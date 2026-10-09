@@ -43,8 +43,8 @@ digraph layer_state {
         "folder state/sessions to folder state/sources" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/sessions to layer data" [label="41", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/system to folder state/shared" [label="39", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/system to folder state/sources" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/system to layer data" [label="61", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/system to folder state/sources" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/system to layer data" [label="64", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/shared" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/sources" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to layer data" [label="27", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

@@ -23,6 +23,11 @@ export type ChatOptions = StartOptions & {
     /** A project in the latest portfolio snapshot. Tests provide the snapshot source they own. */
     projectFor?: (id: string) => ChatProject | null;
     /**
+     * The name of the person marked `self: true` in the hub's people file, or null when none is
+     * marked or the file does not read. The instruction names the hub's owner by it.
+     */
+    ownerFor?: () => string | null;
+    /**
      * The merged engine config as the request read it. Tests provide a fixture without changing the
      * checked-in catalog.
      */
@@ -90,9 +95,9 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
             ? words(catalog, 'server.chat.chat_focus_note', id, project.title, cwd)
             : '';
     const note = words(catalog, 'server.chat.chat_index_note', index);
-    const system = [words(catalog, 'server.chat.chat_instruction', local.hub, cwd), focus, note]
-        .filter((part) => part !== '')
-        .join('\n\n');
+    const owner = options.ownerFor?.() ?? words(catalog, 'server.chat.chat_owner_fallback');
+    const instruction = words(catalog, 'server.chat.chat_instruction', local.hub, cwd, owner);
+    const system = [instruction, focus, note].filter((part) => part !== '').join('\n\n');
     const name = portfolio
         ? words(catalog, 'server.chat.chat_name', await chatNumber(catalog, options))
         : words(catalog, 'server.chat.chat_name_focus', project.title);

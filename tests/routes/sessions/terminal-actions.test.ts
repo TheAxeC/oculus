@@ -497,7 +497,8 @@ describe('POST /api/terminal, the chat action', () => {
         const system = [
             CHAT_CATALOG['server.chat.chat_instruction']
                 .replace('{0}', task.chatHub)
-                .replace('{1}', task.chatProject),
+                .replace('{1}', task.chatProject)
+                .replace('{2}', CHAT_CATALOG['server.chat.chat_owner_fallback']),
             CHAT_CATALOG['server.chat.chat_focus_note']
                 .replace('{0}', 'alpha')
                 .replace('{1}', 'Alpha Study')
@@ -524,5 +525,18 @@ describe('POST /api/terminal, the chat action', () => {
         expect(lineOf(started)).toEqual([expected]);
         expect(lineOf(started)[0]).not.toContain("'-p'");
         expect(indexAtStart).toBe(true);
+        expect(system).toContain('research hub of its owner (oculus)');
+        expect(system).not.toMatch(/null|negative result| - /);
+
+        const owned = tmux();
+        const named = await handleTerminal(
+            request({ action: 'chat', id: 'alpha', cols: 101, rows: 31 }),
+            TOKEN,
+            { ...chatOptions(owned), ownerFor: () => 'Axel Faes' }
+        );
+        expect(named.status).toBe(200);
+        const ownedStart = owned.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(lineOf(ownedStart)[0]).toContain('research hub of Axel Faes (oculus)');
+        expect(lineOf(ownedStart)[0]).not.toContain('its owner');
     });
 });

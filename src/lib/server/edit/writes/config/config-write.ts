@@ -70,7 +70,14 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
     const setting = configKeyWrite(body);
     if (setting !== null) {
         return settled('config-key', () =>
-            writeConfigKey(into.engine, setting.file, setting.key, setting.value, sourcesOf(into))
+            writeConfigKey(
+                into.engine,
+                setting.file,
+                setting.key,
+                setting.value,
+                sourcesOf(into),
+                into.hub
+            )
         );
     }
     const family = configValueWrite(body);
@@ -82,7 +89,8 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
                 family.key,
                 family.value,
                 family.base,
-                sourcesOf(into)
+                sourcesOf(into),
+                into.hub
             )
         );
     }
@@ -91,9 +99,13 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
         const sources = into.sources;
         if (sources === undefined) return UNWRITABLE;
         return settled('roots', () => {
-            if (roots.action === 'add') return addRootTo(sources.file, roots.dir, sources.held);
-            if (roots.action === 'remove') return removeRootFrom(sources.file, roots.key);
-            return orderRootsIn(sources.file, roots.keys);
+            if (roots.action === 'add') {
+                return addRootTo(sources.file, roots.dir, sources.held, sources.base);
+            }
+            if (roots.action === 'remove') {
+                return removeRootFrom(sources.file, roots.key, sources.base);
+            }
+            return orderRootsIn(sources.file, roots.keys, sources.base);
         });
     }
     return null;

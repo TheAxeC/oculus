@@ -48,7 +48,7 @@ if (!present) {
     );
 }
 
-const merged = loadConfig(engine).config;
+const merged = loadConfig(engine, { hub }).config;
 const config = portfolioConfigFrom(merged);
 
 /**

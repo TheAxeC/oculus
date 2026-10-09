@@ -36,9 +36,9 @@
 
     let { groups, id, writer, editors, lists }: Props = $props();
 
-    /** Open one file of the engine's config tree in a source tab. */
-    function openFile(file: string): void {
-        openView('source', sourceTabState(ENGINE_ROOT, file));
+    /** Open one file of a root in a source tab: the engine's config tree, or the hub's layer. */
+    function openFile(root: string, file: string): void {
+        openView('source', sourceTabState(root, file));
     }
 </script>
 
@@ -59,7 +59,7 @@
                         glyph="edit"
                         title={t('views.open_source_tip', line.file)}
                         compact
-                        onclick={() => openFile(line.file)}
+                        onclick={() => openFile(line.root, line.file)}
                     />
                 </div>
                 {#if line.description !== ''}
@@ -91,7 +91,7 @@
                                     glyph="edit"
                                     title={t('views.open_source_tip', row.file)}
                                     compact
-                                    onclick={() => openFile(row.file)}
+                                    onclick={() => openFile(ENGINE_ROOT, row.file)}
                                 />
                             </div>
                             {#if row.help !== ''}

@@ -258,7 +258,7 @@ function fullProblem(
     ctx: Context,
     sources: Sources
 ): string | null {
-    if (spec.control === 'choice' && value === '' && spec.empty !== undefined) return null;
+    if (value === '' && spec.empty !== undefined) return null;
     const lists = listsFor(spec, ctx, sources);
     if (typeof lists === 'string') return lists;
     const problem = ruleProblem(spec, value, lists);

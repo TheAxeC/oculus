@@ -7,9 +7,12 @@
 //
 // A heading draws from the files that hold an option of its subject, and shows one line for each
 // (FileLine): the file's name and description, whether it is the machine's own, and why it has no
-// row when it is still being read, unreadable, cut or not parsed. The rows of such a file are in
-// no heading. A heading exists only while the options catalog holds an option of its subject, so a
-// merged config with no catalog has none.
+// row when it is still being read, unreadable, cut or not parsed. A file with keys of the hub list
+// has a second line when the heading holds one of those keys: the hub layer's file of the same name
+// under `.oculus/config/`, opened in the hub's root, with its own status and, when it is not there,
+// the sentence that a change creates it. The rows of such a file are in no heading. A heading
+// exists only while the options catalog holds an option of its subject, so a merged config with no
+// catalog has none.
 //
 // The text of a tracked file comes from the function the caller hands in, asked once for each
 // described file; the machine's own file is never asked for, since its rows are its catalog
@@ -17,6 +20,7 @@
 // groups, one row per file of config/catalogs/ and of config/text/ and its subfolders, made from
 // the listings the caller hands in (view/folders.ts).
 
+import { hubKeysOf } from '../../../data/helpers/hub-names.ts';
 import {
     HEADINGS,
     UNHEADED,
@@ -25,11 +29,20 @@ import {
 } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { t } from '../../shared/words/text.ts';
+import { ENGINE_ROOT, HUB_ROOT } from '../../sources/explorer/view/place.ts';
 import type { BrowserRow } from './browser.ts';
 import { LOCAL_NAME, describedAs } from './config-files.ts';
 import type { Message } from './messages.ts';
 import type { FileRow, Listed } from './view/folders.ts';
-import { fileRows, localRows, type ConfigRow, type FileStatus, type LocalRow } from './rows.ts';
+import {
+    fileRows,
+    localRows,
+    type ConfigRow,
+    type FileStatus,
+    type HubLayer,
+    type LayerResult,
+    type LocalRow
+} from './rows.ts';
 
 export { catalogOf } from '../../../data/sources/config/catalog/options.ts';
 
@@ -66,6 +79,8 @@ export type Section = { id: string; title: string; rows: Row[] };
 /** One file a heading draws from, with the reason it has no row when it has none. */
 type FileLine = {
     file: string;
+    /** The root the file is opened in: the engine's, or the hub's for a hub layer file. */
+    root: string;
     /** What the file holds, in one sentence, or the empty string. */
     description: string;
     /** Whether the file is the machine's own, which the view tags. */
@@ -179,6 +194,7 @@ export type FolderListings = { catalogs: Listed; schemas: Listed; texts: Listed 
 function lineOf(file: string, status: FileStatus, said: Message | null): FileLine {
     return {
         file,
+        root: ENGINE_ROOT,
         description: describedAs(file),
         local: file === LOCAL_NAME,
         status,
@@ -186,16 +202,30 @@ function lineOf(file: string, status: FileStatus, said: Message | null): FileLin
     };
 }
 
+/** The file line of a hub layer file: its path under the hub, read as the layer result says. */
+function layerLine(file: string, layer: LayerResult): FileLine {
+    return {
+        file: layer.path,
+        root: HUB_ROOT,
+        description: describedAs(file),
+        local: false,
+        status: layer.status,
+        said: layer.said
+    };
+}
+
 /**
  * The groups of the view. `texts` answers the text of a tracked file, and is asked for the files
- * the catalog describes and no other. `folders` are the listings of the catalog, schema and text
- * folders, and none leaves the three groups out.
+ * the catalog describes and no other. `layers` answers the hub layer's file of a tracked file, and
+ * is asked for the files that hold keys of the hub list; without it no file has a layer. `folders`
+ * are the listings of the catalog, schema and text folders, and none leaves the three groups out.
  */
 export function settingsGroups(
     catalog: Catalog,
     texts: (file: string) => FileText,
     browser: BrowserRow[],
-    folders?: FolderListings
+    folders?: FolderListings,
+    layers?: (file: string) => HubLayer
 ): Group[] {
     const groups: Group[] = [];
     if (browser.length > 0) {
@@ -210,18 +240,30 @@ export function settingsGroups(
     }
     const files = FILES.filter((file) => Object.hasOwn(catalog, file));
     const results = new Map(
-        files.map((file) => [file, fileRows(file, catalog[file], texts(file))])
+        files.map((file) => {
+            const hubbed = layers !== undefined && hubKeysOf(file) !== undefined;
+            return [
+                file,
+                fileRows(file, catalog[file], texts(file), hubbed ? layers(file) : undefined)
+            ];
+        })
     );
     const headings: (Heading | typeof UNHEADED)[] = [...HEADINGS, UNHEADED];
     for (const id of headings) {
         const lines: FileLine[] = [];
         const rows: Row[] = [];
         for (const file of files) {
-            const entries = Object.values(catalog[file]).filter((entry) => entry.heading === id);
+            const entries = Object.entries(catalog[file]).filter(
+                ([, entry]) => entry.heading === id
+            );
             if (entries.length === 0) continue;
             const result = results.get(file);
             if (result === undefined) continue;
             lines.push(lineOf(file, result.status, result.said ?? null));
+            const listed = hubKeysOf(file) ?? [];
+            if (result.layer !== undefined && entries.some(([key]) => listed.includes(key))) {
+                lines.push(layerLine(file, result.layer));
+            }
             rows.push(...result.rows.filter((row) => row.entry.heading === id));
         }
         if (lines.length === 0) continue;

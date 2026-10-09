@@ -25,23 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D50
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a30b6993857882108 (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D50
-  base: 2ed26dc28
-  launched: 2026-10-09
-  report: agents/reviews/D50-report.md
-  builder_usage: 348,163 tokens, 105 tool uses, 20.9 min (the first run and the hand-back of the cases); resumed with the cases ruling, to the report: 320,932 tokens, 454 tool uses, 138.4 min; round 1: 142,301 tokens, 194 tool uses, 61.0 min
-  reviewer_report: agents/reviews/D50-refuter.md (a62a3b17bb5c16834, claude-opus-5-5, 72,975 tokens, 88 tool uses, 22.5 min); over round 1: a482febcba2c8b315, claude-opus-5-5, 307,526 tokens, 72 tool uses, 28.7 min
-  brief_check: agents/reviews/D50-brief-check.md (a25c58150d1a4695d, claude-opus-5-5, 266,958 tokens, 111 tool uses, 14.4 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: settings.ts with D46 (the whole file; D50 settingReader 148-151); portfolio.ts, model-machine, config.test.ts and docs/DATA-MAP.md line 69 with D41; server/edit/writes.ts with D48 (WriteTarget); content/docs.ts with D52 (451-456; D50 521-542); config/sources.yml with D48 (line 15, merged by hand); config/catalogs/vocab.yml with D41 (228) and D48 (199-206); config/catalogs/options.yml with D46 (857-860) and D48 (1230); HELP.md with D46 (79-80), D48 (105) and D52 (156; D50 170); docs/window.md with D46 (76) and D52 (41; D50 25, 29); docs/apps.md with D48 (248, 417, 419); docs/configuration.md with D48 (41); config/behavior.yml and config/app.yml with D46 (263-267); DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D48 (552) and D51 (72, 244, 521, 565; D50 91, 272, 306-308, 492, 547, 573); the gate's sparse checkout gains `.oculus` at landing; different lines, each merge simple except sources.yml line 15, merged by hand
-  landing: cherry-picking
-  round_2: agents/briefs/D50-round2.md (open item 31 (a) and Z758), sent to the builder over the tree copied at .agents/worktrees/D50-round1
-  round_2_stopped: Axel stopped the builder during round 2 (no second round was approved); the worktree holds the round's partial changes (20 files, saved as the session's scratchpad `D50-round2-partial.diff`), and `.agents/worktrees/D50-round1` holds round 1's tree to restore from
-  round_2_void: the round's partial changes are discarded; the worktree is restored from `.agents/worktrees/D50-round1` and D50 lands from round 1 with the fixes at landing of The move (the carry-over removed) and of open item 31 (c) (`plan.md` Rulings)
-  round: 2
 - step: D56
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -53,7 +36,7 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D56-report.md
   brief_check: agents/reviews/D56-brief-check.md (ab76aa6336c81ae1d, claude-opus-5-5, 269,002 tokens, 103 tool uses, 13.1 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D50, config/layout.yml (D50 the docs list, the help arrangement and the layer comments; D56 a new top-level workbench key), ActivityRail.svelte (D50 53, 63-65, 161-171; D56 the Workbenches button), the head comment of views/sources/files/Files.svelte (D50 43-49), docs/window.md (D50 25 and 29; D56 a new section), DESIGN.md and HELP.md (D50 170; D56 other lines); different lines, each merge simple
-  builder_usage: 286,546 tokens, 70 tool uses, 11.0 min (the first run and the hand-back of the cases)
+  builder_usage: 286,546 tokens, 70 tool uses, 11.0 min (the first run and the hand-back of the cases); a6f65daca142e0c86, claude-sonnet-5-5, 113,994 tokens, 285 tool uses, 72.3 min (the build)
   cases: agents/briefs/D56-cases.md (Z759), sent to the builder after its first run
   landing: not-started
   round: 0
@@ -281,6 +264,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (D50 landed). D50, the hub's own folder, its shareable files and its settings layer, landed with the carry-over removed and open item 31 (c) written in; `bookmarks.yml` and `workspaces.json` moved into the hub's `.oculus/`. D56 built (report saved) and in review (a17e012de19ee2885, claude-opus-5-5). R2 in repair round 1. D49 and D55 unblocked.
 - 2026-10-09 (The move). Axel ruled open item 31 (c) and The move: no carry-over code; D50 restored to its round-1 tree and landed with the carry-over removed at landing; the five files moved by the orchestrator while Axel's server is stopped. R2 built (report saved) and in review (a89a4942c965eeb8a, claude-opus-5-5). D56 building.
 - 2026-10-09 (all agents stopped). Axel stopped every agent and reopened open items 31 and 32 (no second D50 round was approved) with 33. R2 and D56 restarted on his word with new builders a924a8b4546426f6a and a6f65daca142e0c86 taking over the partial builds; D50 stopped in round 2, waiting for 31. In flight (3 of 6): D50 (stopped, waiting), D56 and R2 (builders).
 - 2026-10-09 (R2 launched). D56's first-run cases ruled as Z759 (`agents/briefs/D56-cases.md`) and its builder resumed. R2 prepared (base 5120f89cf, brief `agents/briefs/R2.md` with G73 and every closure of its brief check) and its builder a00e9759490ea453e (claude-sonnet-5-5) launched in `.agents/worktrees/R2`, base copy in `.agents/worktrees/R2-base`. In flight (3 of 6): D50 (round 2), D56 (builder, after the cases ruling), R2 (builder).

@@ -170,6 +170,7 @@ text:
         settings_mismatch_text: 'The file holds {0}, which is not text.'
         settings_mismatch_toggle: 'The file holds {0}, which is not true or false.'
         settings_missing: 'This key is not set in {0}.'
+        settings_layer_absent: '{0} is not there. A change to a setting of the hub creates it.'
         settings_network: 'Not written: the server could not be reached.'
         settings_blank: 'It must not be blank.'
         settings_no_file: 'The file {0} is not in the hub.'

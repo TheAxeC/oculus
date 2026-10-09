@@ -202,7 +202,10 @@ export function readField(spec: CatalogEntry, held: unknown): Read {
  */
 function emptyIsValue(spec: CatalogEntry): boolean {
     const control = controlOf(spec);
-    return spec.empty !== undefined && (control === 'choice' || control === 'path');
+    return (
+        spec.empty !== undefined &&
+        (control === 'choice' || control === 'path' || control === 'file' || control === 'folder')
+    );
 }
 
 /** The field's value for the text of a box: empty text unsets the field, but for an empty value. */
@@ -414,7 +417,7 @@ function pathTrouble(
 ): Trouble | null {
     const control = controlOf(spec);
     const shape = troubleOf(valueProblem(spec, text));
-    if (shape !== null || control === 'path') return shape;
+    if (shape !== null || control === 'path' || text === '') return shape;
     const wantsFolder = control === 'folder';
     const missing: Trouble = wantsFolder
         ? { is: 'noFolder', path: text }

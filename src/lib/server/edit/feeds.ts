@@ -55,6 +55,7 @@ export function isFeedKind(value: string): value is FeedKind {
 
 /** Resolve one configured feed path only when it remains inside the hub. */
 export function feedFile(hub: string, config: PortfolioConfig, kind: FeedKind): string | null {
+    if (config.feeds[kind] === '') return null;
     const path = resolve(join(hub, config.feeds[kind]));
     return inside(path, hub) ? path : null;
 }
@@ -76,6 +77,7 @@ export function readFeedFile(
     config: PortfolioConfig,
     kind: FeedKind
 ): FeedRead | null {
+    if (config.feeds[kind] === '') return null;
     const file = feedFile(hub, config, kind);
     if (file === null) throw new Error(`the ${kind} feed path is outside the hub`);
     if (!existsSync(file)) return null;

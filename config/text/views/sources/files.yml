@@ -211,7 +211,7 @@ text:
         refused_root_fixed: A configured root is in every workspace and cannot be removed.
         refused_root_held: That folder is already a root of this workspace.
         refused_roots_changed: The roots changed since this list was read; it has been read again.
-        refused_roots_invalid: The roots in config/sources.yml cannot be rewritten without losing a line, so the file is left as it is.
+        refused_roots_invalid: The roots in .oculus/config/sources.yml in the hub cannot be rewritten without losing a line, so the file is left as it is.
         refused_search_failed: The search could not be run on the file.
         refused_token: The write token was refused; reload the page.
         refused_too_large: That file is larger than an upload may be.

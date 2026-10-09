@@ -48,23 +48,17 @@ import {
     schemaFindings,
     loadConfig,
     readLocal,
+    sourceFile,
     settingFindings,
     textCatalog,
     themeFindings,
     type IconMemory
 } from '../../../data/sources/config.ts';
-import { MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { HUB_LAYER, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
-import {
-    ENGINE_ROOT,
-    HUB_ROOT,
-    expandHome,
-    readRoots,
-    rootsFile,
-    type Root
-} from '../../files/files.ts';
+import { ENGINE_ROOT, HUB_ROOT, expandHome, readRoots, type Root } from '../../files/files.ts';
 import { buildFeeds, isLinkedinFile } from '../../edit/feeds.ts';
 import type {
     AuditPayload,
@@ -238,7 +232,7 @@ export function watchedDirectories(
     roots: PersonalRoot[] = []
 ): string[] {
     const dirs = new Set(roleDirectories(hub, config, roots));
-    dirs.add(join(hub, config.feeds.linkedin));
+    if (config.feeds.linkedin !== '') dirs.add(join(hub, config.feeds.linkedin));
     return [...dirs];
 }
 
@@ -416,6 +410,51 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     };
 
     /**
+     * The hub's config layer, `<hub>/.oculus/config`, watched like the engine's config folder: a
+     * change of it is a config change. A layer that is not there is waited for through the nearest
+     * folder that is, and a rebuild is queued only once the layer itself exists, so creating
+     * `<hub>/.oculus` for a bookmark or a note queues nothing. A handle on a layer that has since
+     * gone is closed first, as a root's folder is.
+     */
+    const watchLayer = (dir: string): void => {
+        const key = `layer:${dir}`;
+        if (handles.has(dir) && !existsSync(dir)) {
+            handles.get(dir)?.close();
+            handles.delete(dir);
+        }
+        if (existsSync(dir)) {
+            if (open(dir, true)) {
+                handles.get(key)?.close();
+                handles.delete(key);
+                parents.delete(key);
+            }
+            return;
+        }
+        let parent = dirname(dir);
+        while (!existsSync(parent) && dirname(parent) !== parent) parent = dirname(parent);
+        if (!existsSync(parent) || (handles.has(key) && parents.get(key) === parent)) return;
+        handles.get(key)?.close();
+        handles.delete(key);
+        const wanted = dir.slice(parent.length + 1).split(sep)[0];
+        try {
+            handles.set(
+                key,
+                watch(parent, { recursive: false }, (_event, filename) => {
+                    if (filename !== wanted) return;
+                    if (existsSync(dir)) queue(true, false);
+                    else watchLayer(dir);
+                })
+            );
+            parents.set(key, parent);
+        } catch (error) {
+            if (!refused.has(key)) {
+                console.error(`portfolio watch: cannot watch ${parent}: ${reason(error)}`);
+            }
+            refused.add(key);
+        }
+    };
+
+    /**
      * One file watched on its own, for the career file, which sits wherever `career_file` names
      * it; a name in the hub root would make a recursive watch of its folder cover the whole hub a
      * second time, and where its folder is already watched recursively (the configured
@@ -524,7 +563,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             poll.reading();
             // Read here and not taken from a request: a rebuild is the watcher's answer to a change
             // on disk, and no request is in flight when it runs.
-            const { config, findings } = loadConfig(paths.engine);
+            const { config, findings, from } = loadConfig(paths.engine, { hub: paths.hub });
             if (withConfig) {
                 // The roots of sources.yml, the documents of layout.yml and the icon map are
                 // checked here rather than in loadConfig, which merges files and never touches the
@@ -553,8 +592,13 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                         ...schemaFindings(paths.engine, config),
                         ...themeFindings(paths.engine, config),
                         ...localFindings(paths.engine, config, readLocal(paths.engine).problems),
-                        ...readRoots(config, rootsFile(paths.engine)).findings,
-                        ...docFindings(config, paths.hub, layoutFile(paths.engine)),
+                        ...readRoots(config, sourceFile(paths.engine, paths.hub, from, 'roots'))
+                            .findings,
+                        ...docFindings(
+                            config,
+                            paths.hub,
+                            sourceFile(paths.engine, paths.hub, from, 'docs')
+                        ),
                         ...railFindings(config, layoutFile(paths.engine), textCatalog(config))
                     ]
                 };
@@ -567,7 +611,8 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             watchRootParents(roots);
             // The directories are opened before the snapshot is read, so a write that lands
             // between the read and the open cannot be missed.
-            const linkedinDir = join(paths.hub, portfolio.feeds.linkedin);
+            const linkedinDir =
+                portfolio.feeds.linkedin === '' ? null : join(paths.hub, portfolio.feeds.linkedin);
             const yamlFeedDirs = new Set([
                 dirname(join(paths.hub, portfolio.feeds.leads)),
                 dirname(join(paths.hub, portfolio.feeds.radar))
@@ -607,6 +652,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             }
             openFile(join(paths.hub, portfolio.career));
             open(engineConfig, true);
+            watchLayer(join(paths.hub, HUB_LAYER));
             const version = hub.nextVersion('portfolio');
             const { snapshot, schemas, references } = buildPortfolioWithSchemas(
                 paths.hub,

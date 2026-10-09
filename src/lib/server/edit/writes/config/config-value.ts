@@ -17,6 +17,11 @@
 // checked against come from the write target (`inputs`); without them, as in an undo, no value is
 // checked against the entry and the file is put back as it was.
 //
+// A key of the hub list is written in the hub's config layer (`<hub>/.oculus/config/<file>`) and
+// any other key in the engine's file. A key the layer does not hold is added at the end of its
+// file, which is created with its folders when it is not there (config-key.ts says the same of a
+// single value), and the undo of that write takes the added text out (config-checks.ts).
+//
 // The function is synchronous from the read of the file to its write, which is what lets two
 // writes made at once both land: each reads the file the other has already written.
 //
@@ -24,23 +29,26 @@
 // write left (`putBackConfigValue`) when the file still holds it there, so the file comes back
 // byte for byte; any other undo is this write again with the earlier value.
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { isAlias, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Pair } from 'yaml';
 import { z } from 'zod';
 import { isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
-import { LOCAL_NAME, configDir, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
+import { LOCAL_NAME, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
 import { catalogOf } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
 import { setBlock } from '../../block-edit.ts';
 import { isCollection, valueProblem } from './config-fit.ts';
 import { sourcesFor, type SourceInputs } from './config-sources.ts';
 import {
+    absentIn,
+    insertKey,
     kept,
+    mergedAt,
     optionNow,
     optionOf,
+    placeOf,
+    placeText,
     refusedBy,
     refusing,
     type ConfigKeyOutcome,
@@ -113,17 +121,24 @@ function valueAt(parsed: unknown, key: string): unknown {
  * a map: the file is one the catalog tracks, parses, and holds the key as a bare collection. An
  * undo reads it; a file it may not read throws.
  */
-export function configValueNow(engine: string, file: string, key: string): OptionNow {
-    return optionNow(engine, file, key, (text) => {
-        const held = locate(text, key);
-        return held.kind === 'found' ? { found: true, value: held.value } : null;
-    });
+export function configValueNow(engine: string, file: string, key: string, hub?: string): OptionNow {
+    return optionNow(
+        engine,
+        file,
+        key,
+        (text) => {
+            const held = locate(text, key);
+            return held.kind === 'found' ? { found: true, value: held.value } : null;
+        },
+        hub
+    );
 }
 
 /**
- * Set one list option or family of a tracked config file. A refusal answers the one reason and
- * writes nothing; a value equal to the one held writes nothing and answers with nothing changed.
- * A file that cannot be read or written throws, which the route answers as `unwritable`.
+ * Set one list option or family of a tracked config file, in the hub's layer when it is a key of
+ * the hub list and a hub is given. A refusal answers the one reason and writes nothing; a value
+ * equal to the one held writes nothing and answers with nothing changed. A file that cannot be read
+ * or written throws, which the route answers as `unwritable`.
  */
 export function writeConfigValue(
     engine: string,
@@ -131,9 +146,10 @@ export function writeConfigValue(
     key: string,
     value: unknown,
     base: unknown,
-    inputs?: SourceInputs
+    inputs?: SourceInputs,
+    hub?: string
 ): ConfigKeyOutcome {
-    const before = loadConfig(engine);
+    const before = loadConfig(engine, { hub });
     const text = textCatalog(before.config);
     const refuse = refusing(file, key);
     if (file === LOCAL_NAME) return refuse(words(text, 'server.config_value.local'));
@@ -143,12 +159,19 @@ export function writeConfigValue(
         return refuse(words(text, 'server.config_value.own_write'));
     if (!isCollection(entry)) return refuse(words(text, 'server.config_value.single'));
 
-    const path = join(configDir(engine), file);
-    const source = readFileSync(path, 'utf8');
+    const place = placeOf(engine, hub, file, key);
+    const onDisk = placeText(place);
+    const source = onDisk ?? '';
     const found = locate(source, key);
     if (found.kind === 'unparsed') return refuse(words(text, 'server.config_value.not_parsed'));
-    if (found.kind === 'missing') return refuse(words(text, 'server.config_value.not_in_file'));
-    const held = found.value;
+    const adding =
+        place.layer === 'hub' &&
+        found.kind === 'missing' &&
+        (onDisk === null || absentIn(source, key));
+    if (found.kind === 'missing' && !adding) {
+        return refuse(words(text, 'server.config_value.not_in_file'));
+    }
+    const held = found.kind === 'found' ? found.value : mergedAt(before.config, key);
     if (!isDeepStrictEqual(held, base)) return refuse(words(text, 'server.config_value.changed'));
     if (sameInOrder(held, value)) return { changed: [], refused: [] };
     const reserved = reservedIn(value);
@@ -158,16 +181,16 @@ export function writeConfigValue(
     if (unfit !== null)
         return { changed: [], refused: [{ field: `${file}:${key}`, reason: unfit }] };
 
-    const edited = setBlock(source, key.split('.'), value);
+    const edited = adding ? insertKey(source, key, value) : setBlock(source, key.split('.'), value);
     if (edited === null) return refuse(words(text, 'server.config_value.unsupported'));
     const reread = parseDocument(edited);
     const returned = reread.errors.length === 0 ? valueAt(reread.toJS(), key) : undefined;
     if (!kept(source, edited, key, value) || !sameInOrder(returned, value))
         return refuse(words(text, 'server.config_value.not_kept'));
-    const reason = refusedBy(engine, file, edited, before);
+    const reason = refusedBy(engine, hub, file, edited, before, place.layer);
     if (reason !== null) return { changed: [], refused: [{ field: `${file}:${key}`, reason }] };
 
-    return written(path, file, key, edited, { before: held, after: value }, source);
+    return written(place.path, file, key, edited, { before: held, after: value }, source, adding);
 }
 
 /** A record's replaced text as the log holds it: a whole offset and two texts, else none. */
@@ -187,15 +210,17 @@ export function putBackConfigValue(
     engine: string,
     file: string,
     key: string,
-    values: { replaced?: unknown; before: unknown; after: unknown }
+    values: { replaced?: unknown; before: unknown; after: unknown },
+    hub?: string
 ): ConfigKeyOutcome | null {
     const text = replacedShape.safeParse(values.replaced);
     if (!text.success) return null;
     const { offset, before: earlier, after: later } = text.data;
-    const loaded = loadConfig(engine);
+    const loaded = loadConfig(engine, { hub });
     if (optionOf(catalogOf(loaded.config), file, key) === null) return null;
-    const path = join(configDir(engine), file);
-    const source = readFileSync(path, 'utf8');
+    const place = placeOf(engine, hub, file, key);
+    const source = placeText(place);
+    if (source === null) return null;
     if (offset > source.length || !source.startsWith(later, offset)) return null;
     const found = locate(source, key);
     if (found.kind !== 'found' || !isDeepStrictEqual(found.value, values.after)) return null;
@@ -206,7 +231,14 @@ export function putBackConfigValue(
     if (!kept(source, edited, key, values.before) || !sameInOrder(returned, values.before)) {
         return null;
     }
-    const reason = refusedBy(engine, file, edited, loaded);
+    const reason = refusedBy(engine, hub, file, edited, loaded, place.layer);
     if (reason !== null) return { changed: [], refused: [{ field: `${file}:${key}`, reason }] };
-    return written(path, file, key, edited, { before: found.value, after: values.before }, source);
+    return written(
+        place.path,
+        file,
+        key,
+        edited,
+        { before: found.value, after: values.before },
+        source
+    );
 }

@@ -1,17 +1,21 @@
 // Layer 2, server. The host the Live HPC poller connects to. The machine's own `hpc_host` of
 // local.yml wins when it names one; otherwise it is the ssh alias of the cluster entry that
 // `slurm.resource` of behavior.yml names in registries/resources.yml; otherwise there is no host
-// and a sentence says why. The resolver is pure, so the poller, the config push, the portfolio
-// rebuild and the route all give one answer for one input.
+// and a sentence says why. A hub that sets no `slurm.resource` has no cluster, and the sentence
+// says that the hub's settings name none. The resolver is pure, so the poller, the config push, the
+// portfolio rebuild and the route all give one answer for one input.
 
 import type { Id, Resource, Snapshot } from '../../../data/model/index.ts';
 import { slurmSettings, textCatalog, type SlurmSettings } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { HpcSettings } from './poll.ts';
 
-/** The sentences for having no host. Each takes the resource key as `{0}`, except the first. */
+/**
+ * The sentences for having no host. Each takes the resource key as `{0}`, except the first two.
+ */
 export type HostWords = {
     notRead: string;
+    noCluster: string;
     unknown: string;
     notCluster: string;
     noHost: string;
@@ -39,6 +43,7 @@ function hpcHostOf(input: {
 }): { host: string; missing?: string } {
     const { hpcHost, resource, resources, words } = input;
     if (hpcHost !== undefined) return { host: hpcHost };
+    if (resource === '') return { host: '', missing: words.noCluster };
     if (resources === null) return { host: '', missing: words.notRead };
     const entry = Object.hasOwn(resources, resource) ? resources[resource] : undefined;
     if (entry === undefined) return { host: '', missing: said(words.unknown, resource) };
@@ -106,6 +111,7 @@ export function hostWordsOf(config: Record<string, unknown>): HostWords {
     };
     return {
         notRead: word(textCatalog(config)['hpc.host_not_read'], 'hpc.host_not_read'),
+        noCluster: word(textCatalog(config)['hpc.host_no_cluster'], 'hpc.host_no_cluster'),
         unknown: word(textCatalog(config)['hpc.host_unknown'], 'hpc.host_unknown'),
         notCluster: word(textCatalog(config)['hpc.host_not_cluster'], 'hpc.host_not_cluster'),
         noHost: word(textCatalog(config)['hpc.host_none'], 'hpc.host_none'),

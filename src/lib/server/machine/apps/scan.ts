@@ -5,17 +5,20 @@
 // Every path compared here is a real path as the disk spells it (`realpathSync.native`), so one
 // folder reached through two roots or a link is one folder. The folders are taken in one order, the
 // machine's first and then each root's in the browser's order, and a folder whose real path an
-// earlier one already holds is `repeated`. A root's `.oculus/apps` that resolves outside the root's
-// real path is not read, and the root `engine` is oculus's own config folder, which holds no apps.
-// A folder with no `app.yml` is not an app and gets no finding, since nothing in it claims to be
-// one. This module is a pure function of the disk and its input: it holds nothing between reads,
-// and the keeping of a machine app is the caller's map, edited here only to end a keeping whose
-// manifest changed.
+// earlier one already holds is `repeated`. The hub's `.oculus/apps` is the machine's folder by
+// default, so the hub root whose `.oculus/apps` is the machine's folder is that folder read once,
+// and gets no finding; any other root whose `.oculus/apps` is the machine's folder is `repeated`. A
+// root's `.oculus/apps` that resolves outside the root's real path is not read, and the root
+// `engine` is oculus's own config folder, which holds no apps. A folder with no `app.yml` is not an
+// app and gets no finding, since nothing in it claims to be one. This module is a pure function of
+// the disk and its input: it holds nothing between reads, and the keeping of a machine app is the
+// caller's map, edited here only to end a keeping whose manifest changed.
 
 import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { appViewId } from '../../../data/helpers/files/apps.ts';
+import { HUB_ROOT, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { findingText, type TextCatalog } from '../../../data/helpers/finding-text.ts';
 import type { AppRow, Finding } from '../../../data/model/index.ts';
 import { textCatalog, type AppsSettings } from '../../../data/sources/config.ts';
@@ -197,9 +200,11 @@ export function scanApps(input: ScanInput): AppsHeld {
         }
     };
 
+    let machineReal: string | null = null;
     if (input.machine !== null && existsAny(input.machine)) {
         const real = realPath(input.machine, true);
         if (real !== null && isFolder(real)) {
+            machineReal = real;
             readFolder(real, '', '');
         } else {
             const message = findingText(
@@ -214,7 +219,7 @@ export function scanApps(input: ScanInput): AppsHeld {
     for (const root of input.roots) {
         if (root.key === ENGINE_ROOT) continue;
         const rootReal = realPath(root.dir, true);
-        const typed = join(root.dir, '.oculus', 'apps');
+        const typed = join(root.dir, ROOT_FOLDER, 'apps');
         if (rootReal === null || !existsAny(typed)) continue;
         const real = realPath(typed, true);
         if (real === null || !isFolder(real)) continue;
@@ -223,6 +228,7 @@ export function scanApps(input: ScanInput): AppsHeld {
             note(whole, typed, findingText(catalog, 'findings.apps.folder_outside', real));
             continue;
         }
+        if (root.key === HUB_ROOT && real === machineReal) continue;
         if (seen.has(real)) {
             note(whole, typed, findingText(catalog, 'findings.apps.repeated', real));
             continue;

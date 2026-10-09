@@ -97,9 +97,9 @@ export function readRoots(saved: WorkspacesState): FsRoot[] | null {
 
 /**
  * The roots the reader cannot take off. A tab that follows a session can take none off. In the
- * default workspace (`removable` is the keys of the roots config/sources.yml lists) the folders of
- * that list can be taken off and the hub, the engine's config folder and the fallback folder
- * cannot; in a named workspace the configured roots, which the server marks `fixed`, cannot.
+ * default workspace (`removable` is the keys of the roots the hub's sources.yml layer lists) the
+ * folders of that list can be taken off and the hub, the engine's config folder and the fallback
+ * folder cannot; in a named workspace the configured roots, which the server marks `fixed`, cannot.
  */
 export function fixedRootKeys(
     roots: FsRoot[],
@@ -127,7 +127,7 @@ export function configuredRootKeys(config: Record<string, unknown>): string[] {
 
 /**
  * The keys of the roots the workspace on screen cannot take off. The default workspace (the empty
- * name) takes the folders of `sources.yml`'s `roots:` off; a named workspace takes none of the
+ * name) takes the folders of the hub layer's `roots:` off; a named workspace takes none of the
  * configured ones off, which the server marks `fixed`.
  */
 export function fixedRootsOf(

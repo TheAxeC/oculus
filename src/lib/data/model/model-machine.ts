@@ -1,6 +1,6 @@
 // Layer 1, data. What the machine views read: the Processes view's rows and the payload of one read
-// of the machine's process table, the update tray's schedules (the entries of
-// `~/.oculus/schedules.yml` with their problems, next runs and latest runs), the terminals tmux
+// of the machine's process table, the update tray's schedules (the entries of `schedules.yml` in
+// the hub's `.oculus` folder with their problems, next runs and latest runs), the terminals tmux
 // holds and the words a terminal request is refused with, the messages the page and the language
 // server relay exchange besides JSON-RPC, the debug session's state and console, and what a linter
 // run answers.

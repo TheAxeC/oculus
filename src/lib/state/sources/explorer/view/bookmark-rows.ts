@@ -1,7 +1,7 @@
 // Layer 2, client state, pure. The reader's bookmarks as the file browser and the rail read them: a
-// bookmark is `{ root, path }` in ~/.oculus/bookmarks.yml and names a file or a folder, and these
-// functions turn the entries into the row keys the tree draws its stars from, the rows the rail's
-// Bookmarks menu draws and the label a new bookmark is filed under.
+// bookmark is `{ root, path }` in bookmarks.yml of the hub's .oculus folder and names a file or a
+// folder, and these functions turn the entries into the row keys the tree draws its stars from, the
+// rows the rail's Bookmarks menu draws and the label a new bookmark is filed under.
 
 import { z } from 'zod';
 import { readAs } from '../../../../data/shapes/shapes.ts';

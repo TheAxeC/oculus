@@ -150,8 +150,10 @@
     <div class="linkedin" data-instance={instance.id}>
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="linkedin" />
+        {:else if data.missing && data.file === ''}
+            <Empty message={t('linkedin.unnamed')} glyph="linkedin" />
         {:else if data.missing}
-            <Empty message={t('linkedin.no_folder')} glyph="warn" />
+            <Empty message={t('linkedin.no_folder', data.file)} glyph="warn" />
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}

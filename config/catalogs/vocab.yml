@@ -47,20 +47,8 @@ palette:
   "#6b7280": c-grey-d
   "#475569": c-slate
 
-# Research-domain colours and project-card labels, keyed by the manifest's `domain` value.
-domains:
-  heart:     { color: "#e2374d", label: "Cardiology | ECG" }
-  liver:     { color: "#0d9488", label: "Hepatology | imaging" }
-  liverfl:   { color: "#0d9488", label: "Hepatology | federated" }
-  liversurv: { color: "#0d9488", label: "Hepatology | survival" }
-  privacy:   { color: "#2563eb", label: "Privacy | vertical FL" }
-  theory:    { color: "#2563eb", label: "Privacy | theory" }
-  immune:    { color: "#7c5cff", label: "Immunology | federated" }
-  method:    { color: "#ea580c", label: "Methods frontier" }
-  brain:     { color: "#7c3aed", label: "Neuroscience | EEG" }
-  brainbci:  { color: "#7c3aed", label: "Neuroscience | BCI" }
-  cs:        { color: "#0891b2", label: "Computer Science" }
-  meta:      { color: "#64748b", label: "Meta-science" }
+# Research-domain colours and project-card labels, keyed by the manifest's `domain` value. The engine names none: a hub lists its own in .oculus/config/catalogs/vocab.yml.
+domains: {}
 
 
 # Project-card colours: by tier (type_color) or by archive outcome (arch_color).
@@ -260,35 +248,11 @@ venue_tiers:
   - { key: specialist, color: "#0891b2", label: "specialist" }
   - { key: unrated,    color: "#94a3b8", label: "unrated", assignable: false }
 
-# The theme words a venue's `themes:` may use (registries/venues.yml) and the label each is drawn with; a word used in the registry and missing here is a finding.
-venue_themes:
-  - { key: core-ml,     label: "Core ML" }
-  - { key: clinical,    label: "Clinical" }
-  - { key: high-end,    label: "High-end" }
-  - { key: signal,      label: "Signal" }
-  - { key: theory,      label: "Theory" }
-  - { key: informatics, label: "Informatics" }
-  - { key: federated,   label: "Federated" }
-  - { key: neuro,       label: "Neuro" }
-  - { key: imaging,     label: "Imaging" }
-  - { key: bio,         label: "Bio" }
-  - { key: cs,          label: "CS" }
-  - { key: systems,     label: "Systems" }
-  - { key: method,      label: "Method" }
+# The theme words a venue's `themes:` may use (registries/venues.yml) and the label each is drawn with; a word used in the registry and missing here is a finding. The engine names none: a hub lists its own in .oculus/config/catalogs/vocab.yml.
+venue_themes: []
 
-# The theme words a dataset's `themes:` may use (registries/data.yml) and the label each is drawn with; a word used in the registry and missing here is a finding.
-data_themes:
-  - { key: single-cell,      label: "Single-cell" }
-  - { key: eeg,              label: "EEG" }
-  - { key: mri-imaging,      label: "MRI imaging" }
-  - { key: bci-ecog,         label: "BCI / ECoG" }
-  - { key: ecg,              label: "ECG" }
-  - { key: survival-tabular, label: "Survival (tabular)" }
-  - { key: clinical-ehr,     label: "Clinical EHR" }
-  - { key: pde-operator,     label: "PDE operator" }
-  - { key: ct-imaging,       label: "CT imaging" }
-  - { key: mammography,      label: "Mammography" }
-  - { key: simulated-copula, label: "Simulated (copula)" }
+# The theme words a dataset's `themes:` may use (registries/data.yml) and the label each is drawn with; a word used in the registry and missing here is a finding. The engine names none: a hub lists its own in .oculus/config/catalogs/vocab.yml.
+data_themes: []
 
 
 # Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one of these; `glyph` is a `glyphs:` key. Edit a label/colour HERE (was hardcoded in config.py before 2026-07).

@@ -16,7 +16,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
     const server = locals.server;
     return handleSchedules(request, server.token, {
         files: () => ({
-            schedules: server.local.schedules ?? defaultSchedulesPath(),
+            schedules: server.local.schedules ?? defaultSchedulesPath(server.local.hub),
             record: server.local.scheduleRecord ?? defaultRecordPath(),
             commands: savedPath()
         }),

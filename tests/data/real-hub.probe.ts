@@ -32,7 +32,7 @@ const hub = local.hub;
 console.log(`hub: ${hub}`);
 
 // The hub's layout as the copied config/ describes it. Nothing is typed by hand here any more.
-const config = loadConfig(engine);
+const config = loadConfig(engine, { hub });
 const portfolio = portfolioConfigFrom(config.config);
 const SCAN = portfolio.scan;
 const COLLECTIONS = portfolio.collections;

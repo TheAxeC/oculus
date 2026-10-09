@@ -183,8 +183,8 @@ options:
         data_domains:
             heading: boards
             section: Audit checks
-            help: Domains expected to have a dataset. The audit reports an active or manuscript project in one of these domains that has no datasets entry.
-            default: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
+            help: Domains expected to have a dataset. The audit reports an active or manuscript project in one of these domains that has no datasets entry. This is a setting of the hub, kept in the hub's .oculus/config/behavior.yml, and a hub that sets none expects no dataset.
+            default: []
             control: multi
             from: domains
         waiting_status:
@@ -333,9 +333,10 @@ options:
         slurm.resource:
             heading: cluster
             section: Slurm
-            help: "The cluster the Live HPC poller queries: the key of a cluster entry of registries/resources.yml, whose host is the ssh alias. The machine's own hpc_host in local.yml takes precedence. A key that names no cluster with a host shows why in the HPC view."
-            default: utwente
+            help: "The cluster the Live HPC poller queries: the key of a cluster entry of registries/resources.yml, whose host is the ssh alias. This is a setting of the hub, kept in the hub's .oculus/config/behavior.yml. The machine's own hpc_host in local.yml takes precedence. Empty sets no cluster, and the HPC view says so and polls nothing. A key that names no cluster with a host shows why in the HPC view."
+            default: ''
             control: choice
+            empty: no cluster
             from: clusters
         slurm.days:
             heading: cluster
@@ -1093,7 +1094,7 @@ options:
         docs:
             heading: rail
             section: View catalogue
-            help: Hub documents listed in the view catalogue. Each is one entry inside its group, listed after the group's views, and opens the doc view. An entry that is not three non-empty strings is dropped, and a path with no file there draws the view's own missing line.
+            help: Hub documents listed in the view catalogue. Each is one entry inside its group, listed after the group's views, and opens the doc view. An entry that is not three non-empty strings is dropped, and a path with no file there draws the view's own missing line. This is a setting of the hub, kept in the hub's .oculus/config/layout.yml; the engine's list is empty.
             fields:
                 label: the words of the tab
                 path:
@@ -1335,16 +1336,18 @@ options:
         publications_file:
             heading: sources
             section: Registry and feed files
-            help: The public website's publications feed, cross-checked in the Audit view for missing, leaked, wrong-section and untracked entries. The check is skipped when the file is not checked out.
-            default: theaxec.github.io/_data/publications.yml
+            help: The public website's publications feed, cross-checked in the Audit view for missing, leaked, wrong-section and untracked entries. Empty names no file, and the check is skipped, as it is when the file is not checked out. This is a setting of the hub, kept in the hub's .oculus/config/sources.yml.
+            default: ''
             control: file
+            empty: true
             allow_missing: true
         linkedin_dir:
             heading: sources
             section: Registry and feed files
-            help: The folder of the LinkedIn posts pipeline on the website, where a numbered file is posted and an xx- file is an idea.
-            default: theaxec.github.io/_linkedin
+            help: The folder of the LinkedIn posts pipeline on the website, where a numbered file is posted and an xx- file is an idea. Empty names no folder, and the LinkedIn view says so. This is a setting of the hub, kept in the hub's .oculus/config/sources.yml.
+            default: ''
             control: folder
+            empty: true
         career_file:
             heading: sources
             section: Registry and feed files
@@ -1354,7 +1357,7 @@ options:
         roots:
             heading: sources
             section: Roots
-            help: The roots the server may serve local files from, one directory per key. A relative dir is a finding, and a dir that is not on this machine is a finding and its root serves nothing. Nothing outside a root is served, since both ends are resolved through realpath. These are the folders of the default workspace. The Files view's Add Folder to Workspace appends an entry here and Remove Folder from Workspace removes one, and a saved workspace keeps its own folders in its file.
+            help: The roots the server may serve local files from, one directory per key. A relative dir is a finding, and a dir that is not on this machine is a finding and its root serves nothing. Nothing outside a root is served, since both ends are resolved through realpath. These are the folders of the default workspace, a setting of the hub kept in the hub's .oculus/config/sources.yml; the engine's list is empty. The Files view's Add Folder to Workspace appends an entry here and Remove Folder from Workspace removes one, and a saved workspace keeps its own folders in its file.
             fields:
                 key: the root's key, which the file address api/file/key/path and a bookmark use
                 dir:
@@ -1387,13 +1390,13 @@ options:
             help: Where the per-session overrides live. Without it the file is ~/.oculus/sessions.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         workspaces:
             section: Saved files
-            help: Where the file browser's saved workspaces live. Without it the file is ~/.oculus/workspaces.json. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+            help: Where the file browser's saved workspaces live. Without it the file is .oculus/workspaces.json in the hub. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         bookmarks:
             section: Saved files
-            help: Where the reader's own bookmarks live. Without it the file is ~/.oculus/bookmarks.yml. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+            help: Where the reader's own bookmarks live. Without it the file is .oculus/bookmarks.yml in the hub. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         notes:
             section: Saved files
-            help: Where the scratch notes live. Without it the folder is ~/.oculus/notes. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+            help: Where the scratch notes live. Without it the folder is .oculus/notes in the hub. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         changes:
             section: Saved files
             help: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
@@ -1408,7 +1411,7 @@ options:
             help: Where the language servers keep this machine's state, a folder per served root named by a hash of the root's real path, holding the index clangd writes there instead of into the repository, and choices.json, the interpreter and the compile database chosen for each repository. Without it the folder is ~/.oculus/lsp. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change ends every language server, and each starts again on its next document under the new folder; the old folder is left as it was.
         schedules:
             section: Saved files
-            help: Where the schedules live, the entries the update tray's Schedules section lists and a reader may write by hand. Without it the file is ~/.oculus/schedules.yml. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+            help: Where the schedules live, the entries the update tray's Schedules section lists and a reader may write by hand. Without it the file is .oculus/schedules.yml in the hub. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
         schedule_record:
             section: Saved files
             help: Where the schedules' run record lives, each schedule's latest runs and the last due time it handled. Without it the file is ~/.oculus/schedule.json, mode 0600 when oculus creates it. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
@@ -1459,4 +1462,4 @@ options:
             help: Under `literature:`, the contact address that OpenAlex, Crossref and NCBI ask callers to send with a request. The Settings view never shows the value. A change is read again at the next search.
         apps_dir:
             section: Apps
-            help: Where the machine's apps live, one folder of web files per app. Without it the folder is ~/.oculus/apps. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.
+            help: Where the machine's apps live, one folder of web files per app. Without it the folder is .oculus/apps in the hub, which the hub's owner writes and a git pull into the hub writes too; an app kept approved stays approved through a change to any of its files but app.yml, a pulled change included, while the server runs. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the engine directory. A change is read again at once.

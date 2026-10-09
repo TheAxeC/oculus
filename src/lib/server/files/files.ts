@@ -142,10 +142,10 @@ const rootEntryShape = z.looseObject({ key: z.unknown().optional(), dir: z.unkno
 const rootListShape = z.array(z.unknown());
 
 /**
- * The `roots:` list of config/sources.yml, and a finding for every entry that is not usable: one
- * that is not a pair of strings, a key two entries share, and a directory that is not on this
- * machine. A finding is reported and never repaired, so a root whose directory has moved shows up
- * in the Findings view rather than as a tab that silently serves nothing.
+ * The `roots:` list of the merged sources.yml (the hub layer's list), and a finding for every entry
+ * that is not usable: one that is not a pair of strings, a key two entries share, and a directory
+ * that is not on this machine. A finding is reported and never repaired, so a root whose directory
+ * has moved shows up in the Findings view rather than as a tab that silently serves nothing.
  */
 export function readRoots(
     config: Record<string, unknown>,
@@ -238,8 +238,11 @@ export function serveFile(
     });
 }
 
-/** The file config/sources.yml sits in, which is what a root's finding names. */
-export function rootsFile(engine: string): string {
+/**
+ * The engine's sources.yml, the name `configuredRootsOf` gives `readRoots`; only the roots it reads
+ * are kept, so the name labels no finding that is shown.
+ */
+function rootsFile(engine: string): string {
     return join(configDir(engine), 'sources.yml');
 }
 
@@ -257,8 +260,8 @@ export function engineRoot(engine: string): Root {
 }
 
 /**
- * The roots config/sources.yml names, without the hub in front of them, out of a config already
- * read.
+ * The roots the merged `roots:` list names, without the hub in front of them, out of a config
+ * already read.
  */
 export function configuredRootsOf(config: Record<string, unknown>, engine: string): Root[] {
     return readRoots(config, rootsFile(engine)).roots;

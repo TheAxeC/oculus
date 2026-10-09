@@ -90,7 +90,7 @@ arrangements:
   present:
     root: { kind: pane, view: present }
   help:
-    root: { kind: pane, view: [help, { view: doc, state: { id: docs/HPC-UTwente-howto.md, path: docs/HPC-UTwente-howto.md, label: "HPC how-to" } }, { view: doc, state: { id: docs/DATA-MAP.md, path: docs/DATA-MAP.md, label: "Data map" } }, { view: doc, state: { id: docs/RESEARCH-APPROACH.md, path: docs/RESEARCH-APPROACH.md, label: "Research approach" } }, { view: doc, state: { id: docs/AGENT-APPROACH.md, path: docs/AGENT-APPROACH.md, label: "Agent approach" } }, { view: doc, state: { id: tools/oculus/docs/apps.md, path: tools/oculus/docs/apps.md, label: "Apps guide" } }, { view: doc, state: { id: tools/oculus/docs/configuration.md, path: tools/oculus/docs/configuration.md, label: "Configuration guide" } }, { view: doc, state: { id: tools/oculus/docs/source-control.md, path: tools/oculus/docs/source-control.md, label: "Source Control guide" } }, { view: doc, state: { id: tools/oculus/docs/window.md, path: tools/oculus/docs/window.md, label: "Window guide" } }, { view: doc, state: { id: tools/oculus/docs/views.md, path: tools/oculus/docs/views.md, label: "Views guide" } }, { view: doc, state: { id: tools/oculus/docs/files-and-search.md, path: tools/oculus/docs/files-and-search.md, label: "Files and search guide" } }, { view: doc, state: { id: tools/oculus/docs/terminals.md, path: tools/oculus/docs/terminals.md, label: "Terminals and commands guide" } }, { view: doc, state: { id: tools/oculus/docs/debugging.md, path: tools/oculus/docs/debugging.md, label: "Debugging guide" } }, memories] }
+    root: { kind: pane, view: [help, { view: doc, state: { id: tools/oculus/docs/apps.md, path: tools/oculus/docs/apps.md, label: "Apps guide" } }, { view: doc, state: { id: tools/oculus/docs/configuration.md, path: tools/oculus/docs/configuration.md, label: "Configuration guide" } }, { view: doc, state: { id: tools/oculus/docs/source-control.md, path: tools/oculus/docs/source-control.md, label: "Source Control guide" } }, { view: doc, state: { id: tools/oculus/docs/window.md, path: tools/oculus/docs/window.md, label: "Window guide" } }, { view: doc, state: { id: tools/oculus/docs/views.md, path: tools/oculus/docs/views.md, label: "Views guide" } }, { view: doc, state: { id: tools/oculus/docs/files-and-search.md, path: tools/oculus/docs/files-and-search.md, label: "Files and search guide" } }, { view: doc, state: { id: tools/oculus/docs/terminals.md, path: tools/oculus/docs/terminals.md, label: "Terminals and commands guide" } }, { view: doc, state: { id: tools/oculus/docs/debugging.md, path: tools/oculus/docs/debugging.md, label: "Debugging guide" } }, memories] }
   views:
     root:
       kind: split
@@ -167,18 +167,5 @@ archive_label_mode: short    # Archive tab cards / list rows (live Aa toggle ove
 map_label_mode: short        # Map tab nodes
 
 
-# Hub documents in the view catalogue: one entry inside its group, listed after the group's views, opening the `doc` view over api/docs. `path` is relative to the research hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line.
-docs:
-  - { label: "Research approach",            path: docs/RESEARCH-APPROACH.md,             group: help }
-  - { label: "Agent approach",               path: docs/AGENT-APPROACH.md,                group: help }
-  - { label: "HPC how-to",                   path: docs/HPC-UTwente-howto.md,             group: help }
-  - { label: "Data map",                     path: docs/DATA-MAP.md,                      group: help }
-  - { label: "Apps guide",                   path: tools/oculus/docs/apps.md,             group: help }
-  - { label: "Configuration guide",          path: tools/oculus/docs/configuration.md,    group: help }
-  - { label: "Source Control guide",         path: tools/oculus/docs/source-control.md,   group: help }
-  - { label: "Window guide",                 path: tools/oculus/docs/window.md,           group: help }
-  - { label: "Views guide",                  path: tools/oculus/docs/views.md,            group: help }
-  - { label: "Files and search guide",       path: tools/oculus/docs/files-and-search.md, group: help }
-  - { label: "Terminals and commands guide", path: tools/oculus/docs/terminals.md,        group: help }
-  - { label: "Debugging guide",              path: tools/oculus/docs/debugging.md,        group: help }
-  - { label: "Design",                       path: tools/oculus/DESIGN.md,                group: help }
+# Documents of the hub in the view catalogue: one entry inside its group, listed after the group's views, opening the `doc` view over api/docs. `path` is relative to the hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line. The engine lists none: a hub lists its documents in .oculus/config/layout.yml, and this key is the hub list's `docs`.
+docs: []

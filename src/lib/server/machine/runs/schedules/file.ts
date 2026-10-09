@@ -1,6 +1,6 @@
-// Layer 2, server. The schedules file, `~/.oculus/schedules.yml`: a YAML list of entries that the
-// reader writes by hand or through the update tray's dialog. This module reads it, checks each
-// entry against the disk, and plans and commits a write.
+// Layer 2, server. The schedules file, `schedules.yml` in the hub's `.oculus` folder: a YAML list
+// of entries that the reader writes by hand or through the update tray's dialog. This module reads
+// it, checks each entry against the disk, and plans and commits a write.
 //
 // Reading is the shared rule of data/helpers/run/schedules.ts for the shape of an entry, with the
 // checks that need the disk on top: a folder that exists, a prompt's folder that the hub or a
@@ -33,7 +33,6 @@
 // refused when the entry at that position has another name.
 
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import {
@@ -47,6 +46,7 @@ import {
     isSeq,
     parseDocument
 } from 'yaml';
+import { ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
 import {
     nameKey,
     nameOf,
@@ -63,9 +63,9 @@ import { readAllSaved } from '../commands/saved.ts';
 /** The mode of the file: it names the folders and the prompts of this machine. */
 const FILE_MODE = 0o600;
 
-/** ~/.oculus/schedules.yml, resolved at the call rather than at import. */
-export function defaultSchedulesPath(): string {
-    return join(homedir(), '.oculus', 'schedules.yml');
+/** The hub's own schedules file, `<hub>/.oculus/schedules.yml`, resolved at the call. */
+export function defaultSchedulesPath(hub: string): string {
+    return join(hub, ROOT_FOLDER, 'schedules.yml');
 }
 
 /** What the checks that need the disk read: the hub, the served roots and the saved commands. */

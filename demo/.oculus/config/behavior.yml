@@ -1,0 +1,13 @@
+# ===========================================================================
+# .oculus/config/behavior.yml
+# The demo hub's layer of oculus's behavior.yml: the cluster its jobs run on and the domains expected to have a dataset.
+# ===========================================================================
+
+
+# Domains expected to have a dataset. Oculus reports projects in these domains without a Data section.
+data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
+
+
+# `resource` is the key of a cluster entry of registries/resources.yml, whose `host` is the ssh alias the poller uses.
+slurm:
+  resource: utwente

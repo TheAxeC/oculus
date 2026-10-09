@@ -175,7 +175,7 @@ text:
             problem_record_unread: The run record does not read, so nothing starts.
             problem_record_unwritten: The run record could not be written; check ~/.oculus/schedule.json and try again.
             problem_runs_wrong: What it runs must be exactly one of a task, a command and a prompt.
-            problem_schedules_unread: The schedules file does not read, so oculus writes nothing to it.
+            problem_schedules_unread: schedules.yml in the .oculus folder of the hub (or the path local.yml names) does not read, so oculus writes nothing to it.
             problem_schedules_unwritten: The schedules file could not be written, so nothing was saved.
             problem_server_stopped: The server stopped before the run started.
             problem_unattended_command: Run unattended applies to an update task or a prompt.
@@ -207,8 +207,8 @@ text:
             unattended_unset: not chosen
             unread_commands: The saved commands file ~/.oculus/commands.json does not read, so no command schedule runs.
             unread_record: The run record ~/.oculus/schedule.json does not read, so no schedule runs; the file is left as it is.
-            unread_schedules: '~/.oculus/schedules.yml does not read, so no schedule runs and oculus writes nothing to it.'
-            unread_schedules_at: '~/.oculus/schedules.yml does not read at line {0}, so no schedule runs and oculus writes nothing to it.'
+            unread_schedules: 'schedules.yml in the .oculus folder of the hub (or the path local.yml names) does not read, so no schedule runs and oculus writes nothing to it.'
+            unread_schedules_at: 'schedules.yml in the .oculus folder of the hub (or the path local.yml names) does not read at line {0}, so no schedule runs and oculus writes nothing to it.'
             when: When
             when_custom: Custom
             when_day: Every day

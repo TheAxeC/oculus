@@ -21,9 +21,9 @@
 // changes or the process ends) is held here, in memory, as the hash of the manifest approved.
 
 import { existsSync, lstatSync, watch, type FSWatcher } from 'node:fs';
-import { homedir } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
+import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import type { AppRow } from '../../../data/model/index.ts';
 import { appsSettings, localFile, type LocalConfig } from '../../../data/sources/config.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
@@ -92,7 +92,7 @@ export type AppsWatchOptions = {
 /** The machine's apps folder: `apps_dir` resolved as the other folders of local.yml are. */
 function machineFolder(local: LocalConfig, engine: string): string {
     const dir = local.appsDir;
-    if (dir === undefined) return join(homedir(), '.oculus', 'apps');
+    if (dir === undefined) return join(local.hub, ROOT_FOLDER, 'apps');
     const home = expandHome(dir);
     return isAbsolute(home) ? home : resolve(engine, home);
 }
@@ -129,7 +129,10 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     let missing: string[] = [];
 
     const approvalsPath = (): string => options.local().approvals ?? defaultApprovalsPath();
-    const workspacesPath = (): string => options.local().workspaces ?? defaultWorkspacesPath();
+    const workspacesPath = (): string => {
+        const local = options.local();
+        return local.workspaces ?? defaultWorkspacesPath(local.hub);
+    };
 
     const publish = (): void => {
         const payload = payloadOf(state);
@@ -203,7 +206,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
         const machine = machineFolder(options.local(), options.engine);
         waiting.push(machine);
         for (const root of roots) {
-            waiting.push(join(expandHome(root.dir), '.oculus', 'apps'));
+            waiting.push(join(expandHome(root.dir), ROOT_FOLDER, 'apps'));
         }
         waiting.push(...storeFolders());
         waiting.push(approvalsPath());

@@ -379,7 +379,7 @@
 <g id="node40" class="node">
 <title>folder state/system to folder state/sources</title>
 <polygon fill="none" stroke="none" points="88.88,-404.32 79.12,-404.32 79.12,-391.84 88.88,-391.84 88.88,-404.32"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="84" y="-395.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="84" y="-395.68" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
 </g>
 <!-- folder state/system&#45;&gt;folder state/system to folder state/sources -->
 <g id="edge68" class="edge">
@@ -390,7 +390,7 @@
 <g id="node41" class="node">
 <title>folder state/system to layer data</title>
 <polygon fill="none" stroke="none" points="157.88,-457.36 144.12,-457.36 144.12,-444.88 157.88,-444.88 157.88,-457.36"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="151" y="-448.72" font-family="Helvetica,Arial,sans-serif" font-size="8.00">61</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="151" y="-448.72" font-family="Helvetica,Arial,sans-serif" font-size="8.00">64</text>
 </g>
 <!-- folder state/system&#45;&gt;folder state/system to layer data -->
 <g id="edge70" class="edge">

@@ -65,8 +65,11 @@ export type OpenFilesOptions = {
     hub: Hub;
     /** The roots the names are resolved against; read again after the configuration moved. */
     roots: () => Root[];
-    /** The saved workspaces file, whose change adds or drops roots. */
-    workspacesFile?: string;
+    /**
+     * The saved workspaces file, whose change adds or drops roots. A function names the file at
+     * each tick, so a poll follows the file when the hub it lies in changes.
+     */
+    workspacesFile?: string | (() => string);
     clock?: Clock;
     every?: number;
     /** Read the bytes of a file to hash them; the file system's read unless a test gives one. */

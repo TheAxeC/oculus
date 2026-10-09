@@ -148,10 +148,13 @@ function multiProblem(spec: CatalogEntry, value: unknown, lists: RuleLists): Val
     return stray === undefined ? null : notListed(spec);
 }
 
-/** What is wrong with a path: the form of a hub path, or an absolute or `~/` path. */
+/**
+ * What is wrong with a path: the form of a hub path, or an absolute or `~/` path. The empty text is
+ * the value of an entry that sets `empty`, such as a file the hub leaves out.
+ */
 function pathProblem(spec: CatalogEntry, text: string): ValueProblem | null {
+    if (text === '' && spec.empty !== undefined) return null;
     if (spec.control === 'path') {
-        if (text === '' && spec.empty !== undefined) return null;
         return text.startsWith('~/') || text.startsWith('/') ? null : { kind: 'path' };
     }
     const unfit = text === '' || text.startsWith('/') || text.includes('\\');

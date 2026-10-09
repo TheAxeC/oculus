@@ -24,12 +24,14 @@
     //
     // The files are read through the file browser's `engine` root, and handed the version of the
     // config channel, so a write that the watcher pushes back redraws the value. Only the five
-    // tracked files are asked for; the machine's own file is listed from the catalog alone and its
-    // text is never read. The Catalogs and Texts groups are made from the listings of the two
-    // folders, which the same version re-reads. The lists the controls offer (the domains, the
-    // clusters, the views, the usage tiers, the theme classes, the hub's folders) are built here
-    // from the stores the page holds (editors/sources.ts); one that is not there yet is drawn as
-    // loading.
+    // tracked files are asked for, and for a file with keys of the hub list also the hub layer's
+    // file of the same name under `.oculus/config/`, read through the `hub` root with the folders
+    // on its way listed (state/system/config/view/hub-layer.ts); the machine's own file is listed
+    // from the catalog alone and its text is never read. The Catalogs and Texts groups are made
+    // from the listings of the two folders, which the same version re-reads. The lists the controls
+    // offer (the domains, the clusters, the views, the usage tiers, the theme classes, the hub's
+    // folders) are built here from the stores the page holds (editors/sources.ts); one that is not
+    // there yet is drawn as loading.
     //
     // The query, the text being typed in a box, the drafts of the list, multi and family editors
     // and the rail list being edited are the tab's instance state, so they are there again after
@@ -68,6 +70,7 @@
     import { searchGroups } from '$lib/state/system/config/search';
     import { contentsAfter, contentsPlace } from '$lib/state/system/config/view/contents';
     import { listedFiles } from '$lib/state/system/config/view/folders';
+    import { hubLayerText } from '$lib/state/system/config/view/hub-layer';
     import {
         settingsQuery,
         settingsReveal,
@@ -101,6 +104,7 @@
 
     $effect(() => {
         refresh(ENGINE_ROOT, pushed);
+        refresh(HUB_ROOT, pushed);
     });
 
     const writer = reactiveWriter(writeConfigKey, () => lists);
@@ -126,6 +130,11 @@
         if (held.error !== '') return { state: 'failed', error: held.error };
         if (held.loading) return { state: 'loading' };
         return { state: 'ready', entries: held.entries };
+    }
+
+    /** One folder of the hub as the file browser lists it, hidden entries included. */
+    function hubListing(path: string): ReturnType<typeof listing> {
+        return listing(HUB_ROOT, path, { hidden: true, ignored: true });
     }
 
     /** The body classes the theme sheets hold a block for, read once from the sheets. */
@@ -162,7 +171,8 @@
                 catalogs: listedFiles(CATALOGS, (path) => listing(ENGINE_ROOT, path)),
                 schemas: listedFiles(SCHEMAS, (path) => listing(ENGINE_ROOT, path)),
                 texts: listedFiles(TEXT, (path) => listing(ENGINE_ROOT, path))
-            }
+            },
+            (file) => hubLayerText(file, hubListing, (path) => fileText(HUB_ROOT, path))
         )
     );
 

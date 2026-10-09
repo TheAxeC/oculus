@@ -23,9 +23,9 @@ import type { RequestHandler } from './$types';
 const target = (locals: App.Locals): FsTarget => {
     const server = locals.server;
     return {
-        file: server.local.workspaces ?? defaultWorkspacesPath(),
-        bookmarks: server.local.bookmarks ?? defaultBookmarksPath(),
-        notes: server.local.notes ?? defaultNotesDir(),
+        file: server.local.workspaces ?? defaultWorkspacesPath(server.local.hub),
+        bookmarks: server.local.bookmarks ?? defaultBookmarksPath(server.local.hub),
+        notes: server.local.notes ?? defaultNotesDir(server.local.hub),
         fixed: rootsFrom(
             configuredRootsOf(locals.config().config, server.engine),
             server.local.hub,

@@ -60,8 +60,9 @@
         /** The rail's pages, read by the page out of the merged config and handed on. */
         pages?: RailPage[];
         /**
-         * The reader's own bookmarks, from ~/.oculus/bookmarks.yml; the page reads them off the fs
-         * store and passes them on, since the shell may not read that store itself.
+         * The reader's own bookmarks, from bookmarks.yml in the hub's .oculus folder; the page
+         * reads them off the fs store and passes them on, since the shell may not read that store
+         * itself.
          */
         saved?: Bookmark[];
         /**

@@ -8,7 +8,7 @@ An app is a folder of web files: an HTML page, its scripts and styles, and a man
 
 The frame is an iframe with `sandbox="allow-scripts allow-downloads"`. The app runs in an opaque origin with no cookies, no storage, no popups, no forms that submit and no access to the rest of oculus. The only way out of the frame is the bridge, a small client at `/apps/-/oculus.js` that your script imports. It gives the script nine methods (part 6). Everything an app reads, writes or opens goes through those methods. Each call is checked against the manifest and against fixed rules in oculus.
 
-There are two kinds of app. A machine app lives in a folder of this machine and may read every channel an app can read (part 6). A root app lives in the `.oculus/apps/` folder of a root shown in the Files view, so it travels with that repository. Whoever writes to a root, a `git pull` included, writes the root app. A root app is therefore offered fewer channels, cannot be kept approved while it changes, and can open files only from its own root.
+There are two kinds of app. A machine app lives in the hub's own `.oculus/apps/` folder, which the hub's owner writes and a `git pull` into the hub writes too, and may read every channel an app can read (part 6). A root app lives in the `.oculus/apps/` folder of any other root shown in the Files view, so it travels with that repository. Whoever writes to that root, a `git pull` included, writes the root app. What sets the two kinds apart is the place: a root app is offered fewer channels, cannot be kept approved while it changes, and can open files only from its own root.
 
 You reach an app in three places. The Apps button on the rail opens the Apps page, whose pane is empty until you open something. The Views catalogue on the System page lists every offered app under Apps, a root app's title followed by its root's key in parentheses. The chord `v` followed by the digit the catalogue shows beside an entry opens it.
 
@@ -16,10 +16,10 @@ You reach an app in three places. The Apps button on the rail opens the Apps pag
 
 | Kind | Folder of one app | Set by |
 |------|-------------------|--------|
-| Machine app | `<apps_dir>/<name>/` | `apps_dir` in `config/local.yml`, `~/.oculus/apps` when absent |
-| Root app | `<root>/.oculus/apps/<name>/` | each root shown in the Files view, the hub included |
+| Machine app | `<apps_dir>/<name>/` | `apps_dir` in `config/local.yml`, `<hub>/.oculus/apps` when absent |
+| Root app | `<root>/.oculus/apps/<name>/` | each root shown in the Files view except the hub, whose `.oculus/apps` is the machine folder |
 
-`apps_dir` takes a path. A value of `~` or one starting with `~/` is under your home folder, and any other relative value is resolved against the engine directory. A change to it is read again at once. The root `engine` is oculus's own `config/` folder and holds no apps. The hub is a root like any other, so `<hub>/.oculus/apps/board/` is the root app `board` of the root `hub`.
+`apps_dir` takes a path. A value of `~` or one starting with `~/` is under your home folder, and any other relative value is resolved against the engine directory. A change to it is read again at once. The root `engine` is oculus's own `config/` folder and holds no apps. The hub's own `.oculus/apps/` is the machine folder when `apps_dir` is absent, so `<hub>/.oculus/apps/board/` is the machine app `board`, read once; the `.oculus/apps/` folder of every other root is read as that root's apps.
 
 Each app folder is a direct subfolder of an apps folder and holds a file `app.yml`. The folder's name is the app's name and must match `^[a-z][a-z0-9-]{0,39}$`: a lowercase letter, then lowercase letters, digits and hyphens, 40 characters at most. Three things are skipped: a file directly in an apps folder, a folder whose name starts with a dot, and a folder with no `app.yml`. A folder with no `app.yml` raises no finding, since nothing in it claims to be an app.
 
@@ -39,13 +39,13 @@ oculus serves the folder at an address that holds a key, `/apps/<name>/<key>/<pa
 
 This builds the smallest app that connects, in a machine app folder. Write `index.html` and the script before `app.yml`. The folder is offered as soon as `app.yml` exists, and a manifest whose `entry` file is missing gives the finding `entry_missing`. Put the script in its own file, because the frame refuses inline scripts.
 
-Make the folder:
+Make the folder, from the hub:
 
 ```sh
-mkdir -p ~/.oculus/apps/hello
+mkdir -p .oculus/apps/hello
 ```
 
-`~/.oculus/apps/hello/index.html`:
+`<hub>/.oculus/apps/hello/index.html`:
 
 ```html
 <!doctype html>
@@ -61,7 +61,7 @@ mkdir -p ~/.oculus/apps/hello
 </html>
 ```
 
-`~/.oculus/apps/hello/app.js`:
+`<hub>/.oculus/apps/hello/app.js`:
 
 ```js
 import { connect } from '/apps/-/oculus.js';
@@ -71,7 +71,7 @@ const theme = await oculus.getTheme();
 document.getElementById('out').textContent = `Connected. The theme is ${theme.name}.`;
 ```
 
-`~/.oculus/apps/hello/app.yml`, written last:
+`<hub>/.oculus/apps/hello/app.yml`, written last:
 
 ```yaml
 name: hello
@@ -134,7 +134,7 @@ Once approved, the pane's toolbar shows Revoke, which takes the approval back an
 What changes the approval:
 
 - Any change to any file of the app changes the hash, so the approval does not hold. The tab shows the panel again with the sentence "This app changed since you approved it. Read what it asks for again and approve it to run it." The tab's saved state is kept. A root app changed by a `git pull` asks again in the same way.
-- A machine app kept approved is the exception. A change to any file except `app.yml` leaves it approved. The address key changes with the files, so the frame reloads, and no question is asked. A change to `app.yml` ends the keeping and the panel asks again, because the manifest is what names what you approved.
+- A machine app kept approved is the exception. A change to any file except `app.yml` leaves it approved, a change a `git pull` into the hub makes included. The address key changes with the files, so the frame reloads, and no question is asked. A change to `app.yml` ends the keeping and the panel asks again, because the manifest is what names what you approved.
 - Keeping is held in the server's memory. It ends with Revoke, with a change to `app.yml` and with the server process.
 - After a restart the app is approved only by the entry the button wrote to the approvals file. It runs while its files are as they were at that press and asks at the first change. The file is `~/.oculus/approvals.json` unless the `approvals` key of `config/local.yml` names another.
 - A root app cannot be kept: the button is not offered for one.
@@ -596,7 +596,7 @@ The address an app passes to `open({ url })` is a fourth way to put what it read
 
 The example is a machine app named `task-demo`. It reads the `tasks` collection of the hub (the shipped `config/sources.yml` lists it as `tasks/tasks.yml`) and keeps notes in its store. It creates one task and deletes it again, opens an address and a view, and shows each refusal. The `tasks` file needs a schema whose first field names an entry. The example reads that field's name from the schema, falls back to `title`, and writes that field, `title` and `status: todo` into the task it creates, since the shipped `tasks` schema requires `key`, `title` and `status`. If the hub has no collection `tasks`, the page says so and the Create button answers `refused:no collection tasks`. Change `COLLECTION` at the top of `app.js` to a collection you have.
 
-Make the folder `~/.oculus/apps/task-demo/` and put the four files in it. Write `app.yml` last.
+Make the folder `<hub>/.oculus/apps/task-demo/` and put the four files in it. Write `app.yml` last.
 
 `index.html`:
 

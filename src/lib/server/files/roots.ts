@@ -29,7 +29,7 @@ export function browserRoots(target: RootsTarget): Root[] {
         target.engine
     );
     const saved = readSaved(
-        target.local.workspaces ?? defaultWorkspacesPath(),
+        target.local.workspaces ?? defaultWorkspacesPath(target.local.hub),
         fixed.map((one) => one.key)
     );
     return [...fixed, ...addedRoots(fixed, saved)];

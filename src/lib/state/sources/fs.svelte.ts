@@ -28,7 +28,7 @@
 // which is the reader coming back to it.
 //
 // A bookmark added by hand or by another tool reaches an open page through the `files` message the
-// watcher over ~/.oculus publishes, with no write from the page.
+// watcher of the bookmarks file publishes, with no write from the page.
 //
 // One root alone is re-read by refresh(root, version), which the `files` channel's messages call:
 // it marks the listings, texts and file kinds held under that root, so the page asks again for that
@@ -245,10 +245,10 @@ export type FsStore = {
     addRoot: (dir: string) => Promise<WriteAnswer>;
     removeRoot: (key: string) => Promise<WriteAnswer>;
     /**
-     * Put the roots the reader can move in the order the keys name: the `roots:` list of
-     * config/sources.yml in the default workspace, the workspace's own roots in a named one. The
-     * workspaces are read again after the answer, whatever it was, so a refused order is drawn as
-     * the server holds it.
+     * Put the roots the reader can move in the order the keys name: the `roots:` list of the hub's
+     * `.oculus/config/sources.yml` in the default workspace, the workspace's own roots in a named
+     * one. The workspaces are read again after the answer, whatever it was, so a refused order is
+     * drawn as the server holds it.
      */
     orderRoots: (keys: string[]) => Promise<WriteAnswer>;
     /** Put the notes in the order the ids name, newest first for any a list leaves out. */
@@ -737,8 +737,9 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
     }
 
     /**
-     * Whether the workspace in force is the default one, whose folders are the `roots:` list of
-     * config/sources.yml and are edited by the `roots` write rather than in the workspaces file.
+     * Whether the workspace in force is the default one, whose folders are the `roots:` list of the
+     * hub's `.oculus/config/sources.yml` and are edited by the `roots` write rather than in the
+     * workspaces file.
      */
     function inDefault(): boolean {
         return (queries.peek<WorkspacesState>(WORKSPACES).data?.current ?? '') === '';

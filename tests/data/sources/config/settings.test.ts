@@ -189,6 +189,13 @@ describe('slurmSettings', () => {
             });
         }
     });
+
+    it('answers an empty resource as no cluster, with no problem', () => {
+        expect(read({ ...BLOCK, resource: '' })).toMatchObject({
+            value: { resource: '' },
+            problems: []
+        });
+    });
 });
 
 describe('calendarSettings', () => {

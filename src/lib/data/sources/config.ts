@@ -50,6 +50,7 @@ export {
     droppedFile,
     flattenText,
     loadConfig,
+    sourceFile,
     textCatalog
 } from './config/merge.ts';
 export {

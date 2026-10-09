@@ -11,7 +11,7 @@
 // @module-tag slow: its writes go through the whole configuration load, which runs past the
 // default timeout under load.
 
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -46,7 +46,7 @@ function rootsTarget(body = SOURCES): WriteTarget {
     writeFileSync(file, body);
     return {
         ...into,
-        sources: { file, held: { served: () => [], keys: () => ['hub', 'engine'] } }
+        sources: { file, held: { served: () => [], keys: () => ['hub', 'engine'] }, base: [] }
     };
 }
 
@@ -78,6 +78,22 @@ const COMMENTED = SOURCES.replace(
     '  - { key: cathedra,    dir: ~/workspace/cathedra }\n',
     '  - { key: cathedra,    dir: ~/workspace/cathedra }\n  # the engine of the games\n'
 );
+
+/**
+ * The hub layer's sources.yml of a target, which the roots of a hub that sets none are added to.
+ */
+function layerTarget(): WriteTarget {
+    const into = target();
+    const file = join(into.hub, '.oculus', 'config', 'sources.yml');
+    return {
+        ...into,
+        sources: {
+            file,
+            held: { served: () => [], keys: () => ['hub', 'engine'] },
+            base: [{ key: 'cathedra', dir: '~/workspace/cathedra' }]
+        }
+    };
+}
 
 test.beforeAll(warmConfig);
 
@@ -155,6 +171,24 @@ describe('the roots write', () => {
         }
         expect(sourcesOf(commented)).toBe(COMMENTED);
         expect(changesOf(commented)).toEqual([]);
+
+        // The hub-layer row: an add for a hub that holds no layer file appends to the engine's list
+        // in a new layer file, and the change records what the write made.
+        const layered = layerTarget();
+        expect(existsSync(join(layered.hub, '.oculus'))).toBe(false);
+        const layerDir = folderNamed('thesis');
+        expect((await add(layered, layerDir)).status).toBe(200);
+        expect(rootsOf(layered)).toEqual([
+            { key: 'cathedra', dir: '~/workspace/cathedra' },
+            { key: 'thesis', dir: dirAsWritten(layerDir) }
+        ]);
+        const [made] = changesOf(layered);
+        expect(made).toMatchObject({
+            kind: 'roots',
+            key: 'roots',
+            file: '.oculus/config/sources.yml'
+        });
+        expect(made.created).toEqual(['.oculus', '.oculus/config', '.oculus/config/sources.yml']);
     });
 
     it('records the add and the remove, and the undo of each puts the list back', async () => {
@@ -201,5 +235,29 @@ describe('the roots write', () => {
         const undone = await send(ordered, { kind: 'undo', at: reorder.at });
         expect(undone.status).toBe(200);
         expect(sourcesOf(ordered)).toBe(SOURCES);
+
+        // The hub-layer rows: the undo of an add that made the layer file removes the file and the
+        // folders it made, and a remove from a layer file that holds the list is undone to the
+        // list.
+        const created = layerTarget();
+        await add(created, folderNamed('thesis'));
+        const [madeFile] = changesOf(created);
+        expect((await send(created, { kind: 'undo', at: madeFile.at })).status).toBe(200);
+        expect(existsSync(join(created.hub, '.oculus'))).toBe(false);
+
+        const held = layerTarget();
+        const heldFile = held.sources?.file ?? '';
+        mkdirSync(join(held.hub, '.oculus', 'config'), { recursive: true });
+        writeFileSync(
+            heldFile,
+            'roots:\n  - { key: cathedra, dir: ~/workspace/cathedra }\n  - { key: thesis, dir: ~/workspace/thesis }\n'
+        );
+        const heldBefore = sourcesOf(held);
+        expect((await remove(held, 'thesis')).status).toBe(200);
+        expect(rootsOf(held)).toEqual([{ key: 'cathedra', dir: '~/workspace/cathedra' }]);
+        const [takenOut] = changesOf(held);
+        expect(takenOut.created).toBeUndefined();
+        expect((await send(held, { kind: 'undo', at: takenOut.at })).status).toBe(200);
+        expect(sourcesOf(held)).toBe(heldBefore);
     });
 });

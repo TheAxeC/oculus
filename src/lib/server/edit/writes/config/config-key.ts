@@ -10,24 +10,32 @@
 // own file, local.yml, is refused before anything is read. The checks that stand between the edited
 // text and the file are config-checks.ts's, which config-value.ts runs as well.
 //
+// A key of the hub list is written in the hub's config layer (`<hub>/.oculus/config/<file>`), any
+// other key in the engine's file. When the layer's file or the key in it is not there, the write
+// adds the key at the end of the file and creates the file and its folders, and the undo takes the
+// added text out and removes what the write made (config-checks.ts `takeOutAdded`).
+//
 // The function is synchronous from the read of the file to its write, which is what lets two
 // writes made at once both land: each reads the file the other has already written.
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { isAlias, isMap as isYamlMap, isScalar, parseDocument } from 'yaml';
 import type { Scalar } from 'yaml';
-import { LOCAL_NAME, configDir, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
+import { LOCAL_NAME, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
 import { replaceValue } from '../../yaml/yaml-edit.ts';
 import { isCollection, leafProblem } from './config-fit.ts';
 import { sourcesFor, type SourceInputs } from './config-sources.ts';
 import {
+    absentIn,
+    insertKey,
     kept,
+    mergedAt,
     optionNow,
     optionOf,
+    placeOf,
+    placeText,
     refusedBy,
     refusing,
     type ConfigKeyOutcome,
@@ -74,28 +82,36 @@ function single(entry: CatalogEntry): boolean {
  * one the catalog tracks, parses, and holds the key as a plain or quoted value. An undo reads it;
  * a file it may not read throws.
  */
-export function configKeyNow(engine: string, file: string, key: string): OptionNow {
-    return optionNow(engine, file, key, (text) => {
-        const found = locate(text, key);
-        return found.kind === 'found' ? { found: true, value: found.node.value } : null;
-    });
+export function configKeyNow(engine: string, file: string, key: string, hub?: string): OptionNow {
+    return optionNow(
+        engine,
+        file,
+        key,
+        (text) => {
+            const found = locate(text, key);
+            return found.kind === 'found' ? { found: true, value: found.node.value } : null;
+        },
+        hub
+    );
 }
 
 /**
- * Set one option of a tracked config file. A refusal answers the one reason and writes nothing; a
- * value equal to the one held writes nothing and answers with nothing changed. Given `inputs`, the
- * value is checked against the entry and the lists the server holds (config-fit.ts); without them,
- * as in an undo, no value is checked and the file is put back as it was. A file that cannot be read
- * or written throws, which the route answers as `unwritable`.
+ * Set one option of a tracked config file, in the hub's layer when it is a key of the hub list and
+ * a hub is given. A refusal answers the one reason and writes nothing; a value equal to the one in
+ * force writes nothing and answers with nothing changed. Given `inputs`, the value is checked
+ * against the entry and the lists the server holds (config-fit.ts); without them, as in an undo, no
+ * value is checked and the file is put back as it was. A file that cannot be read or written
+ * throws, which the route answers as `unwritable`.
  */
 export function writeConfigKey(
     engine: string,
     file: string,
     key: string,
     value: unknown,
-    inputs?: SourceInputs
+    inputs?: SourceInputs,
+    hub?: string
 ): ConfigKeyOutcome {
-    const before = loadConfig(engine);
+    const before = loadConfig(engine, { hub });
     const text = textCatalog(before.config);
     const refuse = refusing(file, key);
     if (file === LOCAL_NAME) return refuse(words(text, 'server.config_key.local'));
@@ -104,29 +120,54 @@ export function writeConfigKey(
     if (!single(entry)) return refuse(words(text, 'server.config_key.not_single'));
     const wanted = Object.is(value, -0) ? 0 : value;
 
-    const path = join(configDir(engine), file);
-    const source = readFileSync(path, 'utf8');
+    const place = placeOf(engine, hub, file, key);
+    const onDisk = placeText(place);
+    const source = onDisk ?? '';
     const found = locate(source, key);
     if (found.kind === 'unparsed') return refuse(words(text, 'server.config_key.not_parsed'));
-    if (found.kind === 'missing') return refuse(words(text, 'server.config_key.not_in_file'));
-    const held = found.node.value;
+    const adding =
+        place.layer === 'hub' &&
+        found.kind === 'missing' &&
+        (onDisk === null || absentIn(source, key));
+    if (found.kind === 'missing' && !adding) {
+        return refuse(words(text, 'server.config_key.not_in_file'));
+    }
+    const held = found.kind === 'found' ? found.node.value : mergedAt(before.config, key);
     const sources = inputs === undefined ? null : sourcesFor(inputs, before.config);
     const unfit = leafProblem(entry, held, wanted, { text, sources });
     if (unfit !== null) return refuse(unfit);
     if (isDeepStrictEqual(held, wanted)) return { changed: [], refused: [] };
 
     const scalar = wanted as string | number | boolean;
-    let edited = replaceValue(source, found.node, scalar);
-    // A plain string that would not read back (inside a flow map, a comma or a brace ends it) is
-    // written double-quoted, the one style that holds any string on one line.
-    if ('text' in edited && !kept(source, edited.text, key, wanted) && typeof wanted === 'string') {
-        edited = replaceValue(source, found.node, scalar, 'QUOTE_DOUBLE');
+    let edited: { text: string } | { reason: string };
+    if (found.kind === 'found') {
+        edited = replaceValue(source, found.node, scalar);
+        // A plain string that would not read back (inside a flow map, a comma or a brace ends it)
+        // is written double-quoted, the one style that holds any string on one line.
+        if (
+            'text' in edited &&
+            !kept(source, edited.text, key, wanted) &&
+            typeof wanted === 'string'
+        ) {
+            edited = replaceValue(source, found.node, scalar, 'QUOTE_DOUBLE');
+        }
+    } else {
+        const inserted = insertKey(source, key, wanted);
+        edited = inserted === null ? { reason: '' } : { text: inserted };
     }
     if (!('text' in edited) || !kept(source, edited.text, key, wanted)) {
         return refuse(words(text, 'server.config_key.not_kept'));
     }
-    const reason = refusedBy(engine, file, edited.text, before);
+    const reason = refusedBy(engine, hub, file, edited.text, before, place.layer);
     if (reason !== null) return refuse(reason);
 
-    return written(path, file, key, edited.text, { before: held, after: wanted });
+    return written(
+        place.path,
+        file,
+        key,
+        edited.text,
+        { before: held, after: wanted },
+        adding ? source : undefined,
+        adding
+    );
 }

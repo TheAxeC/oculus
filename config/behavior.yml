@@ -22,8 +22,8 @@ usage_tiers:
 usage_refresh_min: 10
 usage_refresh_model: "haiku"
 
-# Domains expected to have a dataset. Oculus reports projects in these domains without a Data section.
-data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
+# Domains expected to have a dataset. Oculus reports projects in these domains without a Data section. The engine names none: a hub lists its own in .oculus/config/behavior.yml.
+data_domains: []
 
 
 # Collection-entry statuses that wait on someone else, so the audit asks for a date to track them by.
@@ -71,9 +71,9 @@ file_index:
 
 # === Served mode: live SLURM poller and in-page chat =========================
 # Live HPC polling cadences are minutes. `prewarm: false` defers finished-job log resolution.
-# `resource` is the key of a cluster entry of registries/resources.yml, whose `host` is the ssh alias the poller uses.
+# `resource` is the key of a cluster entry of the hub's resources registry, whose `host` is the ssh alias the poller uses; empty means the hub names no cluster and nothing is polled. A hub sets it in .oculus/config/behavior.yml.
 slurm:
-  resource: utwente
+  resource: ''
   days: 3
   poll_min: 20
   quota_min: 60

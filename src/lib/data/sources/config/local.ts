@@ -56,17 +56,17 @@ export type LocalConfig = {
     sessionsOverrides?: string;
     /**
      * Where the file browser's saved workspaces live, `workspaces` in the file. Absent unless the
-     * machine sets it, and the file browser then uses ~/.oculus/workspaces.json.
+     * machine sets it, and the file browser then uses .oculus/workspaces.json in the hub.
      */
     workspaces?: string;
     /**
      * Where the reader's own bookmarks live, `bookmarks` in the file. Absent unless the machine
-     * sets it, and the file browser then uses ~/.oculus/bookmarks.yml.
+     * sets it, and the file browser then uses .oculus/bookmarks.yml in the hub.
      */
     bookmarks?: string;
     /**
      * Where the scratch notes live, `notes` in the file. Absent unless the machine sets it, and the
-     * file browser then uses ~/.oculus/notes.
+     * file browser then uses .oculus/notes in the hub.
      */
     notes?: string;
     /**
@@ -94,7 +94,7 @@ export type LocalConfig = {
     lsp?: string;
     /**
      * Where the schedules live, `schedules` in the file. Absent unless the machine sets it, and the
-     * schedule watcher then uses ~/.oculus/schedules.yml.
+     * schedule watcher then uses .oculus/schedules.yml in the hub.
      */
     schedules?: string;
     /**
@@ -128,7 +128,7 @@ export type LocalConfig = {
     calendarDir?: string;
     /**
      * Where the machine's apps live, `apps_dir` in the file. Absent unless the machine sets it, and
-     * the apps watcher then reads ~/.oculus/apps.
+     * the apps watcher then reads .oculus/apps in the hub.
      */
     appsDir?: string;
     /** The mail accounts the Inbox view reads, empty unless the machine names any. */

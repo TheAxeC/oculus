@@ -24,7 +24,6 @@
 
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { ENGINE_ROOT } from '$lib/state/sources/fs';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { resetBrowserRow } from '$lib/state/system/config/browser';
@@ -33,7 +32,7 @@
     import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { PAGES_ROW, RAIL_ROW, type Row } from '$lib/state/system/config/groups';
     import { message, type Message } from '$lib/state/system/config/messages';
-    import { mismatchMessage } from '$lib/state/system/config/rows';
+    import { mismatchMessage, placeOf } from '$lib/state/system/config/rows';
     import { withTypedText } from '$lib/state/system/config/typed';
     import { gearEntries } from '$lib/state/system/config/view/gear';
     import type { RowWriter } from '$lib/state/system/config/write';
@@ -105,7 +104,7 @@
                 ...(copyRefused ? [t('workbench.settings_copy_refused')] : [])
             ];
         }
-        if (row.state === 'missing') found.push(said(message('missing', row.file)));
+        if (row.state === 'missing') found.push(said(message('missing', placeOf(row).file)));
         const mismatch = mismatchMessage(row);
         if (mismatch !== null) found.push(said(mismatch));
         const written = writer.said(row);
@@ -141,7 +140,8 @@
 
     function open(): void {
         if (row.kind === 'config') {
-            openView('source', sourceTabState(ENGINE_ROOT, row.file, row.line));
+            const { root, file } = placeOf(row);
+            openView('source', sourceTabState(root, file, row.line));
         }
     }
 </script>
@@ -209,10 +209,12 @@
             {#if defaultWords(row) !== ''}
                 <span class="default">{defaultWords(row)}</span>
             {/if}
-            {#if row.line !== undefined}
+            {#if row.line !== undefined || row.hub?.present === true}
                 <ToolButton
-                    label={`${row.file}:${row.line}`}
-                    title={t('workbench.settings_edit_in_tip', row.file)}
+                    label={row.line === undefined
+                        ? placeOf(row).file
+                        : `${placeOf(row).file}:${row.line}`}
+                    title={t('workbench.settings_edit_in_tip', placeOf(row).file)}
                     plain
                     onclick={open}
                 />

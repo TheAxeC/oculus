@@ -17,13 +17,14 @@ import {
     engineDir,
     loadConfig,
     loadLocal,
+    sourceFile,
     optionFindings,
     settingFindings,
     textCatalog,
     themeFindings,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { ENGINE_ROOT, engineRoot, rootsFile } from '../../../src/lib/server/files/files.ts';
+import { ENGINE_ROOT, engineRoot } from '../../../src/lib/server/files/files.ts';
 import { readEditorOptions } from '../../../src/lib/data/sources/config/editor-options.ts';
 import { layoutFile } from '../../../src/lib/server/content/docs.ts';
 import { parse } from 'yaml';
@@ -184,8 +185,11 @@ describe('the config folder of an engine', () => {
         // checkout's own folder, and the machine's own local.yml it lists is the one loadLocal
         // read.
         const engine = scratch();
+        writeConfig(engine, 'sources.yml', 'roots: []\n');
         expect(engineRoot(engine)).toEqual({ key: ENGINE_ROOT, dir: join(engine, 'config') });
-        expect(rootsFile(engine)).toBe(join(engine, 'config', 'sources.yml'));
+        expect(sourceFile(engine, engine, loadConfig(engine).from, 'roots')).toBe(
+            join(engine, 'config', 'sources.yml')
+        );
         expect(layoutFile(engine)).toBe(join(engine, 'config', 'layout.yml'));
     });
 });
@@ -362,6 +366,105 @@ describe('loadConfig', () => {
         expect(findings[1].message).toMatch(/^findings\.file\.does_not_parse \S/);
         // The broken file gives no words, so the key worded above is not in the merged catalog.
         expect(textCatalog(config)['findings.file.not_a_map']).toBe(undefined);
+    });
+});
+
+describe('loadConfig with the hub layer', () => {
+    /**
+     * A copy of the checkout's config folder as an engine, with the machine's own file left out.
+     */
+    function engineCopy(): string {
+        const engine = scratch();
+        cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
+            recursive: true,
+            filter: (source) => !source.endsWith(LOCAL_NAME)
+        });
+        return engine;
+    }
+
+    /** Write one file of a hub's `.oculus/config/` layer, creating the folders. */
+    function layer(hub: string, name: string, body: string): string {
+        const file = join(hub, '.oculus', 'config', name);
+        expect(resolve(file).startsWith(resolve(hub) + sep)).toBe(true);
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, body);
+        return file;
+    }
+
+    /** The finding sentence of the catalog for a key, with its values filled in. */
+    function sentence(config: Record<string, unknown>, key: string, ...values: string[]): string {
+        return values.reduce(
+            (text, value, at) => text.replace(`{${at}}`, value),
+            textCatalog(config)[`findings.config.${key}`]
+        );
+    }
+
+    it('replaces the engine value of a listed key whole and names the layer file in `from`', () => {
+        const engine = engineCopy();
+        const hub = scratch();
+        layer(hub, 'behavior.yml', 'slurm:\n  resource: other\n');
+        layer(hub, 'sources.yml', 'roots:\n  - { key: mine, dir: /nowhere/mine }\n');
+        const { config, findings, from } = loadConfig(engine, { hub });
+        expect(findings).toEqual([]);
+        const slurm = config.slurm as Record<string, unknown>;
+        expect(slurm.resource).toBe('other');
+        expect(slurm.poll_min).toBe(
+            (loadConfig(engine).config.slurm as Record<string, unknown>).poll_min
+        );
+        expect(config.roots).toEqual([{ key: 'mine', dir: '/nowhere/mine' }]);
+        expect(from['slurm.resource']).toBe('.oculus/config/behavior.yml');
+        expect(from.roots).toBe('.oculus/config/sources.yml');
+        expect(from.slurm).toBe('behavior.yml');
+    });
+
+    it('names a key, a file and a local.yml the layer may not set, and applies none of them', () => {
+        const engine = engineCopy();
+        const hub = scratch();
+        const behavior = layer(
+            hub,
+            'behavior.yml',
+            'usage_tiers: { x: X }\nslurm: { resource: x, days: 5 }\n'
+        );
+        const stray = layer(hub, 'stray.yml', 'a: 1\n');
+        const local = layer(hub, LOCAL_NAME, 'port: 9999\n');
+        const engineOnly = loadConfig(engine).config;
+        const { config, findings } = loadConfig(engine, { hub });
+        const named = findings.map((one) => [one.file, one.key]);
+        expect(named).toEqual([
+            [behavior, 'usage_tiers'],
+            [behavior, 'slurm.days'],
+            [local, ''],
+            [stray, '']
+        ]);
+        const messages = findings.map((one) => one.message);
+        expect(messages).toContain(sentence(config, 'hub_key_unknown', 'usage_tiers'));
+        expect(messages).toContain(sentence(config, 'hub_key_unknown', 'slurm.days'));
+        expect(messages).toContain(sentence(config, 'hub_local'));
+        expect(messages).toContain(sentence(config, 'hub_file_unknown'));
+        expect(config.usage_tiers).toEqual(engineOnly.usage_tiers);
+        expect((config.slurm as Record<string, unknown>).days).toBe(
+            (engineOnly.slurm as Record<string, unknown>).days
+        );
+        expect((config.slurm as Record<string, unknown>).resource).toBe('x');
+    });
+
+    it('keeps the engine values and names the file when a layer file does not parse', () => {
+        const engine = engineCopy();
+        const hub = scratch();
+        const broken = layer(hub, 'behavior.yml', 'slurm: [unclosed\n');
+        const { config, findings } = loadConfig(engine, { hub });
+        expect(findings.map((one) => one.file)).toEqual([broken]);
+        expect(findings[0].message).toMatch(/^does not parse/);
+        expect((config.slurm as Record<string, unknown>).resource).toBe('');
+    });
+
+    it('reads the engine alone for a hub without the folder and for a call that passes no hub', () => {
+        const engine = engineCopy();
+        const hub = scratch();
+        expect(loadConfig(engine, { hub }).findings).toEqual([]);
+        expect(loadConfig(engine, { hub }).config.roots).toEqual([]);
+        layer(hub, 'sources.yml', 'roots:\n  - { key: mine, dir: /nowhere/mine }\n');
+        expect(loadConfig(engine).config.roots).toEqual([]);
     });
 });
 
@@ -542,10 +645,12 @@ describe('settingFindings', () => {
         expect(lines).toContain(
             'open.program_ext.pdf: open.program_ext.pdf must be an extension with its dot; the entry is not read'
         );
-        expect(lines).toContain(
-            'slurm.resource: slurm.resource must not be empty; the default is used'
-        );
+        expect(lines).toContain('slurm.resource: slurm.resource must be text; the default is used');
         expect(settingFindings(engine, shipped)).toEqual([]);
+    });
+
+    it('reads an empty slurm.resource as no cluster, with no finding', () => {
+        expect(said({ ...shipped, slurm: { resource: '' } })).toEqual([]);
     });
 
     it('says nothing for a merge that dropped behavior.yml, or for a map without the catalog', () => {

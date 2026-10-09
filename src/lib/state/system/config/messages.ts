@@ -11,6 +11,7 @@ export const SETTINGS_MESSAGES = {
     cut: 'workbench.settings_cut',
     unparsed: 'workbench.settings_unparsed',
     missing: 'workbench.settings_missing',
+    layerAbsent: 'workbench.settings_layer_absent',
     mismatchToggle: 'workbench.settings_mismatch_toggle',
     mismatchNumber: 'workbench.settings_mismatch_number',
     mismatchText: 'workbench.settings_mismatch_text',

@@ -21,7 +21,7 @@
     } from '$lib/state/system/config/editors/fields';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
-    import type { ConfigRow } from '$lib/state/system/config/rows';
+    import { placeOf, type ConfigRow } from '$lib/state/system/config/rows';
     import { typedText, withTypedText } from '$lib/state/system/config/typed';
     import type { RowWriter } from '$lib/state/system/config/write';
     import { useState } from '$lib/state/client/use';
@@ -109,7 +109,7 @@
 </script>
 
 {#if row.state === 'missing'}
-    <EditLink file={row.file} line={row.line} />
+    <EditLink {...placeOf(row)} line={row.line} />
 {:else if single}
     <div class="box" class:wide={control === 'long'} role="presentation" onkeydown={revert}>
         <FieldControl
@@ -127,7 +127,7 @@
     <Editor {row} {id} {editors} {lists} />
 {:else}
     <div class="summary">
-        <EditLink file={row.file} line={row.line} />
+        <EditLink {...placeOf(row)} line={row.line} />
     </div>
 {/if}
 

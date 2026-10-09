@@ -109,10 +109,18 @@ export type ChangeRecord = {
     removed?: RemovedText;
     /**
      * The text a write replaced: on the record of each manifest field whose edit rewrote a note as
-     * a map and left the rewritten lines in the file, on the record of a `config-value` write, and
+     * a map and left the rewritten lines in the file, on the record of a `config-value` write, on
+     * the record of a config write that added a key (the added text, with an empty `before`), and
      * on the record of an undo that put text back; on no other record.
      */
     replaced?: ReplacedText;
+    /**
+     * The paths a write made that the config did not have: on the record of a write that added a
+     * key to the hub's config layer (`<hub>/.oculus/config`), the folders and the file it created,
+     * outermost first, and none when the key went into a file that was there. Its undo takes the
+     * added text (`replaced`) out and removes each path made, while it holds nothing else.
+     */
+    created?: string[];
     /**
      * The two values themselves, for a record whose `before` and `after` are their byte sizes. They
      * are written to the undo folder under the record's moment and are not part of the line.

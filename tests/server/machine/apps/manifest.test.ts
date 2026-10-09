@@ -503,6 +503,20 @@ const ROWS: Row[] = [
         [['app:one/notes'], ['apps[two/]']]
     ],
     [
+        'the hub apps folder, which is the machine folder by default',
+        () => {
+            const base = plantScratch('oculus-apps-hub-', {
+                'hub/.oculus/apps/notes/app.yml': MANIFEST,
+                'hub/.oculus/apps/notes/index.html': PAGE
+            });
+            const scanned = again(base, join(base, 'hub', '.oculus', 'apps'), [
+                { key: 'hub', dir: join(base, 'hub') }
+            ]);
+            return [scanned.apps.map((one) => one.id), scanned.findings.map((one) => one.key)];
+        },
+        [['app:notes'], []]
+    ],
+    [
         'an apps_dir that is a root apps folder',
         () => {
             const base = plantScratch('oculus-apps-dir-', TWO);

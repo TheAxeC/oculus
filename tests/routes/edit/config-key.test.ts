@@ -6,19 +6,13 @@
 // does NOT cover: the Settings control that sends the write.
 // @module-tag slow: every case takes 140 ms or more to write a setting through the route.
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it } from '../../fixtures/scratch.ts';
-import {
-    TOKEN,
-    changesOf,
-    configTarget,
-    engineFile,
-    request,
-    undoneBack
-} from './write-fixture.ts';
+import { TOKEN, changesOf, configTarget, engineFile, request, undone } from './write-fixture.ts';
 
 const KEEP_BLOCK = 'changes:\n  keep: 500\n';
 const KEEP_HELD = 'changes:\n  # how long the log is\n  keep: 200  # how many\n';
@@ -43,19 +37,58 @@ function send(into: WriteTarget, file: string, key: string, value: unknown): Pro
     return handleWrite(request({ kind: 'config-key', file, key, value }), TOKEN, into);
 }
 
+/**
+ * The settings taken back, one row per place the setting was written: the key and the value sent,
+ * the file the write lands in, what that file holds once the undo has run (null when the write made
+ * it and the undo removes it, with the folders it made) and the record the undo logs.
+ */
+const ROWS: {
+    row: string;
+    key: string;
+    value: unknown;
+    file: (into: WriteTarget) => string;
+    logged: (into: WriteTarget) => string;
+    after: (before: string) => string | null;
+    back: Record<string, unknown>;
+}[] = [
+    {
+        row: 'a key outside the hub list',
+        key: 'changes.keep',
+        value: 300,
+        file: (into) => into.behaviorFile,
+        logged: (into) => into.behaviorFile,
+        after: (before) => before,
+        back: { kind: 'config-key', field: 'changes.keep', before: 300, after: 200 }
+    },
+    {
+        row: 'a key of the hub list, whose layer file the write made',
+        key: 'slurm.resource',
+        value: 'other',
+        file: (into) => join(into.hub, '.oculus', 'config', 'behavior.yml'),
+        logged: () => '.oculus/config/behavior.yml',
+        after: () => null,
+        back: { kind: 'config-key', field: 'slurm.resource', before: 'other' }
+    }
+];
+
 describe('taking a setting back', () => {
-    it('puts the file back byte for byte and logs the undo above the write', async () => {
-        const into = keepTarget();
-        const before = behaviorOf(into);
-        await send(into, 'behavior.yml', 'changes.keep', 300);
-        const [change] = changesOf(into);
-        const back = await undoneBack(into, change, into.behaviorFile, before);
-        expect(back).toMatchObject({
-            kind: 'config-key',
-            field: 'changes.keep',
-            before: 300,
-            after: 200,
-            undoes: change.at
-        });
-    });
+    it.each(ROWS)(
+        'puts the file back byte for byte and logs the undo above the write: $row',
+        async ({ key, value, file, logged, after, back: record }) => {
+            const into = keepTarget();
+            const engineBefore = behaviorOf(into);
+            await send(into, 'behavior.yml', key, value);
+            const [change] = changesOf(into);
+            expect(change.file).toBe(logged(into));
+            const expected = after(engineBefore);
+            const response = await undone(into, change);
+            expect(response.status).toBe(200);
+            if (expected === null) expect(existsSync(join(into.hub, '.oculus'))).toBe(false);
+            else expect(readFileSync(file(into), 'utf8')).toBe(expected);
+            expect(behaviorOf(into)).toBe(engineBefore);
+            const [back, first] = changesOf(into);
+            expect(first.at).toBe(change.at);
+            expect(back).toMatchObject({ ...record, undoes: change.at });
+        }
+    );
 });

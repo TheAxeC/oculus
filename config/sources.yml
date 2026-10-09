@@ -1,10 +1,7 @@
 # ===========================================================================
 # sources.yml
-# oculus's own configuration - what the portfolio reads: where the projects are, and which registry,
-# collection, document and feed file each surface is built from, plus the local roots files are served
-# from. Which files open for editing is no key: the file's own first bytes say whether it is text, and
-# its mode on this machine says whether it can be written. Merged with the other config/*.yml
-# by loadConfig(); every key here is a top-level key of the merged map.
+# oculus's own configuration of what the portfolio reads: where the projects are, and which registry, collection, document and feed file each surface is built from, plus the local roots files are served from. Which files open for editing is no key: the file's own first bytes say whether it is text, and its mode on this machine says whether it can be written. Merged with the other config/*.yml by loadConfig(); every key here is a top-level key of the merged map.
+# The keys from scan to roots are the hub list: a hub's own .oculus/config/sources.yml replaces any of them whole, and the values here are the layout every research hub follows (the website folders are one hub's and are set in its layer, and roots is empty).
 # It also holds the map from a file name to the language the editor colours it in (languages).
 # ===========================================================================
 
@@ -72,30 +69,12 @@ leads_file: feeds/position-leads.yml
 # Lit Watch reads the literature scout's accumulated radar. The refresh workflow deduplicates by URL and appends entries.
 radar_file: feeds/literature-radar.yml
 
-# Public website publications feed, cross-checked in the Audit view (missing / leaked / wrong-section / untracked). It is a separate repository folder, and the check is skipped silently when it is not checked out.
-publications_file: theaxec.github.io/_data/publications.yml
-
-# LinkedIn view: the posts pipeline from the website (_linkedin/: numbered = posted, xx- = ideas).
-linkedin_dir: theaxec.github.io/_linkedin
-
 # Career strategy: the order of work, hosts, eligibility and dropped options live in registries/career.yml and are drawn by the Focus board's Career strategy panel. A funding entry's `statement:` shows on the Funding view.
 career_file: registries/career.yml
 
 
-# Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. A dir is
-# absolute or starts with `~/`, which the server expands to the home directory, so this tracked file
-# carries no user or machine path; a relative dir is a finding. Nothing outside a root is ever served:
-# both ends are resolved through realpath and the file must sit inside the root, so a symlink pointing
-# out of it serves nothing. A dir that is not on this machine is a finding on the Findings view and its
-# root serves nothing. The bookmarks that open as tabs are the entries of the reader's own
-# ~/.oculus/bookmarks.yml, each naming a root by its key here.
-roots:
-  - { key: cathedra,    dir: ~/workspace/cathedra }
-  - { key: game-engine, dir: ~/workspace/game-engine }
-  - { key: ordo,        dir: ~/workspace/ordo }
-  - { key: scotoma,     dir: ~/workspace/scotoma }
-  - { key: officium,    dir: ~/workspace/officium }
-  - { key: youtube-downloader, dir: ~/workspace/youtube-downloader }
+# Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. The engine names none: a hub sets its roots in .oculus/config/sources.yml, each a dir that is absolute or starts with `~/`. The bookmarks that open as tabs are the entries of bookmarks.yml in the hub's .oculus folder, each naming a root by its key.
+roots: []
 # How many folder levels below each root the Repositories view looks for repositories, 0 to 3.
 repository_scan_depth: 1
 

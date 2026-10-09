@@ -1,8 +1,8 @@
-// Layer 2, server. The schedules. Each entry of `~/.oculus/schedules.yml` that has a cron pattern,
-// is not paused and has no problem has one croner job, in the local time zone; at each due time
-// the entry starts what it runs (schedules/run.ts), unless its earlier run is still working. The
-// watcher publishes one complete payload on the `schedule` channel after every change of a job, of
-// the run record or of one of the files it reads.
+// Layer 2, server. The schedules. Each entry of `schedules.yml` in the hub's `.oculus` folder that
+// has a cron pattern, is not paused and has no problem has one croner job, in the local time zone;
+// at each due time the entry starts what it runs (schedules/run.ts), unless its earlier run is
+// still working. The watcher publishes one complete payload on the `schedule` channel after every
+// change of a job, of the run record or of one of the files it reads.
 //
 // The file and the saved commands file are read at start and again on every change of either, and
 // through `reload()` after the route's write. A reload stops the job of an entry that went, became

@@ -16,6 +16,11 @@
 // mismatch: the lists come from the portfolio and the page, so the view marks it where the list is
 // known (editors/fields.ts).
 //
+// A key of the hub list (data/helpers/hub-names.ts) is read from the hub's own layer, the file of
+// the same name under `.oculus/config/`, and is named by that file: its value and its line are the
+// layer file's when the file holds the key, else the engine's general value, and a write of it goes
+// to the layer file, which it creates when the file or the key is not there (the row's `hub`).
+//
 // The machine-local file's rows are made from the catalog alone, and its text is never a parameter.
 // Every sentence is a message (messages.ts) for the view to word; nothing here holds one.
 
@@ -34,12 +39,14 @@ import {
     type YAMLSeq
 } from 'yaml';
 import { z } from 'zod';
+import { hubKeysOf, hubLayerPath } from '../../../data/helpers/hub-names.ts';
 import type {
     CatalogEntry,
     Control,
     FieldSpec
 } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
+import { ENGINE_ROOT, HUB_ROOT } from '../../sources/explorer/view/place.ts';
 import { LOCAL_NAME } from './config-files.ts';
 import { readField } from './editors/fields.ts';
 import { message, type Message } from './messages.ts';
@@ -77,6 +84,11 @@ export type ConfigRow = RowBase & {
     state: 'set' | 'missing';
     /** Whether the file's value is one the row's control cannot show. */
     mismatch: boolean;
+    /**
+     * The hub layer's file for a key of the hub list: its path under the hub, and whether the file
+     * is there. null for a key the engine's file alone holds.
+     */
+    hub: { path: string; present: boolean } | null;
 };
 
 /** One key of the machine's own file, listed from the catalog alone. */
@@ -85,8 +97,37 @@ export type LocalRow = RowBase & { kind: 'local'; file: typeof LOCAL_NAME; key: 
 /** Why a file draws no rows, or `rows` when it does. */
 export type FileStatus = 'rows' | 'loading' | 'unreadable' | 'cut' | 'unparsed';
 
-/** The rows of one file, or the sentence saying why it has none. */
-export type FileResult = { status: FileStatus; rows: ConfigRow[]; said?: Message };
+/** The hub layer's file of a config file as it was read, and whether the file is there. */
+export type HubLayer = { text: FileText; present: boolean };
+
+/** The hub layer's file of one config file, as the line under a heading shows it. */
+export type LayerResult = {
+    path: string;
+    present: boolean;
+    status: FileStatus;
+    said: Message | null;
+};
+
+/**
+ * The rows of one file, or the sentence saying why it has none. `layer` is the hub layer's file
+ * when the file has keys of the hub list among its rows.
+ */
+export type FileResult = {
+    status: FileStatus;
+    rows: ConfigRow[];
+    said?: Message;
+    layer?: LayerResult;
+};
+
+/**
+ * The root and the path of the file a row is read from and written to: the hub layer's file for a
+ * key of the hub list, the engine's config file for any other.
+ */
+export function placeOf(row: ConfigRow): { root: string; file: string } {
+    return row.hub === null
+        ? { root: ENGINE_ROOT, file: row.file }
+        : { root: HUB_ROOT, file: row.hub.path };
+}
 
 /** One word of a key path as a title: underscores read as spaces, the first letter capital. */
 function wordOf(segment: string): string {
@@ -157,16 +198,26 @@ function cannotShow(control: Control | 'family', entry: CatalogEntry, value: unk
     return readField(entry, value).kind !== 'value';
 }
 
-/** The row of one catalog entry over a parsed file. */
+/** A parsed file with its line counter: what a row's value and line are read from. */
+type Parsed = { doc: Document; lines: LineCounter };
+
+/**
+ * The hub layer's file of a config file: its path, whether it is there, and its text parsed or
+ * null.
+ */
+type ParsedLayer = { path: string; present: boolean; parsed: Parsed | null };
+
+/** The row of one catalog entry over a parsed file, and over the hub layer's file for a hub key. */
 function rowOf(
     file: string,
     key: string,
     entry: CatalogEntry,
-    doc: Document,
-    lines: LineCounter
+    engine: Parsed,
+    layer: ParsedLayer | null
 ): ConfigRow {
     const control: ConfigRow['control'] =
         entry.fields === undefined ? (entry.control ?? 'text') : 'family';
+    const hubbed = hubKeysOf(file)?.includes(key) === true ? layer : null;
     const base = {
         kind: 'config' as const,
         id: `${file}:${key}`,
@@ -180,10 +231,14 @@ function rowOf(
         entry,
         fields: entry.fields ?? {},
         holds: entry.holds,
-        default: entry.default
+        default: entry.default,
+        hub: hubbed === null ? null : { path: hubbed.path, present: hubbed.present }
     };
-    const pair = pairAt(doc, key);
-    const line = pair === null ? undefined : lineOf(pair, lines);
+    // The layer's value when its file holds the key, else the engine's general value.
+    const held = hubbed?.parsed ? pairAt(hubbed.parsed.doc, key) : null;
+    const from = held !== null && usable(held.value) ? (hubbed?.parsed ?? engine) : engine;
+    const pair = pairAt(from.doc, key);
+    const line = pair === null ? undefined : lineOf(pair, from.lines);
     const node = pair?.value;
     if (pair === null || !usable(node)) {
         return {
@@ -195,40 +250,82 @@ function rowOf(
             modified: false
         };
     }
-    const value: unknown = isScalar(node) ? node.value : node.toJS(doc);
+    const value: unknown = isScalar(node) ? node.value : node.toJS(from.doc);
     return {
         ...base,
         value,
-        line,
+        line: from === engine && hubbed !== null ? undefined : line,
         state: 'set',
         mismatch: cannotShow(control, entry, value),
         modified: control !== 'family' && !isEqual(value, entry.default)
     };
 }
 
-/**
- * The rows of one tracked file over its text, in catalog order. A file still being read, one the
- * file browser could not read, one cut at the window's limit and one that does not parse have no
- * rows and say why; the parser's message is its first line, which names the place.
- */
-export function fileRows(
+/** What a file's text makes of a read: its parsed form, or the status and sentence of why not. */
+function parsed(
     file: string,
-    entries: Record<string, CatalogEntry>,
     held: FileText
-): FileResult {
-    if (held.loading) return { status: 'loading', rows: [], said: message('loading', file) };
+): { ok: Parsed } | { status: FileStatus; said: Message } {
+    if (held.loading) return { status: 'loading', said: message('loading', file) };
     if (held.error !== '') {
-        return { status: 'unreadable', rows: [], said: message('unreadable', file, held.error) };
+        return { status: 'unreadable', said: message('unreadable', file, held.error) };
     }
-    if (held.truncated) return { status: 'cut', rows: [], said: message('cut', file) };
+    if (held.truncated) return { status: 'cut', said: message('cut', file) };
     const lines = new LineCounter();
     const doc = parseDocument(held.text, { lineCounter: lines });
     if (doc.errors.length > 0) {
         const first = doc.errors[0].message.split('\n')[0];
-        return { status: 'unparsed', rows: [], said: message('unparsed', file, first) };
+        return { status: 'unparsed', said: message('unparsed', file, first) };
     }
-    const rows = Object.entries(entries).map(([key, entry]) => rowOf(file, key, entry, doc, lines));
-    return { status: 'rows', rows };
+    return { ok: { doc, lines } };
+}
+
+/**
+ * The hub layer's file read for the rows of a file: parsed when it is there and sound, and the
+ * status and sentence that tell the line under the heading what became of it. A file that is not
+ * there is an empty layer, so every key reads the engine's value; one that is not sound reads the
+ * engine's values too and says why.
+ */
+function layerOf(file: string, layer: HubLayer): { read: ParsedLayer; result: LayerResult } {
+    const path = hubLayerPath(file);
+    if (!layer.present) {
+        return {
+            read: { path, present: false, parsed: null },
+            result: { path, present: false, status: 'rows', said: message('layerAbsent', path) }
+        };
+    }
+    const made = parsed(path, layer.text);
+    if ('ok' in made) {
+        return {
+            read: { path, present: true, parsed: made.ok },
+            result: { path, present: true, status: 'rows', said: null }
+        };
+    }
+    return {
+        read: { path, present: true, parsed: null },
+        result: { path, present: true, status: made.status, said: made.said }
+    };
+}
+
+/**
+ * The rows of one tracked file over its text, in catalog order. A file still being read, one the
+ * file browser could not read, one cut at the window's limit and one that does not parse have no
+ * rows and say why; the parser's message is its first line, which names the place. `layer` is the
+ * hub layer's file of the same name, given for a file that has keys of the hub list.
+ */
+export function fileRows(
+    file: string,
+    entries: Record<string, CatalogEntry>,
+    held: FileText,
+    layer?: HubLayer
+): FileResult {
+    const made = parsed(file, held);
+    if (!('ok' in made)) return { status: made.status, rows: [], said: made.said };
+    const read = layer === undefined ? null : layerOf(file, layer);
+    const rows = Object.entries(entries).map(([key, entry]) =>
+        rowOf(file, key, entry, made.ok, read?.read ?? null)
+    );
+    return read === null ? { status: 'rows', rows } : { status: 'rows', rows, layer: read.result };
 }
 
 /** The rows of the machine's own file, from its catalog entries alone. */

@@ -19,15 +19,15 @@
 // under the same rule the file route serves one by: inside the root it is an ordinary entry, and
 // pointing out of the root it is left out.
 //
-// A workspace is a name and a list of roots, saved at ~/.oculus/workspaces.json, and its roots and
-// the notes are written in a new order through the same route (`order-roots`, `order-notes`). The
-// hub key and the keys the configuration names are reserved: a saved root carrying one is dropped
-// on the read and named back to the page, so a saved file can only ever add a root and never
-// redirect one the rest of the application reads. The file is written whole and atomically, as the
-// other two ~/.oculus files are, because it holds work the reader did by hand, and the writes of
-// one process are chained so two requests in flight cannot lose one another's change. A file that
-// is there and does not read is never written over: a write is refused with the reason, as the
-// saved commands file refuses one, and the file is left as it was.
+// A workspace is a name and a list of roots, saved at workspaces.json in the hub's .oculus folder,
+// and its roots and the notes are written in a new order through the same route (`order-roots`,
+// `order-notes`). The hub key and the keys the configuration names are reserved: a saved root
+// carrying one is dropped on the read and named back to the page, so a saved file can only ever add
+// a root and never redirect one the rest of the application reads. The file is written whole and
+// atomically, as the other files of the hub's .oculus folder are, because it holds work the reader
+// did by hand, and the writes of one process are chained so two requests in flight cannot lose one
+// another's change. A file that is there and does not read is never written over: a write is
+// refused with the reason, as the saved commands file refuses one, and the file is left as it was.
 //
 // The fold from a saved file to the roots on screen is pure: workspaceRoots takes the configured
 // roots and the object the file parsed to, and reads nothing. The reading is readSaved's, for a
@@ -44,6 +44,7 @@ import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, isAbsolute, join } from 'node:path';
 import { z } from 'zod';
+import { ROOT_FOLDER } from '../../data/helpers/hub-names.ts';
 import { isMap } from '../../data/helpers/guards.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { expandHome, HUB_ROOT, resolveRootPath, rootShape, type Root } from './files.ts';
@@ -77,7 +78,7 @@ export type Entry = {
 export type SavedWorkspace = { name: string; roots: Root[] };
 
 /**
- * The whole of ~/.oculus/workspaces.json as it was read: which workspace is current, every saved
+ * The whole of the saved workspaces file as it was read: which workspace is current, every saved
  * one, and the keys the read dropped because the configuration reserves them. Only the first two
  * are written back.
  */
@@ -189,9 +190,9 @@ export type FsTarget = {
     ignored: IgnoredCache;
 };
 
-/** ~/.oculus/workspaces.json, resolved at the call rather than at import. */
-export function defaultWorkspacesPath(): string {
-    return join(homedir(), '.oculus', 'workspaces.json');
+/** The hub's own saved workspaces, `<hub>/.oculus/workspaces.json`, resolved at the call. */
+export function defaultWorkspacesPath(hub: string): string {
+    return join(hub, ROOT_FOLDER, 'workspaces.json');
 }
 
 /**
@@ -271,7 +272,8 @@ function loadSaved(
 }
 
 /**
- * Write the file whole, through the same atomic replace the other ~/.oculus files are written by.
+ * Write the file whole, through the same atomic replace the other files of the hub's .oculus folder
+ * are written by.
  */
 export function writeSaved(file: string, saved: Saved): void {
     writeJsonAtomic(file, { current: saved.current, workspaces: saved.workspaces });

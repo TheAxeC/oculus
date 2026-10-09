@@ -1,5 +1,5 @@
-// Layer 2, server. The reader's own bookmarks: a collection file in the hub's own shape, kept
-// outside the hub at ~/.oculus/bookmarks.yml because it is this machine's and not the portfolio's.
+// Layer 2, server. The reader's own bookmarks: a collection file in the hub's own shape, kept in
+// the hub's own `.oculus` folder, bookmarks.yml, which the portfolio does not build from.
 //
 // It is a collection file and not a JSON store so that the write path that edits every other
 // collection edits this one too: the same schema, the same field-by-field surgery that keeps the
@@ -19,10 +19,10 @@
 // process read two files.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { z } from 'zod';
+import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import type { Entry } from '../../../data/model/index.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { resolveRootPath, type Root } from '../files.ts';
@@ -34,9 +34,9 @@ export const BOOKMARKS = 'bookmarks';
 /** The field a bookmark is addressed by, which is the first field of the scaffold's schema. */
 export const BOOKMARK_IDENTITY = 'label';
 
-/** ~/.oculus/bookmarks.yml, resolved at the call rather than at import. */
-export function defaultBookmarksPath(): string {
-    return join(homedir(), '.oculus', 'bookmarks.yml');
+/** The hub's own bookmarks file, `<hub>/.oculus/bookmarks.yml`, resolved at the call. */
+export function defaultBookmarksPath(hub: string): string {
+    return join(hub, ROOT_FOLDER, 'bookmarks.yml');
 }
 
 /**
@@ -46,7 +46,7 @@ export function defaultBookmarksPath(): string {
  * one a bookmark may name.
  */
 const SCAFFOLD = [
-    '# The bookmarks of this machine, written by oculus from the Files view.',
+    "# The hub's bookmarks, written by oculus from the Files view.",
     '# Each entry is a file or a folder under one of the roots the file browser serves.',
     'title: Bookmarks',
     '',

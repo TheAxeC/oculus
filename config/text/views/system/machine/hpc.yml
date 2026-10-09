@@ -43,6 +43,7 @@ text:
         footer: Polls squeue, sacct, sinfo, and disk quota on {0}. See the HPC how-to.
         gpu: gpu
         host_none: the cluster {0} has no host
+        host_no_cluster: the settings of this hub name no cluster (slurm.resource in .oculus/config/behavior.yml)
         host_not_cluster: '{0} is not a cluster'
         host_not_read: the resources registry is not read yet
         host_unknown: '{0} names no resource'

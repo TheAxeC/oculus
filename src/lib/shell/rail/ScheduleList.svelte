@@ -1,9 +1,9 @@
 <script lang="ts">
-    // Layer 3, shell. The Schedules section of the update tray: the entries of
-    // `~/.oculus/schedules.yml` as rows, each with what it runs, its pattern, why it does not run
-    // when it does not, its next run and its latest runs, and the controls that edit, pause, run
-    // or delete it. The file that does not read is said first, one line for each file, because
-    // nothing runs while one of them is unread.
+    // Layer 3, shell. The Schedules section of the update tray: the entries of `schedules.yml` in
+    // the hub's `.oculus` folder as rows, each with what it runs, its pattern, why it does not run
+    // when it does not, its next run and its latest runs, and the controls that edit, pause, run or
+    // delete it. The file that does not read is said first, one line for each file, because nothing
+    // runs while one of them is unread.
     //
     // Everything a row shows is already worded by the `schedule` store, and every press is a call
     // on it; this draws the rows and tells the tray what to do with an answer. A Run now that

@@ -32,7 +32,7 @@ The tree is one Tab stop: the arrow keys move the selection, Right and Left open
 
 ## Workspaces, roots and Add Folder to Workspace
 
-Add Folder to Workspace opens the system's folder panel (`POST /api/folders/pick`, which lists and serves nothing) and adds every folder it returns that is not a root already, each skipped one named in a line. While the panel is open Add Folder to Workspace and `:folder` are disabled and the view says the folder panel is already open; a cancelled panel adds nothing and says nothing; the panel ends with the page's connection or the server's, and a press after that opens a new one. In the default workspace the added folders are written to the `roots:` list of `sources.yml` and Remove Folder from Workspace removes the entry; the hub and the engine's `config/` folder have no Remove, and in a saved workspace a configured root offers none either.
+Add Folder to Workspace opens the system's folder panel (`POST /api/folders/pick`, which lists and serves nothing) and adds every folder it returns that is not a root already, each skipped one named in a line. While the panel is open Add Folder to Workspace and `:folder` are disabled and the view says the folder panel is already open; a cancelled panel adds nothing and says nothing; the panel ends with the page's connection or the server's, and a press after that opens a new one. In the default workspace the added folders are written to the `roots:` list of the hub's layer of `sources.yml`, `.oculus/config/sources.yml`, and Remove Folder from Workspace removes the entry; the hub and the engine's `config/` folder have no Remove, and in a saved workspace a configured root offers none either.
 
 ## Show in Files
 

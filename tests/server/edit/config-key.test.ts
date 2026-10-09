@@ -9,12 +9,13 @@
 // A case that merges the whole config folder and takes 100 ms or more in a run of its own is
 // tagged slow.
 
-import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { writeConfigKey } from '../../../src/lib/server/edit/writes/config/config-key.ts';
-import { it } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { engineFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
 
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -58,25 +59,130 @@ function held(engine: string, file = 'behavior.yml'): string {
     return readFileSync(engineFile(engine, file), 'utf8');
 }
 
+/** What one write left behind: its answer, the engine file, the hub layer's file, the records. */
+type Left = {
+    changed: string[];
+    refused: unknown[];
+    engine: string;
+    layer: string | null;
+    records: unknown[];
+};
+
+/**
+ * The writes of one value, one row per place the value goes: the row names its scratch engine, the
+ * key and value written, whether a hub is given, and what the write leaves in the engine file, in
+ * the hub layer's file and in its record.
+ */
+const ROWS: {
+    row: string;
+    engine: () => string;
+    key: string;
+    value: unknown;
+    hub: boolean;
+    left: (before: string, engine: string, hub: string) => Left;
+}[] = [
+    {
+        row: 'a key outside the hub list, with no hub',
+        engine: keepEngine,
+        key: 'changes.keep',
+        value: 300,
+        hub: false,
+        left: (before, engine) => ({
+            changed: [KEEP],
+            refused: [],
+            engine: before.replace('keep: 200  # how many', 'keep: 300  # how many'),
+            layer: null,
+            records: [
+                {
+                    file: engineFile(engine, 'behavior.yml'),
+                    key: 'behavior.yml',
+                    field: 'changes.keep',
+                    before: 200,
+                    after: 300,
+                    undo: 'field'
+                }
+            ]
+        })
+    },
+    {
+        row: 'a key outside the hub list, whatever hub is given',
+        engine: keepEngine,
+        key: 'changes.keep',
+        value: 300,
+        hub: true,
+        left: (before, engine) => ({
+            changed: [KEEP],
+            refused: [],
+            engine: before.replace('keep: 200  # how many', 'keep: 300  # how many'),
+            layer: null,
+            records: [
+                {
+                    file: engineFile(engine, 'behavior.yml'),
+                    key: 'behavior.yml',
+                    field: 'changes.keep',
+                    before: 200,
+                    after: 300,
+                    undo: 'field'
+                }
+            ]
+        })
+    },
+    {
+        row: 'a key of the hub list, with a hub that holds no layer file',
+        engine: scratchEngine,
+        key: 'slurm.resource',
+        value: 'other',
+        hub: true,
+        left: (before, engine, hub) => ({
+            changed: ['behavior.yml:slurm.resource'],
+            refused: [],
+            engine: before,
+            layer: 'slurm: { resource: other }\n',
+            records: [
+                {
+                    file: join(hub, '.oculus', 'config', 'behavior.yml'),
+                    key: 'behavior.yml',
+                    field: 'slurm.resource',
+                    before: '',
+                    after: 'other',
+                    undo: 'field',
+                    replaced: { offset: 0, before: '', after: 'slurm: { resource: other }\n' },
+                    created: [
+                        join(hub, '.oculus'),
+                        join(hub, '.oculus', 'config'),
+                        join(hub, '.oculus', 'config', 'behavior.yml')
+                    ]
+                }
+            ]
+        })
+    }
+];
+
 describe('one value written over its own bytes', { tags: ['slow'] }, () => {
-    it('replaces the value and keeps every other byte, the comment on its line included', () => {
-        const engine = keepEngine();
-        const before = held(engine);
-        const outcome = writeConfigKey(engine, 'behavior.yml', 'changes.keep', 300);
-        expect(outcome.changed).toEqual([KEEP]);
-        expect(outcome.refused).toEqual([]);
-        expect(held(engine)).toBe(before.replace('keep: 200  # how many', 'keep: 300  # how many'));
-        expect(outcome.records).toEqual([
-            {
-                file: engineFile(engine, 'behavior.yml'),
-                key: 'behavior.yml',
-                field: 'changes.keep',
-                before: 200,
-                after: 300,
-                undo: 'field'
-            }
-        ]);
-    });
+    it.each(ROWS)(
+        'replaces the value and keeps every other byte, the comment on its line included: $row',
+        ({ engine: make, key, value, hub: withHub, left }) => {
+            const engine = make();
+            const hub = scratchDir('oculus-hub-');
+            const before = held(engine);
+            const outcome = writeConfigKey(
+                engine,
+                'behavior.yml',
+                key,
+                value,
+                undefined,
+                withHub ? hub : undefined
+            );
+            const layer = join(hub, '.oculus', 'config', 'behavior.yml');
+            expect({
+                changed: outcome.changed,
+                refused: outcome.refused,
+                engine: held(engine),
+                layer: existsSync(layer) ? readFileSync(layer, 'utf8') : null,
+                records: outcome.records
+            }).toEqual(left(before, engine, hub));
+        }
+    );
 });
 
 describe('an option the catalog does not hold', { tags: ['slow'] }, () => {

@@ -213,10 +213,10 @@
     };
 
     /**
-     * The reader's own bookmarks, from ~/.oculus/bookmarks.yml through the fs store. They are read
-     * here rather than in the rail because the shell's row of the boundary table does not name that
-     * store; the rail is handed what to draw. Which view opens one is a question about a file name,
-     * which state/sources/fs.ts answers.
+     * The reader's own bookmarks, from bookmarks.yml in the hub's .oculus folder through the fs
+     * store. They are read here rather than in the rail because the shell's row of the boundary
+     * table does not name that store; the rail is handed what to draw. Which view opens one is a
+     * question about a file name, which state/sources/fs.ts answers.
      */
     const saved = $derived<Bookmark[]>(bookmarkRows(savedBookmarks().entries, holds));
 

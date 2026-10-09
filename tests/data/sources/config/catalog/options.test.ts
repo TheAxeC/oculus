@@ -81,9 +81,9 @@ describe('the options file shape in loadConfig', () => {
     function loaded(entry: string) {
         const text = `options:\n    behavior.yml:\n        probe:\n${entry}`;
         const name = 'catalogs/options.yml';
-        return loadConfig(engineDir(), { name, text }).findings.filter((one) =>
-            one.file.endsWith(name)
-        );
+        return loadConfig(engineDir(), {
+            instead: { name, text, layer: 'engine' }
+        }).findings.filter((one) => one.file.endsWith(name));
     }
 
     it('names a key an entry does not take, and leaves a control to optionFindings', () => {

@@ -1,11 +1,13 @@
-// Layer 2, server. The scratch notes: one plain-text file per note under ~/.oculus/notes/, written
-// while the reader types and read back by the Files view's Notes section.
+// Layer 2, server. The scratch notes: one plain-text file per note under the notes folder of the
+// hub's `.oculus` folder, written while the reader types and read back by the Files view's Notes
+// section.
 //
 // A note is a file and not a record in a store so that it is a thing the reader can open, copy and
-// delete with anything else on this machine; it never leaves it, since nothing here reads or writes
-// anything outside the folder the caller names. The first line is the title and everything after it
-// is the body, which is what makes the listing readable without parsing the file: the title the
-// section draws is the line a `head -1` would give.
+// delete with anything else on this machine; nothing here reads or writes anything outside the
+// folder the caller names, which is the hub's `.oculus/notes` unless `notes` in local.yml names
+// another, so a note in the hub's folder travels with the hub when the hub is pushed. The first
+// line is the title and everything after it is the body, which is what makes the listing readable
+// without parsing the file: the title the section draws is the line a `head -1` would give.
 //
 // Every path is checked three times: an id is one plain name, the path it resolves to has to be
 // inside the folder, and a file that is already there has to really be inside it. So an id carrying
@@ -24,9 +26,9 @@
 // (`below`, `realPath`).
 
 import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { z } from 'zod';
+import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { readJsonChecked, writeJsonAtomic, writeTextAtomic } from '../../core/json.ts';
 import { below, realPath } from '../../core/paths.ts';
 
@@ -39,9 +41,9 @@ export type NoteRow = { id: string; title: string; modified: number };
 /** One note as its own view reads it: the row, and the text under the title. */
 export type NoteText = NoteRow & { body: string };
 
-/** ~/.oculus/notes, resolved at the call rather than at import. */
-export function defaultNotesDir(): string {
-    return join(homedir(), '.oculus', 'notes');
+/** The hub's own notes folder, `<hub>/.oculus/notes`, resolved at the call. */
+export function defaultNotesDir(hub: string): string {
+    return join(hub, ROOT_FOLDER, 'notes');
 }
 
 /**

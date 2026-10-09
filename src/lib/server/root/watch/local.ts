@@ -122,7 +122,7 @@ export type WatcherName = (typeof WATCHERS)[number];
 
 /** The watchers built directly from a key; the ones built from those follow in `rebuiltBy`. */
 const BUILT_FROM: Partial<Record<keyof LocalConfig, WatcherName[]>> = {
-    hub: ['portfolio', 'usageRefresh', 'git'],
+    hub: ['portfolio', 'usageRefresh', 'git', 'bookmarks', 'schedules'],
     accounts: ['sessions', 'usageRefresh'],
     sessionsCache: ['sessions'],
     sessionsOverrides: ['sessions'],

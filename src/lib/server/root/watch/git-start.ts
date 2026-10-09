@@ -13,7 +13,7 @@ import type { GitWatcher, GitWatchOptions } from './git.ts';
 
 /** What the git watcher's start reads from the process: the configuration, as it is now. */
 export type GitStart = {
-    loadConfig: (engine: string) => { config: Record<string, unknown> };
+    loadConfig: (engine: string, opts?: { hub?: string }) => { config: Record<string, unknown> };
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
     watchAutofetch: (hub: Hub, options: AutofetchOptions) => AutofetchWatcher;
 };
@@ -27,13 +27,14 @@ export type GitLocal = { hub: string; workspaces?: string };
  * watched whether or not a session names it.
  */
 export function startGit(make: GitStart, hub: Hub, engine: string, local: GitLocal): GitWatcher {
-    const config = (): Record<string, unknown> => make.loadConfig(engine).config;
+    const config = (): Record<string, unknown> =>
+        make.loadConfig(engine, { hub: local.hub }).config;
     return make.watchGit(hub, {
         always: local.hub,
         roots: () => repositoryRoots({ config: config(), engine, local }),
         text: () => textCatalog(config()),
         depth: () => repositoryScanDepth(config()),
-        workspacesFile: local.workspaces ?? defaultWorkspacesPath()
+        workspacesFile: local.workspaces ?? defaultWorkspacesPath(local.hub)
     });
 }
 

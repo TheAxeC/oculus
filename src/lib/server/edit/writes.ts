@@ -46,7 +46,6 @@ import { gateWrite, storeWrite } from './writes/app-gate.ts';
 import { defaultAppData } from '../machine/apps/store.ts';
 import type { AppsHeld, HeldApp } from '../machine/apps/held.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
-import { rootsFile } from '../files/files.ts';
 import {
     entities as entitiesOf,
     projects as projectsOf,
@@ -59,7 +58,8 @@ import { createIdea, writeManifest } from './writes/manifest.ts';
 import { configWrite } from './writes/config/config-write.ts';
 import { writeDeckEdit } from './writes/config/deck/deck-acts.ts';
 import { undoDeckEdit } from './writes/config/deck/deck-undo.ts';
-import { rootsHeldIn, type RootsHeld } from './writes/config/roots.ts';
+import { rootItemsOf, rootsHeldIn, type RootItem, type RootsHeld } from './writes/config/roots.ts';
+import { hubLayerPath } from '../../data/helpers/hub-names.ts';
 import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
@@ -159,11 +159,12 @@ export type WriteTarget = {
      */
     glyphs: string[];
     /**
-     * The `roots:` list of the engine's config/sources.yml, where the default workspace's folders
-     * live, and what the roots in force hold, which an added folder is checked against. A target
-     * built without it writes no roots: the write answers `unwritable`.
+     * The `roots:` list of the hub's config layer (`<hub>/.oculus/config/sources.yml`), where the
+     * default workspace's folders live, the list in force when the layer holds none (`base`), and
+     * what the roots in force hold, which an added folder is checked against. A target built
+     * without it writes no roots: the write answers `unwritable`.
      */
-    sources?: { file: string; held: RootsHeld };
+    sources?: { file: string; held: RootsHeld; base: RootItem[] };
     /**
      * What taking back a file operation runs over: the roots the file browser serves, the local
      * history folder and the chain the file operations wait on. A target built without it answers
@@ -277,13 +278,14 @@ export function target(
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         sideProjects: () => (server === undefined ? [] : sideProjectsOf(server.hub)),
         entities: server === undefined ? undefined : (kind) => entitiesOf(server.hub, kind),
-        bookmarks: local.bookmarks ?? defaultBookmarksPath(),
+        bookmarks: local.bookmarks ?? defaultBookmarksPath(local.hub),
         behaviorFile: join(configDir(engine), BEHAVIOR),
         layoutFile: join(configDir(engine), LAYOUT),
         glyphs: glyphNames(merged) ?? [],
         sources: {
-            file: rootsFile(engine),
-            held: rootsHeldIn(engine, merged, local.hub, local.workspaces)
+            file: join(local.hub, hubLayerPath('sources.yml')),
+            held: rootsHeldIn(engine, merged, local.hub, local.workspaces),
+            base: rootItemsOf(merged.roots)
         },
         files: filesTargetOf(
             rootsHeldIn(engine, merged, local.hub, local.workspaces).served,
@@ -638,6 +640,9 @@ async function answer(
     const records = outcome.records?.map((record) => ({
         ...record,
         file: pathOf(into.hub, record.file),
+        ...(record.created === undefined
+            ? {}
+            : { created: record.created.map((path) => pathOf(into.hub, path)) }),
         ...(app === undefined ? {} : { app: app.id })
     }));
     await logChanges(into.changes, kind, records, undoes);

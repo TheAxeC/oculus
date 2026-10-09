@@ -161,6 +161,21 @@ export function entities(
 }
 
 /**
+ * The name of the person the last published `portfolio` payload marks `self: true`, the hub's
+ * owner, or null when none is marked, the name is empty or no payload was published.
+ */
+export function ownerName(hub: HubLike): string | null {
+    const people = entityMap(hub, 'people');
+    if (people === null) return null;
+    for (const person of Object.values(people)) {
+        if (isMap(person) && person.self === true && typeof person.name === 'string') {
+            return person.name === '' ? null : person.name;
+        }
+    }
+    return null;
+}
+
+/**
  * The project ids the last published `portfolio` payload names. POST /api/deposit takes them as one
  * half of what a deposit may address, the hub's own manifests being the other; a process that has
  * published nothing yet names none, and the manifests answer alone.

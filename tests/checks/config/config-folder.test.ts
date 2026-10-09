@@ -17,12 +17,13 @@ import {
     iconFindings,
     iconSet,
     loadConfig,
+    sourceFile,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { createChecker, checkDocument } from '../../../src/lib/data/snapshot/schema/check.ts';
 import { schemaFor } from '../../../src/lib/data/snapshot/schema/set.ts';
-import { readRoots, rootsFile } from '../../../src/lib/server/files/files.ts';
+import { readRoots } from '../../../src/lib/server/files/files.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import {
     arrange,
@@ -86,6 +87,12 @@ function glyphReaders(engine: string): Set<string> {
         values(parse(readFileSync(file, 'utf8')));
     });
     return found;
+}
+
+/** The roots in the hub layer's sources.yml with their findings, as the server reads them. */
+function rootsOfHub(hub: string): ReturnType<typeof readRoots> {
+    const { config, from } = loadConfig(engineDir(), { hub });
+    return readRoots(config, sourceFile(engineDir(), hub, from, 'roots'));
 }
 
 /** Every description key opens with this, which is what makes an orphan one findable. */
@@ -196,8 +203,6 @@ describe("oculus's own config directory", () => {
             'collections',
             'leads_file',
             'radar_file',
-            'publications_file',
-            'linkedin_dir',
             'career_file',
             'portfolio_deck',
             'roots',
@@ -323,7 +328,9 @@ describe("oculus's own config directory", () => {
             'key stray is not a key this file takes'
         ]
     ])('words a part of %s its shape refuses', (name, text, key, message) => {
-        const { config, findings } = loadConfig(engineDir(), { name, text });
+        const { config, findings } = loadConfig(engineDir(), {
+            instead: { name, text, layer: 'engine' }
+        });
         const mine = findings.filter((one) => one.file.endsWith(name));
         expect(
             mine.map((one) => [one.file.endsWith(`/config/${name}`), one.key, one.message])
@@ -350,36 +357,6 @@ describe("oculus's own config directory", () => {
             const source = readFileSync(file, 'utf8');
             expect(source.startsWith('# Oculus text owned by ')).toBe(true);
             expect(Object.keys(parse(source) as Record<string, unknown>)).toEqual(['text']);
-        }
-    });
-
-    // The two roots of sources.yml sit under the home directory of whoever runs this, and a
-    // checkout on a machine without those two repositories has neither. The check is skipped there
-    // with the directories named, rather than failing over a fact about the machine.
-    const ROOTS = readRoots(loadConfig(engineDir()).config, rootsFile(engineDir())).roots;
-    const MISSING = ROOTS.filter((root) => !existsSync(root.dir));
-    if (MISSING.length > 0) {
-        console.log(
-            `config.test.ts: skipping the roots check; no directory at ${MISSING.map((root) => root.dir).join(', ')}`
-        );
-    }
-
-    it.skipIf(MISSING.length > 0)('reads the roots of sources.yml without a finding', () => {
-        expect(readRoots(loadConfig(engineDir()).config, rootsFile(engineDir())).findings).toEqual(
-            []
-        );
-    });
-
-    it('names a group of its own and a path under the hub for every document', () => {
-        const { config } = loadConfig(engineDir());
-        const groups = Object.keys(config.nav_groups as Record<string, unknown>);
-        const docs = config.docs as { label: string; path: string; group: string }[];
-        for (const entry of docs) {
-            expect(groups).toContain(entry.group);
-            expect(entry.path.startsWith('/')).toBe(false);
-            expect(entry.path.includes('..')).toBe(false);
-            expect(entry.path.endsWith('.md')).toBe(true);
-            expect(entry.label.length).toBeGreaterThan(0);
         }
     });
 
@@ -582,13 +559,53 @@ describe("oculus's own config directory", () => {
         expect(invalid.map((view) => view.id)).toEqual([]);
     });
 
+    // The cases over the real hub read the config with the hub's own layer,
+    // `<hub>/.oculus/config/`, over the engine's. They are skipped where the hub's data is not on
+    // the machine.
+    const HUB = realHub();
+
+    // The roots of the hub's sources.yml sit under the home directory of whoever runs this, and a
+    // checkout on a machine without those repositories has none of them. The check is skipped there
+    // with the directories named, rather than failing over a fact about the machine.
+    const READ = HUB.present ? rootsOfHub(HUB.hub) : null;
+    const ROOTS = READ?.roots ?? [];
+    const MISSING = ROOTS.filter((root) => !existsSync(root.dir));
+    if (HUB.present && MISSING.length > 0) {
+        console.log(
+            `config-folder.test.ts: skipping the roots check; no directory at ${MISSING.map((root) => root.dir).join(', ')}`
+        );
+    }
+
+    it.skipIf(!HUB.present || MISSING.length > 0)(
+        'reads the roots of sources.yml without a finding',
+        () => {
+            expect(ROOTS.length).toBeGreaterThan(0);
+            expect(READ?.findings).toEqual([]);
+        }
+    );
+
+    it.skipIf(!HUB.present)(
+        'names a group of its own and a path under the hub for every document',
+        () => {
+            const { config } = loadConfig(engineDir(), { hub: HUB.hub });
+            const groups = Object.keys(config.nav_groups as Record<string, unknown>);
+            const docs = config.docs as { label: string; path: string; group: string }[];
+            for (const entry of docs) {
+                expect(groups).toContain(entry.group);
+                expect(entry.path.startsWith('/')).toBe(false);
+                expect(entry.path.includes('..')).toBe(false);
+                expect(entry.path.endsWith('.md')).toBe(true);
+                expect(entry.label.length).toBeGreaterThan(0);
+            }
+        }
+    );
+
     // Every YAML file of the folder is matched to a schema generated from the catalogs, and the
     // files oculus ships pass it, both under the engine's own root and as the hub sees them under
     // tools/oculus/config. Skipped where the hub's data is not on the machine, since the schemas
     // list the registries' keys.
-    const HUB = realHub();
     it.skipIf(!HUB.present)('passes every config file through the schema it is matched to', () => {
-        const { config } = loadConfig(engineDir());
+        const { config } = loadConfig(engineDir(), { hub: HUB.hub });
         const portfolio = portfolioConfigFrom(config);
         const checker = createChecker();
         const { schemas } = buildPortfolioWithSchemas(HUB.hub, portfolio, 1, [], checker);

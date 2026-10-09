@@ -16,9 +16,10 @@
 // note or a list of one note as a map carries the text it replaced, which the manifest writer puts
 // back over the lines the write left while the file still holds them.
 
-import { isAbsolute, join, resolve } from 'node:path';
+import { isAbsolute, join, resolve, sep } from 'node:path';
 import { z } from 'zod';
 import { scalar } from '../../../data/helpers/guards.ts';
+import { HUB_LAYER } from '../../../data/helpers/hub-names.ts';
 import { keptValues, same } from '../../core/changes.ts';
 import { appById } from '../../machine/apps/held.ts';
 import { APP_STORE, storeNow, writeAppStore } from './app-store.ts';
@@ -37,8 +38,9 @@ import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
 import { deckSlidesNow, undoDeckSlides } from './config/deck/deck.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
+import { takeOutAdded } from './config/config-checks.ts';
 import { railNow, writeRail } from './config/rail.ts';
-import { rootsNow, writeRoots } from './config/roots.ts';
+import { ROOTS, rootsValueNow, writeRoots } from './config/roots.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
 import {
     createEntry,
@@ -81,6 +83,23 @@ export type UndoOutcome =
  */
 function fileOf(into: WriteTarget, change: Change): string {
     return resolve(isAbsolute(change.file) ? change.file : join(into.hub, change.file));
+}
+
+/**
+ * The hub a record of a config write was written under: the hub when the file it names lies in the
+ * hub's config layer, and none when it lies in the engine's, since a key of the hub list whose
+ * write went to the engine's file is taken back there.
+ */
+function layerHub(into: WriteTarget, change: Change): string | undefined {
+    const layer = resolve(into.hub, HUB_LAYER) + sep;
+    return fileOf(into, change).startsWith(layer) ? into.hub : undefined;
+}
+
+/** The paths a record says its write made, as absolute paths. */
+function madeBy(into: WriteTarget, change: Change): string[] {
+    return (change.created ?? []).map((path) =>
+        resolve(isAbsolute(path) ? path : join(into.hub, path))
+    );
 }
 
 /** The collection key whose file a record names, or null when the record names another file. */
@@ -139,12 +158,14 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         return rail === null ? { found: false, value: null } : { found: true, value: rail };
     }
     if (change.kind === 'roots') {
-        const roots = into.sources === undefined ? null : rootsNow(into.sources.file);
-        return roots === null ? { found: false, value: null } : { found: true, value: roots };
+        if (into.sources === undefined) return { found: false, value: null };
+        return rootsValueNow(fileOf(into, change), layerHub(into, change) !== undefined);
     }
-    if (change.kind === 'config-key') return configKeyNow(into.engine, change.key, change.field);
+    if (change.kind === 'config-key') {
+        return configKeyNow(into.engine, change.key, change.field, layerHub(into, change));
+    }
     if (change.kind === 'config-value') {
-        return configValueNow(into.engine, change.key, change.field);
+        return configValueNow(into.engine, change.key, change.field, layerHub(into, change));
     }
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
         return subtaskValue(
@@ -359,20 +380,68 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     }
     if (change.kind === 'roots') {
         if (into.sources === undefined) return UNWRITABLE;
-        const outcome = writeRoots(into.sources.file, rootsBeforeShape.parse(change.before));
+        const hub = layerHub(into, change);
+        const added =
+            change.created === undefined
+                ? null
+                : takeOutAdded(
+                      into.engine,
+                      into.hub,
+                      'sources.yml',
+                      ROOTS,
+                      change,
+                      madeBy(into, change),
+                      ROOTS
+                  );
+        if (change.created !== undefined) return added === null ? null : { found: true, ...added };
+        const outcome = writeRoots(
+            fileOf(into, change),
+            rootsBeforeShape.parse(change.before),
+            undefined,
+            hub === undefined ? undefined : into.sources.base
+        );
         if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
         return { found: true, ...outcome };
     }
-    if (change.kind === 'config-key') {
-        const outcome = writeConfigKey(into.engine, change.key, change.field, change.before);
-        return { found: true, ...outcome };
-    }
-    if (change.kind === 'config-value') {
+    if (change.kind === 'config-key' || change.kind === 'config-value') {
+        const layer = layerHub(into, change);
+        // A write that added a key to the hub's config layer is taken back by taking the added text
+        // out and removing the file and folders it made.
+        if (change.created !== undefined) {
+            const outcome = takeOutAdded(
+                into.engine,
+                into.hub,
+                change.key,
+                change.field,
+                change,
+                madeBy(into, change)
+            );
+            return outcome === null ? null : { found: true, ...outcome };
+        }
+        if (change.kind === 'config-key') {
+            const outcome = writeConfigKey(
+                into.engine,
+                change.key,
+                change.field,
+                change.before,
+                undefined,
+                layer
+            );
+            return { found: true, ...outcome };
+        }
         // The text the write replaced goes back as it was when the file still holds what the write
         // left; any other file is put right through the value write.
         const outcome =
-            putBackConfigValue(into.engine, change.key, change.field, change) ??
-            writeConfigValue(into.engine, change.key, change.field, change.before, change.after);
+            putBackConfigValue(into.engine, change.key, change.field, change, layer) ??
+            writeConfigValue(
+                into.engine,
+                change.key,
+                change.field,
+                change.before,
+                change.after,
+                undefined,
+                layer
+            );
         return { found: true, ...outcome };
     }
     if (change.kind === 'subtask') {

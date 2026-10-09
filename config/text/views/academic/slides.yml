@@ -10,7 +10,7 @@ text:
         dropped: The deck changed on disk, so these are the lists the file holds now. Tick and order them again.
         empty: 'The deck in {0} defines no group, so there is no list to edit. Add a groups: block to its present.yml.'
         empty_glyph: circle_empty
-        empty_unnamed: No deck is set. Name the portfolio deck as `portfolio_deck` in config/sources.yml, or open a deck from the Present view.
+        empty_unnamed: No deck is set. Name the portfolio deck as `portfolio_deck` in .oculus/config/sources.yml in the hub or in config/sources.yml, or open a deck from the Present view.
         entry_moved: '{0} is now {1} of {2} in the order'
         failed_file: The deck file could not be read or written on this machine.
         failed_network: The save did not reach the server.

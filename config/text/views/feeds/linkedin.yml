@@ -17,7 +17,7 @@ text:
         markpost: mark posted
         markpost_tip: mark posted - rename xx- to the next number
         no_dates: no dated posts
-        no_folder: No _linkedin folder.
+        no_folder: The LinkedIn folder {0} is not in the hub.
         no_ideas: No ideas yet.
         no_posts: No posts yet.
         nudge: 'Run <code>/research-cockpit linkedin</code> to draft one - a ready idea:'
@@ -27,6 +27,7 @@ text:
         posted_hdr: Posted ({0})
         search: Search posts & ideas ...
         toolbar: LinkedIn actions
+        unnamed: The hub names no LinkedIn folder. Set linkedin_dir in the hub's .oculus/config/sources.yml to name one.
     views:
         linkedin: LinkedIn
         linkedin_badge_mark: post overdue

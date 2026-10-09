@@ -99,11 +99,14 @@ function collectionFiles(value: unknown): CollectionFile[] {
     return readOr(collectionFilesShape, value, []);
 }
 
-/** The feed paths on the hub today, for a config that names none of them. */
+/**
+ * The feed paths for a config that names none of them. The LinkedIn folder is the hub's own, so a
+ * config that names none has no LinkedIn feed, and its path is empty.
+ */
 const FEED_FILES: FeedFiles = {
     leads: 'feeds/position-leads.yml',
     radar: 'feeds/literature-radar.yml',
-    linkedin: 'theaxec.github.io/_linkedin'
+    linkedin: ''
 };
 
 /** The `tag_tones` of the engine's `defaults:`, each class with the hue name it wears. */

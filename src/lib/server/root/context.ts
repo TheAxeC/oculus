@@ -35,6 +35,7 @@ import {
     refreshSettings,
     settingFindings,
     slurmSettings,
+    sourceFile,
     textCatalog,
     themeFindings,
     usageTiers,
@@ -51,7 +52,7 @@ import {
 } from '../accounts/calendar/poll.ts';
 import { watchMail, type MailOptions, type MailWatcher } from '../accounts/mail/poll.ts';
 import { addressOpener, macOpenAddress, macOpenPath, type Opener } from '../files/open.ts';
-import { docFindings, layoutFile } from '../content/docs.ts';
+import { docFindings } from '../content/docs.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { Hub } from '../core/channels.ts';
 import { target } from '../edit/writes.ts';
@@ -233,14 +234,17 @@ export function createServerContext(
     const make = { ...dependencies, ...replacements };
     const initial = make.readLocal(engine, true);
     const local = initial.config;
-    // The read at start: the watchers and the pollers are built from it before any request
-    // arrives, every config push hands the pollers the settings read again through
-    // live-settings.ts, and every write of local.yml is read again by `reloadLocal` below. A
-    // request parses the folder again through `locals.config` once a file of it was written, so a
-    // route never answers from this copy. A value the options catalog's rule refuses is the
-    // entry's default and a finding, so a typo costs one setting and the server starts; only a
-    // catalog with no rule for a key stops it here, naming the key.
-    const { config } = make.loadConfig(engine);
+    // The read at start: the watchers and the pollers are built from it before any request arrives,
+    // every config push hands the pollers the settings read again through live-settings.ts, and
+    // every write of local.yml is read again by `reloadLocal` below. A request parses the folder
+    // again through `locals.config` once a file of it was written, so a route never answers from
+    // this copy. A value the options catalog's rule refuses is the entry's default and a finding,
+    // so a typo costs one setting and the server starts; only a catalog with no rule for a key
+    // stops it here, naming the key. The settings are the engine's with the hub's own layer over
+    // them, read at each call from the hub in force, so a change of `hub` in local.yml moves the
+    // next read to the new hub's layer.
+    const load = (): ReturnType<typeof loadConfig> => make.loadConfig(engine, { hub: local.hub });
+    const { config, from } = load();
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
     const mailConfig = mailSettings(config);
@@ -258,15 +262,15 @@ export function createServerContext(
         schemas,
         oculus: ownFolder(),
         node: process.execPath,
-        roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
+        roots: () => browserRoots({ config: load().config, engine, local }),
         lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
         approvals: () => local.approvals ?? defaultApprovalsPath(),
-        latex: () => latexBuild(make.loadConfig(engine).config),
-        markdown: () => markdownExtensions(make.loadConfig(engine).config),
-        catalog: () => textCatalog(make.loadConfig(engine).config),
-        changes: () => target(engine, make.loadConfig(engine).config, context).changes,
+        latex: () => latexBuild(load().config),
+        markdown: () => markdownExtensions(load().config),
+        catalog: () => textCatalog(load().config),
+        changes: () => target(engine, load().config, context).changes,
         library: () => ({
-            closed: closedPaths(make.loadConfig(engine).config).folders,
+            closed: closedPaths(load().config).folders,
             withheld: withheldFolders(configDir(engine), local.hub)
         })
     });
@@ -274,15 +278,15 @@ export function createServerContext(
         hub,
         spawn: spawnChild,
         adapter: () => local.riteDapBin,
-        catalog: () => textCatalog(make.loadConfig(engine).config)
+        catalog: () => textCatalog(load().config)
     });
     const lintRuns = new LintRuns();
     const comments = new HeldComments();
     const eslint = make.createEslints({
         roots: () =>
-            servedRoots(
-                browserRoots({ config: make.loadConfig(engine).config, engine, local })
-            ).map((root) => root.real)
+            servedRoots(browserRoots({ config: load().config, engine, local })).map(
+                (root) => root.real
+            )
     });
     // The relay and the held ESLint children hear a change of the served roots together.
     const rootsFollowers = {
@@ -291,7 +295,11 @@ export function createServerContext(
             eslint.reconcile();
         }
     };
-    let followed = followRoots(rootsFollowers, hub, local.workspaces ?? defaultWorkspacesPath());
+    let followed = followRoots(
+        rootsFollowers,
+        hub,
+        local.workspaces ?? defaultWorkspacesPath(local.hub)
+    );
     const token = make.mintToken();
     const appsSecret = make.mintToken();
     const store = new HookStore();
@@ -319,7 +327,7 @@ export function createServerContext(
         ...schemaFindings(engine, config),
         ...themeFindings(engine, config),
         ...localFindings(engine, config, initial.problems),
-        ...docFindings(config, local.hub, layoutFile(engine))
+        ...docFindings(config, local.hub, sourceFile(engine, local.hub, from, 'docs'))
     ]);
     // The watchers `reloadLocal` builds again. Each start function reads the machine's values and
     // the settings in force when it is called, so the same code builds a watcher at start and again
@@ -339,15 +347,14 @@ export function createServerContext(
                 engine,
                 icons,
                 host,
-                roots: () =>
-                    browserRoots({ config: make.loadConfig(engine).config, engine, local }),
-                workspacesFile: local.workspaces ?? defaultWorkspacesPath()
+                roots: () => browserRoots({ config: load().config, engine, local }),
+                workspacesFile: local.workspaces ?? defaultWorkspacesPath(local.hub)
             },
             {
                 built: () => {
                     built.live?.hostChanged();
                     relay.settingsChanged();
-                    if (!lintSettings(make.loadConfig(engine).config).on.eslint) eslint.endAll();
+                    if (!lintSettings(load().config).on.eslint) eslint.endAll();
                 },
                 schemas: (set, references) => schemas.publish(set, references)
             }
@@ -373,7 +380,7 @@ export function createServerContext(
     // The reader's own bookmarks lie under no root, so the git watcher's handles say nothing about
     // them: this one carries a bookmark written outside oculus to every open page.
     const startBookmarks = (): Watcher =>
-        make.watchBookmarks(hub, { file: local.bookmarks ?? defaultBookmarksPath() });
+        make.watchBookmarks(hub, { file: local.bookmarks ?? defaultBookmarksPath(local.hub) });
 
     // The files are read from the keys at the call that builds the watcher, which a change of
     // either key builds again. The hub, the roots and the claude program are read at each call, as
@@ -381,12 +388,11 @@ export function createServerContext(
     // start of a run.
     const startSchedules = (): SchedulesWatcher => {
         const files = {
-            schedules: local.schedules ?? defaultSchedulesPath(),
+            schedules: local.schedules ?? defaultSchedulesPath(local.hub),
             record: local.scheduleRecord ?? defaultRecordPath(),
             commands: savedPath()
         };
-        const rootsFor = (): string[] =>
-            repositoryRoots({ config: make.loadConfig(engine).config, engine, local });
+        const rootsFor = (): string[] => repositoryRoots({ config: load().config, engine, local });
         return make.watchSchedules(hub, {
             files,
             rootsFor,
@@ -411,8 +417,8 @@ export function createServerContext(
         engine,
         secret: appsSecret,
         local: () => local,
-        config: () => make.loadConfig(engine).config,
-        roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local })
+        config: () => load().config,
+        roots: () => browserRoots({ config: load().config, engine, local })
     });
 
     const portfolio = startPortfolio();
@@ -432,8 +438,8 @@ export function createServerContext(
     // server runs is followed by the next tick of each open file.
     const openFiles = createOpenFiles({
         hub,
-        roots: () => browserRoots({ config: make.loadConfig(engine).config, engine, local }),
-        workspacesFile: local.workspaces ?? defaultWorkspacesPath()
+        roots: () => browserRoots({ config: load().config, engine, local }),
+        workspacesFile: () => local.workspaces ?? defaultWorkspacesPath(local.hub)
     });
     const autofetch = startAutofetchWatcher();
     const bookmarks = startBookmarks();
@@ -530,7 +536,7 @@ export function createServerContext(
         engine,
         configCache: createConfigCache({
             engine,
-            load: () => make.loadConfig(engine),
+            load,
             report: reportFindings
         }),
         fsWrites: writes,
@@ -779,18 +785,23 @@ export function createServerContext(
         Object.assign(local, next, { port: kept });
 
         if (changed.includes('hub')) {
+            const loaded = load();
             reportFindings(
-                docFindings(make.loadConfig(engine).config, local.hub, layoutFile(engine))
+                docFindings(
+                    loaded.config,
+                    local.hub,
+                    sourceFile(engine, local.hub, loaded.from, 'docs')
+                )
             );
         }
         rebuild(rebuiltBy(changed), previous);
         if (changed.includes('lsp')) relay.reload();
-        if (changed.includes('workspaces')) {
+        if (changed.includes('workspaces') || changed.includes('hub')) {
             followed.close();
             followed = followRoots(
                 rootsFollowers,
                 hub,
-                local.workspaces ?? defaultWorkspacesPath()
+                local.workspaces ?? defaultWorkspacesPath(local.hub)
             );
             rootsFollowers.reconcile();
         }
@@ -805,7 +816,13 @@ export function createServerContext(
             polled.mail.setAccounts(local.mail, context.mailDir);
         }
         if (
-            changed.some((key) => key === 'appsDir' || key === 'approvals' || key === 'workspaces')
+            changed.some(
+                (key) =>
+                    key === 'appsDir' ||
+                    key === 'approvals' ||
+                    key === 'workspaces' ||
+                    key === 'hub'
+            )
         ) {
             apps.follow();
         }

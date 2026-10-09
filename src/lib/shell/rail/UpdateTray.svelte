@@ -1,13 +1,13 @@
 <script lang="ts">
     // Layer 3, shell. The update tray. It holds two sections under its heading. Schedules
-    // (ScheduleList.svelte) lists the entries of `~/.oculus/schedules.yml` with their next and
-    // latest runs and the controls that edit, pause, run and delete them. Tasks lists the four
-    // update tasks: each control starts the server-built Claude command in a terminal, selects it,
-    // and shows it in the Terminal tab of the page on screen, or a new one (the terminals store's
-    // `showTerminal`); the snapshot's feed summary supplies the last-run value beside each control,
-    // the inbox triage's comes from the `inbox` channel, whose notes file is what that task
-    // writes, and each row says which schedule runs the task next and opens the schedule dialog
-    // for the task.
+    // (ScheduleList.svelte) lists the entries of `schedules.yml` in the hub's `.oculus` folder with
+    // their next and latest runs and the controls that edit, pause, run and delete them. Tasks
+    // lists the four update tasks: each control starts the server-built Claude command in a
+    // terminal, selects it, and shows it in the Terminal tab of the page on screen, or a new one
+    // (the terminals store's `showTerminal`); the snapshot's feed summary supplies the last-run
+    // value beside each control, the inbox triage's comes from the `inbox` channel, whose notes
+    // file is what that task writes, and each row says which schedule runs the task next and opens
+    // the schedule dialog for the task.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
     // pane and a press starts it straight away. A run that goes unattended is a schedule's Run

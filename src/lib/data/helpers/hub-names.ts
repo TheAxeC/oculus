@@ -85,6 +85,55 @@ const SIDE_TIER = 'side-projects';
 /** The folder of a repository that holds its side-project manifest. */
 export const ROOT_FOLDER = '.oculus';
 
+/** The hub's own config folder under `.oculus`, which holds the second layer of the settings. */
+export const HUB_LAYER = `${ROOT_FOLDER}/config`;
+
+/**
+ * The keys the hub's own config layer (`<hub>/.oculus/config/`) may set, by the config file they
+ * are set in (named relative to config/). Each is a dotted path into that file; a value the layer
+ * holds at one of these paths replaces the engine's value whole, and a key outside the list is a
+ * finding and is not applied. They are the keys that describe this hub rather than the engine: its
+ * folders and registries, its domains and themes, and the cluster its jobs run on.
+ */
+export const HUB_LIST: Readonly<Record<string, readonly string[]>> = {
+    'sources.yml': [
+        'scan',
+        'portfolio_deck',
+        'venues_file',
+        'datasets_file',
+        'pillars_file',
+        'domains_file',
+        'people_file',
+        'organisations_file',
+        'resources_file',
+        'collections',
+        'leads_file',
+        'radar_file',
+        'publications_file',
+        'linkedin_dir',
+        'career_file',
+        'roots'
+    ],
+    'layout.yml': ['docs'],
+    'behavior.yml': ['slurm.resource', 'data_domains'],
+    'catalogs/vocab.yml': ['domains', 'venue_themes', 'data_themes']
+};
+
+/** The dotted keys the hub list names for a config file, or undefined for a file outside it. */
+export function hubKeysOf(name: string): readonly string[] | undefined {
+    return Object.hasOwn(HUB_LIST, name) ? HUB_LIST[name] : undefined;
+}
+
+/** The path, inside the hub, of a file of the hub's config layer (`.oculus/config/sources.yml`). */
+export function hubLayerPath(name: string): string {
+    return `${HUB_LAYER}/${name}`;
+}
+
+/** Whether a `from` value (see loadConfig) names a file of the hub's layer. */
+export function fromHubLayer(file: string): boolean {
+    return file.startsWith(`${HUB_LAYER}/`);
+}
+
 /** Whether a scan rule names the side-projects tier, by the last segment of its `dir`. */
 export function isSideTier(rule: ScanRule): boolean {
     return (rule.dir.split('/').pop() ?? rule.dir) === SIDE_TIER;

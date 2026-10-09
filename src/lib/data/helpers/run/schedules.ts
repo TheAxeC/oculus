@@ -1,9 +1,9 @@
-// Layer 1, data. The rule for one entry of the schedules file, `~/.oculus/schedules.yml`, shared by
-// the update tray's dialog, which checks an entry before it sends it, and by the server, which
-// reads the file and runs the timer by the same rule, so the two cannot disagree on what runs. It
-// looks at the shape and the values of an entry and nothing on the machine: the checks that need
-// the disk (a folder that exists, a saved command that is there, a repository the file browser
-// serves) are the server's (server/machine/runs/schedules/file.ts).
+// Layer 1, data. The rule for one entry of the schedules file, `schedules.yml` in the hub's
+// `.oculus` folder, shared by the update tray's dialog, which checks an entry before it sends it,
+// and by the server, which reads the file and runs the timer by the same rule, so the two cannot
+// disagree on what runs. It looks at the shape and the values of an entry and nothing on the
+// machine: the checks that need the disk (a folder that exists, a saved command that is there, a
+// repository the file browser serves) are the server's (server/machine/runs/schedules/file.ts).
 //
 // An entry is `{ name, runs, when, paused?, unattended? }`. `runs` holds exactly one of `task` (an
 // update task), `command` (a saved command's name, with the `folder` it is saved under) or `prompt`

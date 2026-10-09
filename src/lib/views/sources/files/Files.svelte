@@ -40,13 +40,13 @@
     // tab shown last, the bookmarks and the notes read their own files and answer a read of either
     // that failed. What this view reads of them is the bookmarks the tree draws its stars from. A
     // bookmark is added by the star on a file and renamed and removed on its row in the Bookmarks
-    // section; the file `~/.oculus/bookmarks.yml` is under no served root, so no form or source tab
-    // edits it.
+    // section; the file `bookmarks.yml` in the hub's `.oculus` folder is written by those controls
+    // and by the star, and no form edits it.
     //
-    // The folders of the default workspace are the roots config/sources.yml lists, and those can be
-    // taken out; every root the configuration names in a saved workspace is in it and cannot be,
-    // and the server refuses that removal as well, since a refusal that lives only in a view
-    // disappears with the next caller. Add Folder to Workspace opens the folder panel (POST
+    // The folders of the default workspace are the roots the hub's sources.yml layer lists, and
+    // those can be taken out; every root the configuration names in a saved workspace is in it and
+    // cannot be, and the server refuses that removal as well, since a refusal that lives only in a
+    // view disappears with the next caller. Add Folder to Workspace opens the folder panel (POST
     // /api/folders/pick) and adds what it returns; the workspace menu items and Open Folder open
     // the palette with their command typed, where state/workbench/palette.ts runs them.
     //
