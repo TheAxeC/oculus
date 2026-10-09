@@ -12,6 +12,7 @@ Queued, in order (6 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D41 (links in Markdown checked), 2026-10-09, 17c8ac9bc.
 - D53 (unique views), 2026-10-09, d29631c18.
 - D46 (the VS Code palette keys), 2026-10-09, 66e5eedc6.
 - D48 (side projects with the research keys that apply, and smaller Focus rows), 2026-10-09, b00a6c468.
