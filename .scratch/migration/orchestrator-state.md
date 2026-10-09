@@ -70,7 +70,6 @@ dispatch:   # steps in flight, up to six (Z632)
   round_1: agents/briefs/D52-round1.md, sent to the builder over the tree copied at .agents/worktrees/D52-round0
   landing: not-started
   round: 1
-```
 
 - step: D50
   executor: agent
@@ -100,6 +99,19 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with D46, DESIGN.md, files-and-search.md, model/index.ts and state/client/context.ts; with D48, vocab.yml, findings.yml, DESIGN.md, docs/views.md, model/index.ts, model-entities.ts, snapshot/normalise.ts, sources/manifests.ts and root/watch/portfolio.ts; with D50, portfolio.ts, model-machine, config.test.ts and docs/DATA-MAP.md line 69; with D51, DESIGN.md and docs/views.md; with D52, docs/DATA-MAP.md, findings.yml, files-and-search.md, docs/views.md and snapshot/normalise.ts; each on different lines, as judged in the earlier entries of these steps (D48 typeWritten vs SideProject fields; D52 normalise 514 vs typeWritten 303); docs/diagrams/ regenerated at landing; each merge simple
   landing: not-started
   round: 0
+- step: D53
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a852fc218b52cd9f6 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D53
+  base: 82eaeace7
+  launched: 2026-10-09
+  report: agents/reviews/D53-report.md
+  brief_check: agents/reviews/D53-brief-check.md (a12465afebb34bf1c, claude-opus-5-5, 254,223 tokens, 79 tool uses, 12.0 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: src/lib/state/client/context.ts with D41 and D46 (different lines; D53 adds the registerUnique call beside 762); ActivityRail.svelte with D50 (head comment only); Settings.svelte with D50 (D53 changes the registration line only); docs/window.md with D46 (72-80), D50 (25, 29) and D52 (41), D53 lines 21, 54 and a paragraph after 33; DESIGN.md with D41, D46, D48, D50 and D51, D53 a new bullet after 480; different lines everywhere, each merge simple
+  landing: not-started
+  round: 0
+```
 ## The standing demands (from Axel, in force)
 - A brief is written, its premises checked and its findings closed by the orchestrator itself through the `spec` skill, never by an agent (Axel, 2026-10-09): no brief-writing agent, no premise survey or premise recheck agent, no agent that edits a brief; the one agent `/spec` starts is the brief check, as the skill says.
 - A builder or reviewer never takes focus on Axel's screen and never reruns a case that starts the app (Axel, 2026-10-05): no `app.focus({steal:true})`, no `osascript activate`, no `Page.bringToFront`, no `focus()` or `show()` called from outside the app's code; a focus case is read from a recorder on `BrowserWindow.prototype.focus`; the app is started once for all window cases and closed by its pid; a case that does not show in that run is reported not verified and goes to the look. Every builder prompt that runs the desktop app restates this.
@@ -298,6 +310,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (D53 launched). D53 prepared (base 82eaeace7, brief `agents/briefs/D53.md` with every closure of its brief check under "Closed") and its builder a852fc218b52cd9f6 (claude-sonnet-5-5) launched in `.agents/worktrees/D53`, base copy in `.agents/worktrees/D53-base`. In flight (6 of 6): D41 (builder), D46 (first review), D48 (repair round 1), D50 (builder, resumed with the cases ruling), D52 (repair round 1), D53 (builder). Next: each report, review and round as it arrives; D49 after D46, D56 after D52 and D53, D55 after D50.
 - 2026-10-09 (after D51). D51 landed (themes from VS Code's theme files; booking in plan.md; `agents/reviews/D51-landing.md`) after one repair round and the review over it, its two findings closed at landing; fixes at landing: the semantic rules that set no colour skipped, the `DESIGN.md:244` sentence, `tests/server/edit/deck-acts.test.ts` tagged slow under Z64. In flight: D41 (builder), D46 (first review), D48 (repair round 1), D50 (builder, resumed with the cases ruling `agents/briefs/D50-cases.md`), D52 (repair round 1). Next: D53's brief check findings closed in the brief, then its preparation commit and launch into D51's slot.
 - 2026-10-09 (after D47). D47 landed (one Session view; booking in plan.md; `agents/reviews/D47-landing.md`) after one repair round and the review over it, its three findings closed at landing; fixes at landing: the `saved.ts` comment merged with D57's, the report's `out-first.log` description corrected in the booking, `tests/routes/edit/roots.test.ts` tagged slow under Z64. In flight: D41 (taken back; its diagnosis came back with a cause and a fix, `agents/reviews/D41-diagnosis.md`), D46 (waiting for open item 28), D48 (first review running), D51 (repair round 1 running), D52 (first review running). Next: D41's cause into its Step 0, then /spec D41 again; D50 into the freed slot.
 - 2026-10-09 (D41 taken back). D41's landing stopped before main was touched: the gate passed `npm run test:landing` but for the integrity check of Axel's `network/events.yml` (open item 27), and the look failed case 34 (Shift+F12 on a Markdown heading finds no references; cause not known), recorded in D41's Step 0; the fixes at landing are committed on the branch D41 (ce1eafcc8), the guarded lines in `agents/reviews/D41-guarded.patch`. In flight: D46, D48, D52 (builders), D47 (review over round 1), D51 (first review), D41 (backed out, its slot held). Next: /diagnose D41 red line, then /spec D41 again; D50's preparation and dispatch when a slot frees.
