@@ -1,7 +1,7 @@
 In flight (6 of 6 slots in use):
-- D41 (links in Markdown checked): repair round 1 back, review over the round running, launched 2026-10-09.
+- D41 (links in Markdown checked): review over repair round 1 back, waits for D57's landing to land, launched 2026-10-09.
 - D57 (an empty pane closes): landing, launched 2026-10-09.
-- D46 (the VS Code palette keys): builder resumed with the ruling on a case of its first run, launched 2026-10-09.
+- D46 (the VS Code palette keys): builder resumed with the ruling on the 50 ms bound, launched 2026-10-09.
 - D47 (one Session view): built, review running, launched 2026-10-09.
 - D48 (side projects with the research keys that apply, and smaller Focus rows): builder running, launched 2026-10-09.
 - D51 (themes from VS Code's theme files): builder resumed with the ruling on a case of its first run, launched 2026-10-09.

@@ -35,7 +35,7 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D41-report.md
   builder_usage: 190,097 tokens, 596 tool uses, 147.6 min; round 1: 163,380 tokens, 175 tool uses, 49.6 min
   brief_check: agents/reviews/D41-brief-check.md (ac604810d19c5e3dc, claude-opus-5-5, 322,042 tokens, 110 tool uses, 15.3 min; closed inline in the brief by the orchestrator)
-  reviewer_report: agents/reviews/D41-refuter.md (a0542130f88439869, claude-opus-5-5, 78,020 tokens, 114 tool uses, 28.4 min)
+  reviewer_report: agents/reviews/D41-refuter.md (a0542130f88439869, claude-opus-5-5, 78,020 tokens, 114 tool uses, 28.4 min); over round 1: a33f9e7d18db3918b, claude-opus-5-5, 272,363 tokens, 95 tool uses, 39.0 min
   round_1: agents/briefs/D41-round1.md, sent to the builder over the tree copied at .agents/worktrees/D41-round0
   landing: not-started
   round: 1
@@ -64,8 +64,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D46-report.md
   brief_check: agents/reviews/D46-brief-check.md (a3a03b9da01471872, claude-opus-5-5, 214,222 tokens, 92 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D41, tools/oculus/DESIGN.md (D41 lines 23, 166, 503, 575-576, D46 line 142), src/lib/state/client/context.ts and src/lib/state/sources/explorer/ops.svelte.ts (D41 adds the Markdown edit wiring, D46 the open call; separate hunks), tests/checks/source/keys.test.ts (one line each), tests/checks/config/config.test.ts (each its own keys) and docs/files-and-search.md (D41 lines 69 and 85, D46 the search section near 140); with D57, tools/oculus/DESIGN.md (D57 line 238), docs/window.md (D57 line 15, D46 the palette section 72-80) and src/lib/state/workbench/layout/index.ts (D57 the KeepRule export, D46 one export line for tabForKind); different lines, each merge is simple
-  cases_ruling: agents/briefs/D46-cases.md (case 9 to option A, the extra paths, the 50 ms bound for every keystroke)
-  builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9)
+  cases_ruling: agents/briefs/D46-cases.md (case 9 to option A, the extra paths, the 50 ms bound for every keystroke); its second section (Z754): the file mode's matching in a Web Worker, the bound on the page's main thread
+  builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9); after the ruling, to the hand-back on the 50 ms bound: 75,516 tokens, 155 tool uses, 69.5 min
   landing: not-started
   round: 0
 - step: D47

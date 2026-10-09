@@ -175,3 +175,177 @@ The orchestrator's 13 points:
 - The one failed run of the four check files: the failing test is not identified; three reruns passed.
 
 Reviewer usage: a0542130f88439869, claude-opus-5-5, tokens not known, about 115 tool uses, minutes not known.
+
+## Repair round 1, refuted
+
+Reviewed tree: `.agents/worktrees/D41`, base 53fa9b002. Round delta read against `.agents/worktrees/D41-round0/tools/oculus`. I changed nothing in the worktree or the ledger. My scratch copy and probes were under $TMPDIR and have been removed.
+
+```
+$ npm run test:quick            (from .agents/worktrees/D41/tools/oculus, node v24.21.0)
+run 1, load average 18.9 to 19.1:
+ Test Files  6 failed | 113 passed | 3 skipped (122)
+      Tests  8 failed | 1028 passed | 23 skipped (1059)
+ok      svelte-check (239.8 s): ... COMPLETED 441 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 338.5 s (limit 45.0 s); failed: vitest
+test:quick: over the time limit
+(One failure was shown: tests/server/machine/lsp/servers.test.ts:74, which is a turn-count loop
+"for (let turn = 0; turn < 30 && spawned.calls.length < 5; ..."; the other five failing files were
+not kept. The step does not change servers.test.ts.)
+run 2, load average 17.0 to 19.4:
+ok      ASCII gate (14.8 s)
+ok      svelte-kit sync (56.0 s)
+ok      prettier (14.8 s): All matched files use Prettier code style!
+ok      eslint (98.5 s)
+ok      svelte-check (113.8 s): ... COMPLETED 441 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (182.1 s): Duration  140.68s ...
+test:quick: 90 changed file(s), from git since HEAD
+test:quick: 122 test file(s), 10 essential
+test:quick: 201.0 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+
+$ npx vitest run tests/server/machine/lsp/servers.test.ts
+ Test Files  1 passed (1)      Tests  6 passed (6)
+
+$ npx vitest run tests/server/machine/lsp/adapters/markdown-requests.test.ts tests/server/machine/lsp/uris.test.ts tests/server/machine/lsp/lifetime.test.ts
+ Test Files  3 passed (3)      Tests  84 passed (84)
+
+$ wc -l relay.ts servers.ts ops.svelte.ts Editor.svelte
+ 880 / 864 / 696 / 518
+
+$ sh utils/folder-check.sh; echo folder=$?
+folder=0
+$ sh utils/unused-exports.sh vs .agents/worktrees/D41-base/tools/oculus/unused-exports.txt
+364 lines, identical
+$ spec.md perl ASCII gate over src tests config (local.yml excluded; there is no bin folder)
+ascii=0, no output; DESIGN.md, docs/files-and-search.md, docs/DATA-MAP.md: 0 non-ASCII lines
+$ added lines over 100 columns in the round's changed files: none
+$ history words in the round's added comments and test titles: only ordering words
+  ("comes before the second", "before they are read", "before the served roots were known",
+  "sent before or is sent later")
+
+$ npx vitest run --no-isolate --testTimeout 0 --hookTimeout 0 tests/server/machine/lsp tests/state tests/checks tests/ui/controls tests/views/sources
+ Test Files  49 passed (49)    Tests  608 passed (608)   Duration 224.09s
+$ npx vitest run --no-isolate --testTimeout 0 --hookTimeout 0 tests/data tests/server tests/routes tests/shell tests/fixtures
+ Test Files  137 passed (137)  Tests  1028 passed (1028) Duration 989.11s
+
+The builder's round probes, rerun with its scripts in $TMPDIR/d41r1 ("after" with OC set to the
+worktree; "before" with OC set to $TMPDIR/d41r1/before, whose src is the same as D41-round0's src
+by diff -rq):
+probe1  before: {"changes":[["inner/docs/a.md",["3:4-17 -> ../library/b.md"]]]}
+probe1  after:  {"changes":[["inner/docs/a.md",["3:4-17 -> ../library/b.md","3:24-47 -> tools/oculus/library/b.md"]]],"overlaps":[]}
+probe1b after:  a.md gets the shared edit once plus the outer edit; "overlaps":["oculus-file:///inner/c.md"]
+probe4  before: SECOND ... {"changes":[]}
+probe4  after:  SECOND ... {"changes":[["ws/README.md",["7:4-17 -> documentation/DATA.md"]]]}  README.md link is on line 7
+probe4b before: SECOND ... [["ws/other.md",...],["ws/README.md",...]]
+probe4b after:  SECOND ... {"changes":[["ws/README.md",["3:4-17 -> documentation/DATA.md"]]]}
+probe8  before: pulls=undefined -> ["textDocument/diagnostic"]; pulls=true -> ["textDocument/diagnostic"]
+probe8  after:  pulls=undefined -> []; pulls=true -> ["textDocument/diagnostic"]
+relay run10 after: CASE 14 readFile big.md refused: Error: the file is too large to read / small.md bytes: 4
+relay run9  after: CASE 14 links answered: 3 error: null / symbols answered: ["# L"]
+probe2.test.ts and probe56.client.test.ts, run in a scratch copy of the tree (node_modules linked,
+local.yml not copied): Test Files 2 passed (2), Tests 3 passed (3); output identical to the
+report's "after" lines: SAID [the three md_links_* sentences for a, b, c; "Two served folders
+rewrite the same text of docs/a b.md differently; it is left as it is."]; ITEM 5 save returned
+false, requests sent 0, message = the disk_unserved sentence; ITEM 6 [] -> disk unserved, error "";
+["fixture"] -> error "Cannot open: The server refused the request (HTTP 404)."
+
+$ node watch-probe.ts (my probe: a RootWatch registered with the Markdown entry's own glob
+**/*.md over a scratch root, then one file written in each folder)
+["1 docs/a.md","1 node_modules/p/README.md","1 secrets/key.md"]
+
+$ git status --short (inside the worktree)
+src/lib/state/system/machine/refactor/notice-words.ts is "??" (untracked, not intent-to-add);
+src/lib/views/sources/source/language/notice-words.ts is " D". The landing commit has to stage the
+new file explicitly.
+```
+
+I did not rerun the builder's backticked-path count: its `count.ts` is not in $TMPDIR. No decision depends on the count.
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. The round's item 7 added a stat check before `readFile` (`requests.ts:33`; run10 reproduces). The round's item 8 added the `pulls` check (`held.ts:417`; probe8 reproduces). Spec 1 below is a G3-adjacent leak of path names, not of file content.
+- 2: holds. The `pulls` check means a server that pushes its diagnostics is not pulled.
+- 3: holds (no change in the round).
+- 4: holds (no change in the round).
+- 5: violated, Behaviour 1. The first run's Spec 1 / Behaviour 2 (per-file merge) is closed: probe1 and probe1b reproduce. Its Behaviour 1 (disk changes reaching the server) is closed: probe4 and probe4b reproduce. Its Standards 1 (catalog wording) is closed: the four sentences are byte-identical to the round brief, and probe2 reproduces. What remains open is that a server failing for one of several roots is silent.
+- 6: holds (no change in the round).
+- 7: holds. Behaviour 3 is closed: `performSave` refuses at `source.svelte.ts:658`. Behaviour 4 is closed: the 404 waits in `unsettled`. probe56 reproduces both. Behaviour 2 below is a remaining edge case, and Proof 1 below concerns the report's evidence.
+- 8: holds (no change in the round).
+- 9: holds (no change in the round).
+- 10: partial, Spec 2. The G36 Code line still lacks `held/requests/links.ts`. The round did not send this; it is for landing.
+
+Cases:
+
+- 1, 2, 3, 4, 7: met by the report's relay runs 1, 11 and 13 and by reading; not rerun.
+- 5, 6: not verifiable here; they are page cases for the look on landing.
+- 8, 9, 10: met. The report now states case 10 correctly: line 17 is an existing folder and is not marked, and line 16 is the marked one.
+- 11: met by the rule in `backticks.ts` and the test rows.
+- 12, 13: met; verify 2 passes.
+- 14: met; run10 and run9 reproduce, and the file size is now checked before the read.
+- 15, 16: met. Case 16's row now waits on signals (`childOf`, `sentOf`, `arrival`) and passes.
+- 17, 18, 19: met by the report's relay runs and by reading; not rerun.
+- 20: met; probe1 shows the outer root's backtick edit kept beside the inner root's link edit.
+- 21, 22: not verifiable here; page cases.
+- 23: met; probe4 and probe4b show the second rewrite computed on the new text, with the deleted file dropped.
+- 24: met by the report's unit run and by reading.
+- 25 to 28: met by the report's audit harness; nothing changed in the round.
+- 29: met. probe56 shows Save refused with the unserved sentence, no request sent, and the restore path settled. Cmd+S and the palette's Save reach `saveSourceDraft` by reading (Proof 1). The bar and the note are for the look on landing.
+- 30: met by reading; nothing changed in the round.
+- 31: met; verify 2.
+- 32: met by the report's harness; nothing changed in the round.
+- 33: not verifiable here; page case.
+- 34: met by the report's relay runs; the Outline is for the look.
+
+### Findings
+
+Spec
+
+- 1. `src/lib/server/machine/lsp/servers.ts:787`: "fileEvents: () => extensions().map((extension) => `**/*.${extension}`)", registered at `held.ts:510-523` through `RootWatch`.
+  - What is wrong: `RootWatch` leaves out only `.git`, so this registration sends `workspace/didChangeWatchedFiles` to the Markdown server for `.md` files under the hub's `secrets` folder and under `node_modules`. My watch-probe printed "1 secrets/key.md" and "1 node_modules/p/README.md". The round 0 tree never named a path under `secrets` to this server; the test row "watchers are not made for a file under secrets" exists for that reason. G3's new sentence says no file under `secrets` "is given to the ... Markdown language server". `DESIGN.md` 166 says such a file is "never given to it".
+  - Why the damage is limited: the server acts only on files already in its cache (`workerMain.js:25015-25048`), and `readFile` refuses `secrets`, so no content leaks.
+  - Failure scenario: a file `secrets/<client>-contract.md` is saved while a hub Markdown server runs. Its full path reaches the server process, and the server logs it at trace level.
+  - Fix at landing: register with `registerMatch` and a test that drops `withheld(...)` paths, dot folders and `node_modules`, the same set `markdownFiles` leaves out.
+  - Verdict: no item violated; it bears on item 10's G3 sentence.
+- 2. Carried from the first run (its Spec 2): `agents/guarded.md` G36's Code line does not name `src/lib/server/machine/lsp/held/requests/links.ts`, which starts the server for a rewrite and arms its end. The round brief leaves this to landing.
+  - Failure scenario: a later step changes `links.ts`, and its guarded-entry check does not point at G36.
+  - Verdict: item 10 partial.
+
+Proof
+
+- 1. Report, round section 5: "Cmd+S (`views/sources/source/save/tab-save.svelte.ts:36`) and the palette's Save (`state/client/context.ts:423`) both call `saveSourceDraft`".
+  - What is wrong: `context.ts:423` is the LaTeX `saveAll` loop, not the palette Save. The palette path is `shell/Workbench.svelte:238` (`SAVE_ACTION`), then `views/sources/source/status/ask-perform.ts:60` (`run: deps.save`), then `tab-save.svelte.ts` `save()`, then `deps.saveDraft` (= `saveSourceDraft`, `Source.svelte:244`). The conclusion holds by that reading.
+  - The round brief asked for "a probe run of each, before and after". The only probe calls `saveSourceDraft` directly.
+  - Failure scenario: the orchestrator checks the wrong line when it confirms the palette path.
+  - Verdict: none; case 29 is met by reading.
+
+Standards: none. The round's files are under the size line, folders hold at most ten items, new comments carry no history and end by column 100, the ASCII gate passes, and unused exports are unchanged.
+
+Behaviour
+
+- 1. `src/lib/server/machine/lsp/held/requests/links.ts:255-258`: "if (found === null) { failed = true; continue; }", together with `:274`: "if (failed && changes.length === 0 && overlaps.length === 0) return { error: 'no_answer' };".
+  - What is wrong: when several roots hold a move and one root's server ends or does not answer within `ASK_MS` while another root answers with edits, the answer carries those edits and no error. The page opens a preview with nothing said about the failed root. Brief item 5 says a server that ends while a rewrite is asked answers with an error. Round item 2 says `links.ts` answers a code for each failure. The report does not state this case.
+  - Failure scenario: a folder under `tools/oculus` is moved. The inner root's server answers. The hub root's server ends mid-request. The preview lists only the inner root's edits, and the hub's Markdown files that link into the moved folder keep their old links with no notice.
+  - Fix at landing: answer the failed roots beside the edit and say `md_links_no_answer` for each one.
+  - Verdict: item 5 violated (in the multi-root case only).
+- 2. `src/lib/state/sessions/source/source.svelte.ts:346-349`: "if (deps.served() === null) { unsettled.set(id, ...); return; }".
+  - What is wrong: `served()` is `readRoots(fs.workspaces())`, which is null while the workspaces load and also while their read has failed (`fs-transport.ts:95`, `saved.error !== ''`). A restored tab whose 404 arrives in the failed state shows its old text with no error and disk `same` until the workspaces read succeeds. Before the round it said "Cannot open" at once. The report states only the loading case.
+  - Failure scenario: the workspaces read fails and a restored tab's file was deleted on disk. The tab shows no "Cannot open" line and no gone note, so the reader keeps editing a file that is not there.
+  - Verdict: case 29 met; an edge case of the round's item 6 for the orchestrator to judge.
+- 3. `src/lib/state/system/machine/lsp/lsp.svelte.ts:369,381`: "if (answer === null) resolve({ ok: false, error: 'unsent' })", reached also by the 60 s `LINKS_MS` timeout.
+  - What is wrong: a request that was sent but not answered within 60 s is reported with "the Markdown server could not be asked". The `md_links_no_answer` sentence is the true one for that case. The report states the choice but not that the sentence is wrong.
+  - Failure scenario: a move held by two roots whose servers both hang. The relay times out at 30 s plus 30 s, the page gives up at 60 s first, and the reader is told the server could not be asked.
+  - Verdict: none; the wording should be fixed at landing.
+
+### Declined to judge
+
+- Whether round item 1's "the preview's warning line" means the warning notification (`parts.say`, which the build uses) or a line inside the Refactor Preview. The preview's only line is its `failed` alert for Apply. This is the orchestrator's reading.
+- Run 1 of `test:quick` failed 8 tests in 6 files under a load average of 19. Only `servers.test.ts` was identified; it passes alone and is not changed by the step. Run 2 passed every command. The 45 s limit was exceeded in both runs, as the builder reported, under the load of the other builders.
+- The builder's relay runs 1 to 8 and 11 to 13 for cases 1 to 4, 7, 11, 17 to 20, 23 and 34 were not rerun beyond run9 and run10. Nothing in the round changes their code paths, apart from those my probes cover.
+- The backticked-path counts (886 / 801 / 85 / 39 / 68 in the report) were not reproduced, because `count.ts` is not available. No decision rests on them.
+- A Markdown server now holds two recursive `fs.watch` of its root: `Held`'s and `Followed`'s. The cost on the hub root was not measured.
+- `.md` files under dot folders (for example `.agents/skills/*`) match no file-event glob (`matchesGlob('.agents/skills/x/SKILL.md', '**/*.md')` is false). A cached link target there stays stale after a disk edit. With fragment-link validation off, I judged this minor and did not probe it.
+- The page cases 5, 6, 21, 22, 29 (bar and note), 33 and 34 are for the look on landing.
+
+Reviewer usage: agent id not known to me, claude-opus-5-5, tokens not known, about 75 tool uses, about 40 minutes.

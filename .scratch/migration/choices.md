@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z754 (2026-10-09, step D46, the orchestrator, automode): the 50 ms bound over queries of several words
+
+- Chosen: B, the file mode's matching moved into a Web Worker (Vite's `?worker`, as Monaco's workers are built), which takes the names once per answer and answers each numbered query with at most 200 rows, the page drawing only the newest answer and keeping the last rows while it waits. The bound of the brief's line 73 is restated as under 50 ms of the page's main thread per keystroke over 100,000 names, with the worker's matching time quoted as measured.
+- Not chosen: A, the stock figures accepted with the requirement unmet (the lazy option); C, the rarest word matched first, which returns wrong rows when two words both match many names; D, a new meaning for a query of several words, which changes what a user's query finds.
+
+Where it applies: D46. Booked in `plan.md` Rulings and `agents/briefs/D46-cases.md` (its second section).
+
 ## Z753 (2026-10-09, step D50, the orchestrator, automode): the choices of D50's brief check
 
 - Chosen: (a) the hub's `.oculus/` tracked in the hub's git, since ruling (9) calls the five files shareable; (b) `loadConfig(engine, hub?)`, every server caller passing `local.hub`, a call with no hub reading the engine alone, so fixture tests are unchanged and no test reads the real hub's layer; (c) `slurm.resource` `''` meaning no cluster, `config.test.ts`'s empty-resource row made true to it, and the hub-list options' defaults set to the engine's general values so Reset writes them, `domains` `{}`; (d) `linkedin_dir` absent is no LinkedIn feed, the website fallback dropped; (e) a write of a hub-list key the hub layer lacks inserts it (file and folder created when absent), its undo removing what it created; (f) a link under a carried folder copied as what it points to, a carried app asked for approval again, a carried note's earlier save copies not carried, each said in the docs; (g) this hub's layer keeps the whole `docs:` list, oculus's guides with it; (h) the hub layer checked per dotted key, a `local.yml` there a finding and never read; (i) the cases over this hub read it only through G14's integrity test.
