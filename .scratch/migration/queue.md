@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- D50 (the hub's own folder, its shareable files and its settings layer): landing, after its review over repair round 1.
+- D50 (the hub's own folder, its shareable files and its settings layer): waits for Axel on open item 31 before it lands; its review over repair round 1 is saved and its findings are closed at landing under Z758.
 - D56 (the workbench): building, launched 2026-10-09.
 
 Queued, in order (5 steps):

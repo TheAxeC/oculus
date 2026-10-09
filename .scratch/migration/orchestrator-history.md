@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z758 (2026-10-09): D50's review over repair round 1 closed in automode (`choices.md`), replacing Z755: a link under a carried folder is copied only when it points inside that folder, a carried path that is itself a link is followed unless it points at a secret, a dangling link is left out with a finding, and the false sentences and test titles fixed at D50's landing after open item 31.
 - Z757 (2026-10-09): the twenty shapes D56's brief check found open, closed in automode (`choices.md`), among them the workbench arrangement moved to a top-level `workbench:` key of `layout.yml` (replacing Z756 (b)), a cap of 20 kept layouts, Problems limited to a path, and held unique views taken into a fresh workbench as DESIGN.md:481 records.
 - Z756 (2026-10-09): the three shapes D56's brief needed closed in automode (`choices.md`): the Workbenches button fixed at the rail's foot with no `rail:` key, the workbench page made from `arrangements: workbench:`, a closed workbench's layout kept in the browser's saved layout by its folder.
 - Z754 (2026-10-09): D46's second hand-back (the 50 ms bound missed at the second word of a query over 100,000 names) closed in automode (`choices.md`): the file mode's matching in a Web Worker, the bound on the page's main thread.
