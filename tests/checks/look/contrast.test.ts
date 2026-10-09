@@ -3,23 +3,26 @@
 //
 // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
 // the card and the chip, whether derive.ts mints it or a theme authors it, and a tab label's
-// `--tab-*-txt` on the strip and the shown tab only; a hue's `-txt` on its own tint; a hue's
-// `-lane-txt` on its `-lane` and on nothing else, since a Focus lane or column header is where it
-// is painted. That every word of those headers sits on its own lane surface in the page needs a DOM
-// and is not run here; the src/ reading case below only reports a lane text token referenced
-// outside the one shape the header uses; `--on-accent-bg` on the selected tree row's surface
-// `--accent-bg`; the on-chip ink on its filled chip; and the ink of the orange debugging status bar
-// on the fill its hovered and open items take. A pair below the threshold is printed with its ratio
-// and fails. It is never fixed by loosening the threshold or by editing a colour here: a colour is
-// an authored value in tokens.css or themes.css, and a failure is a finding about that value or
-// about derive.ts, not something this file repairs.
+// `--tab-*-txt` on the strip and the shown tab only; `--ink-txt` and the six `--c-code-*-txt` on
+// the three Source Control tints the diff and merge editors draw code over; a hue's `-txt` on its
+// own tint; a hue's `-lane-txt` on its `-lane` and on nothing else, since a Focus lane or column
+// header is where it is painted. That every word of those headers sits on its own lane surface in
+// the page needs a DOM and is not run here; the src/ reading case below only reports a lane text
+// token referenced outside the one shape the header uses; `--on-accent-bg` on the selected tree
+// row's surface `--accent-bg`; the on-chip ink on its filled chip; and the ink of the orange
+// debugging status bar on the fill its hovered and open items take. A pair below the threshold is
+// printed with its ratio and fails. It is never fixed by loosening the threshold or by editing a
+// colour here: a colour is an authored value in tokens.css or themes.css, or a generated one in
+// vscode.css. A failure of an authored value is a finding about that value or about derive.ts, and
+// a failure of a generated value is a finding about the mapping in
+// utils/migrations/convert-vscode-themes.ts, not something this file repairs.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { SCROLL_THUMB_RATIO, deriveTokens, ratio } from '../../../src/lib/themes/derive.ts';
-import { NAMES, THEMES, TOKENS, blocks, themeTokens } from './themes.ts';
+import { NAMES, THEMES, TOKENS, VSCODE, blocks, themeTokens } from './themes.ts';
 import { treeFiles } from '../walk.ts';
 
 const MINIMUM = 4.5;
@@ -32,6 +35,10 @@ const LANE_TEXT = /^--c-.+-lane-txt$/;
 
 /** The four surfaces any text can land on. */
 const SURFACES = ['--bg', '--panel', '--card', '--chip'];
+
+/** The ink and the code hues, which the diff and merge editors also draw over the three tints. */
+const CODE_TEXT = /^(?:--ink|--c-code-[a-z]+)-txt$/;
+const TINTS = ['--c-scm-added-bg', '--c-scm-deleted-bg', '--c-scm-conflict-bg'];
 
 /** A tab label's text token, which lands on the strip (`--bg`) or on the shown tab (`--panel`). */
 const TAB_TEXT = /^--tab-.+-txt$/;
@@ -55,6 +62,7 @@ function pairs(name: string): Pair[] {
         const grounds = TAB_TEXT.test(fg) ? TAB_SURFACES : SURFACES;
         if (!LANE_TEXT.test(fg))
             for (const surface of grounds) if (all[surface]) measure(fg, surface);
+        if (CODE_TEXT.test(fg)) for (const tint of TINTS) if (all[tint]) measure(fg, tint);
         const own = `${fg.slice(0, -'-txt'.length)}-bg`;
         if (fg.startsWith('--c-') && all[own]) measure(fg, own);
         const lane = fg.slice(0, -'-txt'.length);
@@ -246,7 +254,7 @@ describe('contrast', () => {
     it('references only tokens :root defines', () => {
         const root = blocks[':root'];
         const referenced = new Set<string>();
-        for (const sheet of [TOKENS, THEMES]) {
+        for (const sheet of [TOKENS, THEMES, VSCODE]) {
             for (const match of sheet.matchAll(/var\(\s*(--[a-z0-9-]+)/g)) referenced.add(match[1]);
         }
         expect([...referenced].filter((token) => !(token in root))).toEqual([]);

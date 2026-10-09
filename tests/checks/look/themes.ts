@@ -1,5 +1,7 @@
-// Layer 4, test helper. Every theme the picker offers, read out of the two stylesheets and derived
-// the way ui/theme.ts derives it in the browser.
+// Layer 4, test helper. Every theme the picker offers, read out of the three stylesheets
+// (tokens.css, themes.css and the generated vscode.css) and derived the way ui/theme.ts derives it
+// in the browser. A picker row with a class word that no block of the sheets holds is refused by
+// name, so no row is measured as another theme.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -23,12 +25,13 @@ const THEMES_DIR = resolve(
     'themes'
 );
 
-/** The two stylesheets' text: the default tokens and the theme blocks. */
+/** The stylesheets' text: the default tokens, the ported theme blocks and the VS Code blocks. */
 export const TOKENS = readFileSync(join(THEMES_DIR, 'tokens.css'), 'utf8');
 export const THEMES = readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8');
+export const VSCODE = readFileSync(join(THEMES_DIR, 'vscode.css'), 'utf8');
 
-/** Every `:root` and `body.<class>` block of both sheets. */
-export const blocks = parseBlocks(`${TOKENS}\n${THEMES}`);
+/** Every `:root` and `body.<class>` block of the sheets. */
+export const blocks = parseBlocks(`${TOKENS}\n${THEMES}\n${VSCODE}`);
 
 setAppearance(loadConfig(engineDir()).config);
 
@@ -40,6 +43,14 @@ export function themeTokens(name: string): {
     theme: Record<string, string>;
     derived: Record<string, string>;
 } {
-    const theme = resolveTheme(blocks, themeClass(name));
+    const classes = themeClass(name);
+    for (const word of classes.split(/\s+/).filter((one) => one !== '')) {
+        if (!(word in blocks)) {
+            throw new Error(
+                `appearance.yml theme ${name}: class ${word} has no block in the sheets`
+            );
+        }
+    }
+    const theme = resolveTheme(blocks, classes);
     return { theme, derived: deriveTokens(theme) };
 }

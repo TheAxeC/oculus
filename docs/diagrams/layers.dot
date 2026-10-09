@@ -35,7 +35,7 @@ digraph layers {
     "routes to state" [label="29", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to state" [arrowhead=none];
     "routes to state" -> "state" [];
-    "routes to themes" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "routes to themes" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to themes" [arrowhead=none];
     "routes to themes" -> "themes" [];
     "routes to ui" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -74,7 +74,7 @@ digraph layers {
     "ui to state" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "ui" -> "ui to state" [arrowhead=none];
     "ui to state" -> "state" [];
-    "ui to themes" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "ui to themes" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "ui" -> "ui to themes" [arrowhead=none];
     "ui to themes" -> "themes" [];
     "views to data" [label="18", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

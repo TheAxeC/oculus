@@ -101,7 +101,10 @@ export function semanticRules(tokenColors: TokenColors): SemanticRule[] {
     for (const row of SEMANTIC_ROWS) {
         for (const scope of row.scopes) {
             const paint = paintOf(scope, tokenColors);
-            if (paint === null) continue;
+            // A rule that only resets the style sets no colour and no style here, and a rule of
+            // neither would paint the token in the editor's default ink over Shiki's colour.
+            const style = paint?.fontStyle ?? '';
+            if (paint === null || (paint.foreground === undefined && style === '')) continue;
             rules.push({
                 token: row.lookup,
                 ...(paint.foreground === undefined ? {} : { foreground: digits(paint.foreground) }),

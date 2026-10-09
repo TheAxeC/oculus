@@ -32,7 +32,7 @@ export function windowPreferences(preload: string): WindowPreferences {
 
 /**
  * The colour a window and the find bar's view are filled with before the page paints: the
- * background of the app's dark theme (themes.css, `vscode-dark-modern`), so no white shows while a
+ * background of the app's dark theme (vscode.css, `vscode-dark-modern`), so no white shows while a
  * page loads.
  */
 export const WINDOW_BACKGROUND = '#181818';

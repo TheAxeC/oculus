@@ -2,7 +2,8 @@
 // theme, the code theme or the text size changes: a token's computed value on the body, where the
 // theme's class sets it, and the font the code window draws in. Monaco takes both as values and
 // reads no CSS, so the text editor and the diff editor read them here, one frame after the look
-// they are handed changes, and hand the code theme in force to the page's paint with them.
+// they are handed changes, and hand the code theme in force and the body's class string to the
+// page's paint with them.
 
 import type * as Monaco from 'monaco-editor';
 import type { EditorKit } from './load';
@@ -30,15 +31,15 @@ export function font(host: HTMLElement | undefined): Monaco.editor.IEditorOption
 }
 
 /**
- * Paint the page's theme under the code theme `code`. A paint that fails (a code theme whose file
- * did not load) leaves the theme before it in force and is not an error of the editor: `failed`
- * is told, so the editor forgets what it painted and the next change of the look or of the code
- * theme paints again (a second pick of the same theme changes neither), and the answer always
- * resolves.
+ * Paint the page's theme under the code theme `code` and the body's class string. A paint that
+ * fails (a code theme whose file did not load) leaves the theme before it in force and is not an
+ * error of the editor: `failed` is told, so the editor forgets what it painted and the next change
+ * of the look or of the code theme paints again (a second pick of the same theme changes neither),
+ * and the answer always resolves.
  */
 export async function paintCode(kit: EditorKit, code: string, failed: () => void): Promise<void> {
     try {
-        await kit.paint(token, code);
+        await kit.paint(token, code, document.body.className);
     } catch {
         failed();
     }

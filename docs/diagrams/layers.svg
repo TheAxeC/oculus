@@ -87,7 +87,7 @@
 <g id="node33" class="node">
 <title>ui to themes</title>
 <polygon fill="none" stroke="none" points="744.88,-176.16 735.12,-176.16 735.12,-163.68 744.88,-163.68 744.88,-176.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="740" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="740" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">6</text>
 </g>
 <!-- ui&#45;&gt;ui to themes -->
 <g id="edge41" class="edge">
@@ -243,7 +243,7 @@
 <g id="node20" class="node">
 <title>routes to themes</title>
 <polygon fill="none" stroke="none" points="771.88,-229.2 762.12,-229.2 762.12,-216.72 771.88,-216.72 771.88,-229.2"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="767" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="767" y="-220.56" font-family="Helvetica,Arial,sans-serif" font-size="8.00">5</text>
 </g>
 <!-- routes&#45;&gt;routes to themes -->
 <g id="edge15" class="edge">

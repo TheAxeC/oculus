@@ -6,6 +6,7 @@
 //
 // The hub is a temporary directory (deckTarget); the Trash is a folder of that directory, handed in
 // as the writer's `trash`, so no case moves a file to the reader's own Trash.
+// @module-tag slow: each act is written and then taken back through the change log and the Trash.
 
 import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';

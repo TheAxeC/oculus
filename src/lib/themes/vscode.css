@@ -1,0 +1,711 @@
+/* The VS Code themes: one block per colour theme of Visual Studio Code 1.137.0, written by
+   utils/migrations/convert-vscode-themes.ts from the theme files under extensions/ of the
+   installed app, which are Microsoft's and MIT licensed with VS Code. Generated: change the
+   converter and run it, never this file, with: node utils/migrations/convert-vscode-themes.ts. A
+   block sets the chrome tokens, the Source Control tokens, the tab tokens the theme holds and
+   the six code hues; its comment names each token that VS Code's registered default or oculus's
+   base gave. */
+
+/* Light 2026: theme-defaults/themes/2026-light.json, uiTheme vs. Registered VS Code defaults:
+   --c-scm-added-bg (diffEditor.insertedLineBackground), --c-scm-deleted-bg
+   (diffEditor.removedLineBackground). oculus base: --c-scm-conflict-bg. */
+body.vscode-light-2026 {
+    --bg: #fafafd;
+    --panel: #ffffff;
+    --card: #fafafd;
+    --ink: #202020;
+    --muted: #606060;
+    --line: #f0f1f2;
+    --chip: #fafafd;
+    --accent: #0069cc;
+    --c-scm-added: #587c0c;
+    --c-scm-modified: #667309;
+    --c-gutter-modified: #005fb8;
+    --c-scm-deleted: #ad0707;
+    --c-scm-conflict: #ad0707;
+    --c-scm-added-bg: #ebf1dd;
+    --c-scm-deleted-bg: #ffcccc;
+    --c-scm-conflict-bg: #e1caea;
+    --tab-active-txt: #202020;
+    --tab-inactive-txt: #606060;
+    --tab-active-border: #ffffff;
+    --c-code-comment: #6e7781;
+    --c-code-keyword: #cf222e;
+    --c-code-meta: #116329;
+    --c-code-name: #8250df;
+    --c-code-number: #098658;
+    --c-code-string: #0a3069;
+}
+
+/* Light Modern: theme-defaults/themes/light_modern.json, uiTheme vs. Registered VS Code
+   defaults: --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-scm-deleted
+   (gitDecoration.deletedResourceForeground), --c-scm-conflict
+   (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. Nudged to 4.5:1: --tab-inactive-txt from #868686
+   (tab.inactiveForeground). */
+body.vscode-light-modern {
+    --bg: #f8f8f8;
+    --panel: #ffffff;
+    --card: #f8f8f8;
+    --ink: #3b3b3b;
+    --muted: #868686;
+    --line: #e5e5e5;
+    --chip: #f8f8f8;
+    --accent: #005fb8;
+    --c-scm-added: #587c0c;
+    --c-scm-modified: #895503;
+    --c-gutter-modified: #005fb8;
+    --c-scm-deleted: #ad0707;
+    --c-scm-conflict: #ad0707;
+    --c-scm-added-bg: #ebf1dd;
+    --c-scm-deleted-bg: #ffcccc;
+    --c-scm-conflict-bg: #e1caea;
+    --tab-active-txt: #3b3b3b;
+    --tab-inactive-txt: #717171;
+    --tab-active-border: #f8f8f8;
+    --c-code-comment: #008000;
+    --c-code-keyword: #0000ff;
+    --c-code-meta: #800000;
+    --c-code-name: #795e26;
+    --c-code-number: #098658;
+    --c-code-string: #a31515;
+}
+
+/* Light+: theme-defaults/themes/light_plus.json, uiTheme vs. Registered VS Code defaults: --bg
+   (sideBar.background), --card (editorWidget.background), --muted (tab.inactiveForeground),
+   --line (panel.border), --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-light-plus {
+    --bg: #f3f3f3;
+    --panel: #ffffff;
+    --card: #f3f3f3;
+    --ink: #000000;
+    --muted: #707070;
+    --line: #d3d3d3;
+    --chip: #f3f3f3;
+    --accent: #007acc;
+    --c-scm-added: #587c0c;
+    --c-scm-modified: #895503;
+    --c-gutter-modified: #2090d3;
+    --c-scm-deleted: #ad0707;
+    --c-scm-conflict: #ad0707;
+    --c-scm-added-bg: #ebf1dd;
+    --c-scm-deleted-bg: #ffcccc;
+    --c-scm-conflict-bg: #e1caea;
+    --c-code-comment: #008000;
+    --c-code-keyword: #0000ff;
+    --c-code-meta: #800000;
+    --c-code-name: #795e26;
+    --c-code-number: #098658;
+    --c-code-string: #a31515;
+}
+
+/* Light (Visual Studio): theme-defaults/themes/light_vs.json, uiTheme vs. Registered VS Code
+   defaults: --bg (sideBar.background), --card (editorWidget.background), --muted
+   (tab.inactiveForeground), --line (panel.border), --c-scm-added
+   (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg, --c-code-name. */
+body.vscode-light-visual-studio {
+    --bg: #f3f3f3;
+    --panel: #ffffff;
+    --card: #f3f3f3;
+    --ink: #000000;
+    --muted: #707070;
+    --line: #d3d3d3;
+    --chip: #f3f3f3;
+    --accent: #007acc;
+    --c-scm-added: #587c0c;
+    --c-scm-modified: #895503;
+    --c-gutter-modified: #2090d3;
+    --c-scm-deleted: #ad0707;
+    --c-scm-conflict: #ad0707;
+    --c-scm-added-bg: #ebf1dd;
+    --c-scm-deleted-bg: #ffcccc;
+    --c-scm-conflict-bg: #e1caea;
+    --c-code-comment: #008000;
+    --c-code-keyword: #0000ff;
+    --c-code-meta: #800000;
+    --c-code-name: #2563eb;
+    --c-code-number: #098658;
+    --c-code-string: #a31515;
+}
+
+/* Quiet Light: theme-quietlight/themes/quietlight-color-theme.json, uiTheme vs. Registered VS
+   Code defaults: --line (panel.border), --c-scm-added (gitDecoration.addedResourceForeground),
+   --c-scm-modified (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-quiet-light {
+    --bg: #f2f2f2;
+    --panel: #f5f5f5;
+    --card: #f5f5f5;
+    --ink: #333333;
+    --muted: #6d705b;
+    --line: #cccccc;
+    --chip: #f5f5f5;
+    --accent: #9769dc;
+    --c-scm-added: #587c0c;
+    --c-scm-modified: #895503;
+    --c-gutter-modified: #2090d3;
+    --c-scm-deleted: #ad0707;
+    --c-scm-conflict: #ad0707;
+    --c-scm-added-bg: #e3e9d5;
+    --c-scm-deleted-bg: #f7c4c4;
+    --c-scm-conflict-bg: #e1caea;
+    --c-code-comment: #aaaaaa;
+    --c-code-keyword: #4b69c6;
+    --c-code-meta: #91b3e0;
+    --c-code-name: #aa3731;
+    --c-code-number: #9c5d27;
+    --c-code-string: #448c27;
+}
+
+/* Solarized Light: theme-solarized-light/themes/solarized-light-color-theme.json, uiTheme vs.
+   Registered VS Code defaults: --c-scm-added (gitDecoration.addedResourceForeground),
+   --c-scm-modified (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   --muted: --ink at 0.7 over --panel, the rule of VS Code descriptionForeground. oculus base:
+   --c-scm-conflict-bg. Nudged to 4.5:1: --tab-inactive-txt from #586e75
+   (tab.inactiveForeground). */
+body.vscode-solarized-light {
+    --bg: #eee8d5;
+    --panel: #fdf6e3;
+    --card: #eee8d5;
+    --ink: #657b83;
+    --muted: #93a0a0;
+    --line: #ddd6c1;
+    --chip: #eee8d5;
+    --accent: #b49471;
+    --c-scm-added: #587c0c;
+    --c-scm-modified: #895503;
+    --c-gutter-modified: #2090d3;
+    --c-scm-deleted: #ad0707;
+    --c-scm-conflict: #ad0707;
+    --c-scm-added-bg: #e9eac7;
+    --c-scm-deleted-bg: #fdc5b6;
+    --c-scm-conflict-bg: #e1caea;
+    --tab-inactive-txt: #53686f;
+    --c-code-comment: #93a1a1;
+    --c-code-keyword: #859900;
+    --c-code-meta: #268bd2;
+    --c-code-name: #268bd2;
+    --c-code-number: #d33682;
+    --c-code-string: #2aa198;
+}
+
+/* Abyss: theme-abyss/themes/abyss-color-theme.json, uiTheme vs-dark. Registered VS Code
+   defaults: --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-abyss {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #060621;
+    --panel: #000c18;
+    --card: #262641;
+    --ink: #6688cc;
+    --muted: #406385;
+    --line: #2b2b4a;
+    --chip: #262641;
+    --accent: #596f99;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #1f2f24;
+    --c-scm-deleted-bg: #330a13;
+    --c-scm-conflict-bg: #29133d;
+    --c-code-comment: #384887;
+    --c-code-keyword: #225588;
+    --c-code-meta: #225588;
+    --c-code-name: #ddbb88;
+    --c-code-number: #f280d0;
+    --c-code-string: #22aa44;
+}
+
+/* Dark 2026: theme-defaults/themes/2026-dark.json, uiTheme vs-dark. oculus base:
+   --c-scm-conflict-bg. */
+body.vscode-dark-2026 {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #191a1b;
+    --panel: #121314;
+    --card: #202122;
+    --ink: #bfbfbf;
+    --muted: #8c8c8c;
+    --line: #2a2b2c;
+    --chip: #202122;
+    --accent: #2d6e8a;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #73c991;
+    --c-scm-modified: #e5ba7d;
+    --c-gutter-modified: #0078d4;
+    --c-scm-deleted: #f48771;
+    --c-scm-conflict: #f48771;
+    --c-scm-added-bg: #17231a;
+    --c-scm-deleted-bg: #2d1919;
+    --c-scm-conflict-bg: #29133d;
+    --tab-active-txt: #bfbfbf;
+    --tab-inactive-txt: #8c8c8c;
+    --tab-active-border: #121314;
+    --c-code-comment: #8b949e;
+    --c-code-keyword: #ff7b72;
+    --c-code-meta: #7ee787;
+    --c-code-name: #d2a8ff;
+    --c-code-number: #b5cea8;
+    --c-code-string: #a5d6ff;
+}
+
+/* Dark Modern: theme-defaults/themes/dark_modern.json, uiTheme vs-dark. Registered VS Code
+   defaults: --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-scm-deleted
+   (gitDecoration.deletedResourceForeground), --c-scm-conflict
+   (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-dark-modern {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #181818;
+    --panel: #1f1f1f;
+    --card: #202020;
+    --ink: #cccccc;
+    --muted: #9d9d9d;
+    --line: #2b2b2b;
+    --chip: #202020;
+    --accent: #0078d4;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #0078d4;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #383e2a;
+    --c-scm-deleted-bg: #4c1919;
+    --c-scm-conflict-bg: #29133d;
+    --tab-active-txt: #ffffff;
+    --tab-inactive-txt: #9d9d9d;
+    --tab-active-border: #1f1f1f;
+    --c-code-comment: #6a9955;
+    --c-code-keyword: #569cd6;
+    --c-code-meta: #569cd6;
+    --c-code-name: #dcdcaa;
+    --c-code-number: #b5cea8;
+    --c-code-string: #ce9178;
+}
+
+/* Dark+: theme-defaults/themes/dark_plus.json, uiTheme vs-dark. Registered VS Code defaults:
+   --bg (sideBar.background), --card (editorWidget.background), --muted (tab.inactiveForeground),
+   --line (panel.border), --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-dark-plus {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #252526;
+    --panel: #1e1e1e;
+    --card: #252526;
+    --ink: #d4d4d4;
+    --muted: #8f8f8f;
+    --line: #404040;
+    --chip: #252526;
+    --accent: #007acc;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #373d29;
+    --c-scm-deleted-bg: #4b1818;
+    --c-scm-conflict-bg: #29133d;
+    --c-code-comment: #6a9955;
+    --c-code-keyword: #569cd6;
+    --c-code-meta: #569cd6;
+    --c-code-name: #dcdcaa;
+    --c-code-number: #b5cea8;
+    --c-code-string: #ce9178;
+}
+
+/* Dark (Visual Studio): theme-defaults/themes/dark_vs.json, uiTheme vs-dark. Registered VS Code
+   defaults: --bg (sideBar.background), --card (editorWidget.background), --muted
+   (tab.inactiveForeground), --line (panel.border), --c-scm-added
+   (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg, --c-code-name. */
+body.vscode-dark-visual-studio {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #252526;
+    --panel: #1e1e1e;
+    --card: #252526;
+    --ink: #d4d4d4;
+    --muted: #8f8f8f;
+    --line: #404040;
+    --chip: #252526;
+    --accent: #007acc;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #373d29;
+    --c-scm-deleted-bg: #4b1818;
+    --c-scm-conflict-bg: #29133d;
+    --c-code-comment: #6a9955;
+    --c-code-keyword: #569cd6;
+    --c-code-meta: #569cd6;
+    --c-code-name: #2563eb;
+    --c-code-number: #b5cea8;
+    --c-code-string: #ce9178;
+}
+
+/* Kimbie Dark: theme-kimbie-dark/themes/kimbie-dark-color-theme.json, uiTheme vs-dark.
+   Registered VS Code defaults: --muted (tab.inactiveForeground), --line (panel.border),
+   --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-kimbie-dark {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #362712;
+    --panel: #221a0f;
+    --card: #131510;
+    --ink: #d3af86;
+    --muted: #918d87;
+    --line: #433e37;
+    --chip: #131510;
+    --accent: #a57a4c;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #3a3a1d;
+    --c-scm-deleted-bg: #4e150c;
+    --c-scm-conflict-bg: #29133d;
+    --c-code-comment: #a57a4c;
+    --c-code-keyword: #98676a;
+    --c-code-meta: #dc3958;
+    --c-code-name: #8ab1b0;
+    --c-code-number: #f79a32;
+    --c-code-string: #889b4a;
+}
+
+/* Monokai: theme-monokai/themes/monokai-color-theme.json, uiTheme vs-dark. Registered VS Code
+   defaults: --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-monokai {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #1e1f1c;
+    --panel: #272822;
+    --card: #1e1f1c;
+    --ink: #f8f8f2;
+    --muted: #ccccc7;
+    --line: #414339;
+    --chip: #1e1f1c;
+    --accent: #99947c;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #3e452c;
+    --c-scm-deleted-bg: #52201b;
+    --c-scm-conflict-bg: #29133d;
+    --tab-inactive-txt: #ccccc7;
+    --c-code-comment: #88846f;
+    --c-code-keyword: #f92672;
+    --c-code-meta: #f92672;
+    --c-code-name: #a6e22e;
+    --c-code-number: #ae81ff;
+    --c-code-string: #e6db74;
+}
+
+/* Monokai Dimmed: theme-monokai-dimmed/themes/dimmed-monokai-color-theme.json, uiTheme vs-dark.
+   Registered VS Code defaults: --muted (tab.inactiveForeground), --c-scm-added
+   (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-monokai-dimmed {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #272727;
+    --panel: #1e1e1e;
+    --card: #525252;
+    --ink: #c5c8c6;
+    --muted: #8f8f8f;
+    --line: #303030;
+    --chip: #525252;
+    --accent: #3655b5;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #373d29;
+    --c-scm-deleted-bg: #4b1818;
+    --c-scm-conflict-bg: #29133d;
+    --tab-inactive-txt: #d8d8d8;
+    --c-code-comment: #9a9b99;
+    --c-code-keyword: #676867;
+    --c-code-meta: #d0b344;
+    --c-code-name: #ce6700;
+    --c-code-number: #6089b4;
+    --c-code-string: #9aa83a;
+}
+
+/* Red: theme-red/themes/Red-color-theme.json, uiTheme vs-dark. Registered VS Code defaults:
+   --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg, --c-code-number. */
+body.vscode-red {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #330000;
+    --panel: #390000;
+    --card: #300000;
+    --ink: #f8f8f8;
+    --muted: #a33f3f;
+    --line: #611414;
+    --chip: #300000;
+    --accent: #bd4444;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #4d2511;
+    --c-scm-deleted-bg: #610000;
+    --c-scm-conflict-bg: #29133d;
+    --c-code-comment: #e7c0c0;
+    --c-code-keyword: #f12727;
+    --c-code-meta: #ec0d1e;
+    --c-code-name: #ffb454;
+    --c-code-number: #ea580c;
+    --c-code-string: #cd8d8d;
+}
+
+/* Solarized Dark: theme-solarized-dark/themes/solarized-dark-color-theme.json, uiTheme vs-dark.
+   Registered VS Code defaults: --muted (tab.inactiveForeground), --c-scm-added
+   (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-solarized-dark {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #00212b;
+    --panel: #002b36;
+    --card: #00212b;
+    --ink: #839496;
+    --muted: #6b8389;
+    --line: #2b2b4a;
+    --chip: #00212b;
+    --accent: #197271;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #1f473c;
+    --c-scm-deleted-bg: #33222b;
+    --c-scm-conflict-bg: #29133d;
+    --tab-active-txt: #d6dbdb;
+    --tab-inactive-txt: #93a1a1;
+    --c-code-comment: #586e75;
+    --c-code-keyword: #859900;
+    --c-code-meta: #268bd2;
+    --c-code-name: #268bd2;
+    --c-code-number: #d33682;
+    --c-code-string: #2aa198;
+}
+
+/* Tomorrow Night Blue: theme-tomorrow-night-blue/themes/tomorrow-night-blue-color-theme.json,
+   uiTheme vs-dark. Registered VS Code defaults: --muted (tab.inactiveForeground), --c-scm-added
+   (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-scm-added-bg
+   (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground).
+   oculus base: --c-scm-conflict-bg. */
+body.vscode-tomorrow-night-blue {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #001c40;
+    --panel: #002451;
+    --card: #001c40;
+    --ink: #ffffff;
+    --muted: #8092a8;
+    --line: #404f7d;
+    --chip: #001c40;
+    --accent: #bbdaff;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #81b88b;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #e4676b;
+    --c-scm-added-bg: #1f4252;
+    --c-scm-deleted-bg: #331d41;
+    --c-scm-conflict-bg: #29133d;
+    --c-code-comment: #7285b7;
+    --c-code-keyword: #ebbbff;
+    --c-code-meta: #ff9da4;
+    --c-code-name: #bbdaff;
+    --c-code-number: #ffc58f;
+    --c-code-string: #d1f1a9;
+}
+
+/* Dark High Contrast: theme-defaults/themes/hc_black.json, uiTheme hc-black. Registered VS Code
+   defaults: --bg (sideBar.background), --card (editorWidget.background), --muted
+   (descriptionForeground), --line (contrastBorder), --accent (contrastActiveBorder),
+   --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground). oculus base:
+   --c-scm-conflict-bg, --c-scm-added-bg, --c-scm-deleted-bg. */
+body.vscode-dark-high-contrast {
+    color-scheme: dark;
+    --shadow: none;
+    --bg: #000000;
+    --panel: #000000;
+    --card: #0c141f;
+    --ink: #ffffff;
+    --muted: #b3b3b3;
+    --line: #6fc3df;
+    --chip: #0c141f;
+    --accent: #f38518;
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+    --c-scm-added: #a1e3ad;
+    --c-scm-modified: #e2c08d;
+    --c-gutter-modified: #1b81a8;
+    --c-scm-deleted: #c74e39;
+    --c-scm-conflict: #c74e39;
+    --c-scm-added-bg: #0d2e28;
+    --c-scm-deleted-bg: #351521;
+    --c-scm-conflict-bg: #29133d;
+    --c-code-comment: #7ca668;
+    --c-code-keyword: #569cd6;
+    --c-code-meta: #569cd6;
+    --c-code-name: #dcdcaa;
+    --c-code-number: #b5cea8;
+    --c-code-string: #ce9178;
+}
+
+/* Light High Contrast: theme-defaults/themes/hc_light.json, uiTheme hc-light. Registered VS Code
+   defaults: --panel (editor.background), --bg (sideBar.background), --card
+   (editorWidget.background), --ink (foreground), --muted (descriptionForeground), --line
+   (contrastBorder), --accent (contrastActiveBorder), --c-scm-added
+   (gitDecoration.addedResourceForeground), --c-scm-modified
+   (gitDecoration.modifiedResourceForeground), --c-gutter-modified
+   (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground). oculus base:
+   --c-scm-conflict-bg, --c-scm-added-bg, --c-scm-deleted-bg. */
+body.vscode-light-high-contrast {
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --card: #ffffff;
+    --ink: #292929;
+    --muted: #696969;
+    --line: #0f4a85;
+    --chip: #ffffff;
+    --accent: #006bbd;
+    --c-scm-added: #374e06;
+    --c-scm-modified: #895503;
+    --c-gutter-modified: #2090d3;
+    --c-scm-deleted: #ad0707;
+    --c-scm-conflict: #ad0707;
+    --c-scm-added-bg: #c5e5d6;
+    --c-scm-deleted-bg: #edcccf;
+    --c-scm-conflict-bg: #e1caea;
+    --c-code-comment: #515151;
+    --c-code-keyword: #0f4a85;
+    --c-code-meta: #0f4a85;
+    --c-code-name: #5e2cbc;
+    --c-code-number: #096d48;
+    --c-code-string: #0f4a85;
+}

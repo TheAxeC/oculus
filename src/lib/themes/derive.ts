@@ -1,6 +1,7 @@
-// The derived colour tokens. tokens.css and themes.css hold the colours an author picked; the ones
-// a component actually paints text with are computed from them, because a single foreground cannot
-// be readable on a dark green and a light gold at once. Two families:
+// The derived colour tokens. tokens.css, themes.css and vscode.css hold the colours an author or
+// the VS Code converter picked; the ones a component actually paints text with are computed from
+// them, because a single foreground cannot be readable on a dark green and a light gold at once.
+// Two families:
 //
 //   --on-<token>    black or white, whichever scores higher ON that colour: text on a filled chip.
 //   --<token>-txt   the token's own hue, nudged in lightness until it clears 4.5:1 on every surface
@@ -19,6 +20,10 @@
 // icon colours of a file row, `--seti-*`, which are seti-ui's own values in every dark theme and,
 // in a theme whose panel is lighter than its ink, the same hue darkened until it clears 3:1 on the
 // panel, since seti-ui draws for a dark ground and a pale icon disappears on a light one.
+//
+// The diff and merge editors draw code over the three Source Control tints (`--c-scm-added-bg`,
+// `--c-scm-deleted-bg`, `--c-scm-conflict-bg`), so `--ink-txt` and the six `--c-code-*-txt` are
+// also nudged on those, after the four surfaces.
 //
 // And `--c-orange-hover`, the fill a hovered or open item of the status bar takes while a debug
 // session paints the bar orange: the orange moved a quarter of the way toward the colour opposite
@@ -58,6 +63,12 @@ export const SCROLL_THUMB_RATIO = 3;
  * The contrast a Seti icon keeps against the panel on a theme whose panel is lighter than its ink.
  */
 export const SETI_RATIO = 3;
+
+/** The tints the diff and merge editors fill a line with, over which code is drawn. */
+const CODE_TINTS = ['--c-scm-added-bg', '--c-scm-deleted-bg', '--c-scm-conflict-bg'];
+
+/** The start of the names of the hues the code window paints with. */
+const CODE_HUE = '--c-code-';
 
 /** How much of the accent the pressed-toggle surface carries, the rest being the page. */
 const ACCENT_SHARE = 0.2;
@@ -201,13 +212,15 @@ export function readable(fg: string, bg: string, minimum = 4.5): string {
  * three chrome colours that carry text (`--muted`, `--accent`, `--ink`) and for every palette hue.
  * A hue's `-txt` is made readable on its own `--c-<hue>-bg` first when it has one, then on
  * `--chip`, `--card`, `--panel` and `--bg` in turn, so it clears on every surface it can land on
- * rather than only on the tinted pill it was measured against. Hues that are themselves a tint
- * (`-bg`), a derived value (`-txt`, `-on`), a lane surface (`-lane`) or the on-chip ink (`--c-on`)
- * are skipped, since nothing places text on them. The two scrollbar colours, `--scroll-thumb` and
- * `--scroll-track`, come with them, and so does `--accent-bg`, the accent mixed into the page, with
- * its `--on-accent-bg`. Every hue also gets its lane header surface, `--c-<hue>-lane`, the hue
- * mixed into the panel, and `--c-<hue>-lane-txt`, the hue's own `-txt` nudged until it clears on
- * that surface; a theme with no panel and no page gets neither.
+ * rather than only on the tinted pill it was measured against; `--ink-txt` and the six
+ * `--c-code-*-txt` go on to the three Source Control tints, which the diff and merge editors draw
+ * code over. Hues that are themselves a tint (`-bg`), a derived value (`-txt`, `-on`), a lane
+ * surface (`-lane`) or the on-chip ink (`--c-on`) are skipped, since nothing places text on them.
+ * The two scrollbar colours, `--scroll-thumb` and `--scroll-track`, come with them, and so does
+ * `--accent-bg`, the accent mixed into the page, with its `--on-accent-bg`. Every hue also gets its
+ * lane header surface, `--c-<hue>-lane`, the hue mixed into the panel, and `--c-<hue>-lane-txt`,
+ * the hue's own `-txt` nudged until it clears on that surface; a theme with no panel and no page
+ * gets neither.
  *
  * The input is the whole token map; anything that is not a colour token with a hex value is
  * ignored, so the caller can hand over the theme exactly as parse.ts read it.
@@ -241,9 +254,12 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
     const page = effective['--bg'];
     const grounds = [chip, card, panel, page].filter((ground) => Boolean(ground));
 
-    const everywhere = (colour: string, own?: string): string => {
+    const tints = CODE_TINTS.map((token) => effective[token]).filter((tint) => Boolean(tint));
+    const everywhere = (colour: string, own?: string, beyond: string[] = []): string => {
         let out = colour;
-        for (const ground of own ? [own, ...grounds] : grounds) out = readable(out, ground);
+        for (const ground of [...(own ? [own] : []), ...grounds, ...beyond]) {
+            out = readable(out, ground);
+        }
         return out;
     };
 
@@ -257,7 +273,9 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
         derived['--accent-bg'] = tint;
         derived['--on-accent-bg'] = contrastOn(tint);
     }
-    if (effective['--ink'] && chip) derived['--ink-txt'] = everywhere(effective['--ink']);
+    if (effective['--ink'] && chip) {
+        derived['--ink-txt'] = everywhere(effective['--ink'], undefined, tints);
+    }
 
     if (effective['--muted'] && effective['--line'] && panel) {
         const thumb = mix(effective['--muted'], effective['--line'], 0.5);
@@ -282,7 +300,11 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
         if (hue.endsWith('-bg') || hue.endsWith('-txt') || hue.endsWith('-on')) continue;
         if (hue.endsWith('-lane')) continue;
         if (effective[key] && chip) {
-            const text = everywhere(effective[key], effective[`--c-${hue}-bg`]);
+            const text = everywhere(
+                effective[key],
+                effective[`--c-${hue}-bg`],
+                key.startsWith(CODE_HUE) ? tints : []
+            );
             derived[`--c-${hue}-txt`] = text;
             if (panel) {
                 const lane = mix(effective[key], panel, LANE_SHARE);

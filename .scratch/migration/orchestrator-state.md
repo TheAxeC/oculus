@@ -36,7 +36,8 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D46-brief-check.md (a3a03b9da01471872, claude-opus-5-5, 214,222 tokens, 92 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D41, tools/oculus/DESIGN.md (D41 lines 23, 166, 503, 575-576, D46 line 142), src/lib/state/client/context.ts and src/lib/state/sources/explorer/ops.svelte.ts (D41 adds the Markdown edit wiring, D46 the open call; separate hunks), tests/checks/source/keys.test.ts (one line each), tests/checks/config/config.test.ts (each its own keys) and docs/files-and-search.md (D41 lines 69 and 85, D46 the search section near 140); with D57, tools/oculus/DESIGN.md (D57 line 238), docs/window.md (D57 line 15, D46 the palette section 72-80) and src/lib/state/workbench/layout/index.ts (D57 the KeepRule export, D46 one export line for tabForKind); different lines, each merge is simple
   cases_ruling: agents/briefs/D46-cases.md (case 9 to option A, the extra paths, the 50 ms bound for every keystroke); its second section (Z754): the file mode's matching in a Web Worker, the bound on the page's main thread; its third section (open item 28 (a)): `F1` removed from `FAMILIES` in `history.test.ts`, the file added to the paths
-  builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9); after the ruling, to the hand-back on the 50 ms bound: 75,516 tokens, 155 tool uses, 69.5 min; resumed with the ruling on the 50 ms bound, to the hand-back on the F1 check: 243,385 tokens, 102 tool uses, 69.4 min
+  builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9); after the ruling, to the hand-back on the 50 ms bound: 75,516 tokens, 155 tool uses, 69.5 min; resumed with the ruling on the 50 ms bound, to the hand-back on the F1 check: 243,385 tokens, 102 tool uses, 69.4 min; resumed with ruling 28, to the report: 319,997 tokens, 26 tool uses, 18.1 min
+  reviewer_report: running (a7cdb86a0c105ec03, claude-opus-5-5)
   landing: not-started
   round: 0
 - step: D48
@@ -53,22 +54,6 @@ dispatch:   # steps in flight, up to six (Z632)
   round_1: agents/briefs/D48-round1.md, sent to the builder over the tree copied at .agents/worktrees/D48-round0
   shared_paths: with D41, model-entities.ts (D41 lines 82, 103, 505; D48 SideProject 804-815), data/sources/manifests.ts (D41 lines 100-160; D48 the comments at 25 and 356-360), config/text/findings.yml (D41 removes line 36; D48 lines 43 and 45), vocab.yml (D41 line 228; D48 199-206), keys.test.ts (one line each), DESIGN.md (D41 23, 166, 503, 575-576; D48 552) and docs/views.md (D41 73 and its Audit section; D48 5-7, 21-23); with D41, portfolio.ts (D41 589-606; D48 92) and model/index.ts (D41 608; D48 147), the latter also with D46 (557); with D46, options.yml (D46 beside search.max_hits; D48 the `scan` help at 1230), keys.test.ts, HELP.md (D46 79-80; D48 105) and DESIGN.md (D46 142); with D47, keys.test.ts, HELP.md (D47 43, 134, 138-139), docs/views.md (D47 159-181) and DESIGN.md (D47 225, 456); with D57, DESIGN.md (D57 238); different lines, each merge simple
   landing: not-started
-  round: 1
-- step: D51
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a1b4474a23a7d0138 (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D51
-  base: 207d4725b
-  launched: 2026-10-09
-  report: agents/reviews/D51-report.md
-  brief_check: agents/reviews/D51-brief-check.md (a3f85385ee8a110b3, claude-opus-5-5, 261,325 tokens, 73 tool uses, 15.3 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D47 (225, 456), D48 (552) and D57 (238), D51 lines 72, 244 and 565; docs/views.md with D41 (73, 213), D47 (159-181) and D48 (5-7, 21-23), D51 line 243; DESIGN.md line 521 and config/catalogs/options.yml line 146 (D51), with D46, D47 and D48 on other lines of options.yml (857-860, 832, 1230); src/lib/ui/controls/editor/kit/look.ts (D51 line 42, written outside the brief's list as `paint`'s one caller; no other step in flight changes it); src/lib/ui/controls/editor/kit/load.ts with D46 (lines 64 and 221-226), D51 the rules lookup near 370-405; docs/diagrams/ regenerated at landing; different lines, each merge simple
-  cases_ruling: agents/briefs/D51-cases.md (case 13 to option A, `--bg` from the side bar VS Code draws, the tint pairs for every theme)
-  builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13); 246,281 tokens, 135 tool uses, 64.3 min (resumed on the cases ruling, to the report); round 1: 387,443 tokens, 42 tool uses, 27.3 min
-  reviewer_report: agents/reviews/D51-refuter.md (a06b5571264eac4f2, claude-opus-5-5, 351,753 tokens, 109 tool uses, 43.5 min); over round 1: a66724bd02b28bc62, claude-opus-5-5, 285,748 tokens, 82 tool uses, 22.5 min
-  round_1: agents/briefs/D51-round1.md, sent to the builder over the tree copied at .agents/worktrees/D51-round0
-  landing: cherry-picking
   round: 1
 - step: D52
   executor: agent
@@ -313,6 +298,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (after D51). D51 landed (themes from VS Code's theme files; booking in plan.md; `agents/reviews/D51-landing.md`) after one repair round and the review over it, its two findings closed at landing; fixes at landing: the semantic rules that set no colour skipped, the `DESIGN.md:244` sentence, `tests/server/edit/deck-acts.test.ts` tagged slow under Z64. In flight: D41 (builder), D46 (first review), D48 (repair round 1), D50 (builder, resumed with the cases ruling `agents/briefs/D50-cases.md`), D52 (repair round 1). Next: D53's brief check findings closed in the brief, then its preparation commit and launch into D51's slot.
 - 2026-10-09 (after D47). D47 landed (one Session view; booking in plan.md; `agents/reviews/D47-landing.md`) after one repair round and the review over it, its three findings closed at landing; fixes at landing: the `saved.ts` comment merged with D57's, the report's `out-first.log` description corrected in the booking, `tests/routes/edit/roots.test.ts` tagged slow under Z64. In flight: D41 (taken back; its diagnosis came back with a cause and a fix, `agents/reviews/D41-diagnosis.md`), D46 (waiting for open item 28), D48 (first review running), D51 (repair round 1 running), D52 (first review running). Next: D41's cause into its Step 0, then /spec D41 again; D50 into the freed slot.
 - 2026-10-09 (D41 taken back). D41's landing stopped before main was touched: the gate passed `npm run test:landing` but for the integrity check of Axel's `network/events.yml` (open item 27), and the look failed case 34 (Shift+F12 on a Markdown heading finds no references; cause not known), recorded in D41's Step 0; the fixes at landing are committed on the branch D41 (ce1eafcc8), the guarded lines in `agents/reviews/D41-guarded.patch`. In flight: D46, D48, D52 (builders), D47 (review over round 1), D51 (first review), D41 (backed out, its slot held). Next: /diagnose D41 red line, then /spec D41 again; D50's preparation and dispatch when a slot frees.
 - 2026-10-09 (after D57). D57 landed (an empty pane closes; booking in plan.md; `agents/reviews/D57-landing.md`) after one repair round and the review over it; fixes at landing: the Page 1 sentence of `docs/window.md`, the `registry.ts` comment, three test files tagged slow under Z64. In flight: D41 (review over round 1 back, landing next), D46 (builder resumed with the ruling on the 50 ms bound), D47 (review back, repair round 1 being written), D48 and D51 (builders running). Next: D52 dispatched into D57's slot (base d7a654584); /land D41; D47's repair round 1. D50 waits for Axel on open items 25 and 26.

@@ -11,6 +11,23 @@ themes:
   - { name: dark,         class: "dark",               glyph: theme_base, label: "dark" }
   - { name: vscode-dark-modern,  class: "vscode-dark-modern",  glyph: theme_base, label: "vscode dark modern" }
   - { name: vscode-light-modern, class: "vscode-light-modern", glyph: theme_base, label: "vscode light modern" }
+  - { name: vscode-light-2026, class: "vscode-light-2026", glyph: theme_base, label: "vscode light 2026" }
+  - { name: vscode-light-plus, class: "vscode-light-plus", glyph: theme_base, label: "vscode light+" }
+  - { name: vscode-light-visual-studio, class: "vscode-light-visual-studio", glyph: theme_base, label: "vscode light (visual studio)" }
+  - { name: vscode-quiet-light, class: "vscode-quiet-light", glyph: theme_base, label: "vscode quiet light" }
+  - { name: vscode-solarized-light, class: "vscode-solarized-light", glyph: theme_base, label: "vscode solarized light" }
+  - { name: vscode-abyss, class: "vscode-abyss", glyph: theme_base, label: "vscode abyss" }
+  - { name: vscode-dark-2026, class: "vscode-dark-2026", glyph: theme_base, label: "vscode dark 2026" }
+  - { name: vscode-dark-plus, class: "vscode-dark-plus", glyph: theme_base, label: "vscode dark+" }
+  - { name: vscode-dark-visual-studio, class: "vscode-dark-visual-studio", glyph: theme_base, label: "vscode dark (visual studio)" }
+  - { name: vscode-kimbie-dark, class: "vscode-kimbie-dark", glyph: theme_base, label: "vscode kimbie dark" }
+  - { name: vscode-monokai, class: "vscode-monokai", glyph: theme_base, label: "vscode monokai" }
+  - { name: vscode-monokai-dimmed, class: "vscode-monokai-dimmed", glyph: theme_base, label: "vscode monokai dimmed" }
+  - { name: vscode-red, class: "vscode-red", glyph: theme_base, label: "vscode red" }
+  - { name: vscode-solarized-dark, class: "vscode-solarized-dark", glyph: theme_base, label: "vscode solarized dark" }
+  - { name: vscode-tomorrow-night-blue, class: "vscode-tomorrow-night-blue", glyph: theme_base, label: "vscode tomorrow night blue" }
+  - { name: vscode-dark-high-contrast, class: "vscode-dark-high-contrast", glyph: theme_base, label: "vscode dark high contrast" }
+  - { name: vscode-light-high-contrast, class: "vscode-light-high-contrast", glyph: theme_base, label: "vscode light high contrast" }
   - { name: mocha,        class: "rice mocha",         glyph: theme_rice, label: "mocha" }
   - { name: gruvbox,      class: "rice gruvbox",       glyph: theme_rice, label: "gruvbox" }
   - { name: nord,         class: "rice nord",          glyph: theme_rice, label: "nord" }

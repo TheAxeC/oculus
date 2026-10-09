@@ -1,18 +1,20 @@
 // Layer 3, primitive, and one of the three that are not components. Putting a theme on the
 // document: the class string on the body, the derived colour tokens on the root element, and beside
 // them the three custom properties the wallpaper's translucent surfaces are painted through. It
-// also names the classes the sheet holds a theme block for (`themeClasses`), which the Settings
+// also names the classes the sheets hold a theme block for (`themeClasses`), which the Settings
 // view offers as the words of a theme's `class`.
 //
-// The two stylesheets reach this module as text through Vite's `?raw` import, which is the same
-// bytes the page is styled with. The derivation therefore runs on the authored values themselves
-// and nothing restates a colour in TypeScript. The caller may pass its own two sheets instead,
-// which is how the test runs it over the files read from disk.
+// The three stylesheets (tokens.css, themes.css and the generated vscode.css) reach this module as
+// text through Vite's `?raw` import, which is the same bytes the page is styled with. The
+// derivation therefore runs on the authored values themselves and nothing restates a colour in
+// TypeScript. The caller may pass its own tokens sheet and its own theme sheets, which is how the
+// test runs it over the files read from disk.
 
 import { deriveTokens } from '$lib/themes/derive';
 import { parseBlocks, resolveTheme } from '$lib/themes/parse';
 import tokensCss from '$lib/themes/tokens.css?raw';
 import themesCss from '$lib/themes/themes.css?raw';
+import vscodeCss from '$lib/themes/vscode.css?raw';
 
 /**
  * What this needs of a Document, so a test can hand it a plain object and read back what was set.
@@ -21,6 +23,9 @@ export type Themeable = {
     body: { className: string };
     documentElement: { style: { setProperty: (name: string, value: string) => void } };
 };
+
+/** The sheets that hold theme blocks, themes.css and the generated vscode.css, as one text. */
+const THEME_SHEETS = `${themesCss}\n${vscodeCss}`;
 
 /** The body class the CRT overlay is switched on by; themes.css draws it on top of any theme. */
 export const CRT_CLASS = 'crt';
@@ -79,7 +84,7 @@ export function applyTheme(
     classes: string,
     crt: boolean,
     tokens: string = tokensCss,
-    themes: string = themesCss
+    themes: string = THEME_SHEETS
 ): Record<string, string> {
     const className = [classes, crt ? CRT_CLASS : '']
         .join(' ')
@@ -101,7 +106,7 @@ export function applyTheme(
  * `body.<class>` block `parseBlocks` reads, without `:root` and without the CRT overlay's class,
  * which themes.css draws on top of any theme and is not one.
  */
-export function themeClasses(tokens: string = tokensCss, themes: string = themesCss): string[] {
+export function themeClasses(tokens: string = tokensCss, themes: string = THEME_SHEETS): string[] {
     return Object.keys(parseBlocks(`${tokens}\n${themes}`)).filter(
         (name) => name !== ':root' && name !== CRT_CLASS
     );
@@ -112,7 +117,7 @@ export function themeClasses(tokens: string = tokensCss, themes: string = themes
  * declares on `:root` and every one the derivation adds to them. An app's frame is given the value
  * each has on the page, so it is painted in the page's colours.
  */
-export function tokenNames(tokens: string = tokensCss, themes: string = themesCss): string[] {
+export function tokenNames(tokens: string = tokensCss, themes: string = THEME_SHEETS): string[] {
     const blocks = parseBlocks(`${tokens}\n${themes}`);
     const base = resolveTheme(blocks, '');
     return [...new Set([...Object.keys(base), ...Object.keys(deriveTokens(base))])];

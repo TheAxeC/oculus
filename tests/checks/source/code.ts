@@ -12,7 +12,7 @@
 // the style block's list; its markup text is code and holds no string. A page or an image written
 // as markup (.html, .svg) is read the same way. A stylesheet's comments are those parseCss reports.
 // No parser for the shell is installed, so a shell script keeps the rule that a `#` opening a word
-// opens a comment.
+// opens a comment. A JSON file has no comments: all of it is code.
 //
 // A file that does not parse is not guessed at: every function throws with the file's name, so a
 // check that meets one fails loudly rather than reading it wrong.
@@ -170,6 +170,7 @@ function fileKinds(name: string, text: string): Kind[] {
                 mark(kinds, one.start, one.end, 'comment');
             }
         } else if (name.endsWith('.sh')) shellKinds(text, kinds);
+        else if (name.endsWith('.json')) JSON.parse(text);
         else if (/\.(ts|js|mjs|cjs|mts|cts)$/.test(name)) markScript(name, text, 0, kinds);
         else throw new Error('no reader is known for its language');
     } catch (error) {

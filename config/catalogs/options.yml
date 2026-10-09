@@ -143,7 +143,7 @@ options:
         code_theme:
             heading: appearance
             section: Code theme
-            help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours while the editor's background and chrome stay on the UI theme. An id Shiki does not bundle is reported as a finding and read as tokens. The Code theme row under This browser in the Settings view saves the viewer's own choice, which takes over.
+            help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens (a VS Code theme brings its own TextMate rules), and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours while the editor's background and chrome stay on the UI theme. An id Shiki does not bundle is reported as a finding and read as tokens. The Code theme row under This browser in the Settings view saves the viewer's own choice, which takes over.
             default: tokens
             control: choice
             from: code_themes

@@ -171,3 +171,198 @@ Points the orchestrator asked about:
 10. **Files other steps write.** The changed line ranges are D41 DESIGN.md 23/166/575-576 and views.md 73/213; D46 DESIGN.md 142 and options.yml 857-860; D47 DESIGN.md 225/456, views.md 161/175 and options.yml 832; D48 DESIGN.md 552, views.md 7/23 and options.yml 1230; D52 views.md 97-109 and 253/257. D51's are DESIGN.md 72/244/521/565, views.md 243 and options.yml 146. None overlaps, and no hunk's meaning depends on another step's code. D46's `kit/load.ts` hunks (64, 222-226) are independent of D51's (14-22, 71, 80-88, 418-432, 487). The state file's `shared_paths` for D51 lacks DESIGN.md:521, options.yml:146 and `look.ts`.
 
 Reviewer usage: agent id not visible to me, claude-opus-5-5, about 290,000 tokens, about 75 tool uses, about 45 minutes.
+
+## Repair round 1, refuted
+
+I ran every command from `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D51/tools/oculus` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`, in the foreground, at load averages of 6.5 to 16.3. My scratch work is in `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/r1/`: `e2e.ts`, `sem.ts`, `run.mjs`, a scratch tool root `root/` and a scratch extensions copy `loop/`. No file in the worktree, the round-0 copy, the base copy, main or the ledger changed. `git status --short` printed the same 24 paths at the start and at the end, and the `shasum` of the two generated files was `c201abe72cf9` and `cd900d4ff501` before and after every run. I did not run `npm run diagrams`, because it writes `docs/diagrams/`. The round's delta (`diff -ru` of the round-0 copy against the worktree) touches six files: `D51-report.md`, `DESIGN.md`, `docs/views.md`, `vscode-rules.json`, `kit/theme/theme.ts` (a doc comment only) and `convert-vscode-themes.ts`.
+
+```
+npm run test:quick -- --base 207d4725b   (load 6.53)
+test:quick: 24 changed file(s), from git since 207d4725b
+test:quick: 13 test file(s), 10 essential
+ok      prettier (3.4 s): All matched files use Prettier code style!
+ok      ASCII gate (3.7 s)
+ok      svelte-kit sync (10.5 s)
+ok      eslint (18.0 s)
+ok      vitest (23.8 s): Duration  15.74s (transform 26.87s, setup 0ms, import 33.21s, tests 3.60s, environment 2ms)
+ok      svelte-check (17.4 s): 1791557751060 COMPLETED 441 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 28.0 s (limit 45.0 s); every command passed
+
+npx vitest run tests/checks/look/contrast.test.ts tests/checks/config/config-folder.test.ts tests/checks/config/config.test.ts tests/checks/source/keys.test.ts tests/checks/tree/size.test.ts --reporter dot   (load 7.42)
+ Test Files  5 passed (5)
+      Tests  114 passed (114)
+
+npx vitest run tests/checks --reporter dot   (default 5000 ms timeout, load 9.6)
+ Test Files  4 failed | 13 passed (17)
+      Tests  6 failed | 259 passed (265)
+ (among them comment-width "ends by the hundredth column everywhere under src, tests and utils" and history "names no package id, date or session in any comment", each "Error: Test timed out in 5000ms.")
+npm run test:checks   (vitest run tests/checks --testTimeout 0 --hookTimeout 0, load 7.7 to 11.9)
+ Test Files  17 passed (17)
+      Tests  265 passed (265)
+ (so all six failures above were timeouts)
+
+npx vitest run tests/checks/look/contrast.test.ts --reporter verbose   (load 12.61)
+ x finds lane text painted only over its own lane surface under src/ 12386ms (Test timed out)   Tests  1 failed | 39 passed (40)
+npx vitest run tests/checks/look/contrast.test.ts --testTimeout 0 --reporter verbose   (load 16.30)
+      Tests  40 passed (40)
+ 34 "keeps every pair at 4.5:1 in the <theme> theme" lines passing, 19 of them vscode-*; lane text case passes in 606ms
+
+ASCII gate (agents/spec.md, the perl command over src tests bin config utils, ! -name local.yml): no output ("bfs: error: bin: No such file or directory."), ascii exit 0
+LC_ALL=C grep -c '[^ -~]': DESIGN.md 0, docs/views.md 0, convert-vscode-themes.ts 0, D51-report.md 0, kit/theme/theme.ts 0
+sh utils/folder-check.sh: exit 0 | sh utils/size-check.sh: exit 0
+sh utils/unused-exports.sh: 364 lines; diff against .agents/worktrees/D51-base/tools/oculus/unused-exports.txt: no output, exit 0
+python3 yaml.safe_load(config/appearance.yml, config/catalogs/options.yml): yaml ok
+wc -l: vscode.css 711, convert-vscode-themes.ts 810, vscode-rules.json 3760, themes.css 776, derive.ts 317, tokens.css 272, ui/theme.ts 124, kit/load.ts 493, kit/look.ts 66, kit/theme/theme.ts 209, look/themes.ts 56, contrast.test.ts 262, source/code.ts 222, appearance.yml 97, +layout.svelte 49, window-options.ts 38
+ls | wc -l: src/lib/themes 8, utils 10, utils/migrations 4 | grep -c "^  - { name: vscode" config/appearance.yml: 19 | grep -c "c-code" themes.css: 0 | grep -c "^  - { name:" config/appearance.yml: 34
+history-word grep over the round's added comment lines (before|used to|no longer|still|always|previously|D51|dates): hits only on the two "+++" file headers
+
+node utils/migrations/convert-vscode-themes.ts --check
+19 themes up to date
+check exit 0
+shasum: c201abe72cf98a028774e4a72dd7aec1637e1ec9 vscode.css | cd900d4ff5018081380146226bad49ea4b96939d vscode-rules.json
+node utils/migrations/convert-vscode-themes.ts
+wrote .../src/lib/themes/vscode.css and .../src/lib/themes/vscode-rules.json: 19 themes of VS Code 1.137.0
+run exit 0
+shasum after: the same two hashes
+npx prettier --check src/lib/themes/vscode.css src/lib/themes/vscode-rules.json: All matched files use Prettier code style!
+
+Round item 1 (empty fontStyle):
+grep -c '"fontStyle": ""' vscode-rules.json: round0 0, now 102
+python3 over the two files: round0 rules 1100, empty 0 | now rules 1103, empty fontStyle 102, empty and no foreground 3 {'vscode-quiet-light': 2, 'vscode-solarized-light': 5, 'vscode-abyss': 12, 'vscode-monokai': 10, 'vscode-monokai-dimmed': 43, 'vscode-red': 16, 'vscode-solarized-dark': 5, 'vscode-tomorrow-night-blue': 9}
+python3 over VS Code's own 19 resolved theme files (scoped rules, fontStyle a blank string): 102, the same eight themes, the same counts per theme
+structural compare of round0 and now (every "" fontStyle removed, then rules left with only a scope dropped): generated text same, theme keys same, themes differing beyond the empty fontStyle: 0
+the three new rules: vscode-abyss {'scope': ['variable'], 'fontStyle': ''}, vscode-abyss {'scope': ['support.other.variable'], 'fontStyle': ''}, vscode-monokai {'scope': ['support.other.variable'], 'fontStyle': ''}
+vscode-quiet-light comment.block.preprocessor: round0 [{'scope': ['comment.block.preprocessor'], 'foreground': '#565656'}] | now [... 'foreground': '#565656', 'fontStyle': '']   (vscode-rules.json:1183)
+vscode-solarized-dark markup.heading.setext: round0 [... 'foreground': '#6eb3e4'] | now [... 'foreground': '#6eb3e4', 'fontStyle': '']   (vscode-rules.json:3144)
+builder's node $TMPDIR/d51r1/count.ts over both files: the lines its report quotes, identical
+builder's node $TMPDIR/d51r1/resolved.ts: resolved rules with fontStyle "": 102 {"Abyss":12,"Monokai":10,"Monokai Dimmed":43,"Quiet Light":2,"Red":16,"Solarized Dark":5,"Solarized Light":5,"Tomorrow Night Blue":9}
+builder's node $TMPDIR/d51r1/run.mjs (the real painter through jiti with the $lib alias): the four lines its report quotes, identical, exit 0
+reviewer's node r1/run.mjs r1/e2e.ts (the real painter() of kit/load.ts, the real shiki createHighlighter, the real @shikijs/monaco shikiToMonaco, a stub Monaco, Monaco's own TokenTheme resolving each returned token):
+after  vscode-quiet-light | int x; | "int x;" -> token "comment.block.preprocessor" #565656 none
+round0 vscode-quiet-light | int x; | "int x;" -> token "comment" #565656 italic
+after  vscode-quiet-light | // note | "// note" -> token "comment" #565656 italic
+after  vscode-solarized-dark | ===== | "=====" -> token "variable.language" #6eb3e4 none
+round0 vscode-solarized-dark | ===== | "=====" -> token "markup.heading" #6eb3e4 bold
+after  vscode-solarized-dark | # Atx | "# Atx" -> token "markup.heading" #6eb3e4 bold
+after  vscode-solarized-light | ===== | "=====" -> token "variable.language" #185c8b none
+round0 vscode-solarized-light | ===== | "=====" -> token "markup.heading" #185c8b bold
+reviewer's node r1/run.mjs r1/sem.ts (semanticRules over each theme's rules, round0 against now):
+vscode-abyss variable: round0 none | now {"token":"variable"}
+vscode-abyss property: round0 none | now {"token":"property"}
+vscode-abyss enumMember: round0 none | now {"token":"enumMember"}
+vscode-abyss variable.readonly: round0 none | now {"token":"variable.readonly"}
+vscode-abyss property.readonly: round0 none | now {"token":"property.readonly"}
+vscode-abyss variable.defaultLibrary: round0 none | now {"token":"variable.defaultLibrary"}
+vscode-monokai variable.defaultLibrary: round0 none | now {"token":"variable.defaultLibrary"}
+semantic rules that differ: 7
+
+Round item 2 (the builder's scratch copies; --check, so no run can write):
+--check --from $TMPDIR/d51r1/ext: convert-vscode-themes: the theme file /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/d51r1/ext/theme-defaults/themes/nothere.json does not exist, included by /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/d51r1/ext/theme-defaults/themes/2026-dark.json; name the extensions folder with --from   missing include exit 1
+--check --from $TMPDIR/d51r1/ext2: convert-vscode-themes: the theme file /var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/d51r1/ext2/theme-defaults/themes/hc_black.json does not exist; name the extensions folder with --from   missing listed theme file exit 1
+--check --from /nonexistent: convert-vscode-themes: the extensions folder /nonexistent does not exist; name it with --from <extensions folder>   missing folder exit 1
+
+Round item 3 (a scratch copy r1/loop of git, theme-defaults and theme-red from the installed app):
+2026-dark.json including itself, --check: convert-vscode-themes: Maximum call stack size exceeded   self-include exit 1
+2026-dark -> dark_modern -> dark_plus -> dark_vs -> 2026-dark, --check: convert-vscode-themes: Maximum call stack size exceeded   chain loop exit 1
+
+Round item 6:
+awk over the WORKBENCH table, entries counted: 28 | wc -l tests/checks/look/contrast.test.ts: 262
+
+Builder's earlier probes, rerun from the session scratchpad d51/:
+node c8b.ts: the nine lines the report quotes, identical (vscode-red keyword {"foreground":"#f57373","fontStyle":""})
+node cases.ts: the case 1, 11, 12 and 13 blocks, identical to the report
+node c9.ts: the Modern lists and the four --bg lines, identical to the report
+node change.ts: total changed derived tokens 258; the per-theme list is identical to the report's (diff prints nothing)
+node tintbase.ts <base> tokens.css themes.css: light 18, dark 4, vscode-dark-modern 16, vscode-light-modern 18, mocha 18, gruvbox 12, nord 3, synthwave 14, tokyoneon 10, tokyonight 18, rosepine 18, everforest 18, dracula 11, kanagawa 11, solarized 1, latte 18, gruvboxlight 18 / pairs under 4.5:1 of 357: 226
+node c239.ts: chain keys 2026-dark 298 | dark_modern 129 | dark_vs 37 | resolved 334 | tokenColors resolved 118; all 19 files parse
+node c14b.ts: vscode-bogus appearance.yml theme vscode-bogus: class vscode-bogus has no block in the sheets / vscode-monokai has a block
+python3 over vscode-rules.json: vscode-dark-2026 118 rules, min 30, max 118, total 1103
+Reviewer's scratch root r1/root (the current converter, sheets, outputs and appearance.yml, node_modules linked):
+ --check: 19 themes up to date, exit 0
+ a vscode-bogus row added: appearance.yml row vscode-bogus has no block, bogus row exit 1
+ both outputs removed: no outputs exit 1, 39 lines: 19 "block ... is missing", 19 "rules of ... is missing", 1 "has no block"
+```
+
+### Verdicts
+
+These cover the whole diff since 207d4725b.
+
+- 1: holds. The missing-theme-file message now names `--from` (convert-vscode-themes.ts:558-561), as the error runs above show. The loop check is gone as ruled. Everything the first review found holding still holds: the run line, `--from`, the labels, `JSON.parse`, the include chain, `semanticTokenColors` ignored, both outputs with their head comments, the prettier form, `--check`, a byte-identical second run, and a pure `mapTheme`.
+- 2: holds. `cases.ts` reproduces cases 1, 11, 12 and 13, and `mapTheme` did not change in the round.
+- 3: holds. The `WORKBENCH` table has 28 entries, and `readGit` runs at run time.
+- 4: holds. The contrast test passes 40 of 40 with no timeout, over 34 rows. The text-on-tint pairs went from 226 failures on the base (`tintbase.ts`) to 0. The threshold is unchanged.
+- 5: holds. The 19 `vscode-*` rows are in the brief's order, and `THEME_SHEETS` is the default in `applyTheme`, `themeClasses` and `tokenNames`.
+- 6: holds. A rule's `fontStyle` is kept whenever the theme sets it (convert-vscode-themes.ts:497, 509), 102 rules as in VS Code's own files. `ownRules` passes `""` through (theme.ts:204), and `e2e.ts` shows the reset reaching what Monaco draws. A side effect on the semantic-token rules is Behaviour 1 below; it gets no verdict.
+- 7: holds. `DESIGN.md:244` and `docs/views.md:243` carry the round's wording. A remaining incomplete clause is Standards 2 below; it gets no verdict.
+- 8: holds. `vscode.css` is 711 lines and `vscode-rules.json` 3760. `themes.css` went from 846 to 776. The folders hold 8 and 4 items.
+
+Cases:
+
+- 1: met (`cases.ts`).
+- 2: met (`c239.ts`).
+- 3: met. All 19 files parse, and an invalid one stops the run naming it (the report's run and the first review's).
+- 4: met. The missing folder, the missing include and the missing listed file each stop the run with the path and `--from`, exit 1.
+- 5: met. The writing run left both hashes unchanged, and `--check` exits 0. With no outputs, `--check` exits 1 naming 19 blocks and 19 rule sets. Prettier passes.
+- 6: met. 40 of 40 with `--testTimeout 0`, 226 base failures reproduced, and the light Modern `--tab-inactive-txt` is still `#717171`. At load 12.6 and the default 5000 ms, the lane-text case timed out once (12386 ms). It is not the step's: it passed in the scoped run and in the run with no timeout.
+- 7: met by reading `appearance.yml`. What the picker shows is for the look.
+- 8: met for everything a run can show. `paint.ts`, `c8b.ts` and `e2e.ts` cover the real painter, each theme's own rules and the reset font styles, and Monokai's `support.type` is cyan and italic. The drawn editor, the diff tints and the status bar are for the landing look on TEST.
+- 9: met (`c9.ts`). `--bg` `#181818` matches `WINDOW_BACKGROUND`.
+- 10: met by reading. The page is for the look.
+- 11: met (`cases.ts`).
+- 12: met (`cases.ts`). The block comments name the sources.
+- 13: met (`cases.ts`). Muted is below ink for all three themes.
+- 14: met. On the converter side, `r1/root` gives the bogus row, exit 1. The `themes.ts` side holds by reading `themes.ts:46-53` and the `c14b.ts` run.
+
+The closures the round claims:
+
+- Item 1 is closed by a fix, not by removing a check. The JSON changes only by the 102 empty font styles (99 on existing rules, 3 new rules), and `vscode.css` is byte-identical.
+- How Monaco reads an empty `fontStyle` (orchestrator point 1):
+  - `parseTokenTheme` (`monaco-editor/esm/vs/editor/common/languages/supports/tokenization.js:28-49`) reads a string `fontStyle`, the empty one included, as `FontStyle.None`. That overwrites an inherited italic or bold, since `acceptOverwrite` skips only `NotSet`.
+  - Shiki's bridge gives every rule it defines a string `fontStyle` anyway (`normalizeFontStyleString(undefined)` returns `""`, `@shikijs/monaco/dist/index.mjs`). So at Monaco's level every bridged rule already resets.
+  - What decides the drawn style is Shiki's tokenizer (`@shikijs/vscode-textmate`: `""` is None, an absent key is NotSet and inherits). The bridge then picks the Monaco rule by colour and style.
+  - `e2e.ts` shows the effect. Under round 0, Quiet Light's `#if 0` body was italic and the Solarized setext underline bold. Now both are upright in the theme's colour, while `// note` stays italic and `# Atx` bold.
+- No other theme's TextMate drawing changes. The other 11 VS Code themes and the non-VS-Code themes have identical rules, and the block sheet is unchanged.
+- Item 2 is reproduced.
+- Item 3: the check is removed. A loop now ends in "Maximum call stack size exceeded", which the run's `catch` reports with exit 1 and no file named. `build()` runs before any write (convert-vscode-themes.ts:756-760, 792-793).
+- Items 4 and 5 match the round's words. The 19 labels are in `appearance.yml`'s order, compared label by label.
+- Item 6 is reproduced: 28 entries and 262 lines, and the file table marks `kit/look.ts` with its reason (report lines 146, 162).
+- `test:quick` took 28.0 s against the 45.0 s limit (orchestrator point 6).
+
+### Findings
+
+- Behaviour 1. `src/lib/ui/controls/editor/kit/theme/semantic.ts:84` and `:104-110`, fed by the three new font-style-only rules of `vscode-rules.json`.
+  - The hunks: "if (best === null || (best.foreground === undefined && best.fontStyle === undefined))" and "...(paint.fontStyle === undefined || paint.fontStyle === '' ? {} : { fontStyle: paint.fontStyle })".
+  - What is wrong:
+    - `paintOf` takes the most specific matching rule. For Abyss's `variable` and `support.other.variable` and Monokai's `support.other.variable`, that is now a rule with no foreground and `fontStyle: ""`.
+    - `paintOf` returns it, since `fontStyle` is defined. `semanticRules` then drops the empty style, so the rule it pushes carries neither colour nor style.
+    - `sem.ts` shows 7 such rules: Abyss `variable`, `property`, `enumMember`, `variable.readonly`, `property.readonly` and `variable.defaultLibrary`, and Monokai `variable.defaultLibrary`. Under round 0 there was no rule for any of them.
+    - Each one puts its lookup into `ruled`. `lsp/semantic.ts` then keeps those clangd tokens, and Monaco paints them from a trie entry cloned from the root, which is the editor's default foreground with no style. Before the round the provider left them to Shiki's colour, which is the contract `lsp/semantic.ts:4-7` states ("a token of a row the theme does not colour keeps Shiki's colour").
+    - The report does not state this change. Its sentence "`semanticRules` (`kit/theme/semantic.ts:108`) already reads an empty font style as none" does not hold: line 108 drops the key, which Monaco reads as NotSet, not None.
+  - Failure scenario: under `vscode-abyss`, a C file served by clangd has an identifier clangd types as variable, property or enum member. Under `vscode-monokai`, an identifier clangd types as variable.defaultLibrary (`errno`, `stdout`). Each is painted in the default foreground, with Shiki's TextMate colour dropped. Where that TextMate colour came from a rule that sets a foreground, the identifier changes colour. I found no identifier where the two colours differ, and I did not look at a drawn page.
+  - Fix at landing: `semanticRules` treats a paint with no foreground and an empty or absent font style as no paint (`continue`), so such a row stays unruled.
+  - Heading: Behaviour. No verdict.
+- Standards 2. `DESIGN.md:244`.
+  - The hunk: "`tokens.css` and `themes.css` hold the colours ported from the cockpit, a type scale and radii set on VS Code's measures, and the theme blocks, which override tokens and nothing else".
+  - What is wrong: since the step, the theme blocks live in `themes.css` and `vscode.css`. The opening clause still places all of them in the two hand-kept sheets, and two sentences later the paragraph says `vscode.css` holds one block per VS Code theme. This breaks the rules file's rule that a sentence a change makes false is a defect of the change (`agents/spec.md`, "What every package obeys").
+  - Failure scenario: a reader looking for where a theme block lives starts with `tokens.css` and `themes.css` and does not find the 19 VS Code blocks there.
+  - Fix at landing: "and the ported theme blocks". The clause came in with round 0, not this round.
+  - Heading: Standards. No verdict.
+- Proof notes, none a finding, since no decision rests on them:
+  - The report says the contrast test passes "on all 36 rows". `appearance.yml` has 34 rows, and the test prints 34 per-theme cases.
+  - The report's "Anything in the brief that was wrong" item 6 says `src/lib/themes` "takes two plus `vscode.css` and `vscode-rules.json`". The brief's two files are those two (6 to 8 items), so the brief was right.
+  - The report counts 7 default-timeout failures under plain `npx vitest run tests/checks`; my run had 6. All 265 tests pass with no timeout.
+
+### Declined to judge
+
+- The drawn result on TEST (cases 7, 8 and 10, and the seven themes the brief's look names). It needs the app, which a reviewer does not start.
+- Whether any identifier under Abyss or Monokai actually changes colour through Behaviour 1. It needs clangd serving a C file in the running editor, or a token-by-token comparison of clangd's types against Shiki's scopes, which a read and a rerun here do not give.
+- Whether the semantic rows reach a style VS Code does not draw in the other themes. `semanticRules` and `paintOf` are outside the round's changed lines, and only Behaviour 1's seven rules changed between round 0 and now (`sem.ts`).
+- The open items the report copies are 27 and 28. The state file now lists both as closed. The report was copied when it was written, so I did not judge the copy.
+
+Reviewer usage: agent id not visible to me, claude-opus-5-5, about 260,000 tokens, about 55 tool uses, about 22 minutes.
+
+## Closed
+
+- Repair round 1, Behaviour 1 (`kit/theme/semantic.ts`, a paint with no foreground and an empty font style made a semantic rule with neither): fixed at landing, `semanticRules` skips such a paint so the row stays unruled and keeps Shiki's colour.
+- Repair round 1, Standards 2 (`DESIGN.md:244`, the opening clause places every theme block in `tokens.css` and `themes.css`): fixed at landing, "and the ported theme blocks".
+- Repair round 1, the proof notes (36 rows, the folder count, 7 timeouts): no decision rests on them; noted in the landing report.

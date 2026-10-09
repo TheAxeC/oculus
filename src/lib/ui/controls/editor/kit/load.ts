@@ -14,9 +14,12 @@
 // one hook its worker loading reads.
 //
 // Monaco holds one theme for the whole page, and so does this module: `paint` builds the theme from
-// the tokens in force and the code theme chosen (`tokens`, or the id of a Shiki theme whose scoped
-// syntax rules replace the tokens' rules, kit/theme/theme.ts's `codeRules`) and sets it on every
-// editor, doing nothing when neither has moved, so each editor may call it on every theme change.
+// the tokens in force, the body's class string and the code theme chosen (`tokens`, or the id of a
+// Shiki theme whose scoped syntax rules replace the tokens' rules, kit/theme/theme.ts's
+// `codeRules`) and sets it on every editor, doing nothing when none of them has moved, so each
+// editor may call it on every theme change. Under `tokens`, the class of a VS Code theme
+// (themes/vscode.css) gives the theme that VS Code theme's own rules (`ownRules`) in place of the
+// six code hues; a class with no entry leaves the hues.
 // Shiki's bridge (`shikiToMonaco`) defines a Monaco theme for each theme a highlighter holds, wraps
 // Monaco's `setTheme` and `create` to keep its tokens coloured by the theme set, and gives each
 // language a tokens provider over that highlighter, for the languages the highlighter has loaded
@@ -68,16 +71,20 @@ import { registerFolding } from './folding';
 import { createLspKit, type LspKit } from './lsp/hosts';
 import { Signal } from './lsp/signal';
 import { semanticRules } from './theme/semantic';
-import { codeRules, editorTheme } from './theme/theme';
+import { codeRules, editorTheme, ownRules } from './theme/theme';
 import type { EditorEnding, EditorKey, KeyPress } from '../types';
 import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
 import type { BundledLanguage, BundledTheme, LanguageRegistration, ThemeRegistration } from 'shiki';
 
 /**
- * Paint the page's theme from a reading of the tokens and a code theme (`tokens`, the default, or
- * a Shiki theme id), answering the theme's name once it is in force.
+ * Paint the page's theme from a reading of the tokens, a code theme (`tokens`, the default, or a
+ * Shiki theme id) and the body's class string, answering the theme's name once it is in force.
  */
-export type Paint = (read: (token: string) => string, code?: string) => Promise<string>;
+export type Paint = (
+    read: (token: string) => string,
+    code?: string,
+    classes?: string
+) => Promise<string>;
 
 /** The edits one model's owner answers a Format Document with. */
 export type Format = (model: Monaco.editor.ITextModel) => Promise<Monaco.languages.TextEdit[]>;
@@ -411,18 +418,18 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
         parts.shikiToMonaco(highlighter, parts.monaco as never);
     }
 
-    async function paintNow(read: (token: string) => string, code: string): Promise<string> {
+    async function paintNow(
+        read: (token: string) => string,
+        code: string,
+        classes: string
+    ): Promise<string> {
         if (ended()) return THEME;
         const { textmate } = editorTheme(read, THEME);
         const id = known.has(code) ? code : '';
-        const signature = JSON.stringify([
-            id,
-            textmate.type,
-            textmate.colors,
-            textmate.tokenColors
-        ]);
+        const tokenColors = (id === '' ? ownRules(classes) : undefined) ?? textmate.tokenColors;
+        const signature = JSON.stringify([id, textmate.type, textmate.colors, tokenColors]);
         if (signature === painted) return THEME;
-        const theme = id === '' ? textmate : { ...textmate, tokenColors: await rulesOf(id) };
+        const theme = { ...textmate, tokenColors: id === '' ? tokenColors : await rulesOf(id) };
         const langs = [...parts.langs, ...loaded].map(parts.source);
         const next = await parts.createHighlighter({ themes: [theme], langs });
         if (ended()) {
@@ -477,7 +484,7 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
     }
 
     return {
-        paint: (read, code = '') => enqueue(() => paintNow(read, code)),
+        paint: (read, code = '', classes = '') => enqueue(() => paintNow(read, code, classes)),
         ensureLanguage,
         ruled: () => ruled,
         onPainted: repainted.event,

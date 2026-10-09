@@ -3,9 +3,9 @@
      - chrome  (--bg/--panel/--card/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
      - palette (--c-*), the status hues shared by the sheets and the config vocabulary.
    A theme is a block of overrides on these tokens and never a per-rule edit; themes.css holds the
-   sixteen blocks. Every colour a component uses resolves through a token here, so the contrast test
-   can walk them all. The -txt and --on-* tokens the components read are derived from these by
-   derive.ts, the way the cockpit derived them at build time. */
+   ported blocks and vscode.css the generated ones. Every colour a component uses resolves through
+   a token here, so the contrast test can walk them all. The -txt and --on-* tokens the components
+   read are derived from these by derive.ts, the way the cockpit derived them at build time. */
 :root {
     --bg: #f1f5f9;
     --panel: #fff;
@@ -56,7 +56,7 @@
     --c-grey-d: #6b7280;
     /* code window: one hue per role the highlighter marks, so the window is re-coloured here and
        never in the component. They are palette entries so derive.ts mints their `-txt` against each
-       theme's own surfaces, which is what keeps the code readable in all seventeen. */
+       theme's own surfaces, which is what keeps the code readable in every theme. */
     --c-code-keyword: #7c5cff;
     --c-code-string: #16a34a;
     --c-code-number: #ea580c;

@@ -9,6 +9,7 @@
 
     import '$lib/themes/tokens.css';
     import '$lib/themes/themes.css';
+    import '$lib/themes/vscode.css';
     import '$lib/themes/code.css';
     import '$lib/themes/slide.css';
     import favicon from '$lib/assets/favicon.svg';

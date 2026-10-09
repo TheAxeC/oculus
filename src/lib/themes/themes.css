@@ -1,19 +1,15 @@
 /* The themes. Fourteen blocks are ported from the cockpit's assets/css/08-themes.css and
-   01-base.css with their token values unchanged; the two VS Code blocks below are oculus's own and
-   their values are authored here, which is why they are the only ones an adjustment may touch. A
-   theme is a block of token overrides, so no component knows a theme exists. A dark theme's block
-   also sets `color-scheme: dark`, so the page's native controls and scrollbars and the frame of an
-   app follow it; the light themes take the base `color-scheme: light` of tokens.css. The body
-   carries one palette class; the thirteen terminal palettes additionally carry `rice`, which holds
-   the shape they share (square corners, no shadow, monospace chrome, one step down the type scale).
-   `crt` is an independent overlay that goes on any of them.
+   01-base.css with their token values unchanged. The VS Code themes are not here: they are
+   generated into vscode.css by utils/migrations/convert-vscode-themes.ts from the theme files of
+   the installed VS Code. A theme is a block of token overrides, so no component knows a theme
+   exists. A dark theme's block also sets `color-scheme: dark`, so the page's native controls and
+   scrollbars and the frame of an app follow it; the light themes take the base `color-scheme:
+   light` of tokens.css. The body carries one palette class; the thirteen terminal palettes
+   additionally carry `rice`, which holds the shape they share (square corners, no shadow,
+   monospace chrome, one step down the type scale). `crt` is an independent overlay that goes on
+   any of them.
    The theme names and the class string each one puts on the body are the `themes:` list of
-   config/appearance.yml; light is :root alone and carries no class.
-   The tab colours of the two VS Code Modern blocks are the ten tab keys of the installed VS Code's
-   dark_modern.json and light_modern.json: seven are surfaces the blocks already set (`--panel`,
-   `--bg`, `--line`, `--accent`), and the keys the surfaces do not give are the tokens
-   `--tab-active-txt` (dark), `--tab-inactive-txt` and `--tab-active-border` (light). The other
-   themes keep their own tab colours. */
+   config/appearance.yml; light is :root alone and carries no class. */
 
 body.dark {
     color-scheme: dark;
@@ -38,72 +34,6 @@ body.dark {
     --c-scm-added-bg: #0d2e28;
     --c-scm-deleted-bg: #351521;
     --c-scm-conflict-bg: #29133d;
-}
-
-/* --- VS Code Dark Modern ------------------------------------------------- */
-/* oculus's own two blocks, not ported: VS Code's default pair since 2023, mapped onto the chrome
-   tokens. #181818 is its side bar, activity bar and status bar, #1f1f1f its editor, so the rail and
-   the page take the first and the panes the second. The red and amber tints are the dark theme's,
-   because a tint has to darken with the ground it sits on; every other hue inherits :root. */
-body.vscode-dark-modern {
-    color-scheme: dark;
-    --bg: #181818;
-    --panel: #1f1f1f;
-    --card: #262626;
-    --ink: #cccccc;
-    --muted: #9d9d9d;
-    --line: #2b2b2b;
-    --chip: #262626;
-    --accent: #0078d4;
-    --shadow: none;
-    --c-red-bg: #3b1212;
-    --c-red-s: #7f1d1d;
-    --c-amber-bg: #3b2f0b;
-    --c-amber-s: #5c4a14;
-    /* Source Control: added, modified, deleted and conflicted paths and lines. */
-    --c-scm-added: #81b88b;
-    --c-scm-modified: #e2c08d;
-    --c-gutter-modified: #0078d4;
-    --c-scm-deleted: #c74e39;
-    --c-scm-conflict: #e4676b;
-    --c-scm-added-bg: #2d382f;
-    --c-scm-deleted-bg: #3b231f;
-    --c-scm-conflict-bg: #412829;
-    /* The tab strip's colours that the surfaces do not already give, from dark_modern.json: the
-       shown tab's label (tab.activeForeground). Its other keys are the surfaces this block sets:
-       tab.activeBackground is --panel, tab.inactiveBackground and editorGroupHeader.tabsBackground
-       are --bg, tab.border and editorGroupHeader.tabsBorder and tab.unfocusedActiveBorderTop are
-       --line, tab.activeBorderTop is --accent, tab.activeBorder is the shown tab's own --panel,
-       and tab.inactiveForeground is --muted. */
-    --tab-active-txt: #ffffff;
-}
-
-/* --- VS Code Light Modern ------------------------------------------------ */
-body.vscode-light-modern {
-    --bg: #f8f8f8;
-    --panel: #ffffff;
-    --card: #f3f3f3;
-    --ink: #3b3b3b;
-    --muted: #616161;
-    --line: #e5e5e5;
-    --chip: #f3f3f3;
-    --accent: #005fb8;
-    /* Source Control: added, modified, deleted and conflicted paths and lines. */
-    --c-scm-added: #587c0c;
-    --c-scm-modified: #895503;
-    --c-gutter-modified: #005fb8;
-    --c-scm-deleted: #ad0707;
-    --c-scm-conflict: #a31515;
-    --c-scm-added-bg: #d8dfc9;
-    --c-scm-deleted-bg: #e9c8c8;
-    --c-scm-conflict-bg: #e7cbcb;
-    /* The tab strip's colours that the surfaces do not already give, from light_modern.json: the
-       other tabs' label (tab.inactiveForeground, darkened from #868686 to reach 4.5:1 on the
-       strip) and the line under the shown tab (tab.activeBorder), which is the strip's colour. Its
-       other keys are the surfaces this block sets, as in the dark block, and tab.activeForeground
-       is --ink. */
-    --tab-inactive-txt: #717171;
-    --tab-active-border: #f8f8f8;
 }
 
 /* --- Catppuccin Mocha ---------------------------------------------------- */
