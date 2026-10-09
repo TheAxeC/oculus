@@ -37,6 +37,18 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D41-brief-check.md (ac604810d19c5e3dc, claude-opus-5-5, 322,042 tokens, 110 tool uses, 15.3 min; closed inline in the brief by the orchestrator)
   landing: not-started
   round: 0
+- step: D57
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: aa332d0db41803a43 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D57
+  base: 55d0ba416
+  launched: 2026-10-09
+  report: agents/reviews/D57-report.md
+  brief_check: agents/reviews/D57-brief-check.md (a7d14de49f99d0e6e, claude-opus-5-5, 223,069 tokens, 63 tool uses, 8.7 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: tools/oculus/DESIGN.md with D41 (D41 lines 23, 166, 503, 575-576, D57 line 238; different lines, the merge is simple)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
