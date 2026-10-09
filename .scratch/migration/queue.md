@@ -1,6 +1,17 @@
 In flight (1 of 6 slots in use): D41 (links in Markdown checked), builder launched 2026-10-09.
 
-Queued, in order (3 steps):
+Queued, in order (14 steps):
+- D46 (the VS Code palette keys): waiting for Axel's check of the bookings.
+- D47 (one Session view): waiting for Axel's check of the bookings.
+- D48 (side projects with the research keys that apply, and smaller Focus rows): waiting for Axel's check of the bookings.
+- D49 (the help pages cut): waiting for Axel's check of the bookings.
+- D51 (themes from VS Code's theme files): waiting for Axel's check of the bookings.
+- D52 (a page per collection entry): waiting for Axel's check of the bookings.
+- D53 (unique views): waiting for Axel's check of the bookings.
+- D50 (the hub's own folder, its shareable files and its settings layer): waiting for Axel's check of the bookings.
+- D55 (roots as hubs): waiting for Axel's check of the bookings.
+- D56 (the workbench): waiting for Axel's check of the bookings.
+- D57 (an empty pane closes): waiting for Axel's check of the bookings.
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (the first-run check): paused (Axel).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
