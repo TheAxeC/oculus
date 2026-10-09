@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z762 (2026-10-09, step D55, the orchestrator, automode): the shapes of a second hub
+
+- Chosen: (a) `hub: true` on a `roots:` entry of the first hub's layer, with findings for a non-boolean, a hub inside, holding or equal to the first, and a key `side`, `root` or one holding `:`; (b) a second hub's ids `<root key>:<id>`, references never crossing hubs; (c) a `root` field on every record (`hub` or the root key), paths relative to their own hub; (d) each hub built with its own settings, the page's settings and `roots:` the first hub's; (e) career and website the first hub's, feeds and audit merged; (f) a write goes to its record's hub, a new record to the first, the change log naming a second hub's file by its absolute path; (g) a root-key chip on a second hub's cards, rows and entry pages; (h) every hub's `secrets` private; (i) a hub root's own `.oculus/project.yml` not a side project.
+- Not chosen: bare ids with collisions refused (the lazy option, against the step's line); `/` as the separator (reads as a path); a hub per page; asking which hub for a new record; a second hub's career and website.
+
+Where it applies: D55. Booked in `plan.md` Rulings (and D55's Step 0) and the closed log of `orchestrator-history.md`.
+
 ## Z761 (2026-10-09, step R2, the orchestrator, automode): the supported Node, an unreadable hub, and the app's install check
 
 - Chosen: (a) Node `^24.15.0 || >=26.0.0`, the range every installed package accepts, in `engines`, the start check and the docs, `engine-strict` kept; (b) an unreadable hub reported as the hub lack with its error code; (c) `preapp` runs only the Node and packages check, the app checking the hub and programs over its own engine.
