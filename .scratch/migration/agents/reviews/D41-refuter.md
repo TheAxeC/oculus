@@ -349,3 +349,12 @@ Behaviour
 - The page cases 5, 6, 21, 22, 29 (bar and note), 33 and 34 are for the look on landing.
 
 Reviewer usage: agent id not known to me, claude-opus-5-5, tokens not known, about 75 tool uses, about 40 minutes.
+
+## Closed (at landing)
+
+- Spec 1 (the Markdown server told of a file under `secrets`, a dot folder or `node_modules`): closed at landing. `server/machine/lsp/held/watch.ts` gains `entryFiles(globs, refused)`, a match that drops a path under a dot folder or `node_modules` and a path the entry's `refuses` withholds; `held.ts` `#watchEntryFiles` registers through `registerMatch` with it. Test: `tests/server/machine/lsp/adapters/markdown-requests.test.ts`, four rows "tells the server a change on disk of %s: %s" (a file at the root and in a folder told; a file under `secrets` and under `node_modules` not told).
+- Spec 2 (G36's Code line): closed at landing. `agents/guarded.md` G36's Code line names `held/requests/links.ts`.
+- Proof 1 (the palette Save's line): no change needed. The palette path is `shell/Workbench.svelte:238` to `ask-perform.ts:60` to `tab-save.svelte.ts` to `saveSourceDraft`, the reviewer's reading, and case 29 is met by it.
+- Behaviour 1 (a root that does not answer beside one that does): closed at landing. `held/requests/links.ts` answers `unanswered: string[]` beside the edit, and `no_answer` only when no root answered; `model-machine.ts`'s `links_answer`, `lsp.svelte.ts`'s `LinksReply` and `link-rewrite.ts` carry it, the last saying `md_links_no_answer` for each root named. Tests: `tests/server/machine/lsp/lifetime.test.ts` "a link rewrite of a move two roots hold" (the inner root answers, the outer one times out, `unanswered: ['repo']`) and `tests/state/system/link-rewrite.test.ts` (three rows). `DESIGN.md:576` states it.
+- Behaviour 2 (a restored tab whose file is gone while the served roots' read has failed): closed at landing. `SourceDeps.rootsFailed` (`state/client/context.ts`: `fs.workspaces().error !== ''`) lets `source.svelte.ts` settle the 404 at once when the read failed. Test: `tests/state/sessions/source.test.ts` "a restored source tab whose file is gone, before the served roots are known" (two rows).
+- Behaviour 3 (the 60 s timeout said as "could not be asked"): closed at landing. `lsp.svelte.ts` ends a timed-out request with `no_answer` and a failed write with `unsent`.

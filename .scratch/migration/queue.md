@@ -1,9 +1,9 @@
 In flight (6 of 6 slots in use):
-- D41 (links in Markdown checked): landing, its gate running, launched 2026-10-09.
+- D41 (links in Markdown checked): taken back before main at its landing (the look's case 34 failed); its cause being diagnosed, launched 2026-10-09.
 - D46 (the VS Code palette keys): builder resumed with the ruling on the 50 ms bound, launched 2026-10-09.
-- D47 (one Session view): repair round 1 sent, launched 2026-10-09.
+- D47 (one Session view): review over repair round 1 running, launched 2026-10-09.
 - D48 (side projects with the research keys that apply, and smaller Focus rows): builder running, launched 2026-10-09.
-- D51 (themes from VS Code's theme files): builder resumed with the ruling on a case of its first run, launched 2026-10-09.
+- D51 (themes from VS Code's theme files): first review running, launched 2026-10-09.
 - D52 (a page per collection entry): builder running, launched 2026-10-09.
 
 Queued, in order (8 steps):

@@ -37,7 +37,7 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D41-brief-check.md (ac604810d19c5e3dc, claude-opus-5-5, 322,042 tokens, 110 tool uses, 15.3 min; closed inline in the brief by the orchestrator)
   reviewer_report: agents/reviews/D41-refuter.md (a0542130f88439869, claude-opus-5-5, 78,020 tokens, 114 tool uses, 28.4 min); over round 1: a33f9e7d18db3918b, claude-opus-5-5, 272,363 tokens, 95 tool uses, 39.0 min
   round_1: agents/briefs/D41-round1.md, sent to the builder over the tree copied at .agents/worktrees/D41-round0
-  landing: cherry-picking
+  landing: backed-out
   round: 1
 - step: D46
   executor: agent
@@ -61,7 +61,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 5f08fde1a
   launched: 2026-10-09
   report: agents/reviews/D47-report.md
-  builder_usage: 118,882 tokens, 144 tool uses, 59.6 min
+  builder_usage: 118,882 tokens, 144 tool uses, 59.6 min; round 1: 237,020 tokens, 71 tool uses, 28.3 min
   brief_check: agents/reviews/D47-brief-check.md (a176332cf8ff0b352, claude-opus-5-5, 229,921 tokens, 87 tool uses, 10.2 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D46, config/text/app.yml line 13 (the same line: D47 changes `m1-m7`, D46 adds the palette rows; merged by hand at the later landing) and HELP.md (D47 lines 43, 134, 138-139, D46 lines 79-80); with D57, instances.ts (D57 line 83, D47 lines 139 and 164), saved/saved.ts (D57 lines 18, 372, 556-557, 604; D47 lines 526 and 562), config/layout.yml (D57 line 44, D47 line 65) and DESIGN.md (D57 line 238); with D41, DESIGN.md (D41 lines 23, 166, 575-576; D47 lines 225, 456), docs/views.md (D41 lines 73, 213; D47 lines 159-181) and sections/Outline.svelte (D41 the head comment and lines 147-151, D47 the import line); different lines except app.yml, each merge simple; config/behavior.yml line 257 and config/catalogs/options.yml line 832 (the Changes view's sentence), with D46 (behavior.yml 263-267, options.yml), D48 and D50 (options.yml), different lines, the merge simple
   reviewer_report: agents/reviews/D47-refuter.md (af6ed9204a4a55b6f, claude-opus-5-5, 295,499 tokens, 92 tool uses, 39.4 min)
@@ -91,7 +91,7 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D51-brief-check.md (a3f85385ee8a110b3, claude-opus-5-5, 261,325 tokens, 73 tool uses, 15.3 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D47 (225, 456), D48 (552) and D57 (238), D51 lines 72, 244 and 565; docs/views.md with D41 (73, 213), D47 (159-181) and D48 (5-7, 21-23), D51 line 243; src/lib/ui/controls/editor/kit/load.ts with D46 (lines 64 and 221-226), D51 the rules lookup near 370-405; docs/diagrams/ regenerated at landing; different lines, each merge simple
   cases_ruling: agents/briefs/D51-cases.md (case 13 to option A, `--bg` from the side bar VS Code draws, the tint pairs for every theme)
-  builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13)
+  builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13); 246,281 tokens, 135 tool uses, 64.3 min (resumed on the cases ruling, to the report)
   landing: not-started
   round: 0
 - step: D52
@@ -222,7 +222,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- 27. The hub's `network/events.yml` fails its own schema since your commit f28e137f1: the entry "Research visit - Linkoping (Sweden)" (`entries[2]`, line 47) lost its `status: planned` line, and the file's `schema:` block (line 9) marks `status` as `required: true`. The landing gate's `tests/checks/config/integrity.test.ts` "validates with no findings" fails on it with "key entries[2].status is required", on main as on D41 (D41 changes no file under `network/` and no schema). (a) Recommended: put a status back on the entry; `planned` is what it held, and every other entry carries one. (b) Make `status` optional in the file's `schema:` block, so a dated entry may carry none. (c) Leave it, which keeps the integrity check red at every landing; this is the lazy option. Both files are yours, so I change neither until you rule. D41 lands with this red line named as main's, not D41's.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -306,6 +306,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (D41 taken back). D41's landing stopped before main was touched: the gate passed `npm run test:landing` but for the integrity check of Axel's `network/events.yml` (open item 27), and the look failed case 34 (Shift+F12 on a Markdown heading finds no references; cause not known), recorded in D41's Step 0; the fixes at landing are committed on the branch D41 (ce1eafcc8), the guarded lines in `agents/reviews/D41-guarded.patch`. In flight: D46, D48, D52 (builders), D47 (review over round 1), D51 (first review), D41 (backed out, its slot held). Next: /diagnose D41 red line, then /spec D41 again; D50's preparation and dispatch when a slot frees.
 - 2026-10-09 (after D57). D57 landed (an empty pane closes; booking in plan.md; `agents/reviews/D57-landing.md`) after one repair round and the review over it; fixes at landing: the Page 1 sentence of `docs/window.md`, the `registry.ts` comment, three test files tagged slow under Z64. In flight: D41 (review over round 1 back, landing next), D46 (builder resumed with the ruling on the 50 ms bound), D47 (review back, repair round 1 being written), D48 and D51 (builders running). Next: D52 dispatched into D57's slot (base d7a654584); /land D41; D47's repair round 1. D50 waits for Axel on open items 25 and 26.
 - 2026-10-09 09:40. D41 prepared (base 53fa9b002, brief `agents/briefs/D41.md` with every closure of its brief check) and its builder af88be61741f59b6d (claude-sonnet-5-5) launched in `.agents/worktrees/D41`, base copy in `.agents/worktrees/D41-base`. Nothing else in flight; every other queued step is paused by Axel. Next: D41's build, /refute D41, /land D41.
 - 2026-10-09 09:11. /spec D41 stopped on open item 24 (G3's wording for the Markdown server), after the brief check (`agents/reviews/D41-brief-check.md`, ac604810d19c5e3dc, claude-opus-5-5); every other finding closed as written under its "Closed" or as Z743 in automode. Open items 22 and 23 ruled (a). The brief draft is not in the ledger (the stop removes it); the next /spec writes it again with the closures. Nothing in flight; every other queued step is paused by Axel. Next: Axel's ruling on 24, then /spec D41.
