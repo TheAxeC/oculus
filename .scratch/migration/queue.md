@@ -4,7 +4,7 @@ In flight (6 of 6 slots in use):
 - D48 (side projects with the research keys that apply, and smaller Focus rows): repair round 1 running, launched 2026-10-09.
 - D50 (the hub's own folder, its shareable files and its settings layer): builder running, launched 2026-10-09.
 - D51 (themes from VS Code's theme files): review over repair round 1 running, launched 2026-10-09.
-- D52 (a page per collection entry): first review running, launched 2026-10-09.
+- D52 (a page per collection entry): repair round 1 running, launched 2026-10-09.
 
 Queued, in order (7 steps):
 - D49 (the help pages cut): waits for D46, whose text in docs/window.md and docs/views.md it carries; D47's has landed.
