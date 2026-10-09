@@ -358,3 +358,203 @@ Reviewer usage: agent id not known to me, claude-opus-5-5, tokens not known, abo
 - Behaviour 1 (a root that does not answer beside one that does): closed at landing. `held/requests/links.ts` answers `unanswered: string[]` beside the edit, and `no_answer` only when no root answered; `model-machine.ts`'s `links_answer`, `lsp.svelte.ts`'s `LinksReply` and `link-rewrite.ts` carry it, the last saying `md_links_no_answer` for each root named. Tests: `tests/server/machine/lsp/lifetime.test.ts` "a link rewrite of a move two roots hold" (the inner root answers, the outer one times out, `unanswered: ['repo']`) and `tests/state/system/link-rewrite.test.ts` (three rows). `DESIGN.md:576` states it.
 - Behaviour 2 (a restored tab whose file is gone while the served roots' read has failed): closed at landing. `SourceDeps.rootsFailed` (`state/client/context.ts`: `fs.workspaces().error !== ''`) lets `source.svelte.ts` settle the 404 at once when the read failed. Test: `tests/state/sessions/source.test.ts` "a restored source tab whose file is gone, before the served roots are known" (two rows).
 - Behaviour 3 (the 60 s timeout said as "could not be asked"): closed at landing. `lsp.svelte.ts` ends a timed-out request with `no_answer` and a failed write with `unsent`.
+
+# Prepared again from main, base d13535993
+
+## Step D41 refuter report (on .agents/worktrees/D41, base d13535993)
+
+A page this report cites (the rules file, a standard, a skill's text) is named with its section, never with a line number, since a page's lines move and a section's name does not. A finding in code keeps its `file:line`.
+
+### Verification (rerun by the reviewer)
+
+```
+$ npm run test:quick -- --base d13535993      (from .agents/worktrees/D41/tools/oculus, node v24.21.0, load average 7.5 to 12.7)
+        tests/checks/source/keys.test.ts: changed, run by npm run test:checks
+        tests/server/machine/lsp/adapters/markdown-created.test.ts: changed, run by npm run test:slow
+ok      ASCII gate (5.2 s)
+ok      svelte-kit sync (5.2 s)
+ok      prettier (5.2 s): All matched files use Prettier code style!
+ok      eslint (44.0 s)
+ok      svelte-check (57.3 s): 1791564330934 COMPLETED 444 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (98.2 s): Duration  93.04s (transform 128.67s, setup 0ms, import 183.73s, tests 176.19s, environment 410ms)
+test:quick: 103.6 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+second run:
+test:quick: 93 changed file(s), from git since d13535993
+test:quick: 119 test file(s), 10 essential
+test:quick: 125.0 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+
+$ npx vitest run tests/server/machine/lsp/adapters/markdown-requests.test.ts tests/server/machine/lsp/uris.test.ts tests/server/machine/lsp/lifetime.test.ts
+ Test Files  3 passed (3)
+      Tests  89 passed (89)
+
+$ npx vitest run --testTimeout 0 --hookTimeout 0 tests/checks/tree tests/checks/source/keys.test.ts tests/checks/config/config.test.ts tests/checks/source/history.test.ts tests/checks/source/comment-width.test.ts tests/checks/diagrams tests/state/sessions/source.test.ts tests/state/system/link-rewrite.test.ts tests/state/system/refactor-preview.test.ts tests/ui/controls/editor/lsp-transport.test.ts tests/checks/imports
+ Test Files  15 passed (15)
+      Tests  201 passed (201)
+(the same set with the default 5000 ms timeout, load average about 17: 9 tests timed out in order, diagrams and comment-width; none failed on an assertion)
+
+$ wc -l relay.ts servers.ts ops.svelte.ts Editor.svelte
+     880 / 879 / 696 / 518
+
+$ sh utils/folder-check.sh; echo folder=$?
+folder=0
+$ sh utils/unused-exports.sh > $TMPDIR/rv41-unused.txt; diff it .agents/worktrees/D41-base/tools/oculus/unused-exports.txt
+diff=0, 364 lines each   (the report says 365 each; no decision rests on the count)
+(D41-base is at the new base: docs/window.md, which D57 changed, is byte-equal to the worktree's)
+
+$ HOME=$TMPDIR/rv41home npx vitest run tests/server/machine/lsp/adapters/markdown-created.test.ts --testTimeout 20000 --reporter=verbose   (twice)
+ ok 'a file created after the first refere...' 722ms / 405ms
+ ok 'a file moved after the first referenc...' 755ms / 400ms
+ ok answers a second move from the files as the first move left them 412ms / 196ms
+ Test Files  1 passed (1)   Tests  3 passed (3)   (both runs)
+
+$ spec.md perl ASCII gate over $(find src tests config -type f ! -name local.yml)
+ascii=0, no output
+$ LC_ALL=C grep -n '[^ -~]' DESIGN.md docs/files-and-search.md docs/views.md README.md ../../docs/DATA-MAP.md
+(no output)
+$ history words (before, used to, no longer, still, always, previously, as before, the step adds) over notices.ts and markdown-created.test.ts
+notices.ts:50: "Send a list of changes after the lists before it."   (an ordering word, no history)
+$ awk 'length>100' over notices.ts, markdown-created.test.ts, held/watch.ts
+(no output)
+
+$ grep -rnE '^(<<<<<<<|>>>>>>>|=======$|\|\|\|\|\|\|\|)' --exclude-dir=node_modules --exclude=local.yml .  (worktree tools/oculus, .scratch left out)
+(no output); grep -rlE '^(<<<<<<< |>>>>>>> )' over the same: (no output)
+$ git status --short (worktree)
+UU tools/oculus/docs/diagrams/layer-views.dot      (index still unmerged; the file holds no marker and tests/checks/diagrams passes)
+?? tools/oculus/src/lib/server/machine/lsp/held/requests/notices.ts
+?? tools/oculus/tests/server/machine/lsp/adapters/markdown-created.test.ts
+
+servers.test.ts (the report's one unexplained failure at :228):
+$ npx vitest run tests/server/machine/lsp/servers.test.ts     six runs, load average 16.7 to 18.5
+      Tests  6 passed (6)   (each of the six)
+$ HOME=$TMPDIR/rv41home npx vitest run tests/server/machine/lsp --testTimeout 20000     three runs, load average 12.4 to 13.3
+ Test Files  12 passed (12)       Tests  175 passed (175)   (each of the three)
+
+Report evidence rerun (the builder's probe scripts in the session scratchpad probe/, from tools/oculus, TREE=$PWD HOME=$TMPDIR/rv41home node --experimental-strip-types --no-warnings <script>):
+$ stat.ts (HUB=the worktree root, which holds no secrets folder: test -d secrets printed no-secrets), three runs
+files=469 firstCall changes=0 secondCall changes=0 secondCallMs=1.5 / 1.4 / 1.2      (report: 2.8 ms)
+$ c34.ts MODE=created with OPEN_README=0, OPEN_README=1, OPEN_README=0 RESTART=1, OPEN_README=1 RESTART=1 (the last twice)
+MODE=created OPEN_README=0 references on ## Intro: ["hub/README.md:0"]
+MODE=created OPEN_README=1 references on ## Intro: ["hub/README.md:0"]
+MODE=created OPEN_README=0 references on ## Intro: ["hub/README.md:0"] / after restart references on ## Intro: ["hub/README.md:0"]
+MODE=created OPEN_README=1 references on ## Intro: ["hub/README.md:0"] / after restart references on ## Intro: ["hub/README.md:0"]   (both runs)
+$ c34.ts MODE=created FULL=1
+completion after ](: ["README.md","docs/","warm.md"]
+definition on [sec](docs/DATA.md#intro): {"uri":"oculus-file:///hub/docs/DATA.md","range":{"start":{"line":4,...
+prepareRename on ## Intro: {"range":{"start":{"line":4,"character":3},"end":{"line":4,"character":8}},"placeholder":"Intro"}
+rename ## Intro -> Start: DATA.md 4:3-4:8 "Start" and README.md 0:48-0:53 "start" (README.md not open)
+documentSymbol of DATA.md: ["# Data"]
+$ cl.ts CASE=23 GAP=0, 0, 10, 100
+      hub/README.md: 1:8-1:21=>"manual/DATA.md" ; 1:31-1:50=>"manual/DATA.md#intro" ; 1:57-1:70=>"manual/DATA.md"   (each of the four)
+$ cl.ts CASE=17 / 18 / 20
+case 17: hub/README.md: 1:8-1:20=>"guide/DATA.md" ; 1:30-1:48=>"guide/DATA.md#intro" ; 1:55-1:67=>"guide/DATA.md"; nothing written by the ask: true
+case 18: hub/docs/other.md: 1:15-1:27=>"../sub/README.md"; hub/sub/README.md: 1:8-1:20=>"../docs/DATA.md" ; 1:30-1:48=>"../docs/DATA.md#intro"
+case 20: inner/README.md: 1:8-1:20=>"guide/DATA.md"; hub/README.md: 1:8-1:32=>"tools/inner/guide/DATA.md" ; 1:39-1:63=>"tools/inner/guide/DATA.md"
+$ c1.ts
+c1.md [[0,2,"link.no-such-file","File does not exist at path: docs/missing.md"]]; c2.md []; c3.md []; c4.md []
+$ c5.ts
+resolve target: "oculus-file:///hub/docs/DATA.md"; "oculus-file:///hub/docs/DATA.md#L5,1"; undefined (missing); machine path in any field: false
+$ c7.ts HUB=the worktree root (read only)
+case 7  CLAUDE.md: [[3,2,"link.no-such-file","File does not exist at path: projects/manuscripts/CLAUDE.md"]]
+case 8  definition: [{"uri":"oculus-file:///hub/tools/cockpit/src/cockpit/schema.py","range":{"start":{"line":60,...
+case 9  line 78 diagnostics include the docs/adr/ mark among absent tools/figures/*.svg marks
+$ ca.ts (scratch hub) and CASE=28 HUB=the worktree root
+projects/archive/nogo/y | conform | type dropped is not the folder's nogo
+projects/coauthor/abandoned/v | conform | type in-prep is not the folder's abandoned
+projects/ideas/x | conform | type active is not the folder's idea
+project keyed type= idea typeWritten= undefined
+case 28 real hub (the worktree, read only): projects 94 audit rows of this kind 0 []
+
+Reviewer's own probe ($scratchpad/rv41/folder-move.ts and folder-move2.ts: the real relay and server over a scratch root holding warm.md, docs/DATA.md and notes/README.md = "[sec](../docs/DATA.md#intro)"; references on warm.md first; then the change; DATA.md opened; references on ## Intro asked every 200 ms for 6 s):
+MODE=folder    (notes/ renamed to letters/ on disk)            references on ## Intro: ["hub/notes/README.md:0"] NOT LISTED   (twice)
+MODE=file      (notes/README.md renamed to notes/LETTER.md)    references on ## Intro: ["hub/notes/LETTER.md:0"] LISTED
+MODE=filesview (notes/ renamed, then the page's `links` ask for notes -> letters, as the Files view sends it)
+               links_answer edit: null error: undefined; references on ## Intro: [] NOT LISTED   (twice)
+```
+
+Not rerun: the report's 49-file run of the guarded entries' tests (its file list is not on disk); I ran the subset above. c10, c11, c14, c32 and the case 29 scratch client test were not rerun; their code paths are the reviewed patch's and the rows that guard them passed above.
+
+### Verdicts
+
+Items of the brief's "What to build", in its numbering:
+
+- 1: holds. Verify 2 (89 passed, the G2 and G3 rows); c1, c5 and c34 FULL reruns give the marks, the resolve with its `#L` fragment and no machine path, completion, definition, prepareRename, rename and symbols.
+- 2: holds. c1 rerun gives the one `link.no-such-file` mark with the path from the root; `relay.ts` is 880 lines.
+- 3: holds by the c5 rerun (targets with and without `#L5,1`, none for a missing file); the click itself is the look at landing.
+- 4: holds. c7 rerun: case 8's definition at line index 60, case 9's `docs/adr/` mark.
+- 5: holds. cl.ts reruns of cases 17, 18, 20 and 23; `link-rewrite.test.ts` and `refactor-preview.test.ts` pass. Behaviour 2 and Standards 2 bear on its wait.
+- 6: holds. ca.ts rerun gives the three rows, `typeWritten` undefined for a manifest key, and 0 rows on the worktree's hub.
+- 7: holds. `tests/state/sessions/source.test.ts` passes (the restored-tab rows with `rootsFailed`, `source.svelte.ts:349`); the note and the bar are the look.
+- 8: holds by reading `portfolio.ts` (the `existsSync(dir)` test before `open`, `openParent` for a missing folder); case 32's harness not rerun.
+- 9: holds. `kit/theme/rename.css` (doubled class, `var(--muted-txt, var(--muted))`), imported by `Editor.svelte` (518 lines); the line itself is the look.
+- 10: holds. The report's "Doc text" gives G2, G3 (word for word as ruling 24) and G36 as they are and as they become; G72's Test line differs from ruling 29 (Spec 1, Standards 3).
+- 11: violated. Behaviour 1 (a Markdown file moved by the rename of its folder is not in the workspace answers, so the item's heading and G72's sentence do not hold for a folder move) and Spec 1 (a third test beyond the two rows ruling 29 names). The mechanism the item dictates (`introduce` on Created Markdown changes, the ordered chain, the 10 s bound, servers.ts at 879) is built and closes the diagnosed cause for a single file: G72 rows 1 and 2 pass, and every c34 form, README open and after a restart included, lists the link.
+
+Cases of the brief's "Cases":
+
+- 1: met; c1 rerun. The Problems view row is the look.
+- 2: met; c1 rerun (`c2.md []`).
+- 3: met; c1 rerun (`c3.md []`).
+- 4: met; c1 rerun (`c4.md []`).
+- 5: not verifiable here (the click is a page case); c5 rerun gives the targets the opener receives.
+- 6: not verifiable here (page case); c5 rerun gives no target for the missing file.
+- 7: met; c7 rerun.
+- 8: met; c7 rerun.
+- 9: met; c7 rerun.
+- 10: met by the report's scratch-root run c10 (the file is not in the worktree); not rerun.
+- 11: met by the report's c11 run and the `backticks.ts` rule rows; not rerun.
+- 12: met; verify 2.
+- 13: met; verify 2.
+- 14: met by the report's c14 and c14b runs and the stat before the read (`requests.ts:40`); not rerun.
+- 15: met; verify 2 (lifetime row).
+- 16: met; verify 2 (lifetime row on fake time).
+- 17: met at relay level (cl.ts CASE=17 rerun, nothing written by the ask); the preview title, Apply and the History record are the look.
+- 18: met; cl.ts CASE=18 rerun.
+- 19: met by the report's run (`edit=null`) and reading; not rerun.
+- 20: met; cl.ts CASE=20 rerun.
+- 21: not verifiable here; the report's cl.ts CASE=21 gives the edits with the tab text, the tab is the look.
+- 22: met by reading and `refactor-preview.test.ts` passing.
+- 23: met; cl.ts CASE=23 at GAP 0, 0, 10 and 100 gives all three edits. Behaviour 2 names the timing the wait rests on.
+- 24: met by reading `ops.svelte.ts` (one `moved(finishedMoves)` per paste or drop).
+- 25: met; ca.ts rerun.
+- 26: met; ca.ts rerun (the y and v rows, none for z and w).
+- 27: met; ca.ts rerun (`keyed` and `notype` give no row, `typeWritten` undefined).
+- 28: met; ca.ts CASE=28 rerun, 0 rows.
+- 29: met for the store (source.test.ts passes); the note and the bar are the look.
+- 30: met by the report's scratch test and reading; not rerun.
+- 31: met; verify 2 (the uris.test.ts row) and the c5 rerun.
+- 32: met by the report's c32 runs; not rerun.
+- 33: not verifiable here; a page case for the look on landing.
+- 34: met at relay level: every c34 rerun lists README's link (README open or not, before and after a restart), and completion, definition, prepareRename, rename and symbols answer. The Outline fallback and the page's Shift+F12 are the look. The look's own unexplained part (README open, Restart) did not reproduce at relay level, before or after item 11.
+- 35: met; G72 row 1 passes (two runs); its failure before item 11 is quoted in the report.
+- 36: met as written (a file moved); G72 row 2 passes. A folder move is not covered (Behaviour 1).
+
+### 1. Spec
+
+- 1. `tests/server/machine/lsp/adapters/markdown-created.test.ts:191-208`: "it('answers a second move from the files as the first move left them', async () => { ... writeFileSync(join(root, 'README.md'), '[a](guide/DATA.md) [b](guide/DATA.md#intro)\n'); const second = (await move(41, 'guide', 'manual')) ...". What is wrong: ruling 29 gives G72 two rows (a file created, a file moved, both read by references); the brief says every case other than 12, 13, 15, 16 and 31 "is checked by a run the report quotes", and case 23 is one of them. This third test, outside the `it.each` table, guards a file changed on disk just before a second link rewrite (the `caughtUp` wait), which G72's sentence ("A Markdown file created, moved or renamed on disk ... is in the server's workspace answers") does not state. The report's Doc text lists it as a third G72 row. spec.md, "What every package obeys": a test exists only as the test of one entry, and a step that needs a new entry stops and asks Axel. Failure scenario: the orchestrator writes the Doc text as given, and `agents/guarded.md` then holds under G72 a row guarding a guarantee its sentence does not name, a widening of a ruled entry nobody ruled; or the row is dropped at landing and case 23's fix has no test. Either way it is the orchestrator's choice to make: drop the row (case 23 stays the quoted cl.ts run), or put G72's widened sentence to Axel. Verdict: item 11 violated (with Behaviour 1).
+
+### 2. Proof
+
+- 1. Report, "Anything wrong or impossible in the brief": "The section 'The patch as applied' that the brief names (`grep -n "The patch as applied" agents/briefs/D41.md` prints nothing) is not in the brief". What is wrong: the ledger's brief holds that section at its end (`tools/oculus/.scratch/migration/agents/briefs/D41.md:376-378`), added by commit 0d3a339f6 ("Launch D41's builder again: Add the patch as applied to D41's brief"), which came after the worktree's base d13535993. The worktree's copy of the brief, the one the builder read, does not hold it (`diff` of the two copies: lines 375-378 only in the ledger's). The builder's statement is true of its copy and false of the ledger. What the section says reproduces: the only file the patch left with markers was `layer-views.dot`; no conflict marker is left anywhere under the worktree's `tools/oculus` (the grep above prints nothing); `tests/checks/diagrams` passes; the index still shows `UU` for `layer-views.dot`, and `notices.ts` and `markdown-created.test.ts` are untracked, so the landing stages all three explicitly. Failure scenario: a reader of the report concludes the orchestrator dispatched an incomplete brief; the cause is the brief edit after the base. Verdict: none.
+
+### 3. Standards
+
+- 1. `tests/server/machine/lsp/adapters/markdown-created.test.ts:173-185`: "const end = Date.now() + WAIT_MS; while (Date.now() < end && !found.includes(pageFile('hub', listed))) { ... await new Promise((resolve) => setTimeout(resolve, 100)); }". What is wrong: spec.md, "What every package obeys": "A test waits on a signal (an event, a promise, a fake clock), never on a fixed sleep or a wall-clock margin". Rows 1 and 2 poll references every 100 ms against an 8 s wall clock (`WAIT_MS = 8000`). The signal exists in the harness: the recording sink sees the relay's frames, and the server's `markdown/fs/readFile` of the created file (the relay's handler) or the notice could be awaited before the one references ask. Failure scenario: under the load seen in this session (load average 17 to 19, test:quick at 103 to 157 s), the 200 ms debounce, the `introduce` ask and the server's reads pass 8 s and the row fails with the behaviour correct, at `npm run test:slow` on landing. Verdict: none (the rows pass here).
+- 2. `src/lib/server/machine/lsp/held/requests/links.ts:14-16`: "A root whose server ended or did not answer within 30 s is named in the answer beside the edits of the others". What is wrong: `editOf` awaits `held.caughtUp(files)` (`links.ts:160`) before the 30 s race (`links.ts:166-180`), outside it. `caughtUp` waits for the whole chain of notices (`notices.ts:84`), each list bounded by `INTRODUCE_MS` 10 s (`notices.ts:19, 96-105`), then up to `SETTLE_MAX_MS` 2 s (`notices.ts:123-129`). The sentence is false for that part of the wait (spec.md: a head comment the change makes false is a defect of the change). It cannot wait forever: every list ends within 10 s, `Calls.end()` answers null when the server exits, and `call` with `start=false` answers null at once for a server not running. Failure scenario: a hub Markdown server that does not answer `markdown/resolveLinkTarget` while a checkout writes Markdown files in seven debounced lists; the next move's rewrite waits about 70 s in `caughtUp` and 30 s more for the edit; the page gives up at `LINKS_MS` 60 s with "did not answer", while `held.asking` keeps the server alive; a reader of the comment expects a 30 s bound. Fix at landing: the sentence says the wait before the ask, or the 30 s race covers `caughtUp` too. Verdict: none.
+- 3. Placement of G72's test: `tests/server/machine/lsp/adapters/markdown-created.test.ts` (the ruled path is `tests/server/machine/lsp/markdown-created.test.ts`). What is wrong: `tests/server/machine/lsp` holds ten items (the `ls` above), so the ruled path breaks the folder rule; the builder disclosed it (Judgment call 1). spec.md says a folder that would pass ten "is split into folders named for what they hold", and "a new file goes where its concern already lives"; the test's subject is the held server's notices (`held/held.ts`, `held/requests/notices.ts`, `held/watch.ts`, G72's Code line), and `adapters/` holds the adapter tests (`cpp-file`, `hub-keys`, `markdown-requests`). The other two placements are judged fit: `held/requests/notices.ts` sits beside `followed.ts`, which also tells a server of path changes, and `introduceMarkdown` in `adapters/markdown/requests.ts` (ten files there) has its head comment made true. Failure scenario: a later step changing `held/` looks for G72's test beside the held server's tests and does not find it under `adapters/`. Either placement needs G72's Test line written with the path that lands, which the Doc text gives. Verdict: none.
+
+### 4. Behaviour
+
+- 1. `src/lib/server/machine/lsp/held/watch.ts:100-103` with `adapters/markdown/requests.ts:96-110` and `held/requests/notices.ts:75-86`: the root watch matches each event's own path against `**/*.md` ("if (![...this.#globs.values()].some((match) => match(relative))) return;"), and `introduceMarkdown` words a read only for a Created change "whose ending is a Markdown extension". What is wrong: a folder renamed on disk produces events for the folder's own name only (the files inside raise none), so the server is told nothing of the files under the folder's new name, nor that the old ones are gone. My probe: `notes/` renamed to `letters/` on disk after the first references gives "references on ## Intro: ["hub/notes/README.md:0"] NOT LISTED" after 6 s (twice): the moved file is missing and a path that no longer exists is listed. The same move made as the Files view makes it (rename, then the page's `links` ask) gives `links_answer edit: null` and then "references on ## Intro: [] NOT LISTED" (twice): `goneFiles` tells the old path deleted, and the first `caughtUp` of that server "only takes the times" (`writtenSince` with `known === null`, `watch.ts:150-172`), so `letters/README.md` is not told as created. A single file renamed in place gives "LISTED". G72's sentence (ruling 29) and item 11's heading say a Markdown file "moved or renamed on disk" is in the workspace answers; ruling 21 makes a folder move part of this step. Case 36 runs only a file move. The report does not state this. Failure scenario: Axel moves `docs/` to `guide/` in the Files view, applies or skips the link preview, then Shift+F12 on a heading in `tools/oculus/HELP.md`: the links in the files under `guide/` are missing and stale `docs/...` places are listed, until a tab opens each file or the server restarts. This is the look's case 34 symptom by another route. Fix: tell the server, for a folder Created or Deleted, the Markdown files under it (read from disk, the same exclusions as `markdownFiles`), and introduce the created ones; a G72 row for a folder moved after the first references. Verdict: item 11 violated.
+- 2. `src/lib/server/machine/lsp/held/requests/notices.ts:117-129`: "Returns when none of its requests is open and none has been made for SETTLE_MS, or after SETTLE_MAX_MS." What is wrong (by reading, not reproduced): the wait that makes the case 23 fix hold is a quiet interval (50 ms with no request of the server to the relay, capped at 2 s), not a signal that the server has read the files it was just told changed. The server's handler of `workspace/didChangeWatchedFiles` asks `markdown/fs/readFile` asynchronously; if that ask starts more than 50 ms after the notice (a busy machine), `caughtUp` returns and `markdown/getEditForFileRenames` is answered from the old text, the case 23 defect again; with a large root the 2 s cap ends the wait before the reads do. The report states the 50 ms and 2 s bounds but not this failure. My four CASE=23 reruns (GAP 0, 0, 10, 100) and the report's were all correct on this machine. A signal is at hand: the relay told the server the exact Changed and Created files, and its own `readFile` handler sees each read, so the wait can end when each told file has been read, bounded as now. Failure scenario: under load, a folder moved, its link preview applied, and the folder moved again at once: the second preview lists only the backticked edit, and Apply leaves `README.md` linking into the folder's first new place. Verdict: none (case 23 met here).
+
+### Declined to judge
+
+- The servers.test.ts failure the report saw at `servers.test.ts:228`: not reproduced in six runs of the file alone and three runs of `tests/server/machine/lsp` (all passed). Line 228 is the `await steps()` of `it.each(ROWS)`, so the line names no row. By reading, the start row waits a fixed 30 `settle()` turns for five spawns (`servers.test.ts:73`, and the file's own slow tag says so), and the coordinator's fact that D48's builder, whose worktree changes nothing under `src/lib/server/machine/lsp`, saw the same file fail once on a list ending in `clangd` against `/node` entries and pass alone, points to that turn-count wait under load rather than D41's change. Its cause is not known: a run that catches the failure with its output kept would settle it.
+- Whether the look's unexplained part of case 34 (README open, and after Restart Language Server) is closed: it never reproduced at relay level; the page look on landing settles it, and Behaviour 1 is one route to the same symptom.
+- The report's 49-file run of the guarded entries' tests (337 passed, 1 skipped): not rerun in that form, since its file list is not on disk; the subset above passed.
+- Cases 5, 6, 21, 29 (note and bar), 33 and 34's page parts: page cases for the look on landing.
+- The `vscode-markdown-languageserver` version risk the diagnosis names (the fix rests on a fragment resolve reading the file in 0.5.0): a fact of the dependency, not checkable beyond the runs above.
+
+Reviewer usage: agent id not known to me, claude-opus-5-5, tokens not known, about 55 tool uses, minutes not known.

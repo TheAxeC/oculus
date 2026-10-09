@@ -51,7 +51,7 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D48-report.md
   builder_usage: 178,779 tokens, 330 tool uses, 136.7 min; round 1: 290,099 tokens, 195 tool uses, 109.7 min
   brief_check: agents/reviews/D48-brief-check.md (abe9a0d14115bbbde, claude-opus-5-5, 276,858 tokens, 122 tool uses, 14.0 min; closed in the brief by the orchestrator under "Closed")
-  reviewer_report: agents/reviews/D48-refuter.md (aeac87c877d84bfe3, claude-opus-5-5, 348,330 tokens, 108 tool uses, 36.9 min); over round 1: running (a5a9980f32b496ee0, claude-opus-5-5)
+  reviewer_report: agents/reviews/D48-refuter.md (aeac87c877d84bfe3, claude-opus-5-5, 348,330 tokens, 108 tool uses, 36.9 min); over round 1: a5a9980f32b496ee0, claude-opus-5-5, 263,029 tokens, 69 tool uses, 32.0 min
   round_1: agents/briefs/D48-round1.md, sent to the builder over the tree copied at .agents/worktrees/D48-round0
   shared_paths: with D41, model-entities.ts (D41 lines 82, 103, 505; D48 SideProject 804-815), data/sources/manifests.ts (D41 lines 100-160; D48 the comments at 25 and 356-360), config/text/findings.yml (D41 removes line 36; D48 lines 43 and 45), vocab.yml (D41 line 228; D48 199-206), keys.test.ts (one line each), DESIGN.md (D41 23, 166, 503, 575-576; D48 552) and docs/views.md (D41 73 and its Audit section; D48 5-7, 21-23); with D41, portfolio.ts (D41 589-606; D48 92) and model/index.ts (D41 608; D48 147), the latter also with D46 (557); with D46, options.yml (D46 beside search.max_hits; D48 the `scan` help at 1230), keys.test.ts, HELP.md (D46 79-80; D48 105) and DESIGN.md (D46 142); with D47, keys.test.ts, HELP.md (D47 43, 134, 138-139), docs/views.md (D47 159-181) and DESIGN.md (D47 225, 456); with D57, DESIGN.md (D57 238); different lines, each merge simple
   landing: not-started
@@ -94,14 +94,15 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-09
   report: agents/reviews/D41-report.md
   builder_usage: 350,099 tokens, 284 tool uses, 87.5 min
-  reviewer_report: running (a3548ef46cc305fbd, claude-opus-5-5)
+  reviewer_report: agents/reviews/D41-refuter.md (a3548ef46cc305fbd, claude-opus-5-5, 297,647 tokens, 79 tool uses, 35.2 min)
   brief_check: agents/reviews/D41-brief-check.md (ac604810d19c5e3dc, claude-opus-5-5, 322,042 tokens, 110 tool uses, 15.3 min; closed inline in the brief by the orchestrator; not run again for the preparation after the back-out)
   reviewers_before: agents/reviews/D41-refuter.md (a0542130f88439869, claude-opus-5-5, 78,020 tokens, 114 tool uses, 28.4 min); over round 1: a33f9e7d18db3918b, claude-opus-5-5, 272,363 tokens, 95 tool uses, 39.0 min
   diagnosis: agents/reviews/D41-diagnosis.md (aa704af05fb1f06d9)
   patch: agents/reviews/D41-backed-out.patch, applied with git apply --3way, layer-views.dot left with conflict markers (generated)
   shared_paths: with D46, DESIGN.md, files-and-search.md, model/index.ts and state/client/context.ts; with D48, vocab.yml, findings.yml, DESIGN.md, docs/views.md, model/index.ts, model-entities.ts, snapshot/normalise.ts, sources/manifests.ts and root/watch/portfolio.ts; with D50, portfolio.ts, model-machine, config.test.ts and docs/DATA-MAP.md line 69; with D51, DESIGN.md and docs/views.md; with D52, docs/DATA-MAP.md, findings.yml, files-and-search.md, docs/views.md and snapshot/normalise.ts; each on different lines, as judged in the earlier entries of these steps (D48 typeWritten vs SideProject fields; D52 normalise 514 vs typeWritten 303); docs/diagrams/ regenerated at landing; each merge simple
   landing: not-started
-  round: 0
+  round_1: agents/briefs/D41-round1.md, sent to the builder over the tree copied at .agents/worktrees/D41-round0
+  round: 1
 - step: D53
   executor: agent
   worker: claude:sonnet at ordo-high

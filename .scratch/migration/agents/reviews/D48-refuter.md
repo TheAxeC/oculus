@@ -295,3 +295,237 @@ Cases of the brief's "Cases":
 - The brief's "Closed" section: it is in `agents/reviews/D48-brief-check.md`, not in `agents/briefs/D48.md`. Unlike D46 and D47, `plan.md`'s D48 line carries no "Step 0" line. These are ledger matters outside the diff.
 
 Reviewer usage: agent id not known to me, served model claude-opus-5-5, about 336,000 tokens (context counter), about 75 tool uses, about 37 minutes.
+
+## Repair round 1, refuted
+
+Reviewer: a fresh session. It ran from `.agents/worktrees/D48/tools/oculus` unless a line below names another directory. Base 40059354d. The round's delta is the worktree against `.agents/worktrees/D48-round0/tools/oculus`. I compared the two with `diff -rq/-ru`, excluding node_modules, .svelte-kit, .scratch and local.yml. That gives 19 changed files: DESIGN.md, side-project-schema.yml, server.yml, docs/apps.md, layer-server.dot/.svg, normalise-personal.ts, writes/manifest.ts, writes.ts, board/items.ts, board/personal.ts, board/presets.ts, CardLinks.svelte, app-gate.test.ts, undo.test.ts, write-fixture.ts, changes.test.ts, writes-fixture.ts and writes.test.ts.
+
+I did not run `npm run diagrams`, because it writes `docs/diagrams/` and a reviewer edits nothing. `tests/checks/diagrams` passed inside `tests/checks`.
+
+No file in any tree was changed by me. `git status --short | wc -l` gave 72 before the review and 72 after it.
+
+My scratch copies are under `$TMPDIR/d48rev`, outside every tree:
+- `round0`: a copy of the round-0 tree.
+- `base`: a copy of the base copy.
+- Both copies hold the current test and fixture files and a `node_modules` link, with no source change.
+- `probe`: one probe file.
+
+```
+npm run test:quick -- --base 40059354d          (load average 12 to 17)
+test:quick: 72 changed file(s), from git since 40059354d
+test:quick: 118 test file(s), 10 essential
+ok      ASCII gate (3.4 s)
+ok      prettier (3.9 s): All matched files use Prettier code style!
+ok      svelte-kit sync (31.7 s)
+ok      eslint (81.1 s)
+ok      svelte-check (68.6 s): 1791564923333 COMPLETED 441 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (129.1 s): Duration  99.52s (transform 198.89s, setup 0ms, import 253.64s, tests 113.65s, environment 403ms)
+test:quick: 132.5 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+quick-exit 0
+
+npx vitest run <the brief's eleven files> --reporter=dot      (default 5 s timeout)
+ FAIL  tests/checks/source/keys.test.ts > ... Error: Test timed out in 5000ms.
+ FAIL  tests/checks/tree/size.test.ts > ... Error: Test timed out in 5000ms.
+ Test Files  2 failed | 9 passed (11)
+      Tests  2 failed | 158 passed (160)
+npx vitest run <the eleven files> tests/routes/edit/app-gate.test.ts --testTimeout 0 --hookTimeout 0
+ Test Files  12 passed (12)
+      Tests  180 passed (180)
+  (the two failures above were load timeouts; with no timeout the eleven files give 160 tests and app-gate.test.ts gives 20)
+
+npx vitest run tests/checks --reporter=dot --testTimeout 0 --hookTimeout 0
+checks-exit 0
+ Test Files  17 passed (17)
+      Tests  248 passed (248)
+
+npx vitest run tests/server/edit/writes.test.ts -t 'ticks and reopens' --testTimeout 0
+ Test Files  1 passed (1)
+      Tests  3 passed | 14 skipped (17)
+npx vitest run --tagsFilter slow tests/server/edit/writes.test.ts tests/server/git/deposit.test.ts --testTimeout 0
+ Test Files  2 passed (2)
+      Tests  4 passed | 14 skipped (18)
+
+sh utils/folder-check.sh                          folder-check exit 0
+ls src/lib/state/boards/board | wc -l             10
+ls src/lib/data/snapshot | wc -l                  10
+wc -l: writes.ts 670, writes/manifest.ts 633, normalise-personal.ts 281, CardLinks.svelte 193, board/personal.ts 205, presets.ts 408, model-entities.ts 836, deposit.ts 875, ticker.ts 521, writes.test.ts 296, write-fixture.ts 447, writes-fixture.ts 143, server.yml 300
+sh utils/unused-exports.sh: 364 lines; diff against D48-base/tools/oculus/unused-exports.txt:
+11c11  normalise.ts loses "followups, subtasks"
+51c51  writes.ts loses "insideHub"
+(no line added)
+
+ASCII gate (the perl command of agents/spec.md, verbatim)
+bfs: error: bin: No such file or directory.
+perl exit 0
+LC_ALL=C grep -n '[^ -~]' DESIGN.md HELP.md docs/apps.md docs/views.md docs/configuration.md utils/diagrams/writes.mjs <worktree report>
+grep exit 1   (nothing printed)
+
+grep -c -F '<title>' agents/guarded.md (from the main ledger), for each guarded title the diff touches
+1  <- writes the changed field and nothing else
+1  <- ticks and reopens a line of a manifest
+1  <- records one manifest field with the value it had and the value written
+1  <- records a subtask ticked, a subtask added and a subtask taken out
+1  <- writes a manifest field back, logs the undo, and undoes the undo
+1  <- puts a subtask line back as it was
+1  <- finds $name
+1  <- refuses a write whose matched kind is not the open kind its header names
+Titles of it/describe/test, extracted with perl from each changed test file at the base and now, then compared with diff:
+no difference in writes.test.ts, changes.test.ts, undo.test.ts, app-gate.test.ts, references.test.ts, audit-mute.test.ts, deposit.test.ts (no title added)
+
+The new G49 row on the round-0 copy ($TMPDIR/d48rev/round0, the current test and fixture files)
+npx vitest run tests/routes/edit/app-gate.test.ts --testTimeout 0 --hookTimeout 0
+ FAIL  ... > the endpoint lets an app write a side project of the hub and answers not found for a repository root, leaving its file as it was
+AssertionError: expected { hub: 200, root: 200, ...(2) } to deeply equal { hub: 200, root: 404, ...(2) }
+ Test Files  1 failed (1)
+      Tests  1 failed | 19 passed (20)
+
+The route-level rows on the base copy ($TMPDIR/d48rev/base, the current test and fixture files)
+npx vitest run tests/server/core/changes.test.ts tests/routes/edit/undo/undo.test.ts tests/routes/edit/app-gate.test.ts tests/data/snapshot/references.test.ts --testTimeout 0 --hookTimeout 0
+ failing: references 'finds ...a collaborators value of a side proje...' (1); app-gate side row (1);
+          changes 'records one manifest field ...' (2), 'records a subtask ticked ...' (2);
+          undo 'writes a manifest field back ...' (4), 'puts a subtask line back as it was' (4)
+ Test Files  4 failed (4)
+      Tests  14 failed | 71 passed (85)
+
+writes.test.ts on the builder's unchanged copy ($TMPDIR/d48/unchanged/oculus)
+  `diff -rq src` and `diff -rq config` against D48-base: no difference.
+  Its writes.test.ts is the current file plus the eight-line signature shim the report describes (diff read).
+npx vitest run tests/server/edit/writes.test.ts --testTimeout 0 --tagsFilter '!slow || slow'
+     x writes the changed field and nothing else   (8 rows)
+     x ticks and reopens a line of a manifest       (2 rows)
+ Test Files  1 failed (1)
+      Tests  10 failed | 7 passed (17)
+  (14 + 10 = the report's 24 failing rows)
+
+The builder's scratch cases, changed tree
+npx vitest run --config $TMPDIR/d48/vitest.scratch.config.mts first1 first4 first5 first5b first15 first16 after5b after9 --reporter=verbose --testTimeout 0
+ Test Files  8 passed (8)
+      Tests  10 passed (10)
+CASE1 problems []
+CASE2 findings [ "deadline: deadline is not text and is read as empty", "pin: pin is not true or false and is read as empty", "subtasks: subtasks is not a map or a list of lines and is read as empty", "venue: key venue is not a field of the side-project schema and is not read", "waiting-on: waiting-on is not a list of text and is read as empty" ]
+CASE3 side subtasks [{"key":"0","do":"a","deadline":"2026-11-01","done":false},{"key":"1","do":"b","done":false}] followups [{"do":"x","after":"2026-11-01"},{"do":"y"}]
+CASE3 research subtasks (identical values)
+CASE4 side manifest with eleven research-shaped values: valid=true; with venue: valid=false ["additionalProperties:venue"]; research manifest: valid=true
+CASE5 categoryLabel [["side","side projects"],...]; openLine calls ["onfile:{...side-projects/dl10/project.yml...}","onproject:proj-a"]
+CASE6 runHeading ["side projects","other","funding"]
+CASE10 unknown side id / root no longer served {"found":false,...}; field outside the schema refused 'the manifest schema does not name the field'
+CASE11 deadline lines for root:r and side:alpha
+WAITING people [{"label":"Alice","count":1}]
+CASE15 3 projects 0 findings 0 read findings
+CASE16 references of amir [... "hub:side-projects/idea/project.yml:2:16","hub:side-projects/idea/project.yml:3:13"]
+
+A probe of the research subtask add, read only ($TMPDIR/d48rev/probe/add.scratch.ts over the worktree's source)
+ADD exact true            (after writeSubtaskAdd on alpha, the file equals MANIFEST + 'subtasks:\n  - { do: write it }\n')
+AFTER DELETE "e\"\npillar: [tensor]\n"   (the end of the file after the delete is MANIFEST's end)
+
+grep -n "words(" src/lib/server/edit/** : manifest.ts, config-key.ts, config-value.ts, deck-new.ts, config-fit.ts, deck.ts, deck-files.ts
+find tools/oculus -name adr -type d: nothing (no ADR applies)
+```
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds.
+  - `normalise-personal.ts` reads text fields with `str` (`:89`) and list fields with `strings` (`:120`).
+  - It reads the plan fields with `followups` and `subtasks` from `normalise-plans.ts`.
+  - CASE1, CASE2 and CASE3 reruns.
+  - `SideProject` is written as a `Pick` of `Project`.
+  - The side kind's JSON Schema goes through the manifest translation (CASE4).
+  - `fieldTypes` reads the list form.
+  - The G66 references row fails on the base copy and passes after.
+- 2: holds.
+  - Scratch reruns show the `side` group, the overdue line, follow-ups, subtasks under "side projects", snooze and `openLine` to the file opener.
+  - The waiting tally counts a running side project and leaves out a parked one.
+- 3: holds.
+  - The rows of G8 and G9 fail on the base and pass after.
+  - CASE10 and CASE11 reruns.
+  - An app is handed only hub side projects (`writes.ts:321-324`). The G49 row fails on the round-0 copy and passes after.
+- 4: holds by reading and by the first review's scratch run of the state functions.
+  - `CardLinks.svelte:106` gives no press for a `related` id that no project holds.
+  - What is drawn is left to the look.
+- 5: holds by reading of `Ticker.svelte` (unchanged in the round).
+- 6: holds.
+  - The listed sentences are made true, `manifest.ts:4-6` among them.
+  - `docs/apps.md:417` and `:419` are rewritten, and `:413` is true again.
+- 7: holds.
+  - No source file is over 880 lines; the largest is `deposit.ts` at 875.
+  - Both folders hold 10 items.
+  - folder-check exits 0.
+
+Cases of the brief's "Cases":
+
+- 1: met (CASE1 rerun).
+- 2: met (CASE2 rerun through `str` and `strings`).
+- 3: met (CASE3 rerun, and the import read).
+- 4: met (CASE4 rerun).
+- 5: met (CASE5 and TICKER reruns).
+- 6: met (CASE6 rerun).
+- 7: met (TICKER followups rerun).
+- 8: met (TICKER snoozed rerun).
+- 9: met.
+  - The rows are in the guarded tables, with no new title (grep and title comparison above).
+  - 24 rows fail on the unchanged tree and the rows pass after.
+  - The research row's loosened assertion is a Proof finding below. It does not touch the side rows.
+- 10: met.
+  - The `side:gone`, `root:gone` and `venue` rows of 'writes the changed field and nothing else'.
+  - CASE10 rerun.
+- 11: met.
+  - CASE11 rerun.
+  - The `root:r` rows of the undo tables fail on the base and pass after.
+- 12: met (WAITING rerun).
+- 13: not verifiable here. What is drawn (the ring, the glyph, the latest line, a held related tag opening the project tab, an unheld one with no press) needs the look on a scratch oculus.
+- 14: not verifiable here. Computed heights need a layout engine; the look on TEST at text scales 0.7, 1 and 1.6 and under Rice settles it.
+- 15: met (CASE15 rerun; personal.test.ts passes in the 12-file run).
+- 16: met (the references row fails on the base copy and passes after; CASE16 rerun).
+
+### Findings
+
+- `tests/server/edit/writes.test.ts:164`, `:180` and `:194`, under **Proof**.
+  - Quoted: "{ name: 'a research project', subject: 'alpha', first: 0 }", "expect(readFileSync(file, 'utf8'), row.name).toContain('- { do: write it }');" and "if (row.subject !== 'alpha') expect(readFileSync(file, 'utf8'), row.name).toBe(original);".
+  - What is wrong: the round turned the G8 test 'ticks and reopens a line of a manifest' into a table. In doing so it loosened the research row's check of the add.
+    - At the base and in round 0, the research row asserted the whole file after the add: `expect(manifestOf(root)).toBe(`${MANIFEST}subtasks:\n  - { do: write it }\n`)`.
+    - Now the row checks only `toContain('- { do: write it }')`.
+    - The final whole-file check is skipped for the research row.
+    - The research row's input also changed, from `wider()` to `sideWorld()`.
+  - My probe shows the exact assertion holds today ("ADD exact true"), so the narrowing guards nothing. Every row of the table could still assert the whole file after the add.
+  - The report's "Edits to existing assertions" section misstates this edit:
+    - It says the body "is the research row of `LINE_ROWS` with the same expected values" and lists the `toBe(`${MANIFEST}subtasks:...`)` among them.
+    - It says the research rows take "an empty list" of side projects; they take `world.sides`.
+    - It says "No expected value changed".
+    - It also describes the undo rows' assertions as "the same values ... the `toContain` pair", though they are now stronger `toBe(original)` and `toBe(written)` checks.
+  - This breaks the rules file's "never loosen a ... predicate" and its rule that the report lists every edit to an existing assertion with its before and after.
+  - Failure scenario: a later change to `addSubtask` rewrites another line of a research manifest while appending the subtask, for example by re-quoting `status.line`. G8 says the rest of the file stays byte-identical. The base test would fail on that change; the table passes it, because the research row asks only that the new line appear. The orchestrator, reading the report, believes the guarded assertion is unchanged.
+  - Fix at landing:
+    - The research row asserts `toBe(`${MANIFEST}subtasks:\n  - { do: write it }\n`)` after the add.
+    - Or every row asserts the whole file after the add as `original` plus the added line.
+    - The report's assertion-edit section is corrected in the booking.
+  - Verdict: none; cases 9 and 10 still hold for the side rows.
+
+The first review's findings, judged as closed:
+- Spec 1: closed. The rows are in the guarded tables, no title was added, and the failures reproduce (14 on the base copy, 10 on the builder's unchanged copy, 1 on round 0).
+- Spec 2: closed in the report.
+- Spec 3: closed, by `str` and `strings`.
+- Spec 4 and Standards 2: closed. `sidesFor` limits an app to hub side projects, the G49 row is reproduced, and `apps.md` rows 417 and 419 are rewritten.
+- Proof 1: closed by removing the row. Its input class remains as the `root:gone` row of the same table, which takes the same branch.
+- Proof 2: closed in the report.
+- Standards 1: closed (`manifest.ts:4-6`).
+- Standards 3: closed. Every refusal reason of `manifest.ts` is `words(..., 'server.manifest_write.*')`, read the way `config-key.ts` and `config-value.ts` read theirs, and `keys.test.ts` passes.
+- Standards 4: closed. `plantSides` and one `SIDE_MANIFEST` live in `write-fixture.ts`, and `writes-fixture.ts` imports them, the direction other server tests already use.
+- Behaviour 1 and 2: closed in the report.
+- The unheld `related` id: closed (`CardLinks.svelte:106`).
+
+No fix reaches beyond its finding.
+- `createIdea` and `coerce` gained a catalog parameter, as item 6 requires; the one caller of each follows.
+- `tagLabel` is exported for reuse by `sideLinks`.
+- The `pin` help line lost the word "still", under the rules file's history-word rule.
+
+### Declined to judge
+
+- Cases 13 and 14 on screen. They need the look on a scratch oculus and on TEST.
+- Whether an app's `subtask-add` row in `docs/apps.md:418` should also say that `root:<key>` answers not found. Item 4 of the round names only the `manifest` and `subtask` rows. The code refuses it (`writes.ts:430`), and no test row covers it; one row was asked for.
+- The `test:quick` time over its 45 s limit (132.5 s at load 12 to 17). Other worktrees' builds share the machine, and `quick.mjs` has no selection-only mode to separate the step's share.
+- `npm run diagrams`: not run, because it writes `docs/diagrams/`. `tests/checks/diagrams` passed.
+
+Reviewer usage: agent id not known to me, served model claude-opus-5-5, about 256,000 tokens (context counter), about 46 tool uses, about 35 minutes.
