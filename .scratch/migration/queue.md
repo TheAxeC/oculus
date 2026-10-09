@@ -1,12 +1,12 @@
-In flight (3 of 6 slots in use, 3 more being prepared):
+In flight (4 of 6 slots in use, 2 more being prepared):
 - D41 (links in Markdown checked): repair round 1 with the builder, launched 2026-10-09.
 - D57 (an empty pane closes): builder running, launched 2026-10-09.
 - D46 (the VS Code palette keys): builder running, launched 2026-10-09.
+- D47 (one Session view): builder running, launched 2026-10-09.
 
-Queued, in order (12 steps):
-- D47 (one Session view): brief checked, its findings being closed in the brief.
+Queued, in order (11 steps):
 - D48 (side projects with the research keys that apply, and smaller Focus rows): brief being written.
-- D49 (the help pages cut): brief next, after D48's.
+- D49 (the help pages cut): brief being written after D48's.
 - D51 (themes from VS Code's theme files): brief next, after D49's.
 - D52 (a page per collection entry): brief next, after D51's.
 - D53 (unique views): waits for D56.

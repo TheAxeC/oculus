@@ -63,6 +63,18 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with D41, tools/oculus/DESIGN.md (D41 lines 23, 166, 503, 575-576, D46 line 142), src/lib/state/client/context.ts and src/lib/state/sources/explorer/ops.svelte.ts (D41 adds the Markdown edit wiring, D46 the open call; separate hunks), tests/checks/source/keys.test.ts (one line each); with D57, tools/oculus/DESIGN.md (D57 line 238) and docs/window.md (D57 line 15, D46 the palette section 72-80); different lines, each merge is simple
   landing: not-started
   round: 0
+- step: D47
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a03cb689a744cc64c (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D47
+  base: 5f08fde1a
+  launched: 2026-10-09
+  report: agents/reviews/D47-report.md
+  brief_check: agents/reviews/D47-brief-check.md (a176332cf8ff0b352, claude-opus-5-5, 229,921 tokens, 87 tool uses, 10.2 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: with D46, config/text/app.yml line 13 (the same line: D47 changes `m1-m7`, D46 adds the palette rows; merged by hand at the later landing) and HELP.md (D47 lines 43, 134, 138-139, D46 lines 79-80); with D57, instances.ts (D57 line 83, D47 lines 139 and 164), saved/saved.ts (D57 lines 18, 372, 556-557, 604; D47 lines 526 and 562), config/layout.yml (D57 line 44, D47 line 65) and DESIGN.md (D57 line 238); with D41, DESIGN.md (D41 lines 23, 166, 575-576; D47 lines 225, 456), docs/views.md (D41 lines 73, 213; D47 lines 159-181) and sections/Outline.svelte (D41 the head comment and lines 147-151, D47 the import line); different lines except app.yml, each merge simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
