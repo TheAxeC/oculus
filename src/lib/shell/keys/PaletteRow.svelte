@@ -10,6 +10,12 @@
         /** The label's letters, matched and unmatched, when a query matched them. */
         parts?: TextPart[];
         hint?: string;
+        /** The hint's letters, matched and unmatched, drawn in place of `hint`. */
+        hintParts?: TextPart[];
+        /** A file's name, which draws the icon of that name before the label. */
+        file?: string;
+        /** A word drawn muted after the hint. */
+        trail?: string;
         /** A word drawn at the row's right, which is also the title of a row that cannot run. */
         note?: string;
         active?: boolean;
@@ -22,12 +28,15 @@
     // Layer 3, partial of shell/keys/Palette.svelte. One result row of the palette's list: what it
     // is in words, then the control that opens it filling the rest. A `parts` label draws its
     // matched letters marked. A title longer than the row is cut with an ellipsis at the row's end
-    // and its whole words are the row's tooltip, as VS Code's quick pick does. The Command reads
-    // the row's id and selection from the item, so the row's own control is pressed through the row
-    // and does nothing more.
+    // and its whole words are the row's tooltip, as VS Code's quick pick does. A file row draws the
+    // icon of its file name before its label, its folder as the hint with the letters a query
+    // matched marked, and the key of its root after it, which it carries only when more than one
+    // root holds files. The Command reads the row's id and selection from the item, so the row's
+    // own control is pressed through the row and does nothing more.
 
     import { Command } from 'bits-ui';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import FileIcon from '$lib/ui/display/FileIcon.svelte';
 
     let { row }: { row: ResultRow } = $props();
 
@@ -52,6 +61,9 @@
                     active={row.active}
                     onclick={pressed}
                 >
+                    {#if row.file !== undefined}
+                        <FileIcon name={row.file} />
+                    {/if}
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render marked(row.parts)}
                 </ToolButton>
@@ -66,9 +78,17 @@
                     onclick={pressed}
                 />
             {/if}
-            {#if row.hint !== undefined || row.note !== undefined}
+            {#if row.hint !== undefined || row.hintParts !== undefined || row.note !== undefined}
                 <span class="end">
-                    {#if row.hint !== undefined}<span class="hint">{row.hint}</span>{/if}
+                    {#if row.hintParts !== undefined}
+                        <span class="hint">
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render marked(row.hintParts)}
+                        </span>
+                    {:else if row.hint !== undefined}
+                        <span class="hint">{row.hint}</span>
+                    {/if}
+                    {#if row.trail !== undefined}<span class="hint">{row.trail}</span>{/if}
                     {#if row.note !== undefined}<span class="unavailable">{row.note}</span>{/if}
                 </span>
             {/if}

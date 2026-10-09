@@ -13,6 +13,12 @@
 // is what a server process hands a child, so a search with no path would wait for input nobody
 // sends. A search scoped to one folder (`under`) names `./<folder>` there instead.
 //
+// The route also lists the names of the files of the served roots (`list=names`), for the palette's
+// file mode. That request carries no pattern, so it has its own small shape beside the query: the
+// root it names or every root, the arguments `--files` runs with, and the same refusal of a root
+// that is not served. It reads the same `SKIP_GLOBS`, so a search and a name list leave out the
+// same folders.
+//
 // In regular-expression mode the arguments also carry the replacement template of ./replace.ts, so
 // that each match ripgrep reports holds the text of every group of the pattern. A replace names one
 // file instead of a directory and asks for every match of it (`fileArgs`).
@@ -236,8 +242,60 @@ export function searchUrl(query: SearchQuery): string {
     return `/api/search?${searchParams(query).toString()}`;
 }
 
+/** What a request to the search route asks for. */
+export type SearchRequest =
+    | { kind: 'search'; query: SearchQuery }
+    | { kind: 'names'; root: string }
+    | { kind: 'refused'; refused: 'list' };
+
+/** The only value the `list` parameter takes. */
+const NAMES_LIST = 'names';
+
+/**
+ * Whether a request asks for a search or for the names of the served roots. No `list` parameter is
+ * a search; `list` given once with the value `names` lists names, and an empty, repeated or other
+ * `list` is refused, so a typo never runs a search nobody asked for.
+ */
+export function requestFrom(parameters: URLSearchParams, cap: number): SearchRequest {
+    if (!parameters.has('list')) return { kind: 'search', query: queryFrom(parameters, cap) };
+    const lists = parameters.getAll('list');
+    if (lists.length !== 1 || lists[0] !== NAMES_LIST) return { kind: 'refused', refused: 'list' };
+    return { kind: 'names', root: parameters.get('root') ?? ALL_ROOTS };
+}
+
+/** Why a names request is refused before anything ran: a root key that no served root has. */
+export function namesRefusal(root: string, rootKeys: string[]): 'unknown_root' | null {
+    return root === ALL_ROOTS || rootKeys.includes(root) ? null : 'unknown_root';
+}
+
+/** The address the names of one root, or of every root, are fetched at. */
+export function namesUrl(root: string = ALL_ROOTS): string {
+    const parameters = new URLSearchParams({ list: NAMES_LIST });
+    if (root !== ALL_ROOTS) parameters.set('root', root);
+    return `/api/search?${parameters.toString()}`;
+}
+
+/** A path as a glob that matches that path alone: its glob characters and spaces escaped. */
+function globEscape(path: string): string {
+    return path.replace(/[\\*?[\]{}!\s]/g, (one) => `\\${one}`);
+}
+
+/**
+ * ripgrep's arguments for the names of one root: every file with hidden ones, the skipped folders,
+ * and one anchored glob for each folder inside the root that no name may be answered from (the
+ * machine's private folders, given as paths inside the root). The directory is named `.` as a
+ * search names it, and the paths come back as `./<path>`, which `pathIn` reads.
+ */
+export function namesArgs(withheld: string[]): string[] {
+    const args = ['--files', '--hidden'];
+    for (const glob of SKIP_GLOBS) args.push('--glob', glob);
+    for (const path of withheld) args.push('--glob', `!/${globEscape(path)}`);
+    args.push(SEARCH_PATH);
+    return args;
+}
+
 /** The query a request carries, with the cap applied and every absent parameter at its default. */
-export function queryFrom(parameters: URLSearchParams, cap: number): SearchQuery {
+function queryFrom(parameters: URLSearchParams, cap: number): SearchQuery {
     const flag = (name: string): boolean => parameters.get(name) === '1';
     const max = Number(parameters.get('max') ?? '');
     return {

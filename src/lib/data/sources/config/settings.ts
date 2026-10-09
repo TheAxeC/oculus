@@ -264,15 +264,21 @@ export type SearchSettings = {
     maxHits: number;
     /** How long one root's search is given, in seconds. */
     timeoutS: number;
+    /** How many file names the palette's file mode lists before it says the list was cut. */
+    maxNames: number;
 };
 
-/** Read `search:`'s two keys, each its default when it is missing or wrong. */
+/** Read `search:`'s three keys, each its default when it is missing or wrong. */
 export function searchSettings(
     config: Record<string, unknown>,
     problems: SettingProblem[] = []
 ): SearchSettings {
     const read = settingReader(config, problems);
-    return { maxHits: read.number('search.max_hits'), timeoutS: read.number('search.timeout_s') };
+    return {
+        maxHits: read.number('search.max_hits'),
+        timeoutS: read.number('search.timeout_s'),
+        maxNames: read.number('search.max_names')
+    };
 }
 
 /** The Literature search settings of config/behavior.yml. */

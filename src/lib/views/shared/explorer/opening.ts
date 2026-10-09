@@ -10,15 +10,8 @@
 // the rule reads the same whichever client it runs in.
 
 import type { Entry } from '$lib/state/boards/collection';
-import {
-    bookmarkRef,
-    nameOf,
-    typeOfFile,
-    type BookmarkKind,
-    type TreeRow
-} from '$lib/state/sources/fs';
-import { documentState } from '$lib/state/workbench/layout';
-import { sourceTabState } from '$lib/state/sessions/source/draft';
+import { bookmarkRef, typeOfFile, type BookmarkKind, type TreeRow } from '$lib/state/sources/fs';
+import { documentState, tabForKind } from '$lib/state/workbench/layout';
 import type { ClientState } from '$lib/state/client/context';
 
 /** The store calls opening a file needs. */
@@ -46,28 +39,6 @@ export type BesideOpener = {
     /** Whether a file lies in an apps folder, which opens as source text. */
     holds: ClientState['apps']['holds'];
 };
-
-/**
- * The view a file of one kind opens in, and the state that tab is given. The tree's rows know the
- * size of a file; a caller that has only the path passes undefined. A file in an apps folder opens
- * as source text whatever its kind, since an app's page is code to read and never a page to run in
- * the Document view; `holds` says whether a file lies in one.
- */
-export function tabForKind(
-    kind: string,
-    root: string,
-    path: string,
-    size: number | undefined,
-    holds: Opener['holds']
-): { view: string; state: unknown } {
-    const label = nameOf(path);
-    if (holds(root, path)) return { view: 'source', state: sourceTabState(root, path) };
-    if (kind === 'html') return { view: 'document', state: documentState({ label, root, path }) };
-    if (kind === 'text' || kind === 'missing') {
-        return { view: 'source', state: sourceTabState(root, path) };
-    }
-    return { view: 'file', state: { root, path, label, size } };
-}
 
 /**
  * Open a file as a page in the Document view, or as source text when it lies in an apps folder.

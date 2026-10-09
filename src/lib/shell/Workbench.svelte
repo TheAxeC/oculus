@@ -34,8 +34,9 @@
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
     import Asks from './commands/Asks.svelte';
     import DebugToolbar from './commands/DebugToolbar.svelte';
-    import type { DebugKey } from '$lib/state/system/machine/debug/debug';
+    import { pressDebug } from './commands/debug-key';
     import Palette from './keys/Palette.svelte';
+    import type { PaletteStart } from './keys/palette-modes';
     import FoldedPane from './panes/leaf/FoldedPane.svelte';
     import PageLeaf from './panes/leaf/PageLeaf.svelte';
     import PaneView from './panes/PaneView.svelte';
@@ -50,6 +51,8 @@
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import { paneAt, resize, type FloatSpec, type Layout } from '$lib/state/workbench/layout';
+    import { modeOf, type PaletteKey } from '$lib/state/workbench/palette';
+    import { COMMAND_PALETTE_EVENT } from '$lib/ui/controls/editor/chords';
     import {
         docState,
         railOrder,
@@ -166,7 +169,8 @@
     let area: HTMLElement | undefined = $state();
 
     let paletteOpen = $state(false);
-    let palettePrefill = $state('');
+    let paletteStart = $state<PaletteStart>({ text: '', files: false });
+    let paletteQuery = $state('');
     let updateOpen = $state(false);
     let sheetOpen = $state(false);
     let handledUpdateRequest = $state(updateTrayRequested());
@@ -190,21 +194,6 @@
             docs
         )
     );
-    /** Carry out one debug key; the steps and the stop act only on a session that can take them. */
-    function pressDebug(which: DebugKey): boolean {
-        const { debug } = client;
-        if (which === 'toggle') return debug.toggleAtCaret();
-        if (which === 'start') void debug.press();
-        else if (which === 'restart') {
-            if (debug.active()) void debug.restart();
-        } else if (which === 'stop') {
-            if (debug.active() || debug.waiting() !== null) void debug.stop();
-        } else if (debug.paused()) {
-            void debug.resume(which === 'over' ? 'next' : which === 'into' ? 'stepIn' : 'stepOut');
-        }
-        return true;
-    }
-
     const keyboard = createWorkbenchKeys({
         drag: client.drag,
         layout: client.layout,
@@ -213,6 +202,7 @@
         activeMain: () => activeMain,
         focus: () => focus,
         paletteOpen: () => paletteOpen,
+        paletteMode: () => (paletteOpen ? modeOf(paletteQuery, paletteStart.files) : null),
         updateOpen: () => updateOpen,
         sheetOpen: () => sheetOpen,
         setPaletteOpen: (open) => (paletteOpen = open),
@@ -230,7 +220,7 @@
             sourceOnScreen(activeInstance(), client.editorStatus.statusOf)?.status.file.endsWith(
                 '.rite'
             ) === true,
-        debugKey: (which) => pressDebug(which),
+        debugKey: (which) => pressDebug(client.debug, which),
         walkProblem: (by) => walkProblem(by),
         saveSource: () => {
             const tab = sourceOnScreen(activeInstance(), client.editorStatus.statusOf);
@@ -245,7 +235,8 @@
             if (index < 1 || entry === undefined) return false;
             return client.layout.openRailPage(entry.page, entry.label, entry.node);
         },
-        openPalette: (prefill) => openPalette(prefill)
+        openPalette: (prefill) => openPalette(prefill),
+        showPalette: (key) => showPalette(key)
     });
 
     // A browser with no saved layout starts on the first rail page rather than on a page no button
@@ -272,13 +263,24 @@
         return keyboard.stopCards;
     });
 
-    function openPalette(prefill: string): void {
+    function openPalette(prefill: string, files = false): void {
         keyboard.clearCursor();
         sheetOpen = false;
         updateOpen = false;
-        palettePrefill = prefill;
+        paletteStart = { text: prefill, files };
         paletteOpen = true;
     }
+
+    /** Open the palette in the mode a palette key names: the commands, or the files. */
+    const showPalette = (key: PaletteKey): void =>
+        key === 'commands' ? openPalette(':') : openPalette('', true);
+
+    // F1 arrives as a keydown, its Monaco binding being freed; the editor's menu item raises this.
+    $effect(() => {
+        const open = (): void => showPalette('commands');
+        window.addEventListener(COMMAND_PALETTE_EVENT, open);
+        return () => window.removeEventListener(COMMAND_PALETTE_EVENT, open);
+    });
 
     function openUpdate(): void {
         keyboard.clearCursor();
@@ -426,7 +428,8 @@
 <DropLayer />
 <Palette
     open={paletteOpen}
-    prefill={palettePrefill}
+    start={paletteStart}
+    bind:query={paletteQuery}
     onclose={() => (paletteOpen = false)}
     onupdate={openUpdate}
 />

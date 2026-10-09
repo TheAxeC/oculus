@@ -25,18 +25,25 @@ import {
     type SearchQuery
 } from '../../../data/helpers/search/query.ts';
 import type {
+    NamesAnswer,
     SearchAnswer,
     SearchFailure,
     SearchFile,
     SearchHit
 } from '../../../data/model/index.ts';
-import { anyNumberShape, mapOfShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
+import {
+    anyNumberShape,
+    mapOfShape,
+    readAs,
+    rowsShape,
+    stringItemsShape
+} from '../../../data/shapes/shapes.ts';
 
 // The view layer reads the wire shapes and the all-roots key through this module: DESIGN.md's
 // boundary table lets a view import `state/` and not `data/`, so the one place that names both is
 // here.
 export { ALL_ROOTS };
-export type { ReplaceQuery, SearchAnswer, SearchFile, SearchHit };
+export type { NamesAnswer, ReplaceQuery, SearchAnswer, SearchFile, SearchHit };
 
 /** A hit the reader took out of the results: its file, the place it had and the length it took. */
 export type Dismissed = { root: string; path: string; line: number; at: number; length: number };
@@ -180,6 +187,33 @@ export function answerOf(value: unknown): SearchAnswer | null {
         truncated: held.truncated,
         ms: held.ms,
         failed: held.failed
+    };
+}
+
+/** The names of one root out of a fetched answer: a root key, its paths and why it is not whole. */
+const namesRootShape = z.object({
+    root: z.string(),
+    paths: stringItemsShape,
+    error: z.enum(['timed_out', 'failed']).optional().catch(undefined)
+});
+
+/** A names answer out of a fetched value. */
+const namesShape = z.object({
+    roots: rowsShape(namesRootShape),
+    cut: z.boolean().catch(false)
+});
+
+/** A names answer out of a fetched value, and null for anything that is not one. */
+export function namesOf(value: unknown): NamesAnswer | null {
+    const held = readAs(namesShape, value);
+    if (held === null) return null;
+    return {
+        roots: held.roots.map((one) =>
+            one.error === undefined
+                ? { root: one.root, paths: one.paths }
+                : { root: one.root, paths: one.paths, error: one.error }
+        ),
+        cut: held.cut
     };
 }
 

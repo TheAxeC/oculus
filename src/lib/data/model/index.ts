@@ -554,6 +554,8 @@ export type {
     LiteratureHit,
     LiteratureRefusal,
     LiteratureSource,
+    NamesAnswer,
+    NamesRoot,
     SearchAnswer,
     SearchFailure,
     SearchFile,

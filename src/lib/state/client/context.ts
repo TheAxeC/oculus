@@ -575,7 +575,9 @@ export function createClientState(
     const paletteSource = createPaletteSource(entities, feeds, {
         writeConfigValue: writes.writeConfigValue,
         layout,
-        ui
+        ui,
+        readFileKind: fs.readFileKind,
+        holds: (root, path) => apps.holds(root, path)
     });
     const editorStatus = createEditorStatus();
     const headings = createHeadings();

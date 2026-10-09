@@ -10,6 +10,10 @@
 // regular-expression hit can be emboldened at all: the page knows the pattern, not what it matched.
 // `at` places the match in the whole line, which is what names it to a replace, and `groups` is the
 // text of every group of the pattern, which is what a replace text with `$1` in it is read over.
+//
+// A names answer is the other thing the search route answers: the paths ripgrep lists under each
+// served root, with no match in them, which the palette's file mode matches on the page as the
+// reader types.
 
 /** One match: where its line is, where the match sits in the line and in the text, and the text. */
 export type SearchHit = {
@@ -64,6 +68,25 @@ export type SearchAnswer = {
     ms: number;
     /** The roots that answered nothing because their search failed or timed out. */
     failed: SearchFailure[];
+};
+
+/** Why a root's list of names stopped before it was whole. */
+type NamesFailure = 'timed_out' | 'failed';
+
+/** The names under one served root: each path inside that root, and why the list is not whole. */
+export type NamesRoot = {
+    root: string;
+    paths: string[];
+    error?: NamesFailure;
+};
+
+/**
+ * What `GET /api/search?list=names` answers: the names of each root asked, and whether the list
+ * was cut at the configured number of names in all.
+ */
+export type NamesAnswer = {
+    roots: NamesRoot[];
+    cut: boolean;
 };
 
 /** The eight scholarly sources, in the order the route lists them. */

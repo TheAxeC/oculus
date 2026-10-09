@@ -61,6 +61,7 @@ const DEFAULTS: Record<string, unknown> = {
     'calendar.days_ahead': 20,
     'search.max_hits': 300,
     'search.timeout_s': 15,
+    'search.max_names': 7000,
     'literature.timeout_s': 40,
     'literature.per_source': 12,
     'literature.cache_min': 5,
@@ -212,20 +213,28 @@ describe('calendarSettings', () => {
 describe('searchSettings', () => {
     const read = (search: unknown) => outcome((p) => searchSettings(mapWith({ search }), p));
 
-    it('answers the default for each value that is not above zero, and for a fraction of hits', () => {
+    it('answers the default for each value that is not above zero, and for a fraction of a count', () => {
         for (const bad of [...NOT_FINITE, -1, 0]) {
-            expect(read({ max_hits: bad, timeout_s: 4 })).toMatchObject({
-                value: { maxHits: 300, timeoutS: 4 },
+            expect(read({ max_hits: bad, timeout_s: 4, max_names: 8 })).toMatchObject({
+                value: { maxHits: 300, timeoutS: 4, maxNames: 8 },
                 problems: [expect.stringMatching(/^search\.max_hits: /)]
             });
-            expect(read({ max_hits: 9, timeout_s: bad })).toMatchObject({
-                value: { maxHits: 9, timeoutS: 15 },
+            expect(read({ max_hits: 9, timeout_s: bad, max_names: 8 })).toMatchObject({
+                value: { maxHits: 9, timeoutS: 15, maxNames: 8 },
                 problems: [expect.stringMatching(/^search\.timeout_s: /)]
             });
+            expect(read({ max_hits: 9, timeout_s: 4, max_names: bad })).toMatchObject({
+                value: { maxHits: 9, timeoutS: 4, maxNames: 7000 },
+                problems: [expect.stringMatching(/^search\.max_names: /)]
+            });
         }
-        expect(read({ max_hits: 10.5, timeout_s: 4 })).toStrictEqual({
-            value: { maxHits: 300, timeoutS: 4 },
+        expect(read({ max_hits: 10.5, timeout_s: 4, max_names: 8 })).toStrictEqual({
+            value: { maxHits: 300, timeoutS: 4, maxNames: 8 },
             problems: ['search.max_hits: whole']
+        });
+        expect(read({ max_hits: 9, timeout_s: 4, max_names: 10.5 })).toStrictEqual({
+            value: { maxHits: 9, timeoutS: 4, maxNames: 7000 },
+            problems: ['search.max_names: whole']
         });
     });
 });

@@ -1,7 +1,8 @@
-// What server/files/search.ts does with a query: which roots it runs over.
+// What server/files/search.ts does with a query and with a request for names: which roots it runs
+// over.
 
 import { describe, expect } from 'vitest';
-import { runSearch, type RunOutcome } from '../../../src/lib/server/files/search.ts';
+import { runNames, runSearch, type RunOutcome } from '../../../src/lib/server/files/search.ts';
 import { emptyQuery, type SearchQuery } from '../../../src/lib/data/helpers/search/query.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it } from '../../fixtures/scratch.ts';
@@ -35,5 +36,22 @@ describe('what the process is given', () => {
         });
         expect(outcome).toEqual({ ok: false, refused: 'unknown_root' });
         expect(started).toBe(0);
+    });
+
+    it('refuses a names list for a root outside the served list before any process starts', async () => {
+        for (const root of ['elsewhere', '']) {
+            let started = 0;
+            const outcome = await runNames(ROOTS, root, {
+                run: () => {
+                    started += 1;
+                    return Promise.resolve(quiet());
+                },
+                timeout: TIMEOUT,
+                max: 100,
+                withheld: []
+            });
+            expect(outcome).toEqual({ ok: false, refused: 'unknown_root' });
+            expect(started).toBe(0);
+        }
     });
 });

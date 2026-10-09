@@ -19,12 +19,25 @@
 //
 // Nothing is searched outside a served root: the roots come in as the list the route composed, and
 // a key that is not one of them is refused before any process starts.
+//
+// The names of the files of the served roots (`runNames`) are listed by the same call site with
+// `--files`, one run for each root and all of them at once, so the answer waits at most one
+// timeout. A request for all roots answers a name once: a file under two roots (one lies inside the
+// other) is listed under the root whose folder is deeper. A request for one root answers every
+// path listed under it, the files of a root nested inside it included. The machine's private
+// folders are left out by a glob for each one inside a root, and a root that lies inside one is not
+// listed at all. Each root stops at the cap, with the child ended when a name arrives past it, and
+// the answer is the roots in order cut to the cap in all.
 
 import { spawn } from 'node:child_process';
 import { statSync } from 'node:fs';
+import { relative, sep } from 'node:path';
 import { rgPath } from '@vscode/ripgrep';
 import { z } from 'zod';
 import {
+    ALL_ROOTS,
+    namesArgs,
+    namesRefusal,
     pathIn,
     rootsOf,
     searchQuery,
@@ -34,9 +47,17 @@ import {
     type QueryRefusal
 } from '../../data/helpers/search/query.ts';
 import { groupsFrom } from '../../data/helpers/search/replace.ts';
-import type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from '../../data/model/index.ts';
+import type {
+    NamesAnswer,
+    NamesRoot,
+    SearchAnswer,
+    SearchFailure,
+    SearchFile,
+    SearchHit
+} from '../../data/model/index.ts';
 import { anyNumberShape } from '../../data/shapes/shapes.ts';
-import { resolveRootPath, type Root } from './files.ts';
+import { below, realPath, under } from '../core/paths.ts';
+import { expandHome, resolveRootPath, type Root } from './files.ts';
 
 /**
  * How much of one root's output is read while the fold still has room for what it carries, counted
@@ -489,4 +510,135 @@ export async function runSearch(
         return { ok: false, error: failed[0].reason, timedOut: failed[0].reason === TIMED_OUT };
     }
     return { ok: true, answer: { files, total, truncated, ms: clock() - started, failed } };
+}
+
+/** How the names are listed: the process, the timeout, the cap and the folders kept private. */
+export type NamesOptions = {
+    /** How one root is listed; the real binary when absent. */
+    run?: SearchRunner;
+    /** Milliseconds one root's listing is given, from `search.timeout_s` in config/behavior.yml. */
+    timeout: number;
+    /** How many names the whole answer carries, from `search.max_names` in config/behavior.yml. */
+    max: number;
+    /** The folders no name is answered from (`privateFolders`), as absolute paths. */
+    withheld: string[];
+};
+
+/** What a names request answers: the roots' names, or the reason it did not run. */
+export type NamesOutcome =
+    { ok: true; answer: NamesAnswer } | { ok: false; refused: 'unknown_root' };
+
+/** One root as a listing sees it. */
+type NamesPlan = {
+    key: string;
+    dir: string;
+    /** The paths inside this root that a deeper root lists, so it does not; none for one root. */
+    deeper: string[];
+    /** The private folders inside this root, as paths inside it. */
+    withheld: string[];
+    /** Whether the root is a private folder or lies in one, which lists nothing. */
+    private: boolean;
+};
+
+/** A path inside a root written with `/`, whatever the platform separates with. */
+function slashed(path: string): string {
+    return sep === '/' ? path : path.split(sep).join('/');
+}
+
+/**
+ * Each root with what a listing of it leaves out: the folders of the deeper roots inside it, when
+ * every root is listed (`shared`), so that a file is listed once, under the deepest root holding
+ * it, and the private folders inside it. A listing of one root leaves out no deeper root's
+ * folder: it answers every path ripgrep lists under that root. Roots and folders are compared by
+ * their real paths, so a link names the same place as its target. A root with no directory on
+ * this machine is listed as it is and fails there.
+ */
+function namesPlans(roots: Root[], withheld: string[], shared: boolean): NamesPlan[] {
+    const dirs = roots.map((root) => {
+        const dir = expandHome(root.dir);
+        return { key: root.key, dir, real: realPath(dir) ?? dir };
+    });
+    const folders = withheld.map((folder) => realPath(expandHome(folder)) ?? expandHome(folder));
+    return dirs.map((root) => ({
+        key: root.key,
+        dir: root.dir,
+        deeper: shared
+            ? dirs
+                  .filter((other) => other.key !== root.key && below(other.real, root.real))
+                  .map((other) => slashed(relative(root.real, other.real)))
+            : [],
+        withheld: folders
+            .filter((folder) => below(folder, root.real))
+            .map((folder) => slashed(relative(root.real, folder))),
+        private: under(root.real, folders)
+    }));
+}
+
+/** Whether a path is the folder or lies below it, both written with `/`. */
+function atOrBelow(path: string, folder: string): boolean {
+    return path === folder || path.startsWith(`${folder}/`);
+}
+
+/**
+ * The names of one root, up to the cap. The child is ended when a name arrives past it, which is
+ * how a list cut at the cap knows more names existed.
+ */
+async function listRoot(
+    plan: NamesPlan,
+    options: NamesOptions
+): Promise<{ listed: NamesRoot; cut: boolean }> {
+    const paths: string[] = [];
+    let cut = false;
+    if (plan.private) return { listed: { root: plan.key, paths }, cut };
+    const run = options.run ?? runRipgrep;
+    const outcome = await within(
+        run(plan.dir, namesArgs(plan.withheld), options.timeout, (line) => {
+            const path = pathIn(line);
+            if (path === '' || plan.deeper.some((folder) => atOrBelow(path, folder))) return true;
+            if (paths.length >= options.max) {
+                cut = true;
+                return false;
+            }
+            paths.push(path);
+            return true;
+        }),
+        options.timeout
+    );
+    const listed: NamesRoot = { root: plan.key, paths };
+    if (outcome.timedOut) listed.error = 'timed_out';
+    else if (!outcome.stopped && outcome.code >= FAILED) listed.error = 'failed';
+    return { listed, cut };
+}
+
+/**
+ * The names of one served root or of all of them. A request for one root answers every path
+ * ripgrep lists under it, the files of a served root nested inside it included; a request for all
+ * of them lists each file once, under the deepest root that holds it. A root key that is none of
+ * the served ones is refused before any process starts. The roots run at once; the answer keeps
+ * them in the order given, cut to the cap in all, and says it was cut. A root whose listing did not
+ * finish is named with why and keeps the names read before it stopped.
+ */
+export async function runNames(
+    roots: Root[],
+    root: string,
+    options: NamesOptions
+): Promise<NamesOutcome> {
+    const refused = namesRefusal(
+        root,
+        roots.map((one) => one.key)
+    );
+    if (refused !== null) return { ok: false, refused };
+    const plans = namesPlans(roots, options.withheld, root === ALL_ROOTS).filter(
+        (plan) => root === ALL_ROOTS || plan.key === root
+    );
+    const listings = await Promise.all(plans.map((plan) => listRoot(plan, options)));
+    let room = options.max;
+    let cut = listings.some((one) => one.cut);
+    const answered = listings.map(({ listed }) => {
+        const kept = listed.paths.slice(0, room);
+        if (kept.length < listed.paths.length) cut = true;
+        room -= kept.length;
+        return { ...listed, paths: kept };
+    });
+    return { ok: true, answer: { roots: answered, cut } };
 }

@@ -14,10 +14,10 @@ import {
     openPage,
     openRow,
     openRowBeside,
-    tabForKind,
     type BesideOpener,
     type Opener
 } from '../../../../src/lib/views/shared/explorer/opening.ts';
+import { tabForKind } from '../../../../src/lib/state/workbench/layout/instance.ts';
 import type { TreeRow } from '../../../../src/lib/state/sources/fs.ts';
 import { it } from '../../../fixtures/scratch.ts';
 

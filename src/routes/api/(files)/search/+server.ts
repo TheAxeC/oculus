@@ -19,6 +19,8 @@ export const GET: RequestHandler = ({ request, locals }) => {
     return handleSearch(request, locals.token, {
         roots: browserRoots({ config, engine: locals.server.engine, local: locals.server.local }),
         cap: settings.maxHits,
+        maxNames: settings.maxNames,
+        hub: locals.server.local.hub,
         timeout: settings.timeoutS * 1000
     });
 };

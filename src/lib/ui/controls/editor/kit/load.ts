@@ -64,7 +64,7 @@
 
 import type * as Monaco from 'monaco-editor';
 import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './grammars';
-import { freedKeys } from '../chords';
+import { COMMAND_PALETTE_EVENT, freedKeys } from '../chords';
 import { RITE_GRAMMAR } from './rite/rite';
 import { registerSettings } from './rite/settings';
 import { registerFolding } from './folding';
@@ -226,6 +226,11 @@ async function start(): Promise<EditorKit> {
     monaco.editor.addKeybindingRules(
         freedKeys(mac).map((press) => ({ keybinding: keyCode(monaco, press), command: null }))
     );
+    // The newest command of an id is the one that runs, so the editor's Command Palette menu item
+    // opens the workbench's palette in place of Monaco's own.
+    monaco.editor.registerCommand('editor.action.quickCommand', () => {
+        window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_EVENT));
+    });
     const known = new Set(monaco.languages.getLanguages().map((language) => language.id));
     for (const id of SHIKI_LANGUAGES) {
         if (!known.has(id)) monaco.languages.register({ id });

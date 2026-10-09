@@ -854,10 +854,18 @@ options:
         search.timeout_s:
             heading: editor
             section: Search
-            help: Seconds one root's ripgrep search is given.
+            help: Seconds one root's ripgrep search, or its list of file names, is given.
             default: 10
             control: number
             min: 1
+        search.max_names:
+            heading: editor
+            section: Search
+            help: How many file names the palette's file mode lists in all before it says the list was cut.
+            default: 100000
+            control: number
+            min: 1
+            whole: true
         literature.timeout_s:
             heading: editor
             section: Literature search

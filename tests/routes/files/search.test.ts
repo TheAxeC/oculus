@@ -53,6 +53,8 @@ function options(answer: Partial<RunOutcome> & { stdout?: string } = {}): Search
     return {
         roots: ROOTS,
         cap: 500,
+        maxNames: 100,
+        hub: '/hub',
         timeout: 10000,
         now: () => 0,
         run: (dir, _args, _timeout, onLine) => {

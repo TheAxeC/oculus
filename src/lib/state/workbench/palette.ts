@@ -8,6 +8,12 @@
 // hint, none for an action without keys, and choosing one asks that tab to run it. A view that
 // offers commands of its own (the Present view's slide actions) has them listed the same way while
 // its tab is on screen, and choosing one runs the command the view handed in.
+//
+// The palette also has a file mode, which finds files by name across the served roots. Its names
+// come from the search route and are matched in a worker (sources/search/file-match.ts). With
+// nothing typed the file mode lists the file tabs open on the page, which `openFileEntries` reads.
+// `paletteKeyOf` is the one place that says which mode a key opens, read by the workbench's key
+// handler and by the terminal, which keeps those keys from the program.
 
 import { z } from 'zod';
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
@@ -25,6 +31,8 @@ import { workspaceMatches, type WorkspaceChoice } from '../sources/explorer/acts
 import type { WorkspacesState } from '../sources/fs-transport.ts';
 import { t } from '../shared/words/text.ts';
 import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
+import { instanceText, pageLeaves, panes, type Host, type Layout } from './layout/index.ts';
+import { MARKDOWN_PREVIEW_VIEW } from '../sources/explorer/file-type.ts';
 import {
     byScore,
     fuzzyMatches,
@@ -32,6 +40,14 @@ import {
     textParts,
     type TextPart
 } from '../shared/words/fuzzy.ts';
+import { fileEntry, type FileEntry } from '../sources/search/file-match.ts';
+
+export {
+    fileValue,
+    plainFile,
+    type FileEntry,
+    type FileMatch
+} from '../sources/search/file-match.ts';
 
 export type PaletteView = { id: string; label: string };
 
@@ -441,3 +457,100 @@ export async function folderCommand(
 /** The sentence for what a workspace write or the folder panel refused with. */
 export { pickerLine, refusal as refusalLine };
 export type { WorkspaceChoice };
+
+/** Which mode of the palette a key opens: the colon commands or the file mode. */
+export type PaletteKey = 'commands' | 'files';
+
+/** The parts of a key event the palette keys read. */
+type PaletteKeyEvent = {
+    key: string;
+    metaKey?: boolean;
+    ctrlKey?: boolean;
+    shiftKey?: boolean;
+    altKey?: boolean;
+};
+
+/**
+ * The mode a key opens, or null for any other key: F1 and Cmd+Shift+P open the command mode, and
+ * Cmd+P the file mode, VS Code's three. Cmd is the Meta key on macOS and the Control key elsewhere,
+ * the other of the two left to the editor, the terminal and the field (on macOS Ctrl+P is the
+ * cursor up of a text and the previous line of a shell). The letter is the typed one, as Cmd+K's
+ * is, since the browser's own key for it (print) is the typed letter's too. F1 answers with no
+ * modifier held.
+ */
+export function paletteKeyOf(event: PaletteKeyEvent, mac: boolean): PaletteKey | null {
+    const [meta, ctrl, shift, alt] = [
+        event.metaKey === true,
+        event.ctrlKey === true,
+        event.shiftKey === true,
+        event.altKey === true
+    ];
+    if (event.key === 'F1') return meta || ctrl || shift || alt ? null : 'commands';
+    if (event.key.toLowerCase() !== 'p' || alt) return null;
+    if (mac ? !meta || ctrl : !ctrl || meta) return null;
+    return shift ? 'commands' : 'files';
+}
+
+/** The views whose tabs show one file by a `root` and a `path` of their state. */
+const FILE_VIEWS: readonly string[] = ['source', 'file', 'document', MARKDOWN_PREVIEW_VIEW];
+
+/**
+ * The trees the file tabs open on the page are read from: in a float's window the float alone, else
+ * the page on screen, the pages it shows in its leaves, and the floats drawn over it.
+ */
+export function shownTrees(
+    hosts: readonly Host[],
+    shown: { page: string; floats: readonly string[]; float: string | null }
+): Layout[] {
+    const treeOf = (id: string): Layout[] =>
+        hosts.filter((host) => host.id === id).map((host) => host.workbench.root);
+    if (shown.float !== null) return treeOf(shown.float);
+    const pages: string[] = [];
+    const visit = (id: string): void => {
+        if (pages.includes(id)) return;
+        pages.push(id);
+        for (const tree of treeOf(id)) pageLeaves(tree).forEach((leaf) => visit(leaf.page));
+    };
+    visit(shown.page);
+    return [...pages, ...shown.floats].flatMap(treeOf);
+}
+
+/**
+ * The files open in tabs of these trees, once each: the tab with id `first` ahead of the rest (the
+ * active tab of the pane the reader last worked in), then each pane's tabs in that pane's order of
+ * use, the active one, those it showed since, newest first, and those never shown.
+ */
+export function openFileEntries(trees: readonly Layout[], first: string | null): FileEntry[] {
+    const ordered = trees.flatMap((tree) =>
+        panes(tree).flatMap(({ pane }) => {
+            const ids = [pane.active, ...(pane.recent ?? []), ...pane.tabs.map((tab) => tab.id)];
+            return [...new Set(ids)].flatMap((id) => pane.tabs.filter((tab) => tab.id === id));
+        })
+    );
+    const front = ordered.filter((tab) => tab.id === first);
+    const seen = new Set<string>();
+    const found: FileEntry[] = [];
+    for (const tab of [...front, ...ordered]) {
+        const root = instanceText(tab.state, 'root');
+        const path = instanceText(tab.state, 'path');
+        if (!FILE_VIEWS.includes(tab.view) || root === '' || path === '') continue;
+        if (seen.has(`${root}\0${path}`)) continue;
+        seen.add(`${root}\0${path}`);
+        found.push(fileEntry(root, path));
+    }
+    return found;
+}
+
+/** The mode a palette is in, which its query and how it was opened decide. */
+export type PaletteMode = 'search' | 'files' | 'commands' | 'symbols';
+
+/**
+ * The mode of a palette holding `query`, opened in the file mode or not: a leading colon is the
+ * command mode and a leading hash the symbols whatever it was opened in, else the mode it was
+ * opened in.
+ */
+export function modeOf(query: string, files: boolean): PaletteMode {
+    if (query.startsWith(':')) return 'commands';
+    if (query.startsWith('#')) return 'symbols';
+    return files ? 'files' : 'search';
+}

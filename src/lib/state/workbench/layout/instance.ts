@@ -5,6 +5,8 @@
 import { z } from 'zod';
 import type { Instance, Layout, Pane, ViewId } from './index.ts';
 import { isMap, item } from '../../../data/helpers/guards.ts';
+import { nameOf } from '../../../data/helpers/files/paths.ts';
+import { sourceTabState } from '../../sessions/source/draft.ts';
 import {
     anyNumberShape,
     filledTextShape,
@@ -100,6 +102,32 @@ export function documentState(mark: { label: string; root: string; path: string 
         path: mark.path,
         label: mark.label
     };
+}
+
+/**
+ * The view a file of one kind opens in, and the state that tab is given: a file in an apps folder
+ * or a text file in the source tab, an HTML file in the document view, anything else in the file
+ * view. A file the route says is gone opens in the source tab too, which says it cannot be opened.
+ * The tree's rows know the size of a file; a caller that has only the path passes undefined. A file
+ * in an apps folder opens as source text whatever its kind, since an app's page is code to read and
+ * never a page to run in the document view; `holds` says whether a file lies in one. It sits here
+ * beside `documentState`, which it builds, because the file browser, the palette and the source
+ * tab's read-again all choose a view by it.
+ */
+export function tabForKind(
+    kind: string,
+    root: string,
+    path: string,
+    size: number | undefined,
+    holds: (root: string, path: string) => boolean
+): { view: string; state: unknown } {
+    const label = nameOf(path);
+    if (holds(root, path)) return { view: 'source', state: sourceTabState(root, path) };
+    if (kind === 'html') return { view: 'document', state: documentState({ label, root, path }) };
+    if (kind === 'text' || kind === 'missing') {
+        return { view: 'source', state: sourceTabState(root, path) };
+    }
+    return { view: 'file', state: { root, path, label, size } };
 }
 
 /**

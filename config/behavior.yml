@@ -262,10 +262,11 @@ git:
 
 
 # === Search across files ====================================================
-# The Search view runs ripgrep over one served root or all of them. `max_hits` is how many hits one answer carries before it says it was cut; `timeout_s` is how long one root's search is given.
+# The Search view runs ripgrep over one served root or all of them. `max_hits` is how many hits one answer carries before it says it was cut; `timeout_s` is how long one root's search is given, and the same time is given to one root's list of file names; `max_names` is how many file names the palette's file mode lists in all before it says the list was cut.
 search:
   max_hits: 500
   timeout_s: 10
+  max_names: 100000
 
 # === Literature search ======================================================
 # The Literature search view asks every source toggled on for one page of hits. `timeout_s` is how many seconds one source is given; `per_source` is how many hits one page asks of each source; `cache_min` is how many minutes an answer is kept for the same request, 0 for none.

@@ -12,8 +12,10 @@
 // was made does not perform it.
 //
 // A tab also publishes the editor actions it offers the palette, the Cmd+K chords the editor gave
-// up so Cmd+K reaches the palette, and the palette asks the tab to run one by its id. A diff pane
-// publishes its diff editor's actions the same way, and says nothing else of use to the bar.
+// up so Cmd+K reaches the palette (F1 is given up the same way, and opens the palette's
+// command mode, so it has no action to list), and the palette asks the tab to run one by its id.
+// A diff pane publishes its diff editor's actions the same way, and says nothing else of use to
+// the bar.
 //
 // The store also holds the source tab whose editor the reader focused last, until that tab goes: a
 // project command started from a button in another view reads its placeholders from that tab.

@@ -28,6 +28,7 @@ import {
     type RailOrder
 } from './keys';
 import { DOC_PICK } from '$lib/state/workbench/navigation/catalogue';
+import { paletteKeyOf, type PaletteKey, type PaletteMode } from '$lib/state/workbench/palette';
 import type { DebugKey } from '$lib/state/system/machine/debug/debug';
 
 type Options = {
@@ -38,12 +39,16 @@ type Options = {
     activeMain: () => Instance | null;
     focus: () => Focus | null;
     paletteOpen: () => boolean;
+    /** The mode the palette is in while it is open, and null while it is closed. */
+    paletteMode: () => PaletteMode | null;
     updateOpen: () => boolean;
     sheetOpen: () => boolean;
     setPaletteOpen: (open: boolean) => void;
     setUpdateOpen: (open: boolean) => void;
     setSheetOpen: (open: boolean) => void;
     openPalette: (prefill: string) => void;
+    /** Open the palette in the mode a palette key names, whatever mode it is in. */
+    showPalette: (key: PaletteKey) => void;
     /** Open one configured hub document by its path, in the page named, as the catalogue does. */
     openDoc: (path: string, page: string | undefined) => void;
     /** New: the composer in the Terminal tab of the page named, the terminals store's rule. */
@@ -124,6 +129,13 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return;
         }
         if (options.sheetOpen()) return;
+        const wanted = paletteKeyOf(event, options.mac);
+        if (wanted !== null) {
+            event.preventDefault();
+            if (options.paletteMode() === wanted) options.setPaletteOpen(false);
+            else options.showPalette(wanted);
+            return;
+        }
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
             event.preventDefault();
             if (options.paletteOpen()) options.setPaletteOpen(false);

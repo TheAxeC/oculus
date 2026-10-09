@@ -25,22 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D46
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a741dc49f99c07dba (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D46
-  base: 29b50632c
-  launched: 2026-10-09
-  report: agents/reviews/D46-report.md
-  brief_check: agents/reviews/D46-brief-check.md (a3a03b9da01471872, claude-opus-5-5, 214,222 tokens, 92 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: with D41, tools/oculus/DESIGN.md (D41 lines 23, 166, 503, 575-576, D46 line 142), src/lib/state/client/context.ts and src/lib/state/sources/explorer/ops.svelte.ts (D41 adds the Markdown edit wiring, D46 the open call; separate hunks), tests/checks/source/keys.test.ts (one line each), tests/checks/config/config.test.ts (each its own keys) and docs/files-and-search.md (D41 lines 69 and 85, D46 the search section near 140); with D57, tools/oculus/DESIGN.md (D57 line 238), docs/window.md (D57 line 15, D46 the palette section 72-80) and src/lib/state/workbench/layout/index.ts (D57 the KeepRule export, D46 one export line for tabForKind); different lines, each merge is simple
-  cases_ruling: agents/briefs/D46-cases.md (case 9 to option A, the extra paths, the 50 ms bound for every keystroke); its second section (Z754): the file mode's matching in a Web Worker, the bound on the page's main thread; its third section (open item 28 (a)): `F1` removed from `FAMILIES` in `history.test.ts`, the file added to the paths
-  builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9); after the ruling, to the hand-back on the 50 ms bound: 75,516 tokens, 155 tool uses, 69.5 min; resumed with the ruling on the 50 ms bound, to the hand-back on the F1 check: 243,385 tokens, 102 tool uses, 69.4 min; resumed with ruling 28, to the report: 319,997 tokens, 26 tool uses, 18.1 min; round 1: 216,918 tokens, 89 tool uses, 61.2 min
-  reviewer_report: agents/reviews/D46-refuter.md (a7cdb86a0c105ec03, claude-opus-5-5, 301,318 tokens, 80 tool uses, 33.0 min); over round 1: a2f2b3fa07ace87d6, claude-opus-5-5, 243,263 tokens, 64 tool uses, 25.1 min
-  round_1: agents/briefs/D46-round1.md, sent to the builder over the tree copied at .agents/worktrees/D46-round0
-  landing: cherry-picking
-  round: 1
 - step: D50
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -294,6 +278,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (after D46). D46 landed (the VS Code palette keys; booking in plan.md; `agents/reviews/D46-landing.md`) after one repair round and the review over it, its three findings closed at landing. D50's first review is saved and its repair round 1 sent; R2 stopped at its preparation for open item 32. Open items 31 and 32 wait for Axel. In flight: D41 (repair round 1), D50 (repair round 1), D53 (landing next). Next: /land D53, then D49 into a free slot, D56 after D53, D55 after D50.
 - 2026-10-09 (after D48). D48 landed (side projects with the research keys that apply, and smaller Focus rows; booking in plan.md; `agents/reviews/D48-landing.md`) after one repair round and the review over it, its one finding closed at landing (the G8 test's whole-file check after the add). D50's builder reported (`agents/reviews/D50-report.md`) and its first review runs; D53's review over round 1 is saved, three findings to fix at landing; R2's brief is written and its brief check is back (`agents/reviews/R2-brief-check.md`), its findings to close in the brief. In flight: D41 (repair round 1), D46 (landing next), D50 (first review), D53 (waits to land after D46). Next: /land D46, /land D53, R2's brief closed and prepared, D49 after D46, D56 after D53, D55 after D50.
 - 2026-10-09 (after D52). D52 landed (a page per collection entry; booking in plan.md; `agents/reviews/D52-landing.md`) after one repair round and the review over it, its findings closed at landing; fixes at landing: the person page's Folder heading, the `apps.md` example's `status`, the `new-entry` undo narrowed, `valueNow`'s comment, the entry page's Files heading aligned (the look), three tests tagged slow under Z64. D41 and D53 are in repair round 1 (D53's review over the round running); D46 and D48 have their reviews over round 1 and wait to land, each with findings to fix at landing; D50's builder runs. Axel unpaused Q72 and R2. Next: /land D48, /land D46, R2 into the free slot, D56 after D53, D49 after D46, D55 after D50.
 - 2026-10-09 (D46 round 1). D46's first review saved (`agents/reviews/D46-refuter.md`); its findings sent as repair round 1 (`agents/briefs/D46-round1.md`) to builder a741dc49f99c07dba. In flight (6 of 6): D41, D50 and D53 (builders), D46, D48 and D52 (repair round 1). Next: each report and the review over each round as it arrives; D49 after D46, D56 after D52 and D53, D55 after D50.

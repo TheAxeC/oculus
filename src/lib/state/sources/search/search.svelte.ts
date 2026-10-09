@@ -12,6 +12,12 @@
 // server checks it with (data/helpers/search/query.ts), so a refusal is a sentence rather than a
 // round trip. The server answers a refusal as a word and every sentence is worded here.
 //
+// `names` is the same endpoint asked for the names of every file under the served roots
+// (`list=names`), which the palette's file mode matches on the page. It answers the names or the
+// sentence for the refusal or failure, and is not tied to a tab: the palette that asked ends it.
+// `fileMatcher` hands an answer to a web worker that matches the palette's queries against it
+// (file-matcher.svelte.ts), and the palette that made it ends it.
+//
 // A replace is posted as POST /api/ops `replace` over the hits of the answer, named by the query
 // the answer was found by. One replace is out at a time. A file a source tab holds unsaved text of
 // is left out of it. The answer carries the hits of every file the replace wrote as they are after
@@ -24,17 +30,20 @@ import { z } from 'zod';
 import { readAs, readJson } from '../../../data/shapes/shapes.ts';
 import {
     answerOf,
+    namesOf,
     parseSearchState,
     queryOf,
     ranOf,
     remembered,
     rereadsOf,
+    type NamesAnswer,
     type SearchFile,
     type SearchMode,
     type SearchState
 } from './search.ts';
 import {
     refusalFrom,
+    namesUrl,
     refusalOf,
     searchCap,
     searchUrl,
@@ -63,6 +72,7 @@ import {
     type ReplaceScope
 } from './hits.ts';
 import { replaceDone, replaceQuestion, replaceStopped } from './words.ts';
+import { createFileMatcher, type FileMatcher } from './file-matcher.svelte.ts';
 
 /** A refusal's body: the word it answers, and the reason a pattern was refused. */
 const refusalBodyShape = z.object({
@@ -147,6 +157,13 @@ export type SearchStore = {
     focusTaken: (id: string) => void;
     /** Forget a tab's in-flight work and what it said, for a tab that closed. */
     forgetSearch: (id: string) => void;
+    /**
+     * The names of every file under the served roots, for the palette's file mode: the answer, or
+     * the sentence that says why there is none. Aborting the signal ends the request.
+     */
+    names: (signal: AbortSignal) => Promise<NamesRead>;
+    /** A matcher in a web worker for a names answer; ending it stops the worker. */
+    fileMatcher: (answer: NamesAnswer) => FileMatcher;
 };
 
 export function createSearch(
@@ -266,7 +283,12 @@ export function createSearch(
         unsay(id);
         state.running = [...state.running, id];
         try {
-            const answer = await ask(query, writes.writeToken(), gate.signal);
+            const answer = await request(
+                searchUrl(query),
+                writes.writeToken(),
+                gate.signal,
+                answerOf
+            );
             if (!open(id) || runs.get(id) !== run) return;
             const remember = {
                 queries: remembered(held.queries, query.q),
@@ -455,23 +477,31 @@ export function createSearch(
         wantFocus,
         focusWanted,
         focusTaken,
-        forgetSearch
+        forgetSearch,
+        names: (signal) => request(namesUrl(), writes.writeToken(), signal, namesOf),
+        fileMatcher: (answer) => createFileMatcher(answer)
     };
 }
 
-/** One request to the endpoint, with the token the page was given. */
-async function ask(
-    query: SearchQuery,
+/** What a request to the endpoint answered: the answer read from the body, or why there is none. */
+type Read<T> = { ok: true; answer: T } | { ok: false; error: string };
+
+/** What a names request answered: the names, or the sentence that says why there are none. */
+type NamesRead = Read<NamesAnswer>;
+
+/**
+ * One request to the endpoint, with the token the page was given. `read` takes the answer out of
+ * the body and gives null for a body that is not one, so a refusal, an unreadable body and a
+ * failed request are worded here for a search and for a names request alike.
+ */
+async function request<T>(
+    url: string,
     token: string,
-    signal: AbortSignal
-): Promise<
-    { ok: true; answer: NonNullable<SearchState['answer']> } | { ok: false; error: string }
-> {
+    signal: AbortSignal,
+    read: (body: unknown) => T | null
+): Promise<Read<T>> {
     try {
-        const response = await fetch(searchUrl(query), {
-            headers: { 'x-oculus-token': token },
-            signal
-        });
+        const response = await fetch(url, { headers: { 'x-oculus-token': token }, signal });
         const body = await readJson(response);
         if (!response.ok) {
             const held = readAs(refusalBodyShape, body);
@@ -482,7 +512,7 @@ async function ask(
             return { ok: false, error: refusedAnswer(response.status, held?.error) };
         }
         if (body === undefined) return { ok: false, error: unreadableAnswer(response.status) };
-        const answer = answerOf(body);
+        const answer = read(body);
         if (answer === null) return { ok: false, error: t('search.failed') };
         return { ok: true, answer };
     } catch (error) {

@@ -7,7 +7,8 @@
 // does.
 
 import { describe, expect, it } from 'vitest';
-import { openRow, tabForKind } from '../../../../src/lib/views/shared/explorer/opening.ts';
+import { openRow } from '../../../../src/lib/views/shared/explorer/opening.ts';
+import { tabForKind } from '../../../../src/lib/state/workbench/layout/instance.ts';
 import type { Opener } from '../../../../src/lib/views/shared/explorer/opening.ts';
 import type { TreeRow } from '../../../../src/lib/state/sources/fs.ts';
 

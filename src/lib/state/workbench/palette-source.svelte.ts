@@ -1,8 +1,9 @@
 // Layer 2, client state. The reactive values the shell palette indexes when it opens, and the two
 // run dates the update tray draws beside its tasks. This adapter keeps the pure index in palette.ts
 // free of stores while exposing only the snapshot, socket feeds, merged config and triage-notes run
-// date the shell needs, and the two things the language picker does beyond painting a tab: write a
-// file association and open the Settings view on the language settings.
+// date the shell needs, and what the palette does beyond painting a tab: write a file association,
+// open the Settings view on the language settings, and open a file the file mode chose in the view
+// that can show it.
 //
 // A view in focus also offers the palette its own commands: the Present view's slide actions and
 // Export to PDF. A view says which commands it offers while it is mounted, keyed by its instance,
@@ -13,6 +14,7 @@ import { untrack } from 'svelte';
 import type { EntitiesStore, WriteAnswer } from '../shared/stores/shapes.ts';
 import type { FeedsStore } from '../feeds/feeds.svelte.ts';
 import type { PaletteFeeds } from './palette.ts';
+import { tabForKind } from './layout/index.ts';
 import type { Snapshot } from '../../data/model/index.ts';
 import { withSettingsQuery } from '../system/config/typed.ts';
 import type { LayoutStore } from './layout.svelte.ts';
@@ -23,11 +25,16 @@ import type { UiStore } from './ui.svelte.ts';
 /** The search that shows the language settings row of the Settings view and nothing else. */
 const LANGUAGE_SETTINGS = '@id:editor.languages';
 
-/** What the language picker acts through: the configuration write, the layout and the UI store. */
+/**
+ * What the palette acts through: the configuration write, the layout, the UI store, the read of a
+ * file's kind and whether a file lies in an apps folder, which opens as source text.
+ */
 export type PaletteActions = {
     writeConfigValue: Parameters<typeof associateEnding>[0];
-    layout: Pick<LayoutStore, 'openView' | 'currentPage'>;
+    layout: Pick<LayoutStore, 'openView' | 'currentPage' | 'keepPreview' | 'askFocus'>;
     ui: Pick<UiStore, 'instanceState' | 'setInstanceState'>;
+    readFileKind: (root: string, path: string) => Promise<{ kind: string }>;
+    holds: (root: string, path: string) => boolean;
 };
 
 /** One command a view offers the palette: the label it is listed by, and what choosing it does. */
@@ -57,6 +64,13 @@ export type PaletteSourceStore = {
      * search.
      */
     openLanguageSettings: () => string;
+    /**
+     * Open a file of a served root as a kept tab in the view that can show it, and give the
+     * keyboard to the tab; the instance it opened. The file's kind is read first, so a text file
+     * opens in the source tab, an HTML file in the document view and anything else in the file
+     * view.
+     */
+    openFile: (root: string, path: string) => Promise<string>;
     /** Say which commands one view offers, replacing what it offered before. */
     offer: (instance: string, commands: ViewCommand[]) => void;
     /** Take a view's commands away, which is what an unmounted view does. */
@@ -99,6 +113,15 @@ export function createPaletteSource(
         return id;
     }
 
+    async function openFile(root: string, path: string): Promise<string> {
+        const type = await actions.readFileKind(root, path);
+        const tab = tabForKind(type.kind, root, path, undefined, actions.holds);
+        const id = actions.layout.openView(tab.view, tab.state, undefined, { preview: false });
+        actions.layout.keepPreview(id);
+        actions.layout.askFocus(id);
+        return id;
+    }
+
     let held = $state<Record<string, ViewCommand[]>>({});
 
     // A view offers from an effect, so the write reads what is held without subscribing to it:
@@ -128,6 +151,7 @@ export function createPaletteSource(
         paletteSource,
         associate,
         openLanguageSettings,
+        openFile,
         offer,
         withdraw,
         offered,

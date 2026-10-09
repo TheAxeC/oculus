@@ -87,6 +87,7 @@ digraph channels {
         "? src/lib/state/sessions/source/disk.svelte.ts:153" [label="src/lib/state/sessions/source/disk.svelte.ts:153 .listen(name, (heard)"];
         "? src/lib/state/sessions/source/disk.svelte.ts:153" [label="src/lib/state/sessions/source/disk.svelte.ts:153 message(name, heard)"];
         "? src/lib/state/sessions/source/disk.svelte.ts:154" [label="src/lib/state/sessions/source/disk.svelte.ts:154 .subscribe([name])"];
+        "? src/lib/state/sources/search/file-matcher.svelte.ts:83" [label="src/lib/state/sources/search/file-matcher.svelte.ts:83 .listen("];
         "? src/lib/state/system/apps/apps.svelte.ts:293" [label="src/lib/state/system/apps/apps.svelte.ts:293 message(channel)"];
         "? src/lib/state/system/config/editors/draft.ts:346" [label="src/lib/state/system/config/editors/draft.ts:346 message('notYaml', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:351" [label="src/lib/state/system/config/editors/draft.ts:351 message('where', place.label, name)"];
@@ -139,6 +140,7 @@ digraph channels {
         "state/sessions/terminal/pty/pty-wire";
         "state/sessions/terminals";
         "state/sources/fs";
+        "state/sources/search/file-matcher";
         "state/sources/search/search";
         "state/system/apps/apps";
         "state/system/apps/rules";
@@ -203,6 +205,7 @@ digraph channels {
     "? src/lib/state/sessions/source/disk.svelte.ts:150" -> "state/sessions/source/disk";
     "? src/lib/state/sessions/source/disk.svelte.ts:153" -> "state/sessions/source/disk";
     "? src/lib/state/sessions/source/disk.svelte.ts:154" -> "state/sessions/source/disk";
+    "? src/lib/state/sources/search/file-matcher.svelte.ts:83" -> "state/sources/search/file-matcher";
     "? src/lib/state/system/apps/apps.svelte.ts:293" -> "state/system/apps/apps";
     "? src/lib/state/system/config/editors/draft.ts:346" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:351" -> "state/system/config/editors/draft";

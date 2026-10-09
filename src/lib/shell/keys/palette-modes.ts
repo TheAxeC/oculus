@@ -26,6 +26,9 @@ import {
     type LspChoiceKind
 } from '$lib/data/prose/lsp-servers';
 
+/** What a request to open the palette installs: the text, and whether it is the file mode. */
+export type PaletteStart = { text: string; files: boolean };
+
 /** The commands that, chosen, open the list of their own instead of running. */
 const MODE_COMMANDS = [
     'language',
@@ -199,6 +202,8 @@ export function choiceRows(
 export type ListedFacts = {
     parsed: ParsedCommand | null;
     matches: PaletteMatch[];
+    /** The values of the file mode's rows, or null while the palette is in another mode. */
+    files: string[] | null;
     /** The line a go-to-line query names, or null for another query. */
     line: number | null;
     /** Whether the source tab on screen has a caret, which a go-to-line needs. */
@@ -218,12 +223,13 @@ export type ListedFacts = {
 
 /**
  * How many rows the list draws and the value of each row a press can run, in the order drawn: the
- * fuzzy matches with no command, the go-to-line row, the language entries and languages, the
- * workspaces, the save row, the choices of a server, else the colon commands, among which one that
- * is unavailable is drawn and has no value.
+ * files of the file mode, the fuzzy matches with no command, the go-to-line row, the language
+ * entries and languages, the workspaces, the save row, the choices of a server, else the colon
+ * commands, among which one that is unavailable is drawn and has no value.
  */
 export function listedRows(facts: ListedFacts): { count: number; values: string[] } {
     const { parsed, line, languageMode, workspaceMode, saveMode, choiceMode } = facts;
+    if (facts.files !== null) return { count: facts.files.length, values: facts.files };
     if (parsed === null) {
         return { count: facts.matches.length, values: facts.matches.map((one) => one.item.id) };
     }

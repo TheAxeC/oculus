@@ -1,9 +1,12 @@
 <script lang="ts">
-    // Layer 3, shell. The Cmd-K overlay over the workbench, on the modal ground
-    // ui/frame/Modal.svelte draws, its list bits-ui's Command. It builds a fresh pure index
-    // whenever it opens, then either matches the query fuzzily or lists the colon commands, each
-    // with its argument hint after its name and what it does at the end of the row;
-    // choosing a result changes layout or appearance state and never mounts a view of its own.
+    // Layer 3, shell. The palette overlay over the workbench, on the modal ground
+    // ui/frame/Modal.svelte draws, its list bits-ui's Command. Cmd-K opens it to search the
+    // projects, entries and tabs, a colon or Cmd+Shift+P or F1 to list the colon commands (rows/
+    // CommandRows.svelte), and Cmd+P to find a file by name across the served roots (rows/
+    // FileRows.svelte). It builds a fresh pure index whenever it opens in the search mode, then
+    // either matches the query fuzzily or lists the colon commands; choosing a result changes
+    // layout or appearance state and never mounts a view of its own, except a file, which opens in
+    // the view that can show it.
     // Every row is one grid line: what it is in words, then the control that opens it filling the
     // rest, its matched letters marked.
     //
@@ -41,37 +44,51 @@
     // query lists its workspace's symbols (rows/SymbolRows.svelte; Cmd+T in the app).
     // `:eslint-config` lists the ESLint configuration of the tab's file
     // (rows/LintConfigRows.svelte).
+    //
+    // The file mode asks the search route for the names of every file under the served roots when
+    // it opens (file-names.svelte.ts) and a worker matches them (file-match.worker.ts); the rows
+    // are those of the newest query the worker has answered. With nothing typed it lists the files
+    // open in tabs; a colon or a hash typed in it leaves it for the commands or the symbols. A
+    // request to open the palette while it is open installs the text and the mode of the request,
+    // and the query is bound to the window, which reads the mode the palette is in.
 
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
+    import CommandRows from '$lib/shell/keys/rows/CommandRows.svelte';
+    import FileRows from '$lib/shell/keys/rows/FileRows.svelte';
+    import LineRows from '$lib/shell/keys/rows/LineRows.svelte';
     import LanguageRows from '$lib/shell/keys/rows/LanguageRows.svelte';
     import ChoiceRows from '$lib/shell/keys/rows/ChoiceRows.svelte';
     import LintConfigRows from '$lib/shell/keys/rows/LintConfigRows.svelte';
     import { createLintConfigList } from '$lib/shell/keys/lint-config.svelte';
     import SymbolRows from '$lib/shell/keys/rows/SymbolRows.svelte';
     import WorkspaceRows from '$lib/shell/keys/rows/WorkspaceRows.svelte';
+    import { createFileNames } from '$lib/shell/keys/file-names.svelte';
     import {
         choiceModeOf,
         choiceRows,
         listedRows,
-        opensAsMode
+        type PaletteStart
     } from '$lib/shell/keys/palette-modes';
-    import { configuredThemes, landOn, openPaletteItem } from '$lib/shell/keys/palette-open';
+    import { landOn, openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
         buildIndex,
         commands,
         editorItems,
-        pinItems,
-        viewItems,
-        folderCommand,
+        fileValue,
         kindWord,
         lineQuery,
+        modeOf,
+        openFileEntries,
         parseCommand,
+        pinItems,
+        plainFile,
         ranked,
+        shownTrees,
+        viewItems,
         workspaceChoicesOf,
-        type PaletteCommand,
         type PaletteItem
     } from '$lib/state/workbench/palette';
     import {
@@ -84,35 +101,46 @@
         editorOnScreen,
         sourceOnScreen
     } from '$lib/state/workbench/navigation/editor-status.svelte';
-    import { t } from '$lib/state/shared/words/text';
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
+    import { t } from '$lib/state/shared/words/text';
     import { untrack } from 'svelte';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
 
     const {
-        editorStatus: { ask, statusOf },
+        editorStatus: { statusOf },
         explorer,
         fs: { workspaces },
-        layout: { activeInstance, openView },
+        layout: { activeInstance, currentPage, floats, hosts },
         lint,
         lsp,
         paletteSource: { paletteSource, offered },
-        ui: { setCrt, setTheme, crt },
-        registry: { views }
+        registry: { views },
+        search
     } = client;
 
     type Props = {
         open: boolean;
         onclose: () => void;
         onupdate: () => void;
-        /** The text installed on this opening, empty for Cmd-K and colon for command mode. */
-        prefill?: string;
+        /**
+         * What this opening installs: empty for Cmd-K, a colon for the command mode, and the file
+         * mode for Cmd+P. Each request is a new object, so one made while the palette is open
+         * installs again.
+         */
+        start?: PaletteStart;
+        /** The text in the field, which the window reads to know the mode the palette is in. */
+        query?: string;
     };
 
-    let { open, onclose, onupdate, prefill = '' }: Props = $props();
-    let query = $state(untrack(() => prefill));
+    let {
+        open,
+        onclose,
+        onupdate,
+        start = { text: '', files: false },
+        query = $bindable('')
+    }: Props = $props();
     let box: HTMLDivElement | undefined = $state();
 
     /** The Command's selected row, by its value. */
@@ -128,6 +156,10 @@
     const knownViews = $derived(
         views().map((view) => ({ id: view.id, label: registrationLabel(view) }))
     );
+    const names = createFileNames(search, () => (fileMode ? query : ''));
+    /** The mode the query puts the palette in; with no prefix, the mode it was opened in. */
+    const mode = $derived(modeOf(query, start.files));
+    const fileMode = $derived(mode === 'files');
     /** The source tab on screen and what it last said, or null when the tab on screen is none. */
     const source = $derived(sourceOnScreen(activeInstance(), statusOf));
     /** The tab on screen whose editor actions are listed: a source tab or a diff pane. */
@@ -136,7 +168,7 @@
     const tab = $derived(activeInstance());
     const pinnable = $derived(tab === null ? null : { id: tab.id, pinned: tab.pinned === true });
     const index = $derived(
-        open
+        open && mode === 'search'
             ? [
                   ...buildIndex(current.snapshot, current.feeds, knownViews),
                   ...editorItems(acting),
@@ -173,7 +205,7 @@
         choiceMode === null ? [] : choiceRows(choiceMode, choiceView, parsed?.argument ?? '')
     );
     /** Whether the query is the workspace's symbol list (a `#`), the workspace list or its save. */
-    const symbolMode = $derived(parsed === null && query.startsWith('#'));
+    const symbolMode = $derived(mode === 'symbols');
     const workspaceMode = $derived(parsed !== null && parsed.name === 'workspace');
     const saveMode = $derived(parsed !== null && parsed.name === 'workspace-save');
     const lintConfig = createLintConfigList({
@@ -200,13 +232,32 @@
               ).filter((command) => command.name.startsWith(parsed.name))
     );
     const matches = $derived(
-        parsed === null && !symbolMode ? ranked(index, query).slice(0, 30) : []
+        parsed === null && mode === 'search' ? ranked(index, query).slice(0, 30) : []
     );
+    /** The files open in tabs of the trees on screen, the active tab of the pane in use first. */
+    const openFiles = $derived(
+        open && fileMode
+            ? openFileEntries(
+                  shownTrees(hosts(), {
+                      page: currentPage().id,
+                      floats: floats().map((one) => one.id),
+                      float: client.float
+                  }),
+                  tab?.id ?? null
+              ).map(plainFile)
+            : []
+    );
+    /** The rows of the file mode: the open files with nothing typed, else the matches. */
+    const fileFound = $derived.by(() => {
+        if (!fileMode) return [];
+        return query.trim() === '' ? openFiles : names.rows();
+    });
     /** How many rows the list draws, and the value of each one a press can run, in its order. */
     const listed = $derived(
         listedRows({
             parsed,
             matches,
+            files: fileMode ? fileFound.map((one) => fileValue(one.entry)) : null,
             line,
             hasCaret: caret !== null,
             languageMode,
@@ -224,12 +275,20 @@
     const count = $derived(listed.count);
     const values = $derived(listed.values);
 
-    // Each opening starts from its prefill; what is typed after that is read untracked, so typing
-    // does not start it again.
+    // Each request starts from its text; what is typed after that is read untracked, so typing does
+    // not start it again.
     $effect(() => {
         if (!open || box === undefined) return;
-        const start = prefill;
-        untrack(() => typed(start));
+        const asked = start;
+        untrack(() => typed(asked.text));
+    });
+
+    // The file mode asks for the names when the palette opens in it and ends the request when the
+    // palette closes, so a palette opened again asks again.
+    const wantsNames = $derived(open && start.files);
+    $effect(() => {
+        if (!wantsNames) return;
+        return untrack(() => names.ask());
     });
 
     // The second list is left with the language mode, and its first row is the selected one.
@@ -263,55 +322,6 @@
         const id = openPaletteItem(client, item);
         if (id !== '' && item.kind !== 'editor' && item.kind !== 'command') void landOn(id);
     }
-
-    /** Send the source tab on screen to a line. */
-    function goLine(wanted: number): void {
-        if (source === null || caret === null) return;
-        ask(source.instance, { kind: 'goto', line: wanted });
-        onclose();
-    }
-
-    /** Open Folder: the folder panel, then the folder shown; a panel that did not open is said. */
-    async function openFolder(): Promise<void> {
-        const result = await folderCommand(explorer.openFolder);
-        if (result.closed) onclose();
-        else said = result.said;
-    }
-
-    function run(command: PaletteCommand): void {
-        if (!command.available || parsed === null) return;
-        const argument = parsed.argument;
-        // The instance a command showed, when it showed a tab.
-        let shown = '';
-        // The commands that list choices are modes of their own: choosing one opens its list.
-        if (opensAsMode(command.name)) {
-            typed(`:${command.name} `);
-            return;
-        }
-        if (command.name === 'folder') {
-            void openFolder();
-            return;
-        }
-        if (command.name === 'theme') {
-            if (configuredThemes(current.config).includes(argument)) setTheme(argument);
-        } else if (command.name === 'crt') {
-            setCrt(!crt());
-        } else if (command.name === 'tab') {
-            if (knownViews.some((view) => view.id === argument)) shown = openView(argument);
-        } else if (command.name === 'goto') {
-            const project = current.snapshot?.entities.projects[argument];
-            if (project !== undefined) {
-                shown = openView('project', {
-                    id: project.id,
-                    label: project.short ?? project.title
-                });
-            }
-        } else if (command.name === 'update') {
-            onupdate();
-        }
-        onclose();
-        if (shown !== '') void landOn(shown);
-    }
 </script>
 
 {#if open}
@@ -329,7 +339,9 @@
                                 {#snippet child({ props: input })}
                                     <Search
                                         value={query}
-                                        placeholder={t('app.palette.cmdk_placeholder')}
+                                        placeholder={fileMode
+                                            ? t('app.palette.files_placeholder')
+                                            : t('app.palette.cmdk_placeholder')}
                                         field={{ ...input, 'aria-controls': LIST }}
                                         oninput={typed}
                                     />
@@ -346,6 +358,13 @@
                                                         query={query.slice(1)}
                                                         {onclose}
                                                     />
+                                                {:else if fileMode}
+                                                    <FileRows
+                                                        found={fileFound}
+                                                        listingOpen={query.trim() === ''}
+                                                        {names}
+                                                        {onclose}
+                                                    />
                                                 {:else if parsed === null}
                                                     {#each matches as found (found.item.id)}
                                                         <PaletteRow
@@ -360,25 +379,13 @@
                                                         />
                                                     {/each}
                                                 {:else if line !== null}
-                                                    {#if caret !== null}
-                                                        <PaletteRow
-                                                            row={{
-                                                                value: 'line',
-                                                                kind: t(
-                                                                    'statusbar.palette_kind_line'
-                                                                ),
-                                                                label: t(
-                                                                    'statusbar.palette_line',
-                                                                    line
-                                                                ),
-                                                                pick: () => goLine(line)
-                                                            }}
-                                                        />
-                                                    {:else}
-                                                        <p class="empty">
-                                                            {t('statusbar.palette_line_none')}
-                                                        </p>
-                                                    {/if}
+                                                    <LineRows
+                                                        {line}
+                                                        instance={caret === null
+                                                            ? null
+                                                            : (source?.instance ?? null)}
+                                                        {onclose}
+                                                    />
                                                 {:else if languageMode}
                                                     {#if source === null}
                                                         <p class="empty">
@@ -421,36 +428,25 @@
                                                         onsaid={(words: string) => (said = words)}
                                                     />
                                                 {:else}
-                                                    {#if parsed.name === '' && caret !== null && source !== null}
-                                                        <p class="empty" data-line-hint>
-                                                            {t(
-                                                                'statusbar.palette_line_hint',
-                                                                caret.line,
-                                                                caret.column,
-                                                                source.status.lines
-                                                            )}
-                                                        </p>
-                                                    {/if}
-                                                    {#each commandList as command (command.name)}
-                                                        <PaletteRow
-                                                            row={{
-                                                                value: `command:${command.name}`,
-                                                                kind: ':',
-                                                                label: `${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`,
-                                                                hint: command.description,
-                                                                disabled: !command.available,
-                                                                note: command.available
-                                                                    ? undefined
-                                                                    : t('app.palette_unavailable'),
-                                                                pick: () => run(command)
-                                                            }}
-                                                        />
-                                                    {/each}
+                                                    <CommandRows
+                                                        {parsed}
+                                                        list={commandList}
+                                                        caret={caret !== null && source !== null
+                                                            ? {
+                                                                  ...caret,
+                                                                  lines: source.status.lines
+                                                              }
+                                                            : null}
+                                                        {onclose}
+                                                        {onupdate}
+                                                        ontype={typed}
+                                                        onsaid={(words: string) => (said = words)}
+                                                    />
                                                 {/if}
                                                 {#if said !== ''}
                                                     <p class="empty" data-palette-said>{said}</p>
                                                 {/if}
-                                                {#if count === 0 && line === null && !languageMode && !workspaceMode && !symbolMode && choiceMode === null && !lintConfig.active}
+                                                {#if count === 0 && line === null && !languageMode && !workspaceMode && !symbolMode && !fileMode && choiceMode === null && !lintConfig.active}
                                                     <p class="empty">
                                                         {parsed === null
                                                             ? t('app.palette_empty')

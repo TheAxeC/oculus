@@ -482,6 +482,7 @@ describe('settingFindings', () => {
                 'open.program_ext.pdf',
                 'processes.patterns',
                 'search.max_hits',
+                'search.max_names',
                 'search.timeout_s',
                 'slurm.days',
                 'slurm.poll_min',

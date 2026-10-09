@@ -8,8 +8,7 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import type { HeadStage } from '$lib/state/sources/repositories/file-git';
-import { instanceText } from '$lib/state/workbench/layout/instance';
-import { tabForKind } from '../../../shared/explorer/opening';
+import { instanceText, tabForKind } from '$lib/state/workbench/layout/instance';
 
 /** The tab being read again: its instance, whether it is a preview tab, and its file. */
 export type ReadAgain = {

@@ -1,7 +1,11 @@
 // Layer 3, primitive. The keys the editor gives up so the shell receives them from inside the
 // editor: Cmd+K and Ctrl+K, which open the palette (every chord Monaco binds under Cmd+K, Ctrl+K
-// off macOS, and on macOS Ctrl+K, which Monaco binds to Delete All Right), and F8 and Shift+F8,
-// which walk the Problems view's rows across files where Monaco's own walk stays in one file.
+// off macOS, and on macOS Ctrl+K, which Monaco binds to Delete All Right), F1, which Monaco binds
+// to its own command palette and the workbench's palette takes in its command mode, and F8 and
+// Shift+F8, which walk the Problems view's rows across files where Monaco's own walk stays in one
+// file. Monaco's Command Palette item of the editor's menu runs the same palette: its command is
+// replaced by one that raises `COMMAND_PALETTE_EVENT` on the window (kit/load.ts), which the
+// workbench answers by opening the palette in its command mode.
 //
 // Monaco resolves a chord through its first key, so one rule binding that key to no command frees
 // every chord under it (`freedKeys`, turned into Monaco's key codes when Monaco has loaded). The
@@ -25,8 +29,12 @@ export const SAVE_KEY: KeyPress = { code: 'KeyS', cmd: true };
 
 const CMD_K: KeyPress = { code: 'KeyK', cmd: true };
 const CTRL_K: KeyPress = { code: 'KeyK', ctrl: true };
+const F1: KeyPress = { code: 'F1' };
 const F8: KeyPress = { code: 'F8' };
 const SHIFT_F8: KeyPress = { code: 'F8', shift: true };
+
+/** The event on the window that asks the workbench to open the palette in its command mode. */
+export const COMMAND_PALETTE_EVENT = 'oculus-command-palette';
 
 /** A Cmd+K chord whose second key is held with Cmd too, as most of them are. */
 function underCmdK(id: string, code: KeyPress['code'], shift = false): RemovedChord {
@@ -75,10 +83,10 @@ export function removedChords(mac: boolean): RemovedChord[] {
 
 /**
  * The first keys bound to no command, which frees every chord that starts with them: the Cmd+K
- * chords, Ctrl+K on macOS, and the two keys of the workbench's walk through the problems.
+ * chords, Ctrl+K on macOS, F1, and the two keys of the workbench's walk through the problems.
  */
 export function freedKeys(mac: boolean): KeyPress[] {
-    return mac ? [CMD_K, CTRL_K, F8, SHIFT_F8] : [CMD_K, F8, SHIFT_F8];
+    return mac ? [CMD_K, CTRL_K, F1, F8, SHIFT_F8] : [CMD_K, F1, F8, SHIFT_F8];
 }
 
 /** Monaco's name for a key as its keycap reads: `KeyC` is C and `Digit0` is 0. */

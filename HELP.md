@@ -77,6 +77,8 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | Ctrl+Shift+M, then Cmd+B, I, R, T, S, Shift+B or C | wrap the selection in `\mathbf`, `\mathit`, `\mathrm`, `\mathtt`, `\mathsf`, `\mathbb` or `\mathcal` (Ctrl+M, then Ctrl+key off macOS) |
 | Shift-F10 | the right-click menu of the focused row or control, as the context menu key opens it |
 | Cmd-K | jump palette |
+| Cmd+P | find a file by name across the served roots and open it (Ctrl+P off macOS) |
+| Cmd+Shift+P, F1 | the palette in its command mode, as a colon opens it; either key closes it again (Ctrl+Shift+P off macOS; F1 works in the editors and in a terminal too) |
 | Cmd+T | in the app, the palette on the symbols of the workspace (`#` in the palette does the same in a browser) |
 | F2 | rename the symbol at the caret of a source tab's editor, through its language server; in a YAML file of the hub, on a value that names an entry of another file, it renames that key in every file that names it and shows the edit as a Refactor Preview before anything is written, and Cmd+Enter in the rename box shows that preview for any rename |
 | Shift+Alt+H | show the call hierarchy of the symbol at the caret of a source tab's editor, in the References view |
