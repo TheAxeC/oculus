@@ -36,7 +36,7 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D56-report.md
   brief_check: agents/reviews/D56-brief-check.md (ab76aa6336c81ae1d, claude-opus-5-5, 269,002 tokens, 103 tool uses, 13.1 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D50, config/layout.yml (D50 the docs list, the help arrangement and the layer comments; D56 a new top-level workbench key), ActivityRail.svelte (D50 53, 63-65, 161-171; D56 the Workbenches button), the head comment of views/sources/files/Files.svelte (D50 43-49), docs/window.md (D50 25 and 29; D56 a new section), DESIGN.md and HELP.md (D50 170; D56 other lines); different lines, each merge simple
-  builder_usage: 286,546 tokens, 70 tool uses, 11.0 min (the first run and the hand-back of the cases); a6f65daca142e0c86, claude-sonnet-5-5, 113,994 tokens, 285 tool uses, 72.3 min (the build)
+  builder_usage: 286,546 tokens, 70 tool uses, 11.0 min (the first run and the hand-back of the cases); a6f65daca142e0c86, claude-sonnet-5-5, 113,994 tokens, 285 tool uses, 72.3 min (the build); round 1: 209,153 tokens, 377 tool uses, 70.8 min
   cases: agents/briefs/D56-cases.md (Z759), sent to the builder after its first run
   reviewer_report: agents/reviews/D56-refuter.md (a17e012de19ee2885, claude-opus-5-5, 346,450 tokens, 92 tool uses, 30.1 min)
   round_1: agents/briefs/D56-round1.md (the review's findings and Z763), sent to the builder

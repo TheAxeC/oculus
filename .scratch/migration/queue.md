@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D56 (the workbench): building repair round 1.
+- D56 (the workbench): in review over repair round 1.
 
 Queued, in order (4 steps):
 - D49 (the help pages cut): waits for D56, whose sections in `docs/window.md`, `docs/views.md` and `docs/files-and-search.md` it folds into HELP.md.
@@ -10,6 +10,7 @@ Queued, in order (4 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- R2 (the first-run check), 2026-10-10, 4664a5f21.
 - D50 (the hub's own folder, its shareable files and its settings layer), 2026-10-09, b4cb416a3.
 - D41 (links in Markdown checked), 2026-10-09, 17c8ac9bc.
 - D53 (unique views), 2026-10-09, d29631c18.
