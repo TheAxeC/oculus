@@ -66,9 +66,9 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D47 (225, 456), D48 (552) and D57 (238), D51 lines 72, 244 and 565; docs/views.md with D41 (73, 213), D47 (159-181) and D48 (5-7, 21-23), D51 line 243; DESIGN.md line 521 and config/catalogs/options.yml line 146 (D51), with D46, D47 and D48 on other lines of options.yml (857-860, 832, 1230); src/lib/ui/controls/editor/kit/look.ts (D51 line 42, written outside the brief's list as `paint`'s one caller; no other step in flight changes it); src/lib/ui/controls/editor/kit/load.ts with D46 (lines 64 and 221-226), D51 the rules lookup near 370-405; docs/diagrams/ regenerated at landing; different lines, each merge simple
   cases_ruling: agents/briefs/D51-cases.md (case 13 to option A, `--bg` from the side bar VS Code draws, the tint pairs for every theme)
   builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13); 246,281 tokens, 135 tool uses, 64.3 min (resumed on the cases ruling, to the report); round 1: 387,443 tokens, 42 tool uses, 27.3 min
-  reviewer_report: agents/reviews/D51-refuter.md (a06b5571264eac4f2, claude-opus-5-5, 351,753 tokens, 109 tool uses, 43.5 min)
+  reviewer_report: agents/reviews/D51-refuter.md (a06b5571264eac4f2, claude-opus-5-5, 351,753 tokens, 109 tool uses, 43.5 min); over round 1: a66724bd02b28bc62, claude-opus-5-5, 285,748 tokens, 82 tool uses, 22.5 min
   round_1: agents/briefs/D51-round1.md, sent to the builder over the tree copied at .agents/worktrees/D51-round0
-  landing: not-started
+  landing: cherry-picking
   round: 1
 - step: D52
   executor: agent
