@@ -78,6 +78,18 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with D46, config/text/app.yml line 13 (the same line: D47 changes `m1-m7`, D46 adds the palette rows; merged by hand at the later landing) and HELP.md (D47 lines 43, 134, 138-139, D46 lines 79-80); with D57, instances.ts (D57 line 83, D47 lines 139 and 164), saved/saved.ts (D57 lines 18, 372, 556-557, 604; D47 lines 526 and 562), config/layout.yml (D57 line 44, D47 line 65) and DESIGN.md (D57 line 238); with D41, DESIGN.md (D41 lines 23, 166, 575-576; D47 lines 225, 456), docs/views.md (D41 lines 73, 213; D47 lines 159-181) and sections/Outline.svelte (D41 the head comment and lines 147-151, D47 the import line); different lines except app.yml, each merge simple
   landing: not-started
   round: 0
+- step: D48
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a08cd36ac4b778a76 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D48
+  base: 40059354d
+  launched: 2026-10-09
+  report: agents/reviews/D48-report.md
+  brief_check: agents/reviews/D48-brief-check.md (abe9a0d14115bbbde, claude-opus-5-5, 276,858 tokens, 122 tool uses, 14.0 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: with D41, model-entities.ts (D41 lines 82, 103, 505; D48 SideProject 804-815), data/sources/manifests.ts (D41 lines 100-160; D48 the comments at 25 and 356-360), config/text/findings.yml (D41 removes line 36; D48 lines 43 and 45), vocab.yml (D41 line 228; D48 199-206), keys.test.ts (one line each), DESIGN.md (D41 23, 166, 503, 575-576; D48 552) and docs/views.md (D41 73 and its Audit section; D48 5-7, 21-23); with D46, options.yml (D46 beside search.max_hits; D48 the side_project_status description), keys.test.ts, HELP.md (D46 79-80; D48 105) and DESIGN.md (D46 142); with D47, keys.test.ts, HELP.md (D47 43, 134, 138-139), docs/views.md (D47 159-181) and DESIGN.md (D47 225, 456); with D57, DESIGN.md (D57 238); different lines, each merge simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
