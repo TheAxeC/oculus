@@ -1,17 +1,16 @@
-In flight (6 of 6 slots in use):
-- D41 (links in Markdown checked): taken back before main at its landing (the look's case 34 failed); its cause being diagnosed, launched 2026-10-09.
+In flight (5 of 6 slots in use):
+- D41 (links in Markdown checked): taken back before main at its landing (the look's case 34 failed); cause found by its diagnosis, prepared again next, launched 2026-10-09.
 - D46 (the VS Code palette keys): builder waiting for Axel on open item 28 (the key name F1 and the history check), launched 2026-10-09.
-- D47 (one Session view): landing, launched 2026-10-09.
 - D48 (side projects with the research keys that apply, and smaller Focus rows): first review running, launched 2026-10-09.
 - D51 (themes from VS Code's theme files): repair round 1 running, launched 2026-10-09.
-- D52 (a page per collection entry): builder running, launched 2026-10-09.
+- D52 (a page per collection entry): first review running, launched 2026-10-09.
 
 Queued, in order (8 steps):
-- D49 (the help pages cut): waits for D46 and D47, whose text in docs/window.md and docs/views.md it carries.
+- D49 (the help pages cut): waits for D46, whose text in docs/window.md and docs/views.md it carries; D47's has landed.
 - D53 (unique views): waits for D56.
 - D50 (the hub's own folder, its shareable files and its settings layer): brief ready with open items 25 and 26 ruled (a); its preparation commit and a free slot next.
 - D55 (roots as hubs): waits for D50.
-- D56 (the workbench): waits for D47 and D52.
+- D56 (the workbench): waits for D52 (D47 landed).
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (the first-run check): paused (Axel).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
@@ -19,6 +18,7 @@ Queued, in order (8 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D47 (one Session view), 2026-10-09, acece2a09.
 - D57 (an empty pane closes), 2026-10-09, 8505da5e1.
 - D40 (the writing rules as editor marks), 2026-10-09, fde67f62d.
 - D39 (hub keys as links), 2026-10-09, 0f790f449.
