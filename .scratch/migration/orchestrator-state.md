@@ -51,6 +51,18 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: tools/oculus/DESIGN.md with D41 (D41 lines 23, 166, 503, 575-576, D57 line 238; different lines, the merge is simple)
   landing: not-started
   round: 0
+- step: D46
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a741dc49f99c07dba (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D46
+  base: 29b50632c
+  launched: 2026-10-09
+  report: agents/reviews/D46-report.md
+  brief_check: agents/reviews/D46-brief-check.md (a3a03b9da01471872, claude-opus-5-5, 214,222 tokens, 92 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: with D41, tools/oculus/DESIGN.md (D41 lines 23, 166, 503, 575-576, D46 line 142), src/lib/state/client/context.ts and src/lib/state/sources/explorer/ops.svelte.ts (D41 adds the Markdown edit wiring, D46 the open call; separate hunks), tests/checks/source/keys.test.ts (one line each); with D57, tools/oculus/DESIGN.md (D57 line 238) and docs/window.md (D57 line 15, D46 the palette section 72-80); different lines, each merge is simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
