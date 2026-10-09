@@ -33,6 +33,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 53fa9b002
   launched: 2026-10-09
   report: agents/reviews/D41-report.md
+  builder_usage: 190,097 tokens, 596 tool uses, 147.6 min
   brief_check: agents/reviews/D41-brief-check.md (ac604810d19c5e3dc, claude-opus-5-5, 322,042 tokens, 110 tool uses, 15.3 min; closed inline in the brief by the orchestrator)
   landing: not-started
   round: 0
