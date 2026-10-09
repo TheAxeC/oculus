@@ -1,10 +1,10 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - D50 (the hub's own folder, its shareable files and its settings layer): landing, after its review over repair round 1.
+- D56 (the workbench): building, launched 2026-10-09.
 
-Queued, in order (6 steps):
+Queued, in order (5 steps):
 - D49 (the help pages cut): waits for D50, whose edits to the guides, DATA-MAP and the docs list it folds.
 - D55 (roots as hubs): waits for D50.
-- D56 (the workbench): being prepared, its brief check's findings being closed in the brief.
 - Q72 (the architecture re-read): waits for D49, D55 and D56, whose code it re-reads.
 - R2 (the first-run check): waits for Axel on open item 32.
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).

@@ -39,6 +39,18 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: settings.ts with D46 (the whole file; D50 settingReader 148-151); portfolio.ts, model-machine, config.test.ts and docs/DATA-MAP.md line 69 with D41; server/edit/writes.ts with D48 (WriteTarget); content/docs.ts with D52 (451-456; D50 521-542); config/sources.yml with D48 (line 15, merged by hand); config/catalogs/vocab.yml with D41 (228) and D48 (199-206); config/catalogs/options.yml with D46 (857-860) and D48 (1230); HELP.md with D46 (79-80), D48 (105) and D52 (156; D50 170); docs/window.md with D46 (76) and D52 (41; D50 25, 29); docs/apps.md with D48 (248, 417, 419); docs/configuration.md with D48 (41); config/behavior.yml and config/app.yml with D46 (263-267); DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D48 (552) and D51 (72, 244, 521, 565; D50 91, 272, 306-308, 492, 547, 573); the gate's sparse checkout gains `.oculus` at landing; different lines, each merge simple except sources.yml line 15, merged by hand
   landing: not-started
   round: 1
+- step: D56
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a98f8c8c562caa8d7 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D56
+  base: dee635dbd
+  launched: 2026-10-09
+  report: agents/reviews/D56-report.md
+  brief_check: agents/reviews/D56-brief-check.md (ab76aa6336c81ae1d, claude-opus-5-5, 269,002 tokens, 103 tool uses, 13.1 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: with D50, config/layout.yml (D50 the docs list, the help arrangement and the layer comments; D56 a new top-level workbench key), ActivityRail.svelte (D50 53, 63-65, 161-171; D56 the Workbenches button), the head comment of views/sources/files/Files.svelte (D50 43-49), docs/window.md (D50 25 and 29; D56 a new section), DESIGN.md and HELP.md (D50 170; D56 other lines); different lines, each merge simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -245,6 +257,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (D56 launched). D56 prepared (base dee635dbd, brief `agents/briefs/D56.md` with every closure of its brief check, the `context.ts` size reread after D41) and its builder a98f8c8c562caa8d7 (claude-sonnet-5-5) launched in `.agents/worktrees/D56`, base copy in `.agents/worktrees/D56-base`. In flight (2 of 6): D50 (landing next), D56 (builder).
 - 2026-10-09 (after D41). D41 landed (links in Markdown checked; booking in plan.md; `agents/reviews/D41-landing.md`) after its back-out, the diagnosis, the second build, one repair round and the review over it; the review's five findings closed at landing, with the folder-limit and comment-width fixes of the gate. `npm ci` was run in main's `tools/oculus` for the two new packages. D50's review over repair round 1 saved (a482febcba2c8b315); its landing is next. D56 is prepared next on the new head. In flight (1 of 6): D50.
 - 2026-10-09 (after D53). D53 landed (unique views; booking in plan.md; `agents/reviews/D53-landing.md`) after one repair round and the review over it, its three findings closed at landing; fixes at landing: the maximised-pane and Reset all pages sentences of `docs/window.md`, `opened` without a default, the long comment of `drag.svelte.ts` rewrapped, the store's doubled `Away` members folded and their allow-list line removed. D41's round 1 is back and its review over the round runs; D50's builder runs repair round 1. D49 waits for D41 and D50, whose edits to the guides, `DATA-MAP.md` and the `docs:` list it folds. Next: D56 into the free slot, /land D41 after its review.
 - 2026-10-09 (after D46). D46 landed (the VS Code palette keys; booking in plan.md; `agents/reviews/D46-landing.md`) after one repair round and the review over it, its three findings closed at landing. D50's first review is saved and its repair round 1 sent; R2 stopped at its preparation for open item 32. Open items 31 and 32 wait for Axel. In flight: D41 (repair round 1), D50 (repair round 1), D53 (landing next). Next: /land D53, then D49 into a free slot, D56 after D53, D55 after D50.
