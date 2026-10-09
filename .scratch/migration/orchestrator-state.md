@@ -25,20 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D41
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: af88be61741f59b6d (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D41
-  base: 53fa9b002
-  launched: 2026-10-09
-  report: agents/reviews/D41-report.md
-  builder_usage: 190,097 tokens, 596 tool uses, 147.6 min; round 1: 163,380 tokens, 175 tool uses, 49.6 min
-  brief_check: agents/reviews/D41-brief-check.md (ac604810d19c5e3dc, claude-opus-5-5, 322,042 tokens, 110 tool uses, 15.3 min; closed inline in the brief by the orchestrator)
-  reviewer_report: agents/reviews/D41-refuter.md (a0542130f88439869, claude-opus-5-5, 78,020 tokens, 114 tool uses, 28.4 min); over round 1: a33f9e7d18db3918b, claude-opus-5-5, 272,363 tokens, 95 tool uses, 39.0 min
-  round_1: agents/briefs/D41-round1.md, sent to the builder over the tree copied at .agents/worktrees/D41-round0
-  landing: backed-out
-  round: 1
 - step: D46
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -226,6 +212,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- 29. D41: the test of the fix its diagnosis found (`agents/reviews/D41-diagnosis.md`). The Markdown language server 0.5.0 drops the notice of a Markdown file created on disk after its first workspace-wide request, so that file is missing from Shift+F12, rename and the link rewrite of a move until a tab opens it or the server restarts; the fix is an `introduce` hook in `servers.ts` that has the server read each created file before `held.ts` sends the notice. A test of it needs a guarded entry, and a new entry is yours (`agents/spec.md:57`); D41 waits for this ruling, its work saved as `agents/reviews/D41-backed-out.patch` and its slot free. (a) Recommended: a new entry G72, "A Markdown file created, moved or renamed on disk while the Markdown server runs is in the server's workspace answers (references, rename, definition and the link rewrite) without a tab opening it", Code `src/lib/server/machine/lsp/held/held.ts` and `servers.ts`, its test `tests/server/machine/lsp/markdown-created.test.ts` tagged slow (it starts the real server), rows for a file created and a file moved after the first references; slow tests run at every landing (`test:landing`'s third lane runs `npm run test:slow`). Pro: a server upgrade or a relay change that brings the miss back fails the landing, and the miss costs a link rewrite that skips the new file's links. Con: one more slow test, a few seconds per landing. (b) No test: the fix lands with the diagnosis's red command quoted in D41's report and case 34 seen in the look. Pro: no new entry. Con: nothing catches the miss coming back; this is the lazy option. Not explained by the diagnosis, and checked again in D41's look either way: the empty answer the look saw with README.md open beside DATA.md and after Restart Language Server.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

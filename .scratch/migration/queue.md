@@ -1,12 +1,12 @@
-In flight (6 of 6 slots in use):
-- D41 (links in Markdown checked): taken back before main at its landing (the look's case 34 failed); cause found by its diagnosis, prepared again next, launched 2026-10-09.
+In flight (5 of 6 slots in use):
 - D46 (the VS Code palette keys): builder running, resumed with the ruling on open item 28, launched 2026-10-09.
 - D48 (side projects with the research keys that apply, and smaller Focus rows): repair round 1 running, launched 2026-10-09.
 - D50 (the hub's own folder, its shareable files and its settings layer): builder running, launched 2026-10-09.
 - D51 (themes from VS Code's theme files): review over repair round 1 running, launched 2026-10-09.
 - D52 (a page per collection entry): repair round 1 running, launched 2026-10-09.
 
-Queued, in order (7 steps):
+Queued, in order (8 steps):
+- D41 (links in Markdown checked): waits for Axel on open item 29 (the test of the fix its diagnosis found); its work kept as a patch.
 - D49 (the help pages cut): waits for D46, whose text in docs/window.md and docs/views.md it carries; D47's has landed.
 - D53 (unique views): waits for D56.
 - D55 (roots as hubs): waits for D50.
