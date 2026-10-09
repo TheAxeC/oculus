@@ -39,11 +39,13 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: settings.ts with D46 (the whole file; D50 settingReader 148-151); portfolio.ts, model-machine, config.test.ts and docs/DATA-MAP.md line 69 with D41; server/edit/writes.ts with D48 (WriteTarget); content/docs.ts with D52 (451-456; D50 521-542); config/sources.yml with D48 (line 15, merged by hand); config/catalogs/vocab.yml with D41 (228) and D48 (199-206); config/catalogs/options.yml with D46 (857-860) and D48 (1230); HELP.md with D46 (79-80), D48 (105) and D52 (156; D50 170); docs/window.md with D46 (76) and D52 (41; D50 25, 29); docs/apps.md with D48 (248, 417, 419); docs/configuration.md with D48 (41); config/behavior.yml and config/app.yml with D46 (263-267); DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D48 (552) and D51 (72, 244, 521, 565; D50 91, 272, 306-308, 492, 547, 573); the gate's sparse checkout gains `.oculus` at landing; different lines, each merge simple except sources.yml line 15, merged by hand
   landing: not-started
   round_2: agents/briefs/D50-round2.md (open item 31 (a) and Z758), sent to the builder over the tree copied at .agents/worktrees/D50-round1
+  round_2_stopped: Axel stopped the builder during round 2 (no second round was approved); the worktree holds the round's partial changes (20 files, saved as the session's scratchpad `D50-round2-partial.diff`), and `.agents/worktrees/D50-round1` holds round 1's tree to restore from
   round: 2
 - step: D56
   executor: agent
   worker: claude:sonnet at ordo-high
-  session_id: a98f8c8c562caa8d7 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  session_id: a6f65daca142e0c86 (claude-sonnet-5-5, the transcript's message.model, read after launch; started on Axel's word to restart D56, taking over the partial build)
+  builders_before: a98f8c8c562caa8d7 (claude-sonnet-5-5; stopped by Axel part-way through its build, after its first run and the cases ruling)
   worktree: .agents/worktrees/D56
   base: dee635dbd
   launched: 2026-10-09
@@ -57,7 +59,8 @@ dispatch:   # steps in flight, up to six (Z632)
 - step: R2
   executor: agent
   worker: claude:sonnet at ordo-high
-  session_id: a00e9759490ea453e (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  session_id: a924a8b4546426f6a (claude-sonnet-5-5, the transcript's message.model, read after launch; started on Axel's word to restart R2, taking over the partial build)
+  builders_before: a00e9759490ea453e (claude-sonnet-5-5; stopped by Axel part-way through its build, after its first run and the cases ruling; its first run kept at the session's scratchpad `R2-first-run.md` and given to the new builder)
   worktree: .agents/worktrees/R2
   base: 5120f89cf
   launched: 2026-10-09
@@ -185,6 +188,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 - Open items 31 and 32 reopened (2026-10-09, Axel): he did not give permission for a second repair round of D50; D50's builder a30b6993857882108 was stopped during round 2, its partial round-2 edits left in `.agents/worktrees/D50` (20 files differ from the round-1 copy at `.agents/worktrees/D50-round1`, `diff -rq`); 31 and 32 are discussed again before anything more is built for them. R2 builds on under 32 (a) until Axel rules again.
+- Open item 31, reopened (2026-10-09, Axel): booked as ruled (a) with D50's repair round 2, which Axel had not approved; the round is stopped and the item is open again for discussion. D50 does not land until it is ruled.
+- Open item 32, reopened (2026-10-09, Axel): booked as ruled (a), G73; open again for discussion. R2 builds G73's test meanwhile, on Axel's word to restart R2; the test and the entry are dropped before landing if the ruling changes.
 - Open item 33 (2026-10-09, the queue): Q72, the architecture re-read, is queued to wait for D49, D55 and D56, an order the orchestrator set and Axel has not ruled; Axel unpaused Q72. Options: (a), recommended: keep the wait, so the re-read covers the code D49, D55 and D56 change before O33 opens the repository; (b) start Q72 now, which leaves those three steps' code unread by it. R2 stays before Q72, in the order `queue.md` gives.
 
 
@@ -274,6 +279,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (all agents stopped). Axel stopped every agent and reopened open items 31 and 32 (no second D50 round was approved) with 33. R2 and D56 restarted on his word with new builders a924a8b4546426f6a and a6f65daca142e0c86 taking over the partial builds; D50 stopped in round 2, waiting for 31. In flight (3 of 6): D50 (stopped, waiting), D56 and R2 (builders).
 - 2026-10-09 (D50 stopped). Axel stopped D50's repair round 2 (no permission for a second round) and reopened open items 31 and 32 and item 33 for discussion. D50's builder stopped mid-round; its worktree holds partial round-2 edits beside the round-1 copy. In flight: D56 and R2 (builders); D50 held.
 - 2026-10-09 (R2 launched). D56's first-run cases ruled as Z759 (`agents/briefs/D56-cases.md`) and its builder resumed. R2 prepared (base 5120f89cf, brief `agents/briefs/R2.md` with G73 and every closure of its brief check) and its builder a00e9759490ea453e (claude-sonnet-5-5) launched in `.agents/worktrees/R2`, base copy in `.agents/worktrees/R2-base`. In flight (3 of 6): D50 (round 2), D56 (builder, after the cases ruling), R2 (builder).
 - 2026-10-09 (D50 round 2). Axel ruled open items 31 and 32 (a). D50's repair round 2 (`agents/briefs/D50-round2.md`: open item 31 (a), a kept machine app asks again after a change oculus did not write; Z758's carry-over links, dangling link, false sentences and test titles) sent to builder a30b6993857882108; R2 is prepared again with G73. Open item 33 (Q72's wait) raised. In flight (2 of 6): D50 (round 2), D56 (builder).
