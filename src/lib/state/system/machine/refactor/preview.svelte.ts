@@ -30,6 +30,8 @@ export type Preview = {
     /** The key a rename changes and what it becomes, for a rename of a hub key; else null. */
     rename: { from: string; to: string } | null;
     files: PreviewFile[];
+    /** The words the view's title is, when the edit names its own; else null. */
+    title: string | null;
 };
 
 /** The two texts of one file of a preview, as a diff pane draws them. */
@@ -46,6 +48,8 @@ export type RefactorParts = {
 type SubmitOptions = {
     /** The reader asked to see the edit before it is made. */
     preview: boolean;
+    /** The title the preview is shown under; absent, the rename's or the plain one. */
+    title?: string;
     /** Runs once the edit was made. */
     applied: () => Promise<void>;
     /** The sentence of a notice the edit may be refused with, in the catalog's words. */
@@ -127,7 +131,7 @@ export function createRefactor(parts: RefactorParts): RefactorStore {
         made += 1;
         const files = plan.files.map((file) => ({ ...file, checked: file.edits.map(() => true) }));
         return {
-            preview: { id: String(made), rename: plan.rename, files },
+            preview: { id: String(made), rename: plan.rename, files, title: options.title ?? null },
             plan,
             applied: options.applied,
             words: options.words

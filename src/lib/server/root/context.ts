@@ -72,6 +72,7 @@ import { wallpaperMemory } from '../content/wallpaper.ts';
 import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
 import { savedPath } from '../machine/runs/commands/saved.ts';
+import { markdownExtensions } from '../machine/lsp/adapters/markdown/settings.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
 import { DebugClient, type DebugOptions } from '../machine/debug/session.ts';
 import { createRelay, type Relay } from '../machine/lsp/relay.ts';
@@ -261,6 +262,7 @@ export function createServerContext(
         lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
         approvals: () => local.approvals ?? defaultApprovalsPath(),
         latex: () => latexBuild(make.loadConfig(engine).config),
+        markdown: () => markdownExtensions(make.loadConfig(engine).config),
         catalog: () => textCatalog(make.loadConfig(engine).config),
         changes: () => target(engine, make.loadConfig(engine).config, context).changes,
         library: () => ({

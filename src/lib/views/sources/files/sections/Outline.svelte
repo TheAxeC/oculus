@@ -13,11 +13,12 @@
     // worst problem its range holds, as `outline.problems.colors` does. A press on a symbol selects
     // its name in the tab's editor and gives the editor the keyboard. While the server has not
     // answered the section says so, and a file with no server to answer, or whose server is not
-    // found or failed, says it has no symbols yet. A LaTeX or BibTeX tab shows the heading reader's
-    // rows until texlab answers a tree, and texlab's tree once it has. A Doc tab and a Markdown
-    // preview tab hold no text here: they say which headings they draw
-    // (state/sources/explorer/sections/headings.svelte.ts), and a press scrolls that tab to the
-    // heading. A source tab in another language says it has no symbols yet, and a page whose
+    // found or failed, says it has no symbols yet. A LaTeX, BibTeX or Markdown tab shows the
+    // heading reader's rows until its server answers a tree, and the server's tree once it has, so
+    // a Markdown file whose server is starting, not running or failed lists its headings from the
+    // reader. A Doc tab and a Markdown preview tab hold no text here: they say which headings they
+    // draw (state/sources/explorer/sections/headings.svelte.ts), and a press scrolls that tab to
+    // the heading. A source tab in another language says it has no symbols yet, and a page whose
     // followed tab shows no editor, or has no file tab, says the active editor cannot provide
     // outline information.
     //
@@ -147,10 +148,11 @@
 
     /**
      * Whether the rows are what a language server answered: a tab a server serves, but for a LaTeX
-     * tab whose server has not answered a list, which shows the heading reader's rows.
+     * or Markdown tab whose server has not answered a list, which shows the heading reader's rows.
      */
     const fromServer = $derived(
-        served !== null && (latexText === null || typeof served !== 'string')
+        served !== null &&
+            (typeof served !== 'string' || (latexText === null && language !== 'markdown'))
     );
 
     /** The symbols of the followed source tab: null for a tab with none to read, else the list. */

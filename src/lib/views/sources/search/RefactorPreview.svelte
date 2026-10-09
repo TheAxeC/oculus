@@ -48,9 +48,10 @@
     const files = $derived(preview === null ? [] : rowsOf(preview));
     const failed = $derived(refactor.failed());
     const title = $derived(
-        preview?.rename == null
-            ? t('refactor_preview.title_plain')
-            : t('refactor_preview.title_rename', preview.rename.from, preview.rename.to)
+        preview?.title ??
+            (preview?.rename == null
+                ? t('refactor_preview.title_plain')
+                : t('refactor_preview.title_rename', preview.rename.from, preview.rename.to))
     );
 
     /** The tree's rows as the keyboard reads them: each file with its edits under it. */

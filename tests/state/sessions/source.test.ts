@@ -396,6 +396,32 @@ const rows: Row[] = [
     }
 ];
 
+describe('a restored source tab whose file is gone, before the served roots are known', () => {
+    it.each([
+        {
+            title: 'says at once that it cannot be opened when the read of the served roots failed',
+            failed: true,
+            said: true
+        },
+        { title: 'waits while the served roots are read', failed: false, said: false }
+    ])('$title', async ({ failed, said }) => {
+        const env = server({ served: () => null, rootsFailed: () => failed });
+        env.states.set('one', {
+            file: KEY,
+            text: 'old\n',
+            saved: 'old\n',
+            base: hashOf('old\n'),
+            loaded: true,
+            readIn: 'an earlier page'
+        });
+        await env.source.loadSourceDraft('one', 'fixture', 'a.md');
+        await env.settled();
+        const error = env.source.sourceDraft('one').error;
+        expect(error.startsWith(t('source.cannot_open', ''))).toBe(said);
+        expect(env.source.sourceDraft('one').text).toBe('old\n');
+    });
+});
+
 describe('a source tab over a file that changes on disk', () => {
     afterEach(() => vi.unstubAllGlobals());
 

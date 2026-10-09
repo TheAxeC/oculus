@@ -41,6 +41,15 @@ export function placeOfResource(resource: { scheme: string; path: string }): Pla
     }
 }
 
+/**
+ * The line a link's fragment names, `L<line>` or `L<line>,<column>` (the form a Markdown link to a
+ * heading is resolved to); 1 for any other fragment or none.
+ */
+export function lineOfFragment(fragment: string): number {
+    const line = /^L(\d+)(?:,\d+)?$/.exec(fragment)?.[1];
+    return line === undefined || Number(line) < 1 ? 1 : Number(line);
+}
+
 /** The library file a Monaco resource names when it is in the page's address form, or null. */
 export function libraryOfResource(resource: { scheme: string; path: string }): Library | null {
     if (`${resource.scheme}:` !== LIBRARY_SCHEME) return null;

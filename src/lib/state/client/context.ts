@@ -89,7 +89,11 @@ import {
 } from '../sources/repositories/repositories.svelte.ts';
 import { heldDiff } from '../sources/repositories/repositories.ts';
 import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
-import { createExplorer, type ExplorerStore } from '../sources/explorer/ops.svelte.ts';
+import {
+    createExplorer,
+    type ExplorerStore,
+    type MovedItems
+} from '../sources/explorer/ops.svelte.ts';
 import { createSearch, type SearchStore } from '../sources/search/search.svelte.ts';
 import { createLint, type LintStore } from '../system/machine/lint/lint.svelte.ts';
 import { createClangd, type ClangdStore } from '../system/machine/lsp/clangd.svelte.ts';
@@ -116,6 +120,7 @@ import {
     createWorkspaceSymbols,
     type WorkspaceSymbolsStore
 } from '../system/machine/lsp/workspace-symbols.ts';
+import { createLinkRewrite } from '../system/machine/refactor/link-rewrite.ts';
 import { createLsp, type LspStore } from '../system/machine/lsp/lsp.svelte.ts';
 import { createReferences, type ReferencesStore } from '../system/machine/lsp/references.svelte.ts';
 import { saveRulesOf } from '../workbench/navigation/editor-text.ts';
@@ -482,7 +487,9 @@ export function createClientState(
                 const caret = editorStatus.statusOf(id)?.caret;
                 return caret === null || caret === undefined ? [] : [caret];
             },
-            roots: () => fs.roots()
+            roots: () => fs.roots(),
+            served: () => readRoots(fs.workspaces())?.map((one) => one.key) ?? null,
+            rootsFailed: () => fs.workspaces().error !== ''
         }
     );
     const autosave = createAutosave({
@@ -530,6 +537,9 @@ export function createClientState(
         instanceState: ui.instanceState,
         setInstanceState: ui.setInstanceState
     });
+    // The offer to rewrite Markdown links over moved items needs the language server and refactor
+    // stores, which are made after the explorer; it is told what moved from the time it is made.
+    let movedItems: MovedItems = () => undefined;
     const explorer = createExplorer(
         writes,
         fs,
@@ -540,7 +550,8 @@ export function createClientState(
             showFolderInFiles: layout.showFolderInFiles
         },
         ui,
-        source
+        source,
+        (moves) => movedItems(moves)
     );
     const search = createSearch(entities, writes, ui, explorer, {
         open: repositories.openDiff,
@@ -602,6 +613,11 @@ export function createClientState(
     const refactor = createRefactor({
         lspEdits,
         show: () => void layout.openView(REFACTOR_VIEW)
+    });
+    movedItems = createLinkRewrite({
+        askLinks: lsp.askLinks,
+        submit: refactor.submit,
+        say: (message) => void notices.post(message, { tone: 'warning' })
     });
     const documents = createDocuments();
     const workspaceSymbols = createWorkspaceSymbols(async (root, path) => {

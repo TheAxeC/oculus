@@ -18,7 +18,7 @@
 //
 // An entry may answer a request of the page itself (`answers`) before it reaches a server, from the
 // reference index of the latest build and the texts of the page's tabs (held/answers.ts): the YAML
-// entry does so for a hub key. It answers whether or not its server is running.
+// entry for a hub key, the Markdown for a backticked path, with its server running or not.
 //
 // What a server asks of its client is answered here and not forwarded: `workspace/configuration`
 // from the registry, `client/registerCapability` (the file watchers become held/watch.ts's),
@@ -44,7 +44,9 @@ import { WORKSPACE_LANGUAGE } from '../../../data/prose/lsp-servers.ts';
 import { reconfigure } from './choices.ts';
 import { answerFor } from './held/answers.ts';
 import { adoptHeld, changeDocument, closeDocument, openingTarget } from './held/documents.ts';
+import { PUBLISHED, publish, type Publishing } from './held/diagnostics/published.ts';
 import { workspaceMessage } from './held/elsewhere.ts';
+import { askLinks, type LinksContext } from './held/requests/links.ts';
 import { handleOculus, heldOf, type OculusContext } from './held/oculus.ts';
 import {
     Held,
@@ -127,7 +129,8 @@ export class Relay {
             createServers({
                 oculus: options.oculus,
                 node: options.node,
-                latex: options.latex
+                latex: options.latex,
+                markdown: options.markdown
             });
         this.#spawn = options.spawn ?? spawnChild;
         this.#now = options.now ?? Date.now;
@@ -135,6 +138,7 @@ export class Relay {
         const feed = options.schemas;
         this.#host = {
             spawn: this.#spawn,
+            roots: () => this.#roots(),
             initialize: (held, setup) => this.#initializeParams(held, setup),
             prepare: (held) => this.#prepare(held),
             changed: (held) => this.#publish(held),
@@ -206,7 +210,9 @@ export class Relay {
             return true;
         }
         const payload: Inbound = frame.payload;
-        if (payload.kind === 'oculus') {
+        if (payload.kind === 'oculus' && payload.message.oculus === 'links') {
+            void askLinks(this.#linksContext(), page, frame.channel, entry, payload.message);
+        } else if (payload.kind === 'oculus') {
             handleOculus(this.#oculusContext(), page, frame.channel, entry, payload.message).catch(
                 () => undefined
             );
@@ -542,6 +548,7 @@ export class Relay {
             channel,
             id: message.id ?? null,
             held,
+            method,
             address: address ?? ''
         });
     }
@@ -665,6 +672,16 @@ export class Relay {
         };
     }
 
+    #linksContext(): LinksContext {
+        return {
+            ...this.#oculusContext(),
+            extensions: () => this.#options.markdown?.() ?? ['md'],
+            orphans: this.#orphans,
+            make: (page, entry, root, key) => this.#make(page, entry, root, key),
+            mapper: (page, held) => this.#mapper(page, held)
+        };
+    }
+
     #env(root: ServedRoot): RootEnv {
         return {
             root: root.real,
@@ -719,7 +736,12 @@ export class Relay {
             });
             return;
         }
-        const result = held.pageVersions(message.result ?? null);
+        const answer = message.result ?? null;
+        const result = held.pageVersions(
+            held.entry.results === undefined
+                ? answer
+                : held.entry.results(pending.method, answer, held.root)
+        );
         const mapped = toPage(result, this.#mapper(pending.page, held, pending));
         this.#reply(
             pending.page,
@@ -797,39 +819,17 @@ export class Relay {
     }
 
     #serverNotification(held: Held, message: LspRpc): void {
-        if (held.notice(message)) return;
-        if (
-            message.method !== 'textDocument/publishDiagnostics' &&
-            message.method !== 'textDocument/inactiveRegions'
-        ) {
-            return;
-        }
-        const params = isRecord(message.params) ? message.params : {};
-        const page = held.owner as Page | null;
-        const named = isRecord(params.textDocument) ? params.textDocument.uri : params.uri;
-        const doc = held.docs.get(docKey(String(named)));
-        const shown =
-            message.method === 'textDocument/publishDiagnostics' && held.entry.diagnostics
-                ? held.entry.diagnostics(params)
-                : message.params;
-        const mapped =
-            page === null ? null : toPage(held.pageVersions(shown), this.#mapper(page, held));
-        if (doc === undefined || page === null || mapped === null) return;
-        this.#send(page, doc.channel, {
-            jsonrpc: '2.0',
-            method: message.method,
-            params: mapped.value
-        });
-        // The other names the page has for the document are told the same.
-        const first = isRecord(mapped.value) ? mapped.value.uri : undefined;
-        for (const [name, open] of page.docs) {
-            if (open.doc !== doc || name === first || !isRecord(mapped.value)) continue;
-            this.#send(page, doc.channel, {
-                jsonrpc: '2.0',
-                method: message.method,
-                params: { ...mapped.value, uri: name }
-            });
-        }
+        if (held.notice(message) || !PUBLISHED.includes(message.method ?? '')) return;
+        publish(this.#publishing(), held, message);
+    }
+
+    #publishing(): Publishing {
+        return {
+            roots: () => this.#roots(),
+            catalog: () => this.#options.catalog?.() ?? {},
+            mapper: (page, held) => this.#mapper(page, held),
+            send: (page, channel, payload) => this.#send(page, channel, payload)
+        };
     }
 
     /** A server's process ended: what waited on it is answered with an error, or dropped. */

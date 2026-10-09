@@ -71,6 +71,7 @@ export class Stub extends EventEmitter {
     signals: NodeJS.Signals[] = [];
     ended = false;
     #writer = new StreamMessageWriter(this.stdout);
+    #waiting: { method: string; resolve: (message: LspRpc) => void }[] = [];
     #behaviour: Required<Omit<Behaviour, 'missing'>>;
 
     constructor(pid: number, behaviour: Behaviour) {
@@ -86,9 +87,21 @@ export class Stub extends EventEmitter {
         reader.listen((message) => this.#read(message as LspRpc));
     }
 
+    /** The first message of a method it was sent, whether it was sent before or is sent later. */
+    sentOf(method: string): Promise<LspRpc> {
+        const found = this.messages.find((one) => one.method === method);
+        if (found !== undefined) return Promise.resolve(found);
+        return new Promise((resolve) => this.#waiting.push({ method, resolve }));
+    }
+
     #read(message: LspRpc): void {
         this.messages.push(message);
         this.received.push(message.method ?? 'response');
+        this.#waiting = this.#waiting.filter((one) => {
+            if (one.method !== message.method) return true;
+            one.resolve(message);
+            return false;
+        });
         const { initialize, shutdown, diesOn } = this.#behaviour;
         const id = message.id ?? null;
         if (message.method === 'initialize' && initialize !== 'silent') {
@@ -133,9 +146,12 @@ export class Stub extends EventEmitter {
 export function stubSpawn(behave: (call: number, command: string) => Behaviour = () => ({})): {
     spawn: Spawn;
     children: Stub[];
+    /** The child the spawn made as call number `index`, whether it is made already or later. */
+    childOf: (index: number) => Promise<Stub>;
     calls: { command: string; args: readonly string[]; cwd: string; env?: NodeJS.ProcessEnv }[];
 } {
     const children: Stub[] = [];
+    const starts = new Map<number, (child: Stub) => void>();
     const calls: {
         command: string;
         args: readonly string[];
@@ -150,22 +166,41 @@ export function stubSpawn(behave: (call: number, command: string) => Behaviour =
         }
         const child = new Stub(4000 + children.length, behaviour);
         children.push(child);
+        starts.get(children.length - 1)?.(child);
         return child;
     };
-    return { spawn, children, calls };
+    const childOf = (index: number): Promise<Stub> => {
+        if (index < children.length) return Promise.resolve(children[index]);
+        return new Promise((resolve) => void starts.set(index, resolve));
+    };
+    return { spawn, children, childOf, calls };
 }
 
 /** A sink that keeps each frame it was sent, parsed, in order. */
 export function recordingSink(): {
     sink: Sink;
     frames: { channel: string; payload: LspRpc & Record<string, unknown> }[];
+    /** The first frame a test accepts, whether it was sent before or is sent later. */
+    arrival: (accepts: (payload: LspRpc & Record<string, unknown>) => boolean) => Promise<void>;
 } {
-    const frames: { channel: string; payload: LspRpc & Record<string, unknown> }[] = [];
+    type Frame = { channel: string; payload: LspRpc & Record<string, unknown> };
+    const frames: Frame[] = [];
+    let waiting: { accepts: (payload: Frame['payload']) => boolean; resolve: () => void }[] = [];
     return {
         frames,
+        arrival: (accepts) => {
+            if (frames.some((one) => accepts(one.payload))) return Promise.resolve();
+            return new Promise((resolve) => waiting.push({ accepts, resolve }));
+        },
         sink: {
             send: (text) => {
-                frames.push(JSON.parse(text) as (typeof frames)[number]);
+                const sent = JSON.parse(text) as Frame;
+                frames.push(sent);
+                waiting = waiting.filter((one) => {
+                    if (!one.accepts(sent.payload)) return true;
+                    one.resolve();
+                    return false;
+                });
                 return Promise.resolve();
             },
             close: () => undefined

@@ -87,6 +87,8 @@ text:
         cmd_latex_restart: 'LaTeX: Restart Language Server'
         cmd_lint_fix_all: '{0}: Fix All Auto-fixable Problems'
         cmd_lint_rerun: 'Linters: Run Again'
+        cmd_markdown_output: 'Markdown: Show Language Server Output'
+        cmd_markdown_restart: 'Markdown: Restart Language Server'
         cmd_next_reference: Go to Next Reference
         cmd_preview_side: 'Markdown: Open Preview to the Side'
         cmd_previous_reference: Go to Previous Reference
@@ -111,6 +113,7 @@ text:
         conflict_title: '{0} (in file) <-> {0} (in oculus): Resolve save conflict'
         disk_changed: The file changed on disk after this tab read it; your changes are kept, and Save is refused until you compare, overwrite or revert.
         disk_gone: The file was deleted on disk; Save writes it again.
+        disk_unserved: This file is no longer in a served folder; Save is not offered until its folder is served again.
         failed: failed
         format_failed: 'Saved without formatting: {0}'
         format_timeout: 'Saved without formatting: the language server did not answer within 60 seconds.'
@@ -149,6 +152,11 @@ text:
         lsp_edit_typed: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. {1} files were written, and History undoes them."
         lsp_edit_typed_one: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. 1 file was written, and History undoes it."
         lsp_rename_refused_empty: The language server refused this rename and gave no reason.
+        md_links_no_answer: 'Links in Markdown files under {0} were not checked: the Markdown server did not answer.'
+        md_links_no_place: 'Links in Markdown files under {0} were not checked: the move names no place under a served folder.'
+        md_links_overlap: 'Two served folders rewrite the same text of {0} differently; it is left as it is.'
+        md_links_unsent: 'Links in Markdown files under {0} were not checked: the Markdown server could not be asked.'
+        md_no_such_path: 'File does not exist at path: {0}'
         next_change: Go to Next Change
         not_text: This file is not UTF-8 text throughout; it is shown read-only and nothing is saved over it.
         open_change: Open Change

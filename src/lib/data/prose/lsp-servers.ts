@@ -13,7 +13,8 @@
 // holds no sentence.
 
 /** The ids of the language servers. */
-export type LspServerId = 'pyright' | 'clangd' | 'typescript' | 'svelte' | 'yaml' | 'texlab';
+export type LspServerId =
+    'pyright' | 'clangd' | 'typescript' | 'svelte' | 'yaml' | 'texlab' | 'markdown';
 
 /**
  * What a server asks its reader to choose for a root: the Python interpreter, the compile
@@ -193,6 +194,24 @@ const LSP_SERVERS: readonly LspServerFacts[] = [
         interpreterLibrary: false,
         extras: [],
         refusedExtensions: ['.rnw', '.jnw', '.pnw'],
+        approvedBy: null
+    },
+    {
+        id: 'markdown',
+        languages: ['markdown'],
+        program: 'vscode-markdown-languageserver',
+        words: {
+            name: 'statusbar.server_markdown',
+            restart: 'source.cmd_markdown_restart',
+            output: 'source.cmd_markdown_output',
+            choice: {}
+        },
+        semanticTokens: false,
+        formatOnType: false,
+        organizeImports: null,
+        choices: [],
+        interpreterLibrary: false,
+        extras: [],
         approvedBy: null
     }
 ];

@@ -7,23 +7,28 @@
 // and the `adapter` of its entry here names what it needs of a root (written in a folder of its own
 // under adapters/); nothing else names a server or a language.
 //
-// The registry is code and no reader edits it. There are six entries. pyright serves `python`, the
-// TypeScript server `javascript` and `typescript`, the Svelte server `svelte`, the YAML server
-// `yaml`, clangd `c` and `cpp`, and texlab `latex` and `bibtex`. The first four run under the node
-// that runs oculus, from their packages in oculus's own `node_modules`, never a global install,
-// never a `node` found on PATH. The TypeScript server runs on oculus's own TypeScript, with
-// automatic type acquisition and tsserver's log off, so no `npm` runs and nothing is written into
-// a repository. The YAML server runs under node's permission model, which lets it read only
-// oculus's own `node_modules`: a schema it is told of by a modeline or a `$schema:` key that names
-// a file on disk is not loaded, and the schemas it uses are the ones the entry hands it from
-// memory. An entry may answer a request of the page itself (`answers`) before it reaches the
-// server: the YAML entry does so for the definition, references and rename of a hub key, from the
-// index the snapshot build makes. clangd is the `clangd` on the oculus process's PATH, with
+// The registry is code and no reader edits it. There are seven entries. pyright serves `python`,
+// the TypeScript server `javascript` and `typescript`, the Svelte server `svelte`, the YAML server
+// `yaml`, the Markdown server `markdown`, clangd `c` and `cpp`, and texlab `latex` and `bibtex`.
+// The first five run under the node that runs oculus, from their packages in oculus's own
+// `node_modules`, never a global install, never a `node` found on PATH. The TypeScript server runs
+// on oculus's own TypeScript, with automatic type acquisition and tsserver's log off, so no `npm`
+// runs and nothing is written into a repository. The YAML server runs under node's permission
+// model, which lets it read only oculus's own `node_modules`: a schema it is told of by a modeline
+// or a `$schema:` key that names a file on disk is not loaded, and the schemas it uses are the ones
+// the entry hands it from memory. The Markdown server runs under the same permission model and
+// reads no file itself: the entry answers the requests it makes of its client inside the served
+// root (adapters/markdown/). An entry may answer a request of the page itself (`answers`) before it
+// reaches the server: the YAML entry does so for the definition, references and rename of a hub
+// key, from the index the snapshot build makes, and the Markdown entry for the definition of a
+// backticked path. The Markdown server takes the notice of a created file only for a file it holds,
+// so the entry's `introduce` words the request that makes it read the file first
+// (adapters/markdown/requests.ts). clangd is the `clangd` on the oculus process's PATH, with
 // oculus's own arguments and no `--query-driver`; its index is written under the folder oculus
 // links the chosen compile database into, never into a repository. texlab is the program
 // `latex.texlab_path` names, else the `texlab` on the oculus process's PATH, started by its
-// absolute path with a PATH of its own that holds links to the TeX programs and no `latexmk`, so
-// it never runs the code of a latexmkrc.
+// absolute path with a PATH of its own that holds links to the TeX programs and no `latexmk`, so it
+// never runs the code of a latexmkrc.
 //
 // Every command is an argument array: a root's path is one argument whatever characters it
 // holds, and nothing is passed through a shell.
@@ -39,15 +44,32 @@ import { svelteAdapter } from './adapters/web/svelte-adapter.ts';
 import { typescriptAdapter } from './adapters/web/typescript-adapter.ts';
 import { texlabAdapter } from './adapters/texlab/adapter.ts';
 import { texlabSettings } from './adapters/texlab/settings.ts';
+import { markdownAdapter } from './adapters/markdown/adapter.ts';
+import { answerMarkdown } from './adapters/markdown/answers.ts';
+import { markdownDiagnostics } from './adapters/markdown/diagnostics.ts';
+import { markdownFiles } from './adapters/markdown/places.ts';
+import { introduceMarkdown, markdownRequests } from './adapters/markdown/requests.ts';
+import { markdownResults } from './adapters/markdown/scrub.ts';
+import { MARKDOWN_SETTINGS } from './adapters/markdown/settings.ts';
+import type {
+    ChangeKind,
+    DiagnosticView,
+    Introduction,
+    Registration,
+    ServerAsk
+} from './adapters/asks.ts';
+import { markdownCapabilities } from './adapters/markdown/capabilities.ts';
 import { yamlAdapter } from './adapters/yaml/adapter.ts';
 import { yamlRequests } from './adapters/yaml/requests.ts';
+import { YAML_SETTINGS } from './adapters/yaml/settings.ts';
 import { answerHubKeys } from './adapters/yaml/hub-keys.ts';
 import { isMachineFile, isPrivateFile } from './adapters/yaml/machine-file.ts';
 import type { ReferenceIndex } from '../../../data/snapshot/references/model.ts';
 import type { FileText } from '../../../data/snapshot/references/rename.ts';
-import type { SchemaSet } from '../../../data/snapshot/schema/set.ts';
 import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
 import type { ServedRoot } from './uris.ts';
+
+export type { ChangeKind, DiagnosticView, Registration, ServerAsk };
 
 /** What an entry is told about the root it starts a server for. */
 export type Setup = {
@@ -180,19 +202,43 @@ export type ServerEntry = {
     clientWorkspace?: Record<string, unknown>;
     /**
      * The requests the server makes of its client that are the entry's to answer, by method. A
-     * handler returns the result, or throws to answer with an error; a method it does not name is
-     * left to the relay.
+     * handler returns the result or a promise of it, or throws or rejects to answer with an error;
+     * a method it does not name is left to the relay.
      */
     requests?: Readonly<Record<string, (params: unknown, ask: ServerAsk) => unknown>>;
-    /** The notifications sent to the server right after `initialized`, by method. */
-    registrations?: readonly string[];
+    /** The notifications sent to the server right after `initialized`. */
+    registrations?: readonly Registration[];
+    /**
+     * Whether the server answers `textDocument/diagnostic` and publishes nothing: the relay then
+     * asks for a document's diagnostics 500 ms after it was opened or last changed, and for every
+     * open document when the server asks for a refresh.
+     */
+    pulls?: boolean;
+    /**
+     * The globs of the files whose changes on disk the server is told of whether or not it
+     * registered a watcher for them, as a client that synchronizes file events tells it: the
+     * server keeps the files it read until it hears they changed.
+     */
+    fileEvents?: () => string[];
+    /**
+     * The requests the server is asked ahead of the notice of changes on disk, one for each change
+     * it would otherwise drop; it is told after the last answer, or after a bound on the wait.
+     */
+    introduce?(changes: readonly { uri: string; type: number }[]): Introduction[];
+    /** The files of the entry's kind under a folder, from disk: the notice of a folder created. */
+    filesUnder?(folder: string, root: ServedRoot, roots: readonly ServedRoot[]): Promise<string[]>;
     /** Whether a file is kept from the server: it is never put on one. */
     refuses?(real: string, roots: readonly ServedRoot[]): boolean;
     /**
      * The diagnostics of a file before the page sees them: the `publishDiagnostics` params with
      * the entries the page is not shown taken out.
      */
-    diagnostics?(params: Record<string, unknown>): Record<string, unknown>;
+    diagnostics?(params: Record<string, unknown>, view: DiagnosticView): Record<string, unknown>;
+    /**
+     * An answer of the server to a request of the page, by the request's method, before it goes
+     * to the page: the result with whatever must not reach the page taken out.
+     */
+    results?(method: string, result: unknown, root: ServedRoot): unknown;
     /**
      * An answer to a request of the page that the entry gives itself, from what the relay holds,
      * before the request goes to the server. The result or the error is the page's answer; nothing
@@ -205,9 +251,6 @@ export type ServerEntry = {
      */
     followed?: readonly string[];
 };
-
-/** What an entry's handler of a server request knows: the server's root and the current schemas. */
-export type ServerAsk = { root: ServedRoot; schemas: SchemaSet };
 
 /** A request of the page, as it came: the method and its params with the page's addresses. */
 export type PageRequest = { method: string; params: unknown };
@@ -263,6 +306,8 @@ export type ServersOptions = {
     exists?: (path: string) => boolean;
     /** The LaTeX settings in force, read at each start and each configuration answer. */
     latex: () => LatexBuilding;
+    /** The extensions of Markdown files, without the dot; `md` alone when absent. */
+    markdown?: () => string[];
 };
 
 /**
@@ -602,19 +647,6 @@ function svelte(options: ServersOptions): ServerEntry {
     };
 }
 
-/** The sections the YAML server reads its settings from, as the one answer it is given. */
-const YAML_SETTINGS = {
-    schemas: {},
-    validate: true,
-    hover: true,
-    completion: true,
-    schemaStore: { enable: false },
-    kubernetesCRDStore: { enable: false },
-    hoverSchemaSource: false,
-    format: { enable: false },
-    yamlVersion: '1.2'
-};
-
 /**
  * The YAML entry: `yaml-language-server`, under node's permission model with read access to
  * oculus's own `node_modules` and nothing else, so no file a document names reaches it. No schema
@@ -641,7 +673,10 @@ function yaml(options: ServersOptions): ServerEntry {
         clientWorkspace: { workspaceFolders: true },
         configuration: (section) => (section === 'yaml' ? YAML_SETTINGS : null),
         requests: yamlRequests,
-        registrations: ['yaml/registerCustomSchemaRequest', 'yaml/registerContentRequest'],
+        registrations: [
+            { method: 'yaml/registerCustomSchemaRequest' },
+            { method: 'yaml/registerContentRequest' }
+        ],
         refuses: (real, roots) => isMachineFile(real, roots) || isPrivateFile(real, roots),
         answers: answerHubKeys,
         capabilities: (language) => ({
@@ -724,6 +759,48 @@ function texlab(options: ServersOptions): ServerEntry {
     };
 }
 
+/**
+ * The Markdown entry: `vscode-markdown-languageserver`, Microsoft's server for the links of a
+ * Markdown file, under node's permission model with read access to oculus's own `node_modules` and
+ * nothing else. It reads files only through the requests it makes of its client, which the entry
+ * answers inside the served root (adapters/markdown/requests.ts). It publishes no diagnostics: the
+ * relay asks for them (`pulls`). The entry adds its own mark and its own definition for a
+ * backticked path (adapters/markdown/backticks.ts) and keeps every file `yaml` keeps from its
+ * server.
+ */
+function markdown(options: ServersOptions): ServerEntry {
+    const extensions = options.markdown ?? ((): string[] => ['md']);
+    return {
+        ...factsOf('markdown'),
+        adapter: markdownAdapter,
+        launch: (setup) =>
+            packaged(
+                options,
+                'markdown',
+                ['vscode-markdown-languageserver', 'dist', 'node', 'workerMain.js'],
+                setup,
+                ['--permission', `--allow-fs-read=${join(options.oculus, 'node_modules')}`]
+            ),
+        initializationOptions: () => ({ markdownFileExtensions: extensions() }),
+        configuration: () => null,
+        clientWorkspace: { workspaceFolders: true, diagnostics: { refreshSupport: true } },
+        requests: markdownRequests(extensions),
+        registrations: [
+            { method: 'workspace/didChangeConfiguration', params: { settings: MARKDOWN_SETTINGS } }
+        ],
+        pulls: true,
+        fileEvents: () => extensions().map((extension) => `**/*.${extension}`),
+        introduce: (changes) => introduceMarkdown(changes, extensions()),
+        filesUnder: (folder, root, roots) => markdownFiles({ root, roots }, extensions(), folder),
+        refuses: (real, roots) => isMachineFile(real, roots) || isPrivateFile(real, roots),
+        diagnostics: markdownDiagnostics,
+        answers: answerMarkdown,
+        results: markdownResults,
+        capabilities: (language) => markdownCapabilities(language, serving, INCREMENTAL),
+        commands: []
+    };
+}
+
 /** The registry for this machine. */
 export function createServers(options: ServersOptions): Servers {
     const entries = [
@@ -732,7 +809,8 @@ export function createServers(options: ServersOptions): Servers {
         typescript(options),
         svelte(options),
         yaml(options),
-        texlab(options)
+        texlab(options),
+        markdown(options)
     ];
     return {
         entries,

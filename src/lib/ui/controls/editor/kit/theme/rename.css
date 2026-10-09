@@ -1,0 +1,8 @@
+/* Layer 3, stylesheet of ui/controls/editor/Editor.svelte. Monaco's rename box hides the line that
+   names its two keys (the accept key to rename, the preview key to preview) until the preview is
+   open; the source editor shows it from the start, in the muted text colour. The class is doubled
+   so the rule outweighs Monaco's own, whatever order the two stylesheets load in. */
+.monaco-editor .rename-box .rename-label.rename-label {
+    display: block;
+    color: var(--muted-txt, var(--muted));
+}

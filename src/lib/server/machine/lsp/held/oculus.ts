@@ -3,6 +3,7 @@
 // reads, the choices of a root and the approvals it asks (choices.ts). The server of a root is the
 // one the page opened a document of that language on; a message about a root with none running
 // only answers with the root's choices.
+// The `links` request of a move in the Files view is the relay's own (held/requests/links.ts).
 
 import type { LspToPage, LspToServer } from '../../../../data/model/index.ts';
 import { serverFacts } from '../../../../data/prose/lsp-servers.ts';
@@ -71,7 +72,9 @@ export async function handleOculus(
         );
         return;
     }
-    if (message.oculus === 'held' || message.oculus === 'held_ask') return;
+    if (message.oculus === 'held' || message.oculus === 'held_ask' || message.oculus === 'links') {
+        return;
+    }
     const { root, held } = heldOf(context.roots(), page, entry, message.root);
     if (root === undefined) return;
     const { adapter } = entry;

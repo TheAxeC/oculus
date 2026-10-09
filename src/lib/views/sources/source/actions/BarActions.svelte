@@ -76,8 +76,11 @@
     const draft = $derived(sourceDraft(id));
     /** Whether the text differs from the saved one. */
     const dirty = $derived(draft.text !== draft.saved);
-    /** Whether Save has work: unsaved text, or a file deleted on disk to write again. */
-    const savable = $derived(dirty || draft.disk === 'gone');
+    /**
+     * Whether Save has work: unsaved text, or a file deleted on disk to write again. A file whose
+     * folder is not served is not written.
+     */
+    const savable = $derived(draft.disk !== 'unserved' && (dirty || draft.disk === 'gone'));
 
     /** Open Preview to the Side: the preview tab in a new pane to the right, or the open one. */
     function previewSide(): void {

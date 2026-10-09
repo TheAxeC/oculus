@@ -84,10 +84,10 @@ export type SourceTabState = {
 export type { HeadStage };
 
 /**
- * What the server's channel last said of a file a tab holds: it is as read, it moved, or it is not
- * there.
+ * What the server's channel last said of a file a tab holds: it is as read, it moved, it is not
+ * there, or its folder is not one the page serves, so the file is not known to be gone.
  */
-type DiskState = 'same' | 'changed' | 'gone';
+type DiskState = 'same' | 'changed' | 'gone' | 'unserved';
 
 export type SourceDraft = {
     text: string;
@@ -178,7 +178,7 @@ const draftShape = z
         text: z.string().catch(''),
         saved: z.string().catch(''),
         base: z.string().catch(''),
-        disk: z.enum(['same', 'changed', 'gone']).catch('same'),
+        disk: z.enum(['same', 'changed', 'gone', 'unserved']).catch('same'),
         conflict: z.boolean().catch(false),
         loaded: z.boolean().catch(false),
         readIn: optionalTextShape,

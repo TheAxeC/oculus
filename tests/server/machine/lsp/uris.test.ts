@@ -238,6 +238,67 @@ const ROWS: Row[] = [
         ]
     },
     {
+        name: 'gives a document link to the page with no machine path in any field, takes its note back as the file address, and gives the target of its resolve with its #L fragment',
+        got: (world) => {
+            const spelled = (real: string, uri: string): Record<string, unknown> => ({
+                $mid: 1,
+                external: uri,
+                fsPath: real,
+                path: real,
+                scheme: 'file'
+            });
+            const link = {
+                range: { start: { line: 2, character: 7 }, end: { line: 2, character: 19 } },
+                data: {
+                    kind: 1,
+                    href: { kind: 1, path: spelled(world.app, pathToFileURL(world.app).href) },
+                    source: { resource: spelled(world.app, pathToFileURL(world.app).href) }
+                }
+            };
+            const shown = toPage([link], world.mapper)?.value;
+            const [back] = shown as { data: unknown }[];
+            const returned = toServer(back, world.roots)?.value as Record<string, unknown>;
+            const resolve = toPage(
+                { ...link, target: `${pathToFileURL(world.app).href}#L5,1` },
+                world.mapper
+            );
+            const machine = world.roots[0].real;
+            return [
+                JSON.stringify(shown).includes(machine),
+                returned.data,
+                resolve?.value,
+                JSON.stringify(resolve).includes(machine)
+            ];
+        },
+        want: (world) => [
+            false,
+            {
+                kind: 1,
+                href: {
+                    kind: 1,
+                    path: {
+                        $mid: 1,
+                        external: pathToFileURL(world.app).href,
+                        fsPath: world.app,
+                        path: world.app,
+                        scheme: 'file'
+                    }
+                },
+                source: {
+                    resource: {
+                        $mid: 1,
+                        external: pathToFileURL(world.app).href,
+                        fsPath: world.app,
+                        path: world.app,
+                        scheme: 'file'
+                    }
+                }
+            },
+            expect.objectContaining({ target: 'oculus-file:///repo/src/app.py#L5,1' }) as unknown,
+            false
+        ]
+    },
+    {
         name: 'turns a library address of a message to a server into the file address its resolver gives, and refuses the message when it gives none',
         got: (world) => {
             const real = pathToFileURL(world.outside).href;

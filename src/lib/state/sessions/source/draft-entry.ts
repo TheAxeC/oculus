@@ -62,6 +62,7 @@ function unfit(draft: ReturnType<DraftSource['sourceDraft']>): string {
     if (draft.notText) return t('source.not_text');
     if (draft.disk === 'changed') return t('source.disk_changed');
     if (draft.disk === 'gone') return t('source.disk_gone');
+    if (draft.disk === 'unserved') return t('source.disk_unserved');
     return '';
 }
 

@@ -558,3 +558,277 @@ Cases of the brief's "Cases":
 - The `vscode-markdown-languageserver` version risk the diagnosis names (the fix rests on a fragment resolve reading the file in 0.5.0): a fact of the dependency, not checkable beyond the runs above.
 
 Reviewer usage: agent id not known to me, claude-opus-5-5, tokens not known, about 55 tool uses, minutes not known.
+
+## Repair round 1, refuted
+
+Sections of the rules file and the brief are cited by name. Code findings keep `file:line`, and those line numbers are the worktree's as it stands. I changed nothing in the worktree, the ledger or the round-0 copy. My probes are in the session scratchpad under `rv41r1/` and use the builder's harness `probe/lib.ts`. Every run set HOME under `$TMPDIR/rv41r1home`.
+
+### Verification (rerun by the reviewer)
+
+```
+$ npm run test:quick -- --base d13535993      (worktree tools/oculus; load average 18.10 at start, 18.00 at end)
+        tests/checks/source/keys.test.ts: changed, run by npm run test:checks
+        tests/server/machine/lsp/adapters/markdown-created.test.ts: changed, run by npm run test:slow
+ok      ASCII gate (8.5 s)
+ok      prettier (8.5 s): All matched files use Prettier code style!
+ok      svelte-kit sync (50.5 s)
+ok      eslint (66.1 s)
+ok      svelte-check (101.3 s): 1791571640662 COMPLETED 444 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (158.0 s): Duration  114.52s (transform 140.39s, setup 0ms, import 211.32s, tests 212.97s, environment 10.02s)
+test:quick: 168.5 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+
+$ npx vitest run tests/server/machine/lsp/adapters/markdown-requests.test.ts tests/server/machine/lsp/uris.test.ts tests/server/machine/lsp/lifetime.test.ts
+ Test Files  3 passed (3)
+      Tests  89 passed (89)
+
+$ wc -l relay.ts servers.ts ops.svelte.ts Editor.svelte
+     880 src/lib/server/machine/lsp/relay.ts
+     878 src/lib/server/machine/lsp/servers.ts
+     696 src/lib/state/sources/explorer/ops.svelte.ts
+     518 src/lib/ui/controls/editor/Editor.svelte
+(round-0 copy: servers.ts 879)
+
+$ sh utils/folder-check.sh; echo folder=$?
+folder=0
+$ sh utils/unused-exports.sh > $TMPDIR/rv41r1-unused.txt; diff it .agents/worktrees/D41-base/tools/oculus/unused-exports.txt; echo diff=$?
+diff=0      (364 lines each)
+
+$ npx vitest run tests/server/machine/lsp/adapters/markdown-created.test.ts --testTimeout 20000 --reporter=verbose    (three runs)
+ ✓ ... 'a file created after the first refere…' 560ms / 363ms / 373ms
+ ✓ ... 'a file moved after the first referenc…' 379ms / 313ms / 353ms
+ ✓ ... 'a folder moved after the first refere…' 333ms / 347ms / 398ms
+ Test Files  1 passed (1)   Tests  3 passed (3)   (each run)
+$ grep -n "setTimeout\|Date.now\|WAIT_MS\|sleep\|second move" tests/server/machine/lsp/adapters/markdown-created.test.ts; echo exit=$?
+exit=1
+
+$ spec.md perl ASCII gate over $(find src tests config -type f ! -name local.yml); echo ascii=$?
+ascii=0, no output
+$ LC_ALL=C grep -n '[^ -~]' DESIGN.md docs/files-and-search.md ../../docs/DATA-MAP.md; echo $?
+1, no output
+$ awk 'length>100' over the round's eleven changed files: no output
+$ history words over the comment lines of the round's files: only ordering uses ("before it reaches the server", "no longer served"), none added by the round
+
+$ npx vitest run tests/server/machine/lsp/servers.test.ts     (three runs)
+      Tests  6 passed (6)   (each)
+$ npx vitest run tests/server/machine/lsp --testTimeout 20000
+ Test Files  12 passed (12)
+      Tests  175 passed (175)
+$ npx vitest run tests/checks/tree tests/checks/source/keys.test.ts tests/checks/diagrams tests/checks/config --testTimeout 300000
+ Test Files  9 passed (9)
+      Tests  168 passed | 1 skipped (169)     (the report says "169 passed (169)"; the skip is config-folder.test.ts 'reads the roots of sources.yml without a finding'; no decision rests on it)
+$ npx vitest run tests/state/sessions/source.test.ts tests/state/system/link-rewrite.test.ts tests/state/system/refactor-preview.test.ts tests/ui/controls/editor/lsp-transport.test.ts tests/checks/source/history.test.ts tests/checks/source/comment-width.test.ts tests/checks/imports
+ Test Files  9 passed (9)
+      Tests  77 passed (77)
+$ $TMPDIR/d41/unchanged2.out (the builder's unchanged-tree run): "Test Files  8 failed (8)", "Tests  9 failed | 88 passed (97)", the nine failing tests as the report lists them
+
+$ git status --short (worktree, excerpt)
+UU tools/oculus/docs/diagrams/layer-views.dot
+?? tools/oculus/src/lib/server/machine/lsp/held/requests/notices.ts
+?? tools/oculus/tests/server/machine/lsp/adapters/markdown-created.test.ts
+$ git diff d13535993 --stat | tail -1
+ 92 files changed, 3754 insertions(+), 796 deletions(-)
+
+Report evidence rerun (builder's probes, TREE=$PWD node --experimental-strip-types --no-warnings <script>, from the worktree's tools/oculus):
+$ fold.ts MODE=disk / MODE=view (case 37, ruling 1)
+before the rename: ["notes/README.md"]
+MODE=disk references on ## Intro: ["letters/README.md"] letters/README.md LISTED; notes/ place none
+MODE=view links_answer: {"oculus":"links_answer","id":900,"edit":null,...,"unanswered":[]}
+MODE=view references on ## Intro: ["letters/README.md"] letters/README.md LISTED; notes/ place none
+$ the same on the round-0 source ($TMPDIR/d41/r0, src equal to D41-round0 by diff -rq), first as the report ran it:
+MODE=created ... {"code":-32800,"message":"the server is not running"}   (the copy's own node_modules no longer starts the server)
+  then with OC=<worktree tools/oculus> (the worktree's packages, the round-0 source):
+before the rename: ["notes/README.md"]
+MODE=disk references on ## Intro: ["notes/README.md"] letters/README.md NOT LISTED; notes/ place LISTED
+MODE=view references on ## Intro: [] letters/README.md NOT LISTED; notes/ place none
+$ first reviewer's rv41/folder-move.ts MODE=folder (twice), folder-move2.ts MODE=filesview (twice), MODE=file
+MODE=folder references on ## Intro: ["hub/letters/README.md:0"] LISTED   (both)
+MODE=filesview references on ## Intro: ["hub/letters/README.md:0"] LISTED   (both)
+MODE=file references on ## Intro: ["hub/notes/LETTER.md:0"] LISTED
+$ cl.ts CASE=23 GAP=0 / 10 / 100
+      hub/README.md: 1:8-1:21=>"manual/DATA.md" ; 1:31-1:50=>"manual/DATA.md#intro" ; 1:57-1:70=>"manual/DATA.md"   (each)
+$ t23.ts
+second ask took 7 ms; edits 3
+$ cl.ts CASE=17 / 18 / 19 / 20 / 21: the same lines the report quotes (17: three edits, "nothing written by the ask: true"; 18: other.md and sub/README.md edits; 19: edit=null; 20: inner and hub edits; 21: 2:8-2:15 and 2:25-2:37 with the tab text held, disk text unchanged)
+$ c34.ts MODE=created, OPEN_README 0/1 x RESTART 0/1: references on ## Intro: ["hub/README.md:0"] in every form, before and after the restart
+$ c34.ts FULL=1: completion ["README.md","docs/","warm.md"]; definition line 4; prepareRename 4:3-4:8 "Intro"; rename edits DATA.md and README.md 0:48-0:53; documentSymbol ["# Data"]
+$ c1.ts: c1.md [[0,2,"link.no-such-file","File does not exist at path: docs/missing.md"]]; c2.md []; c3.md []; c4.md []
+$ c5.ts: targets ".../docs/DATA.md", ".../docs/DATA.md#L5,1", undefined; machine path in any field: false
+$ c7.ts HUB=<worktree root>: case 7 [[3,2,"link.no-such-file","File does not exist at path: projects/manuscripts/CLAUDE.md"]]; case 8 definition line 60; [78,2,"oculus.no-such-path","File does not exist at path: docs/adr/"]
+$ c10.ts: case 10 diagnostics: [] / definition: undefined;  c11.ts: lines 1-9 undefined, line 11 DATA.md
+$ c14.ts / c14b.ts: the report's lines (big.md refused, ok.md answered, references and diagnostics for the other files)
+$ ca.ts: the three conform rows (y, v, x); x typeWritten= active; CASE=28 on the worktree: 94 projects, 0 rows, 0 type_not_tier findings
+$ stat.ts HUB=<worktree root>: files=469 firstCall changes=0 secondCall changes=0 secondCallMs=1.1
+
+Reviewer's own probes (scratchpad rv41r1/):
+$ fresh.ts: root warm.md, docs/DATA.md, notes/README.md ("[sec](../docs/DATA.md#intro)"), x/keep.md; workspace loaded by references on warm.md; then either
+  MODE=newfile: new/README.md ("[a](../docs/DATA.md) [b](../docs/DATA.md#intro)") written, GAP ms, docs/ renamed to guide/, the Files view's links ask at once
+  MODE=deep: GAP ms, notes/ renamed to x/notes/, GAP2 ms, the links ask
+MODE=newfile GAP=0: edit=1 file(s) (hub/notes/README.md only; new/README.md missing)   7 of 7 runs
+MODE=newfile GAP=50 / 100 / 200 / 250 / 300 / 400: edit=2 file(s) (new/README.md's two edits included)
+MODE=deep GAP2=0: edit=null 3 of 22 runs, otherwise hub/x/notes/README.md: 1:6-1:27=>"../../docs/DATA.md#intro"
+MODE=deep GAP2=20 / 50 / 100: edit=1 file(s), 15 of 15
+round-0 source (OC trick): newfile GAP=0 edit=1 file(s) 3 of 3; deep GAP2=0 edit=null 3 of 3
+$ hubmove.ts: a copy of the worktree's 469 Markdown files (no dot folders, no node_modules, no secrets); HELP.md open, its diagnostics in; tools/oculus/docs renamed to guide, the links ask
+links answer in 957 ms / 1287 ms: 3 files, 127 edits      round-0 source: 1994 ms / 1312 ms, 3 files, 127 edits
+$ quiet.ts: a RootWatch with '**/*.md'; a.md written, then a new file under out/ every 100 ms for 2 s
+current tree:  a.md written at 302 ms ... changed at 2554 ms: a.md:1
+round-0 tree:  a.md written at 301 ms ... changed at 514 ms: a.md:1
+$ link.ts: markdownFiles over a root holding a link ext -> an outside folder
+walk of the root: ["/root/docs/A.md"]
+walk from the link (a folder event of ext): ["/root/ext/deep/SECRET-NOTES.md"]
+```
+
+Not rerun: the report's 72-path run of the guarded entries' tests (I ran the lsp folder, the checks set and the state set above), c32 and c32b, the case 29 scratch client test, and ten consecutive runs of G72's file (I ran three). The round's delta does not touch the code these cover. It touches only DESIGN.md, docs/files-and-search.md, adapters/asks.ts, markdown/places.ts, markdown/requests.ts, held/held.ts, held/requests/links.ts, held/requests/notices.ts, held/watch.ts, servers.ts and markdown-created.test.ts, per `diff -rq` against D41-round0.
+
+### Verdicts
+
+Items of the brief's "What to build", for the whole diff since d13535993:
+
+- 1: holds. Verify 2 passes with 89 tests, which include the G2 and G3 rows. The c1, c5 and c34 FULL reruns give the marks, the resolve with its `#L` fragment and no machine path, completion, definition, prepareRename, rename and symbols.
+- 2: holds. The c1 rerun gives one `link.no-such-file` mark worded from the root, and `relay.ts` is 880 lines.
+- 3: holds by the c5 rerun. The click itself is the look at landing.
+- 4: holds by the c7, c10 and c11 reruns.
+- 5: holds at the gaps a page's ask can follow a move. With 20 to 100 ms between the rename and the ask, the deep folder move gave the edit in 15 of 15 runs, and cl.ts cases 17 to 23 give their edits. Behaviour 1 names a race when the ask follows the disk change by about 0 ms.
+- 6: holds. The ca.ts reruns give the three rows, `typeWritten` undefined for a manifest key, and 0 rows on the worktree's hub.
+- 7: holds. `tests/state/sessions/source.test.ts` passes. The note and the bar are the look.
+- 8: holds by the first review's reading of `portfolio.ts`. The round does not touch it.
+- 9: holds. `kit/theme/rename.css` is imported by `Editor.svelte` (518 lines). The line itself is the look.
+- 10: holds. The report's "Doc text" gives G2, G3 (word for word as ruling 24) and G36, and G72 with the `adapters/` test path that was closed at landing.
+- 11: holds. `introduce` on Created Markdown changes, the ordered chain with a 10 s bound, and `servers.ts` at 878 lines are all built. G72's three rows pass three times each, and every c34 form lists the link. The ruling 1 folder notices close the folder case: fold.ts gives LISTED both on disk and through the Files view. Behaviour 2 and Behaviour 3 are defects of the round's folder code, and Standards 1 is how `servers.ts` was kept at 878.
+
+Cases of the brief's "Cases":
+
+- 1: met (c1 rerun). The Problems view row is the look.
+- 2: met (c1, `c2.md []`).
+- 3: met (c1, `c3.md []`).
+- 4: met (c1, `c4.md []`).
+- 5: not verifiable here (a page case). The c5 rerun gives the targets the opener receives.
+- 6: not verifiable here (a page case). The c5 rerun gives no target for the missing file.
+- 7: met (c7 rerun).
+- 8: met (c7 rerun).
+- 9: met (c7 rerun, the `docs/adr/` mark).
+- 10: met (c10 rerun on a scratch root, since the file is not in the worktree).
+- 11: met (c11 rerun).
+- 12: met (verify 2).
+- 13: met (verify 2).
+- 14: met (c14 and c14b reruns).
+- 15: met (verify 2, the lifetime row).
+- 16: met (verify 2, the lifetime row on fake time).
+- 17: met at relay level (cl.ts 17 rerun, nothing written by the ask). The preview title, Apply and the History record are the look.
+- 18: met (cl.ts 18 rerun).
+- 19: met for a move of a file nothing links to (cl.ts 19 rerun, `edit=null`). The copy, cross-root, refused and undo parts are met by reading `ops.svelte.ts`, which the round does not touch.
+- 20: met (cl.ts 20 rerun).
+- 21: not verifiable here. The cl.ts 21 rerun gives the edits with the tab text held and the disk unchanged; the tab itself is the look.
+- 22: met by reading and by `refactor-preview.test.ts` passing.
+- 23: met. cl.ts 23 at GAP 0, 10 and 100 gives all three edits, and t23 gives "second ask took 7 ms; edits 3".
+- 24: met by reading `ops.svelte.ts` (untouched by the round).
+- 25: met (ca.ts rerun).
+- 26: met (ca.ts rerun).
+- 27: met (ca.ts rerun).
+- 28: met (ca.ts CASE=28, 0 rows).
+- 29: met for the store (`source.test.ts` passes). The note and the bar are the look.
+- 30: met by the report's scratch test, not rerun. Its code is untouched by the round.
+- 31: met (verify 2, `uris.test.ts`; c5 rerun).
+- 32: met by the report's c32 runs and the first review's reading, not rerun. The round does not touch `portfolio.ts`.
+- 33: not verifiable here (a page case).
+- 34: met at relay level: every c34 form lists README's link, with README open or not and before and after a restart. The Outline fallback and the page's Shift+F12 are the look.
+- 35: met (G72 row 1 passes three times). Its failure before item 11 is quoted in the report from the first pass and in `$TMPDIR/d41/unchanged2.out`.
+- 36: met (G72 row 2 passes three times).
+- 37 (added by the builder for ruling 1): met. fold.ts gives LISTED both on disk and through the Files view, and gives the report's NOT LISTED lines on the round-0 source.
+
+### Closures of the round's rulings
+
+1. Ruling 1, a folder moved on disk: closed. On the current tree, fold.ts (both modes) and the first reviewer's folder-move.ts and folder-move2.ts give `letters/README.md` LISTED with no `notes/` place. On the round-0 source, fold.ts reproduces the report's NOT LISTED lines. The G72 folder row is in the `it.each` table and passes. On the round-0 tree it times out, according to the report; I judged that by reading the row, since `learned()` waits for a read the round-0 code never causes.
+   - The fix reaches beyond the finding in two ways. Behaviour 2: every unmatched `rename` event now restarts the 200 ms quiet of every server's root watch. Behaviour 3: a folder event's walk follows a link to a folder out of the root.
+   - The first `caughtUp` tells Created for every file the server has not read, which is wider than "the files under the folder's new name". I judged that on cost: over a 469-file copy of the hub, hubmove.ts answered in 957 and 1287 ms, against 1994 and 1312 ms on the round-0 source. That is no regression, and it is not a finding.
+2. Ruling 2, the wait for the server's reads: partly closed.
+   - Changed files are closed. A Changed file the server has read is marked unread before the notice, and the wait ends on the server's read of it after the notice (`notices.ts:193`, `asked()` at :111). Case 23 gives all three edits at GAP 0, 10 and 100, and `SETTLE_MS` is gone (grep).
+   - Created files are not closed. The read that clears a Created file is the one the introduce ask causes, which completes before `workspace/didChangeWatchedFiles` is written. The read the server makes after taking the notice is not waited for. That is the read the builder's own G72 test has to wait for (Judgment call 7). See Behaviour 1.
+3. Ruling 3, the 30 s bound: closed, by reading. `links.ts:161-186` runs `caughtUp`, `touched`, `goneFiles` and the ask inside one async function that the `ASK_MS` timer races. `abandoned.now` stops a late `caughtUp` from asking, and a root that loses the race reaches `unanswered`. The head comment at `links.ts:14-17` says this. The `markdownFiles` walk before the timer is the relay's own work, not the server's, so the sentence stays true. No run passes 30 s; the report says so.
+4. Ruling 4, the waits of G72's rows: closed in substance, with a disclosed departure that I accept. The recording sink only holds frames the relay sends to the page. The server's `markdown/fs/readFile` is answered inside the relay, so the signal the ruling names does not exist in the sink. `tapped()` reads the server's stdout and the relay's writes to its stdin with `StreamMessageReader`. Each row waits, in order, for the server's read of the file, the notice naming it, the server's next read and the relay's answer, then asks references once. The grep for clock waits exits 1. The test's own 30 s timeout is the only bound, which fits the rules file's signal rule. The waits depend on server 0.5.0 re-reading after the notice; Judgment call 7 states this.
+5. Ruling 5, the third test: closed. The grep for "second move" exits 1, and the file holds one `it.each` of three rows. Case 23 is checked by the cl.ts runs above.
+6. Ruling 6, the report: closed.
+   - The first line states the departures. The visible changes list the folder move and the 30 s bound with before and after.
+   - "Anything wrong or impossible" says the worktree's brief predates the ledger's.
+   - No git command is named as run. The only git text is test:quick's own "from git since HEAD".
+   - Two figures differ from my reruns, and no decision rests on either. The checks set gives "168 passed | 1 skipped" against the report's "169 passed". The `$TMPDIR/d41/r0` copy no longer starts the server; its round-0 lines reproduce with the worktree's packages.
+7. Standards 3 (closed at landing, not sent): G72's Test line in the Doc text uses `tests/server/machine/lsp/adapters/markdown-created.test.ts`.
+8. Judgment call 8, a file created in a quiet stays Created when a change follows: I accept it. It applies to every server's root watch. For a file that did not exist before the quiet, Created is the protocol's true kind. Without it, a new Markdown file written in two steps would reach `introduce` as Changed, and the server would drop it. Created then Deleted still ends Deleted (`watch.ts:127-129`).
+
+### Findings
+
+#### Spec
+
+None.
+
+#### Proof
+
+None. The report's statements about how the wait ends (Judgment call 4, "Host- or user-visible changes") are taken up under Behaviour 1.
+
+#### Standards
+
+1. `src/lib/server/machine/lsp/servers.ts`: comments were cut to stay under 880 lines.
+   - **What changed:** the file went from 879 lines (round 0) to 878 while the round added three lines (the `markdownFiles` import and the two lines of `filesUnder`). The round removed these lines from the head comment:
+     > "// backticked path. The Markdown server takes the notice of a created file only for a file it holds, // so the entry's `introduce` words the request that makes it read the file first // (adapters/markdown/requests.ts). clangd is ..."
+   - It also shortened the `introduce` doc (`servers.ts:220`) from "The requests the server is asked ahead of the notice of changes on disk, one for each change it would otherwise drop; it is told after the last answer, or after a bound on the wait." to "The requests asked of the server ahead of a notice of changes, one per change it drops."
+   - **What is wrong:** the rules file's "What every package obeys" says a file that would pass 880 is split by concern, and "comments are not shortened and code is not compacted to stay under it". Without the cut, the file is 882. The cut also leaves `servers.ts:24`, "// backticked path. clangd is the `clangd` on the oculus process's PATH, with", at 77 columns inside a sentence. The rewrap rule says a comment the step edits is rewrapped as a whole paragraph.
+   - **Failure scenario:** a reader of `ServerEntry.introduce` no longer learns that the notice is sent only after the asks are answered or given up on. A reader of the head comment of the file that "holds how each server is started" no longer learns why the Markdown entry has an `introduce`. The next step that adds a line to `servers.ts` meets the same wall.
+   - **Fix:** restore both texts and move a concern out of `servers.ts`, for example the Markdown entry's construction into `adapters/markdown/`.
+2. `src/lib/server/machine/lsp/held/requests/notices.ts:45`: `export type Asked` has no importer outside the file (grep over src and tests; the `Asked` names in `hub-keys.ts` and `run.svelte.ts` are their own local types). `NoticeHost` at :29 is in the same position, carried from round 0.
+   - **What is wrong:** the rules file's principles say every export the step adds that has no importer outside its own file and its tests is removed or made local. knip did not list either one.
+   - **Failure scenario:** a reader takes `Asked` for part of the module's interface to other modules. A later change that renames it searches for importers that do not exist.
+
+#### Behaviour
+
+1. `src/lib/server/machine/lsp/held/requests/notices.ts:186-215` (`#send`): a Created file counts as read before the server has taken its notice.
+   - **The code:**
+     ```
+     for (const change of changes) { ... else if (change.type === CHANGED ? this.#seen.has(real) : asks.length > 0) { this.#unread.set(real, at); } }
+     if (asks.length > 0) { ... await Promise.race([Promise.all(asks.map((one) => this.#host.call(one.method, one.params))), bound]); ... }
+     this.#host.notify({ ... method: 'workspace/didChangeWatchedFiles', params: { changes } });
+     ```
+   - **What is wrong:** a Created file is marked unread before the introduce asks. The read those asks cause clears it before the notice is written. `caughtUp` then returns right after the notice, and `markdown/getEditForFileRenames` is asked while the server is still taking the notice. Judgment call 7 records that the server re-reads the file when it takes the notice and answers from its old table until it has the bytes, and G72's `learned()` waits for exactly that second read. Ruling 2 asks for "each Changed and Created file it was just told of" to be read. The head comment of `notices.ts` (lines 7-9) and `DESIGN.md:575` say a link rewrite waits until the server "has read every Markdown file written since the last one, including a write the platform's watch has not reported yet".
+   - **What my probe shows** (fresh.ts above):
+     - A Markdown file written right before the move, with the ask at once (GAP 0): its two links into the moved folder are missing from the edit in 7 of 7 runs. At 50 ms and later they are included.
+     - A folder moved into another folder (`notes/` to `x/notes/`), with the ask at once: the edit is null in 3 of 22 runs, so the relative link inside the moved file is not rewritten and no preview opens. With 20 to 100 ms between the rename and the ask, it was right in 15 of 15.
+     - The round-0 source misses both in 3 of 3, for a different reason: its first call only took the times.
+   - **Exposure:** the window is the one the comment claims to cover, a write the platform's watch has not reported yet. A page's ask after the Files view's own move probably comes later than that (not measured). A script or agent that writes Markdown files and moves a folder through oculus within a few ms meets it.
+   - **Failure scenario:** an agent writes `new/README.md` linking `../docs/DATA.md` and `docs/` is moved straight after. The preview lists the other files but not `new/README.md`, and Apply leaves its two links pointing at `docs/`. Or a folder is moved into another folder with the ask at once, no preview appears, and the moved file's `../` links break silently.
+   - **Fix:** for a Created change with asks, mark it unread after the asks have resolved, just before the notice is written, so `#read` waits for the read the server makes after taking the notice, as the G72 rows do. Quote fresh.ts at GAP 0 for both modes before and after the fix.
+   - **Bears on:** ruling 2 (partly closed) and item 5 (holds at the measured page gaps).
+2. `src/lib/server/machine/lsp/held/watch.ts:115-123`: every unrelated file creation now restarts the quiet of every server's root watch.
+   - **The code:**
+     ```
+     if (![...this.#globs.values()].some((match) => match(relative))) { const hidden = ...; if (event === 'rename' && this.#options.folders !== undefined && !hidden) { if (isFolder(real)) this.#folders.set(real, true); else if (!existsSync(real)) this.#folders.set(real, false); this.#later(); } return; }
+     ```
+   - **What is wrong:** `#later()` runs for every unmatched `rename` event outside dot folders and `node_modules`, including a regular file of another kind being created, which records nothing. `held.ts:529` passes `folders` to the root watch of every server, so this applies to pyright, clangd, the YAML server and the rest. Each such event also costs a `statSync` and an `existsSync` on the event loop. In round 0, unmatched events never touched the timer. The head comment's "debounced 200 ms" is no longer what a reader gets.
+   - **Probe** (quiet.ts above): `a.md` written at 302 ms while a new file is created under `out/` every 100 ms for 2 s. The current tree hands `a.md` over at 2554 ms; round 0 at 514 ms.
+   - **Failure scenario:** a Python tab is open on a root where a build or an experiment creates files under a non-dot folder faster than every 200 ms, such as a LaTeX build or `make` writing objects. A `.py` or `.md` file changed on disk by another program is not told to its server until the churn stops. Diagnostics, references and hover answer from the old text for the whole build, and a long build delays it for minutes. A link rewrite is unaffected only because it calls `flush`.
+   - **Fix:** call `#later()` only when a folder entry was recorded, or give folder events a timer of their own. Rerun quiet.ts to show `a.md` handed over within the quiet.
+3. `src/lib/server/machine/lsp/held/watch.ts:120` with `adapters/markdown/places.ts:66-99` and `held/requests/notices.ts:157-171`: a folder event's walk follows a link to a folder out of the root.
+   - **The code:** `if (isFolder(real)) this.#folders.set(real, true);` (`statSync` follows a link), and `markdownFiles(reach, extensions, from)` starts with `const folders = [from];`.
+   - **What is wrong:** the root walk leaves out a link to a folder, as `markdownFiles`' doc comment says. A walk started at `from` enters `from` even when it is such a link. Ruling 1 asks for the files under the folder "read from disk with the exclusions `markdownFiles` uses".
+   - **Probe** (link.ts above): the root walk gives `["/root/docs/A.md"]`, while a walk from the link `ext` gives `["/root/ext/deep/SECRET-NOTES.md"]`, a file outside the root.
+   - **Failure scenario:** while the Markdown server runs and has read files, someone runs `ln -s ~/data/eeg projects/x/data` in a served root. The relay walks the whole outside tree one `readdir` at a time inside the ordered notice chain, so every later notice and link rewrite of that root waits behind it, and the rewrite is named `unanswered` after 30 s. The relay then tells the server Created for every `.md` under the link, with one `markdown/resolveLinkTarget` ask each. The reads are refused (`reachable` resolves the real path, so G2 holds at `readFile`), but the server is given the names of files outside the root.
+   - **Fix:** skip a `from` that is a symbolic link (`lstat`) or whose real path lies outside the root, in `#event` or in `markdownFiles`.
+
+### Declined to judge
+
+- The `servers.test.ts:228` failure the report saw once. It passed in my three runs of the file and one run of `tests/server/machine/lsp`, and in the first review's nine runs. The file exercises `servers.ts`, which the step changes, so a reproduced failure would count. A run that catches it with its output kept would settle it.
+- test:quick at 168.5 s against its 45 s limit. Every command passed. The selection is 119 test files, because 93 files changed since the base, and the load average was 18. That a list of this size can meet 45 s on an idle machine is not verified here.
+- Whether the page's real ask after a Files view move falls inside Behaviour 1's window. That needs the page, and is settled at the look on landing by moving a folder holding a `../` link into another folder.
+- Cases 5, 6, 21 (the tab), 29 (the note and the bar), 33 and 34's page parts. These are page cases for the look on landing.
+- Whether server 0.5.0 always re-reads a Created file after its notice. Judgment call 7 and G72's rows rest on it, and it is a fact of the dependency beyond the runs above.
+
+Reviewer usage: ac925e245cbc13ce9, claude-opus-5-5, 314,411 tokens, 73 tool uses, 28.3 min.
+
+## Closed (at landing, over round 1)
+
+Each finding of the run over round 1 is small and inside the brief and was fixed on main at landing by the orchestrator (`refute` "Over a repair round" 7). The probes are the reviewer's, in the session scratchpad `rv41r1/`, run with `TREE` at the gate's `tools/oculus`.
+
+- Standards 1 (`servers.ts` comments cut to stay under 880): both texts restored word for word from the round-0 copy (the head comment's sentence on `introduce`, and the `introduce` doc); `YAML_SETTINGS` moved to `adapters/yaml/settings.ts`, beside the Markdown entry's `adapters/markdown/settings.ts`; `servers.ts` is 871 lines; `sh utils/folder-check.sh` exits 0.
+- Standards 2 (`Asked` and `NoticeHost` exported with no importer): both made local to `notices.ts`.
+- Behaviour 1 (a Created file counted as read before the server takes its notice): `Notices.#send` marks a Changed file it has read as unread before the asks and a Created file after the asks resolve, just before the notice, so `caughtUp` waits for the read the server makes on taking the notice. `fresh.ts` at GAP 0: MODE=newfile gives `edit=2 file(s)` 5 of 5 (1 file in 7 of 7 before); MODE=deep gives `edit=1 file(s)` 10 of 10 (null in 3 of 22 before).
+- Behaviour 2 (every unmatched creation restarts the quiet of every root watch): folder events have a timer of their own (`#laterFolders`, `#flushFolders`), and a path that is there and is no folder records nothing; `flush` hands both over. `quiet.ts`: `a.md` handed over at 517 ms with files created under `out/` every 100 ms until 2349 ms (2554 ms before).
+- Behaviour 3 (a folder event's walk follows a link out of the root): `isFolder` reads `lstatSync`, so a link to a folder raises no folder event. `linkwatch.ts` (a link `ext` to an outside folder and a real folder `real` made in the root): `folder events: ["real=true"]`.

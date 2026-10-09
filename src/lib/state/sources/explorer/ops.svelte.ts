@@ -248,12 +248,19 @@ function doneOf(outcome: Outcome, asked: string[]): string[] {
     return outcome.done ?? [];
 }
 
+/**
+ * What is told of the items a rename, a drag or a paste moved, once the page follows them: the
+ * places they were at and the places they are at. A copy, a refused move and an undo tell nothing.
+ */
+export type MovedItems = (moves: Move[]) => void;
+
 export function createExplorer(
     writes: WritesStore,
     fs: FsStore,
     layout: ExplorerLayout,
     ui: InstanceStates,
-    source: ExplorerSource
+    source: ExplorerSource,
+    moved: MovedItems = () => undefined
 ): ExplorerStore {
     // Two signals, each replaced whole, so a view that reads one is drawn again when it changes.
     let clip: Clipboard | null = $state.raw(null);
@@ -437,6 +444,7 @@ export function createExplorer(
         const moves: Move[] =
             renamed === undefined ? [] : [{ from: item, to: { root: item.root, path: renamed } }];
         await landed(moves, [parent], moves.length > 0 ? [item] : []);
+        if (moves.length > 0) moved(moves);
         return outcome;
     }
 
@@ -502,6 +510,8 @@ export function createExplorer(
         const paths: string[] = [];
         let outcome: Outcome;
         let kept = false;
+        let lost = false;
+        const finishedMoves: Move[] = [];
         for (;;) {
             const sent = waiting;
             outcome = await send({
@@ -512,15 +522,19 @@ export function createExplorer(
                 path: into.path,
                 replace
             });
-            if (!answered(outcome)) return { outcome, kept: true };
+            if (!answered(outcome)) {
+                lost = true;
+                break;
+            }
             const finished = doneOf(
                 outcome,
                 sent.map((one) => one.path)
             );
             done.push(...finished);
             if (outcome.ok) paths.push(...outcome.paths);
-            const moved = sent.filter((one) => finished.includes(one.path));
-            const gone = mode === 'move' ? moved : [];
+            const finishedItems = sent.filter((one) => finished.includes(one.path));
+            const gone = mode === 'move' ? finishedItems : [];
+            finishedMoves.push(...gone.map((one) => movedTo(one, into)));
             await landed(
                 gone.map((one) => movedTo(one, into)),
                 [into, ...gone.map((one) => ({ root: one.root, path: parentPath(one.path) }))],
@@ -538,6 +552,8 @@ export function createExplorer(
             replace = true;
             waiting = sent.filter((one) => !finished.includes(one.path));
         }
+        if (finishedMoves.length > 0) moved(finishedMoves);
+        if (lost) return { outcome, kept: true };
         return {
             outcome: outcome.ok
                 ? { ok: true, paths }

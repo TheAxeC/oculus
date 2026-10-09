@@ -1,7 +1,8 @@
 // Layer 2, server. The deterministic scan of what the hub is missing: open markers left in a
 // document, a manifest field a live project has not filled in, a folder that is not the one the
-// tier standard names, a status chip the project's own tier and type contradict, a field long
-// enough to stop being a glance, and the public website's publication list against the portfolio.
+// tier standard names or whose project's manifest `type` is not the folder's, a status chip the
+// project's own tier and type contradict, a field long enough to stop being a glance, and the
+// public website's publication list against the portfolio.
 //
 // It is not the Findings view's list and does not repeat it. Findings is what
 // data/snapshot/validate.ts found wrong in the files themselves, a bad id or an unknown chip; this

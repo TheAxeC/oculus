@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z757 (2026-10-09): the twenty shapes D56's brief check found open, closed in automode (`choices.md`), among them the workbench arrangement moved to a top-level `workbench:` key of `layout.yml` (replacing Z756 (b)), a cap of 20 kept layouts, Problems limited to a path, and held unique views taken into a fresh workbench as DESIGN.md:481 records.
+- Z756 (2026-10-09): the three shapes D56's brief needed closed in automode (`choices.md`): the Workbenches button fixed at the rail's foot with no `rail:` key, the workbench page made from `arrangements: workbench:`, a closed workbench's layout kept in the browser's saved layout by its folder.
 - Z754 (2026-10-09): D46's second hand-back (the 50 ms bound missed at the second word of a query over 100,000 names) closed in automode (`choices.md`): the file mode's matching in a Web Worker, the bound on the page's main thread.
 - Z753 (2026-10-09): the choices of D50's brief check closed in automode (`choices.md`): `.oculus/` tracked, `loadConfig(engine, hub?)`, no cluster as `''`, no LinkedIn feed when absent, an inserting hub-key write, the carry-over's links, approvals and note history, this hub's whole `docs:` list, per dotted key, this hub read only through G14. Open items 25 (the hub's apps trust) and 26 (the four registry lines) raised to Axel.
 - Z752 (2026-10-09): the choices of D52's brief check closed in automode (`choices.md`): funding's own identity checks removed, the session row and folder block shared, the task card moved with the card, no page for a file link, keys written by hand under ruling (13), an old-title undo refused.

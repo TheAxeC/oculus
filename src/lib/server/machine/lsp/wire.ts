@@ -55,7 +55,13 @@ const oculusShape = z.discriminatedUnion('oculus', [
     }),
     z.object({ oculus: z.literal('read'), root: rootShape, uri: z.string().min(1) }),
     z.object({ oculus: z.literal('held'), files: z.array(placeShape) }),
-    z.object({ oculus: z.literal('held_ask'), id: z.number().int(), files: z.array(placeShape) })
+    z.object({ oculus: z.literal('held_ask'), id: z.number().int(), files: z.array(placeShape) }),
+    z.object({
+        oculus: z.literal('links'),
+        id: z.number().int(),
+        root: rootShape,
+        moves: z.array(z.object({ from: z.string().min(1), to: z.string().min(1) })).min(1)
+    })
 ]) satisfies z.ZodType<LspToServer>;
 
 /** A JSON-RPC message: a request, a notification or a response. */
@@ -124,6 +130,17 @@ export function addressOf(method: string, params: unknown): string | null {
     // clangd's `textDocument/switchSourceHeader` takes the document's identifier itself.
     if (method === 'textDocument/switchSourceHeader') {
         return typeof params.uri === 'string' ? params.uri : null;
+    }
+    // A document link resolves by the note its server gave it, which names the document it is in.
+    if (method === 'documentLink/resolve') {
+        const data = params.data;
+        const source = isRecord(data) ? data.source : null;
+        const resource = isRecord(source) ? source.resource : null;
+        return isRecord(resource) &&
+            resource.scheme === 'oculus-file' &&
+            typeof resource.path === 'string'
+            ? `oculus-file://${resource.path}`
+            : null;
     }
     if (method === 'completionItem/resolve') {
         const data = params.data;

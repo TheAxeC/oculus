@@ -66,6 +66,7 @@
     import { lineBars } from './bars/zones';
     import LineBars from './bars/LineBars.svelte';
     import './gutter/marks.css';
+    import './kit/theme/rename.css';
     import type {
         EditorAction,
         EditorBar,

@@ -19,7 +19,7 @@ import { Signal } from './signal';
 import { SERVED_LANGUAGES, factsForLanguage } from '$lib/data/prose/lsp-servers';
 import { keyOf, type CompletionHook } from './transport/messages';
 import type { Jump } from './transport/renames';
-import { libraryOfResource, placeOfResource, type Target } from './uris';
+import { libraryOfResource, lineOfFragment, placeOfResource, type Target } from './uris';
 
 export { SERVED_LANGUAGES };
 
@@ -194,7 +194,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
         open(resource) {
             const target = libraryOfResource(resource) ?? placeOfResource(resource);
             if (target === null || services === null) return false;
-            services.open(target, 1);
+            services.open(target, lineOfFragment(resource.fragment));
             return true;
         }
     });

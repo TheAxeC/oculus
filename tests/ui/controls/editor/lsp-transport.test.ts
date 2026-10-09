@@ -4,7 +4,7 @@
 // `rename` is told to the page as the notice `lsp_edit_refused` and answers the editor with no
 // result; a refusal with no words is the catalog's sentence for it, with no placeholder left in it.
 //
-// The words are the page's own (views/sources/source/language/notice-words.ts) over the checkout's
+// The words are the page's own (state/system/machine/refactor/notice-words.ts) over the checkout's
 // catalog (tests/server/text.ts), so a refusal whose key the page does not word, or a sentence
 // that needs a word the transport does not give, fails here.
 //
@@ -18,7 +18,7 @@ import {
     type TransportHost
 } from '../../../../src/lib/ui/controls/editor/kit/lsp/transport';
 import type { LspPort } from '../../../../src/lib/ui/controls/editor/kit/lsp/services';
-import { noticeWords } from '../../../../src/lib/views/sources/source/language/notice-words.ts';
+import { noticeWords } from '../../../../src/lib/state/system/machine/refactor/notice-words.ts';
 import { TEXT } from '../../../server/text.ts';
 
 setCatalog(TEXT);

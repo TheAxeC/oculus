@@ -30,6 +30,7 @@
 // client is listening.
 
 import type {
+    LinksFailure,
     LspApproval,
     LspCode,
     LspConfig,
@@ -48,7 +49,23 @@ import type { SocketStore } from '../../../shared/stores/shapes.ts';
 
 /** A message of the relay about one root's server. */
 type HeldAnswer = Extract<LspToPage, { oculus: 'held_answer' }>;
-type RootMessage = Exclude<LspToPage, HeldAnswer>;
+type LinksAnswer = Extract<LspToPage, { oculus: 'links_answer' }>;
+type RootMessage = Exclude<LspToPage, HeldAnswer | LinksAnswer>;
+
+/**
+ * What the Markdown servers answered to the moves of a root: the workspace edit as the page
+ * spells its addresses (null when no file needs one) and the text each server holds of the
+ * documents opened on it, by the page's address, or why there is no edit.
+ */
+export type LinksReply =
+    | {
+          ok: true;
+          edit: unknown;
+          held: Map<string, string>;
+          overlaps: string[];
+          unanswered: string[];
+      }
+    | { ok: false; error: LinksFailure };
 
 /** The state of a port: the page socket as a language server client sees it. */
 type LspLinkState = 'open' | 'connecting' | 'closed';
@@ -110,6 +127,9 @@ type LibraryRead = { text: string } | { code: LspReadRefusal | 'unsent' };
 /** The milliseconds an answer to a choice is waited for. */
 const ANSWER_MS = 10_000;
 
+/** The milliseconds the answer to a question about moved files is waited for. */
+const LINKS_MS = 60_000;
+
 export type LspStore = {
     /** The channel of a language, made the first time it is asked for. */
     link: (language: string) => LspLink;
@@ -139,6 +159,11 @@ export type LspStore = {
      * in which case an edit that names them is not made.
      */
     askHeld: (files: LspPlace[]) => Promise<LspPlace[] | null>;
+    /**
+     * Ask the Markdown servers for the edit that keeps the links to some moved items pointing at
+     * them: the moves are `from` and `to` paths under one served root, made already.
+     */
+    askLinks: (root: string, moves: { from: string; to: string }[]) => Promise<LinksReply>;
     /** End a root's server and start it again on its next request. */
     restart: (root: string, language: string) => boolean;
     /** Record a library file a server named, under the root and language of the request. */
@@ -174,6 +199,9 @@ function keyOf(root: string, language: string): string {
 
 /** The language of the channel that holds the page's own messages. */
 const WORKSPACE = WORKSPACE_LANGUAGE;
+
+/** The language whose servers answer the questions about moved files. */
+const LINKS_LANGUAGE = 'markdown';
 
 /** The channel a language's messages are on. */
 function channelOf(language: string): string {
@@ -326,6 +354,43 @@ export function createLsp(socket: SocketStore): LspStore {
         });
     }
 
+    /** Whether a payload is the relay's answer to a question about moved files. */
+    function isLinksAnswer(payload: unknown): payload is LinksAnswer {
+        if (typeof payload !== 'object' || payload === null) return false;
+        const one = payload as Record<string, unknown>;
+        return one.oculus === 'links_answer' && typeof one.id === 'number';
+    }
+
+    const linking = new Map<number, (answer: LinksAnswer | LinksFailure) => void>();
+    let linkQuestions = 0;
+
+    function askLinks(root: string, moves: { from: string; to: string }[]): Promise<LinksReply> {
+        link(LINKS_LANGUAGE);
+        linkQuestions += 1;
+        const id = linkQuestions;
+        return new Promise((resolve) => {
+            const end = (answer: LinksAnswer | LinksFailure): void => {
+                clearTimeout(later);
+                linking.delete(id);
+                if (typeof answer === 'string') resolve({ ok: false, error: answer });
+                else if ('error' in answer) resolve({ ok: false, error: answer.error });
+                else {
+                    const texts = new Map(answer.held.map((one) => [one.uri, one.text]));
+                    resolve({
+                        ok: true,
+                        edit: answer.edit,
+                        held: texts,
+                        overlaps: answer.overlaps,
+                        unanswered: answer.unanswered
+                    });
+                }
+            };
+            const later = setTimeout(() => end('no_answer'), LINKS_MS);
+            linking.set(id, end);
+            if (!write(LINKS_LANGUAGE, root, { oculus: 'links', id, root, moves })) end('unsent');
+        });
+    }
+
     function link(language: string): LspLink {
         const made = links.get(language);
         if (made !== undefined) return made;
@@ -338,7 +403,7 @@ export function createLsp(socket: SocketStore): LspStore {
                 const resolve = asking.get(payload.id);
                 asking.delete(payload.id);
                 resolve?.(payload.files);
-            }
+            } else if (isLinksAnswer(payload)) linking.get(payload.id)?.(payload);
         });
         const own: LspLink = {
             state: {
@@ -462,6 +527,7 @@ export function createLsp(socket: SocketStore): LspStore {
             ask(language, root, { oculus: 'revoke', root, approval: { kind: 'config' } }),
         publishTabs,
         askHeld,
+        askLinks,
         restart: (root, language) => write(language, root, { oculus: 'restart', root }),
         named: (address, root, language) => {
             const known = libraries.get(address);

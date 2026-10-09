@@ -10,6 +10,7 @@
 
 import { realpathSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import type { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
@@ -345,6 +346,71 @@ const ROWS: Row[] = [
         }
     },
     {
+        name: 'is one Markdown server for two md tabs of one root on one page, which ends 60 s after the last closed',
+        tab: {
+            channel: 'lsp:markdown',
+            file: 'a.md',
+            language: 'markdown',
+            files: ['a.md', 'b.md']
+        },
+        steps: async ({ relay, spawned, page }) => {
+            open(relay, page.sink, 'lsp:markdown', pageFile('repo', 'b.md'), 'markdown');
+            await advance(0);
+            expect(spawned.children).toHaveLength(1);
+            expect(spawned.calls[0].args).toContain('--permission');
+            close(relay, page.sink, 'lsp:markdown', pageFile('repo', 'a.md'));
+            await advance(MINUTE * 2);
+            expect(spawned.children[0].ended).toBe(false);
+            close(relay, page.sink, 'lsp:markdown', pageFile('repo', 'b.md'));
+            await advance(MINUTE - 1);
+            expect(spawned.children[0].ended).toBe(false);
+            await advance(1);
+            expect(spawned.children[0].ended).toBe(true);
+            expect(relay.pids()).toEqual([]);
+        }
+    },
+    {
+        name: 'is started for a link rewrite with no Markdown tab open and ends 60 s after its answer, not at 59.999 s',
+        tab: {
+            channel: 'lsp:markdown',
+            file: 'a.md',
+            language: 'markdown',
+            files: ['a.md', 'docs/b.md']
+        },
+        steps: async ({ relay, spawned, page }) => {
+            close(relay, page.sink, 'lsp:markdown', pageFile('repo', 'a.md'));
+            await advance(MINUTE);
+            expect(spawned.children[0].ended).toBe(true);
+            relay.inbound(
+                page.sink,
+                frame('lsp:markdown', {
+                    oculus: 'links',
+                    id: 5,
+                    root: 'repo',
+                    moves: [{ from: 'docs/b.md', to: 'docs/c.md' }]
+                })
+            );
+            // The ask waits on the root's Markdown files, which are read from the disk: the second
+            // child exists when the relay has read them, and has the ask when the relay sent it.
+            const second = await spawned.childOf(1);
+            const asked = await second.sentOf('markdown/getEditForFileRenames');
+            expect(spawned.children).toHaveLength(2);
+            second.say({
+                jsonrpc: '2.0',
+                id: asked.id,
+                result: { edit: { documentChanges: [] } }
+            });
+            await page.arrival((payload) => payload.oculus === 'links_answer');
+            const answer = page.frames.find((one) => one.payload.oculus === 'links_answer');
+            expect(answer?.payload).toMatchObject({ oculus: 'links_answer', id: 5, edit: null });
+            await advance(MINUTE - 1);
+            expect(second.ended).toBe(false);
+            await advance(1);
+            expect(second.ended).toBe(true);
+            expect(relay.pids()).toEqual([]);
+        }
+    },
+    {
         name: 'is one texlab for a tex tab and a bib tab of one root on one page, which ends 60 s after the last closed',
         tab: {
             channel: 'lsp:latex',
@@ -570,5 +636,68 @@ const ROWS: Row[] = [
 describe('the life of a language server', () => {
     it.each(ROWS)('$name', async ({ behave, tab, steps }) => {
         await steps(await opened(behave, tab));
+    });
+});
+
+describe('a link rewrite of a move two roots hold', () => {
+    it('answers the edit of the root whose server answered and names the root whose server did not', async () => {
+        const dir = plantRoot(['notes.md', 'sub/a.md', 'sub/b.md', 'sub/d.md']);
+        const served = [
+            { key: 'repo', dir },
+            { key: 'inner', dir: join(dir, 'sub') }
+        ];
+        const spawned = stubSpawn();
+        const relay = makeRelay({ roots: () => served, spawn: spawned.spawn });
+        made.push(relay);
+        const page = recordingSink();
+        open(relay, page.sink, 'lsp:markdown', pageFile('inner', 'a.md'), 'markdown');
+        await settle();
+        relay.inbound(
+            page.sink,
+            frame('lsp:markdown', {
+                oculus: 'links',
+                id: 9,
+                root: 'inner',
+                moves: [{ from: 'b.md', to: 'c.md' }]
+            })
+        );
+        const inner = await spawned.childOf(0);
+        const asked = await inner.sentOf('markdown/getEditForFileRenames');
+        inner.say({
+            jsonrpc: '2.0',
+            id: asked.id,
+            result: {
+                edit: {
+                    documentChanges: [
+                        {
+                            textDocument: {
+                                uri: pathToFileURL(join(dir, 'sub', 'd.md')).href,
+                                version: null
+                            },
+                            edits: [
+                                {
+                                    range: {
+                                        start: { line: 0, character: 0 },
+                                        end: { line: 0, character: 1 }
+                                    },
+                                    newText: 'y'
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        });
+        const outer = await spawned.childOf(1);
+        await outer.sentOf('markdown/getEditForFileRenames');
+        await advance(30_000);
+        await page.arrival((payload) => payload.oculus === 'links_answer');
+        const answer = page.frames.find((one) => one.payload.oculus === 'links_answer');
+        expect(answer?.payload).toMatchObject({
+            oculus: 'links_answer',
+            id: 9,
+            unanswered: ['repo']
+        });
+        expect(answer?.payload.edit).not.toBeNull();
     });
 });

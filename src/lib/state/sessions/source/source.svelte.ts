@@ -11,7 +11,7 @@
 // tab as the smallest edits, so the editor keeps its caret and its scroll and one undo restores the
 // text. What the disk says of the file meanwhile is disk.svelte.ts's.
 
-import { tick } from 'svelte';
+import { tick, untrack } from 'svelte';
 import { endText, trimText, type KeptPlace } from '../../../data/helpers/files/save-text.ts';
 import { sameDiskFile, type RootFolder } from '../../../data/helpers/hub-names.ts';
 import { editsBetween, type TextEdit } from '../../../data/prose/text-edits.ts';
@@ -52,6 +52,13 @@ export type SourceDeps = {
     kept: (id: string) => KeptPlace[];
     /** The roots the file browser serves, which decide whether two names are one file on disk. */
     roots: () => readonly RootFolder[];
+    /**
+     * The keys of the roots the page serves, and null while the page has not read them: an empty
+     * list read that way says nothing about what is served.
+     */
+    served: () => readonly string[] | null;
+    /** Whether the page's read of its served roots failed; they stay unknown until a later read. */
+    rootsFailed: () => boolean;
 };
 
 /** How one save of a tab is made. */
@@ -206,6 +213,19 @@ export function createSource(
         ui.setInstanceState(id, { ...sourceDraft(id), ...changes, ...failed });
     }
 
+    /** Tabs whose read found no file while the served roots were unknown, by tab. */
+    const unsettled = new Map<string, { file: string; error: string }>();
+
+    /** Whether the page has read its served roots and the root key is not among them. */
+    function unserved(root: string): boolean {
+        return deps.served()?.includes(root) === false;
+    }
+
+    /** What a file that cannot be read is, by whether its folder is served. */
+    function missing(root: string): 'gone' | 'unserved' {
+        return unserved(root) ? 'unserved' : 'gone';
+    }
+
     const disk = createDisk(deps.socket, {
         draft: sourceDraft,
         update: updateDraft,
@@ -213,7 +233,41 @@ export function createSource(
         fileOf: (id) => {
             const state = ui.instanceState(id);
             return state === undefined ? null : sourceDraft(id).file;
-        }
+        },
+        unserved
+    });
+
+    // A tab over a file in a root that is not served is marked unserved, and when its root is
+    // served again the tab reads the file again, a tab with unsaved text included. A read of a
+    // restored tab that found no file while the served roots were being read waits here: the tab
+    // is unserved when its root is not among them, and cannot be opened when it is. When the read
+    // of the served roots failed, such a tab cannot be opened at once.
+    $effect.root(() => {
+        $effect(() => {
+            const keys = deps.served();
+            if (keys === null) return;
+            for (const [id, waiting] of [...unsettled]) {
+                unsettled.delete(id);
+                untrack(() => {
+                    const place = diskFileOf(waiting.file);
+                    if (sourceDraft(id).file !== waiting.file || place === null) return;
+                    if (keys.includes(place.root)) updateDraft(id, { error: waiting.error });
+                });
+            }
+            for (const id of ui.instanceKeys('')) {
+                untrack(() => {
+                    const draft = sourceDraft(id);
+                    const place = diskFileOf(draft.file);
+                    if (!draft.loaded || place === null) return;
+                    const out = !keys.includes(place.root);
+                    if (out && draft.disk !== 'unserved') {
+                        updateDraft(id, { disk: 'unserved', conflict: false, error: '' });
+                    } else if (!out && draft.disk === 'unserved') {
+                        void reloadSource(id);
+                    }
+                });
+            }
+        });
     });
 
     function openDrafts(): string[] {
@@ -289,9 +343,22 @@ export function createSource(
                     : [await loadHeadFile(root, path, head), true];
             if (sourceDraft(id).file !== file) return;
             if (!answer.ok) {
+                // A draft restored with the page whose root is not served keeps its text and says
+                // the folder is not served, rather than that the file cannot be opened.
+                if (answer.status === 404 && sourceDraft(id).loaded) {
+                    if (deps.served() === null && !deps.rootsFailed()) {
+                        unsettled.set(id, { file, error: t('source.cannot_open', answer.error) });
+                        return;
+                    }
+                    if (unserved(root)) {
+                        updateDraft(id, { disk: 'unserved', conflict: false });
+                        return;
+                    }
+                }
                 updateDraft(id, { error: t('source.cannot_open', answer.error) });
                 return;
             }
+            unsettled.delete(id);
             const held = sourceDraft(id);
             const edited = held.loaded && held.text !== held.saved && held.text !== answer.content;
             updateDraft(id, edited ? keptEdits(held, answer, readonly) : taken(answer, readonly));
@@ -405,17 +472,21 @@ export function createSource(
     async function reloadSource(id: string): Promise<void> {
         const draft = sourceDraft(id);
         const place = diskFileOf(draft.file);
-        if (!draft.loaded || draft.text !== draft.saved || place === null) return;
+        if (!draft.loaded || place === null) return;
+        if (draft.text !== draft.saved && draft.disk !== 'unserved') return;
         const answer = await loadSource(place.root, place.path);
         if (ui.instanceState(id) === undefined) return;
         const held = sourceDraft(id);
         if (held.file !== draft.file) return;
         if (!answer.ok) {
-            if (answer.status === 404) updateDraft(id, { disk: 'gone', conflict: false });
+            if (answer.status === 404) {
+                updateDraft(id, { disk: missing(place.root), conflict: false });
+            }
             return;
         }
         if (held.text !== held.saved) {
             if (answer.base !== held.base) updateDraft(id, { disk: 'changed' });
+            else if (held.disk === 'unserved') updateDraft(id, { disk: 'same' });
             return;
         }
         reachTo(id, held.text, answer.content);
@@ -491,7 +562,12 @@ export function createSource(
             });
         } else if (answer.status === 404) {
             reachTo(id, held.text, held.saved);
-            updateDraft(id, { text: held.saved, disk: 'gone', conflict: false, message: '' });
+            updateDraft(id, {
+                text: held.saved,
+                disk: missing(place.root),
+                conflict: false,
+                message: ''
+            });
         } else {
             updateDraft(id, { message: t('source.cannot_open', answer.error), failed: true });
         }
@@ -582,6 +658,7 @@ export function createSource(
     ): Promise<boolean> {
         const draft = sourceDraft(id);
         if (draft.readonly) return saidOnLine(id, t('source.readonly'));
+        if (draft.disk === 'unserved') return saidOnLine(id, t('source.disk_unserved'));
         if (draft.truncated) return saidOnLine(id, t('source.truncated'));
         if (draft.notText) return saidOnLine(id, t('source.not_text'));
         const base = options.overwrite === true ? '' : draft.base;

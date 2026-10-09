@@ -12,6 +12,8 @@
 // order given. The text an edit brings is written with the line ends the text has, which are CRLF
 // when CR and CRLF line ends together outnumber half of all of them (the rule of a text model of
 // the editor) and LF otherwise.
+//
+// The same module merges the workspace edits several roots answer for one move (`MergedEdits`).
 
 /**
  * The id of the change annotation a rename of a hub key carries on each of its edits. The
@@ -229,3 +231,113 @@ export const LSP_EDIT_NOTICES = [
 
 /** One of those notices. */
 export type LspEditNotice = (typeof LSP_EDIT_NOTICES)[number];
+
+// ---------------------------------------------------------------------------------------------
+// The workspace edits of several served roots for one move, made into one. Each root's Markdown
+// server edits the files of its folder, and a file of an inner root is a file of the outer root
+// too, so one file can come back from more than one root. Every edit of every root is kept; an
+// edit the same as one already kept (the same range and the same new text) is kept once; a file
+// two roots rewrite differently over the same text is left out whole and named. The relay merges
+// the roots it asked (server/machine/lsp/held/requests/links.ts) and the page merges the answers
+// it got for several roots (state/system/machine/refactor/link-rewrite.ts).
+
+/** The edits of one file, and whether two roots disagreed about them. */
+type FileEdits = { entry: Record<string, unknown>; edits: TextEdit[]; overlap: boolean };
+
+/** Whether a value is an object. */
+function isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Whether a value is a position. */
+function isTextPosition(value: unknown): value is TextPosition {
+    return isObject(value) && typeof value.line === 'number' && typeof value.character === 'number';
+}
+
+/** Whether a value is a text edit. */
+function isEdit(value: unknown): value is TextEdit {
+    return (
+        isObject(value) &&
+        isObject(value.range) &&
+        isTextPosition(value.range.start) &&
+        isTextPosition(value.range.end) &&
+        typeof value.newText === 'string'
+    );
+}
+
+/** Whether the first position comes before the second. */
+function before(a: TextPosition, b: TextPosition): boolean {
+    return a.line < b.line || (a.line === b.line && a.character < b.character);
+}
+
+/** Whether two edits have the same range. */
+function sameRange(a: TextEdit, b: TextEdit): boolean {
+    return (
+        a.range.start.line === b.range.start.line &&
+        a.range.start.character === b.range.start.character &&
+        a.range.end.line === b.range.end.line &&
+        a.range.end.character === b.range.end.character
+    );
+}
+
+/** Whether two edits change the same text: one range, or ranges that share some of it. */
+function overlaps(a: TextEdit, b: TextEdit): boolean {
+    return (
+        sameRange(a, b) ||
+        (before(a.range.start, b.range.end) && before(b.range.start, a.range.end))
+    );
+}
+
+/** The address of the file an entry of a workspace edit is for, or null for any other entry. */
+function nameOf(entry: unknown): string | null {
+    if (!isObject(entry) || !isObject(entry.textDocument)) return null;
+    const uri = entry.textDocument.uri;
+    return typeof uri === 'string' && Array.isArray(entry.edits) ? uri : null;
+}
+
+/** The edits of the roots asked so far, by the address of the file. */
+export class MergedEdits {
+    #files = new Map<string, FileEdits>();
+    #others: unknown[] = [];
+
+    /** Add the entries of the edit one root answered, in the page's addresses. */
+    add(entries: readonly unknown[]): void {
+        for (const entry of entries) {
+            const name = nameOf(entry);
+            if (name === null) {
+                this.#others.push(entry);
+                continue;
+            }
+            const edits = (entry as { edits: unknown[] }).edits.filter(isEdit);
+            const known = this.#files.get(name);
+            if (known === undefined) {
+                this.#files.set(name, {
+                    entry: { ...(entry as Record<string, unknown>) },
+                    edits: [...edits],
+                    overlap: false
+                });
+                continue;
+            }
+            const earlier = known.edits.length;
+            for (const edit of edits) {
+                const prior = known.edits.slice(0, earlier);
+                if (prior.some((one) => sameRange(one, edit) && one.newText === edit.newText)) {
+                    continue;
+                }
+                if (prior.some((one) => overlaps(one, edit))) known.overlap = true;
+                known.edits.push(edit);
+            }
+        }
+    }
+
+    /** The one edit: the entries of the files all roots agree about, and the files left out. */
+    result(): { changes: unknown[]; overlaps: string[] } {
+        const changes: unknown[] = [...this.#others];
+        const left: string[] = [];
+        for (const [name, file] of this.#files) {
+            if (file.overlap) left.push(name);
+            else changes.push({ ...file.entry, edits: file.edits });
+        }
+        return { changes, overlaps: left };
+    }
+}

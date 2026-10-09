@@ -225,7 +225,7 @@ archive_dead: [nogo, dropped, disproved, abandoned, parked]
 leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }
 
 
-# Project lifecycle vocab: the single source for the status guardrails the Audit view reports. `archive_outcomes` = the `type:` set on archiving, and the conventional archive/<outcome>/ filing folder (archive is a NESTED tier, so the folder is a convention here, not a rule the engine reads). `live_chips` = in-flight chips a terminal project must not still carry; clear them when you archive, or the guardrail flags it. `terminal_types` = done/closed outcomes.
+# Project lifecycle vocab: the single source for the status guardrails the Audit view reports. `archive_outcomes` = the `type:` set on archiving, and the archive/<outcome>/ filing folder (archive is a NESTED tier, so the engine does not read the folder; the Audit lists an archived project whose `type:` differs from its outcome folder). `live_chips` = in-flight chips a terminal project must not still carry; clear them when you archive, or the guardrail flags it. `terminal_types` = done/closed outcomes.
 lifecycle:
   archive_outcomes: [published, nogo, dropped, disproved, phd]
   live_chips: [submit-ready, submitted, revision, accepted, in-prep, blocked, numbers-pending, results-positive, admin-prep]

@@ -97,7 +97,9 @@ function nestedProjects(base: string, segments: string[] = []): string[][] {
 
 /**
  * Build one record. Provenance wins over the manifest for `id`, and for `type` on a flat tier;
- * the manifest's own values are kept (`manifestId`) or reported (`type`), never silently replaced.
+ * the manifest's own values are kept (`manifestId`, `typeWritten`) or reported (`id`), never
+ * silently replaced. A flat tier's `type` that the manifest writes differently is kept as
+ * `typeWritten`, which the Audit lists beside the tier.
  */
 function record(
     hub: string,
@@ -126,31 +128,19 @@ function record(
         });
     }
 
-    let type: string | undefined;
-    if (ruleType !== undefined) {
-        type = ruleType;
-        if (data.type !== undefined && data.type !== ruleType) {
-            findings.push({
-                file,
-                key: 'type',
-                message: findingText(
-                    catalog,
-                    'findings.manifests.type_not_tier',
-                    JSON.stringify(data.type),
-                    ruleType
-                )
-            });
-        }
-    } else {
-        type = optionalText(data.type);
-    }
+    const written = optionalText(data.type);
+    const type = ruleType ?? written;
 
     const built: RawManifest = { ...data, file, folder, id, tier, ghost: false };
-    const written = mtimeOf(file);
-    if (written !== undefined) built.fileMtime = written;
+    const changed = mtimeOf(file);
+    if (changed !== undefined) built.fileMtime = changed;
     if (category !== undefined) built.category = category;
     if (type !== undefined) built.type = type;
     if (data.id !== undefined) built.manifestId = data.id;
+    delete built.typeWritten;
+    if (ruleType !== undefined && written !== undefined && written !== '' && written !== ruleType) {
+        built.typeWritten = written;
+    }
     return built;
 }
 

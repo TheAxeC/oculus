@@ -53,6 +53,8 @@ export type RelayOptions = {
     exists?: (path: string) => boolean;
     /** The LaTeX settings in force, read at each texlab start and each answer it is given. */
     latex: () => LatexBuilding;
+    /** The extensions of Markdown files, without the dot, read at each start of that server. */
+    markdown?: () => string[];
     /** oculus's own environment, whose PATH finds a server's program; `process.env` by default. */
     env?: NodeJS.ProcessEnv;
     now?: () => number;

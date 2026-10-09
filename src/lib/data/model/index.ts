@@ -607,6 +607,7 @@ export type {
     DebugSession,
     DebugStatus,
     DebugWatch,
+    LinksFailure,
     LintAnswer,
     LintConfig,
     LintEdit,

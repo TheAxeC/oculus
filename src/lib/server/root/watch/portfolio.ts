@@ -586,6 +586,12 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 const shared = linkedin && otherDirs.has(dir);
                 const yamlFeed = yamlFeedDirs.has(dir);
                 const isFeed = linkedin || yamlFeed;
+                // A folder that is not there is waited for through its parent and is no error to
+                // print; any other failure to watch an existing folder is printed once.
+                if (!existsSync(dir)) {
+                    if (!handles.has(dir)) openParent(dir, isFeed);
+                    continue;
+                }
                 const opened = open(
                     dir,
                     false,
@@ -598,7 +604,6 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                             named(join(dir, filename ?? '')))
                 );
                 if (opened && isFeed) withFeeds = true;
-                if (!opened && !handles.has(dir) && !existsSync(dir)) openParent(dir, isFeed);
             }
             openFile(join(paths.hub, portfolio.career));
             open(engineConfig, true);

@@ -43,7 +43,9 @@
             ? draft.message
             : draft.disk === 'gone'
               ? t('source.disk_gone')
-              : t('source.disk_changed')
+              : draft.disk === 'unserved'
+                ? t('source.disk_unserved')
+                : t('source.disk_changed')
     );
 
     /** Compare: the file on disk against this tab's text, in a tab after this one. */

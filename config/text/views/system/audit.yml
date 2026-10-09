@@ -54,6 +54,7 @@ text:
         msg_retired_doc: 'retired doc: fold it into README.md'
         msg_bad_folder: 'non-canonical folder: rename to {0}'
         msg_code_no_readme: code/ has no README.md (the deposit root)
+        msg_type_not_folder: "type {0} is not the folder's {1}"
         msg_no_author_chip: 'archive/coauthor entry has no author-role chip (lead / coauthor)'
         msg_terminal_live: 'terminal ({0}) but still carries live chip(s) {1}: stale; clear them or re-open the project'
         msg_projects_published: 'projects-tier carries `published`: it got accepted; move the folder to archive/published/'

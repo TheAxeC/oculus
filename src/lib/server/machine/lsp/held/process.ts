@@ -17,7 +17,7 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import type { Readable, Writable } from 'node:stream';
 import { StreamMessageReader, StreamMessageWriter } from 'vscode-jsonrpc/node';
 import type { LspCode, LspRpc } from '../../../../data/model/index.ts';
-import type { Launch } from '../servers.ts';
+import type { Launch, Registration } from '../servers.ts';
 
 /** The milliseconds a server may take to answer `initialize`. */
 const INITIALIZE_MS = 30_000;
@@ -74,7 +74,7 @@ export type ProcessOptions = {
     /** The `initialize` request's params. */
     initialize: Record<string, unknown>;
     /** The notifications written right after `initialized`, before anything queued. */
-    registrations?: readonly string[];
+    registrations?: readonly Registration[];
     events: ProcessEvents;
 };
 
@@ -187,8 +187,8 @@ export class ServerProcess {
             }
             this.#status = 'ready';
             this.#write({ jsonrpc: '2.0', method: 'initialized', params: {} });
-            for (const method of this.#options.registrations ?? []) {
-                this.#write({ jsonrpc: '2.0', method, params: {} });
+            for (const { method, params } of this.#options.registrations ?? []) {
+                this.#write({ jsonrpc: '2.0', method, params: params ?? {} });
             }
             for (const queued of this.#queue.splice(0)) this.#write(queued);
             this.#options.events.ready(message.result);

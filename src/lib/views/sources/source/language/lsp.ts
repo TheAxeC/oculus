@@ -55,7 +55,7 @@ import type { AstNode, MemoryTree } from '$lib/state/system/machine/lsp/clangd';
 import { symbolRowsOf, type SymbolRow } from '$lib/state/system/machine/lsp/workspace-symbols';
 import { t } from '$lib/state/shared/words/text';
 import { isWithheldFile } from '$lib/state/system/config/config-files';
-import { noticeWords } from '$lib/views/sources/source/language/notice-words';
+import { noticeWords } from '$lib/state/system/machine/refactor/notice-words';
 
 /** The milliseconds a save waits for the language server's formatting (VS Code's participant). */
 const FORMAT_TIMEOUT_MS = 60_000;
@@ -119,7 +119,8 @@ function servedLanguage(language: string): boolean {
 /**
  * Whether a file is one the server of its language is not given, which the relay's entry refuses as
  * well: the machine's `local.yml`, or a YAML file under the hub's `secrets` folder or under
- * `~/.oculus`, for the YAML server, and a file whose extension the entry lists in
+ * `~/.oculus`, for the YAML server, a Markdown file under those two folders for the Markdown
+ * server, and a file whose extension the entry lists in
  * `refusedExtensions` (the Sweave sources texlab is not given).
  */
 function isRefusedFile(
@@ -129,7 +130,8 @@ function isRefusedFile(
 ): boolean {
     if (refusesFile(factsForLanguage(language), file.path)) return true;
     return (
-        language === 'yaml' && isWithheldFile(file, client.fs.roots(), client.fs.workspaces().home)
+        (language === 'yaml' || language === 'markdown') &&
+        isWithheldFile(file, client.fs.roots(), client.fs.workspaces().home)
     );
 }
 

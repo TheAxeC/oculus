@@ -16,8 +16,14 @@
 // wherever they stand (the document of a request, the two kinds of location, the location of
 // related information, the folders of a workspace, the files a workspace edit renames), the `file`
 // of a clangd command's argument, the `target` of a document link, the address strings of a
-// command's `arguments` and the keys of a workspace edit's `changes`. A message to a server that
-// holds any other address, or one that does not resolve, is refused whole.
+// command's `arguments` and the keys of a workspace edit's `changes`. A record that spells an
+// address (a `scheme`, a `path` and sometimes an `external` and an `fsPath`, as the `data` of a
+// document link does, a server's own note that comes back with the link's resolve) goes to the
+// page as a page address of the same shape and back to the server as the file's. A `#fragment`
+// after an address (the `#L<line>,<column>` of a link to a heading) is kept apart from the path in
+// both directions.
+// A message to a server that holds any other address, or one that does not resolve, is refused
+// whole.
 //
 // A file outside every served root that a server names reaches the page as a library address
 // (library/address.ts) when the mapper's `library` gives one, and the page's message about it goes
@@ -35,8 +41,9 @@ import { expandHome } from '../../files/files.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import { isLibraryAddress } from './library/address.ts';
 
-/** The scheme the page names a document by. */
-const PAGE_SCHEME = 'oculus-file:';
+/** The name of the scheme the page names a document by, and the scheme with its colon. */
+const PAGE_NAME = 'oculus-file';
+const PAGE_SCHEME = `${PAGE_NAME}:`;
 
 /** A root the file browser serves, with its real path resolved. */
 export type ServedRoot = { key: string; dir: string; real: string };
@@ -180,11 +187,24 @@ export type Mapper = {
     library?(real: string): string | null;
 };
 
+/** The address without its `#fragment`, and the fragment with its `#` or the empty string. */
+function splitFragment(uri: string): [string, string] {
+    const at = uri.indexOf('#');
+    return at < 0 ? [uri, ''] : [uri.slice(0, at), uri.slice(at)];
+}
+
 /**
  * The page URI of a server's `file://` URI: the address the page opened it under, its address under
  * a served root, or its library address; null for a file the page has no address for.
  */
 function toPageUri(uri: string, mapper: Mapper): string | null {
+    const [bare, fragment] = splitFragment(uri);
+    const page = toPageBare(bare, mapper);
+    return page === null ? null : page + fragment;
+}
+
+/** The page URI of a server's `file://` URI that has no fragment. */
+function toPageBare(uri: string, mapper: Mapper): string | null {
     const real = realOfFileUri(uri);
     if (real === null) return null;
     const known = mapper.opened(real);
@@ -209,6 +229,14 @@ const FILE_FIELD = 'file';
 
 /** The field of a document link that holds the address it leads to. */
 const LINK_FIELD = 'target';
+
+/** The scheme the server's `file://` addresses have as the record of an address spells it. */
+const SERVER_SCHEME = 'file';
+
+/** A record that spells an address (`{ scheme, path }`), in the scheme the record is for. */
+function spelledIn(value: unknown, scheme: string): value is Record<string, unknown> {
+    return isRecord(value) && value.scheme === scheme && typeof value.path === 'string';
+}
 
 /** A value that stands for a location the page cannot be given, dropped with what holds it. */
 const DROP = Symbol('dropped');
@@ -236,18 +264,29 @@ export function toServer(
 ): { value: unknown } | null {
     const outcome = { refused: false };
     const address = (uri: unknown): string => {
-        const resolved = isLibraryAddress(uri)
-            ? (library?.(uri) ?? null)
-            : (resolvePageUri(uri, roots)?.fileUri ?? null);
+        const [bare, fragment] = typeof uri === 'string' ? splitFragment(uri) : [uri, ''];
+        const resolved = isLibraryAddress(bare)
+            ? (library?.(bare) ?? null)
+            : (resolvePageUri(bare, roots)?.fileUri ?? null);
         if (resolved === null) {
             outcome.refused = true;
             return '';
         }
-        return resolved;
+        return resolved + fragment;
     };
+    /** A record spelling a page address, as the server spells it. */
+    const spelledForServer = (item: Record<string, unknown>): Record<string, unknown> => {
+        const real = realOfFileUri(address(`${PAGE_SCHEME}//${String(item.path)}`));
+        const copy: Record<string, unknown> = { ...item, scheme: SERVER_SCHEME, path: real ?? '' };
+        if (typeof item.external === 'string') copy.external = address(item.external);
+        if (typeof item.fsPath === 'string') copy.fsPath = real ?? '';
+        return copy;
+    };
+
     const walk = (item: unknown): unknown => {
         if (Array.isArray(item)) return item.map(walk);
         if (!isRecord(item)) return item;
+        if (spelledIn(item, PAGE_NAME)) return spelledForServer(item);
         const copy: Record<string, unknown> = {};
         for (const [key, inner] of Object.entries(item)) {
             if (URI_FIELDS.includes(key) && typeof inner === 'string') copy[key] = address(inner);
@@ -284,11 +323,22 @@ export function toPage(value: unknown, mapper: Mapper): { value: unknown } | nul
         const page = toPageUri(value, mapper);
         return page === null ? null : { value: page };
     }
+    /** A record spelling a server address, as the page spells it; DROP for one it has none for. */
+    const spelledForPage = (item: Record<string, unknown>): Record<string, unknown> | symbol => {
+        const page = toPageUri(pathToFileURL(String(item.path)).href, mapper);
+        if (page === null) return DROP;
+        const path = page.slice(PAGE_SCHEME.length + 2);
+        const copy: Record<string, unknown> = { ...item, scheme: PAGE_NAME, path };
+        if (typeof item.external === 'string') copy.external = page;
+        if (typeof item.fsPath === 'string') copy.fsPath = path;
+        return copy;
+    };
     const walk = (item: unknown): unknown => {
         if (Array.isArray(item)) {
             return item.map(walk).filter((one) => one !== DROP);
         }
         if (!isRecord(item)) return item;
+        if (spelledIn(item, SERVER_SCHEME)) return spelledForPage(item);
         const copy: Record<string, unknown> = {};
         for (const [key, inner] of Object.entries(item)) {
             if (

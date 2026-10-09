@@ -44,6 +44,7 @@ text:
         empty: Invoke a code action, like rename, to see a preview of its changes here.
         file_title: Compare {0} with the checked edits
         results: Refactor Preview
+        title_md_links: Update links in Markdown files
         title_plain: Refactoring
         title_rename: Renaming '{0}' to '{1}'
     references:

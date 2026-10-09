@@ -5,11 +5,12 @@
 // A tab that read the file or wrote it holds `base`, the hash of those bytes. A message with that
 // hash moves nothing. A message with another hash reads a tab with no unsaved text again, and marks
 // a tab with unsaved text `changed` with its text kept. A null hash marks every tab over the file
-// `gone`. Several tabs over one file share one channel; the channel is subscribed when the first of
-// them has loaded its draft and dropped, with a message to the server, when the last of them closes
-// or is pointed at another file. A tab whose own save is in flight holds the messages it hears
-// until the answer lands and compares the newest with the hash the answer carries, so the tab's own
-// write is never taken for another program's.
+// `gone`, or `unserved` when the tab's root is not among the page's served roots, since a root that
+// stops being served says nothing of its files. Several tabs over one file share one channel; the
+// channel is subscribed when the first of them has loaded its draft and dropped, with a message to
+// the server, when the last of them closes or is pointed at another file. A tab whose own save is
+// in flight holds the messages it hears until the answer lands and compares the newest with the
+// hash the answer carries, so the tab's own write is never taken for another program's.
 //
 // A tab whose file is renamed or moved is followed at its new place: the draft names the new
 // file, the old channel is dropped and the new one followed, with the text and the unsaved mark
@@ -37,6 +38,8 @@ export type DiskHost = {
     reread: (id: string) => Promise<void>;
     /** The `file` of a tab's draft, or null when the tab has no record. */
     fileOf: (id: string) => string | null;
+    /** Whether the page has read its served roots and the root key is not among them. */
+    unserved: (root: string) => boolean;
 };
 
 /** The channel's payload: the hash of the file, or null when nothing readable is there. */
@@ -75,7 +78,7 @@ export function createDisk(
     /** Counts the tabs followed, which is what the effect below re-reads the tabs' files for. */
     const followed = $state({ count: 0 });
     /** The channel and file of each tracked tab. */
-    const places = new Map<string, { name: string; file: string }>();
+    const places = new Map<string, { name: string; file: string; root: string }>();
     /** The tabs whose save is out, with the newest message heard meanwhile. */
     const saving = new Map<string, { held: string | null | undefined }>();
     /** The newest message each cut read heard, which a message that differs reads again for. */
@@ -91,8 +94,9 @@ export function createDisk(
         const draft = host.draft(id);
         if (!draft.loaded) return;
         if (hash === null) {
-            if (draft.disk !== 'gone' || draft.conflict)
-                host.update(id, { disk: 'gone', conflict: false });
+            const absent = host.unserved(places.get(id)?.root ?? '') ? 'unserved' : 'gone';
+            if (draft.disk !== absent || draft.conflict)
+                host.update(id, { disk: absent, conflict: false });
             return;
         }
         if (hash === draft.base) {
@@ -144,7 +148,7 @@ export function createDisk(
         const name = sourceChannel(root, path);
         const file = `${root}/${path}`;
         if (places.get(id)?.name !== name) leave(id);
-        places.set(id, { name, file });
+        places.set(id, { name, file, root });
         followed.count += 1;
         let channel = channels.get(name);
         if (channel === undefined) {

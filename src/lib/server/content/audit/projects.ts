@@ -17,6 +17,7 @@ import { PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import {
     printed,
     type AuditInput,
+    type AuditRules,
     sentence,
     type Raised,
     slurp,
@@ -285,6 +286,22 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
     }
 }
 
+/**
+ * The type a project's folder says it has, and none when the folder says nothing: the type the
+ * scan rule gives on a flat tier, the outcome folder of an archived project and `abandoned` for a
+ * coauthor project filed under `abandoned`.
+ */
+function folderType(project: Project, rules: AuditRules): string | undefined {
+    if (project.typeWritten !== undefined) return project.type;
+    if (project.tier === 'archive') {
+        const outcome = project.category;
+        return outcome !== undefined && rules.archiveOutcomes.has(outcome) ? outcome : undefined;
+    }
+    return project.tier === 'coauthor' && project.category === 'abandoned'
+        ? 'abandoned'
+        : undefined;
+}
+
 /** The tier-conformance rules: the one README, the retired documents and the folder names. */
 export function conformance(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
@@ -331,6 +348,17 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 kind: 'conform',
                 file: NO_FILE,
                 ...sentence('audit.msg_code_no_readme')
+            });
+        }
+        const expected = folderType(project, input.rules);
+        const written = project.typeWritten ?? project.type;
+        if (expected !== undefined && written !== undefined && written !== expected) {
+            add({
+                scope,
+                where: 'project.yml',
+                kind: 'conform',
+                file: fileOf(input.hub, project.file),
+                ...sentence('audit.msg_type_not_folder', written, expected)
             });
         }
     }

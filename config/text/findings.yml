@@ -33,7 +33,6 @@ text:
             code_theme: code_theme is {0}, which is neither tokens nor the id of a Shiki theme; the editor colours code from the tokens instead
         manifests:
             id_not_folder: id {0} is not the folder name {1}
-            type_not_tier: "type {0} is not the tier's {1}"
             scan_missing: scan directory does not exist
             personal_no_manifest: folder has no project.yml
             personal_not_file: project.yml is not a regular file and is not read

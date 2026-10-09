@@ -230,6 +230,7 @@ function project(
         ghost: manifest.ghost,
         category: str(manifest.category),
         type: str(manifest.type),
+        typeWritten: str(manifest.typeWritten),
         title: str(manifest.title) ?? '',
         short: str(manifest.short),
         lead: str(manifest.lead),

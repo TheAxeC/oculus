@@ -25,6 +25,8 @@ export type AuditRules = {
     publicationsFile: string;
     /** In-flight chips a finished project must not still carry, `lifecycle.live_chips`. */
     liveChips: Set<string>;
+    /** The types an archived project is filed under, `lifecycle.archive_outcomes`. */
+    archiveOutcomes: Set<string>;
     /** The types that are a closed outcome, `lifecycle.terminal_types`. */
     terminalTypes: Set<string>;
     /** The chips one of which marks the author role, `lifecycle.author_chips`. */
@@ -73,6 +75,7 @@ const chipPairShape = wordListShape.pipe(z.tuple([z.string(), z.string()]));
 /** The part of the configuration that names the chips a project's lifecycle reads. */
 const lifecycleShape = z.object({
     live_chips: wordListShape.catch(() => []),
+    archive_outcomes: wordListShape.catch(() => []),
     terminal_types: wordListShape.catch(() => []),
     author_chips: wordListShape.catch(() => []),
     contradictory_chips: keeping(chipPairShape).catch(() => [])
@@ -117,6 +120,7 @@ export function auditRules(config: Record<string, unknown>): AuditRules {
         waitingStatus: waiting.success ? waiting.data : new Set(),
         publicationsFile: publications.success ? publications.data : '',
         liveChips: new Set(chips.live_chips),
+        archiveOutcomes: new Set(chips.archive_outcomes),
         terminalTypes: new Set(chips.terminal_types),
         authorChips: chips.author_chips,
         contradictory: chips.contradictory_chips

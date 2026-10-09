@@ -14,17 +14,26 @@
 // its page has documents open in it, starts it again at once. One that exits on its own is started
 // again on the next request of its page; a second exit within three minutes leaves it failed until
 // the reader presses Restart.
+//
+// The server is told of changes on disk by held/requests/notices.ts, a list at a time in the order
+// the root watch saw them, and of the files inside a folder that was created or deleted; a link
+// rewrite waits there until the server has read the files written since.
 
-import { basename } from 'node:path';
+import { basename, join } from 'node:path';
 import type { watch } from 'node:fs';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import type { LspCode, LspRpc, LspState } from '../../../../data/model/index.ts';
 import { OUTPUT_LINES, ServerProcess, type Spawn } from './process.ts';
 import type { Sink } from '../../../core/channels.ts';
 import type { Library } from '../library/tokens.ts';
 import { emptySchemaSet, type SchemaSet } from '../../../../data/snapshot/schema/set.ts';
-import type { Prepared, ServerEntry, Setup } from '../servers.ts';
-import { RootWatch, globsOf, type FileChange } from './watch.ts';
+import type { ChangeKind, Prepared, ServerAsk, ServerEntry, Setup } from '../servers.ts';
+import { docKey } from './doc-key.ts';
+import { Calls } from './requests/calls.ts';
+import { Followed } from './requests/followed.ts';
+import { Pulls } from './diagnostics/pulls.ts';
+import { RootWatch, entryFiles, globsOf, type FileChange } from './watch.ts';
+import { Notices } from './requests/notices.ts';
 import { normal, type ServedRoot } from '../uris.ts';
 
 /** The milliseconds a server outlives its last document or its page. */
@@ -33,18 +42,10 @@ export const LINGER_MS = 60_000;
 /** The span in which a second exit is not started again. */
 const EXIT_SPAN_MS = 3 * 60_000;
 
-/**
- * What a document is looked up by when a server names it: the path its `file://` address spells. A
- * server may write the same address with other percent-escapes than the ones it was given (pyright
- * writes `(` and `)` as `%28` and `%29`), so the address itself is not the key.
- */
-export function docKey(fileUri: string): string {
-    try {
-        return fileURLToPath(fileUri);
-    } catch {
-        return fileUri;
-    }
-}
+/** The id of the watch the entry asks for itself, apart from the ones a server registers. */
+const FILE_EVENTS = 'oculus:file-events';
+
+export { docKey };
 
 /** One document the page has open on a server. */
 export type Doc = {
@@ -69,6 +70,8 @@ export type Doc = {
 /** What a held server asks of the relay. */
 export type HeldHost = {
     spawn: Spawn;
+    /** The roots the file browser serves now. */
+    roots(): readonly ServedRoot[];
     watchFolder?: typeof watch;
     /** The client capabilities the page sent, for the server's own `initialize`. */
     initialize(held: Held, setup: Setup): Record<string, unknown>;
@@ -145,6 +148,24 @@ export class Held {
     #now: () => number;
     #progress = new Map<string, boolean>();
     #watch: RootWatch | null = null;
+    /** The paths the server asked to have watched one by one, made with the first. */
+    #followed: Followed | null = null;
+    /** How many link rewrites of the page are out on this server (held/requests/links.ts). */
+    asking = 0;
+    /** The requests this module makes of the server itself. */
+    readonly #calls = new Calls();
+    /** The notices of changes on disk the server is sent (held/requests/notices.ts). */
+    readonly #notices = new Notices({
+        introduce: (changes) => this.entry.introduce?.(changes) ?? [],
+        filesUnder: (folder) =>
+            this.entry.filesUnder?.(folder, this.root, this.#host.roots()) ?? Promise.resolve([]),
+        call: (method, params) => this.call(method, params),
+        notify: (message) => this.notify(message),
+        flush: () => this.#watch?.flush(),
+        open: (real) => this.docs.has(docKey(pathToFileURL(real).href))
+    });
+    /** The diagnostics asked for, for a server that publishes none. */
+    readonly #pulls = new Pulls(this, (message) => this.#host.message(this, message));
 
     constructor(
         entry: ServerEntry,
@@ -285,6 +306,39 @@ export class Held {
         this.docs.set(key, doc);
         if (this.#proc?.alive === true) this.#proc.send(openOf(doc));
         else if (this.#restartable) this.start();
+        if (this.entry.pulls === true) this.#pulls.schedule(doc);
+    }
+
+    /** The page changed a document the server holds. */
+    edited(doc: Doc): void {
+        if (this.entry.pulls === true) this.#pulls.schedule(doc);
+    }
+
+    /** The page closed a document. */
+    dropped(doc: Doc): void {
+        this.#pulls.forget(doc);
+    }
+
+    /**
+     * Ask the server something of the relay's own and wait for the answer, which is null when the
+     * server did not take the request or ended first. With `start`, a server that is not running is
+     * started for it; without, it is asked only if it is running.
+     */
+    call(method: string, params: unknown, start = false): Promise<LspRpc | null> {
+        return this.#calls.begin(method, params, (message) => {
+            if (start) return this.request(message);
+            if (this.#proc?.alive !== true) return false;
+            this.#proc.send(message);
+            return true;
+        });
+    }
+
+    /**
+     * Tell a server that watches paths one by one (and the watchers it registered) that a path
+     * changed, as the disk will say a moment later.
+     */
+    touched(real: string, kind: ChangeKind): void {
+        this.#followed?.told(real, kind);
     }
 
     /** The version to send the server for a page version of an open file, which it is held at. */
@@ -374,8 +428,10 @@ export class Held {
             case 'client/unregisterCapability':
                 this.#registered(params.unregisterations, false);
                 return reply(null);
-            case 'window/workDoneProgress/create':
             case 'workspace/diagnostic/refresh':
+                if (this.entry.pulls === true) this.#pulls.all();
+                return reply(null);
+            case 'window/workDoneProgress/create':
             case 'window/showMessageRequest':
                 return reply(null);
             case 'window/showDocument':
@@ -394,16 +450,41 @@ export class Held {
         const requests = this.entry.requests;
         const method = message.method ?? '';
         if (requests === undefined || !Object.hasOwn(requests, method)) return false;
-        const ask = { root: this.root, schemas: this.#host.schemas?.() ?? emptySchemaSet() };
-        try {
-            this.notify({
-                jsonrpc: '2.0',
-                id: message.id,
-                result: requests[method](message.params, ask)
-            });
-        } catch (error) {
+        const asked = this.#notices.asked();
+        const ask: ServerAsk = {
+            root: this.root,
+            roots: this.#host.roots(),
+            schemas: this.#host.schemas?.() ?? emptySchemaSet(),
+            follow: (id, real, parents, notice) => {
+                this.#followed ??= new Followed({
+                    root: this.root.real,
+                    tell: ({ method, params }) => void this.call(method, params),
+                    watchFolder: this.#host.watchFolder
+                });
+                this.#followed.follow(id, real, parents, notice);
+            },
+            unfollow: (id) => this.#followed?.unfollow(id),
+            reading: (uri) => asked.read(uri)
+        };
+        const failed = (error: unknown): void => {
             const text = error instanceof Error ? error.message : 'the request failed';
             this.notify({ jsonrpc: '2.0', id: message.id, error: { code: -32603, message: text } });
+        };
+        const ended = (): void => asked.end();
+        try {
+            void Promise.resolve(requests[method](message.params, ask)).then(
+                (result) => {
+                    this.notify({ jsonrpc: '2.0', id: message.id, result: result ?? null });
+                    ended();
+                },
+                (error: unknown) => {
+                    failed(error);
+                    ended();
+                }
+            );
+        } catch (error) {
+            failed(error);
+            ended();
         }
         return true;
     }
@@ -435,19 +516,48 @@ export class Held {
                 this.#watch?.unregister(one.id);
                 continue;
             }
-            this.#watch ??= new RootWatch({
-                root: this.root.real,
-                open: (real) => this.docs.has(docKey(pathToFileURL(real).href)),
-                changed: (changes: FileChange[]) =>
-                    this.notify({
-                        jsonrpc: '2.0',
-                        method: 'workspace/didChangeWatchedFiles',
-                        params: { changes }
-                    }),
-                watchFolder: this.#host.watchFolder
-            });
-            this.#watch.register(one.id, globsOf(one.registerOptions));
+            this.#rootWatch().register(one.id, globsOf(one.registerOptions));
         }
+    }
+
+    /** The watch of the root that tells the server of changed files, made on first use. */
+    #rootWatch(): RootWatch {
+        this.#watch ??= new RootWatch({
+            root: this.root.real,
+            open: (real) => this.docs.has(docKey(pathToFileURL(real).href)),
+            changed: (changes: FileChange[]) => this.#notices.tell(changes),
+            folders: (folders) => this.#notices.folders(folders),
+            watchFolder: this.#host.watchFolder
+        });
+        return this.#watch;
+    }
+
+    /**
+     * Wait until the server has been told of every change to `files` (real paths) and has read
+     * them (held/requests/notices.ts).
+     */
+    caughtUp(files: readonly string[]): Promise<void> {
+        return this.#notices.caughtUp(files);
+    }
+
+    /** The server is told a file is gone apart from the lists: what is kept of it is dropped. */
+    forget(real: string): void {
+        this.#notices.forget(real);
+    }
+
+    /** Watch the files the entry wants the server told of, as a registration of its own. */
+    #watchEntryFiles(): void {
+        const globs = this.entry.fileEvents?.() ?? [];
+        if (globs.length === 0) return;
+        const entry = this.entry;
+        this.#rootWatch().registerMatch(
+            FILE_EVENTS,
+            entryFiles(
+                globs,
+                (relative) =>
+                    entry.refuses?.(join(this.root.real, relative), this.#host.roots()) ?? false
+            )
+        );
     }
 
     /** Add lines to the output and tell the relay. */
@@ -515,13 +625,16 @@ export class Held {
             registrations: this.entry.registrations,
             events: {
                 message: (message) => {
-                    if (this.#proc === proc) this.#host.message(this, message);
+                    if (this.#proc === proc && !this.#calls.take(message)) {
+                        this.#host.message(this, message);
+                    }
                 },
                 output: (lines) => this.#append(lines),
                 ready: (result) => {
                     if (this.#proc !== proc) return;
                     this.legend = legendOf(result);
                     this.legendDue = this.legend !== null;
+                    this.#watchEntryFiles();
                     if (this.state.state === 'starting') this.#set({ state: 'ready' });
                 },
                 failed: (code, program) => {
@@ -536,6 +649,7 @@ export class Held {
                 exited: (asked) => {
                     if (this.#proc !== proc) return;
                     this.#proc = null;
+                    this.#calls.end();
                     this.#host.stopped(this);
                     if (asked || this.#closed) return;
                     if (this.state.state === 'failed' || this.state.state === 'not_found') return;
@@ -545,7 +659,10 @@ export class Held {
         });
         this.#proc = proc;
         proc.start();
-        for (const doc of this.docs.values()) proc.send(openOf(doc));
+        for (const doc of this.docs.values()) {
+            proc.send(openOf(doc));
+            if (this.entry.pulls === true) this.#pulls.schedule(doc);
+        }
         for (const message of this.#early.splice(0)) proc.send(message);
     }
 
@@ -567,6 +684,9 @@ export class Held {
         this.#early = [];
         this.#watch?.close();
         this.#watch = null;
+        this.#followed?.close();
+        this.#followed = null;
+        this.#pulls.clear();
         const proc = this.#proc;
         if (proc === null) return;
         await proc.end();
@@ -679,6 +799,8 @@ export type Pending = {
     channel: string;
     id: number | string | null;
     held: Held;
+    /** The method of the request, which an entry may filter the answer to by. */
+    method: string;
     address: string;
 };
 

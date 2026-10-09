@@ -66,6 +66,7 @@ export function tabShown(input: TabShownInput): TabShown {
         editing &&
         (draft.conflict ||
             draft.disk === 'gone' ||
+            draft.disk === 'unserved' ||
             (draft.disk === 'changed' && draft.text !== draft.saved));
     return {
         error,

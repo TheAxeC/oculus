@@ -386,6 +386,13 @@ export type LspRefusal = 'choices_unread' | 'choices_write';
 export type LspReadRefusal =
     'unknown' | 'not_served' | 'not_file' | 'moved' | 'binary' | 'too_large';
 
+/**
+ * Why the Markdown servers gave no edit for the moves of a root: the request could not be sent
+ * (`unsent`), the server did not answer in time or ended (`no_answer`), or the moves name no place
+ * under a served root (`no_place`).
+ */
+export type LinksFailure = 'unsent' | 'no_answer' | 'no_place';
+
 /** One Python interpreter a root can use, as the picker lists it. */
 export type LspInterpreter = {
     /** The path as found or typed, never resolved through a link. */
@@ -452,7 +459,13 @@ export type LspToServer =
      */
     | { oculus: 'held'; files: LspPlace[] }
     /** On the same channel: which of these files another page holds open in a tab. */
-    | { oculus: 'held_ask'; id: number; files: LspPlace[] };
+    | { oculus: 'held_ask'; id: number; files: LspPlace[] }
+    /**
+     * On the channel `lsp:markdown`: the moves a reader made in the Files view of one served root
+     * (paths under the root), after they happened, and the question which edits to Markdown files
+     * keep their links and backticked paths pointing at the moved items.
+     */
+    | { oculus: 'links'; id: number; root: string; moves: { from: string; to: string }[] };
 
 /** The relay's message to a page, besides the JSON-RPC ones. */
 export type LspToPage =
@@ -497,7 +510,23 @@ export type LspToPage =
     | { oculus: 'file'; root: string; uri: string; text: string }
     | { oculus: 'file'; root: string; uri: string; code: LspReadRefusal }
     /** The answer to a `held_ask`: those of its files that another page holds open. */
-    | { oculus: 'held_answer'; id: number; files: LspPlace[] };
+    | { oculus: 'held_answer'; id: number; files: LspPlace[] }
+    /**
+     * The answer to a `links`: the workspace edit as the page spells its addresses, null when no
+     * file needs one, with the text each Markdown server holds of the documents the page opened
+     * (the texts the edit's positions are of), the files the edit leaves out because two served
+     * roots rewrite the same text of one differently, and the keys of the roots whose Markdown
+     * server gave no answer, or why no Markdown server gave one.
+     */
+    | {
+          oculus: 'links_answer';
+          id: number;
+          edit: unknown;
+          held: { uri: string; text: string }[];
+          overlaps: string[];
+          unanswered: string[];
+      }
+    | { oculus: 'links_answer'; id: number; error: LinksFailure };
 
 /** Where a debug session stands: no session yet, starting, running, paused, or ended. */
 export const DEBUG_STATUSES = ['idle', 'starting', 'running', 'paused', 'ended'] as const;

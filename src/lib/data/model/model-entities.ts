@@ -79,8 +79,9 @@ export type ScanRule = {
 /**
  * A project.yml as it was read, plus provenance. Every key the YAML held is present untouched,
  * except that the provenance names below are set by the reader: `id` is the folder's basename and
- * the manifest's own `id` is kept as `manifestId`, and `type` on a flat tier comes from the rule.
- * A disagreement between either pair is a finding, never a repair.
+ * the manifest's own `id` is kept as `manifestId`, and `type` on a flat tier comes from the rule
+ * while the manifest's own differing `type` is kept as `typeWritten`. A disagreement of `id` is a
+ * finding and one of `type` is the Audit's, never a repair.
  */
 export type RawManifest = {
     [key: string]: unknown;
@@ -101,6 +102,8 @@ export type RawManifest = {
     category?: string;
     /** From the scan rule on a flat tier, from the manifest itself on a nested one. */
     type?: string;
+    /** The manifest's own `type` on a flat tier when it differs from the rule's, else absent. */
+    typeWritten?: string;
     /** True only when the scan found a flat-tier folder with no project.yml. */
     ghost: boolean;
     /** The manifest's own `id` value, exactly as read, whatever its type. */
@@ -503,6 +506,8 @@ export type Project = {
     ghost: boolean;
     category?: string;
     type?: string;
+    /** The manifest's own `type` on a flat tier when it differs from the folder's. */
+    typeWritten?: string;
     title: string;
     short?: string;
     lead?: string;

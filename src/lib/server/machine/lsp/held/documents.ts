@@ -69,6 +69,7 @@ export function changeDocument(page: Page, params: unknown): void {
             contentChanges: changes
         }
     });
+    open.held.edited(open.doc);
 }
 
 /** The page's `textDocument/didClose`: the server drops the document with the last name for it. */
@@ -87,6 +88,7 @@ export function closeDocument(page: Page, params: unknown): void {
     }
     page.opened.delete(normal(open.doc.real));
     open.held.docs.delete(docKey(open.doc.fileUri));
+    open.held.dropped(open.doc);
     open.held.notify({
         jsonrpc: '2.0',
         method: 'textDocument/didClose',
