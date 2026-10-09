@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z760 (2026-10-09, step R2, the orchestrator, automode): the scratch port, and where engineDir lives
+
+- Chosen: (a) port 8811 through the scratch engine's `local.yml` or `--default-port`; (b) a new `src/lib/data/places/` holding `engine-dir.ts` and `hub-address.ts`.
+- Not chosen: `engine-dir.ts` among the zod schemas of `src/lib/data/shapes/` (the lazy option); moving `file-ops.ts` and `hub-address.ts` together (57 importers, a folder no name fits).
+
+Where it applies: R2. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/briefs/R2-cases.md`.
+
 ## Z759 (2026-10-09, step D56, the orchestrator, automode): the kept workbench's view state, and Close in the Workbenches menu
 
 - Chosen: (a) each kept workbench entry carries `states: { <instanceId>: <state> }` in browser storage, the ui record of each tab snapshotted at close and written back at reopen, a source tab's unsaved text left out; (b) an optional trailing action on `MenuItem`, drawn as its own button, used for Close.

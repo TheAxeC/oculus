@@ -64,6 +64,8 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/R2-report.md
   brief_check: agents/reviews/R2-brief-check.md (a57eea66538e91df5, claude-opus-5-5, 224,420 tokens, 82 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D50, src/lib/data/sources/config.ts (D50 line 53, an added export; R2 engineDir at 15-30 and the head comment), config/text/server.yml (D50 server.carry; R2 new keys under server.start), HELP.md and DESIGN.md (R2 line 509 and one bullet under Decisions taken); with D56, DESIGN.md and HELP.md on other sections; docs/diagrams/ regenerated at landing; each merge simple
+  builder_usage: 164,875 tokens, 34 tool uses, 6.3 min (the first run and the hand-back of the cases)
+  cases: agents/briefs/R2-cases.md (Z760), sent to the builder after its first run
   landing: not-started
   round: 0
 ```
