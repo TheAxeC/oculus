@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z763 (2026-10-10, step D56, the orchestrator, automode): Reset all pages and a unique view a workbench holds
+
+- Chosen: Reset all pages leaves every workbench and its tabs as they are; a rail page whose arrangement names a unique view (Settings, for instance) that a workbench holds is built without it, and DESIGN.md's unique-view sentence names this exception.
+- Not chosen: moving the held view out of the workbench into the rail page (it changes a workbench the reader built); resetting workbenches too (a workbench has its own reset); DESIGN.md left as it is (the lazy option: it would then state a rule Reset all pages breaks).
+
+Where it applies: D56, repair round 1. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/briefs/D56-round1.md`.
+
 ## Z762 (2026-10-09, step D55, the orchestrator, automode): the shapes of a second hub
 
 - Chosen: (a) `hub: true` on a `roots:` entry of the first hub's layer, with findings for a non-boolean, a hub inside, holding or equal to the first, and a key `side`, `root` or one holding `:`; (b) a second hub's ids `<root key>:<id>`, references never crossing hubs; (c) a `root` field on every record (`hub` or the root key), paths relative to their own hub; (d) each hub built with its own settings, the page's settings and `roots:` the first hub's; (e) career and website the first hub's, feeds and audit merged; (f) a write goes to its record's hub, a new record to the first, the change log naming a second hub's file by its absolute path; (g) a root-key chip on a second hub's cards, rows and entry pages; (h) every hub's `secrets` private; (i) a hub root's own `.oculus/project.yml` not a side project.

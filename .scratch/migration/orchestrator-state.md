@@ -38,8 +38,10 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with D50, config/layout.yml (D50 the docs list, the help arrangement and the layer comments; D56 a new top-level workbench key), ActivityRail.svelte (D50 53, 63-65, 161-171; D56 the Workbenches button), the head comment of views/sources/files/Files.svelte (D50 43-49), docs/window.md (D50 25 and 29; D56 a new section), DESIGN.md and HELP.md (D50 170; D56 other lines); different lines, each merge simple
   builder_usage: 286,546 tokens, 70 tool uses, 11.0 min (the first run and the hand-back of the cases); a6f65daca142e0c86, claude-sonnet-5-5, 113,994 tokens, 285 tool uses, 72.3 min (the build)
   cases: agents/briefs/D56-cases.md (Z759), sent to the builder after its first run
+  reviewer_report: agents/reviews/D56-refuter.md (a17e012de19ee2885, claude-opus-5-5, 346,450 tokens, 92 tool uses, 30.1 min)
+  round_1: agents/briefs/D56-round1.md (the review's findings and Z763), sent to the builder
   landing: not-started
-  round: 0
+  round: 1
 - step: R2
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -51,7 +53,7 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/R2-report.md
   brief_check: agents/reviews/R2-brief-check.md (a57eea66538e91df5, claude-opus-5-5, 224,420 tokens, 82 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D50, src/lib/data/sources/config.ts (D50 line 53, an added export; R2 engineDir at 15-30 and the head comment), config/text/server.yml (D50 server.carry; R2 new keys under server.start), HELP.md and DESIGN.md (R2 line 509 and one bullet under Decisions taken); with D56, DESIGN.md and HELP.md on other sections; docs/diagrams/ regenerated at landing; each merge simple
-  builder_usage: 164,875 tokens, 34 tool uses, 6.3 min (the first run and the hand-back of the cases); a924a8b4546426f6a, claude-sonnet-5-5, 337,954 tokens, 122 tool uses, 31.2 min (the build)
+  builder_usage: 164,875 tokens, 34 tool uses, 6.3 min (the first run and the hand-back of the cases); a924a8b4546426f6a, claude-sonnet-5-5, 337,954 tokens, 122 tool uses, 31.2 min (the build); round 1: 167,159 tokens, 59 tool uses, 42.5 min
   cases: agents/briefs/R2-cases.md (Z760), sent to the builder after its first run
   reviewer_report: agents/reviews/R2-refuter.md (a89a4942c965eeb8a, claude-opus-5-5, 283,279 tokens, 86 tool uses, 24.2 min)
   round_1: agents/briefs/R2-round1.md (the review's findings and Z761), sent to the builder
