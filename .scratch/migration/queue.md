@@ -1,8 +1,8 @@
 In flight (5 of 6 slots in use):
 - D41 (links in Markdown checked): taken back before main at its landing (the look's case 34 failed); cause found by its diagnosis, prepared again next, launched 2026-10-09.
 - D46 (the VS Code palette keys): builder waiting for Axel on open item 28 (the key name F1 and the history check), launched 2026-10-09.
-- D48 (side projects with the research keys that apply, and smaller Focus rows): first review running, launched 2026-10-09.
-- D51 (themes from VS Code's theme files): repair round 1 running, launched 2026-10-09.
+- D48 (side projects with the research keys that apply, and smaller Focus rows): repair round 1 running, launched 2026-10-09.
+- D51 (themes from VS Code's theme files): review over repair round 1 running, launched 2026-10-09.
 - D52 (a page per collection entry): first review running, launched 2026-10-09.
 
 Queued, in order (8 steps):

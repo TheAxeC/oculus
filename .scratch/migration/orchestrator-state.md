@@ -63,9 +63,11 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D48-report.md
   builder_usage: 178,779 tokens, 330 tool uses, 136.7 min
   brief_check: agents/reviews/D48-brief-check.md (abe9a0d14115bbbde, claude-opus-5-5, 276,858 tokens, 122 tool uses, 14.0 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: with D41, model-entities.ts (D41 lines 82, 103, 505; D48 SideProject 804-815), data/sources/manifests.ts (D41 lines 100-160; D48 the comments at 25 and 356-360), config/text/findings.yml (D41 removes line 36; D48 lines 43 and 45), vocab.yml (D41 line 228; D48 199-206), keys.test.ts (one line each), DESIGN.md (D41 23, 166, 503, 575-576; D48 552) and docs/views.md (D41 73 and its Audit section; D48 5-7, 21-23); with D46, options.yml (D46 beside search.max_hits; D48 the side_project_status description), keys.test.ts, HELP.md (D46 79-80; D48 105) and DESIGN.md (D46 142); with D47, keys.test.ts, HELP.md (D47 43, 134, 138-139), docs/views.md (D47 159-181) and DESIGN.md (D47 225, 456); with D57, DESIGN.md (D57 238); different lines, each merge simple
+  reviewer_report: agents/reviews/D48-refuter.md (aeac87c877d84bfe3, claude-opus-5-5, 348,330 tokens, 108 tool uses, 36.9 min)
+  round_1: agents/briefs/D48-round1.md, sent to the builder over the tree copied at .agents/worktrees/D48-round0
+  shared_paths: with D41, model-entities.ts (D41 lines 82, 103, 505; D48 SideProject 804-815), data/sources/manifests.ts (D41 lines 100-160; D48 the comments at 25 and 356-360), config/text/findings.yml (D41 removes line 36; D48 lines 43 and 45), vocab.yml (D41 line 228; D48 199-206), keys.test.ts (one line each), DESIGN.md (D41 23, 166, 503, 575-576; D48 552) and docs/views.md (D41 73 and its Audit section; D48 5-7, 21-23); with D41, portfolio.ts (D41 589-606; D48 92) and model/index.ts (D41 608; D48 147), the latter also with D46 (557); with D46, options.yml (D46 beside search.max_hits; D48 the `scan` help at 1230), keys.test.ts, HELP.md (D46 79-80; D48 105) and DESIGN.md (D46 142); with D47, keys.test.ts, HELP.md (D47 43, 134, 138-139), docs/views.md (D47 159-181) and DESIGN.md (D47 225, 456); with D57, DESIGN.md (D57 238); different lines, each merge simple
   landing: not-started
-  round: 0
+  round: 1
 - step: D51
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -77,7 +79,7 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D51-brief-check.md (a3f85385ee8a110b3, claude-opus-5-5, 261,325 tokens, 73 tool uses, 15.3 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D47 (225, 456), D48 (552) and D57 (238), D51 lines 72, 244 and 565; docs/views.md with D41 (73, 213), D47 (159-181) and D48 (5-7, 21-23), D51 line 243; DESIGN.md line 521 and config/catalogs/options.yml line 146 (D51), with D46, D47 and D48 on other lines of options.yml (857-860, 832, 1230); src/lib/ui/controls/editor/kit/look.ts (D51 line 42, written outside the brief's list as `paint`'s one caller; no other step in flight changes it); src/lib/ui/controls/editor/kit/load.ts with D46 (lines 64 and 221-226), D51 the rules lookup near 370-405; docs/diagrams/ regenerated at landing; different lines, each merge simple
   cases_ruling: agents/briefs/D51-cases.md (case 13 to option A, `--bg` from the side bar VS Code draws, the tint pairs for every theme)
-  builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13); 246,281 tokens, 135 tool uses, 64.3 min (resumed on the cases ruling, to the report)
+  builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13); 246,281 tokens, 135 tool uses, 64.3 min (resumed on the cases ruling, to the report); round 1: 387,443 tokens, 42 tool uses, 27.3 min
   reviewer_report: agents/reviews/D51-refuter.md (a06b5571264eac4f2, claude-opus-5-5, 351,753 tokens, 109 tool uses, 43.5 min)
   round_1: agents/briefs/D51-round1.md, sent to the builder over the tree copied at .agents/worktrees/D51-round0
   landing: not-started

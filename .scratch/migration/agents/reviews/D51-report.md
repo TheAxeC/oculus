@@ -1,14 +1,36 @@
 # D51 report
 
-NOT done: the look on the TEST page in the running app (cases 8 and 10). A builder starts no app, so case 8 was checked by a scratch run of the editor's theme code over the generated rules and case 10 by reading `chosenTheme`; the landing look still has to take both. Everything else in the brief is done, and the five rulings of `D51-cases.md` are carried out as listed below.
-
-The same text is in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D51/tools/oculus/.scratch/migration/agents/reviews/D51-report.md`.
+After repair round 1 the six items of `D51-round1.md` are done: an empty `fontStyle` now reaches the editor (102 rules), the missing-theme-file error names `--from`, the include-loop check is removed, `DESIGN.md:244` and `docs/views.md:243` are reworded, and this report is rewritten whole with `kit/look.ts` marked outside the write list. NOT done: the look on the TEST page in the running app (cases 8 and 10). A builder starts no app, so case 8 was checked by a scratch run of the real painter and case 10 by reading `chosenTheme`; the landing look has to take both. Everything else in the brief is done, and the five rulings of `D51-cases.md` are carried out as listed below.
 
 ## Open items of the state file (verbatim from `tools/oculus/.scratch/migration/orchestrator-state.md` in the main checkout, read at the moment of writing)
 
-- 25. D50: who may write an app in the hub's `.oculus/apps`. Ruling (9) moves the apps folder of `~/.oculus` into the hub, and my automode choice Z751(c) reads `<hub>/.oculus/apps` as the machine apps folder, so those apps keep every channel and may stay approved while they change. `docs/apps.md:11` gives the reason a root app gets fewer channels: whoever writes a repository, a `git pull` included, writes its apps. The hub is a git repository, so under Z751(c) a pull of the hub writes an app that reads every channel, and one kept approved runs the pulled change unasked until the server ends. (a) Recommended: Z751(c) kept, and `docs/apps.md` says a machine app lives in the hub's own `.oculus/apps`, which only the hub's owner writes, and a root app in any other root; your apps keep the channels they have. (b) The hub's `.oculus/apps` read as the hub root's apps, with a root app's fewer channels, no keeping approved while it changes and files opened only from the hub; an app of yours that reads a channel a root app is not offered stops working. (c) Apps left in `~/.oculus`, against ruling (9). (a) costs the least to build; it is recommended because ruling (9) moves your apps without taking channels from them, and the docs then state the pull risk plainly. D50 waits for this ruling.
+- 27. The hub's `network/events.yml` fails its own schema since your commit f28e137f1: the entry "Research visit - Linkoping (Sweden)" (`entries[2]`, line 47) lost its `status: planned` line, and the file's `schema:` block (line 9) marks `status` as `required: true`. The landing gate's `tests/checks/config/integrity.test.ts` "validates with no findings" fails on it with "key entries[2].status is required", on main as on D41 (D41 changes no file under `network/` and no schema). (a) Recommended: put a status back on the entry; `planned` is what it held, and every other entry carries one. (b) Make `status` optional in the file's `schema:` block, so a dated entry may carry none. (c) Leave it, which keeps the integrity check red at every landing; this is the lazy option. Both files are yours, so I change neither until you rule. D41 lands with this red line named as main's, not D41's.
 
-- 26. D50: four lines of the hub's registries name `tools/oculus/config/...` as the home of a key that moves into the hub's `.oculus/config/`: `registries/data.yml:28` and `registries/venues.yml:27` (the help the edit form shows for `themes`), `registries/domains.yml:1` (the `domains` map) and `registries/resources.yml:1` (`slurm.resource`). The rules file lets a builder reword hub text by hand only where a ruling of yours asks for it (`agents/spec.md:103`), and ruling (17) does not. (a) Recommended: you rule that D50 rewords these four lines by hand to name `.oculus/config/` of the hub, the report listing each before and after. (b) The lines are left naming the engine's file, which is false after D50; this is the lazy option. D50 waits for this ruling.
+- 28. D46: the history check forbids the key name F1. `tests/checks/source/history.test.ts:41` lists `F1` among the plan's id families (the package F1, landed, `plan.md:79`), so the check fails on every comment and document line that names the F1 key: on D46's tree `chords.ts:3` and `:86`, `Workbench.svelte:278`, `Palette.svelte:4`, `palette.ts:474` and `:478`, `editor-status.svelte.ts:15`, `grid-keys.ts:2`, `HELP.md:81` and `docs/window.md:76`. D46's brief requires the key named in HELP's key row, `docs/window.md` and `editor-status.svelte.ts`. On main no comment or document names the package F1 (`grep -rnE '(^|[^A-Za-z])F1([^A-Za-z0-9]|$)'` over `src tests utils HELP.md DESIGN.md README.md docs` prints only the check's own line 41). Changing what a check passes is yours to rule. (a) Recommended: `F1` removed from `FAMILIES`, in D46 with the path widened; a comment naming the package F1 would then pass, and none does today, and the plan has no other F package. (b) The F1 pattern narrowed so a key named in prose passes (not next to `Shift+`, `Cmd+`, "and"); a guess about the next sentence that fails on it. (c) Every comment and document reworded to avoid the name ("the help key"); HELP.md would no longer say which key opens the palette; this is the lazy option. D46's builder waits for this ruling.
+
+## Repair round 1 (`tools/oculus/.scratch/migration/agents/briefs/D51-round1.md`)
+
+1. A rule's empty `fontStyle`. `mapRules` in `utils/migrations/convert-vscode-themes.ts` (lines 481-512) keeps `fontStyle` whenever the theme sets one, the empty string included, and keeps a rule whose only setting is `fontStyle: ""`; its comment says why (TextMate reads the empty string as no style and so resets a style a broader rule set). How the editor hands a font style on: `ownRules` (`kit/theme/theme.ts`, `ownRules`) copies `fontStyle` whenever it is not `undefined`, so `""` leaves it as `{ fontStyle: "" }`; `paintNow` (`kit/load.ts:429-432`) passes those rules to `createHighlighter` unchanged and includes them in its signature; `semanticRules` (`kit/theme/semantic.ts:108`) already reads an empty font style as none. Only the converter dropped it, so no editor code needed a change; the doc comment of `OwnRule` in `theme.ts` now says an empty font style is handed on as it is. The outputs are regenerated with `node utils/migrations/convert-vscode-themes.ts`: `vscode.css` is byte-identical (`c201abe72cf9`), `vscode-rules.json` changed (`d4655f7c66f2` to `cd900d4ff501`, 3687 to 3760 lines, 1100 to 1103 rules).
+   - Count of rules carrying `"fontStyle": ""` in `vscode-rules.json`, by `$TMPDIR/d51r1/count.ts`. Before: `rules with fontStyle "" ... 0 {}`, and `grep -c '"fontStyle": ""'` prints 0. After: `102 {"vscode-quiet-light":2,"vscode-solarized-light":5,"vscode-abyss":12,"vscode-monokai":10,"vscode-monokai-dimmed":43,"vscode-red":16,"vscode-solarized-dark":5,"vscode-tomorrow-night-blue":9}`, and `grep -c` prints 102. `$TMPDIR/d51r1/resolved.ts` over the 19 resolved theme files counts the same 102 in the same eight themes. The three added rules are the ones whose only setting is the empty font style: `variable` and `support.other.variable` in `vscode-abyss` (31 to 33 rules) and `support.other.variable` in `vscode-monokai` (50 to 51); every other empty font style sits in a rule that also sets a foreground, which was already kept.
+   - The generated rule, before: `vscode-quiet-light comment.block.preprocessor [{"scope":["comment.block.preprocessor"],"foreground":"#565656"}]` and `vscode-solarized-dark markup.heading.setext [{"scope":["markup.heading.setext"],"foreground":"#6eb3e4"}]`. After: `[{"scope":["comment.block.preprocessor"],"foreground":"#565656","fontStyle":""}]` and `[{"scope":["markup.heading.setext"],"foreground":"#6eb3e4","fontStyle":""}]`.
+   - The real painter, `node $TMPDIR/d51r1/run.mjs` (jiti with the `$lib` alias, `$TMPDIR/d51r1/paint.ts` driving `painter()` of `kit/load.ts` with stub Monaco and Shiki parts and the tokens of each block), prints the rules `createHighlighter` receives:
+     ```
+     vscode-quiet-light | rules 55 | rules with fontStyle "" handed to the highlighter 2 | comment.block.preprocessor [{"foreground":"#565656","fontStyle":""}]
+     vscode-solarized-dark | rules 37 | rules with fontStyle "" handed to the highlighter 5 | markup.heading.setext [{"foreground":"#6eb3e4","fontStyle":""}]
+     vscode-solarized-light | rules 37 | rules with fontStyle "" handed to the highlighter 5 | markup.heading.setext [{"foreground":"#185c8b","fontStyle":""}]
+     vscode-monokai | rules 51 | rules with fontStyle "" handed to the highlighter 10 | support.type [{"foreground":"#66d9ef","fontStyle":"italic"}]
+     ```
+2. The missing theme file names its flag. The message is now `the theme file <path> does not exist[, included by <path>]; name the extensions folder with --from`. Run with `--check` against scratch copies (`$TMPDIR/d51r1/ext` and `ext2`, copies of the `git`, `theme-defaults` and `theme-red` extension folders; the generated files' `shasum` is `c201abe72cf9 cd900d4ff501` before and after):
+   ```
+   convert-vscode-themes: the theme file <scratch>/ext/theme-defaults/themes/nothere.json does not exist, included by <scratch>/ext/theme-defaults/themes/2026-dark.json; name the extensions folder with --from
+   missing include exit 1
+   convert-vscode-themes: the theme file <scratch>/ext2/theme-defaults/themes/hc_black.json does not exist; name the extensions folder with --from
+   missing listed theme file exit 1
+   ```
+3. The include-loop check (the `chain.includes(file)` test and its message) is removed from `readTheme`. `chain` stays, since the "included by" part of the missing-file message reads it. Any failure reaches the `catch` of the run, which prints `convert-vscode-themes: <message>` and exits 1.
+4. `DESIGN.md:244` reads "The VS Code themes are generated: `utils/migrations/convert-vscode-themes.ts` reads ...", the rest of the sentence unchanged.
+5. `docs/views.md:243` names the 19 themes as the picker labels them, in the order of `config/appearance.yml`: vscode dark modern, vscode light modern, vscode light 2026, vscode light+, vscode light (visual studio), vscode quiet light, vscode solarized light, vscode abyss, vscode dark 2026, vscode dark+, vscode dark (visual studio), vscode kimbie dark, vscode monokai, vscode monokai dimmed, vscode red, vscode solarized dark, vscode tomorrow night blue, vscode dark high contrast and vscode light high contrast (`sed -n 9,31p config/appearance.yml | grep -o 'label: "[^"]*"'` prints `light`, `dark` and then these 19).
+6. This report: the file table marks `kit/look.ts` as outside the write list, judgment call 7 says 28 workbench keys, and the line count of `contrast.test.ts` is the 262 that `wc -l` prints.
 
 ## The ruling carried (`tools/oculus/.scratch/migration/agents/briefs/D51-cases.md`)
 
@@ -16,7 +38,7 @@ The same text is in `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D5
 2. `--bg` is the theme's `sideBar.background`, else its registered default; the rest of `--bg`'s list is read only when that default is `null`. Every other token keeps item 2's order. The new `--bg` of the four themes is listed under "Visible changes".
 3. `derive.ts`'s nudge applies to every theme. The theme by theme before and after of each `-txt` value that changes is under "Visible changes".
 4. The registration forms beyond the brief's list (`qe.white`, `qe.black`, `qe.fromHex("#808080").transparent(a)`, the diff tints' colour objects) are resolved into the converter's `WORKBENCH` table as hexes and alphas; the comment above the table names each form and the helper that carries it (`via`, `fade`).
-5. The contrast test was run again after the last change, and passed 40 of 40 (quoted below, load average 8.9). Its timeout is untouched. Plain `npx vitest run tests/checks` under a load of 7 to 14 timed out five other tests at the default 5000 ms; they are named in the quoted outputs under "DONE / NOT DONE".
+5. The contrast test was run again after the last change, and passed 40 of 40 (quoted below, load average 8.9). Its timeout is untouched. Plain `npx vitest run tests/checks` under a load of 8 to 9 timed out seven other tests at the default 5000 ms; they are named in the quoted outputs under "DONE / NOT DONE".
 
 ## The cases
 
@@ -65,26 +87,26 @@ Case 13, Solarized Light. Rule (items 2 and 3): `--muted` is the first held cand
    convert-vscode-themes: <scratch>/ext3/theme-defaults/themes/2026-dark.json is not valid JSON: Unexpected end of JSON input
    invalid json exit 1
    ```
-4. Missing folder and missing include, against the real tree (`shasum` of `vscode.css` and `vscode-rules.json` before and after: `c201abe72cf9 d4655f7c66f2` both times):
+4. Missing folder and missing include, against the real tree (`shasum` of `vscode.css` and `vscode-rules.json` before and after: `c201abe72cf9 cd900d4ff501` both times):
    ```
    convert-vscode-themes: the extensions folder /nonexistent does not exist; name it with --from <extensions folder>
    missing folder exit 1
-   convert-vscode-themes: the theme file <scratch>/ext3/theme-defaults/themes/nothere.json does not exist, included by <scratch>/ext3/theme-defaults/themes/2026-dark.json
+   convert-vscode-themes: the theme file <scratch>/ext/theme-defaults/themes/nothere.json does not exist, included by <scratch>/ext/theme-defaults/themes/2026-dark.json; name the extensions folder with --from
    missing include exit 1
    ```
 5. Run twice and hash: `node utils/migrations/convert-vscode-themes.ts` twice, then `shasum`:
    ```
    c201abe72cf98a028774e4a72dd7aec1637e1ec9  src/lib/themes/vscode.css
-   d4655f7c66f2d24a8880d89996cd4a61de6b696f  src/lib/themes/vscode-rules.json
+   cd900d4ff5018081380146226bad49ea4b96939d  src/lib/themes/vscode-rules.json
    ```
    identical after both runs. `node utils/migrations/convert-vscode-themes.ts --check` printed `19 themes up to date`, exit 0. `npx prettier --check src/lib/themes/vscode.css src/lib/themes/vscode-rules.json` printed `All matched files use Prettier code style!`. `--check` with no output files: in the scratch tool root `c14root`, with `vscode.css` and `vscode-rules.json` removed and the base `appearance.yml` (two `vscode-*` rows), it printed 19 lines `block vscode-<slug> is missing`, 19 lines `rules of vscode-<slug> is missing`, 17 lines `block vscode-<slug> has no appearance.yml row`, and exited 1 (`node utils/migrations/convert-vscode-themes.ts --check; echo "exit $?"`).
-6. `npx vitest run tests/checks/look/contrast.test.ts` after the last change: `Test Files 1 passed (1)`, `Tests 40 passed (40)`, `Duration 2.56s`, load average 8.9 (`uptime`: 15:10). The lane-text case passed. The test in its changed form measures the text-on-tint pairs and passes on all 36 rows; on the unchanged tree the same measurement fails 226 pairs (case 6 above).
+6. `npx vitest run tests/checks/look/contrast.test.ts` after the last change: `Test Files 1 passed (1)`, `Tests 40 passed (40)`, `Duration 2.32s`, load average 13.6 to 9.5 (`uptime`: 16:29 and 16:30). The lane-text case passed. The test in its changed form measures the text-on-tint pairs and passes on all 36 rows; on the unchanged tree the same measurement fails 226 pairs (case 6 above).
 7. `grep -c "^  - { name: vscode" config/appearance.yml` prints 19. The 17 new rows are in the brief's order after `vscode-light-modern`.
 8. Editor rules, `node c8b.ts` (a scratch copy of the final `theme.ts` and `colours.ts`, the final `vscode-rules.json`, and `ownRules(cls) ?? textmate.tokenColors` as `kit/load.ts` does):
    ```
-   vscode-monokai               bg #272822 fg #f8f8f2 type dark | rules 50 own | keyword {"foreground":"#fb92b8"} | support.type {"foreground":"#66d9ef","fontStyle":"italic"} | bad 0
+   vscode-monokai               bg #272822 fg #f8f8f2 type dark | rules 51 own | keyword {"foreground":"#fb92b8"} | support.type {"foreground":"#66d9ef","fontStyle":"italic"} | bad 0
    vscode-quiet-light           bg #f5f5f5 fg #333333 type light | rules 55 own | keyword {"foreground":"#3450a7"} | support.type {"foreground":"#7a3e9d"} | bad 0
-   vscode-red                   bg #390000 fg #f8f8f8 type dark | rules 40 own | keyword {"foreground":"#f57373"} | support.type null | bad 0
+   vscode-red                   bg #390000 fg #f8f8f8 type dark | rules 40 own | keyword {"foreground":"#f57373","fontStyle":""} | support.type null | bad 0
    vscode-dark-high-contrast    bg #000000 fg #ffffff type dark | rules 54 own | keyword {"foreground":"#569cd6"} | support.type {"foreground":"#4ec9b0"} | bad 0
    vscode-light-high-contrast   bg #ffffff fg #292929 type light | rules 68 own | keyword {"foreground":"#0f4a85"} | support.type {"foreground":"#185e73"} | bad 0
    vscode-dark-plus             bg #1e1e1e fg #d4d4d4 type dark | rules 65 own | keyword {"foreground":"#6eaadb"} | support.type {"foreground":"#4ec9b0"} | bad 0
@@ -92,7 +114,7 @@ Case 13, Solarized Light. Rule (items 2 and 3): `--muted` is the first held cand
    dark                         bg #121a2b fg #e7ecf3 type dark | rules 11 fixed | keyword {"foreground":"#947aff"} | support.type {"foreground":"#6691f0"} | bad 0
    (light)                      bg #ffffff fg #0f172a type light | rules 11 fixed | keyword {"foreground":"#481cff"} | support.type {"foreground":"#124bc9"} | bad 0
    ```
-   Monokai's `support.type` is cyan and italic. Its `keyword` is `#fb92b8`, the theme's `#F92672` nudged to 4.5:1 on the diff tints (item 6 of the brief). A theme without an entry (`dark`, the light default) keeps the 11 fixed rules, and a chosen Shiki code theme goes through `rulesOf` as before. The diff tints and Source Control colours come from the block: `--c-scm-*` in `vscode.css`. The look in the running app is not taken.
+   Monokai's `support.type` is cyan and italic. Its `keyword` is `#fb92b8`, the theme's `#F92672` nudged to 4.5:1 on the diff tints (item 6 of the brief). Under Red the `keyword` rule carries `fontStyle: ""` that resets a broader rule's style (round 1, item 1). A theme without an entry (`dark`, the light default) keeps the 11 fixed rules, and a chosen Shiki code theme goes through `rulesOf` as before. The diff tints and Source Control colours come from the block: `--c-scm-*` in `vscode.css`. The look in the running app is not taken.
 9. `node c9.ts` (blocks of the base `themes.css` against the generated `vscode.css`): the lists under "Visible changes".
 10. Saved appearance. By reading: the row `vscode-dark-modern` stays in `appearance.yml` (`grep -n "name: vscode-dark-modern" config/appearance.yml`), so `chosenTheme` returns the saved name.
 11. `node cases.ts` case 11 block:
@@ -129,6 +151,7 @@ Case 13, Solarized Light. Rule (items 2 and 3): `--muted` is the first held cand
 | `--check` exits 0 | DONE | `node utils/migrations/convert-vscode-themes.ts --check` |
 | Prettier on both outputs | DONE | `npx prettier --check src/lib/themes/vscode.css src/lib/themes/vscode-rules.json` |
 | `derive.ts` tint grounds, all themes | DONE | contrast test 40 of 40 |
+| Empty `fontStyle` reaches the editor | DONE | `node $TMPDIR/d51r1/count.ts`, `node $TMPDIR/d51r1/run.mjs`, repair round 1 item 1 |
 | 17 picker rows | DONE | `grep -c "^  - { name: vscode" config/appearance.yml` prints 19 |
 | Editor rules per VS Code theme | DONE in code and a scratch run | `node c8b.ts` |
 | Look in the running app, cases 8 and 10 | NOT DONE | needs the app, a builder starts none |
@@ -136,7 +159,7 @@ Case 13, Solarized Light. Rule (items 2 and 3): `--muted` is the first held cand
 | Folder sizes | DONE | `ls src/lib/themes \| wc -l` prints 8, `ls utils \| wc -l` prints 10, `ls utils/migrations \| wc -l` prints 4 |
 | `sh utils/folder-check.sh` | DONE | exit 0, no output |
 | `sh utils/unused-exports.sh` | DONE | 364 lines, `diff` against `.agents/worktrees/D51-base/tools/oculus/unused-exports.txt` prints nothing; the step adds no line |
-| ASCII gate | DONE | the perl command of `agents/spec.md:99` over `src tests config` printed nothing, exit 0 (`bin` does not exist in this tree; `DESIGN.md`, `docs/views.md` and the converter were also passed through it, nothing printed) |
+| ASCII gate | DONE | the perl command of `agents/spec.md:99` over `src tests config utils`, `DESIGN.md` and `docs/views.md` printed nothing, `ascii exit 0` (`bin` does not exist in this tree) |
 
 Quoted outputs.
 
@@ -144,29 +167,31 @@ Quoted outputs.
 ```
 test:quick: 16 changed file(s), from the given paths
 test:quick: 12 test file(s), 10 essential
-ok      prettier (0.7 s): All matched files use Prettier code style!
-ok      ASCII gate (0.8 s)
-ok      svelte-kit sync (2.8 s)
-ok      eslint (11.3 s)
-ok      svelte-check (11.6 s): 1791551839264 COMPLETED 441 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (17.1 s): Duration  10.86s (transform 14.56s, setup 0ms, import 23.86s, tests 5.04s, environment 3ms)
-test:quick: 17.8 s (limit 45.0 s); every command passed
+ok      ASCII gate (2.0 s)
+ok      prettier (3.3 s): All matched files use Prettier code style!
+ok      svelte-kit sync (18.6 s)
+ok      eslint (41.1 s)
+ok      vitest (42.6 s): Duration  24.59s (transform 45.43s, setup 0ms, import 52.98s, tests 3.35s, environment 4ms)
+ok      svelte-check (31.0 s): 1791556150863 COMPLETED 441 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 49.6 s (limit 45.0 s); every command passed
+test:quick: over the time limit
 ```
+Every command passed; the run is over the 45 s limit because the machine was at a load average of 18.3 (`uptime` 16:26).
 
 `npx vitest run tests/checks/look/contrast.test.ts tests/checks/config/config-folder.test.ts tests/checks/config/config.test.ts tests/checks/source/keys.test.ts tests/checks/tree/size.test.ts`:
 ```
  Test Files  5 passed (5)
       Tests  114 passed (114)
-   Duration  41.22s (transform 20.26s, setup 0ms, import 66.47s, tests 16.62s, environment 1ms)
+   Duration  50.06s (transform 38.37s, setup 0ms, import 90.01s, tests 19.25s, environment 1ms)
 ```
 
-`npm run test:checks` (`vitest run tests/checks --testTimeout 0 --hookTimeout 0`), after the last change to code and comments:
+`npm run test:checks` (`vitest run tests/checks --testTimeout 0 --hookTimeout 0`), after the last change:
 ```
  Test Files  17 passed (17)
       Tests  265 passed (265)
 ```
 
-`npx vitest run tests/checks` (the default 5000 ms timeout), load average 7.4 at the start and 13.6 at the end: `Test Files 3 failed | 14 passed (17)`, `Tests 5 failed | 260 passed (265)`. All five failures are `Error: Test timed out in 5000ms`, none an assertion: `names no package id, date or session in any comment` (6420 ms), `places every folder of every layer the tree holds, and every sub-folder of an inner order` (5308 ms), `are what the source gives now, each file byte for byte` (6463 ms), `are named stale, every one at once, when an import and a publish are added` (109881 ms), `reads a label node by the box Graphviz drew for it, the two halves through it its own` (97606 ms). Each of the five passes under `npm run test:checks`. The history test passes alone in 4.1 s (`npx vitest run tests/checks/source/history.test.ts`: `Tests 3 passed (3)`). Whether the base tree times out the same five under the same load is not verified: the base copy has no `node_modules`.
+`npx vitest run tests/checks > plain.txt` (the default 5000 ms timeout), load average 8.8 at the start and 8.4 at the end: `Test Files 5 failed | 12 passed (17)`, `Tests 7 failed | 258 passed (265)`. `grep -c "Test timed out in 5000ms"` over the output prints 7, one for each failure; no assertion message is in the output. The seven: `passes every config file through the schema it is matched to`, `are what the source gives now, each file byte for byte`, `are named stale, every one at once, when an import and a publish are added`, `reads a label node by the box Graphviz drew for it, the two halves through it its own`, `ends by the hundredth column everywhere under src, tests and utils`, `names no package id, date or session in any comment`, `reads every findingText key as a whole literal, except where a documented rule computes it`. An earlier run of the same command at load 11 to 19 failed 11 tests, each after more than 5000 ms (the messages were not read). Each of the 265 tests passes under `npm run test:checks` (above), which has no timeout. Whether the base tree times out the same tests under the same load is not verified: the base copy has no `node_modules`.
 
 `node utils/migrations/convert-vscode-themes.ts --check`:
 ```
@@ -174,9 +199,9 @@ test:quick: 17.8 s (limit 45.0 s); every command passed
 check exit 0
 ```
 
-`LC_ALL=C perl -ne '...' $(find src tests config -type f ! -name local.yml)` (the command of `agents/spec.md:99`): no output, `ascii exit 0`.
+`LC_ALL=C perl -ne '...' $(find src tests config utils -type f ! -name local.yml) DESIGN.md docs/views.md` (the command of `agents/spec.md:99`): no output, `ascii exit 0`.
 
-Prose checked against `agents/spec.md`'s rules: the sentences added to `DESIGN.md` (lines 72, 244, 521, 565), `docs/views.md:243`, the `code_theme` help in `config/catalogs/options.yml:146` and the comments are plain, one line per paragraph in the Markdown, no em dash, no history word. A grep of the added comment lines for `before|used to|no longer|still|always|previously|formerly|now|again|already|originally|anymore`, plan ids and years found hits only in text that belongs to the code's behaviour (for example `look.ts` "the theme before it in force", "the answer always resolves", `load.ts` "once it is in force"), each in text that was already in the file and rewrapped; none is a statement of history. The Markdown lines depart from the 100-column wrap because the docs keep one paragraph per line.
+Prose checked against `agents/spec.md`'s rules: the sentences added to `DESIGN.md` (lines 72, 244, 521, 565), `docs/views.md:243` (the 19 themes by the picker's labels), the `code_theme` help in `config/catalogs/options.yml:146` and the comments are plain, one line per paragraph in the Markdown, no em dash, no history word. A grep of the added comment lines for `before|used to|no longer|still|always|previously|formerly|now|again|already|originally|anymore`, plan ids and years found hits only in text that belongs to the code's behaviour (for example `look.ts` "the theme before it in force", "the answer always resolves", `load.ts` "once it is in force"), each in text that was already in the file and rewrapped; none is a statement of history. The Markdown lines depart from the 100-column wrap because the docs keep one paragraph per line.
 
 ## The terms
 
@@ -188,19 +213,19 @@ no glossary (`ls tools/oculus/docs` prints `apps.md configuration.md debugging.m
 
 | File | Lines |
 |---|---|
-| `utils/migrations/convert-vscode-themes.ts` (new) | 808 |
+| `utils/migrations/convert-vscode-themes.ts` (new) | 810 |
 | `src/lib/themes/vscode.css` (new, generated) | 711 (limit 880) |
-| `src/lib/themes/vscode-rules.json` (new, generated) | 3687 |
+| `src/lib/themes/vscode-rules.json` (new, generated) | 3760 |
 | `src/lib/themes/themes.css` | 776 (846) |
 | `src/lib/themes/tokens.css` | 272 (272) |
 | `src/lib/themes/derive.ts` | 317 (295) |
 | `src/lib/ui/theme.ts` | 124 (119) |
 | `src/routes/+layout.svelte` | 49 (48) |
 | `src/lib/ui/controls/editor/kit/load.ts` | 493 (486) |
-| `src/lib/ui/controls/editor/kit/look.ts` | 66 (65) |
-| `src/lib/ui/controls/editor/kit/theme/theme.ts` | 206 (181) |
+| `src/lib/ui/controls/editor/kit/look.ts` (outside the write list) | 66 (65) |
+| `src/lib/ui/controls/editor/kit/theme/theme.ts` | 209 (181) |
 | `tests/checks/look/themes.ts` | 56 (45) |
-| `tests/checks/look/contrast.test.ts` | 263 (254) |
+| `tests/checks/look/contrast.test.ts` | 262 (254) |
 | `tests/checks/source/code.ts` (outside the write list) | 222 (221) |
 | `config/appearance.yml` | 97 (80) |
 | `config/catalogs/options.yml` (outside the write list) | 1454 (1454) |
@@ -213,6 +238,7 @@ no glossary (`ls tools/oculus/docs` prints `apps.md configuration.md debugging.m
 
 Paths outside the brief's write list, with the reason:
 
+- `src/lib/ui/controls/editor/kit/look.ts:42`: `paintCode` is the one caller of `kit.paint` (`Editor.svelte`, `DiffEditor.svelte` and `look.ts` reach it through `paintCode`), and `kit.paint` now takes the body's class string as a third argument so `paintNow` can choose a VS Code theme's own rules; `paintCode` passes `document.body.className`.
 - `tests/checks/source/code.ts` (two lines): `tests/checks/source/history.test.ts` reads every file under `src`, `tests`, `utils` and `config` through `fileKinds`, which threw `src/lib/themes/vscode-rules.json does not parse: no reader is known for its language`. The brief fixes the JSON file's path, so the reader now accepts a `.json` file as code with no comments (`JSON.parse`, so an invalid file still throws), and the head comment says so.
 - `DESIGN.md:521`: the sentence on how the editor primitive builds its TextMate theme said each scope takes the code hue of its role, which a VS Code theme now replaces with its own rules; it carries the clause "(under a VS Code theme, the rules of that theme from `themes/vscode-rules.json`)".
 - `config/catalogs/options.yml:146`: the `code_theme` help says `tokens` takes the syntax colours from the UI theme's own code tokens; it carries "(a VS Code theme brings its own TextMate rules)". `tests/checks/config/config.test.ts` and `config-folder.test.ts` pass.
@@ -245,7 +271,7 @@ Paths outside the brief's write list, with the reason:
 4. Errors print `convert-vscode-themes: <message>` and exit 1 before anything is written; `build` lists the themes first, so a missing `--from` folder stops before the git extension's path is read.
 5. `--muted`'s candidate skip and the `--ink` at 0.7 fallback are the rulings; `--bg`'s lead key is `sideBar.background`, implemented as the `lead` option of the converter's `pick`.
 6. `ownRules(classes)` takes the first class word that has an entry (`Object.hasOwn`), so a body with `dark vscode-red` reads Red's rules; `kit.paint(token, code, classes)` takes the body's class string and `kit/look.ts` passes `document.body.className`.
-7. The converter's `WORKBENCH` table of registered defaults holds the 23 workbench keys the mapping names, by type; the comment above it says `sideBar.foreground` and `tab.activeBorder` are registered with no default.
+7. The converter's `WORKBENCH` table of registered defaults holds the 28 workbench keys the mapping names (`awk '/^const WORKBENCH/,/^};/'` over the converter, counting the entries, quoted and unquoted), by type; the comment above it says `sideBar.foreground` and `tab.activeBorder` are registered with no default.
 8. A `.json` file is read as code with no comments by `tests/checks/source/code.ts`, rather than excluding `vscode-rules.json` from the history audit by name, so any future JSON under `src` is audited the same way.
 9. Dark Modern keeps the red and amber tints and `--shadow: none` that the converter sets for dark types.
 10. `docs/views.md` names the 19 themes and the command; `config/text/views/system/workbench.yml:114` ("From the theme takes the syntax colours of the UI theme") stays true for a VS Code theme and is unchanged.
@@ -271,7 +297,11 @@ These themes are new in the picker. Their `--bg` is the side bar VS Code draws:
 
 ### The editor under a VS Code theme
 
-Before: every theme gave the editor the same 11 fixed rules in six hues. After: under `code_theme: tokens` a VS Code theme's source tab, diff and merge editor use that theme's own scoped rules (`vscode-rules.json`, 30 to 118 rules per theme, listed by `node -e` over the file), each foreground nudged to 4.5:1 on `--panel` and the three tints; a chosen Shiki theme and a non-VS-Code theme are unchanged.
+Before: every theme gave the editor the same 11 fixed rules in six hues. After: under `code_theme: tokens` a VS Code theme's source tab, diff and merge editor use that theme's own scoped rules (`vscode-rules.json`, 30 to 118 rules per theme, listed by `node -e` over the file, an empty font style kept as written), each foreground nudged to 4.5:1 on `--panel` and the three tints; a chosen Shiki theme and a non-VS-Code theme are unchanged.
+
+### A rule's empty font style (round 1, item 1)
+
+Before: a rule whose font style the theme sets to the empty string lost it, so the style a broader rule set came back where VS Code draws none (102 rules in eight themes). After: the empty font style is generated and handed to the editor, which draws the scope upright and not bold. Examples: Quiet Light's `comment.block.preprocessor` (was `{"foreground":"#565656"}`, inheriting the italic of `comment`; now `{"foreground":"#565656","fontStyle":""}`) and Solarized Dark's and Solarized Light's `markup.heading.setext` (was inheriting the bold of `markup.heading`; now `"fontStyle":""`). `vscode-rules.json` goes from 1100 to 1103 rules and from 3687 to 3760 lines.
 
 ### Dark Modern and Light Modern blocks (hand-written to generated; `node c9.ts`)
 
@@ -344,7 +374,6 @@ The 226 failing pairs across the 17 existing themes (case 6) are 0 after the cha
 2. The text-on-tint failures are 226 pairs across all 17 existing themes (case 6), not the 12, 10 and 12 pairs of three themes the brief names. Ruling 3 widens the nudge to every theme.
 3. The workbench registers forms the brief's list lacks (`qe.white`, `qe.black`, `qe.fromHex(...).transparent(a)`, two colour objects); ruling 4.
 4. Case 13 under the brief's `--muted` rule, and `--bg` for the plus and Visual Studio themes: rulings 1 and 2.
-5. The brief's write list does not include `tests/checks/source/code.ts`, `DESIGN.md:521` or `config/catalogs/options.yml:146`, which the step cannot be correct without (the history test fails on a `.json` file under `src`; two sentences said the editor takes only the six hues); the three edits are listed above.
+5. The brief's write list does not include `tests/checks/source/code.ts`, `DESIGN.md:521`, `config/catalogs/options.yml:146` or `src/lib/ui/controls/editor/kit/look.ts`, which the step cannot be correct without (the history test fails on a `.json` file under `src`; two sentences said the editor takes only the six hues; `kit.paint` needs the body's class string from its one caller); the four edits are listed above.
 6. The brief says `src/lib/themes` takes two files; it takes two plus `vscode.css` and `vscode-rules.json`, eight items, under the limit of ten.
-7. The lane-text case of the contrast test timed out on the unchanged tree at 5000 ms (21.3 s, load average 14.7) and passed after the change (load average 8.9). Plain `npx vitest run tests/checks` timed out five other tests under load (named above); `npm run test:checks` passes all 265.
-
+7. The lane-text case of the contrast test timed out on the unchanged tree at 5000 ms (21.3 s, load average 14.7) and passed after the change (load average 8.9). In this round the lane-text case passed at default timeouts (load 9.5 to 13.6). Plain `npx vitest run tests/checks` timed out seven other tests under load (named above); `npm run test:checks` passes all 265.
