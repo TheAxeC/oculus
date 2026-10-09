@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z761 (2026-10-09, step R2, the orchestrator, automode): the supported Node, an unreadable hub, and the app's install check
+
+- Chosen: (a) Node `^24.15.0 || >=26.0.0`, the range every installed package accepts, in `engines`, the start check and the docs, `engine-strict` kept; (b) an unreadable hub reported as the hub lack with its error code; (c) `preapp` runs only the Node and packages check, the app checking the hub and programs over its own engine.
+- Not chosen: `engines` kept at `>=24` (the lazy option: npm refuses Node 24.0 to 24.14 and 25 over write-file-atomic while the README says below 24); `engine-strict` dropped (Node 25 installs a package that declares it unsupported); `preapp` removed (missing packages reach Electron's load error).
+
+Where it applies: R2, repair round 1. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/briefs/R2-round1.md`.
+
 ## Z760 (2026-10-09, step R2, the orchestrator, automode): the scratch port, and where engineDir lives
 
 - Chosen: (a) port 8811 through the scratch engine's `local.yml` or `--default-port`; (b) a new `src/lib/data/places/` holding `engine-dir.ts` and `hub-address.ts`.
@@ -19,6 +26,8 @@ Where it applies: R2. Booked in `plan.md` Rulings, the closed log of `orchestrat
 Where it applies: D56. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/briefs/D56-cases.md`.
 
 ## Z758 (2026-10-09, step D50, the orchestrator, automode): links in the carry-over, and the findings of D50's review over repair round 1
+
+Replaced by Axel's ruling The move (`plan.md` Rulings): no carry-over code; its findings (d) and (e) are fixed at D50's landing.
 
 - Chosen: (a) a link under a carried folder is copied only when its target lies inside that carried folder, so no secret of `~/.oculus` reaches the hub's tracked folder; (b) a carried path that is itself a link is copied as what it points to, unless it points into the secret folders or at `approvals.json`; (c) a dangling link is left out with a finding and the rest is copied; (d) the DATA-MAP sentences fixed at landing, the apps sentences after open item 31; (e) the test titles and the roots helper fixed at landing.
 - Not chosen: the build's refusal of a top-level link (empties Bookmarks or Notes at every start); Z755's boundary at `~/.oculus` (a linked token lands in git); the build's refusal of the whole folder for one dangling link (hides every note).
@@ -48,6 +57,8 @@ Where it applies: D46. Booked in `plan.md` Rulings and `agents/briefs/D46-cases.
 
 ## Z753 (2026-10-09, step D50, the orchestrator, automode): the choices of D50's brief check
 
+(f) replaced by Axel's ruling The move (`plan.md` Rulings).
+
 - Chosen: (a) the hub's `.oculus/` tracked in the hub's git, since ruling (9) calls the five files shareable; (b) `loadConfig(engine, hub?)`, every server caller passing `local.hub`, a call with no hub reading the engine alone, so fixture tests are unchanged and no test reads the real hub's layer; (c) `slurm.resource` `''` meaning no cluster, `config.test.ts`'s empty-resource row made true to it, and the hub-list options' defaults set to the engine's general values so Reset writes them, `domains` `{}`; (d) `linkedin_dir` absent is no LinkedIn feed, the website fallback dropped; (e) a write of a hub-list key the hub layer lacks inserts it (file and folder created when absent), its undo removing what it created; (f) a link under a carried folder copied as what it points to, a carried app asked for approval again, a carried note's earlier save copies not carried, each said in the docs; (g) this hub's layer keeps the whole `docs:` list, oculus's guides with it; (h) the hub layer checked per dotted key, a `local.yml` there a finding and never read; (i) the cases over this hub read it only through G14's integrity test.
 - Not chosen: `.oculus/` ignored (the lazy option: no `.gitignore` decision, and the shareable files stay machine-local in another folder); `loadConfig` reading `local.yml` itself (every test over the real engine would then read the real hub's layer); `slurm.resource` absent with the `utwente` default kept (a hub with no cluster would poll utwente); a write refused when the hub layer lacks the key (the lazy option: the Settings view could not set a hub key on a fresh hub); links copied as links (a link out of the hub inside its git).
 
@@ -61,6 +72,8 @@ Where it applies: D50. Booked in `plan.md` Rulings, D50's brief ("Decisions take
 Where it applies: D52. Booked in `plan.md` Rulings, D52's brief and `agents/reviews/D52-brief-check.md` ("Closed").
 
 ## Z751 (2026-10-09, step D50, the orchestrator, automode): the choices of D50's brief
+
+(d) replaced by Axel's ruling The move (`plan.md` Rulings).
 
 - Chosen: (a) the hub layer may set only the hub list: the keys of `sources.yml` that name hub paths and the hub's served folders (`roots`), `docs` of `layout.yml`, `slurm.resource` and `data_domains` of `behavior.yml`, and `domains`, `venue_themes` and `data_themes` of `catalogs/vocab.yml`; any other key there is a finding and is not applied; (b) a hub key replaces the engine's value of its path whole, a list included; (c) the machine's apps folder defaults to `<hub>/.oculus/apps` and is read once, as the machine folder, never again as the hub root's apps; (d) at start, each of `bookmarks.yml`, `notes/`, `apps/`, `schedules.yml` and `workspaces.json` is copied from `~/.oculus` to `<hub>/.oculus/` when the hub has none, nothing deleted; (e) the engine keeps the general folder layout, and the two website keys, `roots`, `docs`, `slurm.resource` and the four research lists are empty or absent there, this hub's values moved to `<hub>/.oculus/config/`; the `help` arrangement opens oculus's own guides, the hub's documents reached from the catalogue; (f) the chat instruction names the owner from `self: true`, or "its owner", and drops the owner's null-result sentence, which the hub's `CLAUDE.md` carries to the agent.
 - Not chosen: any key settable in the hub layer (the lazy option: one merge with no list, and the per-hub structure the ruling refuses); lists merged entry by entry (the engine's entries would stay in every hub); the hub's apps read as root apps (fewer channels for the reader's own apps) or read twice (a `repeated` finding on every app); leaving the files in `~/.oculus` for the reader to move (the lazy option: the bookmarks and notes vanish from the page); moving them (deletes from `~/.oculus`); the hub's documents kept in the engine's `help` arrangement (a hub path in oculus's general defaults).

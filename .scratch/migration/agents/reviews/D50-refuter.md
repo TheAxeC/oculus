@@ -391,3 +391,11 @@ Open item 31 (the first review's B1) stays open in the state file. This round do
 - The builder's scratch scripts in `$TMPDIR/d50` were copied to `$TMPDIR/d50r1/t/s` and run with `TMPDIR` set there, so the builder's folder was not written. The two probes `probe-secret.mts` and `probe-dangling.mts` are mine, in the same folder.
 
 Reviewer usage: a482febcba2c8b315, claude-opus-5-5, 307,526 tokens, 72 tool uses, 28.7 min.
+
+### Closed (at landing)
+
+- S1 (git commands in round 1): nothing in the tree to fix; the builder's commands were read-only and changed nothing, and round 2 is void.
+- S2 (sentences still false): `docs/DATA-MAP.md` lines 37, 58, 190 and the table row at 310 name `.oculus/config/sources.yml`, the hub's layer, with the engine's file as the general default; `options.yml` `apps_dir` help and `docs/apps.md:11` and `:137` and `DESIGN.md:417` follow Axel's ruling on open item 31 (c): the machine apps folder is written by the hub's owner and by a `git pull`, a kept app stays approved through a pulled change, and a root app is set apart by its place.
+- S3, B1, B2 (the carry-over's links): the carry-over is removed under Axel's ruling The move (`carry-over.ts`, its call and import in `context.ts`, `server.carry`, `findings.config.carry_failed` and `carry_link_outside`, the `docs/configuration.md` paragraph and the test stub in `eslint-switch.test.ts`); the files are moved by the orchestrator.
+- St1: the empty-resource assertion is its own test, 'answers an empty resource as no cluster, with no problem'; both `ROWS` tables run through `it.each(ROWS)` with `$row` in the title.
+- St2: `rootsOfHub` returns the whole `readRoots` result, and the roots test uses it.

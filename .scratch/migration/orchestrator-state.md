@@ -37,9 +37,10 @@ dispatch:   # steps in flight, up to six (Z632)
   reviewer_report: agents/reviews/D50-refuter.md (a62a3b17bb5c16834, claude-opus-5-5, 72,975 tokens, 88 tool uses, 22.5 min); over round 1: a482febcba2c8b315, claude-opus-5-5, 307,526 tokens, 72 tool uses, 28.7 min
   brief_check: agents/reviews/D50-brief-check.md (a25c58150d1a4695d, claude-opus-5-5, 266,958 tokens, 111 tool uses, 14.4 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: settings.ts with D46 (the whole file; D50 settingReader 148-151); portfolio.ts, model-machine, config.test.ts and docs/DATA-MAP.md line 69 with D41; server/edit/writes.ts with D48 (WriteTarget); content/docs.ts with D52 (451-456; D50 521-542); config/sources.yml with D48 (line 15, merged by hand); config/catalogs/vocab.yml with D41 (228) and D48 (199-206); config/catalogs/options.yml with D46 (857-860) and D48 (1230); HELP.md with D46 (79-80), D48 (105) and D52 (156; D50 170); docs/window.md with D46 (76) and D52 (41; D50 25, 29); docs/apps.md with D48 (248, 417, 419); docs/configuration.md with D48 (41); config/behavior.yml and config/app.yml with D46 (263-267); DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D48 (552) and D51 (72, 244, 521, 565; D50 91, 272, 306-308, 492, 547, 573); the gate's sparse checkout gains `.oculus` at landing; different lines, each merge simple except sources.yml line 15, merged by hand
-  landing: not-started
+  landing: cherry-picking
   round_2: agents/briefs/D50-round2.md (open item 31 (a) and Z758), sent to the builder over the tree copied at .agents/worktrees/D50-round1
   round_2_stopped: Axel stopped the builder during round 2 (no second round was approved); the worktree holds the round's partial changes (20 files, saved as the session's scratchpad `D50-round2-partial.diff`), and `.agents/worktrees/D50-round1` holds round 1's tree to restore from
+  round_2_void: the round's partial changes are discarded; the worktree is restored from `.agents/worktrees/D50-round1` and D50 lands from round 1 with the fixes at landing of The move (the carry-over removed) and of open item 31 (c) (`plan.md` Rulings)
   round: 2
 - step: D56
   executor: agent
@@ -67,10 +68,12 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/R2-report.md
   brief_check: agents/reviews/R2-brief-check.md (a57eea66538e91df5, claude-opus-5-5, 224,420 tokens, 82 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D50, src/lib/data/sources/config.ts (D50 line 53, an added export; R2 engineDir at 15-30 and the head comment), config/text/server.yml (D50 server.carry; R2 new keys under server.start), HELP.md and DESIGN.md (R2 line 509 and one bullet under Decisions taken); with D56, DESIGN.md and HELP.md on other sections; docs/diagrams/ regenerated at landing; each merge simple
-  builder_usage: 164,875 tokens, 34 tool uses, 6.3 min (the first run and the hand-back of the cases)
+  builder_usage: 164,875 tokens, 34 tool uses, 6.3 min (the first run and the hand-back of the cases); a924a8b4546426f6a, claude-sonnet-5-5, 337,954 tokens, 122 tool uses, 31.2 min (the build)
   cases: agents/briefs/R2-cases.md (Z760), sent to the builder after its first run
+  reviewer_report: agents/reviews/R2-refuter.md (a89a4942c965eeb8a, claude-opus-5-5, 283,279 tokens, 86 tool uses, 24.2 min)
+  round_1: agents/briefs/R2-round1.md (the review's findings and Z761), sent to the builder
   landing: not-started
-  round: 0
+  round: 1
 ```
 
 ## The standing demands (from Axel, in force)
@@ -187,7 +190,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 31, reopened (2026-10-09, Axel): booked as ruled (a) with D50's repair round 2, which Axel had not approved; the round is stopped and the item is open again for discussion. D50 does not land until it is ruled.
+None.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -209,6 +212,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports the four test sweeps leave unused (T1c's report names `ClientState` in `tests/fixtures/client.ts`, `sweepingOnError` in `scratch.ts` and `gitPayload` in `sessions-fixture.ts`; T1b, T1d and T1e name theirs): removed by the orchestrator at the landing of the last of T1b to T1e, after `sh utils/unused-exports.sh` and a grep of each name over `tests` and `src`, since each is unused only once all four have landed (T1e's brief, item 6).
 
 ## Closed items
+- 2026-10-09: open item 31 ruled (c) by Axel: a kept machine app stays approved through any change but to `app.yml`, a pulled change included, `docs/apps.md` and the `apps_dir` help saying so at D50's landing. The move ruled by Axel: the five shareable files of `~/.oculus` are moved into `<hub>/.oculus/` once by the orchestrator with `mv` while his server is stopped, with no carry-over code; D50 lands without it and O33's rename moves `~/.oculus` the same way; Z751 (d), Z753 (f) and Z758 replaced (`plan.md` Rulings, "Open item 31" and "The move").
 - 2026-10-09: open item 32 ruled (a) again by Axel after its reopening (G73, R2's builder writes its test); open item 33 ruled (a) by Axel: Q72 waits for D49, D55 and D56 (`plan.md` Rulings, "Open item 33"). Open item 31 stays open: Axel leans to (c).
 - 2026-10-09: open items 31 and 32 ruled (a) by Axel. 31: an approved machine app whose files change by anything other than oculus's own editor is asked again before it runs, built in D50 as its repair round 2 together with Z758's fixes (`plan.md` Rulings, "Open item 31"; D50's line, tag "ruling 31"). 32: a new guarded entry G73 for R2's start check with one table test written by R2's builder (`plan.md` Rulings, "Open item 32"; R2's line, tag "ruling 32").
 - 2026-10-09: open item 30 ruled (a) by Axel, with option (1) for its step: the Code theme menu and `code_theme:` also take the 19 VS Code themes of `vscode-rules.json` by their class names, listed before Shiki's; carried by D56 (`plan.md` D56's line, tag "ruling 30"; Rulings line "Open item 30").
@@ -277,6 +281,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (The move). Axel ruled open item 31 (c) and The move: no carry-over code; D50 restored to its round-1 tree and landed with the carry-over removed at landing; the five files moved by the orchestrator while Axel's server is stopped. R2 built (report saved) and in review (a89a4942c965eeb8a, claude-opus-5-5). D56 building.
 - 2026-10-09 (all agents stopped). Axel stopped every agent and reopened open items 31 and 32 (no second D50 round was approved) with 33. R2 and D56 restarted on his word with new builders a924a8b4546426f6a and a6f65daca142e0c86 taking over the partial builds; D50 stopped in round 2, waiting for 31. In flight (3 of 6): D50 (stopped, waiting), D56 and R2 (builders).
 - 2026-10-09 (R2 launched). D56's first-run cases ruled as Z759 (`agents/briefs/D56-cases.md`) and its builder resumed. R2 prepared (base 5120f89cf, brief `agents/briefs/R2.md` with G73 and every closure of its brief check) and its builder a00e9759490ea453e (claude-sonnet-5-5) launched in `.agents/worktrees/R2`, base copy in `.agents/worktrees/R2-base`. In flight (3 of 6): D50 (round 2), D56 (builder, after the cases ruling), R2 (builder).
 - 2026-10-09 (D50 round 2). Axel ruled open items 31 and 32 (a). D50's repair round 2 (`agents/briefs/D50-round2.md`: open item 31 (a), a kept machine app asks again after a change oculus did not write; Z758's carry-over links, dangling link, false sentences and test titles) sent to builder a30b6993857882108; R2 is prepared again with G73. Open item 33 (Q72's wait) raised. In flight (2 of 6): D50 (round 2), D56 (builder).

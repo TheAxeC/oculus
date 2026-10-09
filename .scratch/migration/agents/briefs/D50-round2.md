@@ -1,3 +1,5 @@
+Void: this round is not built. Its changes are discarded under Axel's rulings Open item 31 (c) and The move (`plan.md` Rulings).
+
 # D50, repair round 2
 
 This round builds Axel's ruling on open item 31 (a) and the findings of the review over repair round 1 (`agents/reviews/D50-refuter.md`, "Repair round 1, refuted"), each with its ruling. Work in `.agents/worktrees/D50` only, under the brief `agents/briefs/D50.md`, the cases ruling `agents/briefs/D50-cases.md` and `agents/spec.md`. No git command of any kind, read-only ones included: no `git status`, `git diff`, `git diff --no-index`, `git log`, `git ls-files`, `git ls-tree` or `git -C`, not even inside a composed shell line (Spec S1 of the review over round 1). To compare with the base, use `diff` against `.agents/worktrees/D50-base/tools/oculus/`; to compare with the tree as round 1 left it, the orchestrator keeps a copy at `.agents/worktrees/D50-round1/tools/oculus/`.

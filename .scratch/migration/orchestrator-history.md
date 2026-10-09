@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z761 (2026-10-09): R2's review closed in automode (`choices.md`, `agents/briefs/R2-round1.md`): the supported Node `^24.15.0 || >=26.0.0` everywhere oculus states it, an unreadable hub as the hub lack, `preapp` running only the install part; sent as R2's repair round 1.
 - Z760 (2026-10-09): R2's two first-run cases closed in automode (`choices.md`, `agents/briefs/R2-cases.md`): the scratch port through `local.yml` or `--default-port`, and `engineDir` in a new `src/lib/data/places/` with `hub-address.ts`.
 - Z759 (2026-10-09): D56's two first-run cases closed in automode (`choices.md`, `agents/briefs/D56-cases.md`): a kept workbench keeps its tabs' view state, and the Menu primitive gains a trailing action for Close.
 - Z758 (2026-10-09): D50's review over repair round 1 closed in automode (`choices.md`), replacing Z755: a link under a carried folder is copied only when it points inside that folder, a carried path that is itself a link is followed unless it points at a secret, a dangling link is left out with a finding, and the false sentences and test titles fixed at D50's landing after open item 31.
