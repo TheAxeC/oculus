@@ -5,9 +5,9 @@ In flight (4 of 6 slots in use, 2 more being prepared):
 - D47 (one Session view): builder running, launched 2026-10-09.
 
 Queued, in order (11 steps):
-- D48 (side projects with the research keys that apply, and smaller Focus rows): brief written, brief check running.
-- D51 (themes from VS Code's theme files): brief written, brief check next.
-- D52 (a page per collection entry): brief next, after D51's.
+- D48 (side projects with the research keys that apply, and smaller Focus rows): brief checked and closed, builder being launched.
+- D51 (themes from VS Code's theme files): brief written, brief check running.
+- D52 (a page per collection entry): brief being written.
 - D49 (the help pages cut): waits for D46, D47 and D57, whose text in docs/window.md and docs/views.md it carries.
 - D53 (unique views): waits for D56.
 - D50 (the hub's own folder, its shareable files and its settings layer): brief next, after D52's.

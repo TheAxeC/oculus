@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z748 (2026-10-09): the choices of D48's brief check closed in automode (`choices.md`): `live: false` on the parked side status, the ticker button at the row's height, side tasks under "side projects", the related line on the Personal card, the apps API's side fields, side writes through the published portfolio.
+- Z747 (2026-10-09): the choices of D51's brief closed in automode (`choices.md`): every VS Code theme through the converter, the Modern blocks regenerated, the key mapping and its fallbacks, contrast nudges by derive's rule, the converter in `utils/migrations/` writing `vscode.css`, the picker rows' names.
 - Z746 (2026-10-09): the choices of D48's brief closed in automode (`choices.md`): the `side` group on Focus, parked side projects off it, side writes through the existing requests looked up by `readPersonal`, 18 px row buttons, the Personal card drawing the six keys.
 - Z745 (2026-10-09): the findings of D47's brief check closed in automode (`agents/reviews/D47-brief-check.md`, Closed; `choices.md`): a bar pick keeps a tab's other state, the migration renamed and run on the pre-pages workbench, the `changes` glyph removed, `m1-m5`, one tree per section, G29 reworded at landing.
 - Z744 (2026-10-09): the findings of D46's brief check closed in automode (`agents/reviews/D46-brief-check.md`, Closed; `choices.md`): the names request on the search route and its wire format, the `search.max_names` key, hidden files listed and private folders left out, `tabForKind` moved into state, the terminal and right-click routes to the palette.

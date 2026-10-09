@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z748 (2026-10-09, step D48, the orchestrator, automode): the choices of D48's brief check
+
+- Chosen: (a) `live: false` on the `parked` row of `side_project_status`, read by the ticker, so no status word is written in code; (b) a ticker row's button is exactly the row's height at every text scale from 0.7 to 1.6; (c) a side project's subtasks and undated follow-ups under the heading "side projects", the catalog word of its deadline group; (d) a "related" line (`personal.related`) of project tags on the Personal card; (e) the apps API's `personal` map carrying the new side fields, listed in `docs/apps.md`; (f) a side write's file found through the portfolio the server last published, a `sideProjects` beside `projects` on `WriteTarget`, an id it does not hold refused as not found.
+- Not chosen: the word `parked` written in the ticker (the lazy option: a vocabulary word bound in code); `padding: 1px 6px` (taller than the row below a text scale of 1); the raw word `side` or the research "other" heading for side tasks (a raw word breaks the catalog rule, "other" misfiles them); `related` read and not drawn (the lazy option); the apps API's old shape kept by dropping fields (a second shape of one record); the personal roots carried into every write (more plumbing, and a root no longer served would still be written until the next read).
+
+Where it applies: D48. Booked in `plan.md` Rulings, D48's brief ("Decisions taken in this brief" 2, 4, 7-10) and `agents/reviews/D48-brief-check.md` ("Closed").
+
+## Z747 (2026-10-09, step D51, the orchestrator, automode): the choices of D51's brief
+
+- Chosen: (a) all 19 VS Code colour themes through the converter, Dark Modern and Light Modern regenerated and their hand-written blocks removed; (b) the mapping of D51's "What to build" 2, each token the first key of its list, alphas composited over `--panel`, `--chip` following `--card`; (c) a missing key falls back to the same token of oculus's base of the theme's type, a high-contrast theme's `contrastBorder` and `contrastActiveBorder` first, a missing tab key left out; (d) a text token short of 4.5:1 nudged by `derive.ts`'s rule, VS Code's value named in the block's comment, the contrast threshold unchanged; (e) the converter at `utils/migrations/convert-vscode-themes.ts` with `--from` and `--check`, its output `src/lib/themes/vscode.css` committed; (f) rows named `vscode-<slug>` with glyph `theme_base` and the label "vscode " plus VS Code's label in lower case, after the Modern rows in VS Code's order.
+- Not chosen: the two Modern blocks kept by hand beside the generated ones (the lazy option: two ways to the same kind of theme, and the hand-written sentence stays); `--chip` from `badge.background` (a filled accent where oculus's chip is a neutral surface); VS Code's registered defaults as the fallback (they sit in its compiled workbench, no file the converter can read); a theme that misses 4.5:1 added with the check loosened (the lazy option); a new top-level `utils/` file (the folder is full).
+
+Where it applies: D51. Booked in `plan.md` Rulings and D51's brief ("Decisions taken in this brief").
+
 ## Z746 (2026-10-09, step D48, the orchestrator, automode): the choices of D48's brief
 
 - Chosen: (a) a side project's deadlines form a Focus group of their own, `side`, headed "side projects" with the glyph `spark`, after `task`; (b) a parked side project draws no Focus line; (c) a side project's write goes through the existing `writeManifest` and `writeSubtask` requests, the server looking a `side:` or `root:` id up through `readPersonal` and writing only a file it found, with `side_project_schema`'s field names; (d) a ticker row's button takes `padding: 1px 6px`, 18 px high, so the 18 px row keeps its height; (e) the Personal card draws `pin` (first in its status, with its glyph), `priority` (the lane card's flames), `latest`, `waiting-on`, `collaborators` and `related` as oculus draws them for a research project.
