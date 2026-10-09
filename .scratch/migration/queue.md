@@ -1,7 +1,7 @@
 In flight (0 of 6 slots in use): none.
 
 Queued, in order (8 steps):
-- D41 (links in Markdown checked, with M7's two defects and the Audit's wrong `type` item): stopped on open item 24 (G3's wording, Axel's); prepared again at the next /spec.
+- D41 (links in Markdown checked, with M7's two defects and the Audit's wrong `type` item): being prepared (/spec after ruling 24).
 - Q72 (the architecture re-read): paused (Axel).
 - R2 (release readiness): paused (Axel).
 - O29 (retiring the cockpit): paused (Axel).
