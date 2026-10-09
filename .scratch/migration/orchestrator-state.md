@@ -63,10 +63,10 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D47-report.md
   builder_usage: 118,882 tokens, 144 tool uses, 59.6 min; round 1: 237,020 tokens, 71 tool uses, 28.3 min
   brief_check: agents/reviews/D47-brief-check.md (a176332cf8ff0b352, claude-opus-5-5, 229,921 tokens, 87 tool uses, 10.2 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: with D46, config/text/app.yml line 13 (the same line: D47 changes `m1-m7`, D46 adds the palette rows; merged by hand at the later landing) and HELP.md (D47 lines 43, 134, 138-139, D46 lines 79-80); with D57, instances.ts (D57 line 83, D47 lines 139 and 164), saved/saved.ts (D57 lines 18, 372, 556-557, 604; D47 lines 526 and 562), config/layout.yml (D57 line 44, D47 line 65) and DESIGN.md (D57 line 238); with D41, DESIGN.md (D41 lines 23, 166, 575-576; D47 lines 225, 456), docs/views.md (D41 lines 73, 213; D47 lines 159-181) and sections/Outline.svelte (D41 the head comment and lines 147-151, D47 the import line); different lines except app.yml, each merge simple; config/behavior.yml line 257 and config/catalogs/options.yml line 832 (the Changes view's sentence), with D46 (behavior.yml 263-267, options.yml), D48 and D50 (options.yml), different lines, the merge simple
-  reviewer_report: agents/reviews/D47-refuter.md (af6ed9204a4a55b6f, claude-opus-5-5, 295,499 tokens, 92 tool uses, 39.4 min)
+  shared_paths: with D46, config/text/app.yml line 13 (the same line: D47 changes `m1-m7`, D46 adds the palette rows; merged by hand at the later landing) and HELP.md (D47 lines 43, 134, 138-139, D46 lines 79-80); with D57, instances.ts (D57 line 83, D47 lines 139 and 164), saved/saved.ts (D57 lines 18, 372, 556-557, 604; D47 lines 526, 557 and 562; line 557 is shared and is merged by hand at D47's landing as main's paragraph followed by D47's one sentence), config/layout.yml (D57 line 44, D47 line 65) and DESIGN.md (D57 line 238); with D41, DESIGN.md (D41 lines 23, 166, 575-576; D47 lines 225, 456), docs/views.md (D41 lines 73, 213; D47 lines 159-181) and sections/Outline.svelte (D41 the head comment and lines 147-151, D47 the import line); different lines except app.yml, each merge simple; config/behavior.yml line 257 and config/catalogs/options.yml line 832 (the Changes view's sentence), with D46 (behavior.yml 263-267, options.yml), D48 and D50 (options.yml), different lines, the merge simple
+  reviewer_report: agents/reviews/D47-refuter.md (af6ed9204a4a55b6f, claude-opus-5-5, 295,499 tokens, 92 tool uses, 39.4 min); over round 1: a03935f40685cc337, claude-opus-5-5, 222,848 tokens, 63 tool uses, 20.3 min
   round_1: agents/briefs/D47-round1.md, sent to the builder over the tree copied at .agents/worktrees/D47-round0
-  landing: not-started
+  landing: cherry-picking
   round: 1
 - step: D48
   executor: agent
@@ -76,6 +76,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 40059354d
   launched: 2026-10-09
   report: agents/reviews/D48-report.md
+  builder_usage: 178,779 tokens, 330 tool uses, 136.7 min
   brief_check: agents/reviews/D48-brief-check.md (abe9a0d14115bbbde, claude-opus-5-5, 276,858 tokens, 122 tool uses, 14.0 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: with D41, model-entities.ts (D41 lines 82, 103, 505; D48 SideProject 804-815), data/sources/manifests.ts (D41 lines 100-160; D48 the comments at 25 and 356-360), config/text/findings.yml (D41 removes line 36; D48 lines 43 and 45), vocab.yml (D41 line 228; D48 199-206), keys.test.ts (one line each), DESIGN.md (D41 23, 166, 503, 575-576; D48 552) and docs/views.md (D41 73 and its Audit section; D48 5-7, 21-23); with D46, options.yml (D46 beside search.max_hits; D48 the side_project_status description), keys.test.ts, HELP.md (D46 79-80; D48 105) and DESIGN.md (D46 142); with D47, keys.test.ts, HELP.md (D47 43, 134, 138-139), docs/views.md (D47 159-181) and DESIGN.md (D47 225, 456); with D57, DESIGN.md (D57 238); different lines, each merge simple
   landing: not-started
@@ -89,11 +90,13 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-09
   report: agents/reviews/D51-report.md
   brief_check: agents/reviews/D51-brief-check.md (a3f85385ee8a110b3, claude-opus-5-5, 261,325 tokens, 73 tool uses, 15.3 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D47 (225, 456), D48 (552) and D57 (238), D51 lines 72, 244 and 565; docs/views.md with D41 (73, 213), D47 (159-181) and D48 (5-7, 21-23), D51 line 243; src/lib/ui/controls/editor/kit/load.ts with D46 (lines 64 and 221-226), D51 the rules lookup near 370-405; docs/diagrams/ regenerated at landing; different lines, each merge simple
+  shared_paths: DESIGN.md with D41 (23, 166, 503, 575-576), D46 (142), D47 (225, 456), D48 (552) and D57 (238), D51 lines 72, 244 and 565; docs/views.md with D41 (73, 213), D47 (159-181) and D48 (5-7, 21-23), D51 line 243; DESIGN.md line 521 and config/catalogs/options.yml line 146 (D51), with D46, D47 and D48 on other lines of options.yml (857-860, 832, 1230); src/lib/ui/controls/editor/kit/look.ts (D51 line 42, written outside the brief's list as `paint`'s one caller; no other step in flight changes it); src/lib/ui/controls/editor/kit/load.ts with D46 (lines 64 and 221-226), D51 the rules lookup near 370-405; docs/diagrams/ regenerated at landing; different lines, each merge simple
   cases_ruling: agents/briefs/D51-cases.md (case 13 to option A, `--bg` from the side bar VS Code draws, the tint pairs for every theme)
   builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13); 246,281 tokens, 135 tool uses, 64.3 min (resumed on the cases ruling, to the report)
+  reviewer_report: agents/reviews/D51-refuter.md (a06b5571264eac4f2, claude-opus-5-5, 351,753 tokens, 109 tool uses, 43.5 min)
+  round_1: agents/briefs/D51-round1.md, sent to the builder over the tree copied at .agents/worktrees/D51-round0
   landing: not-started
-  round: 0
+  round: 1
 - step: D52
   executor: agent
   worker: claude:sonnet at ordo-high
