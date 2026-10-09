@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z746 (2026-10-09, step D48, the orchestrator, automode): the choices of D48's brief
+
+- Chosen: (a) a side project's deadlines form a Focus group of their own, `side`, headed "side projects" with the glyph `spark`, after `task`; (b) a parked side project draws no Focus line; (c) a side project's write goes through the existing `writeManifest` and `writeSubtask` requests, the server looking a `side:` or `root:` id up through `readPersonal` and writing only a file it found, with `side_project_schema`'s field names; (d) a ticker row's button takes `padding: 1px 6px`, 18 px high, so the 18 px row keeps its height; (e) the Personal card draws `pin` (first in its status, with its glyph), `priority` (the lane card's flames), `latest`, `waiting-on`, `collaborators` and `related` as oculus draws them for a research project.
+- Not chosen: side deadlines under `paper` or `task` (the lazy option; it misnames them); every side project on Focus whatever its status (a parked project's dates would crowd the board); a new write request for side manifests (a second request with the same fields); the 22 px button on an 18 px row (every row with a shown button would grow to 22 px); the six keys read and drawn nowhere (the lazy option: a key the reader writes and never sees).
+
+Where it applies: D48. Booked in `plan.md` Rulings and D48's brief ("Decisions taken in this brief").
+
 ## Z745 (2026-10-09, step D47, the orchestrator, automode): the choices of D47's brief check
 
 - Chosen: (a) a pick, pin or unpin in a tab's bar changes only `session` and `label` and keeps the tab's other state (`instances.ts` `pinInstance`, `unpinInstance`), so the Session view's closed sections and order survive a session change; (b) the saved-layout migration functions are renamed for the retired views they carry (`treeWithoutRetired`, `withoutRetiredTabs`) and the workbench held before pages goes through them; (c) the glyph `changes` leaves `glyphs.yml` and `icons.yml`, its last readers gone; (d) the chords read `m1-m5`; (e) each Session section is its own tree, Tab between them, as the Files view's; (f) G29's text is reworded at landing to name the retired tabs carried and dropped (`config`, `changes`, `agents`), with the new test's title; (g) the section state keys are `closed` and `sections`.

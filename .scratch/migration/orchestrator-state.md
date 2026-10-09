@@ -47,6 +47,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 55d0ba416
   launched: 2026-10-09
   report: agents/reviews/D57-report.md
+  builder_usage: 294,570 tokens, 79 tool uses, 23.7 min
   brief_check: agents/reviews/D57-brief-check.md (a7d14de49f99d0e6e, claude-opus-5-5, 223,069 tokens, 63 tool uses, 8.7 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: tools/oculus/DESIGN.md with D41 (D41 lines 23, 166, 503, 575-576, D57 line 238; different lines, the merge is simple)
   landing: not-started
@@ -60,7 +61,9 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-09
   report: agents/reviews/D46-report.md
   brief_check: agents/reviews/D46-brief-check.md (a3a03b9da01471872, claude-opus-5-5, 214,222 tokens, 92 tool uses, 12.2 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: with D41, tools/oculus/DESIGN.md (D41 lines 23, 166, 503, 575-576, D46 line 142), src/lib/state/client/context.ts and src/lib/state/sources/explorer/ops.svelte.ts (D41 adds the Markdown edit wiring, D46 the open call; separate hunks), tests/checks/source/keys.test.ts (one line each); with D57, tools/oculus/DESIGN.md (D57 line 238) and docs/window.md (D57 line 15, D46 the palette section 72-80); different lines, each merge is simple
+  shared_paths: with D41, tools/oculus/DESIGN.md (D41 lines 23, 166, 503, 575-576, D46 line 142), src/lib/state/client/context.ts and src/lib/state/sources/explorer/ops.svelte.ts (D41 adds the Markdown edit wiring, D46 the open call; separate hunks), tests/checks/source/keys.test.ts (one line each), tests/checks/config/config.test.ts (each its own keys) and docs/files-and-search.md (D41 lines 69 and 85, D46 the search section near 140); with D57, tools/oculus/DESIGN.md (D57 line 238), docs/window.md (D57 line 15, D46 the palette section 72-80) and src/lib/state/workbench/layout/index.ts (D57 the KeepRule export, D46 one export line for tabForKind); different lines, each merge is simple
+  cases_ruling: agents/briefs/D46-cases.md (case 9 to option A, the extra paths, the 50 ms bound for every keystroke)
+  builder_usage: 306,126 tokens, 80 tool uses, 16.3 min (the first run and the hand-back of case 9)
   landing: not-started
   round: 0
 - step: D47
