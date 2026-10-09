@@ -1,13 +1,9 @@
 In flight (1 of 6 slots in use): D41 (links in Markdown checked), builder launched 2026-10-09.
 
-Queued, in order (7 steps):
+Queued, in order (3 steps):
 - Q72 (the architecture re-read): paused (Axel).
-- R2 (release readiness): paused (Axel).
-- O29 (retiring the cockpit): paused (Axel).
-- O33 (oculus in its own repository): paused (Axel).
-- O34 (remote access): paused (Axel).
-- O35 (macOS, Linux and Windows): paused (Axel).
-- O36 (a second person in the hub): paused (Axel).
+- R2 (the first-run check): paused (Axel).
+- O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
