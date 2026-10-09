@@ -1,7 +1,7 @@
 In flight (3 of 6 slots in use):
-- D50 (the hub's own folder, its shareable files and its settings layer): held; its repair round 2 stopped by Axel, open items 31 and 32 under discussion.
-- D56 (the workbench): building, launched 2026-10-09; its first-run cases ruled (Z759).
-- R2 (the first-run check): building, launched 2026-10-09.
+- D50 (the hub's own folder, its shareable files and its settings layer): stopped in repair round 2; waits for Axel on open item 31.
+- D56 (the workbench): building, restarted 2026-10-09; its first-run cases ruled (Z759).
+- R2 (the first-run check): building, restarted 2026-10-09; its first-run cases ruled (Z760); open item 32 under discussion.
 
 Queued, in order (4 steps):
 - D49 (the help pages cut): waits for D50, whose edits to the guides, DATA-MAP and the docs list it folds.
