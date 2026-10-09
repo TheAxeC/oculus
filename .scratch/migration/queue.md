@@ -1,5 +1,5 @@
 In flight (6 of 6 slots in use):
-- D41 (links in Markdown checked): review over repair round 1 back, landing next, launched 2026-10-09.
+- D41 (links in Markdown checked): landing, its gate running, launched 2026-10-09.
 - D46 (the VS Code palette keys): builder resumed with the ruling on the 50 ms bound, launched 2026-10-09.
 - D47 (one Session view): repair round 1 sent, launched 2026-10-09.
 - D48 (side projects with the research keys that apply, and smaller Focus rows): builder running, launched 2026-10-09.
@@ -9,7 +9,7 @@ In flight (6 of 6 slots in use):
 Queued, in order (8 steps):
 - D49 (the help pages cut): waits for D46 and D47, whose text in docs/window.md and docs/views.md it carries.
 - D53 (unique views): waits for D56.
-- D50 (the hub's own folder, its shareable files and its settings layer): brief check back, its findings closed in the brief; waits for Axel's rulings on open items 25 and 26.
+- D50 (the hub's own folder, its shareable files and its settings layer): brief ready with open items 25 and 26 ruled (a); its preparation commit and a free slot next.
 - D55 (roots as hubs): waits for D50.
 - D56 (the workbench): waits for D47 and D52.
 - Q72 (the architecture re-read): paused (Axel).
@@ -19,8 +19,9 @@ Queued, in order (8 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D40 (the writing rules as editor marks), 2026-10-09.
-- D39 (hub keys as links), 2026-10-09.
+- D57 (an empty pane closes), 2026-10-09, 8505da5e1.
+- D40 (the writing rules as editor marks), 2026-10-09, fde67f62d.
+- D39 (hub keys as links), 2026-10-09, 0f790f449.
 - D36 (linters as VS Code's), 2026-10-09, 5ed0bc24c.
 - D43 (LaTeX navigation through texlab), 2026-10-08, a60dcb4fa.
 - M6 (the collection forms removed), 2026-10-08, 827d5b77c.
@@ -35,15 +36,15 @@ Landed, newest first:
 - PR4 (Present's presenter screen), 2026-10-07, eede4598.
 - D23c (library definitions read-only, the symbol selected on open), 2026-10-07, c0a4af9c.
 - PR3 (Present decks edited and generated), 2026-10-07, a2901490.
-- Q126 (DESIGN.md reduced where Q125 left it short), 2026-10-06.
-- D23 (the language server client), 2026-10-06.
-- Q125 (the user's guide, the design document and the guides), 2026-10-06.
+- Q126 (DESIGN.md reduced where Q125 left it short), 2026-10-06, 6561f82ae.
+- D23 (the language server client), 2026-10-06, 797e1e5dc.
+- Q125 (the user's guide, the design document and the guides), 2026-10-06, e7952e163.
 - PR2 (Present decks from any folder), 2026-10-06, 548004bc.
 - Q124 (every tree check with no limit, and the vitest races), 2026-10-06, abf4356cf.
 - O30b (the app's own build folders), 2026-10-06, 4ce24363b.
 - E4g (the apps guide), 2026-10-06, c86f10f2f.
 - PR1 (Present full screen), 2026-10-06, 687cd1d5c.
-- E4 (the apps), 2026-10-06.
+- E4 (the apps), 2026-10-06, 10ac00c69.
 - A3 (scheduled runs), 2026-10-06, 09509b5b6.
 - O30 (the native window in Electron), 2026-10-06, 3cb170eae.
 - D44 (Submit on a .slurm file), 2026-10-05, d7ff5fd3d.
