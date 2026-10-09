@@ -1,12 +1,12 @@
 In flight (3 of 6 slots in use):
 - D50 (the hub's own folder, its shareable files and its settings layer): stopped in repair round 2; waits for Axel on open item 31.
 - D56 (the workbench): building, restarted 2026-10-09; its first-run cases ruled (Z759).
-- R2 (the first-run check): building, restarted 2026-10-09; its first-run cases ruled (Z760); open item 32 under discussion.
+- R2 (the first-run check): building, restarted 2026-10-09; its first-run cases ruled (Z760).
 
 Queued, in order (4 steps):
 - D49 (the help pages cut): waits for D50, whose edits to the guides, DATA-MAP and the docs list it folds.
 - D55 (roots as hubs): waits for D50.
-- Q72 (the architecture re-read): waits for Axel on open item 33 (keep its wait for D49, D55 and D56, or start now).
+- Q72 (the architecture re-read): waits for D49, D55 and D56 (open item 33 (a)).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.

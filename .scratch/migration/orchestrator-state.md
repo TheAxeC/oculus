@@ -188,8 +188,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
 - Open item 31, reopened (2026-10-09, Axel): booked as ruled (a) with D50's repair round 2, which Axel had not approved; the round is stopped and the item is open again for discussion. D50 does not land until it is ruled.
-- Open item 32, reopened (2026-10-09, Axel): booked as ruled (a), G73; open again for discussion. R2 builds G73's test meanwhile, on Axel's word to restart R2; the test and the entry are dropped before landing if the ruling changes.
-- Open item 33 (2026-10-09, the queue): Q72, the architecture re-read, is queued to wait for D49, D55 and D56, an order the orchestrator set and Axel has not ruled; Axel unpaused Q72. Options: (a), recommended: keep the wait, so the re-read covers the code D49, D55 and D56 change before O33 opens the repository; (b) start Q72 now, which leaves those three steps' code unread by it. R2 stays before Q72, in the order `queue.md` gives.
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -211,6 +209,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports the four test sweeps leave unused (T1c's report names `ClientState` in `tests/fixtures/client.ts`, `sweepingOnError` in `scratch.ts` and `gitPayload` in `sessions-fixture.ts`; T1b, T1d and T1e name theirs): removed by the orchestrator at the landing of the last of T1b to T1e, after `sh utils/unused-exports.sh` and a grep of each name over `tests` and `src`, since each is unused only once all four have landed (T1e's brief, item 6).
 
 ## Closed items
+- 2026-10-09: open item 32 ruled (a) again by Axel after its reopening (G73, R2's builder writes its test); open item 33 ruled (a) by Axel: Q72 waits for D49, D55 and D56 (`plan.md` Rulings, "Open item 33"). Open item 31 stays open: Axel leans to (c).
 - 2026-10-09: open items 31 and 32 ruled (a) by Axel. 31: an approved machine app whose files change by anything other than oculus's own editor is asked again before it runs, built in D50 as its repair round 2 together with Z758's fixes (`plan.md` Rulings, "Open item 31"; D50's line, tag "ruling 31"). 32: a new guarded entry G73 for R2's start check with one table test written by R2's builder (`plan.md` Rulings, "Open item 32"; R2's line, tag "ruling 32").
 - 2026-10-09: open item 30 ruled (a) by Axel, with option (1) for its step: the Code theme menu and `code_theme:` also take the 19 VS Code themes of `vscode-rules.json` by their class names, listed before Shiki's; carried by D56 (`plan.md` D56's line, tag "ruling 30"; Rulings line "Open item 30").
 - 2026-10-09: open item 29 ruled (a) by Axel: a new guarded entry G72 for a Markdown file created, moved or renamed while the Markdown server runs, its slow-tagged test written by D41's builder; and D53 before D56 ruled by Axel, D56's line carrying the unique-view rule for workbench pages (`plan.md`, Rulings, Open item 29 and "D53 before D56").
