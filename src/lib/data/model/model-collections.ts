@@ -47,6 +47,8 @@ export type SchemaField = {
     when?: When;
     /** The field takes keys it does not declare. */
     open?: boolean;
+    /** On a `records` field: the value is a map from a name to one record, not a list of them. */
+    map?: boolean;
     /** The fields of each record of a `records` field. */
     fields?: SchemaField[];
 };

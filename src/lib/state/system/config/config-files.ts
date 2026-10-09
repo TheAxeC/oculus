@@ -18,17 +18,17 @@ const CONFIG_SUFFIX = '.yml';
 export const LOCAL_NAME = 'local.yml';
 
 /**
- * Whether a file of a served root is one no YAML language server is given: the machine's own
- * `local.yml`, a file under the hub's `secrets` folder or a file under `~/.oculus`. The folders are
- * the relay's (data/helpers/files/private-folders.ts); the roots are as the file listing answers
- * them, with absolute folders, and `home` is the machine's home folder as that listing gives it.
+ * Whether a file of a served root is in a folder that is private to the machine: under the hub's
+ * `secrets` folder or under `~/.oculus`. The folders are the relay's
+ * (data/helpers/files/private-folders.ts); the roots are as the file listing answers them, with
+ * absolute folders, and `home` is the machine's home folder as that listing gives it. No edit of a
+ * language server is made in such a file.
  */
-export function isWithheldFile(
+export function isPrivateFile(
     file: { root: string; path: string },
     roots: readonly { key: string; dir: string }[],
     home: string
 ): boolean {
-    if (file.root === ENGINE_ROOT && file.path === LOCAL_NAME) return true;
     const root = roots.find((one) => one.key === file.root);
     if (root === undefined) return false;
     const hub = roots.find((one) => one.key === HUB_ROOT);
@@ -36,6 +36,19 @@ export function isWithheldFile(
     return privateFolders(hub?.dir ?? null, home).some(
         (folder) => pathUnder(folder, absolute) !== null
     );
+}
+
+/**
+ * Whether a file of a served root is one no YAML language server is given: the machine's own
+ * `local.yml` or a private file (`isPrivateFile`).
+ */
+export function isWithheldFile(
+    file: { root: string; path: string },
+    roots: readonly { key: string; dir: string }[],
+    home: string
+): boolean {
+    if (file.root === ENGINE_ROOT && file.path === LOCAL_NAME) return true;
+    return isPrivateFile(file, roots, home);
 }
 
 /** The folder under config/ that holds the vocabulary catalogs. */

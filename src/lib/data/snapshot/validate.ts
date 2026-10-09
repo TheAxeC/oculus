@@ -36,9 +36,6 @@ import { personalFindings } from './normalise-personal.ts';
 import { isWords } from './schema/check.ts';
 import { checkResources } from './validate-kinds.ts';
 
-/** Which people and projects exist, so a `waiting-on` can be resolved against both. */
-type IdSets = { people: Set<string>; projects: Set<string> };
-
 /** A text, which an id of a relation field must be. */
 const idShape = z.string();
 
@@ -98,9 +95,10 @@ function checkClusterFolder(
 
 /**
  * The relation fields a manifest may not leave as a bare `key:`, and whether each holds a list or
- * one text. The generated schemas accept null on every field, which is what a bare key reads as,
- * and accept `waiting-on` written as one text because it names no list of keys, so these two cases
- * stay a check of their own.
+ * one text. The generated schemas accept null on every field, which is what a bare key reads as.
+ * They accept `waiting-on` written as one text while a source of its `from` was not read, since
+ * the field is then held to no list of keys, so that case stays a check of its own: once both
+ * sources read, the schema reports the one text itself and this check leaves it alone.
  */
 const NOT_BARE: { field: string; list: boolean }[] = [
     { field: 'domain', list: false },
@@ -117,16 +115,22 @@ function mustBe(catalog: TextCatalog, list: boolean): string {
     return findingText(catalog, 'findings.schema.is_text');
 }
 
-/** A relation field is not a bare key, and `waiting-on` is a list when it is there. */
+/**
+ * A relation field is not a bare key, and `waiting-on` is a list when it is there. `listed` holds
+ * the fields whose `from` sources were all read, which the schema holds to a list itself.
+ */
 function checkRelationShapes(
     manifest: RawManifest,
+    listed: ReadonlySet<string>,
     catalog: TextCatalog,
     findings: Finding[]
 ): void {
     for (const { field, list } of NOT_BARE) {
         const value = manifest[field];
         if (value === undefined) continue;
-        const wrong = value === null || (field === 'waiting-on' && !Array.isArray(value));
+        const wrong =
+            value === null ||
+            (field === 'waiting-on' && !Array.isArray(value) && !listed.has(field));
         if (!wrong) continue;
         findings.push({
             file: manifest.file,
@@ -185,31 +189,17 @@ function checkFolderNames(raw: RawPortfolio, catalog: TextCatalog, findings: Fin
 
 /**
  * `waiting-on` names what a project waits for before it moves: a person of the people registry, or
- * another project by its id. A value that is neither resolves against nothing, so the strip can
- * only draw it as written and no reader can look it up.
+ * another project by its id; the schema holds each value to those keys, as it does `related`. A
+ * project that waits on itself would never move, so that is a finding of its own.
  */
-function checkWaitingOn(
-    manifest: RawManifest,
-    keys: Set<string>,
-    projects: Set<string>,
-    catalog: TextCatalog,
-    findings: Finding[]
-): void {
+function checkWaitingOn(manifest: RawManifest, catalog: TextCatalog, findings: Finding[]): void {
     if (manifest['waiting-on'] === undefined) return;
     for (const item of readOr(idsShape, manifest['waiting-on'], [])) {
-        if (item === manifest.id) {
-            findings.push({
-                file: manifest.file,
-                key: 'waiting-on',
-                message: findingText(catalog, 'findings.validate.waiting_on_itself', item)
-            });
-            continue;
-        }
-        if (keys.has(item) || projects.has(item)) continue;
+        if (item !== manifest.id) continue;
         findings.push({
             file: manifest.file,
             key: 'waiting-on',
-            message: findingText(catalog, 'findings.validate.no_waiting_on', item)
+            message: findingText(catalog, 'findings.validate.waiting_on_itself', item)
         });
     }
 }
@@ -399,14 +389,6 @@ function checkFundingStatements(
     });
 }
 
-/** Which ids exist. A project is known by its folder name, which is the reader's `id`. */
-function idSets(raw: RawPortfolio): IdSets {
-    return {
-        people: new Set(raw.registries.people.entries.map((entry) => entry.key).filter(Boolean)),
-        projects: new Set(raw.manifests.map((manifest) => manifest.id))
-    };
-}
-
 /** By file then key, and by nothing else: the sort is stable, so equal pairs keep their order. */
 export function sortFindings(findings: Finding[]): Finding[] {
     return findings.sort((a, b) => {
@@ -436,14 +418,14 @@ function checkRetiredLabels(raw: RawPortfolio, rules: ValidationRules, findings:
  */
 export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     const findings: Finding[] = [...raw.findings];
-    const ids = idSets(raw);
     const catalog = rules.text;
+    const listed = rules.listed ?? new Set<string>();
 
     for (const manifest of raw.manifests) {
-        checkRelationShapes(manifest, catalog, findings);
+        checkRelationShapes(manifest, listed, catalog, findings);
         checkSelfRelated(manifest, catalog, findings);
         checkClusterFolder(manifest, catalog, findings);
-        checkWaitingOn(manifest, ids.people, ids.projects, catalog, findings);
+        checkWaitingOn(manifest, catalog, findings);
     }
     checkFolderNames(raw, catalog, findings);
     checkPeople(raw, catalog, findings);

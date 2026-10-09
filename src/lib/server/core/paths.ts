@@ -5,8 +5,11 @@
 // route may list the root it serves), `below` does not (a write into the hub may never name the hub
 // folder itself). Both resolve first, so a `..` is worked out before the test and a sibling whose
 // name starts with the folder's is never taken for a child of it. A folder of `/` holds only
-// itself, since no resolved path below it starts with `//`. It sits in server/core, the bottom of
-// the server's folder order, so every server module reads the one rule from here.
+// itself, since no resolved path below it starts with `//`. `under` asks the same of a list of
+// folders for a real path, each folder compared as written and as resolved: it tells the folders
+// this machine keeps to itself (data/helpers/files/private-folders.ts) from the rest. It sits in
+// server/core, the bottom of the server's folder order, so every server module reads the one rule
+// from here.
 
 import { realpathSync } from 'node:fs';
 import { isAbsolute, resolve, sep } from 'node:path';
@@ -29,6 +32,16 @@ export function below(path: string, dir: string): boolean {
     const full = resolve(path);
     const root = resolve(dir);
     return full !== root && full.startsWith(root + sep);
+}
+
+/** Whether a real path lies in one of the folders, each compared as written and as resolved. */
+export function under(real: string, folders: readonly string[]): boolean {
+    const target = real.normalize('NFC');
+    return folders.some((folder) => {
+        const own = resolve(folder).normalize('NFC');
+        const there = realPath(folder, true);
+        return inside(target, own) || (there !== null && inside(target, there.normalize('NFC')));
+    });
 }
 
 /**

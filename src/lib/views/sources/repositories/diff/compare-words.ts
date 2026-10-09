@@ -8,6 +8,8 @@
 // A Replace Preview is refused with the words of a replace (data/file-ops.ts OPS_REFUSALS), and the
 // pane says the sentence the catalog holds for the word, or its general one for any other.
 //
+// A pane over a file of a Refactor Preview that is no longer pending says so.
+//
 // A read of the change a commit made that fails says so with the commit's short form as git prints
 // it, the one the pane's title shows, and none of git's words.
 
@@ -44,6 +46,7 @@ function previewSentence(word: unknown, t: (key: string) => string): string {
 export function failureSentence(
     subject: {
         replace?: unknown;
+        refactor?: unknown;
         against?: unknown;
         save?: string;
         commit?: string;
@@ -53,6 +56,7 @@ export function failureSentence(
     t: (key: string, ...args: string[]) => string
 ): string {
     if (subject.replace !== undefined) return previewSentence(error, t);
+    if (subject.refactor !== undefined) return t('repositories.diff_refactor_gone');
     if (subject.against !== undefined || (subject.save ?? '') !== '') {
         return compareSentence(error, t);
     }

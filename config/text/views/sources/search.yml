@@ -1,4 +1,4 @@
-# Oculus text owned by the Search, References and Problems views: the query row, the count line, the results grouped by file and the problems of the page.
+# Oculus text owned by the Search, References, Refactor Preview and Problems views: the query row, the count line, the results grouped by file, the edits of a pending refactoring and the problems of the page.
 text:
     problems:
         actions: Problems actions
@@ -29,6 +29,23 @@ text:
         show_documentation: Show Documentation
         toolbar: Problems
         warnings: Show Warnings
+    refactor_preview:
+        another: Another refactoring is being previewed.
+        another_detail: Continue discards that one and previews this one.
+        apply: Apply
+        apply_title: Make the checked edits
+        cancel: Cancel
+        check_edit: Make this edit
+        check_file: Make the edits of {0}
+        continue: Continue
+        discard: Discard
+        discard_title: Drop this preview without changing a file
+        edit_title: Compare {0} with the checked edits, at line {1}
+        empty: Invoke a code action, like rename, to see a preview of its changes here.
+        file_title: Compare {0} with the checked edits
+        results: Refactor Preview
+        title_plain: Refactoring
+        title_rename: Renaming '{0}' to '{1}'
     references:
         actions: References actions
         clear: Clear
@@ -150,6 +167,8 @@ text:
     views:
         problems: Problems
         problems_glyph: warn
+        refactor_preview: Refactor Preview
+        refactor_preview_glyph: diff
         references: References
         references_glyph: references
         search: Search

@@ -40,6 +40,7 @@ import {
 } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 import { refCompareUrl, workspaceUrl } from './diff/compare.ts';
+import { refactorShape, type RefactorSubject } from './diff/refactor-subject.ts';
 import { replacePreviewShape } from './replace-preview.ts';
 
 export { validName, worktreePath } from '../../../data/helpers/worktrees.ts';
@@ -135,7 +136,9 @@ export function worktreeDiffUrl(root: string, path: string): string {
  * comparison of two files: the file at `root` and `path` on the right and `against` on the left.
  * `unsaved` is the instance id of a source tab, which makes the pane the comparison of that tab's
  * file as the disk holds it (left) with the tab's own text (right, editable): the tab's save
- * conflict. `line` is the line of the new side the pane opens at, 0 for its top. `session` is the
+ * conflict. `refactor` names the pending Refactor Preview, which makes the pane the comparison of
+ * one of its files with the file as the checked edits would leave it. `line` is the line of the new
+ * side the pane opens at, 0 for its top. `session` is the
  * id of the session record the pane was opened for, empty or absent for a pane opened from the
  * Repositories view.
  */
@@ -160,6 +163,8 @@ export type DiffSubject = {
     save?: string;
     /** The replacements of a Search tab, for the pane previewing them in the file. */
     replace?: ReplacePreview;
+    /** The pending Refactor Preview, for the pane over one of its files. */
+    refactor?: RefactorSubject;
     /** The source tab whose unsaved text is the right side, for the pane over a save conflict. */
     unsaved?: string;
     line?: number;
@@ -179,6 +184,7 @@ function sideOf(subject: DiffSubject): string {
         return `compare@${subject.against.root}:${subject.against.path}`;
     if ((subject.save ?? '') !== '') return `save@${subject.save ?? ''}`;
     if (subject.replace !== undefined) return 'replace';
+    if (subject.refactor !== undefined) return 'refactor';
     if ((subject.unsaved ?? '') !== '') return `unsaved@${subject.unsaved ?? ''}`;
     if ((subject.group ?? '') !== '') return `group@${subject.group ?? ''}`;
     if (subject.worktree) return 'worktree';
@@ -228,6 +234,7 @@ const heldDiffShape = z
         compare: compareShape.optional().catch(undefined),
         workspace: z.literal(true).optional().catch(undefined),
         replace: replacePreviewShape.optional().catch(undefined),
+        refactor: refactorShape.optional().catch(undefined),
         unsaved: z.string().optional().catch(undefined),
         line: anyNumberShape.catch(0),
         session: z.string().catch('')
@@ -253,6 +260,7 @@ export function heldDiff(state: unknown): DiffState {
             compare: undefined,
             workspace: undefined,
             replace: undefined,
+            refactor: undefined,
             unsaved: undefined,
             line: 0,
             session: ''
@@ -292,6 +300,7 @@ export function diffActs(state: DiffSubject): boolean {
         state.compare === undefined &&
         state.workspace !== true &&
         state.replace === undefined &&
+        state.refactor === undefined &&
         (state.unsaved ?? '') === '' &&
         state.against === undefined
     );

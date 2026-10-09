@@ -8,7 +8,8 @@
 // required field that is missing, a key that stands twice in a referenced file, and a `schema:`
 // block that does not read. The documents checked are the project manifests and the hub's data
 // files. The other schemas serve the editor alone: the readers of their files report their own
-// findings.
+// findings. The texts of the manifests and hub data files the run read come back with it, so the
+// reference index (snapshot/references/) scans them without reading a file again.
 //
 // Server side only: it reads the files it checks.
 
@@ -17,20 +18,45 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { findingText } from '../../helpers/finding-text.ts';
 import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files.ts';
-import type { Finding, PortfolioConfig, RawPortfolio, ScanRule } from '../../model/index.ts';
+import type {
+    Finding,
+    PortfolioConfig,
+    RawPortfolio,
+    ScanRule,
+    SchemaField
+} from '../../model/index.ts';
 import { isSideTier, MANIFEST } from '../../helpers/hub-names.ts';
 import { checkDocument, isWords, type Checker, type SchemaDoc } from './check.ts';
 import { fileSchema, writtenFields, type FileKind } from './hub.ts';
 import { schemaText, type JsonSchema } from './json.ts';
-import { duplicateKeys, hubLists, listsOf, unreadSources, vocabLists } from './lists.ts';
+import { duplicateKeys, hubLists, listsOf, vocabLists } from './lists.ts';
 import { manifestSchema } from './manifest.ts';
 import { fieldsOf } from './field.ts';
-import type { Context, SchemaProblem } from './record.ts';
+import { problemText, type Context, type SchemaProblem } from './record.ts';
 import type { SchemaRule, SchemaSet } from './set.ts';
 import { projectFileSchemas } from './static.ts';
 
-/** What one build of the schemas gives: the set for the editor and the findings for the gate. */
-export type SchemaRun = { set: SchemaSet; findings: Finding[] };
+/** A hub data file the build read: its text and the fields of its `schema:` block, if it reads. */
+type HubFileRead = {
+    /** The path from the hub. */
+    path: string;
+    text: string;
+    fields: SchemaField[] | undefined;
+    kind: FileKind;
+    list: string;
+};
+
+/** The texts one build read, which the reference index scans so no file is read twice. */
+export type ReadTexts = {
+    hub: HubFileRead[];
+    manifests: { file: string; text: string }[];
+};
+
+/**
+ * What one build of the schemas gives: the set for the editor, the findings for the gate and the
+ * texts the build read.
+ */
+export type SchemaRun = { set: SchemaSet; findings: Finding[]; read: ReadTexts };
 
 /** A hub data file the gate checks, by its hub-relative path. */
 type HubFile = { path: string; kind: FileKind; list: string; collection: boolean };
@@ -85,32 +111,27 @@ function readText(file: string): string | undefined {
 
 /** The finding for a schema that names a source or a field that does not exist. */
 function problemFinding(config: PortfolioConfig, file: string, problem: SchemaProblem): Finding {
-    const message =
-        problem.word === 'from'
-            ? findingText(config.text, 'findings.schema.bad_from', ...problem.args)
-            : findingText(config.text, 'findings.schema.bad_when', ...problem.args);
-    return { file, key: problem.key, message };
+    return { file, key: problem.key, message: problemText(config.text, problem) };
 }
 
 /**
  * Generate the schemas of one build and check the hub against them. `checker` holds the validators
- * compiled so far, so a build whose schemas did not change compiles nothing.
+ * compiled so far, so a build whose schemas did not change compiles nothing. `unread` names the
+ * sources whose file did not read, whose keys are not known.
  */
 export function runSchemas(
     hub: string,
     config: PortfolioConfig,
     raw: RawPortfolio,
-    checker: Checker
+    checker: Checker,
+    unread: ReadonlySet<string>
 ): SchemaRun {
     const texts: Record<string, string> = {};
     const rules: SchemaRule[] = [];
     const findings: Finding[] = [];
     const docs: SchemaDoc[] = [];
-    const lists = listsOf(
-        hubLists(raw),
-        vocabLists(config.merged, VOCAB_FILE_KEYS),
-        unreadSources(raw, hub, config.registries)
-    );
+    const read: ReadTexts = { hub: [], manifests: [] };
+    const lists = listsOf(hubLists(raw), vocabLists(config.merged, VOCAB_FILE_KEYS), unread);
     const context = (at: string): Context => ({ lists, problems: [], at });
     const add = (name: string, schema: JsonSchema, rule: Omit<SchemaRule, 'name'>): void => {
         texts[name] = schemaText(schema);
@@ -130,18 +151,21 @@ export function runSchemas(
         const path = join(hub, file.path);
         const text = readText(path);
         if (text === undefined) continue;
+        const own = { path: file.path, text, kind: file.kind, list: file.list };
         let parsed: unknown;
         try {
             parsed = parse(text);
         } catch {
+            read.hub.push({ ...own, fields: undefined });
             continue;
         }
         const held =
             typeof parsed === 'object' && parsed !== null
                 ? (parsed as Record<string, unknown>)
                 : {};
+        const fields = held.schema === undefined ? undefined : fieldsOf(held.schema);
+        read.hub.push({ ...own, fields });
         if (held.schema === undefined) continue;
-        const fields = fieldsOf(held.schema);
         if (fields === undefined) {
             findings.push({
                 file: path,
@@ -174,9 +198,10 @@ export function runSchemas(
     for (const doc of docs) {
         const text = doc.text === '' ? readText(doc.file) : doc.text;
         if (text === undefined) continue;
+        if (doc.name === 'manifest') read.manifests.push({ file: doc.file, text });
         findings.push(...checkDocument({ ...doc, text }, texts, checker, config.text));
     }
     findings.push(...duplicateKeys(raw, config.text, readText));
     checker.keepOnly(new Set(Object.values(texts)));
-    return { set: { rules, texts }, findings };
+    return { set: { rules, texts }, findings, read };
 }

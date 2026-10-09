@@ -35,6 +35,15 @@
 // symbols, the semantic tokens, the formatting) go through `ask`, which answers the protocol's
 // result as the relay sent it, addresses in the page's form.
 //
+// A rename is asked in two steps and the transport answers each as VS Code's language client does
+// (transport/renames.ts). The `prepareRename` the client sends is held back until the server has
+// answered; a refusal or no answer rejects it with the sentence, which Monaco shows at the caret,
+// and every other answer is passed on. The rename a server refuses is told as a notice of the page,
+// since the box is closed by then. The edit a rename answers is handed to the host with the mark
+// of whether the reader asked for the preview (`TransportHost.applyEdit`), and the host decides
+// whether it is made at once or shown first. The places a definition, declaration, type definition
+// or implementation answer names are told to the host (`TransportHost.targeted`).
+//
 // A library file a server names in an answer (`oculus-lib:` in uris.ts) is told to the host with
 // the root of the document the request was made for, and is answered like any other file: the model
 // of the tab that holds it, else a peek model the host reads through the channel. A library address
@@ -57,7 +66,6 @@
 
 import type { LspDiagnostic, LspEditOutcome, LspFrame, LspPort } from './services';
 import {
-    ADDRESSES,
     APPLY_COMMAND,
     BARE_DOCUMENT,
     Closed,
@@ -77,8 +85,18 @@ import {
     type TextEdit
 } from './transport/messages';
 import { Connection } from './transport/connection';
+import { addressesIn, pageOf, toPage } from './transport/addresses';
 import { GoneRoots } from './transport/roots';
 import { EDITING, type Doc, type Own, type Peek, type Waiting } from './transport/records';
+import {
+    JUMPS,
+    PREPARE,
+    RENAME,
+    Settling,
+    placesOf,
+    refusalOf,
+    type Jump
+} from './transport/renames';
 import {
     EditTokens,
     declaringEdits,
@@ -104,8 +122,23 @@ export type TransportHost = {
     drop(model: LspModel): void;
     /** Apply edits to a registered model as one undo stop; false when it could not be. */
     apply(model: LspModel, edits: readonly TextEdit[]): boolean;
-    /** Make the edit a server asked for, all or none; the outcome says why not. */
-    applyEdit(edit: unknown): Promise<LspEditOutcome>;
+    /**
+     * Make the edit a server asked for, all or none; the outcome says why not. `preview` is set for
+     * the answer of a rename the reader asked to see before it is made, which is then shown and
+     * not made until the reader says so.
+     */
+    applyEdit(edit: unknown, preview: boolean): Promise<LspEditOutcome>;
+    /** The reader asks for the next rename to be previewed, or the mark is cleared (false). */
+    markPreview(marked: boolean): void;
+    /** Whether the next rename was marked for the preview; reading it clears the mark. */
+    takePreview(): boolean;
+    /**
+     * The places the answer to a jump named, for the editor with the address `asking` (the
+     * client's address of its model), in the client's addresses.
+     */
+    targeted(asking: string, places: readonly Jump[]): void;
+    /** A catalog line of the page's words, filled with `words`. */
+    words(key: string, ...words: string[]): string;
     /**
      * A server's diagnostics for one file, whether or not a model holds it: the file's address,
      * and its place when it is a file of a served root.
@@ -350,16 +383,29 @@ export class LspTransport {
     /** One request of the client sent to the server with its addresses turned. */
     #forward(id: number | string, method: string, given: unknown): Promise<void> {
         const asking = this.#askingOf(given);
-        const params = this.#out(given);
+        const params = toPage(this.#addresses, given);
         if (params === null || this.#left(asking)) {
             this.#enqueue(() => this.#deliver({ jsonrpc: '2.0', id, result: null }));
             return Promise.resolve();
         }
         const asked = EDITING.includes(method) ? this.#versions() : null;
         const listed = method === 'completionItem/resolve' ? { listed: this.#listed } : {};
-        this.#waiting.set(id, { method, params: given, asking, asked, ...listed });
+        // A rename is previewed when the reader marked it; asking whether a rename can be made
+        // clears an earlier mark, and the client is told nothing until the server has answered.
+        if (method === PREPARE) this.#host.markPreview(false);
+        const preview = method === RENAME ? { preview: this.#host.takePreview() } : {};
+        const settle = method === PREPARE ? new Settling() : undefined;
+        this.#waiting.set(id, {
+            method,
+            params: given,
+            asking,
+            asked,
+            ...listed,
+            ...preview,
+            settle
+        });
         this.#write({ jsonrpc: '2.0', id, method, params: params.value });
-        return Promise.resolve();
+        return settle?.promise ?? Promise.resolve();
     }
 
     /**
@@ -398,44 +444,6 @@ export class LspTransport {
     }
 
     /**
-     * A message for the server with every address turned from the client's form into the page's,
-     * or null when an address names no registered model.
-     */
-    #out(value: unknown): { value: unknown } | null {
-        const missing: string[] = [];
-        const page = (address: string): string => {
-            const found = this.#addresses.get(address);
-            if (found === undefined) {
-                missing.push(address);
-                return '';
-            }
-            return found;
-        };
-        const walk = (item: unknown): unknown => {
-            if (Array.isArray(item)) return item.map(walk);
-            if (!isRecord(item)) return item;
-            const copy: Record<string, unknown> = {};
-            for (const [key, inner] of Object.entries(item)) {
-                if (ADDRESSES.includes(key) && typeof inner === 'string') copy[key] = page(inner);
-                else if (key === 'changes' && isRecord(inner)) {
-                    const changes: Record<string, unknown> = {};
-                    for (const [address, edits] of Object.entries(inner)) {
-                        changes[page(address)] = walk(edits);
-                    }
-                    copy[key] = changes;
-                } else if (key === 'arguments' && Array.isArray(inner)) {
-                    copy[key] = inner.map((one) =>
-                        typeof one === 'string' && this.#addresses.has(one) ? page(one) : walk(one)
-                    );
-                } else copy[key] = walk(inner);
-            }
-            return copy;
-        };
-        const walked = walk(value);
-        return missing.length > 0 ? null : { value: walked };
-    }
-
-    /**
      * Ask the server about a registered model's file and answer the protocol's result, addresses in
      * the page's form. Rejects with `Closed` when the port is closed or the transport ended, and
      * with the server's own error otherwise.
@@ -457,7 +465,7 @@ export class LspTransport {
             const kept = this.#tokens.get(args[0]);
             return kept === undefined ? null : this.#applyKept(kept);
         }
-        const turned = this.#out({ arguments: args });
+        const turned = toPage(this.#addresses, { arguments: args });
         if (turned === null) return null;
         const { arguments: given } = turned.value as { arguments: unknown[] };
         return this.#request({ command, arguments: given }, 'workspace/executeCommand', null);
@@ -484,13 +492,14 @@ export class LspTransport {
      */
     async #commit(
         edit: unknown,
-        asked: ReadonlyMap<string, number> | null
+        asked: ReadonlyMap<string, number> | null,
+        preview = false
     ): Promise<LspEditOutcome> {
         const stale = staleFile(edit, this.#versions(), asked);
         if (stale !== null) {
             return { applied: false, notice: 'lsp_edit_changed', words: [nameOfPage(stale)] };
         }
-        return await this.#host.applyEdit(edit);
+        return await this.#host.applyEdit(edit, preview);
     }
 
     /**
@@ -603,6 +612,17 @@ export class LspTransport {
         const waiting = this.#waiting.get(id);
         if (waiting === undefined) return;
         this.#waiting.delete(id);
+        if (waiting.settle !== undefined) {
+            // The server refused a rename, or answered none: Monaco shows the words there.
+            const refusal = this.#left(waiting.asking)
+                ? null
+                : refusalOf(message, (key, ...words) => this.#host.words(key, ...words));
+            if (refusal !== null) {
+                waiting.settle.reject(refusal);
+                return;
+            }
+            waiting.settle.resolve();
+        }
         // A request the relay could not pass on, as while its server restarts, is answered with no
         // result: the Monaco client turns an error into a provider's rejection, which Monaco throws
         // to the page as an uncaught error.
@@ -612,6 +632,14 @@ export class LspTransport {
         }
         // The relay holds no document of a root that left, so its error for one is no answer.
         if (message.error !== undefined && this.#left(waiting.asking)) {
+            this.#deliver({ jsonrpc: '2.0', id, result: null });
+            return;
+        }
+        if (message.error !== undefined && waiting.method === RENAME) {
+            // The box is closed by now and the caret may have moved, so the refusal is a notice.
+            const given = message.error.message;
+            const words = given === '' ? this.#host.words('lsp_rename_refused_empty') : given;
+            this.#host.notice('lsp_edit_refused', words);
             this.#deliver({ jsonrpc: '2.0', id, result: null });
             return;
         }
@@ -626,7 +654,7 @@ export class LspTransport {
         }
         // The model the request was made for went before the answer came: nothing is made for it.
         if (waiting.asking !== null && !this.#addresses.has(waiting.asking)) {
-            if (waiting.method === 'textDocument/rename' && message.result != null) {
+            if (waiting.method === RENAME && message.result != null) {
                 this.#host.notice('lsp_edit_gone');
             }
             this.#deliver({ jsonrpc: '2.0', id, result: null });
@@ -637,12 +665,12 @@ export class LspTransport {
             result = this.#codeActions(waiting, result);
         } else if (waiting.method === 'codeAction/resolve') {
             result = keeping(result, this.#tokens, waiting);
-        } else if (waiting.method === 'textDocument/rename' && result !== null) {
+        } else if (waiting.method === RENAME && result !== null) {
             // Monaco's rename applies the edit it is given to the models it can name and announces
             // what it applied, so the page makes the real edit and Monaco is given no result: an
             // empty edit would be announced as "Made 0 edits in 0 files". Monaco's standalone
             // editor writes its "No result." for that answer to the console only.
-            const outcome = await this.#commit(result, waiting.asked);
+            const outcome = await this.#commit(result, waiting.asked, waiting.preview === true);
             if (!outcome.applied) this.#host.notice(outcome.notice, ...outcome.words);
             this.#deliver({ jsonrpc: '2.0', id, result: null });
             return;
@@ -651,6 +679,9 @@ export class LspTransport {
         if (turned === DROP) {
             this.#deliver({ jsonrpc: '2.0', id, result: null });
             return;
+        }
+        if (JUMPS.includes(waiting.method) && waiting.asking !== null) {
+            this.#host.targeted(waiting.asking, placesOf(turned));
         }
         if (waiting.method === 'textDocument/completion') this.#listed = waiting.params;
         const request =
@@ -724,7 +755,7 @@ export class LspTransport {
     #notification(message: Rpc): void {
         const params = isRecord(message.params) ? message.params : {};
         if (message.method === 'textDocument/publishDiagnostics') {
-            const page = this.#pageOf(params.uri);
+            const page = pageOf(params.uri);
             if (page === null || !Array.isArray(params.diagnostics)) return;
             const place = placeOf(page);
             this.#host.diagnostics(
@@ -734,7 +765,7 @@ export class LspTransport {
             );
         } else if (message.method === 'textDocument/inactiveRegions') {
             const document = params.textDocument;
-            const page = this.#pageOf(isRecord(document) ? document.uri : undefined);
+            const page = pageOf(isRecord(document) ? document.uri : undefined);
             if (page === null || !Array.isArray(params.regions)) return;
             const place = placeOf(page);
             this.#host.inactive(
@@ -744,38 +775,12 @@ export class LspTransport {
         }
     }
 
-    /** A file's address when it is one of a served root or a library file, else null. */
-    #pageOf(uri: unknown): string | null {
-        if (typeof uri !== 'string') return null;
-        return placeOf(uri) !== null || libraryOf(uri) !== null ? uri : null;
-    }
-
     // ------------------------------------------------------------------ addresses in answers
-
-    /** The addresses of documents a message names, in every field that holds one. */
-    #addressesIn(value: unknown): Set<string> {
-        const wanted = new Set<string>();
-        const collect = (item: unknown): void => {
-            if (Array.isArray(item)) {
-                for (const one of item) collect(one);
-                return;
-            }
-            if (!isRecord(item)) return;
-            for (const [key, inner] of Object.entries(item)) {
-                if (ADDRESSES.includes(key) && typeof inner === 'string') wanted.add(inner);
-                else if (key === 'changes' && isRecord(inner)) {
-                    for (const address of Object.keys(inner)) wanted.add(address);
-                } else collect(inner);
-            }
-        };
-        collect(value);
-        return wanted;
-    }
 
     /** Tell the host the library files an answer names, under the root its request was for. */
     #named(value: unknown, root: string | null): void {
         if (root === null) return;
-        for (const address of this.#addressesIn(value)) {
+        for (const address of addressesIn(value)) {
             if (libraryOf(address) !== null) this.#host.library(address, root);
         }
     }
@@ -789,7 +794,7 @@ export class LspTransport {
     async #in(value: unknown, asking: string | null): Promise<unknown> {
         const root = this.#docOf(asking)?.place.root ?? null;
         const models = new Map<string, string | null>();
-        for (const page of this.#addressesIn(value)) {
+        for (const page of addressesIn(value)) {
             if (libraryOf(page) !== null) {
                 if (root === null) {
                     models.set(page, null);
@@ -851,6 +856,7 @@ export class LspTransport {
         this.#watching.clear();
         for (const own of this.#own.values()) own.reject(new Closed());
         this.#own.clear();
+        for (const waiting of this.#waiting.values()) waiting.settle?.resolve();
         this.#waiting.clear();
         this.#tokens.clear();
         for (const peek of this.#peeks.values()) this.#host.drop(peek.model);

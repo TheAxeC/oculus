@@ -34,21 +34,29 @@ export function openLibraryFile(
 
 /**
  * Open the file a reference names at its line and column: a file of a served root, or a library
- * file, which a reference carries as an address in `path` with the file's name in `library`.
+ * file, which a reference carries as an address in `path` with the file's name in `library`. With
+ * an `end` (a line and column, counted from one) the range from the start to it is selected, the
+ * whole match of a reference; with none the word at the column is.
  */
 export function openReference(
     client: ClientState,
     file: { root: string; path: string; library?: string },
     line: number,
     column: number,
+    end?: { line: number; column: number },
     options?: OpenOptions
 ): string {
+    const to = end === undefined ? {} : { endLine: end.line, endColumn: end.column };
     if (file.library !== undefined) {
         return openLibraryFile(
             client,
-            { library: file.path, name: file.library, line, column },
+            { library: file.path, name: file.library, line, column, ...to },
             options
         );
     }
-    return openSourceFile(client, { root: file.root, path: file.path, line, column }, options);
+    return openSourceFile(
+        client,
+        { root: file.root, path: file.path, line, column, ...to },
+        options
+    );
 }

@@ -40,7 +40,6 @@ import {
     refusesFile,
     type LspServerFacts
 } from '$lib/data/prose/lsp-servers';
-import { LSP_EDIT_NOTICES } from '$lib/data/prose/text-edits';
 import { hierarchyBelow, hierarchyRoots } from '$lib/views/sources/source/language/hierarchy';
 import type { HierarchyDirection, HierarchyEntry } from '$lib/state/system/machine/lsp/hierarchy';
 import { isLibrary, libraryOf, placeOf, type Target } from '$lib/ui/controls/editor/kit/lsp/uris';
@@ -56,6 +55,7 @@ import type { AstNode, MemoryTree } from '$lib/state/system/machine/lsp/clangd';
 import { symbolRowsOf, type SymbolRow } from '$lib/state/system/machine/lsp/workspace-symbols';
 import { t } from '$lib/state/shared/words/text';
 import { isWithheldFile } from '$lib/state/system/config/config-files';
+import { noticeWords } from '$lib/views/sources/source/language/notice-words';
 
 /** The milliseconds a save waits for the language server's formatting (VS Code's participant). */
 const FORMAT_TIMEOUT_MS = 60_000;
@@ -111,16 +111,6 @@ const KEYS: Record<string, KeyPress> = {
     previous: { code: 'F4', shift: true }
 };
 
-/** A notice of the editor extension, by its name, in the catalog's words. */
-function noticeWords(key: string, words: string[]): string {
-    if ((LSP_EDIT_NOTICES as readonly string[]).includes(key)) {
-        return t(`source.${key}`, ...words);
-    }
-    if (key === 'format_failed') return t('source.format_failed', ...words);
-    if (key === 'format_timeout') return t('source.format_timeout');
-    return key;
-}
-
 /** Whether a language is one a server serves. */
 function servedLanguage(language: string): boolean {
     return SERVED_LANGUAGES.includes(language);
@@ -167,10 +157,25 @@ function locationOf(item: unknown): { uri: string; range: Range } | null {
         : null;
 }
 
+/**
+ * The text of the match at the caret of a search among its answer's files, or the search's own
+ * word when no match covers the caret.
+ */
+function matchAt(files: readonly RefFile[], search: RefSearch): string {
+    const file = files.find((one) => one.root === search.root && one.path === search.path);
+    const row = file?.lines.find(
+        (one) =>
+            one.line === search.line &&
+            one.start <= search.column - 1 &&
+            search.column - 1 <= one.end
+    );
+    return row === undefined ? search.word : row.text.slice(row.start, row.end);
+}
+
 /** Make the language server wiring of one source tab. */
 export function createLspTab(input: LspTabInput): LspTab {
     const { client } = input;
-    const { lsp, lspEdits, documents, references, clangd, workspaceSymbols } = client;
+    const { lsp, refactor, documents, references, clangd, workspaceSymbols } = client;
 
     /** What the registered model gave back, while the extension holds one. */
     const held: {
@@ -217,11 +222,12 @@ export function createLspTab(input: LspTabInput): LspTab {
             }
         },
         library: lsp.named,
-        applyEdit: lspEdits.apply,
+        applyEdit: (edit, held, options) =>
+            refactor.submit(edit, held, { ...options, words: noticeWords }),
         diagnostics: documents.setDiagnostics,
         symbols: documents.setSymbols,
         notice: (key, ...words) => input.say(noticeWords(key, words)),
-        words: (key) => key
+        words: (key, ...words) => noticeWords(key, words)
     };
 
     /** The files of an answer's locations, each with the text of its lines. */
@@ -334,9 +340,16 @@ export function createLspTab(input: LspTabInput): LspTab {
             line: at.lineNumber,
             column: at.column
         };
-        await references.start(search, { files: askFiles, entries: askEntries }, () =>
-            client.layout.openView(REFERENCES_VIEW)
-        );
+        // The word that titles the result is the text of the match at the caret, which is the whole
+        // key for a key with a hyphen in it, where the editor's word stops.
+        const whole = kind === 'references';
+        const answered = whole ? await askFiles(search) : null;
+        const titled = answered === null ? search : { ...search, word: matchAt(answered, search) };
+        const ask = {
+            files: whole ? () => Promise.resolve(answered) : askFiles,
+            entries: askEntries
+        };
+        await references.start(titled, ask, () => client.layout.openView(REFERENCES_VIEW));
     }
 
     async function showAst(): Promise<void> {
@@ -542,7 +555,10 @@ export function createLspTab(input: LspTabInput): LspTab {
     /** Go to the next or previous location of the latest References result. */
     function walk(delta: 1 | -1): void {
         const pick = references.step(delta);
-        if (pick !== null) openReference(client, pick, pick.line, pick.column);
+        if (pick === null) return;
+        const end =
+            pick.endColumn === undefined ? undefined : { line: pick.line, column: pick.endColumn };
+        openReference(client, pick, pick.line, pick.column, end);
     }
 
     async function formatForSave(): Promise<void> {

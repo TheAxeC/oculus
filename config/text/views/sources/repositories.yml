@@ -189,6 +189,7 @@ text:
         diff_empty: Nothing to show for this one.
         diff_failed: The diff could not be read.
         diff_pending: Reading the diff
+        diff_refactor_gone: This refactoring is no longer pending, so there is nothing to compare.
         diff_retry: Read again
         diff_staged_title: Show what is staged for this path
         diff_title: Show what changed in this path

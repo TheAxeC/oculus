@@ -29,9 +29,16 @@ import { textCatalog } from './sources/config.ts';
 import { normalise } from './snapshot/normalise.ts';
 import { sortFindings, validate } from './snapshot/validate.ts';
 import { createChecker, type Checker } from './snapshot/schema/check.ts';
+import { unreadSources } from './snapshot/schema/lists.ts';
+import { listedFields } from './snapshot/schema/manifest.ts';
 import { runSchemas } from './snapshot/schema/run.ts';
 import { withSchemas, type SchemaSet } from './snapshot/schema/set.ts';
 import { engineSchemas } from './sources/config/catalog/schemas/engine.ts';
+import { catalogOf } from './sources/config/catalog/options.ts';
+import { optionFiles } from './sources/config/catalog/schemas/references.ts';
+import { DECK_FILE } from './sources/deck/read.ts';
+import { buildReferences } from './snapshot/references/build.ts';
+import type { ReferenceIndex } from './snapshot/references/model.ts';
 import type {
     CollectionFile,
     DocPresence,
@@ -213,8 +220,11 @@ function decks(
     return { decks: found, findings: reader.findings() };
 }
 
-/** The snapshot of one build and the schemas it was checked against, for the editor. */
-export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet };
+/**
+ * The snapshot of one build, the schemas it was checked against and the index of the hub keys it
+ * names and defines, for the editor.
+ */
+export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet; references: ReferenceIndex };
 
 /**
  * Read the hub, check what was read, and hand back the snapshot with the schemas the check used.
@@ -223,14 +233,16 @@ export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet };
  * `roots` are the directories whose `.oculus/project.yml` is a side project beside the hub's own
  * side-projects tier, read as handed; the watcher's `personalRoots` decides which roots of the file
  * browser they are. `checker` keeps the compiled validators from one build to the next, so a
- * rebuild whose schemas did not change compiles nothing.
+ * rebuild whose schemas did not change compiles nothing. `engine` is the engine's config folder,
+ * whose files that carry a reference are indexed beside the hub's; none when it is null.
  */
 export function buildPortfolioWithSchemas(
     hub: string,
     config: PortfolioConfig,
     version = 0,
     roots: PersonalRoot[] = [],
-    checker: Checker = createChecker()
+    checker: Checker = createChecker(),
+    engine: string | null = null
 ): PortfolioBuild {
     const manifests = readManifests(hub, config.scan, config.text);
     const personal = readPersonal(hub, config.scan, roots, config.text);
@@ -260,17 +272,31 @@ export function buildPortfolioWithSchemas(
         ]
     };
 
-    const run = runSchemas(hub, config, raw, checker);
+    const unread = unreadSources(raw, hub, config.registries);
+    const run = runSchemas(hub, config, raw, checker, unread);
     const findings = sortFindings([
         ...validate(raw, {
             vocab: config.vocab,
             datasetsFile: join(hub, config.registries.datasets),
+            listed: listedFields(config.schema, unread),
             text: config.text
         }),
         ...run.findings
     ]);
+    const references = buildReferences({
+        hub,
+        config,
+        engine,
+        read: run.read,
+        manifests: raw.manifests,
+        personal: raw.personal,
+        decks: raw.decks,
+        options: optionFiles(catalogOf(config.merged)),
+        deckFile: DECK_FILE
+    });
     return {
         snapshot: normalise(raw, findings, version, config.vocab.sideStatuses),
-        schemas: withSchemas(run.set, engineSchemas(raw, config))
+        schemas: withSchemas(run.set, engineSchemas(raw, config)),
+        references
     };
 }

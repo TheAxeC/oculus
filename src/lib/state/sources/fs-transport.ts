@@ -426,20 +426,6 @@ export async function digestOf(bytes: Uint8Array): Promise<string> {
 }
 
 /**
- * The SHA-256 of one file's bytes as lower-case hex, read through the file route, or null when the
- * file cannot be read. The read asks the server to revalidate, as `readText` does.
- */
-export async function readHash(root: string, path: string): Promise<string | null> {
-    try {
-        const response = await fetch(fileBytesUrl(root, path), { cache: 'no-cache' });
-        if (!response.ok) return null;
-        return await digestOf(new Uint8Array(await response.arrayBuffer()));
-    } catch {
-        return null;
-    }
-}
-
-/**
  * One file's text, read through the file route and stopped at the window's limit. The read asks
  * the server to revalidate, since the route lets a browser keep an address for a minute, and a
  * text read again after a save or a push must be the file as it is now.

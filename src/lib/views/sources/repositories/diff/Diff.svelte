@@ -20,10 +20,12 @@
     // worktree holds that its repository's branch does not, every path of the staged or the changed
     // group, every file a ref and a commit differ in (Compare with Remote, Compare with Merge Base,
     // Compare with...), a linked worktree's file against the main worktree's (Compare with
-    // Workspace), or the Replace Preview of a Search tab: a file as it is against the file as the
-    // tab's replacements would leave it. The groups and the comparisons are read a few files at a
-    // time (diff/diff-read.ts) and every read is read-only; the reader drops an answer that is no
-    // longer the newest, and every answer once the pane is closed.
+    // Workspace), the Replace Preview of a Search tab: a file as it is against the file as the
+    // tab's replacements would leave it, or one file of the Refactor Preview: the file as it is
+    // against the file as the edits checked in the preview would leave it. The groups and the
+    // comparisons are read a few files at a time (diff/diff-read.ts) and every read is read-only;
+    // the reader drops an answer that is no longer the newest, and every answer once the pane is
+    // closed.
     //
     // The bar (diff/DiffBar.svelte) holds icon buttons: Open File (a file's own diff), Previous
     // Change and Next Change, which Shift+Alt+F5 and Alt+F5 press while the pane holds the focus
@@ -102,6 +104,7 @@
         selectors: { gitFor, gitRoots },
         writes,
         source: { diskHash, editSourceDraft, sourceDraft },
+        refactor,
         editorStatus: { asked: askedOf, forget, publish },
         layout: { instanceView },
         ui: { codeTheme, instanceState, setInstanceState, theme, textScale }
@@ -117,7 +120,7 @@
 
     const held = $derived(heldDiff(instance.state));
     /** What a read is made under: the pane, its replacements and a conflict's disk hash. */
-    const readKey = $derived(readKeyOf(held, diskHash));
+    const readKey = $derived(readKeyOf(held, diskHash, refactor.revision));
     /** The source tab whose text is the right side of a save conflict's comparison, if any. */
     const tab = $derived(held.unsaved === undefined ? null : sourceDraft(held.unsaved));
 
@@ -181,7 +184,7 @@
 
     /** The reads of this pane: the newest answer is drawn, and none once the pane is closed. */
     const reader = diffReader(
-        (state) => readPaneDiff(state, repo, writes.writeToken()),
+        (state) => readPaneDiff(state, repo, writes.writeToken(), refactor.sides),
         latestRead()
     );
 

@@ -23,7 +23,7 @@ export const hashOf = (content: string): string =>
     createHash('sha256').update(content).digest('hex');
 
 /** What a fake server holds and what the page sent it. */
-export function server(options: Partial<Pick<SourceDeps, 'rules' | 'kept'>> = {}) {
+export function server(options: Partial<Pick<SourceDeps, 'rules' | 'kept' | 'roots'>> = {}) {
     const files = new Map<string, string>();
     /** Files held as bytes, for a file that is not UTF-8 text; a key held here is read here. */
     const raw = new Map<string, Uint8Array>();
@@ -152,7 +152,8 @@ export function server(options: Partial<Pick<SourceDeps, 'rules' | 'kept'>> = {}
     const source = createSource(writes, ui, () => undefined, {
         socket,
         rules: options.rules ?? (() => ({ trim: false, finalNewline: false, formatOnSave: false })),
-        kept: options.kept ?? (() => [])
+        kept: options.kept ?? (() => []),
+        roots: options.roots ?? (() => [])
     });
     return {
         files,

@@ -316,17 +316,22 @@ export function sourceInfoUrl(root: string, path: string): string {
 }
 
 /**
- * Read one file's text from the existing file route, cut at the limit every reader of it uses. The
+ * Read one file's text from the existing file route, cut at `limit` (the limit every reader of it
+ * uses by default; an edit of a language server reads up to the most a write carries). The
  * route lets a browser keep an answer for a minute, so the read asks the server each time: a text
  * a write is based on, or a tab shows after a change, is the file's text now.
  */
-export async function loadSource(root: string, path: string): Promise<SourceLoad> {
+export async function loadSource(
+    root: string,
+    path: string,
+    limit: number = TEXT_LIMIT
+): Promise<SourceLoad> {
     try {
         const response = await fetch(fileBytesUrl(root, path), { cache: 'no-cache' });
         if (!response.ok) {
             return { ok: false, error: refusedAnswer(response.status), status: response.status };
         }
-        const held = await readCappedBytes(response, TEXT_LIMIT);
+        const held = await readCappedBytes(response, limit);
         return {
             ok: true,
             content: new TextDecoder().decode(held.bytes),

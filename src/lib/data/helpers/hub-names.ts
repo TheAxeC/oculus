@@ -21,15 +21,56 @@ export const ENGINE_ROOT = 'engine';
 /** Where the engine's config folder lies inside the hub, its files served there under `hub`. */
 export const ENGINE_IN_HUB = 'tools/oculus/config';
 
+/** A file named by the root it is served under and its path inside that root. */
+export type FileName = { root: string; path: string };
+
+/** A served root as the decision of one disk file needs it: its key and its folders. */
+export type RootFolder = { key: string; dir: string; real?: string };
+
 /**
- * The one name of a disk file. A file of the engine's config folder is reached under `engine` and,
- * as `tools/oculus/config/<name>`, under `hub`; both are named under `engine`, so two names of one
- * file compare equal.
+ * The name a file has under `hub` when it lies in the engine's config folder of the hub itself,
+ * else its own. It is the whole decision while no root is known.
  */
-export function diskName(file: { root: string; path: string }): { root: string; path: string } {
+function byPrefix(file: FileName): FileName {
     const prefix = `${ENGINE_IN_HUB}/`;
     if (file.root !== HUB_ROOT || !file.path.startsWith(prefix)) return file;
     return { root: ENGINE_ROOT, path: file.path.slice(prefix.length) };
+}
+
+/**
+ * The path of a named file on disk: its root's real folder (the root's `dir` when it carries no
+ * `real`) joined with its path. Null for a name whose root is not among the roots, and for a root
+ * whose real folder is empty, a folder that does not exist.
+ */
+export function diskPath(file: FileName, roots: readonly RootFolder[]): string | null {
+    const root = roots.find((one) => one.key === file.root);
+    const folder = root === undefined ? '' : (root.real ?? root.dir);
+    if (folder === '') return null;
+    const base = folder.replace(/\/+$/, '');
+    return file.path === '' ? base : `${base}/${file.path}`;
+}
+
+/**
+ * Whether two names are one file on disk. Each name stands for its root's folder joined with its
+ * path, so the engine's config folder reached as `engine:layout.yml` and as
+ * `hub:tools/oculus/config/layout.yml` is one file when the engine root is served from the hub's
+ * own config folder, and two files when it is served from another checkout's. A name that stands
+ * for no path on disk (see `diskPath`) is one file with itself alone. While the roots are not
+ * known, the engine's config folder inside the hub counts as the engine root's. A file reached
+ * through a symbolic link inside a root is another file than its target.
+ */
+export function sameDiskFile(
+    one: FileName,
+    other: FileName,
+    roots: readonly RootFolder[]
+): boolean {
+    if (roots.length === 0) {
+        const [first, second] = [byPrefix(one), byPrefix(other)];
+        return first.root === second.root && first.path === second.path;
+    }
+    const [first, second] = [diskPath(one, roots), diskPath(other, roots)];
+    if (first !== null && second !== null) return first === second;
+    return one.root === other.root && one.path === other.path;
 }
 
 /** The career file's path in the hub, which the config falls back to when it names none. */

@@ -1,18 +1,20 @@
 // Layer 3, view helper of views/sources/repositories/diff/Diff.svelte. The reads a diff is made of:
 // the one request of a file's, a commit's, a stash's, a worktree's or a Replace Preview's diff (the
-// last a POST, answers.ts's diffRequest), or several reads joined into one answer. A group of
-// changes is one read per path, and a comparison of a ref with a commit is one read of the files
-// the two differ in and then one per file, each holding the file's two sides. Reads of the same
-// diff run a few at a time. The comparison of a save conflict is one read of the file as the disk
-// holds it, which is the left side; the right side is the source tab's own text, which the pane
-// puts in as the tab changes. `readKeyOf` is the key a pane's read is made under, which tells it
-// when to read again.
+// last a POST, answers.ts's diffRequest), a file of the Refactor Preview (read from the preview),
+// or several reads joined into one answer. A group of changes is one read per path, and a
+// comparison of a ref with a commit is one read of the files the two differ in and then one per
+// file, each holding the file's two sides. Reads of the same diff run a few at a time. The
+// comparison of a save conflict is one read of the file as the disk holds it, which is the left
+// side; the right side is the source tab's own text, which the pane puts in as the tab changes.
+// `readKeyOf` is the key a pane's read is made under, which tells it when to read again.
 
 import { readJson } from '$lib/data/shapes/shapes';
 import { refusedAnswer } from '$lib/state/shared/answers/answers';
 import { TEXT_LIMIT } from '$lib/state/sources/fs';
 import { readCapped } from '$lib/state/sources/fs.svelte';
 import { previewKey } from '$lib/state/sources/repositories/replace-preview';
+import type { PreviewSides } from '$lib/state/system/machine/refactor/preview.svelte';
+import { refactorKey } from '$lib/state/sources/repositories/diff/refactor-subject';
 import {
     commitFilesOf,
     diffAnswerOf,
@@ -33,6 +35,9 @@ import {
 const GROUP_READS = 6;
 
 type Git = Parameters<typeof groupPaths>[0];
+
+/** The two texts of a file of the pending Refactor Preview, by its identity, root and path. */
+export type RefactorSides = (id: string, root: string, path: string) => PreviewSides | null;
 
 /** What one request answered: whether the server took it, and what its body held. */
 async function answer(request: DiffRequest): Promise<DiffAnswer> {
@@ -66,16 +71,41 @@ async function diskSide(state: DiffState): Promise<DiffAnswer> {
 }
 
 /**
+ * The file of a Refactor Preview as the preview holds it: the file as it is on the left and the
+ * file with the checked edits on the right. A preview that is no longer pending has none.
+ */
+function refactorSide(state: DiffState, sides: RefactorSides): DiffAnswer {
+    const held =
+        state.refactor === undefined ? null : sides(state.refactor.id, state.root, state.path);
+    if (held === null) {
+        return { ok: false, files: null, attributes: null, conflicted: false, error: 'gone' };
+    }
+    const file = {
+        oldPath: state.path,
+        newPath: state.path,
+        head: [],
+        binary: false,
+        encoded: false,
+        original: held.original,
+        modified: held.modified
+    };
+    return { ok: true, files: [file], attributes: null, conflicted: false, error: undefined };
+}
+
+/**
  * What a diff pane shows for `state`: the one request (a Replace Preview's is a POST carrying the
  * page's write `token`), the files of a comparison, or one read per path of a group of the
- * repository `repo`.
+ * repository `repo`. A file of the pending Refactor Preview is read from the preview (`sides`) and
+ * touches no disk.
  */
 export async function readPaneDiff(
     state: DiffState,
     repo: Git | null,
-    token: string
+    token: string,
+    sides: RefactorSides
 ): Promise<DiffAnswer> {
     const { group, compare } = state;
+    if (state.refactor !== undefined) return refactorSide(state, sides);
     if ((state.unsaved ?? '') !== '') return diskSide(state);
     const url = diffUrl(state);
     if (compare !== undefined) {
@@ -108,9 +138,10 @@ export async function readPaneDiff(
 
 /**
  * What a diff pane's read is made under: the pane's id, its replace field when it is a Replace
- * Preview, and for the comparison of a save conflict (a pane naming the source tab whose text is
- * its right side) the hash of the file on disk, so the comparison is read again when the file
- * changes. A pane of any other kind is not read again for a change of the file.
+ * Preview, its preview and the revision of that preview (`revision`) when it is the diff of a file
+ * of the Refactor Preview, and for the comparison of a save conflict (a pane naming the source tab
+ * whose text is its right side) the hash of the file on disk, so the comparison is read again when
+ * the file changes. A pane of any other kind is not read again for a change of the file.
  */
 export function readKeyOf(
     held: {
@@ -118,10 +149,13 @@ export function readKeyOf(
         root: string;
         path: string;
         replace?: Parameters<typeof previewKey>[0];
+        refactor?: Parameters<typeof refactorKey>[0];
         unsaved?: string | undefined;
     },
-    diskHash: (root: string, path: string) => string | null | undefined
+    diskHash: (root: string, path: string) => string | null | undefined,
+    revision: (id: string) => number = () => 0
 ): string {
     const disk = held.unsaved === undefined ? '' : (diskHash(held.root, held.path) ?? '');
-    return `${held.id}${previewKey(held.replace)}${disk}`;
+    const moved = held.refactor === undefined ? 0 : revision(held.refactor.id);
+    return `${held.id}${previewKey(held.replace)}${refactorKey(held.refactor, moved)}${disk}`;
 }

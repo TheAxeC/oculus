@@ -102,9 +102,16 @@ import {
 } from '../system/problem-sources.ts';
 import { createProblems, problemTarget, type ProblemsStore } from '../system/problems.svelte.ts';
 import { openPlace, type PlaceOpener } from '../sessions/source/place.ts';
-import { readHash, readRoots, readText } from '../sources/fs-transport.ts';
+import { readRoots, readText } from '../sources/fs-transport.ts';
 import { watchServedRoots } from '../shared/stores/served-roots.svelte.ts';
 import { createLspEdits, type LspEdits } from '../system/machine/lsp/edits.ts';
+import {
+    REFACTOR_VIEW,
+    createRefactor,
+    type RefactorStore
+} from '../system/machine/refactor/preview.svelte.ts';
+import { isPrivateFile } from '../system/config/config-files.ts';
+import { WRITE_MAX_BYTES } from '../../data/file-ops.ts';
 import {
     createWorkspaceSymbols,
     type WorkspaceSymbolsStore
@@ -223,6 +230,8 @@ export type ClientState = {
     lsp: LspStore;
     /** The edits the language servers ask for, and the files this page's tabs hold open. */
     lspEdits: LspEdits;
+    /** The Refactor Preview: an edit a server asked for, shown before it is made. */
+    refactor: RefactorStore;
     /** The symbol queries a source tab's server answers, for the palette's `#` list. */
     workspaceSymbols: WorkspaceSymbolsStore;
     /** The diagnostics of the files and the document symbols of the source tabs. */
@@ -472,7 +481,8 @@ export function createClientState(
             kept: (id) => {
                 const caret = editorStatus.statusOf(id)?.caret;
                 return caret === null || caret === undefined ? [] : [caret];
-            }
+            },
+            roots: () => fs.roots()
         }
     );
     const autosave = createAutosave({
@@ -574,14 +584,22 @@ export function createClientState(
         tabs: () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root)),
         draft: source.sourceDraft,
         edit: source.editSourceDraft,
-        diskText: async (root, path) => {
-            const answer = await loadSource(root, path);
-            return answer.ok && !answer.truncated ? answer.content : null;
+        read: async (root, path) => {
+            const answer = await loadSource(root, path, WRITE_MAX_BYTES);
+            if (!answer.ok) return null;
+            if (answer.truncated) return 'too_large';
+            if (answer.notText) return 'not_text';
+            return { text: answer.content, hash: answer.base };
         },
         askHeld: lsp.askHeld,
         publishTabs: lsp.publishTabs,
         write: explorer.lspEdit,
-        hashOf: readHash
+        roots: () => fs.roots(),
+        withheld: (place) => isPrivateFile(place, fs.roots(), fs.workspaces().home)
+    });
+    const refactor = createRefactor({
+        lspEdits,
+        show: () => void layout.openView(REFACTOR_VIEW)
     });
     const documents = createDocuments();
     const workspaceSymbols = createWorkspaceSymbols(async (root, path) => {
@@ -823,6 +841,7 @@ export function createClientState(
         headings,
         lsp,
         lspEdits,
+        refactor,
         workspaceSymbols,
         documents,
         problems,

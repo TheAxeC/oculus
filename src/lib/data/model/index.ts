@@ -91,6 +91,11 @@ export type ValidationRules = {
      * it even when the file lists no dataset.
      */
     datasetsFile?: string;
+    /**
+     * The manifest fields the generated schema holds to the keys of their `from` sources, all of
+     * which were read: the schema reports a value of the wrong shape there, so validate does not.
+     */
+    listed?: ReadonlySet<string>;
     /** The flat text catalog every finding's sentence is read from, by its `findings.` key. */
     text: Record<string, string>;
 };

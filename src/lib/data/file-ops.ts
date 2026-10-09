@@ -31,6 +31,15 @@ import type { TextEdit } from './prose/text-edits.ts';
 /** The largest text a code window draws, and the largest file a comparison reads. */
 export const TEXT_LIMIT = 2 * 1024 * 1024;
 
+/**
+ * The largest file whose copy the local history keeps before a delete or a language server's edit
+ * changes it, and the largest a language server's edit reads and writes, in bytes.
+ */
+export const WRITE_MAX_BYTES = 5 * 1024 * 1024;
+
+/** The same limit in megabytes, which the sentences that name it say. */
+export const WRITE_MAX_MEGABYTES = WRITE_MAX_BYTES / (1024 * 1024);
+
 /** The largest file one upload carries, in bytes, which the Memories wall's pictures share. */
 export const MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
 

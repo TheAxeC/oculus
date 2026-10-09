@@ -7,10 +7,11 @@
 // file's own line ends). The server decides what is written from the file as it is now, never from
 // the page: every file is read and checked before any is written, and a request that fails a check
 // writes nothing. The checks are made per file in the order `outside` (a root not served, a path
-// out of it, or under a `node_modules` folder or a folder whose name starts with a dot, which are
-// never edited here), `missing`, `protected` (the machine's local.yml), `denied` (the file's mode
-// locks it), `binary` (a NUL byte in the first 8 KB), `too_large` (over what the history keeps a
-// copy of, as the file is and as the edit would leave it), `changed` (the bytes are not the ones
+// out of it, a path under a `node_modules` folder or a folder whose name starts with a dot, or a
+// file in the hub's `secrets` folder or in `~/.oculus`, none of which is ever edited here),
+// `missing`, `protected` (the machine's local.yml), `denied` (the file's mode locks it), `binary`
+// (a NUL byte in the first 8 KB), `too_large` (over 5 MB, the most a copy of kind `lsp-edit` is
+// kept for, as the file is and as the edit would leave it), `changed` (the bytes are not the ones
 // the edit was computed for, or a range names a line the file lacks), and after `changed` `binary`
 // again for a file with a NUL byte anywhere or bytes that are not UTF-8 throughout (the whole-file
 // rule of data/helpers/files/text-kind.ts). A file named twice, no file at all, or two ranges of a
@@ -24,14 +25,16 @@
 // naming its copy) and as they are.
 
 import { readFileSync } from 'node:fs';
+import { WRITE_MAX_BYTES } from '../../../data/file-ops.ts';
 import type { FileStamp, LspEditFile, OpsAnswer } from '../../../data/file-ops.ts';
 import { isWholeText } from '../../../data/helpers/files/text-kind.ts';
 import { applyTextEdits } from '../../../data/prose/text-edits.ts';
 import { hashOf, splitMark, withMark } from '../../core/file-bytes.ts';
 import { writeBytesAtomic } from '../../core/json.ts';
-import type { Root } from '../files.ts';
+import { under } from '../../core/paths.ts';
+import { resolveRootPath, type Root } from '../files.ts';
 import { stampOf } from './file-changes.ts';
-import { SAVE_MAX_BYTES, keepCopy } from './history.ts';
+import { keepCopy } from './history.ts';
 import { fail, readChecked, refused, type Fail } from './replace.ts';
 
 /** What an `lsp-edit` runs over: the roots, the files never changed, the history and the record. */
@@ -39,6 +42,8 @@ export type LspEditScope = {
     roots: Root[];
     /** Whether a path is a file the server never changes, or a folder that holds one. */
     guarded: (path: string) => boolean;
+    /** The folders no file of is edited: the hub's `secrets` folder and `~/.oculus`. */
+    withheld: readonly string[];
     /** The local history folder a copy is kept in before a file is written; none keeps none. */
     history?: string;
     /** Say that files were written: the stamps of what was there and of what is there now. */
@@ -61,7 +66,9 @@ function inLibraryFolder(path: string): boolean {
 /** One file of the request, read and checked, with the bytes its edit makes. */
 function plan(scope: LspEditScope, file: LspEditFile): Planned | Fail {
     if (inLibraryFolder(file.path)) return fail('outside');
-    const read = readChecked(scope, file.root, file.path, SAVE_MAX_BYTES, true);
+    const found = resolveRootPath(scope.roots, file.root, file.path);
+    if ('path' in found && under(found.path, scope.withheld)) return fail('outside');
+    const read = readChecked(scope, file.root, file.path, WRITE_MAX_BYTES, true);
     if (refused(read)) return read;
     const { bytes } = read;
     if (hashOf(bytes) !== file.hash) return fail('changed');
@@ -70,7 +77,7 @@ function plan(scope: LspEditScope, file: LspEditFile): Planned | Fail {
     const edited = applyTextEdits(body.toString('utf8'), file.edits);
     if (!edited.ok) return fail(edited.reason === 'overlap' ? 'not-an-action' : 'changed');
     const after = withMark(Buffer.from(edited.text, 'utf8'), marked);
-    if (after.length > SAVE_MAX_BYTES) return fail('too_large');
+    if (after.length > WRITE_MAX_BYTES) return fail('too_large');
     return { name: `${file.root}/${file.path}`, real: read.real, before: bytes, after };
 }
 

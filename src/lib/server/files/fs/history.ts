@@ -10,11 +10,13 @@
 // A copy of kind `save` is made only for a file of at most 256 KB, and the newest 50 of them are
 // kept per file. A copy of kind `replace`, made before a replace in the Search view writes the
 // file, and again before the undo of a replace writes it back, has the limit and the pruning of a
-// `save`: a file of at most 256 KB, the newest 50 of that kind per file. A copy of kind `delete`,
-// made before a delete, is made for a file of at most 5 MB
-// and is not counted in those 50, since the undo of the delete reads it; the newest 50 copies of
-// kind `delete` over all files are kept, and when a delete adds one the oldest beyond 50 are
-// removed, so an undo of an older delete finds its copy gone. `deletes.json` beside the file
+// `save`: a file of at most 256 KB, the newest 50 of that kind per file. A copy of kind `lsp-edit`,
+// made before an edit a language server asked for writes the file, is made for a file of at most
+// 5 MB, so a rename of a hub key keeps a copy of a large registry or feed file, and the newest 50
+// of that kind per file are kept. A copy of kind `delete`, made before a delete, is made for a file
+// of at most 5 MB and is not counted in those 50, since the undo of the delete reads it; the newest
+// 50 copies of kind `delete` over all files are kept, and when a delete adds one the oldest beyond
+// 50 are removed, so an undo of an older delete finds its copy gone. `deletes.json` beside the file
 // folders lists the copies of kind `delete` as `{ deletes: [{ folder, id, at }] }`, oldest first,
 // so a delete reads one index and the folders of the copies it removes, never every folder; a
 // missing or unreadable index is built again from the folders once. A folder left with no copy is
@@ -39,6 +41,7 @@ import { join } from 'node:path';
 import { basename, dirname } from 'node:path';
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
+import { WRITE_MAX_BYTES } from '../../../data/file-ops.ts';
 import { writeBytesAtomic, writeTextAtomic } from '../../core/json.ts';
 import { realPath } from '../../core/paths.ts';
 import { resolveRootPath, type Root } from '../files.ts';
@@ -46,8 +49,8 @@ import { resolveRootPath, type Root } from '../files.ts';
 /** The most bytes of a file a copy of kind `save` is made of. */
 export const SAVE_MAX_BYTES = 256 * 1024;
 
-/** The most bytes of a file a copy of kind `delete` is made of. */
-export const DELETE_MAX_BYTES = 5 * 1024 * 1024;
+/** The most bytes of a file a copy of kind `delete` or `lsp-edit` is made of. */
+export const DELETE_MAX_BYTES = WRITE_MAX_BYTES;
 
 /** How many copies of kind `save` are kept per file. */
 export const SAVES_KEPT = 50;
@@ -63,6 +66,11 @@ export type HistoryKind = 'save' | 'replace' | 'lsp-edit' | 'delete';
 
 /** The kinds of copy kept per file, newest `SAVES_KEPT` of each, which are the edits of a file. */
 const EDIT_KINDS: readonly HistoryKind[] = ['save', 'replace', 'lsp-edit'];
+
+/** The most bytes of a file a copy of this kind is made of. */
+function limitOf(kind: HistoryKind): number {
+    return kind === 'delete' || kind === 'lsp-edit' ? DELETE_MAX_BYTES : SAVE_MAX_BYTES;
+}
 
 /** One copy of a file: its id, the time it was made (ms), the file's size and why it was made. */
 export type HistorySave = { id: string; at: number; size: number; kind: HistoryKind };
@@ -140,7 +148,7 @@ export function keepCopy(
     let bytes: Buffer;
     try {
         const info = statSync(real);
-        const limit = kind === 'delete' ? DELETE_MAX_BYTES : SAVE_MAX_BYTES;
+        const limit = limitOf(kind);
         if (!info.isFile() || info.size > limit) return { ok: true, kept: null };
         bytes = readFileSync(real);
     } catch (error) {
@@ -162,7 +170,7 @@ export function keepBytes(
     kind: HistoryKind,
     now: number = Date.now()
 ): KeepResult {
-    const limit = kind === 'delete' ? DELETE_MAX_BYTES : SAVE_MAX_BYTES;
+    const limit = limitOf(kind);
     if (bytes.length > limit) return { ok: true, kept: null };
     try {
         const folder = historyFolder(history, real);

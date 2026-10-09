@@ -9,10 +9,13 @@
 // takes its `from` keys as suggestions only. A record allows no key it does not declare unless it
 // is `open`.
 //
-// A condition (`when`, `required: { when }`) becomes an `if` with a `then` or an `else`; the schema
-// carries the condition in `x-when` or `x-required-when` so a finding can name it.
+// A `records` field holds a list of records, one record, or with `map: true` a map from a name to
+// one record (the groups of a deck). A condition (`when`, `required: { when }`) becomes an `if`
+// with a `then` or an `else`; the schema carries the condition in `x-when` or `x-required-when` so
+// a finding can name it.
 
 import { ISO_DATE } from '../../helpers/dates.ts';
+import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { withoutPath } from '../../helpers/files/yaml/collection-text.ts';
 import type { FromPicked, SchemaField, When } from '../../model/index.ts';
 import { TEXT_TYPES, type JsonSchema } from './json.ts';
@@ -23,8 +26,23 @@ import { TEXT_TYPES, type JsonSchema } from './json.ts';
  */
 export type Lists = (source: string) => string[] | null | undefined;
 
-/** Something wrong with the schema itself: a `from` that names no list, a `when` on no field. */
-export type SchemaProblem = { key: string; word: 'from' | 'when'; args: string[] };
+/**
+ * Something wrong with the schema itself: a `from` that names no list, a `when` on no field, a
+ * `map` on a field that is no `records` field.
+ */
+export type SchemaProblem = { key: string; word: 'from' | 'when' | 'map'; args: string[] };
+
+/** The sentence of a schema problem, in the catalog's words. */
+export function problemText(catalog: TextCatalog, problem: SchemaProblem): string {
+    switch (problem.word) {
+        case 'from':
+            return findingText(catalog, 'findings.schema.bad_from', ...problem.args);
+        case 'when':
+            return findingText(catalog, 'findings.schema.bad_when', ...problem.args);
+        case 'map':
+            return findingText(catalog, 'findings.schema.bad_map', ...problem.args);
+    }
+}
 
 /** What a conversion needs: the lists `from` reads, and where to report what is wrong. */
 export type Context = { lists: Lists; problems: SchemaProblem[]; at: string };
@@ -122,6 +140,10 @@ function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
                 at: `${ctx.at}${field.field}.`
             });
             if (field.open === true) record.additionalProperties = true;
+            // A map holds a record under each name it has.
+            if (field.map === true) {
+                return { type: ['object', 'null'], additionalProperties: record };
+            }
             // The list form is checked by `items`, the one-record form by the record's keywords.
             return { ...record, type: ['array', 'object', 'null'], items: record };
         }
@@ -165,6 +187,9 @@ export function recordSchema(fields: SchemaField[], ctx: Context): JsonSchema {
     const known = new Set(fields.map((one) => one.field));
     for (const field of fields) {
         properties[field.field] = fieldSchema(field, ctx);
+        if (field.map === true && field.type !== 'records') {
+            ctx.problems.push({ key: `${ctx.at}${field.field}`, word: 'map', args: [field.field] });
+        }
         if (field.required === true) required.push(field.field);
         if (typeof field.required === 'object') {
             rules.push({
@@ -261,6 +286,10 @@ const SCHEMA_FIELD: JsonSchema = {
             description: 'The condition under which the field is allowed in a record.'
         },
         open: { type: 'boolean', description: 'Whether the field takes keys it does not declare.' },
+        map: {
+            type: 'boolean',
+            description: 'Whether a records field holds a map from a name to one record.'
+        },
         fields: {
             type: 'array',
             items: { $ref: '#/definitions/field' },

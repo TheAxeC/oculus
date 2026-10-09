@@ -89,4 +89,26 @@ describe('the relation fields of a manifest', () => {
         );
         expect(found).toEqual([]);
     });
+
+    it('gives one finding for a waiting-on written as one text when the people file reads, and none for a person key', () => {
+        const hub = plantScratch(
+            'oculus-relation-shapes-',
+            {
+                'registries/people.yml':
+                    'schema:\n  - { field: key, type: text, required: true, help: The person key. }\n  - { field: name, type: text, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
+                'projects/active/alpha/project.yml':
+                    'id: alpha\ntype: active\ntitle: alpha\nwaiting-on: ada\n',
+                'projects/active/beta/project.yml':
+                    'id: beta\ntype: active\ntitle: beta\nwaiting-on: [ada, alpha]\n'
+            },
+            ['registries']
+        );
+        const found = buildPortfolioWithSchemas(hub, CONFIG).snapshot.findings;
+        const of = (name: string) =>
+            found.filter((one) => one.file.endsWith(`/${name}/project.yml`));
+        expect(of('alpha').map((one) => [one.key, one.message])).toEqual([
+            ['waiting-on', typeSentence('waiting-on', 'list', TEXT)]
+        ]);
+        expect(of('beta')).toEqual([]);
+    });
 });

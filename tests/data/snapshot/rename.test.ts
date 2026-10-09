@@ -1,0 +1,405 @@
+// Layer 1, data tests. The rename of a hub key (data/snapshot/references/rename.ts): the edit that
+// changes every reference to a key and the key's definition, and the reasons it is refused. A hub
+// is planted in a scratch directory (tests/data/snapshot/reference-hub.ts), the index of its
+// build is asked for the key at a position, and the edit planned for a new key is applied to the
+// files' texts with the same text edits `lsp-edit` and the editor apply.
+//
+// The edited texts are compared with the planted texts changed by hand at the places the rename
+// names, so a byte that moved anywhere else is a failure. A refusal gives no edit at all.
+//
+// A refusal is asked for at the step it is given: one that depends on the key and the files alone
+// is the answer to `prepareRename` (`refuseRename`), and one that depends on the new key is the
+// answer to `rename` (`planRename`). A row names which, and the other step must not give it.
+//
+// What this does NOT cover: the refusals that come from the page (a file that changed since the
+// edit was planned, a tab typed into), which tests/state/system/lsp/edits.test.ts runs, the
+// preview, which tests/state/system/refactor-preview.test.ts runs, and the refusal only the relay
+// can see (a tab of another window), which tests/server/machine/lsp/adapters/hub-keys.test.ts runs
+// through the answer to `prepareRename`.
+
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect } from 'vitest';
+import { applyTextEdits } from '../../../src/lib/data/prose/text-edits.ts';
+import {
+    planRename,
+    refuseRename,
+    type FileText,
+    type RenameRefusal
+} from '../../../src/lib/data/snapshot/references/rename.ts';
+import type { FileScan } from '../../../src/lib/data/snapshot/references/model.ts';
+import { it } from '../../fixtures/scratch.ts';
+import { HUB_FILES, plantHub, type PlantedHub } from './reference-hub.ts';
+
+type Root = 'hub' | 'engine';
+
+/** Where the rename is asked: a file and a position, the first letter of the key. */
+type At = [Root, string, number, number];
+
+/** The text of a file the rename edits, by its path, for the rows that name the files. */
+type Texts = Record<string, string>;
+
+type Edited = {
+    name: string;
+    at: At;
+    newKey: string;
+    hub?: Texts;
+    /** The files that change, by `root:path`, with the text each has after the rename. */
+    after: Texts;
+};
+
+/** The text of a file of the planted hub or engine, as the disk holds it. */
+function disk(hub: PlantedHub): (scan: FileScan) => FileText {
+    return (scan) => {
+        const folder = scan.file.root === 'hub' ? hub.hub : hub.engine;
+        return { text: readFileSync(join(folder, scan.file.path), 'utf8') };
+    };
+}
+
+/** The files a plan edits, each with its text after the edits, by `root:path`. */
+function applied(hub: PlantedHub, plan: ReturnType<typeof planRename>): Texts {
+    expect(plan.ok).toBe(true);
+    if (!plan.ok) return {};
+    const read = disk(hub);
+    const out: Texts = {};
+    for (const file of plan.files) {
+        const held = read(file.scan);
+        if (held === null || 'large' in held) throw new Error('the file was read');
+        const made = applyTextEdits(held.text, file.edits);
+        expect(made.ok).toBe(true);
+        out[`${file.scan.file.root}:${file.scan.file.path}`] = made.ok ? made.text : '';
+    }
+    return out;
+}
+
+const VENUE = HUB_FILES['registries/venues.yml'];
+const ALPHA = HUB_FILES['projects/active/alpha/project.yml'];
+const BETA = HUB_FILES['projects/active/beta/project.yml'];
+
+const EDITED: Edited[] = [
+    {
+        name: 'a plain and a double-quoted reference and the definition, and no other byte',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: 'jama',
+        after: {
+            'hub:registries/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
+            'hub:projects/active/alpha/project.yml': ALPHA.replace(
+                'venue_id: jbhi',
+                'venue_id: jama'
+            ),
+            'hub:projects/active/beta/project.yml': BETA.replace(
+                'venue_id: "jbhi"',
+                'venue_id: "jama"'
+            )
+        }
+    },
+    {
+        name: 'a single-quoted reference, which keeps its quotes',
+        at: ['hub', 'registries/venues.yml', 4, 10],
+        newKey: 'jama',
+        hub: {
+            'projects/active/alpha/project.yml': ALPHA.replace('venue_id: jbhi', "venue_id: 'jbhi'")
+        },
+        after: {
+            'hub:registries/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
+            'hub:projects/active/alpha/project.yml': ALPHA.replace(
+                'venue_id: jbhi',
+                "venue_id: 'jama'"
+            ),
+            'hub:projects/active/beta/project.yml': BETA.replace(
+                'venue_id: "jbhi"',
+                'venue_id: "jama"'
+            )
+        }
+    },
+    {
+        name: 'a trailing comment on the line, which stays',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: 'jama',
+        hub: {
+            'projects/active/alpha/project.yml': ALPHA.replace(
+                'venue_id: jbhi',
+                'venue_id: jbhi # the target'
+            )
+        },
+        after: {
+            'hub:registries/venues.yml': VENUE.replace('{ id: jbhi,', '{ id: jama,'),
+            'hub:projects/active/alpha/project.yml': ALPHA.replace(
+                'venue_id: jbhi',
+                'venue_id: jama # the target'
+            ),
+            'hub:projects/active/beta/project.yml': BETA.replace(
+                'venue_id: "jbhi"',
+                'venue_id: "jama"'
+            )
+        }
+    },
+    {
+        name: 'a flow sequence, a block sequence and a double-quoted scalar',
+        at: ['hub', 'registries/people.yml', 5, 10],
+        newKey: 'amir-2',
+        hub: {
+            'projects/active/alpha/project.yml': ALPHA.replace(
+                'collaborators: [amir]',
+                'collaborators:\n  - amir'
+            )
+        },
+        after: {
+            'hub:registries/people.yml': HUB_FILES['registries/people.yml'].replace(
+                'key: amir',
+                'key: amir-2'
+            ),
+            'hub:network/joint-work.yml': HUB_FILES['network/joint-work.yml'].replace(
+                '"amir"',
+                '"amir-2"'
+            ),
+            'hub:projects/active/alpha/project.yml': ALPHA.replace(
+                'waiting-on: [amir, beta]',
+                'waiting-on: [amir-2, beta]'
+            ).replace('collaborators: [amir]', 'collaborators:\n  - amir-2')
+        }
+    },
+    {
+        name: 'an anchored key used through an alias, edited once at the anchor',
+        at: ['hub', 'registries/pillars.yml', 3, 9],
+        newKey: 'tens',
+        hub: {
+            'projects/active/alpha/project.yml': ALPHA.replace(
+                'pillar: [tensor, federated]',
+                'pillar: [&p tensor, *p, federated]'
+            )
+        },
+        after: {
+            'hub:registries/pillars.yml': HUB_FILES['registries/pillars.yml'].replace(
+                'key: tensor',
+                'key: tens'
+            ),
+            'hub:projects/active/alpha/project.yml': ALPHA.replace(
+                'pillar: [tensor, federated]',
+                'pillar: [&p tens, *p, federated]'
+            )
+        }
+    },
+    {
+        name: 'a key of the domains: map of vocab.yml, the domains registry entry and the engine reference',
+        at: ['hub', 'registries/domains.yml', 3, 9],
+        newKey: 'cardio',
+        after: {
+            'hub:registries/domains.yml': HUB_FILES['registries/domains.yml'].replace(
+                'key: heart',
+                'key: cardio'
+            ),
+            'engine:behavior.yml': 'data_domains: [cardio]\nslurm:\n  resource: hpc\n',
+            'engine:catalogs/vocab.yml': [
+                'domains:',
+                '  cardio: { color: "#e2374d", label: Heart }',
+                '  brain: { color: "#7c3aed", label: Brain }',
+                'type_color: { active: "#ea580c", manuscript: "#0d9488" }',
+                'type_order: [active, manuscript]',
+                ''
+            ].join('\n')
+        }
+    }
+];
+
+/** A new key that would not read back as itself when written plain is written double-quoted. */
+const QUOTED = [
+    ['123', '"123"'],
+    ['null', '"null"'],
+    ['x: y', '"x: y"'],
+    ['#x', '"#x"']
+] as const;
+
+type Refused = {
+    name: string;
+    /** The step that gives the refusal: the answer to `prepareRename` or to `rename`. */
+    when: 'prepare' | 'rename';
+    at: At;
+    newKey: string;
+    hub?: Texts;
+    open?: Texts;
+    /** Reads the file for the rename, when the row is about what the read gives. */
+    read?: (scan: FileScan) => FileText;
+    refusal: RenameRefusal;
+};
+
+const NOTHING_SAVED = { text: '' };
+
+const REFUSED: Refused[] = [
+    {
+        name: 'an open tab whose unsaved text is not YAML',
+        when: 'prepare',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: 'jama',
+        open: { 'projects/active/beta/project.yml': 'id: beta\nvenue_id: [jbhi\n' },
+        refusal: { code: 'unparsed', file: 'projects/active/beta/project.yml' }
+    },
+    {
+        name: 'an empty new key',
+        when: 'rename',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: '',
+        refusal: { code: 'empty' }
+    },
+    {
+        name: 'a new key of white space only',
+        when: 'rename',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: '  ',
+        refusal: { code: 'empty' }
+    },
+    {
+        name: 'a new key that already stands in the key source',
+        when: 'rename',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: 'bspc',
+        refusal: { code: 'exists', key: 'bspc', source: 'venues' }
+    },
+    {
+        name: 'a new key that stands in another source the field takes together with this one',
+        when: 'rename',
+        at: ['hub', 'projects/active/alpha/project.yml', 6, 13],
+        newKey: 'beta',
+        refusal: { code: 'exists', key: 'beta', source: 'projects' }
+    },
+    {
+        name: 'a value that is a key of two sources the field takes together',
+        when: 'prepare',
+        at: ['hub', 'projects/active/alpha/project.yml', 6, 19],
+        hub: {
+            'registries/people.yml': HUB_FILES['registries/people.yml'].replace(
+                '  - key: ann\n',
+                '  - key: beta\n    name: Beta\n  - key: ann\n'
+            )
+        },
+        newKey: 'gamma',
+        refusal: { code: 'sources', key: 'beta', sources: ['people', 'projects'] }
+    },
+    {
+        name: 'a person key that a reference also names as a project, started at its definition',
+        when: 'prepare',
+        at: ['hub', 'registries/people.yml', 8, 10],
+        hub: {
+            'registries/people.yml': HUB_FILES['registries/people.yml'].replace(
+                '  - key: ann\n',
+                '  - key: beta\n    name: Beta\n  - key: ann\n'
+            )
+        },
+        newKey: 'gamma',
+        refusal: { code: 'sources', key: 'beta', sources: ['people', 'projects'] }
+    },
+    {
+        name: 'a project id',
+        when: 'prepare',
+        at: ['hub', 'projects/active/alpha/project.yml', 0, 4],
+        newKey: 'alpha-2',
+        refusal: { code: 'project', key: 'alpha' }
+    },
+    {
+        name: 'a vocabulary value',
+        when: 'prepare',
+        at: ['engine', 'catalogs/vocab.yml', 4, 21],
+        newKey: 'paper',
+        refusal: { code: 'vocab', key: 'manuscript' }
+    },
+    {
+        name: 'a key that stands twice in its source',
+        when: 'prepare',
+        at: ['hub', 'registries/venues.yml', 4, 10],
+        hub: {
+            'registries/venues.yml': VENUE.replace(
+                '  - { id: bspc, name: Journal Two }',
+                '  - { id: jbhi }'
+            )
+        },
+        newKey: 'jama',
+        refusal: { code: 'twice', key: 'jbhi', source: 'venues' }
+    },
+    {
+        name: 'a new key with a comma, which a flow list would read as two',
+        when: 'rename',
+        at: ['hub', 'registries/pillars.yml', 3, 9],
+        newKey: 'a, b',
+        refusal: { code: 'readback', key: 'a, b', file: 'projects/active/alpha/project.yml' }
+    },
+    {
+        name: 'a file larger than the write limit',
+        when: 'prepare',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: 'jama',
+        read: () => ({ large: true }),
+        refusal: { code: 'large', file: 'registries/venues.yml' }
+    },
+    {
+        name: 'a file that cannot be read',
+        when: 'prepare',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: 'jama',
+        read: () => null,
+        refusal: { code: 'unread', file: 'registries/venues.yml' }
+    },
+    {
+        name: 'a file whose text is no longer the text the index was built from, so the edit does not read back',
+        when: 'rename',
+        at: ['hub', 'projects/active/alpha/project.yml', 3, 10],
+        newKey: 'jama',
+        read: () => NOTHING_SAVED,
+        refusal: { code: 'readback', key: 'jama', file: 'registries/venues.yml' }
+    }
+];
+
+describe('the rename of a hub key', () => {
+    it.each(EDITED)('edits $name', (row) => {
+        const hub = plantHub(row.hub);
+        const [root, path, line, character] = row.at;
+        const { hit, graph } = hub.hit(root, path, { line, character });
+        expect(hit).not.toBeNull();
+        if (hit === null) return;
+        expect(refuseRename(graph, hit, disk(hub))).toBeNull();
+        const edited = applied(hub, planRename(graph, hit, row.newKey, disk(hub)));
+        expect(edited).toEqual(
+            Object.fromEntries(Object.entries(row.after).map(([name, text]) => [name, text]))
+        );
+    });
+
+    it.each(QUOTED)('writes a new key %s that would not read back plain as %s', (key, written) => {
+        const hub = plantHub();
+        const { hit, graph } = hub.hit('hub', 'registries/pillars.yml', { line: 3, character: 9 });
+        expect(hit?.key).toBe('tensor');
+        if (hit === null) return;
+        const edited = applied(hub, planRename(graph, hit, key, disk(hub)));
+        expect(edited['hub:registries/pillars.yml']).toBe(
+            HUB_FILES['registries/pillars.yml'].replace('key: tensor', `key: ${written}`)
+        );
+        expect(edited['hub:projects/active/alpha/project.yml']).toBe(
+            ALPHA.replace('pillar: [tensor,', `pillar: [${written},`)
+        );
+    });
+
+    it('edits a file with CRLF line ends at the exact columns', () => {
+        const crlf = HUB_FILES['registries/venues.yml'].replace(/\n/g, '\r\n');
+        const hub = plantHub({ 'registries/venues.yml': crlf });
+        const { hit, graph } = hub.hit('hub', 'registries/venues.yml', { line: 4, character: 10 });
+        expect(hit?.key).toBe('jbhi');
+        if (hit === null) return;
+        const edited = applied(hub, planRename(graph, hit, 'jama', disk(hub)));
+        expect(edited['hub:registries/venues.yml']).toBe(
+            crlf.replace('{ id: jbhi,', '{ id: jama,')
+        );
+    });
+
+    it.each(REFUSED)('refuses $name at $when and plans no edit', (row) => {
+        const hub = plantHub(row.hub);
+        const [root, path, line, character] = row.at;
+        const { hit, graph } = hub.hit(root, path, { line, character }, row.open);
+        expect(hit).not.toBeNull();
+        if (hit === null) return;
+        const read = row.read ?? disk(hub);
+        const early = refuseRename(graph, hit, read);
+        const plan = planRename(graph, hit, row.newKey, read);
+        // The step that gives a refusal gives it alone: `rename` makes the checks of `prepare`
+        // again, so it gives the same refusal, and `prepare` never gives one of the new key.
+        expect(early).toEqual(row.when === 'prepare' ? row.refusal : null);
+        expect(plan.ok ? null : plan.refusal).toEqual(row.refusal);
+    });
+});

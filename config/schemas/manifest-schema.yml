@@ -15,7 +15,10 @@
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
 # `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
 # domains), `people`, `organisations`, `resources`, `projects`, or a list of vocab.yml written
-# `vocab.<key>` (vocab.type_order, vocab.status_legend, vocab.focus_lanes, vocab.priority_levels).
+# `vocab.<key>` (vocab.type_order, vocab.status_legend, vocab.focus_lanes, vocab.priority_levels). A
+# list of sources offers their keys together (`waiting-on` takes people and projects). Each value
+# of a `from` field is a link in the YAML editor: it opens the entry it names, lists the other
+# files that name it and renames it everywhere.
 # `options:` is a literal list, and a select takes both. Every field has a `help:` line: the form
 # shows it and the YAML editor shows it on hover. oculus turns this file into the JSON Schema
 # of every project.yml, so a key not named here is marked in the editor and is a finding.
@@ -52,7 +55,7 @@ manifest_schema:
     pillar:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "The research lines this project belongs to, picked from the pillars list." }
     funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "The grants that fund this project, picked from the funding list; pick as many as apply." }
     collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "The people who work on this project, picked from the people list; pick as many as apply." }
-    "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
+    "waiting-on":  { label: "Waiting on", type: tags, from: [people, projects], section: Connections, help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
     related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "Other projects this one builds on or feeds, picked from the project list." }
     datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "The datasets this project uses, picked from the data list." }
     deadline:      { label: "Deadline", type: date, section: Dates, help: "The day the next deadline falls on; it shows on the Focus radar while the project is live." }

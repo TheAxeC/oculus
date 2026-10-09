@@ -36,9 +36,16 @@ export type RelayOptions = {
     spawn?: Spawn;
     /**
      * The schemas of the latest snapshot build, which the YAML server is answered from and, when
-     * they change, is asked for its settings again. Absent, no file has a schema.
+     * they change, is asked for its settings again, and the index of the hub keys of that build,
+     * which the YAML entry answers a hub key from. Absent, no file has a schema and no hub key is
+     * a link.
      */
     schemas?: SchemaFeed;
+    /**
+     * The flat text catalog, read at each answer of an entry, whose words an entry's refusal is
+     * worded in. Absent, no entry answers a request itself.
+     */
+    catalog?: () => Record<string, string>;
     /** The registry; `createServers` over `oculus` and `node` unless a test hands one. */
     servers?: Servers;
     /** How an interpreter is asked its version. */

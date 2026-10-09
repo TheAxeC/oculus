@@ -172,7 +172,7 @@ export function withoutKey(fields: Record<string, FieldSpec>): Record<string, Fi
 }
 
 /** Whether a family is a map from a key to one value: fields `key` and `value` and no more. */
-function isPairs(fields: Record<string, FieldSpec>): boolean {
+export function isPairs(fields: Record<string, FieldSpec>): boolean {
     const names = Object.keys(fields);
     return names.length === 2 && names.includes('key') && names.includes('value');
 }

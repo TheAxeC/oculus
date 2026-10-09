@@ -13,7 +13,7 @@
 
 import { tick } from 'svelte';
 import { endText, trimText, type KeptPlace } from '../../../data/helpers/files/save-text.ts';
-import { diskName } from '../../../data/helpers/hub-names.ts';
+import { sameDiskFile, type RootFolder } from '../../../data/helpers/hub-names.ts';
 import { editsBetween, type TextEdit } from '../../../data/prose/text-edits.ts';
 import type { WordWrap } from '../../../data/helpers/editor.ts';
 import type {
@@ -50,6 +50,8 @@ export type SourceDeps = {
     rules: (id: string, draft: SourceDraft, root: string, path: string) => SaveRules;
     /** The places the carets of a tab are at, which an automatic save leaves alone. */
     kept: (id: string) => KeptPlace[];
+    /** The roots the file browser serves, which decide whether two names are one file on disk. */
+    roots: () => readonly RootFolder[];
 };
 
 /** How one save of a tab is made. */
@@ -222,12 +224,10 @@ export function createSource(
     }
 
     function unsavedFile(root: string, path: string): boolean {
-        const file = diskName({ root, path });
+        const roots = deps.roots();
         return openDrafts().some((id) => {
             const place = diskFileOf(sourceDraft(id).file);
-            if (place === null) return false;
-            const held = diskName(place);
-            return held.root === file.root && held.path === file.path && sourceDirty(id);
+            return place !== null && sameDiskFile({ root, path }, place, roots) && sourceDirty(id);
         });
     }
 

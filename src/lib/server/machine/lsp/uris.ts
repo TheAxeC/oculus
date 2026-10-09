@@ -88,7 +88,7 @@ function encodeRoot(root: string): string {
 }
 
 /** The page URI of a path under a root key. */
-function pageUri(root: string, path: string): string {
+export function pageUri(root: string, path: string): string {
     const parts = path === '' ? [] : path.split('/');
     return `${PAGE_SCHEME}///${[encodeRoot(root), ...parts.map(encodePart)].join('/')}`;
 }

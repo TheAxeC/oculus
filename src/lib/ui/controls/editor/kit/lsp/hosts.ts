@@ -18,6 +18,7 @@ import type { LspServices } from './services';
 import { Signal } from './signal';
 import { SERVED_LANGUAGES, factsForLanguage } from '$lib/data/prose/lsp-servers';
 import { keyOf, type CompletionHook } from './transport/messages';
+import type { Jump } from './transport/renames';
 import { libraryOfResource, placeOfResource, type Target } from './uris';
 
 export { SERVED_LANGUAGES };
@@ -67,6 +68,8 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
     const commands = new Map<string, Command>();
     const changed = new Signal();
     const hooks = new Map<string, CompletionHook>();
+    /** The places the last jump answer named, by the address of the model it was asked for. */
+    const jumps = new Map<string, readonly Jump[]>();
     const peeks = createPeeks(monaco, parts.ensureLanguage);
     const ClientClass = clientClassOf(monaco);
     const now = parts.now ?? (() => Date.now());
@@ -134,6 +137,29 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
         return libraryOfResource(resource) ?? placeOfResource(resource);
     }
 
+    /**
+     * The end of the range a jump answer named, when the open is at the start of that range in
+     * the target: the answer's range is selected whole, which Monaco's own open does not.
+     */
+    function kept(
+        asking: Monaco.editor.ITextModel | null,
+        resource: Monaco.Uri,
+        at: { startLineNumber: number; startColumn: number }
+    ): { line: number; column: number } | undefined {
+        if (asking === null) return undefined;
+        const named = jumps
+            .get(asking.uri.toString(true))
+            ?.find(
+                (one) =>
+                    one.address === resource.toString(true) &&
+                    one.range.start.line + 1 === at.startLineNumber &&
+                    one.range.start.character + 1 === at.startColumn
+            );
+        return named === undefined
+            ? undefined
+            : { line: named.range.end.line + 1, column: named.range.end.character + 1 };
+    }
+
     monaco.editor.registerEditorOpener({
         openCodeEditor(source, resource, at) {
             if (services === null) return false;
@@ -153,7 +179,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
                     position.endColumn !== position.startColumn;
                 const end = ends
                     ? { line: position.endLineNumber, column: position.endColumn }
-                    : undefined;
+                    : kept(source.getModel(), resource, position);
                 services.open(target, position.startLineNumber, position.startColumn, end);
             } else if (point !== null) services.open(target, point.lineNumber, point.column);
             else services.open(target, 1);
@@ -192,6 +218,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
                     changed,
                     held: heldOf,
                     hooked: (address) => hooks.get(address),
+                    targeted: (asking, places) => jumps.set(asking, places),
                     now
                 });
                 hosts.set(language, host);

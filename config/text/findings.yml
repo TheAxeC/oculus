@@ -175,6 +175,7 @@ text:
             duplicate_key: 'two entries share the key {0}'
             bad_from: 'the field {0} takes its keys from {1}, which is no registry, projects or vocab list'
             bad_when: 'the field {0} is conditioned on {1}, which is no field of its record'
+            bad_map: 'the field {0} has map set but is not a records field'
             is_list: a list
             is_map: a map
             is_text: a text
@@ -189,7 +190,6 @@ text:
             related_itself: 'related names the project itself: {0}'
             folder_shared: '{0} projects share the folder name {1}, so their ids collide'
             waiting_on_itself: 'waiting-on names the project itself: {0}'
-            no_waiting_on: 'waiting-on names no person or project: {0}'
             status_not_in_vocab: status {0} is not one of the status vocabulary
             schema_malformed: schema {0} is not a list of maps naming a field and a type
             identity_empty: has no {0}

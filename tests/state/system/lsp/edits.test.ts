@@ -1,12 +1,16 @@
 // Layer 4, state test. The page's one function for the edit a language server asks for
-// (state/system/machine/lsp/edits.ts): the refusals G2 files (a library file, a path outside, an
-// entry that creates, renames or deletes a file, a file open in a tab of another page), and the
-// refusal of an edit whose tab was typed into while the edit waited (G8), each leaving every tab
-// and every file as it was.
+// (state/system/machine/lsp/edits.ts): the refusals G2 files (a library file, a path outside, a
+// file under the hub's `secrets` folder or `~/.oculus`, an entry that creates, renames or deletes a
+// file, a file open in a tab of another page), and the refusal of an edit whose tab was typed into
+// while the edit waited (G8), each leaving every tab and every file as it was. The plan and the
+// commit that `apply` runs in one call are run apart: a plan edits and posts nothing, its commit
+// posts the hash the plan read, a commit refuses a tab typed into after the plan, and the plan of
+// a hub-key rename refuses a file that no longer holds the key where an edit stands. A closed file
+// over the write limit or not UTF-8 text is refused with a sentence of its own.
 //
 // The page is a set of recording parts: the tabs' drafts, the answer of the relay about another
-// page's tabs, the file's hash and the post of `lsp-edit`. A tab is edited only through the
-// part that replaces its draft, so the calls of that part are what is read.
+// page's tabs, the disk's text and hash of a file and the post of `lsp-edit`. A tab is edited only
+// through the part that replaces its draft, so the calls of that part are what is read.
 //
 // What this does NOT cover: the editor's undo stop for the draft's new text; the refusals of a
 // file named twice and of a tab whose text is not the one the server holds, which no guarded entry
@@ -22,6 +26,7 @@ import {
     type LspEditsParts
 } from '../../../../src/lib/state/system/machine/lsp/edits.ts';
 import type { LspPlace } from '../../../../src/lib/data/model/index.ts';
+import { isPrivateFile } from '../../../../src/lib/state/system/config/config-files.ts';
 import type { Outcome } from '../../../../src/lib/state/sources/explorer/ops.svelte.ts';
 
 type Draft = ReturnType<LspEditsParts['draft']>;
@@ -43,6 +48,10 @@ function page(options: {
     afterWrite?: () => void;
     /** The files another page holds open in a tab, which the relay answers with. */
     elsewhere?: LspPlace[];
+    /** Whether a file is in a folder no edit is made in; none by default. */
+    withheld?: LspEditsParts['withheld'];
+    /** What the disk gives of a closed file; its text and hash by default. */
+    read?: ReturnType<LspEditsParts['read']>;
 }): Page {
     const drafts = options.drafts ?? {};
     const made: Page = { parts: null as never, written: [], edited: [] };
@@ -52,7 +61,7 @@ function page(options: {
         edit: (id, text) => {
             made.edited.push({ id, text });
         },
-        diskText: () => Promise.resolve(null),
+        read: () => options.read ?? Promise.resolve({ text: 'old = 1\n', hash: 'abc' }),
         askHeld: (files) => {
             options.during?.();
             const asked = (one: LspPlace) =>
@@ -65,7 +74,8 @@ function page(options: {
             options.afterWrite?.();
             return Promise.resolve({ ok: true, paths: [] } satisfies Outcome);
         },
-        hashOf: () => Promise.resolve('abc')
+        roots: () => [],
+        withheld: options.withheld ?? (() => false)
     };
     return made;
 }
@@ -113,6 +123,32 @@ describe('the edit a language server asks for', () => {
         expect(await edits.apply(rename(a, dotted))).toMatchObject({ notice: 'lsp_edit_outside' });
         expect(await edits.apply(rename(a, 'file:///etc/passwd'))).toMatchObject({
             notice: 'lsp_edit_outside'
+        });
+        expect([open.edited, open.written]).toEqual([[], []]);
+    });
+
+    it("refuses a file under the hub's secrets folder and one under the home folder's .oculus before any post (case 30a)", async () => {
+        const roots = [
+            { key: 'hub', dir: '/work/hub' },
+            { key: 'home', dir: '/home/me' }
+        ];
+        const open = page({
+            drafts: { t1: tab('hub/a.py', 'old = 1\n') },
+            withheld: (place) => isPrivateFile(place, roots, '/home/me')
+        });
+        const edits = createLspEdits(open.parts);
+        const secret = pageUri({ root: 'hub', path: 'secrets/a.yml' });
+        const state = pageUri({ root: 'home', path: '.oculus/state.yml' });
+        for (const address of [secret, state]) {
+            expect(await edits.apply(rename(a, address))).toMatchObject({
+                applied: false,
+                notice: 'lsp_edit_outside',
+                words: [address]
+            });
+        }
+        expect(await edits.plan(rename(secret))).toMatchObject({
+            ok: false,
+            outcome: { notice: 'lsp_edit_outside' }
         });
         expect([open.edited, open.written]).toEqual([[], []]);
     });
@@ -189,6 +225,77 @@ describe('the edit a language server asks for', () => {
             words: ['hub/a.py', '2']
         });
         expect([several.edited, several.written]).toEqual([[], [expect.any(Array)]]);
+    });
+
+    it('plans without posting or editing, and commits the hash the plan read', async () => {
+        const drafts = { t1: tab('hub/a.py', 'old = 1\n') };
+        const held = new Map([[a, 'old = 1\n']]);
+        const open = page({ drafts });
+        const edits = createLspEdits(open.parts);
+        const planned = await edits.plan(rename(a, b), held);
+        if (!planned.ok) throw new Error('the plan was refused');
+        expect([open.edited, open.written]).toEqual([[], []]);
+        expect(planned.plan.files.map((file) => [file.name, file.hash])).toEqual([
+            ['hub/a.py', ''],
+            ['hub/sub/b.py', 'abc']
+        ]);
+        expect(await edits.commit(planned.plan)).toEqual({ applied: true });
+        expect(open.written).toEqual([
+            [expect.objectContaining({ path: 'sub/b.py', hash: 'abc' })]
+        ]);
+        expect(open.edited).toEqual([{ id: 't1', text: 'new = 1\n' }]);
+    });
+
+    it('refuses the commit of a plan whose tab was typed into after the plan, and posts nothing', async () => {
+        const drafts = { t1: tab('hub/a.py', 'old = 1\n') };
+        const held = new Map([[a, 'old = 1\n']]);
+        const open = page({ drafts });
+        const edits = createLspEdits(open.parts);
+        const planned = await edits.plan(rename(a, b), held);
+        if (!planned.ok) throw new Error('the plan was refused');
+        drafts.t1 = { ...drafts.t1, text: 'old = 1\nx = 2\n' };
+        expect(await edits.commit(planned.plan)).toEqual({
+            applied: false,
+            notice: 'lsp_edit_changed',
+            words: ['hub/a.py']
+        });
+        expect([open.edited, open.written]).toEqual([[], []]);
+    });
+
+    it('names a closed file the page cannot read for the edit, and posts nothing', async () => {
+        const larger = page({ read: Promise.resolve('too_large') });
+        expect(await createLspEdits(larger.parts).apply(rename(b))).toEqual({
+            applied: false,
+            notice: 'lsp_edit_too_large',
+            words: ['hub/sub/b.py', '5']
+        });
+        const binary = page({ read: Promise.resolve('not_text') });
+        expect(await createLspEdits(binary.parts).apply(rename(b))).toEqual({
+            applied: false,
+            notice: 'lsp_edit_not_text',
+            words: ['hub/sub/b.py']
+        });
+        expect([larger.edited, larger.written, binary.edited, binary.written]).toEqual([
+            [],
+            [],
+            [],
+            []
+        ]);
+    });
+
+    it('refuses the rename of a hub key at the plan when a file no longer holds the key at an edited place (case 30c)', async () => {
+        const open = page({});
+        const edit = {
+            ...(rename(b) as object),
+            changeAnnotations: {
+                'hub-key': { label: 'zzz', description: 'new', needsConfirmation: true }
+            }
+        };
+        expect(await createLspEdits(open.parts).plan(edit)).toEqual({
+            ok: false,
+            outcome: { applied: false, notice: 'lsp_edit_changed', words: ['hub/sub/b.py'] }
+        });
+        expect([open.edited, open.written]).toEqual([[], []]);
     });
 });
 

@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { privateFolders } from '../../../../../data/helpers/files/private-folders.ts';
 import { ENGINE_ROOT, HUB_ROOT } from '../../../../../data/helpers/hub-names.ts';
 import { LOCAL_NAME } from '../../../../../data/sources/config.ts';
-import { under } from '../../library/rules.ts';
+import { under } from '../../../../core/paths.ts';
 import type { ServedRoot } from '../../uris.ts';
 
 /** The device and inode of a path, or null when nothing is there. */

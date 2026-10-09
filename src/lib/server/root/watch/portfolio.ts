@@ -26,6 +26,7 @@ import { debounce as debounced } from 'lodash-es';
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../data/index.ts';
 import { withOwnSchemas } from './own-schemas.ts';
 import { createChecker } from '../../../data/snapshot/schema/check.ts';
+import type { ReferenceIndex } from '../../../data/snapshot/references/model.ts';
 import type { SchemaSet } from '../../../data/snapshot/schema/set.ts';
 import {
     AUDIT_PATHS,
@@ -115,10 +116,11 @@ export type WatchOptions = {
      */
     built?: () => void;
     /**
-     * Called with the schemas each rebuild generated, right after its snapshot is published. The
-     * language server relay reads them; a rebuild that changed none hands over an equal set.
+     * Called with the schemas each rebuild generated and the index of the hub keys it read, right
+     * after its snapshot is published. The language server relay reads both; a rebuild that
+     * changed no schema hands over an equal set.
      */
-    schemas?: (set: SchemaSet) => void;
+    schemas?: (set: SchemaSet, references: ReferenceIndex) => void;
 };
 
 export type Watcher = {
@@ -601,15 +603,16 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             openFile(join(paths.hub, portfolio.career));
             open(engineConfig, true);
             const version = hub.nextVersion('portfolio');
-            const { snapshot, schemas } = buildPortfolioWithSchemas(
+            const { snapshot, schemas, references } = buildPortfolioWithSchemas(
                 paths.hub,
                 portfolio,
                 version,
                 roots,
-                checker
+                checker,
+                engineConfig
             );
             hub.publish('portfolio', snapshot);
-            options.schemas?.(withOwnSchemas(schemas));
+            options.schemas?.(withOwnSchemas(schemas), references);
             if (isClosed()) return;
             // The audit reads the disk, so it runs here, once per rebuild, and never per request.
             // It is published inside its own guard: a scan that throws leaves the previous audit

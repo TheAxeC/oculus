@@ -4,6 +4,7 @@
 
 import type { LspModel } from './messages';
 import type { Place } from '../uris';
+import type { Settling } from './renames';
 
 /** A document the server holds: the file, its models, the version last sent. */
 export type Doc = {
@@ -26,6 +27,10 @@ export type Waiting = {
      * client listed when it asked; that list is open while the item is resolved.
      */
     listed?: unknown;
+    /** For a `prepareRename`, what holds the client's request until the server answered. */
+    settle?: Settling;
+    /** For a rename, whether the reader asked for its edit to be previewed. */
+    preview?: boolean;
 };
 
 /** The requests whose answers hold an edit the transport applies. */

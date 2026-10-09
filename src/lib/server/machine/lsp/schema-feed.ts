@@ -1,15 +1,19 @@
-// Layer 2, server. The latest generated schemas, handed from the snapshot build to the language
-// server relay. The portfolio watcher publishes the set of each rebuild; the relay reads the
-// current one when a server asks for a schema and is told when a set differs from the one before,
-// so it asks its YAML servers for their settings again only then. An `editor.autosave` save writes
-// a hub file after each pause in typing and each write rebuilds the snapshot, so a rebuild that
-// changed no schema must tell nothing.
+// Layer 2, server. The latest generated schemas and the reference index of the hub's keys, handed
+// from the snapshot build to the language server relay. The portfolio watcher publishes both after
+// each rebuild. The relay reads the current schemas when a server asks for one and the current
+// index when the YAML entry answers a hub key. It is told when a set of schemas differs from the
+// one before, so it asks its YAML servers for their settings again only then: an `editor.autosave`
+// save writes a hub file after each pause in typing and each write rebuilds the snapshot, so a
+// rebuild that changed no schema tells nothing, whatever the index holds, since the index is read
+// at each question and no server is told of it.
 
+import { NO_REFERENCES, type ReferenceIndex } from '../../../data/snapshot/references/model.ts';
 import { emptySchemaSet, type SchemaSet } from '../../../data/snapshot/schema/set.ts';
 
 export class SchemaFeed {
     #set: SchemaSet = emptySchemaSet();
     #text = JSON.stringify(this.#set);
+    #index: ReferenceIndex = NO_REFERENCES;
     #listeners = new Set<() => void>();
 
     /** The set of the latest build. */
@@ -17,8 +21,17 @@ export class SchemaFeed {
         return this.#set;
     }
 
-    /** Take the set of a build; the listeners are told only when it differs from the last one. */
-    publish(set: SchemaSet): void {
+    /** The index of the hub keys of the latest build. */
+    references(): ReferenceIndex {
+        return this.#index;
+    }
+
+    /**
+     * Take the set and the index of a build; the listeners are told only when the set differs from
+     * the last one.
+     */
+    publish(set: SchemaSet, references: ReferenceIndex = NO_REFERENCES): void {
+        this.#index = references;
         const text = JSON.stringify(set);
         if (text === this.#text) return;
         this.#set = set;

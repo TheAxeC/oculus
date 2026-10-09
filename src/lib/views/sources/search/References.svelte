@@ -176,7 +176,10 @@
     }
 
     function open(file: RefFile, one: RefLine): void {
-        openReference(client, file, one.line, one.start + 1);
+        openReference(client, file, one.line, one.start + 1, {
+            line: one.line,
+            column: one.end + 1
+        });
     }
 
     function openNode(node: RefNode): void {

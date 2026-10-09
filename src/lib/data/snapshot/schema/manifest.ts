@@ -44,7 +44,7 @@ const WIDGET_TYPES: Record<string, string> = {
 const CONTAINER_TYPES = ['object', 'string', 'array', 'null'];
 
 /** The fields of the manifest schema as schema fields, with a dotted name left whole. */
-function manifestFields(schema: unknown): SchemaField[] {
+export function manifestFields(schema: unknown): SchemaField[] {
     const parsed = readAs(fieldsShape, schema);
     if (parsed === null) return [];
     return Object.entries(parsed.fields).map(([name, row]) => {
@@ -86,4 +86,18 @@ export function manifestSchema(schema: unknown, ctx: Context): JsonSchema {
         };
     }
     return { type: 'object', properties, additionalProperties: false };
+}
+
+/**
+ * The manifest fields whose values are held to the keys of their `from` sources, every one of
+ * which was read: the generated schema reports a value of the wrong shape in them.
+ */
+export function listedFields(schema: unknown, unread: ReadonlySet<string>): Set<string> {
+    const listed = manifestFields(schema).filter(
+        (field) =>
+            Array.isArray(field.from) &&
+            field.from.length > 0 &&
+            field.from.every((source) => !unread.has(source))
+    );
+    return new Set(listed.map((field) => field.field));
 }

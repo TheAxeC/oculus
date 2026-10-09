@@ -45,6 +45,7 @@
 import { json } from '@sveltejs/kit';
 import { constants, lstatSync, readFileSync, statSync } from 'node:fs';
 import { cp, lstat, mkdir, open, rename, rm } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import trashLibrary from 'trash';
 import { z } from 'zod';
@@ -58,6 +59,7 @@ import {
     type OpsRequest
 } from '../../../data/file-ops.ts';
 import { LOCAL_NAME } from '../../../data/sources/config.ts';
+import { privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { FILES_KIND, type FileField, type FileStamp } from '../../../data/file-ops.ts';
 import type { DiffSides } from '../../../data/model/index.ts';
 import { tokenedBody } from '../../core/auth.ts';
@@ -84,6 +86,8 @@ export type OpsTarget = {
     changes?: ChangeLog;
     /** The hub, which the record names a path inside it relative to. */
     hub?: string;
+    /** The home folder, whose `.oculus` folder no edit is made in; the machine's by default. */
+    home?: string;
     /**
      * The local history folder a trash or a delete keeps the content of a file in; none keeps none.
      */
@@ -120,6 +124,8 @@ export type Scope = {
     roots: Root[];
     locals: Guard;
     trash: NonNullable<OpsDeps['trash']>;
+    /** The folders no language server's edit is made in (`privateFolders`). */
+    withheld: readonly string[];
     history?: string;
     /** The search timeout and the ripgrep runner a replace uses. */
     search: { timeout?: number; run?: SearchRunner };
@@ -683,6 +689,7 @@ function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Pro
                     {
                         roots: scope.roots,
                         guarded: (path) => guarded(scope.locals, path),
+                        withheld: scope.withheld,
                         history: scope.history,
                         note: (before, after) => noted(scope, 'lsp-edit', before, after)
                     },
@@ -731,6 +738,7 @@ export async function handleOps(
             roots: into.roots,
             locals: protectedFiles(into),
             trash,
+            withheld: privateFolders(into.hub ?? null, into.home ?? homedir()),
             history: into.history,
             search: { timeout: into.searchTimeout, run: deps.search },
             note: { field: null, before: [], after: [] }

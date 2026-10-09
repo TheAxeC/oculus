@@ -2,8 +2,8 @@
 // and the apps API carry: the name and the type, and beside them the keys a field may hold (its
 // label, options, the sources its values come from, the condition under which it is allowed, the
 // condition under which it is required, whether it takes keys it does not declare, and the fields
-// of a list of records). The same reader reads the fields nested in a `records` field, so a schema
-// is one vocabulary at every depth.
+// of a list of records, or of a map from a name to a record). The same reader reads the fields
+// nested in a `records` field, so a schema is one vocabulary at every depth.
 //
 // A key of the wrong kind reads as absent; a field that names no `field` and `type`, or a nested
 // `fields:` that is no list of such fields, costs the whole schema, because half a schema would
@@ -63,6 +63,7 @@ function fieldOf(item: unknown): SchemaField | null {
         help: optionalTextShape.parse(held.help),
         when: whenShape.parse(held.when),
         open: flagShape.parse(held.open),
+        map: flagShape.parse(held.map),
         fields: nested
     });
 }

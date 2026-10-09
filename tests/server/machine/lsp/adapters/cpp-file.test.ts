@@ -5,8 +5,8 @@
 import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { it, scratchDir } from '../../../fixtures/scratch.ts';
-import { readCppFile } from '../../../../src/lib/server/machine/lsp/adapters/clangd/cpp-file.ts';
+import { it, scratchDir } from '../../../../fixtures/scratch.ts';
+import { readCppFile } from '../../../../../src/lib/server/machine/lsp/adapters/clangd/cpp-file.ts';
 
 /** A repository holding the given `.oculus/cpp.yml` text, a database in `build`, and a link out. */
 function repoWith(yml: string | null): string {

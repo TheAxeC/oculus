@@ -104,13 +104,17 @@ text:
         lsp_edit_failed: "The language server's edit to {0} could not be made, so nothing was changed."
         lsp_edit_gone: This edit was asked for a file that is no longer open in this window, so nothing was changed.
         lsp_edit_library: "{0} is a library file and is not edited here, so the language server's edit was not made."
-        lsp_edit_outside: "{0} is outside the folders oculus serves or under a node_modules or dot folder, so the language server's edit was not made."
+        lsp_edit_not_text: "{0} is not UTF-8 text throughout, so the language server's edit was not made."
+        lsp_edit_outside: "{0} is outside the folders oculus serves, under a node_modules or dot folder, or in the hub's secrets folder or ~/.oculus, so the language server's edit was not made."
         lsp_edit_partial: "The language server's edit stopped at {0} after {1} files were written. History undoes them."
         lsp_edit_partial_one: "The language server's edit stopped at {0} after 1 file was written. History undoes it."
         lsp_edit_protected: "{0} is protected on this machine or read-only, so the language server's edit was not made."
+        lsp_edit_refused: '{0}'
         lsp_edit_structure: "The language server's edit creates, renames or deletes {0}, which oculus does not do, so nothing was changed."
+        lsp_edit_too_large: "{0} is larger than {1} MB, so the language server's edit was not made."
         lsp_edit_typed: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. {1} files were written, and History undoes them."
         lsp_edit_typed_one: "{0} was typed into after the language server's edit was made, so the tabs were left as they are. 1 file was written, and History undoes it."
+        lsp_rename_refused_empty: The language server refused this rename and gave no reason.
         next_change: Go to Next Change
         not_text: This file is not UTF-8 text throughout; it is shown read-only and nothing is saved over it.
         open_change: Open Change
@@ -118,6 +122,18 @@ text:
         preview_side: Open Preview to the Side
         previous_change: Go to Previous Change
         readonly: This file is read-only on this machine; the editor shows it and saves nothing.
+        rename_empty: A key cannot be renamed to nothing, so nothing was renamed.
+        rename_exists: '{0} is already a key of {1}, so nothing was renamed.'
+        rename_large: '{0} is larger than {1} MB, so nothing was renamed.'
+        rename_none: The element can't be renamed.
+        rename_preview: Rename With Preview
+        rename_project: "{0} is a project's folder name, so it is renamed by renaming the folder in Files."
+        rename_readback: 'In {1}, {0} would be read as something other than a key, so nothing was renamed.'
+        rename_sources: '{0} is a key of more than one source ({1}), so nothing was renamed.'
+        rename_twice: '{0} stands twice in {1}, so nothing was renamed.'
+        rename_unparsed: '{0} has unsaved text that does not read as YAML, so nothing was renamed.'
+        rename_unread: '{0} could not be read as UTF-8 text, so nothing was renamed.'
+        rename_vocab: "{0} is a word of oculus's vocabulary in config/catalogs/vocab.yml, and oculus's code reads some of those words, so none of them is renamed here."
         retry: Read again
         revert: Revert
         save_conflict: "Failed to save '{0}': The content of the file is newer. Please compare your version with the file contents or overwrite the content of the file with your changes."

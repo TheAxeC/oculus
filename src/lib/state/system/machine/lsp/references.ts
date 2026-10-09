@@ -121,6 +121,8 @@ export type RefPick = {
     library?: string;
     line: number;
     column: number;
+    /** The column the match ends at, counted from one, on `line`; absent for a node of a tree. */
+    endColumn?: number;
 };
 
 /** The locations of a result in the order they are drawn: by file, then by line. */
@@ -131,7 +133,8 @@ export function picks(files: readonly RefFile[]): RefPick[] {
             path: file.path,
             ...(file.library === undefined ? {} : { library: file.library }),
             line: one.line,
-            column: one.start + 1
+            column: one.start + 1,
+            endColumn: one.end + 1
         }))
     );
 }

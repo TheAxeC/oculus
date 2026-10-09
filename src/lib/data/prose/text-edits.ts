@@ -13,6 +13,21 @@
 // when CR and CRLF line ends together outnumber half of all of them (the rule of a text model of
 // the editor) and LF otherwise.
 
+/**
+ * The id of the change annotation a rename of a hub key carries on each of its edits. The
+ * annotation asks to be confirmed, its label is the old key and its description the new one; the
+ * server's answer sets it and the page's plan reads it.
+ */
+export const RENAME_ANNOTATION = 'hub-key';
+
+/** The byte order mark of a UTF-8 text, which a position never counts. */
+const BOM = '\uFEFF';
+
+/** The text without a leading byte order mark. */
+export function withoutMark(text: string): string {
+    return text.startsWith(BOM) ? text.slice(1) : text;
+}
+
 /** A position of the protocol: a line from zero and a character of it from zero. */
 type TextPosition = { line: number; character: number };
 
@@ -26,7 +41,7 @@ export type TextEdit = { range: TextRange; newText: string };
 export type TextEditRefusal = 'range' | 'overlap';
 
 /** The offset of the start of each line of a text, in UTF-16 units; the first is 0. */
-function lineStarts(text: string): number[] {
+export function lineStarts(text: string): number[] {
     const starts = [0];
     for (let at = 0; at < text.length; at += 1) {
         const code = text.charCodeAt(at);
@@ -52,6 +67,14 @@ function offsetOf(text: string, starts: number[], at: TextPosition): number | nu
     if (!Number.isInteger(at.line) || !Number.isInteger(at.character)) return null;
     if (at.line < 0 || at.character < 0 || at.line >= starts.length) return null;
     return Math.min(starts[at.line] + at.character, lineEnd(text, starts, at.line));
+}
+
+/** The text a range of a text names, or null when the range names a line the text lacks. */
+export function textInRange(text: string, range: TextRange): string | null {
+    const starts = lineStarts(text);
+    const from = offsetOf(text, starts, range.start);
+    const to = offsetOf(text, starts, range.end);
+    return from === null || to === null || to < from ? null : text.slice(from, to);
 }
 
 /** Whether a text ends its lines with CRLF, by the rule in the head of this module. */
@@ -180,8 +203,9 @@ export function editsBetween(from: string, to: string): TextEdit[] {
 
 /**
  * The catalog keys, under `source.`, of the notices that say why an edit a language server asked
- * for was not made. The page's edit (state/system/machine/lsp/edits.ts) names one of them and the
- * words that fill it.
+ * for was not made, or why a rename the server refused was not made (`lsp_edit_refused`, whose one
+ * word is the server's sentence). The page's edit (state/system/machine/lsp/edits.ts) names one of
+ * them and the words that fill it.
  */
 export const LSP_EDIT_NOTICES = [
     'lsp_edit_changed',
@@ -190,13 +214,17 @@ export const LSP_EDIT_NOTICES = [
     'lsp_edit_failed',
     'lsp_edit_gone',
     'lsp_edit_library',
+    'lsp_edit_not_text',
     'lsp_edit_outside',
     'lsp_edit_partial',
     'lsp_edit_partial_one',
     'lsp_edit_protected',
+    'lsp_edit_refused',
     'lsp_edit_structure',
+    'lsp_edit_too_large',
     'lsp_edit_typed',
-    'lsp_edit_typed_one'
+    'lsp_edit_typed_one',
+    'lsp_rename_refused_empty'
 ] as const;
 
 /** One of those notices. */

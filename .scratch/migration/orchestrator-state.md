@@ -25,21 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D39
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  model: claude-sonnet-5-5 (the transcript's message.model, read after launch)
-  session_id: a39d8c564a664a921 (builder, launched 2026-10-08)
-  worktree: .agents/worktrees/D39
-  base: 58c7840d9
-  launched: 2026-10-08
-  report: agents/reviews/D39-report.md
-  builder_usage: 265,677 tokens, 751 tool uses, 171.7 min; round 1 226,450 tokens, 208 tool uses, 51.3 min
-  reviewer_report: agents/reviews/D39-refuter.md (a0406e6fb11a5db2d, claude-opus-5-5, 262,443 tokens, 132 tool uses, 23.6 min); over round 1: ab4302baf1d6aa897, claude-opus-5-5, stopped by Axel before it reported; over round 1: a9fc0373cde573248, claude-opus-5-5, 324,794 tokens, 77 tool uses, 20.2 min
-  brief_check: agents/reviews/D39-brief-check.md (a82035d8af9667de8, claude-opus-5-5, 354,905 tokens, 148 tool uses, 20.9 min; closed inline in the brief); premise recheck at a60dcb4fa aff03e5971f3cf40d, claude-opus-5-5, 331,913 tokens, 122 tool uses, 17.0 min
-  shared_paths: with D36, `server/root/context.ts` (D36 237-262, 321-325 beside D39's two changes at 257 and 327, its `SchemaFeed`, `createRelay` and watcher-hook lines 248-262 and 326), `relay.ts` (D36's three-line head comment edit at 23-25, which D39's hook sentence joins), `state/client/context.ts`, `DESIGN.md` (D36 23, 166, 476; D39 526, 553, 575-576), `HELP.md` (D36 118; D39 81, 116), `docs/views.md` (D36 81; D39 67-69, after 69, 253), `docs/files-and-search.md` (D36 a new section after 85; D39 85), `glyphs.yml` (each its own entries), `config/text/views/sources/search.yml` and `source.yml` (each its own lines), `src/lib/data/model/index.ts` (D36 572-609, D39 94-98) and `docs/diagrams/` (regenerated after the second landing); simple, since each is a few added statements or sentences kept from both sides at the second landing, with no logic of one step depending on the other's
-  landing: not-started
-  round: 1 (agents/briefs/D39-round1.md, sent 2026-10-09; the tree as handed back is at .agents/worktrees/D39-round0)
 - step: D40
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -170,7 +155,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- 22 (2026-10-09, D39's landing). The rename box has no hint line. In VS Code, pressing F2 opens a small box with the name in it, and under the box a grey line names the two keys; Monaco's own label for that line reads "Enter to Rename, Cmd+Enter to Preview" (`monaco-editor/esm/vs/editor/contrib/rename/browser/renameWidget.js:174-175`). In oculus after D39 the box opens and Cmd+Enter does open the Refactor Preview, but that grey line is not drawn, so nothing on screen tells you Cmd+Enter exists (it is named only in `HELP.md` and the guide). D39's brief left it out, because Monaco draws the line only when its edit service says it can preview, and making it say so means replacing one of Monaco's internal services (`IBulkEditService`) with oculus's own, imported from Monaco's internal files, which oculus does not do anywhere today. That replacement would also take over every rename of every language (it decides whether an edit goes straight in or to the preview), and Monaco's own Cmd+Enter binding would then duplicate oculus's, so one of the two is removed. No remaining step of the plan touches the editor, so there is no step to fold it into, and a new step needs your yes.
+  - (a) Recommended: a new step, D39b, that builds the hint line through that service replacement, with oculus's Cmd+Enter binding removed in favour of Monaco's own, and a test that a rename with and without Cmd+Enter goes where it should. It gives VS Code's rename box as it is. Cost: one internal Monaco import, which a Monaco upgrade can break; the step's test would catch that.
+  - (b) Leave it: the box works and Cmd+Enter previews, with no line naming the key. This is the lazy option.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -251,6 +238,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 04:30. D39 landed (hub keys as links; booking in plan.md; `agents/reviews/D39-landing.md`) after one repair round, the review over round 1's findings fixed or decided at landing ("Closed (at landing)" in `agents/reviews/D39-refuter.md`); G66, G67 and G68 written whole into `agents/guarded.md` with the new lines of G2, G8, G9, G13, G28 and G64; gate green in `.agents/worktrees/gate`, the look on the 8796 scratch oculus. In flight: D40 (resumed on its cases ruling, builder a55bd9e7057d5d802). Open item 22 for Axel (the rename box's hint line). Next: /spec D41; D40's report, review and landing.
 - 2026-10-09 03:30. D40 prepared on main at 9fd6c6eac (its brief closed inline by the orchestrator through `/spec`, no agent: open items 18, 19 and 20 and the Folder Fix All ruling written in, every brief-check finding closed under "Closed" in `agents/reviews/D40-brief-check.md`) and its builder a55bd9e7057d5d802 (claude-sonnet-5-5) launched in `.agents/worktrees/D40`. D39's review over round 1 (a9fc0373cde573248, claude-opus-5-5) is running. Next: D39's landing (its review over round 1 is in); D40 resumed on its cases ruling; D41 prepared.
 - 2026-10-09 01:40. D36 landed at 5ed0bc24c (linters as VS Code's; booking in plan.md; `agents/reviews/D36-landing.md`). D39's first review (`agents/reviews/D39-refuter.md`) sent as repair round 1 (`agents/briefs/D39-round1.md`, Z741 in automode) to builder a39d8c564a664a921. No open item. Next: D39's round report, the review over the round and /land D39 (merging with D36's lines in `server/root/context.ts`); /spec D40 now; M7 after D39, D41 after M7.
 - 2026-10-08 22:10. D36 built and reviewed (`agents/reviews/D36-refuter.md`, ae0da9f815922756d, claude-opus-5-5); its findings sent as repair round 1 (`agents/briefs/D36-round1.md`, Z740 in automode) to builder a6524e67c2c932dc1. ShellCheck 0.11.0 installed. D39 building. No open item. Next: D36's round report and the review over it, D39's report and review, then /land; M7 after D39, D41 after M7, D40 after D36.

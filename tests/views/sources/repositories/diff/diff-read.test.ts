@@ -3,7 +3,9 @@
 // The pane reads again when its key changes, so a key that missed a move of the file would leave
 // the left side of the conflict showing the text the disk held before, and a reader who then
 // presses Overwrite would write over a change they never saw. A key that moved for any other pane
-// would read a working-tree diff or a Replace Preview again at every change of its file.
+// would read a working-tree diff or a Replace Preview again at every change of its file. The pane
+// of a file of the Refactor Preview moves with the preview's revision, which a check changes, and
+// with no change of the file on disk.
 
 import { describe, expect, it } from 'vitest';
 import type { ReplacePreview } from '../../../../../src/lib/data/file-ops.ts';
@@ -38,5 +40,16 @@ describe('the read key of a diff pane', () => {
         const held = { ...pane, replace: PREVIEW };
         expect(readKeyOf(held, disk('aaaa'))).toBe(readKeyOf(held, disk('bbbb')));
         expect(readKeyOf(held, disk('aaaa'))).not.toBe(readKeyOf(pane, disk('aaaa')));
+    });
+
+    it('moves with the revision of a Refactor Preview and stays the same when the file changes', () => {
+        const held = { ...pane, refactor: { id: '3' } };
+        const at = (revision: number, hash: string) => readKeyOf(held, disk(hash), () => revision);
+        expect(at(1, 'aaaa')).not.toBe(at(2, 'aaaa'));
+        expect(at(1, 'aaaa')).toBe(at(1, 'bbbb'));
+        expect(at(1, 'aaaa')).not.toBe(readKeyOf(pane, disk('aaaa')));
+        expect(at(1, 'aaaa')).not.toBe(
+            readKeyOf({ ...pane, refactor: { id: '4' } }, disk('aaaa'), () => 1)
+        );
     });
 });

@@ -16,11 +16,14 @@
 // a repository. The YAML server runs under node's permission model, which lets it read only
 // oculus's own `node_modules`: a schema it is told of by a modeline or a `$schema:` key that names
 // a file on disk is not loaded, and the schemas it uses are the ones the entry hands it from
-// memory. clangd is the `clangd` on the oculus process's PATH, with oculus's own arguments and no
-// `--query-driver`; its index is written under the folder oculus links the chosen compile database
-// into, never into a repository. texlab is the program `latex.texlab_path` names, else the
-// `texlab` on the oculus process's PATH, started by its absolute path with a PATH of its own that
-// holds links to the TeX programs and no `latexmk`, so it never runs the code of a latexmkrc.
+// memory. An entry may answer a request of the page itself (`answers`) before it reaches the
+// server: the YAML entry does so for the definition, references and rename of a hub key, from the
+// index the snapshot build makes. clangd is the `clangd` on the oculus process's PATH, with
+// oculus's own arguments and no `--query-driver`; its index is written under the folder oculus
+// links the chosen compile database into, never into a repository. texlab is the program
+// `latex.texlab_path` names, else the `texlab` on the oculus process's PATH, started by its
+// absolute path with a PATH of its own that holds links to the TeX programs and no `latexmk`, so
+// it never runs the code of a latexmkrc.
 //
 // Every command is an argument array: a root's path is one argument whatever characters it
 // holds, and nothing is passed through a shell.
@@ -38,7 +41,10 @@ import { texlabAdapter } from './adapters/texlab/adapter.ts';
 import { texlabSettings } from './adapters/texlab/settings.ts';
 import { yamlAdapter } from './adapters/yaml/adapter.ts';
 import { yamlRequests } from './adapters/yaml/requests.ts';
+import { answerHubKeys } from './adapters/yaml/hub-keys.ts';
 import { isMachineFile, isPrivateFile } from './adapters/yaml/machine-file.ts';
+import type { ReferenceIndex } from '../../../data/snapshot/references/model.ts';
+import type { FileText } from '../../../data/snapshot/references/rename.ts';
 import type { SchemaSet } from '../../../data/snapshot/schema/set.ts';
 import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
 import type { ServedRoot } from './uris.ts';
@@ -188,6 +194,12 @@ export type ServerEntry = {
      */
     diagnostics?(params: Record<string, unknown>): Record<string, unknown>;
     /**
+     * An answer to a request of the page that the entry gives itself, from what the relay holds,
+     * before the request goes to the server. The result or the error is the page's answer; nothing
+     * means the request goes on to the server. It answers whether or not the server is running.
+     */
+    answers?(request: PageRequest, view: PageView): PageAnswer | undefined;
+    /**
      * The sections of `workspace/configuration` that follow the shipped settings: the server is
      * asked again when the answer for one changes.
      */
@@ -196,6 +208,40 @@ export type ServerEntry = {
 
 /** What an entry's handler of a server request knows: the server's root and the current schemas. */
 export type ServerAsk = { root: ServedRoot; schemas: SchemaSet };
+
+/** A request of the page, as it came: the method and its params with the page's addresses. */
+export type PageRequest = { method: string; params: unknown };
+
+/** A document the page holds open, as the page sees it. */
+export type OpenDocument = {
+    /** The file's real path. */
+    real: string;
+    /** The address the page holds it open under. */
+    pageUri: string;
+    /** The version the page holds it at. */
+    version: number;
+    text: string;
+};
+
+/** What an entry's `answers` knows of the page it answers. */
+export type PageView = {
+    roots: readonly ServedRoot[];
+    /** The index of the hub keys the latest snapshot build made. */
+    references: ReferenceIndex;
+    /** The flat text catalog, which the words of an answer are read from. */
+    catalog: Record<string, string>;
+    /** Every document the page holds open, one for each file. */
+    documents: readonly OpenDocument[];
+    /** The document the page names by an address, or undefined when it holds none by it. */
+    document(uri: unknown): OpenDocument | undefined;
+    /** The text of a file on disk by its real path, or why it cannot be had. */
+    read(real: string): FileText;
+    /** Whether a page other than this one holds the file, by its real path, open in a tab. */
+    heldElsewhere(real: string): boolean;
+};
+
+/** The page's answer to a request: its result, or an error with the words of the refusal. */
+export type PageAnswer = { result: unknown } | { error: { code: number; message: string } };
 
 /** The registry: the entries and the lookup by language. */
 export type Servers = {
@@ -574,6 +620,9 @@ const YAML_SETTINGS = {
  * oculus's own `node_modules` and nothing else, so no file a document names reaches it. No schema
  * comes from the network or the schema store: the server asks its client, which answers from the
  * schemas of the latest snapshot build (adapters/yaml/requests.ts). `local.yml` is never put on it.
+ * A hub key in a hub file is a link: the entry answers its definition, references and rename itself
+ * from the reference index of the latest build (adapters/yaml/hub-keys.ts), which the server has no
+ * notion of, and sends every other request to the server.
  */
 function yaml(options: ServersOptions): ServerEntry {
     return {
@@ -594,12 +643,15 @@ function yaml(options: ServersOptions): ServerEntry {
         requests: yamlRequests,
         registrations: ['yaml/registerCustomSchemaRequest', 'yaml/registerContentRequest'],
         refuses: (real, roots) => isMachineFile(real, roots) || isPrivateFile(real, roots),
+        answers: answerHubKeys,
         capabilities: (language) => ({
             textDocumentSync: INCREMENTAL,
             hoverProvider: serving(language),
             completionProvider: serving(language),
             documentSymbolProvider: serving(language),
             definitionProvider: serving(language),
+            referencesProvider: serving(language),
+            renameProvider: serving(language, { prepareProvider: true }),
             foldingRangeProvider: serving(language),
             selectionRangeProvider: serving(language),
             codeActionProvider: serving(language)

@@ -78,7 +78,7 @@ The key sheet opens with `?`. The focus, tab and palette rules behind these keys
 | Shift-F10 | the right-click menu of the focused row or control, as the context menu key opens it |
 | Cmd-K | jump palette |
 | Cmd+T | in the app, the palette on the symbols of the workspace (`#` in the palette does the same in a browser) |
-| F2 | rename the symbol at the caret of a source tab's editor, through its language server |
+| F2 | rename the symbol at the caret of a source tab's editor, through its language server; in a YAML file of the hub, on a value that names an entry of another file, it renames that key in every file that names it and shows the edit as a Refactor Preview before anything is written, and Cmd+Enter in the rename box shows that preview for any rename |
 | Shift+Alt+H | show the call hierarchy of the symbol at the caret of a source tab's editor, in the References view |
 | : | command line |
 | Esc | clear the cursor |
@@ -113,7 +113,7 @@ One row per view of the Views catalogue; each name links to its section of the [
 | `files` | [Files](docs/views.md#files) | The file browser over the hub, the engine config folder and the configured roots, read like an editor's explorer: it follows the disk, roots, bookmarks, notes and sections reorder by drag and by Alt+Up and Alt+Down, and a second Collapse Folders press closes the roots. |
 | `repositories` | [Repositories](docs/views.md#repositories) | VS Code's Source Control over every repository oculus knows, with the commit box, the changes, the graph, stashes, tags and worktrees, repositories below a root down to `repository_scan_depth` included, and a changed file's name pressed to open it. |
 | `search` | [Search](docs/views.md#search) | A pattern across the files of one root or of all of them, the hits grouped by file, with an optional replace. |
-| `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab, and the call and type hierarchies of a symbol. |
+| `references` | [References](docs/views.md#references) | The locations a language server found for Find All References or Find All Implementations in a source tab, which for a value in a YAML file of the hub that names an entry of another file are the files and lines that name it, and the call and type hierarchies of a symbol. |
 | `latex` | [TeX view](docs/views.md#tex-view) | LaTeX Workshop's side bar for the root of the LaTeX file in front: Commands, Structure and Math Symbols. |
 | `problems` | [Problems](docs/views.md#problems) | The errors, warnings and infos of the language servers, of project commands, of LaTeX builds and of the linters (ChkTeX, Ruff, ESLint and ShellCheck), one row per problem under its file. |
 | `debug` | [Debug](docs/views.md#debug) | The debugger of rite: the launch configuration picker with Start, the findings of `.oculus/launch.yml`, and Variables, Watch, Call Stack and Breakpoints. |

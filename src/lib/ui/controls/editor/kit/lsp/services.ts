@@ -45,6 +45,14 @@ export type LspSymbols = readonly LspSymbol[] | 'loading' | 'none';
 export type LspEditOutcome =
     { applied: true } | { applied: false; notice: string; words: string[] };
 
+/** What the page is told about an edit a server asked for. */
+type LspEditOptions = {
+    /** The reader accepted the rename with the preview key. */
+    preview: boolean;
+    /** Runs once the edit was made. */
+    applied: () => Promise<void>;
+};
+
 /** What the language server kit needs from the page, passed in by the source view. */
 export type LspServices = {
     /** The port of a language's channel. */
@@ -89,11 +97,17 @@ export type LspServices = {
      * Make an edit a server asked for, a workspace edit with the page's addresses: the open tabs of
      * any language edited unsaved and the other files written, all or none. `held` is the text the
      * asking server holds of each document, by the page's address of the file, over every language
-     * its entry serves.
+     * its entry serves. An edit the page shows before it makes (the reader asked for the preview,
+     * or the edit asks to be confirmed) answers applied once it is shown and is made when the
+     * reader says so; `options.applied` runs once it was made, whichever way.
      */
-    applyEdit(edit: unknown, held: ReadonlyMap<string, string>): Promise<LspEditOutcome>;
+    applyEdit(
+        edit: unknown,
+        held: ReadonlyMap<string, string>,
+        options: LspEditOptions
+    ): Promise<LspEditOutcome>;
     /** Shows a notice of the source tab by its name, as the tab's other notices are shown. */
     notice(key: string, ...words: string[]): void;
-    /** A catalog line, for the labels of the actions the kit adds. */
-    words(key: string): string;
+    /** A catalog line of the page's words, filled with `words`: a label or a sentence. */
+    words(key: string, ...words: string[]): string;
 };

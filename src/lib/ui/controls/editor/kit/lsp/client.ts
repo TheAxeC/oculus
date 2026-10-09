@@ -28,6 +28,7 @@ import {
     type TextEdit
 } from './transport/messages';
 import { namedBy } from './transport/edits';
+import type { Jump } from './transport/renames';
 import { factsForLanguage } from '$lib/data/prose/lsp-servers';
 import { inactiveDecorations, markerOwner, toMarkers } from './markers';
 import type { Peeks } from './peeks';
@@ -119,6 +120,8 @@ type Entry = {
     watch: { dispose(): void };
     timer: ReturnType<typeof setTimeout> | null;
     inactive: Monaco.editor.IEditorDecorationsCollection;
+    /** The editor's command that accepts the rename box with the preview. */
+    preview: { dispose(): void };
 };
 
 /** What a host reads of the page beyond its services. */
@@ -140,6 +143,8 @@ export type HostParts = {
     held: (language: string) => Map<string, string>;
     /** The hook that adds to the completion answers of the model with this address, if any. */
     hooked: (address: string) => CompletionHook | undefined;
+    /** The places the last jump answer of the editor over the model with this address named. */
+    targeted: (asking: string, places: readonly Jump[]) => void;
     now: () => number;
 };
 
@@ -207,6 +212,8 @@ export class LanguageHost {
     #capabilities: Record<string, unknown> = {};
     #sweep: ReturnType<typeof setInterval> | null = null;
     #refreshTokens: (() => void) | null = null;
+    /** Whether the reader accepted the rename box with the preview key. */
+    #preview = false;
 
     constructor(parts: HostParts) {
         this.#parts = parts;
@@ -256,7 +263,8 @@ export class LanguageHost {
             reg,
             watch: model.onDidChangeContent(() => this.#symbols(entry)),
             timer: null,
-            inactive: reg.editor.createDecorationsCollection()
+            inactive: reg.editor.createDecorationsCollection(),
+            preview: this.#previewKey(reg.editor)
         };
         this.#entries.set(model, entry);
         reg.editor.updateOptions({
@@ -284,6 +292,7 @@ export class LanguageHost {
         if (entry === undefined) return;
         this.#entries.delete(model);
         entry.watch.dispose();
+        entry.preview.dispose();
         if (entry.timer !== null) clearTimeout(entry.timer);
         this.#unmark(entry);
         this.#forget(entry.reg, null);
@@ -292,6 +301,25 @@ export class LanguageHost {
         this.#parts.services.symbols(entry.reg.instance, 'none');
         this.#parts.changed.fire();
         if (this.#entries.size === 0) this.#end();
+    }
+
+    /**
+     * The editor's command that marks the next rename answer for the Refactor Preview and then
+     * accepts the rename box, bound to Cmd+Enter (Ctrl+Enter elsewhere) while the box is open.
+     * Monaco's standalone editor has no preview of its own, so the key it binds there is replaced.
+     */
+    #previewKey(editor: Monaco.editor.IStandaloneCodeEditor): { dispose(): void } {
+        const { monaco, services } = this.#parts;
+        return editor.addAction({
+            id: 'oculus.renameWithPreview',
+            label: services.words('rename_preview'),
+            keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+            precondition: 'renameInputVisible',
+            run: (focused) => {
+                this.#preview = true;
+                focused.trigger('oculus', 'acceptRenameInput', null);
+            }
+        });
     }
 
     /** Put back the options registration set on the editor, unless the editor is gone. */
@@ -471,7 +499,17 @@ export class LanguageHost {
             peek: (target, page, spelling) => peeks.acquire(services, target, page, spelling),
             drop: (model) => peeks.release(model as Monaco.editor.ITextModel),
             apply: (model, edits) => this.#apply(model as Monaco.editor.ITextModel, edits),
-            applyEdit: (edit) => this.#applyEdit(edit),
+            applyEdit: (edit, preview) => this.#applyEdit(edit, preview),
+            markPreview: (marked) => {
+                this.#preview = marked;
+            },
+            takePreview: () => {
+                const marked = this.#preview;
+                this.#preview = false;
+                return marked;
+            },
+            targeted: (asking, places) => this.#parts.targeted(asking, places),
+            words: (key, ...words) => services.words(key, ...words),
             diagnostics: (page, place, items) => {
                 this.#diagnostics.set(page, items);
                 const shown = [...this.#entries.values()].filter(
@@ -561,14 +599,15 @@ export class LanguageHost {
     }
 
     /**
-     * Make the edit a server asked for, through the page, and read again the peek models of the
-     * files it wrote.
+     * Make the edit a server asked for, through the page, which reads the peek models of the files
+     * it wrote again once the edit was made, however long the reader took to say so.
      */
-    async #applyEdit(edit: unknown): Promise<LspEditOutcome> {
+    #applyEdit(edit: unknown, preview: boolean): Promise<LspEditOutcome> {
         const { services, peeks } = this.#parts;
-        const outcome = await services.applyEdit(edit, this.#parts.held(this.language));
-        if (outcome.applied) await peeks.refresh(services, namedBy(edit).pages);
-        return outcome;
+        return services.applyEdit(edit, this.#parts.held(this.language), {
+            preview,
+            applied: () => peeks.refresh(services, namedBy(edit).pages)
+        });
     }
 
     /**

@@ -16,6 +16,10 @@
 // address, `oculus-lib:///<token>/<file name>` (library/), and the page reads it over the same
 // channel with `{ oculus: 'read' }`; the tokens are the page's, minted only in answers.
 //
+// An entry may answer a request of the page itself (`answers`) before it reaches a server, from the
+// reference index of the latest build and the texts of the page's tabs (held/answers.ts): the YAML
+// entry does so for a hub key. It answers whether or not its server is running.
+//
 // What a server asks of its client is answered here and not forwarded: `workspace/configuration`
 // from the registry, `client/registerCapability` (the file watchers become held/watch.ts's),
 // progress as `state` messages. Only `workspace/applyEdit` and the two refreshes reach the page.
@@ -38,6 +42,7 @@ import type { LspRpc, LspToPage } from '../../../data/model/index.ts';
 import type { Sink } from '../../core/channels.ts';
 import { WORKSPACE_LANGUAGE } from '../../../data/prose/lsp-servers.ts';
 import { reconfigure } from './choices.ts';
+import { answerFor } from './held/answers.ts';
 import { adoptHeld, changeDocument, closeDocument, openingTarget } from './held/documents.ts';
 import { workspaceMessage } from './held/elsewhere.ts';
 import { handleOculus, heldOf, type OculusContext } from './held/oculus.ts';
@@ -60,6 +65,7 @@ import type { RelayOptions } from './relay-options.ts';
 import {
     createServers,
     initializeParams,
+    type PageAnswer,
     type Prepared,
     type RootEnv,
     type ServerEntry,
@@ -485,6 +491,12 @@ export class Relay {
     #route(page: Page, channel: string, entry: ServerEntry, message: LspRpc): void {
         const method = message.method ?? '';
         const isRequest = message.id !== undefined && message.id !== null;
+        const given = isRequest ? this.#givenBy(page, entry, method, message.params) : undefined;
+        if (given !== undefined) {
+            if ('result' in given) this.#reply(page, channel, message.id, given.result);
+            else this.#fail(page, channel, message.id, given.error.code, given.error.message);
+            return;
+        }
         const address = addressOf(method, message.params);
         const open = address === null ? undefined : page.docs.get(address);
         const held = open?.held ?? this.#heldFor(page, entry, method, message.params, address);
@@ -532,6 +544,22 @@ export class Relay {
             held,
             address: address ?? ''
         });
+    }
+
+    /** What the entry answers to a request itself, from the latest build and the page's tabs. */
+    #givenBy(
+        page: Page,
+        entry: ServerEntry,
+        method: string,
+        params: unknown
+    ): PageAnswer | undefined {
+        const answering = {
+            roots: this.#roots(),
+            feed: this.#options.schemas,
+            catalog: this.#options.catalog,
+            pages: () => this.#pages.values()
+        };
+        return answerFor(entry, page, answering, { method, params });
     }
 
     /**

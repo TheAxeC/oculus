@@ -257,7 +257,7 @@ const COMPUTED_PREFIXES = [
     {
         // The notice that says why an edit a language server asked for was not made is one of the
         // list in data/prose/text-edits.ts.
-        file: 'lib/views/sources/source/language/lsp.ts',
+        file: 'lib/views/sources/source/language/notice-words.ts',
         start: 't(`source.${key}`',
         keys: () => LSP_EDIT_NOTICES.map((notice) => `source.${notice}`)
     },

@@ -77,7 +77,7 @@ digraph channels {
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:290" [label="src/lib/server/machine/runs/schedules/watch.ts:290 publish(CHANNEL)"];
-        "? src/lib/server/root/context.ts:347" [label="src/lib/server/root/context.ts:347 publish(set)"];
+        "? src/lib/server/root/context.ts:348" [label="src/lib/server/root/context.ts:348 publish(set)"];
         "? src/lib/shell/panes/PaneView.svelte:473" [label="src/lib/shell/panes/PaneView.svelte:473 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
@@ -359,7 +359,7 @@ digraph channels {
     "server/machine/pty/channel" -> "ch pty:*";
     "server/machine/runs/schedules/watch" -> "? src/lib/server/machine/runs/schedules/watch.ts:290";
     "server/machine/usage/watch" -> "ch usage";
-    "server/root/context" -> "? src/lib/server/root/context.ts:347";
+    "server/root/context" -> "? src/lib/server/root/context.ts:348";
     "server/root/hooks" -> "ch sessions";
     "server/root/watch/apps" -> "ch apps";
     "server/root/watch/bookmarks" -> "ch files";

@@ -1,8 +1,10 @@
-// Layer 1, data. The folders of this machine that hold its own state or secrets, which no library
-// file lies in (server/machine/lsp/library/rules.ts) and no file of is given to the YAML language
-// server: the machine's `~/.oculus` and the hub's `secrets` folder. The engine's own config folder
-// is withheld as well, and is named by the caller, since the engine's config folder is served.
-// It is one definition for the server and the page, which each compare a file with it.
+// Layer 1, data. The folders of this machine that hold its own state or secrets: the machine's
+// `~/.oculus` and the hub's `secrets` folder. No library file lies in them
+// (server/machine/lsp/library/rules.ts), no file of them is given to the YAML language server, and
+// no language server's edit changes one (server/files/fs/lsp-edit.ts and the page's plan). The
+// library rules also withhold the engine's own config folder, which the caller names, since that
+// folder is served. It is one definition for the server and the page, which each compare a file
+// with it.
 
 import { joinPath } from './paths.ts';
 

@@ -260,6 +260,7 @@ export function createServerContext(
         lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
         approvals: () => local.approvals ?? defaultApprovalsPath(),
         latex: () => latexBuild(make.loadConfig(engine).config),
+        catalog: () => textCatalog(make.loadConfig(engine).config),
         changes: () => target(engine, make.loadConfig(engine).config, context).changes,
         library: () => ({
             closed: closedPaths(make.loadConfig(engine).config).folders,
@@ -344,7 +345,7 @@ export function createServerContext(
                     relay.settingsChanged();
                     if (!lintSettings(make.loadConfig(engine).config).on.eslint) eslint.endAll();
                 },
-                schemas: (set) => schemas.publish(set)
+                schemas: (set, references) => schemas.publish(set, references)
             }
         );
     const folders = (): ProjectFolder[] => {

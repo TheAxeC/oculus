@@ -21,8 +21,7 @@ import { dirname, resolve } from 'node:path';
 import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps.ts';
 import { privateFolders } from '../../../../data/helpers/files/private-folders.ts';
 import { namesInterpreterLibrary } from '../../../../data/prose/lsp-servers.ts';
-import { inside, realPath } from '../../../core/paths.ts';
-import { normal } from '../uris.ts';
+import { inside, realPath, under } from '../../../core/paths.ts';
 
 /** What the rules read of this machine. */
 export type LibraryRules = {
@@ -54,16 +53,6 @@ export type Naming = {
 function inClosed(path: string, closed: readonly string[]): boolean {
     const parts = path.split('/').filter((part) => part !== '');
     return parts.some((_, at) => inClosedPaths(parts.slice(at).join('/'), closed));
-}
-
-/** Whether a real path lies in one of the folders, each compared as written and as resolved. */
-export function under(real: string, folders: readonly string[]): boolean {
-    const target = normal(real);
-    return folders.some((folder) => {
-        const own = normal(resolve(folder));
-        const there = realPath(folder, true);
-        return inside(target, own) || (there !== null && inside(target, normal(there)));
-    });
 }
 
 /** Whether a prefix is the filesystem root, the home folder or a folder holding the home folder. */

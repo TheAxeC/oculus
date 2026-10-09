@@ -14,7 +14,12 @@ import { isEqual } from 'lodash-es';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import type { SchemaField, When } from '../../../model/index.ts';
-import { editsBetween, type TextEdit } from '../../../prose/text-edits.ts';
+import {
+    editsBetween,
+    textInRange,
+    withoutMark,
+    type TextEdit
+} from '../../../prose/text-edits.ts';
 import { byKey, isMap, scalar } from '../../guards.ts';
 import { columnOf, pairOf, rangeOf, valueEnd } from './yaml-ranges.ts';
 
@@ -42,6 +47,21 @@ export function renderScalar(value: ScalarFieldValue, style?: string): string {
             ? stringify(value, { lineWidth: 0 })
             : stringify(value, { lineWidth: 0, defaultStringType: wanted });
     return text.replace(/\n+$/, '');
+}
+
+/**
+ * Whether a range of a text is one YAML scalar that reads as `key`, in whatever quoting it is
+ * written. The page asks it of every edited range of a file as it is read, before it shows or makes
+ * the edit of a rename, so a file that changed since the edit was computed is not edited at places
+ * that moved.
+ */
+export function holdsKey(text: string, range: TextEdit['range'], key: string): boolean {
+    const held = textInRange(withoutMark(text), range);
+    if (held === null) return false;
+    const read = parseDocument(held, { schema: 'failsafe' });
+    return (
+        read.errors.length === 0 && isScalar(read.contents) && scalar(read.contents.value) === key
+    );
 }
 
 /** The line a byte offset sits on, counting from zero. */

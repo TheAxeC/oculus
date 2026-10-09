@@ -23,6 +23,15 @@ function holdTabs(page: Page, roots: readonly ServedRoot[], files: LspPlace[]): 
     page.tabs = new Set(files.flatMap((file) => pathOf(roots, file) ?? []));
 }
 
+/** Whether a page other than `asking` holds the file at a real path open in a tab. */
+export function isHeldElsewhere(pages: Iterable<Page>, asking: Page, real: string): boolean {
+    const wanted = normal(real);
+    for (const other of pages) {
+        if (other !== asking && other.tabs.has(wanted)) return true;
+    }
+    return false;
+}
+
 /** Those of the files that a page other than `asking` holds open in a tab. */
 function heldElsewhere(
     pages: Iterable<Page>,
@@ -30,10 +39,10 @@ function heldElsewhere(
     roots: readonly ServedRoot[],
     files: LspPlace[]
 ): LspPlace[] {
-    const others = [...pages].filter((one) => one !== asking);
+    const all = [...pages];
     return files.filter((file) => {
         const path = pathOf(roots, file);
-        return path !== null && others.some((one) => one.tabs.has(path));
+        return path !== null && isHeldElsewhere(all, asking, path);
     });
 }
 

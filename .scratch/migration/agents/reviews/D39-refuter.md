@@ -378,3 +378,17 @@ The round brief's items:
 - Whether the relay keeps the private-folder branch (Standards 5) and where the new hub-keys test lives (Standards 4): the orchestrator's call at landing.
 
 Reviewer usage: agent id not known to the reviewer; served model claude-opus-5-5, per the session's own model line; tokens, tool uses and minutes not known (not verified).
+
+### Closed (at landing)
+
+- Proof 1: fixed at landing. The sentence in `agents/reviews/D39-report.md`, section 7, now says `createDiffEditor` takes the same third argument, so the override can be passed by whichever editor the page creates first. Whether to build the hint line is open item 22.
+- Proof 2: fixed at landing. The first report's section 6 is carried whole into `agents/reviews/D39-report.md` section 6, and every Test and Code line it names is written into `agents/guarded.md` (G2, G8, G9, G13, G28, G64, G66, G67, G68).
+- Proof 3: closed at landing. The edits.test.ts row 'names a closed file the page cannot read for the edit, and posts nothing' stands under G67 alone, whose widened sentence names that refusal; G9 does not take it. `held/answers.ts` is not in G67's Code line.
+- Proof 4: fixed at landing. `views/sources/source/language/notice-words.ts` now holds the page's `noticeWords`, which `lsp.ts` imports and `tests/ui/controls/editor/lsp-transport.test.ts` uses as the host's `words` over the checkout's catalog, so a refusal key the page does not word fails the test; line 103 is deleted; `tests/checks/source/keys.test.ts` names the new file for the `LSP_EDIT_NOTICES` keys.
+- Standards 1: fixed at landing. `endOf` awaits the request's settlement, and the rename rows await the transport's delivery to the editor, a promise the rig resolves from its listener; no `setTimeout` is left in the file.
+- Standards 2: fixed at landing. `held/answers.ts`'s `readText` reads the bytes, refuses with `isWholeText` and decodes; the strict decoder is gone. The catalog sentence `rename_unread` now reads "{0} could not be read as UTF-8 text, so nothing was renamed.", and `docs/files-and-search.md` says the same.
+- Standards 3: fixed at landing. `rename.ts` exports `namedScans`, which `hub-keys.ts`'s `heldBack` uses; `held/elsewhere.ts` exports `isHeldElsewhere`, which its own `heldElsewhere` and `answers.ts` use.
+- Standards 4: decided at landing. `tests/server/machine/lsp/adapters/` holds the adapters' tests, `hub-keys.test.ts` and `cpp-file.test.ts` (moved from `tests/server/machine/lsp/`), mirroring `src/lib/server/machine/lsp/adapters/`; `tests/server/machine` is back to 9 entries and `tests/server/machine/lsp` holds 10. G13's Test line names the new path.
+- Standards 5: decided at landing, the branch removed. No index holds a file under a private folder, so `heldBack`'s private-folder branch, the `private` refusal and its two rows are gone; the head comments of `hub-keys.ts` and `rename.test.ts` and the guide's paragraph no longer name a private folder for a hub-key rename. The guards that act on a private file are G2's.
+- Behaviour 1: fixed at landing. `refusalOfKey` runs `refuseRename` first and `heldBack` after it, and `rename` makes the same checks in the same order; the row 'refuses a project id for what it is when another window holds a file that names it' covers it, and the guide says the key's own reasons come first.
+- The relay at 880 lines: unchanged by the landing.
