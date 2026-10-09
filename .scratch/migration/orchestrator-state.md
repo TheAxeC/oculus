@@ -93,6 +93,18 @@ dispatch:   # steps in flight, up to six (Z632)
   builder_usage: 218,072 tokens, 40 tool uses, 13.4 min (the first run and the hand-back of case 13)
   landing: not-started
   round: 0
+- step: D52
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a991368e85fbfbc0d (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D52
+  base: d7a654584
+  launched: 2026-10-09
+  report: agents/reviews/D52-report.md
+  brief_check: agents/reviews/D52-brief-check.md (af6a63a7f7aa23810, claude-opus-5-5, 227,555 tokens, 99 tool uses, 13.1 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: docs/views.md with D41 (73, the Audit section at 211), D47 (159-181), D48 (5-7, 21-23) and D51 (243), D52 lines 95-118 and 249-257; HELP.md with D46 (79-80), D47 (43) and D48 (105), D52 line 156; docs/window.md with D46 (72-80), D52 line 41, which D57 rewrote on main after D52's base, so line 41 is merged by hand at D52's landing; docs/DATA-MAP.md with D41 (69), D52 lines 156-177, 193-194, 284 and 352; src/lib/data/helpers/hub-names.ts with D48 (82), D52 93-106; config/text/findings.yml with D41 (keys it adds) and D48 (43, 45), D52 200-201; src/lib/data/snapshot/normalise.ts with D48 (234-280, 321-323, 530-531), D52 line 514; tests/checks/tree/allow-duplication.txt with D47 (23), D52 line 20; tests/checks/source/keys.test.ts with D41, D46, D47 and D48, each only the keys it adds or removes; network/events.yml and education/education.yml changed by Axel's f28e137f1 after D52's base, every entry gaining a key line. Different lines everywhere, so the merges are simple, except window.md line 41 and Axel's two files, which the landing merges by hand.
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
