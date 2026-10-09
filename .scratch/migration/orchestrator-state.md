@@ -184,6 +184,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open items 31 and 32 reopened (2026-10-09, Axel): he did not give permission for a second repair round of D50; D50's builder a30b6993857882108 was stopped during round 2, its partial round-2 edits left in `.agents/worktrees/D50` (20 files differ from the round-1 copy at `.agents/worktrees/D50-round1`, `diff -rq`); 31 and 32 are discussed again before anything more is built for them. R2 builds on under 32 (a) until Axel rules again.
 - Open item 33 (2026-10-09, the queue): Q72, the architecture re-read, is queued to wait for D49, D55 and D56, an order the orchestrator set and Axel has not ruled; Axel unpaused Q72. Options: (a), recommended: keep the wait, so the re-read covers the code D49, D55 and D56 change before O33 opens the repository; (b) start Q72 now, which leaves those three steps' code unread by it. R2 stays before Q72, in the order `queue.md` gives.
 
 
@@ -273,6 +274,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-09 (D50 stopped). Axel stopped D50's repair round 2 (no permission for a second round) and reopened open items 31 and 32 and item 33 for discussion. D50's builder stopped mid-round; its worktree holds partial round-2 edits beside the round-1 copy. In flight: D56 and R2 (builders); D50 held.
 - 2026-10-09 (R2 launched). D56's first-run cases ruled as Z759 (`agents/briefs/D56-cases.md`) and its builder resumed. R2 prepared (base 5120f89cf, brief `agents/briefs/R2.md` with G73 and every closure of its brief check) and its builder a00e9759490ea453e (claude-sonnet-5-5) launched in `.agents/worktrees/R2`, base copy in `.agents/worktrees/R2-base`. In flight (3 of 6): D50 (round 2), D56 (builder, after the cases ruling), R2 (builder).
 - 2026-10-09 (D50 round 2). Axel ruled open items 31 and 32 (a). D50's repair round 2 (`agents/briefs/D50-round2.md`: open item 31 (a), a kept machine app asks again after a change oculus did not write; Z758's carry-over links, dangling link, false sentences and test titles) sent to builder a30b6993857882108; R2 is prepared again with G73. Open item 33 (Q72's wait) raised. In flight (2 of 6): D50 (round 2), D56 (builder).
 - 2026-10-09 (D56 launched). D56 prepared (base dee635dbd, brief `agents/briefs/D56.md` with every closure of its brief check, the `context.ts` size reread after D41) and its builder a98f8c8c562caa8d7 (claude-sonnet-5-5) launched in `.agents/worktrees/D56`, base copy in `.agents/worktrees/D56-base`. In flight (2 of 6): D50 (waits for open item 31 before its landing; its review over round 1's findings closed as Z758, to be fixed at landing), D56 (builder).
