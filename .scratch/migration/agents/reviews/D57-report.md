@@ -1,4 +1,4 @@
-Everything in the brief is done. The cases' page-only aspects (a pane drawn on screen, a drag, a reload of the real page) are left to the orchestrator's look at landing and are named in the table; the unit-level runs of all 28 cases are quoted below.
+Everything in the brief and in repair round 1 is done: the first pane of a page made by New page is documented in `docs/window.md:41` and its probe row is in the before and after table. The cases' page-only aspects (a pane drawn on screen, a drag, a reload of the real page) are left to the orchestrator's look at landing and are named in the table; the unit-level runs of all 28 cases are quoted below.
 
 ## Open items of the state file (copied from the main checkout's `tools/oculus/.scratch/migration/orchestrator-state.md` when this report was written)
 
@@ -287,32 +287,33 @@ The stale-id block: after a tab was closed, `transferInstance`, `splitInstance`,
 | What to build 2, the rule | DONE | `tree.ts:178-185` `keptPane`; cases 1 to 27 above |
 | What to build 3, one function reached by every caller | DONE | `grep -rn "keptPane" src` prints the definition `tree.ts:178`, its one call `tree.ts:203` in `removeTab`, and the comments `tree.ts:194` and `instances.ts:83`; `floatTab`, `windowTab`, `moveInstance` and `adoptFloats` reach it through `removeTab` (cases 20, 17, 23) |
 | What to build 4, the text | DONE | `docs/window.md` lines 15 and 41 and `DESIGN.md:238` rewritten; the other comments listed below |
-| Verify 1, `npm run diagrams && npm run test:quick` | DONE | `test:quick: 56.8 s (limit 45.0 s); every command passed`; lines below |
+| Verify 1, `npm run diagrams && npm run test:quick` | DONE | `test:quick: 72.0 s (limit 45.0 s); every command passed`; lines below |
 | Verify 2, G29, G31, G28 | DONE | unchanged tree: `Test Files  3 passed (3)`, `Tests  7 passed (7)`; after: `Test Files  3 passed (3)`, `Tests  7 passed (7)` (`npx vitest run tests/state/workbench/layout/saved/layout-saved.test.ts tests/state/workbench/layout/saved/layout-unread.test.ts tests/state/client/terminal/terminal-close.test.ts`) |
 | Verify 3, scratch runs | DONE | quoted above; `ls tests/state/workbench/layout` prints `armed-keep.client.test.ts layout-fixture.ts saved`, so the scratch file is gone |
 | Verify 4, new or changed tests | DONE | the step adds, changes and deletes no test; `diff -rq .agents/worktrees/D57-base/tools/oculus/tests tests` prints nothing. No test of the suite asserted the rule as it was: `grep -rln "closeInstance\|removeTab\|KeepRule\|closePane\|splitInstance\|openBeside\|openNextTo\|openAway\|windowTab\|floatTab\|moveInstanceToPage\|transferInstance\|resetPage" tests` prints `tests/state/client/terminal/terminal-close.test.ts` and `tests/views/shared/explorer/opening-apps.test.ts`, and both pass after the change (`Test Files  2 passed (2)`, `Tests  13 passed (13)`) |
 | Verify 5, prose read against `agents/spec.md` | DONE | see "Prose" below |
+| Round 1, finding 1 (New page's first pane) | DONE | `docs/window.md:41` holds "The first pane of a page made by New page stays the same way." after "a tool view included."; the P1 row is in the before and after table |
 | Verify 6, `sh utils/folder-check.sh`, `wc -l`, unused exports | DONE | `folder-check exit=0`; `sh utils/unused-exports.sh \| diff - .agents/worktrees/D57-base/tools/oculus/unused-exports.txt` prints nothing (364 lines each); the step added no line, and `addedPane` has importers in `tree.ts`, `nested.ts` and `open/float/pages.ts` |
-| ASCII gate | DONE | `LC_ALL=C perl -ne '...' $(find src tests config -type f ! -name local.yml)` printed nothing, `ascii gate exit=0` (the spec's command lists `bin`, which this tree does not have, so `bin` is left out of the `find`); `LC_ALL=C grep -n '[^ -~]' docs/window.md DESIGN.md` printed nothing |
+| ASCII gate | DONE | `LC_ALL=C perl -ne '...' $(find src tests config -type f ! -name local.yml)` printed nothing, `ascii gate exit=0` (the spec's command lists `bin`, which this tree does not have, so `bin` is left out of the `find`); `LC_ALL=C grep -n '[^ -~]' docs/window.md DESIGN.md` printed nothing (rerun after the last change) |
 | Page-only looks | NOT RUN, by rule | cases 1 to 4 on a scratch oculus with rail pages made from their arrangements; cases 5, 12 and 13 on TEST; see the before and after section |
 
 The last full list, `npm run diagrams && npm run test:quick`, printed:
 
 ```
-test:quick: 11 changed file(s), from git since HEAD
+test:quick: 12 changed file(s), from git since HEAD
 test:quick: 17 test file(s), 10 essential
-ok      ASCII gate (1.0 s)
-ok      prettier (2.4 s): All matched files use Prettier code style!
-ok      svelte-kit sync (3.1 s)
-ok      svelte-check (41.9 s): 1791545567234 COMPLETED 441 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (47.8 s): Duration  40.86s (transform 101.24s, setup 0ms, import 141.47s, tests 7.22s, environment 269ms)
-ok      eslint (55.7 s)
-test:quick: 56.8 s (limit 45.0 s); every command passed
+ok      prettier (2.7 s): All matched files use Prettier code style!
+ok      ASCII gate (3.0 s)
+ok      svelte-kit sync (22.9 s)
+ok      eslint (42.5 s)
+ok      vitest (61.0 s): Duration  39.47s (transform 109.55s, setup 0ms, import 129.70s, tests 5.10s, environment 228ms)
+ok      svelte-check (48.8 s): 1791547732105 COMPLETED 441 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+test:quick: 72.0 s (limit 45.0 s); every command passed
 test:quick: over the time limit
 test:quick: not covered: tests outside the selection, tests/checks, slow tests,
 ```
 
-The full list ran 2 times; the lines above are the second run, which followed the last change. It took 56.8 s against its 45 s limit while other suites were running on this machine; every command passed. `diff -rq .agents/worktrees/D57-base/tools/oculus/docs docs` prints only `window.md`, so the regenerated diagrams equal the committed ones.
+The full list ran 1 time in this round, after the last change, and every command passed. It took 72.0 s against its 45 s limit while other suites were running on this machine. `diff -rq .agents/worktrees/D57-base/tools/oculus/docs docs` prints only `window.md`, so the regenerated diagrams equal the committed ones.
 
 History-word grep over the lines the step added, `grep -inE "before|used to|no longer|still|always has been|always had|as before|previously|the step adds|after this package lands|\b[A-Z][0-9]{1,3}[a-z]?\b|20[0-9]{2}"` over the added lines of every changed file (made from `diff` against the base copy): three hits in comments, judged: `model.ts` "dragged onto it still goes in" is the `locked` sentence reflowed, it states what a lock allows and compares with no earlier state; `saved.ts` "is still the one the viewer left" is a reflowed sentence about the arrangement and compares with no earlier state; `registry.ts` "The tabs close before the registration goes" gives an order. The hits in `docs/window.md` are in sentences the step did not write ("shown before it"); the sentences it wrote contain none of the words. No package id or date was added.
 
@@ -361,7 +362,7 @@ Every changed path is in the brief's write list. The write list's `layout/index.
 
 ## Prose
 
-The new `docs/window.md:41` text is one paragraph line as the file is written; it states the rule in six sentences. It lists the ways a pane is split off in one sentence because the brief asks for each of them to be named; the list is the sentence's only long part. `DESIGN.md:238` names `keptPane`, `added` and `KeepRule` and the three places that set the mark. The `registry.ts` comment gives the order and no reason, since the reason it had is gone. No sentence uses a negation-contrast, an em dash, a group of three padded to three or a history word.
+The new `docs/window.md:41` text is one paragraph line as the file is written; it states the rule in seven sentences, one of them "The first pane of a page made by New page stays the same way." It lists the ways a pane is split off in one sentence because the brief asks for each of them to be named; the list is the sentence's only long part. `DESIGN.md:238` names `keptPane`, `added` and `KeepRule` and the three places that set the mark. The `registry.ts` comment gives the order and no reason, since the reason it had is gone. No sentence uses a negation-contrast, an em dash, a group of three padded to three or a history word.
 
 ## Judgment calls the brief left open (each reversible)
 
@@ -370,7 +371,7 @@ The new `docs/window.md:41` text is one paragraph line as the file is written; i
 3. A saved value of `added` that is not `true` (`false`, `"yes"`, `1`, `null`) reads as absent; the layout still reads (the `CASE 21 saved added=...` lines).
 4. A terminals pane that is added and locked keeps all three: `keeps: 'terminals'`, `locked` and `added`.
 5. `keptPane` takes the pane instead of the layout and a path, so it no longer scans the tree for other empty panes; `panes` is no longer imported in `tree.ts`.
-6. Case 8 closes the New page's only tab (its Status tab) for the first part, since a page made by New page is one pane holding Status (`defaultWorkbench`); the second part opens a file there, which lands in a new added pane.
+6. Case 8 closes the New page's only tab (its Status tab) for the first part, since a page made by New page is one pane holding Status (`defaultWorkbench`); the second part opens a file there, which lands in a new added pane. The first pane carries no mark and stays when its last tab closes, which `docs/window.md:41` now says (round 1 ruling 1).
 
 ## Host- or user-visible changes, before and after, for the look on TEST and on a scratch oculus
 
@@ -383,6 +384,7 @@ The new `docs/window.md:41` text is one paragraph line as the file is written; i
 | TEST: a pane split off, then Reload | the pane closes or stays by the view's kind | the pane is still split off, and closes with its last tab |
 | TEST: Float a pane, then Return to Page, then close its tabs | the returned pane stays if its last tab was an opened view | the returned pane closes with its last tab |
 | Sessions page: close the Terminal tab of the arrangement's pane | an empty terminals pane | the same |
+| New page (probe P1): open a file beside the Status tab, then close the Status tab | only the file's pane was kept; the Status pane went | the Status pane stays as an empty documents pane beside the file's pane |
 | A browser holding a layout saved before this step | panes close by the view's kind | every pane reads as defined by the arrangement and stays when emptied; a pane split off before the step stays too until Close pane removes it once (decision 1) |
 
 ## Limitations and sharp edges I know of
@@ -390,7 +392,7 @@ The new `docs/window.md:41` text is one paragraph line as the file is written; i
 1. A pane split off before this step reads as one the arrangement defined and stays when emptied, until Close pane removes it (ruled in decision 1).
 2. After a split collapses into an added pane that is then the page's root, closing its last tab leaves the page one unmarked empty pane (case 9, as the brief states).
 3. The rule for a pane of a page and the rule for a float are separate: a float whose last tab goes is removed by `writeHost`, not by `keptPane`.
-4. The list ran over its time limit (56.8 s of 45 s) on a machine running other suites; no command failed.
+4. The list ran over its time limit (72.0 s of 45 s) on a machine running other suites; no command failed.
 5. Page-only behaviour (drag, reload of the real page, Return to Page drawn, the empty pane's text) is not verified here; the rows above name the look for each.
 
 ## Wrong or impossible in the brief

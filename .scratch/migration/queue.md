@@ -1,13 +1,13 @@
 In flight (5 of 6 slots in use, 1 more being prepared):
-- D41 (links in Markdown checked): repair round 1 with the builder, launched 2026-10-09.
-- D57 (an empty pane closes): repair round 1 (one finding), launched 2026-10-09.
+- D41 (links in Markdown checked): repair round 1 back, review over the round running, launched 2026-10-09.
+- D57 (an empty pane closes): repair round 1 back, review over the round running, launched 2026-10-09.
 - D46 (the VS Code palette keys): builder resumed with the ruling on a case of its first run, launched 2026-10-09.
 - D47 (one Session view): builder running, launched 2026-10-09.
 - D48 (side projects with the research keys that apply, and smaller Focus rows): builder running, launched 2026-10-09.
 
 Queued, in order (10 steps):
-- D51 (themes from VS Code's theme files): brief written, brief check running.
-- D52 (a page per collection entry): brief being written.
+- D51 (themes from VS Code's theme files): brief check back, its findings being closed in the brief.
+- D52 (a page per collection entry): brief written, brief check running.
 - D49 (the help pages cut): waits for D46, D47 and D57, whose text in docs/window.md and docs/views.md it carries.
 - D53 (unique views): waits for D56.
 - D50 (the hub's own folder, its shareable files and its settings layer): brief next, after D52's.
