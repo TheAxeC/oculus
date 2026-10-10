@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z777 (2026-10-10, step D62, ruled by Axel): D62 beside D60 and D61
+
+- Chosen: D62 starts once D59 lands, beside D60 and D61; it needs D59's changes to `ApprovalPanel.svelte` and `docs/apps.md`, nothing of D60 or D61.
+- Not chosen: D62 after D61 (the lazy option), which held the three app steps back with no cause.
+
+Where it applies: D62. Booked in `plan.md` Rulings, `queue.md` and the closed log of `orchestrator-history.md`.
+
 ## Z776 (2026-10-10, step D59, the orchestrator, automode): existing workbenches renamed too
 
 - Chosen: a workbench kept from before, closed or open at reload, drops a Files or LaTeX tab label equal to its folder name, so every workbench reads Files and LaTeX.

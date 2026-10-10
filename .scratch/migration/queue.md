@@ -3,7 +3,7 @@ In flight (1 of 6 slots in use): D59 (builder launched 2026-10-10).
 Queued, in order (7 steps):
 - D60 (repositories read as projects of the hub): after D59.
 - D61 (the Workbenches view and the status bar's repository): after D59, beside D60.
-- D62 (apps: the host and the bridge): after D61, before O33 (Axel).
+- D62 (apps: the host and the bridge): after D59, beside D60 and D61, before O33 (Axel, Z777).
 - D63 (apps in the shell): after D62.
 - D64 (apps in the tools): after D63.
 - Q72 (the architecture re-read): waits for D49, D55, D58, D59 and D60 to D64, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
