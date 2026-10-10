@@ -33,9 +33,11 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 6511e8ce1
   launched: 2026-10-10
   report: agents/reviews/D58-report.md
+  builder_usage: 353,563 tokens, 116 tool uses, 31.6 min
+  reviewer_report: agents/reviews/D58-refuter.md (a5069412810f7d98c, claude-opus-5-5, 243,734 tokens, 67 tool uses, 12.5 min)
   brief_check: agents/reviews/D58-brief-check.md (a7c19a6a67f61ce16, claude-opus-5-5, 235,846 tokens, 62 tool uses, 9.9 min; closed in the brief by the orchestrator under "Closed")
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D58-round1.md)
 ```
 
 ## The standing demands (from Axel, in force)
