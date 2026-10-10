@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- D58 (the engine's guides on every hub): builder running.
 
-Queued, in order (3 steps):
-- D58 (the engine's guides on every hub): next, D49 and D55 have landed.
+Queued, in order (2 steps):
 - Q72 (the architecture re-read): waits for D49, D55 and D58 (open item 33 (a), Z766).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
 
