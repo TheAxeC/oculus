@@ -36,6 +36,18 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D60-brief-check.md (a9cd3f67733719350, claude-opus-5-5, 222,061 tokens, 70 tool uses, 9.4 min; closed in the brief by the orchestrator under "Closed")
   landing: not-started
   round: 0
+- step: D61
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a59e2f194e5e771bc (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D61
+  base: a35863cc6
+  launched: 2026-10-10
+  report: agents/reviews/D61-report.md
+  brief_check: agents/reviews/D61-brief-check.md (a29257cca60a58268, claude-opus-5-5, 207,035 tokens, 76 tool uses, 8.0 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: with D60, tools/oculus/HELP.md (D60 lines 169 and 451-452, D61 lines 35, 53-60 and 80-82), tools/oculus/DESIGN.md (D60 lines 558 and 593, D61 the workbench and status bar paragraphs) and tools/oculus/docs/diagrams/ (generated); simple: the two steps change different lines of the two documents, and the diagrams are made again by `npm run diagrams` at each landing
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
