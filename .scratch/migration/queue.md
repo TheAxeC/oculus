@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - D60 (repositories read as projects of the hub): building.
-- D61 (the Workbenches view and the status bar's repository): brief check returned, its findings being closed in the brief.
+- D61 (the Workbenches view and the status bar's repository): prepared, builder starting.
 
 Queued, in order (5 steps):
 - D62 (apps: the host and the bridge): stopped at /spec, waiting for Axel's ruling on open item 40 (where an app's secrets are kept).

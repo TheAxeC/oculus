@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z786 (2026-10-10): D61's brief check left one choice, closed in automode (`choices.md`, `plan.md` Rulings): New workbench offers the served roots' tops and Open Folder..., and a folder outside every root is added to the workspace and opened.
 - Z783 to Z785, and Z780 and Z781 amended (2026-10-10): the brief checks of D60 and D61 left three choices, closed in automode (`choices.md`, `plan.md` Rulings): an app's write to a repository's research project answers not found; a `tier: projects` repository moves by its manifest's `type:` line; the Settings view's roots gain `tier`. Z780 keeps a repository side project without LaTeX, and Z781 registers the Workbenches view last so no chord moves.
 - Z778 to Z782 (2026-10-10): D60's and D61's preparation left five choices; closed in automode (`choices.md`, `plan.md` Rulings): a repository's research project is named by its root key, its board and type come from the hub's scan rules with an unusable one read as a side project, no Deposit and LaTeX read from a repository's folder; the Workbenches view in the Views catalogue, and a status bar repository item with a kept last choice.
 - 2026-10-10: Z777, D62's place in the queue, ruled by Axel: after D59, beside D60 and D61 (`plan.md` Rulings, `queue.md`, `choices.md`).

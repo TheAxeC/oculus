@@ -4,6 +4,12 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z786 (2026-10-10, step D61, the orchestrator, automode): what New workbench in the Workbenches view opens
+
+- Options: (a) a menu of the served roots' tops and Open Folder..., which shows the folder panel Add Folder to Workspace uses (POST /api/folders/pick): a folder inside a served root opens its workbench at that root and path, and a folder outside every served root is added to the workspace by the same act as Add Folder to Workspace and its workbench then opens, as VS Code's Open Folder opens any folder; (b) the same, refusing a folder outside every served root with a line that says to add it first, which leaves the reader to do by hand what the act already does; (c) the roots' tops only, the lazy option, which drops the step line's "New workbench from a folder". Taken: (a).
+
+Where it applies: D61. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
 ## Z785 (2026-10-10, step D60, the orchestrator, automode): the `tier` of a root in the Settings view
 
 - Options: (a) the Settings view's `roots` fields gain `tier`, a choice of the four words with none allowed, and its help names what each does (`config/catalogs/options.yml:1363-1371`), so a reader sets it where the roots are edited; (b) the docs say it is set in the file, which leaves a Settings edit unable to show it; (c) neither, the lazy option, which hides a key the Settings view would then write around. Taken: (a).
@@ -30,7 +36,7 @@ Where it applies: D61. Booked in `plan.md` Rulings, the brief and the closed log
 
 ## Z781 (2026-10-10, step D61, the orchestrator, automode): where the Workbenches view lives
 
-- Options: (a) a unique view of the Views catalogue's `views` group registered last, after Processes, so it is the eleventh entry and has no chord and every existing chord stays (amended at D61's brief check: placed after Pages it would take `y5` and shift five chords), opened from the rail menu's new item Manage Workbenches; New workbench lists the served roots' tops, a folder inside a root opening from the places that already open one; (b) a rail page of its own, which adds a button for a list the menu already reaches; (c) only the rail menu, the lazy option, which the ruling's view replaces. Taken: (a).
+- Options: (a) a unique view of the Views catalogue's `views` group registered last, after Processes, so it is the eleventh entry and has no chord and every existing chord stays (amended at D61's brief check: placed after Pages it would take `y5` and shift five chords), opened from the rail menu's new item Manage Workbenches; New workbench as Z786 says (amended at D61's brief check); (b) a rail page of its own, which adds a button for a list the menu already reaches; (c) only the rail menu, the lazy option, which the ruling's view replaces. Taken: (a).
 
 Where it applies: D61. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
 
