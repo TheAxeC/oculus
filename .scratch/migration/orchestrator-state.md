@@ -44,10 +44,13 @@ dispatch:   # steps in flight, up to six (Z632)
   base: a35863cc6
   launched: 2026-10-10
   report: agents/reviews/D61-report.md
+  builder_usage: 324,989 tokens, 236 tool uses, 85.4 min (the builder ran two git commands against the no-git rule, `git -C . status` and `git rm -q` with no path, which changed nothing, its report says)
   brief_check: agents/reviews/D61-brief-check.md (a29257cca60a58268, claude-opus-5-5, 207,035 tokens, 76 tool uses, 8.0 min; closed in the brief by the orchestrator under "Closed")
+  reviewer_report: agents/reviews/D61-refuter.md (a86856c9cda9069e5, claude-opus-5-5, 266,968 tokens, 81 tool uses, 15.2 min)
   shared_paths: with D60, tools/oculus/HELP.md (D60 lines 169 and 451-452, D61 lines 35, 53-60 and 80-82), tools/oculus/DESIGN.md (D60 lines 558 and 593, D61 the workbench and status bar paragraphs) and tools/oculus/docs/diagrams/ (generated); simple: the two steps change different lines of the two documents, and the diagrams are made again by `npm run diagrams` at each landing
   landing: not-started
-  round: 0
+  round: 1
+  round_1: sent 2026-10-10 with agents/briefs/D61-round1.md; the tree before it is `git diff --binary a35863cc6` in the worktree, shasum 9172f22e84511d444f211ca4b3e17248f9412fd1 (session scratchpad D61-before-round1.diff)
 ```
 
 ## The standing demands (from Axel, in force)
