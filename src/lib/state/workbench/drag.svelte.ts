@@ -193,11 +193,11 @@ export function createDrag(layout: LayoutStore, desktop?: Desktop): DragStore {
         // A unique view a page or float holds is the instance the drop moves, and nothing
         // is opened.
         open: (view, state, page) =>
-            layout.heldUnique(view) ??
+            layout.heldInstance(view) ??
             layout.openView(view, state, page ?? layout.currentPage().id),
         holds: (path, id, page) => layout.paneHolds(path, id, page ?? layout.currentPage().id),
         away: (view, state, avoid, page) => {
-            const held = layout.heldUnique(view);
+            const held = layout.heldInstance(view);
             const at = page ?? layout.currentPage().id;
             if (held === null) layout.openAway(view, state, at, avoid);
             else layout.moveAway(held, at, avoid);

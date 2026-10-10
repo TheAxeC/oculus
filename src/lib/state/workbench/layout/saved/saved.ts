@@ -50,7 +50,7 @@ import {
 } from '../model.ts';
 import { placeFits } from '../open/float/pages.ts';
 import { withInfoFolded, withSystemLabel } from './fold.ts';
-import { folderOf, itemOf, keptOf } from './kept.ts';
+import { folderOf, itemOf, keptOf, withoutFolderLabels } from './kept.ts';
 import { treeWithoutRetired, withoutRetiredTabs } from './migrate.ts';
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
 import { normaliseSizes } from '../tree.ts';
@@ -121,12 +121,16 @@ const dockedShape = z.object({
     focus: z.unknown().optional()
 });
 
+/** The paths of the documents a rail page has been given; a value that is no list is none. */
+const docsShape = z.array(z.string());
+
 /** A page of the pages envelope: its id and label, with its tree and its rail key read apart. */
 const savedPageShape = z.object({
     id: z.string(),
     label: z.string(),
     workbench: z.unknown().optional(),
     rail: filledTextShape,
+    docs: z.unknown().optional(),
     folder: z.unknown().optional(),
     item: z.unknown().optional()
 });
@@ -574,10 +578,15 @@ export function parseLayout(value: unknown, label: string): Pages | null {
         if (workbench === null) return null;
         const page: Page = { id: entry.id, label: entry.label, workbench };
         const rail = railKey(entry.rail, pages);
-        if (rail !== null) page.rail = rail;
+        if (rail !== null) {
+            page.rail = rail;
+            const docs = readAs(docsShape, entry.docs);
+            if (docs !== null) page.docs = docs;
+        }
         const folder = folderOf(entry.folder, pages);
         if (folder !== null) {
             page.folder = folder;
+            page.workbench = withoutFolderLabels(page.workbench, folder);
             const item = itemOf(entry.item);
             if (item !== null) page.item = item;
         }

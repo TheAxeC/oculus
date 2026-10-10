@@ -56,6 +56,25 @@ export function engineDocState(
 }
 
 /**
+ * What openView is handed for a document row whose document some page or float already shows: the
+ * state of that tab, which is the one over the entry's hub path or, for a path inside oculus's own
+ * folder at `engineAt`, the engine document tab. Null when no tab (`holds` says which ids are held)
+ * shows it.
+ */
+export function heldDocState(
+    entry: DocEntry,
+    engineAt: string,
+    holds: (id: string) => boolean
+): ReturnType<typeof docState> | ReturnType<typeof engineDocState> | null {
+    const own = docState(entry);
+    if (holds(own.id)) return own;
+    const inside = engineRelative(entry.path, engineAt);
+    if (inside === null) return null;
+    const engine = engineDocState(inside, entry.label);
+    return holds(engine.id) ? engine : null;
+}
+
+/**
  * Whether the engine read serves a path relative to the engine folder: not one that runs through a
  * dot folder or `node_modules`, which stays a document of the hub where the folder lies in it.
  */

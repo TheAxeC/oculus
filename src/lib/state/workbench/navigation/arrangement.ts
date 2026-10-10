@@ -19,6 +19,8 @@ import {
     type Workbench
 } from '../layout/index.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
+import { fields, isMap } from '../../../data/helpers/guards.ts';
+import { docState, type DocEntry } from './catalogue.ts';
 
 /** A view id: a name that is not empty, made into an instance with a fresh id. */
 const viewIdShape = z
@@ -123,4 +125,56 @@ export function parseFloats(value: unknown): FloatSpec[] {
         specs.push({ pane: { kind: 'pane', tabs, active: tabs[0].id }, place });
     }
     return specs;
+}
+
+/** The tabs of a raw pane's `view`: a list, one tab, or none. */
+function rawTabs(view: unknown): unknown[] {
+    if (Array.isArray(view)) return view;
+    return view === undefined ? [] : [view];
+}
+
+/** The ids of the `doc` tabs a raw node holds in any of its panes. */
+function rawDocIds(node: unknown): string[] {
+    const held = fields(node);
+    if (held.root !== undefined) return rawDocIds(held.root);
+    if (Array.isArray(held.children)) return held.children.flatMap(rawDocIds);
+    return rawTabs(held.view).flatMap((tab) => {
+        const { view, state } = fields(tab);
+        const id = fields(state).id;
+        return view === 'doc' && typeof id === 'string' ? [id] : [];
+    });
+}
+
+/** The raw node with `tabs` added after the first tab of its first leaf pane, or null with none. */
+function rawWithTabs(node: unknown, tabs: unknown[]): unknown {
+    if (!isMap(node)) return null;
+    if (node.kind === 'pane') {
+        const own = rawTabs(node.view);
+        return { ...node, view: [...own.slice(0, 1), ...tabs, ...own.slice(1)] };
+    }
+    if (node.kind !== 'split' || !Array.isArray(node.children)) return null;
+    const children: unknown[] = node.children;
+    const first = rawWithTabs(children[0], tabs);
+    return first === null ? null : { ...node, children: [first, ...children.slice(1)] };
+}
+
+/**
+ * An arrangement as it is read from `layout.yml` with the hub's documents added: one `doc` tab per
+ * entry of `docs`, in the list's order, after the first tab of the arrangement's first leaf pane (a
+ * pane with no tab takes them as its tabs). An entry whose path is already a `doc` tab of the
+ * arrangement, or comes earlier in the list, adds no second tab. A node that is no arrangement, or
+ * has no pane, is returned as it is, and parseArrangement refuses it.
+ */
+export function withDocs(node: unknown, docs: readonly DocEntry[]): unknown {
+    if (docs.length === 0) return node;
+    const held = new Set(rawDocIds(node));
+    const tabs: unknown[] = [];
+    for (const entry of docs) {
+        if (held.has(entry.path)) continue;
+        held.add(entry.path);
+        tabs.push({ view: 'doc', state: docState(entry) });
+    }
+    if (tabs.length === 0 || !isMap(node)) return node;
+    const root = rawWithTabs(node.root, tabs);
+    return root === null ? node : { ...node, root };
 }

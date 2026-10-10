@@ -1,17 +1,16 @@
 # Oculus text owned by the personal view.
 text:
     personal:
+        col_deadline: Deadline
+        col_next: Next
+        col_status: Status
+        col_title: Title
         empty: 'No side project has a manifest yet. A hub side project is a `project.yml` in `side-projects/<slug>/`; a repository gets a card from its `.oculus/project.yml` once the repository is a Files root that is not marked `hub: true`, added with Add Folder to Workspace... in the Files view or under `roots:` in `sources.yml`.'
         empty_glyph: circle_empty
-        next: Next
         none_match: No side project matches.
         none_match_glyph: circle_empty
-        open_workbench: Open Workbench
-        open_workbench_tip: open a workbench for {0}
         related: related
         search: Search title | eli5 | next
-        show_in_files: Show in Files
-        show_in_files_tip: select {0} in the Files view
         status_toggle_tip: show or hide the {0} projects
         status_unknown: unknown
         status_unknown_glyph: question

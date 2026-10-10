@@ -43,13 +43,15 @@
         docPick,
         docState,
         groupGlyph,
+        heldDocState,
         keyOf,
         onCataloguePage,
         railOrder,
         readChord,
         listedViews,
         readDocs,
-        readGroups
+        readGroups,
+        type DocEntry
     } from '$lib/state/workbench/navigation/catalogue';
     import { railPages } from '$lib/state/workbench/navigation/rail';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
@@ -68,7 +70,7 @@
         entities: { config },
         layout: {
             currentPage,
-            heldUnique,
+            heldInstance,
             openAway,
             openBeside,
             openNextTo,
@@ -77,7 +79,8 @@
             previousPage,
             switchPage
         },
-        registry: { views }
+        registry: { views },
+        selectors: { engineAtSettled }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -105,7 +108,7 @@
      * view a page or float holds shows no target: opening it goes to where it is held.
      */
     function showTarget(view: string): void {
-        if (heldUnique(view) !== null) return;
+        if (heldInstance(view) !== null) return;
         if (!onCataloguePage(currentPage().rail, railPages(merged), registration.id)) return;
         const back = previousPage();
         if (back !== null) {
@@ -126,6 +129,23 @@
         showTarget(view);
         if (event.shiftKey) openBeside(view, state);
         else openView(view, state);
+    }
+
+    /**
+     * A press on a document row shows the tab that any page or float already holds over the
+     * document, by either press, and otherwise opens it as `open` does.
+     */
+    async function openDoc(entry: DocEntry, event: MouseEvent): Promise<void> {
+        const held = heldDocState(
+            entry,
+            await engineAtSettled(),
+            (id) => heldInstance(DOC_VIEW, id) !== null
+        );
+        if (held === null) {
+            open(DOC_VIEW, docState(entry), event);
+        } else if (!dragged(event)) {
+            openView(DOC_VIEW, held, undefined, { held: true });
+        }
     }
 
     /** The two items of an entry's right-click menu. */
@@ -242,7 +262,7 @@
                                     title={hint(entry.label, docPick(entry))}
                                     glyph={t('views.doc_glyph')}
                                     dataDoc={entry.path}
-                                    onclick={(event: MouseEvent) => open(DOC_VIEW, state, event)}
+                                    onclick={(event: MouseEvent) => void openDoc(entry, event)}
                                 />
                                 {#if key !== ''}
                                     <span class="key" aria-hidden="true">{key}</span>

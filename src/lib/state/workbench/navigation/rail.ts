@@ -14,6 +14,8 @@ import {
     type RailRead
 } from '../../../data/sources/config/rail.ts';
 import { fields, isMap } from '../../../data/helpers/guards.ts';
+import { withDocs } from './arrangement.ts';
+import { readDocs, type DocEntry } from './catalogue.ts';
 import { t } from '../../shared/words/text.ts';
 
 export { arrangementKeys, glyphNames, readRail };
@@ -25,23 +27,30 @@ export { sourceTabState } from '../../sessions/source/draft.ts';
 /** One choice of the rail's Bookmarks menu, as the file browser's module defines it. */
 export type { BookmarkRow as Bookmark } from '../../sources/fs.ts';
 
-/** One rail button and the arrangement its page is made from the first time it is pressed. */
-export type RailPage = RailEntry & { node: unknown };
+/**
+ * One rail button and the arrangement its page is made from the first time it is pressed: the
+ * arrangement of config/layout.yml with the hub's documents of the page's group added as tabs, and
+ * those documents.
+ */
+export type RailPage = RailEntry & { node: unknown; docs: DocEntry[] };
 
 /**
  * The rail's pages, in the order `rail:` lists them. An entry the rule refuses is left out, since a
  * button over a page that cannot be made, or drawn with a glyph the vocabulary does not hold, would
- * be a press that does nothing or a blank; the server reports it as a finding. The node is handed
- * on untouched: state/workbench/navigation/arrangement.ts reads its shape when the page is made.
+ * be a press that does nothing or a blank; the server reports it as a finding. The node is the
+ * arrangement of the page's key with the `docs:` entries whose `group` is that key added as `doc`
+ * tabs (state/workbench/navigation/arrangement.ts `withDocs`); its shape is read when the page is
+ * made.
  */
 export function railPages(config: Record<string, unknown> | undefined): RailPage[] {
     if (config === undefined) return [];
     const arrangements = fields(config.arrangements);
     const read = readRail(config.rail, arrangementKeys(arrangements), glyphNames(config));
-    return read.entries.map((entry) => ({
-        ...entry,
-        node: arrangements[entry.page]
-    }));
+    const listed = readDocs(config.docs);
+    return read.entries.map((entry) => {
+        const docs = listed.filter((one) => one.group === entry.page);
+        return { ...entry, node: withDocs(arrangements[entry.page], docs), docs };
+    });
 }
 
 /** The view the rail list is edited in, whose instance state holds the list being typed. */

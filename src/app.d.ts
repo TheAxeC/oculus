@@ -16,9 +16,10 @@ declare global {
             server: ServerContext;
             /**
              * The configuration as the disk holds it. The first call of a request takes the server
-             * context's `configCache`, which parses the config folder again only when a file of it
-             * changed, and the request keeps that one read for every later call; a request that
-             * never calls it reads nothing.
+             * context's `configCache`, which parses the configuration again only when a file of the
+             * engine's config folder or of the hub's `.oculus/config/` folder changed, and the
+             * request keeps that one read for every later call; a request that never calls it reads
+             * nothing.
              */
             config: () => ReturnType<typeof loadConfig>;
         }

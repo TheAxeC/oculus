@@ -7,7 +7,7 @@
 // and change the pages and floats together: where one is held, what a page or float made from the
 // config takes of it, and what the default page leaves out of it.
 
-import { findInstance, findView, tabsOf } from '../../instance.ts';
+import { docPaths, findInstance, findView, tabsOf } from '../../instance.ts';
 import {
     addedPane,
     clamp,
@@ -164,15 +164,17 @@ export type UniqueRule = (view: ViewId) => boolean;
 export type Builds = { unique: UniqueRule; keep?: KeepRule };
 
 /**
- * The first of these hosts carrying an instance of a view, whatever state its instance names, with
- * that instance; null when none does.
+ * The first of these hosts carrying an instance of a view, with that instance; null when none does.
+ * An omitted identity matches whatever state the instance names, a string only the instance of that
+ * record.
  */
 export function heldView(
     hosts: readonly Host[],
-    view: ViewId
+    view: ViewId,
+    id?: string
 ): { host: Host; instance: Instance } | null {
     for (const host of hosts) {
-        const instance = findView(host.workbench.root, view);
+        const instance = findView(host.workbench.root, view, id);
         if (instance !== null) return { host, instance };
     }
     return null;
@@ -286,6 +288,16 @@ export function keptDefault(held: Pages, shipped: FloatSpec[], builds: Builds): 
 }
 
 /**
+ * A rail page made again: its words and workbench replaced, its id and rail key kept, and the
+ * documents its new tabs hold recorded as the ones it has been given.
+ */
+function remade(page: Page, label: string, workbench: Workbench): Page {
+    const made: Page = { ...page, label, workbench };
+    if (page.rail !== undefined) made.docs = docPaths(workbench.root);
+    return made;
+}
+
+/**
  * The pages with the page `id` made again from a workbench under a label, taking the unique views
  * the workbench names from the other pages and the floats.
  */
@@ -299,9 +311,7 @@ export function rebuiltPage(
     const claims = createClaims(held, builds, new Set([id]));
     const root = claims.settle(workbench.root);
     const rest = claims.rest();
-    const pages = rest.pages.map((page) =>
-        page.id === id ? { ...page, label, workbench: { root } } : page
-    );
+    const pages = rest.pages.map((page) => (page.id === id ? remade(page, label, { root }) : page));
     return { ...rest, pages };
 }
 
@@ -340,7 +350,7 @@ export function resetAll(
         const source = arranged.get(page.id);
         if (source === undefined) continue;
         const workbench = { root: claims.settle(source.workbench.root) };
-        made.set(page.id, { ...page, label: source.label, workbench });
+        made.set(page.id, remade(page, source.label, workbench));
     }
     const floats = floatsFrom(shipped, claims.settle);
     const pages = claims.rest().pages.flatMap((page): Page[] => {

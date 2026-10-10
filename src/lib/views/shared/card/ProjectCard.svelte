@@ -13,6 +13,12 @@
     // state for it; its subtasks block is drawn only for a project that has subtasks, adding the
     // first being one of the controls. The card is a positioned box whose content may reach past
     // its edge, so the More menu of its controls is not cut off at the foot of a short card.
+    //
+    // A side project is drawn by this card too, through the record that stands for it
+    // (data/snapshot/as-project.ts): its status replaces the chips
+    // (views/shared/card/project/CardStatus.svelte), its `links:` are listed under the next action,
+    // and its folder is the one `placeOf` names, which is a repository's own Files root when the
+    // project is a repository. It has no deposit control.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
@@ -20,14 +26,16 @@
     import CardActions, { type CardAction } from './CardActions.svelte';
     import CardDetails from './project/CardDetails.svelte';
     import RootChip from './RootChip.svelte';
+    import CardAddresses from './project/CardAddresses.svelte';
     import CardLinks from './project/CardLinks.svelte';
     import CardSessions from './project/CardSessions.svelte';
+    import CardStatus from './project/CardStatus.svelte';
     import CommandBar from '../sessions/CommandBar.svelte';
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import Clamp from './Clamp.svelte';
     import Subtasks from '../forms/Subtasks.svelte';
     import { codeLabel, deadline, deckOf, openDocument, openWorkbench } from './card';
-    import { rootOf } from '$lib/state/shared/page/hubs';
+    import { placeOf } from '$lib/state/shared/page/hubs';
     import {
         firstSentence,
         hasReadme,
@@ -40,7 +48,6 @@
     import { resourceGlyph } from '$lib/state/forms/schema';
     import { personNames } from '$lib/state/boards/person';
     import { t } from '$lib/state/shared/words/text';
-    import { chipGlyphName, chipLabel, statusTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
 
@@ -120,7 +127,9 @@
                   snapshot.entities.projects
               )
     );
-    const hub = $derived(rootOf(item.project));
+    /** Where the project's folder is: the Files root that holds it and its path in that root. */
+    const place = $derived(placeOf(item.project));
+    const hub = $derived(place.root);
     /** The project's folder when the `git` channel carries it as a repository, else ''. */
     const repo = $derived.by((): string => {
         const folder = item.project.folder;
@@ -170,7 +179,7 @@
             title: t('project.helper.show_in_files_tip'),
             glyph: 'show_in_files',
             onclick: () => {
-                showFolderInFiles(item.project.folder, hub);
+                showFolderInFiles(place.path, hub);
             }
         });
         if (folders.served(hub)) {
@@ -179,7 +188,7 @@
                 label: t('project.helper.open_workbench'),
                 title: t('project.helper.open_workbench_tip'),
                 glyph: 'app_view',
-                onclick: () => openWorkbench(client, item, tab, hub)
+                onclick: () => openWorkbench(client, item, tab)
             });
         }
         if (ontoggle !== undefined) {
@@ -285,7 +294,10 @@
     }
     /** Ask the host to reveal the project's folder. */
     async function showFolder(): Promise<void> {
-        const answer = await openFolder(item.project.folder, hub);
+        const answer =
+            item.project.repository === undefined
+                ? await openFolder(item.project.folder, hub)
+                : await openFolder(place.dir);
         if (!answer.ok) onsaid(t('project.card.folder_failed', answer.error ?? ''));
     }
     /** Start a project chat, select it and show it in the page's Terminal tab, or a new one. */
@@ -341,14 +353,12 @@
             <CardActions {actions} />
         {/snippet}
 
-        <div class="folder">{item.project.folder}</div>
+        <div class="folder">{item.project.repository?.root ?? item.project.folder}</div>
         <div class="row">
             {#if item.project.focus}
                 <Tag label={item.project.focus} />
             {/if}
-            {#each item.chips as chip (chip)}
-                <Chip label={chipLabel(chip)} glyph={chipGlyphName(chip)} tone={statusTone(chip)} />
-            {/each}
+            <CardStatus {item} />
             {#if item.code !== ''}
                 <Tag label={codeLabel(item.code, t)} glyph={t('project.card.code_glyph')} />
             {/if}
@@ -394,6 +404,7 @@
         {#if item.project.next}
             <p class="next"><CodeText text={firstSentence(item.project.next, CARD_NEXT)} /></p>
         {/if}
+        <CardAddresses {item} />
         {#if open && !item.project.ghost}
             <CardDetails {item} {onsaid} {documents} {now} />
         {/if}

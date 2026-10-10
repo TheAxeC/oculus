@@ -32,6 +32,10 @@
     // read-only with a sentence saying where to edit them, and what the draft kept for them from
     // before is neither shown, counted nor posted (state/forms/schema.ts decides which fields
     // write).
+    //
+    // A side project is edited in this form too. Its fields are the rows of
+    // config/schemas/side-project-schema.yml, in that file's order, under the sections of the
+    // fields the two forms share (state/forms/schema.ts, `sideFormFields`).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
@@ -79,8 +83,8 @@
     const id = $derived(instanceText(instance.state, 'id'));
     const project = $derived(id === '' ? null : projectOf(id));
     const values = $derived(project === null ? {} : fieldValues(project));
-    const fields = $derived(manifestFields());
-    const sections = $derived(manifestSections());
+    const fields = $derived(manifestFields(project));
+    const sections = $derived(manifestSections(project));
 
     /** The edits over the project's own values, by field name. Cleared by Revert and by a save. */
     const edits = $derived(manifestEdits(instance.id, id));

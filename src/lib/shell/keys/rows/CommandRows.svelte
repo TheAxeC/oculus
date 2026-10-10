@@ -74,7 +74,8 @@
         } else if (command.name === 'tab') {
             if (knownViews.some((view) => view.id === argument)) shown = openView(argument);
         } else if (command.name === 'goto') {
-            const project = current.snapshot?.entities.projects[argument];
+            const held = current.snapshot?.entities;
+            const project = held?.projects[argument] ?? held?.personal[argument];
             if (project !== undefined) {
                 shown = openView('project', {
                     id: project.id,

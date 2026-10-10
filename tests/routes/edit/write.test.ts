@@ -14,7 +14,17 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import { GOOD, MANIFEST, TOKEN, manifestOf, request, target, warmConfig } from './write-fixture.ts';
+import {
+    GOOD,
+    MANIFEST,
+    SIDE_MANIFEST,
+    TOKEN,
+    manifestOf,
+    request,
+    secondHubSide,
+    target,
+    warmConfig
+} from './write-fixture.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 
 test.beforeAll(warmConfig);
@@ -43,5 +53,17 @@ describe('the write endpoint', () => {
             { field: 'hidden', reason: `${basename(path)} is not JSON: ${path}` }
         ]);
         expect(readFileSync(path, 'utf8')).toBe('{"sessions": ');
+    });
+
+    it("writes a second hub's side project in that hub's file and no other", async () => {
+        const planted = secondHubSide();
+        const body = { kind: 'manifest', id: 'two:side:idea', fields: { snooze: '2026-12-01' } };
+        const response = await handleWrite(request(body), TOKEN, planted.into);
+        expect(response.status).toBe(200);
+        expect(readFileSync(planted.second, 'utf8')).toBe(
+            SIDE_MANIFEST.replace('2026-11-01', '2026-12-01')
+        );
+        expect(readFileSync(planted.files['side:idea'], 'utf8')).toBe(SIDE_MANIFEST);
+        expect(readFileSync(planted.files['root:r'], 'utf8')).toBe(SIDE_MANIFEST);
     });
 });

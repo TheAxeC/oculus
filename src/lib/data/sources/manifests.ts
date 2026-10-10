@@ -3,7 +3,7 @@
 // validates nothing and resolves nothing. Every failure is a Finding; nothing here throws, so one
 // unparseable manifest costs its own record and no more.
 
-import { lstatSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import type {
@@ -16,6 +16,8 @@ import type {
 } from '../model/index.ts';
 import { MANIFEST, ROOT_FOLDER, isSideTier } from '../helpers/hub-names.ts';
 import { optionalText } from '../shapes/shapes.ts';
+import { DECK_FILE, PROJECT_DECK } from './deck/read.ts';
+import { projectDocs } from './docs.ts';
 import { errorLine, readYamlMap } from './yaml-file.ts';
 
 /** Folder names the walk never descends into: a project's own code and attic hold no manifests. */
@@ -53,6 +55,16 @@ function mtimeOf(file: string): number | undefined {
     } catch {
         return undefined;
     }
+}
+
+/**
+ * What a side project's folder holds besides its manifest: its fixed documents and its deck. `at`
+ * is the folder's path against the Files root that holds it, empty for a repository's top.
+ */
+function folderHolds(dir: string, at: string): Pick<RawPersonal, 'dir' | 'docs' | 'deck'> {
+    const deck = at === '' ? PROJECT_DECK : `${at}/${PROJECT_DECK}`;
+    const held = existsSync(join(dir, PROJECT_DECK, DECK_FILE));
+    return { dir, docs: projectDocs(dir), ...(held ? { deck } : {}) };
 }
 
 function hasManifest(dir: string): boolean {
@@ -309,7 +321,8 @@ function hubPersonal(
                 personal.push({
                     source: { kind: 'hub', folder: hubPath(hub, folderPath) },
                     file,
-                    data: read.data
+                    data: read.data,
+                    ...folderHolds(folderPath, hubPath(hub, folderPath))
                 });
             }
         }
@@ -336,7 +349,8 @@ function rootPersonal(
             personal.push({
                 source: { kind: 'root', key: root.key, dir: root.dir },
                 file,
-                data: read.data
+                data: read.data,
+                ...folderHolds(root.dir, '')
             });
         }
     }
@@ -345,9 +359,11 @@ function rootPersonal(
 /**
  * Read every side project: the folders of the hub's side-projects tier and the `.oculus` manifests
  * of the roots. Nothing here shares a code path with readManifests, so a side project is never a
- * research record. Each result is a raw manifest with where it came from; what its fields hold is
- * checked and shaped by snapshot/normalise-parts/personal.ts, and the Personal board and the Focus
- * ticker read the records that make.
+ * research record. Each result is a raw manifest with where it came from, the absolute path of its
+ * folder, which of the fixed project documents the folder holds and, when the folder holds
+ * `present/present.yml`, the path of its deck. What its fields hold is checked and shaped by
+ * snapshot/normalise-parts/personal.ts, and the Personal board, the project view, the editor, the
+ * palette and the Focus ticker read the records that make.
  */
 export function readPersonal(
     hub: string,

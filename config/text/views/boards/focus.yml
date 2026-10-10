@@ -85,6 +85,7 @@ text:
         eligibility: FWO Senior eligibility
         empty_glyph: circle_empty
         fire_glyph: fire
+        fold: Fold {0}
         funding_glyph: coin
         funding_lane: Funding
         funding_sub: grant applications
@@ -122,6 +123,7 @@ text:
         teaching_glyph: teaching
         teaching_lane: Teaching & supervision
         teaching_sub: this academic year
+        unfold: Unfold {0}
         venue_unset: (venue unset)
         wait_apps: Applications
         wait_blocked: Blocked

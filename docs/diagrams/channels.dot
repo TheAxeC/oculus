@@ -168,7 +168,6 @@ digraph channels {
         label="views"; style=solid;
         "views/boards/focus";
         "views/boards/person";
-        "views/boards/personal";
         "views/feeds/leads";
         "views/feeds/literature";
         "views/feeds/radar";
@@ -324,7 +323,6 @@ digraph channels {
     "ch portfolio" -> "state/workbench/rail-badges";
     "ch portfolio" -> "views/boards/focus";
     "ch portfolio" -> "views/boards/person";
-    "ch portfolio" -> "views/boards/personal";
     "ch portfolio" -> "views/feeds/literature";
     "ch portfolio" -> "views/feeds/radar";
     "ch portfolio" -> "views/shared/card";

@@ -40,14 +40,24 @@ import { languageMap, type LanguageMap } from '../../data/helpers/files/language
 import type { ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { movable } from '../boards/focus.ts';
-import { choicesFor, formFields, formSections } from '../forms/schema.ts';
+import {
+    choicesFor,
+    formFields,
+    formSections,
+    isSideRecord,
+    sideFormFields,
+    sideFormSections
+} from '../forms/schema.ts';
+import { projectOfSide } from '../../data/snapshot/as-project.ts';
 import { pinnedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
 import { isEngineDoc } from '../workbench/navigation/pages.ts';
 import type { SelectionStore } from '../workbench/selection.svelte.ts';
 import type { BoardItem, BoardPreset, BoardStats, Dissemination } from '../boards/board/index.ts';
 import {
+    sideCardOf as cardOfSide,
     sideCards as cardsOf,
+    sideItem as itemOfSide,
     sideStatuses as statusesOf,
     type SideCard,
     type SideStatus
@@ -82,18 +92,22 @@ export type {
 /**
  * The absolute folder of one project: the manifest's own path, less the file name. The snapshot
  * carries the folder relative to the hub and the manifest's absolute path, and the manifest sits in
- * the folder, so this is the hub's own root without the page ever being told what it is.
+ * the folder, so this is the hub's own root without the page ever being told what it is. A
+ * repository's manifest sits in its `.oculus` folder, so a repository's record names its folder.
  */
 export function folderOf(project: Project): string {
+    if (project.repository !== undefined) return project.repository.dir;
     const cut = project.file.lastIndexOf('/');
     return cut < 0 ? '' : project.file.slice(0, cut);
 }
 
 /**
  * The absolute folder of the hub a project is of: its folder less the part relative to the hub.
- * Empty for a project that has no folder of its own or whose manifest does not lie in it.
+ * Empty for a project that has no folder of its own or whose manifest does not lie in it. A
+ * repository is the root of its own, so its folder is the whole of it.
  */
 function hubOfProject(project: Project): string {
+    if (project.repository !== undefined) return project.repository.dir;
     if (project.folder === '') return '';
     const folder = folderOf(project);
     const suffix = `/${project.folder}`;
@@ -128,10 +142,16 @@ export type SelectorsStore = {
     domainChoices: () => Choice[];
     hubRoot: () => string;
     engineAtFor: (tab: { view: string; state: unknown }) => string;
+    /**
+     * The place of oculus's own folder in the hub once the server's answer is in, waiting for it
+     * while it is on its way, so a press made right after a reload finds a tab of that folder.
+     */
+    engineAtSettled: () => Promise<string>;
     hubDirOf: (id: Id) => string;
     collectionOf: (key: string) => Collection | null;
     collectionsOfKey: (key: string) => Collection[];
     boardItemOf: (id: Id) => BoardItem | null;
+    sideItem: (card: SideCard) => BoardItem | null;
     projectOf: (id: Id) => Project | null;
     projects: () => Project[];
     sideStatuses: () => SideStatus[];
@@ -139,8 +159,8 @@ export type SelectorsStore = {
     venues: () => Venue[];
     datasets: () => Dataset[];
     archiveDead: () => string[];
-    manifestFields: () => FormField[];
-    manifestSections: () => string[];
+    manifestFields: (project?: Project | null) => FormField[];
+    manifestSections: (project?: Project | null) => string[];
     fieldChoices: (field: FormField, project?: Project | null) => Choice[];
     contextWindow: () => number;
     waitingCount: () => number;
@@ -159,7 +179,8 @@ export function createSelectors(
     entities: EntitiesStore,
     layout: LayoutStore,
     selection: SelectionStore,
-    engineAt: () => string
+    engineAt: () => string,
+    engineAtSettled: () => Promise<string>
 ): SelectorsStore {
     /**
      * The merged config the `config` channel delivered, or an empty map before the first message.
@@ -275,8 +296,8 @@ export function createSelectors(
 
     /** The absolute folder of the hub the project `id` is of, or the empty string. */
     function hubDirOf(id: Id): string {
-        const project = entities.portfolio()?.entities.projects[id];
-        return project === undefined ? '' : hubOfProject(project);
+        const project = projectOf(id);
+        return project === null ? '' : hubOfProject(project);
     }
 
     /**
@@ -322,6 +343,10 @@ export function createSelectors(
     function boardItemOf(id: Id): BoardItem | null {
         const snapshot = entities.portfolio();
         if (snapshot === null) return null;
+        const side = byKey(snapshot.entities.personal, id);
+        if (side !== undefined) {
+            return sideItem(cardOfSide(side, sideStatuses()));
+        }
         const project = byKey(snapshot.entities.projects, id);
         if (project === undefined) return null;
         const merged = configMap();
@@ -331,12 +356,27 @@ export function createSelectors(
     }
 
     /**
+     * A side project's card as the shared project card draws it, or null until the first snapshot.
+     * The preset is the first board's, since the join reads a preset for its rollup and its type
+     * order alone.
+     */
+    function sideItem(card: SideCard): BoardItem | null {
+        const snapshot = entities.portfolio();
+        if (snapshot === null) return null;
+        return itemOfSide(snapshot, card, presetFor(BOARDS[0], configMap()), sessionsOf);
+    }
+
+    /**
      * One project of the snapshot, or null before the first one arrives and for an id it does not
-     * hold.
+     * hold. A side project's id gives the record it stands for as a project.
      */
     function projectOf(id: Id): Project | null {
         const snapshot = entities.portfolio();
-        return snapshot === null ? null : (byKey(snapshot.entities.projects, id) ?? null);
+        if (snapshot === null) return null;
+        const held = byKey(snapshot.entities.projects, id);
+        if (held !== undefined) return held;
+        const side = byKey(snapshot.entities.personal, id);
+        return side === undefined ? null : projectOfSide(side);
     }
 
     /**
@@ -382,14 +422,23 @@ export function createSelectors(
         return readAs(stringItemsShape, configMap().archive_dead) ?? [];
     }
 
-    /** The edit form as config/schemas/manifest-schema.yml describes it, in file order. */
-    function manifestFields(): FormField[] {
-        return formFields(configMap());
+    /**
+     * The edit form as config/schemas/manifest-schema.yml describes it, in file order, and a side
+     * project's as the rows of side-project-schema.yml describe it.
+     */
+    function manifestFields(project: Project | null = null): FormField[] {
+        const config = configMap();
+        return project !== null && isSideRecord(project)
+            ? sideFormFields(config)
+            : formFields(config);
     }
 
     /** The form's sections, in the order the schema lists them. */
-    function manifestSections(): string[] {
-        return formSections(configMap());
+    function manifestSections(project: Project | null = null): string[] {
+        const config = configMap();
+        return project !== null && isSideRecord(project)
+            ? sideFormSections(config)
+            : formSections(config);
     }
 
     /**
@@ -579,10 +628,12 @@ export function createSelectors(
         domainChoices,
         hubRoot,
         engineAtFor,
+        engineAtSettled,
         hubDirOf,
         collectionOf,
         collectionsOfKey,
         boardItemOf,
+        sideItem,
         projectOf,
         projects,
         sideStatuses,

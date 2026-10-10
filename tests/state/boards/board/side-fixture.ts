@@ -14,6 +14,8 @@ export function side(slug: string, over: Partial<SideProject> = {}): SideProject
         links: [],
         source: { kind: 'hub', folder: `side-projects/${slug}` },
         file: `/hub/side-projects/${slug}/project.yml`,
+        folder: `side-projects/${slug}`,
+        docs: [],
         ...over
     };
 }
@@ -24,6 +26,7 @@ export function rooted(key: string, dir: string, over: Partial<SideProject> = {}
         id: `root:${key}`,
         source: { kind: 'root', key, dir },
         file: `${dir}/.oculus/project.yml`,
+        folder: dir,
         ...over
     });
 }

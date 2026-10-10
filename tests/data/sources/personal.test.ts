@@ -99,7 +99,27 @@ describe('the fields of a manifest', () => {
             next: 'What comes next.',
             links: ['https://x.org', 'notes.md'],
             source: { kind: 'hub', folder: 'side-projects/slug' },
-            file: expect.stringMatching(/side-projects\/slug\/project\.yml$/) as string
+            file: expect.stringMatching(/side-projects\/slug\/project\.yml$/) as string,
+            folder: 'side-projects/slug',
+            docs: expect.any(Array) as unknown[]
         });
+    });
+});
+
+describe('the folder of a side project', () => {
+    it('names its deck when the folder holds present/present.yml, and its documents by presence', () => {
+        const hub = hubWith({
+            'side-projects/deck/project.yml': manifest(),
+            'side-projects/deck/present/present.yml': 'slides: []\n',
+            'side-projects/deck/README.md': '# deck\n',
+            'side-projects/plain/project.yml': manifest()
+        });
+        const { snapshot } = buildPortfolioWithSchemas(hub, configOver());
+        const deck = snapshot.entities.personal['side:deck'];
+        const plain = snapshot.entities.personal['side:plain'];
+        expect(deck.deck).toBe('side-projects/deck/present');
+        expect(plain.deck).toBeUndefined();
+        expect(deck.docs.find((one) => one.name === 'README.md')?.present).toBe(true);
+        expect(plain.docs.find((one) => one.name === 'README.md')?.present).toBe(false);
     });
 });

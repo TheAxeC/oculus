@@ -23,9 +23,8 @@
     // work that fills the rail's pages and takes in the shipped floats, which the main window's
     // page does for every window.
     //
-    // It is also where the appearance is put on the document, in one effect: the theme's class and
-    // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
-    // and which of the two glyph vocabularies renders.
+    // It is also where the appearance is put on the document (window/appearance.svelte.ts): the
+    // theme, the wallpaper and which of the two glyph vocabularies renders.
 
     import { activeLabel, windowTitle } from '$lib/shell/panes/workbench-title';
     import ActivityRail from './rail/ActivityRail.svelte';
@@ -49,12 +48,13 @@
     import KeySheet from '$lib/ui/menu/keys/KeySheet.svelte';
     import { provideTabFrames } from '$lib/ui/tabs/tab-frames.svelte';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
-    import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
+    import { useAppearance } from './window/appearance.svelte';
     import { paneAt, resize, type FloatSpec, type Layout } from '$lib/state/workbench/layout';
     import { modeOf, type PaletteKey } from '$lib/state/workbench/palette';
     import { COMMAND_PALETTE_EVENT } from '$lib/ui/controls/editor/chords';
     import {
         docState,
+        heldDocState,
         railOrder,
         type DocEntry,
         type NavGroup
@@ -72,13 +72,7 @@
     } from '$lib/state/workbench/navigation/status';
     import Bell from './status/Bell.svelte';
     import StatusBar from './status/StatusBar.svelte';
-    import { setGlyphMode, t } from '$lib/state/shared/words/text';
-    import {
-        terminalTheme,
-        themeClass,
-        wallpaperOnTheme,
-        wallpaperSettings
-    } from '$lib/state/shared/words/appearance';
+    import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -91,7 +85,7 @@
 
     const {
         layout: { change, activeInstance, currentPage, expandChild, floats, focused, layout },
-        ui: { crt, icons, paletteRequested, textScale, theme, updateTrayRequested, wallpaper },
+        ui: { paletteRequested, updateTrayRequested },
         registry: { views }
     } = client;
 
@@ -210,7 +204,15 @@
         setSheetOpen: (open) => (sheetOpen = open),
         openDoc: (path, at) => {
             const entry = docs.find((one) => one.path === path);
-            if (entry !== undefined) client.layout.openView('doc', docState(entry), at);
+            if (entry === undefined) return;
+            void client.selectors.engineAtSettled().then((engineAt) => {
+                const held = heldDocState(
+                    entry,
+                    engineAt,
+                    (id) => client.layout.heldInstance('doc', id) !== null
+                );
+                client.layout.openView('doc', held ?? docState(entry), at, { held: true });
+            });
         },
         composeIn: (page) => client.terminals.composeIn(page),
         focusSearchBox: (id, box) => client.search.wantFocus(id, box),
@@ -249,6 +251,13 @@
             client.layout.startOnRailPage(first.page, first.label, first.node, shipped);
         } else client.layout.keepDefaultPage(shipped);
         client.layout.adoptFloats(shipped);
+    });
+
+    // A page of the rail, saved or adopted by its button, is given each of the hub's documents it
+    // lacks, once, as a tab.
+    $effect(() => {
+        if (!configured || floatId !== null) return;
+        client.layout.giveDocuments(pages.map(({ page, docs }) => ({ page, docs })));
     });
 
     // The files this page's source tabs hold open are told to the language server relay, which
@@ -312,26 +321,9 @@
             : `${t('app.keys.rows')};;${t('desktop.keys.rows')}`
     );
 
-    /** The wallpaper is drawn when the viewer wants one and the theme is one it shows under. */
-    const wall = $derived(wallpaper() && wallpaperOnTheme(theme()));
-    const paper = $derived(wallpaperSettings());
-
-    /**
-     * The image's own two numbers, as the properties its layer's filter reads: the dim is how much
-     * light is taken out of the picture, so the brightness left is what the filter wants.
-     */
-    const image = $derived(
-        `--wall-dim: ${paper === null ? 1 : 1 - paper.dim}; --wall-image-blur: ${paper === null ? 0 : paper.blur}px`
-    );
-
-    $effect(() => {
-        document.documentElement.style.setProperty('--text-scale', String(textScale() ?? 1));
-        applyTheme(document, [themeClass(theme()), wall ? WALL_CLASS : ''].join(' '), crt());
-        applyWallpaper(document, paper, wall);
-        // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the icons;
-        // every other theme draws the icon config/catalogs/icons.yml maps each glyph name to.
-        setGlyphMode(terminalTheme(theme()) && !icons() ? 'ascii' : 'icon');
-    });
+    const appearance = useAppearance(client);
+    const wall = $derived(appearance.wall());
+    const image = $derived(appearance.image());
 
     /**
      * A tab in the background still says a session wants Axel: the document title carries the count

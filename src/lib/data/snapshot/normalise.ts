@@ -15,13 +15,13 @@ import { compact } from './compact.ts';
 import { fieldsOf } from './schema/field.ts';
 import { career } from './normalise-parts/career.ts';
 import { followups, subtasks } from './normalise-parts/plans.ts';
+import { docFlags } from './normalise-parts/folder.ts';
 import { sideProjects } from './normalise-parts/personal.ts';
 import { indexing } from './indexing.ts';
 import type {
     CodeAvailability,
     Collection,
     Dataset,
-    DocFlag,
     DocPresence,
     Domain,
     Entry,
@@ -171,19 +171,6 @@ function reproduced(value: unknown): Reproduced | undefined {
     return present<Reproduced>({ date: str(value.date), note: str(value.note) });
 }
 
-/** The documents of one folder, without the absolute path the presence check carries. */
-function docs(found: DocPresence[] | undefined): DocFlag[] {
-    return (found ?? []).map((doc) =>
-        compact({
-            name: doc.name,
-            label: doc.label,
-            present: doc.present,
-            human: doc.human,
-            mtime: doc.present && doc.mtime > 0 ? doc.mtime : undefined
-        })
-    );
-}
-
 /** The calendar day a moment falls on, as the midnight that day is measured from. */
 function dayOf(ms: number): number {
     const at = new Date(ms);
@@ -265,7 +252,7 @@ function project(
         collaborators: strings(manifest.collaborators),
         venue: str(manifest.venue),
         staleDays: lag > 0 ? lag : undefined,
-        docs: docs(found),
+        docs: docFlags(found),
         deck: deck?.path,
         deckTags: deck !== undefined && deck.tags.length > 0 ? deck.tags : undefined,
         folder: manifest.folder,

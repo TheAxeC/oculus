@@ -86,7 +86,8 @@ const ORDER: Record<string, string[]> = {
         'shell/status',
         'shell/panes',
         'shell/keys',
-        'shell/commands'
+        'shell/commands',
+        'shell/window'
     ],
     views: [
         'views/academic',

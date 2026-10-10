@@ -8,12 +8,13 @@
 //
 // A request names one of four things, and one that names several is answered for the first of
 // `manual`, `engine`, `hub` and `project`, in that order. `project` with `name` is one of that
-// project's own documents, its id `<root key>:<id>` for a project of a hub other than the first;
-// `hub` is a path relative to the research hub, which is what the `docs:` list of
+// project's own documents, its id `<root key>:<id>` for a project of a hub other than the first; a
+// side project is named by its own id, and the documents of a repository side project are read from
+// the repository; `hub` is a path relative to the research hub, which is what the `docs:` list of
 // config/layout.yml lists in the view catalogue, and `root` beside it names the hub it is relative
 // to; `engine` is a Markdown file of oculus's own folder, named by a path relative to that folder,
-// wherever the folder sits; `manual` is the engine's own HELP.md and takes no path. Everything
-// else is a 404 naming what was wrong.
+// wherever the folder sits; `manual` is the engine's own HELP.md and takes no path. Everything else
+// is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
@@ -496,6 +497,28 @@ function answer(
 }
 
 /**
+ * One of the documents of a repository side project, rendered: the file lies in the repository,
+ * which the project's record names, and is checked against it as another project's is against the
+ * hub. A figure beside it is addressed under the repository's Files root.
+ */
+function renderRepositoryDoc(
+    into: DocTarget,
+    repository: { root: string; dir: string },
+    name: string,
+    held: string
+): Response {
+    const path = join(repository.dir, name);
+    if (escapes(path, repository.dir)) {
+        return json(
+            { error: 'the document is not inside the repository' },
+            { status: 404, headers: NO_STORE }
+        );
+    }
+    const base = { root: repository.root, folder: dirname(name) };
+    return answer(into, path, held, (text) => renderMarkdown(text, base));
+}
+
+/**
  * One document of one project, rendered. Every refusal is a 404 naming what was wrong: a name this
  * route does not serve, an id the reader does not know, a path that would leave the hub, and a file
  * that is not there or whose frontmatter does not parse.
@@ -512,6 +535,10 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
         (into.hubs ?? []).map((one) => one.key)
     );
     const owner = within(into, named.root);
+    const repository = owner?.project?.(named.id)?.repository;
+    if (owner !== null && repository !== undefined) {
+        return renderRepositoryDoc(owner, repository, name, held);
+    }
     const folder = owner === null ? null : folderOf(owner, named.id);
     if (owner === null || folder === null)
         return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });

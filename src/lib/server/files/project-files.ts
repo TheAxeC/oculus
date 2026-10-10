@@ -22,9 +22,10 @@ import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
 import { splitHubId } from '../../data/helpers/hub-names.ts';
+import { placeOf } from '../../data/snapshot/as-project.ts';
 import { loadLocal } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
-import type { PortfolioConfig } from '../../data/model/index.ts';
+import type { PortfolioConfig, Project } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
 import { hubTargets, type HubTarget } from './roots.ts';
 import { anyNumberShape } from '../../data/shapes/shapes.ts';
@@ -39,6 +40,8 @@ export type FilesTarget = {
     hubs?: HubTarget[];
     /** The merged config of config/*.yml, read for `file_index` and nothing else. */
     settings: Record<string, unknown>;
+    /** One side project of the portfolio the server holds, as a project, by its id. */
+    side?: (id: string) => Project | null;
 };
 
 /**
@@ -180,6 +183,24 @@ function walk(root: string, dir: string, ext: string[], rows: FileRow[]): void {
 }
 
 /**
+ * The files of a side project: those of its folder of the hub, or of its repository. The answer's
+ * `folder` is against the Files root that holds the project, so it is the folder of a hub side
+ * project and empty for a repository.
+ */
+function listSideFiles(side: Project, hub: string, settings: Record<string, unknown>): Response {
+    const place = placeOf(side);
+    const folder = side.repository === undefined ? join(hub, side.folder) : place.dir;
+    const bound = side.repository === undefined ? hub : place.dir;
+    if (!inside(folder, bound))
+        return json(
+            { error: 'the folder is not inside its root' },
+            { status: 404, headers: NO_STORE }
+        );
+    const answer: FilesAnswer = { ...projectFiles(folder, settings), folder: place.path };
+    return json(answer, { headers: NO_STORE });
+}
+
+/**
  * The files of the project the request names. Every refusal says what was wrong: a request with no
  * id at all is a 400, an id the reader does not know is a 404, and so is a folder that would leave
  * the hub.
@@ -195,6 +216,8 @@ export function listFiles(into: FilesTarget, id: string): Response {
         hub: into.hub,
         config: into.config
     };
+    const side = into.side?.(id) ?? null;
+    if (side !== null) return listSideFiles(side, owner.hub, into.settings);
     const { manifests } = readManifests(owner.hub, owner.config.scan, owner.config.text);
     const manifest = manifests.find((one) => one.id === named.id);
     if (manifest === undefined)
@@ -217,13 +240,18 @@ export function listFiles(into: FilesTarget, id: string): Response {
  * The hub and the scan rules come from the readers target() in lib/server/edit/writes.ts takes them
  * from, loadLocal and portfolioConfigFrom, rather than from a second reader of local.yml.
  */
-export function filesTarget(engine: string, settings: Record<string, unknown>): FilesTarget {
+export function filesTarget(
+    engine: string,
+    settings: Record<string, unknown>,
+    side?: FilesTarget['side']
+): FilesTarget {
     const local = loadLocal(engine);
     return {
         hub: local.hub,
         config: portfolioConfigFrom(settings),
         hubs: hubTargets({ config: settings, engine, local }),
-        settings
+        settings,
+        side
     };
 }
 

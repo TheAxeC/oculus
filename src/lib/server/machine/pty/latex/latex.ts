@@ -188,7 +188,8 @@ function latexFolder(
         };
     }
     const project = (options.projectFor ?? (() => null))(named.data.id);
-    if (project === null) return refusal('no-project');
+    // A repository side project holds no manuscript folder the build reads.
+    if (project === null || project.repository !== undefined) return refusal('no-project');
     const first = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
     // A project of a hub other than the first lies under the served root of that hub's key.
     const key = hubOf(project);

@@ -726,9 +726,13 @@ body.tokyoneon {
 }
 
 /* --- Rice: the shape the thirteen terminal palettes share ---------------- */
-/* Terminal-ish rather than pixel-art: square corners, hairline borders, no shadows, monospace
-   chrome, the seven type scale steps one step down. The palette classes above carry the colour;
-   this carries the shape, and a component reads both through the tokens. */
+/* A terminal look: square corners, hairline borders, no shadows, monospace chrome and every text
+   one size down. Each step of the type scale takes the value of the next smaller step of the
+   default scale in `tokens.css` (`--fs-sm` 12px becomes 11px, `--fs-xl` 16px becomes 14px,
+   `--fs-3xl` 26px becomes 20px), and `--fs-xs`, which has no smaller step, is 10px. The six size
+   tokens are 1px below their default values. The slide scale is lowered in `slide.css`. The palette
+   classes above carry the colour, this block carries the shape, and a component reads both through
+   the tokens. */
 body.rice {
     --fs-xs: calc(10px * var(--text-scale, 1));
     --fs-sm: calc(11px * var(--text-scale, 1));
@@ -737,6 +741,12 @@ body.rice {
     --fs-xl: calc(14px * var(--text-scale, 1));
     --fs-2xl: calc(16px * var(--text-scale, 1));
     --fs-3xl: calc(20px * var(--text-scale, 1));
+    --rail-badge-text: 8px;
+    --status-text: 11px;
+    --tree-font: 12px;
+    --tree-heading-font: 10px;
+    --tree-badge-font: 10px;
+    --button-font: 11px;
     --radius: 3px;
     --radius-sm: 2px;
     --radius-pill: 3px;

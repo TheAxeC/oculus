@@ -20,15 +20,17 @@
     //
     // The LaTeX panel is project/Latex.svelte, drawn for a project whose manuscript folder holds a
     // main file, or whose read failed, and for no other: what it needs is the id, and everything
-    // about the files it lists comes from api/latex rather than from the snapshot.
+    // about the files it lists comes from api/latex rather than from the snapshot. A repository
+    // side project gets no panel, since the build reads no manuscript folder of one.
     //
     // The card is views/shared/card/ProjectCard.svelte, the one the board draws, with `deposit` on
     // and no `ontoggle`: this tab's card is always open, so it carries the deposit control and no
-    // expand control. It is drawn with `documents` off, since the documents section below is this
-    // tab's list of the project's documents, and with no clamp state, so its ELI5 is drawn whole.
-    // That list draws a known document the project has not got as the card's tag for it.
-    // Everything else the card shows, the pin, the stale badge, the file finder and the subtasks
-    // among it, is the board's card unchanged.
+    // expand control. A side project opens in this view too, by its `side:<slug>` or `root:<key>`
+    // id, and its card has no deposit control. It is drawn with `documents` off, since the
+    // documents section below is this tab's list of the project's documents, and with no clamp
+    // state, so its ELI5 is drawn whole. That list draws a known document the project has not got
+    // as the card's tag for it. Everything else the card shows, the pin, the stale badge, the file
+    // finder and the subtasks among it, is the board's card unchanged.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
     // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
@@ -47,8 +49,9 @@
     import ProjectCard from '../../shared/card/ProjectCard.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import SessionRow from '../../shared/sessions/SessionRow.svelte';
-    import { absentDocs, markdownDocNames, type BoardItem } from '$lib/state/boards/board';
-    import { cardCursor, instanceText } from '$lib/state/workbench/layout/instance';
+    import { absentDocs, markdownDocNames } from '$lib/state/boards/board';
+    import { folderOf } from '$lib/state/client/selectors.svelte';
+    import { cardCursor, instanceChoice, instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -65,14 +68,14 @@
     const id = $derived(instanceText(instance.state, 'id'));
     const cursor = $derived(cardCursor(instance.state));
     const item = $derived(id === '' ? null : boardItemOf(id));
-    const folder = $derived(item === null ? '' : folderOf(item));
+    const folder = $derived(item === null ? '' : folderOf(item.project));
     const rows = $derived(folder === '' ? [] : sessionsForProject(folder));
     /**
      * The Markdown this tab can draw: the fixed documents the folder holds. The project's deck is
      * opened from the card's presentation control.
      */
     const names = $derived(item === null ? [] : markdownDocNames(item.project));
-    const chosen = $derived(pick(names, instanceText(instanceState(instance.id), 'doc')));
+    const chosen = $derived(instanceChoice(instanceState(instance.id), 'doc', names));
     const shown = $derived(chosen === '' ? null : docFor(id, chosen));
     const lag = $derived(staleLag());
 
@@ -81,23 +84,6 @@
 
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
-
-    /**
-     * The project's absolute folder, which is what the session join matches against: the record
-     * carries the folder relative to the hub and the manifest's absolute path, and the manifest
-     * sits in the folder.
-     */
-    function folderOf(one: BoardItem): string {
-        const file = one.project.file;
-        const cut = file.lastIndexOf('/');
-        return cut < 0 ? '' : file.slice(0, cut);
-    }
-
-    /** The document showing: the one the tab remembers while it is still there, else the first. */
-    function pick(present: string[], held: string): string {
-        if (present.includes(held)) return held;
-        return present[0] ?? '';
-    }
 
     function choose(name: string): void {
         setInstanceState(instance.id, { id, doc: name });
@@ -131,7 +117,7 @@
                 {now}
                 cursor={cursor === item.id}
                 open
-                deposit
+                deposit={item.sideStatus === undefined}
                 documents={false}
                 label={item.project.title}
                 tab={item.project.title}
@@ -139,7 +125,9 @@
                 onsaid={(answer: string) => (said = answer)}
             />
 
-            <Latex {id} />
+            {#if item.project.repository === undefined}
+                <Latex {id} />
+            {/if}
 
             <section class="block">
                 <h3 class="heading">{t('project.documents')}</h3>

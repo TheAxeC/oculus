@@ -563,7 +563,13 @@ export function createClientState(
         layout
     });
     const usageRefresh = createUsageRefresh(entities, writes);
-    const selectors = createSelectors(entities, layout, selection, docs.engineAt);
+    const selectors = createSelectors(
+        entities,
+        layout,
+        selection,
+        docs.engineAt,
+        docs.engineAtSettled
+    );
     const manifestDraft = createManifestDraft(ui, selectors.projectOf);
     ui.registerUnsaved(manifestDraft.manifestDirty);
     // A file browser's root or workspace line is text no save has taken, asked by the instance's

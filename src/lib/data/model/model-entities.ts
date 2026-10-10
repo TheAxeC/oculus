@@ -602,6 +602,14 @@ export type Project = Rooted & {
     /** Folder relative to the hub, and the manifest's absolute path. */
     folder: string;
     file: string;
+    /**
+     * Where the project's folder is when it is a repository served as a Files root of its own,
+     * which only a side project's record is made with (snapshot/as-project.ts): the root's key and
+     * the repository's absolute path. A project of a hub folder has none.
+     */
+    repository?: { root: string; dir: string };
+    /** The web addresses or paths a side project's manifest lists; only its record holds them. */
+    links?: string[];
 };
 
 /** A venue from registries/venues.yml. Its id field in the file is `id`, not `key`. */
@@ -813,6 +821,15 @@ export type RawPersonal = {
     /** Absolute path of the project.yml that was read. */
     file: string;
     data: Record<string, unknown>;
+    /** Absolute path of the project's folder: its folder of the hub, or the repository. */
+    dir: string;
+    /** Which of the fixed project documents the folder holds, from sources/docs.ts. */
+    docs: DocPresence[];
+    /**
+     * The path of the folder's `present/` folder against the Files root that holds the project,
+     * present when `present/present.yml` is there.
+     */
+    deck?: string;
 };
 
 /**
@@ -840,7 +857,11 @@ type SideResearchKeys = Partial<
  * One side project of the Personal board and the Focus ticker: a hub folder under `side-projects/`
  * or a repository with a `.oculus/project.yml`. The id is `side:<slug>` for the first and
  * `root:<key>` for the second, and a hub other than the first has its root key in front of either.
- * `status` is a key of `side_project_status`, or `unknown` for any other value.
+ * `status` is a key of `side_project_status`, or `unknown` for any other value. Its `folder` is
+ * `side-projects/<slug>` against the hub for a hub folder and the repository's absolute path for a
+ * repository; `docs` is which of the fixed project documents the folder holds, and `deck` is the
+ * path of its `present/` folder against the Files root that holds the project (the hub for a hub
+ * folder, the repository's root for a repository), present when `present/present.yml` is there.
  */
 export type SideProject = SideResearchKeys &
     Rooted & {
@@ -853,4 +874,7 @@ export type SideProject = SideResearchKeys &
         source: PersonalSource;
         /** Absolute path of the manifest. */
         file: string;
+        folder: string;
+        docs: DocFlag[];
+        deck?: string;
     };

@@ -6,6 +6,7 @@ import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/st
 import type { ClientState } from '$lib/state/client/context';
 import { findView, type Layout } from '$lib/state/workbench/layout';
 import { HUB_ROOT } from '$lib/state/sources/fs';
+import { placeOf } from '$lib/state/shared/page/hubs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { t } from '$lib/state/shared/words/text';
 import { openPage } from '../explorer/opening';
@@ -59,9 +60,14 @@ export function subOf(path: string): string {
     return at < 0 ? '' : path.slice(0, at);
 }
 
+/** A path below a project's folder against its Files root; the folder is empty at a root's top. */
+export function below(folder: string, path: string): string {
+    return folder === '' ? path : `${folder}/${path}`;
+}
+
 /** The encoded api/file address for a project-relative file. */
 export function urlOf(folder: string, path: string, root: string = HUB_ROOT): string {
-    return fileBytesUrl(root, `${folder}/${path}`);
+    return fileBytesUrl(root, below(folder, path));
 }
 
 /**
@@ -80,26 +86,20 @@ export function openDocument(
     path: string,
     root: string = HUB_ROOT
 ): void {
-    openPage(client, { root, path: `${folder}/${path}`, label: path });
+    openPage(client, { root, path: below(folder, path), label: path });
 }
 
 /**
- * Open the workbench of a project's folder under the root of its hub, named by the project's title,
- * with the project view in its documents pane; a ghost has no project view and opens none.
+ * Open the workbench of a project's folder, under the Files root that holds it, named by the
+ * project's title, with the project view in its documents pane; a ghost has no project view and
+ * opens none.
  */
-export function openWorkbench(
-    client: ClientState,
-    item: BoardItem,
-    tab: string,
-    root: string
-): void {
+export function openWorkbench(client: ClientState, item: BoardItem, tab: string): void {
     const first = item.project.ghost
         ? undefined
         : { view: 'project', state: { id: item.id, label: tab } };
-    client.folders.open(
-        { root, path: item.project.folder },
-        { label: item.project.title, item: first }
-    );
+    const { root, path } = placeOf(item.project);
+    client.folders.open({ root, path }, { label: item.project.title, item: first });
 }
 
 /**

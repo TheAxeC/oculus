@@ -56,7 +56,7 @@ terminal:
 # === Wallpaper ==============================================================
 # `dir` is relative to the hub and must remain inside it. No image means no backdrop.
 wallpaper:
-  dir: tools/oculus/assets/wallpaper
+  dir: .oculus/wallpaper
   file: "wallhaven-83"       # name the image to use (full name or any unique part of it). Empty = use `pick:` below
   pick: first    # `first` = the first image in the folder | `random` = a different one each build
   dim: 0.72      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85
@@ -72,7 +72,7 @@ wallpaper:
 # === Memories ===============================================================
 # The photo wall's folder, the same shape as `wallpaper:` above: `dir` is relative to the hub and must remain inside it. Every .jpg / .jpeg / .png / .webp in it is a tile, and the wall's own control adds one.
 memories:
-  dir: tools/oculus/assets/memories
+  dir: .oculus/memories
 
 
 # The CRT overlay (scanlines and vignette, cosmetic only): what a browser that has never been told

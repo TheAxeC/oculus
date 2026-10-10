@@ -1,8 +1,8 @@
 // Layer 2, client state. The Personal board's arithmetic: the statuses of `side_project_status` in
-// their order, the cards sorted by it, the search and status toggles a view instance remembers, and
-// where the title and Show in Files of a card point. Pure over the config and the side projects of
-// the snapshot; no words live here but the label of the unknown status, which comes from the
-// catalog.
+// their order, the cards sorted by it, the search, status toggles, cards or list switch and
+// expanded cards a view instance remembers, where the manifest of a card is, and the board item a
+// side project's card is drawn from. Pure over the config and the side projects of the snapshot; no
+// words live here but the label of the unknown status, which comes from the catalog.
 //
 // A card whose status is not in the vocabulary is drawn as `unknown` and sorted last. That status
 // has no toggle, so a card the vocabulary does not name is never hidden by a control it cannot see.
@@ -17,12 +17,12 @@ import {
     readAs
 } from '../../../data/shapes/shapes.ts';
 import { rootOf } from '../../../data/helpers/hub-names.ts';
+import { projectOfSide } from '../../../data/snapshot/as-project.ts';
 import { t } from '../../shared/words/text.ts';
 import { statusRows, type StatusRow } from '../../shared/words/status-rows.ts';
 import { UNKNOWN_TONE } from '../../shared/words/tones.ts';
-import { personNames } from '../person.ts';
-import { tagLabel } from './items.ts';
-import type { LinkedItem, RelatedTag } from './presets.ts';
+import { boardItemFor, tagLabel } from './items.ts';
+import type { BoardItem, BoardMode, BoardPreset, RelatedTag, SessionsOf } from './presets.ts';
 
 export type { SideProject } from '../../../data/model/index.ts';
 
@@ -39,10 +39,17 @@ export type SideStatus = StatusRow;
 export type SideCard = { project: SideProject; status: SideStatus };
 
 /**
- * What a view instance remembers: the search text, the statuses toggled off and the ids of the
- * cards whose explanation is drawn whole.
+ * What a view instance remembers: the search text, the statuses toggled off, the ids of the cards
+ * whose explanation is drawn whole, whether the board is cards or a table, and the ids of the cards
+ * that are open.
  */
-export type PersonalState = { search: string; hidden: string[]; more: string[] };
+export type PersonalState = {
+    search: string;
+    hidden: string[];
+    more: string[];
+    mode: BoardMode;
+    expanded: string[];
+};
 
 /** Where a card's title or folder opens: a Files root, a path in it and the tab's words. */
 export type SideTarget = { root: string; path: string };
@@ -65,21 +72,23 @@ function unknownStatus(): SideStatus {
     };
 }
 
+/** One side project under its status: the vocabulary's, or `unknown` when it names none. */
+export function sideCardOf(project: SideProject, statuses: SideStatus[]): SideCard {
+    const status = statuses.find((one) => one.key === project.status) ?? unknownStatus();
+    return { project, status };
+}
+
 /**
  * The cards of the side projects: each under its status, sorted by the vocabulary's order, the
  * unknown ones last, a pinned card first within its status, then by title.
  */
 export function sideCards(projects: SideProject[], statuses: SideStatus[]): SideCard[] {
-    const unknown = unknownStatus();
     const rank = (card: SideCard): number => {
         const at = statuses.findIndex((status) => status.key === card.status.key);
         return at === -1 ? statuses.length : at;
     };
     return projects
-        .map((project): SideCard => {
-            const status = statuses.find((one) => one.key === project.status) ?? unknown;
-            return { project, status };
-        })
+        .map((project) => sideCardOf(project, statuses))
         .sort(
             (a, b) =>
                 rank(a) - rank(b) ||
@@ -103,23 +112,37 @@ export function sideLive(
     return readAs(liveShape, row)?.live !== false;
 }
 
-/** The state a view instance starts in: no search, every status shown, every explanation cut. */
+/**
+ * The state a view instance starts in: no search, every status shown, every explanation cut, cards
+ * and none of them open.
+ */
 export function emptyPersonalState(): PersonalState {
-    return { search: '', hidden: [], more: [] };
+    return { search: '', hidden: [], more: [], mode: 'cards', expanded: [] };
 }
+
+/** The switch between cards and a table: the word `list` is the table and any other is cards. */
+const modeShape = z.enum(['cards', 'list']).catch('cards');
 
 /** The fields of a saved state, each read apart, so a wrong one costs that field alone. */
 const stateShape = z.object({
     search: optionalTextShape,
     hidden: fieldItemsShape,
-    more: fieldItemsShape
+    more: fieldItemsShape,
+    mode: modeShape,
+    expanded: fieldItemsShape
 });
 
 /** Read a saved state, falling back one field at a time when a value is invalid. */
 export function parsePersonalState(value: unknown): PersonalState {
     const held = readAs(stateShape, value);
     if (held === null || readAs(mapShape, value) === null) return emptyPersonalState();
-    return { search: held.search ?? '', hidden: held.hidden, more: held.more };
+    return {
+        search: held.search ?? '',
+        hidden: held.hidden,
+        more: held.more,
+        mode: held.mode,
+        expanded: held.expanded
+    };
 }
 
 /** The state with one status toggled: off when it was on, on when it was off. */
@@ -138,6 +161,14 @@ export function toggleMore(state: PersonalState, id: string): PersonalState {
     return { ...state, more };
 }
 
+/** The state with one card opened, or closed again. */
+export function toggleExpanded(state: PersonalState, id: string): PersonalState {
+    const expanded = state.expanded.includes(id)
+        ? state.expanded.filter((one) => one !== id)
+        : [...state.expanded, id];
+    return { ...state, expanded };
+}
+
 /**
  * The cards the search and the toggles leave. The search is a case-insensitive match of title,
  * eli5 or next; a card of the unknown status is never hidden by a toggle.
@@ -154,12 +185,7 @@ export function filterCards(cards: SideCard[], state: PersonalState): SideCard[]
     });
 }
 
-/** The line under a card's title that says where the project lives. */
-export function sourceLine(project: SideProject): string {
-    return project.source.kind === 'hub' ? project.source.folder : project.source.key;
-}
-
-/** The file a card's title opens: its manifest, under the Files root that holds it. */
+/** A side project's manifest, which a ticker line opens, under the Files root that holds it. */
 export function manifestTarget(project: SideProject): SideTarget & { label: string } {
     if (project.source.kind === 'hub') {
         return {
@@ -171,35 +197,35 @@ export function manifestTarget(project: SideProject): SideTarget & { label: stri
     return { root: project.source.key, path: '.oculus/project.yml', label: project.title };
 }
 
-/** What Show in Files selects: a hub side project's folder, a repository's top folder. */
-export function folderTarget(project: SideProject): SideTarget {
-    return project.source.kind === 'hub'
-        ? { root: rootOf(project), path: project.source.folder }
-        : { root: project.source.key, path: '' };
-}
-
 /**
- * The people and projects a side project's card links to: its `collaborators:` as people, drawn by
- * their names in the registry, and its `related:` as projects, drawn by their short name or title,
- * and by the id itself, marked not held, when no project has it.
+ * The projects a side project's `related:` names, drawn by their short name or title, and by the id
+ * itself, marked not held, when no project has it.
  */
-export function sideLinks(project: SideProject, snapshot: Snapshot | null): LinkedItem {
-    const names = personNames(snapshot);
+function relatedProjects(project: SideProject, snapshot: Snapshot | null): RelatedTag[] {
     const projects = snapshot?.entities.projects ?? {};
-    const related = (project.relatedIds ?? []).map((id: Id): RelatedTag => {
+    return (project.relatedIds ?? []).map((id: Id): RelatedTag => {
         const held = byKey(projects, id);
         return { id, label: held === undefined ? id : tagLabel(held), held: held !== undefined };
     });
+}
+
+/**
+ * A side project's card as the shared project card draws it: the project its record stands for,
+ * joined as a research project is, in the hue of its status, with the status it is drawn under and
+ * the projects its `related:` names. The project card reads a board item, and a side project is one
+ * through this record, so the two kinds of card are one piece of code.
+ */
+export function sideItem(
+    snapshot: Snapshot,
+    card: SideCard,
+    preset: BoardPreset,
+    sessionsOf: SessionsOf
+): BoardItem {
+    const joined = boardItemFor(snapshot, projectOfSide(card.project), preset, sessionsOf);
     return {
-        id: project.id,
-        pillars: [],
-        funding: [],
-        datasets: [],
-        collaborators: (project.collaborators ?? []).map((id) => ({
-            id,
-            label: byKey(names, id) ?? id
-        })),
-        software: [],
-        related
+        ...joined,
+        tone: card.status.tone,
+        sideStatus: card.status,
+        related: relatedProjects(card.project, snapshot)
     };
 }

@@ -60,6 +60,12 @@ export type OpenOptions = {
      * workbench's sessions list take it.
      */
     document?: boolean;
+    /**
+     * Show the instance of this view that names the state's `id` and that any page or float holds,
+     * as a unique view is shown, and open a new one only when none does. The document rows of the
+     * Views catalogue take it, so a document is one tab wherever it is held.
+     */
+    held?: boolean;
 };
 
 export type Opening = {
@@ -76,10 +82,12 @@ export type Opening = {
      */
     openInPane: (view: ViewId, state: unknown, page: string, path: number[]) => string;
     /**
-     * The id of the instance of a unique view that a page or float holds, the one openView would
-     * show, or null for a view that is not unique or that nothing holds. It changes nothing.
+     * The id of the instance that openView would show where a page or float holds one, or null when
+     * nothing does. Without `id` it answers for a unique view and is null for any other; with the
+     * `id` a state names it answers for the instance of that record, which `options.held` shows. It
+     * changes nothing.
      */
-    heldUnique: (view: ViewId) => string | null;
+    heldInstance: (view: ViewId, id?: string) => string | null;
 };
 
 /** A unique view's instance with the page or float holding it, and whether the screen draws it. */
@@ -154,7 +162,8 @@ export function createOpening(
             page,
             options?.preview === true,
             undefined,
-            options?.document === true
+            options?.document === true,
+            options?.held === true
         );
     }
 
@@ -195,12 +204,18 @@ export function createOpening(
         page?: string,
         preview = false,
         asker?: string,
-        document = false
+        document = false,
+        anywhere = false
     ): string {
         const held = page === undefined ? attention.touched() : access.at(page);
         if (held === null) return '';
         const host = held.id;
-        const holder = unique(view) ? holderOf(view) : null;
+        const wanted = stateId(state);
+        const holder = unique(view)
+            ? holderOf(view)
+            : anywhere && wanted !== null
+              ? holderOf(view, wanted)
+              : null;
         if (holder !== null) return showHeld(holder, state, preview);
         // A view open in a float is activated there when the host holds none of its own.
         const floated = findInFloats(view, stateId(state));
@@ -219,7 +234,6 @@ export function createOpening(
         const tree = access.layout(host);
         const into = focus === null ? null : focus.path;
         const inside = into === null ? null : paneAt(tree, into);
-        const wanted = stateId(state);
         const existing =
             inside === null ? findView(tree, view, wanted) : findIn(inside, view, wanted);
         if (existing !== null) {
@@ -363,18 +377,19 @@ export function createOpening(
      * Where a unique view is held, in the order the reader meets it: the pages drawn on the page on
      * screen (that page first, then the pages it draws), the floats, which are drawn over every
      * page, and then every other page in the page list's order. The instance is the first one in
-     * that order, whatever record its state names.
+     * that order, whatever record its state names, or the one naming `id` when it is given.
      */
-    function holderOf(view: ViewId): Holder | null {
+    function holderOf(view: ViewId, id?: string): Holder | null {
         const { pages, floats } = access.held();
         const drawn = drawnBy(pages, access.currentPage().id);
         const shown = [...drawn].flatMap((id) => pages.filter((page) => page.id === id));
         const apart = pages.filter((page) => !drawn.has(page.id));
-        const found = heldView([...shown, ...floats.map(floatHost), ...apart], view);
+        const found = heldView([...shown, ...floats.map(floatHost), ...apart], view, id);
         return found === null ? null : { ...found, drawn: drawn.has(found.host.id) };
     }
 
-    function heldUnique(view: ViewId): string | null {
+    function heldInstance(view: ViewId, id?: string): string | null {
+        if (id !== undefined) return holderOf(view, id)?.instance.id ?? null;
         return unique(view) ? (holderOf(view)?.instance.id ?? null) : null;
     }
 
@@ -463,5 +478,5 @@ export function createOpening(
         return pane.tabs.find((tab) => isInstanceOf(tab, view, id)) ?? null;
     }
 
-    return { openView, openBeside, openInPane, heldUnique };
+    return { openView, openBeside, openInPane, heldInstance };
 }

@@ -14,6 +14,7 @@ export {
     defaultWorkbench,
     emptyPane,
     floatHost,
+    folderName,
     hostsOf,
     newPage,
     pageLeaf,
@@ -121,6 +122,8 @@ export type { LayoutAccess } from './access.ts';
 export { LAYOUT_KEY, PREVIOUS_KEY, createStorage } from './saved/storage.ts';
 export type { LayoutStorage, SaveTurn, Storable } from './saved/storage.ts';
 export { createLoad } from './saved/load.ts';
+export { giveDocuments } from './saved/docs.ts';
+export type { DocSource } from './saved/docs.ts';
 export { carryWorkbench } from './saved/carry.ts';
 export { createAttention } from './open/attention.ts';
 export type { Attention, Beside, Touched } from './open/attention.ts';

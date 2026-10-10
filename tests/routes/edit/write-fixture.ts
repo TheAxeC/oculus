@@ -358,7 +358,9 @@ export function plantSides(hubDir: string): PlantedSides {
         next: '',
         links: [],
         source,
-        file
+        file,
+        folder: source.kind === 'hub' ? source.folder : source.dir,
+        docs: []
     });
     return {
         served,
@@ -383,6 +385,43 @@ export function sideTarget(base: WriteTarget = target()): SideTarget {
     return {
         into: { ...base, config: { ...base.config, scan }, sideProjects: () => sides },
         files
+    };
+}
+
+/**
+ * The target with a side project of a second hub, the hub `two`, added to the two of `sideTarget`:
+ * its manifest is planted at `side-projects/idea/project.yml` of a folder of its own under the
+ * system temporary directory, and the target publishes it as `two:side:idea` and names the hub.
+ */
+export function secondHubSide(base: WriteTarget = target()): SideTarget & { second: string } {
+    const first = sideTarget(base);
+    const second = scratchDir('oculus-second-');
+    const file = join(second, 'side-projects', 'idea', 'project.yml');
+    expect(resolve(file).startsWith(resolve(second) + sep)).toBe(true);
+    mkdirSync(join(file, '..'), { recursive: true });
+    writeFileSync(file, SIDE_MANIFEST);
+    const record: SideProject = {
+        id: 'two:side:idea',
+        root: 'two',
+        title: 'An idea',
+        status: 'idea',
+        eli5: 'what it is',
+        next: '',
+        links: [],
+        source: { kind: 'hub', folder: 'side-projects/idea' },
+        file,
+        folder: 'side-projects/idea',
+        docs: []
+    };
+    const sides = first.into.sideProjects();
+    return {
+        into: {
+            ...first.into,
+            hubs: [{ key: 'two', hub: second, config: first.into.config }],
+            sideProjects: () => [...sides, record]
+        },
+        files: first.files,
+        second: file
     };
 }
 

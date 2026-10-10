@@ -6,6 +6,7 @@ import type { Id, Project, Resource, Tier, Venue } from '../../../data/model/ind
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
 import { fields, strings, text as str } from '../../../data/helpers/guards.ts';
 import { fieldItemsShape, readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
+import type { StatusRow } from '../../shared/words/status-rows.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -112,6 +113,13 @@ export type BoardItem = {
     chips: string[];
     /** Everything the search reads, lower case, one string. */
     haystack: string;
+    /**
+     * A side project's status as the Personal board draws it: its words, its glyph and its hue.
+     * Absent for a research project, whose status is its chips.
+     */
+    sideStatus?: StatusRow;
+    /** The projects a side project's `related:` names; absent for a research project. */
+    related?: RelatedTag[];
 };
 
 /** One value of one facet: what a filter stores, what the menu says, and how many carry it. */

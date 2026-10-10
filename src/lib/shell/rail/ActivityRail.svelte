@@ -51,7 +51,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { currentPage, heldUnique, openRailPage, openView, pages: allPages, resetPage },
+        layout: { currentPage, heldInstance, openRailPage, openView, pages: allPages, resetPage },
         notices: { post },
         registry: { viewFor },
         ui: { unsaved, busyTerminals, saveBeforeClose }
@@ -168,7 +168,7 @@
         const holder = pages.find((entry) =>
             railPageViews(allPages(), entry.page, entry.node).includes(SETTINGS_VIEW)
         );
-        if (holder !== undefined && heldUnique(SETTINGS_VIEW) === null) {
+        if (holder !== undefined && heldInstance(SETTINGS_VIEW) === null) {
             openRailPage(holder.page, holder.label, holder.node);
         }
         openView(SETTINGS_VIEW, { reveal: 'rail' }, currentPage().id);

@@ -30,6 +30,9 @@
     type Props = {
         week: FocusTicker | null;
         view: ViewRows;
+        /** Whether the section is open, and the control on its heading that folds it. */
+        open: boolean;
+        ontoggle: () => void;
         attentionRows: TickerRow[];
         refreshRows: TickerRow[];
         onproject: (id: string) => void;
@@ -42,6 +45,8 @@
     let {
         week,
         view,
+        open,
+        ontoggle,
         attentionRows,
         refreshRows,
         onproject,
@@ -101,6 +106,15 @@
 {#if anything}
     <section class="week">
         <div class="head">
+            <ToolButton
+                bare
+                label={open
+                    ? t('focus.fold', t('focus.command.command_center'))
+                    : t('focus.unfold', t('focus.command.command_center'))}
+                glyph={open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
+                expanded={open}
+                onclick={ontoggle}
+            />
             <b
                 ><Glyph name={t('focus.command.command_center_glyph')} />{t(
                     'focus.command.command_center'
@@ -116,91 +130,107 @@
                 >
             {/if}
         </div>
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render group(
-            t('focus.command.grp_overdue_label'),
-            t('focus.command.grp_overdue_glyph'),
-            view.overdue
-        )}
-        {#if attentionRows.length > 0 || week?.behind}
-            <div class="grp">
-                <p class="lbl">
-                    <Glyph name={t('focus.command.grp_attention_glyph')} />{t(
-                        'focus.command.grp_attention_label'
-                    )}
-                </p>
-                {#if attentionRows.length > 0}
-                    <Ticker rows={attentionRows} onpick={onattention} />
-                {/if}
-                {#if week?.behind}
-                    <div class="behind">
-                        <Glyph name={t('board.stale_glyph')} />
-                        <b>{week.behind.count} {manifestWord(week.behind.count)}</b><span
-                            >{t('focus.command.behind_refresh')}</span
-                        >
-                        {#each week.behind.projects as project (project.id)}
-                            <span class="link">
-                                <ToolButton
-                                    plain
-                                    label={project.label}
-                                    title={t('project.card.stale_behind', project.days)}
-                                    onclick={() => onproject(project.id)}
-                                />
-                            </span>
-                        {/each}
-                        {#if week.behind.more > 0}
-                            <span>{t('focus.command.more', week.behind.more)}</span>
-                        {/if}
-                    </div>
-                {/if}
-            </div>
-        {/if}
-        {#if view.categories.length > 0}
-            <div class="grp">
-                <p class="lbl">
-                    <Glyph name={t('focus.command.grp_deadlines_glyph')} />{t(
-                        'focus.command.grp_deadlines_label'
-                    )}
-                </p>
-                {#each view.categories as one (one.category)}
-                    <p class="sub">
-                        {categoryLabel(one.category)}
+        {#if open}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render group(
+                t('focus.command.grp_overdue_label'),
+                t('focus.command.grp_overdue_glyph'),
+                view.overdue
+            )}
+            {#if attentionRows.length > 0 || week?.behind}
+                <div class="grp">
+                    <p class="lbl">
+                        <Glyph name={t('focus.command.grp_attention_glyph')} />{t(
+                            'focus.command.grp_attention_label'
+                        )}
                     </p>
-                    <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} {marked} />
-                {/each}
-            </div>
-        {/if}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render kindGroups(
-            t('focus.command.grp_subtask_dl_label'),
-            t('focus.command.grp_subtask_glyph'),
-            view.subtaskDated
-        )}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render group(
-            t('focus.command.grp_followups_label'),
-            t('focus.command.grp_followups_glyph'),
-            view.followups
-        )}
-        {#if refreshRows.length > 0}
-            <div class="grp">
-                <p class="lbl">
-                    <Glyph name={t('focus.command.refresh_glyph')} />{t(
-                        'focus.command.grp_refresh_label'
-                    )}
-                </p>
-                <Ticker rows={refreshRows} onpick={onrefresh} />
-            </div>
-        {/if}
-        {#if view.snoozed.length > 0}
-            <details class="grp">
-                <summary class="lbl"
-                    ><Glyph name={t('focus.command.snoozed_glyph')} />{t(
-                        'focus.command.snoozed',
-                        view.snoozed.length
-                    )}</summary
-                ><Ticker rows={view.snoozed} {onpick} {onaction} reveal kept={view.kept} {marked} />
-            </details>
+                    {#if attentionRows.length > 0}
+                        <Ticker rows={attentionRows} onpick={onattention} />
+                    {/if}
+                    {#if week?.behind}
+                        <div class="behind">
+                            <Glyph name={t('board.stale_glyph')} />
+                            <b>{week.behind.count} {manifestWord(week.behind.count)}</b><span
+                                >{t('focus.command.behind_refresh')}</span
+                            >
+                            {#each week.behind.projects as project (project.id)}
+                                <span class="link">
+                                    <ToolButton
+                                        plain
+                                        label={project.label}
+                                        title={t('project.card.stale_behind', project.days)}
+                                        onclick={() => onproject(project.id)}
+                                    />
+                                </span>
+                            {/each}
+                            {#if week.behind.more > 0}
+                                <span>{t('focus.command.more', week.behind.more)}</span>
+                            {/if}
+                        </div>
+                    {/if}
+                </div>
+            {/if}
+            {#if view.categories.length > 0}
+                <div class="grp">
+                    <p class="lbl">
+                        <Glyph name={t('focus.command.grp_deadlines_glyph')} />{t(
+                            'focus.command.grp_deadlines_label'
+                        )}
+                    </p>
+                    {#each view.categories as one (one.category)}
+                        <p class="sub">
+                            {categoryLabel(one.category)}
+                        </p>
+                        <Ticker
+                            rows={one.rows}
+                            {onpick}
+                            {onaction}
+                            reveal
+                            kept={view.kept}
+                            {marked}
+                        />
+                    {/each}
+                </div>
+            {/if}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render kindGroups(
+                t('focus.command.grp_subtask_dl_label'),
+                t('focus.command.grp_subtask_glyph'),
+                view.subtaskDated
+            )}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render group(
+                t('focus.command.grp_followups_label'),
+                t('focus.command.grp_followups_glyph'),
+                view.followups
+            )}
+            {#if refreshRows.length > 0}
+                <div class="grp">
+                    <p class="lbl">
+                        <Glyph name={t('focus.command.refresh_glyph')} />{t(
+                            'focus.command.grp_refresh_label'
+                        )}
+                    </p>
+                    <Ticker rows={refreshRows} onpick={onrefresh} />
+                </div>
+            {/if}
+            {#if view.snoozed.length > 0}
+                <details class="grp">
+                    <summary class="lbl"
+                        ><Glyph name={t('focus.command.snoozed_glyph')} />{t(
+                            'focus.command.snoozed',
+                            view.snoozed.length
+                        )}</summary
+                    ><Ticker
+                        rows={view.snoozed}
+                        {onpick}
+                        {onaction}
+                        reveal
+                        kept={view.kept}
+                        {marked}
+                    />
+                </details>
+            {/if}
         {/if}
     </section>
 {/if}

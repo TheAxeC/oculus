@@ -21,7 +21,9 @@
     // state/boards/focus.ts, state/feeds/feeds.ts and state/boards/career.ts; the markup is six
     // partials under views/boards/focus/, which are this view's own and which nothing else may
     // import. What is left here is the composition, the awaiting-a-response strip, and the one line
-    // that says what the last write answered.
+    // that says what the last write answered. The command center and the tasks section fold, each
+    // by a control on its heading, and which of them is closed is kept in the tab's instance state,
+    // so a reload and a move of the tab keep it; both start open. The career panel folds by itself.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -35,12 +37,15 @@
     import Tasks from './Tasks.svelte';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import {
+        foldOpen,
+        foldToggled,
         labelOf,
         lanes,
         liveProjects,
         portfolioProjects,
         waiting,
         waitingTotal,
+        type FoldKey,
         type Id
     } from '$lib/state/boards/focus';
     import { personNames } from '$lib/state/boards/person';
@@ -53,7 +58,8 @@
         clock: { minuteNow, startMinuteClock },
         selectors: { configMap },
         entities: { portfolio },
-        layout: { openView }
+        layout: { openView },
+        ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -100,6 +106,14 @@
     }
 
     const waited = $derived(waitingTotal(strip));
+
+    /** The tab's folded sections, which its instance state keeps. */
+    const folds = $derived(instanceState(instance.id));
+
+    /** Open or close one folded section, keeping the rest of the tab's state. */
+    function fold(key: FoldKey): void {
+        setInstanceState(instance.id, foldToggled(folds, key));
+    }
 </script>
 
 {#snippet segment(label: string, names: string[])}
@@ -118,11 +132,20 @@
         <CommandCenter
             {week}
             {now}
+            open={foldOpen(folds, 'command')}
+            ontoggle={() => fold('command')}
             onproject={openProject}
             onsaid={(text: string) => (said = text)}
         />
 
-        <Tasks {week} {now} onproject={openProject} onsaid={(text: string) => (said = text)} />
+        <Tasks
+            {week}
+            {now}
+            open={foldOpen(folds, 'tasks')}
+            ontoggle={() => fold('tasks')}
+            onproject={openProject}
+            onsaid={(text: string) => (said = text)}
+        />
 
         <QuickAdd projects={live} onsaid={(text: string) => (said = text)} />
 

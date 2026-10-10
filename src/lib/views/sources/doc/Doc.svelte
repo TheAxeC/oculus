@@ -1,7 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. A hub document opens from its group in the view catalogue, a
-    // document of oculus's own folder from a link or the Help page, and the view is not listed as
-    // a view of its own.
+    // Layer 3, view registration. A hub document opens from its group in the view catalogue and is
+    // a tab of the page its group names, a document of oculus's own folder opens from a link or is
+    // a tab of the Help page, and the view is not listed as a view of its own.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {

@@ -65,7 +65,7 @@ options:
             heading: appearance
             section: Wallpaper
             help: Folder holding the wallpaper images, relative to the hub and inside it. A missing folder, or one outside the hub, serves no image, which means no backdrop.
-            default: tools/oculus/assets/wallpaper
+            default: .oculus/wallpaper
             control: folder
         wallpaper.file:
             heading: appearance
@@ -132,7 +132,7 @@ options:
             heading: appearance
             section: Photo wall
             help: Folder of the photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it is a tile, and the wall's add control puts new pictures here.
-            default: tools/oculus/assets/memories
+            default: .oculus/memories
             control: folder
         crt.default:
             heading: appearance

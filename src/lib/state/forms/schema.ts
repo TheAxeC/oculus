@@ -7,6 +7,10 @@
 // place a widget learns what to offer, so adding a venue to the registry adds it to the form with
 // no code change.
 //
+// A side project's form is the rows of `side_project_schema` (sideFormFields below), which name a
+// field, its widget and its choices; the words of a field both manifests share are the research
+// form's, and the two keys only a side project has are worded by the catalog.
+//
 // The current values come from the snapshot's Project, which carries what the model declares and no
 // more. Five of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens
 // them empty; the write itself handles them like any other, since it reads the manifest from disk.
@@ -17,6 +21,7 @@ import { z } from 'zod';
 import type { Id, Project, Resource, Snapshot } from '../../data/model/index.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
 import { HUB_ROOT, rootOf } from '../../data/helpers/hub-names.ts';
+import { SIDE_PROJECT_TIER } from '../../data/snapshot/as-project.ts';
 import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
 import { t } from '../shared/words/text.ts';
 import {
@@ -166,6 +171,63 @@ export function formFields(config: Record<string, unknown>): FormField[] {
     return found;
 }
 
+/** One row of `side_project_schema`: the field, its widget, its choices and its help line. */
+const sideRowShape = z.object({
+    field: z.string(),
+    type: filledTextShape,
+    from: filledTextShape,
+    help: filledTextShape
+});
+
+/** The rows of `side_project_schema`, and none when the key is no list. */
+const sideRowsShape = rowsShape(sideRowShape);
+
+/**
+ * The label of a field only a side project's form has; the keys are literal so keys.test.ts sees
+ * them, and any other field is called by its name.
+ */
+function sideLabel(field: string): string {
+    if (field === 'status') return t('editor.side_label_status');
+    if (field === 'links') return t('editor.side_label_links');
+    return field;
+}
+
+/**
+ * The fields of a side project's form, in the order of `side_project_schema`. A field the research
+ * form has too takes that field's label and section, so the two forms word it once; a field only a
+ * side project has takes its label from the catalog (`sideLabel`) and the section of the field
+ * above it. The widget, the choices and the help line are the side row's own.
+ */
+export function sideFormFields(config: Record<string, unknown>): FormField[] {
+    const rows = readAs(sideRowsShape, config.side_project_schema) ?? [];
+    const shared = schemaOf(config).fields ?? {};
+    const found: FormField[] = [];
+    for (const row of rows) {
+        const same = readAs(fieldRowShape, shared[row.field]);
+        const section = same?.section ?? found.at(-1)?.section ?? '';
+        found.push({
+            field: row.field,
+            label: same?.label ?? sideLabel(row.field),
+            help: row.help,
+            type: row.type ?? '',
+            section,
+            from: row.from
+        });
+    }
+    return found;
+}
+
+/** The sections a side project's form draws, in the research form's order. */
+export function sideFormSections(config: Record<string, unknown>): string[] {
+    const held = new Set(sideFormFields(config).map((one) => one.section));
+    return formSections(config).filter((one) => held.has(one));
+}
+
+/** Whether a record is a side project's: the one tier no board of research projects lists. */
+export function isSideRecord(project: Pick<Project, 'tier'>): boolean {
+    return project.tier === SIDE_PROJECT_TIER;
+}
+
 /**
  * One entry of a keyed vocabulary list: a word is its own choice, and a map with a `key` is the
  * choice of that key under its `label`, or under the key when it has no label.
@@ -297,6 +359,8 @@ export function fieldValues(project: Project): Record<string, unknown> {
         type: project.type,
         short: project.short,
         title: project.title,
+        status: isSideRecord(project) ? project.chips[0] : undefined,
+        links: project.links,
         lead: project.lead,
         authors: project.authors,
         'status.chips': project.chips,

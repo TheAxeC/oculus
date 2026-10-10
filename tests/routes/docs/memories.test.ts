@@ -1,7 +1,7 @@
 // Layer 2, route tests. What the /api/memories route accepts: one added.
 // The route itself hands the request to lib/server/content/memories.ts, which is what this reads.
 //
-// Nothing here reads the engine's own assets/memories folder or machine-local config: every case
+// Nothing here reads the hub's own .oculus/memories folder or machine-local config: every case
 // builds its own directory under the system temporary directory and asserts each write stays inside
 // it, so no case can write into the checkout. This does not cover the browser drawing the wall.
 

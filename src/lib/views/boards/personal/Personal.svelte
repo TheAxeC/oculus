@@ -16,137 +16,93 @@
 <script lang="ts">
     // Layer 3, view. The Personal board: one card per side project, whether it is a folder of the
     // hub's `side-projects/` or a repository that is a Files root and carries a
-    // `.oculus/project.yml`. A card shows the title, its status in the status's hue, where the
-    // project lives, what it is in a few lines, what comes next under a label, and its links. A
-    // pinned card has the pin glyph and the accent ring and is drawn first within its status, a
-    // priority is its flames, `latest` is drawn under the explanation, what the project waits on is
-    // the project card's waiting line, and its collaborators and related projects are the project
-    // card's cross-link lines. A card's controls are Show in Files and Open Workbench, which opens
-    // the workbench of the side project's folder with its `project.yml` in the documents pane.
+    // `.oculus/project.yml`, as cards or as a table. The card is the project card of the research
+    // boards (views/shared/card/ProjectCard.svelte), drawn from the side project's record: the
+    // title opens the project view, the controls are the research card's (Pin, Copy context, Ask,
+    // Finder, Files, Workbench, expand, subtasks, Present when the folder has a deck, Edit
+    // Manifest) without the deposit, and the status is drawn in the hue of `side_project_status`.
+    // The switch between cards and the table, the search, the status toggles and the open cards are
+    // the view instance's state.
     //
-    // It joins nothing and counts nothing itself: the cards, their order, the search and the
-    // toggles are the pure functions of state/boards/board/personal.ts. Every word a manifest
-    // holds is drawn as text. A link is an address only when views/shared/forms/posting.ts says it
-    // names a web page; every other entry is drawn as the words it is.
+    // It joins nothing and counts nothing itself: the cards, their order, the search, the toggles
+    // and the board item of each card are the pure functions of state/boards/board/personal.ts.
+    // Every word a manifest holds is drawn as text.
 
-    import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
+    import Table from '$lib/ui/display/table/Table.svelte';
+    import type { Column } from '$lib/ui/display/table/table-rows';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
-    import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
-    import RootChip from '$lib/views/shared/card/RootChip.svelte';
-    import Clamp from '$lib/views/shared/card/Clamp.svelte';
-    import CardLinks from '$lib/views/shared/card/project/CardLinks.svelte';
-    import { posting } from '$lib/views/shared/forms/posting';
-    import { openSourceFile } from '$lib/views/shared/links/source-file';
-    import { sourceFileState } from '$lib/state/sessions/source/place';
+    import ModeSwitch from '$lib/views/shared/card/ModeSwitch.svelte';
+    import ProjectCard from '$lib/views/shared/card/ProjectCard.svelte';
     import {
         filterCards,
-        folderTarget,
-        manifestTarget,
         parsePersonalState,
-        sideLinks,
-        sourceLine,
+        toggleExpanded,
         toggleMore,
         toggleStatus,
         type PersonalState,
         type SideCard
     } from '$lib/state/boards/board/personal';
-    import { waitingLine } from '$lib/state/boards/board';
-    import { flamesOf } from '$lib/state/boards/focus';
-    import { personNames } from '$lib/state/boards/person';
+    import { firstSentence, type BoardMode } from '$lib/state/boards/board';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
-    const client = useState();
     const {
-        folders,
-        layout: { showInFiles },
-        entities: { portfolio },
-        selectors: { configMap, sideCards, sideStatuses },
+        selectors: { sideCards, sideItem, sideStatuses, staleLag },
         ui: { instanceState, setInstanceState }
-    } = client;
+    } = useState();
 
     let { instance }: ViewProps = $props();
+
+    /** How much of `next` a table row shows. */
+    const ROW_NEXT = 110;
 
     const held = $derived(parsePersonalState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const cards = $derived(sideCards());
     const statuses = $derived(sideStatuses());
     const shown = $derived(filterCards(cards, held));
-    const snapshot = $derived(portfolio());
-    const config = $derived(configMap());
+    const lag = $derived(staleLag());
+    const rows = $derived(shown.map(row));
 
-    /** What the project waits on, by the project card's rule, and nothing when it waits on none. */
-    function waiting(card: SideCard): ReturnType<typeof waitingLine> {
-        if (snapshot === null) return null;
-        return waitingLine(
-            { waitingOn: card.project.waitingOn ?? [] },
-            snapshot.entities.venues,
-            personNames(snapshot),
-            snapshot.entities.projects
-        );
-    }
+    /** What the last write on this board answered, shown under the toolbar until the next one. */
+    let said = $state('');
+
+    /**
+     * Today, for the deadline badge. It is read once, when the board is opened, so a page left open
+     * across midnight counts the day it was opened on until it is reloaded.
+     */
+    const now = Date.now();
+
+    const columns: Column[] = [
+        { key: 'title', label: t('personal.col_title') },
+        { key: 'status', label: t('personal.col_status') },
+        { key: 'next', label: t('personal.col_next') },
+        { key: 'deadline', label: t('personal.col_deadline') }
+    ];
 
     function write(next: PersonalState): void {
         setInstanceState(instance.id, next);
     }
 
-    /**
-     * The controls of a card: its folder selected in the Files view, and the workbench of that
-     * folder, which shows the card's manifest in its documents pane.
-     */
-    function actions(card: SideCard): CardAction[] {
-        const target = folderTarget(card.project);
-        const rows: CardAction[] = [
-            {
-                id: 'files',
-                label: t('personal.show_in_files'),
-                title: t('personal.show_in_files_tip', card.project.title),
-                glyph: 'show_in_files',
-                onclick: () => {
-                    showInFiles(target.path, target.root);
-                }
-            }
-        ];
-        if (folders.served(target.root)) {
-            rows.push({
-                id: 'workbench',
-                label: t('personal.open_workbench'),
-                title: t('personal.open_workbench_tip', card.project.title),
-                glyph: 'app_view',
-                onclick: () => openWorkbench(card)
-            });
-        }
-        return rows;
+    function setMode(mode: BoardMode): void {
+        write({ ...held, mode });
     }
 
-    /** Open the workbench of the card's folder, named by the project's title. */
-    function openWorkbench(card: SideCard): void {
-        const folder = folderTarget(card.project);
-        const manifest = manifestTarget(card.project);
-        folders.open(folder, {
-            label: card.project.title,
-            item: {
-                view: 'source',
-                state: sourceFileState(client, {
-                    root: manifest.root,
-                    path: manifest.path,
-                    label: manifest.label
-                })
-            }
-        });
-    }
-
-    /** The card's manifest in a source tab, which is where its words are edited. */
-    function openManifest(card: SideCard): void {
-        const target = manifestTarget(card.project);
-        openSourceFile(client, { root: target.root, path: target.path, label: target.label });
+    /** One row of the table: the card's title, status, what comes next and its deadline. */
+    function row(card: SideCard): Record<string, unknown> {
+        return {
+            id: card.project.id,
+            title: card.project.title,
+            status: card.status.label,
+            next: firstSentence(card.project.next, ROW_NEXT),
+            deadline: card.project.deadline ?? ''
+        };
     }
 </script>
 
@@ -168,93 +124,44 @@
                 onclick={() => write(toggleStatus(held, item.key))}
             />
         {/each}
+        <ModeSwitch mode={held.mode} onchange={setMode} />
     </Toolbar>
 {/snippet}
 
 <Pane title={t('views.personal')} {bar}>
     <div class="board" data-instance={instance.id} data-board="personal">
+        {#if said !== ''}
+            <p class="said">{said}</p>
+        {/if}
         {#if shown.length === 0}
             {#if cards.length === 0}
                 <Empty message={t('personal.empty')} glyph={t('personal.empty_glyph')} />
             {:else}
                 <Empty message={t('personal.none_match')} glyph={t('personal.none_match_glyph')} />
             {/if}
+        {:else if held.mode === 'list'}
+            <div class="table">
+                <Table {columns} {rows} rowKey="id" sortable />
+            </div>
         {:else}
             <div class="cards">
                 {#each shown as card (card.project.id)}
-                    <Card
-                        id={card.project.id}
-                        cursor={cursor === card.project.id}
-                        title={card.project.title}
-                        tone={card.status.tone}
-                        pinned={card.project.pin === true}
-                        ontitle={() => openManifest(card)}
-                    >
-                        {#snippet meta()}
-                            {@const item = card.status}
-                            <RootChip record={card.project} />
-                            {#if card.project.pin === true}
-                                <span class="pin"><Glyph name={t('project.card.pin_glyph')} /></span
-                                >
-                            {/if}
-                            {#if flamesOf(card.project, config) > 0}
-                                <span class="flames" title={card.project.priority}>
-                                    {#each { length: flamesOf(card.project, config) } as _, at (at)}
-                                        <Glyph name={t('focus.fire_glyph')} />
-                                    {/each}
-                                </span>
-                            {/if}
-                            <Chip label={item.label} glyph={item.glyph} tone={item.tone} />
-                            <CardActions actions={actions(card)} />
-                        {/snippet}
-
-                        {@const wait = waiting(card)}
-                        <p class="source">{sourceLine(card.project)}</p>
-                        {#if card.project.eli5 !== ''}
-                            <div class="eli5">
-                                <Clamp
-                                    open={held.more.includes(card.project.id)}
-                                    ontoggle={() => write(toggleMore(held, card.project.id))}
-                                >
-                                    {card.project.eli5}
-                                </Clamp>
-                            </div>
-                        {/if}
-                        {#if (card.project.latest ?? '') !== ''}
-                            <p class="latest">
-                                <span class="label">{t('project.card.latest')}</span>
-                                {card.project.latest}
-                            </p>
-                        {/if}
-                        {#if card.project.next !== ''}
-                            <p class="next">
-                                <span class="label">{t('personal.next')}</span>
-                                {card.project.next}
-                            </p>
-                        {/if}
-                        {#if wait !== null}
-                            <p class="waiting {wait.kind}">{wait.text}</p>
-                        {/if}
-                        {#if card.project.links.length > 0}
-                            <ul class="links">
-                                {#each card.project.links as link, index (`${index}:${link}`)}
-                                    {@const href = posting(link)}
-                                    <li>
-                                        {#if href !== undefined}
-                                            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external web page, rather than a route id resolve() takes -->
-                                            <a {href} target="_blank" rel="noreferrer">
-                                                <Glyph name="link" />
-                                                <span>{link}</span>
-                                            </a>
-                                        {:else}
-                                            <span>{link}</span>
-                                        {/if}
-                                    </li>
-                                {/each}
-                            </ul>
-                        {/if}
-                        <CardLinks item={sideLinks(card.project, snapshot)} />
-                    </Card>
+                    {@const item = sideItem(card)}
+                    {#if item !== null}
+                        <ProjectCard
+                            {item}
+                            {now}
+                            cursor={cursor === item.id}
+                            open={held.expanded.includes(item.id)}
+                            more={held.more.includes(item.id)}
+                            onmore={() => write(toggleMore(held, item.id))}
+                            label={card.project.title}
+                            tab={card.project.title}
+                            staleLag={lag}
+                            ontoggle={() => write(toggleExpanded(held, item.id))}
+                            onsaid={(answer: string) => (said = answer)}
+                        />
+                    {/if}
                 {/each}
             </div>
         {/if}
@@ -270,61 +177,15 @@
         align-items: stretch;
     }
 
-    .source,
-    .next,
-    .latest,
-    .links {
-        margin: 6px 0 0;
-        overflow-wrap: anywhere;
+    /* A table wider than the pane scrolls inside its own box. */
+    .table {
+        min-width: 0;
+        overflow-x: auto;
     }
 
-    .source {
-        color: var(--muted-txt, var(--muted));
-        font-family: var(--font-mono);
-        font-size: var(--fs-sm);
-    }
-
-    .eli5 {
-        margin-top: 6px;
+    .said {
+        margin: 0 0 8px;
         font-size: var(--fs-md);
-    }
-
-    .next,
-    .latest {
-        font-size: var(--fs-md);
-    }
-
-    .waiting {
-        margin: 6px 0 0;
-        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
-    }
-
-    .pin,
-    .flames {
-        display: inline-flex;
-        flex: 0 0 auto;
-        line-height: 1;
-    }
-
-    .label {
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
-    }
-
-    .links {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-        padding: 0;
-        list-style: none;
-        font-size: var(--fs-sm);
-    }
-
-    .links a {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        color: var(--accent-txt, var(--accent));
     }
 </style>

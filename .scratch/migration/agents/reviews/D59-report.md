@@ -266,3 +266,90 @@ After: ``The key `wallpaper.dir` of `tools/oculus/config/appearance.yml` selects
 - New "Config layer" row in "A second hub" (line 581), in full:
 
   | Config layer | each hub's `.oculus/config/` layer is that hub's own, and every path in it is read from that hub's folder, so the first hub's `venues_file: registries/venues.yml` and a second hub's `venues_file: other-folder/venues.yml` each read their own file. A layer sets only the keys of the hub list: in `sources.yml`, `scan`, `portfolio_deck`, `venues_file`, `datasets_file`, `pillars_file`, `domains_file`, `people_file`, `organisations_file`, `resources_file`, `collections`, `leads_file`, `radar_file`, `publications_file`, `linkedin_dir`, `career_file` and `roots`; in `layout.yml`, `docs`; in `behavior.yml`, `slurm.resource` and `data_domains`; in `catalogs/vocab.yml`, `domains`, `venue_themes` and `data_themes`. A key outside the list, a file outside those four and a `local.yml` in the layer are findings that name the layer's file and are not applied. Every other key, `repository_scan_depth` and `languages` among them, is oculus's own and holds for every hub. Of the listed keys, a second hub's `roots`, `career_file`, `publications_file`, `linkedin_dir` and `portfolio_deck` are the ones the Settings row above says are not read |
+
+## Repair round 1
+
+Not done: nothing of the eleven items is left. Item 10 is done at a place other than the brief's (`src/lib/data/snapshot/as-project.ts`, not `src/lib/data/helpers/as-project.ts`), with the evidence below. Not verified: `npx vitest run` without the `slow` tag filter runs `tests/server/machine/pty/sessions.test.ts` (a private tmux server), which timed out waiting for typed output; it is a slow-tagged test that `npm test` excludes, and the round did not touch it.
+
+Read-only reads outside the worktree: the round brief and `reviews/D59-refuter.md` in the main checkout's `.scratch/migration/agents/`, and `HELP.md`, `DESIGN.md`, `docs/DATA-MAP.md`, `docs/apps.md` and `.oculus/config/layout.yml` of the main checkout, only to diff the prose this step added against main. Nothing was written there. One accidental command `git -C . status >/dev/null 2>&1` was run once in the first task; it read only and changed nothing.
+
+### The eleven items
+
+| # | Change | Evidence |
+|---|---|---|
+| 1 | A catalogue document row, and the `h` chord, show the doc tab that any page or float already holds. `heldView(hosts, view, id?)` takes the tab's state id (`layout/open/float/pages.ts:171`); `openInto(..., document, anywhere)` looks for a holder by that id when `anywhere` is set (`layout/open/opening.ts:208-217`); `Opening.heldInstance(view, id?)` replaces `heldUnique` (`opening.ts:90`, `:391`); `OpenOptions.held` carries it from `openView`. `heldDocState(entry, engineAt, holds)` (`navigation/catalogue.ts:64`) names the held tab, the engine copy as `engine:<path>`. Catalogue row: `views/system/workbench/Catalogue.svelte:140-148`; chord: `shell/Workbench.svelte:209-214`. Applies to document rows only; every other row opens as it did. | Probe quoted below (`$S/probe-held.out`, a throwaway test run once and deleted; no test added). `npm run check` 0 errors. |
+| 2 | Rice comment states the rule as it is: each step takes the value of the next smaller default step (`--fs-sm` 12px becomes 11px, `--fs-xl` 16px becomes 14px, `--fs-3xl` 26px becomes 20px), `--fs-xs` is 10px, the six size tokens are 1px below their default values (`themes/themes.css:728-734`). Slide comment: the slide type scale in px at 1280 by 720, which follows the text size, reading width, padding and surface (`themes/slide.css:1-4`). `tokens.css:125` comment rewrapped. | `grep -rnE 'font-size: *[0-9.]+px' src` prints nothing (exit 1). |
+| 3 | The layout-saved test is a table of rows, and the kept-layout half has its own row. Rows (`tests/state/workbench/layout/saved/layout-saved.test.ts`): 'version 3' (:84), 'version 6' (:93), 'the current version with a documents pane' (:105), 'rail pages: the paths read for a rail page with documents, none for the rest' (:116), 'Files and LaTeX tabs: the folder name is taken off a workbench page' (:144), 'Files and LaTeX tabs: the folder name is taken off a kept layout' (:156), run by `it.each(rows)('reads $name', ...)` (:172). The kept row holds Files and LaTeX tabs labelled with the kept folder's own name (`beta`). The earlier separate 'Doc text' G29 addition is these rows. | First run on the unchanged tree (base copy plus this test file, `$S/r1/layout-saved-first.out`): `Tests  3 failed \| 10 passed (13)`; the kept row fails with `+ "label": "beta"` kept on the tab of the reopened kept layout. After the change: `Test Files  5 passed (5)` / `Tests  54 passed (54)` for the verify line below. |
+| 4 | History words removed from comments: `navigation/arrangement.ts:166` ("...is returned as it is, and parseArrangement refuses it."), `layout/saved/kept.ts:1-7` (a workbench's Files or LaTeX tab whose saved label is the folder's name loses the label, so the tab reads Files or LaTeX), `layout/model.ts:119-124` ("A page saved with no record has none"). | Grep quoted below. |
+| 5 | `DESIGN.md:476` gives LaTeX `{ root, path }`; `config/text/app.yml:29` is `cmd_goto_hint: '<project id, side:slug or root:key>'`. | `grep -n "cmd_goto_hint" config/text/app.yml`. |
+| 6 | `HELP.md:56` reads "The Files and LaTeX tabs of a workbench are named Files and LaTeX."; `layout/saved/kept.ts:58` reads "Whether a workbench names this view's tab by the view: Files and LaTeX." | Grep quoted below. |
+| 7 | Every comment paragraph the step edited is filled to 100 columns: no line inside a sentence ends short when the next word fits. Edited by script over the step's changed files and read afterwards; `layout/open/float/browser.ts:1-17`, `server/root/process/config-cache.ts:1-12`, `data/snapshot/as-project.ts:15-18`, `layout/saved/kept.ts:1-7`, `tests/checks/tree/boundaries.test.ts:174-177` among them. | The report script over the 81 changed `src` and `tests` files prints `paragraphs 0`; `tests/checks/source/comment-width.test.ts` passes (verify line below). |
+| 8 | `shell/Workbench.svelte` is 511 lines (was 536). The appearance concern (theme class and tokens, wallpaper layer, text scale, glyph mode) moved to `shell/window/appearance.svelte.ts` (47 lines, `useAppearance(client)` answering `wall()` and `image()`; Workbench.svelte:51, :323-325). To keep `shell` at ten entries, `browser-windows.svelte.ts` and `desktop-windows.svelte.ts` moved from `shell/` into `shell/window/` (`routes/+page.svelte:36-37`, comments in `layout.svelte.ts:339`, `layout/open/float/browser.ts`, `DESIGN.md:591`), and `shell/window` is registered in the shell import order (`tests/checks/imports/order.ts`). `openDoc` reads `client.selectors.engineAtFor(...)` (Workbench.svelte:211), since the shell store check reads a destructured `client.selectors` member as a store. | `wc -l`: Workbench.svelte 511, `layout.svelte.ts` 877; `size.test.ts`, `boundaries.test.ts`, `order.test.ts` pass (checks line below). |
+| 9 | `sideItem` joins the project and `related: relatedProjects(card.project, snapshot)` (`state/boards/board/personal.ts:204-224`); `sideLinks` is gone. | `grep -rn sideLinks src` prints nothing. |
+| 10 | `as-project.ts` is `src/lib/data/snapshot/as-project.ts` (was `data/snapshot/normalise-parts/as-project.ts`); imports `../model/index.ts`, `../helpers/hub-names.ts`, `./compact.ts`. Importers repointed: `server/sessions/stores/hooks.ts`, `server/files/project-files.ts`, `state/forms/schema.ts`, `state/shared/page/hubs.ts`, `state/boards/board/personal.ts`, `state/client/selectors.svelte.ts`; comments in `model-entities.ts:607`, `ProjectCard.svelte:18`, `hooks.ts:201`; `tests/checks/tree/boundaries.test.ts:174` (paragraph) and `:245` (allowlist entry); `DESIGN.md:558`; diagrams regenerated. | `grep -rnE "normalise-parts/as-project\|places/as-project" src tests DESIGN.md HELP.md docs ../../docs` prints nothing. |
+| 11 | `docs/DATA-MAP.md:234` as it is in the file: `\| .oculus/config/layout.yml \| docs, the hub documents of the Help page: Research approach, Agent approach, HPC how-to and Data map, each an entry with group: help; the Apps guide and Memories are tabs of oculus's own arrangement of the Help page and take no entry \|` (backticks around the key and values omitted here). | `sed -n 234p docs/DATA-MAP.md`. |
+
+### Item 10 deviation
+
+The brief's place `src/lib/data/helpers/as-project.ts` cannot hold the file. `data/helpers` has ten tracked entries (`sh utils/folder-check.sh` allows ten) and ranks below `data/snapshot` in the data import order (data, sources, snapshot, accounts, shapes, helpers, prose, places, model; `tests/checks/imports/order.ts`), while `as-project.ts` imports `snapshot/compact.ts`, so a helpers file would import upward and fail `tests/checks/imports/order.test.ts`. `data/places` also ranks below `snapshot`, so it fails the same test. `data/snapshot` holds nine entries and ranks at the file's own level, so the file is `data/snapshot/as-project.ts`. It left `normalise-parts/` as the brief asks. The file left `normalise-parts/` as the brief asks, and its imports, the `boundaries.test.ts` entry and paragraph, and the diagrams follow.
+
+### The probe for item 1
+
+A throwaway test (a document row opened on three pages) run once, output at `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/be0ac0d7-a551-4911-a072-9f76e1bbe399/scratchpad/probe-held.out`:
+
+```
+start
+  on screen: focus
+  help: help | doc:HPC how-to
+  focus: focus
+press without the option
+  on screen: focus
+  help: help | doc:HPC how-to
+  focus: focus | doc:HPC how-to
+press with the option
+  on screen: help
+  help: help | doc:HPC how-to
+  focus: focus
+engine document, start
+  on screen: focus
+  help: help | doc:Apps guide
+  focus: focus
+engine document, press on the row whose path lies in the engine folder
+  on screen: help
+  help: help | doc:Apps guide
+  focus: focus
+```
+
+Pressing a document row without the option opens a second tab on the page the reader is on; with the option, the held tab on the Help page is shown. The engine's Apps guide, held as `engine:docs/apps.md`, is shown the same way from the row of the path inside the engine folder.
+
+### Greps quoted
+
+History words over the comments the step added (`$S/r1/added-comments.txt`, 405 lines), word list before, after, still, always, as before, no longer, used to, previously, formerly, originally, legacy, renamed, moved, now: six hits, every one a position in a list ("added after the first tab of its first leaf pane", `saved/docs.ts`, `layout.svelte.ts`, `navigation/arrangement.ts` twice; "after Help", `views/personal/memories/Memories.svelte`). None of the other words occurs.
+
+Contrast constructions over the same lines for "not ", "rather than", "instead of": the "not " hits are plain negation of a state ("marked not held", "is not given again", "has not been given", "is not one of them"); the one "rather than" is `layout/open/float/browser.ts:7`, a sentence of the file that the base copy holds at its line 7 (`// change, rather than in an effect that reacts to it.`) and that this round only refilled; no "instead of".
+
+### Verify lines, from `tools/oculus` of the worktree
+
+- `npm run format`: exit 0. `npm run check`: `COMPLETED 3643 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`. `npm run diagrams`: exit 0.
+- `npm run test:quick -- <the 81 changed src and tests files>`: `ok ASCII gate`, `ok prettier`, `ok eslint (13.1 s)`, `ok svelte-check ... 0 ERRORS`, `ok vitest (34.1 s)`, `test:quick: 34.6 s (limit 45.0 s); every command passed`.
+- `npx vitest run tests/state/workbench/layout/saved/layout-saved.test.ts tests/checks/tree/boundaries.test.ts tests/checks/tree/size.test.ts tests/checks/source/comment-width.test.ts tests/checks/tree/duplication.test.ts`: `Test Files  5 passed (5)`, `Tests  54 passed (54)`.
+- `npx vitest run tests/checks --testTimeout 0 --hookTimeout 0` (the diagrams test included): `Test Files  17 passed (17)`, `Tests  271 passed (271)`.
+- `npm test`: `Test Files  143 passed | 30 skipped (173)`, `Tests  1153 passed | 244 skipped (1397)`.
+- `sh utils/folder-check.sh`: exit 0.
+- Check 3b: `LC_ALL=C perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof' tools/oculus/HELP.md tools/oculus/DESIGN.md tools/oculus/README.md docs/DATA-MAP.md .oculus/config/layout.yml .oculus/wallpaper/README.md` prints nothing, exit 0.
+- `grep -rnE 'font-size: *[0-9.]+px' src`: prints nothing (exit 1).
+- `sh utils/unused-exports.sh` against `D59-base/tools/oculus/unused-exports.txt`: `diff` shows two changed lines (`state/boards/board/index.ts` and `presets.ts`), both without `BoardMode`; no line is added and no name is added to a line.
+
+### User-visible changes of the round
+
+- Opening a hub document from the Views catalogue row or the `h` chord shows the tab of that document that any page or float already holds, instead of opening a second tab; the Apps guide tab of the Help page is found the same way. Other catalogue rows are unchanged.
+- No other change of what a reader sees: items 2 to 11 are comments, text, tests and file places.
+
+Behaviour 1 (kept, as the brief rules). The Personal card, collapsed. Before this step: a side project's card drew its `latest` line, the whole `next` under a "Next" label, and its links. After: `next` is cut to its first sentence of at most 130 characters (`views/shared/card/ProjectCard.svelte:112`, `:405`), `latest` shows only on an expanded card or on the project page (`CardDetails.svelte:64-66`), and a write outcome line appears under the card's toolbar.
+
+Behaviour 2 (kept, as the brief rules). The LaTeX build by project id. Before this step: a request naming a side project's id was refused with `no-project`. After: a hub side project's id builds under `side-projects/<slug>/manuscript` (`server/machine/pty/latex/latex.ts:191-193`, `projectFor: (id) => projectOrSide(server.hub, id)` in `routes/api/(sessions)/terminal/+server.ts:31`), a folder that usually does not exist, so the refusal text of a missing folder replaces `no-project` there; a repository side project's id is still refused with `no-project`.
+
+### Deviations
+
+- Item 10's place (above).
+- Item 8 changed the folder of two existing modules (`shell/window/`), which the brief names as a split of `Workbench.svelte` only; the move is needed to keep `shell` at ten entries.

@@ -171,6 +171,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // status bar's linter items and the palette's ESLint configuration list draw the linters' states
 // and names.
 //
+// `data/snapshot/as-project` is the side project seen as a project and the place of any project's
+// folder: the server hands the chat, the document route and the file listing a side project through
+// it, and the page draws a side project's card, project view and manifest form from the same
+// record, so the two cannot disagree about where a repository's folder is.
+//
 // `state/client/context` is where the client's stores are wired together, and it names nothing of
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
 // counter beside the client object, so the state row reaches no layer above it.
@@ -237,6 +242,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/apps',
         'data/helpers/files/private-folders',
         'data/helpers/hub-names',
+        'data/snapshot/as-project',
         'data/shapes/vocab-keys',
         'data/accounts/leads',
         'data/helpers/worktrees',

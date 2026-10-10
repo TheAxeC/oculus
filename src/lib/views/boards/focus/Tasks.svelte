@@ -10,33 +10,18 @@
 
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
-    import {
-        hasTasks,
-        taskGroups,
-        type Ticker as FocusTicker,
-        type TickerItem
-    } from '$lib/state/boards/ticker';
+    import { hasTasks, taskGroups, type TickerItem } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
-    import { act, fileBlock, openLine, rowMaker } from './rows';
+    import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import { useState } from '$lib/state/client/use';
     import { openSourceFile } from '$lib/views/shared/links/source-file';
 
     const client = useState();
 
-    type Props = {
-        /** The board's one ticker, walked once by the view that holds both sections. */
-        week: FocusTicker | null;
-        /** The moment every countdown on the board is measured from. */
-        now: number;
-        /** Open one project as its own tab; the board owns what a tab is called. */
-        onproject: (id: string) => void;
-        /** What a write answered, for the one outcome line the board holds. */
-        onsaid: (said: string) => void;
-    };
-
-    let { week, now, onproject, onsaid }: Props = $props();
+    let { week, now, open, ontoggle, onproject, onsaid }: SectionProps = $props();
 
     /** The lines of each group, which state/boards/ticker.ts sorts into them. */
     const lines = $derived(taskGroups(week?.tasks ?? []));
@@ -92,24 +77,35 @@
 {#if anything}
     <section class="tasks">
         <div class="head">
+            <ToolButton
+                bare
+                label={open
+                    ? t('focus.fold', t('focus.tasks.heading'))
+                    : t('focus.unfold', t('focus.tasks.heading'))}
+                glyph={open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
+                expanded={open}
+                onclick={ontoggle}
+            />
             <b><Glyph name={t('focus.tasks.heading_glyph')} />{t('focus.tasks.heading')}</b>
         </div>
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render group(
-            t('focus.tasks.grp_followups_label'),
-            t('focus.command.grp_followups_glyph'),
-            view.followups
-        )}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render group(
-            t('focus.tasks.grp_subtasks_label'),
-            t('focus.command.grp_subtask_glyph'),
-            view.subtasks
-        )}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render group(t('focus.tasks.grp_tasks_label'), '', view.tasks)}
-        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-        {@render group(t('focus.command.dlcat_side'), t('views.personal_glyph'), view.side)}
+        {#if open}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render group(
+                t('focus.tasks.grp_followups_label'),
+                t('focus.command.grp_followups_glyph'),
+                view.followups
+            )}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render group(
+                t('focus.tasks.grp_subtasks_label'),
+                t('focus.command.grp_subtask_glyph'),
+                view.subtasks
+            )}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render group(t('focus.tasks.grp_tasks_label'), '', view.tasks)}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render group(t('focus.command.dlcat_side'), t('views.personal_glyph'), view.side)}
+        {/if}
     </section>
 {/if}
 

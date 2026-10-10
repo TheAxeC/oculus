@@ -17,3 +17,15 @@
     color: var(--ink-txt, var(--ink));
     font-size: var(--slide-fs-body);
 }
+
+/* Under a rice theme the slide sizes are the design sizes times 12/13, rounded to whole pixels (56
+   gives 52, 36 gives 33, 28 gives 26, 24 gives 22, 18 gives 17). The rule sits here because the
+   sizes are declared on `.slide-frame` itself, where a declaration on `body.rice` does not
+   reach. */
+body.rice .slide-frame {
+    --slide-fs-title: calc(52px * var(--text-scale, 1));
+    --slide-fs-h: calc(33px * var(--text-scale, 1));
+    --slide-fs-sub: calc(26px * var(--text-scale, 1));
+    --slide-fs-body: calc(22px * var(--text-scale, 1));
+    --slide-fs-small: calc(17px * var(--text-scale, 1));
+}

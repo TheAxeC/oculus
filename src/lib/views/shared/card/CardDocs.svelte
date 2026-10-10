@@ -33,10 +33,10 @@
         opensInProgram,
         patchedFilesView
     } from '$lib/state/sources/fs';
-    import { rootOf } from '$lib/state/shared/page/hubs';
+    import { placeOf } from '$lib/state/shared/page/hubs';
     import { matchingFiles } from '$lib/state/sources/files.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { nameOf, openDocument, subOf, urlOf } from './card';
+    import { below, nameOf, openDocument, subOf, urlOf } from './card';
     import ProgramButton from '../links/ProgramButton.svelte';
     import { useState } from '$lib/state/client/use';
     import { useInstance } from '$lib/state/client/instance-context';
@@ -62,8 +62,9 @@
 
     /** Extensions the document view can render as text. */
     const READABLE = /\.(html?|md|txt|ya?ml|py|sh|slurm|tex|bib|json|csv|r|m|cpp|h|ts|js|css)$/i;
-    /** The key of the hub the project is of. */
-    const hub = $derived(rootOf(item.project));
+    /** Where the project's folder is, and the key of the Files root that holds it. */
+    const place = $derived(placeOf(item.project));
+    const hub = $derived(place.root);
     /** The key of the record this card keeps its tree and its finder text under. */
     const owner = $derived(cardTreeKey(instance?.() ?? '', item.id));
     /** The current file-name or path filter. */
@@ -83,7 +84,7 @@
     function openReadable(path: string): void {
         openPage(client, {
             root: hub,
-            path: `${held?.folder ?? ''}/${path}`,
+            path: below(held?.folder ?? '', path),
             label: nameOf(path)
         });
     }
@@ -104,7 +105,7 @@
                         <ToolButton
                             label={doc.label}
                             title={docTip(doc)}
-                            onclick={() => openDocument(client, item.project.folder, doc.name, hub)}
+                            onclick={() => openDocument(client, place.path, doc.name, hub)}
                         />
                     </span>
                 {:else}
@@ -150,7 +151,7 @@
                     {:else if opensInProgram(row.path, programApps())}
                         <ProgramButton
                             root={hub}
-                            path={`${held.folder}/${row.path}`}
+                            path={below(held.folder, row.path)}
                             label={nameOf(row.path)}
                             {onsaid}
                         />

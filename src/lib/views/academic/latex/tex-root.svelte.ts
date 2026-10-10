@@ -2,8 +2,8 @@
 // the reader looked at last on the page builds through (the view follows the active LaTeX editor,
 // as LaTeX Workshop's outline does), or one the reader picked from the roots this page has seen,
 // which the view keeps in its state as `{ root, path, main }`. A saved tab of the folder-only view
-// has `{ root, path, label }` and no main: it names that folder's first main file. A pin at a root
-// the page's workspace does not serve names no file, so no root is asked of the server.
+// has `{ root, path }` and no main: it names that folder's first main file. A pin at a root the
+// page's workspace does not serve names no file, so no root is asked of the server.
 //
 // The followed tab is read through `followedTab` (state/sources/explorer/sections/followed-tab.ts):
 // a source tab of a LaTeX file, or a PDF tab of a build, and for the editing commands the source

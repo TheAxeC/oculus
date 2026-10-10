@@ -16,7 +16,7 @@ import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from '../sessions.ts';
 import { shellWord } from '../shell-word.ts';
 
-type ChatProject = Pick<Project, 'title' | 'folder' | 'root'>;
+type ChatProject = Pick<Project, 'title' | 'folder' | 'root' | 'repository'>;
 
 export type ChatOptions = StartOptions & {
     /** The engine directory the configuration and the machine's own file are read from. */
@@ -89,12 +89,15 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const terminalId = newId('claude');
     const index = chatIndexPath(local.sessionsOverrides, terminalId);
     const portfolio = project === null;
-    // A project of a hub other than the first lies under its own hub's folder.
+    // A project of a hub other than the first lies under its own hub's folder, and a repository
+    // side project in the repository's own folder.
     const home = portfolio
         ? local.hub
         : (hubTargets({ config, engine, local }).find((one) => one.key === project.root)?.hub ??
           local.hub);
-    const cwd = portfolio ? local.hub : projectDirectory(home, project.folder);
+    const cwd = portfolio
+        ? local.hub
+        : (project.repository?.dir ?? projectDirectory(home, project.folder));
 
     const focus =
         typeof id === 'string' && project !== null

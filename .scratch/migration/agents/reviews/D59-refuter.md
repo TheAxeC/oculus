@@ -175,3 +175,233 @@ Cases of the brief's "Cases":
 - Point 8, the builder's `git -C . status`. The report says it read only; nothing in the diff or in `git status --short` shows a change from it, so it is not noted under Standards.
 
 Reviewer usage: a7d96fd7cc9f172c5, claude-opus-5-5, 375,724 tokens, 109 tool uses, 27.5 min (from the completion notice).
+
+## Repair round 1, refuted
+
+```
+From tools/oculus in .agents/worktrees/D59 (base aff419a0b):
+
+$ npm run test:quick -- --base aff419a0b
+test:quick: 139 changed file(s), from git since aff419a0b
+test:quick: 94 test file(s), 10 essential
+ok      ASCII gate (0.6 s)
+ok      prettier (1.7 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.2 s)
+ok      eslint (6.2 s)
+ok      svelte-check (5.4 s): 1791638324910 COMPLETED 458 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (24.1 s): Duration  19.64s (transform 26.25s, setup 0ms, import 46.17s, tests 30.52s, environment 281ms)
+test:quick: 24.8 s (limit 45.0 s); every command passed
+
+$ npm run check
+1791638362422 COMPLETED 3643 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+
+$ npx prettier --check <the 93 changed and new .ts/.svelte/.css/.js/.json/.yml/.md files under tools/oculus, from git diff aff419a0b --name-only and git status --short>
+Checking formatting...
+All matched files use Prettier code style!
+
+$ npx vitest run tests/state/workbench/layout/saved/layout-saved.test.ts tests/checks/tree/boundaries.test.ts tests/checks/tree/size.test.ts tests/checks/source/comment-width.test.ts tests/checks/tree/duplication.test.ts
+ Test Files  5 passed (5)
+      Tests  54 passed (54)
+
+$ npx vitest run tests/checks/diagrams --testTimeout 0 --hookTimeout 0
+ Test Files  1 passed (1)
+      Tests  46 passed (46)
+
+$ the spec's ASCII gate (perl) over src tests config          (no output) exit=0
+$ check 3b, LC_ALL=C perl ... over tools/oculus/HELP.md DESIGN.md README.md docs/*.md docs/DATA-MAP.md .oculus/config/layout.yml .oculus/wallpaper/README.md          (no output) exit=0
+$ grep -rnE 'font-size: *[0-9.]+px' src          (no output) exit=1
+$ sh utils/folder-check.sh          (no output) exit=0
+$ sh utils/unused-exports.sh | diff D59-base/tools/oculus/unused-exports.txt -          365 lines
+303,304c303,304  (BoardMode leaves index.ts and presets.ts; no line added)
+
+Commands the round section quotes as evidence, rerun:
+$ npx vitest run tests/checks --testTimeout 0 --hookTimeout 0
+ Test Files  17 passed (17)
+      Tests  271 passed (271)
+$ npm test
+ Test Files  143 passed | 30 skipped (173)
+      Tests  1153 passed | 244 skipped (1397)
+$ wc -l src/lib/shell/Workbench.svelte src/lib/state/workbench/layout.svelte.ts          511 / 877
+$ grep -rn sideLinks src          (no output)
+$ grep -rnE "normalise-parts/as-project|places/as-project" src tests DESIGN.md HELP.md docs ../../docs          (no output) exit=1
+$ grep -n cmd_goto_hint config/text/app.yml          29:            cmd_goto_hint: '<project id, side:slug or root:key>'
+$ sed -n 234p docs/DATA-MAP.md   (hub root)          | `.oculus/config/layout.yml` | `docs`, the hub documents of the Help page: Research approach, Agent approach, HPC how-to and Data map, each an entry with `group: help`; the Apps guide and Memories are tabs of oculus's own arrangement of the Help page and take no entry |
+$ ls ../../.oculus/memories | wc -l          16;  ls assets: app-icon.png app-icon.svg;  shasum base vs moved: only wallpaper/README.md differs (the reworded sentence)
+
+Item 3, the changed layout-saved test on the unchanged tree (scratch copy of D59-base src/tests/config/utils under $TMPDIR, the worktree's layout-saved.test.ts laid over it, layout-fixture.ts identical to the base, node_modules linked):
+$ npx vitest run --project unit tests/state/workbench/layout/saved/layout-saved.test.ts
+ FAIL ... reads 'rail pages: the paths read for a rail...'   AssertionError: expected [ undefined, undefined, ...(2) ] to deeply equal [ [ 'x.md', 'y.md' ], undefined, ...(2) ]
+ FAIL ... reads 'Files and LaTeX tabs: the folder name...'   (workbench page row)  +  "label": "alpha",  (twice)
+ FAIL ... reads 'Files and LaTeX tabs: the folder name...'   (kept layout row)     +  "label": "beta",   (twice)
+      Tests  3 failed | 10 passed (13)
+(the builder's first run reproduces; after the change the row passes, in the 54-passed run above)
+
+Item 1, my own probe (a throwaway vitest file under $TMPDIR run through a scratch config that loads the worktree's vite.config.ts; it builds createClientState() and loadLayout over a fake storage, then calls heldDocState and layout.openView):
+A start (Help holds HPC how-to, Focus on screen)
+  on screen: focus / help: help* | doc:{"id":"docs/HPC-UTwente-howto.md",...} / focus: focus*
+A1 chord form without held option (page focus)
+  on screen: focus / help: help* | doc:HPC / focus: focus | doc:HPC*          (the old rule: a second tab)
+heldDocState: {"id":"docs/HPC-UTwente-howto.md","path":"docs/HPC-UTwente-howto.md","label":"HPC how-to"} heldInstance(doc,id): h2 heldInstance(doc): null
+A2 chord form with held option (page focus)
+  on screen: help / help: help | doc:HPC* / focus: focus*
+A3 catalogue form with held option (page undefined)
+  on screen: help / help: help | doc:HPC* / focus: focus*
+engine heldDocState: {"id":"engine:docs/apps.md","path":"docs/apps.md","engine":true,"label":"Apps guide"}
+B engine copy, chord form with held option
+  on screen: help / help: help | doc:engine:docs/apps.md* / focus: focus*
+C float holds HPC how-to, press with held option
+  on screen: focus / float fl: doc{"id":"docs/HPC-UTwente-howto.md",...}* / focus: focus*   (no second tab)
+D none held: heldDocState null; press opens the tab on Focus (focus: focus | doc:HPC*)
+F project p held on Help, opened from Focus without the option: focus: focus | project*   (other opened views keep the old rule)
+
+Cases 1, 3, 21, 23 again (probe over loadConfig(engineDir(), { hub }) of the worktree, railPages, parseArrangement, giveDocuments):
+focus: focus | doc:Focus note
+help: help | doc:Research approach | doc:Agent approach | doc:HPC how-to | doc:Data map | doc:Apps guide | memories
+given: help | doc:Research approach | doc:Agent approach | doc:HPC how-to | doc:Data map | doc:Apps guide | memories ["docs/RESEARCH-APPROACH.md","docs/AGENT-APPROACH.md","docs/HPC-UTwente-howto.md","docs/DATA-MAP.md"]
+(the added duplicate of docs/AGENT-APPROACH.md gives one tab; the nopage entry adds none)
+
+Item 7, comment words before and after the round: each of the 44 tracked files whose diff changed in the round was rebuilt as it stood at the round's start (D59-base, or the current file with the whole-step diff reversed, then d59.diff applied), and the words of its comments compared with the current file. Every word change is one of the round's rewordings (items 1, 2, 3, 4, 6, 8, 10 and the history words); a rewrap changed no word. Over the 76 changed src and tests files, no comment paragraph whose words equal the base's was rewrapped ("total 0").
+```
+
+`npm run format` and `npm run diagrams` were not run (they write files); the prettier check and the diagrams test above stand in for them. `test:quick` was run with `--base aff419a0b` (139 files) because the round section gives no list of its 81 files.
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff since the base:
+
+- 1: holds. The probe above shows that a document row and the `h` chord show the tab any page or float holds (A2, A3, C), that the engine copy is found as `engine:<path>` (B), and that with nothing holding it the tab opens on the page as before (D). `held: true` is passed only by `Catalogue.svelte:148` and `Workbench.svelte:214` (`grep -rn "held: true" src` finds those two and an unrelated test). For unique views, `openInto` keeps `unique(view) ? holderOf(view)` (`opening.ts:213-214`), and `heldInstance(view)` with no id runs the old `heldUnique` body (`opening.ts:391-393`). The other callers (`drag.svelte.ts:196,200`, `ActivityRail.svelte:171`, `Catalogue.svelte:112`) only change the name they call. Related findings: Standards 1 (HELP.md made false), Behaviour 1, Spec 1.
+- 2: holds. In this round `config-cache.ts` changed only comment words ("now" and "before" removed); its test runs in test:quick, and `npm test` passes.
+- 3: holds. `sideLinks` is gone and `relatedProjects` (`personal.ts:204-210`) feeds `related` (`:229`). `as-project.ts` moved, as item 10 below describes. Personal, Project, Focus and ProjectCard have no code change in this round, only comment rewraps.
+- 4: holds (no code change this round).
+- 5: holds. The kept-layout row now fails on the unchanged tree and passes after. Related finding: Proof 1 (G29's text).
+- 6: holds (check 3d rerun above).
+- 7: holds. The declarations are unchanged. The rice comment (`themes.css:729-735`) and the slide comment (`slide.css:21-24`) give true numbers. Defaults: xs 11, sm 12, md 13, lg 14, xl 16, 2xl 20, 3xl 26 (`tokens.css`). Rice: 10, 11, 12, 13, 14, 16, 20, so each step except xs takes the next smaller default value. The six tokens move 9 to 8, 12 to 11, 13 to 12, 11 to 10, 11 to 10 and 12 to 11. 56, 36, 28, 24 and 18 times 12/13 round to 52, 33, 26, 22 and 17. The "rather than" construction and the false 1 px and 12/13 claims are gone. The slide head comment (`slide.css:1-4`) is the base text, and it is true. Related finding: Standards 2 (lines left short).
+- 8: holds. DATA-MAP changed only in wording this round ("is given each document it lacks").
+
+Round items 1 to 11, each closure:
+
+- R1: closed (probe above).
+- R2: closed.
+- R3: closed (fails on the unchanged tree with `+ "label": "beta"`; table form). Related finding: Proof 1.
+- R4: closed (grep below).
+- R5: closed.
+- R6: closed.
+- R7: partly not reproduced. No words changed and no unedited paragraph was rewrapped, but five lines inside edited paragraphs still end short (Standards 2).
+- R8: closed (511 lines; appearance behaviour identical by reading; old paths followed everywhere outside the ledger).
+- R9: closed.
+- R10: closed at a place other than the brief's, and both reasons reproduce:
+  - `ls src/lib/data/helpers` holds 10 entries, the folder limit.
+  - `tests/checks/imports/order.ts` ORDER lists `data/helpers` below `data/snapshot`, and `as-project.ts` imports `./compact.ts`.
+  - `data/places` is also below `data/snapshot`.
+  - Every other data folder (`ls src/lib/data`) is at 10 too.
+  - The head comment's statement that the record "is never part of the snapshot" is true of the record. The file now sits in `data/snapshot/`, so the folder name and the concern still differ, one level up. No home that satisfies both rules exists.
+- R11: closed.
+
+Cases of the brief's "Cases":
+
+- 1: met. Probe above: Help, Research approach, Agent approach, HPC how-to, Data map, Apps guide, Memories.
+- 2: met by reading (no change this round).
+- 3: met. Probe above: `focus | doc:Focus note`, and the `nopage` entry adds no tab.
+- 4 to 7: met (config-cache rows; no code change this round; test:quick green).
+- 8 to 13: met by reading as in the first report. These files have no code change this round. The look confirms them.
+- 14: met. The workbench-page row and the kept-layout row each fail on the unchanged tree and pass after.
+- 15: met (check 3d).
+- 16: not verifiable here. Check 3e is reproduced; the record's red command at the look settles it.
+- 17: met by reading.
+- 18 to 20: met by reading (unchanged this round).
+- 21: met (giveDocuments probe above).
+- 22: met (the workbench-page row).
+- 23: met. A duplicate path gives one tab; the sessions case was read in the first report and is unchanged.
+- 24 to 26: met by reading (unchanged this round).
+
+### Findings
+
+**1. Spec**
+
+- `src/lib/views/system/workbench/Catalogue.svelte:140-143` and `src/lib/shell/Workbench.svelte:209-212`: "`heldDocState(entry, selectors.engineAtFor({ view: DOC_VIEW, state: engineDocState('') }), ...)`".
+  - What is wrong: the engine copy is found only when `engineAt()` already holds the manual's answer. `docs.svelte.ts` asks for that answer on its first call and reads `''` until it arrives (`PENDING.engineAt: ''`). So the first press of a `docs:` entry whose path lies in oculus's own folder, made before any engine document was drawn in the session, misses the held Apps guide tab.
+  - Failure scenario: a hub lists `tools/oculus/docs/apps.md` in `docs:`, and the reader reloads on Focus and presses that entry's chord. `heldDocState` returns null, so a second Apps guide tab opens on Focus; the second press finds the Help tab.
+  - No entry of this hub's list lies in the engine folder, so the probe cannot show it; this is by reading.
+  - Verdict: none.
+
+**2. Proof**
+
+- Report, section "Doc text" (G29 Test line, addition): "describe 'a saved rail page and a saved workbench page', 'reads the paths of the documents a rail page was given, ...', 'takes the folder name off ...'". Round section, row 3: "The earlier separate 'Doc text' G29 addition is these rows."
+  - What is wrong: those two titles no longer exist. The round also renamed G29's existing table from `'migrates every page, and reads which one was current'` (base `layout-saved.test.ts:67`) to `'reads $name'` (now `:172`), with six rows. So the Test line of G29 in `agents/guarded.md` names a title the tree no longer holds, and the report gives no replacement line.
+  - Decision resting on it: the orchestrator applies "Doc text" to `guarded.md` at landing.
+  - Failure scenario: the landing writes the stale addition, or keeps G29's line naming a missing test. The next step whose change touches `saved/` looks for that title, and the replacement for G29's Test line is still owed.
+  - Verdict: none (case 14 is met).
+- Report, round row 2: "Slide comment: ... (`themes/slide.css:1-4`)".
+  - What is wrong: lines 1-4 are the base text, unchanged. The rewritten rice comment is `slide.css:21-24`.
+  - No decision rests on it beyond where the orchestrator reads.
+  - Failure scenario: the orchestrator checks the wrong lines for the rewritten comment.
+  - Verdict: none.
+
+**3. Standards**
+
+- `tools/oculus/HELP.md:26`: "An entry of the hub's `docs:` list ... opens by its `h` chord or its row in the Views catalogue, in the page you are on". `HELP.md:24`: "a unique view goes to the page or float that holds it, and a shift-click on any other view opens it in a new pane to the right".
+  - What is wrong: round item 1 makes both false. A held document now opens on the page that holds it, and on this hub the Help page holds all four documents. A shift-click on a held document row also shows the held tab (`Catalogue.svelte:146-148` ignores `shiftKey`). This breaks `agents/spec.md`'s rule that a sentence a change makes false is a defect, and its rule that HELP.md says what a user does.
+  - `DESIGN.md:483` ("Unique views ...") describes `holderOf` for unique views only. The `held` option for document rows, a mechanism of the same function, is not described anywhere in DESIGN.md.
+  - Failure scenario: a reader on Focus follows HELP and presses `h` then 4 to read HPC how-to beside Focus. The screen moves to the Help page instead, and a shift-click opens no pane.
+  - Verdict: none (item 1's code holds). Small, inside the brief; fixable at landing.
+- `src/lib/themes/slide.css:21` (95 columns, next word "(56" fits at 99) and `:22` (96, "the" fits at 100); `src/lib/themes/themes.css:733` (92, "palette" fits at 100) and `:734` (94, "both" fits at 99); `src/lib/themes/tokens.css:134` (94, "rest." fits at 100).
+  - What is wrong: the round's item 7 claims "no line inside a sentence ends short when the next word fits" and "paragraphs 0"; my scan of comment paragraphs whose words differ from the base does not reproduce that. `agents/spec.md` "What every package obeys" says a comment edited by the step is rewrapped as a whole paragraph at 100 columns. The base fills to 100: for example `shell/window/browser-windows.svelte.ts:3,10,11` are 100 columns. `comment-width.test.ts` checks only lines past 100, so it cannot see this.
+  - Failure scenario: none functional; the comments stay against the rule the round was sent to close.
+  - Verdict: none. Fixable at landing.
+- `src/lib/state/workbench/layout/saved/kept.ts:5-7`: "A Files or LaTeX tab of a workbench whose saved label is the folder's name loses the label, so the tab reads Files or LaTeX whatever label it was saved with."
+  - What is wrong: "whatever label it was saved with" reads as any label. `withoutFolderLabels`'s own comment (`kept.ts:63-66`) and the test row ('Other name', 'By hand' kept) say that a label that is not the folder's name stays.
+  - Failure scenario: a reader of the head comment expects a hand-named Files tab to lose its name on restore, and files a defect when it keeps it.
+  - Verdict: none.
+- `tools/oculus/DESIGN.md:488`: "A page saved before `Page.docs` existed is given each document of its group that it does not already show."
+  - What is wrong: this is the comparison with an earlier state that round item 4 removed from `model.ts:123-124` ("A page saved with no record has none"). It stays in DESIGN.md. Round item 4 named comments only, so this is outside its text.
+  - Failure scenario: the two descriptions of one rule use two wordings, one of which ages with the code.
+  - Verdict: none.
+
+**4. Behaviour**
+
+- `src/lib/views/system/workbench/Catalogue.svelte:139-149`: "`} else if (!dragged(event)) { openView(DOC_VIEW, held, undefined, { held: true }); }`".
+  - What is wrong: the report's user-visible line gives only "shows the tab ... instead of opening a second tab". It does not say three things:
+    - the page on screen changes to the holder page (Help on this hub), as in probe A2 and A3;
+    - a shift-click on a held document row no longer opens a pane beside;
+    - right-click "Open on this page" and "Open beside" still open a second copy.
+  - Failure scenario: at the look, the orchestrator checks the plain press only. The changed shift-click and the page switch go unchecked, and HELP.md:24 and :26 stay wrong (Standards 1).
+  - Verdict: none.
+
+### Declined to judge
+
+- A unique view's behaviour by a run. The probe's client has no view registry loaded (`heldInstance('settings')` printed null), so its unique-view lines prove nothing. Unique views are judged by reading `opening.ts:213-217` and `:391-393`, which keep the old branch.
+- The round's delta inside the untracked files changed during the round: `src/lib/state/workbench/layout/saved/docs.ts` and `src/lib/views/shared/card/project/CardAddresses.svelte` (both modified after `d59.diff` was written, by `stat`). No diff records their text at the round's start. I read both whole and judged them as whole-step files.
+- The look-only parts of cases 8 to 14, 16 and 18 to 26, and case 16's red command. They need a page or a browser, so they are left to the orchestrator at landing.
+- `npm run test:landing`. It runs once, on main, at landing.
+- The `test:quick` run in the builder's exact form (its list of 81 files is not quoted). I ran the `--base aff419a0b` form instead, and it is green.
+- Git use: besides `git diff aff419a0b` (with `--name-only`, `--stat` and `-U0`) and `git status --short`, I ran `git show aff419a0b:<path>` twice, read-only, for HELP.md and for slide.css and themes.css. It changed nothing; every later base read used the base copy or a reversed `git diff aff419a0b`.
+
+Reviewer usage: a331fd523c64b7d1d, claude-opus-5-5, 311,085 tokens, 101 tool uses, 24.4 min (from the completion notice).
+
+Files: the probes are at `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/r1rev/probe/tests/held.probe.test.ts` and `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/r1rev/probe/tests/help.probe.test.ts`, run through the scratch config `/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/r1rev/probe/probe.config.mts`. Nothing was written in the worktree or the ledger.
+
+## Closed
+
+Each finding of both runs, with its disposition. The findings of the run over round 1 are fixed at landing (small, inside the brief), as `refute`'s "Steps / Over a repair round" 7 says; none goes back to the builder and none is an open item.
+
+First run:
+
+- Spec 1 (catalogue document row opens a second tab): closed in round 1 (R1).
+- Spec 2 (`Entry.svelte`'s shared `instanceChoice`): no change, by the round brief's ruling.
+- Spec 3 (rice and slide comments): closed in round 1 (R2).
+- Proof 1 (kept-layout half of the label test): closed in round 1 (R3).
+- Proof 2: no change, by its verdict.
+- Proof 3 (report text against the disk): closed in round 1 (R11).
+- Standards 1 to 9: closed in round 1 (R4 to R10, R2 and R3).
+- Behaviour 1 (side card's collapsed look) and Behaviour 2 (LaTeX build of a hub side project): kept as built, stated in the round report with before and after, and checked at the look.
+
+Run over round 1:
+
+- Spec 1 (the first press of a `docs:` entry inside oculus's own folder misses a held engine tab while the manual's answer is pending): fixed at landing. The docs store gains `engineAtSettled()`, which waits for the manual's answer; the catalogue's document row and the `h` chord read the engine folder's place through it, so the held engine tab is found on the first press.
+- Proof 1 (G29's Test line names a title the tree no longer holds): fixed at landing in `agents/guarded.md`, with the table's current title and rows; the report's "Doc text" G29 addition is not applied.
+- Proof 2 (`slide.css:1-4` cited for `:21-24`): no change; the landing reads `:21-24`.
+- Standards 1 (HELP.md:24 and :26 false for a held document; DESIGN.md silent on the `held` option): fixed at landing in HELP.md and DESIGN.md.
+- Standards 2 (short comment lines in `slide.css:21-22`, `themes.css:733-734`, `tokens.css:134`): fixed at landing by rewrapping each paragraph at 100 columns.
+- Standards 3 (`kept.ts:5-7` "whatever label it was saved with"): fixed at landing.
+- Standards 4 (`DESIGN.md:488` "saved before `Page.docs` existed"): fixed at landing, worded as `model.ts` is.
+- Behaviour 1 (page switch, shift-click and the right-click items unstated): stated in the booking with before and after, and checked at the look.

@@ -44,9 +44,32 @@ export function instanceText(state: unknown, key: string): string {
     return wordShape.parse(readAs(mapShape, state)?.[key]);
 }
 
+/**
+ * The choice a tab remembers under `key` while it is among `present`, else the first of them, and
+ * the empty text when there are none.
+ */
+export function instanceChoice(state: unknown, key: string, present: string[]): string {
+    const held = instanceText(state, key);
+    return present.includes(held) ? held : (present[0] ?? '');
+}
+
 /** Whether a tab's saved state holds `true` under `key`; any other value is not a set flag. */
 export function instanceFlag(state: unknown, key: string): boolean {
     return readAs(mapShape, state)?.[key] === true;
+}
+
+/** The view that draws one Markdown document as a tab of its own. */
+export const DOC_VIEW = 'doc';
+
+/**
+ * The paths of the hub's documents a tree holds as tabs, in the order of its tabs. A tab over a
+ * document of oculus's own folder, which carries `engine: true`, is not one of them.
+ */
+export function docPaths(layout: Layout): string[] {
+    return tabsOf(layout)
+        .filter((tab) => tab.view === DOC_VIEW && !instanceFlag(tab.state, 'engine'))
+        .map((tab) => instanceText(tab.state, 'path'))
+        .filter((path) => path !== '');
 }
 
 /** The words a tab's saved state carries as its `label`, or null when it carries none. */

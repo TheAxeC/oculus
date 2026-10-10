@@ -43,6 +43,7 @@ import {
     findInstance,
     focusedPane,
     fold,
+    giveDocuments as giveDocumentsIn,
     hostsOf,
     keptDefault,
     LAYOUT_KEY,
@@ -61,9 +62,9 @@ import {
     withPage,
     writeHost,
     floatHost,
-    type Arranged,
     type Away,
     type Builds,
+    type DocSource,
     type Edge,
     type Float,
     type FloatOps,
@@ -91,7 +92,7 @@ import {
 } from './layout/index.ts';
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
 import { parseArrangement } from './navigation/arrangement.ts';
-import { resetPlan, type RailSource } from './navigation/pages.ts';
+import { arrangedPages, resetPlan, type RailSource } from './navigation/pages.ts';
 import { t } from '../shared/words/text.ts';
 
 export { LAYOUT_KEY, PREVIOUS_KEY };
@@ -165,6 +166,11 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
          */
         adoptFloats: (floats: FloatSpec[]) => void;
         /**
+         * Give every rail page the documents its source lists that it has not been given: a tab
+         * after the page's first tab, recorded so a tab the reader closes is not given again.
+         */
+        giveDocuments: (sources: readonly DocSource[]) => void;
+        /**
          * The id of the page that was on screen before the one on screen now, while that page is
          * still in the list; null on a fresh load and after it was closed. It is not saved.
          */
@@ -189,8 +195,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         openAway: Away['openAway'];
         openNextTo: Away['openNextTo'];
         moveAway: Away['moveAway'];
-        /** The id of the instance of a unique view that a page or float holds, else null. */
-        heldUnique: (view: ViewId) => string | null;
+        /** The id of the instance of a view that a page or float holds (see Opening), else null. */
+        heldInstance: Opening['heldInstance'];
         paneHolds: Away['paneHolds'];
         /**
          * Say which views are opened for something, which the registry knows and this store does
@@ -330,7 +336,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     /**
      * The floats, in the order they were made. A float placed in a window is drawn by the window
      * that holds it: the host's in the app, a browser tab opened for it in a browser
-     * (shell/browser-windows.svelte.ts takes a float back whose tab is gone).
+     * (shell/window/browser-windows.svelte.ts takes a float back whose tab is gone).
      */
     function floats(): Float[] {
         return store.current.floats;
@@ -525,6 +531,12 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         savePages(adoptFloatsIn(store.current, shipped, keepRule));
     }
 
+    /** Every rail page given the documents its source lists that it has not been given. */
+    function giveDocuments(sources: readonly DocSource[]): void {
+        const next = giveDocumentsIn(store.current, sources);
+        if (next !== store.current) savePages(next);
+    }
+
     /** The page on screen before the current one, while it is still one of the pages. */
     function previousPage(): string | null {
         const held = previous;
@@ -710,22 +722,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     function resetPages(rail: readonly RailSource[], shipped: FloatSpec[]): boolean {
         const held = store.current;
         const plan = resetPlan(held.pages, rail);
-        if (
-            plan.rebuilt.length === 0 &&
-            plan.removed.length === 0 &&
-            held.floats.length === 0 &&
-            shipped.length === 0
-        ) {
-            return false;
-        }
-        const arranged = new Map<string, Arranged>();
-        for (const page of plan.rebuilt) {
-            const source = rail.find((entry) => entry.page === page.rail);
-            const workbench = source === undefined ? null : parseArrangement(source.node);
-            if (source !== undefined && workbench !== null) {
-                arranged.set(page.id, { label: source.label, workbench });
-            }
-        }
+        const changes = plan.rebuilt.length + plan.removed.length + held.floats.length;
+        if (changes + shipped.length === 0) return false;
+        const arranged = arrangedPages(plan.rebuilt, rail);
         const next = resetAll(held, plan, arranged, shipped, t('ui.page_default', 1), builds);
         for (const page of [...plan.rebuilt, ...plan.removed]) attention.forgetPage(page.id);
         for (const float of held.floats) attention.forgetPage(float.id);
@@ -818,6 +817,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         startingFresh: () => fresh,
         keepDefaultPage,
         adoptFloats,
+        giveDocuments,
         ...floatOps,
         openFolderPage: folderOps.openFolderPage,
         resetFolderPage: folderOps.resetFolderPage,
@@ -852,7 +852,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         openAway: away.openAway,
         openNextTo: away.openNextTo,
         moveAway: away.moveAway,
-        heldUnique: opening.heldUnique,
+        heldInstance: opening.heldInstance,
         paneHolds: away.paneHolds,
         showInFiles: files.showInFiles,
         showTimeline: files.showTimeline,

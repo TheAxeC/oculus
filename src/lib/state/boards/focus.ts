@@ -12,7 +12,13 @@ import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data
 // string. The alias also keeps the name off the several `const text` locals in this file.
 import { byKey, text as str } from '../../data/helpers/guards.ts';
 import { joinedEntries } from '../../data/helpers/hub-names.ts';
-import { mapShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
+import {
+    fieldItemsShape,
+    mapShape,
+    readAs,
+    rowsShape,
+    wordShape
+} from '../../data/shapes/shapes.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the three model types
 // the Focus view names reach it from here, beside the functions that take and return them.
@@ -371,4 +377,24 @@ export function waitingTotal(strip: Waiting | null): number {
         strip.applications.length +
         strip.hosts.length
     );
+}
+
+/** The two sections of the Focus board that fold, by the key their closed state is kept under. */
+export type FoldKey = 'command' | 'tasks';
+
+/** The folded sections a Focus tab's saved state names as closed; a wrong value names none. */
+const closedShape = z.object({ closed: fieldItemsShape });
+
+/** Whether a section is open in a Focus tab's state: every section is, until it is closed. */
+export function foldOpen(state: unknown, key: FoldKey): boolean {
+    return !(readAs(closedShape, state)?.closed ?? []).includes(key);
+}
+
+/** The tab's state with one section's fold turned over, and every other key of it kept. */
+export function foldToggled(state: unknown, key: FoldKey): Record<string, unknown> {
+    const closed = readAs(closedShape, state)?.closed ?? [];
+    return {
+        ...(readAs(mapShape, state) ?? {}),
+        closed: closed.includes(key) ? closed.filter((one) => one !== key) : [...closed, key]
+    };
 }

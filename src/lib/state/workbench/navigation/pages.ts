@@ -23,6 +23,7 @@ import { z } from 'zod';
 import {
     floatHost,
     tabsOf,
+    type Arranged,
     type Float,
     type Host,
     type Instance,
@@ -240,6 +241,26 @@ export function pageAt(pages: readonly Page[], id: string): { page: Page; at: nu
 
 /** One rail button as a reset reads it: its arrangement key, its words and its arrangement. */
 export type RailSource = { page: string; label: string; node: unknown };
+
+/**
+ * The workbenches the pages of `rebuilt` are made again as, by page id: each from the arrangement
+ * of the button that carries the page's key, with that button's words. A page whose button is gone
+ * or whose arrangement does not parse is left out.
+ */
+export function arrangedPages(
+    rebuilt: readonly Page[],
+    rail: readonly RailSource[]
+): Map<string, Arranged> {
+    const arranged = new Map<string, Arranged>();
+    for (const page of rebuilt) {
+        const source = rail.find((entry) => entry.page === page.rail);
+        const workbench = source === undefined ? null : parseArrangement(source.node);
+        if (source !== undefined && workbench !== null) {
+            arranged.set(page.id, { label: source.label, workbench });
+        }
+    }
+    return arranged;
+}
 
 /**
  * What resetting every page does: the saved pages a rail button carries the key of, rebuilt from

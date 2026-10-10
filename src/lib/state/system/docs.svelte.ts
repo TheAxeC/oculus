@@ -114,6 +114,11 @@ export type DocsStore = {
      * while that answer is on its way, when it failed, and when the folder lies outside the hub.
      */
     engineAt: () => string;
+    /**
+     * The same place once the manual's answer is in, asking for it when nothing is held, so a
+     * press made before the answer arrives still finds a tab of oculus's own folder.
+     */
+    engineAtSettled: () => Promise<string>;
 };
 
 /** The endpoint every document is read at. */
@@ -126,6 +131,9 @@ const KIND = 'docs';
 const HUB = 'hub';
 const ENGINE = 'engine';
 const MANUAL = 'manual';
+
+/** The address the manual is read at. */
+const MANUAL_URL = `${DOCS}?${MANUAL}=1`;
 
 /**
  * One run of a document as the answer carries it: a string of HTML, or a diagram with a name and
@@ -246,7 +254,7 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
 
     /** The manual, which is one document and takes no path. */
     function manual(): DocState {
-        return reading(ownKey(MANUAL, MANUAL), `${DOCS}?${MANUAL}=1`);
+        return reading(ownKey(MANUAL, MANUAL), MANUAL_URL);
     }
 
     /** What is held for one address, asking for it when nothing is held or it was marked since. */
@@ -363,8 +371,19 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
     /** The engine folder's place in the hub, from the manual's answer. */
     function engineAt(): string {
         const guide = manual();
+        return placeOf(guide);
+    }
+
+    /** The engine folder's place in the hub, waiting for the manual's answer while it is out. */
+    async function engineAtSettled(): Promise<string> {
+        const held = await queries.fetch([KIND, ownKey(MANUAL, MANUAL)], fetcherOf(MANUAL_URL));
+        return placeOf(held.doc);
+    }
+
+    /** The engine folder's place a manual's answer gives, empty while pending or after failing. */
+    function placeOf(guide: DocState): string {
         return guide.loading || guide.error !== '' ? '' : guide.engineAt;
     }
 
-    return { document, hubDocument, engineDocument, manual, engineAt };
+    return { document, hubDocument, engineDocument, manual, engineAt, engineAtSettled };
 }

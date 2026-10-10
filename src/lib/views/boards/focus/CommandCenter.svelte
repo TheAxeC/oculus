@@ -26,13 +26,12 @@
         CATEGORIES,
         deadlinesByCategory,
         runsByKind,
-        type Ticker as FocusTicker,
         type TickerItem
     } from '$lib/state/boards/ticker';
     import { attention, refresh } from '$lib/state/feeds/feeds';
     import { t } from '$lib/state/shared/words/text';
     import { instanceMap } from '$lib/state/workbench/layout';
-    import { act, dateTail, fileBlock, openLine, rowMaker } from './rows';
+    import { act, dateTail, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import { openSourceFile } from '$lib/views/shared/links/source-file';
     import CommandCenterView from './CommandCenterView.svelte';
     import { useState } from '$lib/state/client/use';
@@ -47,18 +46,7 @@
         ui: { instanceState, requestUpdateTray, setInstanceState }
     } = client;
 
-    type Props = {
-        /** The board's one ticker, walked once by the view that holds both sections. */
-        week: FocusTicker | null;
-        /** The moment every countdown on the board is measured from. */
-        now: number;
-        /** Open one project as its own tab; the board owns what a tab is called. */
-        onproject: (id: string) => void;
-        /** What a write answered, for the one outcome line the board holds. */
-        onsaid: (said: string) => void;
-    };
-
-    let { week, now, onproject, onsaid }: Props = $props();
+    let { week, now, open, ontoggle, onproject, onsaid }: SectionProps = $props();
 
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
@@ -257,6 +245,8 @@
 <CommandCenterView
     {week}
     {view}
+    {open}
+    {ontoggle}
     attentionRows={attentionView.rows}
     refreshRows={refreshView.rows}
     {onproject}

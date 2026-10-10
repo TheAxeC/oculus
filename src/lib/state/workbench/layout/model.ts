@@ -1,7 +1,8 @@
 // Layer 2, client state. Layout types, constants, defaults and page operations live here because
 // changes to the model should not involve tree or workbench algorithms.
 
-import { newInstance } from './instance.ts';
+import { nameOf } from '../../../data/helpers/files/paths.ts';
+import { docPaths, newInstance } from './instance.ts';
 
 /**
  * The view a pane's tab mounts. The view registry is its vocabulary. A saved layout may name a
@@ -100,6 +101,11 @@ export function sameFolder(left: FolderRef, right: FolderRef): boolean {
     return left.root === right.root && left.path === right.path;
 }
 
+/** The words of a folder: the last name of its path, and the root's key for the root itself. */
+export function folderName(folder: FolderRef): string {
+    return folder.path === '' ? folder.root : nameOf(folder.path);
+}
+
 /**
  * The view a folder page opens in its documents pane when it is made, with the state that view
  * opens with: the item the page was opened for, which Reset layout opens again.
@@ -112,13 +118,17 @@ export type FolderItem = { view: ViewId; state: unknown };
  * config/layout.yml the page was made from by a rail button, which is what ties the page to that
  * button: renaming the button keeps the page, and a page no button made carries none. `folder` ties
  * the page to one folder, which makes it a workbench in the reader's words; such a page has no
- * `rail` key. `item` is what the page was opened for.
+ * `rail` key. `item` is what the page was opened for. `docs` is the paths of the hub's documents
+ * the page has been given as tabs, which a rail page records so that a document tab the reader
+ * closed is not given again and a document added to the `docs:` list later is given once. A page
+ * saved with no record has none, and is given every document of its group.
  */
 export type Page = {
     id: string;
     label: string;
     workbench: Workbench;
     rail?: string;
+    docs?: string[];
     folder?: FolderRef;
     item?: FolderItem;
 };
@@ -342,7 +352,8 @@ export function defaultWorkbench(): Workbench {
 
 /**
  * A fresh page around a workbench, with the id every page operation addresses it by. The words are
- * the caller's: they come from the catalog, which the layout modules do not read.
+ * the caller's: they come from the catalog, which the layout modules do not read. A page made for a
+ * rail button records the paths of the documents its tabs hold (`Page.docs`).
  */
 export function newPage(
     label: string,
@@ -350,7 +361,10 @@ export function newPage(
     rail?: string
 ): Page {
     const page: Page = { id: crypto.randomUUID(), label, workbench };
-    if (rail !== undefined) page.rail = rail;
+    if (rail !== undefined) {
+        page.rail = rail;
+        page.docs = docPaths(workbench.root);
+    }
     return page;
 }
 

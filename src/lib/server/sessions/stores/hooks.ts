@@ -20,6 +20,7 @@ import type {
     Workspace
 } from '../../../data/model/index.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
+import { projectOfSide } from '../../../data/snapshot/as-project.ts';
 
 /** How long a hook keeps showing on its session before it is treated as if it never arrived. */
 export const HOOK_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -193,6 +194,25 @@ export function project(hub: HubLike, id: string): Project | null {
     const found = projects === null ? undefined : projects[id];
     // The payload is the server's own snapshot, so what sits under a project id is a project.
     return isMap(found) ? (found as Project) : null;
+}
+
+/**
+ * One side project in the last published portfolio payload, as a project: the record the card, the
+ * page and the manifest form read it by (data/snapshot/as-project.ts). Null for an id no side
+ * project has.
+ */
+export function sideAsProject(hub: HubLike, id: string): Project | null {
+    const side = sideProjects(hub).find((one) => one.id === id);
+    return side === undefined ? null : projectOfSide(side);
+}
+
+/**
+ * One project or side project of the last published portfolio payload, as a project, for a server
+ * action that is scoped by an id the Personal board's cards carry too: the document route and the
+ * chat.
+ */
+export function projectOrSide(hub: HubLike, id: string): Project | null {
+    return project(hub, id) ?? sideAsProject(hub, id);
 }
 
 /**

@@ -21,6 +21,7 @@ import type { TickerAction, TickerRow } from '$lib/ui/display/ticker/ticker-rows
 import {
     daysTone,
     type SideManifest,
+    type Ticker,
     type TickerItem,
     type TickerTarget
 } from '$lib/state/boards/ticker';
@@ -32,6 +33,21 @@ import type { ClientState } from '$lib/state/client/context';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
 import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
 import { blockedBy } from '$lib/views/shared/forms/entry-file';
+
+/** What the command center and the tasks section are each given by the board that draws them. */
+export type SectionProps = {
+    /** The board's one ticker, walked once by the view that holds both sections. */
+    week: Ticker | null;
+    /** The moment every countdown on the board is measured from. */
+    now: number;
+    /** Whether the section is open, and the control on its heading that folds it. */
+    open: boolean;
+    ontoggle: () => void;
+    /** Open one project as its own tab; the board owns what a tab is called. */
+    onproject: (id: string) => void;
+    /** What a write answered, for the one outcome line the board holds. */
+    onsaid: (said: string) => void;
+};
 
 /** How a status button's id starts, the status following it. */
 const STATUS = 'status:';

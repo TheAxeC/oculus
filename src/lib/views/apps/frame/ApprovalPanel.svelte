@@ -105,14 +105,14 @@
 
     h2 {
         margin: 0 0 4px;
-        font-size: 14px;
+        font-size: var(--fs-lg);
         color: var(--muted-txt, var(--muted));
         font-weight: 600;
     }
 
     .title {
         margin: 0 0 6px;
-        font-size: 16px;
+        font-size: var(--fs-xl);
     }
 
     .description {
@@ -127,7 +127,7 @@
     .meta {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: 12px;
+        font-size: var(--fs-sm);
     }
 
     .question {

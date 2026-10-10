@@ -49,6 +49,7 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Card from '../../shared/card/ProjectCard.svelte';
+    import ModeSwitch from '../../shared/card/ModeSwitch.svelte';
     import NewIdea from './NewIdea.svelte';
     import Stats from './Stats.svelte';
     import {
@@ -60,6 +61,7 @@
         parseBoardState,
         typeCounts,
         type BoardItem,
+        type BoardMode,
         type BoardState
     } from '$lib/state/boards/board';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
@@ -112,11 +114,6 @@
      */
     const now = Date.now();
 
-    const modes: SegmentItem[] = [
-        { id: 'cards', label: t('board.view_cards'), glyph: t('board.view_cards_glyph') },
-        { id: 'list', label: t('board.view_list'), glyph: t('board.view_list_glyph') }
-    ];
-
     const labelModes: SegmentItem[] = [
         { id: 'short', label: t('project.helper.short') },
         { id: 'full', label: t('project.helper.full') }
@@ -124,6 +121,10 @@
 
     function write(next: Partial<BoardState>): void {
         setInstanceState(instance.id, { ...held, ...next });
+    }
+
+    function setMode(mode: BoardMode): void {
+        write({ mode });
     }
 
     /** Add or remove one value of one facet, which is what a pick in the filter menu means. */
@@ -302,12 +303,7 @@
                 onclick={() => toggleType(one.type)}
             />
         {/each}
-        <Segment
-            label={t('board.view')}
-            items={modes}
-            value={held.mode}
-            onchange={(id) => write({ mode: id === 'list' ? 'list' : 'cards' })}
-        />
+        <ModeSwitch mode={held.mode} onchange={setMode} />
         <Segment
             label={t('board.labels')}
             items={labelModes}

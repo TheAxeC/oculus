@@ -33,8 +33,8 @@
     import { bookmarkRows, HUB_ROOT, problemMarkOf, problemWords } from '$lib/state/sources/fs';
     import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
-    import { useBrowserWindows } from '$lib/shell/browser-windows.svelte';
-    import { useDesktopWindows } from '$lib/shell/desktop-windows.svelte';
+    import { useBrowserWindows } from '$lib/shell/window/browser-windows.svelte';
+    import { useDesktopWindows } from '$lib/shell/window/desktop-windows.svelte';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
     import { floatOf, ownerOf } from '$lib/state/workbench/layout/open/float/browser';
     import { browserTabId, holdBrowserTabId } from '$lib/state/workbench/layout/saved/storage';

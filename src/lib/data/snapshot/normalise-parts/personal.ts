@@ -20,6 +20,7 @@ import type { Finding, PersonalSource, RawPersonal, SideProject } from '../../mo
 import { isMap, str, strings } from '../../helpers/guards.ts';
 import { readAs } from '../../shapes/shapes.ts';
 import { compact } from '../compact.ts';
+import { docFlags } from './folder.ts';
 import { followups, subtasks } from './plans.ts';
 
 /** A field that is a text, and a field that is a list of anything. */
@@ -214,7 +215,10 @@ export function sideProject(raw: RawPersonal, statuses: string[] | undefined): R
         relatedIds: textsField(data, 'related', problems),
         collaborators: textsField(data, 'collaborators', problems),
         source: raw.source,
-        file: raw.file
+        file: raw.file,
+        folder: raw.source.kind === 'hub' ? raw.source.folder : raw.source.dir,
+        docs: docFlags(raw.docs),
+        deck: raw.deck
     });
     return { project, problems };
 }

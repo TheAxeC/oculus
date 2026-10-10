@@ -1,7 +1,9 @@
 // Layer 2, client-state tests. The saved form of a layout: the older envelope read by migration. A
 // workbench of two trees and a docked panel opens as the one tree a page now is; a tab of a retired
 // view (`changes`, `agents`) is carried to its successor, or dropped where a tab of the successor
-// already holds the pane; and every other tab is kept.
+// already holds the pane; and every other tab is kept. A rail page records the paths of the
+// documents it was given, and a Files or LaTeX tab labelled by its folder's own name is read
+// without the label, in a workbench page and in a kept layout.
 //
 // Nothing here touches localStorage or the DOM: every case reads a hand-built envelope.
 
@@ -10,10 +12,18 @@ import {
     LAYOUT_VERSION,
     PAGES_VERSION,
     serialiseLayout,
-    type Layout
+    type Layout,
+    type Workbench
 } from '../../../../../src/lib/state/workbench/layout/index.ts';
 import { parseLayout } from '../../../../../src/lib/state/workbench/layout/saved/saved.ts';
 import { bench, docked, pane, split } from '../layout-fixture.ts';
+
+type Tab = { id: string; view: string; state: unknown };
+
+/** A pane of tabs whose first is the one shown. */
+function paneOf(...tabs: Tab[]): Layout {
+    return { kind: 'pane', tabs, active: tabs[0].id };
+}
 
 describe('a saved envelope, read as pages of one tree', () => {
     /** An envelope of this version over pages whose workbenches are as that version saved them. */
@@ -26,12 +36,52 @@ describe('a saved envelope, read as pages of one tree', () => {
         return { version, pages, current: 'page-0' };
     }
 
+    /** An envelope of the current version over pages and kept layouts as it saved them. */
+    function latest(pages: Record<string, unknown>[], kept?: unknown): unknown {
+        return { version: LAYOUT_VERSION, pages, current: pages[0].id, floats: [], kept };
+    }
+
     /** The empty pane a workbench keeps for the documents its views open, as a layout saved it. */
     const documents: Layout = { kind: 'pane', tabs: [], active: '', documents: true };
 
-    const rows = [
+    /**
+     * The tabs of a workbench of one folder as saved, with the Files and LaTeX tabs labelled by the
+     * folder's own name, and the tabs as they are read: those two without the label, a tab of
+     * another view, a tab named by hand and a tab labelled by another name kept as they are.
+     */
+    function folderTabs(path: string, name: string, id: string): { saved: Tab[]; read: Tab[] } {
+        const own = { root: 'hub', path };
+        const saved: Tab[] = [
+            { id: `${id}1`, view: 'files', state: { ...own, label: name } },
+            { id: `${id}2`, view: 'latex', state: { ...own, label: name } },
+            { id: `${id}3`, view: 'search', state: { label: name } },
+            {
+                id: `${id}4`,
+                view: 'files',
+                state: { root: 'hub', path: 'other', label: 'By hand' }
+            },
+            { id: `${id}5`, view: 'files', state: { ...own, label: 'Other name' } }
+        ];
+        const read = saved.map((tab, at) => (at < 2 ? { ...tab, state: own } : tab));
+        return { saved, read };
+    }
+
+    const help = (id: string): Layout => paneOf({ id, view: 'help', state: null });
+    const page = folderTabs('projects/alpha', 'alpha', 'p');
+    const held = folderTabs('projects/beta', 'beta', 'k');
+    const workbenchOf = (root: Layout): Record<string, unknown> => ({ root });
+
+    const rows: {
+        name: string;
+        envelope: unknown;
+        trees: Workbench[];
+        /** The paths each page records as the documents it was given. */
+        docs?: unknown[];
+        /** The tree of each kept layout. */
+        kept?: Layout[];
+    }[] = [
         {
-            version: PAGES_VERSION,
+            name: 'version 3',
             envelope: saved(
                 PAGES_VERSION,
                 docked(pane(['a']), pane([]), 'hidden'),
@@ -40,7 +90,7 @@ describe('a saved envelope, read as pages of one tree', () => {
             trees: [bench(pane(['a'])), bench(split('row', [0.7, 0.3], [pane(['b']), pane(['p'])]))]
         },
         {
-            version: 6,
+            name: 'version 6',
             envelope: {
                 ...(saved(
                     6,
@@ -52,7 +102,7 @@ describe('a saved envelope, read as pages of one tree', () => {
             trees: [bench(pane(['a'])), bench(split('row', [0.5, 0.5], [pane(['b']), pane(['p'])]))]
         },
         {
-            version: LAYOUT_VERSION,
+            name: 'the current version with a documents pane',
             envelope: {
                 ...(saved(
                     LAYOUT_VERSION,
@@ -61,23 +111,77 @@ describe('a saved envelope, read as pages of one tree', () => {
                 floats: []
             },
             trees: [bench(split('row', [0.5, 0.5], [pane(['a']), documents]))]
+        },
+        {
+            name: 'rail pages: the paths read for a rail page with documents, none for the rest',
+            envelope: latest([
+                {
+                    id: 'page-0',
+                    label: 'Help',
+                    workbench: workbenchOf(help('t0')),
+                    rail: 'help',
+                    docs: ['x.md', 'y.md']
+                },
+                {
+                    id: 'page-1',
+                    label: 'Old',
+                    workbench: workbenchOf(help('t1')),
+                    rail: 'sessions'
+                },
+                {
+                    id: 'page-2',
+                    label: 'Bad',
+                    workbench: workbenchOf(help('t2')),
+                    rail: 'focus',
+                    docs: 'x.md'
+                },
+                { id: 'page-3', label: 'Page', workbench: workbenchOf(help('t3')), docs: ['x.md'] }
+            ]),
+            trees: [bench(help('t0')), bench(help('t1')), bench(help('t2')), bench(help('t3'))],
+            docs: [['x.md', 'y.md'], undefined, undefined, undefined]
+        },
+        {
+            name: 'Files and LaTeX tabs: the folder name is taken off a workbench page',
+            envelope: latest([
+                {
+                    id: 'page-0',
+                    label: 'alpha',
+                    workbench: workbenchOf(paneOf(...page.saved)),
+                    folder: { root: 'hub', path: 'projects/alpha' }
+                }
+            ]),
+            trees: [bench(paneOf(...page.read))]
+        },
+        {
+            name: 'Files and LaTeX tabs: the folder name is taken off a kept layout',
+            envelope: latest(
+                [{ id: 'page-0', label: 'Help', workbench: workbenchOf(help('t4')) }],
+                [
+                    {
+                        folder: { root: 'hub', path: 'projects/beta' },
+                        workbench: workbenchOf(paneOf(...held.saved)),
+                        states: {}
+                    }
+                ]
+            ),
+            trees: [bench(help('t4'))],
+            kept: [paneOf(...held.read)]
         }
     ];
 
-    it.each(rows)('migrates every page, and reads which one was current', ({ envelope, trees }) => {
+    it.each(rows)('reads $name', ({ envelope, trees, docs, kept }) => {
         const read = parseLayout(envelope, 'Page 1');
         if (read === null) throw new Error('the envelope was not read');
         expect(read.pages.map((page) => page.workbench)).toEqual(trees);
+        expect(read.pages.map((page) => page.docs)).toEqual(docs ?? trees.map(() => undefined));
         expect(read.current).toBe('page-0');
-        expect(read.kept ?? []).toEqual([]);
+        expect((read.kept ?? []).map((one) => one.workbench.root)).toEqual(kept ?? []);
         const written = JSON.parse(serialiseLayout(read)) as { version: number };
         expect(written.version).toBe(LAYOUT_VERSION);
     });
 });
 
 describe('a saved tab of a retired view (changes, agents)', () => {
-    type Tab = { id: string; view: string; state: unknown };
-
     /** One saved tab; a session makes it a tab pinned to that session. */
     function tab(id: string, view: string, session?: string): Tab {
         return { id, view, state: session === undefined ? null : { session, label: session } };

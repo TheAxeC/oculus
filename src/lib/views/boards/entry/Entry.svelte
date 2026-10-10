@@ -59,7 +59,7 @@
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
     import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
-    import { instanceText } from '$lib/state/workbench/layout/instance';
+    import { instanceChoice, instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -120,7 +120,7 @@
             .filter((one) => one.kind === 'file' && /\.md$/i.test(one.name))
             .map((one) => one.name)
     );
-    const chosen = $derived(pick(names, instanceText(instanceState(instance.id), 'doc')));
+    const chosen = $derived(instanceChoice(instanceState(instance.id), 'doc', names));
     const shown = $derived(
         folder === undefined || chosen === '' ? null : hubDocument(`${folder}/${chosen}`, hub)
     );
@@ -136,12 +136,6 @@
 
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
-
-    /** The document showing: the one the tab remembers if the folder holds it, else the first. */
-    function pick(present: string[], held: string): string {
-        if (present.includes(held)) return held;
-        return present[0] ?? '';
-    }
 
     function choose(name: string): void {
         setInstanceState(instance.id, { doc: name });

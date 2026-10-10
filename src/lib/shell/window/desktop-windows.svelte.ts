@@ -11,9 +11,9 @@
 // host close the window when its float stops being one placed in a window. Every window, sent to
 // the server's new origin after a restart, carries the arrangement there and goes.
 
-import type { ClientState } from '../state/client/context.ts';
-import { SETTINGS_VIEW } from '../state/workbench/navigation/rail.ts';
-import { carryWorkbench } from '../state/workbench/layout/index.ts';
+import type { ClientState } from '../../state/client/context.ts';
+import { SETTINGS_VIEW } from '../../state/workbench/navigation/rail.ts';
+import { carryWorkbench } from '../../state/workbench/layout/index.ts';
 
 /** The bar a window's title takes above its content, which a screen point is moved by. */
 function titleBar(): number {

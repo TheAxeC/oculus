@@ -544,6 +544,7 @@ export function createServerContext(
         engine,
         configCache: createConfigCache({
             engine,
+            hub: () => local.hub,
             load,
             report: reportFindings
         }),

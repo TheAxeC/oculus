@@ -122,13 +122,17 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
     --font-num: var(--font-mono); /* counts, dates, ids - mono in every theme */
     --text-scale: 1;
-    /* Type scale. Every font-size resolves through these seven steps, VS Code's own sizes, so a
-       theme rescales the whole UI by overriding them here and no rule carries its own px value. A
-       text takes its step by its role: the main words of a row, a paragraph or a card `--fs-md`,
-       secondary words (a detail, a date, a caption, a control's words) `--fs-sm`, a label, a badge
-       or an uppercase heading `--fs-xs`, a page or document title `--fs-xl` and above. Every focus
-       ring is `1px solid var(--accent)` at an offset of -1 px, or 1 px for plain words with no box,
-       and a link has no underline at rest. */
+    /* Type scale. Every font-size resolves through these seven steps, VS Code's own sizes, or
+       through one of the size tokens a step cannot carry: the rail badge's count and the status
+       bar's words above (`--rail-badge-text`, `--status-text`), a tree's and a form button's text
+       below (`--tree-font`, `--tree-heading-font`, `--tree-badge-font`, `--button-font`), and the
+       slide scale in `slide.css`. No rule carries its own px value. A theme rescales the UI by
+       overriding the steps and those tokens together. A text takes its step by its role: the main
+       words of a row, a paragraph or a card `--fs-md`, secondary words (a detail, a date, a
+       caption, a control's words) `--fs-sm`, a label, a badge or an uppercase heading `--fs-xs`, a
+       page or document title `--fs-xl` and above. Every focus ring is `1px solid var(--accent)` at
+       an offset of -1 px, or 1 px for plain words with no box, and a link has no underline at
+       rest. */
     --fs-xs: calc(11px * var(--text-scale, 1));
     --fs-sm: calc(12px * var(--text-scale, 1));
     --fs-md: calc(13px * var(--text-scale, 1));

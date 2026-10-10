@@ -5,7 +5,12 @@
 import { browserRoots, repositoryRoots } from '$lib/server/files/roots';
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
 import { handleTerminal, handleTerminalList } from '$lib/server/machine/pty/routes';
-import { datasetIds, ownerName, project, sessionRecord } from '$lib/server/sessions/stores/hooks';
+import {
+    datasetIds,
+    ownerName,
+    projectOrSide,
+    sessionRecord
+} from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request }) => handleTerminalList(request);
@@ -23,7 +28,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
                 engine: server.engine,
                 local: server.local
             }),
-        projectFor: (id) => project(server.hub, id),
+        projectFor: (id) => projectOrSide(server.hub, id),
         ownerFor: () => ownerName(server.hub),
         // The one read `locals.config` keeps for the request, for the actions that read the config
         // at the request: the chat launcher, the LaTeX words, the hub task seeds and the glyph

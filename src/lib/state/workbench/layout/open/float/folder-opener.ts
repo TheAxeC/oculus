@@ -9,13 +9,14 @@
 // Each tab starts limited to the folder in the state its view reads: Files is rooted at it (`top`),
 // Search is under it (`under`), Problems is scoped to its root and path (`scope` and `under`),
 // Repositories and the sessions list hold it as `folder` (limit.ts), and LaTeX points at it in the
-// folder-only shape `{ root, path, label }` that names the folder's first main file. A tab of a
-// view that is not listed here starts as the arrangement gives it.
+// folder-only shape `{ root, path }` that names the folder's first main file. Files and LaTeX carry
+// no folder name, so their tabs read Files and LaTeX. A tab of a view that is not listed here
+// starts as the arrangement gives it.
 
 import { fields } from '../../../../../data/helpers/guards.ts';
-import { nameOf } from '../../../../../data/helpers/files/paths.ts';
 import { parseArrangement } from '../../../navigation/arrangement.ts';
 import {
+    folderName,
     markDocuments,
     restate,
     tabsOf,
@@ -55,18 +56,12 @@ export type FolderPages = {
     served: (root: string) => boolean;
 };
 
-/** The words of a folder: the last name of its path, and the root's key for the root itself. */
-function folderName(folder: FolderRef): string {
-    return folder.path === '' ? folder.root : nameOf(folder.path);
-}
-
 /** What each view of the left pane starts with, given the folder. */
 function startOf(view: string, folder: FolderRef): Start {
-    const name = folderName(folder);
     switch (view) {
         case 'files':
             return {
-                layout: { root: folder.root, path: folder.path, label: name },
+                layout: { root: folder.root, path: folder.path },
                 ui: rootedState(undefined, folder)
             };
         case 'search':
@@ -77,7 +72,7 @@ function startOf(view: string, folder: FolderRef): Start {
         case 'session-list':
             return { ui: withLimit(undefined, folder) };
         case 'latex':
-            return { layout: { root: folder.root, path: folder.path, label: name } };
+            return { layout: { root: folder.root, path: folder.path } };
         default:
             return {};
     }

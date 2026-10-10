@@ -17,7 +17,7 @@
 // (FloatWindow.svelte). The app's windows are the host's (desktop-windows.svelte.ts), and nothing
 // is done there.
 
-import type { ClientState } from '../state/client/context.ts';
+import type { ClientState } from '../../state/client/context.ts';
 
 /**
  * How long a page takes to load and take its float's lock: a main page waits this long for a

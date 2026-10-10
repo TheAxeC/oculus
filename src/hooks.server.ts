@@ -66,11 +66,12 @@ function refused(event: RequestEvent): boolean {
 //
 // The configuration is read only by a request that asks for it, through `locals.config`, which the
 // page's title and its load function share: the first call of a request reads it and the rest of
-// the request keeps that read, so one request sees one configuration, and a request to an API
-// route that never asks reads nothing. The read itself is the server context's `configCache`
-// (lib/server/root/process/config-cache.ts), which parses the config folder again only when a
-// file of it was added, removed or written, because a parse holds the one event loop the socket's
-// upgrade waits on and a page that boots makes several requests at once.
+// the request keeps that read, so one request sees one configuration, and a request to an API route
+// that never asks reads nothing. The read itself is the server context's `configCache`
+// (lib/server/root/process/config-cache.ts), which parses the configuration again only when a file
+// of the engine's config folder or of the hub's `.oculus/config/` folder was added, removed or
+// written, because a parse holds the one event loop the socket's upgrade waits on and a page that
+// boots makes several requests at once.
 //
 // The page's answer carries `Content-Security-Policy: frame-src 'self'`, which holds the frame of
 // an app, whose files are served from /apps/ outside the guard, to the addresses of this origin.

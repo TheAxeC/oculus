@@ -1,19 +1,20 @@
 // Layer 2, client state. A tab in a window of its own, in a browser: the float the tab becomes and
 // the page that draws it. In the desktop app the main window's page asks the host for a window per
-// float placed in one (shell/desktop-windows.svelte.ts); in a browser the same float is drawn by a
-// second page of the server at `/?float=<id>`, which is a browser tab the reader's press opens.
-// That has to happen inside the press, since a browser opens a window a script asks for outside a
-// user's gesture only when its pop-up blocker allows it, so the opening is here, with the layout
-// change, rather than in an effect that reacts to it.
+// float placed in one (shell/window/desktop-windows.svelte.ts); in a browser the same float is
+// drawn by a second page of the server at `/?float=<id>`, which is a browser tab the reader's press
+// opens. That has to happen inside the press, since a browser opens a window a script asks for
+// outside a user's gesture only when its pop-up blocker allows it, so the opening is here, with the
+// layout change, rather than in an effect that reacts to it.
 //
 // The two pages find each other through the saved arrangement they share: the float is in the saved
-// floats with a window place, the page at its address draws it, and shell/browser-windows.svelte.ts
-// keeps both ends honest (the page closes itself when the float leaves its window place, and the
-// main page takes the float's tabs back when no page draws it). Several main pages may share one
-// arrangement, so the address also names the main page that opened the window (`owner`), which is
-// what a message from the float to its main page is addressed to. A main page's id is the browser
-// tab's (`browserTabId` of layout/saved/storage.ts), which a reload keeps; a page whose session
-// storage cannot be used makes an id for itself, which a reload loses.
+// floats with a window place, the page at its address draws it, and
+// shell/window/browser-windows.svelte.ts keeps both ends honest (the page closes itself when the
+// float leaves its window place, and the main page takes the float's tabs back when no page draws
+// it). Several main pages may share one arrangement, so the address also names the main page that
+// opened the window (`owner`), which is what a message from the float to its main page is addressed
+// to. A main page's id is the browser tab's (`browserTabId` of layout/saved/storage.ts), which a
+// reload keeps; a page whose session storage cannot be used makes an id for itself, which a reload
+// loses.
 
 import type { Float } from '../../model.ts';
 import type { FloatOps, WindowBounds } from './store.ts';

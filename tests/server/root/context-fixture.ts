@@ -148,7 +148,12 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         engine,
         configCache:
             overrides.configCache ??
-            createConfigCache({ engine, load: () => loadConfig(engine), report: () => undefined }),
+            createConfigCache({
+                engine,
+                hub: () => local.hub,
+                load: () => loadConfig(engine, { hub: local.hub }),
+                report: () => undefined
+            }),
         fsWrites: overrides.fsWrites ?? fsWrites(),
         opsWrites: overrides.opsWrites ?? fsWrites(),
         gitRunning: overrides.gitRunning ?? createRunningGit(),
