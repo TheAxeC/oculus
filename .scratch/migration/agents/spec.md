@@ -39,6 +39,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 
 ## What every package obeys
 
+- No migration code: no code reads, carries, converts or tolerates an older form of stored data (a saved layout, a manifest, a config file, an id, any file oculus writes). A change of shape is made once on the data itself by the orchestrator, or the old data is left to show as unknown or as a finding. A brief, a ruling or a review that asks for such code is overruled by this rule.
 - No history in code or comments: a comment says what the code does and why, never which package, session, date, earlier bug or reverted attempt it came from. A comment naming a package id (O17, Q14, D19c) or a date is a defect. This holds for test titles too, and covers wording that compares with an earlier state: 'before', 'used to', 'no longer', 'still', 'always has been', 'always had', 'as before', 'previously', 'the step adds', 'after this package lands'. Before you report, grep the comment lines and test titles you added or changed for these words, and the report quotes the grep with each hit judged.
 - A comment edited by the step is rewrapped as a whole paragraph at 100 columns, so no line inside a sentence ends short.
 
