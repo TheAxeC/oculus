@@ -2,7 +2,7 @@ In flight (1 of 6 slots in use):
 - D62 (apps: the host and the bridge): builder running, resumed after its cases ruling (`agents/briefs/D62-cases.md`).
 
 Queued, in order (5 steps):
-- D65 (one kind of project): after D60, beside D62; /spec next (open item 47).
+- D65 (one kind of project): stopped at /spec, waiting for Axel's ruling on open item 48.
 - D63 (apps in the shell): after D62.
 - D64 (apps in the tools): after D63.
 - Q72 (the architecture re-read): waits for D60 to D64, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
