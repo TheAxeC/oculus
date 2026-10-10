@@ -238,3 +238,150 @@ Cases:
 - The report's assertion table gives "12 tests" for the base `undo.test.ts`. The base file has 11 `it(` calls, and its runs expand to 19 through `.each`. No decision rests on that count.
 
 Reviewer usage: a1856be287746a96e, claude-opus-5-5, 196,464 tokens, 159 tool uses, 35.7 min.
+
+## Repair round 1, refuted
+
+Not closed by this round: item 3 for manifest writes of a second-hub project, item 4 for the registry cards of a second hub, item 6 for the page's naming of the file a second-hub entry write changes, item 12 for `docs/apps.md`, and the two hub-secrets tests that go red on a case-sensitive file system. Each is a finding below. The rest of the round holds, and every run of the round brief passes.
+
+```
+# Round brief: "npm run diagrams && npm run test:quick". I did not run npm run diagrams, because main() writes files whatever the state. I ran the read-only staleness check in its place:
+node -e "import('./utils/diagrams/diagrams.mjs').then(async m => {... m.staleFiles(process.cwd()) ...})"
+stale diagram files: []
+
+# npm run test:quick, run 1 (load average 2.72 / 3.21 / 3.93 before, 4.20 after)
+ok ASCII gate (1.4 s)
+ok prettier (2.7 s)
+ok svelte-kit sync (7.7 s)
+ok eslint (17.0 s)
+ok svelte-check (22.7 s): ... 455 FILES 0 ERRORS 0 WARNINGS
+ok vitest (47.5 s): Duration 39.54s (transform 73.78s, setup 0ms, import 92.08s, tests 57.37s)
+test:quick: 48.6 s (limit 45.0 s)
+every command passed
+test:quick: over the time limit
+
+# npm run test:quick, run 2
+176 changed file(s), from git since HEAD; 128 test file(s), 10 essential
+ok vitest (28.6 s): Duration 25.03s (transform 24.15s ... tests 54.54s)
+test:quick: 29.1 s (limit 45.0 s)
+every command passed
+
+# Each changed test file in the quick set, alone, --tagsFilter '!slow'
+hub-portfolio 0 run, 9 skipped | hub-roots 6 tests 27 ms | career 2 tests 13 ms | hub-secrets 8 tests 421 ms | app-store 11 tests 2593 ms | undo 19 run, 1 skipped, 3787 ms (the new undo test about 195 ms)
+
+# Brief verify item 2
+npx vitest run tests/server/edit tests/routes/edit tests/server/core/changes.test.ts tests/server/files tests/data tests/checks/config tests/checks/tree tests/checks/imports tests/checks/source --testTimeout 300000
+Test Files 66 passed (66); Tests 575 passed | 1 skipped (576)
+
+# Round brief's last run
+npx vitest run tests/routes/hubs tests/data/hubs tests/server/git/deposit.test.ts tests/routes/edit/undo --testTimeout 300000
+Test Files 6 passed (6); Tests 67 passed (67)
+
+# The report's base copy, $TMPDIR/d55base1/tools/oculus (src and config: diff -rq against D55-base prints nothing; hub test files cmp-identical to the worktree's)
+npx vitest run tests/data/hubs tests/routes/hubs
+Tests 34 failed | 11 passed (45)
+(the G8 lead test and both LinkedIn tests pass there; the R1 tests fail)
+
+# The report's case script, changed tree
+node $TMPDIR/d55/round1-cases.ts
+personInSecondHubFile: "chen-graph"; fileHasLabPrefix: false; secretsFilesListed: []; folds [["hub",true],["lab",true]]; openedAs {root: lab, path: registries/people.yml}
+# Same script, D55_ENG=$TMPDIR/d55base1/...
+stopped by roots.hubTargets is not a function; secretsFilesListed: ["Secrets/x.yml"]; folds null; R1-8 "Cannot read properties of undefined (reading 'file')"
+
+# Brief verify item 6
+sh utils/folder-check.sh                     -> exit 0
+sh utils/unused-exports.sh                   -> 365 lines; diff against the base list shows only the moved normalise-parts/personal.ts lines and Entities dropped; nothing added
+wc -l                                        -> deposit.ts 880/880, state/client/context.ts 879, server/root/context.ts 871, yaml-edit.ts 868, EntryCard.svelte 518/520, ProjectCard.svelte 509; none over
+
+# ASCII gate (perl form over src tests config): no output, exit 0. Added doc lines: no non-ASCII.
+# Comment width: no added line over 100 columns (only existing eslint-disable lines).
+# History-word grep over added comments and test titles: hits are "before" for operation order and "new" in 'new-entry'; none records history.
+
+# Reviewer probes, $TMPDIR copies of demo/, HOME=$TMPDIR/d55home
+npx tsx scratchpad/manifest-ref.ts
+project lab:streaming-anomaly collaborators in the snapshot ["lab:rivera-lab"]
+write 200 {"ok":true,"changed":["collaborators"],"refused":[]}
+second hub manifest collaborators lines: collaborators: [lab:rivera-lab]
+
+npx tsx scratchpad/wf.ts   (writtenFile for the bodies the views send)
+{"kind":"entry","collection":"tasks","id":"lab:Review the draft",...}          -> {"root":"hub","path":"tasks/tasks.yml"}
+{"kind":"delete-entry","collection":"tasks","id":"lab:Review the draft"}       -> {"root":"hub","path":"tasks/tasks.yml"}
+{"kind":"subtask","target":{"collection":"tasks","id":"lab:Review the draft"}} -> {"root":"hub","path":"tasks/tasks.yml"}
+{"kind":"reorder","collection":"tasks","order":["lab:a","lab:b"]}              -> {"root":"hub","path":"tasks/tasks.yml"}
+{"kind":"entry","collection":"lab:tasks","id":"Review the draft","fields":{}}  -> {"root":"lab","path":"tasks/tasks.yml"}
+
+# test -e for config/local.yml in the worktree, D55-base, $TMPDIR/d55basetree and $TMPDIR/d55base1: absent in all four. test -e for a secrets folder in any letter case under $TMPDIR/d55basetree: absent.
+```
+
+### Verdicts
+
+Items of "What to build":
+
+- 1: holds. hub-roots tests (6), the case 4 to 6d lines, and the undo of a removed hub root.
+- 2: holds. Case 7 and 19a.
+- 3: violated. Entry references of a second hub are prefixed now (`merge.ts` `collectionOf` through `throughSchema`; R1-1 rerun gives `chen-graph` in the file, `lab:` in the snapshot), and feed ids are scanned. Manifest writes of a second-hub project write the prefix into the hub's file, and the editor offers ids of every hub (finding 1).
+- 4: violated in part. VenueCard now passes the venue's root (round item 2 closed). The registry cards of a second hub get no entry, so they draw no Edit in File and no deadline (finding 3).
+- 5: holds. Case 15, 16 and 21.
+- 6: violated. Server routing holds (hub-writes tests, 19b). The page's `writtenFile` names the first hub's file for every entry, delete, subtask and reorder write of a second-hub entry (finding 2), and the manifest write path keeps prefixes (finding 1).
+- 7: holds for the code. Tasks.svelte and CommandCenterView.svelte draw the chip through RootChip (round item 6 closed). The look is checked at landing.
+- 8: holds. All six `privateFolders(` callers pass every hub; `isPrivateFile` lower-cases when `folds` is true; `namesPlans` resolves native case. Proof finding 4 is about the tests of it.
+- 9: holds. Case 14 and 19f.
+- 10: holds. The undo test and cases 11, 12, 12a.
+- 11: holds. Case 19.
+- 12: violated. `docs/apps.md` is not updated for app-visible shapes the step changes (finding 5).
+- 13: holds. Each named G row has its tests; finding 4 is on two of them.
+
+Cases:
+
+- 1, 2: met (as in the first review; hub-portfolio tests pass).
+- 3: met for the read side. The manifest write side is finding 1.
+- 4, 5, 6, 6a, 6b: met.
+- 6c: met, feed items included (round item 3; the G32 lead test passes).
+- 6d: met.
+- 7 to 12, 12a: met.
+- 13: met on macOS (R1-4 rerun gives `secretsFilesListed: []`, hub-secrets tests pass). On a case-sensitive file system two tests fail at a precondition (finding 4).
+- 14: met.
+- 15: met (feed ids and `root` on feed-field, feed-delete and linkedin-post; hub-writes tests).
+- 16, 17, 18, 19, 19a, 19b: met.
+- 19c: partial. The deck base is met. The unsaved-tab refusal names `hub/tasks/tasks.yml` for an entry write of a second-hub task (finding 2).
+- 19d: met for the snapshot and the undo; the tab's not-found state needs a page run.
+- 19e, 19f, 19g: met.
+- 19h: met for the tone; the drawing is checked at landing.
+- 20, 21: met.
+
+### Findings
+
+1. Spec and behaviour. `src/lib/server/edit/writes/manifest.ts:395` `export function writeManifest(` strips no hub prefix, while `entries.ts:228` does: `const fields = hubKey === undefined ? given : hubOwnValues(held.schema, given, hubKey);`. What is wrong: Editor.svelte fills the form through `fieldValues` (state/forms/schema.ts) from the merged, prefixed snapshot (`venue_id`, `collaborators`, `waiting-on`, `pillar`, `funding`, `related`, `datasets`, `compute`) and posts the changed fields to `writeManifest`. Round item 1 requires that a second hub's file keep its own ids. In addition, `choicesFor` and `entityChoices` offer the ids of every hub. A first-hub project can be given `lab:x`, which the page then resolves to the second hub's record. A second-hub project can be given a bare first-hub id, which then resolves to that hub's own record of the same id. HELP.md's "the people, venues, projects and other records its entries name are that hub's own" and DESIGN.md's "never crosses hubs" are false for manifests. Failure scenario: the reviewer probe above. Editing collaborators on `lab:streaming-anomaly` writes `collaborators: [lab:rivera-lab]` into the second hub's `project.yml`. Opened as a hub of its own, that file names a person that does not exist. Verdict: items 3 and 6 violated.
+
+2. Behaviour, and proof against the report's item-8 table. `src/lib/state/sessions/source/write-files.ts:95-96`: `const collection = (name: unknown): ViewSource | null => look.collectionFile(text(name)) ?? viewSourceFile('collection', merged, text(name));`. What is wrong: `look.collectionFile` (state/client/context.ts) answers only for a collection id whose root is not `hub`, such as `lab:tasks`. The views send the bare key: Collection.svelte:344 `collection={key}`, InPlace.svelte:66, EntryCard:259/264, Collection:252 `reorderEntries(key, moved)`, focus/rows.ts:347/351. So every entry, delete-entry, subtask and reorder write of a second-hub entry is named as the first hub's file (probe above). The report's table says `look.collectionFile` gives the record's hub for a collection entry, and for these bodies that claim is false. The view-level checks (EntryCard, Subtasks, Focus rows, Collection writeOrder) pass `part.file` and so check the right file. The store's guard (`writes.svelte.ts:562` `fileOf` and `unsavedRefusal`) does not. Failure scenario: with unsaved text in a tab of the first hub's `tasks/tasks.yml`, a status change on a second-hub task is refused as a write over unsaved text. With unsaved text in the second hub's `tasks/tasks.yml`, the same write is let through the store's guard. Verdict: item 6 violated, case 19c partial.
+
+3. Spec, and proof against round item 8. `src/lib/views/shared/forms/registry/registry-file.svelte.ts:59` `entryOf: (id) => entryById(collection, id),` with `const collection = $derived(collectionOf(key));` (:42), which is the first hub's registry. Callers: Venues.svelte:140, :179, Data.svelte:126, Pillars.svelte:93, :122, :152 pass `entry={file.entryOf(<id>)}`. What is wrong: for a second-hub id (`lab:x`) the entry is null. VenueCard then skips `if (entry !== null && schema !== undefined)` (:97) and `{#if entry?.fields.deadline !== undefined}` (:239), so it draws no Edit in File and no deadline in place. The report's row says "the card of a second-hub venue, dataset, domain or pillar opens its own file from its own card controls (VenueCard, DatasetCard, RegistryCard)". Reading the code refutes that. Failure scenario: a venue held only by the second hub shows no edit control and no deadline, while the same venue in the first hub shows both. Verdict: item 4 violated in part.
+
+4. Proof. `tests/routes/hubs/hub-secrets.test.ts:118` `expect(existsSync(join(lab, 'SECRETS', 's.yml'))).toBe(true);` and `:192` `expect(existsSync(join(lab, 'secrets', 'x.yml'))).toBe(true);`. What is wrong: each precondition holds only where the file system folds case. The file is not tagged slow, so it runs in `npm test` and the quick tier. The ruling "Remote and group dropped" and O33's Lima Ubuntu run put Linux among the supported hosts. Failure scenario: on Linux, both tests fail at the precondition, so `npm test` goes red there, and they check nothing about the case-sensitive behaviour. The fitting forms are a skip on `foldsCase`, or an assertion of what the case-sensitive file system should give. Verdict: item 13 holds, with this defect in its proof. Case 13 is met on macOS only.
+
+5. Standards (brief item 12, every sentence the change makes false). `docs/apps.md:273`: "`id` is the entry's `key` when it has one and its `title` otherwise." That sentence is false for a second-hub entry, whose id is `lab:<key>`. `docs/apps.md:425-430` gives `feed-field` as `{ kind, feed, id, field, value }`, `feed-delete` as `{ kind, feed, id }` and `linkedin-post` as `{ kind, file }`, and none of them names the `root?` the step adds in `bodies.ts`. The `portfolio` channel tables (:232-276, people at :244) name neither the `root` the step adds on every entity and audit finding, nor `Person.file`, nor `hubFiles` on the feeds payload. Only :524 is changed by the step. Failure scenario: an app author reading apps.md posts a feed-field write for a second-hub lead without `root`. The write goes to the first hub, which holds no such id, and is refused. Verdict: item 12 violated.
+
+6. Standards (round brief opening paragraph: "no copy of the real hub's folders is made"). The report's line 35 says the earlier base runs used `$TMPDIR/d55basetree` "with the hub data beside it". That folder holds copies of the real hub's applications, deck, docs, education, feeds, funding, network, projects, registries, side-projects and tasks. Its top level was last modified at 02:32 and 04:51, before the round. The command that made it is not given, and the copy is still on disk. No `local.yml` exists there, and loadLocal's default hub is `resolve(engine,'..','..')`, so a run on that tree reads the copy of the real data as its hub. `test -e` finds no secrets folder in it in any letter case. The round's own scripts copy `ENG/demo` only (`world()`). Failure scenario: base numbers in the report's earlier sections come from real data, not from the demo the brief names, and the copy of private data stays under `$TMPDIR`. Verdict: no item; the orchestrator decides whether to remove the copy.
+
+### Declined to judge
+
+- `root` on feed-field and feed-delete: round brief item 3 names it, but no plan.md ruling books it (Z765 (b) names linkedin-post only), and it sits on a public app write kind. Whether it needs a ruling is the orchestrator's call.
+- `folds` on the workspaces answer: round item 4 allows it. The key name is the builder's and is listed under Judgment calls. `/api/fs` is not an app channel.
+- `Person.file`: named in no brief or ruling, it sits on the `portfolio` channel apps read, and it is listed under Judgment calls. Whether it needs a ruling is the orchestrator's call. Its doc gap is part of finding 5.
+- `FeedItem` changes: an internal data type, on no wire. Not judged as a shape.
+- Not checked: whether a collection view is registered for a key that only a second hub holds.
+- The remaining `HUB_ROOT` uses in page code (card.ts urlOf and openDocument defaults, EntryLink, FolderFiles, post-card, Settings.svelte, Doc.svelte:149/155; 55 lines by grep): the step does not change Doc.svelte (`git diff ecbc37a0c --stat` of views/sources/doc is empty), Settings is the first hub's by design, and no second-hub path through the others was found. They were not judged as findings.
+- The chips, tooltips and neutral tones, and the tab's not-found state (19d): these need a page run, which this review may not start. They are left to the landing look.
+- The test:quick run over its limit (48.6 s) came with a cold transform cache (transform 73.8 s against 24.2 s on the 29.1 s run) and machine load. The step's added tests add well under 1 s (the per-file times above). This finding of cause comes from those runs. No run with a warm cache and an idle machine was made to settle it further.
+
+Answers to the task's nine points:
+1. Prefixing rule: a `select` value and a `tags` item are prefixed even when the hub does not resolve them (`hub-portfolio` "prefixes a value its hub cannot resolve too": `ghost` becomes `lab:ghost` and the finding stays). A free `text` value is prefixed only when the hub holds that record (`merge.ts` `reach`). The two rules are consistent with round item 1. An unresolved value shows as the raw `lab:ghost`, since `personName` falls back to the key. The entry write strips the prefix (R1-1: the file holds `chen-graph`). The manifest write does not (finding 1).
+2. New wire shapes: `root?` on feed-field, feed-delete and linkedin-post; `folds` on the workspaces answer; `Person.file`, `hubFiles` and `root` on entities and findings on the portfolio channel. See Declined and finding 5.
+3. test:quick: 48.6 s and then 29.1 s, every command passing both times. The added tests are not the cause (see Declined).
+4. Tests that pass on the unchanged tree: the G8 lead test and the LinkedIn absent-root test cover behaviour the step keeps from the one-hub base. Their base and after runs are reproduced above. The round-start tree was not kept, which the report's first line states. The other round tests fail on the base for want of the hub machinery, with the failure lines quoted.
+5. Relay test on a case-sensitive file system: finding 4.
+6. File-opening calls: every record call passes its root. Linkedin.svelte:126 (a new idea, always the first hub) and posting.ts:15 (http only) need none. The collection and registry pane toolbars open the first hub's file, which fits item 6, since a new entry goes to the first hub. The registry cards are finding 3.
+7. isPrivateFile: the server says whether the file system folds case (`foldsCase`, `folds: true`) and the page lower-cases. All six callers pass every hub: library/rules.ts withheldFolders, machine-file.ts, writing/folder.ts, search-routes.ts:70, fs/ops.ts:744, config-files.ts:39.
+8. Base runs and copies of the real hub: the round's base runs use a demo copy (`d55base1` holds only `tools`). The earlier copy of real data remains (finding 6).
+9. Non-ASCII, history words, size limits and prose: clean (runs above).
+
+Reviewer usage: aa068552ee5aa1c92, claude-opus-5-5, 91,605 tokens, 149 tool uses, 23.9 min (from the completion notice; the reviewer counts about 450,000 tokens across its own compaction).

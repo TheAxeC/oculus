@@ -22,7 +22,7 @@
     // documents out of the snapshot, so state/system/docs.svelte.ts asks api/docs for this path and
     // the shared Markdown partial draws what comes back. A figure beside the document is addressed
     // under the hub root by the server, so it is drawn through the file route. A document of
-    // oculus's own (DESIGN.md, a guide) comes back with its diagrams cut out as parts of their own,
+    // oculus's own that holds a diagram comes back with its diagrams cut out as parts of their own,
     // and the view draws each from the diagram route in the page's text colour between the runs of
     // prose. A press on a relative link to another Markdown file opens that document as a tab
     // (shared/prose/jump.ts), and the heading a link names is in the tab's state as `fragment`,

@@ -90,7 +90,7 @@ arrangements:
   present:
     root: { kind: pane, view: present }
   help:
-    root: { kind: pane, view: [help, { view: doc, state: { id: tools/oculus/docs/apps.md, path: tools/oculus/docs/apps.md, label: "Apps guide" } }, { view: doc, state: { id: tools/oculus/docs/configuration.md, path: tools/oculus/docs/configuration.md, label: "Configuration guide" } }, { view: doc, state: { id: tools/oculus/docs/source-control.md, path: tools/oculus/docs/source-control.md, label: "Source Control guide" } }, { view: doc, state: { id: tools/oculus/docs/window.md, path: tools/oculus/docs/window.md, label: "Window guide" } }, { view: doc, state: { id: tools/oculus/docs/views.md, path: tools/oculus/docs/views.md, label: "Views guide" } }, { view: doc, state: { id: tools/oculus/docs/files-and-search.md, path: tools/oculus/docs/files-and-search.md, label: "Files and search guide" } }, { view: doc, state: { id: tools/oculus/docs/terminals.md, path: tools/oculus/docs/terminals.md, label: "Terminals and commands guide" } }, { view: doc, state: { id: tools/oculus/docs/debugging.md, path: tools/oculus/docs/debugging.md, label: "Debugging guide" } }, memories] }
+    root: { kind: pane, view: [help, { view: doc, state: { id: tools/oculus/docs/apps.md, path: tools/oculus/docs/apps.md, label: "Apps guide" } }, memories] }
   views:
     root:
       kind: split

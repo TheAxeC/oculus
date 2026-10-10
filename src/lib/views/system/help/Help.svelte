@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Help opens the Help page's group, and is the first tab of that
-    // page's one pane, beside the hub's documents and the guides.
+    // page's one pane, beside the hub's documents and the Apps guide.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -20,13 +20,14 @@
     // api/docs, the one route that turns Markdown into HTML, which serves that one path of the
     // engine directory and nothing else around it.
     //
-    // The manual holds no diagram: the diagrams of docs/diagrams/ are drawn by the doc view over
-    // DESIGN.md and the guides. A press on a relative link to another Markdown file opens that
-    // document in a doc tab (shared/prose/jump.ts), and a press on a link into the manual from a
-    // guide opens this view with the heading the link names in its state, which the view scrolls to
-    // once the manual is drawn and then removes from the state. The prose is drawn straight into
-    // the box, so over a wallpaper the box asks for the tint and is the one surface the manual is
-    // read off.
+    // The manual holds no diagram. The doc view draws a diagram of docs/diagrams/ only over a
+    // document of the `docs:` list (the hub's layer, .oculus/config/layout.yml, sets it) that lies
+    // inside the engine folder; DESIGN.md is not listed and the Apps guide holds none. A press on a
+    // relative link to another Markdown file opens that document in a doc tab
+    // (shared/prose/jump.ts), and a press on a link into the manual from another document opens
+    // this view with the heading the link names in its state, which the view scrolls to once the
+    // manual is drawn and then removes from the state. The prose is drawn straight into the box, so
+    // over a wallpaper the box asks for the tint and is the one surface the manual is read off.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { withoutFragment } from '../../shared/prose/doc-link';

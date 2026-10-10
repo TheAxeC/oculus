@@ -1,8 +1,8 @@
-// Layer 4, tree check. The config folder oculus ships, read the way the server reads it: which
-// keys sit in which file, that no key is defined in two, that every file carries the one line the
-// Settings view and the Configuration guide show, and that the glyphs, the icons and the catalogue
-// groups the files name resolve. The machine's own local.yml is left out of every list here, since
-// a checkout has one or it has none and neither may change a result.
+// Layer 4, tree check. The config folder oculus ships, read the way the server reads it: which keys
+// sit in which file, that no key is defined in two, that every file carries a description line, the
+// one the Settings view shows, and that the glyphs, the icons and the catalogue groups the files
+// name resolve. The machine's own local.yml is left out of every list here, since a checkout has
+// one or it has none and neither may change a result.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

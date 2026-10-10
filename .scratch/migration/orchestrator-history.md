@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z766 (2026-10-10): D49's look found the Help page's Apps guide tab refused on a hub that does not list the guide, as on the base; closed in automode (`choices.md`, `plan.md` Rulings): step D58 added, the guide named by its engine path and served as the manual is.
 - Z765 (2026-10-10): D55's brief check closed in automode (`choices.md`, `plan.md` Rulings, `agents/briefs/D55.md`): `root` on audit findings and on the LinkedIn posted write, an app's write to a second hub refused, a second hub's uncoloured word drawn neutral, `hub: true` on the workspaces answer's hub roots.
 - Z764 (2026-10-10): D49's brief check closed in automode (`choices.md`, `plan.md` Rulings): the standing spec's sentence on HELP.md and the guides follows Axel's ruling (8), changed in D49's preparation commit.
 - Z763 (2026-10-10): D56's review closed in automode (`choices.md`, `agents/briefs/D56-round1.md`): Reset all pages leaves workbenches and their held unique views alone and builds the rail page without them, DESIGN.md naming the exception; the review's findings ruled and sent as D56's repair round 1.

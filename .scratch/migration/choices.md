@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z766 (2026-10-10, step D49's landing, the orchestrator, automode): the Apps guide on every hub
+
+- Chosen: a new step, D58, after D49 and D55 and before Q72: the Help page's Apps guide tab and the manual's link to the guide name it by its path in the engine and are served as the manual is, so the guide opens on any hub.
+- Not chosen: listing the guide in the engine's `docs:` (the hub's layer replaces that key whole, and the path still resolves against the hub); leaving it, so the guide opens only on this hub (the lazy option).
+
+Where it applies: D58, Q72. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z765 (2026-10-10, step D55, the orchestrator, automode): the internal shapes of a second hub
 
 - Chosen: an audit finding of a second hub carries `root`, opened under it by the Audit view; the LinkedIn posted write carries `root`; an app's write naming a second hub's record is refused as an unknown record; a second hub's word with no colour in the first hub's vocabulary is drawn neutral; the workspaces answer marks each hub root with `hub: true` so the page withholds every hub's `secrets`.

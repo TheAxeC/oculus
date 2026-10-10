@@ -27,11 +27,12 @@
 // again after every write that may concern a document, which on a busy hub is every few seconds,
 // so the stat is what keeps a re-read of an unchanged file from rendering it again.
 //
-// A document of oculus's own (HELP.md, DESIGN.md, a guide under docs/: a file whose real path lies
-// inside the engine's real folder) draws a diagram of `docs/diagrams/` as a part of its own beside
-// its runs of prose, so the page can draw it in the page's text colour; the answer carries those
-// parts only when the document holds a diagram. A document's answer names its own path and the
-// manual's, relative to the hub, which the page resolves a relative link to another document from.
+// A document of oculus's own (HELP.md, DESIGN.md, the Apps guide under docs/: a file whose real
+// path lies inside the engine's real folder) draws a diagram of `docs/diagrams/` as a part of its
+// own beside its runs of prose, so the page can draw it in the page's text colour; the answer
+// carries those parts only when the document holds a diagram. A document's answer names its own
+// path and the manual's, relative to the hub, which the page resolves a relative link to another
+// document from.
 //
 // The HTML is rendered here and filtered on the page: ui/html.ts's sanitise runs over every body
 // this route answers with, before views/shared/prose/Markdown.svelte draws it. One filter, at the

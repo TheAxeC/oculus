@@ -1,10 +1,10 @@
 // Source audit. A comment says what the code does and why, never when it was written, which package
 // or session wrote it, what bug came before it or what was reverted, and a document says what the
 // tool is and does. Every comment line under src, tests, utils and config, every line of a text
-// file there, and every line of the documents (HELP.md, DESIGN.md, README.md and each guide under
-// docs/) is read and matched against the migration plan's id vocabulary, a date and the session
-// phrases below; every hit is printed with its file and line, so a failure names the lines to
-// rewrite rather than only the count of them.
+// file there, and every line of the documents (HELP.md, DESIGN.md, README.md and the Apps guide,
+// docs/apps.md) is read and matched against the migration plan's id vocabulary, a date and the
+// session phrases below; every hit is printed with its file and line, so a failure names the lines
+// to rewrite rather than only the count of them.
 //
 // This file holds the vocabulary it searches for, so it excludes itself by the marker below rather
 // than by its name: a rename keeps the audit working and keeps it from reporting its own data.
@@ -21,7 +21,7 @@ const ROOTS = ['src', 'tests', 'utils', 'config'];
 /** The documents, read whole: every line of one is prose a reader takes as the tool's present. */
 const DOCS = ['HELP.md', 'DESIGN.md', 'README.md'];
 
-/** The folder holding the guides, each a document read whole as well. */
+/** The folder holding the Apps guide and any other Markdown document, each read whole as well. */
 const GUIDES = 'docs';
 
 /** The one file the vocabulary may appear in is the one carrying this word. */
@@ -113,7 +113,7 @@ function commentHits(base = '.'): string[] {
     return found;
 }
 
-/** The documents of a tree: the three at its root and every Markdown guide under its `docs/`. */
+/** The documents of a tree: the three at its root and every Markdown file under its `docs/`. */
 function documentsOf(base: string): string[] {
     const folder = join(base, GUIDES);
     const guides = existsSync(folder)
@@ -150,9 +150,9 @@ describe('no history in code', () => {
 
     // The planted tree tells apart a code line read whole from one read only for its comment: the
     // trailing comments of src/trail.ts and utils/trail.sh are hits, while the url of src/url.ts
-    // and the code `const Q1` of src/quartile.ts are not (its block comment is a hit). A guide
+    // and the code `const Q1` of src/quartile.ts are not (its block comment is a hit). A document
     // under docs/ holding an id is a hit of the documents.
-    it('reads every line of a text file, every guide and every comment of code', () => {
+    it('reads every line of a text file, every document and every comment of code', () => {
         const dir = scratchDir('oculus-history-');
         const plant = (rel: string, body: string): void => {
             const full = join(dir, rel);

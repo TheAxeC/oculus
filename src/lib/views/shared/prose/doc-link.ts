@@ -1,6 +1,6 @@
 // Layer 3, shared view helper. A relative link to a Markdown file, read from the document it is
-// drawn in. Help and the doc view draw oculus's manual, its guides and the hub's documents, which
-// link to one another by relative address (`docs/configuration.md`, `../HELP.md#the-keys`), the
+// drawn in. Help and the doc view draw oculus's manual, the Apps guide and the hub's documents,
+// which link to one another by relative address (`docs/apps.md`, `../HELP.md#the-keys`), the
 // address a Markdown reader opening the file in place follows; the page resolves it against the
 // linking document's own folder, in the hub, and opens the file in a tab instead of leaving the
 // page.
