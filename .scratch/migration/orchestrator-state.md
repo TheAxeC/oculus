@@ -164,7 +164,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-None.
+- Open item 43 (2026-10-10, Axel's question before D62's /spec): should D62, D63 and D64 be one step. (a) One step D62 holding the whole inventory of the ruling Apps as capable as VS Code extensions; pro: one protocol designed against every consumer at once, one brief, one review, one landing; con: larger than D45 (194 files, +15225 -3344), and D45 and D23b (116 files) each left brief items unbuilt after their first build and their one repair round (Z694, Z696), so under one round and never a second more would be left for landing. (b) Three steps as ruled, with D62's brief designing the host and page protocol against every row D63 and D64 need, so neither has to change it; pro: each build is nearer the size that finished; con: three briefs, reviews and landings. Recommendation: (b). The lazy option: (a), the fewer briefs, reviews and landings, with more of the work left unbuilt by the builder.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
