@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 47 (2026-10-10, raised by Axel: personal projects' statuses wrong, and personal projects lacking a focus and most research keys after D48): one kind of project. Closed 2026-10-10 by Axel: A1, B1, C1, D, E, F running, G yes, H1, I1, J1 (`plan.md` Rulings, open item 47); one step, D65. D48's narrow key list was the orchestrator's recommendation of 2026-10-09, which left out `focus`, the status map and the keys a repository project uses.
 - Open item 42 (2026-10-10, D62's preparation, a step that does not converge): seven choices. Closed 2026-10-10 by Axel: no split, D62 one step; choices 1 to 5 and 7 each (a); no second repair round; a builder's work finished, never partial (`plan.md` Rulings, open item 42).
 - Open item 45 (2026-10-10, D62's preparation, a step that does not converge): five choices of managing apps. Closed 2026-10-10 by Axel: (1) (a), (2) (a), (3) (a), (4) (a), (5) (a) (`plan.md` Rulings, open item 45).
 - Open item 44 (2026-10-10, D62's preparation, a step that does not converge): six choices. Closed 2026-10-10 by Axel: (1) (a), (2) (b), (3) (a), (4) (b), (5) (a), (6) (a) (`plan.md` Rulings, open item 44).
