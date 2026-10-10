@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z768 (2026-10-10, step D58, the orchestrator, automode): how a tab and the docs route name a document of the engine
+
+- Chosen: a doc tab's state may carry `engine: true`, its `path` then relative to the engine folder and its id `engine:<path>`; `api/docs?engine=<path>` serves a Markdown file inside the engine's real folder; the manual's and an engine document's answers name paths relative to the engine, so links between them work wherever the engine sits; a saved tab at the guide's old hub path is restated; the Help page's tab names the guide this way, and this hub's `docs:` entry for the guide is removed so one file is one tab.
+- Not chosen: a view of its own for the guide with a fixed path, which serves one file and special-cases the manual's link; the server trying the engine folder when a hub path fails, which still breaks when the engine sits outside the hub (the lazy option).
+
+Where it applies: D58. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z767 (2026-10-10, step D55's landing, the orchestrator, automode): the hub fields an app sees on feed writes and people
 
 - Chosen: `root?` on the `feed-field` and `feed-delete` writes, as on the LinkedIn posted write, and `file?` (the absolute path of the people file) on a person of a hub other than the first, both kept and documented in `docs/apps.md` with the other hub fields; an app's write naming another `root` answers not found.

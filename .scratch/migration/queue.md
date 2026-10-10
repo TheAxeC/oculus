@@ -8,7 +8,7 @@ Queued, in order (3 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D55 (roots as hubs), 2026-10-10.
+- D55 (roots as hubs), 2026-10-10, 57de2c4bd.
 - D49 (the help pages cut), 2026-10-10, 2181e8152.
 - D56 (the workbench), 2026-10-10, 652f5104a.
 - R2 (the first-run check), 2026-10-10, 4664a5f21.

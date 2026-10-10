@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z768 (2026-10-10): D58's preparation found no shape for a document of the engine; closed in automode (`choices.md`, `plan.md` Rulings): a doc tab's `engine: true` with a path relative to the engine, `api/docs?engine=<path>`, answers naming engine paths, saved tabs restated, the hub's `docs:` entry for the guide removed.
 - Z767 (2026-10-10): D55's review over round 1 found `root?` on the `feed-field` and `feed-delete` writes and `file?` on a second hub's person, app-visible and named by no ruling; closed in automode (`choices.md`, `plan.md` Rulings): both kept and documented in `docs/apps.md`.
 - Z766 (2026-10-10): D49's look found the Help page's Apps guide tab refused on a hub that does not list the guide, as on the base; closed in automode (`choices.md`, `plan.md` Rulings): step D58 added, the guide named by its engine path and served as the manual is.
 - Z765 (2026-10-10): D55's brief check closed in automode (`choices.md`, `plan.md` Rulings, `agents/briefs/D55.md`): `root` on audit findings and on the LinkedIn posted write, an app's write to a second hub refused, a second hub's uncoloured word drawn neutral, `hub: true` on the workspaces answer's hub roots.
