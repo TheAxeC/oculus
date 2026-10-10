@@ -176,7 +176,7 @@ None.
 
 ## Closed items
 
-- 2026-10-10: Open item 51, the two choices of D65 rulings 47, 48 and 50 left open, ruled by Axel: (1) (a), the deck's `find:` gains `types:`; (2) (c), everything Focus shows of a project follows its `focus:` (plan.md Rulings, Open item 51).
+- 2026-10-10: Open item 51, the two choices of D65 rulings 47, 48 and 50 left open, ruled by Axel: (1) (a), the deck's `find:` gains `types:`; (2) (d), a project's deadline, follow-ups and subtasks always show, its lane card and waiting tallies follow its `focus:` (plan.md Rulings, Open item 51).
 - 2026-10-10: Open item 46, D62's fifteen choices, ruled by Axel: every choice as recommended (plan.md Rulings, Open item 46).
 - 2026-10-10: Open items 34 to 39 and the memories and wallpaper move, raised in D58's review and by Axel, ruled by Axel: no second round for D58, G74 and its two tests written at D58's landing; the Help page's hub documents, the config cache over `<hub>/.oculus/config/`, personal projects as research projects, Focus's collapsible sections, the workbench tab names and the memories and wallpaper move are one new step, D59 (plan.md Rulings, Open item 34 to Memories and wallpaper).
 - 2026-10-09: open item 31 ruled (c) by Axel: a kept machine app stays approved through any change but to `app.yml`, a pulled change included, `docs/apps.md` and the `apps_dir` help saying so at D50's landing. The move ruled by Axel: the five shareable files of `~/.oculus` are moved into `<hub>/.oculus/` once by the orchestrator with `mv` while his server is stopped, with no carry-over code; D50 lands without it and O33's rename moves `~/.oculus` the same way; Z751 (d), Z753 (f) and Z758 replaced (`plan.md` Rulings, "Open item 31" and "The move").
@@ -248,7 +248,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-10-10 (open item 51 ruled). Axel ruled open item 51: (1) (a), `types:` in the deck's `find:`; (2) (c), Focus by `focus:` alone (`plan.md` Rulings, Open item 51; D65 tagged (ruling 51)). In flight (1 of 6): D62. Next: /spec D65.
+- 2026-10-10 (open item 51 ruled). Axel ruled open item 51: (1) (a), `types:` in the deck's `find:`; (2) (d), a project's deadline, follow-ups and subtasks always on Focus, lane card and waiting tallies by `focus:` (`plan.md` Rulings, Open item 51; D65 tagged (ruling 51)). In flight (1 of 6): D62. Next: /spec D65.
 - 2026-10-10 (D65 stopped at /spec, second time). /spec D65 found two choices no ruling names (open item 51: the deck's `find:` by type, and paused or finished projects on Focus). No brief, worktree or dispatch entry. In flight (1 of 6): D62. Next: Axel's ruling on 51, then /spec D65.
 - 2026-10-10 (open item 50 ruled). Axel ruled 50 (a) folded into D65: D65 also removes the saved-layout migration code. Next: /spec D65.
 - 2026-10-10 (open item 48 ruled). Axel ruled open item 48: (1) (b), no code for the old ids and no change in his browser; (2) (a), `new_project_dir` per tier; and the standing rule that no step adds migration code (`plan.md` Rulings, `agents/spec.md`). Next: /spec D65 again.
