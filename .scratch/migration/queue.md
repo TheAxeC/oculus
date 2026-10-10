@@ -1,9 +1,10 @@
 In flight (1 of 6 slots in use):
-- D58 (the engine's guides on every hub): reviewed after repair round 1; landing waits on open items 34 and 36.
+- D58 (the engine's guides on every hub): landing, with G74 and its two tests written at landing.
 
-Queued, in order (2 steps):
-- Q72 (the architecture re-read): waits for D49, D55 and D58 (open item 33 (a), Z766).
-- O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
+Queued, in order (3 steps):
+- D59 (the hub fixes and personal projects): after D58.
+- Q72 (the architecture re-read): waits for D49, D55, D58 and D59 (open item 33 (a), Z766).
+- O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline; its memories and wallpaper move is D59's): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 

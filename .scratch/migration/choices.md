@@ -11,12 +11,16 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 Where it applies: D58. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
 
+Reviewed 2026-10-10 by Axel: agreed.
+
 ## Z768 (2026-10-10, step D58, the orchestrator, automode): how a tab and the docs route name a document of the engine
 
 - Chosen: a doc tab's state may carry `engine: true`, its `path` then relative to the engine folder and its id `engine:<path>`; `api/docs?engine=<path>` serves a Markdown file inside the engine's real folder; the manual's and an engine document's answers name paths relative to the engine, so links between them work wherever the engine sits; a saved tab at the guide's old hub path is restated; the Help page's tab names the guide this way, and this hub's `docs:` entry for the guide is removed so one file is one tab.
 - Not chosen: a view of its own for the guide with a fixed path, which serves one file and special-cases the manual's link; the server trying the engine folder when a hub path fails, which still breaks when the engine sits outside the hub (the lazy option).
 
 Where it applies: D58. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+Reviewed 2026-10-10 by Axel: agreed.
 
 ## Z767 (2026-10-10, step D55's landing, the orchestrator, automode): the hub fields an app sees on feed writes and people
 
@@ -25,6 +29,8 @@ Where it applies: D58. Booked in `plan.md` Rulings and the closed log of `orches
 
 Where it applies: D55. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
 
+Reviewed 2026-10-10 by Axel: agreed.
+
 ## Z766 (2026-10-10, step D49's landing, the orchestrator, automode): the Apps guide on every hub
 
 - Chosen: a new step, D58, after D49 and D55 and before Q72: the Help page's Apps guide tab and the manual's link to the guide name it by its path in the engine and are served as the manual is, so the guide opens on any hub.
@@ -32,12 +38,16 @@ Where it applies: D55. Booked in `plan.md` Rulings and the closed log of `orches
 
 Where it applies: D58, Q72. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
 
+Reviewed 2026-10-10 by Axel: agreed.
+
 ## Z765 (2026-10-10, step D55, the orchestrator, automode): the internal shapes of a second hub
 
 - Chosen: an audit finding of a second hub carries `root`, opened under it by the Audit view; the LinkedIn posted write carries `root`; an app's write naming a second hub's record is refused as an unknown record; a second hub's word with no colour in the first hub's vocabulary is drawn neutral; the workspaces answer marks each hub root with `hub: true` so the page withholds every hub's `secrets`.
 - Not chosen: absolute paths on audit findings; apps routed to a second hub; a finding for an uncoloured word; the page's private check left on the first hub only (the lazy option: a second hub's `secrets` would open in the page).
 
 Where it applies: D55. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/briefs/D55.md`.
+
+Reviewed 2026-10-10 by Axel: agreed.
 
 ## Z764 (2026-10-10, step D49, the orchestrator, automode): the standing spec's rule on HELP.md and the guides
 
