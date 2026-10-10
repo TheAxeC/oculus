@@ -33,9 +33,13 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 69b16a679
   launched: 2026-10-10
   report: agents/reviews/D60-report.md
+  builder_usage: 204,709 tokens, 491 tool uses, 109.9 min (the builder ran three read-only git commands against the no-git rule, its report says)
   brief_check: agents/reviews/D60-brief-check.md (a9cd3f67733719350, claude-opus-5-5, 222,061 tokens, 70 tool uses, 9.4 min; closed in the brief by the orchestrator under "Closed")
+  reviewer_report: agents/reviews/D60-refuter.md (adf31b9db8965f209, claude-opus-5-5, 79,744 tokens, 120 tool uses, 21.3 min; the reviewer ran one read-only git command outside its set and removed the builder's scratchpad copy `unchanged`, its report says)
+  shared_paths: with D61, tools/oculus/HELP.md, tools/oculus/DESIGN.md, tools/oculus/docs/diagrams/ (as D61's entry says) and tools/oculus/config/text/views/system/workbench.yml (D60 the `desc_side_project_schema` line, D61 lines 1, 10-11 and 215-230); simple: different lines
   landing: not-started
-  round: 0
+  round: 1
+  round_1: sent 2026-10-10 with agents/briefs/D60-round1.md; the tree before it is `git diff --binary 69b16a679` in the worktree, shasum 90f21690a134fcdd16d355ab8e3db48996a10cba (session scratchpad D60-before-round1.diff)
 - step: D61
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -44,7 +48,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: a35863cc6
   launched: 2026-10-10
   report: agents/reviews/D61-report.md
-  builder_usage: 324,989 tokens, 236 tool uses, 85.4 min (the builder ran two git commands against the no-git rule, `git -C . status` and `git rm -q` with no path, which changed nothing, its report says)
+  builder_usage: 324,989 tokens, 236 tool uses, 85.4 min (the builder ran two git commands against the no-git rule, `git -C . status` and `git rm -q` with no path, which changed nothing, its report says); round 1: 129,524 tokens, 58 tool uses, 21.1 min
   brief_check: agents/reviews/D61-brief-check.md (a29257cca60a58268, claude-opus-5-5, 207,035 tokens, 76 tool uses, 8.0 min; closed in the brief by the orchestrator under "Closed")
   reviewer_report: agents/reviews/D61-refuter.md (a86856c9cda9069e5, claude-opus-5-5, 266,968 tokens, 81 tool uses, 15.2 min)
   shared_paths: with D60, tools/oculus/HELP.md (D60 lines 169 and 451-452, D61 lines 35, 53-60 and 80-82), tools/oculus/DESIGN.md (D60 lines 558 and 593, D61 the workbench and status bar paragraphs) and tools/oculus/docs/diagrams/ (generated); simple: the two steps change different lines of the two documents, and the diagrams are made again by `npm run diagrams` at each landing

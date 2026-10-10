@@ -1,4 +1,4 @@
-Everything in the brief is done. Three things are not verified: no screen look was taken (no app, browser or Electron was started), so the Workbenches view, the rail menu and the repository item are checked by type check, lint, the store-level runs below and reading, not by sight; `npm run test:checks` has 3 failures (config-folder twice, integrity once) that read the hub's project files and `local.yml`, which this worktree does not hold, in files this step did not change, and they were not run on the base tree; the Manage Workbenches pick of the rail menu is a Svelte component, and its flow was run through the layout store (case 6), not through the component.
+Everything in the brief is done. Three things are not verified: no screen look was taken (no app, browser or Electron was started), so the Workbenches view, the rail menu and the repository item are checked by type check, lint, the store-level runs below and reading, not by sight; `npm run test:checks` has 3 failures (config-folder twice, integrity once) that read the hub's own `.oculus/` layer (its vocab and `sources.yml`), which this worktree does not hold, in files this step did not change, and they were not run on the base tree; the Manage Workbenches pick of the rail menu is a Svelte component, and its flow was run through the layout store (case 6), not through the component.
 
 Two git commands were run by mistake (`git -C . status` and `git rm -q` with no path); neither changed anything.
 
@@ -96,7 +96,7 @@ Reading of the lines:
 | Verify 4, the ASCII gate of `spec.md` | DONE | the perl command over `src tests config` printed nothing (exit 0); the gate's `bin` folder does not exist in this worktree (`find` printed `bfs: error: bin: No such file or directory`), so it was run over the other three |
 | Verify 5, folders and sizes | DONE | `sh utils/folder-check.sh` printed nothing (exit 0); `src/lib/views/system/workbench` holds 10 items, `layout/open/float` 7; largest changed files below |
 | Verify 1, `npm run diagrams` then `npm run test:quick` | DONE | last run: `ok ASCII gate`, `ok prettier`, `ok svelte-kit sync`, `ok eslint`, `ok svelte-check ... 0 ERRORS 0 WARNINGS`, `ok vitest (17.0 s): ... tests 6.63s`, `test:quick: 17.5 s (limit 45.0 s); every command passed`. `test:quick` ran 3 times in all during the build; the quoted one is after the last change |
-| `npm run test:checks` | 3 failures, not caused by this step | 268 passed, 3 failed: `config-folder.test.ts` "reads the roots of sources.yml without a finding" (`ROOTS.length` 0) and "names a group of its own ..." (no assertion, `HUB.present` false), `integrity.test.ts` "validates with no findings" (239 findings about `projects/**/project.yml` domains and the hub's vocab). They read the hub's project folders and `local.yml`; none of those files is among the changed ones. Not run on the base tree |
+| `npm run test:checks` | 3 failures, not caused by this step | The worktree lacks the hub's own `.oculus/` layer (its vocab and `sources.yml`). The 239 findings of `integrity.test.ts` "validates with no findings" are `domain` and `themes` keys (25 `domain`, 214 `themes`) that the missing vocab does not define; the two `config-folder.test.ts` cases ("reads the roots of sources.yml without a finding" and "names a group of its own ...") read that layer. No file of this step is involved. Not run on the base tree |
 
 The comment-width, import-cycle, boundary, text-key and folder checks of `tests/checks` pass after the last change (`Test Files  2 failed | 15 passed (17)`).
 
@@ -106,9 +106,9 @@ History words in the comments I added, `grep -n -i -E "(//|/\*|^> *\*|<!--|#).*\
 
 `diff -rq` of `src tests config utils` against `D61-base/tools/oculus` lists exactly these paths; the ones outside the brief's write list are marked.
 
-- `src/lib/shell/rail/ActivityRail.svelte` 406 lines: OUTSIDE the write list: `openWorkbenches`, the rail's own opener for the view
+- `src/lib/shell/rail/ActivityRail.svelte` 407 lines: OUTSIDE the write list: `openWorkbenches`, the rail's own opener for the view
 - `src/lib/shell/rail/RailFoot.svelte` 124 lines: OUTSIDE the write list: passes the opener to the menu
-- `src/lib/shell/rail/WorkbenchMenu.svelte` 112 lines
+- `src/lib/shell/rail/WorkbenchMenu.svelte` 118 lines
 - `src/lib/shell/rail/workbench-reset.ts`: deleted
 - `src/lib/shell/status/RepoItems.svelte` 240 lines
 - `src/lib/shell/status/StatusBar.svelte` 361 lines
@@ -123,10 +123,10 @@ History words in the comments I added, `grep -n -i -E "(//|/\*|^> *\*|<!--|#).*\
 - `src/lib/state/workbench/layout/open/float/rail-pages.ts` 134 lines: new
 - `src/lib/state/workbench/layout.svelte.ts` 812 lines
 - `src/lib/state/workbench/navigation/rail.ts` 131 lines: `WORKBENCHES_VIEW`
-- `src/lib/state/workbench/navigation/status.ts` 527 lines
+- `src/lib/state/workbench/navigation/status.ts` 546 lines
 - `src/lib/state/workbench/ui.svelte.ts` 781 lines
 - `src/lib/views/system/workbench/Workbenches.svelte` 360 lines: new
-- `src/routes/+page.svelte` 313 lines
+- `src/routes/+page.svelte` 320 lines
 - `config/text/statusbar.yml` 230 lines
 - `config/text/ui.yml` 140 lines
 - `config/text/views/system/workbench.yml` 230 lines
@@ -134,13 +134,13 @@ History words in the comments I added, `grep -n -i -E "(//|/\*|^> *\*|<!--|#).*\
 - `DESIGN.md` 593 lines: lines 476 and 578
 - `docs/diagrams/`: regenerated by `npm run diagrams`; which of its files differ from the base is not verified
 
-Limits (880 for a file, 520 for a component): the largest is `layout.svelte.ts` at 812; the largest component is `ActivityRail.svelte` at 406.
+Limits (880 for a file, 520 for a component): the largest is `layout.svelte.ts` at 812; the largest component is `ActivityRail.svelte` at 407.
 
 ## Judgment calls the brief left open
 
-1. The rail menu opens the view from `ActivityRail.svelte`, which holds the rail's entries and the page store, and hands the opener to `RailFoot.svelte` and `WorkbenchMenu.svelte` as a prop. The menu cannot find the rail page itself because the shell may not read config. When the rail has no button for the view's catalogue group, the view goes to the first page that is no workbench, and to a new page when every page is a workbench, so a Close or Reset from a row never takes the view with it.
+1. The rail menu opens the view from `ActivityRail.svelte` (`openWorkbenches`), which holds the rail's entries and the page store, and hands the opener to `RailFoot.svelte` and `WorkbenchMenu.svelte` as a prop. The menu cannot find the rail page itself because the shell may not read config. When no page or float holds the view and the page on screen is no workbench, the view opens on the page on screen. When the page on screen is a workbench, the view goes to the rail page of its catalogue group, else to the first page that is no workbench, and to a new page when every page is a workbench, so a Close or Reset from a row never takes the view with it.
 2. A kept layout whose root is not served: the row is dimmed, a press does nothing, Reopen is disabled, and a warning mark at the row's end carries the tooltip. A row without a press has no tooltip in `TreeItem`, so the tooltip sits on the mark.
-3. `chosenState` answers `none`, `use`, `wait` and `drop`. `wait` covers an undelivered `git` channel, served roots not yet read, and a channel with no entry or a non-repository entry for the chosen root (the choice is kept, the hub is shown). `drop` is only the case where the served roots are read and none holds the chosen root, which is the brief's "no longer among the picker's repositories".
+3. `chosenState` answers `none`, `use`, `wait` and `drop`. `wait` covers an undelivered `git` channel, the current workspace's roots not yet read, and a channel with no entry or a non-repository entry for the chosen root (the choice is kept, the hub is shown). `drop` is only the case where the current workspace's roots are read and none holds the chosen root, which is the brief's "no longer among the picker's repositories".
 4. The last chosen repository is one value for the browser tab, in the ui store with the appearance, as the brief says; a newer field read with a `.catch(null)` fallback, no change of `UI_VERSION`.
 5. The Open and Closed sections' open or closed state is held by the view component and starts open; it is not saved.
 6. New workbench lists the roots of the current workspace (`fs.roots()`), by key.
@@ -151,11 +151,11 @@ Limits (880 for a file, 520 for a component): the largest is `layout.svelte.ts` 
 
 ## Visible changes, before and after
 
-- Rail Workbenches menu. Before: the open workbenches, then a second group "Reset layout" listing them again. After: the open workbenches with their close buttons, a rule, and "Manage Workbenches"; with none open, "No workbench is open" and "Manage Workbenches".
+- Rail Workbenches menu. Before: the open workbenches, then a second group "Reset layout" listing them again. After: the heading "Workbenches", the open workbenches with their close buttons, a rule, and "Manage Workbenches"; with none open, the heading, "No workbench is open" and "Manage Workbenches".
 - Views catalogue, System group. Before: ten views. After: Workbenches as the eleventh, at order 10, with no chord; the ten chords are as before.
 - Workbenches view. Before: none. After: Open and Closed sections of explorer rows, each with its controls, and a New workbench icon in the pane header.
 - Reopening a closed workbench whose kept tab ids are held by a page or float. Before: a fresh workbench was made and the kept layout dropped. After: the kept tabs open under fresh ids with their states.
-- Status bar. Before: branch and sync followed the active tab's file, else the hub. After: a `repository` item before `branch` shows the followed repository's name, with a tooltip naming its folder and why; a press lists the Files view's repositories and a pick is kept for the browser tab. Branch and sync follow the file, else the workbench on screen, else the pick, else the hub. The right-click menu of the bar lists the item.
+- Status bar. Before: branch and sync followed the active tab's file, else the hub. After: a `repository` item before `branch` shows the followed repository's name (its accessible label is "Repository {name}"), with a tooltip naming its folder and why; a press lists the Files view's repositories and a pick is kept for the browser tab. Branch and sync follow the file, else the workbench on screen, else the pick, else the hub. The right-click menu of the bar lists the item.
 - Saved ui envelope. Before: no repository field. After: an optional `statusRepository`, read as none when absent.
 - HELP.md and DESIGN.md: as listed above.
 
@@ -165,3 +165,31 @@ Limits (880 for a file, 520 for a component): the largest is `layout.svelte.ts` 
 - The ASCII gate names a `bin` folder this tree does not have (evidence in the Verify 4 row).
 - The write list does not name `ActivityRail.svelte` and `RailFoot.svelte`, which the rail menu needs in order to reach the rail's entries (judgment call 1); widened, as the standing rule says.
 - Items checked in the brief's premises and found as stated: `layout.svelte.ts` 877 lines before and 812 after; `pageFromKept` answering null on a held id; `createFolderPages.served` reading `fs.roots()`.
+
+## Repair round 1
+
+All seven items are closed. Open items: none. Not verified: the screen look (no app, browser or Electron was started), and the Svelte components `ActivityRail.svelte`, `WorkbenchMenu.svelte` and `RepoItems.svelte` are checked by type check, lint and reading, with the opener logic of item 1 run as a copy of `openWorkbenches` over the layout store, not through the component.
+
+1. `openWorkbenches` opens the view on the page on screen unless that page is a workbench. `src/lib/shell/rail/ActivityRail.svelte` line 196 (head comment above it); `DESIGN.md` line 476; `HELP.md` line 59 unchanged. Check: case 6 below. With a page on screen that is no workbench, the view opens on that page (`sameAsOnScreen: true`, `pageCount: 1`). With a workbench on screen, it opens on the rail page `views`.
+2. `chosenState` and `repositoryChoices` take the current workspace's roots, null while they are not read. `src/lib/state/workbench/navigation/status.ts` lines 310 and 333; `src/routes/+page.svelte` line 185 (`workspaceRoots = readRoots(workspaces())`), used at lines 192 and 218; `allRoots` stays at the root-key resolution of `repoStatus`. `DESIGN.md` line 578. Check: case 8 below. With two saved workspaces and the default current, a session repository under the root of `lab` is not listed and a choice under it is `drop`; with `lab` current it is listed and `use`; the roots not read give `wait` and an empty list; a workspace without roots gives `drop`.
+3. One predicate, `readableState` (`status.ts` line 201), used by `readableRepositories` (line 208), `repositoryStatus` (line 238) and `chosenState` (line 333). Check: case 3 below. A chosen root whose git read carries an error is `wait`, is not listed, and `repoStatus` returns null for it.
+4. `status.ts` lines 12 to 18 and the `holdingRepository` comment (line 220) name which functions ask `holdingRepository` (`repositoryOf` for the file, the folder, the hub and the Workbenches rows) and which ask `readableState`; `DESIGN.md` line 578 says the same. Check: reading both texts against the call sites in `status.ts`.
+5. The `test:checks` row of this report (the row in the ledger above, and the first paragraph) names the cause: the worktree lacks the hub's own `.oculus/` layer (its vocab and `sources.yml`); the 239 integrity findings are 25 `domain` and 214 `themes` keys; the two config-folder cases read that layer; no file of the step is involved. Check: `grep -c '^+     "key":'` over the saved run printed 239, with `themes` 214 and `"domain"` 25.
+6. `src/lib/shell/rail/WorkbenchMenu.svelte` line 72: one group headed `ui.workbenches` holds the open workbenches (or "No workbench is open"), then Manage Workbenches with a rule above it. Before: a flat list with no heading. After: the heading "Workbenches", the list, a rule, Manage Workbenches. The pick handler is unchanged.
+7. `config/text/statusbar.yml` line 34 and `src/lib/shell/status/RepoItems.svelte` line 161. Before: the item's accessible label was "Repositories". After: "Repository {repo.name}", for example "Repository hub". `statusbar.repository_heading` ("Repositories") is unchanged.
+
+Checks, from `tools/oculus` in the worktree, after the last change:
+
+- `npm run diagrams`: finished, wrote `docs/diagrams/*`.
+- `npm run test:quick`: `ok ASCII gate (0.6 s)`, `ok prettier (0.8 s)`, `ok svelte-kit sync (2.0 s)`, `ok eslint (8.3 s)`, `ok svelte-check (9.5 s): ... 459 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest (17.6 s)`, `test:quick: 18.4 s (limit 45.0 s); every command passed`.
+- `npm run test:checks`: `Test Files  2 failed | 15 passed (17)`, `Tests  3 failed | 268 passed (271)`; the three failures are the ones of item 5. The comment-width, import-cycle, boundary, text-key and folder checks pass.
+- Rename grep over `src config tests docs HELP.md DESIGN.md`: printed nothing (exit 1).
+- `sh utils/unused-exports.sh` against `D61-base/tools/oculus/unused-exports.txt`: `diff` printed nothing (exit 0).
+- ASCII gate over `src tests config`: printed nothing (exit 0).
+- `sh utils/folder-check.sh`: printed nothing (exit 0).
+- `wc -l`: `WorkbenchMenu.svelte` 118, `ActivityRail.svelte` 407, `RepoItems.svelte` 240, `status.ts` 546, `+page.svelte` 320, `statusbar.yml` 230, `DESIGN.md` 593.
+- Case 6: `CASE 6 page on screen is no workbench {"onScreenBefore":"805915ce-...","openedOn":"805915ce-...","sameAsOnScreen":true,"rail":null,"pageCount":1}`; `CASE 6 page on screen is a workbench {"group":"views","isWorkbench":false,"rail":"views"}`.
+- Case 7: `["wait","use","wait"]` for the chosen root with the channel not delivered, delivered, and delivered without the root; `repoC/chosen`, `hub/hub`, `repoA/file`, `repoB/workbench` as before.
+- Case 8: `CASE 8 default current, lab session repository {"listed":["/h/hub","/h/repoA","/h/repoB","/h/repoC"],"chosen":"drop"}`; `CASE 8 lab current {"listed":["/h/lab/tool"],"chosen":"use"}`; `CASE 8 workspaces loading / failed / empty ["wait",[],"drop"]`; `CASE 8 switch default to lab keeps then drops ["use","drop"]`; `CASE 8 C removed from the roots {"state":"drop","picker":["/h/hub","/h/repoA","/h/repoB"]}`.
+- Case 3 (item 3): `CASE 3 chosen root git read with an error {"chosen":"wait","listed":["/h/hub","/h/repoA","/h/repoB"],"status":null}`.
+- Case 10: `CASE 10 after reload {"hidden":["sync","repository"],"chosen":"/h/repoC","leftItems":["host","repository","branch","sync"]}`.
