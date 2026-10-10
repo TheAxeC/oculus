@@ -25,6 +25,17 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
+- step: D49
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: adab6acbc7bcccf65 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D49
+  base: 9337c3ad4
+  launched: 2026-10-10
+  report: agents/reviews/D49-report.md
+  brief_check: agents/reviews/D49-brief-check.md (a2bb671665419901b, claude-opus-5-5, 233,680 tokens, 62 tool uses, 10.6 min; closed in the brief by the orchestrator under "Closed")
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -232,6 +243,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-10 (D49 launched). D49 prepared (base 9337c3ad4, brief `agents/briefs/D49.md` with every closure of its brief check under "Closed"; Z764 corrected the standing spec's HELP.md rule) and its builder adab6acbc7bcccf65 (claude-sonnet-5-5) launched in `.agents/worktrees/D49`. D55's brief is written and its brief check is running.
 - 2026-10-10 (D56 landed). D56, the workbench, landed (booking in plan.md; `agents/reviews/D56-landing.md`) after one repair round and the review over it, its findings closed at landing (the documents mark kept by `keptPane`, `servesRoot` in Repositories and the sessions list); G29's line updated. Nothing in flight. Next: /spec D49 and /spec D55, which D56's landing unblocks.
 - 2026-10-10 (R2 landed). R2, the first-run check, landed (booking in plan.md; `agents/reviews/R2-landing.md`) after one repair round and the review over it, its four findings closed at landing; G73 written into `agents/guarded.md`. In flight (1 of 6): D56 (builder on repair round 1, `agents/briefs/D56-round1.md`, Z763). Next: D56's review over round 1 and /land D56, then /spec D49 and /spec D55.
 - 2026-10-09 (D50 landed). D50, the hub's own folder, its shareable files and its settings layer, landed with the carry-over removed and open item 31 (c) written in; `bookmarks.yml` and `workspaces.json` moved into the hub's `.oculus/`. D56 built (report saved) and in review (a17e012de19ee2885, claude-opus-5-5). R2 in repair round 1. D49 and D55 unblocked.
