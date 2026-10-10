@@ -3,15 +3,13 @@
     // workbench cannot do for itself: fill the view registry, open the socket, and read the two
     // saved stores. The rail's pages and the chords' groups come from the merged config the socket
     // delivers, and so do the words of the status bar's items, which the page makes from stores the
-    // shell may not read itself; the rail's own rewrite of its list, the git writes of the status
-    // bar's branch and sync items and the Workbenches menu's Reset layout, which makes a workbench
-    // again from the arrangement in the config, are the page's for the same reason.
+    // shell may not read itself; the rail's own rewrite of its list and the git writes of the
+    // status bar's branch and sync items are the page's for the same reason.
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
     import { shouldCancel } from '$lib/shell/context-guard';
     import { provideFileProblems } from '$lib/shell/panes/strip/file-problems';
-    import { provideWorkbenchReset } from '$lib/shell/rail/workbench-reset';
     import type { Bookmark } from '$lib/shell/rail/rail';
     import { parseFloats } from '$lib/state/workbench/navigation/arrangement';
     import { readChord, readDocs, readGroups } from '$lib/state/workbench/navigation/catalogue';
@@ -22,8 +20,10 @@
         type RailEntry
     } from '$lib/state/workbench/navigation/rail';
     import {
+        chosenState,
         findingsCount,
         repoStatus,
+        repositoryChoices,
         statusWords,
         tabFile,
         type StatusGit
@@ -31,6 +31,7 @@
     import { repositoriesViewOf } from '$lib/state/sources/repositories/repositories';
     import { configGeneration } from '$lib/state/shared/words/generation.svelte';
     import { bookmarkRows, HUB_ROOT, problemMarkOf, problemWords } from '$lib/state/sources/fs';
+    import { allRoots, readRoots } from '$lib/state/sources/fs-transport';
     import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
     import { useBrowserWindows } from '$lib/shell/window/browser-windows.svelte';
@@ -73,14 +74,20 @@
         apps: { findings: appFindings, holds, rows: appRows },
         debug: { load: loadDebug, stopFollowing: stopFollowingDebug },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
-        folders: workbenches,
         fs: { bookmarks: savedBookmarks, workspaces },
-        layout: { activeInstance, loadLayout, openView, stopFollowing },
+        layout: { activeInstance, currentPage, loadLayout, openView, stopFollowing },
         problems,
         repositories,
         selectors: { waitingCount },
         socket: { connect, disconnect, seedApps, seedConfig, status: socketStatus },
-        ui: { instanceState, loadUi, setInstanceState, stopFollowing: stopFollowingUi },
+        ui: {
+            instanceState,
+            loadUi,
+            setInstanceState,
+            setStatusRepository,
+            statusRepository,
+            stopFollowing: stopFollowingUi
+        },
         writes: { setToken, writeRail }
     } = client;
 
@@ -169,23 +176,46 @@
      * The roots the file routes serve, the current workspace's first and then every other's, which
      * is what a tab's root key is read against to find the folder its file is in.
      */
-    const served = $derived.by(() => {
-        const held = workspaces();
-        const current = held.workspaces.filter((workspace) => workspace.name === held.current);
-        const others = held.workspaces.filter((workspace) => workspace.name !== held.current);
-        return [...current, ...others].flatMap((workspace) => workspace.roots);
+    const served = $derived(allRoots(workspaces()));
+
+    /**
+     * The current workspace's roots, which are the roots the `git` channel and the Files view
+     * serve, or null while the workspaces are being read.
+     */
+    const workspaceRoots = $derived(readRoots(workspaces()));
+
+    /**
+     * What the repository last chosen in the status bar comes to against the `git` channel and the
+     * current workspace's roots. A choice that names a repository no root of the workspace holds
+     * is forgotten.
+     */
+    const chosen = $derived(chosenState(statusRepository(), gitPayload(), workspaceRoots));
+    $effect(() => {
+        if (chosen === 'drop') setStatusRepository(null);
     });
 
     /**
-     * The words of the status bar's items whose stores the shell may not read, the repository
-     * being the one holding the file of the tab on screen.
+     * The words of the status bar's items whose stores the shell may not read, the repository being
+     * the one its rule follows (state/workbench/navigation/status.ts): the file of the tab on
+     * screen, else the folder of the workbench on screen, else the repository last chosen, else the
+     * hub's.
      */
     const status = $derived(
         statusWords(socketStatus(), usage(), hpc(), sessions(), {
             host: config()?.host ?? null,
             findings: findingsCount(portfolio(), config(), { findings: appFindings() }),
             problems: problems.total(),
-            repo: repoStatus(tabFile(activeInstance()?.state), served, gitPayload(), HUB_ROOT)
+            repo: repoStatus(
+                {
+                    file: tabFile(activeInstance()?.state),
+                    folder: currentPage().folder ?? null,
+                    chosen: chosen === 'use' ? statusRepository() : null
+                },
+                served,
+                gitPayload(),
+                HUB_ROOT
+            ),
+            choices: repositoryChoices(gitPayload(), workspaceRoots)
         })
     );
 
@@ -233,10 +263,6 @@
         const answer = await writeRail(edit(configRail(merged)), true);
         return answer.ok ? '' : railRefusal(answer.error);
     }
-
-    // The Workbenches menu's Reset layout makes a workbench again from the `workbench:` arrangement
-    // of the merged config, which the shell may not read, so the rail gets this function.
-    provideWorkbenchReset((id) => workbenches.reset(id));
 
     onMount(() => {
         connect([

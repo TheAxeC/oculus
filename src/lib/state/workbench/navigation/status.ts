@@ -1,18 +1,28 @@
 // Layer 2, client state. The words of the status bar: what the page makes for the items whose
 // stores the shell's row of the boundary table does not name (the machine, the socket, the usage
-// refreshers, the HPC poll, the live sessions, the findings, the problems and the repository of the
-// tab on screen), and the words the bar draws for the source tab's items, the caret, the
-// indentation and the language, from what the source tab publishes.
+// refreshers, the HPC poll, the live sessions, the findings, the problems and the repository the
+// bar follows), and the words the bar draws for the source tab's items, the caret, the indentation
+// and the language, from what the source tab publishes.
 //
 // The unsaved tabs are counted by the shell itself from the layout and ui stores it does read. The
-// repository holding a tab's file is the deepest one holding it, read through deepestHolding of
+// repository the branch, sync and repository items follow is `repoStatus`'s, in one order: the
+// repository holding the file of the tab on screen (or the folder a Files or LaTeX tab shows), else
+// the repository holding the folder of the workbench on screen, else the repository last chosen in
+// the repository item's picker (`chosenState` says whether the channel reports it), else the hub's.
+// A file or a workbench folder in no repository decides and draws nothing. "The repository holding
+// a place" is `holdingRepository`, the deepest one holding it, read through deepestHolding of
 // data/helpers/files/paths.ts, the rule the source tab's gutter reads a repository by too, on the
-// file's whole path built by the same file's joinPath.
+// place's whole path built by the same file's joinPath; `repositoryOf` asks it for the file, the
+// folder, the hub and the Workbenches view's rows. "A repository git read without an error" is
+// `readableState`: `readableRepositories` (the repositories `holdingRepository` searches),
+// `repositoryStatus` and `listable` all ask it. `listable` is the picker's rule, by which
+// `repositoryChoices` lists and `chosenState` answers 'use', so the picker lists what the bar can
+// follow and a chosen repository the bar cannot follow is never answered 'use'.
 //
 // The language picker's entries are `languageActions`, and Configure File Association
 // (`associateEnding`) writes `sources.yml`'s `languages:` as a `config-value` write recorded in
 // History. Language and indent choices are kept in the tab's instance state, and the hidden set of
-// items and Do Not Disturb are kept in the ui store.
+// items, Do Not Disturb and the repository last chosen are kept in the ui store.
 
 import { z } from 'zod';
 import type {
@@ -23,28 +33,35 @@ import type {
     UsagePayload
 } from '../../../data/model/index.ts';
 import type { FsRoot } from '../../sources/fs.ts';
-import { deepestHolding, joinPath } from '../../../data/helpers/files/paths.ts';
+import { deepestHolding, joinPath, underServedRoot } from '../../../data/helpers/files/paths.ts';
 import { readAs } from '../../../data/shapes/shapes.ts';
 import { extensionOf, nameOf } from '../../sources/explorer/file-type.ts';
+import { repositoryLabels } from '../../sources/repositories/repositories.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
 import { PLAIN, registered } from '../../shared/words/languages.ts';
 import { t } from '../../shared/words/text.ts';
 import { byScore, fuzzyMatches, textParts, type TextPart } from '../../shared/words/fuzzy.ts';
+import type { FolderRef } from '../layout/index.ts';
 import type { Caret, Indent } from './editor-text.ts';
 
 /** The socket's three states, as state/client/socket.svelte.ts names them. */
 export type SocketState = 'connecting' | 'open' | 'closed';
 
+/** Why the repository the bar follows is the one it follows, in the order the rule tries them. */
+export type RepoWhy = 'file' | 'workbench' | 'chosen' | 'hub';
+
 /**
- * The repository holding the file of the tab on screen, as the branch and sync items draw it: the
- * root the `git` channel keys it by, the name the item's tooltip calls it, the branch checked out
- * (the empty string on a detached head, where `head` is the commit), whether the branch tracks an
- * upstream and the upstream's name where the branch listing gave it, how far the two are apart,
- * the branches the picker offers, and the remotes a branch with no upstream can be published to.
+ * The repository the bar follows, as the repository, branch and sync items draw it: the root the
+ * `git` channel keys it by, the name the items call it, why it is the one followed, the branch
+ * checked out (the empty string on a detached head, where `head` is the commit), whether the branch
+ * tracks an upstream and the upstream's name where the branch listing gave it, how far the two are
+ * apart, the branches the picker offers, and the remotes a branch with no upstream can be published
+ * to.
  */
 export type RepoStatus = {
     root: string;
     name: string;
+    why: RepoWhy;
     branch: string;
     head: string;
     tracked: boolean;
@@ -54,6 +71,9 @@ export type RepoStatus = {
     branches: string[];
     remotes: string[];
 };
+
+/** One repository the repository item's picker lists: its root on the channel and its label. */
+export type RepoChoice = { root: string; label: string };
 
 /**
  * What the branch and sync items ask of the page, which alone may write: check a branch out, push
@@ -93,6 +113,8 @@ export type StatusWords = {
     /** The problems the Problems view lists, by severity. */
     problems: { errors: number; warnings: number; infos: number };
     repo: RepoStatus | null;
+    /** The repositories the repository item's picker lists. */
+    choices: RepoChoice[];
 };
 
 /** The bar's words before the page has handed it any. */
@@ -104,7 +126,8 @@ export const NO_STATUS: StatusWords = {
     live: 0,
     findings: 0,
     problems: { errors: 0, warnings: 0, infos: 0 },
-    repo: null
+    repo: null,
+    choices: []
 };
 
 /** A file one tab holds, by the root key the file routes serve it under and its path there. */
@@ -165,43 +188,62 @@ export function tabFile(state: unknown): TabFile | null {
     return readAs(tabFileShape, state);
 }
 
-/** The last folder of a path, which is what the tooltip calls a repository. */
+/** The last folder of a path, which is what the items call a repository. */
 function folderName(dir: string): string {
     return dir.split('/').filter(Boolean).at(-1) ?? dir;
 }
 
 /**
- * The repository holding a tab's file: the innermost root of the `git` channel that is a
- * repository and holds the file's path, the file's root key resolved through the served roots. A
- * diff tab names the repository's folder itself in place of a key, so a root that is an absolute
- * path is read as that folder. A tab holding no file is read as the hub itself, the root served
- * under `hub`. A file in no repository, a root key that is neither a served root nor a folder and
- * a channel not yet delivered answer null.
+ * The channel's state of a root when the root is a repository git read without an error, else
+ * null: a root the channel does not carry, a folder that is no repository and a repository whose
+ * read failed. The one rule for a readable repository.
  */
-export function repoStatus(
-    file: TabFile | null,
-    roots: readonly FsRoot[],
-    git: GitPayload | null,
-    hubKey: string
-): RepoStatus | null {
-    if (git === null) return null;
-    const key = file?.root ?? hubKey;
-    const dir =
-        roots.find((root) => root.key === key)?.dir ?? (key.startsWith('/') ? key : undefined);
-    if (dir === undefined) return null;
-    const path = (file?.path ?? '').split('/').filter(Boolean).join('/');
-    const target = joinPath(dir, path);
-    const repositories = Object.keys(git).filter(
-        (root) => git[root].repository && git[root].error === null
-    );
-    const root = deepestHolding(repositories, (one) => one, target)?.item;
-    if (root === undefined) return null;
+function readableState(git: GitPayload, root: string): GitPayload[string] | null {
+    if (!Object.hasOwn(git, root)) return null;
     const state = git[root];
+    return state.repository && state.error === null ? state : null;
+}
+
+/** The roots of the `git` channel that are repositories git read without an error. */
+function readableRepositories(git: GitPayload): string[] {
+    return Object.keys(git).filter((root) => readableState(git, root) !== null);
+}
+
+/**
+ * The root of the `git` channel of the repository holding a place: the innermost repository of the
+ * channel that holds the place's path, the place's root key resolved through the served roots. A
+ * diff tab names the repository's folder itself in place of a key, so a root that is an absolute
+ * path is read as that folder. Null for a place in no repository and for a root key that is neither
+ * a served root nor a folder. `repositoryOf` asks this for the file the bar follows, the folder of
+ * a workbench, a Files tab's folder, the hub and the rows of the Workbenches view.
+ */
+function holdingRepository(
+    place: TabFile,
+    roots: readonly FsRoot[],
+    git: GitPayload
+): string | null {
+    const dir =
+        roots.find((root) => root.key === place.root)?.dir ??
+        (place.root.startsWith('/') ? place.root : undefined);
+    if (dir === undefined) return null;
+    const path = place.path.split('/').filter(Boolean).join('/');
+    const target = joinPath(dir, path);
+    return deepestHolding(readableRepositories(git), (one) => one, target)?.item ?? null;
+}
+
+/**
+ * What the `git` channel holds of one repository, as the items draw it. Null for a root the channel
+ * does not carry as a repository read without an error.
+ */
+function repositoryStatus(root: string, why: RepoWhy, git: GitPayload | null): RepoStatus | null {
+    const state = git === null ? null : readableState(git, root);
+    if (state === null) return null;
     const current = state.branches.find((branch) => branch.current);
     const detached = state.detached || state.branch === 'HEAD';
     return {
         root,
         name: folderName(root),
+        why,
         branch: detached ? '' : state.branch,
         head: detached ? (state.log.at(0)?.short ?? '') : '',
         tracked: state.upstream === true,
@@ -211,6 +253,101 @@ export function repoStatus(
         branches: state.branches.map((branch) => branch.name),
         remotes: [...state.remotes]
     };
+}
+
+/**
+ * The repository holding a place, as the items draw it, or null when none holds it or the channel
+ * has not been delivered.
+ */
+export function repositoryOf(
+    place: TabFile,
+    why: RepoWhy,
+    roots: readonly FsRoot[],
+    git: GitPayload | null
+): RepoStatus | null {
+    if (git === null) return null;
+    const root = holdingRepository(place, roots, git);
+    return root === null ? null : repositoryStatus(root, why, git);
+}
+
+/**
+ * What decides which repository the bar follows, in the order they are tried: `file`, the file of
+ * the tab on screen or the folder a Files or LaTeX tab shows; `folder`, the folder of the workbench
+ * on screen; `chosen`, the repository last chosen in the picker, given only once the channel
+ * reports it (`chosenState` answers 'use'). Each of the first two that is given decides, and a
+ * place in no repository draws nothing; with none given the hub's repository is followed.
+ */
+export type RepoRule = {
+    file: TabFile | null;
+    folder: FolderRef | null;
+    chosen: string | null;
+};
+
+/**
+ * The repository the bar follows under a rule. A file in no repository, a root key that is neither
+ * a served root nor a folder and a channel not yet delivered answer null.
+ */
+export function repoStatus(
+    rule: RepoRule,
+    roots: readonly FsRoot[],
+    git: GitPayload | null,
+    hubKey: string
+): RepoStatus | null {
+    if (git === null) return null;
+    if (rule.file !== null) return repositoryOf(rule.file, 'file', roots, git);
+    if (rule.folder !== null) return repositoryOf(rule.folder, 'workbench', roots, git);
+    if (rule.chosen !== null) return repositoryStatus(rule.chosen, 'chosen', git);
+    return repositoryOf({ root: hubKey, path: '' }, 'hub', roots, git);
+}
+
+/**
+ * Whether the picker lists a root: a repository git read without an error (`readableState`) at or
+ * below a root of the current workspace. The one rule `repositoryChoices` lists by and
+ * `chosenState` answers 'use' by.
+ */
+function listable(git: GitPayload, roots: readonly FsRoot[], root: string): boolean {
+    return underServedRoot(roots, root) && readableState(git, root) !== null;
+}
+
+/**
+ * The repositories the repository item's picker lists: each repository the `git` channel reports
+ * without an error at a served root or below one, labelled by the shortest tail of its path that
+ * tells it from the others. A session's workspace outside the served roots and a root that is no
+ * readable repository are not listed. `roots` are the current workspace's roots, which are the
+ * roots the channel and the Files view serve; null while they are not read, and nothing is listed.
+ */
+export function repositoryChoices(
+    git: GitPayload | null,
+    roots: readonly FsRoot[] | null
+): RepoChoice[] {
+    if (git === null || roots === null) return [];
+    const listed = Object.keys(git).filter((root) => listable(git, roots, root));
+    const labels = repositoryLabels(listed);
+    return listed.map((root) => ({ root, label: labels[root] }));
+}
+
+/** What the repository last chosen comes to against the channel: see `chosenState`. */
+export type ChosenState = 'none' | 'use' | 'wait' | 'drop';
+
+/**
+ * Whether the repository last chosen is followed. 'none' when nothing was chosen. 'use' when it
+ * lies under a served root and is a repository git read without an error (`readableState`), which
+ * is what the picker lists. 'wait' while the channel or the current workspace's roots are not read
+ * yet (`roots` null), and while the channel carries no readable state for it: the choice is kept
+ * and the hub followed until the channel reports it. 'drop' when the roots are read and it lies
+ * under none of them, a workspace with no root included, so the picker does not list it and the
+ * choice is forgotten. `roots` are the current workspace's roots, which are the roots the channel
+ * and the Files view serve.
+ */
+export function chosenState(
+    chosen: string | null,
+    git: GitPayload | null,
+    roots: readonly FsRoot[] | null
+): ChosenState {
+    if (chosen === null) return 'none';
+    if (git === null || roots === null) return 'wait';
+    if (!underServedRoot(roots, chosen)) return 'drop';
+    return listable(git, roots, chosen) ? 'use' : 'wait';
 }
 
 /**
@@ -250,6 +387,7 @@ export function statusWords(
         findings: number;
         problems: StatusWords['problems'];
         repo: RepoStatus | null;
+        choices: RepoChoice[];
     }
 ): StatusWords {
     return {
@@ -260,7 +398,8 @@ export function statusWords(
         live: liveCount(sessions),
         findings: held.findings,
         problems: held.problems,
-        repo: held.repo
+        repo: held.repo,
+        choices: held.choices
     };
 }
 

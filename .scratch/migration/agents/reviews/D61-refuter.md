@@ -183,3 +183,71 @@ Cases of the brief's "Cases":
 - **The ASCII gate's `bin` folder.** It does not exist in the tree, a fact of the tree that is not the step's.
 
 Reviewer usage: a86856c9cda9069e5, claude-opus-5-5, 266968 tokens, 81 tool uses, 15m 13s.
+
+## Repair round 1, refuted
+
+Reviewer over round 1 (ace7fca6430f15a2c, claude-opus-5-5), on `.agents/worktrees/D61`, base a35863cc6. The delta of `git diff a35863cc6` against `D61-before-round1.diff` (shasum 9172f22e84511d444f211ca4b3e17248f9412fd1) is exactly the saved `D61-round1-delta.diff`.
+
+```
+From tools/oculus in the worktree.
+$ npm run test:quick -- --base a35863cc6
+ok prettier, ok ASCII gate, ok eslint, ok svelte-kit sync,
+ok svelte-check (5.0 s): 459 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok vitest (14.5 s)
+test:quick: 15.0 s (limit 45.0 s); every command passed
+$ rename grep (workbenches_reset_heading|useWorkbenchReset|provideWorkbenchReset|workbench-reset) over src config tests docs HELP.md DESIGN.md: exit=1, nothing printed
+$ sh utils/unused-exports.sh | diff - .agents/worktrees/D61-base/tools/oculus/unused-exports.txt: exit=0 (365 lines now, 365 at base)
+$ ASCII gate of spec.md: exit=0 (bfs: error: bin: No such file or directory.); LC_ALL=C grep over HELP.md DESIGN.md D61-report.md: exit=1
+$ sh utils/folder-check.sh: exit=0
+$ wc -l: largest source file layout.svelte.ts 812 (limit 880); largest component ActivityRail.svelte 407 (limit 520)
+$ npm run test:checks -- --reporter=dot
+ FAIL config-folder.test.ts > reads the roots of sources.yml without a finding
+ FAIL config-folder.test.ts > names a group of its own and a path under the hub for every document
+ FAIL integrity.test.ts > the real hub > validates with no findings
+ Test Files 2 failed | 15 passed (17); Tests 3 failed | 268 passed (271)
+$ integrity findings: 239 keys, "domain" 25, themes 214; the worktree root has no .oculus, the main checkout has one
+$ after.cases.ts: Test Files 1 passed (1), Tests 9 passed (9); CASE 6, 7, 8, 3, 10, 11 lines as the round report quotes them (page UUIDs differ per run)
+```
+
+### Verdicts
+
+Items of the brief: 1 holds; 2 holds; 3 holds; 4 violated (Standards 1).
+
+Cases: 1 to 5 met; 6 met for the opener logic (a copy of `openWorkbenches` over the real layout store, compared line by line with `ActivityRail.svelte:196-208`); 7 to 12 met.
+
+Round items: 1 closed (HELP.md:59 inexact, Standards 1); 2 closed; 3 closed (Standards 2); 4 closed; 5 closed; 6 closed for the list with workbenches, the empty menu gains a heading (Behaviour 1); 7 closed; 8 not verifiable.
+
+### 1. Spec
+
+None.
+
+### 2. Proof
+
+None. Every closure reproduces; no check was removed, loosened or exempted.
+
+### 3. Standards
+
+1. `HELP.md:59`: "when no page or float holds it and the page on screen is a workbench, it opens on the System page of the rail, never inside a workbench." The code (`ActivityRail.svelte:198-205`) opens it on the System page only when the rail lists that page, else on the first page that is no workbench, else on a new page; `HELP.md:22` says a rail button can be hidden. Failure scenario: a reader who hid System presses Manage Workbenches on a workbench and the view opens elsewhere than HELP says. Item 4 violated.
+2. `status.ts:315` and `status.ts:340-341` compose "listed by the picker" twice (`readableRepositories(git).filter((root) => underServedRoot(roots, root))` against `underServedRoot` then `readableState` in `chosenState`), against spec.md's "a rule exists once and is reused". Failure scenario: a later filter added to `repositoryChoices` leaves `chosenState` answering `use` for a repository the picker no longer lists.
+
+### 4. Behaviour
+
+1. `WorkbenchMenu.svelte:72-93,105-106`: with no workbench open, the base menu held "No workbench is open" alone with no heading; now it shows the heading, that line, a rule and Manage Workbenches. Round item 6 asked for the heading over the list "as before the step". Failure scenario: at the look the empty menu shows a heading the base did not have, with no Before/After for it.
+
+### Declined to judge
+
+- Round item 8 (no git in the round): nothing in the tree records it.
+- The ` A` marks of `rail-pages.ts` and `Workbenches.svelte` in `git status --short`: the orchestrator's intent-to-add for its saved diff.
+- A repository deleted under a served root stays at `wait`, kept as built by the round brief.
+- What only a DOM shows (the menu's heading and rule, the accessible name as spoken, the rows and themes): for the look at landing.
+- `npm run diagrams`: not run since it writes files; the diagrams check in test:checks passes.
+
+Reviewer usage: ace7fca6430f15a2c, claude-opus-5-5, 196,355 tokens, 52 tool uses, 11.0 min (from the completion notice).
+
+## Closed
+
+- Round 1, Standards 1 (HELP.md:59): fixed at landing on main, the sentence gains the two fallbacks the code has: else on the first page that is no workbench, else on a new page.
+- Round 1, Standards 2 (the picker's rule written twice): fixed at landing on main, one private predicate in `status.ts` that `repositoryChoices` and `chosenState` both call.
+- Round 1, Behaviour 1 (the empty menu's heading): fixed at landing on main, the empty menu goes back to the base's shape with no heading: "No workbench is open" and Manage Workbenches, the group with its heading only when a workbench is open.
+- Round 1, item 8: not verifiable; the builder's round section names no git command.
+- The test:checks failures: the three are the worktree's missing hub `.oculus/` layer, and the plan's verify list runs on main at landing.

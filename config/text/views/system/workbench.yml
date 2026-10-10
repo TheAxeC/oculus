@@ -1,4 +1,4 @@
-# Oculus text owned by the workbench views: the Views catalogue, the Settings view and the Pages view.
+# Oculus text owned by the workbench views: the Views catalogue, the Settings view, the Pages view and the Workbenches view.
 text:
     views:
         catalogue: Views
@@ -7,6 +7,8 @@ text:
         pages_glyph: pages
         settings: Settings
         settings_glyph: sliders
+        workbenches: Workbenches
+        workbenches_glyph: folder
     settings:
         desc_agents: 'The composer of a new agent session: per agent, the models, efforts and permission modes it offers, each with the words it shows and the flag it passes, and each list with its default.'
         desc_appearance: "The UI theme list with the glyph each theme is offered under, the wallpaper behind the panels, the Memories wall's folder, the CRT default, the code theme of the editors, the terminal text size and the terminal's cursor style, cursor blinking, Option key and copy on selection."
@@ -210,3 +212,19 @@ text:
         settings_unreadable: '{0} could not be read: {1}'
         settings_unwritable: 'Not written: {0} could not be written.'
         settings_where: 'Entry {0}, {1}:'
+        workbenches_close: Close
+        workbenches_closed: Closed
+        workbenches_closed_none: No closed workbench keeps a layout.
+        workbenches_forget: Forget
+        workbenches_forget_detail: 'The layout kept for {0} is dropped, and the next workbench of that folder is made fresh.'
+        workbenches_forget_question: 'Forget the layout kept for {0}?'
+        workbenches_new: New workbench
+        workbenches_not_opened: 'The workbench of {0} could not be opened.'
+        workbenches_not_served: 'The root {0} is not served in this workspace.'
+        workbenches_open: Open
+        workbenches_open_folder: Open Folder...
+        workbenches_open_none: No workbench is open.
+        workbenches_reopen: Reopen
+        workbenches_reset: Reset layout
+        workbenches_toolbar: Workbenches actions
+        workbenches_unserved: 'The folder {0} was added but this workspace does not serve it yet.'

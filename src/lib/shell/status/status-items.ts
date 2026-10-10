@@ -3,30 +3,34 @@
 // hides it.
 //
 // The order is VS Code's: on the left what the window is connected to (the machine, the repository
-// and how far it is from its upstream, the problems, the findings), then the extensions' items
-// oculus keeps (the HPC poll, the usage refreshers, the server connection) and the LaTeX build
-// item; on the right the editor's own items for the source tab on screen (the caret line's blame in
-// a file of a repository, then the caret and the text's own items, then the items of a language
-// server: its state, the Python interpreter, the compile database and the Svelte configuration,
-// each drawn only for the language it belongs to, then the linters of the file, one item each,
-// before the language itself), then the live sessions and the unsaved tabs, and the bell last.
+// with its branch and how far it is from its upstream, the problems, the findings), then the
+// extensions' items oculus keeps (the HPC poll, the usage refreshers, the server connection) and
+// the LaTeX build item; on the right the editor's own items for the source tab on screen (the caret
+// line's blame in a file of a repository, then the caret and the text's own items, then the items
+// of a language server: its state, the Python interpreter, the compile database and the Svelte
+// configuration, each drawn only for the language it belongs to, then the linters of the file, one
+// item each, before the language itself), then the live sessions and the unsaved tabs, and the bell
+// last.
 //
 // The host item is the server's `os.hostname()` on the `config` channel's `ConfigPayload.host`,
-// with its address. Branch and sync are the repository holding the active tab's file
-// (`repoStatus`), or the hub's: the branch picker switches through `switchBranch`, and the sync
-// item pushes through `push` when the branch is only ahead and otherwise pulls and then pushes
-// through `sync`, each asking a confirm that names the upstream or the remote before git runs, and
-// a write git refuses opens the Repositories view on the repository, whose line says why. A branch
-// with no upstream draws Publish Branch in the sync item's place. The blame item shows for a source
-// tab over a file of a repository whether or not the tab draws blame in its gutter, worded as VS
-// Code's `git.blame.statusBarItem.template` default `${authorName} (${authorDateAgo})`, or Not
-// Committed Yet, and a tab over a file at HEAD or in the index shows its blame in the gutter alone.
-// The problems item counts the errors, warnings and infos the Problems view lists, with the infos
-// only when there are some, and a press shows that view or hides it. The findings item counts the
-// Findings view's list, the snapshot's findings and the config channel's, and opens that view. The
-// debug item follows it once a debug session has run since the server started: the last
-// configuration's name, and a press opens the configuration picker. The LaTeX item is the build
-// state of the root of the active LaTeX file or PDF, and opens the TeX view.
+// with its address. The repository item names the repository the bar follows and lists the
+// repositories of the Files view; branch and sync are that repository's. The repository is the one
+// holding the active tab's file, else the one holding the folder of the workbench on screen, else
+// the one last chosen in the repository item, else the hub's (`repoStatus`). The branch picker
+// switches through `switchBranch`, and the sync item pushes through `push` when the branch is only
+// ahead and otherwise pulls and then pushes through `sync`, each asking a confirm that names the
+// upstream or the remote before git runs, and a write git refuses opens the Repositories view on
+// the repository, whose line says why. A branch with no upstream draws Publish Branch in the sync
+// item's place. The blame item shows for a source tab over a file of a repository whether or not
+// the tab draws blame in its gutter, worded as VS Code's `git.blame.statusBarItem.template` default
+// `${authorName} (${authorDateAgo})`, or Not Committed Yet, and a tab over a file at HEAD or in the
+// index shows its blame in the gutter alone. The problems item counts the errors, warnings and
+// infos the Problems view lists, with the infos only when there are some, and a press shows that
+// view or hides it. The findings item counts the Findings view's list, the snapshot's findings and
+// the config channel's, and opens that view. The debug item follows it once a debug session has run
+// since the server started: the last configuration's name, and a press opens the configuration
+// picker. The LaTeX item is the build state of the root of the active LaTeX file or PDF, and opens
+// the TeX view.
 
 import type { EditorStatus } from '$lib/state/workbench/navigation/editor-status.svelte';
 import { t } from '$lib/state/shared/words/text';
@@ -34,6 +38,7 @@ import { t } from '$lib/state/shared/words/text';
 /** The left group, in the order it is drawn. */
 export const LEFT_ITEMS = [
     'host',
+    'repository',
     'branch',
     'sync',
     'problems',
@@ -84,6 +89,8 @@ export function itemName(item: StatusItem): string {
     switch (item) {
         case 'host':
             return t('statusbar.item_host');
+        case 'repository':
+            return t('statusbar.item_repository');
         case 'branch':
             return t('statusbar.item_branch');
         case 'sync':

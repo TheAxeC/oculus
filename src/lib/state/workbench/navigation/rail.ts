@@ -56,6 +56,9 @@ export function railPages(config: Record<string, unknown> | undefined): RailPage
 /** The view the rail list is edited in, whose instance state holds the list being typed. */
 export const SETTINGS_VIEW = 'settings';
 
+/** The view that manages the workbenches, which the rail's Workbenches menu shows. */
+export const WORKBENCHES_VIEW = 'workbenches';
+
 /**
  * The rail list a Settings tab is editing, or null when it edits nothing and shows the list the
  * config holds. It is kept in the tab's own state, so it is there again after the tab is switched

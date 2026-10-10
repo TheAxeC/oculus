@@ -200,7 +200,7 @@
 <g id="node23" class="node">
 <title>folder shell/status to layer state</title>
 <polygon fill="none" stroke="none" points="127.88,-775.44 114.12,-775.44 114.12,-762.96 127.88,-762.96 127.88,-775.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="121" y="-766.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">25</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="121" y="-766.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">26</text>
 </g>
 <!-- folder shell/status&#45;&gt;folder shell/status to layer state -->
 <g id="edge36" class="edge">

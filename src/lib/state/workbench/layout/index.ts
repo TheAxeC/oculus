@@ -15,6 +15,7 @@ export {
     emptyPane,
     floatHost,
     folderName,
+    folderPlace,
     hostsOf,
     newPage,
     pageLeaf,
@@ -71,15 +72,10 @@ export {
     START_DOCK,
     START_H,
     START_W,
-    adoptFloats,
-    adoptedPage,
     defaultBeside,
-    keptDefault,
     placeFits,
     rebuiltPage,
     resetAll,
-    startedOn,
-    withPage,
     withoutHeld,
     writeHost
 } from './open/float/pages.ts';
@@ -122,7 +118,6 @@ export type { LayoutAccess } from './access.ts';
 export { LAYOUT_KEY, PREVIOUS_KEY, createStorage } from './saved/storage.ts';
 export type { LayoutStorage, SaveTurn, Storable } from './saved/storage.ts';
 export { createLoad } from './saved/load.ts';
-export { giveDocuments } from './saved/docs.ts';
 export type { DocSource } from './saved/docs.ts';
 export { carryWorkbench } from './saved/carry.ts';
 export { createAttention } from './open/attention.ts';

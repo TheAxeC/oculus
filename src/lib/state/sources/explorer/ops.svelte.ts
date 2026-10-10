@@ -40,13 +40,18 @@ import { FILES_VIEW } from '../fs.ts';
 import { BOOKMARK_COLLECTION, type FsStore } from '../fs.svelte.ts';
 import { DIFF_VIEW } from '../repositories/repositories.svelte.ts';
 import {
+    addedLine,
     foldersToAdd,
     folderChoice,
     pickedOf,
     type FolderChoice,
     type FoldersAdded,
-    type PickRefusal
+    type PickRefusal,
+    type WorkbenchFolder
 } from './acts/folders.ts';
+import { refusal } from './acts/refusal.ts';
+import { rootHolding } from './view/tab-roots.ts';
+import { t } from '../../shared/words/text.ts';
 import { replacedPlaces, undoneMoves, type FileRecord } from './acts/undo.ts';
 import { nameOf } from './file-type.ts';
 import { cardTreePrefix } from './view/card-tree.ts';
@@ -187,6 +192,14 @@ export type ExplorerStore = {
      * which offers Add Folder to Workspace.
      */
     openFolder: () => Promise<FolderOpened>;
+    /**
+     * Open Folder for a workbench: open the folder panel and answer the folder to open a workbench
+     * at. A folder a served root holds is that root and path; one outside every root is added to
+     * the workspace as Add Folder to Workspace adds it, with its refusals, and is that new root's
+     * top. A cancelled panel answers no folder and no line; a panel that did not open and a refused
+     * add answer no folder and the line that says why.
+     */
+    pickWorkbenchFolder: () => Promise<WorkbenchFolder>;
 };
 
 /** The folder a path sits in, '' for a path at the top of its root. */
@@ -632,30 +645,62 @@ export function createExplorer(
         }
     }
 
-    async function addFolders(): Promise<FoldersAdded> {
-        if (panel) return { ok: true, added: 0, skipped: [], refused: '' };
-        const picked = await pick();
-        if (!picked.ok) return { ok: false, picker: picked.error };
+    /** The roots of the workspace in force. */
+    function currentRoots(): FsRoot[] {
         const current = fs.workspaces();
-        const roots = current.workspaces.find((one) => one.name === current.current)?.roots ?? [];
-        const { add, skipped } = foldersToAdd(picked.paths, roots);
+        return current.workspaces.find((one) => one.name === current.current)?.roots ?? [];
+    }
+
+    /**
+     * Add folders to the workspace in force, one write each: how many were added and the first
+     * refusal, whose code is empty when none was refused.
+     */
+    async function addRoots(dirs: string[]): Promise<{ added: number; refused: string }> {
         let added = 0;
         let refused = '';
-        for (const dir of add) {
+        for (const dir of dirs) {
             const answer = await fs.addRoot(dir);
             if (answer.ok) added += 1;
             else if (refused === '') refused = answer.error ?? 'refused';
         }
+        return { added, refused };
+    }
+
+    async function addFolders(): Promise<FoldersAdded> {
+        if (panel) return { ok: true, added: 0, skipped: [], refused: '' };
+        const picked = await pick();
+        if (!picked.ok) return { ok: false, picker: picked.error };
+        const { add, skipped } = foldersToAdd(picked.paths, currentRoots());
+        const { added, refused } = await addRoots(add);
         return { ok: true, added, skipped, refused };
+    }
+
+    async function pickWorkbenchFolder(): Promise<WorkbenchFolder> {
+        if (panel) return { folder: null, line: '' };
+        const picked = await pick();
+        if (!picked.ok)
+            return { folder: null, line: addedLine({ ok: false, picker: picked.error }, refusal) };
+        const choice = folderChoice(picked.paths, currentRoots());
+        if (choice.kind === 'none') return { folder: null, line: '' };
+        if (choice.kind === 'inside')
+            return { folder: { root: choice.root, path: choice.path }, line: '' };
+        const { added, refused } = await addRoots([choice.dir]);
+        const line = addedLine({ ok: true, added, skipped: [], refused }, refusal);
+        if (added === 0) return { folder: null, line };
+        // The write marked the workspaces stale; the new root's key is the one the server gave it.
+        const now = await fs.workspacesNow();
+        const current = now.workspaces.find((one) => one.name === now.current)?.roots ?? [];
+        const made = rootHolding(current, choice.dir);
+        return made === null
+            ? { folder: null, line: t('workbench.workbenches_unserved', choice.dir) }
+            : { folder: { root: made.root.key, path: made.path }, line };
     }
 
     async function openFolder(): Promise<FolderOpened> {
         if (panel) return { ok: true, choice: { kind: 'none' } };
         const picked = await pick();
         if (!picked.ok) return { ok: false, picker: picked.error };
-        const current = fs.workspaces();
-        const roots = current.workspaces.find((one) => one.name === current.current)?.roots ?? [];
-        const choice = folderChoice(picked.paths, roots);
+        const choice = folderChoice(picked.paths, currentRoots());
         if (choice.kind === 'inside') {
             layout.showFolderInFiles(choice.path, choice.root);
         } else if (choice.kind === 'outside') {
@@ -691,6 +736,7 @@ export function createExplorer(
         lspEdit,
         addFolders,
         panelOpen: () => panel,
-        openFolder
+        openFolder,
+        pickWorkbenchFolder
     };
 }

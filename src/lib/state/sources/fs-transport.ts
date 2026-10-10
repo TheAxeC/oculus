@@ -87,6 +87,16 @@ export function currentWorkspace(saved: WorkspacesState): { name: string; roots:
 }
 
 /**
+ * The roots of every workspace, the current workspace's first: the roots the file routes serve,
+ * which a tab's root key is read against.
+ */
+export function allRoots(saved: WorkspacesState): FsRoot[] {
+    const current = saved.workspaces.filter((workspace) => workspace.name === saved.current);
+    const others = saved.workspaces.filter((workspace) => workspace.name !== saved.current);
+    return [...current, ...others].flatMap((workspace) => workspace.roots);
+}
+
+/**
  * The current workspace's roots when the workspaces were read, and null while they are being read,
  * when none was read yet and when the read failed: an empty list of served roots then says nothing
  * about what is served.

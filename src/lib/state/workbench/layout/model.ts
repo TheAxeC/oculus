@@ -106,6 +106,11 @@ export function folderName(folder: FolderRef): string {
     return folder.path === '' ? folder.root : nameOf(folder.path);
 }
 
+/** Where a folder is: the root's key and the path in it, and the key alone for a root's top. */
+export function folderPlace(folder: FolderRef): string {
+    return folder.path === '' ? folder.root : `${folder.root}/${folder.path}`;
+}
+
 /**
  * The view a folder page opens in its documents pane when it is made, with the state that view
  * opens with: the item the page was opened for, which Reset layout opens again.

@@ -6,9 +6,9 @@
     //
     // What the items say comes from three places. The page hands in the words made from stores the
     // shell's row of the boundary table does not name (state/workbench/navigation/status.ts): the
-    // machine, the repository of the tab on screen, the findings, the problems, the HPC poll, the
-    // usage refreshers, the server connection and the live sessions, with the git writes the branch
-    // and sync items ask for. The source tab on screen publishes its own items' state to the editor
+    // machine, the repository the bar follows, the findings, the problems, the HPC poll, the usage
+    // refreshers, the server connection and the live sessions, with the git writes the branch and
+    // sync items ask for. The source tab on screen publishes its own items' state to the editor
     // status store, which the shell reads. The unsaved tabs and the notifications are the shell's
     // own, from the layout, ui and notices stores.
     //
@@ -166,7 +166,14 @@
                 </span>
             {/if}
             {#if status.repo !== null}
-                <RepoItems repo={status.repo} {git} branch={shown('branch')} sync={shown('sync')} />
+                <RepoItems
+                    repo={status.repo}
+                    {git}
+                    choices={status.choices}
+                    repository={shown('repository')}
+                    branch={shown('branch')}
+                    sync={shown('sync')}
+                />
             {/if}
             {#if shown('problems')}
                 <span data-status="problems">

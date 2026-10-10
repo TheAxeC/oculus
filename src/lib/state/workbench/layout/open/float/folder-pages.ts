@@ -6,8 +6,11 @@
 // its arrangement is kept by the folder (`KeptWorkbench`), at most `KEPT_MAX` of them, the one
 // closed longest ago dropped first. A kept layout is not a holder of a unique view: the page made
 // from it leaves out each unique view another page or a float holds, as a page made from the
-// default does (`withoutHeld`), and makes no copy of it.
+// default does (`withoutHeld`), and makes no copy of it. A kept layout whose tab ids a page or a
+// float holds is given ids of its own (`withFreshIds`) and then makes its page, so a kept layout
+// leaves only by a reader's Forget, by a reset of its folder or as the oldest of twenty.
 
+import { emptyTab, TERMINAL_VIEW } from '../../../../sessions/terminal/terminal-tabs.ts';
 import { tabsOf } from '../../instance.ts';
 import {
     KEPT_MAX,
@@ -18,6 +21,7 @@ import {
     type Page,
     type Pages
 } from '../../model.ts';
+import { renameInstance, restate } from '../../tree.ts';
 import { settleFocus } from '../../workbench.ts';
 import { withoutHeld, type Builds } from './pages.ts';
 
@@ -68,4 +72,21 @@ export function pageFromKept(
     if (tabsOf(entry.workbench.root).some((tab) => taken.has(tab.id))) return null;
     const left = withoutHeld(held, { ...page, workbench: { root: entry.workbench.root } }, builds);
     return { ...page, workbench: settleFocus({ ...entry.workbench, root: left.workbench.root }) };
+}
+
+/**
+ * The kept layout with every tab given an id nobody holds, and the states kept for the tabs filed
+ * under the new ids. A Terminal tab carries its own id in its state, which is made again for the
+ * new id as the close made it for the old one.
+ */
+export function withFreshIds(entry: KeptWorkbench, fresh: () => string): KeptWorkbench {
+    let root = entry.workbench.root;
+    const states: Record<string, unknown> = {};
+    for (const tab of tabsOf(entry.workbench.root)) {
+        const id = fresh();
+        root = renameInstance(root, tab.id, id);
+        if (tab.view === TERMINAL_VIEW) root = restate(root, id, emptyTab(id));
+        if (Object.hasOwn(entry.states, tab.id)) states[id] = entry.states[tab.id];
+    }
+    return { ...entry, workbench: { ...entry.workbench, root }, states };
 }

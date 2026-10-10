@@ -290,6 +290,7 @@ digraph channels {
     "ch git" -> "state/system/apps/rules";
     "ch git" -> "views/sessions/terminal";
     "ch git" -> "views/system/status";
+    "ch git" -> "views/system/workbench";
     "ch hpc" -> "routes/+page" [style=dashed];
     "ch hpc" -> "routes/+page";
     "ch hpc" -> "state/system/machine/hpc/hpc";

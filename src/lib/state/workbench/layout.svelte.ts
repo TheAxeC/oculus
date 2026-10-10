@@ -21,10 +21,9 @@
 
 import { item } from '../../data/helpers/guards.ts';
 import { createArmedKeeps, type ArmedKeep } from './layout/open/armed-keep.svelte.ts';
+import { createRailPages } from './layout/open/float/rail-pages.ts';
 import type { UiStore } from './ui.svelte.ts';
 import {
-    adoptFloats as adoptFloatsIn,
-    adoptedPage,
     clearPage,
     createAttention,
     createAway,
@@ -43,9 +42,7 @@ import {
     findInstance,
     focusedPane,
     fold,
-    giveDocuments as giveDocumentsIn,
     hostsOf,
-    keptDefault,
     LAYOUT_KEY,
     maximise,
     newPage,
@@ -55,11 +52,9 @@ import {
     restore,
     settleFocus,
     showable,
-    startedOn,
     tabsOf,
     unembedPage as unembedIn,
     withoutHeld,
-    withPage,
     writeHost,
     floatHost,
     type Away,
@@ -460,82 +455,20 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         }
     });
 
-    /**
-     * The page of the rail button whose arrangement key is `key`, made current. The page that
-     * carries the key is the one the reader arranged and is switched to as it is; with none, a page
-     * no button has taken yet whose name is the button's label becomes the button's page, which is
-     * how a page opened by name before the rail had buttons is kept, and a workbench (a page with a
-     * `folder`) is never taken; with neither, the page is made from the arrangement, named with the
-     * label, and a unique view the arrangement names is moved into it from the page or float
-     * holding it. An empty key, or an arrangement that does not parse when a page has to be made
-     * from it, changes nothing and says so.
-     */
-    function openRailPage(key: string, label: string, raw: unknown): boolean {
-        if (key === '') return false;
-        const held = store.current.pages;
-        const found = held.find((page) => page.rail === key);
-        if (found !== undefined) {
-            switchPage(found.id);
-            return true;
+    const rail = createRailPages(access, {
+        builds,
+        keepRule,
+        forgetTouched: attention.forgetTouched,
+        switchPage,
+        fresh: () => fresh,
+        settleFresh: () => {
+            fresh = false;
+        },
+        pendingFloats: () => pendingFloats,
+        floatsTaken: () => {
+            pendingFloats = false;
         }
-        const adopted = adoptedPage(store.current, key, label);
-        if (adopted !== null) {
-            attention.forgetTouched();
-            savePages(adopted);
-            return true;
-        }
-        const next = parseArrangement(raw);
-        if (next === null) return false;
-        attention.forgetTouched();
-        savePages(withPage(store.current, newPage(label, next, key), builds));
-        return true;
-    }
-
-    /**
-     * The first rail page as the one page of a browser that had no saved layout: made from its
-     * arrangement in place of the default page, so the reader starts on a page a button owns and
-     * digit 1 shows it again, and the shipped floats made after it. A unique view named twice is
-     * kept by the first place that names it. Once any change was saved the pages are the reader's
-     * and stay.
-     */
-    function startOnRailPage(key: string, label: string, raw: unknown, shipped: FloatSpec[]): void {
-        if (!fresh) return;
-        const next = key === '' ? null : parseArrangement(raw);
-        if (next === null) {
-            // The first entry names nothing drawable: the default page stays the reader's first.
-            keepDefaultPage(shipped);
-            return;
-        }
-        attention.forgetTouched();
-        savePages(startedOn(store.current, newPage(label, next, key), shipped, builds));
-    }
-
-    /**
-     * The default page stays the reader's first, beside the shipped floats. A unique view a shipped
-     * float names is moved into the float out of the default page, which keeps an empty pane.
-     */
-    function keepDefaultPage(shipped: FloatSpec[]): void {
-        if (!fresh) return;
-        fresh = false;
-        if (shipped.length > 0) savePages(keptDefault(store.current, shipped, builds));
-    }
-
-    /**
-     * Take the shipped floats into pages read from an envelope written before floats. It happens
-     * once: the save that follows writes the current envelope, which a later load takes as the
-     * reader's own.
-     */
-    function adoptFloats(shipped: FloatSpec[]): void {
-        if (!pendingFloats) return;
-        pendingFloats = false;
-        savePages(adoptFloatsIn(store.current, shipped, keepRule));
-    }
-
-    /** Every rail page given the documents its source lists that it has not been given. */
-    function giveDocuments(sources: readonly DocSource[]): void {
-        const next = giveDocumentsIn(store.current, sources);
-        if (next !== store.current) savePages(next);
-    }
+    });
 
     /** The page on screen before the current one, while it is still one of the pages. */
     function previousPage(): string | null {
@@ -812,16 +745,18 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         loadLayout: load.loadLayout,
         stopFollowing: load.stopFollowing,
         loaded: () => loaded,
-        openRailPage,
-        startOnRailPage,
+        openRailPage: rail.openRailPage,
+        startOnRailPage: rail.startOnRailPage,
         startingFresh: () => fresh,
-        keepDefaultPage,
-        adoptFloats,
-        giveDocuments,
+        keepDefaultPage: rail.keepDefaultPage,
+        adoptFloats: rail.adoptFloats,
+        giveDocuments: rail.giveDocuments,
         ...floatOps,
         openFolderPage: folderOps.openFolderPage,
         resetFolderPage: folderOps.resetFolderPage,
         folderPage: folderOps.folderPage,
+        keptWorkbenches: folderOps.keptWorkbenches,
+        forgetKept: folderOps.forgetKept,
         copyTabToWindow: (id, bounds) =>
             copiesToWindow(id) ? floatOps.copyTabToWindow(id, bounds) : null,
         previousPage,

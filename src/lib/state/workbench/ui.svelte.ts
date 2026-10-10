@@ -6,9 +6,10 @@
 // it has shown under `pdf-place` (state/sources/explorer/pdf-place.ts).
 //
 // The seven appearance values save together under the one key, so what a browser was left looking
-// like comes back whole, and so do the status bar's own two: the items the reader hid from it and
-// whether its notifications are kept quiet. What the seven start as is config/appearance.yml's,
-// read through state/shared/words/appearance.ts, and never a literal here.
+// like comes back whole, and so do the status bar's own three: the items the reader hid from it,
+// whether its notifications are kept quiet and the repository the reader last chose in its
+// repository item (a root of the `git` channel, or none). What the seven start as is
+// config/appearance.yml's, read through state/shared/words/appearance.ts, and never a literal here.
 //
 // It saves the same way the layout store does, under its own key and through the same small slice
 // of Storage, so a test hands it a plain object and no test touches localStorage.
@@ -16,8 +17,8 @@
 // Every browser tab of one server writes the one key, and the appearance is each tab's own while
 // the instance records are the views' state that belongs with the arrangement the layout store
 // shares. A save therefore reads the saved value first and writes the saved records with the ones
-// this tab changed or removed laid over them, so it never drops a record another tab saved; and
-// the store listens for the browser's `storage` event and takes the saved records when another tab
+// this tab changed or removed laid over them, so it never drops a record another tab saved; and the
+// store listens for the browser's `storage` event and takes the saved records when another tab
 // saves, leaving the appearance as this tab has it (`takeSavedInstances`).
 
 import { z } from 'zod';
@@ -66,6 +67,7 @@ const savedUiShape = z.object({
         .transform((items) => [...new Set(items)])
         .catch(() => []),
     statusQuiet: z.boolean().catch(false),
+    statusRepository: z.string().min(1).nullable().catch(null),
     instances: mapShape.transform((records) => ({ ...records })).catch(() => ({}))
 });
 
@@ -103,6 +105,8 @@ type Ui = {
     statusHidden: string[];
     /** Whether Do Not Disturb is on: a notification goes into the list and shows no toast. */
     statusQuiet: boolean;
+    /** The repository last chosen in the status bar's repository item, by its root, or none. */
+    statusRepository: string | null;
     /**
      * One entry per view instance, by instance id, and one for each fixed id a view keeps a record
      * under. The shape of the value is the view's own.
@@ -160,6 +164,8 @@ export type UiStore = {
     codeTheme: () => string;
     statusHidden: () => string[];
     statusQuiet: () => boolean;
+    /** The repository last chosen in the status bar's repository item, by its root, or null. */
+    statusRepository: () => string | null;
     chosen: () => Chosen;
     initial: () => Chosen;
     instanceState: (id: string) => unknown;
@@ -199,6 +205,8 @@ export type UiStore = {
     setCodeTheme: (id: string | null) => void;
     setStatusHidden: (item: string, hidden: boolean) => void;
     setStatusQuiet: (on: boolean) => void;
+    /** Keep the repository chosen in the status bar's repository item; null forgets it. */
+    setStatusRepository: (root: string | null) => void;
     setPaneStrip: (key: PaneStripKey, value: string) => void;
     setInstanceState: (id: string, state: unknown) => void;
     /**
@@ -249,6 +257,7 @@ export function createUi(
             codeTheme: null,
             statusHidden: [],
             statusQuiet: false,
+            statusRepository: null,
             instances: {}
         };
     }
@@ -335,6 +344,11 @@ export function createUi(
     /** Whether Do Not Disturb is on. */
     function statusQuiet(): boolean {
         return store.current.statusQuiet;
+    }
+
+    /** The repository last chosen in the status bar's repository item, or null. */
+    function statusRepository(): string | null {
+        return store.current.statusRepository;
     }
 
     /** The seven appearance values as this browser holds them of its own. */
@@ -484,6 +498,7 @@ export function createUi(
             codeTheme: isCodeTheme(held.codeTheme) ? held.codeTheme : null,
             statusHidden: held.statusHidden,
             statusQuiet: held.statusQuiet,
+            statusRepository: held.statusRepository,
             instances
         };
         synced = textsOf(instances);
@@ -647,6 +662,13 @@ export function createUi(
         save({ ...store.current, statusQuiet: on });
     }
 
+    /** Keep the repository chosen in the status bar, or forget it with null or the empty text. */
+    function setStatusRepository(root: string | null): void {
+        const next = root === '' ? null : root;
+        if (next === store.current.statusRepository) return;
+        save({ ...store.current, statusRepository: next });
+    }
+
     /** Stop taking another browser tab's saved records, which `loadUi` given a window started. */
     function stopFollowing(): void {
         unfollow();
@@ -717,6 +739,7 @@ export function createUi(
         codeTheme,
         statusHidden,
         statusQuiet,
+        statusRepository,
         chosen,
         initial,
         instanceState,
@@ -747,6 +770,7 @@ export function createUi(
         setCodeTheme,
         setStatusHidden,
         setStatusQuiet,
+        setStatusRepository,
         setPaneStrip,
         setInstanceState,
         updateInstanceState,

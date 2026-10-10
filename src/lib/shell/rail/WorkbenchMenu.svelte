@@ -3,16 +3,15 @@
     // open, a page that belongs to one folder, listed by their words with the one on screen marked.
     // A row shows its workbench, and the button at the row's end closes it, asking first about
     // unsaved text and running terminals as closing a page asks (state/workbench/navigation/
-    // pages.ts, `createPageFlows`). A second group lists the same workbenches under Reset layout,
-    // which asks first, makes the workbench again from the `workbench:` arrangement of
-    // config/layout.yml and drops the layout kept for its folder. With no workbench open the menu
-    // says so.
+    // pages.ts, `createPageFlows`). Under the list, Manage Workbenches opens the Workbenches view,
+    // which holds what the menu leaves out: the closed workbenches whose layout is kept, Reset
+    // layout, Forget and New workbench. With no workbench open the menu says so and holds Manage
+    // Workbenches alone.
     //
     // The keyboard ring is the rail's, so the button is handed its place in the focus order and its
     // key handler.
 
     import CloseQuestions from '$lib/ui/tabs/CloseQuestions.svelte';
-    import { useWorkbenchReset } from './workbench-reset';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
     import {
@@ -24,6 +23,9 @@
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
+    /** The id of the item that opens the Workbenches view, which no page id can be. */
+    const MANAGE = 'manage';
+
     const {
         layout: { closePage, currentPage, pages, switchPage },
         registry: { viewFor },
@@ -33,14 +35,13 @@
     type Props = {
         stopIndex: (id: string) => number;
         ringKeys: (id: string) => (event: KeyboardEvent) => void;
+        /** Show the Workbenches view. */
+        onmanage: () => void;
     };
 
-    let { stopIndex, ringKeys }: Props = $props();
+    let { stopIndex, ringKeys, onmanage }: Props = $props();
 
-    /** Make a workbench again from its arrangement, which the page reads from the config. */
-    const resetWorkbench = useWorkbenchReset();
-
-    /** The close that waits on its dialog, and the reset question that waits on its own. */
+    /** The close that waits on its dialog, and the question an unsaved tab waits on. */
     let confirming: { message: string; id: string } | null = $state(null);
     let question: Question | null = $state(null);
 
@@ -65,31 +66,36 @@
 
     const none: MenuItem[] = [{ id: 'none', label: t('ui.workbenches_none'), disabled: true }];
 
+    const manage: MenuItem = { id: MANAGE, label: t('ui.workbenches_manage'), rule: true };
+
+    /**
+     * One group under the Workbenches heading: the open workbenches, then Manage Workbenches.
+     * With no workbench open the menu holds no group: the line that says so, then Manage
+     * Workbenches.
+     */
     const groups = $derived<MenuGroup[]>([
         {
             id: 'open',
             heading: t('ui.workbenches'),
-            items: open.map((one) => ({
-                id: one.id,
-                label: one.name,
-                active: one.id === current,
-                action: {
-                    glyph: t('ui.close_glyph'),
-                    label: t('ui.workbenches_close', one.name),
-                    run: () => flows.close(one.id)
-                }
-            }))
-        },
-        {
-            id: 'reset',
-            heading: t('ui.workbenches_reset_heading'),
-            items: open.map((one) => ({ id: one.id, label: one.name }))
+            items: [
+                ...open.map((one) => ({
+                    id: one.id,
+                    label: one.name,
+                    active: one.id === current,
+                    action: {
+                        glyph: t('ui.close_glyph'),
+                        label: t('ui.workbenches_close', one.name),
+                        run: () => flows.close(one.id)
+                    }
+                })),
+                manage
+            ]
         }
     ]);
 
-    function pick(id: string, _event: MouseEvent, group?: string): void {
-        if (group === 'open') switchPage(id);
-        else if (group === 'reset') flows.reset(id, () => resetWorkbench(id));
+    function pick(id: string): void {
+        if (id === MANAGE) onmanage();
+        else switchPage(id);
     }
 </script>
 
@@ -98,7 +104,7 @@
     glyph={t('ui.workbenches_glyph')}
     rail
     placement="beside"
-    items={open.length === 0 ? none : []}
+    items={open.length === 0 ? [...none, manage] : []}
     groups={open.length === 0 ? undefined : groups}
     onpick={pick}
     stop="workbenches"

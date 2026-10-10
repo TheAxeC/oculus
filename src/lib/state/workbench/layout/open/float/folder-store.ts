@@ -5,11 +5,13 @@
 // by instance id.
 //
 // A folder page opened for a folder that has one open is shown. One opened for a folder with a
-// layout kept is made from that layout, its tabs' ui states written back under the same ids. Any
-// other is made from the arrangement the caller builds. Closing a folder page keeps its layout and
-// the states its tabs held, except the source tabs, whose draft is the file's text and is read from
-// the disk again, and the tabs holding unsaved text. A Terminal tab is kept without the terminals
-// its close ended.
+// layout kept is made from that layout, its tabs' ui states written back under the same ids, or
+// under ids of their own when a page or a float holds one of the kept ids. Any other is made from
+// the arrangement the caller builds. Closing a folder page keeps its layout and the states its tabs
+// held, except the source tabs, whose draft is the file's text and is read from the disk again, and
+// the tabs holding unsaved text. A Terminal tab is kept without the terminals its close ended. The
+// layouts kept are read with `keptWorkbenches`, and one is dropped by `forgetKept` alone, a
+// folder's reset or the twenty a close keeps.
 
 import { emptyTab, TERMINAL_VIEW } from '../../../../sessions/terminal/terminal-tabs.ts';
 import { tabsOf } from '../../instance.ts';
@@ -27,7 +29,14 @@ import {
 } from '../../model.ts';
 import { settlePageLeaves } from '../../nested.ts';
 import { restate } from '../../tree.ts';
-import { folderPageOf, keptFor, pageFromKept, withKept, withoutKept } from './folder-pages.ts';
+import {
+    folderPageOf,
+    keptFor,
+    pageFromKept,
+    withFreshIds,
+    withKept,
+    withoutKept
+} from './folder-pages.ts';
 import { rebuiltPage, withPage, type Builds } from './pages.ts';
 
 /** The view of a source tab, whose draft holds the text of its file. */
@@ -69,6 +78,10 @@ export type FolderOps = {
     resetFolderPage: (id: string, layout: FolderLayout) => boolean;
     /** The page that belongs to a folder, or null. */
     folderPage: (folder: FolderRef) => Page | null;
+    /** The layouts kept of closed folder pages, the one closed longest ago first. */
+    keptWorkbenches: () => readonly KeptWorkbench[];
+    /** Drop the layout kept for a folder; answers whether one was kept. */
+    forgetKept: (folder: FolderRef) => boolean;
     /** The pages with the layout of a folder page that is about to close kept for its folder. */
     keepClosed: (held: Pages, closing: Page) => Pages;
 };
@@ -95,6 +108,23 @@ export function createFolderOps(
         }
     }
 
+    /**
+     * The page a kept layout makes, with the states of its tabs under the ids the page gives them:
+     * the ids it was closed with, else fresh ones when a page or a float holds one of them. Null
+     * only when the kept layout cannot make a page even with ids of its own.
+     */
+    function revive(
+        held: Pages,
+        entry: KeptWorkbench,
+        page: Page
+    ): { restored: Page; states: Record<string, unknown> } | null {
+        const same = pageFromKept(held, entry, page, builds);
+        if (same !== null) return { restored: same, states: entry.states };
+        const fresh = withFreshIds(entry, () => crypto.randomUUID());
+        const made = pageFromKept(held, fresh, page, builds);
+        return made === null ? null : { restored: made, states: fresh.states };
+    }
+
     function openFolderPage(spec: FolderSpec): FolderOpened | null {
         const held = access.held();
         const open = folderPageOf(held, spec.folder);
@@ -110,9 +140,10 @@ export function createFolderOps(
             ...item
         };
         const entry = keptFor(held, spec.folder);
-        const restored = entry === null ? null : pageFromKept(held, entry, page, builds);
-        if (entry !== null && restored !== null) {
-            write(restored.workbench.root, entry.states);
+        const revived = entry === null ? null : revive(held, entry, page);
+        if (revived !== null) {
+            const { restored, states } = revived;
+            write(restored.workbench.root, states);
             const next = withoutKept(held, spec.folder);
             access.save(
                 settlePageLeaves({
@@ -157,6 +188,14 @@ export function createFolderOps(
         return tab.view !== SOURCE_VIEW && !access.ui.unsaved(tab.id);
     }
 
+    function forgetKept(folder: FolderRef): boolean {
+        const held = access.held();
+        const next = withoutKept(held, folder);
+        if (next === held) return false;
+        access.save(next);
+        return true;
+    }
+
     function keepClosed(held: Pages, closing: Page): Pages {
         if (closing.folder === undefined) return held;
         const tabs = tabsOf(closing.workbench.root);
@@ -181,6 +220,8 @@ export function createFolderOps(
         openFolderPage,
         resetFolderPage,
         folderPage: (folder) => folderPageOf(access.held(), folder),
+        keptWorkbenches: () => access.held().kept ?? [],
+        forgetKept,
         keepClosed
     };
 }

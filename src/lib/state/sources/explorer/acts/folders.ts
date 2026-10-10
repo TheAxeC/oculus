@@ -73,6 +73,12 @@ export function folderChoice(paths: string[], roots: FsRoot[]): FolderChoice {
         : { kind: 'inside', root: found.root.key, path: found.path };
 }
 
+/**
+ * Where New workbench's Open Folder came to: the folder to open a workbench at (a served root's key
+ * and a path in it), or none with the line that says why (empty for a cancelled panel).
+ */
+export type WorkbenchFolder = { folder: { root: string; path: string } | null; line: string };
+
 /** The sentence for a panel that did not open, by the word the route refused with. */
 export function pickerLine(error: PickRefusal): string {
     if (error === 'unsupported') return t('files.picker_unsupported');

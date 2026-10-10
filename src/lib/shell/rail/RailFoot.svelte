@@ -4,7 +4,8 @@
     // Bookmarks opens a menu of the reader's own bookmarks by name, beside the rail, and a choice
     // opens the bookmark as the file browser opens it (a folder is shown open in the Files view);
     // with no bookmark the menu says there is none. Workbenches opens the menu of the open
-    // workbenches (WorkbenchMenu.svelte), which switches to one and closes one.
+    // workbenches (WorkbenchMenu.svelte), which switches to one, closes one and shows the
+    // Workbenches view.
     //
     // The keyboard ring is the rail's, so each control is handed its place in the focus order and
     // its key handler.
@@ -34,9 +35,11 @@
         ringKeys: (id: string) => (event: KeyboardEvent) => void;
         onsearch: () => void;
         onupdate: () => void;
+        /** Show the Workbenches view. */
+        onworkbenches: () => void;
     };
 
-    let { saved, stopIndex, ringKeys, onsearch, onupdate }: Props = $props();
+    let { saved, stopIndex, ringKeys, onsearch, onupdate, onworkbenches }: Props = $props();
 
     const items = $derived<MenuItem[]>(bookmarkChoices(saved));
 
@@ -79,7 +82,7 @@
         />
     </div>
     <div data-action="workbenches">
-        <WorkbenchMenu {stopIndex} {ringKeys} />
+        <WorkbenchMenu {stopIndex} {ringKeys} onmanage={onworkbenches} />
     </div>
     <div data-action="search">
         <ToolButton

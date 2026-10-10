@@ -40,21 +40,6 @@ dispatch:   # steps in flight, up to six (Z632)
   landing: not-started
   round: 1
   round_1: sent 2026-10-10 with agents/briefs/D60-round1.md; the tree before it is `git diff --binary 69b16a679` in the worktree, shasum 90f21690a134fcdd16d355ab8e3db48996a10cba (session scratchpad D60-before-round1.diff)
-- step: D61
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a59e2f194e5e771bc (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D61
-  base: a35863cc6
-  launched: 2026-10-10
-  report: agents/reviews/D61-report.md
-  builder_usage: 324,989 tokens, 236 tool uses, 85.4 min (the builder ran two git commands against the no-git rule, `git -C . status` and `git rm -q` with no path, which changed nothing, its report says); round 1: 129,524 tokens, 58 tool uses, 21.1 min
-  brief_check: agents/reviews/D61-brief-check.md (a29257cca60a58268, claude-opus-5-5, 207,035 tokens, 76 tool uses, 8.0 min; closed in the brief by the orchestrator under "Closed")
-  reviewer_report: agents/reviews/D61-refuter.md (a86856c9cda9069e5, claude-opus-5-5, 266,968 tokens, 81 tool uses, 15.2 min)
-  shared_paths: with D60, tools/oculus/HELP.md (D60 lines 169 and 451-452, D61 lines 35, 53-60 and 80-82), tools/oculus/DESIGN.md (D60 lines 558 and 593, D61 the workbench and status bar paragraphs) and tools/oculus/docs/diagrams/ (generated); simple: the two steps change different lines of the two documents, and the diagrams are made again by `npm run diagrams` at each landing
-  landing: not-started
-  round: 1
-  round_1: sent 2026-10-10 with agents/briefs/D61-round1.md; the tree before it is `git diff --binary a35863cc6` in the worktree, shasum 9172f22e84511d444f211ca4b3e17248f9412fd1 (session scratchpad D61-before-round1.diff)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -326,6 +311,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-10 (D61 landed). D61, the Workbenches view and the status bar's repository, landed (booking in plan.md; `agents/reviews/D61-landing.md`) after one repair round and the review over it, its three findings and the comment width fixed on main at landing (`agents/reviews/D61-refuter.md`, Closed); the look on a scratch oculus from the gate. Worktree `.agents/worktrees/D61` and its branches removed. In flight (1 of 6): D60 (builder a6dd13dec7398d216 on repair round 1, `agents/briefs/D60-round1.md`). Open item 46 (D62's choices) for Axel. Next: D60's review over round 1 and /land D60; /spec D62 after Axel rules on 46; then D63, D64, Q72 and O33.
 - 2026-10-10 (D59 landed). D59, the hub fixes and personal projects, landed (booking in plan.md; `agents/reviews/D59-landing.md`) after one repair round and the review over it, its findings fixed on main at landing (`agents/reviews/D59-refuter.md`, Closed), with one defect of the look (the side project page's LaTeX panel drew `no-project`) fixed at landing; G61, G8, G32 and G29 written into `agents/guarded.md`; the rice red command GREEN over 16 states. Worktree `.agents/worktrees/D59` and its branches removed. Nothing in flight. Next: /spec D60, D61 and D62 side by side, then D63, D64, Q72 and O33.
 - 2026-10-10 (D59 launched). D59 prepared (base aff419a0b, brief `agents/briefs/D59.md` with item 7 from the diagnosis `agents/reviews/D59-diagnosis.md` and every brief-check finding closed under "Closed"; Z771 to Z776 in automode) and its builder a8937b5db1f83f3b6 (claude-sonnet-5-5) launched in `.agents/worktrees/D59`. D60 to D64 booked by Axel. In flight (1 of 6): D59. Next: /refute D59, /land D59, then D60 and D61.
 - 2026-10-10 (D58 landed). D58, the engine's guides on every hub, landed (booking in plan.md; `agents/reviews/D58-landing.md`) after one repair round, the review over it and Axel's ruling of no second round (Open item 34): G74 and its two tests, G2's Doc text and the review's three findings fixed on main at landing (`agents/reviews/D58-refuter.md`, Closed (at landing)); the look met cases 1, 6, 7, 8 and 11 on a scratch oculus. D59 gained items (7), rice-theme text larger than under a VS Code theme, most visible in the Files view, and (8), the per-hub config paths in `docs/DATA-MAP.md` (Axel). Worktree `.agents/worktrees/D58` and its branches removed. Nothing in flight. Next: /spec D59, then Q72.

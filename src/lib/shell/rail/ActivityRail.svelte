@@ -5,7 +5,8 @@
     // arrangement the first time and switched to after that, which is the whole of what the rail
     // decides about pages; what a page holds is the layout store's, and every view is reached from
     // the catalogue on the System page. A workbench, a page that belongs to one folder, has no
-    // button of its own: the Workbenches button at the foot lists the open ones.
+    // button of its own: the Workbenches button at the foot lists the open ones and shows the
+    // Workbenches view.
     //
     // A page button dragged to a new place, and Hide in its right-click menu, rewrite `rail:`
     // through the rail write the Settings view saves with, which the page reaches for the rail
@@ -42,6 +43,7 @@
     } from '$lib/state/workbench/navigation/pages';
     import {
         SETTINGS_VIEW,
+        WORKBENCHES_VIEW,
         type RailEntry,
         type RailPage
     } from '$lib/state/workbench/navigation/rail';
@@ -51,7 +53,16 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { currentPage, heldInstance, openRailPage, openView, pages: allPages, resetPage },
+        layout: {
+            currentPage,
+            heldInstance,
+            openPage,
+            openRailPage,
+            openView,
+            pages: allPages,
+            resetPage,
+            switchPage
+        },
         notices: { post },
         registry: { viewFor },
         ui: { unsaved, busyTerminals, saveBeforeClose }
@@ -172,6 +183,29 @@
             openRailPage(holder.page, holder.label, holder.node);
         }
         openView(SETTINGS_VIEW, { reveal: 'rail' }, currentPage().id);
+    }
+
+    /**
+     * Show the Workbenches view as a unique view is shown: the one a page or float holds, since it
+     * is held once, else on the page on screen. A page that is a workbench never takes it, since a
+     * Close or a Reset from one of its rows would take the view with it: when the page on screen is
+     * a workbench the view goes to the rail page of the catalogue group the view sits in, made
+     * first when it is not made yet, else to the first page that is no workbench, and to a new page
+     * when every page is a workbench.
+     */
+    function openWorkbenches(): void {
+        if (heldInstance(WORKBENCHES_VIEW) === null && currentPage().folder !== undefined) {
+            const group = viewFor(WORKBENCHES_VIEW)?.group;
+            const entry = pages.find((one) => one.page === group);
+            if (entry !== undefined) {
+                openRailPage(entry.page, entry.label, entry.node);
+            } else {
+                const other = allPages().find((page) => page.folder === undefined);
+                if (other === undefined) openPage(t('ui.page_default', allPages().length + 1));
+                else switchPage(other.id);
+            }
+        }
+        openView(WORKBENCHES_VIEW, {}, currentPage().id);
     }
 
     /**
@@ -315,7 +349,14 @@
         <RailList>
             <RailPages {pages} {stopIndex} {ringKeys} onmove={moved} onmenu={menuPick} />
         </RailList>
-        <RailFoot {saved} {stopIndex} {ringKeys} {onsearch} {onupdate} />
+        <RailFoot
+            {saved}
+            {stopIndex}
+            {ringKeys}
+            {onsearch}
+            {onupdate}
+            onworkbenches={openWorkbenches}
+        />
     </div>
 </nav>
 

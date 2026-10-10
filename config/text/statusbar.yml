@@ -4,6 +4,7 @@ text:
         label: Status bar
         hide_menu: Status bar items
         item_host: Machine
+        item_repository: Repository
         item_branch: Branch
         item_sync: Sync
         item_findings: Findings
@@ -30,6 +31,15 @@ text:
         host_waiting: waiting
         host_tip: oculus runs on {0} and is served at {1}. Open Status.
         host_waiting_tip: The server has not said which machine it runs on yet. Open Status.
+        repository_menu: 'Repository {0}'
+        repository_tip: 'Repository {0}, at {1}. {2} Choose another.'
+        repository_why_file: It holds the file of the tab on screen.
+        repository_why_workbench: It holds the folder of the workbench on screen.
+        repository_why_chosen: It is the one chosen here last.
+        repository_why_hub: It is the hub's own repository.
+        repository_heading: Repositories
+        repository_heading_file: The file on screen decides; a pick is kept for later
+        repository_heading_workbench: The workbench on screen decides; a pick is kept for later
         branch_tip: Branch {0} of {1}. Switch branch.
         branch_detached_tip: No branch is checked out in {1}; HEAD is at {0}. Switch branch.
         branch_menu: Branches of {0}

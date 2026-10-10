@@ -44,8 +44,8 @@ digraph layer_views {
         "folder views/structure to layer state" [label="32", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/structure to layer ui" [label="31", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/system to folder views/shared" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/system to layer state" [label="167", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder views/system to layer ui" [label="148", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/system to layer state" [label="173", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder views/system to layer ui" [label="158", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/shared to layer state" [label="242", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder views/shared to layer ui" [label="130", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
