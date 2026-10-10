@@ -8,32 +8,70 @@
 import { describe, expect, it } from 'vitest';
 import {
     LAYOUT_VERSION,
-    PAGES_VERSION
+    PAGES_VERSION,
+    serialiseLayout,
+    type Layout
 } from '../../../../../src/lib/state/workbench/layout/index.ts';
 import { parseLayout } from '../../../../../src/lib/state/workbench/layout/saved/saved.ts';
 import { bench, docked, pane, split } from '../layout-fixture.ts';
 
-describe('the version 3 envelope, read as pages of one tree', () => {
-    /** A version 3 envelope over pages whose workbenches hold two trees. */
-    function saved(...held: Record<string, unknown>[]): unknown {
+describe('a saved envelope, read as pages of one tree', () => {
+    /** An envelope of this version over pages whose workbenches are as that version saved them. */
+    function saved(version: number, ...held: Record<string, unknown>[]): unknown {
         const pages = held.map((workbench, at) => ({
             id: `page-${at}`,
             label: `Page ${at + 1}`,
             workbench
         }));
-        return { version: PAGES_VERSION, pages, current: 'page-0' };
+        return { version, pages, current: 'page-0' };
     }
 
-    it('migrates every page, and reads which one was current', () => {
-        const read = parseLayout(
-            saved(docked(pane(['a']), pane([]), 'hidden'), docked(pane(['b']), pane(['p']))),
-            'Page 1'
-        );
-        expect(read?.pages.map((page) => page.workbench)).toEqual([
-            bench(pane(['a'])),
-            bench(split('row', [0.7, 0.3], [pane(['b']), pane(['p'])]))
-        ]);
-        expect(read?.current).toBe('page-0');
+    /** The empty pane a workbench keeps for the documents its views open, as a layout saved it. */
+    const documents: Layout = { kind: 'pane', tabs: [], active: '', documents: true };
+
+    const rows = [
+        {
+            version: PAGES_VERSION,
+            envelope: saved(
+                PAGES_VERSION,
+                docked(pane(['a']), pane([]), 'hidden'),
+                docked(pane(['b']), pane(['p']))
+            ),
+            trees: [bench(pane(['a'])), bench(split('row', [0.7, 0.3], [pane(['b']), pane(['p'])]))]
+        },
+        {
+            version: 6,
+            envelope: {
+                ...(saved(
+                    6,
+                    bench(pane(['a'])),
+                    bench(split('row', [0.5, 0.5], [pane(['b']), pane(['p'])]))
+                ) as object),
+                floats: []
+            },
+            trees: [bench(pane(['a'])), bench(split('row', [0.5, 0.5], [pane(['b']), pane(['p'])]))]
+        },
+        {
+            version: LAYOUT_VERSION,
+            envelope: {
+                ...(saved(
+                    LAYOUT_VERSION,
+                    bench(split('row', [0.5, 0.5], [pane(['a']), documents]))
+                ) as object),
+                floats: []
+            },
+            trees: [bench(split('row', [0.5, 0.5], [pane(['a']), documents]))]
+        }
+    ];
+
+    it.each(rows)('migrates every page, and reads which one was current', ({ envelope, trees }) => {
+        const read = parseLayout(envelope, 'Page 1');
+        if (read === null) throw new Error('the envelope was not read');
+        expect(read.pages.map((page) => page.workbench)).toEqual(trees);
+        expect(read.current).toBe('page-0');
+        expect(read.kept ?? []).toEqual([]);
+        const written = JSON.parse(serialiseLayout(read)) as { version: number };
+        expect(written.version).toBe(LAYOUT_VERSION);
     });
 });
 

@@ -5,12 +5,12 @@
     // the file and line of the key.
     //
     // The kinds of row differ in what they put under the description. A config option has its
-    // control (Control.svelte, which draws the control its catalog entry names) and a default
-    // line; the rail row and the arrangements row have the editors of the rail list and of the
-    // page reset; a "This browser" row has the control of the value the ui store keeps; a row of
-    // the machine's own file has its description and key path alone, since its values are the
-    // machine's and are never read here. A config row whose key is not in the file says so and has
-    // the way to edit the file.
+    // control (Control.svelte, which draws the control its catalog entry names) and a default line;
+    // the rail row and the arrangements row have the editors of the rail list and of the page
+    // reset, and the workbench row has none, since its layout tree is edited in the file; a "This
+    // browser" row has the control of the value the ui store keeps; a row of the machine's own file
+    // has its description and key path alone, since its values are the machine's and are never read
+    // here. A config row whose key is not in the file says so and has the way to edit the file.
     //
     // Each item is a stop the search's Down key can move the focus to, and the gear is drawn only
     // while the pointer is over the item or the focus is inside it, and only on a row whose menu
@@ -30,7 +30,7 @@
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
-    import { PAGES_ROW, RAIL_ROW, type Row } from '$lib/state/system/config/groups';
+    import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW, type Row } from '$lib/state/system/config/groups';
     import { message, type Message } from '$lib/state/system/config/messages';
     import { mismatchMessage, placeOf } from '$lib/state/system/config/rows';
     import { withTypedText } from '$lib/state/system/config/typed';
@@ -72,6 +72,7 @@
         if (row.kind === 'config' && row.state === 'missing') return 'none';
         if (row.id === RAIL_ROW) return 'rail';
         if (row.id === PAGES_ROW) return 'arrangements';
+        if (row.id === WORKBENCH_ROW) return 'workbench';
         return row.control;
     });
 
@@ -180,7 +181,7 @@
     {:else if row.kind === 'browser'}
         <BrowserControl {row} onsaid={(next: Message | null) => (browserSaid = next)} />
     {:else}
-        {#if control === 'family' || control === 'rail' || control === 'arrangements'}
+        {#if control === 'family' || control === 'rail' || control === 'arrangements' || control === 'workbench'}
             {#if fields.length > 0}
                 <p class="fields">{t('workbench.settings_fields')}</p>
                 <ul class="field-list">
@@ -194,7 +195,7 @@
             <RailEditor {id} />
         {:else if control === 'arrangements'}
             <PagesReset />
-        {:else}
+        {:else if control !== 'workbench'}
             <Control {row} {id} {writer} {editors} {lists} />
         {/if}
         {#if row.kind === 'config' && row.key === 'editor.languages'}

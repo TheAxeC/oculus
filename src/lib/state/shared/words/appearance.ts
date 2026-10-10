@@ -23,7 +23,12 @@ import { CODE_TOKENS, isCodeTheme } from '../../../data/helpers/code-themes.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
 import { anyNumberShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 
-export { CODE_TOKENS, codeThemeInfo, isCodeTheme } from '../../../data/helpers/code-themes.ts';
+export {
+    CODE_TOKENS,
+    codeThemeInfo,
+    isCodeTheme,
+    type CodeThemeInfo
+} from '../../../data/helpers/code-themes.ts';
 
 /**
  * One theme of the picker: the name the store saves, the body class, the glyph name drawn before
@@ -272,6 +277,15 @@ export function themeClass(name: string): string {
 export function themeLabel(name: string): string {
     configGeneration();
     return byKey(byName, name)?.label ?? name;
+}
+
+/**
+ * The words of the first theme row whose `class` is `cls`, and the class itself when no row carries
+ * it: how the Code theme menu words a VS Code theme, whatever name the row is saved under.
+ */
+export function themeClassLabel(cls: string): string {
+    configGeneration();
+    return list.find((theme) => theme.class === cls)?.label ?? cls;
 }
 
 /** The theme a browser that has saved none starts on: the first the config lists. */

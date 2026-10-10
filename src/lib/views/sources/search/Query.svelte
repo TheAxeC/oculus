@@ -2,7 +2,7 @@
     // Layer 3, partial of views/sources/search/Search.svelte. What a search is asked for: the
     // pattern, which root it runs over, the folder under that root it is scoped to, and the three
     // options. The folder is a line of its own with a control that sends the search back to the
-    // whole root.
+    // whole root (views/shared/links/FolderLine.svelte).
     //
     // Nothing here runs a search on a keystroke. Typing writes the tab's own state and stops there;
     // Enter in the box and the pane's Search action are the two ways a run starts, since a search
@@ -16,6 +16,7 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
+    import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { ALL_ROOTS } from '$lib/state/sources/search/search';
     import { t } from '$lib/state/shared/words/text';
@@ -116,25 +117,10 @@
     />
 </Toolbar>
 {#if under !== ''}
-    <p class="scope">
-        <span>{t('search.in_folder', root, under)}</span>
-        <ToolButton
-            label={t('search.clear_scope')}
-            glyph={t('search.clear_scope_glyph')}
-            compact
-            onclick={onclearscope}
-        />
-    </p>
+    <FolderLine
+        text={t('search.in_folder', root, under)}
+        clear={t('search.clear_scope')}
+        title={t('search.clear_scope_title')}
+        onclear={onclearscope}
+    />
 {/if}
-
-<style>
-    /* The folder line takes the bar's whole width, so it sits under the query row. */
-    .scope {
-        display: flex;
-        flex-basis: 100%;
-        align-items: center;
-        gap: 6px;
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-    }
-</style>

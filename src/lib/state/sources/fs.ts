@@ -18,9 +18,11 @@
 //
 // What a name says about a file is state/sources/explorer/file-type.ts's, exported from here with
 // the rest of the browser. Whether a Monaco language is a LaTeX source tab's (`latex` or `bibtex`)
-// is data/prose/latex.ts's, exported from here so the views read it by the same rule.
+// is data/prose/latex.ts's, exported from here so the views read it by the same rule, and so is the
+// path below a folder (`pathUnder`, data/helpers/files/paths.ts).
 
 export { opensInProgram } from '../../data/helpers/files/opens-in-program.ts';
+export { pathUnder } from '../../data/helpers/files/paths.ts';
 export { isLatexLanguage } from '../../data/prose/latex.ts';
 export type { LanguageMap } from '../../data/helpers/files/languages.ts';
 export {

@@ -21,7 +21,8 @@
     // pinned card has the pin glyph and the accent ring and is drawn first within its status, a
     // priority is its flames, `latest` is drawn under the explanation, what the project waits on is
     // the project card's waiting line, and its collaborators and related projects are the project
-    // card's cross-link lines.
+    // card's cross-link lines. A card's controls are Show in Files and Open Workbench, which opens
+    // the workbench of the side project's folder with its `project.yml` in the documents pane.
     //
     // It joins nothing and counts nothing itself: the cards, their order, the search and the
     // toggles are the pure functions of state/boards/board/personal.ts. Every word a manifest
@@ -40,6 +41,7 @@
     import CardLinks from '$lib/views/shared/card/CardLinks.svelte';
     import { posting } from '$lib/views/shared/forms/posting';
     import { openSourceFile } from '$lib/views/shared/links/source-file';
+    import { sourceFileState } from '$lib/state/sessions/source/place';
     import {
         filterCards,
         folderTarget,
@@ -62,6 +64,7 @@
 
     const client = useState();
     const {
+        folders,
         layout: { showInFiles },
         entities: { portfolio },
         selectors: { configMap, sideCards, sideStatuses },
@@ -93,10 +96,13 @@
         setInstanceState(instance.id, next);
     }
 
-    /** The one control of a card: its folder selected in the Files view. */
+    /**
+     * The controls of a card: its folder selected in the Files view, and the workbench of that
+     * folder, which shows the card's manifest in its documents pane.
+     */
     function actions(card: SideCard): CardAction[] {
         const target = folderTarget(card.project);
-        return [
+        const rows: CardAction[] = [
             {
                 id: 'files',
                 label: t('personal.show_in_files'),
@@ -107,6 +113,33 @@
                 }
             }
         ];
+        if (folders.served(target.root)) {
+            rows.push({
+                id: 'workbench',
+                label: t('personal.open_workbench'),
+                title: t('personal.open_workbench_tip', card.project.title),
+                glyph: 'app_view',
+                onclick: () => openWorkbench(card)
+            });
+        }
+        return rows;
+    }
+
+    /** Open the workbench of the card's folder, named by the project's title. */
+    function openWorkbench(card: SideCard): void {
+        const folder = folderTarget(card.project);
+        const manifest = manifestTarget(card.project);
+        folders.open(folder, {
+            label: card.project.title,
+            item: {
+                view: 'source',
+                state: sourceFileState(client, {
+                    root: manifest.root,
+                    path: manifest.path,
+                    label: manifest.label
+                })
+            }
+        });
     }
 
     /** The card's manifest in a source tab, which is where its words are edited. */

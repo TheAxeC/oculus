@@ -8,8 +8,10 @@
 //
 // `--from` names VS Code's `extensions` folder (default: the installed macOS app's). `--check`
 // writes nothing: it exits 1 and names every block or theme whose file differs from what a run
-// would write, and every `vscode-*` row of config/appearance.yml without a block or block without
-// a row. A run writes two files and a second run changes no byte of them:
+// would write, every `vscode-*` row of config/appearance.yml without a block or block without a
+// row, and every class that the list of VS Code themes in src/lib/data/helpers/code-themes.ts (the
+// one layer 1 holds, since it cannot read themes/) lacks or holds without a block. A run writes two
+// files and a second run changes no byte of them:
 //
 //   - src/lib/themes/vscode.css, one `body.vscode-<slug>` block per theme;
 //   - src/lib/themes/vscode-rules.json, each theme's TextMate rules, which the editor takes in
@@ -37,6 +39,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { format, resolveConfig } from 'prettier';
 import { parse as parseYaml } from 'yaml';
+import { codeThemeInfo } from '../../src/lib/data/helpers/code-themes.ts';
 import { ratio, readable } from '../../src/lib/themes/derive.ts';
 import { parseBlocks } from '../../src/lib/themes/parse.ts';
 
@@ -767,13 +770,32 @@ function rowProblems(built: Built[]): string[] {
     ];
 }
 
+/** The VS Code classes of data/helpers/code-themes.ts against the classes of the blocks. */
+function listProblems(built: Built[]): string[] {
+    const listed = codeThemeInfo()
+        .filter((theme) => theme.vscode)
+        .map((theme) => theme.id);
+    const classes = built.map((one) => one.cls);
+    return [
+        ...classes
+            .filter((cls) => !listed.includes(cls))
+            .map((cls) => `data/helpers/code-themes.ts does not list ${cls}`),
+        ...listed
+            .filter((cls) => !classes.includes(cls))
+            .map((cls) => `data/helpers/code-themes.ts lists ${cls}, which has no block`),
+        ...(classes.length === listed.length && classes.some((cls, at) => cls !== listed[at])
+            ? ['data/helpers/code-themes.ts lists the classes in another order than the blocks']
+            : [])
+    ];
+}
+
 async function main(): Promise<number> {
     const { values } = parseArgs({
         options: { from: { type: 'string' }, check: { type: 'boolean', default: false } }
     });
     const { built, version } = build(values.from ?? DEFAULT_FROM);
     const wanted = await files(built, version);
-    const problems = rowProblems(built);
+    const problems = [...rowProblems(built), ...listProblems(built)];
     for (const one of built) {
         for (const line of one.mapped.unreadable) console.log(`${one.cls}: ${line}`);
     }

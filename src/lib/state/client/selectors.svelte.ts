@@ -88,7 +88,7 @@ export function folderOf(project: Project): string {
 }
 
 /** Whether a path is the folder itself or sits inside it; no path is in no folder. */
-function inFolder(path: string | null, folder: string): boolean {
+export function inFolder(path: string | null, folder: string): boolean {
     if (path === null || path === '') return false;
     return pathUnder(folder, path) !== null;
 }

@@ -3,13 +3,15 @@
     // workbench cannot do for itself: fill the view registry, open the socket, and read the two
     // saved stores. The rail's pages and the chords' groups come from the merged config the socket
     // delivers, and so do the words of the status bar's items, which the page makes from stores the
-    // shell may not read itself; the rail's own rewrite of its list and the git writes of the
-    // status bar's branch and sync items are the page's for the same reason.
+    // shell may not read itself; the rail's own rewrite of its list, the git writes of the status
+    // bar's branch and sync items and the Workbenches menu's Reset layout, which makes a workbench
+    // again from the arrangement in the config, are the page's for the same reason.
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
     import { shouldCancel } from '$lib/shell/context-guard';
     import { provideFileProblems } from '$lib/shell/panes/strip/file-problems';
+    import { provideWorkbenchReset } from '$lib/shell/rail/workbench-reset';
     import type { Bookmark } from '$lib/shell/rail/rail';
     import { parseFloats } from '$lib/state/workbench/navigation/arrangement';
     import { readChord, readDocs, readGroups } from '$lib/state/workbench/navigation/catalogue';
@@ -71,6 +73,7 @@
         apps: { findings: appFindings, holds, rows: appRows },
         debug: { load: loadDebug, stopFollowing: stopFollowingDebug },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
+        folders: workbenches,
         fs: { bookmarks: savedBookmarks, workspaces },
         layout: { activeInstance, loadLayout, openView, stopFollowing },
         problems,
@@ -230,6 +233,10 @@
         const answer = await writeRail(edit(configRail(merged)), true);
         return answer.ok ? '' : railRefusal(answer.error);
     }
+
+    // The Workbenches menu's Reset layout makes a workbench again from the `workbench:` arrangement
+    // of the merged config, which the shell may not read, so the rail gets this function.
+    provideWorkbenchReset((id) => workbenches.reset(id));
 
     onMount(() => {
         connect([

@@ -13,6 +13,8 @@ text:
         reading: Reading the folder ...
         open_collection: 'Show in {0}'
         open_collection_tip: 'Open {0} and scroll to this entry'
+        open_workbench: Open Workbench
+        open_workbench_tip: 'Open a workbench for {0}'
         documents: Documents
         no_documents: The folder holds no Markdown file.
         doc_loading: loading the document ...

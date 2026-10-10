@@ -33,6 +33,8 @@ text:
         change_next_title: Go to the next change (Alt+F5)
         change_prev: Previous Change
         change_prev_title: Go to the previous change (Shift+Alt+F5)
+        clear_scope: Show every repository
+        clear_scope_title: List every repository again, not only those of the folder
         commit_diff_label: '{0} ({1})'
         commit_menu: Commit actions
         commit_outside: Commit {0}
@@ -61,6 +63,8 @@ text:
         fetch: Fetch
         file_fold: Fold this file
         file_unfold: Unfold this file
+        folder_bar: Repositories folder
+        folder_gone: '{0} is not a root this workspace serves, so it lists no repository.'
         folder_discard_confirm: Throw away the changes to {0} paths in {1}?
         folder_discard_title: Throw away every change under this folder
         folder_stage_title: Stage every change under this folder
@@ -77,6 +81,7 @@ text:
         hunk_revert_confirm: Revert this block of {0}?
         hunk_stage: Stage Block
         hunk_unstage: Unstage Block
+        in_folder: In {0}/{1}
         incoming: Incoming
         lines_revert: Revert {0} Selected Lines
         lines_revert_confirm: Revert {0} chosen lines of {1}?

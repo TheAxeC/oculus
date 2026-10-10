@@ -83,7 +83,7 @@ crt:
 
 
 # === Code theme =============================================================
-# How the editors colour code. `tokens` takes the syntax colours from the UI theme's own code tokens. Any id of Shiki's bundled themes (such as `dark-plus`, `github-light`, `nord`) takes that theme's syntax colours, while the editor's background and chrome stay on the UI theme. The Code theme row under This browser in the Settings view writes the viewer's own choice into the appearance store, as its CRT row does, and the `code_theme` row of this file sets the value below.
+# How the editors colour code. `tokens` takes the syntax colours from the UI theme's own code tokens. The class name of any of the 19 VS Code themes (such as `vscode-dark-2026`, `vscode-light-modern`) takes that theme's TextMate rules under any UI theme, and any id of Shiki's bundled themes (such as `dark-plus`, `github-light`, `nord`) takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme. The Code theme row under This browser in the Settings view writes the viewer's own choice into the appearance store, as its CRT row does, and the `code_theme` row of this file sets the value below.
 code_theme: tokens
 
 

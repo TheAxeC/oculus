@@ -33,10 +33,11 @@
     // The controls are views/shared/card/CardActions.svelte, shown under the pointer and kept on
     // one line, and a hub path the entry's `link`, `url` or `folder` names is one of them: a path
     // that is a file is selected in the Files view of this page, and a path that is a folder opens
-    // a Files tab rooted at it. A long body field is views/shared/card/Clamp.svelte, open or cut by
-    // the view instance's state, and drawn whole by a card handed no `onmore`; the subtasks block
-    // is drawn only for an entry that has subtasks, adding the first being one of the controls. The
-    // card may draw past its own edge, so the More menu is not cut off at its foot.
+    // a Files tab rooted at it and offers Open Workbench, the workbench of that folder. A long body
+    // field is views/shared/card/Clamp.svelte, open or cut by the view instance's state, and drawn
+    // whole by a card handed no `onmore`; the subtasks block is drawn only for an entry that has
+    // subtasks, adding the first being one of the controls. The card may draw past its own edge, so
+    // the More menu is not cut off at its foot.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -61,6 +62,7 @@
         isPinned,
         identityValue,
         pageFolder,
+        pageState,
         type Entry,
         type IdentityFault,
         type Project,
@@ -76,6 +78,7 @@
     const client = useState();
     const {
         entities: { portfolio },
+        folders,
         fs: { listing },
         layout: { openView, showFolderInFiles, showInFiles },
         selectors: { archiveDead },
@@ -173,12 +176,14 @@
     /**
      * One Show in Files control per hub path the entry's `link`, `url` or `folder` names: a folder
      * opens a Files tab rooted at it and a file is selected in the page's Files tab. It needs no
-     * identity to write by, so a card of a file with no schema carries it too.
+     * identity to write by, so a card of a file with no schema carries it too. A folder also gets
+     * Open Workbench, which opens the workbench of that folder, with the entry's page in its
+     * documents pane when the folder is the one the entry's page is for.
      */
     const shows: CardAction[] = $derived(
-        hubPathsOf(entry.fields).map((path): CardAction => {
+        hubPathsOf(entry.fields).flatMap((path): CardAction[] => {
             const folder = listsAsFolder(path, listed);
-            return {
+            const show: CardAction = {
                 id: `files:${path}`,
                 label: t('collection.show_in_files'),
                 title: folder
@@ -190,6 +195,28 @@
                     else showInFiles(path);
                 }
             };
+            if (!folder || !folders.served(HUB_ROOT)) return [show];
+            const own = pageFolder(entry.fields, listed) === path;
+            return [
+                show,
+                {
+                    id: `workbench:${path}`,
+                    label: t('collection.open_workbench'),
+                    title: t('collection.open_workbench_tip', path),
+                    glyph: 'app_view',
+                    onclick: () => {
+                        folders.open(
+                            { root: HUB_ROOT, path },
+                            {
+                                label: entry.title === '' ? entry.id : entry.title,
+                                item: own
+                                    ? { view: 'entry', state: pageState(collection, entry) }
+                                    : undefined
+                            }
+                        );
+                    }
+                }
+            ];
         })
     );
 

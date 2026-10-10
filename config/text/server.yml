@@ -112,7 +112,7 @@ text:
         config_value:
             local: local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no list or family of that name in a tracked config file
-            own_write: The rail and the arrangements are set from the rail editor and the pages, not from here
+            own_write: The rail and the arrangements are set from the rail editor and the pages, and the workbench layout in config/layout.yml, not from here
             single: This option is one value, so it is set one key at a time
             not_parsed: The file does not parse
             not_in_file: The file does not hold this key as a list or a map written in place

@@ -129,6 +129,7 @@ text:
         menu_terminal: Open in Integrated Terminal
         menu_timeline: Open Timeline
         menu_upload: Upload...
+        menu_workbench: Open in New Files
         menu_writing_fix: Fix All Writing Problems in Folder...
         move_button: Move
         move_question: "Are you sure you want to move '{0}' into '{1}'?"

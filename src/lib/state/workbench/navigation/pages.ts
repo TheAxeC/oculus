@@ -358,6 +358,87 @@ export async function resetAfterAsking(
     return true;
 }
 
+/** What the close and the reset of a page read of the client. */
+export type PageFlowDeps = {
+    pages: () => readonly Page[];
+    unsaved: (id: string) => boolean;
+    saveBeforeClose: (ids: string[]) => Promise<string[]>;
+    busyTerminals: (instances: readonly Instance[]) => Promise<readonly BusyTerminal[]>;
+    viewFor: (id: string) => Pick<Registration, 'label' | 'words'> | undefined;
+    closePage: (id: string) => void;
+    /** Hold a close's question and the page a yes closes for a dialog to draw; null drops it. */
+    holdClose: (held: { message: string; id: string } | null) => void;
+    /** Ask one question of a reset, as questionFor makes it. */
+    ask: Asker;
+};
+
+/** The close of a page and the reset of a page, each asking what its tabs make it ask. */
+export type PageFlows = {
+    /**
+     * Close a page, asking first unless it holds one tab with nothing unsaved in it. More than one
+     * tab is the page's own sentence, which says how many go; one tab holding unsaved text is the
+     * tab sentence. A close pressed again while its read is in flight does nothing.
+     */
+    close: (id: string) => void;
+    /**
+     * Reset a page: the reset's own question naming it, then the close question of each tab holding
+     * unsaved text, then the busy terminals; `act` makes the page again when every answer was yes.
+     */
+    reset: (id: string, act: () => void) => void;
+};
+
+export function createPageFlows(deps: PageFlowDeps): PageFlows {
+    const once = closeOnce();
+
+    function close(id: string): void {
+        const found = pageAt(deps.pages(), id);
+        if (found === null) return;
+        const ids = pageInstanceIds(found.page);
+        const tabs = instancesOfPages([found.page]);
+        void once(
+            `page:${id}`,
+            async () => {
+                await deps.saveBeforeClose(ids);
+                return deps.busyTerminals(tabs);
+            },
+            (busy) => {
+                const asked = closeAsk({
+                    ids,
+                    unsaved: deps.unsaved,
+                    nameOf: (one) => {
+                        const tab = tabs.find((each) => each.id === one);
+                        return tab === undefined ? one : tabNameOf(tab, deps.viewFor);
+                    },
+                    many: t('ui.page_close_confirm', pageName(found.page, found.at), ids.length),
+                    busy
+                });
+                if (asked === null) deps.closePage(id);
+                else deps.holdClose({ message: closeWords(asked), id });
+            }
+        );
+    }
+
+    function reset(id: string, act: () => void): void {
+        const all = deps.pages();
+        const found = pageAt(all, id);
+        if (found === null) return;
+        const words = resetAsk(all, [found.page], [], found.page);
+        void resetAfterAsking(
+            all,
+            words,
+            [found.page],
+            deps.unsaved,
+            deps.saveBeforeClose,
+            (instance) => tabNameOf(instance, deps.viewFor),
+            deps.ask,
+            act,
+            () => deps.busyTerminals(instancesOfPages([found.page]))
+        );
+    }
+
+    return { close, reset };
+}
+
 /** A root the server serves: its key and the folder it stands for. */
 export type TabRoot = { key: string; dir: string };
 

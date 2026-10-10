@@ -16,13 +16,13 @@
 // A bare `meta` scope wraps whole functions and classes in the grammars, so the meta hue goes to
 // the preprocessor, directive and tag scopes alone, and to punctuation and variables.
 //
-// Under a code theme (a Shiki theme the reader chose in place of the tokens) only the TextMate
-// rules change: `codeRules` takes the theme's own scoped rules for the syntax colours, while the
-// colour map, the type and the base foreground and background stay built from the tokens, so the
-// editor's background and chrome follow the UI theme either way. Under the tokens, a VS Code theme
-// (a body class of themes/vscode.css) replaces the six-hue rules with that theme's own TextMate
-// rules from themes/vscode-rules.json, which `ownRules` reads; the colour map and the base colours
-// come from the tokens.
+// Under a code theme (a Shiki or VS Code theme the reader chose in place of the tokens) only the
+// TextMate rules change: `codeRules` takes a Shiki theme's own scoped rules and `ownRules` a VS
+// Code theme's, from themes/vscode-rules.json, for the syntax colours, while the colour map, the
+// type and the base foreground and background stay built from the tokens, so the editor's
+// background and chrome follow the UI theme either way. Under the tokens, a VS Code UI theme (a
+// body class of themes/vscode.css) replaces the six-hue rules with its own TextMate rules, which
+// `ownRules` reads from the class.
 
 import { wcagLuminance } from 'culori';
 import type { ThemeRegistration } from 'shiki';
@@ -191,9 +191,10 @@ export function codeRules(theme: ThemeRegistration): TokenColors {
 type OwnRule = { scope: string[]; foreground?: string; fontStyle?: string };
 
 /**
- * The TextMate rules of the VS Code theme a body class string names, in the form Shiki takes, or
- * undefined when none of the classes is a VS Code theme's. The first class with an entry wins; a
- * class that is no entry of the file (`rice`, `crt`, an empty word) is passed over.
+ * The TextMate rules of the VS Code theme a class string names, in the form Shiki takes, or
+ * undefined when none of the classes is a VS Code theme's. The string is the body's classes or a
+ * code theme's id. The first class with an entry wins; a class that is no entry of the file
+ * (`rice`, `crt`, `tokens`, an empty word) is passed over.
  */
 export function ownRules(classes: string): TokenColors | undefined {
     const themes: Record<string, OwnRule[]> = vscodeRules.themes;

@@ -25,6 +25,8 @@ export type {
     Float,
     FloatPlace,
     Focus,
+    FolderItem,
+    FolderRef,
     Host,
     Instance,
     Keeps,
@@ -49,6 +51,7 @@ export {
     insertInstance,
     isFolded,
     leafAt,
+    markDocuments,
     moveInstance,
     openInstance,
     pageLeaves,
@@ -68,6 +71,7 @@ export {
     START_H,
     START_W,
     adoptFloats,
+    adoptedPage,
     defaultBeside,
     keptDefault,
     placeFits,
@@ -80,6 +84,8 @@ export {
 } from './open/float/pages.ts';
 export type { Arranged, Builds, UniqueRule } from './open/float/pages.ts';
 export { WINDOW_START, createFloatOps } from './open/float/store.ts';
+export { createFolderOps } from './open/float/folder-store.ts';
+export type { FolderLayout, FolderOps } from './open/float/folder-store.ts';
 export type { FloatOps, WindowBounds } from './open/float/store.ts';
 export type { FloatSpec } from './open/float/pages.ts';
 export { newTextFileOpener, untitledLabel } from './open/new-text-file.ts';

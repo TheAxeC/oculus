@@ -17,21 +17,21 @@
 // the tokens in force, the body's class string and the code theme chosen (`tokens`, or the id of a
 // Shiki theme whose scoped syntax rules replace the tokens' rules, kit/theme/theme.ts's
 // `codeRules`) and sets it on every editor, doing nothing when none of them has moved, so each
-// editor may call it on every theme change. Under `tokens`, the class of a VS Code theme
+// editor may call it on every theme change. A code theme that is the class of a VS Code theme
 // (themes/vscode.css) gives the theme that VS Code theme's own rules (`ownRules`) in place of the
-// six code hues; a class with no entry leaves the hues.
-// Shiki's bridge (`shikiToMonaco`) defines a Monaco theme for each theme a highlighter holds, wraps
-// Monaco's `setTheme` and `create` to keep its tokens coloured by the theme set, and gives each
-// language a tokens provider over that highlighter, for the languages the highlighter has loaded
-// and Monaco lists at the moment of the call. Shiki caches a theme by its name inside one
-// highlighter, so a changed theme under the same name would keep the old colours there: each paint
-// makes a new highlighter holding the one theme `oculus` and every grammar loaded so far, bridges
-// it over the calls as Monaco made them (so the wraps never stack), and disposes the highlighter
-// before it. Monaco's `defineTheme` replaces the theme of that name and redraws it where it is in
-// force, and each language's new provider replaces its old one, so a session of theme switches
-// holds one theme and one highlighter. A paint of a code theme awaits its file, so the paints are
-// queued and the last one asked is the one in force; a file that fails to load rejects that paint
-// and leaves the theme before it in force.
+// six code hues, whatever the UI theme is. Under `tokens`, the body's own class does the same; a
+// class with no entry leaves the hues. Shiki's bridge (`shikiToMonaco`) defines a Monaco theme for
+// each theme a highlighter holds, wraps Monaco's `setTheme` and `create` to keep its tokens
+// coloured by the theme set, and gives each language a tokens provider over that highlighter, for
+// the languages the highlighter has loaded and Monaco lists at the moment of the call. Shiki caches
+// a theme by its name inside one highlighter, so a changed theme under the same name would keep the
+// old colours there: each paint makes a new highlighter holding the one theme `oculus` and every
+// grammar loaded so far, bridges it over the calls as Monaco made them (so the wraps never stack),
+// and disposes the highlighter before it. Monaco's `defineTheme` replaces the theme of that name
+// and redraws it where it is in force, and each language's new provider replaces its old one, so a
+// session of theme switches holds one theme and one highlighter. A paint of a code theme awaits its
+// file, so the paints are queued and the last one asked is the one in force; a file that fails to
+// load rejects that paint and leaves the theme before it in force.
 //
 // The eighteen first languages load with the first editor. Every language of grammars.ts is
 // registered with Monaco at the start, so a model can be made under any of them, and the others'
@@ -431,7 +431,8 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
         if (ended()) return THEME;
         const { textmate } = editorTheme(read, THEME);
         const id = known.has(code) ? code : '';
-        const tokenColors = (id === '' ? ownRules(classes) : undefined) ?? textmate.tokenColors;
+        const own = id === '' ? (ownRules(code) ?? ownRules(classes)) : undefined;
+        const tokenColors = own ?? textmate.tokenColors;
         const signature = JSON.stringify([id, textmate.type, textmate.colors, tokenColors]);
         if (signature === painted) return THEME;
         const theme = { ...textmate, tokenColors: id === '' ? tokenColors : await rulesOf(id) };

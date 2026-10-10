@@ -24,6 +24,7 @@ import { createArmedKeeps, type ArmedKeep } from './layout/open/armed-keep.svelt
 import type { UiStore } from './ui.svelte.ts';
 import {
     adoptFloats as adoptFloatsIn,
+    adoptedPage,
     clearPage,
     createAttention,
     createAway,
@@ -32,6 +33,7 @@ import {
     createShowDeck,
     createShowInFiles,
     createFloatOps,
+    createFolderOps,
     createLoad,
     createStorage,
     defaultBeside,
@@ -67,6 +69,7 @@ import {
     type FloatOps,
     type FloatSpec,
     type Focus,
+    type FolderOps,
     type Host,
     type Instance,
     type Instances,
@@ -102,7 +105,8 @@ const GONE: Workbench = { root: { kind: 'pane', tabs: [], active: '' } };
 
 /** The pages one client is rendering, and their persistence. */
 export type LayoutStore = Omit<Instances, 'forgetTabs'> &
-    FloatOps & {
+    FloatOps &
+    Omit<FolderOps, 'keepClosed'> & {
         currentPage: () => Page;
         /** Every page, never a float. */
         pages: () => Page[];
@@ -211,8 +215,8 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
          * Rebuild every saved page a rail button carries the key of from that button's arrangement
          * and remove every saved page carrying a key no button carries (navigation/pages.ts's
          * resetPlan). A page with no rail key keeps its tabs, except a unique view an arrangement
-         * names, which moves to the page or float made from it. The floats held are replaced by
-         * the shipped ones. Answers whether anything changed.
+         * names, which moves to the page or float made from it; a workbench keeps every tab. The
+         * floats held are replaced by the shipped ones. Answers whether anything changed.
          */
         resetPages: (rail: readonly RailSource[], floats: FloatSpec[]) => boolean;
         /**
@@ -429,6 +433,11 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         (view) => uniqueRule(view)
     );
     const floatOps = createFloatOps(access, keepRule);
+    const folderOps = createFolderOps(access, builds, {
+        forgetTouched: attention.forgetTouched,
+        forgetTabs: instances.forgetTabs,
+        forgetPage: attention.forgetPage
+    });
     const load = createLoad(access, storage, {
         replace: (pages) => {
             store.current = pages;
@@ -449,10 +458,11 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
      * The page of the rail button whose arrangement key is `key`, made current. The page that
      * carries the key is the one the reader arranged and is switched to as it is; with none, a page
      * no button has taken yet whose name is the button's label becomes the button's page, which is
-     * how a page opened by name before the rail had buttons is kept; with neither, the page is made
-     * from the arrangement, named with the label, and a unique view the arrangement names is moved
-     * into it from the page or float holding it. An empty key, or an arrangement that does not
-     * parse when a page has to be made from it, changes nothing and says so.
+     * how a page opened by name before the rail had buttons is kept, and a workbench (a page with a
+     * `folder`) is never taken; with neither, the page is made from the arrangement, named with the
+     * label, and a unique view the arrangement names is moved into it from the page or float
+     * holding it. An empty key, or an arrangement that does not parse when a page has to be made
+     * from it, changes nothing and says so.
      */
     function openRailPage(key: string, label: string, raw: unknown): boolean {
         if (key === '') return false;
@@ -462,14 +472,10 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
             switchPage(found.id);
             return true;
         }
-        const named = held.find((page) => page.rail === undefined && page.label === label);
-        if (named !== undefined) {
+        const adopted = adoptedPage(store.current, key, label);
+        if (adopted !== null) {
             attention.forgetTouched();
-            savePages({
-                ...store.current,
-                pages: held.map((page) => (page.id === named.id ? { ...page, rail: key } : page)),
-                current: named.id
-            });
+            savePages(adopted);
             return true;
         }
         const next = parseArrangement(raw);
@@ -561,8 +567,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
      * when it was the last in the list; closing the only page leaves one fresh default page, since
      * a workbench with no page to render is nothing at all, its pane empty when a float holds the
      * unique view it starts on. Every tab of the page's own tree is forgotten as its own close
-     * would forget it; a page one of its leaves shows is still in the list, so the tabs of that
-     * page are not the closed page's and keep what they hold.
+     * would forget it, after a folder page's layout and its tabs' states are kept by its folder; a
+     * page one of its leaves shows is still in the list, so the tabs of that page are not the
+     * closed page's and keep what they hold.
      */
     function closePage(id: string): void {
         const held = store.current.pages;
@@ -571,8 +578,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         if (closing === undefined) return;
         attention.forgetPage(id);
         const left = held.filter((page) => page.id !== id);
+        const kept = folderOps.keepClosed(store.current, closing);
         if (left.length === 0) {
-            savePages(defaultBeside(t('ui.page_default', 1), store.current.floats, builds));
+            savePages({ ...kept, ...defaultBeside(t('ui.page_default', 1), kept.floats, builds) });
         } else {
             const next =
                 store.current.current === id
@@ -580,7 +588,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
                     : store.current.current;
             // A page that is gone is shown nowhere: every leaf naming it is taken out, so no tree
             // is left pointing at a page the list no longer holds.
-            savePages(clearPage({ pages: left, current: next, floats: store.current.floats }, id));
+            savePages(clearPage({ ...kept, pages: left, current: next }, id));
         }
         instances.forgetTabs(tabsOf(closing.workbench.root));
     }
@@ -811,6 +819,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         keepDefaultPage,
         adoptFloats,
         ...floatOps,
+        openFolderPage: folderOps.openFolderPage,
+        resetFolderPage: folderOps.resetFolderPage,
+        folderPage: folderOps.folderPage,
         copyTabToWindow: (id, bounds) =>
             copiesToWindow(id) ? floatOps.copyTabToWindow(id, bounds) : null,
         previousPage,

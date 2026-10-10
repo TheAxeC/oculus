@@ -54,6 +54,12 @@ export type OpenOptions = {
      * state instead, and a pane holding none gains one.
      */
     preview?: boolean;
+    /**
+     * Land as a view opened for something lands (landing.ts), whatever the view is: in the page's
+     * documents pane and never over its tool panes. A Terminal tab and a Transcript opened from a
+     * workbench's sessions list take it.
+     */
+    document?: boolean;
 };
 
 export type Opening = {
@@ -141,7 +147,15 @@ export function createOpening(
      * in place, so walking a tree with single clicks reads one file after another in one tab.
      */
     function openView(view: ViewId, state?: unknown, page?: string, options?: OpenOptions): string {
-        return openInto(view, state, false, page, options?.preview === true);
+        return openInto(
+            view,
+            state,
+            false,
+            page,
+            options?.preview === true,
+            undefined,
+            options?.document === true
+        );
     }
 
     /**
@@ -180,7 +194,8 @@ export function createOpening(
         beside: boolean,
         page?: string,
         preview = false,
-        asker?: string
+        asker?: string,
+        document = false
     ): string {
         const held = page === undefined ? attention.touched() : access.at(page);
         if (held === null) return '';
@@ -197,7 +212,9 @@ export function createOpening(
         }
         // A float is one pane: a view opened for something lands in it as a tool view does, and a
         // view asked for beside another is a tab of it, since a float takes no split.
-        if (opened(view) && isPage(held)) return openOpened(view, state, host, preview, asker);
+        if ((document || opened(view)) && isPage(held)) {
+            return openOpened(view, state, host, preview, asker);
+        }
         const focus = focusedPane(access.workbench(host));
         const tree = access.layout(host);
         const into = focus === null ? null : focus.path;
@@ -308,7 +325,10 @@ export function createOpening(
         }
         const reader = activePath(tree, attention.active(host));
         const away = asker === undefined ? null : (findInstance(tree, asker)?.path ?? null);
-        const landing = landingFor(tree, opened, attention.received(host), reader, away);
+        const workbench = access
+            .held()
+            .pages.some((page) => page.id === host && page.folder !== undefined);
+        const landing = landingFor(tree, opened, attention.received(host), reader, away, workbench);
         const base =
             landing.kind === 'pane' && shownAt(focus, landing.path) ? bench : restore(bench);
         const replaced =

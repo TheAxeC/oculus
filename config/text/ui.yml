@@ -133,3 +133,8 @@ text:
         window_move: Move into New Window
         window_restore: Restore into Main Window
         window_switch_main: Switch to Main Window
+        workbenches: Workbenches
+        workbenches_close: Close {0}
+        workbenches_glyph: app_view
+        workbenches_none: No workbench is open
+        workbenches_reset_heading: Reset layout

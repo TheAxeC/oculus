@@ -26,7 +26,8 @@ export type TerminalTabs = {
     switchPage: (page: string) => void;
     currentPage: () => string;
     activeTab: (page: string) => string | null;
-    open: (page: string, state: TerminalTabState) => string;
+    /** Open a Terminal tab on a page, in its documents pane when `documents` is set. */
+    open: (page: string, state: TerminalTabState, documents?: boolean) => string;
     close: (id: string, page: string) => void;
     /** A tab's instance state, which holds its composer record. */
     instanceState: (id: string) => unknown;

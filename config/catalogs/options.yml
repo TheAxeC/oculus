@@ -143,7 +143,7 @@ options:
         code_theme:
             heading: appearance
             section: Code theme
-            help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens (a VS Code theme brings its own TextMate rules), and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours while the editor's background and chrome stay on the UI theme. An id Shiki does not bundle is reported as a finding and read as tokens. The Code theme row under This browser in the Settings view saves the viewer's own choice, which takes over.
+            help: How the editors colour code. tokens takes the syntax colours from the UI theme's own code tokens (a VS Code UI theme brings its own TextMate rules). The class name of any of the 19 VS Code themes (for example vscode-dark-2026 or vscode-light-modern) takes that theme's TextMate rules under any UI theme, and the id of any theme Shiki bundles (for example dark-plus, github-light or nord) takes that theme's syntax colours; in both the editor's background and chrome stay on the UI theme. A value that is none of these is reported as a finding and read as tokens. The Code theme row under This browser in the Settings view saves the viewer's own choice, which takes over.
             default: tokens
             control: choice
             from: code_themes
@@ -1053,6 +1053,12 @@ options:
             fields:
                 key: a page key that a rail entry names
                 root: the page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
+        workbench:
+            heading: rail
+            section: Page layouts
+            help: What every workbench page is made from, and what its Reset layout gives back. A workbench is a page that belongs to one folder, and each of its tabs is given the folder when the page is made. It is the shape of one entry of the page layouts, and no rail entry can name it. A layout that does not add up makes no workbench.
+            fields:
+                root: the workbench page's one layout tree, a split of dir, sizes and children or a pane of view, where view is one view id or a list of tabs and a tab may be a view id or a view with its own state
         floats:
             heading: rail
             section: Floats

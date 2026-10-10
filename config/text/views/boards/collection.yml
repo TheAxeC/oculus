@@ -25,6 +25,8 @@ text:
         list_inline: '{0} lists its entries inline; add the entry in the file'
         list_not_a_list: '{1} in {0} is not a list; add the entry in the file'
         open_person: Open this person as their own tab
+        open_workbench: Open Workbench
+        open_workbench_tip: open a workbench for {0}
         person_glyph: collab
         no_funding: No funding
         no_funding_sub: Active and manuscript projects with no scheme attached.

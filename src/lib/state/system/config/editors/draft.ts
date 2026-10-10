@@ -26,7 +26,7 @@ import { isEqual } from 'lodash-es';
 import { byKey, isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
 import type { FieldSpec } from '../../../../data/sources/config/catalog/options.ts';
 import { message, type Message } from '../messages.ts';
-import { PAGES_ROW, RAIL_ROW } from '../groups.ts';
+import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW } from '../groups.ts';
 import type { ConfigRow } from '../rows.ts';
 import {
     cardOf,
@@ -142,7 +142,7 @@ function single(name: string, value: FieldValue): Card {
  */
 export function draftOf(row: ConfigRow): Draft | null {
     if (row.state !== 'set' || row.mismatch) return null;
-    if (row.id === RAIL_ROW || row.id === PAGES_ROW) return null;
+    if (row.id === RAIL_ROW || row.id === PAGES_ROW || row.id === WORKBENCH_ROW) return null;
     const value = row.value;
     if (row.control === 'list' || row.control === 'parked') {
         const read = readField(row.entry, value);

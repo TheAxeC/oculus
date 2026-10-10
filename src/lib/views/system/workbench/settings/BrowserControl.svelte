@@ -1,10 +1,10 @@
 <script lang="ts">
     // Layer 3, view partial. The control of one "This browser" row, which sets the value the ui
-    // store keeps for this browser: the theme list, the code theme menu, the text-size steps with
-    // the size in force, the terminal text size box, and the toggles for the CRT overlay, the
-    // wallpaper and the glyph vocabulary. Each writes the ui store, which saves its values
-    // together, so what the page looks like comes back whole after a reload whichever control set
-    // it.
+    // store keeps for this browser: the theme list, the code theme menu (tokens, the VS Code themes
+    // under the words of the theme list, and Shiki's), the text-size steps with the size in force,
+    // the terminal text size box, and the toggles for the CRT overlay, the wallpaper and the glyph
+    // vocabulary. Each writes the ui store, which saves its values together, so what the page looks
+    // like comes back whole after a reload whichever control set it.
     //
     // The terminal text size is a box holding the text being typed. It is applied on Enter and on
     // leaving the box: a decimal the store clamps to 6 to 40, or an empty box, which gives the size
@@ -16,7 +16,7 @@
     import NumberInput from '$lib/ui/forms/NumberInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { themes as themeList } from '$lib/state/shared/words/appearance';
+    import { themeClassLabel, themes as themeList } from '$lib/state/shared/words/appearance';
     import { terminalSizeOf, type BrowserRow } from '$lib/state/system/config/browser';
     import type { Message } from '$lib/state/system/config/messages';
     import { useState } from '$lib/state/client/use';
@@ -60,7 +60,7 @@
     );
 
     /** The code theme menu's choices, the one in force marked. */
-    const codeThemes = $derived(codeThemeMenu(codeTheme(), t));
+    const codeThemes = $derived(codeThemeMenu(codeTheme(), t, themeClassLabel));
 
     /** The two text steps say what they cannot do, and the reset is there only once it resets. */
     const canShrink = $derived((textScale() ?? 1) > 0.7);
@@ -121,7 +121,7 @@
             items={codeThemes}
             onpick={(id: string) => setCodeTheme(id)}
         />
-        <span class="value" data-code-theme>{codeThemeLabel(codeTheme(), t)}</span>
+        <span class="value" data-code-theme>{codeThemeLabel(codeTheme(), t, themeClassLabel)}</span>
     </div>
 {:else if row.name === 'text_size'}
     <div class="line" role="group" aria-label={t('app.text')}>

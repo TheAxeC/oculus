@@ -50,6 +50,10 @@
     // closes it or every other one. A reveal Finder refused is said on one line over the list until
     // the next one.
     //
+    // A tab a workbench limited to a folder lists the repositories inside the folder and the one
+    // that holds it, so a project folder of the hub lists the hub's repository, with the line "In
+    // root/folder" and the control that lists every repository again.
+    //
     // A repository closed in this tab leaves its list and is never the one shown; it is a filter on
     // what this tab draws, kept in the instance's state, and the channel still carries it. Reopen
     // Closed Repositories, in the title bar and in the `...` menu while any is closed, asks which
@@ -63,18 +67,24 @@
     import type { PromptRequest } from '$lib/ui/forms/prompt';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
-    import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
     import Repo from './Repo.svelte';
     import RepoList from './RepoList.svelte';
     import QuickPick from '$lib/ui/forms/choice/QuickPick.svelte';
     import { closedChoices } from './menus/repo-menu';
+    import { viewMenu } from './menus/view-menu';
     import { toggleExpanded } from '$lib/state/sources/fs';
+    import {
+        limitOf,
+        limitedRepositories,
+        withLimit
+    } from '$lib/state/sources/explorer/view/limit';
+    import { servesRoot } from '$lib/state/sources/fs-transport';
     import { prunedCollapsed } from '$lib/state/sources/repositories/change-tree';
     import {
-        canPublish,
         closeOthers,
         closeRepository,
         pickerRoots,
@@ -87,7 +97,6 @@
         repositoryLabels,
         shownRoot,
         syncWords,
-        upstreamOf,
         visibleRoots,
         type RepositoriesView
     } from '$lib/state/sources/repositories/repositories';
@@ -102,7 +111,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        fs: { workspaces },
+        fs: { roots: fsRoots, workspaces },
         repositories,
         selectors: { gitFor, gitRoots },
         ui: { instanceState, setInstanceState },
@@ -115,7 +124,11 @@
     const served = $derived(
         workspaces().workspaces.flatMap((one) => one.roots.map((root) => root.dir))
     );
-    const every = $derived(pickerRoots(gitRoots(), gitFor, served));
+    /** The folder a workbench limits this tab to, or null for a tab limited to none. */
+    const folder = $derived(limitOf(instanceState(instance.id)));
+    const every = $derived(
+        limitedRepositories(pickerRoots(gitRoots(), gitFor, served), fsRoots(), folder)
+    );
     const view = $derived(repositoriesViewOf(instanceState(instance.id)));
     const roots = $derived(visibleRoots(every, view.closed));
     const labels = $derived(repositoryLabels(every));
@@ -134,6 +147,11 @@
     /** Write part of what this instance remembers, keeping the rest of it as it was. */
     function patch(part: Partial<RepositoriesView>): void {
         setInstanceState(instance.id, { ...instanceMap(instanceState(instance.id)), ...part });
+    }
+
+    /** Take the folder away from this tab: it lists every repository again. */
+    function clearFolder(): void {
+        setInstanceState(instance.id, withLimit(instanceState(instance.id), null));
     }
 
     function ask(message: string, detail: string, act: () => void, confirm?: string): void {
@@ -187,64 +205,7 @@
     }
 
     /** The `...` menu, in VS Code's groups, holding only what the repository can do now. */
-    const menu = $derived.by<MenuGroup[]>(() => {
-        const reopen: MenuGroup[] =
-            view.closed.length === 0
-                ? []
-                : [
-                      {
-                          id: 'closed',
-                          heading: t('repositories.menu_closed'),
-                          items: [
-                              {
-                                  id: 'reopen',
-                                  label: t('repositories.reopen_closed'),
-                                  glyph: 'repositories'
-                              }
-                          ]
-                      }
-                  ];
-        if (held === null || !readable) return reopen;
-        const upstream = upstreamOf(held);
-        const remote = [
-            { id: 'pull', label: t('repositories.pull'), glyph: 'pull' },
-            { id: 'push', label: t('git.push'), glyph: 'push' },
-            { id: 'fetch', label: t('repositories.fetch'), glyph: 'fetch' },
-            { id: 'sync', label: t('repositories.sync'), glyph: 'sync' }
-        ].filter((item) => item.id === 'fetch' || upstream !== '');
-        const remotes: MenuItem[] = [...remote];
-        // Publish Branch names its remote, one choice per remote the repository has.
-        if (canPublish(held)) {
-            for (const name of held.remotes) {
-                remotes.push({
-                    id: `publish:${name}`,
-                    label: t('repositories.publish_to', name),
-                    glyph: 'publish'
-                });
-            }
-        }
-        return [
-            { id: 'remote', heading: t('repositories.menu_remote'), items: remotes },
-            {
-                id: 'stash',
-                heading: t('repositories.menu_stash'),
-                items: [
-                    { id: 'tracked', label: t('repositories.stash_tracked'), glyph: 'stash' },
-                    { id: 'untracked', label: t('repositories.stash_untracked'), glyph: 'stash' },
-                    { id: 'staged', label: t('repositories.stash_staged'), glyph: 'stash' }
-                ]
-            },
-            {
-                id: 'tags',
-                heading: t('repositories.menu_tags'),
-                items: [
-                    { id: 'create', label: t('repositories.tag_create'), glyph: 'tag' },
-                    { id: 'push', label: t('repositories.tags_push'), glyph: 'push' }
-                ]
-            },
-            ...reopen
-        ];
-    });
+    const menu = $derived(viewMenu(view.closed.length, readable ? held : null));
 
     function picked(id: string, _event: MouseEvent, group?: string): void {
         if (group === 'closed') {
@@ -357,6 +318,17 @@
     }
 </script>
 
+{#snippet bar()}
+    <Toolbar label={t('repositories.folder_bar')}>
+        <FolderLine
+            text={t('repositories.in_folder', folder?.root ?? '', folder?.path ?? '')}
+            clear={t('repositories.clear_scope')}
+            title={t('repositories.clear_scope_title')}
+            onclear={clearFolder}
+        />
+    </Toolbar>
+{/snippet}
+
 {#snippet tools()}
     <Toolbar label={t('views.repositories')} overflow>
         {#if view.mode === 'tree'}
@@ -403,10 +375,20 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.repositories')} toolbar={tools} tinted>
+<Pane
+    title={t('views.repositories')}
+    toolbar={tools}
+    bar={folder !== null && folder.path !== '' ? bar : undefined}
+    tinted
+>
     <div class="repos" data-instance={instance.id} data-view="repositories">
         {#if every.length === 0}
-            <Empty message={t('repositories.empty')} glyph={t('repositories.empty_glyph')} />
+            <Empty
+                message={folder !== null && !servesRoot(workspaces(), folder.root)
+                    ? t('repositories.folder_gone', folder.root)
+                    : t('repositories.empty')}
+                glyph={t('repositories.empty_glyph')}
+            />
         {:else if roots.length === 0}
             <Empty message={t('repositories.all_closed')} glyph={t('repositories.empty_glyph')} />
         {:else}

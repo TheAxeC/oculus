@@ -14,11 +14,11 @@ The window is a rail down the left, a status bar along the bottom and, between t
 
 ### The rail
 
-The rail has one button per page, twelve as shipped from Focus to System, each opening the arrangement of panes and tabs that page was left in, and at its foot Bookmarks, Search and Update. The Help page holds this manual, the hub's documents and the guides: [Configuration](docs/configuration.md), [Source Control](docs/source-control.md), [Window](docs/window.md), [Views](docs/views.md), [Files and search](docs/files-and-search.md) and [Terminals and commands](docs/terminals.md). The rail is in the [Window guide](docs/window.md#the-rail).
+The rail has one button per page, twelve as shipped from Focus to System, each opening the arrangement of panes and tabs that page was left in, and at its foot Bookmarks, Workbenches, Search and Update. The Help page holds this manual, the hub's documents and the guides: [Configuration](docs/configuration.md), [Source Control](docs/source-control.md), [Window](docs/window.md), [Views](docs/views.md), [Files and search](docs/files-and-search.md) and [Terminals and commands](docs/terminals.md). The rail is in the [Window guide](docs/window.md#the-rail).
 
 ### Pages and the pane tree
 
-A page is a whole working surface with its own tree of splits and panes, each pane a strip of tabs; tabs split, fold, maximise, float and drag between panes, and the layout is saved as it changes. The operations are in the [Window guide](docs/window.md#inside-a-page).
+A page is a whole working surface with its own tree of splits and panes, each pane a strip of tabs; tabs split, fold, maximise, float and drag between panes, and the layout is saved as it changes. The operations are in the [Window guide](docs/window.md#inside-a-page). A workbench is a page that belongs to one folder, with Files, Search, Repositories, the TeX view, Problems and the sessions list limited to it, opened from a project, an entry, a side project or a folder; see [Workbenches](docs/window.md#workbenches).
 
 ## The keys
 

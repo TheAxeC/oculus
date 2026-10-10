@@ -4,6 +4,8 @@ text:
     folder_files:
         show_in_files: Show in Files
         show_in_files_tip: 'Open {0} in a Files tab of its own'
+        open_workbench: Open Workbench
+        open_workbench_tip: 'Open a workbench for {0}'
         loading: Reading the folder ...
         outside: That is not a folder of the hub, so there is nothing to list.
         empty: The folder holds no files.

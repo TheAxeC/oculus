@@ -16,6 +16,10 @@
     // Each entry holds its label first and draws its dot and glyph before it by the flex order, so
     // the text of an entry begins with its label, which is what bits-ui's type-ahead reads.
     //
+    // A choice carrying `action` draws a button of its own at the end of its row, a menu item for
+    // the keys that follows the row's own, which runs the action's callback and picks nothing. The
+    // opener hands `onact` the callback to answer once its list is gone, as it does for a pick.
+    //
     // A choice carrying `rule` draws bits-ui's separator above it, the line VS Code draws between
     // its menu groups; a separator is no choice, so the arrow keys and the type-ahead pass over
     // it, and the list's first choice draws none (menu-items.ts, `ruleAbove`).
@@ -34,11 +38,13 @@
         groups?: MenuGroup[];
         /** A pick, with the pointer event and, for a choice of a group, that group's id. */
         onpick: (id: string, event: MouseEvent, group?: string) => void;
+        /** Answer a row action's callback: when the list is gone for an opener that holds picks. */
+        onact?: (run: () => void) => void;
         /** The attributes bits-ui's content gives the box that holds the choices. */
         list?: Record<string, unknown>;
     };
 
-    let { label, items, groups, onpick, list = {} }: Props = $props();
+    let { label, items, groups, onpick, onact = (run) => run(), list = {} }: Props = $props();
 
     /** How near the window's edges a list may be laid out. */
     const MARGIN = 8;
@@ -117,25 +123,51 @@
     </DropdownMenu.Separator>
 {/snippet}
 
+{#snippet pickable(item: MenuItem, group?: MenuGroup)}
+    <DropdownMenu.Item disabled={item.disabled === true} onclick={clickOf(item, onpick, group?.id)}>
+        {#snippet child({ props })}
+            <div
+                {...props}
+                class="item"
+                class:current={item.active === true}
+                aria-current={item.active === true}
+                title={item.title}
+            >
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render face(item)}
+            </div>
+        {/snippet}
+    </DropdownMenu.Item>
+{/snippet}
+
 {#snippet entry(item: MenuItem, at: string, group?: MenuGroup)}
     {#if item.items === undefined}
-        <DropdownMenu.Item
-            disabled={item.disabled === true}
-            onclick={clickOf(item, onpick, group?.id)}
-        >
-            {#snippet child({ props })}
-                <div
-                    {...props}
-                    class="item"
-                    class:current={item.active === true}
-                    aria-current={item.active === true}
-                    title={item.title}
+        {@const action = item.action}
+        {#if action === undefined}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render pickable(item, group)}
+        {:else}
+            <div class="split">
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                {@render pickable(item, group)}
+                <DropdownMenu.Item
+                    disabled={item.disabled === true}
+                    onclick={() => onact(action.run)}
                 >
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render face(item)}
-                </div>
-            {/snippet}
-        </DropdownMenu.Item>
+                    {#snippet child({ props })}
+                        <button
+                            {...props}
+                            type="button"
+                            class="action"
+                            aria-label={action.label}
+                            title={action.label}
+                        >
+                            <Glyph name={action.glyph} />
+                        </button>
+                    {/snippet}
+                </DropdownMenu.Item>
+            </div>
+        {/if}
     {:else}
         {@const inner = item.items}
         <DropdownMenu.Sub>
@@ -175,6 +207,7 @@
                                 items={inner}
                                 onpick={(id: string, event: MouseEvent) =>
                                     onpick(id, event, group?.id)}
+                                {onact}
                                 list={props}
                             />
                         </div>
@@ -241,6 +274,45 @@
         height: 1px;
         margin: 4px 0;
         background: var(--line);
+    }
+
+    /* A choice with an action of its own: the pick takes the row's width and the action sits at its
+       end, in the box of an icon. */
+    .split {
+        display: flex;
+        flex: none;
+        align-items: stretch;
+    }
+
+    .split .item {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .action {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 6px;
+        border: 0;
+        border-radius: var(--radius-sm);
+        background: transparent;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+        cursor: pointer;
+        outline: none;
+    }
+
+    .action:hover,
+    .action[data-highlighted] {
+        background: var(--chip);
+        color: var(--ink-txt, var(--ink));
+    }
+
+    .action:focus-visible {
+        outline: 1px solid var(--accent);
+        outline-offset: -1px;
     }
 
     .item .dot {

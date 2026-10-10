@@ -2,7 +2,8 @@
 // the reader looked at last on the page builds through (the view follows the active LaTeX editor,
 // as LaTeX Workshop's outline does), or one the reader picked from the roots this page has seen,
 // which the view keeps in its state as `{ root, path, main }`. A saved tab of the folder-only view
-// has `{ root, path, label }` and no main: it names that folder's first main file.
+// has `{ root, path, label }` and no main: it names that folder's first main file. A pin at a root
+// the page's workspace does not serve names no file, so no root is asked of the server.
 //
 // The followed tab is read through `followedTab` (state/sources/explorer/sections/followed-tab.ts):
 // a source tab of a LaTeX file, or a PDF tab of a build, and for the editing commands the source
@@ -13,6 +14,7 @@ import type { ClientState } from '$lib/state/client/context';
 import type { FollowTab } from '$lib/state/sources/explorer/sections/followed-tab';
 import type { LatexRoot } from '$lib/state/sessions/latex/latex-state';
 import type { LatexTarget } from '$lib/state/sessions/terminal/latex-target';
+import { servesRoot } from '$lib/state/sources/fs-transport';
 import { instanceMap, instanceText } from '$lib/state/workbench/layout/instance';
 import { fileOfTab } from '$lib/state/workbench/navigation/pages';
 import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -35,6 +37,8 @@ export type TexRoot = {
     readonly target: (LatexTarget & { root: string; path: string }) | null;
     /** Whether the reader pointed the view at a root, so it does not follow the editor. */
     readonly pinned: boolean;
+    /** The key of the pinned root when this page does not serve it, else the empty text. */
+    readonly gone: string;
     /** The source tab of a LaTeX file the editing commands act on, or null. */
     readonly source: FollowTab | null;
     /** The file that tab shows, against its root, or null. */
@@ -65,6 +69,7 @@ export function createTexRoot(input: {
     const {
         latex,
         latexActions,
+        fs,
         layout: { restateInstance },
         source: { sourceDraft }
     } = client;
@@ -80,11 +85,13 @@ export function createTexRoot(input: {
         main: instanceText(state, 'main')
     });
     const pinned = $derived(pin.root !== '');
+    /** The key of the pinned root while no root of this page's workspace carries it. */
+    const gone = $derived(pinned && !servesRoot(fs.workspaces(), pin.root) ? pin.root : '');
     /** The main of a pin that names none: the first of its folder. */
     const mainOfPin = $derived(
         pin.main !== ''
             ? pin.main
-            : pinned
+            : pinned && gone === ''
               ? (latex.state({ root: pin.root, path: pin.path }).mains[0]?.main ?? '')
               : ''
     );
@@ -92,7 +99,7 @@ export function createTexRoot(input: {
     /** The file whose root the view is about. */
     const file = $derived.by(() => {
         if (pinned) {
-            return mainOfPin === ''
+            return gone !== '' || mainOfPin === ''
                 ? null
                 : { root: pin.root, path: inFolder(pin.path, mainOfPin) };
         }
@@ -148,6 +155,9 @@ export function createTexRoot(input: {
         },
         get pinned() {
             return pinned;
+        },
+        get gone() {
+            return gone;
         },
         get source() {
             return source;

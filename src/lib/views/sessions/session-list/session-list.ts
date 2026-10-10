@@ -8,6 +8,8 @@ import {
     type ListFilter,
     type ListStateKey
 } from '$lib/state/sessions/folds';
+import { inFolder, type Workspace } from '$lib/state/client/selectors.svelte';
+import type { Terminal } from '$lib/state/sessions/terminals.svelte';
 import { t } from '$lib/state/shared/words/text';
 
 export type SessionRow = { id: string; live: boolean; cwd: string | null };
@@ -112,4 +114,32 @@ export function filterGroups(filter: ListFilter): MenuGroup[] {
             }))
         }
     ];
+}
+
+/**
+ * The workspaces with only the sessions that work in a folder or are filed into it by their area,
+ * the rule `sessionsForProject` lists a project's sessions by, an archived session included so the
+ * list's own filter still reaches it. A workspace or area left with none is dropped. A null folder
+ * is a folder no served root holds and keeps nothing.
+ */
+export function sessionsInFolder(tree: Workspace[], dir: string | null): Workspace[] {
+    if (dir === null) return [];
+    const kept: Workspace[] = [];
+    for (const workspace of tree) {
+        const areas = workspace.areas
+            .map((area) => ({
+                ...area,
+                sessions: area.sessions.filter(
+                    (row) => inFolder(row.area, dir) || inFolder(row.cwd, dir)
+                )
+            }))
+            .filter((area) => area.sessions.length > 0);
+        if (areas.length > 0) kept.push({ ...workspace, areas });
+    }
+    return kept;
+}
+
+/** The terminals running in a folder; none for a folder no served root holds. */
+export function terminalsInFolder(entries: Terminal[], dir: string | null): Terminal[] {
+    return dir === null ? [] : entries.filter((entry) => inFolder(entry.cwd, dir));
 }

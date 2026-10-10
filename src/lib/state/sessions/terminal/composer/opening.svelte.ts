@@ -19,8 +19,12 @@ import { composerOf, freshComposer, splitState, startedAt, withComposer } from '
 /** The seed, folder and name the server answered for the task a tab's composer carries. */
 export type HeldTask = { ref: TaskRef; seed: string; cwd: string; name: string };
 
-/** Where a start opens its composer: a folder, or a task. The agent defaults to Claude. */
-export type ComposeAt = { cwd: string; agent: AgentId } | { task: TaskRef; agent?: AgentId };
+/**
+ * Where a start opens its composer: a folder, or a task. The agent defaults to Claude. A folder
+ * start with `documents` set opens the Terminal tab it needs in the page's documents pane.
+ */
+export type ComposeAt =
+    { cwd: string; agent: AgentId; documents?: boolean } | { task: TaskRef; agent?: AgentId };
 
 /** What the opening reads of the terminals store. */
 export type OpeningHost = {
@@ -96,14 +100,14 @@ export function createComposerOpening(host: OpeningHost) {
 
     /**
      * The Terminal tab a start from a place or a task shows its composer in: the page on screen's
-     * Terminal tab, or a new one there.
+     * Terminal tab, or a new one there, in the page's documents pane when `documents` is set.
      */
-    function targetTab(): TerminalTab | null {
+    function targetTab(documents = false): TerminalTab | null {
         if (workbench === undefined) return null;
         const on = workbench.currentPage();
         const existing = host.pageTab(host.terminalTabs(), on);
         if (existing !== null) return existing;
-        const id = workbench.open(on, emptyTab(crypto.randomUUID()));
+        const id = workbench.open(on, emptyTab(crypto.randomUUID()), documents);
         return host.terminalTabs().find((tab) => tab.id === id) ?? null;
     }
 
@@ -128,7 +132,7 @@ export function createComposerOpening(host: OpeningHost) {
         if (workbench === undefined) return '';
         const mine = ++latest;
         if (!('task' in at)) {
-            const target = targetTab();
+            const target = targetTab(at.documents === true);
             if (target !== null) showAt(target, at, readTab(target.state));
             return '';
         }

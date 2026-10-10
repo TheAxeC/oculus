@@ -16,15 +16,15 @@
     // rail button shows is reached. Each page is one explorer row (ui/tree/TreeItem.svelte in a
     // TreeView), so the list reads at the tree's size like the other explorers: a press on the row
     // shows its page (a drag the row started and released over it shows nothing, by row-press.ts's
-    // rule), the page on screen is the row in force (bold, with a check), a rail page
-    // names its key after its name, and a page holding unsaved text carries the dirty mark at the
-    // row's end. The row's controls, shown under the pointer and with the focus inside the row,
-    // rename it, reset a rail page to its button's arrangement after a confirm naming it, and
-    // close it; New page, an icon in the pane header, makes one. A row carried out of the list onto
-    // a pane's edge shows its page there, which is the pointer's way to a page inside a page; the
-    // pane menu is the keyboard's.
+    // rule), the page on screen is the row in force (bold, with a check), a rail page names its key
+    // after its name, and a page holding unsaved text carries the dirty mark at the row's end. The
+    // row's controls, shown under the pointer and with the focus inside the row, rename it, reset a
+    // rail page to its button's arrangement after a confirm naming it (a workbench is made again
+    // from the workbench arrangement, with its Reset layout), and close it; New page, an icon in
+    // the pane header, makes one. A row carried out of the list onto a pane's edge shows its page
+    // there, which is the pointer's way to a page inside a page; the pane menu is the keyboard's.
 
-    import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
+    import CloseQuestions from '$lib/ui/tabs/CloseQuestions.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
@@ -35,18 +35,11 @@
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import {
-        closeAsk,
-        closeOnce,
-        closeWords,
-        instancesOfPages,
+        createPageFlows,
         pageAt,
-        pageInstanceIds,
         pageName,
         pageUnsaved,
         questionFor,
-        resetAfterAsking,
-        resetAsk,
-        tabNameOf,
         type Question
     } from '$lib/state/workbench/navigation/pages';
     import { railPages, type RailPage } from '$lib/state/workbench/navigation/rail';
@@ -59,6 +52,7 @@
     const {
         drag: { startPage },
         entities: { config },
+        folders,
         layout: { closePage, currentPage, openPage, pages, renamePage, resetPage, switchPage },
         registry: { viewFor },
         ui: { unsaved, busyTerminals, saveBeforeClose }
@@ -86,23 +80,13 @@
      * its tabs holding unsaved text.
      */
     function reset(id: string): void {
-        const found = pageAt(shown, id);
-        const button = buttonOf(found?.page.rail);
-        if (found === null || button === null) return;
-        const words = resetAsk(shown, [found.page], [], found.page);
-        void resetAfterAsking(
-            shown,
-            words,
-            [found.page],
-            unsaved,
-            saveBeforeClose,
-            (instance) => tabNameOf(instance, viewFor),
-            ask,
-            () => {
-                resetPage(id, button);
-            },
-            () => busyTerminals(instancesOfPages([found.page]))
-        );
+        const button = buttonOf(pageAt(shown, id)?.page.rail);
+        if (button !== null) flows.reset(id, () => resetPage(id, button));
+    }
+
+    /** The same ask before a workbench is made again from the workbench arrangement. */
+    function resetLayout(id: string): void {
+        flows.reset(id, () => folders.reset(id));
     }
 
     /**
@@ -112,6 +96,18 @@
      */
     let confirming: { message: string; id: string } | null = $state(null);
 
+    const flows = createPageFlows({
+        pages: () => shown,
+        unsaved,
+        saveBeforeClose,
+        busyTerminals,
+        viewFor,
+        closePage,
+        holdClose: (held) => (confirming = held),
+        ask
+    });
+    const close = flows.close;
+
     /** The page being renamed and the name typed so far, or null when none is. */
     let renaming: { id: string; draft: string } | null = $state(null);
 
@@ -120,50 +116,6 @@
 
     /** The row's click, which a drag released over the same row does not turn into a show. */
     const rowClick = rowPresses((id) => switchPage(id));
-
-    /**
-     * Close a page, asking first unless it holds one tab with nothing unsaved in it. More than one
-     * tab is the page's own sentence, which says how many go; one tab holding unsaved text is the
-     * tab sentence, since what would be lost is that text rather than the page.
-     */
-    const once = closeOnce();
-
-    function close(id: string): void {
-        const found = pageAt(shown, id);
-        if (found === null) return;
-        const ids = pageInstanceIds(found.page);
-        void once(
-            `page:${id}`,
-            async () => {
-                await saveBeforeClose(ids);
-                return busyTerminals(instancesOfPages([found.page]));
-            },
-            (busy) => {
-                const asked = closeAsk({
-                    ids,
-                    unsaved,
-                    nameOf: (one) => {
-                        const tab = instancesOfPages([found.page]).find((each) => each.id === one);
-                        return tab === undefined ? one : tabNameOf(tab, viewFor);
-                    },
-                    many: t('ui.page_close_confirm', pageName(found.page, found.at), ids.length),
-                    busy
-                });
-                if (asked === null) closePage(id);
-                else confirming = { message: closeWords(asked), id };
-            }
-        );
-    }
-
-    /**
-     * Perform the close the dialog was asking about. The page is read out of the state before the
-     * dialog is taken away, since the markup reads the same state and would have nothing to close.
-     */
-    function confirmed(): void {
-        const id = confirming?.id;
-        confirming = null;
-        if (id !== undefined) closePage(id);
-    }
 
     /** A new page at the end of the list, named by its place, and shown. */
     function add(): void {
@@ -330,6 +282,15 @@
                                             tabindex={reach}
                                             onclick={() => reset(page.id)}
                                         />
+                                    {:else if page.folder !== undefined}
+                                        <ToolButton
+                                            label={t('workbench.pages_reset_layout')}
+                                            title={name}
+                                            glyph="refresh"
+                                            compact
+                                            tabindex={reach}
+                                            onclick={() => resetLayout(page.id)}
+                                        />
                                     {/if}
                                     <ToolButton
                                         label={t('workbench.pages_close')}
@@ -349,17 +310,11 @@
     </div>
 </Pane>
 
-<CloseQuestion
-    message={confirming?.message ?? null}
-    onconfirm={confirmed}
-    oncancel={() => (confirming = null)}
-/>
-
-<CloseQuestion
-    message={question?.message ?? null}
-    detail={question?.detail}
-    onconfirm={() => question?.answer(true)}
-    oncancel={() => question?.answer(false)}
+<CloseQuestions
+    closing={confirming}
+    {question}
+    onclose={closePage}
+    onclear={() => (confirming = null)}
 />
 
 <style>

@@ -215,7 +215,8 @@ export function createPicks(deps: PicksDeps) {
                     commandsRead,
                     client.selectors.programApps(),
                     deps.isMarked(here),
-                    writingFixOffered(client.selectors.configMap())
+                    writingFixOffered(client.selectors.configMap()),
+                    client.folders.served(here.root)
                 ),
                 t
             );

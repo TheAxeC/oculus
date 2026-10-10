@@ -20,7 +20,8 @@
     // LaTeX source tab or the PDF of a build, so it lists the root of the file in front of the
     // reader (`view.outline.follow.editor`), and a root picked from the ones this page has seen
     // keeps it on that root until the reader goes back to following. A saved tab of the folder-only
-    // view, which has no main file, names the first main file of its folder.
+    // view, which has no main file, names the first main file of its folder. A tab pointed at a
+    // root this page does not serve (a workbench's) says so and asks the server nothing.
     //
     // The sections are sections of one tree each (Commands, Structure, Math Symbols) so the arrow
     // keys move within one and Tab moves between them. A section's open state is the tab's own and
@@ -180,7 +181,9 @@
             />
             {#if status !== ''}<span class="status">{status}</span>{/if}
         </div>
-        {#if found === null && source === null}
+        {#if rooted.gone !== ''}
+            <Empty message={t('latex.root_gone', rooted.gone)} glyph={t('latex.none_glyph')} />
+        {:else if found === null && source === null}
             <Empty message={t('latex.none_followed')} glyph={t('latex.none_glyph')} />
         {/if}
         <Commands {nodes} open={!isClosed('commands')} ontoggle={() => toggle('commands')} />

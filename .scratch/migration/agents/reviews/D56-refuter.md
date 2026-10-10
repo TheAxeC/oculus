@@ -187,3 +187,178 @@ Cases of the brief's "Cases":
 - The report's first-run section for the unchanged tree is the earlier builder's and was not rerun by the builder or by me. Its scratch files are under `$TMPDIR/d56-scratch`, and I did not run them.
 
 Reviewer usage: a17e012de19ee2885, claude-opus-5-5, 346,450 tokens, 92 tool uses, 30.1 min.
+
+## Repair round 1, refuted
+
+Reviewer of D56 (the workbench) over repair round 1. Worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D56`, base dee635dbd. The round's delta is the 78 files newer than the round brief's mtime (2026-10-10 00:11:01), found with `find . -newer $TMPDIR/d56r1.ref` with `node_modules`, `.svelte-kit` and build folders left out. I read it against the whole `git diff dee635dbd` (95 tracked files changed and 11 untracked files). I changed nothing. Every run set `HOME=$TMPDIR/d56r1/home`. Port 8811 was free before and after (`lsof -iTCP:8811 -sTCP:LISTEN` exit 1 both times). `git status --short` printed 106 lines before and after my runs.
+
+Two defects stop round items 7 and 10 from holding. Item 10 (Behaviour 1): the documents pane loses its mark when its last tab is closed, and after a reload a pick in the sessions list splits a new pane again. Item 7 (Spec 1): Repositories and the sessions list still tell a served root as not served while the workspaces load, and Search, LaTeX and Problems do not.
+
+### Verification lines, verbatim
+
+`npm run test:quick -- --base dee635dbd` (exit 0):
+test:quick: 106 changed file(s), from git since dee635dbd
+test:quick: 80 test file(s), 10 essential
+ok      ASCII gate (0.5 s)
+ok      prettier (0.7 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.1 s)
+ok      eslint (23.6 s)
+ok      svelte-check (24.1 s): 1791588223162 COMPLETED 454 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (30.7 s): Duration  26.53s (transform 62.73s, setup 0ms, import 78.63s, tests 23.03s, environment 436ms)
+test:quick: 31.2 s (limit 45.0 s); every command passed
+
+`npx vitest run tests/state/workbench tests/checks/config tests/data/sources/config tests/shell/panes/strip/tab-menu.test.ts tests/server/machine/runs/lint/eslint-trust.test.ts tests/server/machine/runs/lint/lint-route.test.ts --testTimeout 300000` (exit 0):
+Test Files  16 passed (16)
+Tests  233 passed | 1 skipped (234)
+
+`npm run test:checks` (exit 0):
+Test Files  17 passed (17)
+Tests  265 passed | 1 skipped (266)
+
+`sh utils/folder-check.sh`: no output, exit 0.
+
+`sh utils/unused-exports.sh` against `D56-base/tools/oculus/unused-exports.txt`:
+- Both print `Unused exports (245)`, and both files have 364 lines.
+- `diff` shows three changes: `restate` is gone from the `layout/index.ts` line, `Workspace` is gone from the `selectors.svelte.ts` line, and `pageInstanceIds` is added to the `navigation/pages.ts` line.
+- Counted by name, the lists hold 1039 names on the base and 1038 after.
+- `pageInstanceIds` lost its importer `Pages.svelte`, because the close flow moved into `createPageFlows` in `pages.ts`. Round item 8 asks for it to stay exported.
+
+ASCII gate in the `agents/spec.md` form, over `src tests bin config` with `! -name local.yml`: no output, exit 0. `bin` does not exist. `LC_ALL=C grep -n '[^ -~]'` over DESIGN.md, HELP.md, `docs/*.md`, the report and the changed `utils`, `shell/rail` and `ui/tabs` files: no output.
+
+`node utils/migrations/convert-vscode-themes.ts --check`: `19 themes up to date`, exit 0.
+
+The round's scratch runs (the builder's `d56c-scratch` copied to `$TMPDIR/d56r1/c-scratch`), `npx vitest run --config .../vitest.scratch.config.mjs --silent=false --reporter=verbose`:
+- `Test Files  3 passed (3)` and `Tests  7 passed (7)`.
+- The 13 `RUN` lines, sorted, are byte-identical to the report's block (`diff` printed nothing). That covers RUN 6, 7, 9, 10 and 11.
+- I read the three scratch files. Each sets the state the report describes and prints what it reads.
+
+The older scratch set (`d56b-scratch` copied to `$TMPDIR/d56r1/b-scratch`), same form:
+- `Test Files  5 passed (5)` and `Tests  15 passed (15)`.
+- The 33 `CASE` lines, sorted, are byte-identical to the report's "cases after the change" block.
+
+The changed tests on the unchanged tree. My copy of `D56-base/tools/oculus` is under `$TMPDIR/d56r1/basecopy`, with the worktree's build files and links to `node_modules`, `assets` and `demo`; `diff -rq` of its `src` against the base printed nothing.
+- `pages.test.ts` and `layout-saved.test.ts` as on the base: `Test Files  2 passed (2)`, `Tests  13 passed (13)`. This includes "lists every instance of every pane of a page, in the tree's own order".
+- The five current test files copied in (`cmp` equal for all five):
+  - `Test Files  4 failed | 1 passed (5)` and `Tests  7 failed | 75 passed | 2 skipped (84)`.
+  - The 7 failure titles and their assertion lines are the ones the report quotes.
+  - The G29 failure is at `layout-saved.test.ts:70:58`, on the missing `"documents": true`.
+- After the change, in the worktree, the same five files pass inside the scoped run above. `git diff dee635dbd -- tests/state/workbench/navigation/pages.test.ts` prints nothing.
+
+Line counts: `wc -l` of the 93 changed non-diagram files, against the base copy. Sorted, the rows are the same as the report's table, and no `.ts` file is over 880 and no `.svelte` file over 520.
+
+History grep: my grep of the added lines (comments, docs, catalogue, test titles) for the spec's words gives 17 hits on 14 lines, the same set as the report's table. Each describes present behaviour.
+
+Comment rewrap: my finder over the added and changed comment lines of `src`, `tests` and `utils` checks for a line that ends while the next word would fit by column 100. It printed `hits 0`. `terminals.svelte.ts:216-222`, `Item.svelte:8-13` and `row-menu.ts:1-16` read as rewrapped.
+
+Two scratch runs of my own (`$TMPDIR/d56r1/r-scratch`), quoted under the findings: `LOADING ...` and `RUN M-*`.
+
+Closures: checked that no check was loosened.
+- `git diff dee635dbd --stat -- tests` names only `arrangements.test.ts`, `config-folder.test.ts`, `config.test.ts` and `layout-saved.test.ts`. None of them changed in this round.
+- `tests/checks/tree/boundaries.test.ts` (which holds `SHELL_STORES`), the duplication, order and comment-width tests are unchanged.
+- `pages.test.ts` is identical to the base.
+
+### Verdicts
+
+Items of the brief's "What to build", over the whole diff:
+- 1 (the workbench page): holds. The adoption no longer takes a workbench (`float/pages.ts:63`, `adoptedPage`; RUN 9).
+- 2 (the arrangement): holds.
+- 3 (each tab limited to the folder): holds.
+- 4 (the documents pane): partial, Behaviour 1.
+- 5 (the openers): holds.
+- 6 (the Workbenches button): holds. The close question is drawn by `ui/tabs/CloseQuestions.svelte`.
+- 7 (the kept layout): holds.
+- 8 (unique views): holds.
+- 9 (the VS Code code themes): holds. The label comes from the `themes:` row whose `class` matches (RUN 6).
+- 10 (the docs): holds, except that one `docs/window.md` sentence is made false by Behaviour 1's defect.
+
+Cases of the brief:
+- 1 to 7: met.
+- 8: met as written (no reload in the case). Behaviour 1 limits it after the documents pane empties and the page is reloaded.
+- 9 to 20: met.
+- 21: met. Search and TeX now say the root is not served (RUN 7), as do Problems, Repositories and the sessions list.
+- 22 to 26: met.
+- The case ruling A added (unsaved source text not brought back): met.
+
+Items of the round brief:
+- 1 (layer boundaries): holds.
+  - `code-themes.ts` holds a static class list, checked by the converter's `--check`, and imports nothing outside `data/`.
+  - The views take `Workspace`, `GitState` and `pathUnder` through state modules, as the other views do.
+  - The rail gets Reset layout through a context function the page provides (`workbench-reset.ts`). That follows the page-to-shell route `provideFileProblems` already uses, and `SHELL_STORES` is unchanged.
+- 2 (folder order): holds. The module is now under `state/workbench/layout/open/float/`, and no reference to the old path is left.
+- 3 (one close question): holds.
+- 4 (comments): holds.
+- 5 (the landing rule in the guide and the design): holds.
+- 6 (Code theme label): holds (RUN 6).
+- 7 (not-served Search and LaTeX): partial, Spec 1.
+- 8 (`pageInstanceIds` and its test): holds.
+- 9 (no adoption of a workbench): holds (RUN 9).
+- 10 (the documents mark): partial, Behaviour 1.
+- 11 (Reset all pages and a held unique view): holds (RUN 11; DESIGN.md:483, `docs/window.md`).
+- 12 (two kept changes stated): holds.
+- 13 (the report): holds, except that its first line says items 1 to 13 hold. Items 7 and 10 are partial, and Standards 1 applies.
+
+Traces of the disclosed runs: I found no file of theirs in the worktree.
+- The read-only `git status` touches only the index, which lives under the main repository's `.git/worktrees/`.
+- For the earlier real-HOME runs: `git status --short` lists only the step's 95 tracked changes and 11 new files.
+- `ls -la config` shows no `local.yml`.
+- A `find` for stray names (`.oculus`, logs, scratch files, coverage, tmp) outside `node_modules` and `.svelte-kit` found only tracked files.
+- The only directories newer than the round brief are the four the step writes.
+
+### 1. Spec
+
+1. `src/lib/state/sources/fs-transport.ts:103-106` against `src/lib/state/sources/explorer/view/limit.ts:41-48`, read by `Repositories.svelte:386-390` and `SessionList.svelte:98-115`, and the third rule at `folder-opener.ts:101`.
+   - The hunks:
+     - `export function servesRoot(saved: WorkspacesState, root: string): boolean { const roots = readRoots(saved); return roots === null || roots.some((one) => one.key === root); }`
+     - `const root = roots.find((one) => one.key === folder.root); const base = root === undefined ? '' : (root.real ?? root.dir); return base === '' ? null : joinPath(base, folder.path);`
+     - `message={folder !== null && limitDir(fsRoots(), folder) === null ? t('repositories.folder_gone', folder.root) ...`
+   - What is wrong:
+     - Round item 7 asks Search and LaTeX to use "the words and with the state Problems, Repositories and the sessions list use".
+     - The builder added `servesRoot`, which counts a root as served while the workspaces are being read or failed to read. Search, LaTeX and Problems use it; this round also switched Problems to it, beyond the item's two views.
+     - Repositories and the sessions list still decide from `fs.roots()`, which is empty while the workspaces load (`fs.svelte.ts:490-493`). So the five limited views run two rules with different answers.
+     - A third copy of "is this root served" is `served` in `folder-opener.ts:101`, against the principle that a rule exists once.
+   - Failure scenario: a workbench of `hub/projects/x` is open and the page reloads. While the workspaces are being read, the sessions list says "hub is not a root this workspace serves, so it lists no session." (and Repositories the same when no repository has arrived yet). Search, Problems and TeX say nothing. If the workspaces read fails, the two views keep saying it.
+   - My scratch run (`$TMPDIR/d56r1/r-scratch`, server renders of `SessionList` and `Search` over an `emptyClient`) printed: `LOADING {"workspacesLoading":true,"rootsNow":0,"sessionsSaysGone":true,"searchSaysGone":false}`.
+   - Verdict: round item 7 partial.
+
+### 2. Proof
+
+none
+
+### 3. Standards
+
+1. `.scratch/migration/agents/reviews/D56-report.md:209`: "Each new function was searched for before it was written (`grep -rn "<name>\|<what it does>" src/lib`)."
+   - What is wrong: the brief's verify item 7 asks for the reuse grep before each new function, quoted. The report quotes none for this round's new functions (`servesRoot`, `themeClassLabel`, `adoptedPage`, `markDocuments`, `provideWorkbenchReset`, `useWorkbenchReset`). A grep for "served" would have found `readRoots` and the existing `served` of `folder-opener.ts:101`, and `limitDir`, which Spec 1 shows now disagree.
+   - Failure scenario: the orchestrator cannot see from the report that the second served-root rule was written beside an existing one.
+   - Verdict: brief verify item 7 not met in the report. This does not change the item verdicts above.
+
+### 4. Behaviour
+
+1. `src/lib/state/workbench/layout/tree.ts:178-185`.
+   - The hunk: `function keptPane(pane: Pane, view: ViewId, keep?: KeepRule): Pane | null { ... const left = keep?.(view) === 'terminals' ? emptiedTerminals() : emptyPane(); if (pane.added === true) left.added = true; if (locked) left.locked = true; return left; }`
+   - What is wrong:
+     - Round item 10 asks for the documents mark to be "carried through every rebuild". `repane` carries it (`model.ts:306`).
+     - The empty pane left when a pane's last tab is closed or dragged out is built by `keptPane`, which copies `added` and `locked` and drops `documents`. Closing the project view, or the last Transcript, in a workbench's documents pane therefore removes the mark for good: the saved layout no longer holds it.
+     - Once a Transcript is opened there again and the page reloads, the documents pane holds a tool view the received list no longer names, and the next pick splits a new pane. That is the scenario item 10 was sent to end.
+     - It makes false the `docs/window.md` Workbenches sentence "so a view opened from the workbench lands in it first, also after a reload, and splits no new pane", and brief item 4's documents-pane landing.
+   - Failure scenario, from my scratch run built on the builder's store harness (`$TMPDIR/d56r1/r-scratch/mark.scratch.ts`): open a workbench for `hub/projects/x`; open Transcript s1 with `{ document: true }`; close that tab; open Transcript s2 with `{ document: true }`; read the saved string into a second client; open Transcript and Timeline of s3 with `{ document: true }`. It printed:
+     - `RUN M-opened: {"panes":[["files","search","repositories","latex","problems","session-list"],["transcript:s1"]],"mark":[1]}`
+     - `RUN M-closed: {"panes":[["files","search","repositories","latex","problems","session-list"],[]],"mark":[]}`
+     - `RUN M-reopened: {"panes":[["files","search","repositories","latex","problems","session-list"],["transcript:s2"]],"mark":[]}`
+     - `RUN M-after-reload-pick: {"panes":[["files","search","repositories","latex","problems","session-list"],["transcript:s3","timeline:s3"],["transcript:s2"]],"paneCount":[2,3],"mark":[]}`
+   - Verdict: round item 10 partial; brief item 4 partial.
+
+### Declined to judge
+
+- Whether the documents mark should also come back when the documents pane is floated and returned to the page. `readFloat` (`saved.ts:653`) deletes it on read, and I did not run the in-memory path.
+- The meaning of the `(245)` header of `unused-exports.sh`, which is the same on the base and after while the name count drops from 1039 to 1038. The report states it as not verified, and no decision rests on it.
+- The report's first run of the cases on the unchanged tree is the earlier builder's. It was not rerun by the builder, by the first reviewer or by me.
+- The test:quick time (31.2 s in my run). Other suites may have been running on the machine.
+- Whether `CloseQuestions` belongs in `ui/tabs/`, since it asks about pages. The boundary and folder checks pass, and placement inside `ui/` is a judgment of naming.
+
+Usage: ad867f75f854aa81e, claude-opus-5-5, 299,026 tokens, 88 tool uses, 15.3 min.
+
+## Closed
+
+- Repair round 1, Behaviour 1 (the documents mark dropped when the documents pane's last tab closes): fixed at landing; `keptPane` (`src/lib/state/workbench/layout/tree.ts`) carries `documents` to the empty pane it leaves, as it carries `added` and `locked`. The reviewer's scenario (open Transcript s1, close it, open s2, reload, pick s3) printed `"paneCount":[2,3],"mark":[]` on the round's tree and prints `"paneCount":[2,2],"mark":[1]` on the gate after the fix. No guarded entry covers a pane emptied by a close, so no test was added.
+- Repair round 1, Spec 1 (Repositories and the sessions list calling a root not served while the workspaces load): fixed at landing; `Repositories.svelte` and `SessionList.svelte` decide the not-served sentence with `servesRoot(workspaces(), folder.root)`, the rule Search, LaTeX and Problems use, so all five views answer alike while the workspaces load. Checked by reading. `served` in `folder-opener.ts` stays: it decides whether an open can resolve the folder's directory now, a different question, and a workbench is not opened for a root that may not exist.
+- Repair round 1, Standards 1 (the report quotes no reuse grep for the round's new functions): closed by the fix above, which removed the second served-root rule the grep would have found; named in the booking.

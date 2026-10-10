@@ -35,9 +35,12 @@
     // excluding what it matches. The buttons beside it show or hide the errors, the warnings and
     // the infos, and limit the list to the file the reader is in. A root the view was opened for
     // (the TeX view's Show Problems) is a chip beside the box that lists that root's problems alone
-    // until it is dismissed. The header holds Collapse All and View as Table, which lists every row
-    // the filter keeps in a table, whichever files the tree has folded. A right-click on a problem
-    // offers Copy, which copies the marker as JSON, and Copy Message.
+    // until it is dismissed. A tab limited to a folder of a root (a workbench's) lists the problems
+    // of the files under that folder alone, with the line "In root/folder" and the control that
+    // takes the folder away (views/shared/links/FolderLine.svelte). The header holds Collapse All
+    // and View as Table, which lists every row the filter keeps in a table, whichever files the
+    // tree has folded. A right-click on a problem offers Copy, which copies the marker as JSON, and
+    // Copy Message.
     //
     // The filter, the buttons and the root are the instance's own state, kept with the page.
 
@@ -48,6 +51,8 @@
     import type { Column } from '$lib/ui/display/table/table-rows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
+    import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
+    import { servesRoot } from '$lib/state/sources/fs-transport';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
@@ -75,6 +80,7 @@
 
     const client = useState();
     const {
+        fs: { workspaces },
         problems,
         ui: { instanceState, setInstanceState }
     } = client;
@@ -90,6 +96,10 @@
     const asTable = $derived(instanceFlag(raw, 'asTable'));
     /** The root the tab was opened for, the empty text for every root. */
     const scope = $derived(instanceText(raw, 'scope'));
+    /** The folder under that root the tab is limited to, the empty text for the whole root. */
+    const under = $derived(instanceText(raw, 'under'));
+    /** Whether the root the tab is limited to is one this workspace serves. */
+    const served = $derived(scope === '' || servesRoot(workspaces(), scope));
     /** The files the reader closed, or that Collapse All closed. */
     let closed: string[] = $state([]);
 
@@ -106,7 +116,8 @@
             infos: !hideInfos,
             activeOnly,
             active,
-            scope
+            scope,
+            under
         })
     );
     const entries = $derived(entriesOf(shown, closed));
@@ -129,7 +140,7 @@
     }
 
     function clearScope(): void {
-        patch({ scope: '' });
+        patch({ scope: '', under: '' });
     }
 
     /** The word a severity is told in, in the row's severity cell. */
@@ -238,7 +249,7 @@
             placeholder={t('problems.filter')}
             oninput={(value: string) => patch({ filter: value })}
         />
-        {#if scope !== ''}
+        {#if scope !== '' && under === ''}
             <ToolButton
                 small
                 label={t('problems.scope', scope)}
@@ -275,12 +286,22 @@
             pressed={activeOnly}
             onclick={() => patch({ activeOnly: !activeOnly })}
         />
+        {#if under !== ''}
+            <FolderLine
+                text={t('problems.in_folder', scope, under)}
+                clear={t('problems.clear_scope')}
+                title={t('problems.clear_scope_title')}
+                onclear={clearScope}
+            />
+        {/if}
     </Toolbar>
 {/snippet}
 
 <Pane title={t('views.problems')} toolbar={tools} {bar} tinted>
     <div class="problems" data-instance={instance.id} data-problems>
-        {#if entries.length === 0}
+        {#if !served}
+            <Empty message={t('problems.root_gone', scope)} glyph="info" />
+        {:else if entries.length === 0}
             <Empty
                 message={held.length === 0 ? t('problems.empty') : t('problems.filtered_empty')}
                 glyph="info"

@@ -16,7 +16,9 @@
     //
     // The roots are the file browser's own, the workspace in force: what is listed there is what is
     // searched here, and a folder the reader added is searched as a configured one is. Nothing else
-    // is reachable, since the server refuses a root that is not on that list.
+    // is reachable, since the server refuses a root that is not on that list. A tab limited to a
+    // root that the workspace does not serve (a workbench's) says so in place of its results and
+    // sends no search.
     //
     // A hit opens the file in a source tab at its line, which is what makes this the answer to
     // "where else is this named": the word toggle over an identifier finds the name in every file
@@ -48,6 +50,7 @@
     // takes that key for itself.
 
     import { tick } from 'svelte';
+    import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
@@ -69,7 +72,7 @@
     import { hitKey, rowFor, totals, type Chosen } from '$lib/state/sources/search/hits';
     import { searchKeymap, searchPlan } from '$lib/state/sources/search/keys';
     import { createWalk } from '$lib/state/sources/search/walk';
-    import { currentWorkspace } from '$lib/state/sources/fs-transport';
+    import { currentWorkspace, servesRoot } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -104,6 +107,8 @@
     const saved = $derived(workspaces());
     const current = $derived(currentWorkspace(saved));
     const roots = $derived(current.roots.map((one) => one.key));
+    /** Whether the tab's root is one this workspace serves, or the tab searches every root. */
+    const served = $derived(held.root === ALL_ROOTS || servesRoot(saved, held.root));
     const keymap = searchKeymap(onMac());
     const listed = $derived(totals(held.answer?.files ?? []).hits);
 
@@ -132,6 +137,7 @@
     });
 
     function run(): void {
+        if (!served) return;
         queryWalk.reset();
         replaceWalk.reset();
         void runSearch(instance.id, roots);
@@ -139,6 +145,7 @@
 
     /** A toggle turned over: the search runs again when results are shown. */
     function toggle(mode: SearchMode): void {
+        if (!served) return;
         queryWalk.reset();
         replaceWalk.reset();
         void toggleMode(instance.id, mode, roots);
@@ -157,14 +164,14 @@
 
     /** Replace what a pick names and put the focus on the row that follows. */
     async function replace(pick: Chosen): Promise<void> {
-        if (busy) return;
+        if (busy || !served) return;
         const { focus } = await replaceHits(instance.id, pick);
         if (focus !== '') void results?.focusRow(focus);
     }
 
     /** Replace All over the whole answer, after the question. */
     function replaceAll(): void {
-        if (busy) return;
+        if (busy || !served) return;
         const question = replaceQuestion(instance.id, { kind: 'all' });
         if (question === null) {
             void replace({ kind: 'all' });
@@ -220,7 +227,7 @@
             label={t('search.run')}
             glyph={t('search.run_glyph')}
             title={t('search.run_title')}
-            disabled={running}
+            disabled={running || !served}
             onclick={run}
         />
     </Toolbar>
@@ -272,25 +279,29 @@
     <div class="search-view" data-instance={instance.id} data-search-root={held.root}>
         <Intro html={t('search.help')} trusted />
         <div class="results">
-            <Results
-                bind:this={results}
-                answer={held.answer}
-                {running}
-                error={held.error}
-                all={held.root === ALL_ROOTS}
-                max={held.max}
-                replacing={held.replacing}
-                {busy}
-                {said}
-                settings={held}
-                {keymap}
-                onhit={openHit}
-                onfile={open}
-                onreplace={replace}
-                ondismiss={dismiss}
-                onkey={keyed}
-                onretry={run}
-            />
+            {#if !served}
+                <Empty message={t('search.root_gone', held.root)} glyph="info" />
+            {:else}
+                <Results
+                    bind:this={results}
+                    answer={held.answer}
+                    {running}
+                    error={held.error}
+                    all={held.root === ALL_ROOTS}
+                    max={held.max}
+                    replacing={held.replacing}
+                    {busy}
+                    {said}
+                    settings={held}
+                    {keymap}
+                    onhit={openHit}
+                    onfile={open}
+                    onreplace={replace}
+                    ondismiss={dismiss}
+                    onkey={keyed}
+                    onretry={run}
+                />
+            {/if}
         </div>
     </div>
 </Pane>

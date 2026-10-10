@@ -71,9 +71,8 @@ export function createLoad(access: LayoutAccess, storage: LayoutStorage, set: Lo
         set.setFresh(false);
         set.setPendingFloats(raw !== null && needsFloats(raw));
         set.replace({
-            pages: saved.pages,
-            current: saved.pages.some((page) => page.id === shown) ? shown : saved.current,
-            floats: saved.floats
+            ...saved,
+            current: saved.pages.some((page) => page.id === shown) ? shown : saved.current
         });
     }
 

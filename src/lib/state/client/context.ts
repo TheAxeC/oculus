@@ -44,6 +44,10 @@ import { createEntities, type EntitiesStore } from './entities.svelte.ts';
 import { createFeeds, type FeedsStore } from '../feeds/feeds.svelte.ts';
 import { createFiles, type FilesStore } from '../sources/files.svelte.ts';
 import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
+import {
+    createFolderPages,
+    type FolderPages
+} from '../workbench/layout/open/float/folder-opener.ts';
 import { createFs, type FsStore } from '../sources/fs.svelte.ts';
 import { filesLineTyped } from '../sources/fs.ts';
 import { createHpc, type HpcStore } from '../system/machine/hpc/hpc.svelte.ts';
@@ -147,8 +151,7 @@ import {
     createUsageRefresh,
     type UsageRefreshStore
 } from '../system/machine/usage/usage-refresh.svelte.ts';
-import { createQueries } from './queries.svelte.ts';
-import type { Queries } from '../shared/stores/shapes.ts';
+import { createQueries, scopedStore } from './queries.svelte.ts';
 import { createWrites, type WritesStore } from './writes.svelte.ts';
 import { createGraphviz, type GraphvizLoader } from '../boards/structure/layout.ts';
 import { createLatexReader, type LatexReader } from '../sources/explorer/sections/outline.ts';
@@ -223,6 +226,8 @@ export type ClientState = {
     search: SearchStore;
     /** The Files view's file operations, clipboard and compare selection. */
     explorer: ExplorerStore;
+    /** The workbench: a page that belongs to one folder, opened and made again here. */
+    folders: FolderPages;
     usageRefresh: UsageRefreshStore;
     selectors: SelectorsStore;
     railBadges: RailBadgesStore;
@@ -256,29 +261,6 @@ export type ClientState = {
     /** The copy of these stores a tab provides for its subtree. */
     tabScope: TabScopeStore;
 };
-
-/**
- * A store with each function member run in the scope of `shown` and every other member as it was.
- * The store is read when the copy is made, so a member that is replaced later is not followed.
- */
-function scopedStore(
-    queries: Queries,
-    store: Record<string, unknown>,
-    shown: () => boolean
-): Record<string, unknown> {
-    return Object.fromEntries(
-        Object.entries(store).map(([member, value]) => [
-            member,
-            typeof value === 'function'
-                ? (...args: unknown[]): unknown =>
-                      queries.scoped(shown, () => {
-                          const answer: unknown = Reflect.apply(value, store, args);
-                          return answer;
-                      })
-                : value
-        ])
-    );
-}
 
 /**
  * One client's stores, built in dependency order: a store is made after everything it reads, and is
@@ -363,7 +345,7 @@ export function createClientState(
             const active = layout.activeInstance(page);
             return active?.view === TERMINAL_VIEW ? active.id : null;
         },
-        open: (page, state) => layout.openView(TERMINAL_VIEW, state, page),
+        open: (page, state, document) => layout.openView(TERMINAL_VIEW, state, page, { document }),
         close: (id, page) => layout.closeInstance(id, page),
         instanceState: (id) => ui.instanceState(id),
         setInstanceState: (id, state) => ui.setInstanceState(id, state),
@@ -560,6 +542,11 @@ export function createClientState(
                 .hosts()
                 .flatMap((host) => tabsOf(host.workbench.root))
                 .some((tab) => tab.view === DIFF_VIEW && heldDiff(tab.state).replace !== undefined)
+    });
+    const folders = createFolderPages({
+        config: () => entities.config()?.config,
+        roots: () => fs.roots(),
+        layout
     });
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
@@ -854,6 +841,7 @@ export function createClientState(
         repositories,
         search,
         explorer,
+        folders,
         usageRefresh,
         selectors,
         railBadges,

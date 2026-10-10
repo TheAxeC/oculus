@@ -23,6 +23,9 @@
 // from the read the derived makes again when it is shown. A fetch already scheduled or out is left
 // alone, and `peek`, `fetch`, `hold`, `mark`, `forget` and `entries` do not look at the scope.
 //
+// `scopedStore` makes the copy of a store a tab provides for its subtree: each function of the
+// store runs inside `scoped` for the tab.
+//
 // `fetch` builds the query on the caller's stack, so it is for handlers and effects, never for a
 // `$derived`; `read` is the one a derived calls.
 //
@@ -305,4 +308,27 @@ export function createQueries(): Queries {
     }
 
     return { client, scoped, read, peek, fetch, refetch, hold, mark, forget, entries };
+}
+
+/**
+ * A store with each function member run in the scope of `shown` and every other member as it was.
+ * The store is read when the copy is made, so a member that is replaced later is not followed.
+ */
+export function scopedStore(
+    queries: Queries,
+    store: Record<string, unknown>,
+    shown: () => boolean
+): Record<string, unknown> {
+    return Object.fromEntries(
+        Object.entries(store).map(([member, value]) => [
+            member,
+            typeof value === 'function'
+                ? (...args: unknown[]): unknown =>
+                      queries.scoped(shown, () => {
+                          const answer: unknown = Reflect.apply(value, store, args);
+                          return answer;
+                      })
+                : value
+        ])
+    );
 }

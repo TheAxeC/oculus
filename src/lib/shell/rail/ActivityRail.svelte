@@ -1,10 +1,11 @@
 <script lang="ts">
     // Layer 3, shell. The strip down the left, drawn as VS Code's activity bar: one icon per page
     // of the `rail:` list of config/layout.yml (RailPages.svelte), and at the foot Bookmarks,
-    // Search and Update (RailFoot.svelte). A page button shows its page, made from its arrangement
-    // the first time and switched to after that, which is the whole of what the rail decides about
-    // pages; what a page holds is the layout store's, and every view is reached from the catalogue
-    // on the System page.
+    // Workbenches, Search and Update (RailFoot.svelte). A page button shows its page, made from its
+    // arrangement the first time and switched to after that, which is the whole of what the rail
+    // decides about pages; what a page holds is the layout store's, and every view is reached from
+    // the catalogue on the System page. A workbench, a page that belongs to one folder, has no
+    // button of its own: the Workbenches button at the foot lists the open ones.
     //
     // A page button dragged to a new place, and Hide in its right-click menu, rewrite `rail:`
     // through the rail write the Settings view saves with, which the page reaches for the rail
@@ -181,6 +182,7 @@
     const stops = $derived([
         ...pages.map((entry) => `page:${entry.page}`),
         'bookmarks',
+        'workbenches',
         'search',
         'update'
     ]);

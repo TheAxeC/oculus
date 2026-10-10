@@ -20,6 +20,12 @@
     // LaTeX started it), in the Terminal tab of the page on screen; `Open in its own pane` moves it
     // into a new Terminal tab. New shows the composer in the page's Terminal tab.
     //
+    // A list a workbench limited to a folder (state/sources/explorer/view/limit.ts) holds the
+    // sessions and terminals that work in the folder or are filed into it, with the line "In
+    // root/folder" and the control that lists every session again. Its pages have no Terminal tab
+    // of their own: New opens one in the page's documents pane, in the folder, and a picked session
+    // opens its Transcript and Timeline there.
+    //
     // The filter and the search text are kept in the instance's state, so a list comes back as it
     // was left. The marks a row menu sets (pinned to the top, archived, a title) are writes to
     // ~/.oculus/sessions.json and are drawn at once, before the write lands, and put back when it
@@ -31,6 +37,9 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
+    import { limitDir, limitOf, withLimit } from '$lib/state/sources/explorer/view/limit';
+    import { servesRoot } from '$lib/state/sources/fs-transport';
     import type { GroupedSession } from '$lib/state/client/selectors.svelte';
     import {
         LIST_AGENTS,
@@ -49,17 +58,19 @@
     import Customizations from './Customizations.svelte';
     import SessionWorkspace from './SessionWorkspace.svelte';
     import TerminalRows from './TerminalRows.svelte';
-    import { filterGroups } from './session-list';
+    import { filterGroups, sessionsInFolder, terminalsInFolder } from './session-list';
     import { useState } from '$lib/state/client/use';
 
     const {
         agents: { exportSession },
+        fs: { roots, workspaces },
         layout: { currentPage, openView },
         selection: { select },
         selectors: { sessionsByWorkspace },
         clock: { minuteNow, startMinuteClock },
         ui: { instanceState, setInstanceState },
         terminals: {
+            composeAt,
             composeIn,
             forkTerminal,
             moveTerminal,
@@ -85,12 +96,26 @@
     const now = $derived(minuteNow());
 
     const filter = $derived(listFilterOf(instanceState(instance.id)));
-    const tree = $derived(sessionsByWorkspace(true));
+    /** The folder a workbench limits this list to, and its absolute path; null when not served. */
+    const folder = $derived(limitOf(instanceState(instance.id)));
+    const dir = $derived(folder === null ? null : limitDir(roots(), folder));
+    const tree = $derived(
+        folder === null
+            ? sessionsByWorkspace(true)
+            : sessionsInFolder(sessionsByWorkspace(true), dir)
+    );
     const groups = $derived(listGroups(tree, filter, archived, top));
-    const panes = $derived(terminals());
+    const panes = $derived(folder === null ? terminals() : terminalsInFolder(terminals(), dir));
     const filtered = $derived(
         filter.states.length > 0 || filter.agents.length > 0 || filter.query.trim() !== ''
     );
+    /** What the list says when it holds no row: the filter, a folder no root holds, or nothing. */
+    const emptyWords = $derived.by(() => {
+        if (folder !== null && !servesRoot(workspaces(), folder.root)) {
+            return t('sessions.folder_gone', folder.root);
+        }
+        return filtered ? t('sessions.filter_empty') : t('sessions.state_empty');
+    });
 
     function write(next: Partial<ListFilter>): void {
         setInstanceState(instance.id, {
@@ -125,7 +150,23 @@
      * does the same.
      */
     function newSession(): void {
-        composeIn();
+        if (dir === null) composeIn();
+        else void composeAt({ cwd: dir, agent: 'claude', documents: true });
+    }
+
+    /** A press on a session: it is the selection, and a workbench shows it in its documents. */
+    function pick(row: GroupedSession): void {
+        select(row.id);
+        if (folder === null) return;
+        const page = currentPage().id;
+        const pinned = { session: row.id, label: row.title };
+        openView('transcript', pinned, page, { document: true });
+        openView('timeline', pinned, page, { document: true });
+    }
+
+    /** Take the folder away from this list: it lists every session again. */
+    function clearFolder(): void {
+        setInstanceState(instance.id, withLimit(instanceState(instance.id), null));
     }
 
     /** Open a new Terminal tab on the page on screen and move the terminal into it. */
@@ -251,6 +292,16 @@
             placeholder={t('sessions.search')}
             oninput={(value: string) => write({ query: value })}
         />
+        {#if folder !== null}
+            <FolderLine
+                text={folder.path === ''
+                    ? t('sessions.in_root', folder.root)
+                    : t('sessions.in_folder', folder.root, folder.path)}
+                clear={t('sessions.clear_scope')}
+                title={t('sessions.clear_scope_title')}
+                onclear={clearFolder}
+            />
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -263,10 +314,7 @@
         {/if}
         <div class="rows">
             {#if groups.length === 0 && panes.length === 0}
-                <Empty
-                    message={filtered ? t('sessions.filter_empty') : t('sessions.state_empty')}
-                    glyph={t('sessions.empty_glyph')}
-                />
+                <Empty message={emptyWords} glyph={t('sessions.empty_glyph')} />
             {:else}
                 {#each groups as group (group.key)}
                     <SessionWorkspace
@@ -277,6 +325,7 @@
                         isArchived={archived}
                         topOf={top}
                         onaction={action}
+                        onpick={pick}
                         onrename={(row: GroupedSession, title: string | null) =>
                             void rename(row, title)}
                     />

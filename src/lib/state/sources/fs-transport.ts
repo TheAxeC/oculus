@@ -96,6 +96,16 @@ export function readRoots(saved: WorkspacesState): FsRoot[] | null {
 }
 
 /**
+ * Whether the current workspace serves a root. A workspace being read, or one that failed to read,
+ * answers yes: the empty list it holds says nothing about what is served, so a tab of a root is not
+ * called gone before the workspaces are known.
+ */
+export function servesRoot(saved: WorkspacesState, root: string): boolean {
+    const roots = readRoots(saved);
+    return roots === null || roots.some((one) => one.key === root);
+}
+
+/**
  * The roots the reader cannot take off. A tab that follows a session can take none off. In the
  * default workspace (`removable` is the keys of the roots the hub's sources.yml layer lists) the
  * folders of that list can be taken off and the hub, the engine's config folder and the fallback

@@ -214,10 +214,11 @@ export type TerminalsStore = {
     /** New in one Terminal tab, the bar's New: the composer there, as `composeIn` shows it. */
     composeInTab: (tab: string, agent?: TerminalKind) => void;
     /**
-     * Open the composer at a folder (a worktree start) or on a hub task, in the Terminal tab of
-     * the page on screen or a new one, with the agent's lists at the catalog's defaults. A task
-     * first asks the server for its seed; a refusal is answered as its sentence and opens
-     * nothing, and the empty string is a composer opened.
+     * Open the composer at a folder (a worktree start) or on a hub task, in the Terminal tab of the
+     * page on screen or a new one (in the page's documents pane for a folder start that asks for
+     * it), with the agent's lists at the catalog's defaults. A task first asks the server for its
+     * seed; a refusal is answered as its sentence and opens nothing, and the empty string is a
+     * composer opened.
      */
     composeAt: (at: ComposeAt) => Promise<string>;
     /** The seed the composer of a tab shows for its task, or null when it has none. */

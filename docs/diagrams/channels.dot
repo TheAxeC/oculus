@@ -80,7 +80,7 @@ digraph channels {
         "? src/lib/server/root/context.ts:359" [label="src/lib/server/root/context.ts:359 publish(set)"];
         "? src/lib/shell/panes/PaneView.svelte:473" [label="src/lib/shell/panes/PaneView.svelte:473 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
-        "? src/lib/state/client/queries.svelte.ts:79" [label="src/lib/state/client/queries.svelte.ts:79 .subscribe((event)"];
+        "? src/lib/state/client/queries.svelte.ts:82" [label="src/lib/state/client/queries.svelte.ts:82 .subscribe((event)"];
         "? src/lib/state/sessions/source/disk.svelte.ts:123" [label="src/lib/state/sessions/source/disk.svelte.ts:123 channel === undefined"];
         "? src/lib/state/sessions/source/disk.svelte.ts:137" [label="src/lib/state/sessions/source/disk.svelte.ts:137 channel === undefined"];
         "? src/lib/state/sessions/source/disk.svelte.ts:154" [label="src/lib/state/sessions/source/disk.svelte.ts:154 channel === undefined"];
@@ -120,7 +120,7 @@ digraph channels {
         "? src/lib/views/shared/changes/CommitBox.svelte:76" [label="src/lib/views/shared/changes/CommitBox.svelte:76 message(root)"];
         "? src/lib/views/shared/changes/CommitBox.svelte:83" [label="src/lib/views/shared/changes/CommitBox.svelte:83 message(root)"];
         "? src/lib/views/system/workbench/editors/Editor.svelte:142" [label="src/lib/views/system/workbench/editors/Editor.svelte:142 message('changedSince', row.file)"];
-        "? src/lib/views/system/workbench/settings/Item.svelte:107" [label="src/lib/views/system/workbench/settings/Item.svelte:107 message('missing', placeOf(row)"];
+        "? src/lib/views/system/workbench/settings/Item.svelte:108" [label="src/lib/views/system/workbench/settings/Item.svelte:108 message('missing', placeOf(row)"];
     }
     subgraph "cluster_read state" {
         label="state"; style=solid;
@@ -200,7 +200,7 @@ digraph channels {
     }
     "? src/lib/shell/panes/PaneView.svelte:473" -> "shell/panes/PaneView";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
-    "? src/lib/state/client/queries.svelte.ts:79" -> "state/client/queries";
+    "? src/lib/state/client/queries.svelte.ts:82" -> "state/client/queries";
     "? src/lib/state/sessions/source/disk.svelte.ts:123" -> "state/sessions/source/disk";
     "? src/lib/state/sessions/source/disk.svelte.ts:137" -> "state/sessions/source/disk";
     "? src/lib/state/sessions/source/disk.svelte.ts:154" -> "state/sessions/source/disk";
@@ -239,7 +239,7 @@ digraph channels {
     "? src/lib/views/shared/changes/CommitBox.svelte:76" -> "views/shared/changes";
     "? src/lib/views/shared/changes/CommitBox.svelte:83" -> "views/shared/changes";
     "? src/lib/views/system/workbench/editors/Editor.svelte:142" -> "views/system/workbench";
-    "? src/lib/views/system/workbench/settings/Item.svelte:107" -> "views/system/workbench";
+    "? src/lib/views/system/workbench/settings/Item.svelte:108" -> "views/system/workbench";
     "ch ${path.split('/').slice(-2).join('/')}:*" -> "ui/controls/editor/kit/lsp/transport";
     "ch apps" -> "routes/+page" [style=dashed];
     "ch apps" -> "state/client/socket";

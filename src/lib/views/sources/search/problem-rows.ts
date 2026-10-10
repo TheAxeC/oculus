@@ -11,6 +11,7 @@
 // that path.
 
 import { globTest } from '$lib/state/sources/search/glob';
+import { pathUnder } from '$lib/state/sources/fs';
 import { fuzzyMatches } from '$lib/state/shared/words/fuzzy';
 import { t } from '$lib/state/shared/words/text';
 import type { Problem, ProblemFile, ProblemSeverity } from '$lib/state/system/problems.svelte';
@@ -26,6 +27,8 @@ export type ProblemFilter = {
     active: { root: string; path: string } | null;
     /** Only the rows of this root, the empty text for every root. */
     scope: string;
+    /** Only the rows of files under this folder of the root, the empty text for the whole root. */
+    under: string;
 };
 
 type Term = { text: string; exclude: boolean; glob: boolean };
@@ -76,6 +79,13 @@ function matched(term: Term, rows: readonly Problem[]): Set<Problem> {
     return new Set(found.map((one) => one.row));
 }
 
+/** Whether a row is in the root the filter is limited to, and under its folder. */
+function inScope(row: Problem, filter: ProblemFilter): boolean {
+    if (filter.scope === '') return true;
+    if (row.root !== filter.scope) return false;
+    return filter.under === '' || pathUnder(filter.under, row.path) !== null;
+}
+
 /** The rows of a file the filter keeps, in their order. */
 function kept(rows: readonly Problem[], filter: ProblemFilter): Problem[] {
     const shown: Record<ProblemSeverity, boolean> = {
@@ -89,7 +99,7 @@ function kept(rows: readonly Problem[], filter: ProblemFilter): Problem[] {
     return rows.filter(
         (row) =>
             shown[row.severity] &&
-            (filter.scope === '' || row.root === filter.scope) &&
+            inScope(row, filter) &&
             (including.length === 0 || including.some((set) => set.has(row))) &&
             !excluding.some((set) => set.has(row))
     );

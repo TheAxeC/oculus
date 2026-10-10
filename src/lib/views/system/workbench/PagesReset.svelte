@@ -7,9 +7,9 @@
     // question closing each of the tabs of those pages and floats holding unsaved text asks, one at
     // a time; a no to any leaves every page as it was. A page of the reader's own, which no button
     // made, keeps its tabs, except a unique view that a rail page's arrangement or a shipped float
-    // names, which moves to the page or float made from it. What the reset does is the layout
-    // store's resetPages over state/workbench/navigation/pages.ts's plan, so the confirm names the
-    // pages the store then acts on.
+    // names, which moves to the page or float made from it; a workbench keeps every tab. What the
+    // reset does is the layout store's resetPages over state/workbench/navigation/pages.ts's plan,
+    // so the confirm names the pages the store then acts on.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';

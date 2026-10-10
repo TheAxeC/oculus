@@ -55,6 +55,23 @@ export const START_DOCK = 0.3;
 
 const EPS = 1e-9;
 
+/**
+ * The pages with the page a rail button adopts shown: one no button has taken yet (no `rail` key)
+ * that is not a workbench (no `folder`) and whose words are the button's label, now carrying the
+ * button's key. Null when no page qualifies.
+ */
+export function adoptedPage(held: Pages, key: string, label: string): Pages | null {
+    const named = held.pages.find(
+        (page) => page.rail === undefined && page.folder === undefined && page.label === label
+    );
+    if (named === undefined) return null;
+    return {
+        ...held,
+        pages: held.pages.map((page) => (page.id === named.id ? { ...page, rail: key } : page)),
+        current: named.id
+    };
+}
+
 /** A float before it has an id: the pane it holds and where it is drawn. */
 export type FloatSpec = { pane: Pane; place: FloatPlace };
 
@@ -177,9 +194,15 @@ type Claims = {
 
 /**
  * Claims over `held`, in the order the trees are settled: the first tree to name a unique view
- * keeps it. The hosts in `apart` are not looked in, since the trees being made replace them.
+ * keeps it. The hosts in `apart` are not looked in, since the trees being made replace them. A
+ * unique view held by a host in `fixed` stays there: the tree that names it is made without it.
  */
-function createClaims(held: Pages, builds: Builds, apart: ReadonlySet<string> = new Set()): Claims {
+function createClaims(
+    held: Pages,
+    builds: Builds,
+    apart: ReadonlySet<string> = new Set(),
+    fixed: ReadonlySet<string> = new Set()
+): Claims {
     let rest = held;
     const placed = new Set<ViewId>();
 
@@ -195,6 +218,10 @@ function createClaims(held: Pages, builds: Builds, apart: ReadonlySet<string> = 
             const hosts = hostsOf(rest).filter((host) => !apart.has(host.id));
             const found = heldView(hosts, tab.view);
             if (found === null) continue;
+            if (fixed.has(found.host.id)) {
+                tree = closeInstance(tree, tab.id, builds.keep);
+                continue;
+            }
             const { id, state } = found.instance;
             rest = dropInstance(rest, id, builds.keep);
             tree = restate(renameInstance(tree, tab.id, id), id, state);
@@ -285,9 +312,11 @@ export type Arranged = { label: string; workbench: Workbench };
  * The pages and floats of a reset of every rail page: the pages of `plan.rebuilt` made again from
  * their arrangements (`arranged`, by page id), the pages of `plan.removed` gone, the floats held
  * replaced by the shipped ones, and one default page when no page is left (`label` names it). The
- * pages are made first, then the floats, from the pages that are kept: a unique view an
- * arrangement or a float names is moved in from a kept page, and the first place to name it keeps
- * it. The page on screen moves to the first page left when it was removed.
+ * pages are made first, then the floats, from the pages that are kept: a unique view an arrangement
+ * or a float names is moved in from a kept page, and the first place to name it keeps it, except a
+ * view a workbench (a page with a `folder`) holds, which stays there and is left out of what is
+ * made. The page on screen moves to the first page left when it was removed. The layouts kept of
+ * closed folder pages are kept as they are.
  */
 export function resetAll(
     held: Pages,
@@ -299,7 +328,13 @@ export function resetAll(
 ): Pages {
     const gone = new Set(plan.removed.map((page) => page.id));
     const replaced = [...plan.rebuilt, ...plan.removed, ...held.floats];
-    const claims = createClaims(held, builds, new Set(replaced.map((one) => one.id)));
+    const workbenches = held.pages.filter((page) => page.folder !== undefined);
+    const claims = createClaims(
+        held,
+        builds,
+        new Set(replaced.map((one) => one.id)),
+        new Set(workbenches.map((page) => page.id))
+    );
     const made = new Map<string, Page>();
     for (const page of plan.rebuilt) {
         const source = arranged.get(page.id);
@@ -316,7 +351,7 @@ export function resetAll(
             ? defaultBeside(label, floats, builds)
             : { pages, current: gone.has(held.current) ? pages[0].id : held.current, floats };
     for (const id of gone) next = clearPage(next, id);
-    return next;
+    return held.kept === undefined ? next : { ...next, kept: held.kept };
 }
 
 /**

@@ -10,6 +10,8 @@ text:
         card_live: '{0} live'
         card_n: '{0} sessions'
         card_one: 1 session
+        clear_scope: Show every session
+        clear_scope_title: List every session again, not only those of the folder
         detail_empty: No session is picked. Pick one with the session control on this view's bar, or in the Sessions list.
         dismiss_glyph: dismiss
         empty_glyph: circle_empty
@@ -22,8 +24,11 @@ text:
         filter_agent: Agent
         filter_empty: No session is kept by the filter and the search.
         filter_state: State
+        folder_gone: '{0} is not a root this workspace serves, so it lists no session.'
         fork: Fork
         fork_tip: continue it as a new session in a new terminal
+        in_folder: In {0}/{1}
+        in_root: In {0}
         list_bar: Session list search
         list_toolbar: Session list controls
         live_busy: busy

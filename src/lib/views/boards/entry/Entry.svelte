@@ -29,6 +29,9 @@
     // folder, and each session is views/shared/sessions/SessionRow.svelte, the row the project view
     // draws.
     //
+    // A toolbar action opens the workbench of the entry's folder with this page in its documents
+    // pane (state/workbench/layout/open/float/folder-opener.ts).
+    //
     // Whether the entry has a folder is the file store's listing of the folder that holds its
     // link, as the card's title decides it, so the blocks come and go with the folder.
 
@@ -50,6 +53,7 @@
         identityFaults,
         offeredStatuses,
         pageFolder,
+        pageState,
         statusFacets
     } from '$lib/state/boards/collection';
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
@@ -64,6 +68,7 @@
 
     const {
         docs: { hubDocument },
+        folders,
         fs: { listing },
         layout: { openView },
         selectors: { collectionOf, configMap, hubRoot, projects, sessionsForProject },
@@ -141,6 +146,15 @@
         if (entry === null) return t('views.entry');
         return entry.title === '' ? entry.id : entry.title;
     }
+
+    /** Open the workbench of the entry's folder, with this entry's page in its documents pane. */
+    function openWorkbench(): void {
+        if (entry === null || folder === undefined) return;
+        folders.open(
+            { root: HUB_ROOT, path: folder },
+            { label: title(), item: { view: 'entry', state: pageState(collectionKey, entry) } }
+        );
+    }
 </script>
 
 {#snippet tools()}
@@ -152,6 +166,15 @@
                 glyph="cards"
                 title={t('entry.open_collection_tip', collection.title)}
                 onclick={() => openView(collectionKey, { reveal: entry.id })}
+            />
+        {/if}
+        {#if folder !== undefined && folders.served(HUB_ROOT)}
+            <ToolButton
+                bare
+                label={t('entry.open_workbench')}
+                glyph="app_view"
+                title={t('entry.open_workbench_tip', folder)}
+                onclick={openWorkbench}
             />
         {/if}
         {#if source !== null}

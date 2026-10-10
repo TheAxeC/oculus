@@ -6,6 +6,8 @@ text:
         as_table: View as Table
         as_tree: View as Tree
         badge_title: Total {0} Problems
+        clear_scope: Show every root
+        clear_scope_title: Show the problems of every root again
         col_file: File
         col_message: Message
         col_position: Position
@@ -18,9 +20,11 @@ text:
         errors: Show Errors
         filter: Filter (e.g. text, **/*.ts, !**/node_modules/**)
         filtered_empty: No results found with provided filter criteria.
+        in_folder: In {0}/{1}
         infos: Show Infos
         position: '[Ln {0}, Col {1}]'
         results: Problems
+        root_gone: '{0} is not a root this workspace serves, so it has no problems to list.'
         scope: '{0}'
         scope_title: Show the problems of every root again
         severity_error: Error
@@ -84,7 +88,7 @@ text:
         case: case
         case_title: Match the pattern's own upper and lower case
         clear_scope: Search the whole root
-        clear_scope_glyph: dismiss
+        clear_scope_title: Search every folder of the root again
         count: '{0} hits in {1} files, {2} ms'
         count_replacing: '{0} hits would be replaced in {1} files, {2} ms'
         dismiss: Dismiss
@@ -155,6 +159,7 @@ text:
         root: Where to look
         root_all: Every root
         root_failed: 'No answer from {0}: ripgrep could not search it.'
+        root_gone: '{0} is not a root this workspace serves, so it has nothing to search.'
         root_timed_out: '{0} ran out of time.'
         run: Search
         run_glyph: search

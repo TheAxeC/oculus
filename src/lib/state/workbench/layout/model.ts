@@ -51,8 +51,9 @@ export type Keeps = 'terminals';
  * tab. `locked` marks a pane that a view opened for something does not land in; it stays when its
  * last tab goes, and a tab opened from its own strip or dragged onto it still goes in. `added`
  * marks a pane made while its page was used, which the page's arrangement did not define: it goes
- * with its last tab, where a pane the arrangement defined stays, empty. A pane in a float never
- * carries it.
+ * with its last tab, where a pane the arrangement defined stays, empty. `documents` marks the pane
+ * of a workbench, a page with a `folder`, that a view opened from the page lands in first, whatever
+ * the pane holds. A pane in a float never carries `added` or `documents`.
  */
 export type Pane = {
     kind: 'pane';
@@ -62,6 +63,7 @@ export type Pane = {
     keeps?: Keeps;
     locked?: true;
     added?: true;
+    documents?: true;
 };
 
 /**
@@ -87,16 +89,38 @@ export type Workbench = {
 };
 
 /**
+ * The folder a page belongs to: a root key of the served roots and a path inside that root, the
+ * empty text for the root itself. Two folders are the same when both fields are equal, so one
+ * folder reached through two roots is two folders.
+ */
+export type FolderRef = { root: string; path: string };
+
+/** Whether two folders are the same one: the same root key and the same path. */
+export function sameFolder(left: FolderRef, right: FolderRef): boolean {
+    return left.root === right.root && left.path === right.path;
+}
+
+/**
+ * The view a folder page opens in its documents pane when it is made, with the state that view
+ * opens with: the item the page was opened for, which Reset layout opens again.
+ */
+export type FolderItem = { view: ViewId; state: unknown };
+
+/**
  * One page: a whole workbench with a name of its own. Pages sit above the layout tree so tree and
  * workbench operations remain independent of page selection. `rail` is the `arrangements:` key of
  * config/layout.yml the page was made from by a rail button, which is what ties the page to that
- * button: renaming the button keeps the page, and a page no button made carries none.
+ * button: renaming the button keeps the page, and a page no button made carries none. `folder` ties
+ * the page to one folder, which makes it a workbench in the reader's words; such a page has no
+ * `rail` key. `item` is what the page was opened for.
  */
 export type Page = {
     id: string;
     label: string;
     workbench: Workbench;
     rail?: string;
+    folder?: FolderRef;
+    item?: FolderItem;
 };
 
 /**
@@ -126,9 +150,29 @@ export type FloatPlace =
 export type Float = { id: string; pane: Pane; place: FloatPlace };
 
 /**
- * Every page, the floats beside them, and which page is on screen. This is the unit that is saved.
+ * A closed folder page's layout, held by its folder: the arrangement as it was closed, and the
+ * state each of its tabs held in the ui store (`states`, by instance id), so the page comes back
+ * with its tabs, their layout states and their view states.
  */
-export type Pages = { pages: Page[]; current: string; floats: Float[] };
+export type KeptWorkbench = {
+    folder: FolderRef;
+    workbench: Workbench;
+    states: Record<string, unknown>;
+};
+
+/** How many closed folder pages' layouts are kept. Closing one more drops the oldest. */
+export const KEPT_MAX = 20;
+
+/**
+ * Every page, the floats beside them, and which page is on screen, with the layouts of the folder
+ * pages that were closed, oldest first. This is the unit that is saved.
+ */
+export type Pages = {
+    pages: Page[];
+    current: string;
+    floats: Float[];
+    kept?: KeptWorkbench[];
+};
 
 /** The side of a pane a dropped tab takes, which is what says where the new pane goes. */
 export type Edge = 'left' | 'right' | 'top' | 'bottom';
@@ -144,9 +188,16 @@ export const MAIN_VIEW = 'status';
 
 /**
  * The envelope version serialiseLayout writes and parseLayout demands: the list of pages, one tree
- * each, and the floats beside them, with the tabs a pane pins and the order it showed them in.
+ * each, with the folder a page belongs to, the floats beside them, with the tabs a pane pins and
+ * the order it showed them in, and the layouts of the folder pages that were closed.
  */
-export const LAYOUT_VERSION = 6;
+export const LAYOUT_VERSION = 7;
+
+/**
+ * The envelope version that held no folder page and no kept layout. It is read as it is: every page
+ * and tab is kept and no folder page is closed.
+ */
+export const PINS_VERSION = 6;
 
 /**
  * The envelope version that held floats before a tab could be pinned. It is still read as it is: no
@@ -240,10 +291,10 @@ function recentAfter(from: Pane, tabs: readonly Instance[], active: string): str
 
 /**
  * A pane rebuilt with other tabs: what belongs to the pane and not to its tabs goes with it, the
- * lock and the mark of an added pane always and the kind a pane keeps only while it holds no tab.
- * The pinned tabs are put first and the order the tabs were shown in follows `active`. Every
- * operation that rebuilds a pane builds it here, so a field added to a pane is carried at one
- * place.
+ * lock, the mark of an added pane and the mark of the documents pane always and the kind a pane
+ * keeps only while it holds no tab. The pinned tabs are put first and the order the tabs were shown
+ * in follows `active`. Every operation that rebuilds a pane builds it here, so a field added to a
+ * pane is carried at one place.
  */
 export function repane(from: Pane, tabs: Instance[], active: string): Pane {
     const pane: Pane = { kind: 'pane', tabs: pinnedTabsFirst(tabs), active };
@@ -252,6 +303,7 @@ export function repane(from: Pane, tabs: Instance[], active: string): Pane {
     if (tabs.length === 0 && from.keeps !== undefined) pane.keeps = from.keeps;
     if (from.locked === true) pane.locked = true;
     if (from.added === true) pane.added = true;
+    if (from.documents === true) pane.documents = true;
     return pane;
 }
 

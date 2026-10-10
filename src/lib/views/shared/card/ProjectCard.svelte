@@ -3,15 +3,16 @@
     // framing changes independently of its documents, links, sessions and expanded details.
     //
     // The card's controls are views/shared/card/CardActions.svelte, shown under the pointer and
-    // kept on one line; the project's folder is offered twice among them, shown in Finder through
-    // the host and selected in the Files view of this page. A project whose folder is a repository
-    // also has its project commands, drawn below the chips by the commands bar the Repositories
-    // view uses (views/shared/sessions/CommandBar.svelte): five buttons, an overflow menu for the
-    // rest, the control that adds a command and the mark of a file that was not read. The card's
-    // ELI5 is views/shared/card/Clamp.svelte wherever the caller keeps an open state for it; its
-    // subtasks block is drawn only for a project that has subtasks, adding the first being one of
-    // the controls. The card is a positioned box whose content may reach past its edge, so the More
-    // menu of its controls is not cut off at the foot of a short card.
+    // kept on one line; the project's folder is offered three times among them, shown in Finder
+    // through the host, selected in the Files view of this page, and opened as a workbench (a page
+    // that belongs to the folder, with the project view in its documents pane). A project whose
+    // folder is a repository also has its project commands, drawn below the chips by the commands
+    // bar the Repositories view uses (views/shared/sessions/CommandBar.svelte): five buttons, an
+    // overflow menu for the rest, the control that adds a command and the mark of a file that was
+    // not read. The card's ELI5 is views/shared/card/Clamp.svelte wherever the caller keeps an open
+    // state for it; its subtasks block is drawn only for a project that has subtasks, adding the
+    // first being one of the controls. The card is a positioned box whose content may reach past
+    // its edge, so the More menu of its controls is not cut off at the foot of a short card.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
@@ -46,6 +47,7 @@
 
     const {
         entities: { portfolio },
+        folders,
         layout: { openBeside, openView, showDeck, showFolderInFiles },
         selection: { select },
         selectors: { gitRoots, hubRoot },
@@ -169,6 +171,15 @@
                 showFolderInFiles(item.project.folder);
             }
         });
+        if (folders.served(HUB_ROOT)) {
+            rows.push({
+                id: 'workbench',
+                label: t('project.helper.open_workbench'),
+                title: t('project.helper.open_workbench_tip'),
+                glyph: 'app_view',
+                onclick: openWorkbench
+            });
+        }
         if (ontoggle !== undefined) {
             rows.push({
                 id: 'toggle',
@@ -249,6 +260,19 @@
             return;
         }
         openView('project', { id: item.id, label: tab });
+    }
+    /**
+     * Open the workbench of the project's folder, named by the project's title, with the project
+     * view in its documents pane; a ghost has no project view and opens none.
+     */
+    function openWorkbench(): void {
+        const first = item.project.ghost
+            ? undefined
+            : { view: 'project', state: { id: item.id, label: tab } };
+        folders.open(
+            { root: HUB_ROOT, path: item.project.folder },
+            { label: item.project.title, item: first }
+        );
     }
     /** The title opener, omitted only when a ghost has no readable README. */
     function titleOpener(): (() => void) | undefined {

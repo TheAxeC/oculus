@@ -6,6 +6,12 @@
 import { focusQuietly } from '../frame/quiet-focus';
 
 /**
+ * A second control at the end of a choice's row, apart from the pick the row makes: a glyph name,
+ * its words (the tooltip and the screen reader's name) and what pressing it does.
+ */
+type MenuAction = { glyph: string; label: string; run: () => void };
+
+/**
  * One choice in the list. `active` marks the one in force, which the menu shows as checked, and
  * `glyph` is a name in `glyphs:` drawn before the words, for a list whose choices are things
  * that have an icon of their own.
@@ -47,6 +53,12 @@ export type MenuItem = {
      * first choice draws none, so a rule is never the list's first or last line.
      */
     rule?: boolean;
+    /**
+     * A button at the end of the row that does something else than the pick (Close beside a choice
+     * that shows a page). It is a choice of its own for the keys, the next one after the row, and a
+     * press on it does not pick the row. A choice with `items` draws none.
+     */
+    action?: MenuAction;
 };
 
 /** Whether the choice at `index` draws a rule above it: it asks for one and is not the first. */

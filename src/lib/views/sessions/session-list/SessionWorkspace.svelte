@@ -20,7 +20,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        selection: { select, selected }
+        selection: { selected }
     } = useState();
 
     type Props = {
@@ -33,11 +33,22 @@
         /** Whether a row is pinned to the top, the mark drawn ahead of its write included. */
         topOf: (row: GroupedSession) => boolean;
         onaction: (id: string, row: GroupedSession) => void;
+        /** A press on a row picks its session. */
+        onpick: (row: GroupedSession) => void;
         onrename: (row: GroupedSession, title: string | null) => void;
     };
 
-    let { group, now, armedResume, renaming, isArchived, topOf, onaction, onrename }: Props =
-        $props();
+    let {
+        group,
+        now,
+        armedResume,
+        renaming,
+        isArchived,
+        topOf,
+        onaction,
+        onpick,
+        onrename
+    }: Props = $props();
 
     /** What the rename field holds while it is open. */
     let typed = $state('');
@@ -129,7 +140,7 @@
             <RowButton
                 title={t('sessions.select_tip')}
                 selected={entry.id === selected()}
-                onclick={() => select(entry.id)}
+                onclick={() => onpick(entry)}
                 ondblclick={() => startRename(entry)}
             >
                 <span class="line one">

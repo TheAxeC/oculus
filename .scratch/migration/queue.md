@@ -1,10 +1,9 @@
-In flight (1 of 6 slots in use):
-- D56 (the workbench): in review over repair round 1.
+In flight (0 of 6 slots in use):
 
 Queued, in order (4 steps):
-- D49 (the help pages cut): waits for D56, whose sections in `docs/window.md`, `docs/views.md` and `docs/files-and-search.md` it folds into HELP.md.
-- D55 (roots as hubs): waits for D56, which writes the same cards, entry page and client context; its shapes are ruled (Z762).
-- Q72 (the architecture re-read): waits for D49, D55 and D56 (open item 33 (a)).
+- D49 (the help pages cut): preparing.
+- D55 (roots as hubs): preparing.
+- Q72 (the architecture re-read): waits for D49 and D55 (open item 33 (a)).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.

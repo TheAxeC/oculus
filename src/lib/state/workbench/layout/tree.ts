@@ -2,7 +2,7 @@
 // change independently of workbench focus and persistence.
 
 import { item } from '../../../data/helpers/guards.ts';
-import { findInstance } from './instance.ts';
+import { findInstance, panes } from './instance.ts';
 import {
     MAX_CHILDREN,
     MIN_SIZE,
@@ -172,8 +172,9 @@ export type KeepRule = (view: ViewId) => 'documents' | Keeps;
 /**
  * The empty pane to leave where a pane's last tab was, or null when the pane goes. A locked pane
  * stays whatever else is true of it. Any other pane of a page stays unless it is added, a pane made
- * while the page was used, which goes with its last tab. A pane that stays keeps its lock and its
- * mark, and is a terminals pane when the rule names a terminals pane for its last tab's view.
+ * while the page was used, which goes with its last tab. A pane that stays keeps its lock, its
+ * added mark and its documents mark, and is a terminals pane when the rule names a terminals pane
+ * for its last tab's view.
  */
 function keptPane(pane: Pane, view: ViewId, keep?: KeepRule): Pane | null {
     const locked = pane.locked === true;
@@ -181,6 +182,7 @@ function keptPane(pane: Pane, view: ViewId, keep?: KeepRule): Pane | null {
     const left = keep?.(view) === 'terminals' ? emptiedTerminals() : emptyPane();
     if (pane.added === true) left.added = true;
     if (locked) left.locked = true;
+    if (pane.documents === true) left.documents = true;
     return left;
 }
 
@@ -373,6 +375,19 @@ export function setLocked(layout: Layout, path: number[], locked: boolean): Layo
     if (locked) next.locked = true;
     else delete next.locked;
     return rewrite(layout, path, () => next) ?? layout;
+}
+
+/**
+ * The tree with its documents pane marked: the first pane that holds no tab and keeps no kind,
+ * which is where a view opened from a workbench lands in first. A tree with no such pane is as it
+ * was.
+ */
+export function markDocuments(layout: Layout): Layout {
+    const found = panes(layout).find(
+        ({ pane }) => pane.tabs.length === 0 && pane.keeps === undefined
+    );
+    if (found === undefined) return layout;
+    return rewrite(layout, found.path, () => ({ ...found.pane, documents: true })) ?? layout;
 }
 
 /**

@@ -1,10 +1,10 @@
 <script lang="ts">
     // Layer 3, shared view partial. One folder of the hub as a block of a page: a heading with the
-    // control that opens a Files tab rooted at the folder, and the folder's files, each a row that
-    // opens the file in a source tab as a file browser row does. The person page draws a student's
-    // supervision folder with it and the entry page draws the folder an entry's link names. The
-    // heading is a snippet the page draws in its own element, so the block takes the look of the
-    // other headings of the page it is on.
+    // controls that open a Files tab rooted at the folder and the workbench of the folder, and the
+    // folder's files, each a row that opens the file in a source tab as a file browser row does.
+    // The person page draws a student's supervision folder with it and the entry page draws the
+    // folder an entry's link names. The heading is a snippet the page draws in its own element, so
+    // the block takes the look of the other headings of the page it is on.
     //
     // The folder is listed through the file store rather than carried in the snapshot, because the
     // snapshot holds the portfolio's YAML and not what is in a folder, and the store lists it
@@ -25,6 +25,7 @@
 
     const client = useState();
     const {
+        folders,
         fs: { listing },
         layout: { showFolderInFiles }
     } = client;
@@ -61,6 +62,17 @@
                     showFolderInFiles(folder);
                 }}
             />
+            {#if folders.served(HUB_ROOT)}
+                <ToolButton
+                    label={t('folder_files.open_workbench')}
+                    title={t('folder_files.open_workbench_tip', folder)}
+                    glyph="app_view"
+                    compact
+                    onclick={() => {
+                        folders.open({ root: HUB_ROOT, path: folder });
+                    }}
+                />
+            {/if}
         {/if}
     </div>
     {#if files === null}

@@ -30,7 +30,7 @@ text:
             glyph: the theme {0} names no glyph; it is offered with its words alone
             glyph_unknown: the theme {0} names a glyph glyphs.yml does not hold; it is offered with its words alone
             repeated: a second theme row names {0}; only the first is offered
-            code_theme: code_theme is {0}, which is neither tokens nor the id of a Shiki theme; the editor colours code from the tokens instead
+            code_theme: code_theme is {0}, which is neither tokens, a VS Code theme nor the id of a Shiki theme; the editor colours code from the tokens instead
         manifests:
             id_not_folder: id {0} is not the folder name {1}
             scan_missing: scan directory does not exist

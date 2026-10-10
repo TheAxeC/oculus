@@ -6,19 +6,24 @@
 // data/helpers/guards.ts's `isMap`; what the schemas leave to the checks below is how the parts
 // add up: sizes that sum to one, a minimum size, a folded index inside the children.
 //
-// The envelope is `{ version, pages, current, floats }`, each float `{ id, pane, place }`; a
-// version 4 or 3 envelope is read with no floats. The shipped floats of config/layout.yml reach the
-// page with the configuration, after the saved layout is read, so a layout read from a version 4
-// envelope is written back at version 4 by `serialiseFloatless` until the shipped floats have been
-// taken in (`needsFloats`, and the store's `pendingFloats`), and at the current version from then
-// on; a float-less layout written at a version with floats would read as a reader who has no
-// floats, and the shipped ones would never arrive. A float that does not add up (no tab, a place
-// past the window, an id a page or another float already uses, a tab id held twice, a second float
-// docked on one edge, a window place with a size that is not finite or is under 200) is dropped on
-// reading and the rest kept. A pane carries `locked` (a pane without the field reads as unlocked),
-// `added` (a pane without the field reads as one its page's arrangement defined, and a float's
-// pane never carries it) and `recent`, the ids of the other tabs it showed (a version 5 envelope
-// holds none), and a saved pane whose pinned tabs are not first is put in that order on reading.
+// The envelope is `{ version, pages, current, floats, kept }`, each float `{ id, pane, place }`; a
+// page may carry `folder` (`{ root, path }`) and `item` (`{ view, state }`), and `kept` lists the
+// layouts of the folder pages that were closed (kept.ts reads them). A version 6 envelope has no
+// folder page and no kept layout and is read with every page and tab kept; a version 4 or 3
+// envelope is read with no floats. The shipped floats of config/layout.yml reach the page with the
+// configuration, after the saved layout is read, so a layout read from a version 4 envelope is
+// written back at version 4 by `serialiseFloatless` until the shipped floats have been taken in
+// (`needsFloats`, and the store's `pendingFloats`), and at the current version from then on; a
+// float-less layout written at a version with floats would read as a reader who has no floats, and
+// the shipped ones would never arrive. A float that does not add up (no tab, a place past the
+// window, an id a page or another float already uses, a tab id held twice, a second float docked on
+// one edge, a window place with a size that is not finite or is under 200) is dropped on reading
+// and the rest kept, and so is a kept layout that does not add up. A pane carries `locked` (a pane
+// without the field reads as unlocked), `added` (a pane without the field reads as one its page's
+// arrangement defined, and a float's pane never carries it), `documents` (a pane without the field
+// reads as not the documents pane of a workbench, and a float's pane never carries it) and
+// `recent`, the ids of the other tabs it showed (a version 5 envelope holds none), and a saved pane
+// whose pinned tabs are not first is put in that order on reading.
 
 import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
@@ -28,6 +33,7 @@ import {
     LAYOUT_VERSION,
     MIN_SIZE,
     PAGES_VERSION,
+    PINS_VERSION,
     WORKBENCH_VERSION,
     newPage,
     pageLeaf,
@@ -35,6 +41,7 @@ import {
     show,
     type Float,
     type Instance,
+    type KeptWorkbench,
     type Layout,
     type Page,
     type Pages,
@@ -43,6 +50,7 @@ import {
 } from '../model.ts';
 import { placeFits } from '../open/float/pages.ts';
 import { withInfoFolded, withSystemLabel } from './fold.ts';
+import { folderOf, itemOf, keptOf } from './kept.ts';
 import { treeWithoutRetired, withoutRetiredTabs } from './migrate.ts';
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
 import { normaliseSizes } from '../tree.ts';
@@ -118,14 +126,17 @@ const savedPageShape = z.object({
     id: z.string(),
     label: z.string(),
     workbench: z.unknown().optional(),
-    rail: filledTextShape
+    rail: filledTextShape,
+    folder: z.unknown().optional(),
+    item: z.unknown().optional()
 });
 
 /** The pages envelope's own fields: the saved pages, the id of the current one and the floats. */
 const pagesEnvelopeShape = z.object({
     pages: listShape,
     current: z.string(),
-    floats: z.unknown().optional()
+    floats: z.unknown().optional(),
+    kept: z.unknown().optional()
 });
 
 /** A saved float: its id, with its pane and its place read apart. */
@@ -373,6 +384,9 @@ function readPane(
     if (value.locked === true) read.locked = true;
     // A pane saved without `added`, or with any other value, is one its page's arrangement defined.
     if (value.added === true) read.added = true;
+    // A pane saved without `documents`, or with any other value, is not a workbench's documents
+    // pane.
+    if (value.documents === true) read.documents = true;
     return read;
 }
 
@@ -488,8 +502,14 @@ export function serialiseLayout(pages: Pages): string {
         version: LAYOUT_VERSION,
         pages: pages.pages,
         current: pages.current,
-        floats: pages.floats
+        floats: pages.floats,
+        ...keptField(pages)
     });
+}
+
+/** The envelope's `kept` field: the layouts kept of closed folder pages, left out when none. */
+function keptField(pages: Pages): { kept?: KeptWorkbench[] } {
+    return pages.kept !== undefined && pages.kept.length > 0 ? { kept: pages.kept } : {};
 }
 
 /**
@@ -500,7 +520,8 @@ export function serialiseFloatless(pages: Pages): string {
     return JSON.stringify({
         version: FLOATLESS_VERSION,
         pages: pages.pages,
-        current: pages.current
+        current: pages.current,
+        ...keptField(pages)
     });
 }
 
@@ -514,10 +535,11 @@ export function needsFloats(value: unknown): boolean {
 }
 
 /**
- * Read valid pages from the current envelope, or from any supported older one by migration: a
- * page that held two trees and a docked panel becomes a page holding one tree. A page is read as
- * its id, label, tree and rail key; any other field a saved page carries is dropped, so the next
- * save writes it no more.
+ * Read valid pages from the current envelope, or from any supported older one by migration: a page
+ * that held two trees and a docked panel becomes a page holding one tree. A page is read as its id,
+ * label, tree, rail key, folder and the item it was opened for; any other field a saved page
+ * carries is dropped, so the next save writes it no more. The layouts kept of closed folder pages
+ * are read apart, and one that does not add up is dropped with the rest kept.
  */
 export function parseLayout(value: unknown, label: string): Pages | null {
     const envelope = asEnvelope(value);
@@ -531,6 +553,7 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     const version = envelope.version;
     if (
         version !== LAYOUT_VERSION &&
+        version !== PINS_VERSION &&
         version !== FLOATS_VERSION &&
         version !== FLOATLESS_VERSION &&
         version !== PAGES_VERSION
@@ -552,6 +575,12 @@ export function parseLayout(value: unknown, label: string): Pages | null {
         const page: Page = { id: entry.id, label: entry.label, workbench };
         const rail = railKey(entry.rail, pages);
         if (rail !== null) page.rail = rail;
+        const folder = folderOf(entry.folder, pages);
+        if (folder !== null) {
+            page.folder = folder;
+            const item = itemOf(entry.item);
+            if (item !== null) page.item = item;
+        }
         pages.push(page);
     }
     // A saved info page is folded into the views page, which takes the System label (fold.ts), and
@@ -560,14 +589,16 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     // rest of the arrangement is still the one the viewer left. A saved `changes` or `agents` tab
     // is carried to a `session-detail` tab by the same step.
     const floats =
-        version === LAYOUT_VERSION || version === FLOATS_VERSION
+        version === LAYOUT_VERSION || version === PINS_VERSION || version === FLOATS_VERSION
             ? readFloats(held.floats, pages)
             : [];
     const migrated = withSystemLabel(
         withInfoFolded(withoutRetiredTabs({ pages, current, floats }))
     );
     const read: Pages = settlePageLeaves(migrated);
-    return checkPages(read).length === 0 ? read : null;
+    if (checkPages(read).length > 0) return null;
+    const kept = keptOf(held.kept, readWorkbench, instanceIds(read));
+    return kept.length === 0 ? read : { ...read, kept };
 }
 
 /**
@@ -591,6 +622,15 @@ function readFloats(value: unknown, pages: Page[]): Float[] {
     return floats;
 }
 
+/** The id of every tab a page or a float holds. */
+function instanceIds(held: Pages): Set<string> {
+    const ids = new Set(
+        held.pages.flatMap((page) => tabsOf(page.workbench.root).map((tab) => tab.id))
+    );
+    for (const float of held.floats) for (const tab of float.pane.tabs) ids.add(tab.id);
+    return ids;
+}
+
 /** One saved float, or null for one that does not add up against what is already held. */
 function readFloat(
     raw: unknown,
@@ -608,8 +648,9 @@ function readFloat(
     if (pane?.kind !== 'pane' || pane.tabs.length === 0 || problems.length > 0) {
         return null;
     }
-    // A float is not a page, so its pane is never an added one.
+    // A float is not a page, so its pane is never an added one or a workbench's documents pane.
     delete pane.added;
+    delete pane.documents;
     return { id: held.id, pane, place };
 }
 

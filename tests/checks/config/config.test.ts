@@ -711,7 +711,7 @@ describe('themeFindings', () => {
     }
 
     const CODE = (shown: string): string =>
-        `appearance.yml code_theme: code_theme is ${shown}, which is neither tokens nor the id of a Shiki theme; the editor colours code from the tokens instead`;
+        `appearance.yml code_theme: code_theme is ${shown}, which is neither tokens, a VS Code theme nor the id of a Shiki theme; the editor colours code from the tokens instead`;
 
     it('names a code theme that is no listed id, one finding per value, case included', () => {
         expect(codeSaid({ code_theme: 'not-a-theme' })).toEqual([CODE('"not-a-theme"')]);
@@ -721,6 +721,7 @@ describe('themeFindings', () => {
         expect(codeSaid({ code_theme: 'Dark-Plus' })).toEqual([CODE('"Dark-Plus"')]);
         expect(codeSaid({ code_theme: 'TOKENS' })).toEqual([CODE('"TOKENS"')]);
         expect(codeSaid({ code_theme: 'constructor' })).toEqual([CODE('"constructor"')]);
+        expect(codeSaid({ code_theme: 'vscode-nope' })).toEqual([CODE('"vscode-nope"')]);
     });
 
     it('names a bad code theme in a config that has no themes list', () => {
@@ -741,6 +742,8 @@ describe('themeFindings', () => {
         expect(codeSaid({ code_theme: 'tokens' })).toEqual([]);
         expect(codeSaid({ code_theme: 'dark-plus' })).toEqual([]);
         expect(codeSaid({ code_theme: 'github-light' })).toEqual([]);
+        expect(codeSaid({ code_theme: 'vscode-dark-2026' })).toEqual([]);
+        expect(codeSaid({ code_theme: 'vscode-light-high-contrast' })).toEqual([]);
     });
 
     it('says nothing about the shipped list, a row with no name, or a config with no list', () => {

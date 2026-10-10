@@ -12,6 +12,9 @@
     // tooltip. A pick is answered once the list is gone and the focus is back, so a dialog the pick
     // raises keeps the focus it takes. A press outside and Tab leave the focus where they put it.
     //
+    // A choice's action (menu-items.ts, `MenuAction`) is answered the same way as a pick: once the
+    // list is gone and the focus is back.
+    //
     // The button that opens the list, in each of its looks, is MenuOpener.svelte beside this.
 
     import { DropdownMenu } from 'bits-ui';
@@ -166,7 +169,14 @@
         <DropdownMenu.Content {side} align={edge} sideOffset={GAP} {...closing.content}>
             {#snippet child({ wrapperProps, props })}
                 <div {...wrapperProps}>
-                    <MenuList {label} {items} {groups} onpick={pick} list={props} />
+                    <MenuList
+                        {label}
+                        {items}
+                        {groups}
+                        onpick={pick}
+                        onact={closing.hold}
+                        list={props}
+                    />
                 </div>
             {/snippet}
         </DropdownMenu.Content>

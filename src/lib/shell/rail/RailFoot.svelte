@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, shell. The rail's foot, where VS Code's activity bar keeps Accounts and Manage:
-    // Bookmarks, Search and Update, each an icon with its name as the tooltip. Bookmarks opens a
-    // menu of the reader's own bookmarks by name, beside the rail, and a choice opens the bookmark
-    // as the file browser opens it (a folder is shown open in the Files view); with no bookmark the
-    // menu says there is none.
+    // Bookmarks, Workbenches, Search and Update, each an icon with its name as the tooltip.
+    // Bookmarks opens a menu of the reader's own bookmarks by name, beside the rail, and a choice
+    // opens the bookmark as the file browser opens it (a folder is shown open in the Files view);
+    // with no bookmark the menu says there is none. Workbenches opens the menu of the open
+    // workbenches (WorkbenchMenu.svelte), which switches to one and closes one.
     //
     // The keyboard ring is the rail's, so each control is handed its place in the focus order and
     // its key handler.
@@ -16,6 +17,7 @@
         type Bookmark
     } from '$lib/shell/rail/rail';
     import Menu from '$lib/ui/menu/Menu.svelte';
+    import WorkbenchMenu from './WorkbenchMenu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { t } from '$lib/state/shared/words/text';
@@ -75,6 +77,9 @@
             tabindex={stopIndex('bookmarks')}
             onkeydown={ringKeys('bookmarks')}
         />
+    </div>
+    <div data-action="workbenches">
+        <WorkbenchMenu {stopIndex} {ringKeys} />
     </div>
     <div data-action="search">
         <ToolButton

@@ -5,8 +5,8 @@
 // The options catalog (config/catalogs/options.yml) decides what may be written: the file must be
 // one of its tracked files, the key one of its entries, and the entry a list-valued control
 // (`list`, `multi`, `parked`) or a family (`fields`). A single value goes through config-key.ts,
-// the rail and the arrangements keep their own write (rail.ts), and the machine's own file,
-// local.yml, is refused before anything is read.
+// the rail and the arrangements keep their own write (rail.ts), the workbench layout is edited in
+// the file, and the machine's own file, local.yml, is refused before anything is read.
 //
 // The write is refused, with nothing written, unless the file still holds `base` at the key (the
 // value the editor read), the value fits the entry (config-fit.ts: its shape, and every field
@@ -59,8 +59,8 @@ import {
 /** The keys that name something on every object, which no key or field of a value may be. */
 const RESERVED = ['__proto__', 'constructor', 'prototype'];
 
-/** The options with a write of their own: the rail and the arrangements. */
-const OWN_WRITE = ['rail', 'arrangements'];
+/** The options with a write of their own: the rail, the arrangements and the workbench. */
+const OWN_WRITE = ['rail', 'arrangements', 'workbench'];
 
 /** The collection a key names in a file's text: its parsed value, or why there is none. */
 type Held =

@@ -55,9 +55,13 @@ export const FILES: readonly string[] = [
     'sources.yml'
 ];
 
-/** The ids of the two rows the view draws its own editors in: the rail list and the page reset. */
+/**
+ * The ids of the rows the view draws its own editors in: the rail list and the page reset, and the
+ * workbench layout, which has no editor and is edited in the file.
+ */
 export const RAIL_ROW = 'layout.yml:rail';
 export const PAGES_ROW = 'layout.yml:arrangements';
+export const WORKBENCH_ROW = 'layout.yml:workbench';
 
 /** The id of the group of the per-browser values. */
 export const BROWSER_GROUP = 'this-browser';

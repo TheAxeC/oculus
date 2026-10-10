@@ -6,7 +6,8 @@
 // for (`open.program_ext`) handed to that application through the open endpoint, a picture, a PDF
 // or an HTML page opened in a browser tab of its own (a PDF also in a tab of the page and in a
 // window of its own), a file or folder bookmarked or its bookmark taken out as the row's star does,
-// a file or folder revealed in Finder through the open endpoint, a shell started in the folder
+// a file or folder revealed in Finder through the open endpoint, a folder or root opened as the
+// workbench of that folder (Open in New Files), a shell started in the folder
 // (state/shared/stores/shell.ts, `openShell`), the file's bytes saved from api/file as the file
 // view's link saves them, the Search view opened on the folder, the view's add-root form, and its
 // removal behind its question. Fix All Writing Problems in Folder... is picked in
@@ -73,6 +74,7 @@ const ROW_OPEN_PDF_WINDOW = 'open-pdf-window';
 const ROW_ADD_BOOKMARK = 'add-bookmark';
 const ROW_REMOVE_BOOKMARK = 'remove-bookmark';
 export const ROW_REVEAL = 'reveal';
+const ROW_WORKBENCH = 'workbench';
 export const ROW_TERMINAL = 'terminal';
 export const ROW_FIND = 'find';
 export const ROW_WRITING_FIX = 'writing-fix';
@@ -132,6 +134,11 @@ export type RowMenuFacts = {
      * is where New Presentation... is offered.
      */
     newDeck?: boolean;
+    /**
+     * Whether a workbench can be opened for the row: a folder or a root whose root the page serves,
+     * and not the up row.
+     */
+    workbench?: boolean;
     /** The key hint of an item by its id; none when omitted. */
     hints?: Readonly<Record<string, string>>;
     /** The project commands of the repository a root or a folder row is; none when omitted. */
@@ -218,7 +225,8 @@ export function rowFacts(
     commands: readonly ProjectCommand[] = [],
     programs: Readonly<Record<string, string>> = {},
     bookmarked = false,
-    writing = false
+    writing = false,
+    workbench = false
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -253,7 +261,8 @@ export function rowFacts(
             ),
         hints,
         commands,
-        writing
+        writing,
+        workbench: kind !== 'file' && row.up !== true && workbench
     };
 }
 
@@ -266,17 +275,17 @@ export function rowFacts(
  * is its own group after Reveal in Finder and the terminal, on a `present.yml` file and on a folder
  * or root whose listing holds one: the listing the fs store holds, else the one the menu read when
  * it opened (picks.svelte.ts); New Presentation... is in that group on a folder or root whose
- * listing holds none, and New Presentation from Outline on a Markdown file.
- * A folder: New File... and New Folder...,
- * Reveal in Finder and its shell, Find in Folder... with Fix All Writing Problems in Folder... (a
- * folder Fix All of the writing rules, disabled while `lint.writing` is off), Cut, Copy and Paste,
- * Upload..., the two copies, then Rename... and Delete. A folder or root that is a repository with
- * project commands also offers Run Command, a submenu of them. A root: those of a folder without
- * Cut, Copy, Rename... and Delete, and Add Folder to Workspace... with Remove Folder from Workspace
- * on a root the reader added. Compare with Selected needs a file selected for compare. With two or
- * more rows selected the menu is the one for the selection: Compare Selected for exactly two files,
- * Cut and Copy, the two copies of every path, and Delete. Each item carries the key hint its id has
- * in `hints`.
+ * listing holds none, and New Presentation from Outline on a Markdown file. A folder: New File...
+ * and New Folder..., Reveal in Finder, Open in New Files (the workbench of the folder, on a folder
+ * or root of a served root) and its shell, Find in Folder... with Fix All Writing Problems in
+ * Folder... (a folder Fix All of the writing rules, disabled while `lint.writing` is off), Cut,
+ * Copy and Paste, Upload..., the two copies, then Rename... and Delete. A folder or root that is a
+ * repository with project commands also offers Run Command, a submenu of them. A root: those of a
+ * folder without Cut, Copy, Rename... and Delete, and Add Folder to Workspace... with Remove Folder
+ * from Workspace on a root the reader added. Compare with Selected needs a file selected for
+ * compare. With two or more rows selected the menu is the one for the selection: Compare Selected
+ * for exactly two files, Cut and Copy, the two copies of every path, and Delete. Each item carries
+ * the key hint its id has in `hints`.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => {
@@ -285,6 +294,11 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     };
     const terminal = item(ROW_TERMINAL, t('files.menu_terminal'));
     const reveal = item(ROW_REVEAL, t('files.menu_reveal'));
+    const place = [
+        reveal,
+        ...(facts.workbench === true ? [item(ROW_WORKBENCH, t('files.menu_workbench'))] : []),
+        terminal
+    ];
     const copies = [
         item(ROW_COPY_PATH, t('files.menu_copy_path')),
         item(ROW_COPY_RELATIVE, t('files.menu_copy_relative'))
@@ -375,7 +389,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     if (facts.kind === 'dir') {
         return grouped([
             created,
-            [reveal, terminal],
+            place,
             decks,
             find,
             run,
@@ -388,7 +402,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     }
     return grouped([
         created,
-        [reveal, terminal],
+        place,
         decks,
         find,
         run,
@@ -432,6 +446,7 @@ export type RowStores = {
     openFile: ClientState['writes']['openFile'];
     revealPath: ClientState['writes']['revealPath'];
     openFolder: ClientState['writes']['openFolder'];
+    openWorkbench: ClientState['folders']['open'];
     startTerminal: ClientState['terminals']['startTerminal'];
     showTerminal: ClientState['terminals']['showTerminal'];
     setSearchState: ClientState['search']['setSearchState'];
@@ -455,6 +470,7 @@ export function rowStores(client: ClientState): RowStores {
         openFile: client.writes.openFile,
         revealPath: client.writes.revealPath,
         openFolder: client.writes.openFolder,
+        openWorkbench: client.folders.open,
         startTerminal: client.terminals.startTerminal,
         showTerminal: client.terminals.showTerminal,
         setSearchState: client.search.setSearchState,
@@ -570,6 +586,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
             window.open(fileBytesUrl(row.root, row.path), '_blank', 'noopener');
         else if (pick === ROW_ADD_BOOKMARK || pick === ROW_REMOVE_BOOKMARK) deps.bookmark(row);
         else if (pick === ROW_REVEAL) void reveal(row, paths.absolute);
+        else if (pick === ROW_WORKBENCH) deps.openWorkbench({ root: row.root, path: row.path });
         else if (pick === ROW_TERMINAL) void shell(row, dir);
         else if (pick === ROW_FIND)
             deps.setSearchState(deps.openView('search'), { root: row.root, under: row.path });

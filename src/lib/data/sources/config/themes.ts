@@ -4,8 +4,9 @@
 // config/catalogs/glyphs.yml is still offered, with its words alone, and a second row naming a
 // theme already listed is not offered at all, since the picker keys its entries by the name.
 // state/shared/words/appearance.ts draws by the same rules, so a row the finding names is drawn as
-// the finding says. A `code_theme:` that is neither `tokens` nor the id of a Shiki theme
-// (case-sensitive) is named too, since the editor then colours code from the tokens.
+// the finding says. A `code_theme:` that is neither `tokens`, the class of a VS Code theme nor the
+// id of a Shiki theme (case-sensitive) is named too, since the editor then colours code from the
+// tokens.
 
 import { join } from 'node:path';
 import { isCodeTheme } from '../../helpers/code-themes.ts';

@@ -25,9 +25,9 @@ export type OptionLists = {
 /**
  * The families whose records hold a value the options catalog cannot describe, a layout tree, and
  * whose own reader (data/sources/config/rail.ts) checks it. A text field of such a family takes any
- * value.
+ * value, and one with no `key` field is the single record the key holds, not a list of records.
  */
-const OWN_READER = ['arrangements'];
+const OWN_READER = ['arrangements', 'workbench'];
 
 /** The words a choice or a multi takes, or null when a source it names is not held. */
 function wordsOf(spec: FieldSpec, lists: OptionLists): string[] | null {
@@ -180,8 +180,9 @@ export function isPairs(fields: Record<string, FieldSpec>): boolean {
 /** The schema of a family: a list of its records, or a map from a key to a record or a value. */
 function familySchema(entry: CatalogEntry, lists: OptionLists, loose = false): JsonSchema {
     const fields = entry.fields ?? {};
-    const rows = recordSchema(fields, lists, loose);
     const keyed = 'key' in fields;
+    if (loose && !keyed) return recordSchema(fields, lists, true);
+    const rows = recordSchema(fields, lists, loose);
     let member: JsonSchema;
     if (isPairs(fields)) {
         // A table holds one value a key, or a list of such values where it holds lists; a value
