@@ -35,8 +35,9 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D62-report.md
   brief_check: agents/reviews/D62-brief-check.md (a852246ff3fc11d90, claude-opus-5-5, 273,100 tokens, 100 tool uses, 15m 3s; closed in the brief by the orchestrator under "Closed")
   builder_usage: 265,121 tokens, 47 tool uses, 5.5 min (first run, handed back); 89,943 tokens, 706 tool uses, 174.8 min (resumed after the round-0 cases ruling, to the report)
+  reviewer_report: agents/reviews/D62-refuter.md (a7d94dafa7d50c3a1, claude-opus-5-5, 114,844 tokens, 113 tool uses, 19m 54s)
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D62-round1.md, sent 2026-10-11)
 - step: D65
   executor: agent
   worker: claude:sonnet at ordo-high

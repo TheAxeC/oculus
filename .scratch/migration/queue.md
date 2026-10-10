@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- D62 (apps: the host and the bridge): builder reported (`agents/reviews/D62-report.md`); /refute next.
+- D62 (apps: the host and the bridge): reviewed (`agents/reviews/D62-refuter.md`); repair round 1 sent (`agents/briefs/D62-round1.md`).
 - D65 (one kind of project): builder running, launched 2026-10-11 from 5aa5c52e4.
 
 Queued, in order (4 steps):
