@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D62 (apps: the host and the bridge): builder running.
+- D62 (apps: the host and the bridge): builder running, resumed after its cases ruling (`agents/briefs/D62-cases.md`).
 
 Queued, in order (4 steps):
 - D63 (apps in the shell): after D62.

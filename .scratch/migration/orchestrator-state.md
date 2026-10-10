@@ -34,6 +34,7 @@ dispatch:   # steps in flight, up to six (Z632)
   launched: 2026-10-10
   report: agents/reviews/D62-report.md
   brief_check: agents/reviews/D62-brief-check.md (a852246ff3fc11d90, claude-opus-5-5, 273,100 tokens, 100 tool uses, 15m 3s; closed in the brief by the orchestrator under "Closed")
+  builder_usage: 265,121 tokens, 47 tool uses, 5.5 min (first run, handed back)
   landing: not-started
   round: 0
 ```
@@ -245,6 +246,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-10 (D62 cases ruled). D62's builder handed back two cases at its first run, before any change; ruled inside the step's part in `agents/briefs/D62-cases.md` (the import guard by `module.registerHooks`, since `module.register` misses `createRequire`; the runner the tree file of item 5 started from `ownFolder()`, decision 10 dropped) and the builder resumed with `round: 0`. In flight (1 of 6): D62. Next: D62's report, /refute D62, its repair round, /land D62; then D63, D64, Q72 and O33.
 - 2026-10-10 (D62 launched). D62 prepared (base 398537672, brief `agents/briefs/D62.md` with open item 46's rulings and its premises checked on main after D60; the brief check's closures stand, the changes after it named under its "Closed") and its builder a26cf9f636282978b (claude-sonnet-5-5) launched in `.agents/worktrees/D62`, base copy in `.agents/worktrees/D62-base`. In flight (1 of 6): D62. Next: D62's report, /refute D62, its repair round, /land D62; then D63, D64, Q72 and O33.
 - 2026-10-10 (D60 landed). D60, repositories read as projects of the hub, landed (booking in plan.md; `agents/reviews/D60-landing.md`) after one repair round and the review over it, its findings fixed on main at landing (`agents/reviews/D60-refuter.md`, Closed): the hub-audit test removed, the audit `root` sentences, the collector's clause, and a research tier refused on a hub's folder (`findings.roots.tier_in_hub`); D60's test rows written under G8, G9, G13 and G32 in `agents/guarded.md`; the look on a scratch oculus from the gate with a scratch repository. Worktree `.agents/worktrees/D60` and its branches removed. Nothing in flight. Next: /spec D62 from Steps 1 on main's new head (the ruled brief kept in the session scratch as `D62-brief-ruled.md`).
 - 2026-10-10 (D62 waits for D60). Open item 46 ruled by Axel and booked (plan.md Rulings and D62's Step 0). /spec D62's path comparison: D60's tree rewrites `src/lib/state/client/context.ts` (269 lines changed), splits `src/lib/data/model/index.ts` and deletes `src/lib/state/client/payloads.ts`, and D62 must add the `AppsDeps` member in `context.ts`, the host rows' types beside `AppRow` and the `app-hosts` channel's payload shape there; the merge is not simple, so D62 waits until D60 lands (spec Steps 5), with no brief, commit, worktree or dispatch entry. The ruled brief text is kept in the session scratch as `D62-brief-ruled.md`; /spec D62 is run again from Steps 1 after D60 lands. In flight (1 of 6): D60 (repair round 1). Next: D60's report, /refute over its round, /land D60, then /spec D62.
