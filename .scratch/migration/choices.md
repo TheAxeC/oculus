@@ -4,6 +4,24 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z785 (2026-10-10, step D60, the orchestrator, automode): the `tier` of a root in the Settings view
+
+- Options: (a) the Settings view's `roots` fields gain `tier`, a choice of the four words with none allowed, and its help names what each does (`config/catalogs/options.yml:1363-1371`), so a reader sets it where the roots are edited; (b) the docs say it is set in the file, which leaves a Settings edit unable to show it; (c) neither, the lazy option, which hides a key the Settings view would then write around. Taken: (a).
+
+Where it applies: D60. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z784 (2026-10-10, step D60, the orchestrator, automode): how a `tier: projects` repository moves between ideas, active and manuscripts
+
+- Options: (a) by its manifest's `type:` line, which picks the flat scan rule and so the board column, edited in the manifest's source, as a hub project moves by its folder; a write still refuses `type` (DATA-MAP.md:570), the board offers no move, and HELP.md says so beside the `tier` change that archives it; (b) let the editor write `type` for a repository alone, which breaks the one rule every manifest write keeps; (c) say nothing, the lazy option, which leaves a reader with no way to move it. Taken: (a).
+
+Where it applies: D60. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z783 (2026-10-10, step D60, the orchestrator, automode): an app's write to a repository's research project
+
+- Options: (a) answers not found to an app's frame, as a repository side project's `.oculus/project.yml` does today (`sidesFor`, `src/lib/server/edit/writes.ts:329-336`, DESIGN.md:558), so an approved app's writes stay inside the hub's folders; the page's own writes reach it; (b) an app may write it as it writes a hub research project, which lets an app reach a file in a repository outside the hub that its approval never named; (c) leave it to whatever `homeOf` answers, the lazy option, which decides a security boundary by accident. Taken: (a).
+
+Where it applies: D60. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
 ## Z782 (2026-10-10, step D61, the orchestrator, automode): the status bar's repository item and the last chosen repository
 
 - Options: (a) a status bar item of its own, `repository`, before the branch item and hideable, its tooltip naming the folder and why it is shown; a pick is the last chosen repository, one value for the window kept in the ui store, and a pick made while a file or a workbench decides is kept for when neither does, the picker's heading saying so; (b) the name inside the branch item, which the bar's menu then cannot hide apart; (c) a pick that overrides the active file, which the ruling's order forbids. Taken: (a).
@@ -12,13 +30,13 @@ Where it applies: D61. Booked in `plan.md` Rulings, the brief and the closed log
 
 ## Z781 (2026-10-10, step D61, the orchestrator, automode): where the Workbenches view lives
 
-- Options: (a) a unique view of the Views catalogue's `views` group after Pages, no chord, opened from the rail menu's new item Manage Workbenches; New workbench lists the served roots' tops, a folder inside a root opening from the places that already open one; (b) a rail page of its own, which adds a button for a list the menu already reaches; (c) only the rail menu, the lazy option, which the ruling's view replaces. Taken: (a).
+- Options: (a) a unique view of the Views catalogue's `views` group registered last, after Processes, so it is the eleventh entry and has no chord and every existing chord stays (amended at D61's brief check: placed after Pages it would take `y5` and shift five chords), opened from the rail menu's new item Manage Workbenches; New workbench lists the served roots' tops, a folder inside a root opening from the places that already open one; (b) a rail page of its own, which adds a button for a list the menu already reaches; (c) only the rail menu, the lazy option, which the ruling's view replaces. Taken: (a).
 
 Where it applies: D61. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
 
 ## Z780 (2026-10-10, step D60, the orchestrator, automode): Deposit and LaTeX for a repository
 
-- Options: (a) a repository's research project has no Deposit, since the deposit mirrors a hub folder's `code/` and a repository is its own git repository; LaTeX reads a project's `manuscript/` from its folder as `placeOf` gives it, for every project, a repository's (side or research) included, so a repository paper has the LaTeX panel; (b) keep LaTeX off for repositories, the lazy option, which leaves a repository paper without its panel. Taken: (a).
+- Options: (a) a repository's research project has no Deposit, since the deposit mirrors a hub folder's `code/` and a repository is its own git repository; LaTeX reads a research project's `manuscript/` from its folder as `placeOf` gives it, a repository's included, so a repository paper has the LaTeX panel, while a repository side project stays as it is (no panel), since the step line keeps it a side project as now (amended at D60's brief check); (b) keep LaTeX off for research repositories, the lazy option, which leaves a repository paper without its panel. Taken: (a).
 
 Where it applies: D60. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
 
