@@ -1,7 +1,6 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use): D59 (builder launched 2026-10-10).
 
-Queued, in order (8 steps):
-- D59 (the hub fixes and personal projects, the rice-theme text sizes and the per-hub config in the data map): next.
+Queued, in order (7 steps):
 - D60 (repositories read as projects of the hub): after D59.
 - D61 (the Workbenches view and the status bar's repository): after D59, beside D60.
 - D62 (apps: the host and the bridge): after D61; its place before or after O33 is under discussion with Axel.
