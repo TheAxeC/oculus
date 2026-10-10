@@ -23,6 +23,7 @@ import { z } from 'zod';
 import { ISO_DATE } from '../../../data/helpers/dates.ts';
 import { KEYED_FIELDS, LIST } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';
+import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import {
@@ -187,14 +188,36 @@ function duplicate(collection: Collection): WriteOutcome | null {
     };
 }
 
-/** Set fields of one collection entry, found by the id the reader gave it. */
+/**
+ * The fields with the hub's key and colon taken off every value that names a record of the hub (a
+ * `from:` of the file's schema), since the portfolio gives those values the key
+ * (data/snapshot/hubs/merge.ts) and the file of the hub holds the ids it gave them. A value without
+ * the prefix is kept as it is.
+ */
+function hubOwnValues(
+    schema: unknown,
+    fields: Record<string, unknown>,
+    key: string
+): Record<string, unknown> {
+    const lead = `${key}:`;
+    return throughSchema(collectionSchema(schema) ?? [], fields, (value) =>
+        value.startsWith(lead) ? value.slice(lead.length) : value
+    );
+}
+
+/**
+ * Set fields of one collection entry, found by the id the reader gave it. `hubKey` is the key of
+ * the hub the file belongs to when it is not the first hub: the values of the fields that name
+ * records come with that key in front, and are written without it.
+ */
 export function writeEntry(
     hub: string,
     config: PortfolioConfig,
     collection: string,
     id: string,
-    fields: Record<string, unknown>,
-    own?: string
+    given: Record<string, unknown>,
+    own?: string,
+    hubKey?: string
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
@@ -202,6 +225,7 @@ export function writeEntry(
     if (shared !== null) return shared;
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
+    const fields = hubKey === undefined ? given : hubOwnValues(held.schema, given, hubKey);
     const typed = typeRefusals(held.schema, fields);
     const wanted = fitting(fields, typed);
     if (held.ident in wanted) {

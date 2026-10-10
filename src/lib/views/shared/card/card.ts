@@ -60,8 +60,8 @@ export function subOf(path: string): string {
 }
 
 /** The encoded api/file address for a project-relative file. */
-export function urlOf(folder: string, path: string): string {
-    return fileBytesUrl(HUB_ROOT, `${folder}/${path}`);
+export function urlOf(folder: string, path: string, root: string = HUB_ROOT): string {
+    return fileBytesUrl(root, `${folder}/${path}`);
 }
 
 /**
@@ -73,9 +73,33 @@ export function goto(client: ClientState, view: string, label: string): void {
     }
 }
 
-/** Open one of a project's fixed documents in a document tab under the hub root. */
-export function openDocument(client: ClientState, folder: string, path: string): void {
-    openPage(client, { root: HUB_ROOT, path: `${folder}/${path}`, label: path });
+/** Open one of a project's fixed documents in a document tab under the root of its hub. */
+export function openDocument(
+    client: ClientState,
+    folder: string,
+    path: string,
+    root: string = HUB_ROOT
+): void {
+    openPage(client, { root, path: `${folder}/${path}`, label: path });
+}
+
+/**
+ * Open the workbench of a project's folder under the root of its hub, named by the project's title,
+ * with the project view in its documents pane; a ghost has no project view and opens none.
+ */
+export function openWorkbench(
+    client: ClientState,
+    item: BoardItem,
+    tab: string,
+    root: string
+): void {
+    const first = item.project.ghost
+        ? undefined
+        : { view: 'project', state: { id: item.id, label: tab } };
+    client.folders.open(
+        { root, path: item.project.folder },
+        { label: item.project.title, item: first }
+    );
 }
 
 /**

@@ -8,10 +8,11 @@
 // @module-tag slow: its cases run real git against a bare remote, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { adopt, commit, sync } from '../../../src/lib/server/git/deposit.ts';
+import { parse } from 'yaml';
+import { adopt, commit, push, sync } from '../../../src/lib/server/git/deposit.ts';
 import { type GhRun, type Outcome } from '../../../src/lib/server/git/deposit-git.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
@@ -25,6 +26,7 @@ const known = new Map<string, string>();
 
 let dir = '';
 let hub = '';
+let lab = '';
 let mirrors = '';
 let into: WriteTarget;
 
@@ -96,6 +98,7 @@ function options(): { mirrors: string; into: WriteTarget; gh: GhRun } {
 test.beforeAll(() => {
     dir = scratchDir('oculus-deposit-test-');
     hub = join(dir, 'hub');
+    lab = join(dir, 'lab');
     mirrors = join(dir, 'mirrors');
     mkdirSync(mirrors, { recursive: true });
 
@@ -111,6 +114,13 @@ test.beforeAll(() => {
     write(codeOf('alpha'), join('attic', 'old.py'), 'print(0)\n');
     write(codeOf('alpha'), join('__pycache__', 'run.pyc'), 'bytes\n');
     write(codeOf('alpha'), '.depositignore', '# the hub keeps these\nresults/\nfigures/\nattic/\n');
+
+    write(
+        lab,
+        join('projects', 'manuscripts', 'alpha', 'project.yml'),
+        manifest('alpha', 'alpha-lab-code')
+    );
+    write(join(lab, 'projects', 'manuscripts', 'alpha', 'code'), 'README.md', '# alpha of lab\n');
 
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     into = {
@@ -142,5 +152,35 @@ describe('the plan', () => {
         expect(written.ok).toBe(false);
         expect(written.error).toContain('The scan found something');
         rmSync(join(codeOf('alpha'), '.env'));
+    });
+});
+
+describe('a deposit of a project of the second hub', () => {
+    it('writes code_availability into the manifest of the second hub and no byte of the first', async () => {
+        const manifestOf = (root: string): string =>
+            join(root, 'projects', 'manuscripts', 'alpha', 'project.yml');
+        const published = 'https://github.com/someone/alpha-lab-code';
+        let created = false;
+        const sent: GhRun = (args) => {
+            if (args[1] === 'create') created = true;
+            if (args[1] !== 'view') return answer(true, '', '');
+            return created
+                ? answer(true, JSON.stringify({ url: published, defaultBranchRef: null }), '')
+                : answer(false, '', 'could not resolve to a Repository');
+        };
+        const hubs = [{ key: 'lab', hub: lab, config: into.config }];
+        const both = { mirrors, into: { ...into, hubs }, gh: sent };
+        const firstBefore = readFileSync(manifestOf(hub), 'utf8');
+        expect((await adopt('lab:alpha', TEXT, both)).ok).toBe(true);
+        const pushed = await push('lab:alpha', TEXT, both);
+        expect(pushed.ok).toBe(true);
+        const block = (
+            parse(readFileSync(manifestOf(lab), 'utf8')) as {
+                code_availability: { status: string; url: string };
+            }
+        ).code_availability;
+        expect(block.status).toBe('deposited');
+        expect(block.url).toBe(published);
+        expect(readFileSync(manifestOf(hub), 'utf8')).toBe(firstBefore);
     });
 });

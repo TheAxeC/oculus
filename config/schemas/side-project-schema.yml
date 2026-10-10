@@ -2,13 +2,13 @@
 # side-project-schema.yml
 # oculus's own configuration - the keys of a side project's manifest, as the hub's `schema:` blocks
 # write them. It governs `side-projects/*/project.yml` in the hub and `.oculus/project.yml` in every
-# served root, the two files the Personal board and the Focus board read. oculus turns it into a JSON
-# Schema, so the YAML editor completes the keys, shows each help line and marks a key or a value the
-# reader refuses. The first five keys are a side project's own. The eleven after them are the
-# research manifest's keys that apply to a side project, with the type word and the `from:` of their
-# rows in manifest-schema.yml, so a value is written, read and checked the same way in both kinds of
-# manifest. Merged with the other config/*.yml by loadConfig(); `side_project_schema` is its
-# top-level key.
+# served root that is not a hub root, the two files the Personal board and the Focus board read.
+# oculus turns it into a JSON Schema, so the YAML editor completes the keys, shows each help line
+# and marks a key or a value the reader refuses. The first five keys are a side project's own. The
+# eleven after them are the research manifest's keys that apply to a side project, with the type
+# word and the `from:` of their rows in manifest-schema.yml, so a value is written, read and checked
+# the same way in both kinds of manifest. Merged with the other config/*.yml by loadConfig();
+# `side_project_schema` is its top-level key.
 # ===========================================================================
 
 side_project_schema:

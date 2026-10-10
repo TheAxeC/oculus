@@ -4,24 +4,23 @@
 // The file is found from the held row alone (`row.storeFile`), never from the body, and the folder
 // it lies in must resolve inside the base the store module was given: the app data folder for a
 // machine app and the root's own folder for a root app. A value equal to the file's, key order
-// aside, writes nothing. Otherwise the file is written by rename, read back, and refused unless
-// the read-back is equal to the value; a file that was there is put back as it was when it is not.
+// aside, writes nothing. Otherwise the file is written by rename, read back, and refused unless the
+// read-back is equal to the value; a file that was there is put back as it was when it is not.
 //
-// The record names the store file, the view id as the key, the field `store`, and the byte sizes
-// as `before` and `after`; the values themselves go with it as `kept`, which the change log writes
-// to its undo folder (server/core/changes.ts). The undo puts the value before back through this
-// writer while the file still holds the value after. After a write the apps watcher is told to read
-// the stores' sizes and versions, so the push of the new version does not wait for the folder
-// watch.
+// The record names the store file, the view id as the key, the field `store`, and the byte sizes as
+// `before` and `after`; the values themselves go with it as `kept`, which the change log writes to
+// its undo folder (server/core/changes.ts). The undo puts the value before back through this writer
+// while the file still holds the value after. After a write the apps watcher is told to read the
+// stores' sizes and versions, so the push of the new version does not wait for the folder watch.
 
 import { readFileSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import type { HeldApp } from '../../machine/apps/held.ts';
-import { readStore, storeFolderInside } from '../../machine/apps/store.ts';
-import { writeTextAtomic } from '../../core/json.ts';
-import type { ChangeRecord } from '../../core/changes.ts';
-import type { WriteOutcome, WriteTarget } from '../writes.ts';
+import type { HeldApp } from '../../../machine/apps/held.ts';
+import { readStore, storeFolderInside } from '../../../machine/apps/store.ts';
+import { writeTextAtomic } from '../../../core/json.ts';
+import type { ChangeRecord } from '../../../core/changes.ts';
+import type { WriteOutcome, WriteTarget } from '../../writes.ts';
 
 /** The kind the change log files a store write under. */
 export const APP_STORE = 'app-store';

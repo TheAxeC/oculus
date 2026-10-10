@@ -58,7 +58,7 @@
     } from '$lib/state/feeds/lead-application';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { feedIdents } from '$lib/state/feeds/idents';
+    import { feedIdents, feedRoot } from '$lib/state/feeds/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -142,7 +142,7 @@
         }
         const lead = asText(entry.title);
         if (lead === '') return;
-        const answer = await writeFeedField(LEADS_FEED, lead, 'status', APPLIED);
+        const answer = await writeFeedField(LEADS_FEED, lead, 'status', APPLIED, feedRoot(entry));
         said = answer.ok ? '' : answerWords(answer);
     }
 

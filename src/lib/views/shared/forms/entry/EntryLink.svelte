@@ -25,10 +25,12 @@
         /** The field the value is from: `url` is drawn with the link glyph, any other as a path. */
         field: string;
         value: string;
+        /** The root of the hub the entry is of, which a path of the value is under. */
+        root?: string;
         onsaid: (said: string) => void;
     };
 
-    let { field, value, onsaid }: Props = $props();
+    let { field, value, root = HUB_ROOT, onsaid }: Props = $props();
 
     /** Whether the link names an HTML file of the hub, which the document view holds as a tab. */
     const document = $derived(
@@ -43,7 +45,7 @@
     /** The local HTML file of the hub as its own tab, the way a bookmark of the rail opens one. */
     function openDocument(): void {
         const parts = value.split('/').filter((one) => one !== '');
-        openPage(client, { root: HUB_ROOT, path: value, label: parts[parts.length - 1] ?? value });
+        openPage(client, { root, path: value, label: parts[parts.length - 1] ?? value });
     }
 </script>
 
@@ -53,12 +55,12 @@
     </p>
 {:else if program}
     <p class="body">
-        <ProgramButton root={HUB_ROOT} path={value} label={value} {onsaid} />
+        <ProgramButton {root} path={value} label={value} {onsaid} />
     </p>
 {:else}
     <p class="body">
         <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-        <a href={hrefOf(value)} target="_blank" rel="noreferrer">
+        <a href={hrefOf(value, root)} target="_blank" rel="noreferrer">
             <Glyph
                 name={field === 'url' ? t('collection.link_glyph') : t('collection.folder_glyph')}
             />

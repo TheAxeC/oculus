@@ -121,7 +121,7 @@ export function openDeck(into: WriteTarget, root: string, path: string): OpenDec
     const at = resolveRootPath(roots, root, path);
     if ('error' in at) return gone(words(text, 'server.deck_edit.outside'));
     const deck = readDeck(
-        { roots, hub: into.hub, config: into.config, projects: into.projects() },
+        { roots, hub: into.hub, config: into.config, projects: into.projects(), hubs: into.hubs },
         root,
         dirname(path)
     );

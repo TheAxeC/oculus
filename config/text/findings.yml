@@ -15,6 +15,21 @@ text:
             entry_no_id: entry has no string {0}
         feeds:
             cannot_read: 'cannot be read: {0}'
+        roots:
+            not_a_list: roots is not a list
+            not_a_map: a root is not a map of key and dir
+            no_key: a root has no key
+            no_dir: the root names no dir
+            repeated_key: two roots carry this key
+            relative: 'the dir {0} is relative; a root is absolute or starts with ~/'
+            missing_dir: 'no directory at {0}; this root serves nothing'
+            hub_not_boolean: hub is not true or false; the root is read as a plain root
+            hub_reserved_key: a hub root cannot be keyed side, root, hub or engine, or hold a colon; the root is read as a plain root
+            hub_is_first: the root is, lies inside or holds the first hub; it is read as a plain root
+            hub_same_dir: an earlier hub root names the same directory; this root is read as a plain root
+            hub_nested: the root lies inside or holds the directory of an earlier hub root; it is read as a plain root
+        hubs:
+            id_prefix: 'the id {0} begins with {1}:, the key of a hub root, so it cannot be told from a record of that hub'
         docs:
             missing: document does not exist
         rail:

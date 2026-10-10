@@ -4,6 +4,7 @@
 import type { Collection, Followup, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
 import { z } from 'zod';
 import { text as str } from '../../data/helpers/guards.ts';
+import { bareId, hubId, rootOf } from '../../data/helpers/hub-names.ts';
 import { listOrOneShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
 import { DEADLINE_SOON, daysUntil } from './board/index.ts';
@@ -11,6 +12,7 @@ import {
     GLYPHS,
     dueFollowups,
     item,
+    rootMark,
     subtaskLines,
     subtasksOf,
     type SideManifest,
@@ -129,6 +131,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         if (days > horizon) continue;
         const line = item('paper', GLYPHS.paper, focusLabel(project, labelMode), days, {
             id: project.id,
+            ...rootMark(project),
             target: { kind: 'manifest', id: project.id }
         });
         if (snoozed(project.snooze, now)) {
@@ -164,6 +167,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         const days = daysUntil(isoOf(scheme.deadline), now);
         if (days === null || days > horizon) continue;
         const line = item('funding', GLYPHS.funding, scheme.title, days, {
+            ...rootMark(scheme),
             target: { kind: 'funding', id: scheme.id }
         });
         if (snoozed(scheme.snooze, now)) {
@@ -189,6 +193,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             const line = item(category, GLYPHS[category], entry.title, days, {
                 entry: key,
                 status,
+                ...rootMark(entry),
                 target: { kind: 'entry', id: entry.id, collection: key, statuses }
             });
             if (snoozed(entry.fields.snooze, now)) {
@@ -215,7 +220,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         dated.push({
             category: 'position',
             line: item('position', GLYPHS.position, lead.title, days, {
-                target: { kind: 'lead', id: lead.title }
+                ...rootMark(lead),
+                target: { kind: 'lead', id: hubId(rootOf(lead), lead.title) }
             })
         });
     }
@@ -228,7 +234,13 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             if (days < 0 || days > horizon) continue;
             dated.push({
                 category: 'conference',
-                line: item('conference', GLYPHS.conference, venueLabel(venue), days)
+                line: item(
+                    'conference',
+                    GLYPHS.conference,
+                    venueLabel(venue),
+                    days,
+                    rootMark(venue)
+                )
             });
             continue;
         }
@@ -236,7 +248,10 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         if (ahead === null || ahead > months) continue;
         dated.push({
             category: 'conference',
-            line: item('conference', GLYPHS.conference, venueLabel(venue), null, { months: ahead })
+            line: item('conference', GLYPHS.conference, venueLabel(venue), null, {
+                months: ahead,
+                ...rootMark(venue)
+            })
         });
     }
 
@@ -253,6 +268,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
                     days,
                     {
                         id: project.id,
+                        ...rootMark(project),
                         target: { kind: 'followup', id: project.id }
                     }
                 )
@@ -264,11 +280,18 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         for (const { note, days } of dueFollowups(scheme.followups, now)) {
             notes.push({
                 days,
-                line: item('followup', GLYPHS.followup, `${scheme.title} - ${note.do}`, days)
+                line: item(
+                    'followup',
+                    GLYPHS.followup,
+                    `${scheme.title} - ${note.do}`,
+                    days,
+                    rootMark(scheme)
+                )
             });
         }
     }
-    for (const [key, collection] of Object.entries(collections)) {
+    for (const collection of Object.values(collections)) {
+        const key = bareId(collection);
         for (const entry of collection.entries) {
             if (terminal(config, str(entry.fields.status))) continue;
             const held = followupsOf(entry.fields.followup);
@@ -277,6 +300,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
                     days,
                     line: item('followup', GLYPHS.followup, `${entry.title} - ${note.do}`, days, {
                         entry: key,
+                        ...rootMark(entry),
                         target: { kind: 'followup', id: entry.id, collection: key }
                     })
                 });
@@ -297,7 +321,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             focusLabel(project, labelMode),
             '',
             now,
-            { id: project.id },
+            { id: project.id, ...rootMark(project) },
             { kind: 'manifest', id: project.id }
         )) {
             if (line.snoozed) asleep.push(line);
@@ -312,7 +336,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             scheme.title,
             'funding',
             now,
-            {},
+            rootMark(scheme),
             {
                 kind: 'funding',
                 id: scheme.id
@@ -322,7 +346,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             else subtasks.push(line);
         }
     }
-    for (const [key, collection] of Object.entries(collections)) {
+    for (const collection of Object.values(collections)) {
+        const key = bareId(collection);
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
             if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
@@ -331,7 +356,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
                 entry.title,
                 str(entry.fields.kind),
                 now,
-                { entry: key },
+                { entry: key, ...rootMark(entry) },
                 { kind: 'entry', id: entry.id, collection: key }
             )) {
                 if (line.snoozed) asleep.push(line);

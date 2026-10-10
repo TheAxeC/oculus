@@ -88,7 +88,7 @@ function locate(
     const index = overlay(view.references, view.roots, texts);
     const scan = scanOf(index, view.roots, document.real);
     if (scan === undefined) return undefined;
-    const graph = graphOf(index);
+    const graph = graphOf(index, scan.file.root);
     const at = isRecord(params.position) ? params.position : {};
     const line = count(at.line);
     const character = count(at.character);

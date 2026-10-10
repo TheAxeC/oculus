@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { FILES_KIND } from '../../src/lib/data/file-ops.ts';
 import { engineDir } from '../../src/lib/data/sources/config.ts';
-import { APP_STORE } from '../../src/lib/server/edit/writes/app-store.ts';
+import { APP_STORE } from '../../src/lib/server/edit/writes/apps/store.ts';
 
 /**
  * The kind of the records of the `deck` write, which the log can hold: the History view draws their

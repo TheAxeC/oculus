@@ -56,7 +56,9 @@ import { docFindings } from '../content/docs.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { Hub } from '../core/channels.ts';
 import { target } from '../edit/writes.ts';
-import { expandHome } from '../files/files.ts';
+import { hubDirs } from '../../data/helpers/files/private-folders.ts';
+import { expandHome, hubRoots } from '../files/files.ts';
+import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { createOpenFiles } from '../files/fs/open-files.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
@@ -271,7 +273,10 @@ export function createServerContext(
         changes: () => target(engine, load().config, context).changes,
         library: () => ({
             closed: closedPaths(load().config).folders,
-            withheld: withheldFolders(configDir(engine), local.hub)
+            withheld: withheldFolders(
+                configDir(engine),
+                hubDirs(local.hub, browserRoots({ config: load().config, engine, local }))
+            )
         })
     });
     const debug = make.createDebug({
@@ -361,7 +366,10 @@ export function createServerContext(
         );
     const folders = (): ProjectFolder[] => {
         const message = hub.latest('portfolio');
-        return message === undefined ? [] : projectFolders(local.hub, message.payload as Snapshot);
+        if (message === undefined) return [];
+        const others = hubRoots(browserRoots({ config: load().config, engine, local }));
+        const dirs = Object.fromEntries(others.map((one) => [one.key, one.dir]));
+        return projectFolders({ ...dirs, [HUB_ROOT]: local.hub }, message.payload as Snapshot);
     };
     // The stores are every account's folders, so a session of a second Claude account is read from
     // that account's registry and transcripts as the first one's are.

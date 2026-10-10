@@ -9,6 +9,7 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import CardActions from '$lib/views/shared/card/CardActions.svelte';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { fileNameOf, openEntry } from '$lib/views/shared/forms/entry-file';
     import { editAction, projectCount } from '$lib/views/shared/card/card';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -25,6 +26,8 @@
         title: string;
         /** A hue name from state/shared/words/tones.ts, or none for a card without a bar. */
         tone?: string;
+        /** The line's record, which says which hub the line is of. */
+        record: { root?: string };
         projects: Project[];
         /** The file's entry for this line, or null for a line the file does not hold. */
         entry: Entry | null;
@@ -37,8 +40,20 @@
         children: Snippet;
     };
 
-    let { id, cursor, title, tone, projects, entry, schema, file, fault, onsaid, children }: Props =
-        $props();
+    let {
+        id,
+        cursor,
+        title,
+        tone,
+        record,
+        projects,
+        entry,
+        schema,
+        file,
+        fault,
+        onsaid,
+        children
+    }: Props = $props();
 
     /** Edit in File is for a line the file holds, drawn while the card is hovered or focused. */
     const actions = $derived(
@@ -54,6 +69,7 @@
 
 <Card {id} {cursor} {title} titleHtml={inlineMarkdown(title)} {tone}>
     {#snippet meta()}
+        <RootChip {record} />
         <Tag label={projectCount(projects.length)} />
         {#if actions.length > 0}
             <CardActions {actions} />

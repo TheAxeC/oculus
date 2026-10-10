@@ -37,8 +37,9 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Clamp from '$lib/views/shared/card/Clamp.svelte';
-    import CardLinks from '$lib/views/shared/card/CardLinks.svelte';
+    import CardLinks from '$lib/views/shared/card/project/CardLinks.svelte';
     import { posting } from '$lib/views/shared/forms/posting';
     import { openSourceFile } from '$lib/views/shared/links/source-file';
     import { sourceFileState } from '$lib/state/sessions/source/place';
@@ -191,6 +192,7 @@
                     >
                         {#snippet meta()}
                             {@const item = card.status}
+                            <RootChip record={card.project} />
                             {#if card.project.pin === true}
                                 <span class="pin"><Glyph name={t('project.card.pin_glyph')} /></span
                                 >

@@ -19,6 +19,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { createWrites } from '../../../src/lib/state/client/writes.svelte.ts';
+import { NO_LOOKUPS } from '../../../src/lib/state/sessions/source/write-files.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';
 import { server } from '../sessions/source-server.ts';
 
@@ -73,6 +74,40 @@ describe('a write over a file a source tab holds unsaved text of', () => {
         const free = await writes.writeEntry('events', 'An event', { status: 'done' });
         expect(posted.map((body) => body.collection)).toEqual(['events']);
         expect(free.ok).toBe(true);
+    });
+});
+
+describe('a write to an entry of a hub other than the first', () => {
+    it('is checked against the file of the hub the entry id names, as the server routes it', async () => {
+        const posted: Record<string, unknown>[] = [];
+        vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
+            posted.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({ ok: true, changed: ['status'], refused: [] })
+            });
+        });
+        const lab = { root: 'lab', path: 'tasks/tasks.yml' };
+        const writes = createWrites(
+            () => CONFIG,
+            (file) => file.root === lab.root && file.path === lab.path,
+            {
+                ...NO_LOOKUPS,
+                collectionFile: (id) => (id === 'lab:tasks' ? lab : null)
+            }
+        );
+        const refusal = t('app.file_unsaved', 'tasks.yml');
+        const held = [
+            await writes.writeEntry('tasks', 'lab:Review the draft', { status: 'done' }),
+            await writes.reorderEntries('tasks', ['lab:Review the draft', 'lab:Plan'])
+        ];
+        expect(posted).toEqual([]);
+        expect(held.map((one) => one.error)).toEqual([refusal, refusal]);
+
+        const first = await writes.writeEntry('tasks', 'Review the draft', { status: 'done' });
+        expect(first.ok).toBe(true);
+        expect(posted.map((body) => body.id)).toEqual(['Review the draft']);
     });
 });
 

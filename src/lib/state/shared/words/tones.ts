@@ -142,10 +142,21 @@ export function typeTone(type: unknown): string {
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
+/**
+ * The entry of `map` a domain names: the domain as written, else the word after its first colon,
+ * since the portfolio gives a second hub's domain that hub's key and a colon
+ * (data/snapshot/hubs/merge.ts) and the vocabulary names the word alone.
+ */
+function domainEntry(map: Record<string, string | undefined>, domain: unknown): string | undefined {
+    const text = scalar(domain).toLowerCase();
+    const colon = text.indexOf(':');
+    return byKey(map, text) ?? (colon < 0 ? undefined : byKey(map, text.slice(colon + 1)));
+}
+
 /** The tone of a research domain, through `domains`. */
 export function domainTone(domain: unknown): string {
     configGeneration();
-    const hex = byKey(domainColor, scalar(domain).toLowerCase());
+    const hex = domainEntry(domainColor, domain);
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
@@ -157,8 +168,7 @@ export function domainTone(domain: unknown): string {
  */
 export function domainLabel(domain: unknown): string {
     configGeneration();
-    const text = scalar(domain);
-    return byKey(domainText, text.toLowerCase()) ?? text;
+    return domainEntry(domainText, domain) ?? scalar(domain);
 }
 
 /** The glyph name a status chip carries, and nothing for a chip the legend does not list. */

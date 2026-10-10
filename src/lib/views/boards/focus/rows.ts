@@ -29,7 +29,8 @@ import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import { t } from '$lib/state/shared/words/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/client/writes.svelte';
 import type { ClientState } from '$lib/state/client/context';
-import { viewSourceFile } from '$lib/state/sessions/view-source';
+import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
+import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
 import { blockedBy } from '$lib/views/shared/forms/entry-file';
 
 /** How a status button's id starts, the status following it. */
@@ -73,16 +74,33 @@ function collectionOf(target: TickerTarget): string | undefined {
 }
 
 /**
+ * The file a line of the collection `key` is written in: the first hub's file the configuration
+ * names, or the file of the hub that holds the entry `id` when that is another hub.
+ */
+function collectionFile(
+    client: Pick<ClientState, 'selectors' | 'fs'>,
+    key: string,
+    id: string
+): ViewSource | null {
+    const parts = client.selectors.collectionsOfKey(key);
+    const held = parts.find((one) => one.entries.some((entry) => entry.id === id));
+    if (held === undefined || rootOf(held) === HUB_ROOT) {
+        return viewSourceFile('collection', client.selectors.configMap(), key);
+    }
+    return fileUnder(held.file, client.fs.roots());
+}
+
+/**
  * The words saying why a line's buttons cannot write, or '' when they can: the collection file the
  * line names has unsaved text in a source tab.
  */
 export function fileBlock(
-    client: Pick<ClientState, 'selectors' | 'source'>
+    client: Pick<ClientState, 'selectors' | 'source' | 'fs'>
 ): (line: TickerItem) => string {
     return (line) => {
         const collection = line.target === undefined ? undefined : collectionOf(line.target);
-        if (collection === undefined) return '';
-        const file = viewSourceFile('collection', client.selectors.configMap(), collection);
+        if (collection === undefined || line.target === undefined) return '';
+        const file = collectionFile(client, collection, line.target.id);
         const unsaved = file !== null && client.source.unsavedFile(file.root, file.path);
         return blockedBy(file, unsaved, undefined);
     };
@@ -269,6 +287,7 @@ export function rowMaker(prefix: string, blocked: (line: TickerItem) => string =
                 label: name,
                 tail,
                 tone: daysTone(line.days),
+                ...(line.root === undefined ? {} : { mark: line.root }),
                 actions,
                 plain: !opens(line)
             };

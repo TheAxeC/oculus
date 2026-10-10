@@ -8,6 +8,7 @@
     // views/boards/focus/rows.ts, which the command center draws its own rows with. A group with no
     // line draws nothing, and a section with no group at all draws nothing either.
 
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
@@ -70,6 +71,10 @@
     }
 </script>
 
+{#snippet marked(text: string)}
+    <RootChip record={{ root: text }} />
+{/snippet}
+
 {#snippet group(label: string, glyph: string, rows: TickerRow[])}
     {#if rows.length > 0}
         <div class="grp">
@@ -79,7 +84,7 @@
                 {/if}
                 {label}
             </p>
-            <Ticker {rows} onpick={pick} onaction={run} reveal kept={view.kept} />
+            <Ticker {rows} onpick={pick} onaction={run} reveal kept={view.kept} {marked} />
         </div>
     {/if}
 {/snippet}

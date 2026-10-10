@@ -47,7 +47,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { auditSearch, cardIds, findingsOfKind, muteMessage } from '$lib/state/system/audit';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
     import { cardCursor, instanceFlag, instanceText } from '$lib/state/workbench/layout/instance';
     import { openSourceFile } from '../../shared/links/source-file';
@@ -146,7 +146,8 @@
                     dataCardToggle
                     label={finding.where}
                     title={t('audit.open_place_tip', finding.file)}
-                    onclick={() => openSourceFile(client, { root: HUB_ROOT, path: finding.file })}
+                    onclick={() =>
+                        openSourceFile(client, { root: rootOf(finding), path: finding.file })}
                 />
             </span>
         {:else if finding.where !== ''}

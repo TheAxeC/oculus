@@ -7,8 +7,10 @@
     // The tail's hue is a tone name, turned into `--c-<tone>-txt` on a custom property here, so the
     // only colours in the rules below are tokens. When a row's buttons are drawn, and the hover
     // words of a cut name, are reveal.svelte.ts's. A row's button the caller marks `disabled` is
-    // drawn and answers no press, with the caller's `title` as the reason.
+    // drawn and answers no press, with the caller's `title` as the reason. A row's `mark` is drawn
+    // by the caller's `marked` snippet, since this folder imports nothing of ui/controls.
 
+    import type { Snippet } from 'svelte';
     import Glyph from '../Glyph.svelte';
     import { createReveal, short } from './reveal.svelte';
     import type { TickerRow } from './ticker-rows';
@@ -23,9 +25,11 @@
         reveal?: boolean;
         /** The id of the one button a row keeps drawn, and nothing for a row that keeps none. */
         kept?: (row: TickerRow) => string | undefined;
+        /** How a row's `mark` is drawn, given the mark. A row's mark is not drawn without it. */
+        marked?: Snippet<[string]>;
     };
 
-    let { rows, onpick, onaction, reveal = false, kept }: Props = $props();
+    let { rows, onpick, onaction, reveal = false, kept, marked }: Props = $props();
 
     let list: HTMLUListElement | undefined = $state();
 
@@ -62,6 +66,9 @@
             onfocusin={(event) => shown.measureCut(event, row)}
         >
             <Glyph name={row.glyph} />
+            {#if row.mark !== undefined && marked !== undefined}
+                {@render marked(row.mark)}
+            {/if}
             {#if onpick !== undefined && row.id !== '' && row.plain !== true}
                 <button
                     type="button"

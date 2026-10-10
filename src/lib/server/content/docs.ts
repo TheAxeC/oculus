@@ -7,10 +7,10 @@
 // reaches the page.
 //
 // A request names one of three things. `project` with `name` is one of that project's own
-// documents; `hub` is a path relative to the research hub, which is what the `docs:` list of
-// config/layout.yml lists in the view catalogue; `manual` is the engine's own HELP.md and takes
-// no path.
-// Everything else is a 404 naming what was wrong.
+// documents, its id `<root key>:<id>` for a project of a hub other than the first; `hub` is a path
+// relative to the research hub, which is what the `docs:` list of config/layout.yml lists in the
+// view catalogue, and `root` beside it names the hub it is relative to; `manual` is the engine's
+// own HELP.md and takes no path. Everything else is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
@@ -53,8 +53,9 @@ import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import { renderDocumentParts } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
-import { isSideTier } from '../../data/helpers/hub-names.ts';
+import { hubId, isSideTier, splitHubId } from '../../data/helpers/hub-names.ts';
 import { HUB_ROOT } from '../files/files.ts';
+import type { HubTarget } from '../files/roots.ts';
 import type {
     Finding,
     DocPart,
@@ -75,7 +76,25 @@ export type DocTarget = {
     engine: string;
     config: PortfolioConfig;
     project?: (id: string) => Project | null;
+    /** The hubs other than the first, whose projects are named `<root key>:<id>`. */
+    hubs?: HubTarget[];
 };
+
+/**
+ * The target for the hub served under `root`: the target itself for the first hub, and for another
+ * hub its folder, its scan rules and a project lookup that takes the id inside that hub.
+ */
+function within(into: DocTarget, root: string): DocTarget | null {
+    if (root === HUB_ROOT) return into;
+    const one = (into.hubs ?? []).find((held) => held.key === root);
+    if (one === undefined) return null;
+    return {
+        ...into,
+        hub: one.hub,
+        config: one.config,
+        project: (id) => into.project?.(hubId(root, id)) ?? null
+    };
+}
 
 /**
  * The names this route serves: the Markdown of PROJECT_DOCS. The other entries of that list are a
@@ -434,19 +453,24 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
             { status: 404, headers: NO_STORE }
         );
     }
-    const folder = folderOf(into, id);
-    if (folder === null)
+    const named = splitHubId(
+        id,
+        (into.hubs ?? []).map((one) => one.key)
+    );
+    const owner = within(into, named.root);
+    const folder = owner === null ? null : folderOf(owner, named.id);
+    if (owner === null || folder === null)
         return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
 
-    const path = join(into.hub, folder, name);
-    if (escapes(path, into.hub))
+    const path = join(owner.hub, folder, name);
+    if (escapes(path, owner.hub))
         return json(
             { error: 'the document is not inside the hub' },
             { status: 404, headers: NO_STORE }
         );
 
-    const base = { root: HUB_ROOT, folder: dirname(join(folder, name)) };
-    return answer(into, path, held, (text) => renderMarkdown(text, base));
+    const base = { root: named.root, folder: dirname(join(folder, name)) };
+    return answer(owner, path, held, (text) => renderMarkdown(text, base));
 }
 
 /**
@@ -457,7 +481,16 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
  * a path climbing out of it is a 404 and nothing is opened. The hub's own files are already served
  * to this page by api/file under the `hub` root; this is the same ground, rendered as prose.
  */
-export function renderHubDoc(into: DocTarget, path: string, held = ''): Response {
+export function renderHubDoc(
+    target: DocTarget,
+    path: string,
+    held = '',
+    root = HUB_ROOT
+): Response {
+    const into = within(target, root);
+    if (into === null) {
+        return json({ error: `no hub served as ${root}` }, { status: 404, headers: NO_STORE });
+    }
     if (path === '' || !path.endsWith('.md')) {
         return json(
             { error: `not a document this route serves: ${path}` },
@@ -470,7 +503,7 @@ export function renderHubDoc(into: DocTarget, path: string, held = ''): Response
             { error: 'the document is not inside the hub' },
             { status: 404, headers: NO_STORE }
         );
-    const base = { root: HUB_ROOT, folder: dirname(path) };
+    const base = { root, folder: dirname(path) };
     const own = ownScope(into.engine, full);
     return answer(into, full, held, (text) => renderMarkdown(text, base, own));
 }
@@ -614,7 +647,8 @@ export function handleDocs(request: Request, into: DocTarget): Response {
     const held = request.headers.get('if-none-match') ?? '';
     if (url.searchParams.has(MANUAL_PARAM)) return renderManual(into, held);
     const hub = url.searchParams.get(HUB_ROOT);
-    if (hub !== null) return renderHubDoc(into, hub, held);
+    if (hub !== null)
+        return renderHubDoc(into, hub, held, url.searchParams.get('root') ?? HUB_ROOT);
     return renderDoc(
         into,
         url.searchParams.get('project') ?? '',

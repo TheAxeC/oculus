@@ -48,9 +48,18 @@ export type FsEntry = {
 /**
  * One root as /api/fs answers it: `fixed` is a configured root, which a removal refuses, and `real`
  * is the folder with every symlink resolved, which is how a repository's folder is written; it is
- * empty for a folder that does not exist and absent where an answer carries none.
+ * empty for a folder that does not exist and absent where an answer carries none. `hub` is true on
+ * a root built as a hub of its own.
  */
-export type FsRoot = { key: string; dir: string; fixed: boolean; real?: string };
+export type FsRoot = {
+    key: string;
+    dir: string;
+    fixed: boolean;
+    real?: string;
+    hub?: true;
+    /** Its file system reads a path in another letter case as the same path. */
+    folds?: true;
+};
 
 /**
  * What a listing asks to see beside what the tree offers by default: the dotfiles and the build

@@ -6,14 +6,14 @@
 // folder itself). Both resolve first, so a `..` is worked out before the test and a sibling whose
 // name starts with the folder's is never taken for a child of it. A folder of `/` holds only
 // itself, since no resolved path below it starts with `//`. `under` asks the same of a list of
-// folders for a real path, each folder compared as written and as resolved and the path also in
-// the operating system's own spelling, so another letter case of a private folder is that folder:
-// it tells the folders this machine keeps to itself (data/helpers/files/private-folders.ts) from
-// the rest. It sits in
-// server/core, the bottom of the server's folder order, so every server module reads the one rule
-// from here.
+// folders for a real path, each folder compared as written and as resolved and the path also in the
+// operating system's own spelling, so another letter case of a private folder is that folder: it
+// tells the folders this machine keeps to itself (data/helpers/files/private-folders.ts) from the
+// rest. `foldsCase` tells whether a folder's file system reads another letter case as the same
+// path, which the workspaces answer reports for the page. It sits in server/core, the bottom of the
+// server's folder order, so every server module reads the one rule from here.
 
-import { realpathSync } from 'node:fs';
+import { realpathSync, statSync } from 'node:fs';
 import { isAbsolute, resolve, sep } from 'node:path';
 
 /** Whether the resolved path is the resolved folder or lies below it. */
@@ -64,5 +64,26 @@ export function realPath(path: string, native = false): string | null {
         return native ? realpathSync.native(path) : realpathSync(path);
     } catch {
         return null;
+    }
+}
+
+/**
+ * Whether the file system holding a folder reads a path written in another letter case as the same
+ * path: the folder's real path with its last letter in the other case names the same folder. A
+ * folder that is not there, and one whose path holds no letter, answers false.
+ */
+export function foldsCase(dir: string): boolean {
+    const real = realPath(dir, true);
+    if (real === null) return false;
+    const swapped = real.replace(/[A-Za-z](?=[^A-Za-z]*$)/, (letter) =>
+        letter === letter.toLowerCase() ? letter.toUpperCase() : letter.toLowerCase()
+    );
+    if (swapped === real) return false;
+    try {
+        const one = statSync(real);
+        const other = statSync(swapped);
+        return one.dev === other.dev && one.ino === other.ino;
+    } catch {
+        return false;
     }
 }

@@ -92,7 +92,7 @@ function glyphReaders(engine: string): Set<string> {
 /** The roots in the hub layer's sources.yml with their findings, as the server reads them. */
 function rootsOfHub(hub: string): ReturnType<typeof readRoots> {
     const { config, from } = loadConfig(engineDir(), { hub });
-    return readRoots(config, sourceFile(engineDir(), hub, from, 'roots'));
+    return readRoots(config, sourceFile(engineDir(), hub, from, 'roots'), hub);
 }
 
 /** Every description key opens with this, which is what makes an orphan one findable. */
@@ -280,6 +280,7 @@ describe("oculus's own config directory", () => {
         'views/shared/commands.yml',
         'views/shared/diagram.yml',
         'views/shared/folder-files.yml',
+        'views/shared/hubs.yml',
         'views/sources/data.yml',
         'views/sources/doc.yml',
         'views/sources/document.yml',

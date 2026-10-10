@@ -3,7 +3,7 @@
 // the schemas, and the one-line description each file has in the text catalog.
 
 import { joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
-import { privateFolders } from '../../../data/helpers/files/private-folders.ts';
+import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { hasText, lookup } from '../../shared/words/text.ts';
 import { ENGINE_ROOT, HUB_ROOT } from '../../sources/explorer/view/place.ts';
 
@@ -18,23 +18,26 @@ const CONFIG_SUFFIX = '.yml';
 export const LOCAL_NAME = 'local.yml';
 
 /**
- * Whether a file of a served root is in a folder that is private to the machine: under the hub's
- * `secrets` folder or under `~/.oculus`. The folders are the relay's
+ * Whether a file of a served root is in a folder that is private to the machine: under the
+ * `secrets` folder of any hub or under `~/.oculus`. The folders are the relay's
  * (data/helpers/files/private-folders.ts); the roots are as the file listing answers them, with
- * absolute folders, and `home` is the machine's home folder as that listing gives it. No edit of a
- * language server is made in such a file.
+ * absolute folders, and `home` is the machine's home folder as that listing gives it. A root whose
+ * file system folds letter case (`folds`, which the listing reports) reads `Secrets` as `secrets`,
+ * so the file is compared with the folders in one letter case. No edit of a language server is made
+ * in such a file.
  */
 export function isPrivateFile(
     file: { root: string; path: string },
-    roots: readonly { key: string; dir: string }[],
+    roots: readonly { key: string; dir: string; hub?: boolean; folds?: boolean }[],
     home: string
 ): boolean {
     const root = roots.find((one) => one.key === file.root);
     if (root === undefined) return false;
-    const hub = roots.find((one) => one.key === HUB_ROOT);
-    const absolute = joinPath(root.dir, file.path);
-    return privateFolders(hub?.dir ?? null, home).some(
-        (folder) => pathUnder(folder, absolute) !== null
+    const first = roots.find((one) => one.key === HUB_ROOT);
+    const same = (path: string): string => (root.folds === true ? path.toLowerCase() : path);
+    const absolute = same(joinPath(root.dir, file.path));
+    return privateFolders(hubDirs(first?.dir ?? null, roots), home).some(
+        (folder) => pathUnder(same(folder), absolute) !== null
     );
 }
 

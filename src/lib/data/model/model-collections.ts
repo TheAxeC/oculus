@@ -1,7 +1,7 @@
 // Layer 1, data. Editable collections, generated feeds and the career record.
 // The portfolio aggregate imports these leaf types while data/model/index.ts is the facade.
 
-import type { Id } from './model-entities.ts';
+import type { Id, Rooted } from './model-entities.ts';
 
 /**
  * One entry of one collection, as data/snapshot/normalise.ts fills it from a RawEntry. `id` is the
@@ -10,7 +10,7 @@ import type { Id } from './model-entities.ts';
  * so a view can render a collection from its file's own `schema` without the model naming each
  * field.
  */
-export type Entry = {
+export type Entry = Rooted & {
     id: Id;
     title: string;
     fields: Record<string, unknown>;
@@ -69,7 +69,7 @@ export type When = Record<string, string | string[]>;
  * (venues, pillars, domains, funding and data), the collection being what their entries are
  * edited as. The data file lists its records under `datasets:`; the others use `entries:`.
  */
-export type Collection = {
+export type Collection = Rooted & {
     /** The key from the `collections:` list, `funding` or `events`. */
     id: Id;
     title: string;
@@ -91,7 +91,7 @@ export type Collection = {
  * themselves reported, carried so that validate can pass them through rather than re-derive them.
  */
 /** One live lead of the position scout's feed, as the command center counts it down. */
-export type Lead = {
+export type Lead = Rooted & {
     title: string;
     /** The ISO date inside the feed's own `deadline:` text, and null when it holds none. */
     deadline: string | null;
@@ -114,6 +114,9 @@ export type Feeds = {
     scout: { lastRun: string | null } | null;
     linkedin: { lastPost: string | null } | null;
 };
+
+/** One entry of a feed: the id a write names it by and the file it stands in. */
+export type FeedItem = { file: string; id: string };
 
 /** The generated YAML and Markdown feeds delivered together on the feeds channel. */
 export type FeedKind = 'radar' | 'leads' | 'linkedin';

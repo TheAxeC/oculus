@@ -346,8 +346,8 @@ function rootPersonal(
  * Read every side project: the folders of the hub's side-projects tier and the `.oculus` manifests
  * of the roots. Nothing here shares a code path with readManifests, so a side project is never a
  * research record. Each result is a raw manifest with where it came from; what its fields hold is
- * checked and shaped by snapshot/normalise-personal.ts, and the Personal board and the Focus ticker
- * read the records that make.
+ * checked and shaped by snapshot/normalise-parts/personal.ts, and the Personal board and the Focus
+ * ticker read the records that make.
  */
 export function readPersonal(
     hub: string,

@@ -71,6 +71,8 @@ import {
 } from './deposit-git.ts';
 import { REFS_FORMAT, statusRecords } from '../core/git/parse.ts';
 import { target, writeManifest, type WriteTarget } from '../edit/writes.ts';
+import { owned } from '../edit/writes/hubs.ts';
+import { HUB_ROOT, hubId } from '../../data/helpers/hub-names.ts';
 import { below } from '../core/paths.ts';
 import { words } from '../core/words.ts';
 
@@ -245,8 +247,9 @@ function depositFor(
     text?: Record<string, string>
 ): Deposit | null {
     const { mirrors, into, where } = settings(options, text);
-    const { manifests } = readManifests(into.hub, into.config.scan, into.config.text);
-    const manifest = manifests.find((one) => one.id === id);
+    const { into: at, id: inner } = owned(into, id);
+    const { manifests } = readManifests(at.hub, at.config.scan, at.config.text);
+    const manifest = manifests.find((one) => one.id === inner);
     if (manifest === undefined) return null;
     const block = codeFieldsShape.safeParse(manifest.code_availability);
     const code = block.success ? block.data : codeFieldsShape.parse({});
@@ -256,7 +259,7 @@ function depositFor(
     // repository that exists and push would create a second one.
     const url = code.url;
     const named = code.repo;
-    const repo = named !== '' ? named : url !== '' ? nameOf(url) : id;
+    const repo = named !== '' ? named : url !== '' ? nameOf(url) : inner;
     const description = code.description;
     return {
         id,
@@ -276,11 +279,12 @@ function depositFor(
     };
 }
 
-/** Every project id the hub holds. POST /api/deposit refuses any other id with a 404. */
+/** Every project id the hubs hold; a hub other than the first prefixes its own with its key. */
 export function projectIds(options: DepositOptions = {}): string[] {
     const { into } = settings(options);
-    return readManifests(into.hub, into.config.scan, into.config.text).manifests.map(
-        (one) => one.id
+    const held = [{ key: HUB_ROOT, ...into }, ...(into.hubs ?? [])];
+    return held.flatMap(({ key, hub, config }) =>
+        readManifests(hub, config.scan, config.text).manifests.map((one) => hubId(key, one.id))
     );
 }
 
@@ -432,7 +436,8 @@ export async function push(
     }
 
     const status = deposit.visibility === 'private' ? 'review-anon' : 'deposited';
-    const outcome = writeManifest(into.hub, into.config, into.sideProjects(), id, {
+    const { into: at, id: inner } = owned(into, id);
+    const outcome = writeManifest(at.hub, at.config, at.sideProjects(), inner, {
         'code_availability.status': status,
         'code_availability.url': url,
         'code_availability.date': today()

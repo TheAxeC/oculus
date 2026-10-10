@@ -36,6 +36,7 @@ import { z } from 'zod';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import { ROOT_FOLDER, isSideTier } from '../../../data/helpers/hub-names.ts';
 import { readManifests } from '../../../data/sources/manifests.ts';
+import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
@@ -47,7 +48,7 @@ import { insertRemoved, insertReplaced } from './restore.ts';
 import type { ChangeRecord, RemovedText, ReplacedText } from '../../core/changes.ts';
 import type { Refusal, SetFieldsResult } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import type { PortfolioConfig, SideProject } from '../../../data/model/index.ts';
+import type { PortfolioConfig, SchemaField, SideProject } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below } from '../../core/paths.ts';
 
@@ -96,6 +97,66 @@ const fieldTypesShape = z
  */
 export function fieldTypes(schema: unknown): Record<string, string> {
     return fieldTypesShape.parse(schema);
+}
+
+/** The `from:` of a manifest field: one source or a list of them. */
+const fromShape = z
+    .union([z.string().transform((one) => [one]), z.array(z.string())])
+    .optional()
+    .catch(undefined);
+
+/** One field of a schema with its type and `from:`, in the `fields` map or a list row. */
+const sourcedShape = z.looseObject({ type: z.string(), from: fromShape });
+
+/**
+ * The fields of a manifest schema in the shape the walk of data/snapshot/hubs/references.ts reads,
+ * from the `fields` map (`manifest_schema`) or the list of rows (`side_project_schema`).
+ */
+const schemaFieldsShape = z
+    .union([
+        z
+            .object({ fields: mapShape })
+            .transform((schema) => sourced(Object.entries(schema.fields))),
+        z
+            .array(z.unknown())
+            .transform((rows) =>
+                sourced(rows.map((row) => [isMap(row) ? fieldNameOf(row.field) : '', row]))
+            )
+    ])
+    .catch(() => []);
+
+/** A row's field name, and '' for one that is not text. */
+function fieldNameOf(value: unknown): string {
+    return typeof value === 'string' ? value : '';
+}
+
+/** The named entries that read as a field with a type, each as a schema field. */
+function sourced(entries: [string, unknown][]): SchemaField[] {
+    const out: SchemaField[] = [];
+    for (const [field, entry] of entries) {
+        const read = sourcedShape.safeParse(entry);
+        if (field === '' || !read.success) continue;
+        const { type, from } = read.data;
+        out.push(from === undefined ? { field, type } : { field, type, from });
+    }
+    return out;
+}
+
+/**
+ * The fields with the hub's key and colon taken off every value that names a record of the hub (a
+ * `from:` of the manifest schema naming a registry or the projects), since the portfolio gives
+ * those values the key (data/snapshot/hubs/merge.ts) and the hub's own manifest holds the ids it
+ * gave them. A value without the prefix is kept as it is.
+ */
+function hubOwnFields(
+    schema: unknown,
+    fields: Record<string, unknown>,
+    key: string
+): Record<string, unknown> {
+    const lead = `${key}:`;
+    return throughSchema(schemaFieldsShape.parse(schema), fields, (value) =>
+        value.startsWith(lead) ? value.slice(lead.length) : value
+    );
 }
 
 /** The words a checkbox is true in: what a form posts, and what YAML already holds. */
@@ -391,16 +452,20 @@ function putBack(
  * write rewrote as a map: when the file still holds the lines that write left, the note goes back
  * as the text it was, and otherwise the value is written. Every check of the write is made first,
  * so a record that fails one is refused as any other.
+ *
+ * `hubKey` is the key of the hub the manifest belongs to when it is not the first hub: the values
+ * of the fields that name records come with that key in front, and are written without it.
  */
 export function writeManifest(
     hub: string,
     config: PortfolioConfig,
     sides: readonly SideProject[],
     id: string,
-    fields: Record<string, unknown>,
+    given: Record<string, unknown>,
     reading: ValueReading = 'form',
     removed?: unknown,
-    replaced?: unknown
+    replaced?: unknown,
+    hubKey?: string
 ): WriteOutcome {
     const manifest = homeOf(hub, config, sides, id);
     if (manifest === null) return { found: false, changed: [], refused: [] };
@@ -412,6 +477,7 @@ export function writeManifest(
         };
     }
 
+    const fields = hubKey === undefined ? given : hubOwnFields(manifest.schema, given, hubKey);
     const named = new Set(fieldNames(manifest.schema));
     // The parents of the dotted names, `followup` for `followup.do` and `followup.after`: a group
     // the schema names by its children may be cleared whole by its parent name, since the file may

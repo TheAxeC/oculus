@@ -16,7 +16,7 @@ import {
     optionalTextShape,
     readAs
 } from '../../../data/shapes/shapes.ts';
-import { HUB_ROOT } from '../../sources/fs.ts';
+import { rootOf } from '../../../data/helpers/hub-names.ts';
 import { t } from '../../shared/words/text.ts';
 import { statusRows, type StatusRow } from '../../shared/words/status-rows.ts';
 import { UNKNOWN_TONE } from '../../shared/words/tones.ts';
@@ -163,7 +163,7 @@ export function sourceLine(project: SideProject): string {
 export function manifestTarget(project: SideProject): SideTarget & { label: string } {
     if (project.source.kind === 'hub') {
         return {
-            root: HUB_ROOT,
+            root: rootOf(project),
             path: `${project.source.folder}/project.yml`,
             label: project.source.folder.split('/').pop() ?? project.source.folder
         };
@@ -174,7 +174,7 @@ export function manifestTarget(project: SideProject): SideTarget & { label: stri
 /** What Show in Files selects: a hub side project's folder, a repository's top folder. */
 export function folderTarget(project: SideProject): SideTarget {
     return project.source.kind === 'hub'
-        ? { root: HUB_ROOT, path: project.source.folder }
+        ? { root: rootOf(project), path: project.source.folder }
         : { root: project.source.key, path: '' };
 }
 

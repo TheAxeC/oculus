@@ -9,8 +9,10 @@
 // nothing.
 //
 // The folder walked is the reader's, never the request's: the id names a manifest readManifests
-// already found under the hub's own scan directories, and the folder is joined to the hub and
-// checked against it again before anything is read. A request naming anything else is a 404.
+// already found under the scan directories of the hub the id names (`<root key>:<id>` for a hub
+// other than the first), and the folder is joined to that hub and checked against it again before
+// anything is read. A request naming anything else is a 404. The answer's `folder` is relative to
+// the project's own hub.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
@@ -19,10 +21,12 @@ import { z } from 'zod';
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { portfolioConfigFrom } from '../../data/index.ts';
+import { splitHubId } from '../../data/helpers/hub-names.ts';
 import { loadLocal } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import type { PortfolioConfig } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
+import { hubTargets, type HubTarget } from './roots.ts';
 import { anyNumberShape } from '../../data/shapes/shapes.ts';
 
 /**
@@ -31,6 +35,8 @@ import { anyNumberShape } from '../../data/shapes/shapes.ts';
 export type FilesTarget = {
     hub: string;
     config: PortfolioConfig;
+    /** The hubs other than the first, whose projects are named `<root key>:<id>`. */
+    hubs?: HubTarget[];
     /** The merged config of config/*.yml, read for `file_index` and nothing else. */
     settings: Record<string, unknown>;
 };
@@ -180,13 +186,22 @@ function walk(root: string, dir: string, ext: string[], rows: FileRow[]): void {
  */
 export function listFiles(into: FilesTarget, id: string): Response {
     if (id === '') return json({ error: 'no project id' }, { status: 400, headers: NO_STORE });
-    const { manifests } = readManifests(into.hub, into.config.scan, into.config.text);
-    const manifest = manifests.find((one) => one.id === id);
+    const hubs = into.hubs ?? [];
+    const named = splitHubId(
+        id,
+        hubs.map((one) => one.key)
+    );
+    const owner = hubs.find((one) => one.key === named.root) ?? {
+        hub: into.hub,
+        config: into.config
+    };
+    const { manifests } = readManifests(owner.hub, owner.config.scan, owner.config.text);
+    const manifest = manifests.find((one) => one.id === named.id);
     if (manifest === undefined)
         return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
 
-    const folder = join(into.hub, manifest.folder);
-    if (!inside(folder, into.hub))
+    const folder = join(owner.hub, manifest.folder);
+    if (!inside(folder, owner.hub))
         return json(
             { error: 'the folder is not inside the hub' },
             { status: 404, headers: NO_STORE }
@@ -203,9 +218,11 @@ export function listFiles(into: FilesTarget, id: string): Response {
  * from, loadLocal and portfolioConfigFrom, rather than from a second reader of local.yml.
  */
 export function filesTarget(engine: string, settings: Record<string, unknown>): FilesTarget {
+    const local = loadLocal(engine);
     return {
-        hub: loadLocal(engine).hub,
+        hub: local.hub,
         config: portfolioConfigFrom(settings),
+        hubs: hubTargets({ config: settings, engine, local }),
         settings
     };
 }

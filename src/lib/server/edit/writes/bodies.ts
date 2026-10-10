@@ -74,17 +74,21 @@ export type ReorderWrite = { kind: 'reorder'; collection: string; order: string[
 /** One entry of one collection taken out of its file, by the id the reader gave it. */
 export type DeleteEntryWrite = { kind: 'delete-entry'; collection: string; id: string };
 
-/** One allowed scalar field of one generated feed entry. */
+/**
+ * One allowed scalar field of one generated feed entry. The entry is named by its own identity and
+ * by the key of the hub whose feed holds it in `root`, and an absent `root` is the first hub.
+ */
 export type FeedFieldWrite = {
     kind: 'feed-field';
     feed: string;
     id: string;
+    root?: string;
     field: string;
     value: string | number | boolean | null;
 };
 
-/** One generated feed entry removed by its feed-specific identity. */
-export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string };
+/** One generated feed entry removed by its feed-specific identity, in the hub `root` names. */
+export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string; root?: string };
 
 /** One position lead appended from the feed file's own form schema. */
 export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> };
@@ -135,9 +139,13 @@ export type DeckEditWrite =
     | { kind: 'deck-edit'; act: 'create'; root: string; folder: string; title: string }
     | { kind: 'deck-edit'; act: 'outline'; root: string; file: string };
 
-/** One LinkedIn idea stub and one idea promoted to a numbered post. */
+/**
+ * One LinkedIn idea stub and one idea promoted to a numbered post. The post names the hub whose
+ * LinkedIn folder holds the idea in `root`, the key of its `roots:` entry, and an absent `root` is
+ * the first hub.
+ */
 export type LinkedinIdeaWrite = { kind: 'linkedin-idea'; title: string; category: string };
-export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string };
+export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string; root?: string };
 
 /** One audit finding parked, or brought back, by the signature the scan gave it. */
 export type AuditMuteWrite = { kind: 'audit-mute'; signature: string; muted: boolean };
@@ -263,6 +271,7 @@ const feedFieldShape = z.object({
     kind: z.literal('feed-field'),
     feed: wordShape,
     id: wordShape,
+    root: z.string().optional(),
     field: wordShape,
     value: feedValueShape
 }) satisfies z.ZodType<FeedFieldWrite>;
@@ -270,7 +279,8 @@ const feedFieldShape = z.object({
 const feedDeleteShape = z.object({
     kind: z.literal('feed-delete'),
     feed: wordShape,
-    id: wordShape
+    id: wordShape,
+    root: z.string().optional()
 }) satisfies z.ZodType<FeedDeleteWrite>;
 
 const leadAddShape = z.object({
@@ -292,7 +302,8 @@ const linkedinIdeaShape = z.object({
 
 const linkedinPostShape = z.object({
     kind: z.literal('linkedin-post'),
-    file: z.string()
+    file: z.string(),
+    root: z.string().optional()
 }) satisfies z.ZodType<LinkedinPostWrite>;
 
 const deckSlidesShape = z

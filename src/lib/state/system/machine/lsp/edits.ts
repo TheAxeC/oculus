@@ -22,7 +22,7 @@
 //
 // The plan refuses the whole edit, with the notice that names the file, when
 // - a file is a library file, outside the served roots, under a `node_modules` or dot folder, or in
-//   the hub's `secrets` folder or `~/.oculus`,
+//   the `secrets` folder of every hub or `~/.oculus`,
 // - an entry creates, renames or deletes a file, or one file is named twice,
 // - a file it names is open in a tab of another page (asked of the relay), whether or not a tab of
 //   this page holds it too,
@@ -90,7 +90,10 @@ export type LspEditsParts = {
     write: (files: LspEditFile[]) => Promise<Outcome>;
     /** The roots the file browser serves, which decide whether two names are one file on disk. */
     roots: () => readonly RootFolder[];
-    /** Whether a file is in a folder no edit is made in: the hub's `secrets` and `~/.oculus`. */
+    /**
+     * Whether a file is in a folder no edit is made in: the `secrets` folder of every hub and
+     * `~/.oculus`.
+     */
     withheld: (place: LspPlace) => boolean;
 };
 

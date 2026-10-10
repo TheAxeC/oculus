@@ -16,6 +16,7 @@
 // handler and by the terminal, which keeps those keys from the program.
 
 import { z } from 'zod';
+import { HUB_ROOT, bareId, rootOf } from '../../data/helpers/hub-names.ts';
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
 import {
     LSP_CHOICES,
@@ -24,7 +25,7 @@ import {
     type LspChoiceKind
 } from '../../data/prose/lsp-servers.ts';
 import { filledTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
-import { feedIdents, nestedStrings } from '../feeds/idents.ts';
+import { feedIdents, feedRoot, nestedStrings } from '../feeds/idents.ts';
 import { pickerLine, type PickRefusal } from '../sources/explorer/acts/folders.ts';
 import { refusal } from '../sources/explorer/acts/refusal.ts';
 import { workspaceMatches, type WorkspaceChoice } from '../sources/explorer/acts/workspaces.ts';
@@ -71,9 +72,17 @@ export type PaletteItem = {
     text: string;
     view: string;
     state?: Record<string, unknown>;
-    /** The keys a result is known by, drawn beside it: an editor action's keys or old chord. */
+    /**
+     * What is drawn beside a result: an editor action's keys or old chord, or the key of the hub a
+     * record of a hub other than the first is of, so two hubs' records of one title are told apart.
+     */
     hint?: string;
 };
+
+/** The hint of a record: the key of its hub when that is not the first, else none. */
+function hubHint(root: string): { hint?: string } {
+    return root === HUB_ROOT ? {} : { hint: root };
+}
 
 export type PaletteCommand = {
     name:
@@ -147,7 +156,8 @@ export function buildIndex(
                 title: project.title,
                 text: nestedStrings(fields).join(' '),
                 view: 'project',
-                state: { id: project.id, label: project.short ?? project.title }
+                state: { id: project.id, label: project.short ?? project.title },
+                ...hubHint(rootOf(project))
             });
         }
         for (const collection of Object.values(snapshot.entities.collections)) {
@@ -158,8 +168,9 @@ export function buildIndex(
                     label: entry.title || entry.id,
                     title: entry.title || entry.id,
                     text: nestedStrings(entry.fields).join(' '),
-                    view: collection.id,
-                    state: { reveal: entry.id }
+                    view: bareId(collection),
+                    state: { reveal: entry.id },
+                    ...hubHint(rootOf(collection))
                 });
             }
         }
@@ -178,7 +189,8 @@ export function buildIndex(
                 title: label,
                 text: nestedStrings(entry).join(' '),
                 view: kind,
-                state: revealState(kind, id)
+                state: revealState(kind, id),
+                ...hubHint(feedRoot(entry))
             });
         }
     }

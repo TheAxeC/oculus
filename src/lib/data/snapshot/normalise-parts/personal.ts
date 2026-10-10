@@ -8,19 +8,19 @@
 // (`deadline`, `subtasks`, `followup`, `snooze`, `priority`, `pin`, `short`, `latest`,
 // `collaborators`, `waiting-on` and `related`), under the names and in the shapes the research
 // manifest gives them, read by the same functions. Each key is read for its own type, and a value
-// of the wrong type costs that field alone: the card is drawn, with the field empty or left
-// out of the record, and one finding names what was wrong. A key outside the sixteen is named and
-// not read, which is how a research key that a side project does not take (`venue`, `type`, `id`)
-// is told apart from the fields the board draws.
+// of the wrong type costs that field alone: the card is drawn, with the field empty or left out of
+// the record, and one finding names what was wrong. A key outside the sixteen is named and not
+// read, which is how a research key that a side project does not take (`venue`, `type`, `id`) is
+// told apart from the fields the board draws.
 
 import { z } from 'zod';
-import type { TextCatalog } from '../helpers/finding-text.ts';
-import { findingText } from '../helpers/finding-text.ts';
-import type { Finding, PersonalSource, RawPersonal, SideProject } from '../model/index.ts';
-import { isMap, str, strings } from '../helpers/guards.ts';
-import { readAs } from '../shapes/shapes.ts';
-import { compact } from './compact.ts';
-import { followups, subtasks } from './normalise-plans.ts';
+import type { TextCatalog } from '../../helpers/finding-text.ts';
+import { findingText } from '../../helpers/finding-text.ts';
+import type { Finding, PersonalSource, RawPersonal, SideProject } from '../../model/index.ts';
+import { isMap, str, strings } from '../../helpers/guards.ts';
+import { readAs } from '../../shapes/shapes.ts';
+import { compact } from '../compact.ts';
+import { followups, subtasks } from './plans.ts';
 
 /** A field that is a text, and a field that is a list of anything. */
 const textShape = z.string();
@@ -107,8 +107,8 @@ function flagField(
 
 /**
  * A field that is a list of texts, read by `strings` as the research manifest's is: the entries
- * that are texts are kept, and a value that is no list, or a list with an entry that is no text,
- * is one finding naming the field. Absent and null hold nothing.
+ * that are texts are kept, and a value that is no list, or a list with an entry that is no text, is
+ * one finding naming the field. Absent and null hold nothing.
  */
 function textsField(
     data: Record<string, unknown>,
@@ -145,8 +145,8 @@ function planField<T>(
 }
 
 /**
- * The links of a manifest: the entries that are texts. A value that is no list, and each entry
- * that is no text, is one finding on `links`.
+ * The links of a manifest: the entries that are texts. A value that is no list, and each entry that
+ * is no text, is one finding on `links`.
  */
 function linkList(data: Record<string, unknown>, problems: Problem[]): string[] {
     const value = data.links;
@@ -263,8 +263,8 @@ function wording(problem: Problem, catalog: TextCatalog): string {
 }
 
 /**
- * The findings of every raw manifest, each worded from the catalog and carrying the manifest's
- * path and the key it is about, sorted by path then key so two runs agree.
+ * The findings of every raw manifest, each worded from the catalog and carrying the manifest's path
+ * and the key it is about, sorted by path then key so two runs agree.
  */
 export function personalFindings(
     raws: RawPersonal[],

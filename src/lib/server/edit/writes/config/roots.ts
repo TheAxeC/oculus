@@ -72,21 +72,43 @@ export type RootsOutcome =
               | 'unwritable';
       };
 
-/** One entry of the list: a key and the dir as the file writes it. */
-export type RootItem = { key: string; dir: string };
+/**
+ * One entry of the list: a key, the dir as the file writes it, and `hub: true` when the root is
+ * built as a hub of its own.
+ */
+export type RootItem = { key: string; dir: string; hub?: true };
 
 /** The one key of the hub's sources.yml layer this write reads. */
 const sourcesShape = z.object({ [ROOTS]: z.unknown().optional() }).catch(() => ({}));
 
-/** An entry of the list that is a pair of text, and nothing else. */
-const itemShape = z.object({ key: z.string().min(1), dir: z.string().min(1) });
+/**
+ * An entry of the list that is a pair of text, with `hub: true` when it says so; any other `hub`
+ * value is left out, since the root is then read as a plain one.
+ */
+const itemShape = z.object({
+    key: z.string().min(1),
+    dir: z.string().min(1),
+    hub: z.literal(true).optional().catch(undefined)
+});
+
+/** An entry as the list holds it, with `hub` only where it is true. */
+function itemOf(one: z.infer<typeof itemShape>): RootItem {
+    return one.hub === true
+        ? { key: one.key, dir: one.dir, hub: true }
+        : { key: one.key, dir: one.dir };
+}
+
+/**
+ * The list a change record holds: its entries as RootItems, none for anything that is not a list.
+ */
+export const rootItemsShape = z.catch(z.array(itemShape.transform(itemOf)), () => []);
 
 /** The entries of a `roots:` value that are a pair of text, any other entry left out. */
 export function rootItemsOf(held: unknown): RootItem[] {
     if (!Array.isArray(held)) return [];
     return held.flatMap((item) => {
         const one = itemShape.safeParse(item);
-        return one.success ? [{ key: one.data.key, dir: one.data.dir }] : [];
+        return one.success ? [itemOf(one.data)] : [];
     });
 }
 
@@ -185,7 +207,8 @@ function dirText(dir: string): string {
 
 /** One entry as the line the file carries: a flow map. */
 function itemText(item: RootItem): string {
-    return `{ key: ${dirText(item.key)}, dir: ${dirText(item.dir)} }`;
+    const hub = item.hub === true ? ', hub: true' : '';
+    return `{ key: ${dirText(item.key)}, dir: ${dirText(item.dir)}${hub} }`;
 }
 
 /** The folder as sources.yml writes it: `~/...` under the home folder, else the whole path. */
@@ -232,7 +255,7 @@ export function writeRoots(
     const before = rootsOf(source);
     const written = writtenItems(source);
     const items = wanted.map((one) => {
-        const same = before.find((held) => held.key === one.key && held.dir === one.dir);
+        const same = before.find((held) => isDeepStrictEqual(held, one));
         return same === undefined ? itemText(one) : (written.get(one.key) ?? itemText(one));
     });
     const edited = setItems(source, null, ROOTS, items);

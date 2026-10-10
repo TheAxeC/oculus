@@ -9,7 +9,14 @@ import type { Snapshot } from '../../../data/model/index.ts';
 import { daysUntil } from './index.ts';
 import { focusLabel, setting, snoozed } from '../focus.ts';
 import { manifestTarget, sideLive } from './personal.ts';
-import { GLYPHS, dueFollowups, item, subtaskLines, type TickerItem } from './ticker-lines.ts';
+import {
+    GLYPHS,
+    dueFollowups,
+    item,
+    rootMark,
+    subtaskLines,
+    type TickerItem
+} from './ticker-lines.ts';
 
 /**
  * The lines of the live side projects, split as the ticker needs them. `dated` holds the deadlines
@@ -42,6 +49,7 @@ export function sideLines(
         if (days !== null && days <= horizon) {
             const line = item('side', GLYPHS.side, label, days, {
                 side,
+                ...rootMark(project),
                 target: { kind: 'manifest', id: project.id }
             });
             if (snoozed(project.snooze, now)) out.asleep.push({ ...line, snoozed: true });
@@ -54,6 +62,7 @@ export function sideLines(
                 days: due,
                 line: item('followup', GLYPHS.followup, `${label} - ${note.do}`, due, {
                     side,
+                    ...rootMark(project),
                     target: { kind: 'followup', id: project.id }
                 })
             });
@@ -64,7 +73,7 @@ export function sideLines(
             label,
             '',
             now,
-            { side },
+            { side, ...rootMark(project) },
             { kind: 'manifest', id: project.id }
         )) {
             if (line.snoozed) out.asleep.push(line);

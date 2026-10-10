@@ -1,5 +1,5 @@
 // Layer 2, route tests. What the write endpoint does with a request from an app's frame: the gate
-// (lib/server/edit/writes/app-gate.ts) that refuses a write whose matched kind is not the open
+// (lib/server/edit/writes/apps/gate.ts) that refuses a write whose matched kind is not the open
 // kind its header names, and the endpoint's answer to the writes the gate lets through.
 //
 // The hub, the apps and the store folder are synthetic, under the system temporary directory.
@@ -13,7 +13,7 @@ import { beforeAll, describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { AppsHeld } from '../../../src/lib/server/machine/apps/held.ts';
 import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps.ts';
-import { gateWrite } from '../../../src/lib/server/edit/writes/app-gate.ts';
+import { gateWrite } from '../../../src/lib/server/edit/writes/apps/gate.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { MANIFEST, notesFiles, PAGE, routeSetup } from '../apps/apps-fixture.ts';
 import {

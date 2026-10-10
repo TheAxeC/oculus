@@ -22,7 +22,7 @@ import { scalar } from '../../../data/helpers/guards.ts';
 import { HUB_LAYER } from '../../../data/helpers/hub-names.ts';
 import { keptValues, same } from '../../core/changes.ts';
 import { appById } from '../../machine/apps/held.ts';
-import { APP_STORE, storeNow, writeAppStore } from './app-store.ts';
+import { APP_STORE, storeNow, writeAppStore } from './apps/store.ts';
 import { mapShape, stringItemsShape } from '../../../data/shapes/shapes.ts';
 import { feedValueShape } from './bodies.ts';
 import {
@@ -40,7 +40,7 @@ import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
 import { takeOutAdded } from './config/config-checks.ts';
 import { railNow, writeRail } from './config/rail.ts';
-import { ROOTS, rootsValueNow, writeRoots } from './config/roots.ts';
+import { ROOTS, rootItemsShape, rootsValueNow, writeRoots } from './config/roots.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
 import {
     createEntry,
@@ -50,6 +50,7 @@ import {
     reorderCollection,
     writeEntry
 } from './entries.ts';
+import { holding } from './hubs.ts';
 import { manifestValue, writeManifest } from './manifest.ts';
 import {
     hostStatus,
@@ -72,7 +73,7 @@ import type { WriteOutcome, WriteTarget } from '../writes.ts';
  * would otherwise say the value is back when it is not.
  */
 export type UndoOutcome =
-    | { error: 'unknown' | 'gone' | 'moved' | 'nothing' | 'copy-gone' | 'deck-gone' }
+    | { error: 'unknown' | 'gone' | 'moved' | 'nothing' | 'copy-gone' | 'deck-gone' | 'outside' }
     | { error: 'unwritable'; records?: ChangeRecord[] }
     | { error: 'refused'; refused: WriteOutcome['refused'] }
     | WriteOutcome;
@@ -266,23 +267,37 @@ const wordsBeforeShape = z.catch(stringItemsShape, () => []);
 /** The rail a record holds, as the rows the rail rule reads out of it; none for anything else. */
 const railBeforeShape = z.unknown().transform((before) => railRows(before) ?? []);
 
-/** The roots list a record holds: the entries that are a pair of text, none for anything else. */
-const rootsBeforeShape = z.catch(
-    z.array(z.object({ key: z.string().min(1), dir: z.string().min(1) })),
-    () => []
-);
-
 /** The scalar a feed field held, or null, which clears the field. */
 const scalarBeforeShape = z.catch(feedValueShape, null);
+
+/** The kinds of change that write a record of a hub, which an undo takes back in that hub. */
+const RECORD_KINDS: readonly string[] = [
+    'manifest',
+    'subtask',
+    'subtask-add',
+    'host',
+    'feed-field',
+    'feed-delete',
+    'lead-add',
+    'radar-add',
+    'entry',
+    'new-entry',
+    'delete-entry',
+    'reorder'
+];
 
 /**
  * The write that takes one change back, or the word saying why none was made. The value at the
  * address is checked first: an undo never writes over an edit made since the change it takes back.
  */
-export function undoChange(into: WriteTarget, change: Change): UndoOutcome {
+export function undoChange(request: WriteTarget, change: Change): UndoOutcome {
     if (change.undo === 'none') return { error: 'nothing' };
     if (change.kind === 'deck') return { error: 'deck-gone' };
-    if (change.kind === APP_STORE) return undoStore(into, change);
+    if (change.kind === APP_STORE) return undoStore(request, change);
+    // A change to a record is taken back in the hub whose folder holds its file, and in no hub at
+    // all when none does: the id it was written under could name a record of another hub.
+    const into = RECORD_KINDS.includes(change.kind) ? holding(request, change.file) : request;
+    if (into === null) return { error: 'outside' };
     let outcome;
     try {
         const now = valueNow(into, change);
@@ -396,7 +411,7 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         if (change.created !== undefined) return added === null ? null : { found: true, ...added };
         const outcome = writeRoots(
             fileOf(into, change),
-            rootsBeforeShape.parse(change.before),
+            rootItemsShape.parse(change.before),
             undefined,
             hub === undefined ? undefined : into.sources.base
         );

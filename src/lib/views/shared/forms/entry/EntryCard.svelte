@@ -47,6 +47,7 @@
     import { blockedBy, fileNameOf, openEntry } from '../entry-file';
     import Clamp from '../../card/Clamp.svelte';
     import Grip from './Grip.svelte';
+    import RootChip from '../../card/RootChip.svelte';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import InPlace from '../InPlace.svelte';
     import Subtasks from '../Subtasks.svelte';
@@ -68,7 +69,7 @@
         type Project,
         type SchemaField
     } from '$lib/state/boards/collection';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { personName } from '$lib/state/boards/person';
     import { t } from '$lib/state/shared/words/text';
@@ -166,9 +167,12 @@
     /** True while the add-subtask form is open, from the block's own control or the card's. */
     let addingSubtask = $state(false);
 
+    /** The root of the hub the entry is of, which every path of its fields is under. */
+    const root = $derived(rootOf(entry));
+
     /** The entries of one folder of the hub, from the file store's listing of it. */
     const listed = (folder: string): ReturnType<typeof listing>['entries'] =>
-        listing(HUB_ROOT, folder).entries;
+        listing(root, folder).entries;
 
     /** Whether the entry has a page, which is when its `link` names a folder of the hub. */
     const hasPage = $derived(pageFolder(entry.fields, listed) !== undefined);
@@ -191,11 +195,11 @@
                     : t('collection.show_in_files_tip', path),
                 glyph: 'show_in_files',
                 onclick: () => {
-                    if (folder) showFolderInFiles(path);
-                    else showInFiles(path);
+                    if (folder) showFolderInFiles(path, root);
+                    else showInFiles(path, root);
                 }
             };
-            if (!folder || !folders.served(HUB_ROOT)) return [show];
+            if (!folder || !folders.served(root)) return [show];
             const own = pageFolder(entry.fields, listed) === path;
             return [
                 show,
@@ -206,7 +210,7 @@
                     glyph: 'app_view',
                     onclick: () => {
                         folders.open(
-                            { root: HUB_ROOT, path },
+                            { root, path },
                             {
                                 label: entry.title === '' ? entry.id : entry.title,
                                 item: own
@@ -319,6 +323,7 @@
             {#if addressable && ondragfrom !== undefined}
                 <Grip {blocked} onpress={() => (armed = true)} />
             {/if}
+            <RootChip record={entry} />
             {#if status !== undefined && statusPick}
                 <InPlace field="status" {collection} {entry} {schema} {blocked} {onsaid} />
             {:else if status !== undefined}
@@ -379,7 +384,7 @@
                         />
                     </div>
                 {:else if drawn.kind === 'link'}
-                    <EntryLink field={drawn.field} value={drawn.values[0]} {onsaid} />
+                    <EntryLink field={drawn.field} value={drawn.values[0]} {root} {onsaid} />
                 {:else if addressable && (drawn.field === 'deadline' || drawn.field === 'date')}
                     <div class="field">
                         <span class="label">{drawn.label}</span>

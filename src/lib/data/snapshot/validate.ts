@@ -32,7 +32,7 @@ import {
     wordShape
 } from '../shapes/shapes.ts';
 import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
-import { personalFindings } from './normalise-personal.ts';
+import { personalFindings } from './normalise-parts/personal.ts';
 import { isWords } from './schema/check.ts';
 import { checkResources } from './validate-kinds.ts';
 

@@ -27,7 +27,7 @@ const target = (locals: App.Locals): FsTarget => {
         bookmarks: server.local.bookmarks ?? defaultBookmarksPath(server.local.hub),
         notes: server.local.notes ?? defaultNotesDir(server.local.hub),
         fixed: rootsFrom(
-            configuredRootsOf(locals.config().config, server.engine),
+            configuredRootsOf(locals.config().config, server.engine, server.local.hub),
             server.local.hub,
             server.engine
         ),

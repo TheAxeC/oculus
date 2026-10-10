@@ -41,8 +41,8 @@ import { FILES_KIND } from '../../data/file-ops.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
-import { APP_STORE, writeAppStore } from './writes/app-store.ts';
-import { gateWrite, storeWrite } from './writes/app-gate.ts';
+import { APP_STORE, writeAppStore } from './writes/apps/store.ts';
+import { gateWrite, storeWrite } from './writes/apps/gate.ts';
 import { defaultAppData } from '../machine/apps/store.ts';
 import type { AppsHeld, HeldApp } from '../machine/apps/held.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
@@ -60,6 +60,8 @@ import { writeDeckEdit } from './writes/config/deck/deck-acts.ts';
 import { undoDeckEdit } from './writes/config/deck/deck-undo.ts';
 import { rootItemsOf, rootsHeldIn, type RootItem, type RootsHeld } from './writes/config/roots.ts';
 import { hubLayerPath } from '../../data/helpers/hub-names.ts';
+import { routed, routedEntry, routedOrder, routedRoot, routedTarget } from './writes/hubs.ts';
+import { hubTargets, type HubTarget } from '../files/roots.ts';
 import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
@@ -165,6 +167,11 @@ export type WriteTarget = {
      * without it writes no roots: the write answers `unwritable`.
      */
     sources?: { file: string; held: RootsHeld; base: RootItem[] };
+    /**
+     * The hubs other than the first, each with its own settings, which a write that names a record
+     * of one of them is routed to (writes/hubs.ts). A target built without it knows the one hub.
+     */
+    hubs?: HubTarget[];
     /**
      * What taking back a file operation runs over: the roots the file browser serves, the local
      * history folder and the chain the file operations wait on. A target built without it answers
@@ -282,6 +289,7 @@ export function target(
         behaviorFile: join(configDir(engine), BEHAVIOR),
         layoutFile: join(configDir(engine), LAYOUT),
         glyphs: glyphNames(merged) ?? [],
+        hubs: hubTargets({ config: merged, engine, local }),
         sources: {
             file: join(local.hub, hubLayerPath('sources.yml')),
             held: rootsHeldIn(engine, merged, local.hub, local.workspaces),
@@ -314,6 +322,9 @@ export function target(
                   }
     };
 }
+
+/** What a write that names a record answers when its record is of no hub it may reach. */
+const NOT_FOUND: WriteOutcome = { found: false, changed: [], refused: [] };
 
 /**
  * The side projects a manifest or subtask write may name. The page's own writes reach every side
@@ -381,13 +392,21 @@ export async function handleWrite(
 
     const write = manifestWrite(body);
     if (write !== null) {
-        const outcome = writeManifest(
-            into.hub,
-            into.config,
-            sidesFor(into, app),
-            write.id,
-            write.fields
-        );
+        const at = routed(into, write.id, app);
+        const outcome =
+            at === null
+                ? NOT_FOUND
+                : writeManifest(
+                      at.into.hub,
+                      at.into.config,
+                      sidesFor(at.into, app),
+                      at.id,
+                      write.fields,
+                      'form',
+                      undefined,
+                      undefined,
+                      at.hubKey
+                  );
         if (!outcome.found)
             return json({ error: `no project with the id ${write.id}` }, { status: 404 });
         return answer(outcome, 'manifest', into, undefined, app ?? undefined);
@@ -395,14 +414,19 @@ export async function handleWrite(
 
     const entry = entryWrite(body);
     if (entry !== null) {
-        const outcome = writeEntry(
-            into.hub,
-            into.config,
-            entry.collection,
-            entry.id,
-            entry.fields,
-            into.bookmarks
-        );
+        const at = routedEntry(into, entry.collection, entry.id, app);
+        const outcome =
+            at === null
+                ? NOT_FOUND
+                : writeEntry(
+                      at.into.hub,
+                      at.into.config,
+                      at.collection,
+                      at.id,
+                      entry.fields,
+                      at.into.bookmarks,
+                      at.hubKey
+                  );
         if (!outcome.found) {
             return json({ error: `no entry ${entry.id} in ${entry.collection}` }, { status: 404 });
         }
@@ -411,28 +435,36 @@ export async function handleWrite(
 
     const subtask = subtaskWrite(body);
     if (subtask !== null) {
-        const outcome = writeSubtask(
-            into.hub,
-            into.config,
-            sidesFor(into, app),
-            subtask.target,
-            subtask.key,
-            subtask.action,
-            subtask.value
-        );
+        const at = routedTarget(into, subtask.target, app);
+        const outcome =
+            at === null
+                ? NOT_FOUND
+                : writeSubtask(
+                      at.into.hub,
+                      at.into.config,
+                      sidesFor(at.into, app),
+                      at.target,
+                      subtask.key,
+                      subtask.action,
+                      subtask.value
+                  );
         if (!outcome.found) return json({ error: notFound(subtask.target) }, { status: 404 });
         return answer(outcome, 'subtask', into, undefined, app ?? undefined);
     }
 
     const added = subtaskAdd(body);
     if (added !== null) {
-        const outcome = writeSubtaskAdd(
-            into.hub,
-            into.config,
-            sidesFor(into, app),
-            added.target,
-            added.fields
-        );
+        const at = routedTarget(into, added.target, app);
+        const outcome =
+            at === null
+                ? NOT_FOUND
+                : writeSubtaskAdd(
+                      at.into.hub,
+                      at.into.config,
+                      sidesFor(at.into, app),
+                      at.target,
+                      added.fields
+                  );
         if (!outcome.found) return json({ error: notFound(added.target) }, { status: 404 });
         return answer(outcome, 'subtask-add', into, undefined, app ?? undefined);
     }
@@ -460,13 +492,17 @@ export async function handleWrite(
 
     const order = reorderWrite(body);
     if (order !== null) {
-        const outcome = reorderCollection(
-            into.hub,
-            into.config,
-            order.collection,
-            order.order,
-            into.bookmarks
-        );
+        const at = routedOrder(into, order.collection, order.order, app);
+        const outcome =
+            at === null
+                ? NOT_FOUND
+                : reorderCollection(
+                      at.into.hub,
+                      at.into.config,
+                      at.collection,
+                      at.order,
+                      at.into.bookmarks
+                  );
         if (!outcome.found)
             return json({ error: `no collection ${order.collection}` }, { status: 404 });
         return answer(outcome, 'reorder', into, undefined, app ?? undefined);
@@ -474,13 +510,11 @@ export async function handleWrite(
 
     const removal = deleteEntryWrite(body);
     if (removal !== null) {
-        const outcome = removeEntry(
-            into.hub,
-            into.config,
-            removal.collection,
-            removal.id,
-            into.bookmarks
-        );
+        const at = routedEntry(into, removal.collection, removal.id, app);
+        const outcome =
+            at === null
+                ? NOT_FOUND
+                : removeEntry(at.into.hub, at.into.config, at.collection, at.id, at.into.bookmarks);
         if (!outcome.found) {
             return json(
                 { error: `no entry ${removal.id} in ${removal.collection}` },
@@ -494,14 +528,18 @@ export async function handleWrite(
     if (feedField !== null) {
         if (!isFeedKind(feedField.feed))
             return json({ error: `unknown feed ${feedField.feed}` }, { status: 400 });
-        const outcome = writeFeedField(
-            into.hub,
-            into.config,
-            feedField.feed,
-            feedField.id,
-            feedField.field,
-            feedField.value
-        );
+        const at = routedRoot(into, feedField.root, app);
+        const outcome =
+            at === null
+                ? NOT_FOUND
+                : writeFeedField(
+                      at.hub,
+                      at.config,
+                      feedField.feed,
+                      feedField.id,
+                      feedField.field,
+                      feedField.value
+                  );
         if (!outcome.found) {
             return json(
                 { error: `no entry ${feedField.id} in ${feedField.feed}` },
@@ -515,7 +553,11 @@ export async function handleWrite(
     if (feedDelete !== null) {
         if (!isFeedKind(feedDelete.feed))
             return json({ error: `unknown feed ${feedDelete.feed}` }, { status: 400 });
-        const outcome = deleteFeedEntry(into.hub, into.config, feedDelete.feed, feedDelete.id);
+        const at = routedRoot(into, feedDelete.root, app);
+        const outcome =
+            at === null
+                ? NOT_FOUND
+                : deleteFeedEntry(at.hub, at.config, feedDelete.feed, feedDelete.id);
         if (!outcome.found) {
             return json(
                 { error: `no entry ${feedDelete.id} in ${feedDelete.feed}` },
@@ -562,7 +604,9 @@ export async function handleWrite(
 
     const linkedinPost = linkedinPostWrite(body);
     if (linkedinPost !== null) {
-        const outcome = markLinkedinPosted(into.hub, into.config, linkedinPost.file);
+        const at = routedRoot(into, linkedinPost.root, app);
+        const outcome =
+            at === null ? NOT_FOUND : markLinkedinPosted(at.hub, at.config, linkedinPost.file);
         if (!outcome.found)
             return json({ error: 'the LinkedIn idea file is not on this hub' }, { status: 404 });
         return answer(outcome, 'linkedin-post', into, undefined, app ?? undefined);

@@ -60,6 +60,7 @@
         {cursor}
         title={line.title}
         {tone}
+        record={line}
         {projects}
         {entry}
         {schema}

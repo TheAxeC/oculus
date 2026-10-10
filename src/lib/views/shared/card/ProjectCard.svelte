@@ -18,15 +18,16 @@
     import Card from '$lib/ui/frame/Card.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import CardActions, { type CardAction } from './CardActions.svelte';
-    import CardDetails from './CardDetails.svelte';
-    import CardLinks from './CardLinks.svelte';
-    import CardSessions from './CardSessions.svelte';
+    import CardDetails from './project/CardDetails.svelte';
+    import RootChip from './RootChip.svelte';
+    import CardLinks from './project/CardLinks.svelte';
+    import CardSessions from './project/CardSessions.svelte';
     import CommandBar from '../sessions/CommandBar.svelte';
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import Clamp from './Clamp.svelte';
     import Subtasks from '../forms/Subtasks.svelte';
-    import { codeLabel, deadline, deckOf, openDocument } from './card';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { codeLabel, deadline, deckOf, openDocument, openWorkbench } from './card';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import {
         firstSentence,
         hasReadme,
@@ -50,7 +51,7 @@
         folders,
         layout: { openBeside, openView, showDeck, showFolderInFiles },
         selection: { select },
-        selectors: { gitRoots, hubRoot },
+        selectors: { gitRoots, hubDirOf },
         terminals: { showTerminal, startChat },
         writes: { openFolder, writeManifest }
     } = client;
@@ -119,10 +120,11 @@
                   snapshot.entities.projects
               )
     );
+    const hub = $derived(rootOf(item.project));
     /** The project's folder when the `git` channel carries it as a repository, else ''. */
     const repo = $derived.by((): string => {
         const folder = item.project.folder;
-        const whole = folder.startsWith('/') ? folder : absoluteOf(hubRoot(), folder);
+        const whole = folder.startsWith('/') ? folder : absoluteOf(hubDirOf(item.id), folder);
         return whole !== '' && gitRoots().includes(whole) ? whole : '';
     });
     const actions = $derived.by((): CardAction[] => {
@@ -168,16 +170,16 @@
             title: t('project.helper.show_in_files_tip'),
             glyph: 'show_in_files',
             onclick: () => {
-                showFolderInFiles(item.project.folder);
+                showFolderInFiles(item.project.folder, hub);
             }
         });
-        if (folders.served(HUB_ROOT)) {
+        if (folders.served(hub)) {
             rows.push({
                 id: 'workbench',
                 label: t('project.helper.open_workbench'),
                 title: t('project.helper.open_workbench_tip'),
                 glyph: 'app_view',
-                onclick: openWorkbench
+                onclick: () => openWorkbench(client, item, tab, hub)
             });
         }
         if (ontoggle !== undefined) {
@@ -200,7 +202,7 @@
                 onclick: () => {
                     // The project's deck is the identity of its tab: one tab per deck, activated
                     // when it is open already.
-                    showDeck({ root: HUB_ROOT, path: deck }, '', true);
+                    showDeck({ root: hub, path: deck }, '', true);
                 }
             });
         }
@@ -255,24 +257,11 @@
     function openTitle(): void {
         if (item.project.ghost) {
             if (hasReadme(item.project)) {
-                openDocument(client, item.project.folder, 'README.md');
+                openDocument(client, item.project.folder, 'README.md', hub);
             }
             return;
         }
         openView('project', { id: item.id, label: tab });
-    }
-    /**
-     * Open the workbench of the project's folder, named by the project's title, with the project
-     * view in its documents pane; a ghost has no project view and opens none.
-     */
-    function openWorkbench(): void {
-        const first = item.project.ghost
-            ? undefined
-            : { view: 'project', state: { id: item.id, label: tab } };
-        folders.open(
-            { root: HUB_ROOT, path: item.project.folder },
-            { label: item.project.title, item: first }
-        );
     }
     /** The title opener, omitted only when a ghost has no readable README. */
     function titleOpener(): (() => void) | undefined {
@@ -296,7 +285,7 @@
     }
     /** Ask the host to reveal the project's folder. */
     async function showFolder(): Promise<void> {
-        const answer = await openFolder(item.project.folder);
+        const answer = await openFolder(item.project.folder, hub);
         if (!answer.ok) onsaid(t('project.card.folder_failed', answer.error ?? ''));
     }
     /** Start a project chat, select it and show it in the page's Terminal tab, or a new one. */
@@ -321,6 +310,7 @@
         ontitle={titleOpener()}
     >
         {#snippet meta()}
+            <RootChip record={item.project} />
             {#if item.project.type}
                 <Chip label={item.project.type} tone={item.tone} filled />
             {/if}

@@ -24,6 +24,7 @@ text:
         undone_partly: '{0} is back, except {1} field(s) the file would not take.'
         moved: The file has changed since this write, so it was left alone.
         gone: What this write addressed is no longer in the hub.
+        outside: The file this write changed is in no hub now, so it was left alone.
         unknown: The change log no longer holds this write.
         nothing: This write cannot be taken back.
         copy_gone: The copy of a deleted file is no longer kept, so the delete cannot be taken back.

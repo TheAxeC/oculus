@@ -2,6 +2,7 @@
 // independently of filters, facets and statistics.
 
 import { byKey } from '../../../data/helpers/guards.ts';
+import { rootOf, splitHubId } from '../../../data/helpers/hub-names.ts';
 import { domainLabel, domainTone, typeTone } from '../../shared/words/tones.ts';
 import type { Id, Project, Snapshot } from '../../../data/model/index.ts';
 import { personNames } from '../person.ts';
@@ -88,6 +89,8 @@ function itemOf(
     const venue =
         project.venueId === undefined ? undefined : byKey(entities.venues, project.venueId);
     const tag = (id: Id, label: string): BoardTag => ({ id, label });
+    // A tag named by its id shows the id inside the project's own hub, without that hub's key.
+    const own = (id: Id): string => splitHubId(id, [rootOf(project)]).id;
 
     const item: Omit<BoardItem, 'haystack'> = {
         id: project.id,
@@ -106,10 +109,12 @@ function itemOf(
                       short:
                           venue.short !== undefined && venue.short !== '' ? venue.short : venue.name
                   },
-        pillars: project.pillarIds.map((id) => tag(id, byKey(entities.pillars, id)?.title ?? id)),
-        funding: project.fundingIds.map((id) => tag(id, id)),
-        datasets: project.datasetIds.map((id) => tag(id, id)),
-        collaborators: project.collaborators.map((id) => tag(id, names[id] ?? id)),
+        pillars: project.pillarIds.map((id) =>
+            tag(id, byKey(entities.pillars, id)?.title ?? own(id))
+        ),
+        funding: project.fundingIds.map((id) => tag(id, own(id))),
+        datasets: project.datasetIds.map((id) => tag(id, own(id))),
+        collaborators: project.collaborators.map((id) => tag(id, names[id] ?? own(id))),
         software: softwareTags(project, snapshot),
         authors: authorLine(project),
         bucket: bucketOf(project, preset.rollup),

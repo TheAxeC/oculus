@@ -35,17 +35,19 @@
         folder: string | undefined;
         /** The block's heading, drawn by the caller in the style of its page's headings. */
         heading: Snippet;
+        /** The key of the hub that holds the folder. */
+        root?: string;
     };
 
-    let { folder, heading }: Props = $props();
+    let { folder, heading, root = HUB_ROOT }: Props = $props();
 
-    const files = $derived(folder === undefined ? null : listing(HUB_ROOT, folder));
+    const files = $derived(folder === undefined ? null : listing(root, folder));
     const documents = $derived(fileEntries(files?.entries ?? []));
 
     /** Open one file of the folder in the source tab. */
     function openFile(name: string): void {
         if (folder === undefined) return;
-        openSourceFile(client, { root: HUB_ROOT, path: `${folder}/${name}` });
+        openSourceFile(client, { root, path: `${folder}/${name}` });
     }
 </script>
 
@@ -59,17 +61,17 @@
                 glyph="show_in_files"
                 compact
                 onclick={() => {
-                    showFolderInFiles(folder);
+                    showFolderInFiles(folder, root);
                 }}
             />
-            {#if folders.served(HUB_ROOT)}
+            {#if folders.served(root)}
                 <ToolButton
                     label={t('folder_files.open_workbench')}
                     title={t('folder_files.open_workbench_tip', folder)}
                     glyph="app_view"
                     compact
                     onclick={() => {
-                        folders.open({ root: HUB_ROOT, path: folder });
+                        folders.open({ root, path: folder });
                     }}
                 />
             {/if}

@@ -45,9 +45,10 @@
         parseLinkedinState,
         pickIdea,
         splitPosts,
+        type LinkedinEntry,
         type LinkedinState
     } from '$lib/state/feeds/linkedin';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { HUB_ROOT, rootOf } from '$lib/state/shared/page/hubs';
     import { IDEA_BODY_LINE } from '$lib/data/prose/linkedin-idea';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
@@ -78,6 +79,13 @@
     );
     const picked = $derived(pickIdea(split.ideas, today));
     let said = $state('');
+
+    /** The folder of the hub a post is of: the feed's own for the first hub, else the hub's. */
+    function folderOf(entry: LinkedinEntry): string {
+        const root = rootOf(entry);
+        const held = data?.hubFiles ?? {};
+        return root === HUB_ROOT ? (data?.file ?? '') : Object.hasOwn(held, root) ? held[root] : '';
+    }
 
     function write(next: Partial<LinkedinState>): void {
         setInstanceState(instance.id, { ...held, ...next });
@@ -198,7 +206,7 @@
                 </h3>
                 {#if ideas.length > 0}
                     <div class="cards" data-linkedin-section="ideas">
-                        {#each ideas as entry (entry.file)}
+                        {#each ideas as entry (identOf(entry))}
                             <Reveal
                                 id={identOf(entry)}
                                 wanted={held.reveal}
@@ -206,9 +214,9 @@
                             >
                                 <PostCard
                                     {entry}
-                                    id={entry.file}
-                                    cursor={cursor === entry.file}
-                                    folder={data.file}
+                                    id={identOf(entry)}
+                                    cursor={cursor === identOf(entry)}
+                                    folder={folderOf(entry)}
                                     onsaid={(words: string) => (said = words)}
                                 />
                             </Reveal>
@@ -226,7 +234,7 @@
                 </h3>
                 {#if posts.length > 0}
                     <div class="cards" data-linkedin-section="posted">
-                        {#each posts as entry (entry.file)}
+                        {#each posts as entry (identOf(entry))}
                             <Reveal
                                 id={identOf(entry)}
                                 wanted={held.reveal}
@@ -234,9 +242,9 @@
                             >
                                 <PostCard
                                     {entry}
-                                    id={entry.file}
-                                    cursor={cursor === entry.file}
-                                    folder={data.file}
+                                    id={identOf(entry)}
+                                    cursor={cursor === identOf(entry)}
+                                    folder={folderOf(entry)}
                                     posted
                                     onsaid={(words: string) => (said = words)}
                                 />

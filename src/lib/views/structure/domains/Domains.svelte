@@ -78,8 +78,8 @@
                             cursor={cursor === item.domain.id}
                             projects={item.projects}
                             entry={file.entryOf(item.domain.id)}
-                            schema={file.collection?.schema}
-                            file={file.source}
+                            schema={file.schemaOf(item.domain.id)}
+                            file={file.sourceOf(item.domain.id)}
                             fault={file.faultOf(item.domain.id)}
                             onsaid={file.say}
                         />

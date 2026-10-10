@@ -124,8 +124,8 @@
                             cursor={cursor === dataset.id}
                             projects={users(dataset.projectIds)}
                             entry={file.entryOf(dataset.id)}
-                            schema={file.collection?.schema}
-                            file={file.source}
+                            schema={file.schemaOf(dataset.id)}
+                            file={file.sourceOf(dataset.id)}
                             fault={file.faultOf(dataset.id)}
                             onsaid={file.say}
                         />

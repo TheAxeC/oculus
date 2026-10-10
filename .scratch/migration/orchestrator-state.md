@@ -25,20 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D55
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: aba524e6dd605ba38 (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D55
-  base: ecbc37a0c
-  launched: 2026-10-10
-  report: agents/reviews/D55-report.md
-  builder_usage: 347,362 tokens, 962 tool uses, 166.1 min; round 1: 256,919 tokens, 252 tool uses, 61.9 min
-  reviewer_report: agents/reviews/D55-refuter.md (a1856be287746a96e, claude-opus-5-5, 196,464 tokens, 159 tool uses, 35.7 min); over round 1: aa068552ee5aa1c92, claude-opus-5-5, 91,605 tokens, 149 tool uses, 23.9 min
-  brief_check: agents/reviews/D55-brief-check.md (a1d9331ec3d46e873, claude-opus-5-5, 226,582 tokens, 90 tool uses, 10.7 min; closed in the brief by the orchestrator under "Closed")
-  shared_paths: tools/oculus/HELP.md, tools/oculus/DESIGN.md, docs/DATA-MAP.md, tools/oculus/docs/apps.md, tools/oculus/config/text/ and tools/oculus/src/lib/server/content/docs.ts with D49; the merge is simple, since D55 appends bullets and a section and rewrites a few named sentences (HELP.md:107, DESIGN.md:557, DATA-MAP.md:182, 312, 519, apps.md:524), which the landing re-applies on D49's text, and its config/text and docs.ts edits are new keys and the lookup by root, which D49 does not touch
-  landing: not-started
-  round: 1 (agents/briefs/D55-round1.md)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -246,6 +232,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-10 (D55 landed). D55, roots as hubs, landed (booking in plan.md; `agents/reviews/D55-landing.md`) after one repair round and the review over it, its six findings and three defects of the look fixed on main at landing (`agents/reviews/D55-refuter.md`, Closed (at landing)); the cherry-pick's conflict with D49 resolved on main; Z767 booked the two app-visible shapes no ruling named. Worktree `.agents/worktrees/D55` and its branches removed. Nothing in flight. Next: /spec D58, then Q72.
 - 2026-10-10 (D49 landed). D49, the help pages cut, landed (booking in plan.md; `agents/reviews/D49-landing.md`) after one repair round and the review over it, its findings fixed on main at landing (`agents/reviews/D49-refuter.md`, Closed (at landing)). The look found the Help page's Apps guide refused on a hub that does not list it, as on the base: Z766 added step D58 before Q72. In flight (1 of 6): D55 (review over round 1 saved, aa068552ee5aa1c92; its findings are ruled next, then /land D55). Next: /land D55, then /spec D58, then Q72.
 - 2026-10-10 (D49 launched). D49 prepared (base 9337c3ad4, brief `agents/briefs/D49.md` with every closure of its brief check under "Closed"; Z764 corrected the standing spec's HELP.md rule) and its builder adab6acbc7bcccf65 (claude-sonnet-5-5) launched in `.agents/worktrees/D49`. D55's brief is written and its brief check is running.
 - 2026-10-10 (D55 launched): D55's builder runs in `.agents/worktrees/D55` from base ecbc37a0c beside D49's; Z765 booked its internal shapes.

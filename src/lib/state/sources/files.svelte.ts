@@ -84,7 +84,7 @@ const KIND = 'files';
 export function createFiles(
     entities: EntitiesStore,
     queries: Queries,
-    hubRoot: () => string
+    hubDirOf: (id: string) => string
 ): FilesStore {
     /** The version of the last `files` message heard, or null before the first. */
     let heard: number | null = null;
@@ -95,14 +95,18 @@ export function createFiles(
         heard = message.version;
         const payload = entities.payloadOf(message, 'files');
         const root = payload?.root ?? '';
-        const hub = hubRoot();
-        if (gap || hub === '' || payload === null) {
+        if (gap || payload === null) {
             queries.mark([KIND], 'wait');
             return;
         }
         if (root === '') return;
-        // A listing's `folder` is its project's folder against the hub.
+        // A listing's `folder` is its project's folder against the hub the project is of.
         for (const one of queries.entries<FilesState>([KIND])) {
+            const hub = hubDirOf(String(one.key[1]));
+            if (hub === '') {
+                queries.mark(one.key, 'wait');
+                continue;
+            }
             const folder = joinPath(hub, one.data?.folder ?? '');
             if (one.data === undefined || foldersNamedUnder(root, payload.folders, folder)) {
                 queries.mark(one.key, 'wait');

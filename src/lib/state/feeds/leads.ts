@@ -19,7 +19,7 @@ import {
     isLeadDeclined,
     isLeadOpen
 } from '../../data/accounts/leads.ts';
-import { uniqueIdents } from './idents.ts';
+import { feedCursorId, uniqueIdents } from './idents.ts';
 
 export type LeadEntry = Record<string, unknown>;
 export type FitKey = 'strong' | 'moderate' | 'reach';
@@ -77,11 +77,12 @@ function word(entry: LeadEntry, field: string): string {
 export function leadId(entry: LeadEntry): string {
     const url = word(entry, 'url');
     const source = url.startsWith('http') ? url : `${word(entry, 'title')}-${word(entry, 'inst')}`;
-    return source
+    const slug = source
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/-{2,}/g, '-')
         .replace(/^-|-$/g, '');
+    return slug === '' ? slug : feedCursorId(entry, slug);
 }
 
 /**

@@ -28,6 +28,7 @@
         {cursor}
         title={domain.title}
         tone={domainTone(domain.id)}
+        record={domain}
         {projects}
         {entry}
         {schema}

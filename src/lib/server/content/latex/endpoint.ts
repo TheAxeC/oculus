@@ -22,6 +22,7 @@ import { statSync } from 'node:fs';
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { z } from 'zod';
 import type { BuildOutcome, Project } from '../../../data/model/index.ts';
+import { HUB_ROOT, rootOf as hubOf } from '../../../data/helpers/hub-names.ts';
 import {
     MANUSCRIPT,
     isLatexFile,
@@ -57,7 +58,7 @@ import { readCount } from './tools.ts';
  */
 export type LatexTarget = {
     hub: string;
-    project: (id: string) => Pick<Project, 'folder'> | null;
+    project: (id: string) => Pick<Project, 'folder' | 'root'> | null;
     /** The roots the file browser serves, which a root key of a request is looked up in. */
     roots: () => Root[];
     /** The formatter Format Document runs, read from config/behavior.yml at each request. */
@@ -78,8 +79,11 @@ export type LatexTarget = {
 /** One main file of an answer: what its last build left, and how that build ended. */
 type AnsweredMain = MainState & { build: BuildOutcome };
 
-/** The state of a project: its folder, and one state per main file. */
-export type ProjectAnswer = { folder: string; mains: AnsweredMain[] };
+/**
+ * The state of a project: its folder under the root of its hub, named by `root` for a hub other
+ * than the first and absent for the first, and one state per main file.
+ */
+export type ProjectAnswer = { root?: string; folder: string; mains: AnsweredMain[] };
 
 /** The outline of a main file of a project, its files against the project's folder. */
 export type ProjectOutline = Outline & { folder: string };
@@ -191,21 +195,30 @@ function projectScope(into: LatexTarget, id: string): Scope | Response {
     if (id === '') return refuse(400, 'not-an-action');
     const project = into.project(id);
     if (project === null) return refuse(404, 'no-project');
+    // The hub a project lies in is the first hub, or the served root of its own key.
+    const key = hubOf(project);
+    const hub = key === HUB_ROOT ? into.hub : into.roots().find((one) => one.key === key)?.dir;
+    if (hub === undefined) return refuse(404, 'no-project');
     // One rule for resolving a project's folder beneath the hub, the one the terminal actions run
     // through: a folder that would leave the hub throws there and is a 404 here.
     let folder: string;
     try {
-        folder = projectDirectory(into.hub, project.folder);
+        folder = projectDirectory(hub, project.folder);
     } catch {
         return refuse(404, 'outside');
     }
     return {
         dir: join(folder, MANUSCRIPT),
         label: id,
-        bound: realPath(into.hub) ?? into.hub,
+        bound: realPath(hub) ?? hub,
         named: realPath(folder) ?? folder,
         prefixes: { pdf: MANUSCRIPT, files: '' },
-        answer: (mains) => ({ folder: project.folder, mains }) satisfies ProjectAnswer,
+        answer: (mains) =>
+            ({
+                ...(key === HUB_ROOT ? {} : { root: key }),
+                folder: project.folder,
+                mains
+            }) satisfies ProjectAnswer,
         outlined: (outline) => ({ ...outline, folder: project.folder }) satisfies ProjectOutline
     };
 }

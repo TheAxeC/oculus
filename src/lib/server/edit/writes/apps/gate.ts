@@ -1,25 +1,25 @@
-// Layer 2, server. The gate a write passes when it comes from an app's frame: the kind the body
-// is, and whether that kind is one the app may send.
+// Layer 2, server. The gate a write passes when it comes from an app's frame: the kind the body is,
+// and whether that kind is one the app may send.
 //
-// The page sends an app's write to POST /api/write with two headers: `x-oculus-app`, the app's
-// view id with the root key percent-encoded, and `x-oculus-write-kind`, the kind the app named.
-// This module reads the body with the parsers handleWrite tries, in handleWrite's order, and
-// answers with the kind the first one matches, and no writer is run. A write is refused 403
-// `{ error: 'kind' }` when the header names no held row or holds a malformed escape; when the
-// kind the body matches is not the kind the header names; when that kind is not open to apps; and
-// when an entry kind names the collection `bookmarks`, which is the reader's own file. A body
-// matching `{ store: <value> }` is the app's own store, which every app has and which only a
-// request carrying the app header can send.
+// The page sends an app's write to POST /api/write with two headers: `x-oculus-app`, the app's view
+// id with the root key percent-encoded, and `x-oculus-write-kind`, the kind the app named. This
+// module reads the body with the parsers handleWrite tries, in handleWrite's order, and answers
+// with the kind the first one matches, and no writer is run. A write is refused 403
+// `{ error: 'kind' }` when the header names no held row or holds a malformed escape; when the kind
+// the body matches is not the kind the header names; when that kind is not open to apps; and when
+// an entry kind names the collection `bookmarks`, which is the reader's own file. A body matching
+// `{ store: <value> }` is the app's own store, which every app has and which only a request
+// carrying the app header can send.
 
 import {
     APP_HEADER,
     KIND_HEADER,
     appViewIdFromHeader,
     writeAccess
-} from '../../../data/helpers/files/apps.ts';
-import { isMap } from '../../../data/helpers/guards.ts';
-import type { AppsHeld, HeldApp } from '../../machine/apps/held.ts';
-import { appById } from '../../machine/apps/held.ts';
+} from '../../../../data/helpers/files/apps.ts';
+import { isMap } from '../../../../data/helpers/guards.ts';
+import type { AppsHeld, HeldApp } from '../../../machine/apps/held.ts';
+import { appById } from '../../../machine/apps/held.ts';
 import {
     auditMuteWrite,
     configKeyWrite,
@@ -45,8 +45,8 @@ import {
     subtaskAdd,
     subtaskWrite,
     undoWrite
-} from './bodies.ts';
-import { APP_STORE } from './app-store.ts';
+} from '../bodies.ts';
+import { APP_STORE } from './store.ts';
 
 /** The body of a store write: exactly one key, `store`, whatever it holds. */
 export type StoreWrite = { store: unknown };

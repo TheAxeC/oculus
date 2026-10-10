@@ -6,7 +6,17 @@
 // request against them. The fold reads two things, the configured roots of the request's own config
 // and the saved workspaces file, and nothing else.
 
-import { configuredRootsOf, ENGINE_ROOT, expandHome, rootsFrom, type Root } from './files.ts';
+import { portfolioConfigFrom } from '../../data/index.ts';
+import type { PortfolioConfig } from '../../data/model/index.ts';
+import { loadConfig } from '../../data/sources/config.ts';
+import {
+    configuredRootsOf,
+    ENGINE_ROOT,
+    expandHome,
+    hubRoots,
+    rootsFrom,
+    type Root
+} from './files.ts';
 import { addedRoots, defaultWorkspacesPath, readSaved } from './fs.ts';
 
 /**
@@ -24,7 +34,7 @@ export type RootsTarget = {
  */
 export function browserRoots(target: RootsTarget): Root[] {
     const fixed = rootsFrom(
-        configuredRootsOf(target.config, target.engine),
+        configuredRootsOf(target.config, target.engine, target.local.hub),
         target.local.hub,
         target.engine
     );
@@ -46,4 +56,16 @@ export function repositoryRoots(target: RootsTarget): string[] {
     return browserRoots(target)
         .filter((one) => one.key !== ENGINE_ROOT)
         .map((one) => expandHome(one.dir));
+}
+
+/** A hub other than the first as a reader or a write needs it: its key, folder and own settings. */
+export type HubTarget = { key: string; hub: string; config: PortfolioConfig };
+
+/** The hubs other than the first that the roots in force name, each with its settings. */
+export function hubTargets(target: RootsTarget): HubTarget[] {
+    return hubRoots(browserRoots(target)).map((root) => ({
+        key: root.key,
+        hub: root.dir,
+        config: portfolioConfigFrom(loadConfig(target.engine, { hub: root.dir }).config)
+    }));
 }

@@ -15,24 +15,51 @@ import { resolve } from 'node:path';
 import type { ComposeStart, PortfolioConfig, TaskRef } from '../../../../data/model/index.ts';
 import { portfolioConfigFrom } from '../../../../data/index.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
+import { splitHubId } from '../../../../data/helpers/hub-names.ts';
 import { textCatalog } from '../../../../data/sources/config.ts';
+import type { HubTarget } from '../../../files/roots.ts';
 import { realPath } from '../../../core/paths.ts';
 import { approveTexts, isApproved } from '../../approvals/approvals.ts';
 import { TerminalRefused } from '../../pty/refusal.ts';
 import { taskSeed } from './task-seed.ts';
 
-/** What the task steps read of the request's server: the hub, the merged config and the engine. */
-export type SeedSource = { hub: string; merged: Record<string, unknown>; engine: string };
+/**
+ * What the task steps read of the request's server: the first hub, the merged config, the engine
+ * and the hubs other than the first, whose tasks are named `<root key>:<id>`.
+ */
+export type SeedSource = {
+    hub: string;
+    merged: Record<string, unknown>;
+    engine: string;
+    hubs?: HubTarget[];
+};
 
 /** The seed, folder and terminal name of a task, as the page is shown them. */
 export type SeedFacts = { seed: string; cwd: string; name: string };
 
 /** The facts a reference names, or the refusal word thrown as a TerminalRefused. */
 export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
-    const config: PortfolioConfig = portfolioConfigFrom(source.merged);
-    const answer = taskSeed(ref, source.hub, config, textCatalog(source.merged));
+    const hubs = source.hubs ?? [];
+    const named = splitHubId(
+        ref.collection ?? ref.id,
+        hubs.map((one) => one.key)
+    );
+    const owner = hubs.find((one) => one.key === named.root);
+    const config: PortfolioConfig = owner?.config ?? portfolioConfigFrom(source.merged);
+    const bare: TaskRef = owner === undefined ? ref : withoutHub(ref, owner.key);
+    const answer = taskSeed(bare, owner?.hub ?? source.hub, config, textCatalog(source.merged));
     if (!answer.ok) throw new TerminalRefused(answer.word);
     return { seed: answer.seed, cwd: answer.cwd, name: answer.name };
+}
+
+/** The reference with the hub's prefix off the ids of its collection and its task. */
+function withoutHub(ref: TaskRef, key: string): TaskRef {
+    const bare = (id: string): string => splitHubId(id, [key]).id;
+    return {
+        ...ref,
+        id: bare(ref.id),
+        ...(ref.collection === undefined ? {} : { collection: bare(ref.collection) })
+    };
 }
 
 /** The text a seed is approved by: the agent, the folder's real path and the seed. */

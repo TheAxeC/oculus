@@ -548,17 +548,20 @@ function slashed(path: string): string {
 /**
  * Each root with what a listing of it leaves out: the folders of the deeper roots inside it, when
  * every root is listed (`shared`), so that a file is listed once, under the deepest root holding
- * it, and the private folders inside it. A listing of one root leaves out no deeper root's
- * folder: it answers every path ripgrep lists under that root. Roots and folders are compared by
- * their real paths, so a link names the same place as its target. A root with no directory on
- * this machine is listed as it is and fails there.
+ * it, and the private folders inside it. A listing of one root leaves out no deeper root's folder:
+ * it answers every path ripgrep lists under that root. Roots and folders are compared by their real
+ * paths in the file system's own spelling, so a link names the same place as its target and a
+ * private folder written in another letter case is excluded by the name it has on disk. A root with
+ * no directory on this machine is listed as it is and fails there.
  */
 function namesPlans(roots: Root[], withheld: string[], shared: boolean): NamesPlan[] {
     const dirs = roots.map((root) => {
         const dir = expandHome(root.dir);
-        return { key: root.key, dir, real: realPath(dir) ?? dir };
+        return { key: root.key, dir, real: realPath(dir, true) ?? dir };
     });
-    const folders = withheld.map((folder) => realPath(expandHome(folder)) ?? expandHome(folder));
+    const folders = withheld.map(
+        (folder) => realPath(expandHome(folder), true) ?? expandHome(folder)
+    );
     return dirs.map((root) => ({
         key: root.key,
         dir: root.dir,

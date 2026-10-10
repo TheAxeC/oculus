@@ -91,8 +91,8 @@
                         venues={allVenues}
                         {tiers}
                         entry={file.entryOf(line.id)}
-                        schema={file.collection?.schema}
-                        file={file.source}
+                        schema={file.schemaOf(line.id)}
+                        file={file.sourceOf(line.id)}
                         fault={file.faultOf(line.id)}
                         onsaid={file.say}
                     />
@@ -120,8 +120,8 @@
                                 venues={allVenues}
                                 {tiers}
                                 entry={file.entryOf(line.id)}
-                                schema={file.collection?.schema}
-                                file={file.source}
+                                schema={file.schemaOf(line.id)}
+                                file={file.sourceOf(line.id)}
                                 fault={file.faultOf(line.id)}
                                 onsaid={file.say}
                             />
@@ -150,9 +150,9 @@
                                 venues={allVenues}
                                 {tiers}
                                 entry={file.entryOf(line.id)}
-                                schema={file.collection?.schema}
+                                schema={file.schemaOf(line.id)}
                                 muted
-                                file={file.source}
+                                file={file.sourceOf(line.id)}
                                 fault={file.faultOf(line.id)}
                                 onsaid={file.say}
                             />

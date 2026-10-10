@@ -3,6 +3,14 @@
 
 export type Id = string;
 
+/**
+ * A record that says which hub it was read from: the key of the `roots:` entry marked `hub: true`
+ * for a record of a hub other than the first, `hub` for one of the first hub when the portfolio
+ * holds more than one hub, and nothing for a record of a portfolio of one hub. Absent is read as
+ * `hub` (`rootOf` of data/helpers/hub-names.ts).
+ */
+export type Rooted = { root?: string };
+
 /** One problem in one file, reported and carried; never thrown, never repaired by a source. */
 export type Finding = {
     /** Absolute path of the file the problem is in. */
@@ -499,7 +507,7 @@ export type Deck = {
  * manifest's `venue_id`, `funding`, `datasets`, `pillar` and `domain` keys, and leaves them empty
  * when it has none.
  */
-export type Project = {
+export type Project = Rooted & {
     id: Id;
     tier: Tier;
     /** A discovered folder that has no project.yml. */
@@ -597,7 +605,7 @@ export type Project = {
 };
 
 /** A venue from registries/venues.yml. Its id field in the file is `id`, not `key`. */
-export type Venue = {
+export type Venue = Rooted & {
     id: Id;
     name: string;
     short?: string;
@@ -636,7 +644,7 @@ export type Venue = {
 };
 
 /** A dataset from registries/data.yml, whose entry list is under `datasets`. */
-export type Dataset = {
+export type Dataset = Rooted & {
     id: Id;
     name: string;
     modality?: string;
@@ -659,7 +667,7 @@ export type Dataset = {
 };
 
 /** A pillar from registries/pillars.yml. */
-export type Pillar = {
+export type Pillar = Rooted & {
     id: Id;
     title: string;
     color?: string;
@@ -674,7 +682,7 @@ export type Pillar = {
 };
 
 /** A domain from registries/domains.yml. */
-export type Domain = {
+export type Domain = Rooted & {
     id: Id;
     title: string;
     blurb?: string;
@@ -692,7 +700,7 @@ export type Domain = {
  * clinician belongs to the university and to the hospital alike, and the first is the one a single
  * line draws.
  */
-export type Person = {
+export type Person = Rooted & {
     id: Id;
     name: string;
     /** Keys of organisations.yml entries, the primary first, and empty for a person with none. */
@@ -707,6 +715,12 @@ export type Person = {
     /** True on the one entry that is the hub's owner; absent on every other. */
     self?: boolean;
     /**
+     * Absolute path of the people file of a person of a hub other than the first, which the Person
+     * view opens under that hub's root. A person of the first hub has none: the configuration's
+     * `people_file` names its file.
+     */
+    file?: string;
+    /**
      * Projects whose `collaborators:` name this person; filled from the other side of the relation.
      */
     projectIds: Id[];
@@ -719,7 +733,7 @@ export type Person = {
  * scheme's `funder:` are keys into it, so a university, a hospital or a funder is named once and
  * spelled the same way wherever it is drawn.
  */
-export type Organisation = {
+export type Organisation = Rooted & {
     id: Id;
     name: string;
     /** One of `university`, `hospital`, `funder`, `company` and `other`; validate checks it. */
@@ -737,7 +751,7 @@ export type Organisation = {
  * A manifest's `compute:` and `slurm.resource` of behavior.yml are keys into it. `host` is the ssh
  * alias of a cluster or a remote machine.
  */
-export type Resource = {
+export type Resource = Rooted & {
     id: Id;
     name: string;
     kind: 'cluster' | 'machine' | 'storage';
@@ -753,7 +767,7 @@ export type Resource = {
  * A funding scheme from funding/funding.yml. Its `key` is optional in that file by design, where
  * it is the cross-link anchor manifests name; an entry without one has no relations to resolve.
  */
-export type Funding = {
+export type Funding = Rooted & {
     id: Id;
     title: string;
     sub?: string;
@@ -825,17 +839,18 @@ type SideResearchKeys = Partial<
 /**
  * One side project of the Personal board and the Focus ticker: a hub folder under `side-projects/`
  * or a repository with a `.oculus/project.yml`. The id is `side:<slug>` for the first and
- * `root:<key>` for the second. `status` is a key of `side_project_status`, or `unknown` for any
- * other value.
+ * `root:<key>` for the second, and a hub other than the first has its root key in front of either.
+ * `status` is a key of `side_project_status`, or `unknown` for any other value.
  */
-export type SideProject = SideResearchKeys & {
-    id: Id;
-    title: string;
-    status: string;
-    eli5: string;
-    next: string;
-    links: string[];
-    source: PersonalSource;
-    /** Absolute path of the manifest. */
-    file: string;
-};
+export type SideProject = SideResearchKeys &
+    Rooted & {
+        id: Id;
+        title: string;
+        status: string;
+        eli5: string;
+        next: string;
+        links: string[];
+        source: PersonalSource;
+        /** Absolute path of the manifest. */
+        file: string;
+    };

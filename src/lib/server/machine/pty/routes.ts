@@ -27,6 +27,7 @@ import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, loadLocal, textCatalog } from '../../../data/sources/config.ts';
 import type { Root } from '../../files/files.ts';
+import { hubTargets } from '../../files/roots.ts';
 import { approveLatexStep, startLatex } from './latex/latex.ts';
 import type { RcHomes } from './latex/approval.ts';
 import { captureTask, restartTask, rerunTask, startCommand } from '../runs/commands/run.ts';
@@ -307,8 +308,10 @@ async function composeSession(
 
 /** What the task steps read: the hub, the merged config and the engine of this request. */
 function seedSource(options: TerminalOptions): SeedSource {
-    const hub = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
-    return { hub, merged: options.configFor(), engine: options.engine };
+    const local = localOf(options);
+    const merged = options.configFor();
+    const hubs = hubTargets({ config: merged, engine: options.engine, local });
+    return { hub: options.hubFor?.() ?? local.hub, merged, engine: options.engine, hubs };
 }
 
 /** The task reference of a seed or approve-seed request, or the refusal for a missing one. */

@@ -138,8 +138,8 @@
                                         concentrated={use.concentrated}
                                         {labels}
                                         entry={file.entryOf(venue.id)}
-                                        schema={file.collection?.schema}
-                                        file={file.source}
+                                        schema={file.schemaOf(venue.id)}
+                                        file={file.sourceOf(venue.id)}
                                         fault={file.faultOf(venue.id)}
                                         onsaid={file.say}
                                     />
@@ -177,8 +177,8 @@
                                         concentrated={use.concentrated}
                                         {labels}
                                         entry={file.entryOf(venue.id)}
-                                        schema={file.collection?.schema}
-                                        file={file.source}
+                                        schema={file.schemaOf(venue.id)}
+                                        file={file.sourceOf(venue.id)}
                                         fault={file.faultOf(venue.id)}
                                         onsaid={file.say}
                                     />

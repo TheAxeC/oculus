@@ -13,6 +13,10 @@ export type TickerRow = {
     tail?: string;
     tone?: string;
     /**
+     * A short mark drawn in front of the name, such as the key of the hub the row's record is of.
+     */
+    mark?: string;
+    /**
      * Small buttons after the tail. Each is an id the caller knows and words it translated;
      * what pressing one does is the caller's and nothing here knows what an action is.
      */

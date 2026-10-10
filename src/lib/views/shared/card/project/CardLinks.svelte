@@ -16,7 +16,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { BoardTag, LinkedItem } from '$lib/state/boards/board';
     import { t } from '$lib/state/shared/words/text';
-    import { goto, linkView, shownTags } from './card';
+    import { goto, linkView, shownTags } from '../card';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();

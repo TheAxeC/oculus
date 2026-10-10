@@ -23,7 +23,14 @@ import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../data/index.ts';
+import {
+    buildPortfolioWithSchemas,
+    joinHubs,
+    portfolioConfigFrom,
+    readSecondHub
+} from '../../../data/index.ts';
+import { mergedFeeds } from '../../../data/snapshot/hubs/feeds.ts';
+import type { HubSnapshot } from '../../../data/snapshot/hubs/merge.ts';
 import { withOwnSchemas } from './own-schemas.ts';
 import { createChecker } from '../../../data/snapshot/schema/check.ts';
 import type { ReferenceIndex } from '../../../data/snapshot/references/model.ts';
@@ -58,9 +65,17 @@ import { HUB_LAYER, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-name
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
-import { ENGINE_ROOT, HUB_ROOT, expandHome, readRoots, type Root } from '../../files/files.ts';
+import {
+    ENGINE_ROOT,
+    HUB_ROOT,
+    expandHome,
+    hubRoots,
+    readRoots,
+    type Root
+} from '../../files/files.ts';
 import { buildFeeds, isLinkedinFile } from '../../edit/feeds.ts';
 import type {
+    AuditFinding,
     AuditPayload,
     ConfigPayload,
     HostInfo,
@@ -191,7 +206,7 @@ export function namedByConfig(
     for (const file of [config.feeds.leads, config.feeds.radar]) {
         files.add(join(hub, file));
     }
-    files.add(join(hub, config.career));
+    if (config.career !== null) files.add(join(hub, config.career));
     const tiers = config.scan.map((rule) => join(hub, rule.dir) + sep);
     const deck = config.portfolioDeck === null ? null : join(hub, config.portfolioDeck) + sep;
     const perProject = [MANIFEST, DECK_FILE];
@@ -266,18 +281,20 @@ function identityOf(path: string): string {
 
 /**
  * The roots the side-project reader is handed, and the one place that decides which roots of the
- * file browser are repositories of their own. A root keyed `hub` or `engine` is dropped, a leading
- * `~` is expanded, and a root is dropped whose real path is the hub's, the engine's config
- * folder's or an earlier root's, so a second key, a second spelling or a link to a directory read
- * already draws no second card. A root whose directory is not on this machine is kept, for the
- * reader to find nothing in.
+ * file browser are repositories of their own. A root marked `hub: true` is built as a hub of its
+ * own and a root keyed `hub` or `engine` is a fixed one, so each is dropped. A leading `~` is
+ * expanded, and a root is dropped whose real path is the hub's, the engine's config folder's or an
+ * earlier root's, so a second key, a second spelling or a link to a directory read already draws no
+ * second card. A root whose directory is not on this machine is kept, for the reader to find
+ * nothing in.
  */
 export function personalRoots(listed: Root[], hub: string, engineConfig: string): PersonalRoot[] {
     const seen = new Set([identityOf(hub), identityOf(engineConfig)]);
     const keys = new Set<string>();
     const roots: PersonalRoot[] = [];
     for (const root of listed) {
-        if (root.key === HUB_ROOT || root.key === ENGINE_ROOT || keys.has(root.key)) continue;
+        if (root.hub === true || root.key === HUB_ROOT || root.key === ENGINE_ROOT) continue;
+        if (keys.has(root.key)) continue;
         const dir = expandHome(root.dir);
         const identity = identityOf(dir);
         if (seen.has(identity)) continue;
@@ -411,19 +428,20 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
 
     /**
      * The hub's config layer, `<hub>/.oculus/config`, watched like the engine's config folder: a
-     * change of it is a config change. A layer that is not there is waited for through the nearest
-     * folder that is, and a rebuild is queued only once the layer itself exists, so creating
-     * `<hub>/.oculus` for a bookmark or a note queues nothing. A handle on a layer that has since
-     * gone is closed first, as a root's folder is.
+     * change of the first hub's is a config change, and a change of another hub's is a rebuild of
+     * the portfolio alone, since the page's settings are the first hub's. A layer that is not there
+     * is waited for through the nearest folder that is, and a rebuild is queued only once the layer
+     * itself exists, so creating `<hub>/.oculus` for a bookmark or a note queues nothing. A handle
+     * on a layer that has since gone is closed first, as a root's folder is.
      */
-    const watchLayer = (dir: string): void => {
+    const watchLayer = (dir: string, isConfig: boolean): void => {
         const key = `layer:${dir}`;
         if (handles.has(dir) && !existsSync(dir)) {
             handles.get(dir)?.close();
             handles.delete(dir);
         }
         if (existsSync(dir)) {
-            if (open(dir, true)) {
+            if (open(dir, isConfig)) {
                 handles.get(key)?.close();
                 handles.delete(key);
                 parents.delete(key);
@@ -441,8 +459,8 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 key,
                 watch(parent, { recursive: false }, (_event, filename) => {
                     if (filename !== wanted) return;
-                    if (existsSync(dir)) queue(true, false);
-                    else watchLayer(dir);
+                    if (existsSync(dir)) queue(isConfig, false);
+                    else watchLayer(dir, isConfig);
                 })
             );
             parents.set(key, parent);
@@ -551,6 +569,64 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     };
 
     /**
+     * Watch the folders one hub's build reads: its scan tiers, registries, collections and feeds,
+     * the roots' `.oculus` folders, its career file and its config layer. Returns whether a feed
+     * folder was opened by this call, which republishes the feeds. The first hub's layer is a
+     * config change; another hub's is a portfolio rebuild.
+     */
+    const watchHubFolders = (
+        dir: string,
+        portfolio: PortfolioConfig,
+        roots: PersonalRoot[],
+        first: boolean
+    ): boolean => {
+        let feedOpened = false;
+        // Taken before anything is read, so the filters below see the build's own predicate.
+        const linkedinDir =
+            portfolio.feeds.linkedin === '' ? null : join(dir, portfolio.feeds.linkedin);
+        const yamlFeedDirs = new Set([
+            dirname(join(dir, portfolio.feeds.leads)),
+            dirname(join(dir, portfolio.feeds.radar))
+        ]);
+        // A directory the LinkedIn folder shares with another role (a scan tier, a registry or
+        // collection folder, a YAML feed folder) keeps the recursive watch and the YAML filter
+        // beside the flat post filter, so neither role loses its events.
+        const otherDirs = new Set(roleDirectories(dir, portfolio, roots));
+        const rootDirs = new Set(roots.map((root) => join(root.dir, ROOT_FOLDER)));
+        for (const watched of watchedDirectories(dir, portfolio, roots)) {
+            if (rootDirs.has(watched)) {
+                openRootFolder(watched);
+                continue;
+            }
+            const linkedin = watched === linkedinDir;
+            const shared = linkedin && otherDirs.has(watched);
+            const yamlFeed = yamlFeedDirs.has(watched);
+            const isFeed = linkedin || yamlFeed;
+            // A folder that is not there is waited for through its parent and is no error to print;
+            // any other failure to watch an existing folder is printed once.
+            if (!existsSync(watched)) {
+                if (!handles.has(watched)) openParent(watched, isFeed);
+                continue;
+            }
+            const opened = open(
+                watched,
+                false,
+                isFeed,
+                !linkedin || shared,
+                (filename) =>
+                    (linkedin && isLinkedinFile(filename)) ||
+                    ((!linkedin || shared) &&
+                        relevant(filename) &&
+                        named(join(watched, filename ?? '')))
+            );
+            if (opened && isFeed) feedOpened = true;
+        }
+        if (portfolio.career !== null) openFile(join(dir, portfolio.career));
+        watchLayer(join(dir, HUB_LAYER), first);
+        return feedOpened;
+    };
+
+    /**
      * One rebuild. `withConfig` also republishes the config channel. The directory set is derived
      * again from the config that was just read, so a scan path added to layout.yml is watched from
      * the next rebuild on; a path removed keeps its handle until the watcher is closed. Unopened
@@ -564,6 +640,10 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             // Read here and not taken from a request: a rebuild is the watcher's answer to a change
             // on disk, and no request is in flight when it runs.
             const { config, findings, from } = loadConfig(paths.engine, { hub: paths.hub });
+            // The roots marked as hubs are read again at every rebuild, each with its own settings,
+            // so a root that left `roots:` or lost its mark is out of this build.
+            const listed = paths.roots();
+            const others = hubRoots(listed).map((root) => readSecondHub(paths.engine, root));
             if (withConfig) {
                 // The roots of sources.yml, the documents of layout.yml and the icon map are
                 // checked here rather than in loadConfig, which merges files and never touches the
@@ -581,6 +661,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                     host: paths.host,
                     findings: [
                         ...findings,
+                        ...others.flatMap((one) => one.findings),
                         ...iconFindings(paths.engine, config),
                         ...behaviorFindings(paths.engine, config),
                         ...settingFindings(paths.engine, config),
@@ -592,8 +673,11 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                         ...schemaFindings(paths.engine, config),
                         ...themeFindings(paths.engine, config),
                         ...localFindings(paths.engine, config, readLocal(paths.engine).problems),
-                        ...readRoots(config, sourceFile(paths.engine, paths.hub, from, 'roots'))
-                            .findings,
+                        ...readRoots(
+                            config,
+                            sourceFile(paths.engine, paths.hub, from, 'roots'),
+                            paths.hub
+                        ).findings,
                         ...docFindings(
                             config,
                             paths.hub,
@@ -606,55 +690,22 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 if (closed) return;
             }
             const portfolio = portfolioConfigFrom(config);
-            const roots = personalRoots(paths.roots(), paths.hub, engineConfig);
-            named = namedByConfig(paths.hub, portfolio, roots);
+            const roots = personalRoots(listed, paths.hub, engineConfig);
+            const byHub = [
+                namedByConfig(paths.hub, portfolio, roots),
+                ...others.map((one) => namedByConfig(one.dir, one.portfolio))
+            ];
+            named = (path) => byHub.some((one) => one(path));
             watchRootParents(roots);
             // The directories are opened before the snapshot is read, so a write that lands
             // between the read and the open cannot be missed.
-            const linkedinDir =
-                portfolio.feeds.linkedin === '' ? null : join(paths.hub, portfolio.feeds.linkedin);
-            const yamlFeedDirs = new Set([
-                dirname(join(paths.hub, portfolio.feeds.leads)),
-                dirname(join(paths.hub, portfolio.feeds.radar))
-            ]);
-            // A directory the LinkedIn folder shares with another role (a scan tier, a registry or
-            // collection folder, a YAML feed folder) keeps the recursive watch and the YAML filter
-            // beside the flat post filter, so neither role loses its events.
-            const otherDirs = new Set(roleDirectories(paths.hub, portfolio, roots));
-            const rootDirs = new Set(roots.map((root) => join(root.dir, ROOT_FOLDER)));
-            for (const dir of watchedDirectories(paths.hub, portfolio, roots)) {
-                if (rootDirs.has(dir)) {
-                    openRootFolder(dir);
-                    continue;
-                }
-                const linkedin = dir === linkedinDir;
-                const shared = linkedin && otherDirs.has(dir);
-                const yamlFeed = yamlFeedDirs.has(dir);
-                const isFeed = linkedin || yamlFeed;
-                // A folder that is not there is waited for through its parent and is no error to
-                // print; any other failure to watch an existing folder is printed once.
-                if (!existsSync(dir)) {
-                    if (!handles.has(dir)) openParent(dir, isFeed);
-                    continue;
-                }
-                const opened = open(
-                    dir,
-                    false,
-                    isFeed,
-                    !linkedin || shared,
-                    (filename) =>
-                        (linkedin && isLinkedinFile(filename)) ||
-                        ((!linkedin || shared) &&
-                            relevant(filename) &&
-                            named(join(dir, filename ?? '')))
-                );
-                if (opened && isFeed) withFeeds = true;
+            if (watchHubFolders(paths.hub, portfolio, roots, true)) withFeeds = true;
+            for (const one of others) {
+                if (watchHubFolders(one.dir, one.portfolio, [], false)) withFeeds = true;
             }
-            openFile(join(paths.hub, portfolio.career));
             open(engineConfig, true);
-            watchLayer(join(paths.hub, HUB_LAYER));
             const version = hub.nextVersion('portfolio');
-            const { snapshot, schemas, references } = buildPortfolioWithSchemas(
+            const base = buildPortfolioWithSchemas(
                 paths.hub,
                 portfolio,
                 version,
@@ -662,20 +713,40 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 checker,
                 engineConfig
             );
+            const built = joinHubs(
+                base,
+                { hub: paths.hub, config: portfolio },
+                others,
+                version,
+                checker
+            );
+            const snapshot = built.snapshot;
             hub.publish('portfolio', snapshot);
-            options.schemas?.(withOwnSchemas(schemas), references);
+            options.schemas?.(withOwnSchemas(built.schemas), built.references);
             if (isClosed()) return;
             // The audit reads the disk, so it runs here, once per rebuild, and never per request.
             // It is published inside its own guard: a scan that throws leaves the previous audit
             // standing and must not take the portfolio down with it.
             try {
+                const scan = (
+                    part: HubSnapshot,
+                    dir: string,
+                    settings: Record<string, unknown>
+                ): AuditFinding[] =>
+                    auditFindings({
+                        hub: dir,
+                        ...(part.key === HUB_ROOT ? {} : { root: part.key }),
+                        projects: Object.values(part.snapshot.entities.projects),
+                        collections: Object.values(part.snapshot.entities.collections),
+                        rules: auditRules(settings),
+                        catalog: textCatalog(settings)
+                    });
                 const audit: AuditPayload = {
-                    findings: auditFindings({
-                        hub: paths.hub,
-                        projects: Object.values(snapshot.entities.projects),
-                        collections: Object.values(snapshot.entities.collections),
-                        rules: auditRules(config),
-                        catalog: textCatalog(config)
+                    findings: built.parts.flatMap((part) => {
+                        const other = others.find((one) => one.key === part.key);
+                        return other === undefined
+                            ? scan(part, paths.hub, config)
+                            : scan(part, other.dir, other.portfolio.merged);
                     }),
                     muted: mutedSignatures(config)
                 };
@@ -684,7 +755,18 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 console.error(`portfolio watch: the audit scan failed: ${reason(error)}`);
             }
             if (isClosed()) return;
-            if (withFeeds) hub.publish('feeds', buildFeeds(paths.hub, portfolio));
+            if (withFeeds) {
+                hub.publish(
+                    'feeds',
+                    mergedFeeds(
+                        buildFeeds(paths.hub, portfolio),
+                        others.map((one) => ({
+                            key: one.key,
+                            feeds: buildFeeds(one.dir, one.portfolio)
+                        }))
+                    )
+                );
+            }
             if (isClosed()) return;
             try {
                 options.built?.();

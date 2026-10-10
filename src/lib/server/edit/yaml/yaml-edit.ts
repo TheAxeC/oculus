@@ -43,6 +43,7 @@ import type { RemovedText, ReplacedText } from '../../core/changes.ts';
 import { unchanged } from '../../../data/shapes/shapes.ts';
 import {
     isBlockMap,
+    isBlockScalar,
     isMetalist,
     itemStyles,
     renderBlock,
@@ -50,7 +51,7 @@ import {
     renderFlow,
     renderMetalist
 } from './yaml-values.ts';
-import type { BlockMap, FieldValue, FlatStringMap } from './yaml-values.ts';
+import type { BlockMap, FieldValue, ScalarMap } from './yaml-values.ts';
 import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import {
     DEFAULT_INDENT,
@@ -66,7 +67,7 @@ import {
 
 /** The reason a value is none of the shapes a write may carry. */
 export const NOT_A_FIELD_VALUE =
-    'not a string, number, boolean, list of strings, metalist, map of scalars, lists and maps, or null';
+    'not a string, number, boolean, list of strings, list of maps of scalars, map of scalars, lists and maps, or null';
 
 /** One field that was not written, and why. */
 export type Refusal = { field: string; reason: string };
@@ -181,9 +182,9 @@ export function sameValue(next: unknown, current: unknown): boolean {
     return isDeepStrictEqual(next, current);
 }
 
-/** One row of a metalist, tested as given: a map whose values are all strings. */
-const metalistRowShape = z.custom<FlatStringMap>(
-    (row) => isMap(row) && Object.values(row).every((value) => typeof value === 'string')
+/** One row of a metalist, tested as given: a map whose values are all scalars. */
+const metalistRowShape = z.custom<ScalarMap>(
+    (row) => isMap(row) && Object.values(row).every(isBlockScalar)
 );
 
 /**

@@ -24,7 +24,8 @@ import mime from 'mime';
 import { z } from 'zod';
 import { inAppsFolder } from '../../data/helpers/files/apps.ts';
 import { ENGINE_ROOT, HUB_ROOT } from '../../data/helpers/hub-names.ts';
-import { configDir } from '../../data/sources/config.ts';
+import { findingText } from '../../data/helpers/finding-text.ts';
+import { configDir, textCatalog } from '../../data/sources/config.ts';
 import type { Finding } from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
 
@@ -42,8 +43,11 @@ export function projectDirectory(hub: string, folder: string): string {
     return cwd;
 }
 
-/** One directory the server may serve files from: the key a URL names it by, and where it is. */
-export type Root = { key: string; dir: string };
+/**
+ * One directory the server may serve files from: the key a URL names it by, and where it is. A root
+ * marked `hub` is built as a hub of its own and merged into the portfolio.
+ */
+export type Root = { key: string; dir: string; hub?: true };
 
 /** Anything mime does not name is bytes: the browser is told nothing it cannot check. */
 const FALLBACK = 'application/octet-stream';
@@ -135,48 +139,120 @@ export const rootShape = z.object({
     dir: z.string().min(1)
 }) satisfies z.ZodType<Root>;
 
-/** One entry of the `roots:` list: a map, whose `key` and `dir` are checked one at a time. */
-const rootEntryShape = z.looseObject({ key: z.unknown().optional(), dir: z.unknown().optional() });
+/**
+ * One entry of the `roots:` list: a map, whose `key`, `dir` and `hub` are checked one at a time.
+ */
+const rootEntryShape = z.looseObject({
+    key: z.unknown().optional(),
+    dir: z.unknown().optional(),
+    hub: z.unknown().optional()
+});
 
 /** The `roots:` value: a list, of entries nothing has checked yet. */
 const rootListShape = z.array(z.unknown());
 
 /**
+ * The keys a hub root may not carry: each is a prefix or a fixed root the merged ids already use.
+ */
+const RESERVED_HUB_KEYS: readonly string[] = ['side', 'root', HUB_ROOT, ENGINE_ROOT];
+
+/**
+ * A directory's place on disk, links followed, or the directory as written when it is not there.
+ */
+function placeOf(dir: string): string {
+    return realPath(dir, true) ?? resolve(dir);
+}
+
+/**
+ * The sentence saying why a root marked `hub: true` is read as a plain root, or null when it is a
+ * hub: a key that is reserved or holds a colon, a directory that is, lies inside or holds the first
+ * hub, or that is, lies inside or holds the directory of a hub root listed above it.
+ */
+function hubRefusal(
+    catalog: Record<string, string>,
+    key: string,
+    dir: string,
+    first: string,
+    taken: readonly Root[]
+): string | null {
+    if (RESERVED_HUB_KEYS.includes(key) || key.includes(':')) {
+        return findingText(catalog, 'findings.roots.hub_reserved_key');
+    }
+    const place = placeOf(dir);
+    const home = placeOf(first);
+    if (inside(place, home) || inside(home, place)) {
+        return findingText(catalog, 'findings.roots.hub_is_first');
+    }
+    for (const one of taken) {
+        const other = placeOf(one.dir);
+        if (place === other) return findingText(catalog, 'findings.roots.hub_same_dir');
+        if (inside(place, other) || inside(other, place)) {
+            return findingText(catalog, 'findings.roots.hub_nested');
+        }
+    }
+    return null;
+}
+
+/**
  * The `roots:` list of the merged sources.yml (the hub layer's list), and a finding for every entry
- * that is not usable: one that is not a pair of strings, a key two entries share, and a directory
- * that is not on this machine. A finding is reported and never repaired, so a root whose directory
- * has moved shows up in the Findings view rather than as a tab that silently serves nothing.
+ * that is not usable: one that is not a pair of strings, a key two entries share, a directory that
+ * is not on this machine, and a `hub: true` that cannot be honoured. A finding is reported and
+ * never repaired, so a root whose directory has moved shows up in the Findings view rather than as
+ * a tab that silently serves nothing. A root whose `hub` is not true, or whose `hub: true` is
+ * refused, is a plain root. `first` is the first hub's directory, which no hub root may overlap.
  */
 export function readRoots(
     config: Record<string, unknown>,
-    file: string
+    file: string,
+    first: string
 ): { roots: Root[]; findings: Finding[] } {
     const roots: Root[] = [];
     const findings: Finding[] = [];
     if (config.roots === undefined) return { roots, findings };
+    const catalog = textCatalog(config);
     const list = rootListShape.safeParse(config.roots);
     if (!list.success) {
-        findings.push({ file, key: 'roots', message: 'roots is not a list' });
+        findings.push({
+            file,
+            key: 'roots',
+            message: findingText(catalog, 'findings.roots.not_a_list')
+        });
         return { roots, findings };
     }
     for (const item of list.data) {
         const entry = rootEntryShape.safeParse(item);
         if (!entry.success) {
-            findings.push({ file, key: 'roots', message: 'a root is not a map of key and dir' });
+            findings.push({
+                file,
+                key: 'roots',
+                message: findingText(catalog, 'findings.roots.not_a_map')
+            });
             continue;
         }
         const key = rootShape.shape.key.safeParse(entry.data.key);
         if (!key.success) {
-            findings.push({ file, key: 'roots', message: 'a root has no key' });
+            findings.push({
+                file,
+                key: 'roots',
+                message: findingText(catalog, 'findings.roots.no_key')
+            });
             continue;
         }
         const named = rootShape.shape.dir.safeParse(entry.data.dir);
         if (!named.success) {
-            findings.push({ file, key: key.data, message: 'the root names no dir' });
+            findings.push({
+                file,
+                key: key.data,
+                message: findingText(catalog, 'findings.roots.no_dir')
+            });
             continue;
         }
         if (roots.some((one) => one.key === key.data)) {
-            findings.push({ file, key: key.data, message: 'two roots carry this key' });
+            findings.push({
+                file,
+                key: key.data,
+                message: findingText(catalog, 'findings.roots.repeated_key')
+            });
             continue;
         }
         const dir = expandHome(named.data);
@@ -184,20 +260,48 @@ export function readRoots(
             findings.push({
                 file,
                 key: key.data,
-                message: `the dir ${named.data} is relative; a root is absolute or starts with ~/`
+                message: findingText(catalog, 'findings.roots.relative', named.data)
             });
             continue;
         }
-        roots.push({ key: key.data, dir });
+        const root: Root = { key: key.data, dir };
         if (realPath(dir) === null) {
             findings.push({
                 file,
                 key: key.data,
-                message: `no directory at ${dir}; this root serves nothing`
+                message: findingText(catalog, 'findings.roots.missing_dir', dir)
+            });
+        } else if (entry.data.hub === true) {
+            const refusal = hubRefusal(
+                catalog,
+                key.data,
+                dir,
+                first,
+                roots.filter((one) => one.hub === true)
+            );
+            if (refusal === null) root.hub = true;
+            else {
+                findings.push({
+                    file,
+                    key: key.data,
+                    message: refusal
+                });
+            }
+        } else if (entry.data.hub !== undefined && entry.data.hub !== false) {
+            findings.push({
+                file,
+                key: key.data,
+                message: findingText(catalog, 'findings.roots.hub_not_boolean')
             });
         }
+        roots.push(root);
     }
     return { roots, findings };
+}
+
+/** The roots among the given ones that are hubs, in the order of `roots:`. */
+export function hubRoots(list: readonly Root[]): Root[] {
+    return list.filter((one) => one.hub === true);
 }
 
 /**
@@ -263,8 +367,12 @@ export function engineRoot(engine: string): Root {
  * The roots the merged `roots:` list names, without the hub in front of them, out of a config
  * already read.
  */
-export function configuredRootsOf(config: Record<string, unknown>, engine: string): Root[] {
-    return readRoots(config, rootsFile(engine)).roots;
+export function configuredRootsOf(
+    config: Record<string, unknown>,
+    engine: string,
+    hub: string
+): Root[] {
+    return readRoots(config, rootsFile(engine), hub).roots;
 }
 
 /**

@@ -20,19 +20,25 @@ import { readManifests, readPersonal } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
 import { readCareer } from './sources/career.ts';
-import { readFeeds } from './sources/feeds.ts';
+import { feedItems, readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
 import { CAREER_FILE, HUB_ROOT } from './helpers/hub-names.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
-import { textCatalog } from './sources/config.ts';
+import { loadConfig, textCatalog } from './sources/config.ts';
+import { mergeHubs, type HubSnapshot } from './snapshot/hubs/merge.ts';
 import { normalise } from './snapshot/normalise.ts';
 import { sortFindings, validate } from './snapshot/validate.ts';
 import { createChecker, type Checker } from './snapshot/schema/check.ts';
-import { unreadSources } from './snapshot/schema/lists.ts';
+import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
 import { listedFields } from './snapshot/schema/manifest.ts';
 import { runSchemas } from './snapshot/schema/run.ts';
-import { withSchemas, type SchemaSet } from './snapshot/schema/set.ts';
+import {
+    joinedSchemas,
+    scopedSchemas,
+    withSchemas,
+    type SchemaSet
+} from './snapshot/schema/set.ts';
 import { engineSchemas } from './sources/config/catalog/schemas/engine.ts';
 import { catalogOf } from './sources/config/catalog/options.ts';
 import { optionFiles } from './sources/config/catalog/schemas/references.ts';
@@ -51,6 +57,7 @@ import type {
     RawManifest,
     RawPortfolio,
     RegistryFiles,
+    RegistryName,
     ScanRule,
     Snapshot,
     Vocabulary
@@ -237,7 +244,9 @@ export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet; reference
  * side-projects tier, read as handed; the watcher's `personalRoots` decides which roots of the file
  * browser they are. `checker` keeps the compiled validators from one build to the next, so a
  * rebuild whose schemas did not change compiles nothing. `engine` is the engine's config folder,
- * whose files that carry a reference are indexed beside the hub's; none when it is null.
+ * whose files that carry a reference are indexed beside the hub's; none when it is null. `root` is
+ * the key the hub's files are named under in the reference index: `hub` for the first hub, the key
+ * of its root for another.
  */
 export function buildPortfolioWithSchemas(
     hub: string,
@@ -245,14 +254,18 @@ export function buildPortfolioWithSchemas(
     version = 0,
     roots: PersonalRoot[] = [],
     checker: Checker = createChecker(),
-    engine: string | null = null
+    engine: string | null = null,
+    root: string = HUB_ROOT
 ): PortfolioBuild {
     const manifests = readManifests(hub, config.scan, config.text);
     const personal = readPersonal(hub, config.scan, roots, config.text);
     const registries = readRegistries(hub, config.registries, config.text);
     const collections = readCollections(hub, config.collections, config.text);
     const feeds = readFeeds(hub, config.feeds, config.text);
-    const career = readCareer(hub, config.career, config.text);
+    const career =
+        config.career === null
+            ? { career: null, findings: [] }
+            : readCareer(hub, config.career, config.text);
     const deck = decks(hub, manifests.manifests, config);
 
     const raw: RawPortfolio = {
@@ -288,6 +301,7 @@ export function buildPortfolioWithSchemas(
     ]);
     const references = buildReferences({
         hub,
+        root,
         config,
         engine,
         read: run.read,
@@ -301,5 +315,83 @@ export function buildPortfolioWithSchemas(
         snapshot: normalise(raw, findings, version, config.vocab.sideStatuses),
         schemas: withSchemas(run.set, engineSchemas(raw, config)),
         references
+    };
+}
+
+/** A hub other than the first as the build needs it: its key and where it is. */
+export type HubRoot = { key: string; dir: string };
+
+/**
+ * A hub other than the first, read with its own settings: the engine's defaults under the hub's own
+ * `.oculus/config/`. Its career and its portfolio deck are the first hub's alone, so they are not
+ * read, and the findings of its settings layer ride along for the caller to report.
+ */
+export type SecondHub = HubRoot & { portfolio: PortfolioConfig; findings: Finding[] };
+
+/** The settings of a hub other than the first. */
+export function readSecondHub(engine: string, root: HubRoot): SecondHub {
+    const { config, findings } = loadConfig(engine, { hub: root.dir });
+    const portfolio = { ...portfolioConfigFrom(config), career: null, portfolioDeck: null };
+    return { ...root, portfolio, findings };
+}
+
+/** The merged build and each hub's own snapshot, the first hub's under the key `hub`. */
+export type HubsBuild = PortfolioBuild & { parts: HubSnapshot[] };
+
+/**
+ * The first hub's build joined with every hub beside it as one build: each other hub is built on
+ * its own with its own settings and the snapshots are merged (snapshot/hubs/merge.ts), the YAML
+ * server's schemas and reference index joined with each hub's files under its own root. With no
+ * other hub it is the first hub's build as it is. `parts` hold the snapshots the hubs were built
+ * into before the merge, which the audit scans each hub by.
+ */
+export function joinHubs(
+    base: PortfolioBuild,
+    first: { hub: string; config: PortfolioConfig },
+    others: readonly SecondHub[],
+    version: number,
+    checker: Checker
+): HubsBuild {
+    const own: HubSnapshot = { key: HUB_ROOT, snapshot: base.snapshot };
+    if (others.length === 0) return { ...base, parts: [own] };
+    const built = others.map((one) => ({
+        key: one.key,
+        peopleFile: join(one.dir, one.portfolio.registries.people),
+        build: buildPortfolioWithSchemas(
+            one.dir,
+            one.portfolio,
+            version,
+            [],
+            checker,
+            null,
+            one.key
+        )
+    }));
+    const registryFiles = Object.fromEntries(
+        REGISTRIES.map((name) => [name, join(first.hub, first.config.registries[name])])
+    ) as Record<RegistryName, string>;
+    const snapshot = mergeHubs(
+        {
+            snapshot: base.snapshot,
+            registryFiles,
+            feedItems: feedItems(first.hub, first.config.feeds, first.config.text)
+        },
+        built.map((one) => ({
+            key: one.key,
+            snapshot: one.build.snapshot,
+            peopleFile: one.peopleFile
+        })),
+        first.config.text
+    );
+    return {
+        snapshot,
+        schemas: joinedSchemas([
+            base.schemas,
+            ...built.map((one) => scopedSchemas(one.key, one.build.schemas))
+        ]),
+        references: {
+            files: [base, ...built.map((one) => one.build)].flatMap((one) => one.references.files)
+        },
+        parts: [own, ...built.map((one) => ({ key: one.key, snapshot: one.build.snapshot }))]
     };
 }

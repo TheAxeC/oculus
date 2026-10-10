@@ -39,12 +39,15 @@
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
+    import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+    import RootChip from '../../shared/card/RootChip.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
     const {
         entities: { portfolio },
+        fs: { roots },
         layout: { openView },
         selectors: { configMap }
     } = client;
@@ -57,7 +60,17 @@
     const folder = $derived(join.folder);
     /** The folder as a path of the hub, or nothing for one outside it. */
     const folderPath = $derived(hubPathsOf({ folder }).at(0));
-    const source = $derived(viewSourceFile('people', configMap()));
+    /** The key of the hub the person is of. */
+    const hub = $derived(join.person === null ? HUB_ROOT : rootOf(join.person));
+    /**
+     * The people file the person is read from: the configuration's for the first hub, and for a
+     * person of another hub that hub's own file, under the root the hub is served under.
+     */
+    const source = $derived(
+        join.person?.file !== undefined && hub !== HUB_ROOT
+            ? fileUnder(join.person.file, roots())
+            : viewSourceFile('people', configMap())
+    );
 
     /** The rows of the fact strip: what the registry holds about this person beyond their name. */
     const facts = $derived.by(() => {
@@ -129,6 +142,11 @@
         <Empty message={key === '' ? t('person.nobody') : t('person.unknown', key)} glyph="warn" />
     {:else}
         <div class="person" data-person={join.person.id}>
+            {#if hub !== HUB_ROOT}
+                <p class="self">
+                    <RootChip record={join.person} />
+                </p>
+            {/if}
             {#if join.person.self === true}
                 <p class="self">
                     <Tag label={t('person.self')} glyph="star" tone="teal" />
@@ -189,7 +207,7 @@
 
             {#if folder !== ''}
                 <section class="block" data-block="folder">
-                    <FolderFiles folder={folderPath}>
+                    <FolderFiles folder={folderPath} root={hub}>
                         {#snippet heading()}
                             <h3>{t('person.folder', folder)}</h3>
                         {/snippet}

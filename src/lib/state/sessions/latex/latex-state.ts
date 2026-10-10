@@ -264,14 +264,16 @@ const mainShape = z.object({
 });
 
 /**
- * The body of a state answer: its mains, and the project folder a project's answer is against.
+ * The body of a state answer: its mains, and the project folder a project's answer is against,
+ * under the root of the project's hub.
  */
 export const bodyShape = z.object({
     mains: rowsShape(mainShape).catch([]),
+    root: z.string().catch(HUB_ROOT),
     folder: z.string().catch('')
 });
 
-/** What a body that is not a map says: no mains and no folder. */
+/** What a body that is not a map says: no mains and no folder, in the first hub. */
 export const NO_BODY = bodyShape.parse({});
 
 /** The body of an outline answer; a project's carries the folder its files are against. */
@@ -413,7 +415,7 @@ export function stateOf(target: LatexTarget, body: z.output<typeof bodyShape>): 
             building: false
         };
     });
-    return { root: HUB_ROOT, dir, mains, error: '', loading: false };
+    return { root: body.root, dir, mains, error: '', loading: false };
 }
 
 /** The place a main file is built in, which is one for every form of target that reaches it. */

@@ -29,6 +29,7 @@
 
 import { z } from 'zod';
 import type { DocPart, Message, RenderedHeading } from '../../data/model/index.ts';
+import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import { mapShape, readJson, rowsShape } from '../../data/shapes/shapes.ts';
 import { failedAnswer } from '../shared/answers/answers.ts';
 import { filesNamed } from '../shared/answers/files-named.ts';
@@ -84,8 +85,11 @@ const NOTHING: DocState = {
 /** One rendered document per project and name, held for one client. */
 export type DocsStore = {
     document: (id: string, name: string) => DocState;
-    /** One Markdown document of the hub, by its path relative to the hub. */
-    hubDocument: (path: string) => DocState;
+    /**
+     * One Markdown document of a hub, by its path relative to the hub, the first hub's unless
+     * `root` names the root of another.
+     */
+    hubDocument: (path: string, root?: string) => DocState;
     /** Oculus's own manual, which the server reads from the engine directory. */
     manual: () => DocState;
 };
@@ -194,9 +198,13 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
      * One Markdown document of the hub, by the path its `docs:` entry in layout.yml names or, on an
      * entry's page, by the path of a Markdown file in the folder its `link` names.
      */
-    function hubDocument(path: string): DocState {
+    function hubDocument(path: string, root: string = HUB_ROOT): DocState {
         if (path === '') return NOTHING;
-        return reading(ownKey(HUB, path), `${DOCS}?hub=${encodeURIComponent(path)}`);
+        const named = root === HUB_ROOT ? '' : `&root=${encodeURIComponent(root)}`;
+        return reading(
+            ownKey(HUB, root === HUB_ROOT ? path : `${root}:${path}`),
+            `${DOCS}?hub=${encodeURIComponent(path)}${named}`
+        );
     }
 
     /** The manual, which is one document and takes no path. */

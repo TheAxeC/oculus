@@ -1,4 +1,4 @@
-// Layer 2, server test. The `app-store` write kind (lib/server/edit/writes/app-store.ts): an app's
+// Layer 2, server test. The `app-store` write kind (lib/server/edit/writes/apps/store.ts): an app's
 // one JSON value, written to the file its held row names inside the folder the store module was
 // given, recorded with byte sizes, and kept in the undo folder for the undo.
 //
@@ -12,7 +12,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { beforeAll, describe, expect, vi } from 'vitest';
 import type { HeldApp } from '../../../src/lib/server/machine/apps/held.ts';
 import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { writeAppStore } from '../../../src/lib/server/edit/writes/app-store.ts';
+import { writeAppStore } from '../../../src/lib/server/edit/writes/apps/store.ts';
 import { readChanges } from '../../../src/lib/server/core/changes.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { present } from '../../fixtures/present.ts';

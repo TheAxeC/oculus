@@ -8,14 +8,14 @@
 // is left out of both the entity that held it and the relation table, and validate has already
 // named it in a finding, so a view never joins against something that is not there.
 //
-// The career section is read in normalise-career.ts and handed on from here.
+// The career section is read in normalise-parts/career.ts and handed on from here.
 
 import { z } from 'zod';
 import { compact } from './compact.ts';
 import { fieldsOf } from './schema/field.ts';
-import { career } from './normalise-career.ts';
-import { followups, subtasks } from './normalise-plans.ts';
-import { sideProjects } from './normalise-personal.ts';
+import { career } from './normalise-parts/career.ts';
+import { followups, subtasks } from './normalise-parts/plans.ts';
+import { sideProjects } from './normalise-parts/personal.ts';
 import { indexing } from './indexing.ts';
 import type {
     CodeAvailability,
@@ -116,7 +116,7 @@ function num(value: unknown): number | undefined {
 }
 
 /** A record keyed by id, filled in sorted id order, so its JSON does not depend on read order. */
-function byId<T extends { id: Id }>(items: T[]): Record<Id, T> {
+export function byId<T extends { id: Id }>(items: T[]): Record<Id, T> {
     const out: Record<Id, T> = {};
     for (const item of [...items].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))) {
         out[item.id] = item;
@@ -125,7 +125,7 @@ function byId<T extends { id: Id }>(items: T[]): Record<Id, T> {
 }
 
 /** Unique pairs, sorted by the first id then the second. */
-function pairs(found: [Id, Id][]): [Id, Id][] {
+export function pairs(found: [Id, Id][]): [Id, Id][] {
     const seen = new Set<string>();
     const out: [Id, Id][] = [];
     for (const pair of found) {

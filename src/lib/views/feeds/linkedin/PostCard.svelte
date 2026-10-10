@@ -7,7 +7,8 @@
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { rootOf } from '$lib/state/shared/page/hubs';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { snippet, type LinkedinEntry } from '$lib/state/feeds/linkedin';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
@@ -31,6 +32,7 @@
 
     let { entry, id, cursor, folder, posted = false, onsaid }: Props = $props();
 
+    const hub = $derived(rootOf(entry));
     const number = $derived(/^\d+/.exec(entry.file)?.[0] ?? '');
     const path = $derived(linkedinSourcePath(folder, entry.file));
 
@@ -39,23 +41,24 @@
     }
 
     async function promote(): Promise<void> {
-        const answer = await markPosted(entry.file);
+        const answer = await markPosted(entry.file, hub);
         say(answer);
     }
 
     function edit(): void {
-        openLinkedinSource(client.layout, folder, entry.file);
+        openLinkedinSource(client.layout, folder, entry.file, hub);
     }
 </script>
 
 <div
     data-linkedin-card={entry.file}
     data-editor-view="source"
-    data-editor-root={HUB_ROOT}
+    data-editor-root={hub}
     data-editor-path={path}
 >
     <Card {id} {cursor} title={entry.title}>
         {#snippet meta()}
+            <RootChip record={entry} />
             <Tag label={posted ? number : t('linkedin.idea_tag')} />
             {#if entry.category !== ''}
                 <Tag label={entry.category} />

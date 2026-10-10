@@ -1,15 +1,15 @@
-In flight (1 of 6 slots in use):
-- D55 (roots as hubs): findings of the review over round 1 being ruled, then landing.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (3 steps):
-- D58 (the engine's guides on every hub): once D49 and D55 have landed.
+- D58 (the engine's guides on every hub): next, D49 and D55 have landed.
 - Q72 (the architecture re-read): waits for D49, D55 and D58 (open item 33 (a), Z766).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D49 (the help pages cut), 2026-10-10.
+- D55 (roots as hubs), 2026-10-10.
+- D49 (the help pages cut), 2026-10-10, 2181e8152.
 - D56 (the workbench), 2026-10-10, 652f5104a.
 - R2 (the first-run check), 2026-10-10, 4664a5f21.
 - D50 (the hub's own folder, its shareable files and its settings layer), 2026-10-09, b4cb416a3.

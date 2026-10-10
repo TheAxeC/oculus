@@ -13,6 +13,7 @@
 import { z } from 'zod';
 import { ADDRESSED, HOSTED, isHubPath } from '../../data/places/hub-address.ts';
 import { isMap } from '../../data/helpers/guards.ts';
+import { hubId, inHubOf, rootOf } from '../../data/helpers/hub-names.ts';
 import {
     anyNumberShape,
     anyValueShape,
@@ -272,10 +273,10 @@ const HOSTED_SCHEME = 'https://';
  * write as `network/<event>/deck.html` and the like, and is served through api/file's hub root so
  * a click opens the file rather than a 404 under the page's own address.
  */
-export function hrefOf(value: string): string {
+export function hrefOf(value: string, root: string = HUB_ROOT): string {
     if (ADDRESSED.test(value)) return value;
     if (HOSTED.test(value)) return `${HOSTED_SCHEME}${value}`;
-    return fileBytesUrl(HUB_ROOT, value);
+    return fileBytesUrl(root, value);
 }
 
 /** The fields of an entry that hold a path of the hub when their value is not an address. */
@@ -439,7 +440,8 @@ const identityShape = z.union([z.string(), anyNumberShape.transform(String)]);
  */
 export function identityValue(entry: Entry, schema: SchemaField[] | undefined): string {
     const held = readAs(identityShape, entry.fields[identityField(schema)]);
-    return held ?? (entry.title === '' ? entry.id : entry.title);
+    if (held !== null) return held === '' ? '' : hubId(rootOf(entry), held);
+    return entry.title === '' ? entry.id : hubId(rootOf(entry), entry.title);
 }
 
 /**
@@ -465,7 +467,10 @@ export function identityFaults(
     schema: SchemaField[] | undefined
 ): Map<number, IdentityFault> {
     const field = identityField(schema);
-    const values = entries.map((entry) => readAs(identityShape, entry.fields[field]) ?? '');
+    const values = entries.map((entry) => {
+        const own = readAs(identityShape, entry.fields[field]);
+        return own === null || own === '' ? '' : hubId(rootOf(entry), own);
+    });
     const held = (value: string): boolean =>
         value !== '' && values.indexOf(value) !== values.lastIndexOf(value);
     const shared = values.find(held);
@@ -603,12 +608,12 @@ export function crossLinks(
     if (collectionKey === FUNDING) {
         named = projects.filter((project) => project.fundingIds.includes(entry.id));
     } else if (collectionKey === JOINT_WORK) {
-        const person = readAs(stringShape, entry.fields.person) ?? entry.id;
+        const own = readAs(stringShape, entry.fields.person);
+        const person = own === null ? entry.id : inHubOf(entry, own);
         named = projects.filter((project) => project.collaborators.includes(person));
     } else {
-        const ids = wordsOf(entry.fields.related);
-        named = ids
-            .map((id) => projects.find((project) => project.id === id))
+        named = wordsOf(entry.fields.related)
+            .map((id) => projects.find((project) => project.id === inHubOf(entry, id)))
             .filter((project): project is Project => project !== undefined);
     }
     return groupProjects(named, archiveDead);

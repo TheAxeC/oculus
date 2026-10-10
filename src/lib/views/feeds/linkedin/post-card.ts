@@ -9,6 +9,11 @@ export function linkedinSourcePath(folder: string, file: string): string {
     return `${folder.replace(/\/$/, '')}/${file}`;
 }
 
-export function openLinkedinSource(layout: LayoutStore, folder: string, file: string): string {
-    return layout.openView('source', sourceTabState(HUB_ROOT, linkedinSourcePath(folder, file)));
+export function openLinkedinSource(
+    layout: LayoutStore,
+    folder: string,
+    file: string,
+    root: string = HUB_ROOT
+): string {
+    return layout.openView('source', sourceTabState(root, linkedinSourcePath(folder, file)));
 }

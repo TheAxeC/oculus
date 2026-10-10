@@ -1,7 +1,7 @@
 # Oculus text owned by the personal view.
 text:
     personal:
-        empty: 'No side project has a manifest yet. A hub side project is a `project.yml` in `side-projects/<slug>/`; a repository gets a card from its `.oculus/project.yml` once the repository is a Files root, added with Add Folder to Workspace... in the Files view or under `roots:` in `sources.yml`.'
+        empty: 'No side project has a manifest yet. A hub side project is a `project.yml` in `side-projects/<slug>/`; a repository gets a card from its `.oculus/project.yml` once the repository is a Files root that is not marked `hub: true`, added with Add Folder to Workspace... in the Files view or under `roots:` in `sources.yml`.'
         empty_glyph: circle_empty
         next: Next
         none_match: No side project matches.

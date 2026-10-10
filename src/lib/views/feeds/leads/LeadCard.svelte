@@ -30,6 +30,8 @@
     } from '$lib/state/feeds/leads';
     import { posting } from '$lib/views/shared/forms/posting';
     import { textOrNumber } from '$lib/data/shapes/shapes';
+    import { feedRoot } from '$lib/state/feeds/idents';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
@@ -82,13 +84,13 @@
 
     async function mark(next: string): Promise<void> {
         if (title === '') return;
-        say(await writeFeedField('leads', title, 'status', next));
+        say(await writeFeedField('leads', title, 'status', next, feedRoot(entry)));
     }
 
     async function remove(): Promise<void> {
         sure = false;
         if (title === '') return;
-        say(await deleteFeedEntry('leads', title));
+        say(await deleteFeedEntry('leads', title, feedRoot(entry)));
     }
 </script>
 
@@ -101,6 +103,7 @@
         tone={expired ? 'grey' : tone}
     >
         {#snippet meta()}
+            <RootChip record={{ root: feedRoot(entry) }} />
             <Tag label={key ?? t('leads.fit_none')} {tone} />
             {#if expired}
                 <Tag label={status || t('leads.expired')} tone="grey" />

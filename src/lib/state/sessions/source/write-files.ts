@@ -9,18 +9,28 @@
 
 import { fields } from '../../../data/helpers/guards.ts';
 import { CAREER_FILE, ENGINE_ROOT, HUB_ROOT } from '../../../data/helpers/hub-names.ts';
+import type { FeedKind, FeedsPayload } from '../../../data/model/index.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
 
 /** The lookups the page makes of its own stores to name a file a write carries only an id of. */
 export type FileLookups = {
-    /** The hub-relative folder of a project by its id, or null when no project has it. */
-    projectFolder: (id: string) => string | null;
-    /** The file a recorded change wrote, relative to the hub, by its moment; null when unknown. */
-    changeFile: (at: string) => string | null;
+    /** The folder of a project by its id, under the root of its hub; null when none has it. */
+    projectFolder: (id: string) => ViewSource | null;
+    /** The file of a collection of a hub other than the first, by its id; null for any other. */
+    collectionFile: (id: string) => ViewSource | null;
+    /** The file of each feed, per kind, as the page last received them. */
+    feeds: () => FeedsPayload | null;
+    /** The file a recorded change wrote, under the root that holds it, by its moment. */
+    changeFile: (at: string) => ViewSource | null;
 };
 
 /** Lookups that name nothing, for a store built without the page's. */
-export const NO_LOOKUPS: FileLookups = { projectFolder: () => null, changeFile: () => null };
+export const NO_LOOKUPS: FileLookups = {
+    projectFolder: () => null,
+    collectionFile: () => null,
+    feeds: () => null,
+    changeFile: () => null
+};
 
 /** The folder of the engine's configuration, where the root `engine` is served from. */
 const CONFIG_ROOT = ENGINE_ROOT;
@@ -35,6 +45,11 @@ function inHub(path: string): ViewSource | null {
     return path === '' ? null : { root: HUB_ROOT, path };
 }
 
+/** A project's manifest, under the root of the project's hub. */
+function manifestOf(folder: ViewSource | null): ViewSource | null {
+    return folder === null ? null : { root: folder.root, path: `${folder.path}/project.yml` };
+}
+
 /** A file of the engine's config folder, or null for an empty name. */
 function inConfig(path: string): ViewSource | null {
     return path === '' ? null : { root: CONFIG_ROOT, path };
@@ -44,6 +59,37 @@ function inConfig(path: string): ViewSource | null {
 function feedFile(feed: string, config: Record<string, unknown>): ViewSource | null {
     if (feed === 'leads' || feed === 'radar') return viewSourceFile(feed, config);
     return null;
+}
+
+/**
+ * The file of the feed `kind` in the hub the write's `root` names: the first hub's, whose file the
+ * configuration gives, when it is absent.
+ */
+function feedFileOf(
+    kind: FeedKind,
+    root: string,
+    feeds: FeedsPayload | null,
+    config: Record<string, unknown>
+): ViewSource | null {
+    if (root === HUB_ROOT) return kind === 'linkedin' ? null : feedFile(kind, config);
+    const hubFiles = feeds?.[kind].hubFiles ?? {};
+    return Object.hasOwn(hubFiles, root) ? inRoot(root, hubFiles[root]) : null;
+}
+
+/**
+ * The file of the collection `name` of the hub an entry's id names, as the server routes the write
+ * (server/edit/writes/hubs.ts): a view names the collection by its bare key and the entry by its id
+ * in the portfolio, `<root key>:<id>` for an entry of a hub other than the first. Null when the id
+ * names no such hub's collection, which leaves the write the first hub's.
+ */
+function entryHubFile(name: string, id: string, look: FileLookups): ViewSource | null {
+    const colon = id.indexOf(':');
+    return colon <= 0 ? null : look.collectionFile(`${id.slice(0, colon)}:${name}`);
+}
+
+/** A file under a root, or null for an empty path. */
+function inRoot(root: string, path: string): ViewSource | null {
+    return path === '' ? null : { root, path };
 }
 
 /**
@@ -57,36 +103,45 @@ export function writtenFile(
 ): ViewSource | null {
     const body = fields(request);
     const merged = config ?? {};
-    const collection = (name: unknown): ViewSource | null =>
+    const collection = (name: unknown, id: unknown = ''): ViewSource | null =>
+        look.collectionFile(text(name)) ??
+        entryHubFile(text(name), text(id), look) ??
         viewSourceFile('collection', merged, text(name));
     switch (body.kind) {
-        case 'manifest': {
-            const folder = look.projectFolder(text(body.id));
-            return folder === null ? null : inHub(`${folder}/project.yml`);
-        }
+        case 'manifest':
+            return manifestOf(look.projectFolder(text(body.id)));
         case 'entry':
-        case 'new-entry':
         case 'delete-entry':
-        case 'reorder':
+            return collection(body.collection, body.id);
+        case 'new-entry':
             return collection(body.collection);
+        case 'reorder':
+            return collection(body.collection, Array.isArray(body.order) ? body.order[0] : '');
         case 'subtask':
         case 'subtask-add': {
             const target = fields(body.target);
-            if (text(target.collection) !== '') return collection(target.collection);
-            const folder = look.projectFolder(text(target.id));
-            return folder === null ? null : inHub(`${folder}/project.yml`);
+            if (text(target.collection) !== '') return collection(target.collection, target.id);
+            return manifestOf(look.projectFolder(text(target.id)));
         }
         case 'host':
             return inHub(text(merged.career_file) || CAREER_FILE);
         case 'feed-field':
-        case 'feed-delete':
-            return feedFile(text(body.feed), merged);
+        case 'feed-delete': {
+            const feed = text(body.feed);
+            if (feed !== 'leads' && feed !== 'radar') return null;
+            return feedFileOf(feed, text(body.root) || HUB_ROOT, look.feeds(), merged);
+        }
         case 'lead-add':
             return viewSourceFile('leads', merged);
         case 'radar-add':
             return viewSourceFile('radar', merged);
         case 'linkedin-post': {
-            const folder = viewSourceFile('linkedin', merged);
+            const root = text(body.root) || HUB_ROOT;
+            const hubFiles = look.feeds()?.linkedin.hubFiles ?? {};
+            const folder =
+                root === HUB_ROOT
+                    ? viewSourceFile('linkedin', merged)
+                    : inRoot(root, Object.hasOwn(hubFiles, root) ? hubFiles[root] : '');
             const file = text(body.file);
             return folder === null || file === ''
                 ? null
@@ -105,10 +160,8 @@ export function writtenFile(
             return inConfig(text(body.file));
         case 'audit-mute':
             return inConfig('behavior.yml');
-        case 'undo': {
-            const file = look.changeFile(text(body.at));
-            return file === null ? null : inHub(file);
-        }
+        case 'undo':
+            return look.changeFile(text(body.at));
         default:
             return null;
     }
@@ -121,6 +174,5 @@ export function writtenFile(
  */
 export function depositedFile(action: string, id: string, look: FileLookups): ViewSource | null {
     if (action !== 'push') return null;
-    const folder = look.projectFolder(id);
-    return folder === null ? null : inHub(`${folder}/project.yml`);
+    return manifestOf(look.projectFolder(id));
 }

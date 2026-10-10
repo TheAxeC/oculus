@@ -2,7 +2,7 @@
 // are listed. The server runs with no read access beyond its own packages, so every file it looks
 // at goes through the requests answered here (requests.ts), and each one asks first whether the
 // file is in the server's root, is not the machine's own `local.yml`, and does not lie in the
-// hub's `secrets` folder or in `~/.oculus`, whatever letter case names it.
+// `secrets` folder of every hub or in `~/.oculus`, whatever letter case names it.
 
 import { readdir, stat } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';

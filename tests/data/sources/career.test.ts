@@ -7,7 +7,7 @@ import { describe, expect } from 'vitest';
 import { CAREER_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { readCareer } from '../../../src/lib/data/sources/career.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import { career } from '../../../src/lib/data/snapshot/normalise-career.ts';
+import { career } from '../../../src/lib/data/snapshot/normalise-parts/career.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */

@@ -21,6 +21,7 @@ import type { Finding, Project, SubmitPlan } from '../../../data/model/index.ts'
 import { errorLine, readYamlMap } from '../../../data/sources/yaml-file.ts';
 import type { TextCatalog } from '../../../data/helpers/finding-text.ts';
 import { deepestHolding } from '../../../data/helpers/files/paths.ts';
+import { HUB_ROOT, bareId, rootOf } from '../../../data/helpers/hub-names.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import type { Read } from '../../core/git/run.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
@@ -128,7 +129,7 @@ function clusterOf(project: Project, catalog: TextCatalog): { folder: string } |
     const written =
         typeof paths === 'object' && paths !== null && Object.hasOwn(paths, 'cluster')
             ? (paths as Record<string, unknown>).cluster
-            : `~/projects/${project.id}`;
+            : `~/projects/${bareId(project)}`;
     const folder = clusterFolder(written);
     return folder === null
         ? refuse('bad-cluster', typeof written === 'string' ? written : JSON.stringify(written))
@@ -142,13 +143,21 @@ function remoteOf(folder: string, script: string): string {
     return `cd ${where} && sbatch --parsable ${shellWord(script.startsWith('-') ? `./${script}` : script)}`;
 }
 
+/** The folder of a project, under the hub it is of, or null when that hub is served nowhere. */
+function folderOf(project: Project, deps: PlanDeps): string | null {
+    const key = rootOf(project);
+    const hub = key === HUB_ROOT ? deps.hub : deps.roots().find((one) => one.key === key)?.dir;
+    return hub === undefined ? null : projectDirectory(hub, project.folder);
+}
+
 /** The project whose folder holds the path as it was asked, most closely, or null. */
 function projectOf(asked: string, deps: PlanDeps): Project | null {
     const held = new Map<string, Project>();
     for (const project of deps.projects()) {
         if (project.ghost) continue;
         try {
-            const real = realPath(projectDirectory(deps.hub, project.folder), true);
+            const folder = folderOf(project, deps);
+            const real = folder === null ? null : realPath(folder, true);
             if (real !== null) held.set(real, project);
         } catch {
             // A folder outside the hub is no project folder.
@@ -203,7 +212,8 @@ async function compute(input: { root: string; path: string }, deps: PlanDeps): P
     }
     const project = projectOf(asked(deps.roots(), input), deps);
     if (project === null) return refuse('no-project');
-    const home = realPath(projectDirectory(deps.hub, project.folder), true);
+    const folder = folderOf(project, deps);
+    const home = folder === null ? null : realPath(folder, true);
     const code = home === null ? null : realPath(`${home}/code`, true);
     if (home === null || code === null || !inside(code, home) || !inside(file, code)) {
         return refuse('outside-code');

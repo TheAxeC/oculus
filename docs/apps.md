@@ -127,19 +127,21 @@ Every payload is plain JSON. `list of X` is a list of `X`, `map of X` a map from
 | `datasets` | `id`, `name`, `themes`, `projectIds`; text `modality?`, `description?`, `size?`, `access?`, `source?`, `hpcPath?`; `retrieval?` (a map) |
 | `pillars`, `domains` | `id`, `title`, `projectIds`; text `blurb?`; a pillar also has `fundingIds` and text `color?`, `kind?`, `goal?` |
 | `funding` | `id`, `title`, `followups`, `subtasks`, `tags` (list of text), `projectIds`, `pillarIds`; text `sub?`, `status?`, `date?`, `deadline?`, `note?`, `statement?`, `link?`, `url?`, `snooze?`; `funder?` (an organisation id) |
-| `people` | `id`, `name`, `affiliations` (organisation ids), `links`, `projectIds`, `jointWorkIds`; text `role?`, `orcid?`, `email?`, `folder?`; `self?` (boolean) |
+| `people` | `id`, `name`, `affiliations` (organisation ids), `links`, `projectIds`, `jointWorkIds`; text `role?`, `orcid?`, `email?`, `folder?`, `file?` (the absolute path of the people file, on a person of a hub other than the first); `self?` (boolean) |
 | `organisations` | `id`, `name`, `links`, `personIds`, `fundingIds`; text `kind?`, `country?` |
 | `resources` | `id`, `name`, `kind` (`cluster`, `machine` or `storage`), `links`, `order` (number); text `host?`, `access?` |
 | `collections` | `id`, `title`, `file`, `entries` (list of Entry), `intro?`, `schema?` (list of `{ field, type, label?, options?, from?, required?, help?, when?, open?, map?, fields? }`) |
 | `personal` | side projects: `id`, `title`, `status`, `eli5`, `next`, `links`, `source` (`{ kind: 'hub', folder }` or `{ kind: 'root', key, dir }`), `file`; and, when the side manifest holds them, `short?`, `priority?`, `latest?`, `deadline?`, `snooze?`, `pin?`, `waitingOn?`, `relatedIds?`, `collaborators?`, `followups?`, `subtasks?` as in a project |
-| `feeds` | `leads` (list of `{ title, deadline, status, fit }`, the last three text or null, or null), `radar` and `scout` (`{ lastRun }` or null), `linkedin` (`{ lastPost }` or null) |
+| `feeds` | `leads` (list of `{ title, deadline, status, fit, root? }`, the middle three text or null, or null), `radar` and `scout` (`{ lastRun }` or null), `linkedin` (`{ lastPost }` or null) |
 | `career` | the career file of the hub, or null: `title`, `milestone?`, `situation` (list of `{ label, value }`), `order` (list of `{ task, when?, note? }`), `orderNote?`, `hosts` (list of `{ name, inst?, tag?, status, scores, note? }`), `hostCriteria` (list of text), `notHosts` (list of `{ who, why? }`), `eligibility` (`{ rule, shots, caveat? }` or null), `dropped` (list of `{ what, why? }`) |
 
-An Entry is `{ id, title, fields: map, file, index: number }`: `fields` holds every key the entry has in the file, and `id` is the entry's `key` when it has one and its `title` otherwise. `relations` holds lists of `[id, id]` pairs named `projectVenue`, `projectFunding`, `projectDataset`, `projectPillar`, `projectDomain`, `projectRelated`, `fundingPillar`, `projectPerson`, `jointWorkPerson`, `personOrganisation` and `fundingOrganisation`.
+An Entry is `{ id, title, fields: map, file, index: number, root? }`: `fields` holds every key the entry has in the file, and `id` is the entry's `key` when it has one and its `title` otherwise, with the hub's key in front for an entry of a hub other than the first. `relations` holds lists of `[id, id]` pairs named `projectVenue`, `projectFunding`, `projectDataset`, `projectPillar`, `projectDomain`, `projectRelated`, `fundingPillar`, `projectPerson`, `jointWorkPerson`, `personOrganisation` and `fundingOrganisation`.
+
+A `roots:` entry of the hub marked `hub: true` is a hub of its own, merged into the same portfolio. Every record of `entities`, every Entry, every lead and every `audit` finding carries `root`: absent or `hub` for the first hub, and the root's key for another hub. A record of another hub has the id `<root key>:<id>`, every id inside it (a list of ids, a `venueId`, a relation pair, an Entry field whose `from:` names a registry or the projects) has the same key in front, and an `audit` finding of that hub has it in front of its `scope`. An app reads the records of every hub and writes those of the first hub alone: a write that names a record of another hub answers not found.
 
 | Channel | Payload |
 |---------|---------|
-| `feeds` | a map `radar`, `leads`, `linkedin`; each is `{ ok: true, kind, file, meta: map, entries: list of map, cadenceDays?, schema?, missing?, error? }`, where `cadenceDays` (number) is on `linkedin` and `missing` (boolean) says the feed's file is not on this machine |
+| `feeds` | a map `radar`, `leads`, `linkedin`; each is `{ ok: true, kind, file, meta: map, entries: list of map, cadenceDays?, schema?, missing?, error?, hubFiles? }`, where `cadenceDays` (number) is on `linkedin`, `missing` (boolean) says the feed's file is not on this machine, and `hubFiles` maps the key of each other hub to its file of the feed, relative to that hub; an entry of another hub carries `root` and keeps its own title |
 | `hpc` | `status` (`starting`, `ok`, `unreachable` or `error`), `hint?`, `jobs` (list of `{ id, name, partition, state, time, limit, nodes, cpus, gpus, mem, priority, start, reason }`), `running`, `pending`, `total`, `recent` (list of `{ id, name, state, exit, elapsed, end, memUsed, memReq, memPct, cpuPct }`, the last two number or null), `sinfo` (list of `{ partition, avail, nodes, state, gres }`), `quota` (list of `{ name, used, limit, pct }`), `updated`, `lastOk?`, `host`, `pollMin`, `retryMin?` |
 | `audit` | `{ findings: list of { scope, where, file, kind, message, signature }, muted: list of text }`; `kind` is `todo`, `data`, `conform`, `manifest`, `readability` or `publink`, and `signature` is twelve hex characters |
 | `config` | `{ config: map, text: map of text, icons: map of text, host: { name, address }, findings: list of Finding }` |
@@ -164,14 +166,15 @@ An Entry is `{ id, title, fields: map, file, index: number }`: `fields` holds ev
 | `new-entry` | `{ kind, collection, fields }`; `fields` holds the collection's identity field | no |
 | `reorder` | `{ kind, collection, order }`, the entry ids in the new order | no |
 | `delete-entry` | `{ kind, collection, id }` | yes |
-| `feed-field` | `{ kind, feed, id, field, value }`, `feed` one of `radar`, `leads`, `linkedin` | no |
-| `feed-delete` | `{ kind, feed, id }` | yes |
+| `feed-field` | `{ kind, feed, id, field, value, root? }`, `feed` one of `radar`, `leads`, `linkedin` | no |
+| `feed-delete` | `{ kind, feed, id, root? }` | yes |
 | `lead-add` | `{ kind, fields }`, `fields.title` required | no |
 | `radar-add` | `{ kind, fields }`, `fields.title` required | no |
 | `linkedin-idea` | `{ kind, title, category? }` | yes, no undo |
-| `linkedin-post` | `{ kind, file }`, `file` an `xx-*.md` idea | yes, no undo |
+| `linkedin-post` | `{ kind, file, root? }`, `file` an `xx-*.md` idea | yes, no undo |
 | `new-idea` | `{ kind, fields }`, `fields.id` the idea's id | yes, no undo |
 
+- `root` on `feed-field`, `feed-delete` and `linkedin-post` names the hub whose feed holds the item, absent or `hub` for the first hub; an app writes the first hub's feeds alone, so another `root` answers not found.
 - The five kinds that ask first show "The app <title> asks to <words>: <body>" with the body as JSON cut at 300 characters. The words are `delete an entry of a collection`, `delete a feed item`, `create an idea project`, `move a LinkedIn idea` and `move a LinkedIn post`. The keyboard is on Cancel, which rejects `declined`.
 - Every write is recorded in the change log with the app's id, and the History view undoes it. The three kinds marked no undo are not undoable.
 - Closed to apps, and refused with `write_closed` in a manifest: `undo`, `rail`, `audit-mute`, `config-key`, `config-value`, `session`, `deck-slides`, `deck-edit`, `roots`, `app-store`, `calendar`, `connect`, `mail`, `memories`, `fs`, `open`, `source`, `deposit`, `git`, `hpc`, `usage/refresh`, `hook` and `terminal`. Any route that runs processes, writes arbitrary files, reaches a remote or acts on an account is among them.

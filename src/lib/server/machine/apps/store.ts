@@ -5,7 +5,7 @@
 // unless the caller names another, and a root app's is `<root>/.oculus/app-data/<name>.json`. This
 // module names the paths, reads a store with its size and version, and says whether the folder a
 // store is written into lies where it should; the write itself is the write chain's
-// (server/edit/writes/app-store.ts).
+// (server/edit/writes/apps/store.ts).
 //
 // The version is the first 16 hex characters of the SHA-256 of the file's bytes, so a rewrite with
 // the same bytes is no change. A file over the limit is not read whole: its version is taken from

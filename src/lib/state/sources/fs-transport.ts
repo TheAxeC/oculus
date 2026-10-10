@@ -217,7 +217,9 @@ const fsRootShape = z.object({
     key: z.string(),
     dir: z.string(),
     fixed: z.boolean(),
-    real: z.string().optional().catch(undefined)
+    real: z.string().optional().catch(undefined),
+    hub: z.literal(true).optional().catch(undefined),
+    folds: z.literal(true).optional().catch(undefined)
 });
 
 const workspaceShape = unchanged(

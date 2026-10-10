@@ -4,11 +4,11 @@
 //
 // The walk starts at a folder of a served root and lists the files the writing rules take. It does
 // not follow a link, enter a `node_modules` folder or a folder whose name starts with a dot, or
-// enter the hub's `secrets` folder or `~/.oculus`, and a plan that starts in one of those, or under
-// one, is refused with a sentence before any file is listed. The walk leaves out the files the
-// server never writes (the machine's `local.yml`) and the files `lint.writing_skip` skips. A folder
-// that holds more than `MAX_FILES` such files is refused with a sentence that names how many it
-// holds.
+// enter the `secrets` folder of every hub or `~/.oculus`, and a plan that starts in one of those,
+// or under one, is refused with a sentence before any file is listed. The walk leaves out the files
+// the server never writes (the machine's `local.yml`) and the files `lint.writing_skip` skips. A
+// folder that holds more than `MAX_FILES` such files is refused with a sentence that names how many
+// it holds.
 //
 // Each file is read by the same reader a tab's lint runs (writing.ts). Its edits are the first
 // `kind: 'fix'` fix of each row, a fix whose edits cross an edit already taken left out, as Fix All
@@ -24,7 +24,7 @@
 import { readdirSync, readFileSync, statSync, type Dirent } from 'node:fs';
 import { extname, join, relative, sep } from 'node:path';
 import { homedir } from 'node:os';
-import { privateFolders } from '../../../../../data/helpers/files/private-folders.ts';
+import { hubDirs, privateFolders } from '../../../../../data/helpers/files/private-folders.ts';
 import { HUB_ROOT } from '../../../../../data/helpers/hub-names.ts';
 import { TEXT_LIMIT } from '../../../../../data/file-ops.ts';
 import { isWholeText } from '../../../../../data/helpers/files/text-kind.ts';
@@ -197,9 +197,13 @@ export async function planFolder(
     folder: { real: string; rootReal: string },
     signal: AbortSignal
 ): Promise<LintFolderAnswer> {
-    const hub = scope.roots.find((one) => one.key === HUB_ROOT);
+    const first = scope.roots.find((one) => one.key === HUB_ROOT);
+    const placed = (dir: string): string => realPath(dir) ?? dir;
     const withheld = privateFolders(
-        hub === undefined ? null : (realPath(hub.dir) ?? hub.dir),
+        hubDirs(
+            first === undefined ? null : placed(first.dir),
+            scope.roots.map((one) => ({ dir: placed(one.dir), hub: one.hub }))
+        ),
         homedir()
     );
     if (under(folder.real, withheld)) {

@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z767 (2026-10-10, step D55's landing, the orchestrator, automode): the hub fields an app sees on feed writes and people
+
+- Chosen: `root?` on the `feed-field` and `feed-delete` writes, as on the LinkedIn posted write, and `file?` (the absolute path of the people file) on a person of a hub other than the first, both kept and documented in `docs/apps.md` with the other hub fields; an app's write naming another `root` answers not found.
+- Not chosen: routing a feed write by its item id alone, which sends a first-hub lead titled like a second-hub id to the wrong hub; keeping the two fields undocumented (the lazy option).
+
+Where it applies: D55. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z766 (2026-10-10, step D49's landing, the orchestrator, automode): the Apps guide on every hub
 
 - Chosen: a new step, D58, after D49 and D55 and before Q72: the Help page's Apps guide tab and the manual's link to the guide name it by its path in the engine and are served as the manual is, so the guide opens on any hub.

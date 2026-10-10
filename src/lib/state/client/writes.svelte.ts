@@ -25,6 +25,7 @@
 import { tick } from 'svelte';
 import { z } from 'zod';
 import { fields } from '../../data/helpers/guards.ts';
+import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import {
     optionalTextShape,
     readJson,
@@ -274,9 +275,9 @@ export function createWrites(
         return send({ kind: 'manifest', id, fields });
     }
 
-    /** Ask the local server to reveal one project folder, under the hub or another root. */
-    async function openFolder(path: string): Promise<WriteAnswer> {
-        return send({ path }, OPEN_PATH);
+    /** Ask the local server to reveal one project folder, under the first hub or the hub `root`. */
+    async function openFolder(path: string, root: string = HUB_ROOT): Promise<WriteAnswer> {
+        return send(root === HUB_ROOT ? { path } : { root, path }, OPEN_PATH);
     }
 
     /**
@@ -367,19 +368,35 @@ export function createWrites(
         return send({ kind: 'reorder', collection, order });
     }
 
-    /** Set or clear one field allowed by a generated feed. */
+    /**
+     * Set or clear one field allowed by a generated feed, in the feed of the hub `root` names; the
+     * first hub's feed when it is absent.
+     */
     async function writeFeedField(
         feed: string,
         id: string,
         field: string,
-        value: string | number | boolean | null
+        value: string | number | boolean | null,
+        root: string = HUB_ROOT
     ): Promise<WriteAnswer> {
-        return send({ kind: 'feed-field', feed, id, field, value });
+        return send(
+            root === HUB_ROOT
+                ? { kind: 'feed-field', feed, id, field, value }
+                : { kind: 'feed-field', feed, id, root, field, value }
+        );
     }
 
-    /** Delete one entry from a generated feed that permits deletion. */
-    async function deleteFeedEntry(feed: string, id: string): Promise<WriteAnswer> {
-        return send({ kind: 'feed-delete', feed, id });
+    /** Delete one entry from a generated feed that permits deletion, in the hub `root` names. */
+    async function deleteFeedEntry(
+        feed: string,
+        id: string,
+        root: string = HUB_ROOT
+    ): Promise<WriteAnswer> {
+        return send(
+            root === HUB_ROOT
+                ? { kind: 'feed-delete', feed, id }
+                : { kind: 'feed-delete', feed, id, root }
+        );
     }
 
     /** Add one paper to the Lit Watch radar. */
@@ -396,9 +413,16 @@ export function createWrites(
         });
     }
 
-    /** Rename one LinkedIn idea and its same-basename sidecars as the next numbered post. */
-    async function markPosted(file: string): Promise<WriteAnswer> {
-        return send({ kind: 'linkedin-post', file });
+    /**
+     * Rename one LinkedIn idea and its same-basename sidecars as the next numbered post, in the
+     * folder of the hub the idea is of.
+     */
+    async function markPosted(file: string, root: string = HUB_ROOT): Promise<WriteAnswer> {
+        return send(
+            root === HUB_ROOT
+                ? { kind: 'linkedin-post', file }
+                : { kind: 'linkedin-post', file, root }
+        );
     }
 
     /**

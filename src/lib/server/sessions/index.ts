@@ -2,6 +2,7 @@
 // Composition only, so the order of the two steps is the whole content of this file.
 
 import { join } from 'node:path';
+import { HUB_ROOT, rootOf } from '../../data/helpers/hub-names.ts';
 import type { SessionsPayload, Snapshot, Terminal } from '../../data/model/index.ts';
 import { group, type ProjectFolder } from './group.ts';
 import { HookStore, mergeHooks } from './stores/hooks.ts';
@@ -31,11 +32,19 @@ export type SessionsOptions = ScanOptions & {
 // `sessions` channel carries it and the client state reads it there.
 export type { SessionsPayload };
 
-/** Every project's absolute folder with its title, which is what the area scoring is given. */
-export function projectFolders(hub: string, snapshot: Snapshot): ProjectFolder[] {
+/**
+ * Every project's absolute folder with its title, which is what the area scoring is given. A
+ * project's folder is relative to its own hub, so `hubs` names the folder of each hub by its root
+ * key (`hub` for the first); a project of a hub not named there has no folder to give.
+ */
+export function projectFolders(
+    hubs: Readonly<Record<string, string>>,
+    snapshot: Snapshot
+): ProjectFolder[] {
     const folders: ProjectFolder[] = [];
     for (const project of Object.values(snapshot.entities.projects)) {
-        if (typeof project.folder !== 'string' || !project.folder) continue;
+        const hub = Object.hasOwn(hubs, rootOf(project)) ? hubs[rootOf(project)] : undefined;
+        if (hub === undefined || typeof project.folder !== 'string' || !project.folder) continue;
         folders.push([join(hub, project.folder), project.title]);
     }
     return folders;
@@ -47,7 +56,7 @@ export function sessions(options: SessionsOptions = {}): SessionsPayload {
     const folders =
         options.projectFolders ??
         (options.snapshot !== undefined && options.hub !== undefined
-            ? projectFolders(options.hub, options.snapshot)
+            ? projectFolders({ [HUB_ROOT]: options.hub }, options.snapshot)
             : []);
     const workspaces = group(
         records,

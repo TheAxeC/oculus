@@ -21,6 +21,8 @@
     } from '$lib/state/feeds/radar';
     import { posting } from '$lib/views/shared/forms/posting';
     import { textOrNumber } from '$lib/data/shapes/shapes';
+    import { feedRoot } from '$lib/state/feeds/idents';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -58,7 +60,7 @@
 
     async function mark(value: boolean | null): Promise<void> {
         if (identity === '') return;
-        const answer = await writeFeedField('radar', identity, 'dismissed', value);
+        const answer = await writeFeedField('radar', identity, 'dismissed', value, feedRoot(entry));
         onsaid(
             answer.ok
                 ? t('editor.saved', answer.changed.join(', '))
@@ -73,6 +75,7 @@
 
 <Card {id} {cursor} {title} titleHtml={inlineMarkdown(title)} tone={relevanceTone(relevance)}>
     {#snippet meta()}
+        <RootChip record={{ root: feedRoot(entry) }} />
         {#if isNew(entry, lastRun)}
             <Tag label={t('radar.new')} tone="violet" />
         {/if}

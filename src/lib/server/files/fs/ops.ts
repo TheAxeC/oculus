@@ -59,7 +59,7 @@ import {
     type OpsRequest
 } from '../../../data/file-ops.ts';
 import { LOCAL_NAME } from '../../../data/sources/config.ts';
-import { privateFolders } from '../../../data/helpers/files/private-folders.ts';
+import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { FILES_KIND, type FileField, type FileStamp } from '../../../data/file-ops.ts';
 import type { DiffSides } from '../../../data/model/index.ts';
 import { tokenedBody } from '../../core/auth.ts';
@@ -741,7 +741,7 @@ export async function handleOps(
             roots: into.roots,
             locals: protectedFiles(into),
             trash,
-            withheld: privateFolders(into.hub ?? null, into.home ?? homedir()),
+            withheld: privateFolders(hubDirs(into.hub ?? null, into.roots), into.home ?? homedir()),
             history: into.history,
             search: { timeout: into.searchTimeout, run: deps.search },
             note: { field: null, before: [], after: [] }

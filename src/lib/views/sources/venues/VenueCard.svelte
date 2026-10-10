@@ -4,16 +4,18 @@
     // The project list is already restricted to real users, and concentration arrives as a flag.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
-    // (state/boards/collection.ts's hubPathsOf): a path opens through api/file in a tab of its own
-    // and the card carries the control that selects it in the Files view; an address opens in a tab
-    // of the browser's own. Both links the card draws, the site and the call, go through `hrefOf`,
-    // so neither is left relative to the page's own address.
+    // (state/boards/collection.ts's hubPathsOf): a path opens through api/file under the root of
+    // the hub the venue is of, in a tab of its own, and the card carries the control that selects
+    // it in the Files view under that root; an address opens in a tab of the browser's own. Both
+    // links the card draws, the site and the call, go through `hrefOf`, so neither is left relative
+    // to the page's own address.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { editAction } from '$lib/views/shared/card/card';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import InPlace from '$lib/views/shared/forms/InPlace.svelte';
@@ -31,6 +33,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/sources/venues';
     import { themeWordLabel, type ThemeWordLabels } from '$lib/state/shared/words/themes';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();
@@ -87,7 +90,7 @@
                 title: t('venues.show_in_files_tip', path),
                 glyph: 'show_in_files',
                 onclick: () => {
-                    showInFiles(path);
+                    showInFiles(path, rootOf(venue));
                 }
             });
         }
@@ -143,7 +146,7 @@
                 ? {
                       label: t('venues.site'),
                       glyph: 'launch',
-                      href: hrefOf(linkPath ?? venue.link),
+                      href: hrefOf(linkPath ?? venue.link, rootOf(venue)),
                       external: true
                   }
                 : null,
@@ -151,7 +154,7 @@
                 ? {
                       label: t('venues.call'),
                       glyph: 'paper',
-                      href: hrefOf(venue.call),
+                      href: hrefOf(venue.call, rootOf(venue)),
                       external: true
                   }
                 : null,
@@ -165,6 +168,7 @@
 <div class="slot" class:concentrated data-venue={venue.id}>
     <Card id={venue.id} {cursor} title={venue.name} titleHtml={inlineMarkdown(venue.name)}>
         {#snippet meta()}
+            <RootChip record={venue} />
             {#if venue.quartile}
                 <Tag label={venue.quartile} tone={quartileTone(venue.quartile)} />
             {/if}

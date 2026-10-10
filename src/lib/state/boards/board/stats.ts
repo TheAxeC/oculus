@@ -3,6 +3,7 @@
 
 import type { Id, Project, Snapshot, Venue } from '../../../data/model/index.ts';
 import { byKey, strings, text as str } from '../../../data/helpers/guards.ts';
+import { inHubOf, joinedEntries } from '../../../data/helpers/hub-names.ts';
 import { t } from '../../shared/words/text.ts';
 import { waitingLabel } from '../waiting.ts';
 import {
@@ -150,11 +151,11 @@ const ACTIVITY = ['events', 'education', 'applications'];
 export function disseminated(snapshot: Snapshot, id: Id): Dissemination[] {
     const found: Dissemination[] = [];
     for (const collection of ACTIVITY) {
-        const entries = byKey(snapshot.entities.collections, collection)?.entries ?? [];
+        const entries = joinedEntries(snapshot.entities.collections, collection);
         for (const entry of entries) {
             const role = str(entry.fields.role);
             if (collection === 'events' && role === 'attend') continue;
-            if (!strings(entry.fields.related).includes(id)) continue;
+            if (!strings(entry.fields.related).some((one) => inHubOf(entry, one) === id)) continue;
             found.push({ collection, id: entry.id, title: entry.title });
         }
     }

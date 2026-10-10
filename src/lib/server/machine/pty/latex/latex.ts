@@ -44,6 +44,7 @@ import type {
     TerminalJob
 } from '../../../../data/model/index.ts';
 import { MANUSCRIPT, stemOf } from '../../../../data/prose/latex.ts';
+import { HUB_ROOT, rootOf as hubOf } from '../../../../data/helpers/hub-names.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { onPath } from '../../../core/program.ts';
 import { words } from '../../../core/words.ts';
@@ -188,7 +189,12 @@ function latexFolder(
     }
     const project = (options.projectFor ?? (() => null))(named.data.id);
     if (project === null) return refusal('no-project');
-    const hub = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
+    const first = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
+    // A project of a hub other than the first lies under the served root of that hub's key.
+    const key = hubOf(project);
+    const hub =
+        key === HUB_ROOT ? first : options.servedRootsFor?.().find((one) => one.key === key)?.dir;
+    if (hub === undefined) return refusal('no-project');
     return {
         dir: join(projectDirectory(hub, project.folder), MANUSCRIPT),
         label: named.data.id,

@@ -220,7 +220,7 @@ export type WritesStore = {
     pending: () => boolean;
     lastError: () => string | null;
     writeManifest: (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    openFolder: (path: string) => Promise<WriteAnswer>;
+    openFolder: (path: string, root?: string) => Promise<WriteAnswer>;
     openFile: (root: string, path: string) => Promise<WriteAnswer>;
     revealPath: (root: string, path: string) => Promise<WriteAnswer>;
     writeSession: (id: string, fields: SessionFields) => Promise<WriteAnswer>;
@@ -245,12 +245,13 @@ export type WritesStore = {
         feed: string,
         id: string,
         field: string,
-        value: string | number | boolean | null
+        value: string | number | boolean | null,
+        root?: string
     ) => Promise<WriteAnswer>;
-    deleteFeedEntry: (feed: string, id: string) => Promise<WriteAnswer>;
+    deleteFeedEntry: (feed: string, id: string, root?: string) => Promise<WriteAnswer>;
     addRadarEntry: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    markPosted: (file: string) => Promise<WriteAnswer>;
+    markPosted: (file: string, root?: string) => Promise<WriteAnswer>;
     writeDeckSlides: (
         deck: { root: string; path: string },
         groups: { group: string; base: string[]; slides: string[] }[],

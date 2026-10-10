@@ -172,6 +172,44 @@ describe('taking a change back', () => {
         expect(tasksOf(into)).toContain('Another task');
     });
 
+    it('puts a deleted entry back with its subtasks, each as the file held it', async () => {
+        const into = target();
+        const file = join(into.hub, 'tasks', 'tasks.yml');
+        writeFileSync(
+            file,
+            [
+                'title: Tasks',
+                'schema:',
+                '  - { field: title, type: text }',
+                'entries:',
+                '  - title: "With subtasks"',
+                '    status: open',
+                '    subtasks:',
+                '      - { do: a, done: true }',
+                '      - { do: b, deadline: 2026-11-01 }',
+                '  - title: "Another task"',
+                '    status: open',
+                ''
+            ].join('\n')
+        );
+        const entries = (): Record<string, unknown>[] =>
+            (parse(readFileSync(file, 'utf8')) as { entries: Record<string, unknown>[] }).entries;
+        const before = entries();
+        const removed = await made(into, {
+            kind: 'delete-entry',
+            collection: 'tasks',
+            id: 'With subtasks'
+        });
+        expect(entries().map((one) => one.title)).toEqual(['Another task']);
+        expect((await undone(into, removed)).status).toBe(200);
+        const back = entries().find((one) => one.title === 'With subtasks');
+        expect(back).toEqual(before[0]);
+        expect(back?.subtasks).toEqual([
+            { do: 'a', done: true },
+            { do: 'b', deadline: '2026-11-01' }
+        ]);
+    });
+
     it('puts a collection entry field and a feed field back', async () => {
         const into = target();
         const entry = await made(into, {

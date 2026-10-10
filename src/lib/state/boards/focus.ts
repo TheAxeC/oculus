@@ -11,6 +11,7 @@ import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../../data
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
 import { byKey, text as str } from '../../data/helpers/guards.ts';
+import { joinedEntries } from '../../data/helpers/hub-names.ts';
 import { mapShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the three model types
@@ -315,7 +316,7 @@ export function waiting(
 
 /** The entries of one collection of the snapshot, and none when it holds no such file. */
 export function entriesOf(collections: Record<Id, Collection>, key: string): Entry[] {
-    return byKey(collections, key)?.entries ?? [];
+    return joinedEntries(collections, key);
 }
 
 /** The label a card and a ticker line carry: the short handle whenever the manifest has one. */

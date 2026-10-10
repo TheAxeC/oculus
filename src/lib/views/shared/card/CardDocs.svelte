@@ -33,7 +33,7 @@
         opensInProgram,
         patchedFilesView
     } from '$lib/state/sources/fs';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { matchingFiles } from '$lib/state/sources/files.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { nameOf, openDocument, subOf, urlOf } from './card';
@@ -62,6 +62,8 @@
 
     /** Extensions the document view can render as text. */
     const READABLE = /\.(html?|md|txt|ya?ml|py|sh|slurm|tex|bib|json|csv|r|m|cpp|h|ts|js|css)$/i;
+    /** The key of the hub the project is of. */
+    const hub = $derived(rootOf(item.project));
     /** The key of the record this card keeps its tree and its finder text under. */
     const owner = $derived(cardTreeKey(instance?.() ?? '', item.id));
     /** The current file-name or path filter. */
@@ -80,7 +82,7 @@
     /** Open a readable row from the file listing. */
     function openReadable(path: string): void {
         openPage(client, {
-            root: HUB_ROOT,
+            root: hub,
             path: `${held?.folder ?? ''}/${path}`,
             label: nameOf(path)
         });
@@ -102,7 +104,7 @@
                         <ToolButton
                             label={doc.label}
                             title={docTip(doc)}
-                            onclick={() => openDocument(client, item.project.folder, doc.name)}
+                            onclick={() => openDocument(client, item.project.folder, doc.name, hub)}
                         />
                     </span>
                 {:else}
@@ -147,7 +149,7 @@
                         />
                     {:else if opensInProgram(row.path, programApps())}
                         <ProgramButton
-                            root={HUB_ROOT}
+                            root={hub}
                             path={`${held.folder}/${row.path}`}
                             label={nameOf(row.path)}
                             {onsaid}
@@ -156,7 +158,7 @@
                         <!-- eslint-disable svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
                         <a
                             class="fname"
-                            href={urlOf(held.folder, row.path)}
+                            href={urlOf(held.folder, row.path, hub)}
                             target="_blank"
                             rel="noopener"
                         >

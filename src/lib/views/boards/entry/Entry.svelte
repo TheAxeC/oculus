@@ -57,7 +57,7 @@
         statusFacets
     } from '$lib/state/boards/collection';
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
+    import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
@@ -69,9 +69,9 @@
     const {
         docs: { hubDocument },
         folders,
-        fs: { listing },
+        fs: { listing, roots },
         layout: { openView },
-        selectors: { collectionOf, configMap, hubRoot, projects, sessionsForProject },
+        selectors: { collectionsOfKey, configMap, projects, sessionsForProject },
         terminals: { composeAt },
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -81,18 +81,29 @@
     /** The collection and the key of the entry this instance was opened for. */
     const collectionKey = $derived(instanceText(instance.state, 'collection'));
     const key = $derived(instanceText(instance.state, 'key'));
-    const collection = $derived(collectionKey === '' ? null : collectionOf(collectionKey));
+    const held = $derived(collectionKey === '' ? [] : collectionsOfKey(collectionKey));
+    /** The collection that holds the entry: the file of the hub the entry is of. */
+    const collection = $derived(
+        key === ''
+            ? (held.at(0) ?? null)
+            : (held.find((one) => entryById(one, key) !== null) ?? null)
+    );
     const entry = $derived(key === '' ? null : entryById(collection, key));
     const schema = $derived(collection?.schema);
+    const hub = $derived(entry === null ? HUB_ROOT : rootOf(entry));
     const source = $derived(
-        collection === null ? null : viewSourceFile('collection', configMap(), collectionKey)
+        collection === null
+            ? null
+            : hub === HUB_ROOT
+              ? viewSourceFile('collection', configMap(), collectionKey)
+              : fileUnder(collection.file, roots())
     );
     const faults = $derived(identityFaults(collection?.entries ?? [], schema));
     const lifecycle = $derived(offeredStatuses(schema, statusFacets(collection?.entries ?? [])));
 
     /** The entries of one folder of the hub, from the file store's listing of it. */
     const listed = (folder: string): ReturnType<typeof listing>['entries'] =>
-        listing(HUB_ROOT, folder).entries;
+        listing(hub, folder).entries;
 
     /** The folder the entry's link names, undefined while the listing of its parent is read. */
     const folder = $derived(entry === null ? undefined : pageFolder(entry.fields, listed));
@@ -100,10 +111,10 @@
         entry === null ? undefined : hubPathsOf({ link: entry.fields.link }).at(0)
     );
     const reading = $derived(
-        folder === undefined && link !== undefined && listing(HUB_ROOT, dirOf(link)).loading
+        folder === undefined && link !== undefined && listing(hub, dirOf(link)).loading
     );
 
-    const files = $derived(folder === undefined ? null : listing(HUB_ROOT, folder));
+    const files = $derived(folder === undefined ? null : listing(hub, folder));
     const names = $derived(
         (files?.entries ?? [])
             .filter((one) => one.kind === 'file' && /\.md$/i.test(one.name))
@@ -111,13 +122,13 @@
     );
     const chosen = $derived(pick(names, instanceText(instanceState(instance.id), 'doc')));
     const shown = $derived(
-        folder === undefined || chosen === '' ? null : hubDocument(`${folder}/${chosen}`)
+        folder === undefined || chosen === '' ? null : hubDocument(`${folder}/${chosen}`, hub)
     );
     const documents: SegmentItem[] = $derived(names.map((name) => ({ id: name, label: name })));
 
-    const root = $derived(hubRoot());
+    const hubDir = $derived(roots().find((one) => one.key === hub)?.dir ?? '');
     const rows = $derived(
-        folder === undefined || root === '' ? [] : sessionsForProject(absoluteOf(root, folder))
+        folder === undefined || hubDir === '' ? [] : sessionsForProject(absoluteOf(hubDir, folder))
     );
 
     /** What the card's last write answered, the one outcome line this tab holds. */
@@ -151,7 +162,7 @@
     function openWorkbench(): void {
         if (entry === null || folder === undefined) return;
         folders.open(
-            { root: HUB_ROOT, path: folder },
+            { root: hub, path: folder },
             { label: title(), item: { view: 'entry', state: pageState(collectionKey, entry) } }
         );
     }
@@ -168,7 +179,7 @@
                 onclick={() => openView(collectionKey, { reveal: entry.id })}
             />
         {/if}
-        {#if folder !== undefined && folders.served(HUB_ROOT)}
+        {#if folder !== undefined && folders.served(hub)}
             <ToolButton
                 bare
                 label={t('entry.open_workbench')}
@@ -237,7 +248,7 @@
                 </section>
 
                 <section class="block files">
-                    <FolderFiles {folder}>
+                    <FolderFiles {folder} root={hub}>
                         {#snippet heading()}
                             <h3 class="heading">{t('entry.files', folder)}</h3>
                         {/snippet}

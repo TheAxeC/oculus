@@ -46,7 +46,7 @@ const PAGE_NAME = 'oculus-file';
 const PAGE_SCHEME = `${PAGE_NAME}:`;
 
 /** A root the file browser serves, with its real path resolved. */
-export type ServedRoot = { key: string; dir: string; real: string };
+export type ServedRoot = { key: string; dir: string; real: string; hub?: true };
 
 /**
  * A page URI resolved: the file's real path and URI, the root it belongs to, and the page's key.
@@ -75,7 +75,13 @@ export function servedRoots(roots: readonly Root[]): ServedRoot[] {
     for (const root of roots) {
         const dir = expandHome(root.dir);
         const real = realPath(dir, true);
-        if (real !== null) served.push({ key: root.key, dir, real });
+        if (real !== null)
+            served.push({
+                key: root.key,
+                dir,
+                real,
+                ...(root.hub === true ? { hub: true as const } : {})
+            });
     }
     return served;
 }

@@ -16,8 +16,8 @@
 // list of every file name of every root is as much as a search gives away. A `list` that is empty,
 // repeated or any other value is refused as the word `list`, and a root that is not served as
 // `unknown_root`, both before any process starts. The folders no name is listed from are the
-// machine's private ones (`privateFolders`: the hub's `secrets` and `~/.oculus`), the two the
-// language server relay and the writing rules leave out too.
+// machine's private ones (`privateFolders`: the `secrets` folder of every hub and `~/.oculus`),
+// which the language server relay and the writing rules leave out too.
 //
 // A refusal is answered as a word (data/helpers/search/query.ts SearchRefusal) and the page says it
 // in the catalog's sentence for that word. A pattern ripgrep could not read is the word `pattern`
@@ -26,7 +26,7 @@
 import { homedir } from 'node:os';
 import { json } from '@sveltejs/kit';
 import { hasToken } from '../core/auth.ts';
-import { privateFolders } from '../../data/helpers/files/private-folders.ts';
+import { hubDirs, privateFolders } from '../../data/helpers/files/private-folders.ts';
 import { requestFrom } from '../../data/helpers/search/query.ts';
 import { runNames, runSearch, type SearchOptions } from './search.ts';
 import type { Root } from './files.ts';
@@ -38,7 +38,7 @@ export type SearchRouteOptions = SearchOptions & {
     cap: number;
     /** How many names one list carries, from config/behavior.yml. */
     maxNames: number;
-    /** The hub's folder, which with the home folder names the private folders no name is from. */
+    /** The first hub's folder, which with the hubs among the roots names the private folders. */
     hub: string;
 };
 
@@ -67,7 +67,7 @@ export async function handleSearch(
             ...(options.run === undefined ? {} : { run: options.run }),
             timeout: options.timeout,
             max: options.maxNames,
-            withheld: privateFolders(options.hub, homedir())
+            withheld: privateFolders(hubDirs(options.hub, options.roots), homedir())
         });
         if (!listed.ok) {
             return json({ error: listed.refused }, { status: 400, headers: NO_STORE });

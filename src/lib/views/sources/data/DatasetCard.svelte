@@ -21,6 +21,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { editAction } from '$lib/views/shared/card/card';
     import { fileNameOf, openEntry } from '$lib/views/shared/forms/entry-file';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
@@ -107,6 +108,7 @@
         titleHtml={inlineMarkdown(dataset.name === '' ? dataset.id : dataset.name)}
     >
         {#snippet meta()}
+            <RootChip record={dataset} />
             {#if dataset.access}
                 <Tag label={dataset.access} tone={accessTone(dataset.access)} />
             {/if}

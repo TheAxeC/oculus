@@ -1,10 +1,10 @@
 // Layer 2, server. The values a YAML write may carry, and how each is written as text.
 //
-// A value is a scalar, a list of strings, a metalist (a list of flat maps) or a block map (a map of
-// scalars, lists and maps at any depth). The renderers here turn one into the lines it takes in a
-// file: a scalar on one line in the quoting the file already used, a list in the flow or the block
-// style, a map as indented block lines. They know nothing of where the text goes; yaml-edit.ts
-// locates the bytes and the entry writers (lines.ts, render.ts) place the lines.
+// A value is a scalar, a list of strings, a metalist (a list of maps of scalars) or a block map (a
+// map of scalars, lists and maps at any depth). The renderers here turn one into the lines it takes
+// in a file: a scalar on one line in the quoting the file already used, a list in the flow or the
+// block style, a map as indented block lines. They know nothing of where the text goes;
+// yaml-edit.ts locates the bytes and the entry writers (lines.ts, render.ts) place the lines.
 
 import { isScalar, isSeq } from 'yaml';
 import type { Node } from 'yaml';
@@ -15,8 +15,8 @@ import {
 } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 
-/** One row of a metalist: a flat map whose keys and values are strings. */
-export type FlatStringMap = Record<string, string>;
+/** One row of a metalist: a flat map whose values are scalars. */
+export type ScalarMap = Record<string, ScalarFieldValue>;
 
 /** One value inside a block: a scalar, a list of values, or a map of them, at any depth. */
 export type BlockValue = ScalarFieldValue | BlockValue[] | BlockMap;
@@ -28,10 +28,10 @@ export type BlockValue = ScalarFieldValue | BlockValue[] | BlockMap;
 export type BlockMap = { [key: string]: BlockValue };
 
 /** What a field may be set to. A raw map is a block map; null clears the field. */
-export type FieldValue = ScalarFieldValue | string[] | FlatStringMap[] | BlockMap;
+export type FieldValue = ScalarFieldValue | string[] | ScalarMap[] | BlockMap;
 
 /** Whether a value is a scalar a block may hold. */
-function isBlockScalar(value: unknown): value is ScalarFieldValue {
+export function isBlockScalar(value: unknown): value is ScalarFieldValue {
     return (
         value === null ||
         typeof value === 'string' ||
@@ -56,7 +56,7 @@ export function isBlockMap(value: unknown): value is BlockMap {
 }
 
 /** Whether a non-empty list is the metalist shape rather than a list of strings. */
-export function isMetalist(value: Exclude<FieldValue, null>): value is FlatStringMap[] {
+export function isMetalist(value: Exclude<FieldValue, null>): value is ScalarMap[] {
     return Array.isArray(value) && value.length > 0 && isMap(value[0]);
 }
 
@@ -128,8 +128,12 @@ export function renderFlow(values: string[], styles: (string | undefined)[] = []
     return `[${items.join(', ')}]`;
 }
 
-/** One metalist item as a flow map, with its reader-facing value always double-quoted. */
-function renderFlowMap(value: FlatStringMap): string {
+/**
+ * One metalist item as a flow map. A string under the key `value` is double-quoted whatever it
+ * holds, since it is the reader-facing text of a label-value pair; every other scalar is written as
+ * it reads.
+ */
+function renderFlowMap(value: ScalarMap): string {
     const fields = Object.entries(value).map(
         ([key, item]) =>
             `${renderScalar(key)}: ${renderScalar(item, key === 'value' ? 'QUOTE_DOUBLE' : undefined)}`
@@ -138,7 +142,7 @@ function renderFlowMap(value: FlatStringMap): string {
 }
 
 /** A metalist as block-list lines, with continuation lines at the list's indentation. */
-export function renderMetalist(values: FlatStringMap[], indent: number): string {
+export function renderMetalist(values: ScalarMap[], indent: number): string {
     const pad = ' '.repeat(indent);
     return values.map((value) => `- ${renderFlowMap(value)}`).join(`\n${pad}`);
 }

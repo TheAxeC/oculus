@@ -3,8 +3,8 @@
 // tolerates the plain-string form the file may write, and a row without its words is left out.
 
 import { z } from 'zod';
-import { str, strings } from '../helpers/guards.ts';
-import type { Career, Host } from '../model/index.ts';
+import { str, strings } from '../../helpers/guards.ts';
+import type { Career, Host } from '../../model/index.ts';
 import {
     itemsShape,
     mapShape,
@@ -12,8 +12,8 @@ import {
     readAs,
     readOr,
     stringItemsShape
-} from '../shapes/shapes.ts';
-import { compact } from './compact.ts';
+} from '../../shapes/shapes.ts';
+import { compact } from '../compact.ts';
 
 /** The keys of a host row that are the host itself; every other string key is one of its scores. */
 const HOST_KEYS = ['name', 'inst', 'tag', 'status', 'note'];

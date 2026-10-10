@@ -58,7 +58,7 @@ import {
     writeJsonAtomic,
     type FsWrites
 } from '../core/json.ts';
-import { inside, realPath } from '../core/paths.ts';
+import { foldsCase, inside, realPath } from '../core/paths.ts';
 
 /**
  * One entry of one directory, as the tree draws it. `link` is true for a symbolic link, whose
@@ -90,9 +90,10 @@ export type ShownRoot = Root & { fixed: boolean };
 /**
  * A root as the workspaces answer carries it: `real` is its folder with every symlink resolved,
  * which the page compares with the real path of a repository (`repositoryOf`), and empty for a
- * folder that does not exist.
+ * folder that does not exist. `folds` marks a root whose file system reads a path in another letter
+ * case as the same path, which the page compares private folders by (`isPrivateFile`).
  */
-type AnsweredRoot = ShownRoot & { real: string };
+type AnsweredRoot = ShownRoot & { real: string; folds?: true };
 
 /**
  * What a GET with no root answers: the workspace in force, every one there is, and what was
@@ -453,7 +454,8 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
             name,
             roots: workspaceRoots(into.fixed, saved, name).map((root) => ({
                 ...root,
-                real: realPath(root.dir) ?? ''
+                real: realPath(root.dir) ?? '',
+                ...(foldsCase(root.dir) ? { folds: true as const } : {})
             }))
         })),
         dropped: saved.dropped

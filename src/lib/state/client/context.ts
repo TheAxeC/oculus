@@ -49,6 +49,7 @@ import {
     type FolderPages
 } from '../workbench/layout/open/float/folder-opener.ts';
 import { createFs, type FsStore } from '../sources/fs.svelte.ts';
+import { HUB_ROOT, fileUnder, rootOf } from '../../data/helpers/hub-names.ts';
 import { filesLineTyped } from '../sources/fs.ts';
 import { createHpc, type HpcStore } from '../system/machine/hpc/hpc.svelte.ts';
 import {
@@ -292,8 +293,21 @@ export function createClientState(
         () => entities.config()?.config ?? null,
         (file) => source.unsavedFile(file.root, file.path),
         {
-            projectFolder: (id) => entities.portfolio()?.entities.projects[id]?.folder ?? null,
-            changeFile: (at) => changes.rows().find((row) => row.at === at)?.file ?? null
+            projectFolder: (id) => {
+                const project = entities.portfolio()?.entities.projects[id];
+                if (project === undefined || project.folder === '') return null;
+                return { root: rootOf(project), path: project.folder };
+            },
+            collectionFile: (id) => {
+                const held = entities.portfolio()?.entities.collections[id];
+                if (held === undefined || rootOf(held) === HUB_ROOT) return null;
+                return fileUnder(held.file, fs.roots());
+            },
+            feeds: () => entities.feeds(),
+            changeFile: (at) => {
+                const file = changes.rows().find((row) => row.at === at)?.file;
+                return file === undefined ? null : fileUnder(file, fs.roots());
+            }
         }
     );
     const socket = createSocket(entities, writes);
@@ -372,7 +386,7 @@ export function createClientState(
     const agents = withQueries('agents', createAgents(queries));
     const files = withQueries(
         'files',
-        createFiles(entities, queries, () => selectors.hubRoot())
+        createFiles(entities, queries, (id) => selectors.hubDirOf(id))
     );
     const fs = withQueries('fs', createFs(writes, entities, queries));
     /**

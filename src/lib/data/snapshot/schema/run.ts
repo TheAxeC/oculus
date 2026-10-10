@@ -86,7 +86,7 @@ function hubFiles(config: PortfolioConfig): HubFile[] {
     }
     add(config.feeds.leads, 'entries', 'entries', false);
     add(config.feeds.radar, 'entries', 'entries', false);
-    add(config.career, 'sections', 'entries', false);
+    if (config.career !== null) add(config.career, 'sections', 'entries', false);
     return [...files.values()];
 }
 

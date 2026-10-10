@@ -5,6 +5,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Ticker from '$lib/ui/display/ticker/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/display/ticker/ticker-rows';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { hasCommandRows, type Ticker as FocusTicker } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
@@ -72,11 +73,15 @@
     }
 </script>
 
+{#snippet marked(text: string)}
+    <RootChip record={{ root: text }} />
+{/snippet}
+
 {#snippet group(label: string, glyph: string, rows: TickerRow[])}
     {#if rows.length > 0}
         <div class="grp">
             <p class="lbl"><Glyph name={glyph} />{label}</p>
-            <Ticker {rows} {onpick} {onaction} reveal kept={view.kept} />
+            <Ticker {rows} {onpick} {onaction} reveal kept={view.kept} {marked} />
         </div>
     {/if}
 {/snippet}
@@ -87,7 +92,7 @@
             <p class="lbl"><Glyph name={glyph} />{label}</p>
             {#each groups as one (`${one.side}:${one.kind}`)}
                 <p class="sub">{runHeading(one)}</p>
-                <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} />
+                <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} {marked} />
             {/each}
         </div>
     {/if}
@@ -161,7 +166,7 @@
                     <p class="sub">
                         {categoryLabel(one.category)}
                     </p>
-                    <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} />
+                    <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} {marked} />
                 {/each}
             </div>
         {/if}
@@ -194,7 +199,7 @@
                         'focus.command.snoozed',
                         view.snoozed.length
                     )}</summary
-                ><Ticker rows={view.snoozed} {onpick} {onaction} reveal kept={view.kept} />
+                ><Ticker rows={view.snoozed} {onpick} {onaction} reveal kept={view.kept} {marked} />
             </details>
         {/if}
     </section>

@@ -15,6 +15,7 @@ export const GET: RequestHandler = ({ request, locals }) => {
         hub: into.hub,
         engine: locals.server.engine,
         config: into.config,
+        hubs: into.hubs,
         project: (id) => project(locals.server.hub, id)
     });
 };

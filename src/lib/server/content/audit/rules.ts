@@ -157,9 +157,14 @@ export function signatureOf(
     return createHash('sha1').update(raw, 'utf8').digest('hex').slice(0, 12);
 }
 
-/** What the scan is run over: the hub on disk, the snapshot's entities, the rules and the words. */
+/**
+ * What the scan is run over: the hub on disk, the snapshot's entities, the rules and the words.
+ * `root` is the key of a hub other than the first: its findings carry that key and name their place
+ * under it, and the website's publication list, which belongs to the first hub, is not run over it.
+ */
 export type AuditInput = {
     hub: string;
+    root?: string;
     projects: Project[];
     collections: Collection[];
     rules: AuditRules;
@@ -177,8 +182,15 @@ export function sentence(key: string, ...args: (string | number)[]): Sentence {
 /** What a rule hands the collector: where the finding is and which catalog sentence says it. */
 export type Raised = Omit<AuditFinding, 'signature' | 'message'> & Sentence;
 
-/** A collector, so a rule adds a finding without knowing how one is keyed or worded. */
-export function collector(catalog: Record<string, string>): {
+/**
+ * A collector, so a rule adds a finding without knowing how one is keyed or worded. Given the key
+ * of a hub other than the first it puts the key in front of each finding's scope, which is what the
+ * signature reads, and marks the finding with it.
+ */
+export function collector(
+    catalog: Record<string, string>,
+    root?: string
+): {
     found: AuditFinding[];
     add: (f: Raised) => void;
 } {
@@ -186,10 +198,13 @@ export function collector(catalog: Record<string, string>): {
     return {
         found,
         add({ key, args, ...finding }) {
+            const scope = root === undefined ? finding.scope : `${root}:${finding.scope}`;
             found.push({
                 ...finding,
+                scope,
+                ...(root === undefined ? {} : { root }),
                 message: findingText(catalog, key, ...args),
-                signature: signatureOf(finding.scope, finding.where, finding.kind, key, args)
+                signature: signatureOf(scope, finding.where, finding.kind, key, args)
             });
         }
     };

@@ -11,11 +11,12 @@ import { defaultOverridesPath } from '../../../sessions/overrides.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
 import { words } from '../../../core/words.ts';
 import { projectDirectory } from '../../../files/files.ts';
+import { hubTargets } from '../../../files/roots.ts';
 import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from '../sessions.ts';
 import { shellWord } from '../shell-word.ts';
 
-type ChatProject = Pick<Project, 'title' | 'folder'>;
+type ChatProject = Pick<Project, 'title' | 'folder' | 'root'>;
 
 export type ChatOptions = StartOptions & {
     /** The engine directory the configuration and the machine's own file are read from. */
@@ -88,7 +89,12 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const terminalId = newId('claude');
     const index = chatIndexPath(local.sessionsOverrides, terminalId);
     const portfolio = project === null;
-    const cwd = portfolio ? local.hub : projectDirectory(local.hub, project.folder);
+    // A project of a hub other than the first lies under its own hub's folder.
+    const home = portfolio
+        ? local.hub
+        : (hubTargets({ config, engine, local }).find((one) => one.key === project.root)?.hub ??
+          local.hub);
+    const cwd = portfolio ? local.hub : projectDirectory(home, project.folder);
 
     const focus =
         typeof id === 'string' && project !== null

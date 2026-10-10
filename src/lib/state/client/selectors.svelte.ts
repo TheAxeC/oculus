@@ -26,6 +26,7 @@ import {
 import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
+import { HUB_ROOT, collectionsOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
 import type { EditorOptions } from '../../data/helpers/editor.ts';
@@ -87,6 +88,17 @@ export function folderOf(project: Project): string {
     return cut < 0 ? '' : project.file.slice(0, cut);
 }
 
+/**
+ * The absolute folder of the hub a project is of: its folder less the part relative to the hub.
+ * Empty for a project that has no folder of its own or whose manifest does not lie in it.
+ */
+function hubOfProject(project: Project): string {
+    if (project.folder === '') return '';
+    const folder = folderOf(project);
+    const suffix = `/${project.folder}`;
+    return folder.endsWith(suffix) ? folder.slice(0, -suffix.length) : '';
+}
+
 /** Whether a path is the folder itself or sits inside it; no path is in no folder. */
 export function inFolder(path: string | null, folder: string): boolean {
     if (path === null || path === '') return false;
@@ -114,7 +126,9 @@ export type SelectorsStore = {
     disseminatedFor: (id: Id) => Dissemination[];
     domainChoices: () => Choice[];
     hubRoot: () => string;
+    hubDirOf: (id: Id) => string;
     collectionOf: (key: string) => Collection | null;
+    collectionsOfKey: (key: string) => Collection[];
     boardItemOf: (id: Id) => BoardItem | null;
     projectOf: (id: Id) => Project | null;
     projects: () => Project[];
@@ -230,21 +244,26 @@ export function createSelectors(
     }
 
     /**
-     * The hub's own absolute path, or the empty string before the first snapshot. A project carries
-     * its manifest's absolute path and its folder relative to the hub, so the root is the one less
-     * the other and no channel has to carry it. The terminal view offers it as a place to start one
-     * in.
+     * The first hub's own absolute path, or the empty string before the first snapshot. A project
+     * carries its manifest's absolute path and its folder relative to its hub, so the root is the
+     * one less the other and no channel has to carry it. The terminal view offers it as a place to
+     * start one in.
      */
     function hubRoot(): string {
         const snapshot = entities.portfolio();
         if (snapshot === null) return '';
         for (const project of Object.values(snapshot.entities.projects)) {
-            if (project.folder === '') continue;
-            const folder = folderOf(project);
-            const suffix = `/${project.folder}`;
-            if (folder.endsWith(suffix)) return folder.slice(0, -suffix.length);
+            if (rootOf(project) !== HUB_ROOT) continue;
+            const hub = hubOfProject(project);
+            if (hub !== '') return hub;
         }
         return '';
+    }
+
+    /** The absolute folder of the hub the project `id` is of, or the empty string. */
+    function hubDirOf(id: Id): string {
+        const project = entities.portfolio()?.entities.projects[id];
+        return project === undefined ? '' : hubOfProject(project);
     }
 
     /**
@@ -269,6 +288,15 @@ export function createSelectors(
         const snapshot = entities.portfolio();
         if (snapshot === null) return null;
         return byKey(snapshot.entities.collections, key) ?? null;
+    }
+
+    /**
+     * The collections of one key across the hubs, the first hub's first: the key the view is
+     * registered under draws each one, a hub other than the first marking its cards with its root.
+     */
+    function collectionsOfKey(key: string): Collection[] {
+        const snapshot = entities.portfolio();
+        return snapshot === null ? [] : collectionsOf(snapshot.entities.collections, key);
     }
 
     /**
@@ -352,10 +380,12 @@ export function createSelectors(
     }
 
     /**
-     * What one field of choices may be set to, over the snapshot and the vocabulary as they stand.
+     * What one field of choices may be set to, over the snapshot and the vocabulary as they stand,
+     * offering the records of the project's own hub (the first hub's for a new project).
      */
     function fieldChoices(field: FormField, project: Project | null = null): Choice[] {
-        const all = choicesFor(field, entities.portfolio(), configMap());
+        const root = project === null ? HUB_ROOT : rootOf(project);
+        const all = choicesFor(field, entities.portfolio(), configMap(), root);
         // The Focus lane of a project offers only what the board may move it to, so `holding` is
         // not offered to a project of a tier the backlog does not draw.
         if (project === null || field.field !== 'focus') return all;
@@ -448,16 +478,17 @@ export function createSelectors(
      * The areas a session in one workspace may be pinned to by hand: the known areas of the
      * grouping, plus every project folder of the snapshot that no session has touched yet, which is
      * why a folder with no session of its own is still offered. The snapshot's folders join only
-     * for the workspace that is the hub itself, since a folder outside it is no project of the
-     * portfolio.
+     * for the workspace that is the hub the project is of, since a folder outside it is no project
+     * of the portfolio.
      */
     function pinnableAreas(workspace: string): Area[] {
         const known = knownAreas(workspace);
-        if (workspace === '' || workspace !== hubRoot()) return known;
+        if (workspace === '') return known;
         const held = new Set(known.map((area) => area.key));
         const snapshot = entities.portfolio();
         const extra: Area[] = [];
         for (const project of Object.values(snapshot?.entities.projects ?? {})) {
+            if (hubOfProject(project) !== workspace) continue;
             const key = folderOf(project);
             if (key === '' || held.has(key)) continue;
             held.add(key);
@@ -534,7 +565,9 @@ export function createSelectors(
         disseminatedFor,
         domainChoices,
         hubRoot,
+        hubDirOf,
         collectionOf,
+        collectionsOfKey,
         boardItemOf,
         projectOf,
         projects,

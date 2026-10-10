@@ -118,10 +118,10 @@ function servedLanguage(language: string): boolean {
 
 /**
  * Whether a file is one the server of its language is not given, which the relay's entry refuses as
- * well: the machine's `local.yml`, or a YAML file under the hub's `secrets` folder or under
+ * well: the machine's `local.yml`, or a YAML file under the `secrets` folder of every hub or under
  * `~/.oculus`, for the YAML server, a Markdown file under those two folders for the Markdown
- * server, and a file whose extension the entry lists in
- * `refusedExtensions` (the Sweave sources texlab is not given).
+ * server, and a file whose extension the entry lists in `refusedExtensions` (the Sweave sources
+ * texlab is not given).
  */
 function isRefusedFile(
     client: ClientState,

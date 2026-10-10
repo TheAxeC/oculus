@@ -12,8 +12,9 @@
 // What a file defines: a registry file its entries' identity scalars (`REGISTRY_SHAPES`), a
 // manifest its `id:` line, and vocab.yml the items of the lists some reference names.
 //
-// Files are named by the root they are served under: `hub` for the hub's files and `engine` for
-// oculus's own configuration folder, the root the Settings view opens it under.
+// Files are named by the root they are served under: `hub` for the first hub's files, the key of
+// the root for the files of another hub, and `engine` for oculus's own configuration folder, the
+// root the Settings view opens it under.
 
 import { readFileSync, realpathSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -47,6 +48,8 @@ const VOCAB_FILE = 'catalogs/vocab.yml';
 /** What an index is made of. */
 export type ReferenceSources = {
     hub: string;
+    /** The root key the hub's files are named under; `hub` for the first hub. */
+    root?: string;
     config: PortfolioConfig;
     /** The engine's config folder, or null when there is none to read. */
     engine: string | null;
@@ -127,7 +130,7 @@ function hubScans(
     const { hub, config } = sources;
     const scans: FileScan[] = [];
     const add = (path: string, text: string, reading: Reading): void => {
-        scans.push(scanText({ root: HUB_ROOT, path }, text, reading));
+        scans.push(scanText({ root: sources.root ?? HUB_ROOT, path }, text, reading));
     };
     for (const file of sources.read.hub) {
         const spec =

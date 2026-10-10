@@ -1,12 +1,12 @@
-// Layer 2, server. Which files outside every served root may be named to a page as library files.
-// A file the file routes would never serve whatever the roots is never named: a path with a segment
+// Layer 2, server. Which files outside every served root may be named to a page as library files. A
+// file the file routes would never serve whatever the roots is never named: a path with a segment
 // that starts with a dot, a path holding a folder `closed_paths` names, and the folders of this
 // machine that hold its own state or secrets (the engine's `config/` folder, which holds
-// `local.yml`, `~/.oculus`, and the hub's `secrets` folder). `closed_paths` is read as a list of
-// folders each relative to a root and applied to every root (data/helpers/files/apps.ts); a path
-// outside every root has no root to be relative to, so a folder is matched wherever its segments
-// follow each other in the path. A `closed_paths` key that is missing or is no list closes every
-// file, as it does for an app.
+// `local.yml`, `~/.oculus`, and the `secrets` folder of every hub). `closed_paths` is read as a
+// list of folders each relative to a root and applied to every root (data/helpers/files/apps.ts); a
+// path outside every root has no root to be relative to, so a folder is matched wherever its
+// segments follow each other in the path. A `closed_paths` key that is missing or is no list closes
+// every file, as it does for an app.
 //
 // One exception is made to the dot rule: a Python library lives in a virtual environment or a
 // version manager's folder, whose path holds a dot segment (`.venv`, `.pyenv`), so a file under
@@ -36,9 +36,9 @@ export type LibraryRules = {
 /** Rules that name no file: what a relay has until it is given its own. */
 export const NO_LIBRARY: LibraryRules = { closed: null, withheld: [] };
 
-/** The folders of this machine that hold its own state or secrets, from the engine and the hub. */
-export function withheldFolders(engineConfig: string, hub: string): string[] {
-    return [engineConfig, ...privateFolders(hub, homedir())];
+/** The folders of this machine that hold its own state or secrets, from the engine and the hubs. */
+export function withheldFolders(engineConfig: string, hubs: readonly string[]): string[] {
+    return [engineConfig, ...privateFolders(hubs, homedir())];
 }
 
 /** The server a path is asked for, and what it is the interpreter's folders of. */

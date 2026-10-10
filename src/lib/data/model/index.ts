@@ -21,6 +21,7 @@ import type {
     RegistryFiles,
     RegistryName,
     Resource,
+    Rooted,
     ScanRule,
     SideProject,
     Venue
@@ -34,7 +35,7 @@ import type {
     RawFeeds
 } from './model-collections.ts';
 
-export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
+export type { FeedData, FeedEntry, FeedItem, FeedKind } from './model-collections.ts';
 
 /** A project's own deck as the snapshot carries it: where it is, and the tag classes it uses. */
 export type RawDeck = {
@@ -109,8 +110,8 @@ export type PortfolioConfig = {
     feeds: FeedFiles;
     /** The configured interval between LinkedIn posts. */
     linkedinCadenceDays: number;
-    /** The career file, hub-relative. */
-    career: string;
+    /** The career file, hub-relative, or null for a hub whose career is not read. */
+    career: string | null;
     /** The merged `manifest_schema`, the form the manifest's JSON Schema is made from. */
     schema: unknown;
     vocab: Vocabulary;
@@ -302,15 +303,17 @@ export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 
 /**
- * One thing the hub is missing. `scope` is the project folder, the collection key or the website,
- * `where` the file, field or entry it is about, `file` the hub-relative path of the file it is
- * about (the empty text when there is none, which the signature does not read), and `signature`
- * the twelve hex characters the mute list in config/behavior.yml holds.
+ * One thing a hub is missing. `scope` is the project folder, the collection key or the website,
+ * `where` the file, field or entry it is about, `file` the path of the file it is about relative to
+ * the hub its `root` names (the empty text when there is none, which the signature does not read),
+ * and `signature` the twelve hex characters the mute list in config/behavior.yml holds. A finding
+ * of a hub other than the first has its root key in front of its `scope`, so its signature differs
+ * from a first-hub finding of the same place.
  */
-export type AuditFinding = {
+export type AuditFinding = Rooted & {
     scope: string;
     where: string;
-    /** The hub-relative path of an existing file below the hub, else the empty text. */
+    /** The path of an existing file below the hub the `root` names, else the empty text. */
     file: string;
     kind: AuditKind;
     message: string;
@@ -320,7 +323,7 @@ export type AuditFinding = {
 /** The payload of the `audit` channel: what the scan found, and what the reader has parked. */
 export type AuditPayload = {
     findings: AuditFinding[];
-    /** The signatures of config/behavior.yml's `audit_ignore:`. */
+    /** The signatures of config/behavior.yml's `audit_ignore:`, the first hub's mute list. */
     muted: string[];
 };
 
@@ -361,6 +364,11 @@ export type FeedsPayload = Record<
         ok: true;
         kind: FeedKind;
         file: string;
+        /**
+         * The file of this feed in each hub other than the first, relative to that hub, by the
+         * hub's root key. Absent while the portfolio is one hub.
+         */
+        hubFiles?: Record<string, string>;
         missing?: boolean;
         error?: string;
     }
@@ -411,6 +419,7 @@ export type {
     RegistryName,
     Reproduced,
     Resource,
+    Rooted,
     ScanRule,
     SideProject,
     SlideKind,

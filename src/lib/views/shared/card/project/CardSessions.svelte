@@ -5,7 +5,7 @@
     import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
-    import { sessionViewShown } from './card';
+    import { sessionViewShown } from '../card';
     import { folderOf, type GroupedSession } from '$lib/state/client/selectors.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';

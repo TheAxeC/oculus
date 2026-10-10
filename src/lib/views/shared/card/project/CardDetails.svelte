@@ -12,8 +12,8 @@
     import type { BoardItem } from '$lib/state/boards/board';
     import { dueFollowups } from '$lib/state/boards/ticker';
     import { t } from '$lib/state/shared/words/text';
-    import { goto } from './card';
-    import CardDocs from './CardDocs.svelte';
+    import { goto } from '../card';
+    import CardDocs from '../CardDocs.svelte';
     import { useState } from '$lib/state/client/use';
 
     const client = useState();

@@ -1,0 +1,498 @@
+// Layer 2, route tests. Which hub a write goes to when two hubs are built (G8, G9): a write that
+// names a record of the hub `lab` (`lab:<id>`) changes that hub's file and no byte of the first
+// hub, the change log names the file of `lab` by its absolute path, and the undo from History puts
+// that file back.
+//
+// Both hubs are made by `target()` under the system temporary directory, so every id of `lab` is
+// also an id of the first hub, which is the case the prefix exists for. Each case compares every
+// file of both hubs before and after the write and after the undo.
+// @module-tag slow: each case builds two hubs and takes 300 ms or more, so npm test leaves it out.
+
+import {
+    existsSync,
+    mkdirSync,
+    readdirSync,
+    readFileSync,
+    realpathSync,
+    statSync,
+    writeFileSync
+} from 'node:fs';
+import { isAbsolute, join, relative } from 'node:path';
+import { describe, expect } from 'vitest';
+import { parse } from 'yaml';
+import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps.ts';
+import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import { it, test } from '../../fixtures/scratch.ts';
+import { MANIFEST, notesFiles, routeSetup } from '../apps/apps-fixture.ts';
+import {
+    DECK_ORDER,
+    DECK_PATH,
+    TOKEN,
+    changesOf,
+    deckOf,
+    deckTarget,
+    request,
+    target,
+    undone,
+    warmConfig
+} from '../edit/write-fixture.ts';
+
+test.beforeAll(warmConfig);
+
+/** The log, the overrides and the bookmarks are beside the hub's files and are not its content. */
+const BESIDE = new Set(['changes.jsonl', 'sessions.json', 'bookmarks.yml']);
+
+/** Every file under a hub by its path inside it, with its text. */
+function filesOf(dir: string, at = ''): Map<string, string> {
+    const held = new Map<string, string>();
+    for (const name of readdirSync(join(dir, at))) {
+        const path = join(at, name);
+        if (at === '' && BESIDE.has(name)) continue;
+        if (statSync(join(dir, path)).isDirectory()) {
+            for (const [key, text] of filesOf(dir, path)) held.set(key, text);
+        } else {
+            held.set(path, readFileSync(join(dir, path), 'utf8'));
+        }
+    }
+    return held;
+}
+
+/** The paths whose text differs between two readings, or that only one of them holds. */
+function differing(before: Map<string, string>, after: Map<string, string>): string[] {
+    const paths = new Set([...before.keys(), ...after.keys()]);
+    return [...paths].filter((path) => before.get(path) !== after.get(path)).sort();
+}
+
+/** Whether a file lies inside a hub's folder, the folder named by either of its two spellings. */
+function heldBy(dir: string, file: string): boolean {
+    return [dir, realpathSync(dir)].some((one) => !relative(one, file).startsWith('..'));
+}
+
+/** A collection file whose `person` field takes a key of the people registry. */
+const JOINT_WORK = `title: Joint work
+schema:
+  - { field: key, type: text }
+  - { field: title, type: text }
+  - { field: person, type: select, from: people }
+entries:
+  - key: rivera-lab
+    title: "Streaming systems"
+    person: rivera-lab
+`;
+
+/** The first hub with `lab` as a second hub, both holding the same ids. */
+function twoHubs(): { into: WriteTarget; first: string; lab: string } {
+    const first = target();
+    const second = target();
+    const feeds = { ...first.config.feeds, linkedin: 'theaxec.github.io/_linkedin' };
+    const into: WriteTarget = {
+        ...first,
+        config: { ...first.config, feeds },
+        hubs: [{ key: 'lab', hub: second.hub, config: { ...second.config, feeds } }]
+    };
+    return { into, first: first.hub, lab: second.hub };
+}
+
+/**
+ * The writes of the first table. `files` are the files of the second hub the write changes, and
+ * `values` marks a deletion, whose undo writes the entry back as the record holds it, so the file
+ * holds the same values and not the same bytes. `unrecoverable` marks a promotion, whose record
+ * offers no way back.
+ */
+const ROWS: {
+    name: string;
+    body: unknown;
+    files: string[];
+    values?: boolean;
+    unrecoverable?: boolean;
+}[] = [
+    {
+        name: 'a manifest field',
+        body: { kind: 'manifest', id: 'lab:alpha', fields: { 'status.line': 'a lab line' } },
+        files: ['projects/manuscripts/alpha/project.yml']
+    },
+    {
+        name: 'an entry field',
+        body: {
+            kind: 'entry',
+            collection: 'tasks',
+            id: 'lab:Review the draft',
+            fields: { status: 'done' }
+        },
+        files: ['tasks/tasks.yml']
+    },
+    {
+        name: 'a subtask ticked',
+        body: {
+            kind: 'subtask',
+            target: { collection: 'tasks', id: 'lab:Review the draft' },
+            key: '0',
+            action: 'done'
+        },
+        files: ['tasks/tasks.yml']
+    },
+    {
+        name: 'a subtask added to an entry',
+        body: {
+            kind: 'subtask-add',
+            target: { collection: 'tasks', id: 'lab:Review the draft' },
+            fields: { do: 'write it up' }
+        },
+        files: ['tasks/tasks.yml']
+    },
+    {
+        name: 'a subtask added to a manifest',
+        body: { kind: 'subtask-add', target: { id: 'lab:alpha' }, fields: { do: 'write it up' } },
+        files: ['projects/manuscripts/alpha/project.yml']
+    },
+    {
+        name: 'a reorder',
+        body: {
+            kind: 'reorder',
+            collection: 'tasks',
+            order: ['lab:Another task', 'lab:Review the draft']
+        },
+        files: ['tasks/tasks.yml']
+    },
+    {
+        name: 'a deletion',
+        body: { kind: 'delete-entry', collection: 'tasks', id: 'lab:Another task' },
+        files: ['tasks/tasks.yml'],
+        values: true
+    },
+    {
+        name: 'a Lit Watch field',
+        body: {
+            kind: 'feed-field',
+            feed: 'radar',
+            id: 'Paper',
+            root: 'lab',
+            field: 'dismissed',
+            value: true
+        },
+        files: ['feeds/literature-radar.yml']
+    },
+    {
+        name: 'a lead field',
+        body: {
+            kind: 'feed-field',
+            feed: 'leads',
+            id: 'Lead',
+            root: 'lab',
+            field: 'status',
+            value: 'applied'
+        },
+        files: ['feeds/position-leads.yml']
+    },
+    {
+        name: 'a lead deletion',
+        body: { kind: 'feed-delete', feed: 'leads', id: 'Lead', root: 'lab' },
+        files: ['feeds/position-leads.yml'],
+        values: true
+    },
+    {
+        name: 'a LinkedIn idea posted',
+        body: { kind: 'linkedin-post', file: 'xx-route-idea.md', root: 'lab' },
+        files: [
+            'theaxec.github.io/_linkedin/xx-route-idea.md',
+            'theaxec.github.io/_linkedin/01-route-idea.md'
+        ],
+        unrecoverable: true
+    }
+];
+
+describe('a write to a record of the second hub', () => {
+    it.each(ROWS)(
+        '$name changes the second hub only, is logged by path and is undone',
+        async (row) => {
+            const { into, first, lab } = twoHubs();
+            const before = { first: filesOf(first), lab: filesOf(lab) };
+
+            const response = await handleWrite(request(row.body), TOKEN, into);
+            expect(response.status, row.name).toBe(200);
+            const written = { first: filesOf(first), lab: filesOf(lab) };
+            expect(differing(before.first, written.first), row.name).toEqual([]);
+            expect(differing(before.lab, written.lab), row.name).toEqual([...row.files].sort());
+
+            const [change] = changesOf(into);
+            expect(isAbsolute(change.file), row.name).toBe(true);
+            expect(heldBy(lab, change.file), row.name).toBe(true);
+
+            if (row.unrecoverable === true) {
+                expect(change.undo, row.name).toBe('none');
+                return;
+            }
+            expect((await undone(into, change)).status, row.name).toBe(200);
+            expect(differing(before.first, filesOf(first)), row.name).toEqual([]);
+            const back = filesOf(lab);
+            expect(differing(before.lab, back), row.name).toEqual(
+                row.values === true ? [...row.files].sort() : []
+            );
+            if (row.values === true) {
+                for (const file of row.files) {
+                    expect(parse(back.get(file) ?? ''), row.name).toEqual(
+                        parse(before.lab.get(file) ?? '')
+                    );
+                }
+            }
+        }
+    );
+
+    it('goes to the first hub when it creates an entry, whatever other hubs are built', async () => {
+        const { into, first, lab } = twoHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({ kind: 'new-entry', collection: 'tasks', fields: { title: 'A third task' } }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual(['tasks/tasks.yml']);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        const [change] = changesOf(into);
+        expect(isAbsolute(change.file)).toBe(false);
+    });
+
+    it('refuses a record of a hub that is not named, with the route sentence, and writes nothing', async () => {
+        const { into, first, lab } = twoHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({ kind: 'manifest', id: 'nolab:alpha', fields: { 'status.line': 'x' } }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({ error: 'no project with the id nolab:alpha' });
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        expect(changesOf(into)).toEqual([]);
+    });
+
+    it('writes a field that names a record of the second hub without the hub key (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        for (const hub of [first, lab]) {
+            mkdirSync(join(hub, 'network'), { recursive: true });
+            writeFileSync(join(hub, 'network', 'joint-work.yml'), JOINT_WORK);
+        }
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({
+                kind: 'entry',
+                collection: 'joint-work',
+                id: 'lab:rivera-lab',
+                fields: { person: 'lab:chen-graph' }
+            }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        const file = 'network/joint-work.yml';
+        expect(differing(before.lab, filesOf(lab))).toEqual([file]);
+        const written = filesOf(lab).get(file) ?? '';
+        const entries = (parse(written) as { entries: { key: string; person: string }[] }).entries;
+        expect(entries.find((one) => one.key === 'rivera-lab')?.person).toBe('chen-graph');
+        expect(written).not.toContain('lab:');
+    });
+
+    it('writes a manifest field that names records of the second hub without the hub key (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({
+                kind: 'manifest',
+                id: 'lab:alpha',
+                fields: { collaborators: ['lab:rivera-lab'], 'waiting-on': ['lab:chen-graph'] }
+            }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        const file = 'projects/manuscripts/alpha/project.yml';
+        expect(differing(before.lab, filesOf(lab))).toEqual([file]);
+        const written = parse(filesOf(lab).get(file) ?? '') as Record<string, unknown>;
+        expect(written.collaborators).toEqual(['rivera-lab']);
+        expect(written['waiting-on']).toEqual(['chen-graph']);
+    });
+
+    it('sends the status of a first-hub lead titled like a second-hub id to the first hub (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        const leads = join(first, 'feeds', 'position-leads.yml');
+        const title = 'lab: Postdoc in graph learning';
+        writeFileSync(
+            leads,
+            `${readFileSync(leads, 'utf8')}  - title: "${title}"\n    status: open\n`
+        );
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({
+                kind: 'feed-field',
+                feed: 'leads',
+                id: title,
+                field: 'status',
+                value: 'applied'
+            }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual(['feeds/position-leads.yml']);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        expect(readFileSync(leads, 'utf8')).toContain('status: applied');
+    });
+
+    it('answers a LinkedIn idea that no hub holds as missing and writes nothing', async () => {
+        const { into, first, lab } = twoHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({ kind: 'linkedin-post', file: 'xx-nowhere.md', root: 'lab' }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(404);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+    });
+
+    it('sends a LinkedIn idea that names no root to the first hub, which the second also holds', async () => {
+        const { into, first, lab } = twoHubs();
+        const idea = join('theaxec.github.io', '_linkedin', 'xx-route-idea.md');
+        expect(existsSync(join(first, idea))).toBe(true);
+        expect(existsSync(join(lab, idea))).toBe(true);
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({ kind: 'linkedin-post', file: 'xx-route-idea.md' }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual([
+            join('theaxec.github.io', '_linkedin', '01-route-idea.md'),
+            idea
+        ]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        const [change] = changesOf(into);
+        expect(isAbsolute(change.file)).toBe(false);
+    });
+});
+
+describe('a write from an app', () => {
+    const APP = { [APP_HEADER]: 'app:notes' };
+
+    it.each([
+        ['an entry', { kind: 'entry', collection: 'tasks', fields: { status: 'done' } }, 'entry'],
+        ['a manifest field', { kind: 'manifest', fields: { 'status.line': 'x' } }, 'manifest']
+    ])('finds no record of the second hub for %s', async (_name, body, kind) => {
+        const { into, first, lab } = twoHubs();
+        const apps = routeSetup({ machine: notesFiles(`${MANIFEST}writes: [${kind}]\n`) });
+        const fromApp: WriteTarget = {
+            ...into,
+            apps: { held: apps.held, data: join(apps.fixture.base, 'data'), maxKb: 256 }
+        };
+        const ids = {
+            entry: ['Review the draft', 'lab:Review the draft'],
+            manifest: ['alpha', 'lab:alpha']
+        };
+        const [own, other] = ids[kind as 'entry' | 'manifest'];
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const headers = { ...APP, [KIND_HEADER]: kind };
+
+        const refused = await handleWrite(request({ ...body, id: other }, headers), TOKEN, fromApp);
+        expect(refused.status).toBe(404);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+
+        const allowed = await handleWrite(request({ ...body, id: own }, headers), TOKEN, fromApp);
+        expect(allowed.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).not.toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+    });
+});
+
+/** Two deck hubs: each holds the portfolio deck and the decks of its three projects. */
+function twoDeckHubs(): { into: WriteTarget; first: string; lab: string } {
+    const first = deckTarget();
+    const second = deckTarget();
+    const labProjects = second.projects().map((project) => ({
+        ...project,
+        id: `lab:${project.id}`,
+        root: 'lab'
+    }));
+    const into: WriteTarget = {
+        ...first,
+        projects: () => [...first.projects(), ...labProjects],
+        files: {
+            roots: () => [
+                { key: 'hub', dir: first.hub },
+                { key: 'lab', dir: second.hub }
+            ]
+        },
+        hubs: [{ key: 'lab', hub: second.hub, config: second.config }]
+    };
+    return { into, first: first.hub, lab: second.hub };
+}
+
+describe('a deck write to the second hub', () => {
+    const MOVE = [
+        { group: 'pillars', base: ['alpha'], slides: ['beta'] },
+        { group: 'more', base: [], slides: ['alpha'] }
+    ];
+    const send = (groups: unknown, over: Record<string, unknown> = {}): unknown => ({
+        kind: 'deck-slides',
+        root: 'lab',
+        path: DECK_PATH,
+        groups,
+        ...over
+    });
+
+    it('writes the deck file of the second hub, logs its path and undoes it', async () => {
+        const { into, first, lab } = twoDeckHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(request(send(MOVE)), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([DECK_PATH]);
+        const records = changesOf(into);
+        expect(records).toHaveLength(2);
+        for (const record of records) {
+            expect(heldBy(lab, record.file)).toBe(true);
+            expect(record.file.endsWith(DECK_PATH)).toBe(true);
+            expect((await undone(into, record)).status).toBe(200);
+        }
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        expect(deckOf({ ...into, hub: lab })).toBe(before.lab.get(DECK_PATH));
+    });
+
+    it('refuses a base the file of the second hub does not hold, and writes nothing', async () => {
+        const { into, first, lab } = twoDeckHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request(send([{ group: 'pillars', base: ['beta'], slides: ['alpha'] }])),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        const answer = (await response.json()) as {
+            changed: string[];
+            refused: { reason: string }[];
+        };
+        expect(answer.changed).toEqual([]);
+        expect(answer.refused.map((one) => one.reason)).toEqual([
+            "The group's slides list changed on disk while you were working. Read the deck again and make the change again."
+        ]);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        expect(changesOf(into)).toEqual([]);
+    });
+
+    it('writes the order list of the second hub', async () => {
+        const { into, first, lab } = twoDeckHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const order = { base: DECK_ORDER, entries: ['slides:more', 'intro.md', 'slides:pillars'] };
+        const response = await handleWrite(request(send([], { order })), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([DECK_PATH]);
+    });
+});

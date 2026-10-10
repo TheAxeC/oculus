@@ -169,7 +169,7 @@ export function writeDeckSlides(
     }
 
     const deck = readDeck(
-        { roots, hub: into.hub, config: into.config, projects: into.projects() },
+        { roots, hub: into.hub, config: into.config, projects: into.projects(), hubs: into.hubs },
         root,
         dirname(path)
     );

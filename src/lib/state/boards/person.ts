@@ -9,6 +9,7 @@
 
 import type { Entry, Id, Organisation, Person, Project, Snapshot } from '../../data/model/index.ts';
 import { byKey } from '../../data/helpers/guards.ts';
+import { joinedEntries } from '../../data/helpers/hub-names.ts';
 import { JOINT_WORK } from './collection.ts';
 
 /**
@@ -49,11 +50,11 @@ export function personName(snapshot: Snapshot | null, key: Id): string {
 
 /** The joint-work entries naming one person, in the order the collection file writes them. */
 function jointWorkOf(snapshot: Snapshot, key: Id): Entry[] {
-    const collection = byKey(snapshot.entities.collections, JOINT_WORK);
+    const entries = joinedEntries(snapshot.entities.collections, JOINT_WORK);
     const ids = new Set(
         snapshot.relations.jointWorkPerson.filter((pair) => pair[1] === key).map((pair) => pair[0])
     );
-    return (collection?.entries ?? []).filter((entry) => ids.has(entry.id));
+    return entries.filter((entry) => ids.has(entry.id));
 }
 
 /** One person joined to their organisations, joint work, projects and folder. */

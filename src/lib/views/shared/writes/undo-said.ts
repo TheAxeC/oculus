@@ -36,6 +36,7 @@ export function undoSaid(answer: UndoAnswer, name: string): { undone: boolean; s
 export function sentenceFor(word: string): string {
     if (word === 'moved') return t('history.moved');
     if (word === 'gone') return t('history.gone');
+    if (word === 'outside') return t('history.outside');
     if (word === 'unknown') return t('history.unknown');
     if (word === 'nothing') return t('history.nothing');
     if (word === 'copy-gone') return t('history.copy_gone');

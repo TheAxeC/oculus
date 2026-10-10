@@ -19,14 +19,21 @@ import { LOCAL_NAME } from '../../../data/sources/config.ts';
 import { createReader } from '../../../data/sources/deck/read.ts';
 import type { DeckProject } from '../../../data/sources/deck/kinds.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
-import { HUB_ROOT, resolveRootPath, type Root } from '../../files/files.ts';
+import { HUB_ROOT, ofHub } from '../../../data/helpers/hub-names.ts';
+import { resolveRootPath, type Root } from '../../files/files.ts';
+import type { HubTarget } from '../../files/roots.ts';
 
-/** What a deck is read over: the roots it may be in, the hub and the portfolio the hub holds. */
+/**
+ * What a deck is read over: the roots it may be in, the first hub, the portfolio's projects and the
+ * hubs other than the first. A deck in the root of one of those hubs is read over that hub's
+ * folder, settings and projects.
+ */
 export type DeckSource = {
     roots: Root[];
     hub: string;
     config: PortfolioConfig;
     projects: Project[];
+    hubs?: HubTarget[];
 };
 
 /** What the reader needs of a project of the snapshot. */
@@ -76,12 +83,14 @@ export function readDeck(
     if ('error' in found && found.error === 'outside') return 'outside';
     const held = source.roots.find((one) => one.key === root);
     if (held === undefined) return 'outside';
+    const owner = (source.hubs ?? []).find((one) => one.key === root);
+    const config = owner?.config ?? source.config;
     const reader = createReader({
-        hub: { key: HUB_ROOT, dir: source.hub },
-        projects: source.projects.map(deckProject),
-        domains: source.config.domains,
-        tagTones: source.config.tagTones,
-        catalog: source.config.text,
+        hub: { key: owner?.key ?? HUB_ROOT, dir: owner?.hub ?? source.hub },
+        projects: ofHub(source.projects, owner?.key ?? HUB_ROOT).map(deckProject),
+        domains: config.domains,
+        tagTones: config.tagTones,
+        catalog: config.text,
         drafts: draftsOf(source.roots, drafts)
     });
     return reader.read({ key: held.key, dir: held.dir }, path);

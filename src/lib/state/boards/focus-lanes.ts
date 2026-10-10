@@ -4,7 +4,8 @@
 
 import { z } from 'zod';
 import type { Entry, Id, Project, Snapshot } from '../../data/model/index.ts';
-import { byKey, numericSetting, text as str } from '../../data/helpers/guards.ts';
+import { numericSetting, text as str } from '../../data/helpers/guards.ts';
+import { joinedEntries } from '../../data/helpers/hub-names.ts';
 import {
     anyValueShape,
     fieldItemsShape,
@@ -129,7 +130,7 @@ function bandItem(entry: Entry, key: string): BandItem {
  */
 export function collectionLanes(snapshot: Snapshot, config: Record<string, unknown>): Band {
     const collections = snapshot.entities.collections;
-    const grants = byKey(collections, 'funding')?.entries ?? [];
+    const grants = joinedEntries(collections, 'funding');
     const funding: BandStage[] = [];
     for (const stage of fundStages(config)) {
         const items = grants
@@ -140,11 +141,11 @@ export function collectionLanes(snapshot: Snapshot, config: Record<string, unkno
             .sort(bandOrder);
         if (items.length > 0) funding.push({ label: stage.label, color: stage.color, items });
     }
-    const applications = (byKey(collections, 'applications')?.entries ?? [])
+    const applications = joinedEntries(collections, 'applications')
         .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'active')
         .map((entry) => bandItem(entry, 'applications'))
         .sort(bandOrder);
-    const education = (byKey(collections, 'education')?.entries ?? [])
+    const education = joinedEntries(collections, 'education')
         .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'ongoing')
         .map((entry) => bandItem(entry, 'education'))
         .sort(bandOrder);

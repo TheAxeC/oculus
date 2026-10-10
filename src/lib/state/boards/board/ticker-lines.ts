@@ -3,7 +3,8 @@
 // one checklist. The research projects' and entries' lines are built in ticker.ts and the side
 // projects' in side-lines.ts, both out of these builders.
 
-import type { Followup, Id } from '../../../data/model/index.ts';
+import type { Followup, Id, Rooted } from '../../../data/model/index.ts';
+import { HUB_ROOT, rootOf } from '../../../data/helpers/hub-names.ts';
 import { z } from 'zod';
 import { keyedRowsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { snoozed } from '../focus.ts';
@@ -92,8 +93,16 @@ export type TickerItem = {
      * manifest through the target's `side:<slug>` or `root:<key>` id.
      */
     side?: SideManifest;
+    /** The key of the hub the line's record is of, present only for a hub other than the first. */
+    root?: string;
     snoozed: boolean;
 };
+
+/** The mark of a line of a record of a hub other than the first, and nothing for the first. */
+export function rootMark(record: Rooted): Partial<TickerItem> {
+    const root = rootOf(record);
+    return root === HUB_ROOT ? {} : { root };
+}
 
 /** One ticker line. */
 export function item(

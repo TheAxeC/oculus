@@ -13,14 +13,16 @@ import { schemaText, type JsonSchema } from './json.ts';
 
 /**
  * One schema's reach: the globs, relative to a served root, of the files it governs. `hub` applies
- * in the hub root, `engine` in the engine's config folder and `every` in any root. `within` narrows
- * the rule to files that also match one of its globs, which is how a path condition of a schema
- * gives a variant its own reach.
+ * in the hub root, `engine` in the engine's config folder, `roots` in the hub root of another hub
+ * (the globs by that root's key) and `every` in any root. `within` narrows the rule to files that
+ * also match one of its globs, which is how a path condition of a schema gives a variant its own
+ * reach.
  */
 export type SchemaRule = {
     name: string;
     hub?: string[];
     engine?: string[];
+    roots?: Record<string, string[]>;
     every?: string[];
     within?: string[];
 };
@@ -40,6 +42,36 @@ export function withSchemas(set: SchemaSet, added: NamedSchema[]): SchemaSet {
         rules.push({ name: one.name, ...one.rule });
     }
     return { rules, texts };
+}
+
+/**
+ * The schemas of a hub other than the first, as rules for the files of its root alone: each rule
+ * that governs files of the hub keeps its `hub` globs as the globs of the root `key`, and each name
+ * gets the key in front so it cannot meet a schema of another hub. The rules for the engine's
+ * config folder and for any root are the first hub's set to hold.
+ */
+export function scopedSchemas(key: string, set: SchemaSet): SchemaSet {
+    const rules: SchemaRule[] = [];
+    const texts: Record<string, string> = {};
+    for (const rule of set.rules) {
+        if (rule.hub === undefined || !Object.hasOwn(set.texts, rule.name)) continue;
+        const name = `${key}:${rule.name}`;
+        texts[name] = set.texts[rule.name];
+        rules.push({
+            name,
+            roots: { [key]: rule.hub },
+            ...(rule.within === undefined ? {} : { within: rule.within })
+        });
+    }
+    return { rules, texts };
+}
+
+/** The sets as one: the rules of each in order, and the texts of all. */
+export function joinedSchemas(sets: readonly SchemaSet[]): SchemaSet {
+    return {
+        rules: sets.flatMap((one) => one.rules),
+        texts: Object.assign({}, ...sets.map((one) => one.texts)) as Record<string, string>
+    };
 }
 
 /** The set that governs nothing. */
@@ -72,7 +104,8 @@ function matches(globs: string[] | undefined, path: string): boolean {
  */
 export function schemaFor(set: SchemaSet, root: string, path: string): string | undefined {
     for (const rule of set.rules) {
-        const kind = root === HUB_ROOT ? rule.hub : root === ENGINE_ROOT ? rule.engine : [];
+        const kind =
+            root === HUB_ROOT ? rule.hub : root === ENGINE_ROOT ? rule.engine : rule.roots?.[root];
         if (!matches(kind, path) && !matches(rule.every, path)) continue;
         if (rule.within !== undefined && !matches(rule.within, path)) continue;
         if (Object.hasOwn(set.texts, rule.name)) return rule.name;
