@@ -154,7 +154,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 51 (2026-10-10, /spec D65, two choices rulings 47, 48 and 50 leave open). (1) The deck's groups. `deck/present.yml` keeps decks by the folder tiers that ruling 47 (H1, I1) removes: `tiers: [active, manuscripts, ideas]` (line 7), `[active, manuscripts]` (line 17), `[ideas]` (line 28); after D65 every one of those projects has the tier `projects`, with type `active` or `idea`. Options: (a) a group's `find:` gains `types:`, the manifest `type` values a deck's project must have (`types: [active]`, `types: [idea]`), beside `tiers: [projects]`; pros: the three groups keep exactly the decks they hold now; cons: one new key in `present.yml`. (b) no new key: `tiers: [projects]` and the `status:` chips only; pros: no key; cons: the `more` group (`discover: true`) also takes every idea's deck. Recommendation (a); (b) is the lazy option. (2) Paused and finished projects on Focus. Today a side project whose status row says `live: false` (`parked`) draws no Focus line (`state/boards/board/personal.ts:104-112`), and a research project is on Focus by its tier whatever its chips (`state/boards/focus.ts:185`). One rule for every project: (a) a row of `status_legend` may carry `live: false` (`paused`, `finished`, `dropped`, `abandoned`, `nogo`, `disproved`), and a project holding such a chip draws no deadline, task or follow-up line on Focus and counts in no waiting tally, research projects included; pros: a paused or finished project leaves Focus by its chip, as side projects do today; cons: fedbtd (chip `paused` after B1) leaves Focus too, though it has no deadline, subtask or follow-up today. (b) by tier only, as research today; pros: nothing changes for research; cons: a paused or finished personal project keeps its lines on Focus until snoozed or cleared. Recommendation (a); (b) is the lazy option.
+None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -176,6 +176,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- 2026-10-10: Open item 51, the two choices of D65 rulings 47, 48 and 50 left open, ruled by Axel: (1) (a), the deck's `find:` gains `types:`; (2) (c), everything Focus shows of a project follows its `focus:` (plan.md Rulings, Open item 51).
 - 2026-10-10: Open item 46, D62's fifteen choices, ruled by Axel: every choice as recommended (plan.md Rulings, Open item 46).
 - 2026-10-10: Open items 34 to 39 and the memories and wallpaper move, raised in D58's review and by Axel, ruled by Axel: no second round for D58, G74 and its two tests written at D58's landing; the Help page's hub documents, the config cache over `<hub>/.oculus/config/`, personal projects as research projects, Focus's collapsible sections, the workbench tab names and the memories and wallpaper move are one new step, D59 (plan.md Rulings, Open item 34 to Memories and wallpaper).
 - 2026-10-09: open item 31 ruled (c) by Axel: a kept machine app stays approved through any change but to `app.yml`, a pulled change included, `docs/apps.md` and the `apps_dir` help saying so at D50's landing. The move ruled by Axel: the five shareable files of `~/.oculus` are moved into `<hub>/.oculus/` once by the orchestrator with `mv` while his server is stopped, with no carry-over code; D50 lands without it and O33's rename moves `~/.oculus` the same way; Z751 (d), Z753 (f) and Z758 replaced (`plan.md` Rulings, "Open item 31" and "The move").
@@ -247,6 +248,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-10 (open item 51 ruled). Axel ruled open item 51: (1) (a), `types:` in the deck's `find:`; (2) (c), Focus by `focus:` alone (`plan.md` Rulings, Open item 51; D65 tagged (ruling 51)). In flight (1 of 6): D62. Next: /spec D65.
 - 2026-10-10 (D65 stopped at /spec, second time). /spec D65 found two choices no ruling names (open item 51: the deck's `find:` by type, and paused or finished projects on Focus). No brief, worktree or dispatch entry. In flight (1 of 6): D62. Next: Axel's ruling on 51, then /spec D65.
 - 2026-10-10 (open item 50 ruled). Axel ruled 50 (a) folded into D65: D65 also removes the saved-layout migration code. Next: /spec D65.
 - 2026-10-10 (open item 48 ruled). Axel ruled open item 48: (1) (b), no code for the old ids and no change in his browser; (2) (a), `new_project_dir` per tier; and the standing rule that no step adds migration code (`plan.md` Rulings, `agents/spec.md`). Next: /spec D65 again.

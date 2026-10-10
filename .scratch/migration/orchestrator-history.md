@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 51 (2026-10-10, /spec D65): two choices rulings 47, 48 and 50 left open. Closed 2026-10-10 by Axel: (1) (a), a deck group's `find:` gains `types:`; (2) (c), everything Focus shows of a project (lane card, deadline, follow-ups, subtasks, waiting tallies) follows its `focus:`, for every tier (`plan.md` Rulings, Open item 51).
 - Open item 50 (2026-10-10): the saved-layout migration code oculus has, under the rule against migration code. Closed 2026-10-10 by Axel: (a), removed, folded into D65 and no new step (`plan.md` Rulings, open item 50).
 - Open item 48 (2026-10-10, /spec D65): two premises of ruling 47 the plan could not absorb. Closed 2026-10-10 by Axel: (1) (b), no carry of the old ids, he resets his pages; (2) (a), `new_project_dir` per tier (`plan.md` Rulings, open item 48 (1) and (2)).
 - Open item 47 (2026-10-10, raised by Axel: personal projects' statuses wrong, and personal projects lacking a focus and most research keys after D48): one kind of project. Closed 2026-10-10 by Axel: A1, B1, C1, D, E, F running, G yes, H1, I1, J1 (`plan.md` Rulings, open item 47); one step, D65. D48's narrow key list was the orchestrator's recommendation of 2026-10-09, which left out `focus`, the status map and the keys a repository project uses.
