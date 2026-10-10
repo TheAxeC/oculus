@@ -1,4 +1,6 @@
-Everything in the brief is done. Two paths outside the write list were needed and are named in the file table (`src/lib/data/helpers/files/paths.ts`, `src/lib/state/workbench/navigation/pages.ts`), and one visible effect of the Z768 shape on the guide tab (its breadcrumb and tab-menu file items) is reported under 'Anything in the brief that was wrong or impossible'.
+Not done in repair round 1: the test rows that rulings 1 and 2 ask for (`openingOf` and `fileOfTab`). No entry of `agents/guarded.md` covers either function (`grep -rn -e openingOf -e fileOfTab -e shownFileOfTab -e tabCrumbs -e shownTabPath -e activeLabel -e doc-link tests` prints nothing, exit 1), and spec.md line 57 says a step that needs a new entry stops and asks Axel and writes no test until he has ruled; both are checked by the quoted runs below instead. Everything else in the nine rulings is done.
+
+Everything in the brief is done. Paths outside the write list were needed and are named in the file table and in 'Repair round 1'.
 
 ## Open items of the state file, verbatim
 
@@ -166,9 +168,9 @@ Grep for the names the step changes, over `src tests config docs HELP.md DESIGN.
 
 Each is reversible and is reported as a decision the orchestrator may reverse.
 
-1. **`fileOfTab` returns null for an engine tab** (`pages.ts`, `docShape` gains `engine`). Reason: `fileOfTab` reads a doc tab's `path` as a hub-root path, and an engine tab's `path` is relative to the engine folder, so without the change the breadcrumb, the tab menu's file items and the tab icon would name `docs/apps.md` in the hub, a file that is not there. Consequence: the guide tab's breadcrumb and the file items of its tab menu (bookmark, Open in Program) are gone; the pane bar's star and Open in Program stay, because `Doc.svelte` places the file itself from the answer's `engineAt`. The alternative that keeps the breadcrumb is to put `engineAt` in the tab's state, which changes the saved state of case 8 and the shape of Z768 (a), so it is the orchestrator's and Axel's to rule.
+1. **`fileOfTab` takes the engine folder's place** (`pages.ts`, `docShape` gains `engine`). An engine tab's `path` is relative to the engine folder, so `fileOfTab(tab, engineAt)` places it at `<engineAt>/<path>` in the hub root when the caller passes a non-empty `engineAt`, and shows no file otherwise. `engineAt` comes from the manual's answer (`engineAtFor` of the selectors) and is never written into the tab's state. The guide tab keeps its breadcrumb, tab-menu file items, icon, hover path, Open Editors row and Timeline following on a hub that holds the engine folder.
 2. **A link to a path the engine read never serves** (a dot or `node_modules` segment) inside the engine folder opens as a hub document, as it did before the step (`openingOf`: the engine's space reads `.scratch/plan.md` in the hub at `engineAt`; the hub's space leaves it a hub path). The brief's rule 'any other target inside `engineAt` opens as the engine's document' would open a tab that the route refuses with a 404, a change for any hub document that links into `tools/oculus/.scratch/`.
-3. **A link to a document that already has an open engine tab keeps that tab's words.** `openView` restates an open tab with the state it is given (`src/lib/state/workbench/layout/open/opening.ts:225-229`, `restate` replaces the state whole), so the manual's 'Apps guide' link would have wiped the label of the Help page's tab. `Markdown.svelte` `heldLabel` reads the label of the open tab with that id, and a `docs:` entry's label is used first when the hub lists the document. A link-opened engine document with neither has no label, so its pane title is the file's last name and its tab strip name is 'Hub document', as an unlisted hub document's is.
+3. **A link to a document that already has an open engine tab keeps that tab's words.** `openView` restates an open tab with the state it is given (`src/lib/state/workbench/layout/open/opening.ts:225-229`, `restate` replaces the state whole), so the manual's 'Apps guide' link would have wiped the label of the Help page's tab. `Markdown.svelte` `heldLabel` reads the label of the open tab with that id, and a `docs:` entry's label is used first when the hub lists the document. A link-opened engine document with neither has no label, so its pane title, tab strip name and window title are the last name of its path.
 4. **`manual` of a hub document is `<engineAt>/HELP.md` when the file's real path lies outside the hub** (`manualInHub`), for an engine reached through a link in the hub, where `hubPath` gives null and a hub document's link to the manual would otherwise open an engine tab of `HELP.md` instead of the Help view. When the real path is in the hub the value is the one the brief gives (`tools/oculus/HELP.md` in the checkout).
 5. **`engineAt` is the empty string when the engine folder is the hub itself** (relative path empty), the same value as 'not in the hub'. A hub that is the engine folder gets neither the engine-document restate nor the bar actions for the guide.
 6. **The engine document's `path` is the file's real path relative to the engine's real folder**, as the hub read's `path` is real-path based; the manual's is the constant `HELP.md`. A link inside the folder to a file that is itself a link inside the folder resolves its own links from the target's folder.
@@ -176,7 +178,7 @@ Each is reversible and is reported as a decision the orchestrator may reverse.
 8. **The refusal wording** (all literal English, inside `doc.failed_engine`): `no engine document named`, `not a Markdown file: <path>`, `an absolute path is not inside the engine folder: <path>`, `the path leaves the engine folder: <path>`, `the path has a node_modules or dot segment: <path>`, `no file at <path> in the engine folder`, `<path> is a link that leaves the engine folder`, `<path> is a folder, not a Markdown file`. The checks run in that order, and `docs/../.scratch/plan.md` is refused as a dot segment because the segment rule reads the normalised path.
 9. **`doc.failed_engine`** is the new catalog key: 'The oculus document {0} could not be read: {1}'. It is the only new user-facing string; the `doc.yml` file comment now names both kinds of document.
 10. **`hasHiddenSegment` in `data/helpers/files/paths.ts`** is one rule for the server and the page. The two older `inLibraryFolder` functions in `lsp-edit.ts` and `edits.ts` test folders only (they drop the last segment) and are not the same rule, so they were not changed.
-11. **A hub tab asks for the manual's answer** as the brief says, so every hub document tab waits for `HELP.md` to be answered before it draws, and draws `doc.loading` meanwhile. The manual is held in the query client and re-read with its entity tag; the cost of the extra wait on a first draw is not measured.
+11. **A hub tab asks for the manual's answer** as the brief says, and starts its own read in the same render, so a hub document tab draws `doc.loading` until the manual is answered and the two requests are out together. The manual is held in the query client and re-read with its entity tag; the cost of the extra wait on a first draw is not measured.
 12. **Two things outside the worktree's rules, both read-only.** One git command was issued by mistake (`git -C . diff --stat -- .oculus 2>/dev/null | head -0`, in a command meant to inspect a file) with its output discarded; it changed nothing, and no other git command was run. Two `diff` commands read the main checkout without writing: `diff /Users/axelfaes/workspace/research-hub/.oculus/config/layout.yml .oculus/config/layout.yml` (to show the one-row change) and `diff -rq /Users/axelfaes/workspace/research-hub/tools/oculus/docs/diagrams docs/diagrams` (to list the regenerated diagrams), since the base copy holds no `.oculus` or `docs`.
 
 ## Every host- or user-visible change with its before and after
@@ -202,16 +204,16 @@ The look on landing, per case. TEST page of Axel's own Chrome for this hub; a sc
 
 - **Case 7, this hub.** View: the Help page. State: the Help page open with its three tabs (manual, Apps guide, Memories). Press the 'Apps guide' link near the top of the manual. Before and after: the guide tab becomes active, no fourth tab opens, and the tab keeps the name 'Apps guide'. Then press the manual link inside the guide (`../HELP.md`): the manual tab becomes active. Also, a hub document tab (Data map) holding a link to `tools/oculus/HELP.md`, if one exists, opens the manual.
 - **Views catalogue, this hub.** View: System page, Views, Help group. Before: five documents (Research approach, Agent approach, HPC how-to, Data map, Apps guide). After: four; the Apps guide is not a row.
-- **Guide tab breadcrumb, this hub.** View: the Help page's Apps guide tab. Before: the pane's breadcrumb read `hub / tools / oculus / docs / apps.md` and the tab's right-click menu offered the bookmark and Open in Program items. After: no breadcrumb and none of those menu items (judgment call 1); the pane bar's star and Open in Program stay and act on `tools/oculus/docs/apps.md`.
+- **Guide tab breadcrumb, this hub.** View: the Help page's Apps guide tab. Before and after: the pane's breadcrumb reads `hub / tools / oculus / docs / apps.md`, the tab's right-click menu offers Copy Path, Copy Relative Path, Reveal, Show in Files, Open Timeline, the bookmark and Open in Program, its row stands in Open Editors, and the pane bar's star and Open in Program act on `tools/oculus/docs/apps.md`.
 - **Case 1.** View: the Help page on a scratch oculus whose hub is a copy of `tools/oculus/demo`. Before: the Apps guide tab drew the `doc.unlisted` line naming `tools/oculus/docs/apps.md`. After: the tab draws the guide, first heading 'Building an oculus app'.
-- **Case 6.** View: the Help page on a scratch oculus whose server is started with the engine at a path outside the hub. Before: the manual's 'Apps guide' link opened nothing. After: it opens the guide in a tab named by its last name `apps.md` (it has no `docs:` entry and no open tab to take a label from), and the guide's `../HELP.md` link makes the manual active. The Help page's own Apps guide tab draws on such a hub, named 'Apps guide'. The pane bar of an engine tab shows no star and no Open in Program there.
+- **Case 6.** View: the Help page on a scratch oculus whose server is started with the engine at a path outside the hub. Before: the manual's 'Apps guide' link opened nothing. After: with the Help page's Apps guide tab open the link activates that tab, which keeps the name 'Apps guide'; with that tab closed the link opens a new tab named `apps.md` in the strip, the window title and the pane title. The guide's `../HELP.md` link makes the manual active. The Help page's own Apps guide tab draws on such a hub. An engine tab there shows no breadcrumb, no file items in its menu, and no star or Open in Program in the pane bar, since the folder has no place in the hub.
 - **Case 8.** View: any page holding a saved tab `{ id: tools/oculus/docs/apps.md, path: tools/oculus/docs/apps.md, label: "Apps guide" }` (the hub's list no longer names the guide). Before: the tab drew `doc.unlisted`. After: it draws `doc.loading` for the moment the manual is answered, then the guide, and the layout file holds `{ id: engine:docs/apps.md, path: docs/apps.md, engine: true, label: "Apps guide" }` (key order follows the old map, then `engine` last).
 - **Case 11.** View: a scratch oculus whose hub layer lists `tools/oculus/docs/apps.md`. Before: one tab for the catalogue row and the Help tab. After: the same, now by the restate: the row opens a tab that becomes the engine document and closes into the Help page's tab when that is open.
 - **Every hub document tab** now draws the loading line until the manual's answer arrives (judgment call 11).
 
 ## Anything in the brief that was wrong or impossible
 
-- **Item 3 names the pane bar only; the tab's file is also read by `fileOfTab`** (`pages.ts:456`), which feeds the breadcrumb (`strip/tab-crumbs.ts:38`), the tab menu (`strip/tab-menu-state.svelte.ts:70,123`) and the tab icon (`strip/strip-tab.ts:43`). Evidence: `grep -rn fileOfTab src` lists them; `fileOfTab` is a pure function of the tab's state and cannot know where the engine folder sits. The fix in this step (null for an engine tab) removes the breadcrumb and menu items of the guide tab. Keeping them needs `engineAt` in the tab's state or a lookup the shell may not make; that is judgment call 1 and the one item here that is for the orchestrator to rule. It is reported, not hidden: the guide tab on this hub loses a breadcrumb it has today.
+- **Item 3 names the pane bar only; the tab's file is also read by `fileOfTab`** (`pages.ts`), which feeds the breadcrumb (`strip/tab-crumbs.ts`), the tab menu (`strip/tab-menu-state.svelte.ts`), the tab icon (`strip/strip-tab.ts`), the hover path (`pane-view.ts`, `shownTabPath`), Open Editors and the Files view's Timeline, Outline and tree. Evidence: `grep -rn fileOfTab src` lists them. `fileOfTab` is a pure function of the tab's state and cannot know where the engine folder sits, so each caller passes the folder's place (`engineAt`) from the manual's answer; see 'Repair round 1', ruling 2.
 - **Item 6 of the brief 'Paths this step writes' lacks `pages.ts` and `data/helpers/files/paths.ts`**; both were needed (above).
 - **`docs/diagrams/` regenerates eight files**, not only the ones the brief expects; they follow the source (`diff -rq` against the main checkout).
 - No premise of the brief failed to reproduce.
@@ -262,3 +264,150 @@ Replacement:
   Test: fs: `tests/server/files/fs.test.ts`, 'refuses a path that leaves the root, a root nothing names, and a file'; ops: `tests/server/files/ops.test.ts`, 'refuses a path that climbs out, a root not served and an empty root key (case 5)'; search: `tests/server/files/search.test.ts`, 'refuses a root outside the served list before any process starts'.; fs route: `tests/server/files/fs.test.ts`, 'refuses a path that leaves the root, a root nothing names, and a file'; ops replace: `tests/server/files/ops.test.ts`, 'refuses a path that climbs out, a root not served and an empty root key (case 5)'; open: `tests/routes/files/open.test.ts`, 'refuses a directory outside every configured root'; source: `tests/routes/files/source.test.ts`, 'refuses a path outside the named root' (its body with `create: true` included); source channel: `tests/server/files/open-files.test.ts`, the table 'the open files', its rows 'never polls or publishes a name out of the roots, a root nothing names or an empty path', 'takes no name that does not start with source:', 'publishes null for a file replaced by a link out of every root, and reads no file once the link is there', 'publishes null at the tick its root stops being served, and follows the file when it is served again', 'publishes a stat signature for a file over the read limit that nobody may read, and a new one when it grows', 'polls 200 names for one socket and 1,000 over the server, and no more', 'publishes the hash of the file at the first tick, and again only when the file changes' and 'closes the poll when the last socket drops the name, and hands the next one a fresh hash'; search plan: `tests/server/files/search.test.ts`, 'refuses a root outside the served list before any process starts'; history: `tests/routes/files/history.test.ts`, 'refuses a path outside the root and a request without its two parameters'; project-files: `tests/routes/files/project-files.test.ts`, 'answers 404 for an id the hub does not hold'; file/[root]: `tests/routes/files/file.test.ts`, 'has nothing for %s'; lsp: `tests/server/machine/lsp/uris.test.ts`, describe 'a document address', the rows 'is refused for <page address>'; deck read: `tests/routes/docs/deck.test.ts`, 'refuses a root nothing serves, a path that climbs out of the root, a link and an absolute path'; deck read over drafts: `tests/routes/docs/deck.test.ts`, 'refuses a draft read without the token and one over a root nothing serves or a path that climbs out'; deck-slides: `tests/routes/edit/deck-slides.test.ts`, 'refuses what the file or the roots do not allow, and writes nothing'; deck-edit: `tests/server/edit/deck-acts.test.ts`, 'refuses a path outside the roots in every act, and writes nothing'; engine read: `tests/routes/docs/docs.test.ts`, 'serves a Markdown file of the engine and refuses a path that leaves the engine, a link out of it and a file of another kind'.; library: `tests/server/machine/lsp/library.test.ts`, describe 'a library file' (one table, one row per refusal code of the read, per path rule and per message refusal), and `tests/server/machine/lsp/uris.test.ts`, its four library rows; language server edits: `tests/server/machine/lsp/uris.test.ts`, 'drops a workspace edit whose documentChanges name a file the mapper has no address for, and turns the entries of one it can'; `tests/routes/replace/lsp-edit.test.ts`, 'refuses a path that climbs out, a root not served, and a path under a dot or node_modules folder, and writes nothing (case 7)'; `tests/state/system/lsp/edits.test.ts`, 'refuses a library file, a file under node_modules or a dot folder, and a path outside', 'refuses an entry that creates, renames or deletes a file' and 'refuses an edit that names a file open in a tab of another page, whether or not a tab of this page holds it'; lint: `tests/server/machine/runs/lint/lint-route.test.ts`, 'refuses %s before any program starts (G2)' for a path that climbs out of the root, a root no list names, a folder and a file that is gone, and 'lints a link inside the root as its target and refuses a link that leads out (G2)'; `tests/routes/replace/lsp-edit.test.ts`, 'refuses a file under the hub's secrets folder and one under the home folder's .oculus as outside, and writes and keeps nothing (case 30a)'; `tests/state/system/lsp/edits.test.ts`, 'refuses a file under the hub's secrets folder and one under the home folder's .oculus before any post (case 30a)'; the folder Fix All: `tests/routes/replace/writing-fix.test.ts`, 'refuses a path that climbs out of the root, a root not served, a file, and a link out of the root (G2)' (the plan), 'refuses a path out of the root, a link out of it and a root not served, naming the file (G2)' (the write).; Markdown server: `tests/server/machine/lsp/adapters/markdown-requests.test.ts`, describe 'the Markdown server may not be given the machine or the outside', the rows 'is refused for a file beside the root' and 'is refused for a link out of the root' (readFile), 'answers nothing for a file beside the root', 'answers nothing for a link out of the root' and 'answers nothing for the folder above the root' (stat), 'is refused for the folder above the root and for secrets' (readDirectory), 'are not made for a file beside the root' (watchers), and 'drops a mark whose path lies outside the root or under secrets, and words the others from the root' (the diagnostics hook); `tests/server/machine/lsp/uris.test.ts`, 'gives a document link to the page with no machine path in any field, takes its note back as the file address, and gives the target of its resolve with its #L fragment'.
 ```
 
+## Repair round 1
+
+### Open item
+
+1. A guarded entry for the page rules `openingOf` (`src/lib/views/shared/prose/doc-link.ts`) and `fileOfTab` (`src/lib/state/workbench/navigation/pages.ts`) would let them have the table rows rulings 1 and 2 ask for. G37's test (`tests/views/sources/bar-actions.test.ts`) renders each file view and checks what it hands the pane bar; it names neither function. Without an entry the rows are not written. Options: (a) a new entry "a document is opened by the rules of its space, and a tab names the file it shows", with `tests/views/shared/prose/doc-link.test.ts` and `tests/state/workbench/navigation/pages.test.ts` as tests (pros: both rules get rows; cons: a new entry is Axel's to approve); (b) no entry, the rules stay checked by the look and by a quoted run, as the brief does for views. Recommendation: (a), because both functions decide which tab opens and which file a menu acts on, and the refuter found a wrong row in each family by probing. Option (b) is the cheaper one.
+
+### What changed, per ruling
+
+| Ruling | Change | Check that shows it |
+|---|---|---|
+| 1 Spec 1, Behaviour 3, Standards 3 | `doc-link.ts:96`: the hub's space returns null for a target that climbs out of the hub (`climbsOut`), as the engine's space does with an empty `engineAt`. The comment at `doc-link.ts:87` ("Null for a link with no path and for one that leaves the hub") and `Markdown.svelte:22-23` are now true as written and are unchanged. | probe below |
+| 2 Spec 2, Behaviour 1, Proof 2 | `fileOfTab(tab, engineAt = '')` (`pages.ts:480`), `shownFileOfTab(tab, engineAt = '')` (`pages.ts:502`), `isEngineDoc` (`pages.ts:458`), `engineDocName` (`pages.ts:466`), `tabFileFacts` held fact `engineAt`; `engineAtFor` (`selectors.svelte.ts:255`, listed at 130 and 581), `engineAt()` of the docs store (`docs.svelte.ts:364`); the callers listed below | probes below, `test:quick` |
+| 3 Standards 2, Proof 1 | `docs.ts:600-603`: `engineFile` computes `at`, the real path relative to the engine's real folder, after the inside check and refuses a dot or `node_modules` segment of it with the message of the name check; the doc comments of `engineFile` and `renderEngineDoc` say so; `DESIGN.md:493` says "in the name or in the real path of a link inside the folder" | `tests/routes/docs/docs.test.ts:38-39,130-139` |
+| 4 Standards 1 | `jump.ts:6-10` rewrapped, `doc-link.ts` on one line (line 8) | `comment-width.test.ts` |
+| 5 Standards 5 | `catalogue.ts:9-14`: the head comment names the engine document helpers (`engineDocState`, `engineServes`, `engineRelative`, `engineHubPath`) | read |
+| 6 Standards 6 | `docs.test.ts:40`: the config handed to the route is `portfolioConfigFrom({})`, so the test no longer calls `loadConfig(engineDir())`; the imports are gone and the head comment (lines 6-7) says the case reads no configuration file of the engine. Chosen because `handleDocs` takes the config as an argument and the engine read renders with the defaults. | docs test passes, below |
+| 7 Behaviour 2 | `Doc.svelte:152-159`: `hub` is a derived of its own and `shown` reads it before the manual's answer is known | probe below |
+| 8 Behaviour 4 | the case 6 bullet of 'Every host- or user-visible change' is rewritten (link activates the open guide tab; a new tab is named as ruling 2 gives it) | read |
+| 9 Standards 4 | no git command was run in this round | none run |
+
+Ruling 2, the callers, each with the mechanism: the caller reads `engineAt` through `client.selectors.engineAtFor(tab)` and passes it to `fileOfTab`.
+
+| Place | File and line |
+|---|---|
+| breadcrumb | `strip/tab-crumbs.ts:38,40` (`tabCrumbs` takes `engineAt`), called at `PaneView.svelte:338` |
+| tab menu file items, bookmark, Open in Program, Open Timeline, Reveal, Show in Files, Copy Path, Copy Relative Path | `strip/tab-menu-state.svelte.ts:70-79,125` (`tabFileFacts` gets `engineAt`; `tab-menu.ts` reads the facts and needed no change) |
+| tab icon | `strip/strip-tab.ts:46` (`StripTabFacts.engineAt`, supplied at `PaneView.svelte:195`) |
+| hover path | `pane-view.ts:497,499` (`shownTabPath`), called at `PaneView.svelte:183` |
+| Open Editors | `OpenEditors.svelte:60,72` (`open-editors.ts` takes the file function and needed no change) |
+| Timeline | `Timeline.svelte:78,90` |
+| followed file tab for the Files view | `Files.svelte:111,129` |
+| Outline | `Outline.svelte:86,93` |
+| strip label | `strip-tab.ts:43`: the state's label, else the last name of the path (`engineDocName`) |
+| window title | `workbench-title.ts:15`: the same |
+| `doc:` word and registration comment | `config/text/views/sources/doc.yml:16` is `Document`; `Doc.svelte:2-4` says the view draws hub and engine documents; `Doc.svelte:56-69` describes the file actions |
+| `Workbench.svelte`, `LatexItem.svelte`, `followed.svelte.ts`, `tex-root.svelte.ts`, `context.ts:417,737` | no change: they ask for source and file tabs, and `Workbench.svelte` calls `activeLabel` whose signature is unchanged |
+
+Why `engineAt` is passed to `fileOfTab` and read through the selectors. `engineAt` comes from the manual's answer in the docs store (`docs.manual().engineAt`, empty while the answer is on its way, after a failure and when the folder lies outside the hub). The shell may take only the stores of `SHELL_STORES` (`tests/checks/tree/boundaries.test.ts:442-470`) out of the client object, and `docs` is not among them, while `selectors` is; so the selectors store holds `engineAtFor(tab)`, which returns the empty string for every tab that is not an engine document (and asks the server nothing for them) and `docs.engineAt()` for an engine document. `fileOfTab` stays a pure function of the tab and `engineAt`; there is no module-level state and `boundaries.test.ts` passes without an exemption. The saved tab state stays `{ id, path, engine: true, label? }`. The page never recomputes `engineAt` from the served roots.
+
+Outside the extended write list, needed by ruling 2: `src/lib/state/client/selectors.svelte.ts` (`engineAtFor`; `createSelectors` takes the docs store's `engineAt` as a fourth argument) and `src/lib/state/client/context.ts:566` (passes `docs.engineAt`; 879 lines, as at the base). `src/lib/state/system/docs.svelte.ts`, `src/lib/state/workbench/navigation/catalogue.ts`, `HELP.md:27` and `DESIGN.md:493` are in the brief's list. `src/lib/data/helpers/files/paths.ts` is unchanged in this round.
+
+### Before and after of each changed behaviour
+
+Ruling 1. Link `../../x.md` in `docs/DATA-MAP.md`, hub space, `engineAt` `tools/oculus`. Before (the refuter's probe): `{"kind":"hub","path":"../x.md"}`, and a doc tab drawing "../x.md is not in the documents list". After (this round's probe, `probe-after`): `null`, the page stays where it is.
+
+```
+openingOf docs/DATA-MAP.md -> ../../x.md: null
+openingOf docs/DATA-MAP.md -> ../x.md: {"kind":"hub","path":"x.md"}
+openingOf docs/DATA-MAP.md -> RESEARCH-APPROACH.md: {"kind":"hub","path":"docs/RESEARCH-APPROACH.md"}
+openingOf docs/DATA-MAP.md -> ../tools/oculus/HELP.md: {"kind":"help"}
+openingOf docs/apps.md -> ../HELP.md: {"kind":"help"}
+openingOf docs/apps.md -> ../../x.md: {"kind":"hub","path":"tools/x.md"}
+openingOf docs/apps.md -> ../../../../x.md: null
+```
+
+The probe was a scratch test file under `tests/`, run with `npx vitest run` and removed afterwards; it is not a kept test. The first row is the input the refuter named.
+
+Ruling 2. The guide tab on this hub, `engineAt` `tools/oculus`. Before: `fileOfTab` returned null for an engine tab, so the tab had no breadcrumb, no Copy Path, Copy Relative Path, Reveal, Show in Files, Open Timeline, bookmark or Open in Program in its menu, no file icon or hover path, no Open Editors row, and the Timeline did not follow it; the strip label and window title of an unlabelled engine tab read "Hub document". After (probe lines):
+
+```
+fileOfTab engine tab engineAt="tools/oculus": {"root":"hub","path":"tools/oculus/docs/apps.md"}
+fileOfTab engine tab engineAt="": null
+fileOfTab engine tab no argument: null
+fileOfTab hub doc tab: {"root":"hub","path":"docs/DATA-MAP.md"} ; with engineAt {"root":"hub","path":"docs/DATA-MAP.md"}
+shownFileOfTab engine: {"root":"hub","path":"tools/oculus/docs/apps.md"}
+isEngineDoc true false; engineDocName apps.md null
+tabCrumbs engineAt tools/oculus: ["hub","tools","oculus","docs","apps.md"]
+tabCrumbs engineAt '': []
+shownTabPath: ~/hub/tools/oculus/docs/apps.md ; empty: null
+tabFileFacts engine bookmarked: false / no place: null
+activeLabel unlabelled: apps.md ; labelled: Apps guide ; hub unlabelled: Document
+stripTab unlabelled label=apps.md file=tools/oculus/docs/apps.md; labelled label=Apps guide
+```
+
+The store half, on the real client with a stubbed `fetch`:
+
+```
+non-engine tab: ""; fetches 0
+engine tab before the answer: ""
+engine tab after the answer: "tools/oculus"; asked ["/api/docs?manual=1"]
+engine tab, manual refused: ""
+engine outside the hub: ""
+```
+
+Where the folder lies outside the hub, or while the manual is on its way, an engine tab has no file, as before this round. The page was not run: how the strip, the menu and the Files sections look is for the look on landing (View: the Help page, Apps guide tab; State: this hub; what should differ: the breadcrumb `hub / tools / oculus / docs / apps.md`, the menu file items and the Open Editors row are present, as they are for any hub document).
+
+Ruling 3. `docs/hid.md` (a link to `../.scratch/plan.md`) and `docs/nm.md` (a link to `../node_modules/pack/README.md`), both inside the engine folder. Before: both answered 200 and the hidden one's answer was named `.scratch/plan.md`. After: both answer 404 `{"error":"the path has a node_modules or dot segment: docs/hid.md"}` and `...docs/nm.md`. The fixtures link to the files the test already plants under `.scratch/` and `node_modules/pack/` instead of new `x.md` and `y/r.md` files.
+
+Ruling 7. Before: `Doc.svelte` read `waiting ? guide : hubDocument(reading)`, so a hub tab asked for the manual, and its own read began only after the manual's answer, one after the other; the refuter measured the routes at `manual=1` 28.4 ms cold (12.8 and 6.5 ms warm) and `hub=docs/DATA-MAP.md` 12.1 ms over `handleDocs`, which in series add. After: both requests go out in the same render; the restate of item 6 still waits for the manual's `engineAt` (`waiting`, `engined`). The probe renders `Doc` on the real client with a stubbed `fetch` and lists the addresses asked:
+
+```
+hub tab, requests at the first render: []
+hub tab, requests after the answers: ["/api/docs?manual=1","/api/docs?hub=docs%2FDATA-MAP.md"]
+```
+
+A hub tab that turns out to be an engine document (restated after the manual's answer) has also made one hub read of its hub path, which is not drawn. The page timing is not measured; the figures above are the refuter's route times.
+
+Ruling 8. Case 6, as the refuter measured it. Before (as this report said): the link opens a tab named `apps.md`. As measured: with the shipped arrangement the Help page's Apps guide tab is open, the link activates it, and it keeps 'Apps guide'. A new tab, after the guide tab is closed, is named by the state's label or the last name of its path: `apps.md` in the strip (`stripTab`, `label=apps.md` above), the window title (`activeLabel` above) and the pane title; it was 'Hub document' in the strip and window title. The bullet in 'Every host- or user-visible change' says so.
+
+### Tests
+
+New test rows: the two rows of `tests/routes/docs/docs.test.ts` ('a link into a hidden folder of the engine', 'a link into a node_modules folder of the engine'), inside the existing table of G2's test. On the tree before this round's change the file ran:
+
+```
+ FAIL |unit| tests/routes/docs/docs.test.ts > the engine read of the docs route > serves a Markdown file of the engine and refuses a path that leaves the engine, a link out of it and a file of another kind 31ms
+ -> a link into a hidden folder of the engine: expected 200 to be 404 // Object.is equality
+ Test Files  1 failed (1)
+```
+
+The assertion stops at the first failing row, so the `node_modules` row has no failing line of its own on that tree; the refuter measured it at 200 there. After the change:
+
+```
+ PASS |unit| tests/routes/docs/docs.test.ts > the engine read of the docs route > serves a Markdown file of the engine and refuses a path that leaves the engine, a link out of it and a file of another kind 29ms
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+```
+
+No existing assertion, allow list or predicate was edited (the file is new in this step). The test titles added carry none of the history words (`grep -i -E "before|used to|no longer|still|previously"` over the added lines of the changed files hits only "before the file is opened", "before the manual's answer is known" and "Before the config's first push", each a time order inside the code).
+
+### Verification, from `tools/oculus` in the worktree
+
+Check 1:
+
+```
+npm run diagrams: exit 0
+test:quick: 41 changed file(s), from git since HEAD
+test:quick: 27 test file(s), 10 essential
+ok      prettier (0.4 s): All matched files use Prettier code style!
+ok      ASCII gate (0.4 s)
+ok      svelte-kit sync (2.2 s)
+ok      eslint (1.8 s)
+ok      svelte-check (6.7 s): 1791618400385 COMPLETED 455 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (15.5 s): Duration  11.63s (transform 23.67s, setup 0ms, import 34.98s, tests 7.96s, environment 151ms)
+test:quick: 16.1 s (limit 45.0 s); every command passed
+```
+
+Check 2: the docs test line above (`Test Files  1 passed (1)`).
+
+Check 3: `npx vitest run tests/checks/tree/boundaries.test.ts tests/checks/source/comment-width.test.ts tests/checks/tree/size.test.ts tests/checks/config/arrangements.test.ts` gave `Test Files  4 passed (4)`, `Tests  36 passed (36)`. The tests that exercise the changed tab and Doc code, `npx vitest run tests/shell/panes/strip/tab-menu.test.ts tests/views/sources/bar-actions.test.ts` (G28 and G37): `Test Files  2 passed (2)`, `Tests  15 passed (15)`. One run of the same list under the load of `sh utils/unused-exports.sh` reported 2 failed tests whose names were not captured; the reruns of it, alone and after that script, all pass.
+
+Check 3b: `LC_ALL=C grep -n '[^ -~]'` over every file the step touched (the 26 changed `src` and `config` paths, `tests/routes/docs/docs.test.ts`, `HELP.md`, `DESIGN.md`, `docs/DATA-MAP.md`, `.oculus/config/layout.yml`) printed nothing; the perl gate over `src tests config` printed nothing (`perl gate exit 0`).
+
+Check 3c: `sh utils/folder-check.sh`: `folder-check exit 0`. `sh utils/unused-exports.sh` against the base's `unused-exports.txt`: `unused diff exit 0` (no line added; `isEngineDoc` is imported by `selectors.svelte.ts`, and `engineDocName` by `strip-tab.ts` and `workbench-title.ts`). Line counts: context.ts 879, docs.ts 787, pages.ts 633, selectors.svelte.ts 608, PaneView.svelte 518, pane-view.ts 514, Timeline.svelte 409, Files.svelte 366, docs.svelte.ts 370, catalogue.ts 332, OpenEditors.svelte 327, Doc.svelte 313, docs.test.ts 158; none passes 880 (source) or 520 (component).
+
+Check 4: the new rows' failing and passing lines are under 'Tests'.
+
+Documents that describe the changed behaviour, read after the change: `HELP.md:27` rewritten (the engine tab acts as the file at the folder's place; its name), `DESIGN.md:493` rewritten (real-path segments; the tab's file by `engineAt`), `docs/DATA-MAP.md:220` still true (the cell names the `docs:` list and the guides on any hub), `Doc.svelte`, `pages.ts`, `strip-tab.ts`, `catalogue.ts`, `docs.svelte.ts` head comments rewritten, `Markdown.svelte:22-23` and `doc-link.ts:87` still true.

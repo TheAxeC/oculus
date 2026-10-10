@@ -100,3 +100,70 @@ No added dependency; no reserved decision taken; every case has a first run; pre
 5. The `engineAt` of an engine configured through a link inside the hub to a folder outside it (probe gave `tools/oc`): the brief's shape.
 
 Usage: a5069412810f7d98c, claude-opus-5-5, 243,734 tokens, 67 tool uses, 12.5 min.
+
+## Repair round 1, refuted
+
+Reviewer ad3272f8c36ade777, claude-opus-5-5. Nothing was edited in the repository, the worktree or the ledger; scratch copies under `$TMPDIR/d58r1` removed. No server, page or Electron. The only git run: `git diff 6511e8ce1` and `git status --short` from inside the worktree. Vitest wrote its cache under the worktree's `node_modules/.vite/vitest/` (ignored); `git status --short` lists the same 43 entries (41 modified, 2 untracked).
+
+### Verification lines
+
+```
+Check 1, the diagrams (read-only form): stale: []
+Check 1, npm run test:quick:
+test:quick: 41 changed file(s), from git since HEAD
+test:quick: 27 test file(s), 10 essential
+ok      prettier (0.4 s): All matched files use Prettier code style!
+ok      ASCII gate (0.4 s)
+ok      svelte-kit sync (1.9 s)
+ok      eslint (1.5 s)
+ok      svelte-check (6.9 s): 1791618805940 COMPLETED 455 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (14.7 s): Duration  11.13s (transform 21.46s, setup 0ms, import 33.17s, tests 8.04s, environment 140ms)
+test:quick: 15.3 s (limit 45.0 s); every command passed
+(a second run: test:quick: 22.0 s (limit 45.0 s); every command passed)
+Check 2, docs.test.ts: 1 passed; on the base copy: FAIL, AssertionError: an engine inside the hub: expected 404 to be 200
+Check 3: Test Files  4 passed (4), Tests  36 passed (36)
+Check 3b: nothing printed over the 36 changed paths (svg left out) plus docs.test.ts; perl gate exit 0
+Check 3c: folder-check exit 0; unused-exports 365 lines, diff against the base exit 0; wc -l: context.ts 879 (879 at the base), docs.ts 787, pages.ts 633, selectors.svelte.ts 608, PaneView.svelte 518, pane-view.ts 514, Timeline.svelte 409, docs.svelte.ts 370, Files.svelte 366, catalogue.ts 332, OpenEditors.svelte 327, Doc.svelte 313, Markdown.svelte 293, Outline.svelte 287, tab-menu-state.svelte.ts 183, docs.test.ts 158, RenderedMarkdown.svelte 130, jump.ts 128, doc-link.ts 112, paths.ts 109, Help.svelte 97, tab-crumbs.ts 76, strip-tab.ts 74, workbench-title.ts 27
+Report evidence: tab-menu.test.ts and bar-actions.test.ts: Test Files  2 passed (2), Tests  15 passed (15)
+Ruling 1 probe: hub space docs/DATA-MAP.md -> ../../x.md: null (engineAt tools/oculus and ''); ../x.md: {"kind":"hub","path":"x.md"}; ../tools/oculus/HELP.md: {"kind":"help"}; ../tools/oculus/docs/apps.md: {"kind":"engine","path":"docs/apps.md"}; engine space ../../../../x.md: null; every quoted row reproduced
+Ruling 2 probe: fileOfTab engine tab with tools/oculus: {"root":"hub","path":"tools/oculus/docs/apps.md"}; '' and no argument: null; tabCrumbs ["hub","tools","oculus","docs","apps.md"]; shownTabPath "~/hub/tools/oculus/docs/apps.md"; stripTab labels apps.md / Apps guide / Document; engineAtFor "" before the manual's answer, "tools/oculus" after
+Ruling 3 probe: docs/hid.md, docs/nm.md and docs/vis/z.md (a link to docs/.hidden) 404 "the path has a node_modules or dot segment: ..."; docs/a.md 200
+Ruling 7 probe (manual's fetch left pending): after settle asked ["/api/docs?manual=1","/api/docs?hub=docs%2FDATA-MAP.md"], loading=true until the manual answers
+Cases 2-5 and 10 via handleDocs: as the first run, every row reproduced
+```
+
+### Verdicts
+
+Items: 1 holds; 2 holds; 3 holds (callers left on the default `engineAt = ''`: LatexItem.svelte:38, context.ts:417 and :737, followed.svelte.ts:36 and :40, tex-root.svelte.ts:106 and :166, each reads only source, file or tex/pdf tabs, so none is a missed caller); 4 holds; 5 holds; 6 holds by reading; 7 holds; 8 violated for one cell (Standards 2); 9 holds.
+
+Cases: 1 not verifiable (look over a demo copy); 2, 3, 4, 5 met; 6, 7, 8 not verifiable (the look); 9 met; 10 met; 11 not verifiable (the look on a scratch hub).
+
+Rulings 1 to 8 closed by fixes; ruling 9 has no evidence on the tree either way. The paths outside the write list (`selectors.svelte.ts`, `context.ts:566`) accepted.
+
+### Spec
+
+None.
+
+### Proof
+
+None.
+
+### Standards
+
+1. `src/lib/shell/panes/strip/strip-tab.ts:3-5`: the edited head comment is not rewrapped as a paragraph; line 4 ends at column 84 with the next word fitting (agents/spec.md, a comment edited is rewrapped at 100 columns). Fix at landing.
+2. `docs/DATA-MAP.md:220`, `:46` and `:301` still name the view "Hub document", which this round renamed "Document" (`config/text/views/sources/doc.yml:16`). Item 8 violated for this cell. Fix at landing.
+3. `src/lib/state/workbench/navigation/pages.ts:68-70`: `tabNameOf`'s doc comment says a tab is named as its strip names it, but `tabNameOf` falls back to "Document" where the strip gives `engineDocName` (`apps.md`). Nothing visible differs today (callers only for unsaved-text tabs). Fix: `tabNameOf` falls back to `engineDocName`, or the sentence is reworded.
+
+### Behaviour
+
+1. `config/text/views/sources/doc.yml:16`: every unlabelled hub document tab is now named "Document" where it read "Hub document" (strip, window title, pane title, hover hint view words); the report gives no before and after for hub tabs.
+
+### Declined to judge
+
+1. The page cases 1, 6, 7, 8 and 11: no page may be run here.
+2. The failing run of the new rows on the tree before this round: no snapshot exists; rebuilding it would be breakage testing. By reading both rows fail without docs.ts 366-368; the whole test fails on the base (quoted).
+3. Ruling 9: only the builder's transcript would settle it.
+4. The builder's two unnamed failures under `utils/unused-exports.sh` load: not reproduced (4 of 4 files, 36 of 36 tests).
+5. Whether `engineAt` should become a required parameter: a design choice; no caller misses it today.
+6. The rows for `openingOf` and `fileOfTab`: wait on open item 34.
+7. The `.svg` diffs: not read; `stale: []`.

@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D58 (the engine's guides on every hub): repair round 1 running.
+- D58 (the engine's guides on every hub): reviewed after repair round 1; landing waits on open items 34 and 36.
 
 Queued, in order (2 steps):
 - Q72 (the architecture re-read): waits for D49, D55 and D58 (open item 33 (a), Z766).
