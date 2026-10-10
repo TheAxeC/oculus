@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- D62 (apps: the host and the bridge): builder running.
 
-Queued, in order (5 steps):
-- D62 (apps: the host and the bridge): open item 46 ruled; /spec next, on main after D60.
+Queued, in order (4 steps):
 - D63 (apps in the shell): after D62.
 - D64 (apps in the tools): after D63.
 - Q72 (the architecture re-read): waits for D60 to D64, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
