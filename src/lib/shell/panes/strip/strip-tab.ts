@@ -1,12 +1,13 @@
 // Layer 3, shell. The strip's tab for one instance: the registry's words and glyph, or the view's
 // own id when it has none. A state carrying a `label` shows that instead of the view's name, so two
-// documents read as two. A tab showing a file carries its path, which the strip draws the file's
-// icon for, whether that file is gone from the disk, and the errors and warnings it holds.
+// documents read as two, and a document tab of oculus's own folder with none shows the last name of
+// its path. A tab showing a file carries its path, which the strip draws the file's icon for,
+// whether that file is gone from the disk, and the errors and warnings it holds.
 
 import type { ClientState } from '$lib/state/client/context';
 import type { Instance } from '$lib/state/workbench/layout';
 import { instanceLabel } from '$lib/state/workbench/layout';
-import { shownFileOfTab } from '$lib/state/workbench/navigation/pages';
+import { engineDocName, shownFileOfTab } from '$lib/state/workbench/navigation/pages';
 import {
     badgeOf,
     registrationGlyph,
@@ -25,6 +26,8 @@ export type StripTabFacts = {
     client: ClientState;
     mark: (instance: Instance) => { glyph?: string; token?: string };
     pathOf: (instance: Instance) => string | null;
+    /** The place of oculus's own folder in the hub for a document tab of that folder, else ''. */
+    engineAt: (instance: Instance) => string;
     dirty: (id: string) => boolean;
     /** Whether a file is off the disk, read from the listing of its folder. */
     gone: (file: { root: string; path: string }) => boolean;
@@ -37,10 +40,10 @@ export function stripTab(instance: Instance, facts: StripTabFacts, t: Words): Ta
     if (found === undefined) {
         return { id: instance.id, label: t('ui.unknown_view', instance.view) };
     }
-    const own = instanceLabel(instance.state);
+    const own = instanceLabel(instance.state) ?? engineDocName(instance);
     const badge = badgeOf(found, facts.client);
     const preview = instance.preview === true;
-    const shown = shownFileOfTab(instance);
+    const shown = shownFileOfTab(instance, facts.engineAt(instance));
     const gone = shown !== null && facts.gone(shown);
     const problem = shown === null ? null : facts.problemsOf(shown);
     return {

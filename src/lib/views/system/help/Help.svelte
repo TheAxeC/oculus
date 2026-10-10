@@ -1,6 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. Help opens the Help page's group, and is the first tab of that
-    // page's one pane, beside the hub's documents and the Apps guide.
+    // page's one pane, beside the Apps guide, which is a document of oculus's own folder.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -17,17 +17,18 @@
     //
     // The manual is a file beside DESIGN.md rather than text in the catalog, because it is pages of
     // prose about the whole tool and a catalog is words a surface draws. It is read through
-    // api/docs, the one route that turns Markdown into HTML, which serves that one path of the
-    // engine directory and nothing else around it.
+    // api/docs, the one route that turns Markdown into HTML, by its `manual` read, which answers it
+    // in the engine folder's space whatever hub the page is on: its path is HELP.md and a relative
+    // link in it is resolved from there.
     //
-    // The manual holds no diagram. The doc view draws a diagram of docs/diagrams/ only over a
-    // document of the `docs:` list (the hub's layer, .oculus/config/layout.yml, sets it) that lies
-    // inside the engine folder; DESIGN.md is not listed and the Apps guide holds none. A press on a
-    // relative link to another Markdown file opens that document in a doc tab
-    // (shared/prose/jump.ts), and a press on a link into the manual from another document opens
-    // this view with the heading the link names in its state, which the view scrolls to once the
-    // manual is drawn and then removes from the state. The prose is drawn straight into the box, so
-    // over a wallpaper the box asks for the tint and is the one surface the manual is read off.
+    // The manual holds no diagram. The doc view draws a diagram of docs/diagrams/ over a document
+    // of oculus's own folder, which the Apps guide tab of this page is (`engine: true` in the tab's
+    // state, so it draws on any hub); the Apps guide holds none. A press on a relative link to
+    // another Markdown file opens that document in a doc tab (shared/prose/jump.ts), and a press on
+    // a link into the manual from another document opens this view with the heading the link names
+    // in its state, which the view scrolls to once the manual is drawn and then removes from the
+    // state. The prose is drawn straight into the box, so over a wallpaper the box asks for the
+    // tint and is the one surface the manual is read off.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { withoutFragment } from '../../shared/prose/doc-link';

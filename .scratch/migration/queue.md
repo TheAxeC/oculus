@@ -1,14 +1,14 @@
-In flight (1 of 6 slots in use):
-- D58 (the engine's guides on every hub): landing, with G74 and its two tests written at landing.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (3 steps):
-- D59 (the hub fixes and personal projects): after D58.
+- D59 (the hub fixes and personal projects, the rice-theme text sizes and the per-hub config in the data map): next.
 - Q72 (the architecture re-read): waits for D49, D55, D58 and D59 (open item 33 (a), Z766).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline; its memories and wallpaper move is D59's): paused (Axel).
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D58 (the engine's guides on every hub), 2026-10-10.
 - D55 (roots as hubs), 2026-10-10, 57de2c4bd.
 - D49 (the help pages cut), 2026-10-10, 2181e8152.
 - D56 (the workbench), 2026-10-10, 652f5104a.

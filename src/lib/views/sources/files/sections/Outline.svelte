@@ -83,14 +83,14 @@
 
     const {
         source: { sourceDraft },
-        selectors: { languages },
+        selectors: { engineAtFor, languages },
         editorStatus: { ask },
         documents,
         headings,
         latexReader
     } = useState();
 
-    const file = $derived(tab === null ? null : fileOfTab(tab));
+    const file = $derived(tab === null ? null : fileOfTab(tab, engineAtFor(tab)));
     const draft = $derived(tab?.view === 'source' ? sourceDraft(tab.id) : null);
     /** Whether the followed tab draws a document it publishes the headings of. */
     const rendered = $derived(tab?.view === 'doc' || tab?.view === MARKDOWN_PREVIEW_VIEW);

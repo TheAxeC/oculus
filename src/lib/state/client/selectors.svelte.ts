@@ -43,6 +43,7 @@ import { movable } from '../boards/focus.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { pinnedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
+import { isEngineDoc } from '../workbench/navigation/pages.ts';
 import type { SelectionStore } from '../workbench/selection.svelte.ts';
 import type { BoardItem, BoardPreset, BoardStats, Dissemination } from '../boards/board/index.ts';
 import {
@@ -126,6 +127,7 @@ export type SelectorsStore = {
     disseminatedFor: (id: Id) => Dissemination[];
     domainChoices: () => Choice[];
     hubRoot: () => string;
+    engineAtFor: (tab: { view: string; state: unknown }) => string;
     hubDirOf: (id: Id) => string;
     collectionOf: (key: string) => Collection | null;
     collectionsOfKey: (key: string) => Collection[];
@@ -156,7 +158,8 @@ export type SelectorsStore = {
 export function createSelectors(
     entities: EntitiesStore,
     layout: LayoutStore,
-    selection: SelectionStore
+    selection: SelectionStore,
+    engineAt: () => string
 ): SelectorsStore {
     /**
      * The merged config the `config` channel delivered, or an empty map before the first message.
@@ -241,6 +244,16 @@ export function createSelectors(
     function domainChoices(): Choice[] {
         const domains = entities.portfolio()?.entities.domains ?? {};
         return Object.values(domains).map((one) => ({ id: one.id, label: one.title }));
+    }
+
+    /**
+     * The place of oculus's own folder in the hub for a document tab of that folder, which the
+     * file the tab shows is placed by (`fileOfTab`); the empty string for any other tab, which
+     * asks nothing of the server, and while the server's answer is on its way, failed, or names no
+     * place because the folder lies outside the hub.
+     */
+    function engineAtFor(tab: { view: string; state: unknown }): string {
+        return isEngineDoc(tab) ? engineAt() : '';
     }
 
     /**
@@ -565,6 +578,7 @@ export function createSelectors(
         disseminatedFor,
         domainChoices,
         hubRoot,
+        engineAtFor,
         hubDirOf,
         collectionOf,
         collectionsOfKey,

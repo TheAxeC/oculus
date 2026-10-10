@@ -167,3 +167,12 @@ None.
 5. Whether `engineAt` should become a required parameter: a design choice; no caller misses it today.
 6. The rows for `openingOf` and `fileOfTab`: wait on open item 34.
 7. The `.svg` diffs: not read; `stale: []`.
+
+## Closed (at landing)
+
+- Round 1, Standards 1: `src/lib/shell/panes/strip/strip-tab.ts:3-5` rewrapped as one paragraph at 100 columns.
+- Round 1, Standards 2: `docs/DATA-MAP.md` 46, 220 and 301 name the view "Document"; `grep -c 'Hub document' docs/DATA-MAP.md` prints 0.
+- Round 1, Standards 3: `tabNameOf` (`src/lib/state/workbench/navigation/pages.ts`) falls back to `engineDocName` before the view's name, as the strip does, and its doc comment says so.
+- Round 1, Behaviour 1: the look on a scratch oculus over this hub drew an unlabelled hub document tab (`{ id: README.md, path: README.md }`) as "Document" in the strip, with the breadcrumb `hub > README.md` and the view's heading DOCUMENT.
+- Declined 6: G74 written into `agents/guarded.md` with its two tests, `tests/views/shared/prose/doc-link.test.ts` (11 rows) and the describe 'the file a tab names' of `tests/state/workbench/navigation/pages.test.ts` (4 rows): 20 of 20 pass at landing, and on a copy of the base (6511e8ce1) doc-link fails 11 of 11 and pages fails 2 rows.
+- Declined 1: cases 1, 6, 7, 8 and 11 taken in the landing's look, each met (`agents/reviews/D58-landing.md`).

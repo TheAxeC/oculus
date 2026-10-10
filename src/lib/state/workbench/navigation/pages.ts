@@ -11,7 +11,9 @@
 // breadcrumb and its right-click menu name a file by these rules, and so do the Files view's
 // outline, timeline, tree and row menu. The tab menu's file items are here as well: what the menu
 // offers for a tab's file (tabFileFacts), its bookmark made or taken out (bookmarkTabFile), and the
-// file shown in a browser tab (openInBrowserTab).
+// file shown in a browser tab (openInBrowserTab). A document tab of oculus's own folder is placed
+// in the hub by the folder's place there (`engineAt`), which the caller passes from the server's
+// answer (the client state's `engineAtFor`); the tab's saved state never holds it.
 //
 // Whether an instance holds unsaved text is not decided here. The caller passes the ui store's
 // answer for an instance id, so a view that keeps unsaved text registers its rule once and none of
@@ -27,6 +29,7 @@ import {
     type Page
 } from '../layout/index.ts';
 import { filledTextShape, readAs } from '../../../data/shapes/shapes.ts';
+import { engineHubPath } from './catalogue.ts';
 import { registrationLabel, type Registration } from './registry.ts';
 import { t } from '../../shared/words/text.ts';
 import { parseArrangement } from './arrangement.ts';
@@ -63,16 +66,16 @@ export function pageNameOf(pages: readonly Page[], id: string): string {
 }
 
 /**
- * What a tab is called: the `label` its state carries, else its view's name, else the view's id
- * when the registry holds no such view. A pane's tab strip names a tab the same way, so a question
- * about a tab calls it what its strip does.
+ * What a tab is called: the `label` its state carries, else the last name of an engine document's
+ * path, else its view's name, else the view's id when the registry holds no such view. A pane's
+ * tab strip names a tab the same way, so a question about a tab calls it what its strip does.
  */
 export function tabNameOf(
     instance: Instance,
     viewFor: (id: string) => Pick<Registration, 'label' | 'words'> | undefined
 ): string {
-    const own = readAs(tabLabelShape, instance.state)?.label;
-    if (own !== undefined) return own;
+    const own = readAs(tabLabelShape, instance.state)?.label ?? engineDocName(instance);
+    if (own !== null) return own;
     const found = viewFor(instance.view);
     return found === undefined ? instance.view : registrationLabel(found);
 }
@@ -445,18 +448,41 @@ export type TabRoot = { key: string; dir: string };
 /** The root and path a tab's state names. */
 const fileShape = z.object({ root: z.string().min(1), path: z.string().min(1) });
 
-/** The path a document tab holds, which is relative to the hub root. */
-const docShape = z.object({ path: z.string().min(1) });
+/** The path a document tab holds: relative to the hub root, or to the engine folder if flagged. */
+const docShape = z.object({ path: z.string().min(1), engine: z.boolean().optional() });
+
+/**
+ * Whether a tab is a document of oculus's own folder: a doc tab whose state flags `engine`, whose
+ * path is relative to that folder.
+ */
+export function isEngineDoc(tab: { view: string; state: unknown }): boolean {
+    return tab.view === 'doc' && readAs(docShape, tab.state)?.engine === true;
+}
+
+/**
+ * The words of an engine document's tab when its state holds no label: the last name of its path.
+ * Null for any other tab.
+ */
+export function engineDocName(tab: { view: string; state: unknown }): string | null {
+    const doc = tab.view === 'doc' ? readAs(docShape, tab.state) : null;
+    return doc?.engine === true ? nameOf(doc.path) : null;
+}
 
 /**
  * The file a tab shows, or null when its view shows no one file. A document tab holds a path under
- * the hub and no root, so it is read as a file of the hub root. The path `.` names a root's own
- * folder (a Present tab of a deck there), which is no file, as a Files tab of a root is not.
+ * the hub and no root, so it is read as a file of the hub root. A document tab of oculus's own
+ * folder holds a path under that folder, which is a file of the hub root at `engineAt` joined with
+ * it, `engineAt` being the folder's place in the hub as the server's answer for the manual gives
+ * it; it shows no file when `engineAt` is empty, since the tab alone cannot place the folder in the
+ * hub. The path `.` names a root's own folder (a Present tab of a deck there), which is no file,
+ * as a Files tab of a root is not.
  */
-export function fileOfTab(tab: { view: string; state: unknown }): RowRef | null {
+export function fileOfTab(tab: { view: string; state: unknown }, engineAt = ''): RowRef | null {
     if (tab.view === 'doc') {
         const doc = readAs(docShape, tab.state);
-        return doc === null ? null : { root: HUB_ROOT, path: doc.path };
+        if (doc === null) return null;
+        if (doc.engine !== true) return { root: HUB_ROOT, path: doc.path };
+        return engineAt === '' ? null : { root: HUB_ROOT, path: engineHubPath(doc.path, engineAt) };
     }
     const file = readAs(fileShape, tab.state);
     return file === null || file.path === '.' ? null : file;
@@ -473,8 +499,11 @@ const FILE_VIEWS: readonly string[] = ['source', 'file', 'document', 'doc'];
  * glyph though its state names a folder or a file: a Files tab opened on a folder, a LaTeX tab, a
  * Markdown preview.
  */
-export function shownFileOfTab(tab: { view: string; state: unknown }): RowRef | null {
-    return FILE_VIEWS.includes(tab.view) ? fileOfTab(tab) : null;
+export function shownFileOfTab(
+    tab: { view: string; state: unknown },
+    engineAt = ''
+): RowRef | null {
+    return FILE_VIEWS.includes(tab.view) ? fileOfTab(tab, engineAt) : null;
 }
 
 /**
@@ -544,15 +573,16 @@ export type TabFileFacts = {
 
 /**
  * The bookmark, browser tab and program facts of a tab. `served` says the tab's root is one the
- * server serves; the bookmarks are the reader's own entries and `programs` the applications the
- * configuration names by extension.
+ * server serves; the bookmarks are the reader's own entries, `programs` the applications the
+ * configuration names by extension and `engineAt` the place of oculus's own folder in the hub, for
+ * a document tab of that folder (`fileOfTab`).
  */
 export function tabFileFacts(
     tab: { view: string; state: unknown },
     served: boolean,
-    held: { bookmarks: readonly Entry[]; programs: ProgramApps }
+    held: { bookmarks: readonly Entry[]; programs: ProgramApps; engineAt: string }
 ): TabFileFacts {
-    const file = fileOfTab(tab);
+    const file = fileOfTab(tab, held.engineAt);
     const bookmarkable = file !== null && served && headOf(tab.state) === undefined;
     return {
         bookmarked: bookmarkable

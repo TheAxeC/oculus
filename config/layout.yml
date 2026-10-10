@@ -90,7 +90,7 @@ arrangements:
   present:
     root: { kind: pane, view: present }
   help:
-    root: { kind: pane, view: [help, { view: doc, state: { id: tools/oculus/docs/apps.md, path: tools/oculus/docs/apps.md, label: "Apps guide" } }, memories] }
+    root: { kind: pane, view: [help, { view: doc, state: { id: engine:docs/apps.md, path: docs/apps.md, engine: true, label: "Apps guide" } }, memories] }
   views:
     root:
       kind: split

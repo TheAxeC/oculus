@@ -1,7 +1,8 @@
-# Oculus text owned by the doc view: one hub document, named by the `docs:` list of layout.yml.
+# Oculus text owned by the doc view: one Markdown document as its own tab, either a document of the hub, named by the `docs:` list of layout.yml, or a document of oculus's own folder, named by its path in that folder.
 text:
     doc:
         failed: 'The document {0} could not be read: {1}'
+        failed_engine: 'The oculus document {0} could not be read: {1}'
         loading: Reading the document...
         markdown_none: No Markdown file chosen. Open one from the Files view.
         markdown_none_glyph: book
@@ -12,7 +13,7 @@ text:
         none_glyph: book
         unlisted: "{0} is not in the documents list (docs in .oculus/config/layout.yml in the hub, or in config/layout.yml when the hub sets none), and no entry there carries this tab's name."
     views:
-        doc: Hub document
+        doc: Document
         doc_glyph: book
         markdown_preview: Markdown preview
         markdown_preview_glyph: book

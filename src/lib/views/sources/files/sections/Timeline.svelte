@@ -75,7 +75,7 @@
         fs: { commitPage, commits, copies, copyText, refreshFile, roots, workspaces },
         layout: { activeInstance, currentPage, layout },
         repositories: { openDiff },
-        selectors: { gitFor, gitRoots },
+        selectors: { engineAtFor, gitFor, gitRoots },
         source: { saveSource }
     } = useState();
 
@@ -87,7 +87,7 @@
         followedFile(
             panes(layout(page)).map((held) => held.pane),
             activeInstance(page)?.id ?? null,
-            fileOfTab
+            (tab) => fileOfTab(tab, engineAtFor(tab))
         )
     );
     const file = $derived(pinned ?? selected ?? followed);

@@ -5,8 +5,9 @@
 //
 // A view that follows links between documents (the Help and doc views) also hands `jump` a
 // follower: a press on a relative link to a `.md` file is resolved from the linking document
-// (doc-link.ts) and opened by the follower, and the page's address stays as it was. Any other
-// link, a relative one to another kind of file included, is left to the browser.
+// (doc-link.ts), in the space that document is read in, and opened by the follower, and the page's
+// address stays as it was. Any other link, a relative one to another kind of file included, is
+// left to the browser.
 //
 // The heading a link names is looked up inside the box of the view the link is drawn in, the
 // element carrying `data-instance`: a manual drawn as several runs of prose reaches a heading in
@@ -28,9 +29,16 @@ import { docLinkOf, type DocLink } from './doc-link';
 
 /** What opens a link between documents: the linking document's path and the opener. */
 export type LinkFollower = {
-    /** The linking document's path relative to the hub, the empty string when it has none. */
+    /**
+     * The linking document's path relative to the space it is read in (the engine folder for the
+     * manual and oculus's own guides, the hub for any other document), the empty string when it
+     * has none.
+     */
     from: string;
-    /** Opens the document a link names; told the empty path when the link leaves the hub. */
+    /**
+     * Opens the document a link names; told a path relative to the same space, which begins with
+     * `../` when the link climbs out of it, and the empty path when the document has none.
+     */
     open: (link: DocLink) => void;
 };
 

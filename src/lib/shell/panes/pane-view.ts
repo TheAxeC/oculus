@@ -487,14 +487,16 @@ export function tabHint(
 
 /**
  * The path of the file a tab shows as a reader writes it, from its root's folder with the home
- * folder as `~`, or null when the tab shows no file or the server serves no such root.
+ * folder as `~`, or null when the tab shows no file or the server serves no such root. `engineAt`
+ * is the place of oculus's own folder in the hub, which places a document tab of that folder.
  */
 export function shownTabPath(
     tab: Pick<Instance, 'id' | 'view' | 'state'>,
     roots: readonly TabRoot[],
-    home: string
+    home: string,
+    engineAt = ''
 ): string | null {
-    const file = fileOfTab(tab);
+    const file = fileOfTab(tab, engineAt);
     const root = roots.find((one) => one.key === file?.root);
     return file === null || root === undefined ? null : shownPath(root.dir, file.path, home);
 }

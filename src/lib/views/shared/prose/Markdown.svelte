@@ -12,11 +12,15 @@
     //
     // A press on a link to a fragment is handled inside the view by jump.ts, never through the
     // address. A view that says `follow` also has a press on a relative link to a Markdown file
-    // opened as a tab: the target is resolved from this document's own path (the answer's `path`),
-    // the manual opens the Help view at the heading the link names, and any other document opens
-    // as a doc tab, which says so when the `docs:` list of config/layout.yml does not name it. A
-    // link that leaves the hub, and any link of a document outside the hub (the answer's `path`
-    // is then the empty path), opens nothing and the page stays where it is.
+    // opened as a tab: the target is resolved from this document's own path (the answer's `path`)
+    // in the space the answer names, the engine folder for the manual and oculus's own guides and
+    // the hub for any other document (doc-link.ts, `openingOf`). The manual opens the Help view at
+    // the heading the link names, a file of the engine folder opens as the engine's document
+    // whichever document linked to it, and any other document opens as a doc tab of the hub, which
+    // says so when the `docs:` list of config/layout.yml does not name it. A link of the engine's
+    // documents that climbs out of the engine folder is read in the hub when the folder lies in
+    // it. A link that leaves the hub, and any link of a document outside the hub (the answer's
+    // `path` is then the empty path), opens nothing and the page stays where it is.
     //
     // A right-click on the document opens the prose menu (prose-menu.ts), read as the right-click
     // arrives: Copy over a selection, Copy Image over an image, and Open Image over an image the
@@ -33,8 +37,14 @@
     import { proseAt, proseMenu, prosePicked } from './prose-menu';
     import type { DocState } from '$lib/state/system/docs.svelte';
     import { jump, type LinkFollower } from './jump';
-    import type { DocLink } from './doc-link';
-    import { docState, readDocs } from '$lib/state/workbench/navigation/catalogue';
+    import { openingOf, type DocLink } from './doc-link';
+    import {
+        docState,
+        engineDocState,
+        engineHubPath,
+        readDocs
+    } from '$lib/state/workbench/navigation/catalogue';
+    import { instanceText, isInstanceOf, tabsOf } from '$lib/state/workbench/layout';
 
     type Props = {
         /** What state/system/docs.svelte.ts holds for this document. */
@@ -79,17 +89,40 @@
 
     /** Open the document a link between documents names, as the view's tab. */
     function open(link: DocLink): void {
-        if (client === undefined || link.path === '') return;
+        if (client === undefined) return;
+        const opening = openingOf(link, doc);
+        if (opening === null) return;
         const state = fragmentState(link);
-        if (link.path === doc.manual) {
+        if (opening.kind === 'help') {
             client.layout.openView('help', state);
             return;
         }
-        const listed = readDocs(client.entities.config()?.config.docs).find(
-            (one) => one.path === link.path
-        );
-        const entry = listed ?? { label: '', path: link.path, group: '' };
-        client.layout.openView('doc', { ...docState(entry), ...state });
+        const listed = readDocs(client.entities.config()?.config.docs);
+        if (opening.kind === 'hub') {
+            const entry = listed.find((one) => one.path === opening.path);
+            const named = entry ?? { label: '', path: opening.path, group: '' };
+            client.layout.openView('doc', { ...docState(named), ...state });
+            return;
+        }
+        const at = engineHubPath(opening.path, doc.engineAt);
+        const entry = listed.find((one) => at !== '' && one.path === at);
+        const label = entry?.label ?? heldLabel(opening.path);
+        client.layout.openView('doc', { ...engineDocState(opening.path, label), ...state });
+    }
+
+    /**
+     * The words of the tab already open over a document of the engine folder, or the empty text
+     * for none. Opening a tab that is open states it again, so the words it holds are handed back
+     * to keep its name.
+     */
+    function heldLabel(path: string): string {
+        const id = engineDocState(path).id;
+        for (const host of client?.layout.hosts() ?? []) {
+            for (const tab of tabsOf(host.workbench.root)) {
+                if (isInstanceOf(tab, 'doc', id)) return instanceText(tab.state, 'label');
+            }
+        }
+        return '';
     }
 
     /** The state that carries the heading a link names, none for a link to the document alone. */

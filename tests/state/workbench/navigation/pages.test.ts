@@ -1,12 +1,14 @@
 // Layer 2, client-state tests. Which tabs a page holds and what closing it asks: the rules the
 // shell's pane menus and page leaves and the Pages view read, over hand-built page lists and
-// instance ids.
+// instance ids; and the file a document tab names, of the hub or of oculus's own folder.
 
 import { describe, expect, it } from 'vitest';
 import {
     closeAsk,
     closeWords,
-    pageInstanceIds
+    fileOfTab,
+    pageInstanceIds,
+    shownFileOfTab
 } from '../../../../src/lib/state/workbench/navigation/pages.ts';
 import type { Page } from '../../../../src/lib/state/workbench/layout/index.ts';
 import { bench, pane, split } from '../layout/layout-fixture.ts';
@@ -113,5 +115,44 @@ describe('what a close asks once the tabs the autosave mode saves were saved', (
             busy: []
         });
         expect(after).toEqual({ message: 'Close 2 tabs?', detail: '' });
+    });
+});
+
+describe('the file a tab names', () => {
+    const engineTab = {
+        view: 'doc',
+        state: { id: 'engine:docs/apps.md', path: 'docs/apps.md', engine: true }
+    };
+    const hubTab = { view: 'doc', state: { id: 'docs/DATA-MAP.md', path: 'docs/DATA-MAP.md' } };
+    const ROWS = [
+        {
+            row: 'an engine tab with the engine in the hub',
+            tab: engineTab,
+            engineAt: 'tools/oculus',
+            file: { root: 'hub', path: 'tools/oculus/docs/apps.md' }
+        },
+        {
+            row: 'an engine tab with the engine outside the hub',
+            tab: engineTab,
+            engineAt: '',
+            file: null
+        },
+        {
+            row: 'a hub document tab',
+            tab: hubTab,
+            engineAt: 'tools/oculus',
+            file: { root: 'hub', path: 'docs/DATA-MAP.md' }
+        },
+        {
+            row: 'a hub document tab with the engine outside the hub',
+            tab: hubTab,
+            engineAt: '',
+            file: { root: 'hub', path: 'docs/DATA-MAP.md' }
+        }
+    ];
+
+    it.each(ROWS)('$row', ({ tab, engineAt, file }) => {
+        expect(fileOfTab(tab, engineAt)).toEqual(file);
+        expect(shownFileOfTab(tab, engineAt)).toEqual(file);
     });
 });

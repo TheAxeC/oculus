@@ -25,19 +25,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D58
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: aae7ed72c018ec649 (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D58
-  base: 6511e8ce1
-  launched: 2026-10-10
-  report: agents/reviews/D58-report.md
-  builder_usage: 353,563 tokens, 116 tool uses, 31.6 min; round 1: 241,155 tokens, 101 tool uses, 26.4 min
-  reviewer_report: agents/reviews/D58-refuter.md (a5069412810f7d98c, claude-opus-5-5, 243,734 tokens, 67 tool uses, 12.5 min); over round 1: ad3272f8c36ade777, claude-opus-5-5, 260,604 tokens, 70 tool uses, 13.5 min
-  brief_check: agents/reviews/D58-brief-check.md (a7c19a6a67f61ce16, claude-opus-5-5, 235,846 tokens, 62 tool uses, 9.9 min; closed in the brief by the orchestrator under "Closed")
-  landing: not-started
-  round: 1 (agents/briefs/D58-round1.md)
+  []   # nothing in flight
 ```
 
 ## The standing demands (from Axel, in force)
@@ -246,6 +234,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-10 (D58 landed). D58, the engine's guides on every hub, landed (booking in plan.md; `agents/reviews/D58-landing.md`) after one repair round, the review over it and Axel's ruling of no second round (Open item 34): G74 and its two tests, G2's Doc text and the review's three findings fixed on main at landing (`agents/reviews/D58-refuter.md`, Closed (at landing)); the look met cases 1, 6, 7, 8 and 11 on a scratch oculus. D59 gained items (7), rice-theme text larger than under a VS Code theme, most visible in the Files view, and (8), the per-hub config paths in `docs/DATA-MAP.md` (Axel). Worktree `.agents/worktrees/D58` and its branches removed. Nothing in flight. Next: /spec D59, then Q72.
 - 2026-10-10 (D58 launched). D58 prepared (base 6511e8ce1, brief `agents/briefs/D58.md` with every closure of its brief check under "Closed"; Z768 and Z769 booked the engine document's shape and G2's exception) and its builder aae7ed72c018ec649 (claude-sonnet-5-5) launched in `.agents/worktrees/D58`. In flight (1 of 6): D58. Next: /refute D58, then /land D58, then Q72.
 - 2026-10-10 (D55 landed). D55, roots as hubs, landed (booking in plan.md; `agents/reviews/D55-landing.md`) after one repair round and the review over it, its six findings and three defects of the look fixed on main at landing (`agents/reviews/D55-refuter.md`, Closed (at landing)); the cherry-pick's conflict with D49 resolved on main; Z767 booked the two app-visible shapes no ruling named. Worktree `.agents/worktrees/D55` and its branches removed. Nothing in flight. Next: /spec D58, then Q72.
 - 2026-10-10 (D49 landed). D49, the help pages cut, landed (booking in plan.md; `agents/reviews/D49-landing.md`) after one repair round and the review over it, its findings fixed on main at landing (`agents/reviews/D49-refuter.md`, Closed (at landing)). The look found the Help page's Apps guide refused on a hub that does not list it, as on the base: Z766 added step D58 before Q72. In flight (1 of 6): D55 (review over round 1 saved, aa068552ee5aa1c92; its findings are ruled next, then /land D55). Next: /land D55, then /spec D58, then Q72.

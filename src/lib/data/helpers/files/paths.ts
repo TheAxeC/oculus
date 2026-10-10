@@ -1,10 +1,10 @@
 // Layer 1, data. The `/` path rules the page reads a path by: a path's last name, a folder without
 // its trailing slashes, a folder joined with a path below it, the way from one folder to a target,
-// the path of a target below a folder, and the deepest of several folders holding a target. The
-// server reads real paths by the last of these too: the Processes view's project of a process
-// (server/machine/processes/read.ts) and the project Submit plans for
-// (server/machine/hpc/submit.ts), so a change made here for the page's sake changes those two
-// answers as well.
+// the path of a target below a folder, whether a path runs through a hidden or dependency folder,
+// and the deepest of several folders holding a target. The server reads real paths by the last of
+// these too: the Processes view's project of a process (server/machine/processes/read.ts) and the
+// project Submit plans for (server/machine/hpc/submit.ts), so a change made here for the page's
+// sake changes those two answers as well.
 //
 // The page holds paths as the server wrote them, always with `/`, so these are string rules over
 // that separator and import nothing from node; `state/` and the views may import them beside
@@ -98,4 +98,12 @@ export function relativePath(from: string, target: string): string {
         shared += 1;
     }
     return [...down.slice(shared).map(() => '..'), ...goal.slice(shared)].join('/');
+}
+
+/**
+ * Whether a `/` path has a segment named `node_modules` or starting with a dot, a folder or the
+ * file's own name: the places a document is never read from by name.
+ */
+export function hasHiddenSegment(path: string): boolean {
+    return path.split('/').some((part) => part === 'node_modules' || part.startsWith('.'));
 }

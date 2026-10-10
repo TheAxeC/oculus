@@ -28,14 +28,16 @@ export type Crumb = {
 /**
  * The segments of the path a tab shows, outermost first, then the symbols that contain the caret,
  * or none for a tab that names no file and for a file under a root the server does not serve, which
- * the Files view could not show.
+ * the Files view could not show. `engineAt` is the place of oculus's own folder in the hub, which
+ * places a document tab of that folder (`fileOfTab`).
  */
 export function tabCrumbs(
     tab: Pick<Instance, 'id' | 'view' | 'state'>,
     served: readonly string[],
-    symbols: readonly SymbolRow[] = []
+    symbols: readonly SymbolRow[] = [],
+    engineAt = ''
 ): Crumb[] {
-    const file = fileOfTab(tab);
+    const file = fileOfTab(tab, engineAt);
     if (file === null || !served.includes(file.root)) return [];
     const segments = crumbsOf(file);
     return [

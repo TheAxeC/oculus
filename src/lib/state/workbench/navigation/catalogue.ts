@@ -6,10 +6,17 @@
 //
 // The readers of the three `layout.yml` keys the fold is built from are here too, since the page
 // hands the shell what they read and the Views view reads them for itself.
+//
+// The paths of a document of oculus's own folder are here as well, since the doc view, the prose
+// links and the tab rules all read them: the state of an engine document tab (`engineDocState`),
+// whether the engine read serves a path (`engineServes`, never through a dot folder or
+// `node_modules`), and a path moved between the engine folder's space and the hub's at the
+// folder's place in the hub (`engineRelative`, `engineHubPath`).
 
 import { z } from 'zod';
 import { registrationGlyph, type Registration } from './registry.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
+import { hasHiddenSegment, joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
 import { optionalTextShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
 
@@ -28,6 +35,49 @@ export type DocEntry = { label: string; path: string; group: string };
  */
 export function docState(entry: DocEntry): { id: string; path: string; label: string } {
     return { id: entry.path, path: entry.path, label: entry.label };
+}
+
+/** What the id of a tab over a document of oculus's own folder starts with, then its path. */
+const ENGINE_ID = 'engine:';
+
+/**
+ * What openView is handed for a document of oculus's own folder, which the page reads wherever that
+ * folder sits and which no `docs:` entry lists. The `path` is relative to the engine folder, and
+ * the `id` is that path under a prefix a hub path never carries, so one document is one tab
+ * whether the Help page, a link or an arrangement opened it. A tab with no label is named by its
+ * path's last name.
+ */
+export function engineDocState(
+    path: string,
+    label = ''
+): { id: string; path: string; engine: true; label?: string } {
+    const state = { id: `${ENGINE_ID}${path}`, path, engine: true as const };
+    return label === '' ? state : { ...state, label };
+}
+
+/**
+ * Whether the engine read serves a path relative to the engine folder: not one that runs through a
+ * dot folder or `node_modules`, which stays a document of the hub where the folder lies in it.
+ */
+export function engineServes(path: string): boolean {
+    return !hasHiddenSegment(path);
+}
+
+/**
+ * A hub path as the path relative to the engine folder, for a document of oculus's own that the
+ * folder holds at `engineAt` in the hub; null for a path outside it, the folder itself, a hub
+ * whose engine folder lies elsewhere (the empty `engineAt`) and a path the engine read never
+ * serves.
+ */
+export function engineRelative(hubPath: string, engineAt: string): string | null {
+    if (engineAt === '') return null;
+    const inner = pathUnder(engineAt, hubPath);
+    return inner === null || inner === '' || !engineServes(inner) ? null : inner;
+}
+
+/** The hub path of a file of the engine folder, or the empty string where the hub lacks it. */
+export function engineHubPath(path: string, engineAt: string): string {
+    return engineAt === '' ? '' : joinPath(engineAt, path);
 }
 
 /**

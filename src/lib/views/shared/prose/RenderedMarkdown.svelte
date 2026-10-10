@@ -73,7 +73,9 @@
         loading,
         parts: [],
         path: '',
-        manual: ''
+        manual: '',
+        engine: false,
+        engineAt: ''
     });
 
     $effect(() => {

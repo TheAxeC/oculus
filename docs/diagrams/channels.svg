@@ -1552,11 +1552,11 @@
 <path fill="none" stroke="currentColor" d="M432.82,-279.76C472.39,-291.03 560.95,-302.84 612.74,-259 639.07,-236.71 610.45,-210.33 632.74,-184 649.72,-163.93 677.28,-152.2 699.36,-144.55"/>
 <polygon fill="currentColor" stroke="currentColor" points="699.86,-146.6 704.87,-142.69 698.52,-142.62 699.86,-146.6"/>
 </g>
-<!-- ? src/lib/shell/panes/PaneView.svelte:473 -->
+<!-- ? src/lib/shell/panes/PaneView.svelte:476 -->
 <g id="node60" class="node">
-<title>? src/lib/shell/panes/PaneView.svelte:473</title>
+<title>? src/lib/shell/panes/PaneView.svelte:476</title>
 <polygon fill="none" stroke="currentColor" points="521.71,-3249.8 301.7,-3249.8 301.7,-3228.2 521.71,-3228.2 521.71,-3249.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="411.7" y="-3236" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/shell/panes/PaneView.svelte:473 message()</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="411.7" y="-3236" font-family="Helvetica,Arial,sans-serif" font-size="10.00">src/lib/shell/panes/PaneView.svelte:476 message()</text>
 </g>
 <!-- shell/panes/PaneView -->
 <g id="node159" class="node">
@@ -1564,9 +1564,9 @@
 <polygon fill="none" stroke="currentColor" points="787.7,-3249.8 682.11,-3249.8 682.11,-3228.2 787.7,-3228.2 787.7,-3249.8"/>
 <text fill="currentColor" xml:space="preserve" text-anchor="middle" x="734.91" y="-3236" font-family="Helvetica,Arial,sans-serif" font-size="10.00">shell/panes/PaneView</text>
 </g>
-<!-- ? src/lib/shell/panes/PaneView.svelte:473&#45;&gt;shell/panes/PaneView -->
+<!-- ? src/lib/shell/panes/PaneView.svelte:476&#45;&gt;shell/panes/PaneView -->
 <g id="edge1" class="edge">
-<title>? src/lib/shell/panes/PaneView.svelte:473&#45;&gt;shell/panes/PaneView</title>
+<title>? src/lib/shell/panes/PaneView.svelte:476&#45;&gt;shell/panes/PaneView</title>
 <path fill="none" stroke="currentColor" d="M521.9,-3239C572.85,-3239 631.53,-3239 674.21,-3239"/>
 <polygon fill="currentColor" stroke="currentColor" points="674.21,-3241.1 680.21,-3239 674.21,-3236.9 674.21,-3241.1"/>
 </g>

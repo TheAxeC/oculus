@@ -67,14 +67,16 @@ export function createTabMenu(deps: TabMenuDeps) {
         const at = instances.findIndex((one) => one.id === menuTab);
         if (at < 0) return deps.stripItems();
         const found = instances[at];
-        const file = fileOfTab(found);
+        const engineAt = selectors.engineAtFor(found);
+        const file = fileOfTab(found, engineAt);
         const held = explorer.compareFile();
         const other =
             held !== null && !(held.root === file?.root && held.path === file.path) ? held : null;
         const served = file !== null && deps.roots().some((one) => one.key === file.root);
         const facts = tabFileFacts(found, served, {
             bookmarks: fs.bookmarks().entries,
-            programs: selectors.programApps()
+            programs: selectors.programApps(),
+            engineAt
         });
         return tabMenu(
             {
@@ -120,7 +122,7 @@ export function createTabMenu(deps: TabMenuDeps) {
             deps.stripPick(id);
             return;
         }
-        const file = fileOfTab(found);
+        const file = fileOfTab(found, selectors.engineAtFor(found));
         const dir = deps.roots().find((one) => one.key === file?.root)?.dir ?? '';
         tabPicked(id, {
             close: (kind) => close(kind, tab),

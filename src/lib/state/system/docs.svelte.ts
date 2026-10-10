@@ -1,11 +1,12 @@
-// Layer 2, client state. The documents the views draw: a project's, one of the hub's own, and the
-// manual, each held under a key of its own.
+// Layer 2, client state. The documents the views draw: a project's, one of the hub's own, one of
+// oculus's own folder, and the manual, each held under a key of its own.
 //
 // DESIGN.md's wire model keeps documents out of the snapshot, so a document is fetched rather than
 // selected: document(id, name) asks api/docs the first time a pair is wanted and holds the answer,
-// and every later call for that pair reads what is held. hubDocument(path) and manual() are the
-// same rule over the other two shapes the endpoint answers. Each answer is held in the client
-// state's query client through state/client/queries.svelte.ts, which schedules the fetch on
+// and every later call for that pair reads what is held. hubDocument(path), engineDocument(path)
+// and manual() are the same rule over the other shapes the endpoint answers, and engineAt() is the
+// engine folder's place in the hub as the manual's answer gives it. Each answer is held in the
+// client state's query client through state/client/queries.svelte.ts, which schedules the fetch on
 // a microtask, so reading this from a $derived never writes state while a derived is running.
 //
 // A write is what makes a document stale. The git watcher publishes a `files` message naming the
@@ -52,10 +53,17 @@ export type DocState = {
      * own that holds a diagram; empty for every other document.
      */
     parts: DocPart[];
-    /** The document's path relative to the hub, or the empty string outside it. */
+    /**
+     * The document's path: relative to the engine folder when `engine` is true, else relative to
+     * the hub, or the empty string outside it.
+     */
     path: string;
-    /** The manual's path relative to the hub, or the empty string outside it. */
+    /** The manual's path in the same space as `path`, or the empty string outside the hub. */
     manual: string;
+    /** True for the manual and a document of oculus's own folder, read in that folder's space. */
+    engine: boolean;
+    /** The engine folder's path relative to the hub, or the empty string when it is not in it. */
+    engineAt: string;
 };
 
 /** What a pair reads as before its answer arrives. */
@@ -67,7 +75,9 @@ const PENDING: DocState = {
     loading: true,
     parts: [],
     path: '',
-    manual: ''
+    manual: '',
+    engine: false,
+    engineAt: ''
 };
 
 /** What no pair at all reads as: an empty id or name asks nothing and waits for nothing. */
@@ -79,7 +89,9 @@ const NOTHING: DocState = {
     loading: false,
     parts: [],
     path: '',
-    manual: ''
+    manual: '',
+    engine: false,
+    engineAt: ''
 };
 
 /** One rendered document per project and name, held for one client. */
@@ -90,8 +102,18 @@ export type DocsStore = {
      * `root` names the root of another.
      */
     hubDocument: (path: string, root?: string) => DocState;
+    /**
+     * One Markdown document of oculus's own folder, by its path relative to that folder, which the
+     * server reads wherever the folder sits.
+     */
+    engineDocument: (path: string) => DocState;
     /** Oculus's own manual, which the server reads from the engine directory. */
     manual: () => DocState;
+    /**
+     * The engine folder's place in the hub as the manual's answer gives it, or the empty string
+     * while that answer is on its way, when it failed, and when the folder lies outside the hub.
+     */
+    engineAt: () => string;
 };
 
 /** The endpoint every document is read at. */
@@ -100,8 +122,9 @@ const DOCS = '/api/docs';
 /** What every document's query key opens with. */
 const KIND = 'docs';
 
-/** What the two documents that are not a project's are held under; a project id holds no bar. */
+/** What the documents that are not a project's are held under; a project id holds no bar. */
 const HUB = 'hub';
+const ENGINE = 'engine';
 const MANUAL = 'manual';
 
 /**
@@ -123,7 +146,8 @@ const headingShape = z.object({
 /**
  * What api/docs answers in JSON, every field read as absent when it is of the wrong type, since an
  * error answer carries fewer. The runs that fail their shape are dropped, and an answer without
- * runs reads as none. A path the server names as outside the hub reads as the empty string.
+ * runs reads as none. A path the server names as outside the hub reads as the empty string, and an
+ * answer without the engine's fields reads as no engine document in no place.
  */
 const bodyShape = z.object({
     html: z.string().catch(''),
@@ -132,7 +156,9 @@ const bodyShape = z.object({
     file: z.string().catch(''),
     parts: rowsShape(docPartShape).catch([]),
     path: z.string().catch(''),
-    manual: z.string().catch('')
+    manual: z.string().catch(''),
+    engine: z.boolean().catch(false),
+    engineAt: z.string().catch('')
 });
 
 /** What an answer that is no map of fields reads as. */
@@ -151,7 +177,9 @@ function same(one: DocState, other: DocState): boolean {
         JSON.stringify(one.frontmatter) === JSON.stringify(other.frontmatter) &&
         JSON.stringify(one.parts) === JSON.stringify(other.parts) &&
         one.path === other.path &&
-        one.manual === other.manual
+        one.manual === other.manual &&
+        one.engine === other.engine &&
+        one.engineAt === other.engineAt
     );
 }
 
@@ -205,6 +233,15 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
             ownKey(HUB, root === HUB_ROOT ? path : `${root}:${path}`),
             `${DOCS}?hub=${encodeURIComponent(path)}${named}`
         );
+    }
+
+    /**
+     * One Markdown document of oculus's own folder, by the path the guides link to each other by,
+     * relative to that folder.
+     */
+    function engineDocument(path: string): DocState {
+        if (path === '') return NOTHING;
+        return reading(ownKey(ENGINE, path), `${DOCS}?${ENGINE}=${encodeURIComponent(path)}`);
     }
 
     /** The manual, which is one document and takes no path. */
@@ -281,6 +318,8 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
                         parts: body.parts,
                         path: body.path,
                         manual: body.manual,
+                        engine: body.engine,
+                        engineAt: body.engineAt,
                         error: '',
                         loading: false
                     },
@@ -321,5 +360,11 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
         return next;
     }
 
-    return { document, hubDocument, manual };
+    /** The engine folder's place in the hub, from the manual's answer. */
+    function engineAt(): string {
+        const guide = manual();
+        return guide.loading || guide.error !== '' ? '' : guide.engineAt;
+    }
+
+    return { document, hubDocument, engineDocument, manual, engineAt };
 }

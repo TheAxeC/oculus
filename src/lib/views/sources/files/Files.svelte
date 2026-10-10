@@ -108,7 +108,7 @@
         layout: { activeInstance, currentPage, instanceLayoutState, layout },
         clangd,
         selection: { selected },
-        selectors: { sessionById },
+        selectors: { engineAtFor, sessionById },
         terminals: { terminalById },
         ui: { instanceState, requestPalette }
     } = client;
@@ -126,7 +126,7 @@
         followedTab(
             panes(layout(page)).map((one) => one.pane),
             activeInstance(page)?.id ?? null,
-            (one) => fileOfTab(one) !== null
+            (one) => fileOfTab(one, engineAtFor(one)) !== null
         )
     );
 

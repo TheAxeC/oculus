@@ -123,6 +123,7 @@
         documents,
         editorStatus,
         registry: { viewFor },
+        selectors: { engineAtFor },
         terminals: { newTerminalIn, tabMark },
         ui: { unsaved, setPaneStrip }
     } = client;
@@ -179,7 +180,7 @@
 
     /** The path a tab shows, written from its root's folder with the home folder as `~`. */
     const pathOf = (instance: Instance): string | null =>
-        shownTabPath(instance, roots, served.home);
+        shownTabPath(instance, roots, served.home, engineAtFor(instance));
 
     /** A tab per instance (strip/strip-tab.ts). */
     const tabs = $derived<Tab[]>(
@@ -191,6 +192,7 @@
                     client,
                     mark: tabMark,
                     pathOf,
+                    engineAt: engineAtFor,
                     dirty: unsaved,
                     gone: (file) =>
                         client.fs.gone(file.root, file.path) ||
@@ -332,7 +334,8 @@
             : tabCrumbs(
                   shown,
                   roots.map((one) => one.key),
-                  around
+                  around,
+                  engineAtFor(shown)
               )
     );
 

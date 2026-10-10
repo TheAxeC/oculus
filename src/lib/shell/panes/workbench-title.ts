@@ -4,6 +4,7 @@
 // it too, so the shell's folders import downward only.
 
 import { t as catalogText } from '$lib/state/shared/words/text';
+import { engineDocName } from '$lib/state/workbench/navigation/pages';
 import { registrationLabel } from '$lib/state/workbench/navigation/registry';
 import type { RegistryStore } from '$lib/state/workbench/navigation/registry';
 import { instanceLabel, type Instance } from '$lib/state/workbench/layout';
@@ -11,7 +12,7 @@ import { instanceLabel, type Instance } from '$lib/state/workbench/layout';
 /** The words on the active main tab, including the per-instance label when it has one. */
 export function activeLabel(registry: RegistryStore, instance: Instance | null): string {
     if (instance === null) return catalogText('app.title');
-    const held = instanceLabel(instance.state);
+    const held = instanceLabel(instance.state) ?? engineDocName(instance);
     if (held !== null) return held;
     const registered = registry.viewFor(instance.view);
     return registered === undefined

@@ -1,21 +1,27 @@
 // Layer 2, server. One Markdown document, read from disk and rendered to HTML: a project's, the
-// hub's own, or oculus's manual.
+// hub's own, one of oculus's own, or oculus's manual.
 //
 // routes/api/(docs)/docs/+server.ts is the endpoint and holds nothing but its GET, since a route
 // module may export only its verbs; everything the request does is here. DESIGN.md's wire model
 // keeps documents out of the snapshot ("documents on demand"), so this is the one way a README
 // reaches the page.
 //
-// A request names one of three things. `project` with `name` is one of that project's own
-// documents, its id `<root key>:<id>` for a project of a hub other than the first; `hub` is a path
-// relative to the research hub, which is what the `docs:` list of config/layout.yml lists in the
-// view catalogue, and `root` beside it names the hub it is relative to; `manual` is the engine's
-// own HELP.md and takes no path. Everything else is a 404 naming what was wrong.
+// A request names one of four things, and one that names several is answered for the first of
+// `manual`, `engine`, `hub` and `project`, in that order. `project` with `name` is one of that
+// project's own documents, its id `<root key>:<id>` for a project of a hub other than the first;
+// `hub` is a path relative to the research hub, which is what the `docs:` list of
+// config/layout.yml lists in the view catalogue, and `root` beside it names the hub it is relative
+// to; `engine` is a Markdown file of oculus's own folder, named by a path relative to that folder,
+// wherever the folder sits; `manual` is the engine's own HELP.md and takes no path. Everything
+// else is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
-// is checked against the hub again before the file is opened. A request naming anything else is
-// answered 404 and nothing is opened.
+// is checked against the hub again before the file is opened. An `engine` path is checked against
+// the engine folder in the same way, and also for its real place, so a link inside the folder that
+// leads out of it is refused; the engine folder may lie outside the hub, which is why this read
+// does not go through the hub's roots. A request naming anything else is answered 404 and nothing
+// is opened.
 //
 // The folder comes from the snapshot the request carries, so one document costs one file read. A
 // process that has published no portfolio yet has no snapshot to ask, and the folder is then the
@@ -30,9 +36,14 @@
 // A document of oculus's own (HELP.md, DESIGN.md, the Apps guide under docs/: a file whose real
 // path lies inside the engine's real folder) draws a diagram of `docs/diagrams/` as a part of its
 // own beside its runs of prose, so the page can draw it in the page's text colour; the answer
-// carries those parts only when the document holds a diagram. A document's answer names its own
-// path and the manual's, relative to the hub, which the page resolves a relative link to another
-// document from.
+// carries those parts only when the document holds a diagram.
+//
+// A document's answer names its own path and the manual's, which the page resolves a relative link
+// to another document from. For the manual and an `engine` document (`engine: true`) both are
+// relative to the engine folder, so a link between oculus's own documents opens on a hub that does
+// not hold them; for any other document both are relative to the hub. Every answer also names
+// where the engine folder sits in the hub (`engineAt`), so the page can tell a hub path that lies
+// in the engine folder from one that does not.
 //
 // The HTML is rendered here and filtered on the page: ui/html.ts's sanitise runs over every body
 // this route answers with, before views/shared/prose/Markdown.svelte draws it. One filter, at the
@@ -45,11 +56,12 @@
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { existsSync, readdirSync, statSync } from 'node:fs';
-import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decodeHTML } from 'entities';
 import type { MarkedExtension, Token, Tokens } from 'marked';
 import { fileBytesUrl } from '../../data/helpers/files/address.ts';
+import { hasHiddenSegment } from '../../data/helpers/files/paths.ts';
 import { renderDocumentParts } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
@@ -72,7 +84,7 @@ import { inside, realPath } from '../core/paths.ts';
  */
 export type DocTarget = {
     hub: string;
-    /** The engine directory, which is where the manual this route serves sits. */
+    /** The engine directory, which is where the manual and oculus's own documents sit. */
     engine: string;
     config: PortfolioConfig;
     project?: (id: string) => Project | null;
@@ -111,11 +123,14 @@ export const MARKDOWN_DOCS = PROJECT_DOCS.map((doc) => doc.name).filter((name) =
  * (their level, their words and the id the HTML carries), the frontmatter block it had, and the
  * absolute path of the file read. The page holds the path to tell which `files` events concern the
  * document: an event names the watched root a write landed under, and only a root that holds this
- * file can have changed it. `path` is the file's path relative to the hub and `manual` the
- * manual's, each null when the file lies outside the hub; a relative link in the document is
- * resolved from `path`, and one that resolves to `manual` opens the Help view. A document of
- * oculus's own that holds a diagram also carries its runs of prose and diagrams as `parts`, cut
- * from the same parse as its HTML; no other answer does.
+ * file can have changed it. `engine` says the document is one of oculus's own that the page reads
+ * in the engine folder's space: `path` is then the file's path relative to the engine folder and
+ * `manual` is the manual's name in it. For any other document `path` is the file's path relative to
+ * the hub and `manual` the manual's, each null when the file lies outside the hub. A relative link
+ * in the document is resolved from `path`, and one that resolves to `manual` opens the Help view.
+ * `engineAt` is the engine folder's path relative to the hub, or the empty string when the folder
+ * does not lie in it. A document of oculus's own that holds a diagram also carries its runs of
+ * prose and diagrams as `parts`, cut from the same parse as its HTML; no other answer does.
  */
 export type DocAnswer = {
     html: string;
@@ -124,6 +139,8 @@ export type DocAnswer = {
     file: string;
     path: string | null;
     manual: string | null;
+    engine: boolean;
+    engineAt: string;
     parts?: DocPart[];
 };
 
@@ -145,6 +162,9 @@ const CACHE = 'no-store';
 
 /** The query parameter that asks for the manual instead of a project's or the hub's document. */
 export const MANUAL_PARAM = 'manual';
+
+/** The query parameter that asks for a document of oculus's own folder, by a path inside it. */
+const ENGINE_PARAM = 'engine';
 
 /** What every answer of this route carries besides its type. */
 const NO_STORE = { 'cache-control': CACHE };
@@ -411,17 +431,48 @@ function hubPath(hub: string, file: string): string | null {
     return relative(base, real).split(sep).join('/');
 }
 
+/** A relative path with `/` separators. */
+function slashed(path: string): string {
+    return path.split(sep).join('/');
+}
+
+/**
+ * The engine folder's path relative to the hub: on the paths as configured when the engine path
+ * lies under the hub path, else on the real paths when the engine's real folder lies under the
+ * hub's real folder (an engine reached through a link in the hub), else the empty string. The empty
+ * string is also what an engine folder that is the hub itself gives, since the page reads it as
+ * "no place in the hub".
+ */
+function engineAtOf(into: DocTarget): string {
+    if (inside(into.engine, into.hub))
+        return slashed(relative(resolve(into.hub), resolve(into.engine)));
+    const hub = realPath(into.hub);
+    const engine = realPath(into.engine);
+    if (hub === null || engine === null || !inside(engine, hub)) return '';
+    return slashed(relative(hub, engine));
+}
+
+/** The manual's path relative to the hub: where the file really is, else where the engine sits. */
+function manualInHub(into: DocTarget, engineAt: string): string | null {
+    const real = hubPath(into.hub, join(into.engine, MANUAL));
+    if (real !== null || engineAt === '') return real;
+    return `${engineAt}/${MANUAL}`;
+}
+
 /**
  * One read file as the endpoint's answer, or the 404 the read failed with, in the catalog's words.
  * A request that already holds the file's current tag is answered 304 with no body, so a re-read
  * of an unchanged file costs one stat and no render. Both answers name the file, so the page can
- * tell a later write to it from a write elsewhere whether the file was there or not.
+ * tell a later write to it from a write elsewhere whether the file was there or not. `own` is the
+ * file's path relative to the engine folder for a document the page reads in the engine's space
+ * (the manual, an `engine` document) and null for one it reads in the hub's.
  */
 function answer(
     into: DocTarget,
     path: string,
     held: string,
-    draw: (text: string) => Drawn
+    draw: (text: string) => Drawn,
+    own: string | null = null
 ): Response {
     const file = resolve(path);
     const tag = fileTag(file);
@@ -431,12 +482,15 @@ function answer(
     const read = readDoc(file, into.config.text);
     if (isFinding(read))
         return json({ error: read.message, file }, { status: 404, headers: NO_STORE });
+    const engineAt = engineAtOf(into);
     const body: DocAnswer = {
         ...draw(read.text),
         frontmatter: read.frontmatter,
         file,
-        path: hubPath(into.hub, file),
-        manual: hubPath(into.hub, join(into.engine, MANUAL))
+        path: own ?? hubPath(into.hub, file),
+        manual: own === null ? manualInHub(into, engineAt) : MANUAL,
+        engine: own !== null,
+        engineAt
     };
     return json(body, { headers: tag === '' ? NO_STORE : { ...NO_STORE, etag: tag } });
 }
@@ -506,6 +560,71 @@ export function renderHubDoc(
     const base = { root, folder: dirname(path) };
     const own = ownScope(into.engine, full);
     return answer(into, full, held, (text) => renderMarkdown(text, base, own));
+}
+
+/** Whether a path is a file: false for a folder and for a path that cannot be read. */
+function isFile(path: string): boolean {
+    try {
+        return statSync(path).isFile();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * What an `engine` request resolves to: the file as the request named it and its real path
+ * relative to the engine's real folder, or the refusal, in the route's words. Nothing is opened
+ * before every check on the name has passed, and the real path is checked last, for being inside
+ * the engine's real folder and for dot and `node_modules` segments, so a link inside the engine
+ * folder that leads out of it or into a hidden folder, a folder and a name nothing is at are each
+ * refused with their own reason.
+ */
+function engineFile(
+    engine: string,
+    path: string
+): { error: string } | { file: string; at: string } {
+    if (path === '') return { error: 'no engine document named' };
+    if (!path.endsWith('.md')) return { error: `not a Markdown file: ${path}` };
+    if (isAbsolute(path)) {
+        return { error: `an absolute path is not inside the engine folder: ${path}` };
+    }
+    const file = resolve(engine, path);
+    if (!inside(file, engine)) return { error: `the path leaves the engine folder: ${path}` };
+    if (hasHiddenSegment(slashed(relative(resolve(engine), file)))) {
+        return { error: `the path has a node_modules or dot segment: ${path}` };
+    }
+    const real = realPath(file);
+    if (real === null) return { error: `no file at ${path} in the engine folder` };
+    const folder = realPath(engine) ?? resolve(engine);
+    if (!inside(real, folder)) return { error: `${path} is a link that leaves the engine folder` };
+    const at = slashed(relative(folder, real));
+    if (hasHiddenSegment(at)) {
+        return { error: `the path has a node_modules or dot segment: ${path}` };
+    }
+    if (!isFile(real)) return { error: `${path} is a folder, not a Markdown file` };
+    return { file, at };
+}
+
+/**
+ * One Markdown document of oculus's own, named by a path relative to the engine folder: the
+ * guides under `docs/`, DESIGN.md, README.md and HELP.md. It is served wherever the engine folder
+ * sits, so the Help page's guide and a link between the engine's documents open on a hub that does
+ * not hold them. Only a `.md` file whose real path lies inside the engine's real folder is
+ * served, outside `node_modules` and any dot folder, by its name and by its real path, so a link
+ * inside the folder that leads out of it or into such a folder is a 404 and nothing outside the
+ * folder is opened. A figure beside the document is addressed through the hub's root when the
+ * engine folder lies in the hub, and kept as written otherwise.
+ */
+function renderEngineDoc(into: DocTarget, path: string, held = ''): Response {
+    const found = engineFile(into.engine, path);
+    if ('error' in found) {
+        return json({ error: found.error }, { status: 404, headers: NO_STORE });
+    }
+    const engineAt = engineAtOf(into);
+    const base =
+        engineAt === '' ? null : { root: HUB_ROOT, folder: join(engineAt, dirname(found.at)) };
+    const own = ownScope(into.engine, found.file);
+    return answer(into, found.file, held, (text) => renderMarkdown(text, base, own), found.at);
 }
 
 /**
@@ -624,28 +743,38 @@ export function docFindings(config: Record<string, unknown>, hub: string, file: 
 }
 
 /**
- * The one file of the engine directory this route serves: oculus's own manual, beside DESIGN.md.
+ * The manual's name in the engine directory: oculus's own manual, beside DESIGN.md. An answer names
+ * it as the manual, and the page opens the Help view for a link that resolves to it.
  */
 export const MANUAL = 'HELP.md';
 
 /**
- * The manual, read from the engine directory. It is the one path outside the hub this route opens,
- * and it is a constant rather than anything the request names: the `engine` root of api/file is the
- * config folder alone, so the manual has no other way to the page. It is drawn as prose alone.
+ * The manual, read from the engine directory. Its name is a constant that the request does not
+ * name, and the `engine` root of api/file is the config folder alone, so the manual has no other
+ * way to the page than this. It is drawn as prose alone and answered in the engine's space.
  */
 export function renderManual(into: DocTarget, held = ''): Response {
-    return answer(into, join(into.engine, MANUAL), held, (text) => renderMarkdown(text, null));
+    return answer(
+        into,
+        join(into.engine, MANUAL),
+        held,
+        (text) => renderMarkdown(text, null),
+        MANUAL
+    );
 }
 
 /**
- * The whole endpoint: the document the request names. A request carries one of three things: a
- * project and one of that project's document names, a hub path, or `manual`, which is the engine's
- * own HELP.md and takes no path.
+ * The whole endpoint: the document the request names. A request carries one of four things, and
+ * the first of these that it holds is the one answered: `manual`, which is the engine's own
+ * HELP.md and takes no path; `engine`, a Markdown file of the engine folder by its path in it; a
+ * hub path; or a project and one of that project's document names.
  */
 export function handleDocs(request: Request, into: DocTarget): Response {
     const url = new URL(request.url);
     const held = request.headers.get('if-none-match') ?? '';
     if (url.searchParams.has(MANUAL_PARAM)) return renderManual(into, held);
+    const engine = url.searchParams.get(ENGINE_PARAM);
+    if (engine !== null) return renderEngineDoc(into, engine, held);
     const hub = url.searchParams.get(HUB_ROOT);
     if (hub !== null)
         return renderHubDoc(into, hub, held, url.searchParams.get('root') ?? HUB_ROOT);
