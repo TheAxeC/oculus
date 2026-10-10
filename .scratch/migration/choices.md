@@ -4,6 +4,55 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z776 (2026-10-10, step D59, the orchestrator, automode): existing workbenches renamed too
+
+- Chosen: a workbench kept from before, closed or open at reload, drops a Files or LaTeX tab label equal to its folder name, so every workbench reads Files and LaTeX.
+- Not chosen: new workbenches only (the lazy option).
+
+Where it applies: D59 item 5. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z775 (2026-10-10, step D59, the orchestrator, automode): which pages take hub documents as tabs
+
+- Chosen: any page whose key a `docs:` entry's `group` names, the Help page among them.
+- Not chosen: the Help page alone, as a special case.
+
+Where it applies: D59 item 1. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z774 (2026-10-10, step D59, the orchestrator, automode): your saved Help page gets the documents
+
+- Chosen: a saved page gains each document of its group once, remembered, so your Help page shows them without a Reset and a document tab you close stays closed.
+- Not chosen: added on every reload (a closed tab comes back); saved pages untouched until Reset (the lazy option).
+
+Where it applies: D59 item 1. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z773 (2026-10-10, step D59, the orchestrator, automode): the rail badge under a rice theme
+
+- Chosen: 8px, one step below its 9px under every other theme.
+- Not chosen: 9px kept as an exception, since the rice digits are already narrower.
+
+Where it applies: D59 item (7). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z772 (2026-10-10, step D59, the orchestrator, automode): the slide scale under a rice theme
+
+- Chosen: the slide sizes times 12/13 rounded (52, 33, 26, 22, 17 px instead of 56, 36, 28, 24, 18), so a deck under a rice theme and its print follow the same step-down as the chrome.
+- Not chosen: slides left out of the step-down (the lazy option, slide text stays larger); slides kept in the sans face under rice, which changes what a rice deck looks like.
+
+Where it applies: D59 item (7). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z771 (2026-10-10, step D59, the orchestrator, automode): what "larger" means for the rice font sizes
+
+- Chosen: the font size: every text under a rice theme is one size below the same text under a VS Code theme. The diagnosis found six size tokens, the slide scale and the app approval panel that kept the VS Code size; all are stepped down.
+- Not chosen: the rendered width, no rice text drawing a wider box. The monospace face is wider per letter, so after the fix 681 of 1394 measured texts still take more room under rice; ending that means dropping the monospace face or shrinking about 25%, which replaces the rice look.
+
+Where it applies: D59 item (7). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z770 (2026-10-10, step D59, the orchestrator, automode): where the memories photos and the wallpaper go
+
+- Chosen: `<hub>/.oculus/memories/` and `<hub>/.oculus/wallpaper/`, the hub's own oculus folder; `memories.dir` and `wallpaper.dir` default to `.oculus/memories` and `.oculus/wallpaper`, relative to the hub; the other wallpaper keys stay oculus's.
+- Not chosen: two new top-level folders `memories/` and `wallpaper/` in the hub; leaving the images in `tools/oculus/assets/` and moving only the keys, the lazy option.
+
+Where it applies: D59. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z769 (2026-10-10, step D58, the orchestrator, automode): G2 and the engine's documents
 
 - Chosen: G2's guarantee gains the exception for a Markdown document of the engine folder, which `api/docs` serves from inside that folder alone and never from `node_modules` or a dot folder; the docs route joins G2's Code line and its table test the Test line; the orchestrator writes the three lines at landing.

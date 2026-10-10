@@ -1,7 +1,12 @@
 In flight (0 of 6 slots in use): none.
 
-Queued, in order (3 steps):
+Queued, in order (8 steps):
 - D59 (the hub fixes and personal projects, the rice-theme text sizes and the per-hub config in the data map): next.
+- D60 (repositories read as projects of the hub): after D59.
+- D61 (the Workbenches view and the status bar's repository): after D59, beside D60.
+- D62 (apps: the host and the bridge): after D61; its place before or after O33 is under discussion with Axel.
+- D63 (apps in the shell): after D62.
+- D64 (apps in the tools): after D63.
 - Q72 (the architecture re-read): waits for D49, D55, D58 and D59 (open item 33 (a), Z766).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline; its memories and wallpaper move is D59's): paused (Axel).
 
