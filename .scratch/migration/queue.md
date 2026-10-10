@@ -10,7 +10,7 @@ Queued, in order (5 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D60 (repositories read as projects of the hub), 2026-10-10, HASH.
+- D60 (repositories read as projects of the hub), 2026-10-10, 856f2ba34.
 - D61 (the Workbenches view and the status bar's repository), 2026-10-10, b39d35652.
 - D59 (the hub fixes and personal projects), 2026-10-10, 776696a28.
 - D58 (the engine's guides on every hub), 2026-10-10, c18415820.
