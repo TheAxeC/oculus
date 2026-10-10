@@ -46,10 +46,12 @@ dispatch:   # steps in flight, up to six (Z632)
   base: ecbc37a0c
   launched: 2026-10-10
   report: agents/reviews/D55-report.md
+  builder_usage: 347,362 tokens, 962 tool uses, 166.1 min
+  reviewer_report: agents/reviews/D55-refuter.md (a1856be287746a96e, claude-opus-5-5, 196,464 tokens, 159 tool uses, 35.7 min)
   brief_check: agents/reviews/D55-brief-check.md (a1d9331ec3d46e873, claude-opus-5-5, 226,582 tokens, 90 tool uses, 10.7 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: tools/oculus/HELP.md, tools/oculus/DESIGN.md, docs/DATA-MAP.md, tools/oculus/docs/apps.md, tools/oculus/config/text/ and tools/oculus/src/lib/server/content/docs.ts with D49; the merge is simple, since D55 appends bullets and a section and rewrites a few named sentences (HELP.md:107, DESIGN.md:557, DATA-MAP.md:182, 312, 519, apps.md:524), which the landing re-applies on D49's text, and its config/text and docs.ts edits are new keys and the lookup by root, which D49 does not touch
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D55-round1.md)
 ```
 
 ## The standing demands (from Axel, in force)

@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - D49 (the help pages cut): repair round 1.
-- D55 (roots as hubs): building.
+- D55 (roots as hubs): repair round 1.
 
 Queued, in order (2 steps):
 - Q72 (the architecture re-read): waits for D49 and D55 (open item 33 (a)).
