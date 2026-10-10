@@ -3,7 +3,7 @@ In flight (2 of 6 slots in use):
 - D61 (the Workbenches view and the status bar's repository): building.
 
 Queued, in order (5 steps):
-- D62 (apps: the host and the bridge): stopped at /spec, waiting for Axel's ruling on open item 40 (where an app's secrets are kept).
+- D62 (apps: the host and the bridge): open item 40 ruled; /spec running.
 - D63 (apps in the shell): after D62.
 - D64 (apps in the tools): after D63.
 - Q72 (the architecture re-read): waits for D60 to D64, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
