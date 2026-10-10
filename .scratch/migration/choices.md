@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z769 (2026-10-10, step D58, the orchestrator, automode): G2 and the engine's documents
+
+- Chosen: G2's guarantee gains the exception for a Markdown document of the engine folder, which `api/docs` serves from inside that folder alone and never from `node_modules` or a dot folder; the docs route joins G2's Code line and its table test the Test line; the orchestrator writes the three lines at landing.
+- Not chosen: a new guarded entry for the docs route alone, which is yours to approve; no test for the engine read (the lazy option).
+
+Where it applies: D58. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z768 (2026-10-10, step D58, the orchestrator, automode): how a tab and the docs route name a document of the engine
 
 - Chosen: a doc tab's state may carry `engine: true`, its `path` then relative to the engine folder and its id `engine:<path>`; `api/docs?engine=<path>` serves a Markdown file inside the engine's real folder; the manual's and an engine document's answers name paths relative to the engine, so links between them work wherever the engine sits; a saved tab at the guide's old hub path is restated; the Help page's tab names the guide this way, and this hub's `docs:` entry for the guide is removed so one file is one tab.

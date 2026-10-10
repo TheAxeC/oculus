@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z769 (2026-10-10): D58's brief check found G2's guarantee false for the engine read when the engine sits outside the hub; closed in automode (`choices.md`, `plan.md` Rulings): G2 gains the exception for the engine's Markdown documents, outside `node_modules` and dot folders, with the docs route in its Code line and its table test, applied at landing.
 - Z768 (2026-10-10): D58's preparation found no shape for a document of the engine; closed in automode (`choices.md`, `plan.md` Rulings): a doc tab's `engine: true` with a path relative to the engine, `api/docs?engine=<path>`, answers naming engine paths, saved tabs restated, the hub's `docs:` entry for the guide removed.
 - Z767 (2026-10-10): D55's review over round 1 found `root?` on the `feed-field` and `feed-delete` writes and `file?` on a second hub's person, app-visible and named by no ruling; closed in automode (`choices.md`, `plan.md` Rulings): both kept and documented in `docs/apps.md`.
 - Z766 (2026-10-10): D49's look found the Help page's Apps guide tab refused on a hub that does not list the guide, as on the base; closed in automode (`choices.md`, `plan.md` Rulings): step D58 added, the guide named by its engine path and served as the manual is.
