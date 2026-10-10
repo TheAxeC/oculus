@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z764 (2026-10-10): D49's brief check closed in automode (`choices.md`, `plan.md` Rulings): the standing spec's sentence on HELP.md and the guides follows Axel's ruling (8), changed in D49's preparation commit.
 - Z763 (2026-10-10): D56's review closed in automode (`choices.md`, `agents/briefs/D56-round1.md`): Reset all pages leaves workbenches and their held unique views alone and builds the rail page without them, DESIGN.md naming the exception; the review's findings ruled and sent as D56's repair round 1.
 - Z762 (2026-10-09): D55's preparation closed in automode (`choices.md`, `plan.md` Rulings): a second hub's records carry `<root key>:<id>` ids and a `root` field, each hub built with its own settings, writes to the record's own hub and new records to the first, a root-key chip on its cards, every hub's `secrets` private.
 - Z761 (2026-10-09): R2's review closed in automode (`choices.md`, `agents/briefs/R2-round1.md`): the supported Node `^24.15.0 || >=26.0.0` everywhere oculus states it, an unreadable hub as the hub lack, `preapp` running only the install part; sent as R2's repair round 1.

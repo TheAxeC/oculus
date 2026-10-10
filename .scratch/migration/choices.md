@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z764 (2026-10-10, step D49, the orchestrator, automode): the standing spec's rule on HELP.md and the guides
+
+- Chosen: the sentence of `agents/spec.md` that sends detail to "the guide under `docs/` that owns it" becomes "A step writes what a user does into HELP.md as short bullets, what an app builder meets into the Apps guide `docs/apps.md`, and a decision with its reason into DESIGN.md.", following ruling (8), which cuts the guides into HELP.md.
+- Not chosen: the sentence left as it is (the lazy option: later steps would be told to write into guides that no longer exist); a clash raised for Axel (ruling (8) already decides it).
+
+Where it applies: D49 and every later step. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/briefs/D49.md`.
+
 ## Z763 (2026-10-10, step D56, the orchestrator, automode): Reset all pages and a unique view a workbench holds
 
 - Chosen: Reset all pages leaves every workbench and its tabs as they are; a rail page whose arrangement names a unique view (Settings, for instance) that a workbench holds is built without it, and DESIGN.md's unique-view sentence names this exception.

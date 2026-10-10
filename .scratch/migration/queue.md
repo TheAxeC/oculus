@@ -9,6 +9,7 @@ Queued, in order (4 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D56 (the workbench), 2026-10-10, 652f5104a.
 - R2 (the first-run check), 2026-10-10, 4664a5f21.
 - D50 (the hub's own folder, its shareable files and its settings layer), 2026-10-09, b4cb416a3.
 - D41 (links in Markdown checked), 2026-10-09, 17c8ac9bc.
