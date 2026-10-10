@@ -1,18 +1,19 @@
-In flight (1 of 6 slots in use): D59 (builder launched 2026-10-10).
+In flight (2 of 6 slots in use):
+- D60 (repositories read as projects of the hub): brief check returned, its findings being closed in the brief.
+- D61 (the Workbenches view and the status bar's repository): brief check returned, its findings being closed in the brief.
 
-Queued, in order (7 steps):
-- D60 (repositories read as projects of the hub): after D59.
-- D61 (the Workbenches view and the status bar's repository): after D59, beside D60.
-- D62 (apps: the host and the bridge): after D59, beside D60 and D61, before O33 (Axel, Z777).
+Queued, in order (5 steps):
+- D62 (apps: the host and the bridge): stopped at /spec, waiting for Axel's ruling on open item 40 (where an app's secrets are kept).
 - D63 (apps in the shell): after D62.
 - D64 (apps in the tools): after D63.
-- Q72 (the architecture re-read): waits for D49, D55, D58, D59 and D60 to D64, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
-- O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline; its memories and wallpaper move is D59's): after Q72, last; pause lifted by Axel 2026-10-10.
+- Q72 (the architecture re-read): waits for D60 to D64, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
+- O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D58 (the engine's guides on every hub), 2026-10-10.
+- D59 (the hub fixes and personal projects), 2026-10-10, 776696a28.
+- D58 (the engine's guides on every hub), 2026-10-10, c18415820.
 - D55 (roots as hubs), 2026-10-10, 57de2c4bd.
 - D49 (the help pages cut), 2026-10-10, 2181e8152.
 - D56 (the workbench), 2026-10-10, 652f5104a.

@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z778 to Z782 (2026-10-10): D60's and D61's preparation left five choices; closed in automode (`choices.md`, `plan.md` Rulings): a repository's research project is named by its root key, its board and type come from the hub's scan rules with an unusable one read as a side project, no Deposit and LaTeX read from a repository's folder; the Workbenches view in the Views catalogue, and a status bar repository item with a kept last choice.
 - 2026-10-10: Z777, D62's place in the queue, ruled by Axel: after D59, beside D60 and D61 (`plan.md` Rulings, `queue.md`, `choices.md`).
 - 2026-10-10: Open items 34 to 39 and the memories and wallpaper move, raised in D58's review and by Axel, ruled by Axel: no second round for D58, G74 and its two tests written at D58's landing; the Help page's hub documents, the config cache over `<hub>/.oculus/config/`, personal projects as research projects, Focus's collapsible sections, the workbench tab names and the memories and wallpaper move are one new step, D59 (plan.md Rulings, Open item 34 to Memories and wallpaper).
 - 2026-10-10: Axel booked D60 to D64 (repositories as hub projects; the Workbenches view and the status bar's repository; apps as capable as VS Code extensions, three steps) and ruled the rename to Pluteus dropped and how steps run after O33 (`plan.md` Rulings, Repository projects to Steps after O33).
