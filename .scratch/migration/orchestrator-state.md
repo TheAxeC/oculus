@@ -25,6 +25,17 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
+- step: D60
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a6dd13dec7398d216 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D60
+  base: 69b16a679
+  launched: 2026-10-10
+  report: agents/reviews/D60-report.md
+  brief_check: agents/reviews/D60-brief-check.md (a9cd3f67733719350, claude-opus-5-5, 222,061 tokens, 70 tool uses, 9.4 min; closed in the brief by the orchestrator under "Closed")
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

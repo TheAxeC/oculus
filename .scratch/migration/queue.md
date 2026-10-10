@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- D60 (repositories read as projects of the hub): prepared, builder starting.
+- D60 (repositories read as projects of the hub): building.
 - D61 (the Workbenches view and the status bar's repository): brief check returned, its findings being closed in the brief.
 
 Queued, in order (5 steps):
