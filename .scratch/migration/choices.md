@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z765 (2026-10-10, step D55, the orchestrator, automode): the internal shapes of a second hub
+
+- Chosen: an audit finding of a second hub carries `root`, opened under it by the Audit view; the LinkedIn posted write carries `root`; an app's write naming a second hub's record is refused as an unknown record; a second hub's word with no colour in the first hub's vocabulary is drawn neutral; the workspaces answer marks each hub root with `hub: true` so the page withholds every hub's `secrets`.
+- Not chosen: absolute paths on audit findings; apps routed to a second hub; a finding for an uncoloured word; the page's private check left on the first hub only (the lazy option: a second hub's `secrets` would open in the page).
+
+Where it applies: D55. Booked in `plan.md` Rulings, the closed log of `orchestrator-history.md` and `agents/briefs/D55.md`.
+
 ## Z764 (2026-10-10, step D49, the orchestrator, automode): the standing spec's rule on HELP.md and the guides
 
 - Chosen: the sentence of `agents/spec.md` that sends detail to "the guide under `docs/` that owns it" becomes "A step writes what a user does into HELP.md as short bullets, what an app builder meets into the Apps guide `docs/apps.md`, and a decision with its reason into DESIGN.md.", following ruling (8), which cuts the guides into HELP.md.
