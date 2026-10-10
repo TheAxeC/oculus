@@ -47,6 +47,7 @@ function deckProject(project: Project): DeckProject {
         short: project.short ?? '',
         title: project.title
     };
+    if (project.repository !== undefined) one.repository = project.repository;
     if (project.type !== undefined) one.type = project.type;
     const domain = project.domainIds.at(0);
     if (domain !== undefined) one.domain = domain;

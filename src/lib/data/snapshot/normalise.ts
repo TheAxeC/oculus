@@ -256,7 +256,8 @@ function project(
         deck: deck?.path,
         deckTags: deck !== undefined && deck.tags.length > 0 ? deck.tags : undefined,
         folder: manifest.folder,
-        file: manifest.file
+        file: manifest.file,
+        repository: manifest.repository
     });
 }
 

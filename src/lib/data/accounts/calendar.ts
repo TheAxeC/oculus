@@ -14,7 +14,7 @@
 // names travels in the clear; `webcal://` is the same address read over https.
 
 import { connectKey } from './connect.ts';
-import type { CalendarAccountConfig } from '../model/model-calendar.ts';
+import type { CalendarAccountConfig } from '../model/accounts/model-calendar.ts';
 
 /** How an account is named in its credential file, on the wire and in a payload's event rows. */
 export function calendarKey(account: CalendarAccountConfig): string {

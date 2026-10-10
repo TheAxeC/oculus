@@ -104,7 +104,8 @@ export function folderOf(project: Project): string {
 /**
  * The absolute folder of the hub a project is of: its folder less the part relative to the hub.
  * Empty for a project that has no folder of its own or whose manifest does not lie in it. A
- * repository is the root of its own, so its folder is the whole of it.
+ * project read from a repository (a side project, or a research project of a `roots:` entry with a
+ * research `tier`) is in the root of its own, so its folder is the whole of it.
  */
 function hubOfProject(project: Project): string {
     if (project.repository !== undefined) return project.repository.dir;
@@ -280,14 +281,15 @@ export function createSelectors(
     /**
      * The first hub's own absolute path, or the empty string before the first snapshot. A project
      * carries its manifest's absolute path and its folder relative to its hub, so the root is the
-     * one less the other and no channel has to carry it. The terminal view offers it as a place to
-     * start one in.
+     * one less the other and no channel has to carry it. A project read from a repository carries
+     * the repository's absolute path as its folder, so it says nothing of the hub and is passed
+     * over. The terminal view offers the path as a place to start one in.
      */
     function hubRoot(): string {
         const snapshot = entities.portfolio();
         if (snapshot === null) return '';
         for (const project of Object.values(snapshot.entities.projects)) {
-            if (rootOf(project) !== HUB_ROOT) continue;
+            if (rootOf(project) !== HUB_ROOT || project.repository !== undefined) continue;
             const hub = hubOfProject(project);
             if (hub !== '') return hub;
         }
@@ -554,10 +556,11 @@ export function createSelectors(
             const key = folderOf(project);
             if (key === '' || held.has(key)) continue;
             held.add(key);
+            const short = project.repository?.root ?? project.folder;
             extra.push({
                 key,
-                short: project.folder,
-                full: project.title === '' ? project.folder : project.title,
+                short,
+                full: project.title === '' ? short : project.title,
                 known: true,
                 lastActivity: null,
                 sessions: []

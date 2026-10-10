@@ -2,12 +2,13 @@
 // be written at all, one project.yml edited, and one new idea folder scaffolded.
 //
 // A research manifest's path is the reader's, never the request's: the id names a manifest
-// readManifests already found under the hub's own scan directories, and insideHub checks the
-// resolved path against them again before the write.
+// hubManifests already found, under the hub's own scan directories or as the `.oculus/project.yml`
+// of a repository whose `roots:` entry has a research `tier`, and insideHub (for a scan folder) or
+// isRepositoryFile (for a repository) checks the resolved path again before the write.
 //
 // A side project is the one other manifest a write reaches. Its id (`side:<slug>` or `root:<key>`)
 // is found among the side projects of the portfolio the server last published, which carry the
-// absolute file readPersonal found, and not through readManifests, so the server's two readers stay
+// absolute file readPersonal found, and not through hubManifests, so the server's two readers stay
 // apart. The file must be the side project's own project.yml (the folder of the hub's side-projects
 // tier, or `.oculus/project.yml` of its served root), and no other file is opened for writing. The
 // fields a write may name are the rows of `side_project_schema`, where a research manifest's are
@@ -35,7 +36,7 @@ import { parse } from 'yaml';
 import { z } from 'zod';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import { ROOT_FOLDER, isSideTier } from '../../../data/helpers/hub-names.ts';
-import { readManifests } from '../../../data/sources/manifests.ts';
+import { hubManifests } from '../../files/roots.ts';
 import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
@@ -48,7 +49,12 @@ import { insertRemoved, insertReplaced } from './restore.ts';
 import type { ChangeRecord, RemovedText, ReplacedText } from '../../core/changes.ts';
 import type { Refusal, SetFieldsResult } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import type { PortfolioConfig, SchemaField, SideProject } from '../../../data/model/index.ts';
+import type {
+    PortfolioConfig,
+    RawManifest,
+    SchemaField,
+    SideProject
+} from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 import { below } from '../../core/paths.ts';
 
@@ -302,10 +308,20 @@ function isOwnFile(hub: string, config: PortfolioConfig, side: SideProject): boo
 }
 
 /**
+ * Whether a repository's research manifest is the `.oculus/project.yml` of the repository it was
+ * read from.
+ */
+function isRepositoryFile(manifest: RawManifest): boolean {
+    if (manifest.repository === undefined) return false;
+    const file = resolve(manifest.file);
+    return file === resolve(join(manifest.repository.dir, ROOT_FOLDER, MANIFEST));
+}
+
+/**
  * The manifest an id names, or null when there is none. A research project is found by
- * readManifests among the hub's scan directories; any other id is looked for among the side
- * projects of the portfolio the server last published, whose manifest must read as a map. A
- * research id is never taken for a side project.
+ * hubManifests among the hub's scan directories and the repositories its `roots:` read as research
+ * projects; any other id is looked for among the side projects of the portfolio the server last
+ * published, whose manifest must read as a map. A research id is never taken for a side project.
  */
 function homeOf(
     hub: string,
@@ -313,16 +329,21 @@ function homeOf(
     sides: readonly SideProject[],
     id: string
 ): Home | null {
-    const { manifests } = readManifests(hub, config.scan, config.text);
-    const manifest = manifests.find((one) => one.id === id);
+    const manifest = hubManifests(hub, config).find((one) => one.id === id);
     if (manifest !== undefined) {
+        const own =
+            manifest.repository === undefined
+                ? insideHub(hub, config, manifest.file)
+                : isRepositoryFile(manifest);
+        const refused =
+            manifest.repository === undefined
+                ? words(config.text, 'server.manifest_write.not_in_hub')
+                : words(config.text, 'server.manifest_write.not_repository_file');
         return {
             file: manifest.file,
             data: manifest,
             schema: config.schema,
-            refusal: insideHub(hub, config, manifest.file)
-                ? null
-                : words(config.text, 'server.manifest_write.not_in_hub')
+            refusal: own ? null : refused
         };
     }
     const side = sides.find((one) => one.id === id);

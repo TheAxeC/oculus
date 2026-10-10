@@ -64,7 +64,10 @@ export type DeckReader = {
     read: (root: DeckRoot, path: string) => Deck;
     /** Every finding raised so far, each once. */
     findings: () => Finding[];
-    /** The decks of the hub's projects, as `{ project id, folder, tags }`. */
+    /**
+     * The decks of the hub's projects, as `{ project id, folder, tags }`, the folder under the
+     * root that holds the project: the hub, or the project's repository.
+     */
     projectDecks: () => { id: string; path: string; tags: string[] }[];
 };
 
@@ -113,15 +116,21 @@ export function createReader(context: DeckContext): DeckReader {
         return drafts.get(realOf(path) ?? path) ?? readFileSync(path, 'utf8');
     }
 
-    const projectDirs = new Map<string, DeckProject>();
+    /** The real folder of each project's deck, with the project and the root that holds it. */
+    const projectDirs = new Map<string, { project: DeckProject; root: DeckRoot }>();
     for (const project of context.projects) {
-        const dir = realOf(join(context.hub.dir, project.folder, PROJECT_DECK));
-        if (dir !== null) projectDirs.set(dir, project);
+        const root =
+            project.repository === undefined
+                ? context.hub
+                : { key: project.repository.root, dir: project.repository.dir };
+        const folder = project.repository === undefined ? project.folder : '';
+        const dir = realOf(join(root.dir, folder, PROJECT_DECK));
+        if (dir !== null) projectDirs.set(dir, { project, root });
     }
 
     /** The project a deck folder belongs to, with a domain the vocabulary lacks reported. */
     function projectOf(dir: string): DeckProject | null {
-        const project = projectDirs.get(dir);
+        const project = projectDirs.get(dir)?.project;
         if (project === undefined) return null;
         if (project.domain !== undefined && !context.domains.includes(project.domain)) {
             raiseFor(project.file)(
@@ -183,8 +192,8 @@ export function createReader(context: DeckContext): DeckReader {
     /** The project decks of the hub. */
     function projectDocs(): Doc[] {
         const found: Doc[] = [];
-        for (const dir of projectDirs.keys()) {
-            if (existsSync(join(dir, DECK_FILE))) found.push(docAt(context.hub, dir));
+        for (const [dir, { root }] of projectDirs) {
+            if (existsSync(join(dir, DECK_FILE))) found.push(docAt(root, dir));
         }
         return found;
     }
@@ -591,7 +600,7 @@ export function createReader(context: DeckContext): DeckReader {
                 }
                 return {
                     id: doc.project?.id ?? doc.name,
-                    path: relative(context.hub.dir, doc.dir).split(/[\\/]/).join('/'),
+                    path: doc.path,
                     tags
                 };
             })

@@ -39,7 +39,10 @@ export type { FeedData, FeedEntry, FeedItem, FeedKind } from './model-collection
 
 /** A project's own deck as the snapshot carries it: where it is, and the tag classes it uses. */
 export type RawDeck = {
-    /** The deck's folder relative to the hub. */
+    /**
+     * The deck's folder relative to the Files root that holds the project: the hub, or the
+     * project's repository.
+     */
     path: string;
     /** The `tag.class` of each of its project slides, each once. */
     tags: string[];
@@ -303,17 +306,20 @@ export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 
 /**
- * One thing a hub is missing. `scope` is the project folder, the collection key or the website,
- * `where` the file, field or entry it is about, `file` the path of the file it is about relative to
- * the hub its `root` names (the empty text when there is none, which the signature does not read),
- * and `signature` the twelve hex characters the mute list in config/behavior.yml holds. A finding
- * of a hub other than the first has its root key in front of its `scope`, so its signature differs
- * from a first-hub finding of the same place.
+ * One thing a hub is missing. `scope` is the project folder (the key of its root for a project
+ * read from a repository), the collection key or the website, `where` the file, field or entry it
+ * is about, `file` the path of the file it is about relative to the folder its `root` names (the
+ * empty text when there is none, which the signature does not read), and `signature` the twelve
+ * hex characters the mute list in config/behavior.yml holds. A finding of a hub other than the
+ * first has its root key in front of its `scope`, so its signature differs from a first-hub
+ * finding of the same place. `root` is the Files root `file` is relative to: a hub's as for any
+ * record, and the repository's key for a finding that names a file of a project read from a
+ * repository; such a finding with no file carries no `root`.
  */
 export type AuditFinding = Rooted & {
     scope: string;
     where: string;
-    /** The path of an existing file below the hub the `root` names, else the empty text. */
+    /** The path of an existing file below the folder the `root` names, else the empty text. */
     file: string;
     kind: AuditKind;
     message: string;
@@ -379,14 +385,6 @@ export type {
     CodeAvailability,
     CollectionFile,
     Dataset,
-    Deck,
-    DeckCard,
-    DeckGroup,
-    DeckIdeaCard,
-    DeckOrderEntry,
-    DeckSlide,
-    DeckState,
-    DeckSummaryRow,
     DocFlag,
     DocPresence,
     Domain,
@@ -399,13 +397,7 @@ export type {
     RenderedHeading,
     Organisation,
     Person,
-    PresentEli5,
-    PresentPanel,
-    PresentSlide,
-    PresentSpec,
-    PresentTag,
     Pillar,
-    PersonalRoot,
     PersonalSource,
     Project,
     RawCollection,
@@ -417,16 +409,34 @@ export type {
     RegistryFiles,
     RegistryMeta,
     RegistryName,
+    RepositoryRoot,
+    RepositoryTier,
     Reproduced,
     Resource,
     Rooted,
     ScanRule,
     SideProject,
-    SlideKind,
     Subtask,
     Tier,
     Venue
 } from './model-entities.ts';
+
+export type {
+    Deck,
+    DeckCard,
+    DeckGroup,
+    DeckIdeaCard,
+    DeckOrderEntry,
+    DeckSlide,
+    DeckState,
+    DeckSummaryRow,
+    PresentEli5,
+    PresentPanel,
+    PresentSlide,
+    PresentSpec,
+    PresentTag,
+    SlideKind
+} from './model-deck.ts';
 
 export type {
     Career,
@@ -450,7 +460,7 @@ export type {
     ConnectProvider,
     ConnectSetup,
     ConnectStatus
-} from './model-connect.ts';
+} from './accounts/model-connect.ts';
 
 export type {
     InboxKind,
@@ -464,7 +474,7 @@ export type {
     MailStatus,
     TriageFile,
     TriageNote
-} from './model-mail.ts';
+} from './accounts/model-mail.ts';
 
 export type {
     CalendarAccount,
@@ -476,7 +486,7 @@ export type {
     CalendarPayload,
     CalendarProvider,
     CalendarStatus
-} from './model-calendar.ts';
+} from './accounts/model-calendar.ts';
 
 export type {
     Area,
@@ -535,7 +545,7 @@ export type {
 } from './model-sessions.ts';
 export { BRANCH_NOT_MERGED } from './model-sessions.ts';
 
-export { DECK_GAP } from './model-entities.ts';
+export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
 export type {
     AgentAccount,

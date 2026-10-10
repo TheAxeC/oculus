@@ -7,7 +7,7 @@
 // how long ago that was; a payload that carried the words would age on screen without a publish.
 
 import { connectKey } from './connect.ts';
-import type { MailAccountConfig } from '../model/model-mail.ts';
+import type { MailAccountConfig } from '../model/accounts/model-mail.ts';
 
 /** How a mail account is named in its credential file, on the wire and in a thread's id. */
 export function mailKey(account: MailAccountConfig): string {

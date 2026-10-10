@@ -58,7 +58,7 @@ import { readCount } from './tools.ts';
  */
 export type LatexTarget = {
     hub: string;
-    project: (id: string) => Pick<Project, 'folder' | 'root'> | null;
+    project: (id: string) => Pick<Project, 'folder' | 'root' | 'repository'> | null;
     /** The roots the file browser serves, which a root key of a request is looked up in. */
     roots: () => Root[];
     /** The formatter Format Document runs, read from config/behavior.yml at each request. */
@@ -80,8 +80,9 @@ export type LatexTarget = {
 type AnsweredMain = MainState & { build: BuildOutcome };
 
 /**
- * The state of a project: its folder under the root of its hub, named by `root` for a hub other
- * than the first and absent for the first, and one state per main file.
+ * The state of a project: its folder under the root that holds it, named by `root` for a hub other
+ * than the first or for a repository and absent for the first hub, and one state per main file. The
+ * folder is empty for a project of a repository, which is its root's top.
  */
 export type ProjectAnswer = { root?: string; folder: string; mains: AnsweredMain[] };
 
@@ -200,26 +201,29 @@ function projectScope(into: LatexTarget, id: string): Scope | Response {
     const hub = key === HUB_ROOT ? into.hub : into.roots().find((one) => one.key === key)?.dir;
     if (hub === undefined) return refuse(404, 'no-project');
     // One rule for resolving a project's folder beneath the hub, the one the terminal actions run
-    // through: a folder that would leave the hub throws there and is a 404 here.
+    // through: a folder that would leave the hub throws there and is a 404 here. A project of a
+    // repository lies in the repository, which is its own root and bounds what is read.
     let folder: string;
     try {
-        folder = projectDirectory(hub, project.folder);
+        folder = projectDirectory(hub, project);
     } catch {
         return refuse(404, 'outside');
     }
+    const home = project.repository ?? { root: key, dir: hub };
+    const under = project.repository === undefined ? project.folder : '';
     return {
         dir: join(folder, MANUSCRIPT),
         label: id,
-        bound: realPath(hub) ?? hub,
+        bound: realPath(home.dir) ?? home.dir,
         named: realPath(folder) ?? folder,
         prefixes: { pdf: MANUSCRIPT, files: '' },
         answer: (mains) =>
             ({
-                ...(key === HUB_ROOT ? {} : { root: key }),
-                folder: project.folder,
+                ...(home.root === HUB_ROOT ? {} : { root: home.root }),
+                folder: under,
                 mains
             }) satisfies ProjectAnswer,
-        outlined: (outline) => ({ ...outline, folder: project.folder }) satisfies ProjectOutline
+        outlined: (outline) => ({ ...outline, folder: under }) satisfies ProjectOutline
     };
 }
 

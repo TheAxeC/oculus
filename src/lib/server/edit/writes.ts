@@ -61,7 +61,7 @@ import { undoDeckEdit } from './writes/config/deck/deck-undo.ts';
 import { rootItemsOf, rootsHeldIn, type RootItem, type RootsHeld } from './writes/config/roots.ts';
 import { hubLayerPath } from '../../data/helpers/hub-names.ts';
 import { routed, routedEntry, routedOrder, routedRoot, routedTarget } from './writes/hubs.ts';
-import { hubTargets, type HubTarget } from '../files/roots.ts';
+import { hubManifests, hubTargets, type HubTarget } from '../files/roots.ts';
 import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
@@ -337,6 +337,19 @@ function sidesFor(into: WriteTarget, app: HeldApp | null): SideProject[] {
 }
 
 /**
+ * Whether a write from `app` (null for the page) may name the project `id` of `into`. An app's
+ * write does not reach a research project read from a repository, as it does not reach a
+ * repository's side project (`sidesFor`): the repository's `.oculus/project.yml` is outside the
+ * hub.
+ */
+function reaches(into: WriteTarget, id: string, app: HeldApp | null): boolean {
+    if (app === null) return true;
+    return !hubManifests(into.hub, into.config).some(
+        (one) => one.id === id && one.repository !== undefined
+    );
+}
+
+/**
  * The whole endpoint: refuse, or write and say what changed. A refusal names what was wrong and
  * nothing more; the page shows it beside the control that sent the write.
  */
@@ -394,7 +407,7 @@ export async function handleWrite(
     if (write !== null) {
         const at = routed(into, write.id, app);
         const outcome =
-            at === null
+            at === null || !reaches(at.into, at.id, app)
                 ? NOT_FOUND
                 : writeManifest(
                       at.into.hub,
@@ -437,7 +450,7 @@ export async function handleWrite(
     if (subtask !== null) {
         const at = routedTarget(into, subtask.target, app);
         const outcome =
-            at === null
+            at === null || !reaches(at.into, at.target.id, app)
                 ? NOT_FOUND
                 : writeSubtask(
                       at.into.hub,
@@ -456,7 +469,7 @@ export async function handleWrite(
     if (added !== null) {
         const at = routedTarget(into, added.target, app);
         const outcome =
-            at === null
+            at === null || !reaches(at.into, at.target.id, app)
                 ? NOT_FOUND
                 : writeSubtaskAdd(
                       at.into.hub,

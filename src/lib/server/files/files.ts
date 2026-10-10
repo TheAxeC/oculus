@@ -23,19 +23,25 @@ import { Readable } from 'node:stream';
 import mime from 'mime';
 import { z } from 'zod';
 import { inAppsFolder } from '../../data/helpers/files/apps.ts';
-import { ENGINE_ROOT, HUB_ROOT } from '../../data/helpers/hub-names.ts';
+import { ENGINE_ROOT, HUB_ROOT, REPOSITORY_TIERS } from '../../data/helpers/hub-names.ts';
 import { findingText } from '../../data/helpers/finding-text.ts';
+import { folderOnDisk } from '../../data/places/folder-on-disk.ts';
 import { configDir, textCatalog } from '../../data/sources/config.ts';
-import type { Finding } from '../../data/model/index.ts';
+import type { Finding, Project, RepositoryTier } from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
 
 /**
- * A project folder from the snapshot, resolved beneath the configured hub root. Every action that
- * starts a terminal in a project's own folder, and the LaTeX reader of its manuscript folder,
- * resolves it here, so the check that it did not leave the hub exists once.
+ * A project's folder from the snapshot, resolved beneath the configured hub root unless it is a
+ * repository's, which is the repository's own folder. Every action that starts a terminal in a
+ * project's own folder, and the LaTeX reader of its manuscript folder, resolves it here, so the
+ * check that a hub folder did not leave the hub exists once.
  */
-export function projectDirectory(hub: string, folder: string): string {
-    const cwd = resolve(hub, folder);
+export function projectDirectory(
+    hub: string,
+    project: Pick<Project, 'folder' | 'repository'>
+): string {
+    const cwd = folderOnDisk(hub, project);
+    if (project.repository !== undefined) return cwd;
     const within = relative(hub, cwd);
     if (within.startsWith('..') || isAbsolute(within)) {
         throw new Error('the project folder is outside the configured hub');
@@ -45,9 +51,11 @@ export function projectDirectory(hub: string, folder: string): string {
 
 /**
  * One directory the server may serve files from: the key a URL names it by, and where it is. A root
- * marked `hub` is built as a hub of its own and merged into the portfolio.
+ * marked `hub` is built as a hub of its own and merged into the portfolio. A root with a `tier` is
+ * a repository read as a research project of the first hub; `personal` and no `tier` read the same,
+ * as a side project, so the type holds no second spelling of it.
  */
-export type Root = { key: string; dir: string; hub?: true };
+export type Root = { key: string; dir: string; hub?: true; tier?: RepositoryTier };
 
 /** Anything mime does not name is bytes: the browser is told nothing it cannot check. */
 const FALLBACK = 'application/octet-stream';
@@ -140,19 +148,22 @@ export const rootShape = z.object({
 }) satisfies z.ZodType<Root>;
 
 /**
- * One entry of the `roots:` list: a map, whose `key`, `dir` and `hub` are checked one at a time.
+ * One entry of the `roots:` list: a map, whose `key`, `dir`, `hub` and `tier` are checked one at a
+ * time.
  */
 const rootEntryShape = z.looseObject({
     key: z.unknown().optional(),
     dir: z.unknown().optional(),
-    hub: z.unknown().optional()
+    hub: z.unknown().optional(),
+    tier: z.unknown().optional()
 });
 
 /** The `roots:` value: a list, of entries nothing has checked yet. */
 const rootListShape = z.array(z.unknown());
 
 /**
- * The keys a hub root may not carry: each is a prefix or a fixed root the merged ids already use.
+ * The keys a hub root or a research repository may not carry: each is a prefix or a fixed root the
+ * merged ids already use.
  */
 const RESERVED_HUB_KEYS: readonly string[] = ['side', 'root', HUB_ROOT, ENGINE_ROOT];
 
@@ -194,12 +205,43 @@ function hubRefusal(
 }
 
 /**
+ * The sentence saying why an entry's `tier` is read as none, or null when `tier` is honoured: a
+ * research tier whose key holds a colon, a slash or whitespace or is reserved (the key becomes a
+ * project's id), whose directory is, lies inside or holds the first hub, or whose real directory an
+ * earlier root with a research tier has. `taken` are the roots listed above it.
+ */
+function tierRefusal(
+    catalog: Record<string, string>,
+    key: string,
+    dir: string,
+    first: string,
+    taken: readonly Root[]
+): string | null {
+    if (RESERVED_HUB_KEYS.includes(key) || /[:/\s]/.test(key)) {
+        return findingText(catalog, 'findings.roots.tier_reserved_key');
+    }
+    const place = placeOf(dir);
+    const home = placeOf(first);
+    if (inside(place, home) || inside(home, place)) {
+        return findingText(catalog, 'findings.roots.tier_is_first');
+    }
+    if (taken.some((one) => one.tier !== undefined && placeOf(one.dir) === place)) {
+        return findingText(catalog, 'findings.roots.tier_same_dir');
+    }
+    return null;
+}
+
+/**
  * The `roots:` list of the merged sources.yml (the hub layer's list), and a finding for every entry
  * that is not usable: one that is not a pair of strings, a key two entries share, a directory that
- * is not on this machine, and a `hub: true` that cannot be honoured. A finding is reported and
- * never repaired, so a root whose directory has moved shows up in the Findings view rather than as
- * a tab that silently serves nothing. A root whose `hub` is not true, or whose `hub: true` is
- * refused, is a plain root. `first` is the first hub's directory, which no hub root may overlap.
+ * is not on this machine, a `hub: true` that cannot be honoured and a `tier` that cannot be
+ * honoured. A finding is reported and never repaired, so a root whose directory has moved shows up
+ * in the Findings view rather than as a tab that silently serves nothing. A root whose `hub` is not
+ * true, or whose `hub: true` is refused, is a plain root, and so is one whose `tier` is refused or
+ * is `personal`. The `tier` of a plain root, a refused hub mark included, is read by the same
+ * rules; a root that stands as a hub takes no `tier`, and a `tier` on it is a finding. `first` is
+ * the first hub's directory, which no hub root and no research repository may overlap, and no
+ * research repository may overlap a hub root that stands.
  */
 export function readRoots(
     config: Record<string, unknown>,
@@ -271,32 +313,76 @@ export function readRoots(
                 key: key.data,
                 message: findingText(catalog, 'findings.roots.missing_dir', dir)
             });
-        } else if (entry.data.hub === true) {
-            const refusal = hubRefusal(
-                catalog,
-                key.data,
-                dir,
-                first,
-                roots.filter((one) => one.hub === true)
-            );
-            if (refusal === null) root.hub = true;
-            else {
+        } else {
+            if (entry.data.hub === true) {
+                const refusal = hubRefusal(
+                    catalog,
+                    key.data,
+                    dir,
+                    first,
+                    roots.filter((one) => one.hub === true)
+                );
+                if (refusal === null) root.hub = true;
+                else findings.push({ file, key: key.data, message: refusal });
+            } else if (entry.data.hub !== undefined && entry.data.hub !== false) {
                 findings.push({
                     file,
                     key: key.data,
-                    message: refusal
+                    message: findingText(catalog, 'findings.roots.hub_not_boolean')
                 });
             }
-        } else if (entry.data.hub !== undefined && entry.data.hub !== false) {
-            findings.push({
-                file,
-                key: key.data,
-                message: findingText(catalog, 'findings.roots.hub_not_boolean')
-            });
+            if (root.hub === true) {
+                // A hub is a root of its own and has no tier to read.
+                if (entry.data.tier !== undefined) {
+                    findings.push({
+                        file,
+                        key: key.data,
+                        message: findingText(catalog, 'findings.roots.tier_on_hub')
+                    });
+                }
+            } else {
+                // A root that is no hub, a refused hub mark included, has its `tier` read by the
+                // rules of any plain root.
+                const tier = tierOf(entry.data.tier);
+                if (tier === null) {
+                    findings.push({
+                        file,
+                        key: key.data,
+                        message: findingText(catalog, 'findings.roots.tier_unknown')
+                    });
+                } else if (tier !== undefined && tier !== 'personal') {
+                    const refusal = tierRefusal(catalog, key.data, dir, first, roots);
+                    if (refusal === null) root.tier = tier;
+                    else findings.push({ file, key: key.data, message: refusal });
+                }
+            }
         }
         roots.push(root);
     }
+    // A research tier never reads the folder of a hub root that stands, whichever of the two the
+    // list names first, so one folder is never both a hub and a project of the first hub.
+    for (const root of roots) {
+        if (root.tier === undefined) continue;
+        const place = placeOf(root.dir);
+        const hubs = roots.filter((one) => one.hub === true).map((one) => placeOf(one.dir));
+        if (!hubs.some((hub) => inside(place, hub) || inside(hub, place))) continue;
+        delete root.tier;
+        findings.push({
+            file,
+            key: root.key,
+            message: findingText(catalog, 'findings.roots.tier_in_hub')
+        });
+    }
     return { roots, findings };
+}
+
+/**
+ * The tier a `tier` value names: one of the three research tiers, `personal`, nothing when the
+ * entry has no `tier`, and null for any other value, text or not.
+ */
+function tierOf(value: unknown): RepositoryTier | 'personal' | null | undefined {
+    if (value === undefined || value === 'personal') return value;
+    return REPOSITORY_TIERS.find((one) => one === value) ?? null;
 }
 
 /** The roots among the given ones that are hubs, in the order of `roots:`. */

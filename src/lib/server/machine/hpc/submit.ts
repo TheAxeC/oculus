@@ -143,11 +143,14 @@ function remoteOf(folder: string, script: string): string {
     return `cd ${where} && sbatch --parsable ${shellWord(script.startsWith('-') ? `./${script}` : script)}`;
 }
 
-/** The folder of a project, under the hub it is of, or null when that hub is served nowhere. */
+/**
+ * The folder of a project: the repository it is read from, else its folder under the hub it is of.
+ * Null when that hub is served nowhere.
+ */
 function folderOf(project: Project, deps: PlanDeps): string | null {
     const key = rootOf(project);
     const hub = key === HUB_ROOT ? deps.hub : deps.roots().find((one) => one.key === key)?.dir;
-    return hub === undefined ? null : projectDirectory(hub, project.folder);
+    return hub === undefined ? null : projectDirectory(hub, project);
 }
 
 /** The project whose folder holds the path as it was asked, most closely, or null. */

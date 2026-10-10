@@ -1,10 +1,12 @@
 // The LaTeX endpoint. A route module may export only its verbs, so everything it does lives in
 // lib/server/content/latex/endpoint.ts and this is the few lines that join them. The hub is the one
 // every write lands in, the project comes from the portfolio this request's server holds exactly
-// as the document route reads both, a hub side project included and a repository side project
-// left out as the build leaves it out, and the roots are the ones the file browser serves.
+// as the document route reads both, a hub side project and a research project of a repository
+// included and a repository side project left out as the build leaves it out, and the roots are the
+// ones the file browser serves.
 
 import { handleLatex, handleLatexPost, type LatexTarget } from '$lib/server/content/latex/endpoint';
+import { isRepositorySide } from '$lib/data/snapshot/as-project';
 import { browserRoots } from '$lib/server/files/roots';
 import { latexBuild, latexFormatting, textCatalog } from '$lib/data/sources/config';
 import { buildOutcome } from '$lib/server/machine/pty/latex/latex';
@@ -18,7 +20,7 @@ const target = (locals: App.Locals): LatexTarget => {
         hub: server.local.hub,
         project: (id) => {
             const found = projectOrSide(server.hub, id);
-            return found?.repository === undefined ? found : null;
+            return found !== null && isRepositorySide(found) ? null : found;
         },
         roots: () => browserRoots({ config, engine: server.engine, local: server.local }),
         formatting: () => latexFormatting(config),

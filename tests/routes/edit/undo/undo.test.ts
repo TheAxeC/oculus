@@ -26,6 +26,8 @@ import {
     deckTarget,
     manifestOf,
     overridesOf,
+    REPOSITORY_ID,
+    repositoryTarget,
     request,
     sideTarget,
     SIDE_MANIFEST,
@@ -144,6 +146,45 @@ describe('taking a change back', () => {
 
             expect((await undone(into, taken)).status, row.name).toBe(200);
             expect(read(), row.name).toBe(written);
+        }
+    );
+
+    /** The writes to a repository's research project the undo takes back, each by its body. */
+    const REPOSITORY_ROWS = [
+        {
+            name: 'a snooze set',
+            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { snooze: '2026-12-01' } }
+        },
+        {
+            name: 'a snooze woken',
+            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { snooze: '' } }
+        },
+        {
+            name: 'a tick',
+            body: { kind: 'subtask', target: { id: REPOSITORY_ID }, key: '0', action: 'done' }
+        },
+        {
+            name: 'an added line',
+            body: {
+                kind: 'subtask-add',
+                target: { id: REPOSITORY_ID },
+                fields: { do: 'write it up' }
+            }
+        }
+    ];
+
+    it.each(REPOSITORY_ROWS)(
+        "puts a repository's research project's manifest field back",
+        async (row) => {
+            const { into, file } = repositoryTarget();
+            const original = readFileSync(file, 'utf8');
+            const change = await made(into, row.body, row.name);
+            expect(readFileSync(file, 'utf8'), row.name).not.toBe(original);
+
+            const response = await undone(into, change);
+            expect(response.status, row.name).toBe(200);
+            expect(readFileSync(file, 'utf8'), row.name).toBe(original);
+            expect(changesOf(into)[0], row.name).toMatchObject({ undoes: change.at });
         }
     );
 

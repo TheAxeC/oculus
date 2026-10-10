@@ -4,7 +4,14 @@
 // two keys the hub and the engine's config folder are served under, and how each registry file
 // names its entry list and its id field.
 
-import type { Collection, Id, RegistryName, Rooted, ScanRule } from '../model/index.ts';
+import type {
+    Collection,
+    Id,
+    RegistryName,
+    RepositoryTier,
+    Rooted,
+    ScanRule
+} from '../model/index.ts';
 
 /** The key the hub itself is served under, so a collection's `link` to a file in the hub opens. */
 export const HUB_ROOT = 'hub';
@@ -176,6 +183,12 @@ const SIDE_TIER = 'side-projects';
 
 /** The folder of a repository that holds its side-project manifest. */
 export const ROOT_FOLDER = '.oculus';
+
+/**
+ * The tiers a `roots:` entry may read its repository in as a research project of the first hub,
+ * beside `personal`, which reads it as a side project exactly as an entry with no `tier` does.
+ */
+export const REPOSITORY_TIERS: readonly RepositoryTier[] = ['projects', 'coauthor', 'archive'];
 
 /** The hub's own config folder under `.oculus`, which holds the second layer of the settings. */
 export const HUB_LAYER = `${ROOT_FOLDER}/config`;

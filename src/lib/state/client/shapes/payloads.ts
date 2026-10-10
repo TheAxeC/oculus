@@ -6,14 +6,14 @@
 // top level and a payload of a hundred thousand rows costs the same as a small one.
 
 import { z } from 'zod';
-import { DEBUG_STATUSES } from '../../data/model/index.ts';
+import { DEBUG_STATUSES } from '../../../data/model/index.ts';
 import {
     anyNumberShape,
     debugAppendShape,
     mapShape,
     unchangedAs
-} from '../../data/shapes/shapes.ts';
-import type { Payloads } from '../shared/stores/shapes.ts';
+} from '../../../data/shapes/shapes.ts';
+import type { Payloads } from '../../shared/stores/shapes.ts';
 
 /** A list; its items are checked where they are read. */
 const listShape = z.instanceof(Array);

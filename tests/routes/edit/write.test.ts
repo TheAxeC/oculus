@@ -11,21 +11,26 @@
 // pays for it.
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { basename } from 'node:path';
+import { basename, join } from 'node:path';
 import { describe, expect } from 'vitest';
+import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import {
     GOOD,
     MANIFEST,
+    REPOSITORY_ID,
+    REPOSITORY_MANIFEST,
     SIDE_MANIFEST,
     TOKEN,
     manifestOf,
+    repositoryTarget,
     request,
     secondHubSide,
     target,
     warmConfig
 } from './write-fixture.ts';
 import { it, test } from '../../fixtures/scratch.ts';
+import { MANIFEST as APP_MANIFEST, notesFiles, routeSetup } from '../apps/apps-fixture.ts';
 
 test.beforeAll(warmConfig);
 
@@ -65,5 +70,36 @@ describe('the write endpoint', () => {
         );
         expect(readFileSync(planted.files['side:idea'], 'utf8')).toBe(SIDE_MANIFEST);
         expect(readFileSync(planted.files['root:r'], 'utf8')).toBe(SIDE_MANIFEST);
+    });
+
+    it("writes a repository's research project in its .oculus/project.yml and no other, and answers an app not found", async () => {
+        const planted = repositoryTarget();
+        const { into, dir, file } = planted;
+        const hubManifest = manifestOf(into);
+        const body = { kind: 'manifest', id: REPOSITORY_ID, fields: { next: 'write it up' } };
+
+        const page = await handleWrite(request(body), TOKEN, into);
+        expect(page.status).toBe(200);
+        const written = readFileSync(file, 'utf8');
+        expect(written).toBe(`${REPOSITORY_MANIFEST}next: write it up\n`);
+        expect(readFileSync(join(dir, 'README.md'), 'utf8')).toBe('# A repository\n');
+        expect(manifestOf(into)).toBe(hubManifest);
+
+        const apps = routeSetup({ machine: notesFiles(`${APP_MANIFEST}writes: [manifest]\n`) });
+        const held = { ...into, apps: { held: apps.held, data: join(dir, 'data'), maxKb: 256 } };
+        const headers = { [APP_HEADER]: 'app:notes', [KIND_HEADER]: 'manifest' };
+        const app = await handleWrite(
+            request({ ...body, fields: { next: 'x' } }, headers),
+            TOKEN,
+            held
+        );
+        expect(app.status).toBe(404);
+        expect(readFileSync(file, 'utf8')).toBe(written);
+
+        const removed = repositoryTarget(target(), null);
+        const before = readFileSync(removed.file, 'utf8');
+        const without = await handleWrite(request(body), TOKEN, removed.into);
+        expect(without.status).toBe(404);
+        expect(readFileSync(removed.file, 'utf8')).toBe(before);
     });
 });

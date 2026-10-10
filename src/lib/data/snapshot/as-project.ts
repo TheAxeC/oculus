@@ -12,6 +12,14 @@ import { compact } from './compact.ts';
 export const SIDE_PROJECT_TIER: Tier = 'side-projects';
 
 /**
+ * Whether a project is a side project read from a repository: its record carries `repository` and
+ * the side-project tier. A research project read from a repository carries `repository` too.
+ */
+export function isRepositorySide(project: Partial<Pick<Project, 'tier' | 'repository'>>): boolean {
+    return project.repository !== undefined && project.tier === SIDE_PROJECT_TIER;
+}
+
+/**
  * The project a side project stands for. The keys a side project does not hold are empty: no
  * results, ideas, resources or venue. Its status is its one chip. A repository's record names the
  * Files root that holds it and its absolute folder (`repository`), since the manifest sits in the
@@ -60,8 +68,9 @@ export function projectOfSide(side: SideProject): Project {
 /**
  * Where a project's folder is: the Files root that holds it, its path in that root and its absolute
  * path. A project of a hub folder is in its hub's root at its folder, and its folder is the
- * manifest's; a repository's is in the root of that name at the top, at the folder `repository`
- * names.
+ * manifest's; a project of a repository (a side project, or a research project read from a
+ * repository named by a `roots:` entry with a research `tier`) is in the root of that name at the
+ * top, at the folder `repository` names.
  */
 export function placeOf(project: Project): { root: string; path: string; dir: string } {
     if (project.repository !== undefined) {

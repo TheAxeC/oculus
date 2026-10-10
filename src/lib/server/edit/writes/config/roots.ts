@@ -32,6 +32,7 @@ import { dirname, relative, sep } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, isSeq, parse, parseDocument } from 'yaml';
 import { z } from 'zod';
+import { REPOSITORY_TIERS } from '../../../../data/helpers/hub-names.ts';
 import { ENGINE_ROOT, HUB_ROOT, expandHome, type Root } from '../../../files/files.ts';
 import {
     defaultWorkspacesPath,
@@ -72,30 +73,38 @@ export type RootsOutcome =
               | 'unwritable';
       };
 
+/** The words a `tier` takes in the file: the three research tiers and `personal`. */
+const TIERS = [...REPOSITORY_TIERS, 'personal'] as const;
+
 /**
- * One entry of the list: a key, the dir as the file writes it, and `hub: true` when the root is
- * built as a hub of its own.
+ * One entry of the list: a key, the dir as the file writes it, the `tier` it names and `hub: true`
+ * when the root is built as a hub of its own.
  */
-export type RootItem = { key: string; dir: string; hub?: true };
+export type RootItem = { key: string; dir: string; tier?: (typeof TIERS)[number]; hub?: true };
 
 /** The one key of the hub's sources.yml layer this write reads. */
 const sourcesShape = z.object({ [ROOTS]: z.unknown().optional() }).catch(() => ({}));
 
 /**
- * An entry of the list that is a pair of text, with `hub: true` when it says so; any other `hub`
- * value is left out, since the root is then read as a plain one.
+ * An entry of the list that is a pair of text, with its `tier` when that is one of the four words
+ * and `hub: true` when it says so; any other `tier` or `hub` value is left out, since the root is
+ * then read as a plain one.
  */
 const itemShape = z.object({
     key: z.string().min(1),
     dir: z.string().min(1),
+    tier: z.enum(TIERS).optional().catch(undefined),
     hub: z.literal(true).optional().catch(undefined)
 });
 
-/** An entry as the list holds it, with `hub` only where it is true. */
+/** An entry as the list holds it: `tier` where it names one, `hub` only where it is true. */
 function itemOf(one: z.infer<typeof itemShape>): RootItem {
-    return one.hub === true
-        ? { key: one.key, dir: one.dir, hub: true }
-        : { key: one.key, dir: one.dir };
+    return {
+        key: one.key,
+        dir: one.dir,
+        ...(one.tier === undefined ? {} : { tier: one.tier }),
+        ...(one.hub === true ? { hub: true } : {})
+    };
 }
 
 /**
@@ -207,8 +216,20 @@ function dirText(dir: string): string {
 
 /** One entry as the line the file carries: a flow map. */
 function itemText(item: RootItem): string {
+    const tier = item.tier === undefined ? '' : `, tier: ${item.tier}`;
     const hub = item.hub === true ? ', hub: true' : '';
-    return `{ key: ${dirText(item.key)}, dir: ${dirText(item.dir)}${hub} }`;
+    return `{ key: ${dirText(item.key)}, dir: ${dirText(item.dir)}${tier}${hub} }`;
+}
+
+/**
+ * Whether the list asked for would drop or change the `tier` of an entry the file holds and the
+ * list keeps: a write of the list adds, removes and orders entries and never changes one.
+ */
+function losesTier(before: RootItem[], wanted: RootItem[]): boolean {
+    return before.some((held) => {
+        const now = wanted.find((one) => one.key === held.key);
+        return now !== undefined && now.tier !== held.tier;
+    });
 }
 
 /** The folder as sources.yml writes it: `~/...` under the home folder, else the whole path. */
@@ -220,7 +241,8 @@ export function dirAsWritten(dir: string): string {
 
 /**
  * Whether the edited source still says what the original said with the one list replaced: it must
- * parse, hold exactly the entries asked for, and leave every other top-level key unchanged.
+ * parse, hold exactly the entries asked for (tier and hub marks included), and leave every other
+ * top-level key unchanged.
  */
 function kept(source: string, edited: string, wanted: RootItem[]): boolean {
     const read = readBack(source, edited);
@@ -232,7 +254,8 @@ function kept(source: string, edited: string, wanted: RootItem[]): boolean {
 /**
  * Write the list as `wanted`. Entries already in the file keep their text. A list the file already
  * holds writes nothing and answers so, and a list that holds anything but key and dir entries (a
- * comment line between two of them) is refused `invalid` and left as it is.
+ * comment line between two of them) or that changes the `tier` of an entry it keeps is refused
+ * `invalid` and left as it is.
  */
 export function writeRoots(
     file: string,
@@ -253,6 +276,7 @@ export function writeRoots(
     }
     if (source === null || !onlyEntries(source)) return { error: 'invalid' };
     const before = rootsOf(source);
+    if (losesTier(before, wanted)) return { error: 'invalid' };
     const written = writtenItems(source);
     const items = wanted.map((one) => {
         const same = before.find((held) => isDeepStrictEqual(held, one));

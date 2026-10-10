@@ -4,12 +4,12 @@
 // options the library is handed, and the count of today's events still to come that the view's
 // badge draws.
 //
-// A start is an ISO string in one of two forms (data/model/model-calendar.ts says which): a date
-// for an all-day event, and a timed value the page reads in its own zone. A date is taken as it
-// stands, so an all-day event is never moved a day by a zone; a timed value is handed on as the
-// moment it names, since the library reads an offset of `Z` as a wall clock and would move it.
-// A moment's day in the page's own zone is data/helpers/dates.ts's localDate, handed on from here
-// to the view.
+// A start is an ISO string in one of two forms (data/model/accounts/model-calendar.ts says which):
+// a date for an all-day event, and a timed value the page reads in its own zone. A date is taken as
+// it stands, so an all-day event is never moved a day by a zone; a timed value is handed on as the
+// moment it names, since the library reads an offset of `Z` as a wall clock and would move it. A
+// moment's day in the page's own zone is data/helpers/dates.ts's localDate, handed on from here to
+// the view.
 
 import { z } from 'zod';
 import { calendarKey } from '../../data/accounts/calendar.ts';

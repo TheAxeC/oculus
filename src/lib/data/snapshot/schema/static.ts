@@ -74,6 +74,8 @@ export function projectFileSchemas(config: PortfolioConfig, lists: Lists): Named
         at: ''
     });
     if (sideProject !== null) {
+        // The manifest of a repository read as a research project is governed by the manifest
+        // schema (run.ts, repositoryReach), whose rule comes first.
         found.push({
             name: 'side-project',
             schema: sideProject,

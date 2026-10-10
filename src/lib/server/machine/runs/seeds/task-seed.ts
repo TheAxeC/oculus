@@ -22,7 +22,8 @@ import { scalar, str, strings } from '../../../../data/helpers/guards.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
 import type { PortfolioConfig, TaskRef } from '../../../../data/model/index.ts';
 import { keyedRowsShape, readAs, wordShape } from '../../../../data/shapes/shapes.ts';
-import { readManifests } from '../../../../data/sources/manifests.ts';
+import { manifestDir } from '../../../../data/sources/manifests.ts';
+import { hubManifests } from '../../../files/roots.ts';
 import { entryOf, identityOf, readCollection } from '../../../files/fs/collections.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { words } from '../../../core/words.ts';
@@ -58,7 +59,7 @@ type Host = {
     lines: Line[];
     fields: Record<string, unknown>;
     file: string;
-    /** The folder of the project the host is, or the empty string for an entry. */
+    /** The absolute folder of the project the host is, or the empty string for an entry. */
     folder: string;
 };
 
@@ -68,11 +69,11 @@ function plain(value: string): string {
     return value.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
 }
 
-/** The projects of the hub's manifests that are not ghosts, by id, with their folder in the hub. */
+/** The projects of the hub's manifests that are not ghosts, by id, with their absolute folder. */
 function projectFolders(hub: string, config: PortfolioConfig): Record<string, string> {
     const found: Record<string, string> = {};
-    for (const manifest of readManifests(hub, config.scan, config.text).manifests) {
-        if (!manifest.ghost) found[manifest.id] = manifest.folder;
+    for (const manifest of hubManifests(hub, config)) {
+        if (!manifest.ghost) found[manifest.id] = manifestDir(hub, manifest);
     }
     return found;
 }
@@ -81,16 +82,14 @@ function projectFolders(hub: string, config: PortfolioConfig): Record<string, st
 function hostOf(ref: TaskRef, hub: string, config: PortfolioConfig): Host | null {
     if (ref.collection === undefined) {
         if (ref.subtask === undefined) return null;
-        const manifest = readManifests(hub, config.scan, config.text).manifests.find(
-            (one) => one.id === ref.id && !one.ghost
-        );
+        const manifest = hubManifests(hub, config).find((one) => one.id === ref.id && !one.ghost);
         if (manifest === undefined) return null;
         return {
             title: str(manifest.title) ?? '',
             lines: linesOf(manifest.subtasks),
             fields: manifest,
             file: manifest.file,
-            folder: manifest.folder
+            folder: manifestDir(hub, manifest)
         };
     }
     const held = readCollection(hub, config, ref.collection);
@@ -128,7 +127,7 @@ function linkFolder(hub: string, link: unknown): string | null {
 
 /** The folder the agent starts in: the project's, the scheme's, or the hub root. */
 function folderOf(ref: TaskRef, host: Host, hub: string, config: PortfolioConfig): string {
-    if (host.folder !== '') return join(hub, host.folder);
+    if (host.folder !== '') return host.folder;
     if (ref.collection === FUNDING) {
         if (ref.subtask === undefined) return hub;
         return linkFolder(hub, host.fields.link) ?? hub;
@@ -136,7 +135,7 @@ function folderOf(ref: TaskRef, host: Host, hub: string, config: PortfolioConfig
     const projects = projectFolders(hub, config);
     const named = strings(host.fields.related).filter((id) => Object.hasOwn(projects, id));
     const only = new Set(named);
-    return only.size === 1 ? join(hub, projects[[...only][0]]) : hub;
+    return only.size === 1 ? projects[[...only][0]] : hub;
 }
 
 /** The name of a terminal: the catalog's sentence, cut at NAME_MAX units but never mid-pair. */

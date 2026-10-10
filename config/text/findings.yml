@@ -28,6 +28,12 @@ text:
             hub_is_first: the root is, lies inside or holds the first hub; it is read as a plain root
             hub_same_dir: an earlier hub root names the same directory; this root is read as a plain root
             hub_nested: the root lies inside or holds the directory of an earlier hub root; it is read as a plain root
+            tier_unknown: tier is none of projects, coauthor, archive and personal; the root is read as if it had no tier
+            tier_on_hub: a hub root takes no tier; the root is a hub and its tier is not read
+            tier_reserved_key: a research tier needs a key that is not side, root, hub or engine and holds no colon, slash or space, since the key is the project's id; the root is read as if it had no tier
+            tier_is_first: the root is, lies inside or holds the first hub, so a research tier cannot read it; the root is read as if it had no tier
+            tier_same_dir: an earlier root with a research tier names the same directory; this root is read as if it had no tier
+            tier_in_hub: the root is, lies inside or holds the directory of a hub root, so a research tier cannot read it; the root is read as if it had no tier
         hubs:
             id_prefix: 'the id {0} begins with {1}:, the key of a hub root, so it cannot be told from a record of that hub'
         docs:
@@ -50,6 +56,11 @@ text:
             id_not_folder: id {0} is not the folder name {1}
             scan_missing: scan directory does not exist
             personal_no_manifest: folder has no project.yml
+            repository_no_manifest: the root has a research tier and no .oculus/project.yml, so it is no project
+            repository_id_taken: the key is the id of a project the scan reads; the repository is read as a side project
+            repository_tier_no_rule: 'no scan rule carries the tier {0}; the repository is read as a side project'
+            repository_type_missing: type is missing or is not text, and the board of a repository with tier projects is chosen by it; the repository is read as a side project
+            repository_type_unknown: 'type {0} is the type of no scan rule with tier {1}; the repository is read as a side project'
             personal_not_file: project.yml is not a regular file and is not read
             personal_too_large: project.yml is larger than {0} bytes and is not read
             personal_no_title: has no title, so the card is named {0}

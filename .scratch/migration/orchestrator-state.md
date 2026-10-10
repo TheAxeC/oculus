@@ -24,22 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D60
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a6dd13dec7398d216 (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D60
-  base: 69b16a679
-  launched: 2026-10-10
-  report: agents/reviews/D60-report.md
-  builder_usage: 204,709 tokens, 491 tool uses, 109.9 min (the builder ran three read-only git commands against the no-git rule, its report says)
-  brief_check: agents/reviews/D60-brief-check.md (a9cd3f67733719350, claude-opus-5-5, 222,061 tokens, 70 tool uses, 9.4 min; closed in the brief by the orchestrator under "Closed")
-  reviewer_report: agents/reviews/D60-refuter.md (adf31b9db8965f209, claude-opus-5-5, 79,744 tokens, 120 tool uses, 21.3 min; the reviewer ran one read-only git command outside its set and removed the builder's scratchpad copy `unchanged`, its report says)
-  shared_paths: with D61, tools/oculus/HELP.md, tools/oculus/DESIGN.md, tools/oculus/docs/diagrams/ (as D61's entry says) and tools/oculus/config/text/views/system/workbench.yml (D60 the `desc_side_project_schema` line, D61 lines 1, 10-11 and 215-230); simple: different lines
-  landing: not-started
-  round: 1
-  round_1: sent 2026-10-10 with agents/briefs/D60-round1.md; the tree before it is `git diff --binary 69b16a679` in the worktree, shasum 90f21690a134fcdd16d355ab8e3db48996a10cba (session scratchpad D60-before-round1.diff)
+dispatch: []   # steps in flight, up to six (Z632); none now
 ```
 
 ## The standing demands (from Axel, in force)
@@ -156,70 +141,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 46 (2026-10-10), D62, a step that does not converge: fifteen choices the rulings do not name, found while writing D62's brief and by its brief check (`agents/reviews/D62-brief-check.md`). The draft brief is kept in the session scratchpad and is written again from it with the ruling; nothing else of D62 exists. Each choice has its options, the pros and cons of each, one recommendation and the lazy option named. Reply `Ruled: (1) a, (2) b, ...`.
-  - (1) Where an app's per-workspace enable and disable state is kept. Ruling 45 (1) says "with the saved workspace", but the default workspace has no machine-local record: its folders are the tracked hub file `.oculus/config/sources.yml` (`roots.ts:1-14`), while a named workspace is in the untracked `<hub>/.oculus/workspaces.json` (`fs.ts:194-196`).
-    - (a) Everything in `~/.oculus/apps.json`: `{ version: 1, disabled: [<view id>], workspaces: { "<workspace name, or default>": { disabled: [<view id>], enabled: [<view id>] } } }`. Pros: one machine-local file and one code path for every workspace; never a tracked file; matches VS Code, which keeps workspace-disabled extensions in its per-workspace machine storage, never in the `.code-workspace` file. Cons: renaming or deleting a named workspace must carry or drop its entry, which the workspace rename and delete acts must do; the state does not travel with a copied `workspaces.json`.
-    - (b) A named workspace's state inside its `workspaces.json` entry, the default workspace's in `~/.oculus/apps.json`. Pros: follows the ruling's words for named workspaces; rename and delete carry the state with no extra code. Cons: two stores and two code paths for one setting; `workspaces.json` writes go through `/api/fs`, which this step would then also change.
-    - (c) The default workspace's state in `sources.yml`, a named one's in `workspaces.json`. Pros: follows the ruling's words for both. Cons: a per-machine reader setting lands in a tracked file, so disabling an app makes a git change in the hub and carries to every other machine.
-    - Recommendation: (a), for the one code path and because enable state is a reader's machine-local choice. Lazy option: (a) is also the cheapest; it is recommended on its merits, the rename and delete handling included.
-  - (2) How Add app from folder chooses a folder where oculus's folder picker answers `unsupported` (the browser on Linux or Windows without the desktop app; `picker.ts:27`, `picker.ts:159`; the Files view's line is "The folder panel is available on macOS only.").
-    - (a) The picker only, and the refusal line elsewhere, as Add Folder to Workspace does today. Pros: one way in, the same as the Files view. Cons: the action does not work in the browser off macOS.
-    - (b) The picker, plus Add as App on a folder's right-click menu in the Files view, working on every platform for any folder of a shown root. Pros: works everywhere; matches VS Code's Install from VSIX on the Explorer's right-click; no new chooser to build. Cons: a folder outside every shown root needs the picker or adding its root first; touches the Files view's row menu.
-    - (c) The picker, plus an in-page folder chooser that browses the whole disk through the server. Pros: works everywhere for any folder. Cons: a new component and a new server listing of folders outside the roots, a surface G2 exists to keep closed.
-    - Recommendation: (b). Lazy option: (a).
-  - (3) What a damaged `~/.oculus/apps.json` (one that does not parse) means.
-    - (a) Fail closed: every app reads as disabled, a finding names the file, and Enable or Disable is refused with the reason until the file is put right. Pros: a disabled app's host never starts because of a damaged file; the approvals file already fails this way (`approvals.ts:288`, a file that does not read approves nothing). Cons: every app stops at once until the reader fixes or removes the file.
-    - (b) Fail open: every app reads as enabled, with the same finding. Pros: apps keep working. Cons: an app the reader disabled, perhaps for a reason, runs its host again.
-    - Recommendation: (a). Lazy option: neither costs more than the other.
-  - (4) What an app's host may import. The approval hash covers the recorded files only (`record.ts:3-5`: links and dot-led files are left out), so a host can `import` a file outside them (`../x.js`, a link, a dot-led file, a `node_modules` above the folder) and run code the reader never approved; for a root app a `git pull` can change that file with no new question.
-    - (a) The runner installs a Node module hook that refuses any `file:` import outside the app's recorded files; `node:` built-ins are allowed, and a host ships its own packages inside its folder, where they are recorded and approved. Pros: "the reader approved its exact files" holds. Cons: a host cannot import a package installed elsewhere; a large `node_modules` counts toward `apps.max_files` and `max_mb`, so a host bundles its packages.
-    - (b) No hook: the documents say the approval covers the recorded files and a host that imports others runs them unapproved. Pros: any package resolves. Cons: unapproved code runs with the reader's rights, and a pull changes it silently.
-    - Recommendation: (a). Lazy option: (b).
-  - (5) The refusal word for a host that is not running and cannot start, a host request in flight when the host stops, and a dependency that cannot start. The existing `failed:0` means "no answer" (`docs/apps.md:219`).
-    - (a) Reuse `failed:0`. Pros: no new word. Cons: an app cannot tell a stopped host from a lost connection.
-    - (b) A new word, `host_down`. Pros: an app can tell the reader its host stopped and offer Restart. Cons: a tenth word in the refusal table.
-    - Recommendation: (b). Lazy option: (a).
-  - (6) How the new calls are rate-limited. `writes_per_min` and `opens_per_min` are per frame (`config/behavior.yml:304`, `:306`).
-    - (a) A host's store updates count under `writes_per_min` per host; `commands.run` counts under `opens_per_min` per frame; `sendToPage` is unlimited; the two key sentences and their Settings help say "per frame or host" and "calls of open or commands.run". Pros: no new key; a flood of store writes cannot bloat the change log. Cons: two key meanings widen; a host's flood of `sendToPage` is not bounded.
-    - (b) As (a), plus `sendToPage` counted under a new key `messages_per_min` per host (default 600). Pros: every channel a host has to a frame is bounded. Cons: a new config key.
-    - (c) No limit on a host at all, since it can write files natively. Pros: nothing to build. Cons: the change log and the page are open to a flood.
-    - Recommendation: (b). Lazy option: (c).
-  - (7) The answer shapes of `oculus.fs`.
-    - (a) VS Code's `workspace.fs`: `readFile` a `Uint8Array`, `readDirectory` `[name, type]` pairs, `stat` `{ type, ctime, mtime, size }`, `type` the `FileType` numbers (1 file, 2 folder, 64 added for a link). Pros: code written for VS Code ports unchanged. Cons: numbers in place of words.
-    - (b) oculus's own words: `{ name, kind: 'file' | 'folder' | 'link' }` and `{ kind, modified, size }`. Pros: readable. Cons: a second shape for app authors who know VS Code's.
-    - Recommendation: (a). Lazy option: neither costs more.
-  - (8) A dependency disabled, revoked or removed while an app that depends on it runs.
-    - (a) As VS Code does: Disable or Remove of a dependency asks first, naming the apps that depend on it, and on yes those are disabled too and their hosts stop; a revoke stops them with a line saying why. Pros: no host runs with a missing dependency. Cons: one more question.
-    - (b) The dependents keep running and their `apps.get` calls reject with the word (5) rules. Pros: nothing else stops. Cons: each dependent must handle a dependency that vanished.
-    - Recommendation: (a). Lazy option: (b).
-  - (9) Remove when the keyring is not available (no Secret Service on Linux, or a locked store).
-    - (a) Remove refuses, saying the secrets cannot be deleted. Pros: no secret is left behind. Cons: an app cannot be removed on such a machine.
-    - (b) Remove goes ahead, and its question says the app's secrets could not be counted or deleted. Pros: removal always works; on a machine with no store the app could hold no secrets anyway. Cons: secrets stored while the keyring worked stay in it.
-    - Recommendation: (b). Lazy option: (b) is also cheaper; recommended because a refusal blocks the reader for secrets that in most cases do not exist, and the question tells them.
-  - (10) The keyring service of an app's secrets. Ruling 40 says `oculus-app:<app id>`; a root app's id holds its root key (`apps.ts:23-25`), so renaming that root key orphans the secrets.
-    - (a) `oculus-app:<view id>`; a renamed root key leaves the old secrets and the app asks again. Pros: the id oculus uses everywhere. Cons: orphaned entries on a rename.
-    - (b) `oculus-app:<app name>@<the root's real folder>`. Pros: survives a root key rename. Cons: moving the folder orphans them instead; a long service name.
-    - Recommendation: (a). Lazy option: neither costs more.
-  - (11) The host's limits: kept output (1000 lines and 256 KB), stop times (`deactivate` 5 s, then SIGTERM, then SIGKILL 2 s later), the `workspaceContains` walk (10,000 entries per root) and `readDirectory` (10,000 entries).
-    - (a) Constants in the code, named in the documents. Pros: no new keys. Cons: a reader cannot change them.
-    - (b) Keys in the `apps:` block of `config/behavior.yml`: `host_output_kb`, `host_stop_seconds`, `scan_entries`, with the values above as defaults. Pros: changeable in Settings like the other app limits. Cons: three new keys.
-    - Recommendation: (b), since every other app limit is a key. Lazy option: (a).
-  - (12) Test entries. The tests D62 needs have no `agents/guarded.md` entry: the host's lifecycle (it runs only from approved, enabled, unchanged files and ends with them and with the server) and secret values never leaving the keyring; and `~/.oculus/apps.json` and Remove are not in G31's and G10's texts.
-    - (a) Two new entries, "an app's host runs only from its approved, enabled, unchanged files, and stops when they change, when the app is disabled, revoked or removed, and when the server ends" and "a secret's value never leaves the keyring: no log, change record, channel, file or report holds it"; G31's list gains `~/.oculus/apps.json` and G10's units gain Remove. Pros: the security-critical behaviours are held by tests. Cons: more tests to keep.
-    - (b) No new entry: those cases are checked by quoted runs at the build and never again. Pros: fewer tests. Cons: a later step can break host isolation or leak a secret with nothing failing.
-    - Recommendation: (a). Lazy option: (b).
-  - (13) Which channel carries the host rows and their output to the Processes view. `processes` is already closed to every app (`CLOSED_CHANNELS`, `apps.ts:84`).
-    - (a) A new channel `app-hosts`, closed to every app and listed in docs/apps.md's closed channels. Pros: up to 256 KB of output per host never rides the process table's refresh; the hosts' changes push on their own. Cons: one more channel.
-    - (b) The rows and their output added to the `processes` payload. Pros: no new channel; the view reads one channel. Cons: every process table refresh carries every host's output.
-    - Recommendation: (a). Lazy option: (b).
-  - (14) Three manifest rules: `activation` without `host` refuses the app; a dependency that is missing, refused, disabled or unapproved leaves the depending app offered, with its host waiting; `files` on a root app refuses the app.
-    - (a) As written. Pros: a mistake in `app.yml` shows at once; a missing dependency shows as a waiting host, as VS Code shows one. Cons: none found.
-    - (b) Ignore `activation` without `host` and `files` on a root app, with a finding but no refusal. Pros: more forgiving. Cons: an author believes a key works that does nothing.
-    - Recommendation: (a). Lazy option: neither costs more.
-  - (15) What Add app from folder copies, and what a removed app's tabs show.
-    - (a) Copy the files and folders, leaving out links and dot-led names, as the approval hash does; a removed app's open tabs stay and draw the unknown view, as for a removed folder today. Pros: what is copied is what is approved; the tabs behave as they already do. Cons: an app that needs a dot-led file cannot be added this way.
-    - (b) Copy everything, links resolved; a removed app's tabs close. Pros: an exact copy. Cons: copies files no approval covers; closing tabs loses their place.
-    - Recommendation: (a). Lazy option: neither costs more.
+None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -241,6 +163,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 ## Closed items
 
+- 2026-10-10: Open item 46, D62's fifteen choices, ruled by Axel: every choice as recommended (plan.md Rulings, Open item 46).
 - 2026-10-10: Open items 34 to 39 and the memories and wallpaper move, raised in D58's review and by Axel, ruled by Axel: no second round for D58, G74 and its two tests written at D58's landing; the Help page's hub documents, the config cache over `<hub>/.oculus/config/`, personal projects as research projects, Focus's collapsible sections, the workbench tab names and the memories and wallpaper move are one new step, D59 (plan.md Rulings, Open item 34 to Memories and wallpaper).
 - 2026-10-09: open item 31 ruled (c) by Axel: a kept machine app stays approved through any change but to `app.yml`, a pulled change included, `docs/apps.md` and the `apps_dir` help saying so at D50's landing. The move ruled by Axel: the five shareable files of `~/.oculus` are moved into `<hub>/.oculus/` once by the orchestrator with `mv` while his server is stopped, with no carry-over code; D50 lands without it and O33's rename moves `~/.oculus` the same way; Z751 (d), Z753 (f) and Z758 replaced (`plan.md` Rulings, "Open item 31" and "The move").
 - 2026-10-09: open item 32 ruled (a) again by Axel after its reopening (G73, R2's builder writes its test); open item 33 ruled (a) by Axel: Q72 waits for D49, D55 and D56 (`plan.md` Rulings, "Open item 33"). Open item 31 stays open: Axel leans to (c).
@@ -311,6 +234,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-10 (D60 landed). D60, repositories read as projects of the hub, landed (booking in plan.md; `agents/reviews/D60-landing.md`) after one repair round and the review over it, its findings fixed on main at landing (`agents/reviews/D60-refuter.md`, Closed): the hub-audit test removed, the audit `root` sentences, the collector's clause, and a research tier refused on a hub's folder (`findings.roots.tier_in_hub`); D60's test rows written under G8, G9, G13 and G32 in `agents/guarded.md`; the look on a scratch oculus from the gate with a scratch repository. Worktree `.agents/worktrees/D60` and its branches removed. Nothing in flight. Next: /spec D62 from Steps 1 on main's new head (the ruled brief kept in the session scratch as `D62-brief-ruled.md`).
+- 2026-10-10 (D62 waits for D60). Open item 46 ruled by Axel and booked (plan.md Rulings and D62's Step 0). /spec D62's path comparison: D60's tree rewrites `src/lib/state/client/context.ts` (269 lines changed), splits `src/lib/data/model/index.ts` and deletes `src/lib/state/client/payloads.ts`, and D62 must add the `AppsDeps` member in `context.ts`, the host rows' types beside `AppRow` and the `app-hosts` channel's payload shape there; the merge is not simple, so D62 waits until D60 lands (spec Steps 5), with no brief, commit, worktree or dispatch entry. The ruled brief text is kept in the session scratch as `D62-brief-ruled.md`; /spec D62 is run again from Steps 1 after D60 lands. In flight (1 of 6): D60 (repair round 1). Next: D60's report, /refute over its round, /land D60, then /spec D62.
 - 2026-10-10 (D61 landed). D61, the Workbenches view and the status bar's repository, landed (booking in plan.md; `agents/reviews/D61-landing.md`) after one repair round and the review over it, its three findings and the comment width fixed on main at landing (`agents/reviews/D61-refuter.md`, Closed); the look on a scratch oculus from the gate. Worktree `.agents/worktrees/D61` and its branches removed. In flight (1 of 6): D60 (builder a6dd13dec7398d216 on repair round 1, `agents/briefs/D60-round1.md`). Open item 46 (D62's choices) for Axel. Next: D60's review over round 1 and /land D60; /spec D62 after Axel rules on 46; then D63, D64, Q72 and O33.
 - 2026-10-10 (D59 landed). D59, the hub fixes and personal projects, landed (booking in plan.md; `agents/reviews/D59-landing.md`) after one repair round and the review over it, its findings fixed on main at landing (`agents/reviews/D59-refuter.md`, Closed), with one defect of the look (the side project page's LaTeX panel drew `no-project`) fixed at landing; G61, G8, G32 and G29 written into `agents/guarded.md`; the rice red command GREEN over 16 states. Worktree `.agents/worktrees/D59` and its branches removed. Nothing in flight. Next: /spec D60, D61 and D62 side by side, then D63, D64, Q72 and O33.
 - 2026-10-10 (D59 launched). D59 prepared (base aff419a0b, brief `agents/briefs/D59.md` with item 7 from the diagnosis `agents/reviews/D59-diagnosis.md` and every brief-check finding closed under "Closed"; Z771 to Z776 in automode) and its builder a8937b5db1f83f3b6 (claude-sonnet-5-5) launched in `.agents/worktrees/D59`. D60 to D64 booked by Axel. In flight (1 of 6): D59. Next: /refute D59, /land D59, then D60 and D61.

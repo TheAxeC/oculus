@@ -9,8 +9,9 @@
 // A request names one of four things, and one that names several is answered for the first of
 // `manual`, `engine`, `hub` and `project`, in that order. `project` with `name` is one of that
 // project's own documents, its id `<root key>:<id>` for a project of a hub other than the first; a
-// side project is named by its own id, and the documents of a repository side project are read from
-// the repository; `hub` is a path relative to the research hub, which is what the `docs:` list of
+// side project is named by its own id, and the documents of a project read from a repository (a
+// side project, or a research project of a `roots:` entry with a research `tier`) are read from the
+// repository; `hub` is a path relative to the research hub, which is what the `docs:` list of
 // config/layout.yml lists in the view catalogue, and `root` beside it names the hub it is relative
 // to; `engine` is a Markdown file of oculus's own folder, named by a path relative to that folder,
 // wherever the folder sits; `manual` is the engine's own HELP.md and takes no path. Everything else
@@ -497,9 +498,9 @@ function answer(
 }
 
 /**
- * One of the documents of a repository side project, rendered: the file lies in the repository,
- * which the project's record names, and is checked against it as another project's is against the
- * hub. A figure beside it is addressed under the repository's Files root.
+ * One of the documents of a project read from a repository, rendered: the file lies in the
+ * repository, which the project's record names, and is checked against it as another project's is
+ * against the hub. A figure beside it is addressed under the repository's Files root.
  */
 function renderRepositoryDoc(
     into: DocTarget,

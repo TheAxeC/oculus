@@ -8,9 +8,9 @@ import { join, relative, sep } from 'node:path';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import type {
     Finding,
-    PersonalRoot,
     RawManifest,
     RawPersonal,
+    RepositoryRoot,
     ScanRule,
     Tier
 } from '../model/index.ts';
@@ -108,14 +108,14 @@ function nestedProjects(base: string, segments: string[] = []): string[][] {
 }
 
 /**
- * Build one record. Provenance wins over the manifest for `id`, and for `type` on a flat tier;
- * the manifest's own values are kept (`manifestId`, `typeWritten`) or reported (`id`), never
- * silently replaced. A flat tier's `type` that the manifest writes differently is kept as
- * `typeWritten`, which the Audit lists beside the tier.
+ * Build one record of the project `id` whose folder is `folder` (hub-relative, or a repository's
+ * absolute path) and whose manifest is `file`. Provenance wins over the manifest for `id`, and for
+ * `type` on a flat tier; the manifest's own values are kept (`manifestId`, `typeWritten`) or
+ * reported (`id`), never silently replaced. A flat tier's `type` that the manifest writes
+ * differently is kept as `typeWritten`, which the Audit lists beside the tier.
  */
 function record(
-    hub: string,
-    folderPath: string,
+    place: { file: string; folder: string; id: string },
     data: Record<string, unknown>,
     tier: Tier,
     category: string | undefined,
@@ -123,9 +123,7 @@ function record(
     catalog: TextCatalog,
     findings: Finding[]
 ): RawManifest {
-    const file = join(folderPath, MANIFEST);
-    const folder = hubPath(hub, folderPath);
-    const id = folder.split('/').pop() ?? folder;
+    const { file, folder, id } = place;
 
     if (data.id !== undefined && data.id !== id) {
         findings.push({
@@ -225,15 +223,152 @@ export function readManifests(
             );
             if (data === null) continue;
             const category = rule.nested && segments.length > 1 ? segments[0] : undefined;
-            manifests.push(
-                record(hub, folderPath, data, tier, category, rule.type, catalog, findings)
-            );
+            const folder = hubPath(hub, folderPath);
+            const place = {
+                file: join(folderPath, MANIFEST),
+                folder,
+                id: folder.split('/').pop() ?? folder
+            };
+            manifests.push(record(place, data, tier, category, rule.type, catalog, findings));
         }
     }
 
     manifests.sort((a, b) => (a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0));
     findings.sort((a, b) => `${a.file}\0${a.key}`.localeCompare(`${b.file}\0${b.key}`));
     return { manifests, findings };
+}
+
+/**
+ * The scan rule a repository with a research `tier` is read under, or the finding saying why none
+ * is, on the entry (`entry`, with the root's key) or on the manifest's `type`. Every rule is of the
+ * repository's tier word. Under `projects` the rule is the flat one whose `type` the manifest
+ * names, and under `coauthor` and `archive` it is the rule of that word, whose manifests carry
+ * their own `type`.
+ */
+function repositoryRule(
+    root: RepositoryRoot & { tier: string },
+    rules: ScanRule[],
+    written: string | undefined,
+    catalog: TextCatalog
+): { rule: ScanRule } | { entry: boolean; key: string; message: string } {
+    if (rules.length === 0) {
+        const message = findingText(
+            catalog,
+            'findings.manifests.repository_tier_no_rule',
+            root.tier
+        );
+        return { entry: true, key: root.key, message };
+    }
+    if (root.tier !== 'projects') return { rule: rules[0] };
+    if (written === undefined || written === '') {
+        const message = findingText(catalog, 'findings.manifests.repository_type_missing');
+        return { entry: false, key: 'type', message };
+    }
+    const rule = rules.find((one) => one.nested !== true && one.type === written);
+    if (rule !== undefined) return { rule };
+    const message = findingText(
+        catalog,
+        'findings.manifests.repository_type_unknown',
+        written,
+        root.tier
+    );
+    return { entry: false, key: 'type', message };
+}
+
+/**
+ * The research projects of the repositories whose `roots:` entry names a research tier, one per
+ * root whose `.oculus/project.yml` is there. The record is a scan project's, read from the same
+ * kind of file under the same checks as a side project's, with the root's key for its id, the
+ * tier and type of the scan rule (`repositoryRule`) and `repository` naming the root and its
+ * folder. A repository that cannot be read in its tier (a key a scan project has, a tier word no
+ * rule carries, a type no rule takes) is a finding and a side project, so it never vanishes, and
+ * `side` holds the roots left to the side-project reader. A root with a tier and no manifest is a
+ * finding and nothing more. A finding about the entry is filed on `rootsFile`, the file the
+ * `roots:` list is written in and the file `readRoots` files its entry findings on; a finding about
+ * a manifest that exists is filed on the manifest.
+ */
+function repositoryManifests(
+    roots: RepositoryRoot[],
+    scan: ScanRule[],
+    taken: ReadonlySet<string>,
+    catalog: TextCatalog,
+    rootsFile: string
+): { manifests: RawManifest[]; findings: Finding[]; side: RepositoryRoot[] } {
+    const manifests: RawManifest[] = [];
+    const findings: Finding[] = [];
+    const side: RepositoryRoot[] = [];
+    for (const root of roots) {
+        if (root.tier === undefined) {
+            side.push(root);
+            continue;
+        }
+        const file = join(root.dir, ROOT_FOLDER, MANIFEST);
+        const asSide = (on: string, key: string, message: string): void => {
+            findings.push({ file: on, key, message });
+            side.push({ key: root.key, dir: root.dir });
+        };
+        if (taken.has(root.key)) {
+            const message = findingText(catalog, 'findings.manifests.repository_id_taken');
+            asSide(rootsFile, root.key, message);
+            continue;
+        }
+        const read = readPersonalFile(file, catalog, findings);
+        if (read.kind === 'absent') {
+            const message = findingText(catalog, 'findings.manifests.repository_no_manifest');
+            findings.push({ file: rootsFile, key: root.key, message });
+        }
+        if (read.kind !== 'map') continue;
+        const rules = scan.filter((one) => !isSideTier(one) && one.tier === root.tier);
+        const written = optionalText(read.data.type);
+        const found = repositoryRule({ ...root, tier: root.tier }, rules, written, catalog);
+        if ('rule' in found) {
+            const { rule } = found;
+            const tier = (rule.dir.split('/').pop() ?? rule.dir) as Tier;
+            const place = { file, folder: root.dir, id: root.key };
+            const project = record(place, read.data, tier, undefined, rule.type, catalog, findings);
+            manifests.push({ ...project, repository: { root: root.key, dir: root.dir } });
+        } else {
+            asSide(found.entry ? rootsFile : file, found.key, found.message);
+        }
+    }
+    return { manifests, findings, side };
+}
+
+/**
+ * Every research manifest of the first hub: the scan folders' (`readManifests`) and the
+ * repositories' that `roots` name with a research tier (`repositoryManifests`). It is the one
+ * reader of the first hub's research projects, so the build and every reader that finds a project
+ * to read or write it see the same set. `side` are the roots the side-project reader is left,
+ * which `readPersonal` takes. `rootsFile` is the file the entries are written in.
+ */
+export function readHubManifests(
+    hub: string,
+    scan: ScanRule[],
+    roots: RepositoryRoot[],
+    catalog: TextCatalog,
+    rootsFile = ''
+): { manifests: RawManifest[]; findings: Finding[]; side: RepositoryRoot[] } {
+    const folders = readManifests(hub, scan, catalog);
+    const taken = new Set(folders.manifests.map((one) => one.id));
+    const repositories = repositoryManifests(roots, scan, taken, catalog, rootsFile);
+    const findings = [...folders.findings, ...repositories.findings];
+    findings.sort((a, b) => `${a.file}\0${a.key}`.localeCompare(`${b.file}\0${b.key}`));
+    return {
+        manifests: [...folders.manifests, ...repositories.manifests],
+        findings,
+        side: repositories.side
+    };
+}
+
+/**
+ * The absolute folder of a manifest's project: the repository the project is read from, or the
+ * hub-relative `folder` under the hub.
+ */
+export function manifestDir(
+    hub: string,
+    manifest: Pick<RawManifest, 'folder' | 'repository'>
+): string {
+    return manifest.repository?.dir ?? join(hub, manifest.folder);
 }
 
 /** What reading one side project's manifest file found. */
@@ -331,12 +466,13 @@ function hubPersonal(
 
 /**
  * The side projects of the roots it is handed, one per root whose `.oculus/project.yml` is there,
- * in the order given. Which roots those are is decided before this runs (server/root/watch
- * portfolio.ts, personalRoots): a root that is not on this machine, has no `.oculus` folder or
- * holds no manifest is not a side project and not a finding.
+ * in the order given. Which roots those are is decided before this runs (server/files/roots.ts,
+ * repositoriesOf, and `readHubManifests`, which keeps the roots with a research tier apart): a
+ * root that is not on this machine, has no `.oculus` folder or holds no manifest is not a side
+ * project and not a finding.
  */
 function rootPersonal(
-    roots: PersonalRoot[],
+    roots: RepositoryRoot[],
     catalog: TextCatalog,
     personal: RawPersonal[],
     findings: Finding[]
@@ -368,7 +504,7 @@ function rootPersonal(
 export function readPersonal(
     hub: string,
     scan: ScanRule[],
-    roots: PersonalRoot[],
+    roots: RepositoryRoot[],
     catalog: TextCatalog
 ): { personal: RawPersonal[]; findings: Finding[] } {
     const personal: RawPersonal[] = [];

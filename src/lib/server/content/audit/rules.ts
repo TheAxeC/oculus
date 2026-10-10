@@ -214,20 +214,52 @@ export function collector(
 export const NO_FILE = '';
 
 /**
- * The hub-relative path of the file a finding is about: the path given when it names a file on disk
- * whose real path, links followed, lies below the hub's real path, and the empty text for a folder,
- * a missing path, a link that leaves the hub and anything outside the hub.
+ * The scope a finding about a project is filed under: the project's hub-relative folder, and the
+ * key of its root for a project read from a repository. A repository's folder is an absolute path
+ * of this machine, and a muted signature, which reads the scope, is written to the `audit_ignore:`
+ * list of config/behavior.yml, a tracked file that must hold no machine path.
  */
-export function fileOf(hub: string, path: string): string {
+export function scopeOf(project: Pick<Project, 'folder' | 'repository'>): string {
+    return project.repository?.root ?? project.folder;
+}
+
+/**
+ * The path of the file a finding is about, relative to `base`: the path given when it names a file
+ * on disk whose real path, links followed, lies below the real path of `base`, and the empty text
+ * for a folder, a missing path, a link that leaves `base` and anything outside it.
+ */
+function fileBelow(base: string, path: string): string {
     const real = realPath(path);
-    const root = realPath(hub);
+    const root = realPath(base);
     if (real === null || root === null || !below(real, root)) return NO_FILE;
     try {
         if (!statSync(real).isFile()) return NO_FILE;
     } catch {
         return NO_FILE;
     }
-    return relative(hub, path);
+    return relative(base, path);
+}
+
+/** The hub-relative path of the file a finding is about, and the empty text when it names none. */
+export function fileOf(hub: string, path: string): string {
+    return fileBelow(hub, path);
+}
+
+/**
+ * The file a finding about a project is about, as the finding carries it: for a project of the
+ * hub, the hub-relative path and no `root`; for a project read from a repository, the path
+ * relative to the repository and the key of the root that holds it, which the Audit view opens as
+ * `{ root, path }`. A path outside the project's root is no file and carries no `root`.
+ */
+export function fileIn(
+    hub: string,
+    project: Pick<Project, 'repository'>,
+    path: string
+): Pick<AuditFinding, 'file' | 'root'> {
+    const { repository } = project;
+    if (repository === undefined) return { file: fileOf(hub, path) };
+    const file = fileBelow(repository.dir, path);
+    return file === NO_FILE ? { file } : { root: repository.root, file };
 }
 
 /** One file's text, and the empty string for anything that cannot be read. */

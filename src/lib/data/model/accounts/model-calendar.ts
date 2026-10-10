@@ -1,9 +1,9 @@
 // Layer 1, data. The calendar connector's types: what a machine configures, what the poller
 // publishes on the `calendar` channel, and the key an account is addressed by.
 //
-// It is a concern module of its own beside model-sessions.ts and model-collections.ts, reached
-// through the index.ts facade alone, because a calendar changes for calendar reasons: a provider
-// field, a window, an event state.
+// It is a concern module of its own in the accounts folder, beside model-mail.ts and
+// model-connect.ts, reached through the index.ts facade alone, because a calendar changes for
+// calendar reasons: a provider field, a window, an event state.
 //
 // A time is an ISO string exactly as the provider gave it. Google answers a timed event with its
 // own offset (a date, a `T`, a clock and `+02:00`) and an all-day event as the date alone;

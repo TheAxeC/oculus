@@ -15,14 +15,14 @@
 // written, and again where the machine's own configuration is read, so a key is always a safe file
 // name by the time it reaches a join.
 
-import type { CalendarProvider } from '../model/model-calendar.ts';
+import type { CalendarProvider } from '../model/accounts/model-calendar.ts';
 import type {
     AccountProvider,
     AccountRow,
     ConnectAccountConfig,
     ConnectKind,
     ConnectProvider
-} from '../model/model-connect.ts';
+} from '../model/accounts/model-connect.ts';
 
 /** How an account is named in its credential file, on the wire and in a payload's rows. */
 export function connectKey(account: AccountRow): string {

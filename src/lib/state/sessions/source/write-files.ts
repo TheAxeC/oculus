@@ -8,13 +8,23 @@
 // overrides, the default workspace's roots and the git, open and deposit endpoints.
 
 import { fields } from '../../../data/helpers/guards.ts';
-import { CAREER_FILE, ENGINE_ROOT, HUB_ROOT } from '../../../data/helpers/hub-names.ts';
-import type { FeedKind, FeedsPayload } from '../../../data/model/index.ts';
+import {
+    CAREER_FILE,
+    ENGINE_ROOT,
+    HUB_ROOT,
+    MANIFEST,
+    ROOT_FOLDER
+} from '../../../data/helpers/hub-names.ts';
+import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
+import { placeOf } from '../../../data/snapshot/as-project.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
 
 /** The lookups the page makes of its own stores to name a file a write carries only an id of. */
 export type FileLookups = {
-    /** The folder of a project by its id, under the root of its hub; null when none has it. */
+    /**
+     * The folder of a project by its id, under the root that holds it (its hub, or its repository,
+     * whose folder is the empty path); null when none has it.
+     */
     projectFolder: (id: string) => ViewSource | null;
     /** The file of a collection of a hub other than the first, by its id; null for any other. */
     collectionFile: (id: string) => ViewSource | null;
@@ -23,6 +33,17 @@ export type FileLookups = {
     /** The file a recorded change wrote, under the root that holds it, by its moment. */
     changeFile: (at: string) => ViewSource | null;
 };
+
+/**
+ * The folder of a project under the root that holds it, from the project's record: its hub's root
+ * at its folder, or its repository's root at the empty path. Null for no project and for a project
+ * with no folder.
+ */
+export function folderOfProject(project: Project | undefined): ViewSource | null {
+    if (project === undefined || project.folder === '') return null;
+    const { root, path } = placeOf(project);
+    return { root, path };
+}
 
 /** Lookups that name nothing, for a store built without the page's. */
 export const NO_LOOKUPS: FileLookups = {
@@ -45,9 +66,15 @@ function inHub(path: string): ViewSource | null {
     return path === '' ? null : { root: HUB_ROOT, path };
 }
 
-/** A project's manifest, under the root of the project's hub. */
+/**
+ * A project's manifest, under the root that holds the project: `project.yml` in the project's
+ * folder of its hub, and `.oculus/project.yml` for a project read from a repository, whose folder
+ * is the top of its root (an empty path).
+ */
 function manifestOf(folder: ViewSource | null): ViewSource | null {
-    return folder === null ? null : { root: folder.root, path: `${folder.path}/project.yml` };
+    if (folder === null) return null;
+    const path = folder.path === '' ? ROOT_FOLDER : folder.path;
+    return { root: folder.root, path: `${path}/${MANIFEST}` };
 }
 
 /** A file of the engine's config folder, or null for an empty name. */

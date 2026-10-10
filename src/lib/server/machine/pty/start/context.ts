@@ -1,11 +1,12 @@
-// Layer 2, server. The private portfolio index given to an interactive chat terminal.
-// It follows the configured scan rules and collection paths so the index describes the same hub
-// the page loaded, while missing optional files contribute nothing.
+// Layer 2, server. The private portfolio index given to an interactive chat terminal. It follows
+// the configured scan rules, repositories and collection paths so the index describes the same hub
+// the page loaded, while missing optional files contribute nothing. A project of a repository is
+// headed by the repository's absolute path, which is its folder.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { portfolioConfigFrom } from '../../../../data/index.ts';
-import { readManifests } from '../../../../data/sources/manifests.ts';
+import { hubManifests } from '../../../files/roots.ts';
 
 const COLLECTION_ORDER = [
     'funding',
@@ -32,8 +33,7 @@ export function portfolioContext(hub: string, merged: Record<string, unknown>): 
     const parts: string[] = [];
     addFile(parts, hub, config.registries.venues, ' (venue catalogue)');
     parts.push('# PROJECT MANIFESTS (status/venue source of truth)\n');
-    const { manifests } = readManifests(hub, config.scan, config.text);
-    for (const { file, folder, ghost } of manifests) {
+    for (const { file, folder, ghost } of hubManifests(hub, config)) {
         if (ghost) continue;
         parts.push(`## ${folder}\n${readFileSync(file, 'utf8')}`);
     }

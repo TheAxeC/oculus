@@ -16,7 +16,7 @@ import {
     readOr,
     rowsShape
 } from './shapes/shapes.ts';
-import { readManifests, readPersonal } from './sources/manifests.ts';
+import { manifestDir, readHubManifests, readPersonal } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
 import { readCareer } from './sources/career.ts';
@@ -51,32 +51,34 @@ import type {
     FeedFiles,
     Finding,
     Id,
-    PersonalRoot,
     PortfolioConfig,
     RawDeck,
     RawManifest,
     RawPortfolio,
     RegistryFiles,
     RegistryName,
+    RepositoryRoot,
     ScanRule,
     Snapshot,
     Vocabulary
 } from './model/index.ts';
 
 /**
- * One `scan:` rule: a map with a `dir` that is a text, carrying its `type` when that is a text and
- * its `nested` and `optional` marks when they are true.
+ * One `scan:` rule: a map with a `dir` that is a text, carrying its `type` and its `tier` word when
+ * those are texts and its `nested` and `optional` marks when they are true.
  */
 const scanRuleShape = z
     .object({
         dir: z.string(),
         type: optionalTextShape,
+        tier: optionalTextShape,
         nested: z.literal(true).optional().catch(undefined),
         optional: z.literal(true).optional().catch(undefined)
     })
     .transform((item): ScanRule => {
         const rule: ScanRule = { dir: item.dir };
         if (item.type !== undefined) rule.type = item.type;
+        if (item.tier !== undefined) rule.tier = item.tier;
         if (item.nested !== undefined) rule.nested = item.nested;
         if (item.optional !== undefined) rule.optional = item.optional;
         return rule;
@@ -186,7 +188,7 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
  */
 function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresence[]> {
     const found: Record<Id, DocPresence[]> = {};
-    for (const manifest of manifests) found[manifest.id] = projectDocs(join(hub, manifest.folder));
+    for (const manifest of manifests) found[manifest.id] = projectDocs(manifestDir(hub, manifest));
     return found;
 }
 
@@ -203,6 +205,7 @@ function deckProjects(manifests: RawManifest[]): DeckProject[] {
             short: str(manifest.short) ?? '',
             title: str(manifest.title) ?? manifest.id
         };
+        if (manifest.repository !== undefined) project.repository = manifest.repository;
         if (manifest.type !== undefined) project.type = manifest.type;
         const domain = str(manifest.domain);
         if (domain !== undefined && domain !== '') project.domain = domain;
@@ -240,25 +243,28 @@ export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet; reference
  * Read the hub, check what was read, and hand back the snapshot with the schemas the check used.
  * The steps are the modules: the sources say what is on disk, validate and the schemas say what is
  * wrong with it, and normalise turns it into the wire model with the findings carried inside it.
- * `roots` are the directories whose `.oculus/project.yml` is a side project beside the hub's own
- * side-projects tier, read as handed; the watcher's `personalRoots` decides which roots of the file
- * browser they are. `checker` keeps the compiled validators from one build to the next, so a
- * rebuild whose schemas did not change compiles nothing. `engine` is the engine's config folder,
- * whose files that carry a reference are indexed beside the hub's; none when it is null. `root` is
- * the key the hub's files are named under in the reference index: `hub` for the first hub, the key
- * of its root for another.
+ * `roots` are the directories whose `.oculus/project.yml` is read, as handed: a research project of
+ * the hub when the root names a research `tier` (`readHubManifests`), else a side project beside
+ * the hub's own side-projects tier; `repositoriesOf` of server/files/roots.ts decides which roots
+ * of the file browser they are. `checker` keeps the compiled validators from one build to the next,
+ * so a rebuild whose schemas did not change compiles nothing. `engine` is the engine's config
+ * folder, whose files that carry a reference are indexed beside the hub's; none when it is null.
+ * `root` is the key the hub's files are named under in the reference index: `hub` for the first
+ * hub, the key of its root for another. `rootsFile` is the file the first hub's `roots:` list is
+ * written in, on which a finding about one of its entries is filed.
  */
 export function buildPortfolioWithSchemas(
     hub: string,
     config: PortfolioConfig,
     version = 0,
-    roots: PersonalRoot[] = [],
+    roots: RepositoryRoot[] = [],
     checker: Checker = createChecker(),
     engine: string | null = null,
-    root: string = HUB_ROOT
+    root: string = HUB_ROOT,
+    rootsFile = ''
 ): PortfolioBuild {
-    const manifests = readManifests(hub, config.scan, config.text);
-    const personal = readPersonal(hub, config.scan, roots, config.text);
+    const manifests = readHubManifests(hub, config.scan, roots, config.text, rootsFile);
+    const personal = readPersonal(hub, config.scan, manifests.side, config.text);
     const registries = readRegistries(hub, config.registries, config.text);
     const collections = readCollections(hub, config.collections, config.text);
     const feeds = readFeeds(hub, config.feeds, config.text);
@@ -328,10 +334,19 @@ export type HubRoot = { key: string; dir: string };
  */
 export type SecondHub = HubRoot & { portfolio: PortfolioConfig; findings: Finding[] };
 
+/**
+ * The portfolio settings of a hub other than the first. Its `roots:` is the first hub's list to
+ * read, so the settings are made without it and no reader of them finds a repository there.
+ */
+export function portfolioConfigOfOther(merged: Record<string, unknown>): PortfolioConfig {
+    const { roots: _unread, ...rest } = merged;
+    return portfolioConfigFrom(rest);
+}
+
 /** The settings of a hub other than the first. */
 export function readSecondHub(engine: string, root: HubRoot): SecondHub {
     const { config, findings } = loadConfig(engine, { hub: root.dir });
-    const portfolio = { ...portfolioConfigFrom(config), career: null, portfolioDeck: null };
+    const portfolio = { ...portfolioConfigOfOther(config), career: null, portfolioDeck: null };
     return { ...root, portfolio, findings };
 }
 

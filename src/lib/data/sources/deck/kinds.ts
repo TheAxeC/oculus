@@ -26,8 +26,10 @@ export type DeckProject = {
     id: string;
     /** The project's manifest, which a finding about it names. */
     file: string;
-    /** The project's folder relative to the hub. */
+    /** The project's folder relative to the hub, or the repository's absolute path. */
     folder: string;
+    /** The root and folder of the repository the project is read from, when it is in one. */
+    repository?: { root: string; dir: string };
     /** The scan tier the project is in. */
     tier: string;
     chips: string[];

@@ -20,17 +20,21 @@
     //
     // The LaTeX panel is project/Latex.svelte, drawn for a project whose manuscript folder holds a
     // main file, or whose read failed, and for no other: what it needs is the id, and everything
-    // about the files it lists comes from api/latex rather than from the snapshot. A repository
-    // side project gets no panel, since the build reads no manuscript folder of one.
+    // about the files it lists comes from api/latex rather than from the snapshot. A research
+    // project read from a repository has the panel, its manuscript folder being the repository's
+    // `manuscript/`. A repository side project gets no panel, since the build reads no manuscript
+    // folder of one.
     //
     // The card is views/shared/card/ProjectCard.svelte, the one the board draws, with `deposit` on
     // and no `ontoggle`: this tab's card is always open, so it carries the deposit control and no
     // expand control. A side project opens in this view too, by its `side:<slug>` or `root:<key>`
-    // id, and its card has no deposit control. It is drawn with `documents` off, since the
-    // documents section below is this tab's list of the project's documents, and with no clamp
-    // state, so its ELI5 is drawn whole. That list draws a known document the project has not got
-    // as the card's tag for it. Everything else the card shows, the pin, the stale badge, the file
-    // finder and the subtasks among it, is the board's card unchanged.
+    // id, and its card has no deposit control; nor has the card of a research project read from a
+    // repository, which is its own git repository and not a hub folder whose `code/` is mirrored.
+    // It is drawn with `documents` off, since the documents section below is this tab's list of the
+    // project's documents, and with no clamp state, so its ELI5 is drawn whole. That list draws a
+    // known document the project has not got as the card's tag for it. Everything else the card
+    // shows, the pin, the stale badge, the file finder and the subtasks among it, is the board's
+    // card unchanged.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
     // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
@@ -117,7 +121,7 @@
                 {now}
                 cursor={cursor === item.id}
                 open
-                deposit={item.sideStatus === undefined}
+                deposit={item.sideStatus === undefined && item.project.repository === undefined}
                 documents={false}
                 label={item.project.title}
                 tab={item.project.title}
@@ -125,7 +129,7 @@
                 onsaid={(answer: string) => (said = answer)}
             />
 
-            {#if item.project.repository === undefined}
+            {#if item.sideStatus === undefined || item.project.repository === undefined}
                 <Latex {id} />
             {/if}
 

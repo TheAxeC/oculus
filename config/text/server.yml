@@ -283,6 +283,7 @@ text:
             not_in_schema: the manifest schema does not name the field
             not_list: the value is not a list
             not_own_file: "the manifest is not the side project's own project.yml"
+            not_repository_file: the manifest is not the .oculus/project.yml of the repository
             not_text: the value is not text
             read_only: the field is read-only
             unknown_type: unknown field type {0}

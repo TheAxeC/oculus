@@ -73,7 +73,7 @@ radar_file: feeds/literature-radar.yml
 career_file: registries/career.yml
 
 
-# Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. The engine names none: a hub sets its roots in .oculus/config/sources.yml, each a dir that is absolute or starts with `~/`. The bookmarks that open as tabs are the entries of bookmarks.yml in the hub's .oculus folder, each naming a root by its key.
+# Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. The engine names none: a hub sets its roots in .oculus/config/sources.yml, each a dir that is absolute or starts with `~/`. The bookmarks that open as tabs are the entries of bookmarks.yml in the hub's .oculus folder, each naming a root by its key. An entry may carry `tier:` with one of `projects`, `coauthor`, `archive` or `personal`: the first three read the repository's .oculus/project.yml as a project of that tier of the hub, with the key for its id, and `personal` or no `tier` reads it as a side project; an entry marked `hub: true` takes no `tier`.
 roots: []
 # How many folder levels below each root the Repositories view looks for repositories, 0 to 3.
 repository_scan_depth: 1

@@ -13,7 +13,7 @@
 import { isAbsolute, join, resolve } from 'node:path';
 import { HUB_ROOT, ofHub, splitHubId } from '../../../data/helpers/hub-names.ts';
 import { inside } from '../../core/paths.ts';
-import type { HubTarget } from '../../files/roots.ts';
+import { hubManifests, type HubTarget } from '../../files/roots.ts';
 import type { HeldApp } from '../../machine/apps/held.ts';
 import type { WriteTarget } from '../writes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
@@ -177,13 +177,16 @@ export function routedOrder(
 
 /**
  * The target of the hub whose folder holds the file a change names, the request's own for a file of
- * the first hub, of the reader's bookmarks or of a side project, and null for a file that no hub
- * holds: the hub it was written in has left `roots:`.
+ * the first hub, of the reader's bookmarks, of a side project or of a repository read as a research
+ * project of the first hub (its `.oculus/project.yml`, which lies outside the hub's folder), and
+ * null for a file that no hub holds: the hub it was written in has left `roots:`.
  */
 export function holding(into: WriteTarget, file: string): WriteTarget | null {
     const path = resolve(isAbsolute(file) ? file : join(into.hub, file));
     if (inside(path, into.hub) || path === resolve(into.bookmarks)) return into;
     const one = (into.hubs ?? []).find((held) => inside(path, held.hub));
     if (one !== undefined) return within(into, one);
-    return into.sideProjects().some((side) => resolve(side.file) === path) ? into : null;
+    if (into.sideProjects().some((side) => resolve(side.file) === path)) return into;
+    const repositories = hubManifests(into.hub, into.config).filter((one) => one.repository);
+    return repositories.some((project) => resolve(project.file) === path) ? into : null;
 }

@@ -1,8 +1,7 @@
-In flight (1 of 6 slots in use):
-- D60 (repositories read as projects of the hub): repair round 1 running.
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (5 steps):
-- D62 (apps: the host and the bridge): stopped at /spec on open item 46, waiting for Axel.
+- D62 (apps: the host and the bridge): open item 46 ruled; /spec next, on main after D60.
 - D63 (apps in the shell): after D62.
 - D64 (apps in the tools): after D63.
 - Q72 (the architecture re-read): waits for D60 to D64, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
@@ -11,7 +10,8 @@ Queued, in order (5 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D61 (the Workbenches view and the status bar's repository), 2026-10-10.
+- D60 (repositories read as projects of the hub), 2026-10-10, HASH.
+- D61 (the Workbenches view and the status bar's repository), 2026-10-10, b39d35652.
 - D59 (the hub fixes and personal projects), 2026-10-10, 776696a28.
 - D58 (the engine's guides on every hub), 2026-10-10, c18415820.
 - D55 (roots as hubs), 2026-10-10, 57de2c4bd.

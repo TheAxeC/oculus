@@ -29,7 +29,7 @@
 import { SvelteMap } from 'svelte/reactivity';
 import { str } from '../../data/helpers/guards.ts';
 import { joinPath } from '../../data/helpers/files/paths.ts';
-import { rootOf } from '../../data/helpers/hub-names.ts';
+import { placeOf } from '../../data/snapshot/as-project.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import type { Deck } from '../../data/model/index.ts';
 import { readAnswer } from '../sources/fs-transport.ts';
@@ -278,7 +278,7 @@ export function createPresent(
                     ? []
                     : [
                           {
-                              ref: { root: rootOf(project), path: project.deck },
+                              ref: { root: placeOf(project).root, path: project.deck },
                               id: project.id,
                               title:
                                   (project.short ?? '') === ''

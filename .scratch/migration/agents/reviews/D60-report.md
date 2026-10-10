@@ -1,14 +1,6 @@
-NOT DONE: one thing. A finding of the audit about a file of a repository's research project has `file: ''`, so the Findings view has no open-file link for it (`fileOf(input.hub, path)` in `src/lib/server/content/audit/projects.ts:163-284` returns the hub-relative path, which is empty outside the hub; quoted in case 12 below, `"file":""`). Giving it a link needs a new shape in the `Finding` record (`src/lib/data/model/model-entities.ts:15`, a wire shape the brief does not name), so it is raised as an open item below and not built. Everything else in the brief is done.
+NOT DONE: nothing in the brief and nothing in repair round 1. Not run: `npm test` over the whole suite (the brief runs the whole verify list once, at landing).
 
 # D60 report: repositories read as research projects of the hub
-
-## Open item raised by this step (for the orchestrator to book; the builder edits no ledger file)
-
-Open item (D60): an audit finding on a file of a repository's research project has no open-file link.
-- Today on the changed tree: `file: ''` (case 12 output). On the unchanged tree the repository was no research project, so it had no findings at all.
-- (a) `Finding` gains an optional `root` key (the Files root that holds `file`), set to the repository's root key for a repository project and absent for a hub project; the Findings view opens `{ root, path: file }`. Pros: the link works, no machine path in the finding, the same pair `placeOf` returns for every other reader. Cons: one wire key more; touches `model-entities.ts`, the audit rows, `Findings` view and `docs/apps.md` `audit` channel row.
-- (b) Leave `file: ''` and have the view show the finding without a link. Pros: nothing to build. Cons: a finding that names a README or a manifest cannot be opened. This is the lazy option.
-- Recommendation: (a).
 
 ## Open items of the state file, verbatim
 
@@ -101,7 +93,7 @@ Command for the kept tests, from `$SP/unchanged`:
 
     npx vitest run tests/data/sources/manifests.test.ts tests/data/hubs/hub-roots.test.ts tests/routes/edit/write.test.ts tests/routes/edit/undo/undo.test.ts tests/routes/edit/roots.test.ts
 
-Result on the unchanged tree: `Test Files  5 failed (5)`, `Tests  27 failed | 39 passed (66)`. The brief's own rules gave no case a wrong answer, so the build went on.
+The test files import `repositoriesOf`, which the base does not export (it exports `personalRoots`), so every run on the unchanged tree imports it as `personalRoots as repositoriesOf`. Rows of kept behaviour that pass under that alias and prove it: cases 3, 16, the project half of case 17 and the `missing_dir` half of case 7, with the unchanged rows of `hub-roots.test.ts`. Result on the unchanged tree: `Test Files  5 failed (5)`, `Tests  27 failed | 39 passed (66)`. The brief's own rules gave no case a wrong answer, so the build went on.
 
 Case by case (rows are named by their titles in the test files):
 
@@ -315,8 +307,6 @@ RUN side repository build: {"status":400,"body":{"error":"no-project"}}
  x |unit| tests/_d60/runs.test.ts > case 11 latex > answers the main file of alpha and refuses a repository with no tier 1271ms
    -> expected 404 to be 200 // Object.is equality
    -> expected '{"error":"no-project"}' to contain 'main.tex'
-RUN audit findings naming alpha: []
-RUN audit findings with a marker in the repository README: []
  x |unit| tests/_d60/runs.test.ts > case 11 latex > builds in <alpha>/manuscript, and refuses the side repository 1375ms
    -> expected [] to deeply equal [ Array(1) ]
 RUN context holds alpha manifest: false
@@ -387,8 +377,8 @@ RUN route GET research alpha: {"status":200,"body":"{\"root\":\"alpha\",\"folder
 RUN route GET side root:alpha: {"status":404,"body":"{\"error\":\"no-project\"}"}
 RUN side repository build: {"status":400,"body":{"error":"no-project"}}
  ok |unit| tests/_d60/runs.test.ts > case 11 latex > builds in <alpha>/manuscript, and refuses the side repository 1323ms
-RUN audit findings naming alpha: [{"scope":"alpha","where":"project.yml","kind":"data","file":"","message":"missing `results`","signature":"95cdc298382d"},{"scope":"alpha","where":"code/","kind":"conform","file":"","message":"code/ has no README.md (the deposit root)","signature":"0c198222995d"},{"scope":"alpha","where":"eli5","
-RUN audit findings with a marker in the repository README: [{"scope":"alpha","where":"README.md","kind":"todo","file":"","message":"1 open marker(s), the first \"%TODO write it\"","signature":"aab6414db9dc"},{"scope":"alpha","where":"project.yml","kind":"data","file":"","message":"missing `results`","signature":"95cdc298382d"},{
+RUN audit findings naming alpha: [{"scope":"alpha","where":"project.yml","kind":"data","root":"alpha","file":".oculus/project.yml","message":"missing `results`","signature":"95cdc298382d"},{"scope":"alpha","where":"eli5","kind":"manifest","root":"alpha","file":".oculus/project.yml","message":"missing","signature":"268d49dd3838"}]
+RUN audit findings with a marker in the repository README: [{"scope":"alpha","where":"README.md","kind":"todo","root":"alpha","file":"README.md","message":"1 open marker(s), the first \"%TODO write it\"","signature":"aab6414db9dc"},{"scope":"alpha","where":"project.yml","kind":"data","root":"alpha","file":".oculus/project.yml","message":"missing `results`","signature":"95cdc298382d"},{"scope":"alpha","where":"eli5","kind":"manifest","root":"alpha","file":".oculus/project.yml","message":"missing","signature":"268d49dd3838"}]
  ok |unit| tests/_d60/runs.test.ts > case 12 audit > reads the repository and raises nothing for a file it holds 655ms
 RUN context holds alpha manifest: true
 RUN folders offered to the grouping: [["/var/folders/7r/49ks4w4558vcr57tvb9svmph0000gp/T/oculus-hubs-7wiF5q/alpha","Alpha"]]
@@ -452,7 +442,7 @@ All commands run from `tools/oculus` in the worktree `/Users/axelfaes/workspace/
 | 10 text and docs | `diff` of each doc against `$SP/d60-docs-before/`; ASCII gate and `prettier --check docs/apps.md` | ASCII gate prints nothing; `All matched files use Prettier code style!` | DONE |
 | Case 9 (roots write) | `npx vitest run --tagsFilter slow tests/routes/edit/roots.test.ts --testTimeout 20000` (the file is tagged slow, so `npm test` leaves it out) | `Tests  3 passed (3)` | DONE |
 | Cases 10-15, 24, 25 | `tests/_d60/runs.test.ts` (removed afterwards) | `Tests  10 passed (10)` | DONE |
-| Audit open-file link for a repository project | none | `file: ''` | NOT DONE, raised above |
+| Audit open-file link for a repository project | `npx vitest run tests/data/hubs/hub-audit.test.ts` (Repair round 1, item 2) | `Tests  5 passed (5)`; finding of `IDEA.md` has `root: 'alpha'`, `file: 'IDEA.md'` | DONE |
 
 Verify list of the brief:
 
@@ -460,7 +450,7 @@ Verify list of the brief:
 2. The first grep (`grep -rn "join(hub, project.folder)\|projectDirectory(hub, project.folder)\|join(input.hub, project.folder)\|join(owner.hub, manifest.folder)\|join(context.hub.dir, project.folder\|root: rootOf(project), path: project" src`) prints nothing (`... | wc -l` prints 0, run this turn). The hit list of `grep -rnE '(project|manifest)\.folder|project\.deck\b' src` is the 26 lines below (`$SP/v2now.txt`; the brief's pattern `project\.folder\|manifest\.folder\|project\.deck` also matches `project.deckTags` in `src/lib/data/sources/config/catalog/options.ts:488`, which is a list of tag words, not a path). Each hit with the reason it is right for a repository:
 
    - `server/content/latex/endpoint.ts:213` `project.repository === undefined ? project.folder : ''`: a repository's folder is the root itself.
-   - `server/content/audit/rules.ts:222` `project.repository?.root ?? project.folder`: `scopeOf`, the audit scope holds the root key and no machine path.
+   - `server/content/audit/rules.ts:223` `project.repository?.root ?? project.folder`: `scopeOf`, the audit scope holds the root key and no machine path.
    - `server/content/deck/read.ts:44` `folder: project.folder`: copies the record's folder into the deck row; the deck path reads through `DeckProject.repository` (`data/sources/deck/read.ts:126`).
    - `server/sessions/index.ts:48` `!project.folder`: skips a project with no folder, then `folderOnDisk(hub, project)` (line 49) returns the repository's dir for a repository.
    - `server/files/project-files.ts:241`: the last line of the function, reached only when `repository === undefined` (line 240 returns `listIn(folder, repository.dir, '', ...)` first).
@@ -569,11 +559,11 @@ Paths marked "outside the list" were needed by the design for the reason in thei
 
 1. **Where the code lives.** `src/lib/data/model` and `src/lib/state/client` each held ten items, and the step adds files, so: `model-calendar.ts`, `model-mail.ts`, `model-connect.ts` moved into `data/model/accounts/`; the deck types moved out of `model-entities.ts` (880 lines) into `data/model/model-deck.ts`; `state/client/context.ts` (885 lines) lost its client-state types to `state/client/shapes/client-state.ts` and `payloads.ts` moved into `shapes/`. Alternative: widen nothing and split elsewhere; the limits (880 and ten items) leave no other room.
 2. **`folderOnDisk(hub, project)`** is in `src/lib/data/places/folder-on-disk.ts` (it uses `node:path`, so it is server-only, and `server/sessions` may not import `server/files`). It returns `project.repository?.dir ?? resolve(hub, project.folder)`. `folderOfProject(project)` in `state/sessions/source/write-files.ts` is the client's twin and answers `placeOf(project)` as a `{ root, path }`.
-3. **Audit scope.** `scopeOf(project)` in `server/content/audit/rules.ts` returns `project.repository?.root ?? project.folder`; the audit rows and their signatures hold the root key for a repository and no machine path. Alternative: the absolute dir, which would put a machine path into a signature kept in `~/.oculus`.
+3. **Audit scope.** `scopeOf(project)` in `server/content/audit/rules.ts:222` returns `project.repository?.root ?? project.folder`; the audit rows and their signatures hold the root key for a repository and no machine path. The reason: a muted signature is written to the `audit_ignore:` list of `config/behavior.yml` (`src/lib/server/edit/writes/config/audit-mute.ts`), a tracked engine file, and an absolute folder in a signature would put a machine path into a tracked file. Alternative: the absolute dir.
 4. **The record's `folder` for a repository** is its absolute dir (case 1 output). The card's folder line and the palette's area label show the root key instead (`repository?.root ?? folder`); "Show folder" opens `place.dir`.
 5. **The chat context** (`state/boards/project-context.ts:37`) writes `folder:` with the record's value, so a repository project's context line holds the absolute directory. A session started from it needs the real directory; for a hub project the line is unchanged.
 6. **The deck path for a repository** is `present` relative to its own root (`DeckProject.repository` was added for it); the Present view's ref is `{ root: 'alpha', path: 'present' }`.
-7. **`rootItemsShape` / `RootItem`** carry `tier`, so the Settings view's roots list shows and keeps it; the field is the `choice` control with `options: [projects, coauthor, archive, personal]` and `empty: none` (`config/catalogs/options.yml:1372-1376`).
+7. **`rootItemsShape` / `RootItem`** carry `tier`, so the Settings view's roots list shows and keeps it; the field is the `choice` control with `options: [projects, coauthor, archive, personal]` and no `empty:` key (`config/catalogs/options.yml:1372-1375`); the editor draws the empty item as "Not set" and a pick of it leaves the key out of the entry.
 8. **Findings words** added to `config/text/findings.yml`: `findings.roots.tier_unknown`, `tier_on_hub`, `tier_reserved_key`, `tier_is_first`, `tier_same_dir`; `findings.manifests.repository_no_manifest`, `repository_id_taken`, `repository_tier_no_rule`, `repository_type_missing`, `repository_type_unknown`; and to `config/text/server.yml` `server.manifest_write.not_repository_file`. The wording is a user-visible text the brief did not fix; it is plain and reversible.
 9. **A second hub's `roots:`** stays unread (`portfolioConfigOfOther`), so a `tier:` there reads no repository (case 16, and a row in `DATA-MAP.md` line 586).
 10. **`apps.md` row 125** said `folder` was absolute; it is hub-relative for a hub project, so the row now says so and adds `repository?`. Row 161 now says a repository project's id answers an app not found.
@@ -592,7 +582,7 @@ Paths marked "outside the list" were needed by the design for the reason in thei
 | Project card of a repository project | n/a | folder line shows the root key; Show folder opens the repository directory; no Deposit control |
 | Project view of a repository project | n/a | LaTeX panel present, Deposit absent (cases 11 and 14) |
 | Documents, deck, files, LaTeX, audit, chat context, session grouping, Present view | not read for a repository project | read from the repository (cases 10 to 13 and 24) |
-| Findings view | no finding for a research tier | findings of item 8 above; audit findings about a repository project carry `scope` = the root key (case 12) and `file: ''` (NOT DONE above) |
+| Findings view | no finding for a research tier | findings of item 8 above; audit findings about a repository project carry `scope` = the root key, `root` = the root key and `file` relative to the repository, so the Audit view opens them (case 12, Repair round 1 items 1 and 2) |
 | Manifest editor | side-project schema for `<root>/.oculus/project.yml` | the manifest schema for a research repository, the side-project schema for a side repository (case 24) |
 | A write to a repository project from an app's frame | n/a | answers not found, nothing written (case 8) |
 | Personal board's empty line | "...once the repository is a Files root that is not marked `hub: true`..." | adds "and has `tier: personal` or no `tier`" (`config/text/views/boards/personal.yml:8`) |
@@ -623,5 +613,86 @@ Still true (the paragraph at `HELP.md:232` was one of these before its sentence 
 
 1. **The write list is short of what the design needs** (evidence: the file table). Added paths are in their rows: `audit/publications.ts` and `audit/rules.ts`, `server/content/docs.ts`, `pty/start/chat.ts`, `state/client/{entities.svelte,socket.svelte}.ts` and `shapes/payloads.ts`, `state/life/calendar.ts`, `config/text/server.yml`, `config/text/views/system/workbench.yml`, four more `DATA-MAP.md` lines, `HELP.md:232` and `apps.md:161`. The brief's item 5 names every reader that pairs a hub with a folder; `scopeOf` and the palette label are readers that put the folder into text a person reads, and verify 2's hit list showed them.
 2. **`options.yml` lines 1363-1371** are where `tier` sits after line 1371; the five lines added are 1372-1376.
-3. **Audit open-file link** (the NOT DONE item): the brief's item 5 says the audit reads the repository; it does not say what the finding's `file` is for a repository, and the `Finding` shape has no root.
+3. **The brief's "existing audit tests"** (round brief, item 2): no test file for the audit rules existed in the tree, so `tests/data/hubs/hub-audit.test.ts` is new (five rows).
 4. **Cases 14 and 15 cannot fail on the unchanged tree** with the assertions the brief gives, since `alpha` is no project there; they pass vacuously there and are proved on the changed tree by the values in the table.
+
+## Repair round 1
+
+All paths are under `tools/oculus` in the worktree `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D60`. "Before the round" is the tree of the refuter's review with this round's new test files laid over it (`$SP/pre-round`); no source file was reverted to make it. The new and changed test files were run there and in the worktree: on the tree before the round `Test Files  3 failed (3)`, `Tests  8 failed | 34 passed (42)`; after the round `Test Files  3 passed (3)`, `Tests  42 passed (42)` (`npx vitest run tests/data/hubs/hub-audit.test.ts tests/data/hubs/hub-roots.test.ts tests/data/sources/manifests.test.ts`). The `test:quick --base` tool reads git itself; I ran no git command.
+
+### Items
+
+1. **Audit scope.** `src/lib/server/content/audit/rules.ts:219-222` (comment of `scopeOf`): the root key is kept, and the reason is that a muted signature goes to the tracked `audit_ignore:` list of `config/behavior.yml`, which must hold no machine path. `publications.ts` holds no comment that gives a reason (`grep -n "machine path" src/lib/server/content/audit/*.ts` prints only `rules.ts:220`). Judgment 3 of this report says the same. Check: `grep -n "machine path" src/lib/server/content/audit/*.ts`.
+2. **Audit link of a repository project (built).**
+   - `rules.ts:231` `fileBelow(base, path)` is the old `fileOf` body; `fileOf` (`:245`) delegates to it. `rules.ts:254` `fileIn(hub, project, path)` returns `{ file: fileOf(hub, path) }` for a hub project (no `root`), `{ root: repository.root, file: <path relative to repository.dir> }` for a repository project, and `{ file: '' }` with no root when the path is not a file below `repository.dir` (a folder finding such as `paper/`).
+   - `rules.ts:205` the collector keeps a finding's own `root` and adds the section's only when the finding has none.
+   - `projects.ts`: 16 project-bound rule sites spread `...fileIn(input.hub, project, X)` (lines 164, 221, 236, 246, 255, 266, 287, 335, 371, 395, 406, 418, 428, 441, 469, 481); collection rules keep `fileOf`. `publications.ts` is unchanged: its `file` is the hub's `publications.yml`, a file of the hub with no `root`, and its `scope` goes through `scopeOf`.
+   - `src/lib/data/model/index.ts:310-318`: the comment of `AuditFinding` says `file` is relative to the folder its `root` names and that a finding about a repository project has the repository's root key for its `root`.
+   - `docs/apps.md:140` (sentence on a repository project's finding) and `:146` (the `audit` channel row lists `root?`).
+   - New `tests/data/hubs/hub-audit.test.ts` (113 lines, five rows). The brief's "existing audit tests" did not exist in the tree, so the file is new. On the tree before the round these failed: `a retired document of a repository project as a file of the repository` (`- "file": "IDEA.md"`, `+ "file": ""`, `- "root": "alpha"`), `a gap of the manifest ...` (`- "file": ".oculus/project.yml"`, `+ "file": ""`), and `a code folder with no README ...` (below, item 7). After the round all five pass, including the hub project's `IDEA.md` (hub-relative `file`, no `root`) and the `paper/` folder finding (`file: ''`, no `root`).
+   - Run lines (case 12, after the round): `"root":"alpha","file":".oculus/project.yml"` on both findings naming alpha, and with a `%TODO` in the README `{"scope":"alpha","where":"README.md","kind":"todo","root":"alpha","file":"README.md",...}` (lines under case 12 above).
+3. **Evidence on the unchanged tree.** Stated under "First run of every case on the unchanged tree" (line 96): the unchanged-tree runs import `personalRoots as repositoriesOf`; the rows that prove kept behaviour under the alias are cases 3, 16, the project half of case 17, the `missing_dir` half of case 7 and the unchanged rows of `hub-roots.test.ts` (table above: "pass (behaviour kept)").
+4. **Case 4.** `tests/data/hubs/hub-roots.test.ts:202` `hubs: [['lab', true]]`; the assertion at `:298-299` is `expect(roots.map((one) => [one.key, one.hub === true])).toEqual(row.hubs)`. The row passes before and after the round (the kept behaviour is not changed by item 8).
+5. **Where entry findings are filed.** `src/lib/data/sources/manifests.ts:253-275` `repositoryRule` returns `entry: true` for `tier_no_rule` and `entry: false` for the type findings; `:306-331` `asSide(on, key, message)` files `repository_id_taken`, `repository_no_manifest` and `repository_tier_no_rule` on `rootsFile` with the root's key, and leaves `repository_type_missing`, `repository_type_unknown` and `id_not_folder` on `<root>/.oculus/project.yml`. `rootsFile` is passed through `readHubManifests(..., rootsFile = '')` (`manifests.ts:349-353`), `buildPortfolioWithSchemas(..., root = HUB_ROOT, rootsFile = '')` (`src/lib/data/index.ts:264-266`) and the watcher (`src/lib/server/root/watch/portfolio.ts:638`, `sourceFile(paths.engine, paths.hub, from, 'roots')`). Tests: `tests/data/sources/manifests.test.ts:319, 330, 344, 413` assert `findingsOn(read, key, read.at.rootsFile)`; the new row `a tier no scan rule carries as a side project, with a finding on the entry` (`:336`). Before the round these rows failed with `expected [] to deeply equal [ Array(1) ]` (`the key is the id of a project the scan reads; the repository is read as a side project`; `the root has a research tier and no .oculus/project.yml, so it is no project`; `no scan rule carries the tier coauthor; the repository is read as a side project`); after the round they pass.
+6. **Clearing a root's tier in Settings.** `config/catalogs/options.yml:1372-1375`: the `tier` field is a `choice` with the four words and no `empty:` key. The records editor draws an optional field's empty item as "Not set", and `fromPick` of it gives `undefined`, which leaves the key out of the entry; `emptyIsValue` and `writtenField` are untouched. Run (`$SP/round1-runs.test.ts`, from the editor's own `fromPick` and write functions, no app): before the round `tier spec: {"control":"choice","options":[...],"empty":"none"}`, `fromPick of the empty item: ""`, `record written: {"ok":true,"value":[{"key":"ordo","dir":"~/workspace/ordo","tier":""}]}`, `readRoots findings: ["tier is none of projects, coauthor, archive and personal; the root is read as if it had no tier"]`; after the round `tier spec: {"control":"choice","options":["projects","coauthor","archive","personal"]}`, `fromPick of the empty item: "undefined"`, `record written: {"ok":true,"value":[{"key":"ordo","dir":"~/workspace/ordo"}]}`, `readRoots findings: []`. The word "none" of the brief is now the "Not set" item, since a `choice` with `empty: none` writes `tier: ''`.
+7. **Audit rules about the Deposit.** `projects.ts:273` `const deposit = project.repository === undefined ? project.codeAvailability : undefined;` ends `msg_deposit_before_reproduction` for a repository project; `projects.ts:352` `project.repository === undefined &&` ends `msg_code_no_readme`. The case 12 run after the round holds no `code/` finding (lines above). Row `a code folder with no README and a deposit before its reproduction as no finding` failed before the round (`+ "message": "code/ has no README.md (the deposit root)"`, `"where": "code/"`) and passes after. The rule table is below.
+8. **`tier_on_hub` when the hub is refused.** `src/lib/server/files/files.ts:317-359`: a `hub: true` that `hubRefusal` refuses leaves the root a plain root (`root.hub` unset); `tier_on_hub` is raised only when `root.hub === true`; a plain root's `tier` is read by `tierOf`, `tier_unknown` and `tierRefusal`. Rows in `hub-roots.test.ts`: case 4's `a tier on a hub root as a hub with no tier, with a finding` (a standing hub with a tier: finding `findings.roots.tier_on_hub`, no tier, `hub` true) and the new `a tier on a hub mark that is refused as a plain root of that tier, with the refusal alone` (`:206`; two entries on one directory, the second `hub: true, tier: archive`: tiers `[lab undefined, again 'archive']`, hubs `[lab true, again false]`, findings `[['again','findings.roots.hub_same_dir']]`). Before the round the new row failed (`- "archive"` missing from the tiers); after the round it passes.
+9. **`shared_paths` with D61.** Nothing in the tree changes. `config/text/views/system/workbench.yml` is changed by D60 and D61 on different lines; the orchestrator records it.
+
+### Rule table (item 7), `src/lib/server/content/audit/projects.ts`, `publications.ts`, `rules.ts`
+
+| Rule | Runs on a repository project | Why |
+|---|---|---|
+| `markers` (`msg_markers`) | yes | reads the documents of `folderOnDisk(hub, project)`, the repository's own folder; finding `root` = the key, `file` relative |
+| `gaps`: `msg_no_venue`, `msg_missing_field`, `msg_provisional`, `msg_docs_ahead` | yes | read fields of the manifest |
+| `gaps`: `msg_no_data_section` | yes | reads the repository's `README.md` |
+| `gaps`: `msg_deposit_before_reproduction` | no (`projects.ts:273`) | a repository project has no Deposit (Z780) |
+| `conformance`: `msg_no_readme`, `msg_retired_doc`, `msg_bad_folder` | yes | a repository holds the same README and retired or misnamed folders; the first and third have no file to open (`file: ''`, no `root`) |
+| `conformance`: `msg_code_no_readme` | no (`projects.ts:352`) | the README of `code/` is the root of a Deposit |
+| `conformance`: `msg_type_not_folder` | yes, and never fires | `folderType` is `undefined` for a repository (`typeWritten` and `category` are unset) |
+| `guardrails` (`msg_no_author_chip`, `msg_terminal_live`, `msg_projects_published`, `msg_contradictory_chips`, `msg_missing`) | yes | read the manifest's chips and type |
+| `readability` (`msg_too_long`, `msg_result_too_long`) | yes | read manifest fields |
+| `collections` | not project-bound | read the hub's collections |
+| `publications` | yes | reads the hub's `publications.yml`; `file` is the hub's, no `root`; `scope` from `scopeOf` |
+
+`markers` also scans `code/README.md` (`SCANNED`, `projects.ts:42`) and the deck documents of a repository project; the brief does not name them, and a marker there is a finding about a file of the repository, which the finding's `root` and `file` open.
+
+### Visible-change table, added row
+
+| What | Before | After |
+|---|---|---|
+| Audit of a repository project | `code/ has no README.md (the deposit root)` and the deposit-before-reproduction finding appeared; findings had `file: ''` | neither of the two Deposit findings appears; each finding that names a file of the repository carries `root` and a repository-relative `file`, which the Audit view opens |
+
+### Files changed in this round (lines before the round -> after)
+
+| Path | Lines |
+|---|---|
+| `src/lib/data/index.ts` | 410 -> 412 |
+| `src/lib/data/model/index.ts` | 680 -> 682 |
+| `src/lib/data/sources/manifests.ts` | 510 -> 516 |
+| `src/lib/server/content/audit/projects.ts` | 569 -> 578 |
+| `src/lib/server/content/audit/rules.ts` | 258 -> 281 |
+| `src/lib/server/files/files.ts` | 479 -> 480 |
+| `src/lib/server/root/watch/portfolio.ts` | 777 -> 779 |
+| `config/catalogs/options.yml` | 1476 -> 1475 |
+| `docs/apps.md` | the sentence at 140 and the `audit` row at 146 |
+| `tests/data/hubs/hub-roots.test.ts` | 288 -> 310 |
+| `tests/data/sources/manifests.test.ts` | 472 -> 506 |
+| `tests/data/hubs/hub-audit.test.ts` | new, 113 |
+
+Every changed source file is under 880 lines, no component changed, and `sh utils/folder-check.sh` prints nothing (exit 0).
+
+### Checks after the last change (verbatim)
+
+- `npm run diagrams` exit 0 (`$SP/v-diagrams.txt`, last lines `docs/diagrams/channels.svg`, `docs/diagrams/writes.dot`, `docs/diagrams/writes.svg`).
+- `npm run test:quick -- --base 69b16a679` (`$SP/v-quick.txt`): `test:quick: 81 changed file(s), from git since 69b16a679`, `test:quick: 129 test file(s), 10 essential`, `ok      ASCII gate (0.5 s)`, `ok      prettier (1.1 s): All matched files use Prettier code style!`, `ok      eslint (1.4 s)`, `ok      svelte-kit sync (2.0 s)`, `ok      svelte-check (5.3 s): 1791655700408 COMPLETED 458 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok      vitest (26.5 s): Duration  22.24s (transform 21.21s, setup 0ms, import 40.08s, tests 46.30s, environment 281ms)`, `test:quick: 27.2 s (limit 45.0 s); every command passed`. Number of full-list runs this round: three completed `test:quick` runs, the one quoted being the last, after the last change.
+- `npm run test:checks` (`$SP/v-checks.txt`): `Test Files  17 passed (17)`, `Tests  271 passed (271)`.
+- `npx vitest run --tagsFilter slow tests/routes/edit/roots.test.ts --testTimeout 20000`: `Test Files  1 passed (1)`, `Tests  3 passed (3)`.
+- Cases 12 and 25 and the item 6 run (`npx vitest run tests/_d60/runs.test.ts --testTimeout 30000`, file removed afterwards, copy `$SP/round1-runs.test.ts`; `ls tests/_d60` prints "No such file or directory"): `Tests  3 passed (3)`, with the printed lines quoted in items 2 and 6 and, for case 25: `RUN roots fields: ["key","dir","tier"]`, `RUN order: 200`, `RUN file after the order: "roots:\n  - { key: ordo, dir: ~/workspace/ordo, tier: projects }\n  - { key: cathedra, dir: ~/workspace/cathedra, tier: archive }\n"`, `RUN remove: 200`, `RUN file after the removal: "roots:\n  - { key: ordo, dir: ~/workspace/ordo, tier: projects }\n"`.
+- Case 4 and the rows of items 2, 5 and 8: `npx vitest run tests/data/hubs/hub-audit.test.ts tests/data/hubs/hub-roots.test.ts tests/data/sources/manifests.test.ts`: `Test Files  3 passed (3)`, `Tests  42 passed (42)`.
+- Verify grep 1 (`grep -rn "join(hub, project.folder)\|projectDirectory(hub, project.folder)\|join(input.hub, project.folder)\|join(owner.hub, manifest.folder)\|join(context.hub.dir, project.folder\|root: rootOf(project), path: project" src`): prints nothing (exit 1). `grep -rnE '(project|manifest)\.folder|project\.deck\b' src` prints the same 26 hits as the verify 2 list above, with line numbers moved by this round's edits (`rules.ts:223`, `manifests.ts` and the others; `$SP/v2round1.txt`).
+- `sh utils/unused-exports.sh` against `D60-base/tools/oculus/unused-exports.txt`: header `Unused exports (246)` in both; differences are the `personalRoots` entry gone from `server/root/watch/portfolio.ts` and the calendar and mail status lines under their new `data/model/accounts/` paths; no line added.
+- ASCII gate `LC_ALL=C perl -ne 'my $l = $_; $l =~ s/\xC3[\x80-\xBF]//g if $ARGV =~ m{^config/}; print "$ARGV:$.:$_" if $l =~ /[^\x20-\x7E\n]/; close ARGV if eof' $(find src tests config -type f ! -name local.yml)`: prints nothing; the perl check over `../../docs/DATA-MAP.md ../../.oculus/config/sources.yml HELP.md DESIGN.md docs/apps.md`: prints nothing. `npx prettier --check docs/apps.md`: `All matched files use Prettier code style!`.
+- `sh utils/folder-check.sh`: prints nothing, exit 0.
+
+Not run: `npm test` over the whole suite, and the app itself (no app is started by a builder); the Audit view's link is shown by the finding's `root` and `file`, not by a screen.

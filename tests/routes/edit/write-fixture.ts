@@ -425,6 +425,45 @@ export function secondHubSide(base: WriteTarget = target()): SideTarget & { seco
     };
 }
 
+/** The id of the research project `repositoryTarget` plants, which is the key of its root. */
+export const REPOSITORY_ID = 'gamma';
+
+/** The manifest of the repository `repositoryTarget` plants. */
+export const REPOSITORY_MANIFEST = [
+    'title: "A repository"',
+    'type: manuscript',
+    'snooze: 2026-11-01',
+    'subtasks:',
+    '  - { do: read it }',
+    ''
+].join('\n');
+
+/** What `repositoryTarget` plants: the target, the repository's folder and its manifest file. */
+export type RepositoryTarget = { into: WriteTarget; dir: string; file: string };
+
+/**
+ * The target with a repository planted as a research project of the first hub: a folder under the
+ * system temporary directory holding `.oculus/project.yml` and a README, named by an entry of
+ * `roots:` with `tier: projects`, and the scan rule of the manuscripts folder carrying the same
+ * tier word. The target's published projects stay empty, so a write finds the repository by
+ * reading the roots in force, as the server's writers do.
+ */
+export function repositoryTarget(
+    base: WriteTarget = target(),
+    tier: string | null = 'projects'
+): RepositoryTarget {
+    const dir = scratchDir('oculus-repository-');
+    const file = join(dir, '.oculus', 'project.yml');
+    expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+    mkdirSync(join(dir, '.oculus'), { recursive: true });
+    writeFileSync(file, REPOSITORY_MANIFEST);
+    writeFileSync(join(dir, 'README.md'), '# A repository\n');
+    const entry = { key: REPOSITORY_ID, dir, ...(tier === null ? {} : { tier }) };
+    const scan = [{ dir: 'projects/manuscripts', type: 'manuscript', tier: 'projects' }];
+    const merged = { ...base.config.merged, roots: [entry] };
+    return { into: { ...base, config: { ...base.config, scan, merged } }, dir, file };
+}
+
 /** The path of the portfolio deck's file under the hub of a deck target. */
 export const DECK_PATH = `${DECK_FOLDER}/present.yml`;
 

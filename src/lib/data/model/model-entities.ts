@@ -7,7 +7,8 @@ export type Id = string;
  * A record that says which hub it was read from: the key of the `roots:` entry marked `hub: true`
  * for a record of a hub other than the first, `hub` for one of the first hub when the portfolio
  * holds more than one hub, and nothing for a record of a portfolio of one hub. Absent is read as
- * `hub` (`rootOf` of data/helpers/hub-names.ts).
+ * `hub` (`rootOf` of data/helpers/hub-names.ts). An audit finding uses it for the Files root its
+ * file is relative to (`AuditFinding`).
  */
 export type Rooted = { root?: string };
 
@@ -82,14 +83,19 @@ export type ScanRule = {
     nested?: boolean;
     /** True for a directory the hub need not have: absent, it is skipped rather than reported. */
     optional?: boolean;
+    /**
+     * The word that says which `roots:` tier a repository is read under (`projects`, `personal`,
+     * `software`, `coauthor` or `archive`): a repository takes the rule that carries its tier.
+     */
+    tier?: string;
 };
 
 /**
  * A project.yml as it was read, plus provenance. Every key the YAML held is present untouched,
- * except that the provenance names below are set by the reader: `id` is the folder's basename and
- * the manifest's own `id` is kept as `manifestId`, and `type` on a flat tier comes from the rule
- * while the manifest's own differing `type` is kept as `typeWritten`. A disagreement of `id` is a
- * finding and one of `type` is the Audit's, never a repair.
+ * except that the provenance names below are set by the reader: `id` is the folder's basename (the
+ * root's key for a repository) and the manifest's own `id` is kept as `manifestId`, and `type` on a
+ * flat tier comes from the rule while the manifest's own differing `type` is kept as `typeWritten`.
+ * A disagreement of `id` is a finding and one of `type` is the Audit's, never a repair.
  */
 export type RawManifest = {
     [key: string]: unknown;
@@ -101,9 +107,12 @@ export type RawManifest = {
      * key called `mtime` in a project.yml would then be read as provenance.
      */
     fileMtime?: number;
-    /** Folder of the project relative to the hub, `projects/coauthor/active/clinical-hccnet`. */
+    /**
+     * Folder of the project relative to the hub, `projects/coauthor/active/clinical-hccnet`; for a
+     * project of a repository, the repository's absolute path.
+     */
     folder: string;
-    /** The folder's basename, which is the project's id. */
+    /** The folder's basename, which is the project's id; for a repository, its root's key. */
     id: Id;
     tier: Tier;
     /** The first folder under the tier directory, on nested rules only: `published`, `nogo`. */
@@ -116,6 +125,12 @@ export type RawManifest = {
     ghost: boolean;
     /** The manifest's own `id` value, exactly as read, whatever its type. */
     manifestId?: unknown;
+    /**
+     * Set on the project of a repository named by a `roots:` entry with a research `tier`: the key
+     * of that root and its folder, which is where `<dir>/.oculus/project.yml` and the project's
+     * documents and deck are read from. A project of a scan folder has none.
+     */
+    repository?: { root: string; dir: string };
 };
 
 /**
@@ -260,248 +275,6 @@ export type Subtask = {
     snooze?: string;
 };
 
-/** The status chip of a slide: the class its colour comes from, and the word it wears. */
-export type PresentTag = {
-    class?: string;
-    text?: string;
-};
-
-/** One chip of a slide's spec strip. */
-export type PresentSpec = {
-    label: string;
-    value: string;
-};
-
-/** The plain-language callout of a slide: what the work is for, and what it does in plain words. */
-export type PresentEli5 = {
-    purpose?: string;
-    plain?: string;
-};
-
-/**
- * One visual of a slide. `figure` is the file name as the slide wrote it and `src` the address the
- * file route answers it at, which is absent for a figure the deck's root does not hold;
- * `diagramHtml` is inline markup the sanitiser filters.
- */
-export type PresentPanel = {
-    figure?: string;
-    src?: string;
-    diagramHtml?: string;
-    caption?: string;
-    explain?: string;
-    /** The named figure is not in the folder, so the view draws the gap and not a dead image. */
-    missing?: boolean;
-};
-
-/**
- * The rich project slide, read from the front matter of a `kind: project` slide of a deck.
- * `equation` is LaTeX the page typesets; a value that names an image is a finding and is not kept
- * (data/sources/deck/project.ts). `body` is the Markdown under the front matter, which is what a
- * project slide with no rich key draws. `mechanism` and `headline` are what a summary row of
- * another deck reads from it.
- */
-export type PresentSlide = {
-    tag?: PresentTag;
-    title?: string;
-    sub?: string;
-    hook?: string;
-    eli5?: PresentEli5;
-    equation?: string;
-    specs: PresentSpec[];
-    panels: PresentPanel[];
-    method: string[];
-    results: string[];
-    body?: string;
-    mechanism?: string;
-    headline?: string;
-};
-
-/** The kinds a slide of a deck is, from the `kind:` of its front matter or computed by the deck. */
-export type SlideKind =
-    | 'title'
-    | 'section'
-    | 'text'
-    | 'image'
-    | 'columns'
-    | 'equation'
-    | 'code'
-    | 'closing'
-    | 'project'
-    | 'idea'
-    | 'summary'
-    | 'grid';
-
-/** One numbered card of a section slide. */
-export type DeckCard = {
-    n: string;
-    title: string;
-    body: string;
-};
-
-/** One card of the idea grid and the one slide of an `idea` kind. */
-export type DeckIdeaCard = {
-    name: string;
-    desc: string;
-    /** The project's `domain:` key, which the card's colour and words are read from. */
-    domain?: string;
-    /** The status chip of the project that says how far the idea is. */
-    maturity?: string;
-};
-
-/** One row of a summary table. */
-export type DeckSummaryRow = {
-    /** The project's `domain:` key; the field is that domain's label. */
-    domain?: string;
-    project: string;
-    mechanism: string;
-    headline: string;
-};
-
-/**
- * Where a slide is written: the served root and the file under it, the slide's place in that file
- * counted from 0, and `entry`, the place in the shown deck's `order:` of the entry that placed it
- * (a group's entry for a slide of a member deck). For a summary or a grid the file is the deck's
- * `present.yml` and `index` is its entry's place, the same as `entry`. `line` is the 1-based line
- * of the file the slide starts on: the entry's line in `present.yml` for a summary or a grid.
- */
-type DeckSlideSource = {
-    root: string;
-    path: string;
-    index: number;
-    entry: number;
-    line: number;
-};
-
-/** What every slide of a deck carries. */
-type SlideBase = {
-    /** The slide's key inside its deck, which a pane keeps to stay on the slide. */
-    key: string;
-    /** Plain words naming the slide in the overview grid. */
-    title: string;
-    notes?: string;
-    /** Absent for a slide the deck does not read from a file. */
-    source?: DeckSlideSource;
-};
-
-/**
- * The address a slide's Markdown image is given when the deck's folder lacks the file, which the
- * view draws as the gap, with the file's name as the image's alt text.
- */
-export const DECK_GAP = '#gap';
-
-/**
- * One slide of a deck as the view draws it. Words are Markdown, with the group counts in them
- * already replaced. A `legend` is the domain keys of the group the slide names.
- */
-export type DeckSlide =
-    | (SlideBase & {
-          kind: 'title' | 'closing';
-          kicker?: string;
-          heading: string;
-          lede: string;
-          contact?: string;
-          legend: string[];
-      })
-    | (SlideBase & {
-          kind: 'section';
-          heading: string;
-          lede: string;
-          cards: DeckCard[];
-          foot: string;
-          legend: string[];
-      })
-    | (SlideBase & { kind: 'text'; body: string })
-    | (SlideBase & { kind: 'image'; heading: string; src: string; alt: string })
-    | (SlideBase & { kind: 'columns'; heading: string; left: string; right: string })
-    | (SlideBase & { kind: 'equation'; heading: string; equation: string; rest: string })
-    | (SlideBase & { kind: 'code'; heading: string; code: string })
-    | (SlideBase & {
-          kind: 'project';
-          slide: PresentSlide;
-          /** The slide's project type, drawn as its chip. */
-          type?: string;
-          /** The project's `domain:` key. */
-          domain?: string;
-      })
-    | (SlideBase & { kind: 'idea'; card: DeckIdeaCard })
-    | (SlideBase & { kind: 'summary'; heading: string; rows: DeckSummaryRow[]; foot: string })
-    | (SlideBase & {
-          kind: 'grid';
-          heading: string;
-          lede: string;
-          cards: DeckIdeaCard[];
-          foot: string;
-          /** The status chips the group looks for, which the maturity legend explains. */
-          legend: string[];
-      });
-
-/** One deck a group holds or could hold: its name, its words and where it is under its root. */
-type DeckMember = {
-    name: string;
-    title: string;
-    /** The deck's folder under the root it was found in. */
-    path: string;
-    /** Whether the group's `slides:` names it; a member that is not was found by discovery. */
-    named: boolean;
-};
-
-/** A deck two discovering groups both find and neither names, with the other groups. */
-type DeckConflict = {
-    name: string;
-    path: string;
-    others: string[];
-};
-
-/** One group of a deck, as the Slides view lists it. */
-export type DeckGroup = {
-    name: string;
-    /** The group's `slides:` as the file holds it, which a write names as its `base`. */
-    slides: string[];
-    members: DeckMember[];
-    /** Found by the group's `find:`, in no member's place. */
-    candidates: DeckMember[];
-    /** Names in `slides:` that match no deck. */
-    missing: string[];
-    conflicts: DeckConflict[];
-    /** The slides the group holds, which `{{<group>.count}}` is. */
-    count: number;
-};
-
-/**
- * One entry of a deck's `order:` as the Slides view lists it: its `token`, which a write names it
- * by, what it is (a slide file, a group's slides, a summary or a grid), the file or group it
- * names, and the words that show it (the title of a file's first slide, a summary's own title).
- */
-export type DeckOrderEntry = {
-    token: string;
-    kind: 'file' | 'group' | 'summary' | 'grid';
-    name: string;
-    title: string;
-};
-
-/** Why a deck draws nothing, or `ok` when it draws slides. */
-export type DeckState = 'ok' | 'empty' | 'no_file' | 'unreadable' | 'missing';
-
-/**
- * One deck as the deck route answers it: the slides in order, the groups with their members, and
- * what was wrong with the files. `tagTones` is a hue name per `tag.class`, the engine's defaults
- * under the deck's own.
- */
-export type Deck = {
-    root: string;
-    /** The deck's folder under the root. */
-    path: string;
-    name: string;
-    title: string;
-    state: DeckState;
-    slides: DeckSlide[];
-    /** The entries of `order:` the reader knows, in the file's order. */
-    order: DeckOrderEntry[];
-    groups: DeckGroup[];
-    tagTones: Record<string, string>;
-    findings: Finding[];
-};
-
 /**
  * A project. The relation fields hold ids; data/snapshot/normalise.ts fills them from the
  * manifest's `venue_id`, `funding`, `datasets`, `pillar` and `domain` keys, and leaves them empty
@@ -589,9 +362,10 @@ export type Project = Rooted & {
     /** The four fixed project documents, in the order sources/docs.ts lists them, presence only. */
     docs: DocFlag[];
     /**
-     * The project's own deck: the path of its `present/` folder relative to the hub, present when
-     * `present/present.yml` exists. Absent for a project with no deck, which is most of the hub, so
-     * the wire carries the key only where there is something to open.
+     * The project's own deck: the path of its `present/` folder relative to the Files root that
+     * holds the project (the hub, or the repository's root), present when `present/present.yml`
+     * exists. Absent for a project with no deck, which is most of the hub, so the wire carries the
+     * key only where there is something to open.
      */
     deck?: string;
     /**
@@ -599,13 +373,17 @@ export type Project = Rooted & {
      * Settings view offers as the classes a tag tone can be given to.
      */
     deckTags?: string[];
-    /** Folder relative to the hub, and the manifest's absolute path. */
+    /**
+     * Folder relative to the hub, except for a project of a repository, whose folder is the
+     * repository's absolute path; and the manifest's absolute path.
+     */
     folder: string;
     file: string;
     /**
-     * Where the project's folder is when it is a repository served as a Files root of its own,
-     * which only a side project's record is made with (snapshot/as-project.ts): the root's key and
-     * the repository's absolute path. A project of a hub folder has none.
+     * Where the project's folder is when it is a repository served as a Files root of its own: the
+     * root's key and the repository's absolute path. A side project's record is made with it
+     * (snapshot/as-project.ts), and so is a research project read from a repository named by a
+     * `roots:` entry with a research `tier`. A project of a hub folder has none.
      */
     repository?: { root: string; dir: string };
     /** The web addresses or paths a side project's manifest lists; only its record holds them. */
@@ -807,13 +585,17 @@ export type Funding = Rooted & {
 export type PersonalSource =
     { kind: 'hub'; folder: string } | { kind: 'root'; key: string; dir: string };
 
+/** The tiers a `roots:` entry may read its repository in as a research project of the first hub. */
+export type RepositoryTier = 'projects' | 'coauthor' | 'archive';
+
 /**
- * A directory the side-project reader looks into: the key a Files root is served under and where it
- * is, as an absolute path. The reader takes the roots it is handed as they come; the server decides
- * which roots of the file browser are handed to it. It has the shape of the file browser's root,
- * which the data layer cannot import.
+ * A directory a repository's manifest is read from: the key a Files root is served under, where it
+ * is as an absolute path, and the research tier its entry names, absent for a side project. The
+ * readers take the roots they are handed as they come; the server decides which roots of the file
+ * browser are handed to them. It has the shape of the file browser's root, which the data layer
+ * cannot import.
  */
-export type PersonalRoot = { key: string; dir: string };
+export type RepositoryRoot = { key: string; dir: string; tier?: RepositoryTier };
 
 /** A side project's manifest as it parsed, with where it came from and nothing checked. */
 export type RawPersonal = {

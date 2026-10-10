@@ -171,3 +171,165 @@ The orchestrator's points:
 - Whether the `scopeOf` departure is accepted is the orchestrator's decision.
 
 Reviewer usage: adf31b9db8965f209, claude-opus-5-5, 79,744 tokens, 120 tool uses, 21.3 min (from the completion notice).
+
+
+## Repair round 1, refuted
+
+Over the round's delta (`D60-round1-delta.diff`), read against `git diff 69b16a679` and the untracked files in `.agents/worktrees/D60`, base 69b16a679.
+
+```
+$ npm run diagrams                                   (tools/oculus in the worktree)
+... docs/diagrams/channels.dot, channels.svg, writes.dot, writes.svg (last lines)
+$ git status --short   (before and after diagrams, compared with diff)
+STATUS-UNCHANGED   (80 lines; shasum -c of every changed docs/diagrams file: all OK)
+git diff 69b16a679 --stat: 74 files changed, 2574 insertions(+), 2066 deletions(-) (same before and after)
+
+$ npm run test:quick -- --base 69b16a679
+test:quick: 81 changed file(s), from git since 69b16a679
+test:quick: 129 test file(s), 10 essential
+ok      prettier (0.4 s): All matched files use Prettier code style!
+ok      ASCII gate (0.4 s)
+ok      svelte-kit sync (1.7 s)
+ok      eslint (1.3 s)
+ok      svelte-check (5.0 s): 1791656514194 COMPLETED 458 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (26.1 s): Duration  22.40s (transform 23.96s, setup 0ms, import 42.83s, tests 44.80s, environment 331ms)
+test:quick: 26.6 s (limit 45.0 s); every command passed
+(a second run: test:quick: 28.4 s (limit 45.0 s); every command passed)
+
+$ npm run test:checks
+ Test Files  17 passed (17)
+      Tests  271 passed (271)
+   Duration  306.93s
+
+Verify grep 1 (the brief's pattern over src): no output, exit 1
+Verify grep 2 (grep -rn "project\.folder\|manifest\.folder\|project\.deck" src): 27 hits; 26 without options.ts:488 (project.deckTags, which the report's \b form leaves out); the same sites as the report's list, line numbers as the report gives them after the round
+
+$ sh utils/unused-exports.sh, diffed with D60-base/tools/oculus/unused-exports.txt
+Unused exports (246) in both; differences: personalRoots gone from portfolio.ts; CalendarStatus/MailStatus lines moved to data/model/accounts/; no line added
+
+ASCII gate (spec form, src tests bin config, ! -name local.yml): 0 lines
+perl non-ASCII over ../../docs/DATA-MAP.md ../../.oculus/config/sources.yml HELP.md DESIGN.md docs/apps.md and D60-report.md: 0 lines
+$ sh utils/folder-check.sh: no output, exit 0 (tests/data/hubs holds 4 items)
+wc -l, every changed or new file under src and tests: largest docs.ts 815, portfolio.ts 779, context.ts 740; ProjectCard.svelte 520 (at its limit); none over 880/520.
+Round files: data/index.ts 412, model/index.ts 682, manifests.ts 516, audit/projects.ts 578, audit/rules.ts 281, files.ts 480, portfolio.ts 779, options.yml 1475, hub-roots.test.ts 310, manifests.test.ts 506, hub-audit.test.ts 113 (all as the report gives)
+
+Case 4 and the rows of items 2, 5, 8:
+$ npx vitest run tests/data/hubs/hub-audit.test.ts tests/data/hubs/hub-roots.test.ts tests/data/sources/manifests.test.ts --reporter=verbose
+ Test Files  3 passed (3)
+      Tests  42 passed (42)
+ (hub-audit rows: 624, 500, 922, 850, 742 ms; another run: 668, 596, 486, 461, 479 ms)
+
+$ npx vitest run --tagsFilter slow tests/routes/edit/roots.test.ts --testTimeout 20000
+ Tests  3 passed (3)
+$ npx vitest run tests/routes/edit/write.test.ts tests/routes/edit/undo/undo.test.ts
+ Test Files  2 passed (2)   Tests  28 passed (28)
+
+Cases 12 and 25 and the item 6 run: the builder's round1-runs.test.ts, run as tests/_d60/runs.test.ts in a copy of the worktree's tools/oculus under $TMPDIR (node_modules linked, local.yml excluded):
+RUN audit findings naming alpha: [{"scope":"alpha","where":"project.yml","kind":"data","root":"alpha","file":".oculus/project.yml",...},{"scope":"alpha","where":"eli5","kind":"manifest","root":"alpha","file":".oculus/project.yml",...}]
+RUN audit findings with a marker in the repository README: [{"scope":"alpha","where":"README.md","kind":"todo","root":"alpha","file":"README.md",...}, ...]
+RUN roots fields: ["key","dir","tier"]
+RUN order: 200 / file after the order keeps tier: projects and tier: archive / RUN remove: 200
+RUN tier spec: {"control":"choice","options":["projects","coauthor","archive","personal"]}
+RUN fromPick of the empty item: "undefined"
+RUN record written: {"ok":true,"value":[{"key":"ordo","dir":"~/workspace/ordo"}]}
+RUN readRoots findings: []
+ Tests  3 passed (3)        (the same lines as the report's round section)
+
+First round's case runs (d60-runs.test.ts, cases 1, 10 to 15, 24, 25) in the same copy, over the repaired tree:
+ Tests  10 passed (10); alpha tier manuscripts with repository {root:'alpha'}, deck present; api/docs 200; project-files folder ""; latex 200, no tier 404 no-project, side build 400; case 12 as above, no code/ finding; deposit 404 and no Deposit control for alpha; watcher edit, removal, creation, tier archive, type active; present ref {root:'alpha',path:'present'}; hubRoot the hub; projectFolder {root:'alpha',path:''}; schemas manifest and side-project.
+
+Positive control, same copy: a hub project with the hub-audit row 5 manifest (deposited 2026-01-02, reproduced 2026-03-01) raises exactly the message findingText('audit.msg_deposit_before_reproduction', '2026-01-02', '2026-03-01'): Tests 1 passed (1).
+
+The scratch copy was removed afterwards. git status --short in the worktree is identical to its state before the review (STATUS-UNCHANGED, 80 lines).
+```
+
+### Verdicts
+
+Items of the brief's "What to build" (the whole diff since the base):
+
+- 1: holds. A refused hub mark now has its `tier` read like any plain root's, and `tier_on_hub` is raised only when the hub stands (files.ts:669-692; hub-roots rows pass). A "Not set" pick in Settings leaves `tier` out of the entry (round run). Behaviour 1 below is a consequence that should be ruled on.
+- 2: holds (manifests rows 42/42).
+- 3: holds. The entry findings are filed on `rootsFile` and the manifest findings on the manifest (manifests.ts:306-331; rows at :319, :330, :344, :413 and BAD_TYPES at :307).
+- 4: holds (case 15 run).
+- 5: holds. The audit scope is the root key, now with the right reason (rules.ts:217-221). The audit link is built through `fileIn`. Standards 1 below covers the text that describes it.
+- 6: holds (case 24 run).
+- 7: holds (write and undo 28/28, case 14 run).
+- 8: holds (case 11 run).
+- 9: holds (case 15 run).
+- 10: holds. Standards 1 below names three sentences, added or left by the round, that are not quite true.
+
+Cases:
+
+- 1 to 3: met (manifests rows; case 1 run).
+- 4: met. The row now asserts `hubs: [['lab', true]]` (hub-roots.test.ts:202, :298-299).
+- 5: met (BAD_TYPES rows check the manifest file).
+- 6: met (`repository_id_taken` on rootsFile).
+- 7: met (`repository_no_manifest` on rootsFile; `missing_dir` alone in the hub-roots row).
+- 8: met (write and undo tests).
+- 9: met (roots.test.ts 3/3; case 25 run).
+- 10, 11, 13, 14, 15, 24: met (runs above).
+- 12: met. The run reads `<tmp>/alpha`, its findings carry `root: 'alpha'` and a file relative to the repository, and there is no `code/` finding.
+- 16 to 23: met (manifests rows).
+- 25: met. The fields are key, dir and tier with the four words, a write keeps the tier, and the "Not set" pick writes no `tier: ''`.
+
+Items of the round brief:
+
+- 1: holds. The comment at rules.ts:217-221 and the report's judgment 3 both give `audit_ignore:` in config/behavior.yml as the reason. publications.ts gives no reason, so nothing there needed rewording (`grep -rn "machine path" src/lib/server/content/audit/` finds rules.ts:220 only).
+- 2: holds in code. `fileIn` is at rules.ts:254-263, and 16 project-bound sites in projects.ts use it. The two `fileOf` uses left in projects.ts are the collection rules (176, 187, 528-572), and publications.ts:170 is the hub's own publications file, so no project-bound site stays on `fileOf`. A hub project's findings keep no `root` (hub-audit row 4). The NOT DONE row and its open item are gone from the report. Spec 1 and Standards 1, 2 and 3 below are findings on this item.
+- 3: holds (report, "First run" section, the paragraph on the alias).
+- 4: holds.
+- 5: holds. Callers of `rootsFile = ''`: `hubManifests` (roots.ts:123) keeps `.manifests` only and drops the findings. `joinHubs` (data/index.ts:375) passes no roots. Every test caller other than manifests.test.ts passes no roots. So no caller shows a reader an entry finding filed on the empty file.
+- 6: holds. The empty item now reads "Not set" (`settings.unset`, FieldControl.svelte:97, `optional` true in Cards.svelte:191) instead of "none". `emptyIsValue` and `writtenField` are untouched. Item 6 of the report says so.
+- 7: holds. `msg_code_no_readme` and `msg_deposit_before_reproduction` are skipped for a repository project. The `markers` rule still scanning `code/README.md` does not contradict item 7, which names only those two rules. A marker there is a TODO in a file of the repository, and the finding opens it.
+- 8: holds. Behaviour 1 below is a consequence of it.
+- 9: not applicable to the tree.
+
+### Findings
+
+- **Spec 1.** `tools/oculus/tests/data/hubs/hub-audit.test.ts:1-113`, the whole new file: "describe('the audit of a repository read as a research project of the first hub', () => { it.each(ROWS)('reads $name', ...".
+  - What is wrong: the round brief asked for one row (the retired-document row) "in the existing audit tests". That premise does not reproduce: `find tests -iname "*audit*"` lists only `tests/routes/edit/audit-mute.test.ts` and the new file. No `agents/guarded.md` entry names the audit scan or this file (`grep -n -i audit agents/guarded.md` finds only the audit-mute write under G8).
+  - The builder added a new test file with five rows. The rules file says a test exists only as the test of a guarded entry, and that a step needing a new entry stops and asks. The report does not name the entry these rows belong to.
+  - Failure scenario: at landing the orchestrator has no entry to write the five titles under. The file is then either a test outside `guarded.md`, which the rules file forbids, or it is dropped and the audit link and the Deposit rule skip are left with no test.
+  - Verdict: none for the round item (its code holds). It needs an entry ruled by the orchestrator in automode, for example "an audit finding about a file names the Files root and the path the Audit view opens", or the rows moved under an entry that exists.
+- **Standards 1.** Three sentences about `root` on an audit finding are not true for every finding:
+  - `tools/oculus/src/lib/data/model/index.ts:310-311`: "A finding about a project read from a repository has that repository's root key for its `root`."
+  - `tools/oculus/docs/apps.md:140`: "An `audit` finding about a project read from a repository has the repository's root key for its `root`, its `scope` and its `file` relative to the repository."
+  - Unchanged `src/lib/data/model/model-entities.ts:6-11` (`Rooted`, which `AuditFinding` is built on): "A record that says which hub it was read from: the key of the `roots:` entry marked `hub: true`...".
+  - What is wrong: `fileIn` (rules.ts:262) returns `{ file: '' }` with no `root` for a path that is no file. So `msg_no_readme`, `msg_bad_folder` and a folder finding of a repository project carry no `root`, which the new row 'a folder of a repository project that is no file as a finding with no file and no root' asserts. A finding that does carry `root: 'alpha'` names a root that is no hub, which the `Rooted` comment and the first sentence of the same apps.md paragraph ("the root's key for another hub") do not allow for.
+  - Failure scenario: an app on the `audit` channel reads `root` as apps.md describes it. It treats `alpha` as a second hub, and when it lists alpha's findings by `root === 'alpha'` it misses alpha's missing-README and folder-name findings.
+  - Verdict: none (round item 2 holds). Small enough to fix at landing: the three sentences say `root` is the Files root a finding's `file` is relative to, set only when there is a file.
+- **Standards 2.** `tools/oculus/src/lib/server/content/audit/rules.ts:205`: "`...(root === undefined || finding.root !== undefined ? {} : { root }),`", with the unchanged head comment at :184-187 ("Given the key of a hub other than the first ... marks the finding with it").
+  - What is wrong: the new clause takes effect only when the collector has a second hub's key and the finding carries its own `root`. Only a repository project's findings carry their own `root`, and a second hub has none, because `joinHubs` builds every other hub with no roots (data/index.ts:375-383). For the first hub, `...finding` already carried `root` before the round. The clause is a branch for an input that cannot happen, and the head comment does not mention it.
+  - Failure scenario: a reader of the collector concludes that a second hub can hold repository findings and that the hub key gives way to them, which is not how the hubs are built.
+  - Verdict: none. A landing fix: drop the clause and restore `root === undefined ? {} : { root }`.
+- **Standards 3.** `tools/oculus/tests/data/hubs/hub-audit.test.ts:817-828`: "`row.check(published(from.base, from.hub).audit.findings);`".
+  - What is wrong: each row copies demo/ and runs the watcher's first build. Over two runs the rows took 461 to 922 ms. The rules file says a test runs well under a second and one that cannot is tagged slow. Every row of `hub-portfolio.test.ts` goes through the same `published` call and is tagged `slow` (lines 58, 76, 107, 127, 138, 172, 204, 236, 255).
+  - Failure scenario: under the parallel suites this machine runs, a row passes a second and the essential run slows down. If the rows are tagged slow instead, they leave `npm test`.
+  - Verdict: none. The fix that keeps the rows in `npm test` builds the audit input from `buildPortfolioWithSchemas` and calls `auditFindings` directly, without copying demo/ and without the watcher.
+- **Behaviour 1.** `tools/oculus/src/lib/server/files/files.ts:678-692` with `tierRefusal` at :213-232 and `repositoriesOf` (roots.ts:95-112): "`// A root that is no hub, a refused hub mark included, has its `tier` read by the rules of any plain root.`".
+  - What is wrong: a `hub: true` entry that `hubRefusal` refuses as `hub_same_dir` or `hub_nested` (on, or inside, the directory of a hub root that stands) now keeps a research `tier`. `tierRefusal` checks only the first hub and earlier research roots. `repositoriesOf` skips hub roots without adding their directory to `seen`. So the directory of a second hub, or a folder inside it, is also read as a research project of the first hub, and page writes reach its `.oculus/project.yml`. The new hub-roots row builds exactly this input (`again` on `lab`'s directory, tier `archive`) and asserts it as the expected result. The report does not state the consequence.
+  - Failure scenario: an entry `{ key: again, dir: <the lab hub's dir>, hub: true, tier: archive }` gives one directory as both the second hub `lab` and the first-hub project `again`. It shows on the Archive board with a `repository_no_manifest` finding, or with the second hub's own manifest read as a first-hub project.
+  - Verdict: none (round item 8 holds as briefed). The orchestrator rules whether `tierRefusal` also refuses a directory that a standing hub root is, lies in or holds.
+
+Nothing else: the type findings stay on the manifest, the "Not set" pick reproduces as the report states, and every round claim quoted in the report's round section reproduced. Two report details differ and no decision rests on them: the watcher's `rootsFile` argument is at portfolio.ts:675, where the report says :638, and the report's judgment 3 cites rules.ts:222 for `scopeOf` where the return is at :223.
+
+### Declined to judge
+
+- **New tests on the tree before the round.** The failures the report quotes for the hub-audit, hub-roots and manifests rows were judged by reading the before-round code in `D60-before-round1.diff`, not rerun. Rebuilding the tree as it stood before the round to watch the rows fail is a revert of the code under test, which the rules ban. By that reading each quoted failure is the one the before-round code gives. The deposit half of hub-audit row 5 has no quoted failure of its own, because the `code/` assertion fails first. The positive control above shows that half's message matches what the rule raises.
+- **`docs/DATA-MAP.md` and `.oculus/config/sources.yml` in the delta.** Their hunks are byte-identical in `D60-before-round1.diff`, in the delta and in `git diff 69b16a679` now (compared with diff). They came from the orchestrator's construction of the delta and are not changes of this round, so they were not judged as round work.
+- **The filter the rules file names.** `agents/spec.md` names no output filter (`grep -n -i filter` finds none), so the outputs were cut with tail and grep.
+- **What only a page shows.** The Settings records editor's "Not set" item for `tier` as drawn, and a press on an Audit row of `alpha` opening `README.md` under the `alpha` root, were judged by reading FieldControl.svelte, Cards.svelte and Audit.svelte:131-162 only. They are for the look at landing.
+- **Whether the "none" to "Not set" label of the empty item is acceptable.** That wording choice is the orchestrator's.
+
+Reviewer usage: a474ba6bf852ae0e1, claude-opus-5-5, 269,002 tokens, 88 tool uses, 19.5 min (from the completion notice).
+
+## Closed
+
+The run over repair round 1 is the last run; its findings go to landing, none back to the builder.
+
+- Spec 1 (hub-audit.test.ts without a guarded entry): closed at landing by removing `tests/data/hubs/hub-audit.test.ts`. The rules file keeps a test only for behaviour whose failure costs something (lost work, a broken installation, a wrong configuration accepted); an audit finding that opens the wrong file, or a Deposit finding raised on a repository project, costs none of these, so no entry is due and none is asked for. The behaviour stays shown by the quoted runs of case 12 and the round (`agents/reviews/D60-report.md`, "Repair round 1"), which this review reproduced. The round brief's "existing audit tests" was a false premise of the round brief.
+- Standards 1 (three sentences on an audit finding's `root`): fixed at landing in `src/lib/data/model/index.ts` (the `AuditFinding` comment), `src/lib/data/model/model-entities.ts` (the `Rooted` comment) and `docs/apps.md` (the hubs paragraph and the `audit` row): `root` on an audit finding is the Files root its `file` is relative to, a repository's key only when the finding names a file of it.
+- Standards 2 (the collector's clause for a case that cannot happen): fixed at landing; `collector` in `rules.ts` is back to `...(root === undefined ? {} : { root })`.
+- Standards 3 (hub-audit rows near a second each): closed with Spec 1, the file removed.
+- Behaviour 1 (a research tier on the directory of a hub root): fixed at landing in `readRoots` (`src/lib/server/files/files.ts`): after the list is read, a research `tier` on a root whose directory is, lies inside or holds the directory of a hub root that stands is refused with the new finding `findings.roots.tier_in_hub`, whichever of the two is listed first. The G13 row 'a tier on a hub mark that is refused as a plain root of that tier...' now expects no tier and both findings, and a new row covers a plain root listed before the hub on its directory.
+- Declined point "none" read as "Not set": kept; it is the Settings editor's existing word for the empty item of every optional field (`settings.unset`).

@@ -8,11 +8,12 @@
 // it: a card asks for its own folder when it is opened, and a board of fifty projects reads
 // nothing.
 //
-// The folder walked is the reader's, never the request's: the id names a manifest readManifests
+// The folder walked is the reader's, never the request's: the id names a manifest hubManifests
 // already found under the scan directories of the hub the id names (`<root key>:<id>` for a hub
-// other than the first), and the folder is joined to that hub and checked against it again before
+// other than the first) or in a repository the first hub's `roots:` reads as a research project,
+// and the folder is joined to that hub (or is the repository) and checked against it again before
 // anything is read. A request naming anything else is a 404. The answer's `folder` is relative to
-// the project's own hub.
+// the root that holds the project: its own hub, or empty for a repository.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
@@ -24,10 +25,10 @@ import { portfolioConfigFrom } from '../../data/index.ts';
 import { splitHubId } from '../../data/helpers/hub-names.ts';
 import { placeOf } from '../../data/snapshot/as-project.ts';
 import { loadLocal } from '../../data/sources/config.ts';
-import { readManifests } from '../../data/sources/manifests.ts';
+import { manifestDir } from '../../data/sources/manifests.ts';
 import type { PortfolioConfig, Project } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
-import { hubTargets, type HubTarget } from './roots.ts';
+import { hubManifests, hubTargets, type HubTarget } from './roots.ts';
 import { anyNumberShape } from '../../data/shapes/shapes.ts';
 
 /**
@@ -183,6 +184,26 @@ function walk(root: string, dir: string, ext: string[], rows: FileRow[]): void {
 }
 
 /**
+ * The files under `folder`, which must lie inside `bound`, the folder of the root that holds the
+ * project. The answer's `folder` is `path`, the project's folder against that root: the
+ * hub-relative folder of a hub project, and empty for a project of a repository.
+ */
+function listIn(
+    folder: string,
+    bound: string,
+    path: string,
+    settings: Record<string, unknown>
+): Response {
+    if (!inside(folder, bound))
+        return json(
+            { error: 'the folder is not inside its root' },
+            { status: 404, headers: NO_STORE }
+        );
+    const answer: FilesAnswer = { ...projectFiles(folder, settings), folder: path };
+    return json(answer, { headers: NO_STORE });
+}
+
+/**
  * The files of a side project: those of its folder of the hub, or of its repository. The answer's
  * `folder` is against the Files root that holds the project, so it is the folder of a hub side
  * project and empty for a repository.
@@ -190,20 +211,13 @@ function walk(root: string, dir: string, ext: string[], rows: FileRow[]): void {
 function listSideFiles(side: Project, hub: string, settings: Record<string, unknown>): Response {
     const place = placeOf(side);
     const folder = side.repository === undefined ? join(hub, side.folder) : place.dir;
-    const bound = side.repository === undefined ? hub : place.dir;
-    if (!inside(folder, bound))
-        return json(
-            { error: 'the folder is not inside its root' },
-            { status: 404, headers: NO_STORE }
-        );
-    const answer: FilesAnswer = { ...projectFiles(folder, settings), folder: place.path };
-    return json(answer, { headers: NO_STORE });
+    return listIn(folder, side.repository === undefined ? hub : place.dir, place.path, settings);
 }
 
 /**
  * The files of the project the request names. Every refusal says what was wrong: a request with no
  * id at all is a 400, an id the reader does not know is a 404, and so is a folder that would leave
- * the hub.
+ * its root. A project of a repository is listed from the repository, against its own root.
  */
 export function listFiles(into: FilesTarget, id: string): Response {
     if (id === '') return json({ error: 'no project id' }, { status: 400, headers: NO_STORE });
@@ -218,21 +232,13 @@ export function listFiles(into: FilesTarget, id: string): Response {
     };
     const side = into.side?.(id) ?? null;
     if (side !== null) return listSideFiles(side, owner.hub, into.settings);
-    const { manifests } = readManifests(owner.hub, owner.config.scan, owner.config.text);
-    const manifest = manifests.find((one) => one.id === named.id);
+    const manifest = hubManifests(owner.hub, owner.config).find((one) => one.id === named.id);
     if (manifest === undefined)
         return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
-
-    const folder = join(owner.hub, manifest.folder);
-    if (!inside(folder, owner.hub))
-        return json(
-            { error: 'the folder is not inside the hub' },
-            { status: 404, headers: NO_STORE }
-        );
-
-    const found = projectFiles(folder, into.settings);
-    const answer: FilesAnswer = { ...found, folder: manifest.folder };
-    return json(answer, { headers: NO_STORE });
+    const { repository } = manifest;
+    const folder = manifestDir(owner.hub, manifest);
+    if (repository !== undefined) return listIn(folder, repository.dir, '', into.settings);
+    return listIn(folder, owner.hub, manifest.folder, into.settings);
 }
 
 /**

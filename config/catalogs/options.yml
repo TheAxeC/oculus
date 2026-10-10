@@ -1369,6 +1369,10 @@ options:
                 dir:
                     help: the directory, absolute or starting with ~/
                     control: path
+                tier:
+                    help: "what the repository's .oculus/project.yml is read as. projects, coauthor and archive read it as a research project of the first hub on the Projects, Coauthor or Archive board (on the Projects board the manifest's type line picks the column), with the key as its id, LaTeX and no Deposit. personal, or no tier, reads it as a side project of the Personal board. The empty item leaves the key out of the entry. A root marked hub: true takes no tier, and a key with a colon, a slash or a space, or one of side, root, hub and engine, cannot be given a research tier"
+                    control: choice
+                    options: [projects, coauthor, archive, personal]
         repository_scan_depth:
             heading: sources
             section: Roots

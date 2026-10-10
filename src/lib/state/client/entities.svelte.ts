@@ -20,7 +20,7 @@
 import type { Message } from '../../data/model/index.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore, Payloads } from '../shared/stores/shapes.ts';
-import { payloadShapes } from './payloads.ts';
+import { payloadShapes } from './shapes/payloads.ts';
 
 export type { EntitiesStore };
 

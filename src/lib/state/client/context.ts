@@ -20,44 +20,35 @@
 // nothing of `ui/` or `views/`: the view registry is a state module (state/workbench/navigation/
 // registry.ts), and the primitives' tooltip counter is made by the page root beside this object.
 
-import { createRegistry, type RegistryStore } from '../workbench/navigation/registry.ts';
-import { createAgents, type AgentsStore } from '../sessions/agents.svelte.ts';
-import { createChanges, type ChangesStore } from '../sessions/changes.svelte.ts';
-import { createApps, type AppsStore } from '../system/apps/apps.svelte.ts';
-import { createAudit, type AuditStore } from '../system/audit.svelte.ts';
-import { createAccounts, type AccountsStore } from '../life/accounts.svelte.ts';
-import { createCalendar, type CalendarStore } from '../life/calendar.svelte.ts';
-import { createClock, type ClockStore } from './clock.svelte.ts';
-import { createDeposit, type DepositStore } from '../system/deposit.svelte.ts';
-import { createDocs, type DocsStore } from '../system/docs.svelte.ts';
-import { createDrag, type DragStore } from '../workbench/drag.svelte.ts';
+import type { ClientState, TabScopeStore } from './shapes/client-state.ts';
+import { createRegistry } from '../workbench/navigation/registry.ts';
+import { createAgents } from '../sessions/agents.svelte.ts';
+import { createChanges } from '../sessions/changes.svelte.ts';
+import { createApps } from '../system/apps/apps.svelte.ts';
+import { createAudit } from '../system/audit.svelte.ts';
+import { createAccounts } from '../life/accounts.svelte.ts';
+import { createCalendar } from '../life/calendar.svelte.ts';
+import { createClock } from './clock.svelte.ts';
+import { createDeposit } from '../system/deposit.svelte.ts';
+import { createDocs } from '../system/docs.svelte.ts';
+import { createDrag } from '../workbench/drag.svelte.ts';
 import {
     createEditorStatus,
-    sourceOnScreen,
-    type EditorStatusStore
+    sourceOnScreen
 } from '../workbench/navigation/editor-status.svelte.ts';
-import {
-    createHeadings,
-    type HeadingsStore
-} from '../sources/explorer/sections/headings.svelte.ts';
-import { createEntities, type EntitiesStore } from './entities.svelte.ts';
-import { createFeeds, type FeedsStore } from '../feeds/feeds.svelte.ts';
-import { createFiles, type FilesStore } from '../sources/files.svelte.ts';
+import { createHeadings } from '../sources/explorer/sections/headings.svelte.ts';
+import { createEntities } from './entities.svelte.ts';
+import { createFeeds } from '../feeds/feeds.svelte.ts';
+import { createFiles } from '../sources/files.svelte.ts';
 import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
-import {
-    createFolderPages,
-    type FolderPages
-} from '../workbench/layout/open/float/folder-opener.ts';
-import { createFs, type FsStore } from '../sources/fs.svelte.ts';
+import { createFolderPages } from '../workbench/layout/open/float/folder-opener.ts';
+import { createFs } from '../sources/fs.svelte.ts';
 import { HUB_ROOT, fileUnder, rootOf } from '../../data/helpers/hub-names.ts';
 import { filesLineTyped } from '../sources/fs.ts';
-import { createHpc, type HpcStore } from '../system/machine/hpc/hpc.svelte.ts';
-import {
-    createProcesses,
-    type ProcessesStore
-} from '../system/machine/processes/processes.svelte.ts';
-import { createSchedule, type ScheduleStore } from '../system/machine/schedules/schedule.svelte.ts';
-import { createInbox, type InboxStore } from '../feeds/inbox.svelte.ts';
+import { createHpc } from '../system/machine/hpc/hpc.svelte.ts';
+import { createProcesses } from '../system/machine/processes/processes.svelte.ts';
+import { createSchedule } from '../system/machine/schedules/schedule.svelte.ts';
+import { createInbox } from '../feeds/inbox.svelte.ts';
 import {
     instanceMap,
     instanceText,
@@ -68,200 +59,68 @@ import {
 import { fileOfTab } from '../workbench/navigation/pages.ts';
 import { paneAt } from '../workbench/layout/index.ts';
 import { pageOpen } from '../workbench/layout/saved/storage.ts';
-import { createLatexActions, type LatexActions } from '../sessions/latex/actions.ts';
+import { createLatexActions } from '../sessions/latex/actions.ts';
 import { createLatex, type LatexStore } from '../sessions/latex/latex.svelte.ts';
 import type { Desktop } from '../shared/stores/desktop.ts';
-import { createWindows, type Windows } from '../workbench/layout/open/float/browser.ts';
-import { createLayout, type LayoutStore } from '../workbench/layout.svelte.ts';
+import { createWindows } from '../workbench/layout/open/float/browser.ts';
+import { createLayout } from '../workbench/layout.svelte.ts';
 import { appsSettings } from '../../data/sources/config/settings.ts';
-import { createLines, type LinesStore } from '../system/lines.svelte.ts';
-import { createManifestDraft, type ManifestDraftStore } from '../forms/manifest-draft.ts';
-import { createMemories, type MemoriesStore } from '../life/memories.svelte.ts';
-import { createNotices, type NoticesStore } from '../workbench/navigation/notices.svelte.ts';
+import { createLines } from '../system/lines.svelte.ts';
+import { createManifestDraft } from '../forms/manifest-draft.ts';
+import { createMemories } from '../life/memories.svelte.ts';
+import { createNotices } from '../workbench/navigation/notices.svelte.ts';
 import { createNoticeSources } from '../workbench/navigation/notice-sources.ts';
-import {
-    createPaletteSource,
-    type PaletteSourceStore
-} from '../workbench/palette-source.svelte.ts';
-import { createPresent, type PresentStore } from '../life/present.svelte.ts';
+import { createPaletteSource } from '../workbench/palette-source.svelte.ts';
+import { createPresent } from '../life/present.svelte.ts';
 import { SETTINGS_VIEW, configRail, railTyped } from '../workbench/navigation/rail.ts';
 import { settingsTyped } from '../system/config/typed.ts';
-import { createRailBadges, type RailBadgesStore } from '../workbench/rail-badges.svelte.ts';
-import {
-    createRepositories,
-    DIFF_VIEW,
-    type RepositoriesStore
-} from '../sources/repositories/repositories.svelte.ts';
+import { createRailBadges } from '../workbench/rail-badges.svelte.ts';
+import { createRepositories, DIFF_VIEW } from '../sources/repositories/repositories.svelte.ts';
 import { heldDiff } from '../sources/repositories/repositories.ts';
-import { createSelection, type SelectionStore } from '../workbench/selection.svelte.ts';
-import {
-    createExplorer,
-    type ExplorerStore,
-    type MovedItems
-} from '../sources/explorer/ops.svelte.ts';
-import { createSearch, type SearchStore } from '../sources/search/search.svelte.ts';
-import { createLint, type LintStore } from '../system/machine/lint/lint.svelte.ts';
-import { createClangd, type ClangdStore } from '../system/machine/lsp/clangd.svelte.ts';
-import { createDocuments, type DocumentsStore } from '../system/machine/lsp/documents.svelte.ts';
+import { createSelection } from '../workbench/selection.svelte.ts';
+import { createExplorer, type MovedItems } from '../sources/explorer/ops.svelte.ts';
+import { createSearch } from '../sources/search/search.svelte.ts';
+import { createLint } from '../system/machine/lint/lint.svelte.ts';
+import { createClangd } from '../system/machine/lsp/clangd.svelte.ts';
+import { createDocuments } from '../system/machine/lsp/documents.svelte.ts';
 import {
     languageProblems,
     commandProblems,
     latexProblems,
     lintProblems
 } from '../system/problem-sources.ts';
-import { createProblems, problemTarget, type ProblemsStore } from '../system/problems.svelte.ts';
+import { createProblems, problemTarget } from '../system/problems.svelte.ts';
 import { openPlace, type PlaceOpener } from '../sessions/source/place.ts';
 import { readRoots, readText } from '../sources/fs-transport.ts';
 import { watchServedRoots } from '../shared/stores/served-roots.svelte.ts';
-import { createLspEdits, type LspEdits } from '../system/machine/lsp/edits.ts';
-import {
-    REFACTOR_VIEW,
-    createRefactor,
-    type RefactorStore
-} from '../system/machine/refactor/preview.svelte.ts';
+import { createLspEdits } from '../system/machine/lsp/edits.ts';
+import { REFACTOR_VIEW, createRefactor } from '../system/machine/refactor/preview.svelte.ts';
 import { isPrivateFile } from '../system/config/config-files.ts';
 import { WRITE_MAX_BYTES } from '../../data/file-ops.ts';
-import {
-    createWorkspaceSymbols,
-    type WorkspaceSymbolsStore
-} from '../system/machine/lsp/workspace-symbols.ts';
+import { createWorkspaceSymbols } from '../system/machine/lsp/workspace-symbols.ts';
 import { createLinkRewrite } from '../system/machine/refactor/link-rewrite.ts';
-import { createLsp, type LspStore } from '../system/machine/lsp/lsp.svelte.ts';
-import { createReferences, type ReferencesStore } from '../system/machine/lsp/references.svelte.ts';
+import { createLsp } from '../system/machine/lsp/lsp.svelte.ts';
+import { createReferences } from '../system/machine/lsp/references.svelte.ts';
 import { saveRulesOf } from '../workbench/navigation/editor-text.ts';
-import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
-import { createSocket, type SocketStore } from './socket.svelte.ts';
-import { createAutosave, type AutosaveStore } from '../sessions/source/autosave.svelte.ts';
+import { createSelectors } from './selectors.svelte.ts';
+import { createSocket } from './socket.svelte.ts';
+import { createAutosave } from '../sessions/source/autosave.svelte.ts';
 import { loadSource, sourceTabState, type SourceDraft } from '../sessions/source/draft.ts';
-import {
-    createSource,
-    type SaveRules,
-    type SourceStore
-} from '../sessions/source/source.svelte.ts';
-import {
-    createTerminals,
-    terminalLabel,
-    type TerminalsStore
-} from '../sessions/terminals.svelte.ts';
-import { createCommands, type CommandsStore } from '../sessions/terminal/commands.svelte.ts';
+import { createSource, type SaveRules } from '../sessions/source/source.svelte.ts';
+import { folderOfProject } from '../sessions/source/write-files.ts';
+import { createTerminals, terminalLabel } from '../sessions/terminals.svelte.ts';
+import { createCommands } from '../sessions/terminal/commands.svelte.ts';
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
-import { createTranscripts, type TranscriptsStore } from '../sessions/transcript.svelte.ts';
-import { createUi, type UiStore } from '../workbench/ui.svelte.ts';
-import { createDebug, type DebugStore } from '../system/machine/debug/debug.svelte.ts';
-import {
-    createUsageRefresh,
-    type UsageRefreshStore
-} from '../system/machine/usage/usage-refresh.svelte.ts';
+import { createTranscripts } from '../sessions/transcript.svelte.ts';
+import { createUi } from '../workbench/ui.svelte.ts';
+import { createDebug } from '../system/machine/debug/debug.svelte.ts';
+import { createUsageRefresh } from '../system/machine/usage/usage-refresh.svelte.ts';
 import { createQueries, scopedStore } from './queries.svelte.ts';
-import { createWrites, type WritesStore } from './writes.svelte.ts';
-import { createGraphviz, type GraphvizLoader } from '../boards/structure/layout.ts';
-import { createLatexReader, type LatexReader } from '../sources/explorer/sections/outline.ts';
+import { createWrites } from './writes.svelte.ts';
+import { createGraphviz } from '../boards/structure/layout.ts';
+import { createLatexReader } from '../sources/explorer/sections/outline.ts';
 
-/** What a tab needs of the client to hide its reads while it is hidden. */
-export type TabScopeStore = {
-    /**
-     * A copy of `state` in which each store that reads through the query client runs every
-     * function member in the scope of `shown`, so a tab asks nothing through it while `shown`
-     * answers false. Every other store of the copy is the original instance.
-     */
-    wrap: (state: ClientState, shown: () => boolean) => ClientState;
-};
-
-/** Every store one client holds, one instance of each. */
-export type ClientState = {
-    /** What the app gave this page: its bridge and the float it draws; undefined in a browser. */
-    desktop: Desktop | undefined;
-    /** The float this page draws alone in a window of its own, in the app or a browser tab. */
-    float: string | null;
-    /** The id of this page when it is a main page, which the windows it opens carry as `owner`. */
-    pageId: string;
-    /** The id of the main page that opened the window this page draws a float in, else null. */
-    owner: string | null;
-    /** Put a tab in a window of its own. */
-    windows: Windows;
-    graphviz: GraphvizLoader;
-    /** The LaTeX reader the Files Outline reads with, which loads the parser on its first call. */
-    latexReader: LatexReader;
-    entities: EntitiesStore;
-    writes: WritesStore;
-    socket: SocketStore;
-    ui: UiStore;
-    layout: LayoutStore;
-    drag: DragStore;
-    clock: ClockStore;
-    changes: ChangesStore;
-    selection: SelectionStore;
-    terminals: TerminalsStore;
-    /** The project commands of the repositories, and the questions a run asks. */
-    commands: CommandsStore;
-    /** The debugger: its session, console, breakpoints and launch configurations. */
-    debug: DebugStore;
-    /** The composer's choices, the Customizations section's rows, and a session's export. */
-    agents: AgentsStore;
-    files: FilesStore;
-    fs: FsStore;
-    docs: DocsStore;
-    latex: LatexStore;
-    /** What a reader does with a LaTeX file or its PDF: build, view the PDF, SyncTeX. */
-    latexActions: LatexActions;
-    deposit: DepositStore;
-    transcripts: TranscriptsStore;
-    source: SourceStore;
-    /** Saving a source tab by `editor.autosave`: the editor's blur reaches it here. */
-    autosave: AutosaveStore;
-    manifestDraft: ManifestDraftStore;
-    feeds: FeedsStore;
-    hpc: HpcStore;
-    processes: ProcessesStore;
-    schedule: ScheduleStore;
-    calendar: CalendarStore;
-    inbox: InboxStore;
-    /** The Calendar's and the Inbox's accounts, and the account setup page. */
-    accounts: AccountsStore;
-    audit: AuditStore;
-    memories: MemoriesStore;
-    /** The Status view's line counts of oculus's own files. */
-    lines: LinesStore;
-    present: PresentStore;
-    repositories: RepositoriesStore;
-    search: SearchStore;
-    /** The Files view's file operations, clipboard and compare selection. */
-    explorer: ExplorerStore;
-    /** The workbench: a page that belongs to one folder, opened and made again here. */
-    folders: FolderPages;
-    usageRefresh: UsageRefreshStore;
-    selectors: SelectorsStore;
-    railBadges: RailBadgesStore;
-    paletteSource: PaletteSourceStore;
-    /** What each source tab says of its text, for the status bar, and what the bar asks of it. */
-    editorStatus: EditorStatusStore;
-    /** The headings a rendered tab shows, for the Outline, and the Outline's presses on them. */
-    headings: HeadingsStore;
-    /** The language servers: their channels, states, choices and logs. */
-    lsp: LspStore;
-    /** The edits the language servers ask for, and the files this page's tabs hold open. */
-    lspEdits: LspEdits;
-    /** The Refactor Preview: an edit a server asked for, shown before it is made. */
-    refactor: RefactorStore;
-    /** The symbol queries a source tab's server answers, for the palette's `#` list. */
-    workspaceSymbols: WorkspaceSymbolsStore;
-    /** The diagnostics of the files and the document symbols of the source tabs. */
-    documents: DocumentsStore;
-    /** The problems of every source folded: the Problems view, the status bar and the F8 walk. */
-    problems: ProblemsStore;
-    lint: LintStore;
-    /** The References view's results, history and walk. */
-    references: ReferencesStore;
-    /** What clangd answered a tab for the Files view's AST and Memory Usage sections. */
-    clangd: ClangdStore;
-    /** The notifications the status bar's bell counts and its centre lists. */
-    notices: NoticesStore;
-    registry: RegistryStore;
-    /** The apps found while oculus runs, and the frames drawn for them. */
-    apps: AppsStore;
-    /** The copy of these stores a tab provides for its subtree. */
-    tabScope: TabScopeStore;
-};
+export type { ClientState, TabScopeStore };
 
 /**
  * One client's stores, built in dependency order: a store is made after everything it reads, and is
@@ -293,11 +152,7 @@ export function createClientState(
         () => entities.config()?.config ?? null,
         (file) => source.unsavedFile(file.root, file.path),
         {
-            projectFolder: (id) => {
-                const project = entities.portfolio()?.entities.projects[id];
-                if (project === undefined || project.folder === '') return null;
-                return { root: rootOf(project), path: project.folder };
-            },
+            projectFolder: (id) => folderOfProject(entities.portfolio()?.entities.projects[id]),
             collectionFile: (id) => {
                 const held = entities.portfolio()?.entities.collections[id];
                 if (held === undefined || rootOf(held) === HUB_ROOT) return null;

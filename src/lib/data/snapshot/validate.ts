@@ -160,18 +160,21 @@ function checkSelfRelated(manifest: RawManifest, catalog: TextCatalog, findings:
 }
 
 /**
- * Every project folder has a name of its own. The folder name is the project's id, so two manifests
- * under folders of one name are one id: the second card overwrites the first, and the sessions
- * matcher, which finds a project by its folder name, cannot tell the two apart.
+ * Every project folder has a name of its own. The folder name is the project's id, and a
+ * repository's id is its root's key, so two manifests under folders of one name are one id: the
+ * second card overwrites the first, and the sessions matcher, which finds a project by its folder
+ * name, cannot tell the two apart.
  */
 function checkFolderNames(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
     const byName = new Map<string, RawManifest[]>();
     for (const manifest of raw.manifests) {
         const name =
+            manifest.repository?.root ??
             manifest.folder
                 .split('/')
                 .filter((part) => part !== '')
-                .pop() ?? '';
+                .pop() ??
+            '';
         if (name === '') continue;
         byName.set(name, [...(byName.get(name) ?? []), manifest]);
     }

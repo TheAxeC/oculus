@@ -11,6 +11,7 @@ import { stringify } from 'yaml';
 import { z } from 'zod';
 import { localDate } from '../../../data/helpers/dates.ts';
 import { byKey } from '../../../data/helpers/guards.ts';
+import { folderOnDisk } from '../../../data/places/folder-on-disk.ts';
 import { isHubPath } from '../../../data/places/hub-address.ts';
 import type { Project } from '../../../data/model/index.ts';
 import { PROJECT_DECK } from '../../../data/sources/deck/read.ts';
@@ -20,8 +21,10 @@ import {
     type AuditRules,
     sentence,
     type Raised,
+    scopeOf,
     slurp,
     isFolder,
+    fileIn,
     fileOf,
     NO_FILE,
     namesShape,
@@ -147,7 +150,7 @@ function hasDataSection(folder: string): boolean {
 export function markers(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
         if (project.ghost) continue;
-        const folder = join(input.hub, project.folder);
+        const folder = folderOnDisk(input.hub, project);
         for (const name of [...SCANNED, ...deckDocuments(folder)]) {
             const path = join(folder, name);
             if (!existsSync(path)) continue;
@@ -155,10 +158,10 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
             const count = markerCount(text);
             if (count === 0) continue;
             add({
-                scope: project.folder,
+                scope: scopeOf(project),
                 where: name,
                 kind: 'todo',
-                file: fileOf(input.hub, path),
+                ...fileIn(input.hub, project, path),
                 ...sentence('audit.msg_markers', count, firstMarker(text))
             });
         }
@@ -204,8 +207,8 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
         if (project.ghost) continue;
-        const scope = project.folder;
-        const folder = join(input.hub, project.folder);
+        const scope = scopeOf(project);
+        const folder = folderOnDisk(input.hub, project);
         if (
             project.type !== undefined &&
             PLACED.includes(project.type) &&
@@ -215,7 +218,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'venue_id',
                 kind: 'data',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_no_venue')
             });
         }
@@ -230,7 +233,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'project.yml',
                     kind: 'data',
-                    file: fileOf(input.hub, project.file),
+                    ...fileIn(input.hub, project, project.file),
                     ...sentence('audit.msg_missing_field', field)
                 });
             }
@@ -240,7 +243,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'project.yml',
                     kind: 'data',
-                    file: fileOf(input.hub, project.file),
+                    ...fileIn(input.hub, project, project.file),
                     ...sentence('audit.msg_provisional', provisional.length)
                 });
             }
@@ -249,7 +252,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'project',
                     kind: 'data',
-                    file: fileOf(input.hub, join(folder, 'README.md')),
+                    ...fileIn(input.hub, project, join(folder, 'README.md')),
                     ...sentence('audit.msg_no_data_section')
                 });
             }
@@ -260,12 +263,14 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'project.yml',
                     kind: 'data',
-                    file: fileOf(input.hub, project.file),
+                    ...fileIn(input.hub, project, project.file),
                     ...sentence('audit.msg_docs_ahead', when, lag)
                 });
             }
         }
-        const deposit = project.codeAvailability;
+        // A project read from a repository has no Deposit, so the order of its deposit and its
+        // reproduction is not asked of it.
+        const deposit = project.repository === undefined ? project.codeAvailability : undefined;
         const reproduced = asDate(project.reproduced?.date);
         const deposited = asDate(deposit?.date);
         if (
@@ -279,7 +284,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'project.yml',
                 kind: 'data',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_deposit_before_reproduction', deposited, reproduced)
             });
         }
@@ -306,8 +311,8 @@ function folderType(project: Project, rules: AuditRules): string | undefined {
 export function conformance(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
         if (project.ghost) continue;
-        const scope = project.folder;
-        const folder = join(input.hub, project.folder);
+        const scope = scopeOf(project);
+        const folder = folderOnDisk(input.hub, project);
         if (
             project.type !== undefined &&
             STANDARD.includes(project.type) &&
@@ -327,7 +332,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: name,
                 kind: 'conform',
-                file: fileOf(input.hub, join(folder, name)),
+                ...fileIn(input.hub, project, join(folder, name)),
                 ...sentence('audit.msg_retired_doc')
             });
         }
@@ -341,7 +346,13 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 ...sentence('audit.msg_bad_folder', good)
             });
         }
-        if (isFolder(join(folder, 'code')) && !existsSync(join(folder, 'code', 'README.md'))) {
+        // The README of `code/` is the root of a project's Deposit, which a project read from a
+        // repository does not have.
+        if (
+            project.repository === undefined &&
+            isFolder(join(folder, 'code')) &&
+            !existsSync(join(folder, 'code', 'README.md'))
+        ) {
             add({
                 scope,
                 where: 'code/',
@@ -357,7 +368,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'project.yml',
                 kind: 'conform',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_type_not_folder', written, expected)
             });
         }
@@ -372,7 +383,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
         if (project.ghost) continue;
-        const scope = project.folder;
+        const scope = scopeOf(project);
         const chips = new Set(project.chips);
         const finished = project.tier === 'archive' || project.tier === 'coauthor';
         const named = rules.authorChips.some((chip) => chips.has(chip));
@@ -381,7 +392,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_no_author_chip')
             });
         }
@@ -392,7 +403,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                     scope,
                     where: 'status.chips',
                     kind: 'manifest',
-                    file: fileOf(input.hub, project.file),
+                    ...fileIn(input.hub, project, project.file),
                     ...sentence('audit.msg_terminal_live', project.type, printed(live))
                 });
             }
@@ -404,7 +415,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_projects_published')
             });
         }
@@ -414,7 +425,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_contradictory_chips', one, other)
             });
         }
@@ -427,7 +438,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: 'eli5',
                 kind: 'manifest',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_missing')
             });
         }
@@ -439,7 +450,7 @@ export function readability(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
         if (project.ghost) continue;
-        const scope = project.folder;
+        const scope = scopeOf(project);
         const fields: [string, string | undefined][] = [
             ['status.line', project.statusLine],
             ['next', project.next],
@@ -455,7 +466,7 @@ export function readability(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: `\`${field}\``,
                 kind: 'readability',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_too_long', length, limit)
             });
         }
@@ -467,7 +478,7 @@ export function readability(input: AuditInput, add: (f: Raised) => void): void {
                 scope,
                 where: `results[${at}]`,
                 kind: 'readability',
-                file: fileOf(input.hub, project.file),
+                ...fileIn(input.hub, project, project.file),
                 ...sentence('audit.msg_result_too_long', result.length, limit)
             });
         });

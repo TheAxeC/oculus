@@ -40,7 +40,7 @@ import {
     unchanged
 } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
-import { payloadShapes } from './payloads.ts';
+import { payloadShapes } from './shapes/payloads.ts';
 import { configInstalled } from '../shared/words/generation.svelte.ts';
 import { setCatalog, setGlyphs, setIcons } from '../shared/words/text.ts';
 import { setAppearance } from '../shared/words/appearance.ts';

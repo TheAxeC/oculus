@@ -65,25 +65,18 @@ import { HUB_LAYER, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-name
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
-import {
-    ENGINE_ROOT,
-    HUB_ROOT,
-    expandHome,
-    hubRoots,
-    readRoots,
-    type Root
-} from '../../files/files.ts';
+import { HUB_ROOT, hubRoots, readRoots, type Root } from '../../files/files.ts';
+import { repositoriesOf } from '../../files/roots.ts';
 import { buildFeeds, isLinkedinFile } from '../../edit/feeds.ts';
 import type {
     AuditFinding,
     AuditPayload,
     ConfigPayload,
     HostInfo,
-    PersonalRoot,
-    PortfolioConfig
+    PortfolioConfig,
+    RepositoryRoot
 } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
-import { realPath } from '../../core/paths.ts';
 import { POLL, pollFile, systemClock, type Clock } from '../../core/file-poll.ts';
 
 export type WatchPaths = {
@@ -96,9 +89,10 @@ export type WatchPaths = {
     /** The machine the server runs on, carried by every config push. */
     host: HostInfo;
     /**
-     * The directories the file browser serves, read at every rebuild. `personalRoots` below
-     * decides which of them are repositories whose `.oculus/project.yml` is a side project of the
-     * Personal board and the Focus ticker; the reader takes the roots it is handed as they come.
+     * The directories the file browser serves, read at every rebuild. `repositoriesOf` decides
+     * which of them are repositories whose `.oculus/project.yml` is read, as a research project of
+     * the hub when the entry names a `tier` or as a side project of the Personal board and the
+     * Focus ticker when it names none.
      */
     roots: () => Root[];
     /**
@@ -197,7 +191,7 @@ export function relevant(filename: string | null): boolean {
 export function namedByConfig(
     hub: string,
     config: PortfolioConfig,
-    roots: PersonalRoot[] = []
+    roots: RepositoryRoot[] = []
 ): (path: string) => boolean {
     const files = new Set<string>();
     for (const root of roots) files.add(join(root.dir, ROOT_FOLDER, MANIFEST));
@@ -244,7 +238,7 @@ export function namedByConfig(
 export function watchedDirectories(
     hub: string,
     config: PortfolioConfig,
-    roots: PersonalRoot[] = []
+    roots: RepositoryRoot[] = []
 ): string[] {
     const dirs = new Set(roleDirectories(hub, config, roots));
     if (config.feeds.linkedin !== '') dirs.add(join(hub, config.feeds.linkedin));
@@ -257,7 +251,7 @@ export function watchedDirectories(
 export function roleDirectories(
     hub: string,
     config: PortfolioConfig,
-    roots: PersonalRoot[] = []
+    roots: RepositoryRoot[] = []
 ): string[] {
     const dirs = new Set<string>();
     for (const root of roots) dirs.add(join(root.dir, ROOT_FOLDER));
@@ -269,40 +263,6 @@ export function roleDirectories(
     }
     if (config.portfolioDeck !== null) dirs.add(join(hub, config.portfolioDeck));
     return [...dirs];
-}
-
-/**
- * A path as its real path when it is there, else as it is, so a link and its target match, and so
- * do two letter cases of one directory on a case-insensitive file system.
- */
-function identityOf(path: string): string {
-    return realPath(path, true) ?? path;
-}
-
-/**
- * The roots the side-project reader is handed, and the one place that decides which roots of the
- * file browser are repositories of their own. A root marked `hub: true` is built as a hub of its
- * own and a root keyed `hub` or `engine` is a fixed one, so each is dropped. A leading `~` is
- * expanded, and a root is dropped whose real path is the hub's, the engine's config folder's or an
- * earlier root's, so a second key, a second spelling or a link to a directory read already draws no
- * second card. A root whose directory is not on this machine is kept, for the reader to find
- * nothing in.
- */
-export function personalRoots(listed: Root[], hub: string, engineConfig: string): PersonalRoot[] {
-    const seen = new Set([identityOf(hub), identityOf(engineConfig)]);
-    const keys = new Set<string>();
-    const roots: PersonalRoot[] = [];
-    for (const root of listed) {
-        if (root.hub === true || root.key === HUB_ROOT || root.key === ENGINE_ROOT) continue;
-        if (keys.has(root.key)) continue;
-        const dir = expandHome(root.dir);
-        const identity = identityOf(dir);
-        if (seen.has(identity)) continue;
-        seen.add(identity);
-        keys.add(root.key);
-        roots.push({ key: root.key, dir });
-    }
-    return roots;
 }
 
 function reason(error: unknown): string {
@@ -529,7 +489,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     };
 
     /** Watch the parents of the roots listed now, and shut the handles of roots that left. */
-    const watchRootParents = (roots: PersonalRoot[]): void => {
+    const watchRootParents = (roots: RepositoryRoot[]): void => {
         const listed = new Set(roots.map((root) => root.dir));
         for (const [dir, handle] of rootParents) {
             if (listed.has(dir)) continue;
@@ -577,7 +537,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     const watchHubFolders = (
         dir: string,
         portfolio: PortfolioConfig,
-        roots: PersonalRoot[],
+        roots: RepositoryRoot[],
         first: boolean
     ): boolean => {
         let feedOpened = false;
@@ -690,7 +650,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 if (closed) return;
             }
             const portfolio = portfolioConfigFrom(config);
-            const roots = personalRoots(listed, paths.hub, engineConfig);
+            const roots = repositoriesOf(listed, paths.hub, engineConfig);
             const byHub = [
                 namedByConfig(paths.hub, portfolio, roots),
                 ...others.map((one) => namedByConfig(one.dir, one.portfolio))
@@ -711,7 +671,9 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 version,
                 roots,
                 checker,
-                engineConfig
+                engineConfig,
+                HUB_ROOT,
+                sourceFile(paths.engine, paths.hub, from, 'roots')
             );
             const built = joinHubs(
                 base,

@@ -45,6 +45,7 @@ import type {
 } from '../../../../data/model/index.ts';
 import { MANUSCRIPT, stemOf } from '../../../../data/prose/latex.ts';
 import { HUB_ROOT, rootOf as hubOf } from '../../../../data/helpers/hub-names.ts';
+import { isRepositorySide } from '../../../../data/snapshot/as-project.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { onPath } from '../../../core/program.ts';
 import { words } from '../../../core/words.ts';
@@ -189,17 +190,19 @@ function latexFolder(
     }
     const project = (options.projectFor ?? (() => null))(named.data.id);
     // A repository side project holds no manuscript folder the build reads.
-    if (project === null || project.repository !== undefined) return refusal('no-project');
+    if (project === null || isRepositorySide(project)) return refusal('no-project');
     const first = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
     // A project of a hub other than the first lies under the served root of that hub's key.
     const key = hubOf(project);
     const hub =
         key === HUB_ROOT ? first : options.servedRootsFor?.().find((one) => one.key === key)?.dir;
     if (hub === undefined) return refusal('no-project');
+    // A project of a repository is built from the repository, which also bounds what it reads.
+    const bound = project.repository?.dir ?? hub;
     return {
-        dir: join(projectDirectory(hub, project.folder), MANUSCRIPT),
+        dir: join(projectDirectory(hub, project), MANUSCRIPT),
         label: named.data.id,
-        bound: realPath(hub) ?? hub,
+        bound: realPath(bound) ?? bound,
         target: { id: named.data.id }
     };
 }

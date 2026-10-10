@@ -13,6 +13,7 @@ import {
     type AuditInput,
     sentence,
     type Raised,
+    scopeOf,
     slurp,
     scalarShape
 } from './rules.ts';
@@ -203,7 +204,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             const wanted = expectedSections(project);
             if (PUBLIC.includes(type) && !sectionsOf(hit).some((one) => wanted.includes(one))) {
                 add({
-                    scope: project.folder,
+                    scope: scopeOf(project),
                     where: 'publications.yml',
                     kind: 'publink',
                     file,
@@ -219,7 +220,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             claimed.add(hit.key);
             if (PUBLIC.includes(type)) {
                 add({
-                    scope: project.folder,
+                    scope: scopeOf(project),
                     where: 'publications.yml',
                     kind: 'publink',
                     file,
@@ -228,7 +229,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
             }
         } else if (PUBLIC.includes(type)) {
             add({
-                scope: project.folder,
+                scope: scopeOf(project),
                 where: 'publications.yml',
                 kind: 'publink',
                 file,
@@ -249,7 +250,7 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
         if (hit === null || found.score < SAME) continue;
         deadClaimed.add(hit.key);
         add({
-            scope: project.folder,
+            scope: scopeOf(project),
             where: 'publications.yml',
             kind: 'publink',
             file,

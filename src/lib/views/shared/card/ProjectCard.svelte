@@ -17,8 +17,8 @@
     // A side project is drawn by this card too, through the record that stands for it
     // (data/snapshot/as-project.ts): its status replaces the chips
     // (views/shared/card/project/CardStatus.svelte), its `links:` are listed under the next action,
-    // and its folder is the one `placeOf` names, which is a repository's own Files root when the
-    // project is a repository. It has no deposit control.
+    // and its folder is the one `placeOf` names, a repository's own Files root for a repository.
+    // The caller leaves `deposit` off for it and for a research project read from a repository.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
