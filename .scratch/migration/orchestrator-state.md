@@ -33,9 +33,11 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 9337c3ad4
   launched: 2026-10-10
   report: agents/reviews/D49-report.md
+  builder_usage: 253,431 tokens, 320 tool uses, 71.6 min
+  reviewer_report: agents/reviews/D49-refuter.md (add1d084012545bb6, claude-opus-5-5, 352,420 tokens, 138 tool uses, 26.2 min)
   brief_check: agents/reviews/D49-brief-check.md (a2bb671665419901b, claude-opus-5-5, 233,680 tokens, 62 tool uses, 10.6 min; closed in the brief by the orchestrator under "Closed")
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D49-round1.md)
 - step: D55
   executor: agent
   worker: claude:sonnet at ordo-high

@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- D49 (the help pages cut): building.
+- D49 (the help pages cut): repair round 1.
 - D55 (roots as hubs): building.
 
 Queued, in order (2 steps):
