@@ -4,6 +4,60 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z815 (2026-10-11, step D63, the orchestrator, automode): the machine's state placed outside `~/.oculus`
+
+- `local.yml` may place the machine's state files and folders outside `~/.oculus` (`sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks`, `notes`, `changes`, `history`, `approvals`, `schedules`, `schedule_record`, `accounts`, `calendar_dir`, `apps_dir`, `mail_dir`), and `privateFolders` names only `~/.oculus` and each hub's `secrets`. Options: (a) every path those keys name is closed to apps as the private folders are, the set one function of the server's apps folder, `privateFolders` unchanged; (b) `privateFolders` itself widened, which changes what the library rules and the language servers withhold, outside this step; the lazy option is to state the limit and close only `~/.oculus`. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z814 (2026-10-11, step D63, the orchestrator, automode): the saved names of app themes, and a theme that is gone
+
+- A view id starts with `app:` and may hold a `/` (a root key may), so `app:<view id>/<label>` has no single reading. Options: (a) the saved name `<view id>/<label>` and `file_icons: <view id>/<id>`, the label and the id percent-encoded and read by splitting at the last `/`; a colour theme that is gone (its app unapproved, disabled, removed or changed, or its root key not served by this workspace) falls back to the default with a notice on that page, since the colour theme is chosen per browser and the server does not know it; `file_icons`, a key of the configuration, falls back to Seti with a finding keyed `config/appearance.yml`; a page that loads before the `apps` payload draws the default and says nothing until the payload arrives; the find page and the presenter's pages draw an app theme as the workbench does; (b) a server finding for the colour theme, which the server cannot know; (c) the default drawn silently, the reader left to guess why the theme changed; the lazy option is (c). Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z813 (2026-10-11, step D63, the orchestrator, automode): the reader's words for file icons and keybindings
+
+- "Icons" already names the Settings row of a terminal theme's icons and the Icons view, and the key sheet and HELP.md call a keybinding a key. Options: (a) VS Code's name File Icon Theme for the choice, with the colon command `:file-icons` and the Settings row File Icon Theme, and "key" for a keybinding wherever the reader reads it (the approval panel, HELP.md, the key sheet), the manifest point keeping VS Code's name `keybindings`; (b) `:icons` and "keybindings", one word for two things and two words for one; the lazy option is (b). Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z812 (2026-10-11, step D63, the orchestrator, automode): where app settings are written and read
+
+- Z800 writes app settings to the hub layer's `behavior.yml` under `app_settings:`, but `HUB_LIST` lets that layer set only `slurm.resource` and `data_domains`, the config-key writer writes only catalog keys and splits a key at its dots, and the editor's schema refuses an undeclared top-level key. Options: (a) a write kind `app-setting` `{ key, value }` that writes `app_settings` with each setting's whole key as one map key, creating the file when the hub has none, closed to apps; `HUB_LIST` gains `app_settings`; the schema gains it as a map of scalars and lists of strings; the apps watcher judges each value against its declaration, a value outside its type, `enum` or bounds or a key no approved app declares being a finding keyed `config/behavior.yml`; (b) app settings as options-catalog entries generated per app, which writes the shipped catalog from a reader's apps; (c) app settings in a file of their own, which Z800 did not choose; the lazy option is to leave item 12 as written, unbuildable. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z811 (2026-10-11, step D63, the orchestrator, automode): `getConfiguration` synchronous
+
+- VS Code's `getConfiguration(section).get(key)` answers at once. Options: (a) the host holds its app's resolved values, sent when it starts and with each change, so `get` answers at once as in VS Code, and a frame's `oculus.settings.get(key)` is a promise like every frame method; (b) `get` a promise over `oculus/settings/get`, which breaks every ported extension that reads a setting synchronously; the lazy option is (b). Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z810 (2026-10-11, step D63, the orchestrator, automode): the reach of a custom editor
+
+- Item 11 read a custom editor's file under the checks of `fs.readFile`, which a machine app passes only for folders its `files:` names, while Z803's entry said the scope of `open({ file })`. Options: (a) the file the reader opened, under the checks `open({ file })` applies (closed paths and the private folders answer `closed`), for a machine app whatever its `files:`, a root app in its own root; the save writes bytes, text or binary, through a bytes write beside the source save with its `changed` hash, its local-history copy and its refusals; a save while a source tab of the file holds unsaved text is refused `refused:unsaved`; Disable, Remove and Revoke ask through Confirm while a custom editor of the app is dirty, and an approval ended by a change of the app's files posts a notice naming each file whose unsaved changes were lost; (b) the `fs.readFile` checks, so a machine app's editor opens nothing outside its `files:` though the reader chose the file; (c) text files alone through the source save, which leaves a binary editor (an image or a hex editor) unable to save; the lazy option is (c). Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z809 (2026-10-11, step D63, the orchestrator, automode): what goes when a host stops, and where a host's page work lands
+
+- Options: (a) when an app becomes unapproved, disabled, removed or changed, or its host stops, its host's open requests are withdrawn on every page (the host's promise settling `undefined`), its handlers, status items, tree views (drawing the line that the program stopped) and panels go, and its context keys go; a host's panel and a host's run of a command only a frame registered are taken by the page that has the focus, as Z808's commands are; a host's panel is not restored with a page's layout and closes, `onDidDispose` firing, when its page reloads or closes; (b) panels kept open after their host stops, drawing an entry no program answers; (c) a host's panel opened on every page, which draws one panel many times; the lazy option is to leave these states unstated for the builder. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z808 (2026-10-11, step D63, the orchestrator, automode): oculus's own commands run by an app
+
+- Z791 lets an app run oculus's palette colon commands as `oculus.<name>`, and the theme is per browser, so a host's call has no page of its own. Options: (a) an app runs only the colon commands that change what a page shows (`theme`, `file-icons`, `crt`, `tab`, `goto`); the others answer `closed`, since they write configuration (`language`, `interpreter`, `compile-database`, `eslint-config`), start agents (`update`), write the workspaces file (`workspace`, `workspace-save`) or open the system's folder panel (`folder`), which no approval names; a host's call is a request of `app-shell` taken by the page that has the focus, else by the first page that gains it; a frame's call runs on its own page; (b) every colon command, which lets an app start agents and write configuration unasked; (c) no colon command from an app, which drops what Z791 gave for no gain; the lazy option is (b) as Z791 reads, leaving the page unnamed. Taken: (a); Z791 is amended to it.
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z807 (2026-10-11, step D63, the orchestrator, automode): two apps of one name
+
+- Two apps may share a `name` (a machine app and a root app, or root apps of two roots), so the id prefix alone does not keep their ids apart. Options: (a) an id an app earlier in the Views catalogue's order already declares refuses the later app with a finding naming both, and two apps of one name that declare no common id are both offered; (b) every app of a repeated name refused, which refuses apps that never collide; (c) ids prefixed with the view id, which breaks VS Code's id shape for every ported manifest; the lazy option is to leave the collision unhandled, the later registration silently winning. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
 ## Z806 (2026-10-11, step D67 and D63, the orchestrator, automode): the bookmark of `~/.oculus`
 
 - Options: (a) a root `oculus-state` over `~/.oculus` in Axel's workspace beside `claude`, a bookmark that names a root's top (an empty path), and the private folders closed to every app (a `files:` entry under one refuses the app, an `oculus.fs` read under one answers `closed`), built in D63; (b) a root over the home folder with a bookmark of `.oculus`, which serves the whole home folder; (c) the root alone, the lazy option. Taken: (a).
