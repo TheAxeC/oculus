@@ -33,9 +33,11 @@ dispatch:   # steps in flight, up to six (Z632)
   base: e38d174ef
   launched: 2026-10-11
   report: agents/reviews/D63-report.md
+  builder_usage: 211,578 tokens, 330 tool uses, 114.1 min (the completion notice after the resume; the run before Axel's pause was stopped with no notice)
+  reviewer_report: agents/reviews/D63-refuter.md (a3efd9c3f0ad5126e, claude-opus-5-5, 255,070 tokens, 155 tool uses, 30.1 min)
   brief_check: agents/reviews/D63-brief-check.md (a9f32751f0ea11e48, claude-opus-5-5, 333,908 tokens, 108 tool uses, 15.8 min; closed in the brief by the orchestrator under "Closed"; open item 54's ruling put into the brief after)
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D63-round1.md, sent 2026-10-11)
 ```
 
 ## The standing demands (from Axel, in force)
