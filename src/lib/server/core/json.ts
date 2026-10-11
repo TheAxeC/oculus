@@ -63,10 +63,11 @@ export function readJsonChecked(path: string): JsonRead {
  * Write one JSON file whole: a temporary file in the same directory, then a rename, which is
  * atomic on the same filesystem. The temporary name is the target's with a hash of the process,
  * the thread and a counter after it, so two writers cannot collide. Throws when the file cannot be
- * written, the old content and the folder then left as they were.
+ * written, the old content and the folder then left as they were. The file is indented by two
+ * spaces and ends in a newline, so a person can read it, as `writePrivateJson` writes.
  */
 export function writeJsonAtomic(path: string, payload: unknown): void {
-    writeTextAtomic(path, JSON.stringify(payload));
+    writeTextAtomic(path, `${JSON.stringify(payload, null, 2)}\n`);
 }
 
 /** Write text atomically, preserving an existing mode or using newMode for a new file. */
