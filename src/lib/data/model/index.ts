@@ -280,10 +280,34 @@ export type AppRow = {
     reads: string[];
     writes: string[];
     connects: string[];
+    /** The app's host file, a path under its folder, or the empty string for an app with none. */
+    host: string;
+    /**
+     * The folders the app's page may read, as the manifest's `files` lists them (the manifest key
+     * is `files`; `files` below is the count of recorded files). Always empty for a root app.
+     */
+    readFolders: string[];
+    /** Whether the manifest asked for the keyring. */
+    secrets: boolean;
+    /** The activation events of the host, `[onTab]` when the manifest names none. */
+    activation: string[];
+    /** The names of the machine apps this app's host needs started first. */
+    depends: string[];
+    /** Whether the app is disabled in the current workspace, by either list that decides it. */
+    disabled: boolean;
+    /** Whether the machine-wide list disables the app. */
+    machineDisabled: boolean;
+    /**
+     * What the current workspace's lists say of the app: `disabled` or `enabled` when one of them
+     * holds its view id, else the empty string.
+     */
+    workspaceState: '' | 'disabled' | 'enabled';
     files: number;
     bytes: number;
     hash: string;
     approved: boolean;
+    /** Whether the approvals file holds this hash, which a kept app's current files may not. */
+    hashApproved: boolean;
     kept: boolean;
     key: string;
     storeBytes: number;
@@ -610,6 +634,10 @@ export {
     UPDATE_TASKS
 } from './model-machine.ts';
 export type {
+    AppHostRow,
+    AppHostsPayload,
+    AppMessage,
+    AppMessagesPayload,
     BuildOutcome,
     DebugBreakpoint,
     DebugConfiguration,

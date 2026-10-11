@@ -17,11 +17,14 @@
     // local processes whose program the `processes.patterns` list names. The read comes from the
     // `processes` channel every ten seconds while a page is open; a failed read keeps the rows of
     // the last good one under its sentence. Stop ends an oculus terminal, behind a question, and
-    // the view signals no process itself.
+    // the view signals no process itself. Above them are the programs the apps run (their hosts),
+    // from the `app-hosts` channel: each row opens the output the program wrote and has Stop behind
+    // a question that names the app, and Restart; the server ends the program, not this view.
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
+    import type { AppHostRow } from '$lib/state/system/apps/apps.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { clock } from '$lib/state/shared/words/format';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -32,9 +35,11 @@
         type ProcessGroup,
         type ProcessesSort
     } from '$lib/state/system/machine/processes/processes';
+    import AppHosts from './AppHosts.svelte';
     import ProcessTable from './ProcessTable.svelte';
 
     const {
+        apps,
         processes,
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -52,6 +57,20 @@
 
 <Pane title={t('views.processes')}>
     <div class="processes" data-instance={instance.id}>
+        {#if apps.hosts().length > 0}
+            <AppHosts
+                rows={apps.hosts()}
+                onstop={(row: AppHostRow) =>
+                    (asking = {
+                        message: t('processes.host_stop_question', row.title),
+                        detail: '',
+                        act: () => void apps.stopHost(row.app)
+                    })}
+                onrestart={(row: AppHostRow) => void apps.restartHost(row.app)}
+                onapprove={(row: AppHostRow) => apps.review(row.app)}
+                onoutput={(app: string) => apps.hostOutput(app)}
+            />
+        {/if}
         {#if data === null}
             <Empty message={t('processes.reading')} />
         {:else}

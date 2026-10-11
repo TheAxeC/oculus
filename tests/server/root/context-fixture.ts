@@ -5,7 +5,7 @@ import { engineDir, loadConfig, type LocalConfig } from '../../../src/lib/data/s
 import { latexBuild } from '../../../src/lib/data/sources/config/settings.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
-import { noApps } from '../../../src/lib/server/machine/apps/held.ts';
+import { noApps } from '../../../src/lib/server/machine/apps/read/held.ts';
 import { hostInfo, type ServerContext } from '../../../src/lib/server/root/context.ts';
 import { createConfigCache } from '../../../src/lib/server/root/process/config-cache.ts';
 import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
@@ -24,6 +24,7 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { LiteratureDesk } from '../../../src/lib/server/content/literature/desk.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
 import { noop } from '../../fixtures/doubles.ts';
+import { hostsFixture } from '../machine/apps/hosts-fixture.ts';
 
 const ROUTE_TOKEN = 'the-write-token-of-this-context';
 
@@ -134,8 +135,15 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             follow: noop,
             keep: noop,
             unkeep: noop,
+            storeQueue: () => fsWrites(),
+            stateFile: () => '/fixture/apps.json',
+            folder: () => '/fixture/apps',
+            workspace: () => 'default',
+            onRead: () => noop,
+            onStores: () => noop,
             close: noop
         },
+        ...hostsFixture(hub),
         token: ROUTE_TOKEN,
         schedules: {
             reload: noop,

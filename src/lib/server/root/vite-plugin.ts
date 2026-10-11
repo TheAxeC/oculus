@@ -19,13 +19,13 @@ import { attachAtWs, wireServer } from './process/serve.ts';
 import type { Attached } from './socket.ts';
 
 export type ViteServerDependencies = {
-    createContext: (engine: string, portMove: PortMove) => ServerContext;
+    createContext: (engine: string, portMove: PortMove, ready: Promise<void>) => ServerContext;
     attachSocket: (server: Server, context: ServerContext) => Attached;
 };
 
 export type OculusViteServer = {
     adapter: ReturnType<typeof adapter>;
-    plugin: Plugin & {
+    plugin: Omit<Plugin, 'configureServer' | 'configurePreviewServer'> & {
         configureServer: (server: ViteDevServer) => void;
         configurePreviewServer: (server: PreviewServer) => void;
     };
@@ -34,7 +34,7 @@ export type OculusViteServer = {
 type ServerSurface = Pick<ViteDevServer, 'httpServer' | 'middlewares'>;
 
 const dependencies: ViteServerDependencies = {
-    createContext: (engine, portMove) => createServerContext(engine, {}, portMove),
+    createContext: (engine, portMove, ready) => createServerContext(engine, {}, portMove, ready),
     attachSocket: attachAtWs
 };
 
@@ -49,6 +49,12 @@ export function oculusViteServer(
 ): OculusViteServer {
     const make = { ...dependencies, ...replacements };
     const requests = new AsyncLocalStorage<OculusRequest>();
+    // A restart of the dev server loads the configuration again, so each server gets its own
+    // plugin and this closure holds the one context of that server. Vite makes the next server
+    // before it closes the old one, awaits the old plugin's `closeServer` hook, and only then
+    // listens on the next: the hook waits for the old hosts to stop, and the next context starts
+    // no host before its server listens, so no host of one app runs twice.
+    let served: ServerContext | null = null;
     const node = adapter({ out: options.out });
     node.emulate = () => ({
         platform: () => {
@@ -65,9 +71,10 @@ export function oculusViteServer(
         if (!(http instanceof Server)) return;
         const { context } = wireServer(
             http,
-            (portMove) => make.createContext(engine, portMove),
+            (portMove) => make.createContext(engine, portMove, listening(http)),
             make.attachSocket
         );
+        served = context;
 
         server.middlewares.use((request, _response, next) => {
             const carried = request as OculusRequest;
@@ -82,7 +89,15 @@ export function oculusViteServer(
             name: 'oculus-server',
             apply: 'serve',
             configureServer: configure,
-            configurePreviewServer: configure
+            configurePreviewServer: configure,
+            closeServer: async () => {
+                await served?.hosts.close();
+            }
         }
     };
+}
+
+/** Settles once the server listens; Vite configures a server before it listens on it. */
+function listening(http: Server): Promise<void> {
+    return new Promise((resolve) => http.once('listening', () => resolve()));
 }

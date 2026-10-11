@@ -1,5 +1,5 @@
 import { collectionKeys, glyphCatalog, textCatalog, vocabCatalog } from '$lib/data/sources/config';
-import { payloadOf } from '$lib/server/machine/apps/held';
+import { payloadOf } from '$lib/server/machine/apps/read/held';
 import { configSeed } from '$lib/server/root/config-seed';
 import type { PageServerLoad } from './$types';
 

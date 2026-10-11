@@ -194,6 +194,7 @@ glyphs:
   clear_all: "[c]"
   app: "[A]"
   app_view: "[a]"
+  app_disabled: "[-]"
   # language servers
   symbol_file: "f"
   symbol_module: "{}"

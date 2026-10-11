@@ -1,7 +1,15 @@
-// Layer 2, client state. The nine methods the page exposes to one app's frame: `read`, `getTheme`,
-// `getState`, `setState`, `getStore`, `setStore`, `write`, `open` and `key`. Each judges the call
-// by the app's manifest and the limits before it does anything, and a refusal rejects with one
-// fixed word as a plain string (state/system/apps/rules.ts).
+// Layer 2, client state. The methods the page exposes to one app's frame: `read`, `getTheme`,
+// `getState`, `setState`, `getStore`, `setStore`, `write`, `open` and `key`, and the five groups
+// the frame's `oculus` object nests: `fsAddress` (the `fs` methods), `commandsRun`, `secretsGet`,
+// `secretsStore` and `secretsDelete`, and `hostRequest`. Penpal carries them under these flat
+// names and the app's half (serve/oculus.js) nests them as `oculus.fs`, `oculus.commands`,
+// `oculus.secrets` and `oculus.host`. Each judges the call by the app's manifest and the limits
+// before it does anything, and a refusal rejects with one fixed word as a plain string
+// (state/system/apps/rules.ts).
+//
+// A file of a root never passes through the page: `fsAddress` judges the call and answers the
+// address on the app's own address that the frame fetches the bytes, the listing or the stat
+// from, and the server judges the real path.
 //
 // What a method does to the page is handed to it as a function of the context, so the whole table
 // of refusals runs in a test over a context of plain functions and no frame. A call that settles
@@ -10,16 +18,18 @@
 
 import {
     CONFIRMED_WRITES,
+    appAddress,
     inClosedPaths,
+    inFilesEntry,
     pathSegmentsOpen
 } from '../../../data/helpers/files/apps.ts';
+import { createLimiter } from '../../../data/helpers/run/limiter.ts';
 import { webAddress } from '../../../data/places/hub-address.ts';
 import type { AppRow, Message } from '../../../data/model/index.ts';
 import type { AppsSettings } from '../../../data/sources/config/settings.ts';
 import { t } from '../../shared/words/text.ts';
 import { ENGINE_ROOT } from '../../sources/fs.ts';
 import type { WriteAnswer } from '../../shared/stores/shapes.ts';
-import { createLimiter } from './limits.ts';
 import {
     REFUSED,
     failedWith,
@@ -49,6 +59,12 @@ export type KeyInit = {
 /** The answer to `check`: what the server says of a file target. */
 export type OpenResult = 'ok' | 'closed' | 'missing';
 
+/** What the server answered to a call of an app's host or secrets: the value, or the word. */
+export type ServerAnswer = { ok: true; value: unknown } | { ok: false; word: string };
+
+/** How a command run for an app ended. */
+export type CommandOutcome = 'ok' | 'missing' | 'declined' | 'failed';
+
 /** What a method needs of the page, per frame. */
 export type MethodsContext = {
     /** False once the frame was destroyed. */
@@ -62,6 +78,8 @@ export type MethodsContext = {
     dir: () => string | null;
     /** Whether the file browser shows a root of this key. */
     shown: (root: string) => boolean;
+    /** The keys of the roots the file browser shows. */
+    rootKeys: () => string[];
     getState: () => unknown;
     setState: (value: unknown) => void;
     getStore: () => Promise<unknown>;
@@ -78,6 +96,16 @@ export type MethodsContext = {
     /** The server's answer for a file target, or null when the request got none. */
     check: (root: string, path: string) => Promise<OpenResult | null>;
     openFile: (root: string, path: string) => void;
+    /** Run a command of the app's root, in a terminal the reader sees. */
+    runCommand: (name: string) => Promise<CommandOutcome>;
+    /** One call of the app's secrets, or null when the request got no answer. */
+    secrets: (
+        action: 'get' | 'store' | 'delete',
+        key: unknown,
+        value?: unknown
+    ) => Promise<ServerAnswer | null>;
+    /** One request to the app's host, or null when the request got no answer. */
+    host: (method: unknown, params: unknown) => Promise<ServerAnswer | null>;
     /** Open an address outside oculus as a browser tab, with no link back to the page. */
     openUrl: (address: string) => void;
     theme: () => Theme;
@@ -99,7 +127,16 @@ export type Methods = {
     write: (kind: string, body: unknown) => Promise<void>;
     open: (target: unknown) => Promise<void>;
     key: (init: unknown) => Promise<void>;
+    fsAddress: (op: unknown, root: unknown, path: unknown) => Promise<string>;
+    commandsRun: (name: unknown) => Promise<void>;
+    secretsGet: (key: unknown) => Promise<string | undefined>;
+    secretsStore: (key: unknown, value: unknown) => Promise<void>;
+    secretsDelete: (key: unknown) => Promise<void>;
+    hostRequest: (method: unknown, params: unknown) => Promise<unknown>;
 };
+
+/** The reads of a root's files, each with the marker its address carries. */
+const FS_MARKER: Record<string, string> = { read: '.fs', dir: '.dir', stat: '.stat' };
 
 /** A promise that never settles: the answer to a call whose frame is gone. */
 function never(): Promise<never> {
@@ -168,7 +205,7 @@ function answerWord(answer: WriteAnswer): string | null {
     return failedWith(status);
 }
 
-/** Build the nine methods of one frame over its context. */
+/** Build the methods of one frame over its context. */
 export function createMethods(context: MethodsContext): Methods {
     const now = context.now ?? Date.now;
     const settings = context.settings;
@@ -193,6 +230,33 @@ export function createMethods(context: MethodsContext): Methods {
         const word = answerWord(answer);
         if (word !== null) return refuse(word);
         return undefined;
+    }
+
+    /** A read of a root's files that is refused `closed`, and the reader told once. */
+    function fsClosed(): Promise<never> {
+        context.refused('open', 'fs');
+        return refuse(REFUSED.closed);
+    }
+
+    /** What the server answered to a call, as the app is told: the value, or one refusal word. */
+    async function answered(answer: ServerAnswer | null): Promise<unknown> {
+        if (!context.alive()) return never();
+        if (answer === null) return refuse(failedWith(0));
+        if (!answer.ok) return refuse(answer.word);
+        return answer.value;
+    }
+
+    /** One call of the app's secrets: declared, within the write limit, then the server's. */
+    async function secret(
+        action: 'get' | 'store' | 'delete',
+        key: unknown,
+        value?: unknown
+    ): Promise<unknown> {
+        const row = rowOr();
+        if (row === undefined) return refuse(REFUSED.missing);
+        if (!row.secrets) return refuse(REFUSED.notDeclared);
+        if (action !== 'get' && !writes.take()) return rateRefused();
+        return answered(await context.secrets(action, key, value));
     }
 
     return {
@@ -318,6 +382,57 @@ export function createMethods(context: MethodsContext): Methods {
             if (event === null || !keys.take()) return Promise.resolve();
             context.forwardKey(event);
             return Promise.resolve();
+        },
+
+        fsAddress(op: unknown, root: unknown, path: unknown) {
+            const row = rowOr();
+            if (row === undefined) return refuse(REFUSED.missing);
+            const marker = isText(op)
+                ? Object.entries(FS_MARKER).find(([name]) => name === op)
+                : undefined;
+            if (marker === undefined || !isText(root) || !isText(path)) return fsClosed();
+            if (row.disabled || row.key === '') return fsClosed();
+            if (root === ENGINE_ROOT) return fsClosed();
+            const keys = context.rootKeys();
+            if (row.root === '') {
+                if (!row.readFolders.some((entry) => inFilesEntry(entry, keys, root, path))) {
+                    context.refused('read', root);
+                    return refuse(REFUSED.notDeclared);
+                }
+            } else if (root !== row.root) return fsClosed();
+            const whole = path === '' && marker[0] !== 'read';
+            if (!whole && !pathSegmentsOpen(path)) return fsClosed();
+            const folders = settings().closedPaths.folders;
+            if (folders === null || inClosedPaths(path, folders)) return fsClosed();
+            if (!context.shown(root)) return refuse(REFUSED.missing);
+            const tail = whole ? '' : `/${path.split('/').map(encodeURIComponent).join('/')}`;
+            return Promise.resolve(
+                `${appAddress(row.root, row.name, row.key)}${marker[1]}/${encodeURIComponent(root)}${tail}`
+            );
+        },
+
+        async commandsRun(name: unknown) {
+            if (!opens.take()) return rateRefused();
+            if (rowOr() === undefined) return refuse(REFUSED.missing);
+            if (!isText(name) || name === '') return refuse(REFUSED.missing);
+            const outcome = await context.runCommand(name);
+            if (!context.alive()) return never();
+            if (outcome === 'ok') return undefined;
+            return refuse(outcome === 'failed' ? failedWith(0) : REFUSED[outcome]);
+        },
+
+        secretsGet: (key: unknown) => secret('get', key) as Promise<string | undefined>,
+        secretsStore: (key: unknown, value: unknown) =>
+            secret('store', key, value).then(() => undefined),
+        secretsDelete: (key: unknown) => secret('delete', key).then(() => undefined),
+
+        async hostRequest(method: unknown, params: unknown) {
+            const row = rowOr();
+            if (row === undefined) return refuse(REFUSED.missing);
+            if (row.host === '') return refuse(REFUSED.notDeclared);
+            if (params !== undefined && !plainJson(params))
+                return refuse(t('apps.refused_not_json'));
+            return answered(await context.host(method, params ?? null));
         }
     };
 }

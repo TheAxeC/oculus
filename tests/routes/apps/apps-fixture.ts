@@ -9,11 +9,14 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { appsSettings } from '../../../src/lib/data/sources/config.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { approvedApps } from '../../../src/lib/server/machine/approvals/approvals.ts';
-import { scanApps } from '../../../src/lib/server/machine/apps/scan.ts';
-import type { AppsHeld } from '../../../src/lib/server/machine/apps/held.ts';
-import { diskFs } from '../../../src/lib/server/machine/apps/open.ts';
-import type { AppsRouteOptions } from '../../../src/lib/server/machine/apps/routes.ts';
-import type { ServeInput } from '../../../src/lib/server/machine/apps/serve.ts';
+import { scanApps } from '../../../src/lib/server/machine/apps/read/scan.ts';
+import { readAppsState, workspaceKey } from '../../../src/lib/server/machine/apps/read/state.ts';
+import type { AppsHeld } from '../../../src/lib/server/machine/apps/read/held.ts';
+import { diskFs } from '../../../src/lib/server/machine/apps/reach/open.ts';
+import type { AppsRouteOptions } from '../../../src/lib/server/machine/apps/routes/routes.ts';
+import type { ServeInput } from '../../../src/lib/server/machine/apps/serve/serve.ts';
+import { Hub } from '../../../src/lib/server/core/channels.ts';
+import { hostsFixture } from '../../server/machine/apps/hosts-fixture.ts';
 import { plantScratch } from '../../fixtures/scratch.ts';
 import { TEXT } from '../../server/text.ts';
 
@@ -41,11 +44,13 @@ export type Fixture = {
     machine: string;
     roots: { key: string; dir: string }[];
     /** Read every folder again, approving the given hashes. */
-    scan: (approved: ReadonlySet<string>) => AppsHeld;
+    /** The key of the workspace the apps are read for. */
+    workspace: string;
+    scan: (approved: ReadonlySet<string>, kept?: Map<string, string>) => AppsHeld;
 };
 
 /** Plant the files and return a reader of them. */
-export function plant(planted: Planted): Fixture {
+export function plant(planted: Planted, prefix = 'oculus-apps-'): Fixture {
     const files: Record<string, string> = {};
     for (const [path, body] of Object.entries(planted.machine ?? {})) {
         files[`machine/${path}`] = body;
@@ -53,17 +58,18 @@ export function plant(planted: Planted): Fixture {
     for (const [key, held] of Object.entries(planted.roots ?? {})) {
         for (const [path, body] of Object.entries(held)) files[`roots/${key}/${path}`] = body;
     }
-    const base = plantScratch('oculus-apps-', files, ['machine']);
+    const base = plantScratch(prefix, files, ['machine']);
     const machine = join(base, 'machine');
     const roots = Object.keys(planted.roots ?? {}).map((key) => ({
         key,
         dir: join(base, 'roots', key)
     }));
-    return {
+    const fixture: Fixture = {
         base,
         machine,
         roots,
-        scan: (approved) =>
+        workspace: workspaceKey(''),
+        scan: (approved, kept = new Map()) =>
             scanApps({
                 machine,
                 localFile: join(base, 'local.yml'),
@@ -72,11 +78,15 @@ export function plant(planted: Planted): Fixture {
                 settings,
                 port: PORT,
                 approved,
-                kept: new Map(),
+                kept,
+                state: readAppsState(join(base, 'apps.json')),
+                stateFile: join(base, 'apps.json'),
+                workspace: fixture.workspace,
                 secret: 'secret',
                 appData: join(base, 'data')
             })
     };
+    return fixture;
 }
 
 /** The held apps of a fixture with every app it holds approved. */
@@ -92,7 +102,14 @@ export function serveInput(request: Request, held: AppsHeld): ServeInput {
         held,
         limits: () => ({ files: settings.maxFiles, bytes: settings.maxMb * 1024 * 1024 }),
         penpal: () => Buffer.from('export const penpal = 1;\n'),
-        oculus: 'export const oculus = 1;\n'
+        oculus: 'export const oculus = 1;\n',
+        reach: () => ({
+            roots: [],
+            configDir: '',
+            closedPaths: null,
+            fs: diskFs,
+            scanEntries: settings.scanEntries
+        })
     };
 }
 
@@ -118,6 +135,7 @@ export function routeSetup(planted: Planted, over: Partial<AppsRouteOptions> = {
     const approvals = join(fixture.base, 'approvals.json');
     const kept: string[] = [];
     let held = fixture.scan(approvedApps(approvals));
+    const { hosts, secrets } = hostsFixture(new Hub(), { apps: { held: () => held } });
     const options: AppsRouteOptions = {
         apps: {
             held: () => held,
@@ -125,7 +143,10 @@ export function routeSetup(planted: Planted, over: Partial<AppsRouteOptions> = {
                 held = fixture.scan(approvedApps(approvals));
             },
             keep: (id) => kept.push(id),
-            unkeep: (id) => kept.splice(0, kept.length, ...kept.filter((one) => one !== id))
+            unkeep: (id) => kept.splice(0, kept.length, ...kept.filter((one) => one !== id)),
+            stateFile: () => join(fixture.base, 'apps.json'),
+            workspace: () => workspaceKey(''),
+            folder: () => fixture.machine
         },
         approvalsFile: () => approvals,
         text: () => TEXT,
@@ -135,6 +156,11 @@ export function routeSetup(planted: Planted, over: Partial<AppsRouteOptions> = {
         configDir: join(fixture.base, 'engine'),
         closedPaths: () => ['secrets'],
         fs: diskFs,
+        scanEntries: () => settings.scanEntries,
+        limits: () => ({ files: settings.maxFiles, bytes: settings.maxMb * 1024 * 1024 }),
+        hosts,
+        secrets,
+        trash: () => Promise.resolve(),
         ...over
     };
     return { fixture, options, held: () => held, approvals, kept };

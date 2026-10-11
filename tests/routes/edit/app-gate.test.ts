@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
-import type { AppsHeld } from '../../../src/lib/server/machine/apps/held.ts';
+import type { AppsHeld } from '../../../src/lib/server/machine/apps/read/held.ts';
 import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps.ts';
 import { gateWrite } from '../../../src/lib/server/edit/writes/apps/gate.ts';
 import { it } from '../../fixtures/scratch.ts';

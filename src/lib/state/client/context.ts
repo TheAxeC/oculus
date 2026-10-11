@@ -25,6 +25,7 @@ import { createRegistry } from '../workbench/navigation/registry.ts';
 import { createAgents } from '../sessions/agents.svelte.ts';
 import { createChanges } from '../sessions/changes.svelte.ts';
 import { createApps } from '../system/apps/apps.svelte.ts';
+import { appCommands } from '../system/apps/commands.ts';
 import { createAudit } from '../system/audit.svelte.ts';
 import { createAccounts } from '../life/accounts.svelte.ts';
 import { createCalendar } from '../life/calendar.svelte.ts';
@@ -105,7 +106,7 @@ import { saveRulesOf } from '../workbench/navigation/editor-text.ts';
 import { createSelectors } from './selectors.svelte.ts';
 import { createSocket } from './socket.svelte.ts';
 import { createAutosave } from '../sessions/source/autosave.svelte.ts';
-import { loadSource, sourceTabState, type SourceDraft } from '../sessions/source/draft.ts';
+import { loadSource, type SourceDraft } from '../sessions/source/draft.ts';
 import { createSource, type SaveRules } from '../sessions/source/source.svelte.ts';
 import { folderOfProject } from '../sessions/source/write-files.ts';
 import { createTerminals, terminalLabel } from '../sessions/terminals.svelte.ts';
@@ -646,11 +647,12 @@ export function createClientState(
     const apps = createApps({
         entities,
         writes,
+        socket,
+        commands: appCommands({ commands, served: servedRoots }),
         ui,
         registry,
         layout,
         notices,
-        sourceState: sourceTabState,
         settings: () => appsSettings(entities.config()?.config ?? {}),
         served: servedRoots,
         projectOf: selectors.projectOf

@@ -5,6 +5,8 @@ text:
         glyph: app_view
         unapproved_mark: This app is not approved
         editing_mark: This app stays approved while its files change
+        disabled_mark: This app is disabled
+        add_glyph: app
         approve_title: Approve this app
         approve_question: 'This app is a folder of web files that runs inside oculus. It runs only after you approve it, and it asks again whenever its files change. It can:'
         approve: Approve
@@ -22,6 +24,12 @@ text:
         writes_none: Write nothing to oculus.
         connects: 'Reach {0} on the internet.'
         connects_none: Reach no address outside this machine.
+        host_line: 'Run a program on this machine, with your rights, which can read and write your files and reach any address. The program is the file {0}.'
+        files_line: 'Read the files in {0}.'
+        secrets_line: Store secrets in the keyring of this machine.
+        depends_line: 'Start the programs of these apps first: {0}.'
+        send_line: 'What it reads from your files can be sent to {0}.'
+        back: Back to the app
         store_machine: 'Keep its own data in {0}.'
         store_root: 'Keep its own data in {0}, a file of the root that git tracks unless the root ignores .oculus/app-data/.'
         read:
@@ -71,4 +79,43 @@ text:
         refused_not_json: not_json
         confirm_write: 'The app {0} asks to {1}: {2}'
         confirm_open_url: 'The app {0} asks to open this address in a new browser tab. The address can carry what the app has read.'
+        disabled_line: This app is disabled, so it reads, writes and runs nothing.
+        enable: Enable
+        host_ended_code: 'The program of this app ended with exit code {0}.'
+        host_ended_signal: 'The program of this app was ended by the signal {0}.'
+        restart: Restart
+        host_wait_approval: The program of this app waits for you to approve its changed files.
+        host_wait_dependency: 'The program of this app waits for the app {0}, which cannot run.'
+        host_wait_missing: 'The program of this app waits for the app {0}, which is not installed.'
+        host_wait_cycle: The program of this app does not start, because the apps it needs and itself need each other first.
+        host_stopped_by: 'The program of this app was stopped because the approval of the app {0} was revoked.'
+        review: Approve
+        menu_disable: Disable
+        menu_disable_workspace: Disable (Workspace)
+        menu_enable: Enable
+        menu_enable_workspace: Enable (Workspace)
+        menu_remove: Remove
+        menu_add: Add app from folder
+        manage_failed: 'The app was not changed: {0}'
+        disable_dependents: 'These enabled apps need {0}: {1}. Disable them too?'
+        remove_question: 'Remove {0}?'
+        remove_secrets: 'Its folder {0} and its data file move to the Trash, and the {1} secrets it holds are deleted from the keyring.'
+        remove_secrets_unknown: 'Its folder {0} and its data file move to the Trash. The secrets it holds could not be counted and will not be deleted.'
+        remove_dependents: ' These enabled apps need it and are disabled too: {0}.'
+        remove_confirm: Remove
+        remove_failed: 'The app was not removed: {0}'
+        remove_secrets_kept: 'The secrets of {0} could not be deleted from the keyring.'
+        add_unsupported: The folder panel is not available here. Use Add as App on a folder in the Files view.
+        add_panel_failed: The folder panel could not be used.
+        add_panel_busy: The folder panel is already open.
+        add_done: '{0} was added. It asks for your approval before it runs.'
+        add_failed: 'The app was not added: {0}'
+        add_not_folder: the chosen item is not a folder
+        add_no_manifest: the folder holds no app.yml
+        add_name: the folder name is not an app name (a letter, then letters, digits and hyphens, at most 40)
+        add_exists: an item with that name is already in the apps folder
+        add_inside: the folder is inside the apps folder
+        add_holds: the folder holds the apps folder
+        add_too_large: the folder holds more files or bytes than an app may
+        add_copy: the folder could not be copied
         rate: 'The app {0} sent calls faster than oculus lets an app send them, so some were refused.'

@@ -5,11 +5,11 @@
 // id with the root key percent-encoded, and `x-oculus-write-kind`, the kind the app named. This
 // module reads the body with the parsers handleWrite tries, in handleWrite's order, and answers
 // with the kind the first one matches, and no writer is run. A write is refused 403
-// `{ error: 'kind' }` when the header names no held row or holds a malformed escape; when the kind
-// the body matches is not the kind the header names; when that kind is not open to apps; and when
-// an entry kind names the collection `bookmarks`, which is the reader's own file. A body matching
-// `{ store: <value> }` is the app's own store, which every app has and which only a request
-// carrying the app header can send.
+// `{ error: 'kind' }` when the header names no held row or holds a malformed escape; when the app
+// is disabled; when the kind the body matches is not the kind the header names; when that kind is
+// not open to apps; and when an entry kind names the collection `bookmarks`, which is the reader's
+// own file. A body matching `{ store: <value> }` is the app's own store, which every app has and
+// which only a request carrying the app header can send.
 
 import {
     APP_HEADER,
@@ -18,8 +18,8 @@ import {
     writeAccess
 } from '../../../../data/helpers/files/apps.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
-import type { AppsHeld, HeldApp } from '../../../machine/apps/held.ts';
-import { appById } from '../../../machine/apps/held.ts';
+import type { AppsHeld, HeldApp } from '../../../machine/apps/read/held.ts';
+import { appById } from '../../../machine/apps/read/held.ts';
 import {
     auditMuteWrite,
     configKeyWrite,
@@ -117,7 +117,7 @@ export function gateWrite(
     const id = appViewIdFromHeader(header);
     if (id === null || held === undefined) return { refused: true };
     const app = appById(held(), id);
-    if (app === undefined) return { refused: true };
+    if (app === undefined || app.row.disabled) return { refused: true };
     const named = headers.get(KIND_HEADER);
     if (kind === null || named !== kind) return { refused: true };
     if (kind !== APP_STORE && writeAccess(kind) !== 'open') return { refused: true };

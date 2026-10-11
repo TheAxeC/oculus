@@ -13,6 +13,7 @@ digraph channels {
     }
     subgraph "cluster_publish server/machine" {
         label="server/machine"; style=solid;
+        "server/machine/apps/host/manager";
         "server/machine/debug/console";
         "server/machine/debug/session";
         "server/machine/hpc/poll";
@@ -34,6 +35,8 @@ digraph channels {
     subgraph "cluster_channels" {
         label="channels"; style=solid;
         "ch ${path.split('/').slice(-2).join('/')}:*" [label="${path.split('/').slice(-2).join('/')}:*", shape=ellipse];
+        "ch app-hosts" [label="app-hosts", shape=ellipse];
+        "ch app-messages" [label="app-messages", shape=ellipse];
         "ch apps" [label="apps", shape=ellipse];
         "ch audit" [label="audit", shape=ellipse];
         "ch blank" [label="blank", shape=ellipse];
@@ -43,6 +46,7 @@ digraph channels {
         "ch debug-console" [label="debug-console", shape=ellipse];
         "ch draftDropped" [label="draftDropped", shape=ellipse];
         "ch empty" [label="empty", shape=ellipse];
+        "ch failed:*" [label="failed:*", shape=ellipse];
         "ch feeds" [label="feeds", shape=ellipse];
         "ch files" [label="files", shape=ellipse];
         "ch git" [label="git", shape=ellipse];
@@ -77,7 +81,7 @@ digraph channels {
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:290" [label="src/lib/server/machine/runs/schedules/watch.ts:290 publish(CHANNEL)"];
-        "? src/lib/server/root/context.ts:364" [label="src/lib/server/root/context.ts:364 publish(set)"];
+        "? src/lib/server/root/context.ts:367" [label="src/lib/server/root/context.ts:367 publish(set)"];
         "? src/lib/shell/panes/PaneView.svelte:476" [label="src/lib/shell/panes/PaneView.svelte:476 message()"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:82" [label="src/lib/state/client/queries.svelte.ts:82 .subscribe((event)"];
@@ -88,7 +92,7 @@ digraph channels {
         "? src/lib/state/sessions/source/disk.svelte.ts:157" [label="src/lib/state/sessions/source/disk.svelte.ts:157 message(name, heard)"];
         "? src/lib/state/sessions/source/disk.svelte.ts:158" [label="src/lib/state/sessions/source/disk.svelte.ts:158 .subscribe([name])"];
         "? src/lib/state/sources/search/file-matcher.svelte.ts:83" [label="src/lib/state/sources/search/file-matcher.svelte.ts:83 .listen("];
-        "? src/lib/state/system/apps/apps.svelte.ts:293" [label="src/lib/state/system/apps/apps.svelte.ts:293 message(channel)"];
+        "? src/lib/state/system/apps/apps.svelte.ts:381" [label="src/lib/state/system/apps/apps.svelte.ts:381 message(channel)"];
         "? src/lib/state/system/config/editors/draft.ts:346" [label="src/lib/state/system/config/editors/draft.ts:346 message('notYaml', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:351" [label="src/lib/state/system/config/editors/draft.ts:351 message('where', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:459" [label="src/lib/state/system/config/editors/draft.ts:459 message('emptyKey', index + 1)"];
@@ -206,7 +210,7 @@ digraph channels {
     "? src/lib/state/sessions/source/disk.svelte.ts:157" -> "state/sessions/source/disk";
     "? src/lib/state/sessions/source/disk.svelte.ts:158" -> "state/sessions/source/disk";
     "? src/lib/state/sources/search/file-matcher.svelte.ts:83" -> "state/sources/search/file-matcher";
-    "? src/lib/state/system/apps/apps.svelte.ts:293" -> "state/system/apps/apps";
+    "? src/lib/state/system/apps/apps.svelte.ts:381" -> "state/system/apps/apps";
     "? src/lib/state/system/config/editors/draft.ts:346" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:351" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:459" -> "state/system/config/editors/draft";
@@ -240,6 +244,8 @@ digraph channels {
     "? src/lib/views/system/workbench/editors/Editor.svelte:142" -> "views/system/workbench";
     "? src/lib/views/system/workbench/settings/Item.svelte:108" -> "views/system/workbench";
     "ch ${path.split('/').slice(-2).join('/')}:*" -> "ui/controls/editor/kit/lsp/transport";
+    "ch app-hosts" -> "state/system/apps/apps";
+    "ch app-messages" -> "state/system/apps/apps";
     "ch apps" -> "routes/+page" [style=dashed];
     "ch apps" -> "state/client/socket";
     "ch apps" -> "state/system/apps/apps";
@@ -273,6 +279,7 @@ digraph channels {
     "ch debug-console" -> "state/system/machine/debug/debug";
     "ch draftDropped" -> "state/system/config/editors/writer";
     "ch empty" -> "state/system/config/editors/fields";
+    "ch failed:*" -> "state/system/apps/apps";
     "ch feeds" -> "routes/+page" [style=dashed];
     "ch feeds" -> "state/client/context";
     "ch feeds" -> "state/feeds/feeds";
@@ -358,6 +365,7 @@ digraph channels {
     "server/accounts/calendar/poll" -> "ch calendar";
     "server/accounts/mail/poll" -> "ch inbox";
     "server/files/fs/open-files" -> "? src/lib/server/files/fs/open-files.ts:153";
+    "server/machine/apps/host/manager" -> "ch app-hosts";
     "server/machine/debug/console" -> "? src/lib/server/machine/debug/console.ts:98";
     "server/machine/debug/session" -> "? src/lib/server/machine/debug/session.ts:179";
     "server/machine/hpc/poll" -> "ch hpc";
@@ -366,7 +374,7 @@ digraph channels {
     "server/machine/pty/channel" -> "ch pty:*";
     "server/machine/runs/schedules/watch" -> "? src/lib/server/machine/runs/schedules/watch.ts:290";
     "server/machine/usage/watch" -> "ch usage";
-    "server/root/context" -> "? src/lib/server/root/context.ts:364";
+    "server/root/context" -> "? src/lib/server/root/context.ts:367";
     "server/root/hooks" -> "ch sessions";
     "server/root/watch/apps" -> "ch apps";
     "server/root/watch/bookmarks" -> "ch files";

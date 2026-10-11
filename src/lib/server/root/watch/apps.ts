@@ -7,9 +7,11 @@
 // link; a plain one lies over each folder that holds the store of a listed app; and the approvals
 // file is watched by its own path and opened again after every event, since a write by rename
 // replaces the file. It never watches `~/.oculus` as a whole, whose other files change on every
-// write. A burst of events is one read after a short quiet, lodash's `debounce` with a maximum wait
-// as every watcher here has; a read walks and hashes every app again. An event from a store folder
-// alone changes nothing but the stores' sizes and versions, which are read without a walk.
+// write. The record of the disabled apps, `~/.oculus/apps.json`, is polled by a stat as the saved
+// workspaces file is, and read again with every full read, together with the workspace that is
+// current. A burst of events is one read after a short quiet, lodash's `debounce` with a maximum
+// wait as every watcher here has; a read walks and hashes every app again. An event from a store
+// folder alone changes nothing but the stores' sizes and versions, which are read without a walk.
 //
 // A folder that does not exist is no finding. One timer looks again at every folder it waits for
 // (the machine's, a root's `.oculus/apps`, a store folder, the approvals file) every two seconds
@@ -17,8 +19,8 @@
 // the saved workspaces file changes, which is polled as the git watcher polls it, so a root added
 // in the page is read at the next tick and a root that leaves the file browser loses its handles.
 //
-// The keeping of a machine app (the app stays approved while its files change, until its manifest
-// changes or the process ends) is held here, in memory, as the hash of the manifest approved.
+// The keeping of an app (the app stays approved while its files change, until its manifest changes
+// or the process ends) is held here, in memory, as the hash of the manifest approved.
 
 import { existsSync, lstatSync, watch, type FSWatcher } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
@@ -28,18 +30,25 @@ import type { AppRow } from '../../../data/model/index.ts';
 import { appsSettings, localFile, type LocalConfig } from '../../../data/sources/config.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
 import {
+    POLL,
     pollFile,
     systemClock,
     type Clock,
     type FilePoll,
     type Timer
 } from '../../core/file-poll.ts';
+import { fsWrites, type FsWrites } from '../../core/json.ts';
 import { expandHome, type Root } from '../../files/files.ts';
-import { defaultWorkspacesPath } from '../../files/fs.ts';
+import { defaultWorkspacesPath, readSaved } from '../../files/fs.ts';
 import { approvedApps, defaultApprovalsPath } from '../../machine/approvals/approvals.ts';
-import { noApps, payloadOf, type AppsHeld } from '../../machine/apps/held.ts';
-import { scanApps } from '../../machine/apps/scan.ts';
-import { defaultAppData, readStore } from '../../machine/apps/store.ts';
+import { noApps, payloadOf, type AppsHeld } from '../../machine/apps/read/held.ts';
+import { scanApps } from '../../machine/apps/read/scan.ts';
+import {
+    defaultAppsStatePath,
+    readAppsState,
+    workspaceKey
+} from '../../machine/apps/read/state.ts';
+import { defaultAppData, readStore } from '../../machine/apps/store/store.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds of quiet after the last event before one read. */
@@ -48,8 +57,6 @@ const DEBOUNCE = 300;
 const MAX_WAIT = 2 * DEBOUNCE;
 /** Milliseconds between two looks for a folder that is not there yet. */
 const LOOK = 2000;
-/** Milliseconds between two stats of the saved workspaces file. */
-const POLL = 500;
 
 export type AppsWatcher = Watcher & {
     /** The state the last read left. */
@@ -63,10 +70,25 @@ export type AppsWatcher = Watcher & {
      * saved workspaces file) and the roots the file browser shows now, then read every app.
      */
     follow(): void;
-    /** Keep a machine app approved while its files change, as long as its manifest is this one. */
+    /** Keep an app approved while its files change, as long as its manifest is this one. */
     keep(id: string, manifestHash: string): void;
     /** End the keeping of an app. */
     unkeep(id: string): void;
+    /** The chain every write of one store file waits on, made on the first ask. */
+    storeQueue(file: string): FsWrites;
+    /** The record file of the disabled apps. */
+    stateFile(): string;
+    /** The machine's apps folder, which may not exist yet. */
+    folder(): string;
+    /** The key the current workspace has in that file, `default` for the default workspace. */
+    workspace(): string;
+    /** Call a function after every full read; the function that takes it off is returned. */
+    onRead(listener: () => void): () => void;
+    /**
+     * Call a function with the view ids of the apps whose store file changed, after a read that
+     * saw it; the function that takes it off is returned.
+     */
+    onStores(listener: (ids: string[]) => void): () => void;
 };
 
 export type AppsWatchOptions = {
@@ -82,6 +104,8 @@ export type AppsWatchOptions = {
     roots: () => Root[];
     /** The folder the machine apps' stores live in; `~/.oculus/app-data` when absent. */
     appData?: string;
+    /** The record file of the disabled apps; `~/.oculus/apps.json` when absent. */
+    stateFile?: string;
     clock?: Clock;
     /** Milliseconds of quiet before a read; a value over MAX_WAIT is the wait. */
     debounce?: number;
@@ -117,6 +141,10 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     const quiet = options.debounce ?? DEBOUNCE;
     const kept = new Map<string, string>();
     const appData = options.appData ?? defaultAppData();
+    const stateFile = options.stateFile ?? defaultAppsStatePath();
+    const listeners = new Set<() => void>();
+    const storeListeners = new Set<(ids: string[]) => void>();
+    const queues = new Map<string, FsWrites>();
     const handles = new Map<string, FSWatcher>();
     let state: AppsHeld = noApps();
     let roots: Root[] = [];
@@ -125,6 +153,12 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     let fullPending = false;
     let approvalsHandle: { path: string; handle: FSWatcher } | null = null;
     let workspaces: { path: string; poll: FilePoll } | null = null;
+    let stateKey = workspaceKey('');
+    const statePoll: FilePoll = pollFile(stateFile, { clock, every: options.poll ?? POLL }, () => {
+        statePoll.reading();
+        fullPending = true;
+        queued();
+    });
     let looking: Timer | null = null;
     let missing: string[] = [];
 
@@ -132,6 +166,22 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     const workspacesPath = (): string => {
         const local = options.local();
         return local.workspaces ?? defaultWorkspacesPath(local.hub);
+    };
+
+    /** Tell the store listeners which apps' stores differ between two states. */
+    const tellStores = (before: AppsHeld, after: AppsHeld): void => {
+        const versions = new Map(before.apps.map((app) => [app.id, app.row.storeVersion]));
+        const ids = after.apps
+            .filter((app) => versions.has(app.id) && versions.get(app.id) !== app.row.storeVersion)
+            .map((app) => app.id);
+        if (ids.length === 0) return;
+        for (const listener of [...storeListeners]) {
+            try {
+                listener(ids);
+            } catch (error) {
+                console.error(`apps watch: a listener failed: ${reason(error)}`);
+            }
+        }
     };
 
     const publish = (): void => {
@@ -240,9 +290,12 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     const read = (): void => {
         if (closed) return;
         fullPending = false;
+        statePoll.reading();
+        stateKey = workspaceKey(readSaved(workspacesPath()).current);
         const local = options.local();
         const config = options.config();
         const settings = appsSettings(config);
+        const before = state;
         state = scanApps({
             machine: machineFolder(local, options.engine),
             localFile: localFile(options.engine),
@@ -252,11 +305,22 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
             port: local.port,
             approved: approvedApps(approvalsPath()),
             kept,
+            state: readAppsState(stateFile),
+            stateFile,
+            workspace: stateKey,
             secret: options.secret,
             appData
         });
         arrange();
         publish();
+        tellStores(before, state);
+        for (const listener of [...listeners]) {
+            try {
+                listener();
+            } catch (error) {
+                console.error(`apps watch: a listener failed: ${reason(error)}`);
+            }
+        }
     };
 
     /** A read of the stores alone: every app's size and version of its store file. */
@@ -279,6 +343,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
         if (apps.every((app, index) => app === before[index])) return;
         state = { ...state, apps };
         publish();
+        tellStores({ ...state, apps: before }, state);
     };
 
     const queued = debounced(
@@ -361,9 +426,26 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
         unkeep(id: string): void {
             kept.delete(id);
         },
+        storeQueue(file: string): FsWrites {
+            const held = queues.get(file) ?? fsWrites();
+            queues.set(file, held);
+            return held;
+        },
+        stateFile: () => stateFile,
+        folder: () => machineFolder(options.local(), options.engine),
+        workspace: () => stateKey,
+        onRead(listener: () => void): () => void {
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+        },
+        onStores(listener: (ids: string[]) => void): () => void {
+            storeListeners.add(listener);
+            return () => storeListeners.delete(listener);
+        },
         close(): void {
             closed = true;
             queued.cancel();
+            statePoll.close();
             hub.remove(sink);
             for (const path of [...handles.keys()]) close(path);
             approvalsHandle?.handle.close();

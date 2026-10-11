@@ -7,6 +7,11 @@
 // aside, writes nothing. Otherwise the file is written by rename, read back, and refused unless the
 // read-back is equal to the value; a file that was there is put back as it was when it is not.
 //
+// Every write of one store file waits on the chain the apps watcher keeps for that file
+// (`queuedStore`): the frame's `setStore` and the host's `update` alike, so a host update and a
+// frame write made at the same moment both land, in the order the change log records them, and an
+// undo puts back the value that write replaced.
+//
 // The record names the store file, the view id as the key, the field `store`, and the byte sizes as
 // `before` and `after`; the values themselves go with it as `kept`, which the change log writes to
 // its undo folder (server/core/changes.ts). The undo puts the value before back through this writer
@@ -16,9 +21,9 @@
 import { readFileSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import type { HeldApp } from '../../../machine/apps/held.ts';
-import { readStore, storeFolderInside } from '../../../machine/apps/store.ts';
-import { writeTextAtomic } from '../../../core/json.ts';
+import type { HeldApp } from '../../../machine/apps/read/held.ts';
+import { readStore, storeFolderInside } from '../../../machine/apps/store/store.ts';
+import { chained, writeTextAtomic } from '../../../core/json.ts';
 import type { ChangeRecord } from '../../../core/changes.ts';
 import type { WriteOutcome, WriteTarget } from '../../writes.ts';
 
@@ -27,6 +32,16 @@ export const APP_STORE = 'app-store';
 
 /** The mode a store file is made with: it is this machine's own data. */
 const MODE = 0o600;
+
+/** Run a write of the app's store after every earlier write of the same file. */
+export function queuedStore<T>(
+    into: WriteTarget,
+    app: HeldApp,
+    work: () => T | Promise<T>
+): Promise<T> {
+    const queue = into.apps?.queue?.(app.row.storeFile);
+    return queue === undefined ? Promise.resolve().then(work) : chained(queue, work);
+}
 
 /** The base a store file's folder must resolve inside, or null while the target names none. */
 function baseOf(into: WriteTarget, app: HeldApp): string | null {

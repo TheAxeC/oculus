@@ -25,19 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D62
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a26cf9f636282978b (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D62
-  base: 398537672
-  launched: 2026-10-10
-  report: agents/reviews/D62-report.md
-  brief_check: agents/reviews/D62-brief-check.md (a852246ff3fc11d90, claude-opus-5-5, 273,100 tokens, 100 tool uses, 15m 3s; closed in the brief by the orchestrator under "Closed")
-  builder_usage: 265,121 tokens, 47 tool uses, 5.5 min (first run, handed back); 89,943 tokens, 706 tool uses, 174.8 min (resumed after the round-0 cases ruling, to the report)
-  reviewer_report: agents/reviews/D62-refuter.md (a7d94dafa7d50c3a1, claude-opus-5-5, 114,844 tokens, 113 tool uses, 19m 54s)
-  landing: not-started
-  round: 1 (agents/briefs/D62-round1.md, sent 2026-10-11)
 - step: D65
   executor: agent
   worker: claude:sonnet at ordo-high
@@ -53,6 +40,7 @@ dispatch:   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
+- Pause after D62 and D65 land (Axel, 2026-10-11): D62 and D65 are taken to their landing; no /spec, builder or other step is started meanwhile or after, and the loop stops once both are landed, until Axel says to go on.
 - No migration code, in any step, whatever an earlier ruling said (Axel, 2026-10-10): no code reads, carries, converts or tolerates an older form of stored data; a change of shape is made once on the data by the orchestrator or the old data shows as unknown or as a finding (`agents/spec.md`, What every package obeys).
 - A brief is written, its premises checked and its findings closed by the orchestrator itself through the `spec` skill, never by an agent (Axel, 2026-10-09): no brief-writing agent, no premise survey or premise recheck agent, no agent that edits a brief; the one agent `/spec` starts is the brief check, as the skill says.
 - A builder or reviewer never takes focus on Axel's screen and never reruns a case that starts the app (Axel, 2026-10-05): no `app.focus({steal:true})`, no `osascript activate`, no `Page.bringToFront`, no `focus()` or `show()` called from outside the app's code; a focus case is read from a recorder on `BrowserWindow.prototype.focus`; the app is started once for all window cases and closed by its pid; a case that does not show in that run is reported not verified and goes to the look. Every builder prompt that runs the desktop app restates this.
@@ -67,6 +55,7 @@ dispatch:   # steps in flight, up to six (Z632)
 - Looks and the machine, the rules every look and every command keep (Axel, in force; booked 2026-10-03 from the session's standing orders):
   - The ICS calendar link is a secret stored only in gitignored `tools/oculus/config/local.yml`. Never put it in git, the ledger or a log; never print, open, grep or hash that file; never fetch a calendar address; never open the Config view's `local.yml` card or the Settings view's `local.yml` tree node; every grep over `config/` uses `--exclude=local.yml` (`':!config/local.yml'` with git grep).
   - Never screenshot the Config view; never click TEST's "Config" tab or the Settings pane's "Config" tab; a tab beside one of them is clicked by JS (`element.click()`), never by coordinates.
+  - A look never presses a control that opens the macOS folder panel (Add app from folder, Add Folder to Workspace and the like): the panel is a real window in front of Axel's screen, and the server's osascript waits on it. A look of such a control stops at the state before the press.
   - Never touch port 8787, nor 8790 beyond viewing; never curl them; never start, stop or move Axel's server. Oculus never reads `.vscode`.
   - Looks happen on TEST at localhost:8790, tab 812137347, reached from the Pages view on the "Views and Settings" page (its rail button, then the "TEST" row); another rail button leaves TEST, and on TEST no rail button is current. Never click the Sessions rail button during a look. The one exception ruled so far is D35's port move, looked at on a scratch oculus with its own config (Axel's (b), 2026-10-03).
   - The browser theme on TEST is changed only for a light-theme look (Z290), and put back after.
@@ -261,6 +250,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-11 (D62 landed). D62, apps: the host and the bridge, landed (booking in plan.md; `agents/reviews/D62-landing.md`) after one repair round and the review over it, its findings fixed on main at landing (`agents/reviews/D62-refuter.md`, Closed): a dev restart awaits the old hosts through the plugin's `closeServer` hook and a context starts no host before its server listens, the frame's names, the tests without an entry and the sleeps, and two lines the look found; D62's tests written under G1, G2, G7, G9, G10, G13, G31 and G49 and the new G75 and G76 in `agents/guarded.md`; the look on a scratch oculus from the gate with three scratch apps. In flight (1 of 6): D65. Next: D65's report, /refute D65, its repair round, /land D65; then the pause (Axel's standing demand) until he says go.
 - 2026-10-10 (open item 51 ruled). Axel ruled open item 51: (1) (a), `types:` in the deck's `find:`; (2) (d), a project's deadline, follow-ups and subtasks always on Focus, lane card and waiting tallies by `focus:` (`plan.md` Rulings, Open item 51; D65 tagged (ruling 51)). In flight (1 of 6): D62. Next: /spec D65.
 - 2026-10-10 (D65 stopped at /spec, second time). /spec D65 found two choices no ruling names (open item 51: the deck's `find:` by type, and paused or finished projects on Focus). No brief, worktree or dispatch entry. In flight (1 of 6): D62. Next: Axel's ruling on 51, then /spec D65.
 - 2026-10-10 (open item 50 ruled). Axel ruled 50 (a) folded into D65: D65 also removes the saved-layout migration code. Next: /spec D65.

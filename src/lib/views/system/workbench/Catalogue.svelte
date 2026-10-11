@@ -31,6 +31,11 @@
     // The sections and the keys are the fold of state/workbench/navigation/catalogue.ts, the same
     // one the shell's keyboard counts its chords over, so the key drawn beside an entry is the key
     // that opens it.
+    //
+    // An app's right-click menu also offers Disable, Disable (Workspace), Enable, Enable
+    // (Workspace) and, for a machine app, Remove, each asking first when other apps or files are
+    // involved. The Apps group ends with Add app from folder, which is drawn when the group has no
+    // app too.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -38,6 +43,8 @@
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import type { Ask } from '$lib/views/shared/writes/ask';
     import {
         arrange,
         docPick,
@@ -66,6 +73,7 @@
 
     const client = useState();
     const {
+        apps,
         drag: { startView },
         entities: { config },
         layout: {
@@ -94,6 +102,14 @@
     const listed = $derived(listedViews(views()));
     const sections = $derived(arrange(listed, groups, docs));
     const order = $derived(railOrder(listed, groups, readChord(merged?.direct_chord), docs));
+
+    /** The group the apps are listed under, and whether any app is listed in a section. */
+    const APPS_GROUP = 'apps';
+    const appsGroup = $derived(groups.find((group) => group.id === APPS_GROUP));
+    const appsListed = $derived(
+        sections.some((section) => section.items.some((view) => view.group === APPS_GROUP))
+    );
+    let asked: Ask | null = $state(null);
 
     /** The hover words of one entry: its name and, when a chord reaches it, the key. */
     function hint(label: string, pick: string): string {
@@ -156,6 +172,19 @@
         { id: BESIDE, label: t('workbench.catalogue_open_beside') }
     ];
 
+    /** The items of an entry's menu: the two places it opens, and for an app its choices. */
+    function itemsOf(view: string): MenuItem[] {
+        const row = apps.rowOf(view);
+        if (row === undefined) return hereItems;
+        return [...hereItems, ...apps.choices(row).map(({ id, label }) => ({ id, label }))];
+    }
+
+    /** A pick of an entry's menu: where to open it, or a choice about the app. */
+    function picked(view: string, pick: string): void {
+        if (pick === HERE || pick === BESIDE) openHere(view, undefined, pick);
+        else void apps.pick(view, pick, (question) => (asked = question));
+    }
+
     /**
      * Open an entry on the page the catalogue is on: in a pane other than the catalogue's, or in a
      * new pane beside the catalogue.
@@ -211,8 +240,8 @@
                         {@const label = registrationLabel(view)}
                         <ContextMenu
                             {label}
-                            items={hereItems}
-                            onpick={(pick: string) => openHere(view.id, undefined, pick)}
+                            items={itemsOf(view.id)}
+                            onpick={(pick: string) => picked(view.id, pick)}
                         >
                             <!-- A drag starts on the entry; its button is pressed as it is. -->
                             <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -270,11 +299,37 @@
                             </div>
                         </ContextMenu>
                     {/each}
+                    {#if section.items.some((view) => view.group === APPS_GROUP)}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                        {@render addApp()}
+                    {/if}
                 </div>
             </section>
         {/each}
+        {#if !appsListed && appsGroup !== undefined}
+            <section class="group" data-group={appsGroup.label}>
+                <h3>
+                    <Glyph name={appsGroup.glyph ?? ''} />
+                    <span>{appsGroup.label}</span>
+                </h3>
+                <div class="entries">
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render addApp()}
+                </div>
+            </section>
+        {/if}
     </div>
 </Pane>
+<AskConfirm asking={asked} onclose={() => (asked = null)} />
+
+{#snippet addApp()}
+    <ToolButton
+        label={t('apps.menu_add')}
+        glyph={t('apps.add_glyph')}
+        dataView="add-app"
+        onclick={() => void apps.addFromPanel()}
+    />
+{/snippet}
 
 <style>
     .view {

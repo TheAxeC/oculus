@@ -10,18 +10,28 @@
 // The rules of what an app may name (the name pattern, the channels, the write kinds, the path
 // segment rule) are `data/helpers/files/apps.ts`'s, which the page applies too. Only a glyph that
 // is not usable leaves the app offered: it is drawn with the default glyph and the finding says so.
+//
+// The keys of the host are checked here too: `host` names a recorded file, `files` the folders a
+// machine app's page may read (the root of an entry is the longest shown root key it starts with,
+// and an entry naming no shown root is kept), `secrets` is `true` or absent, `activation` lists
+// events and needs a `host`, and `depends` lists the machine apps the host needs. A dependency that
+// is absent, refused, disabled or unapproved does not refuse the folder: the host waits.
 
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import {
     APP_NAME,
     channelAccess,
+    inClosedPaths,
+    filesPlace,
     pathSegmentsOpen,
     writeAccess
-} from '../../../data/helpers/files/apps.ts';
-import { findingText, type TextCatalog } from '../../../data/helpers/finding-text.ts';
-import type { Finding } from '../../../data/model/index.ts';
-import { parseYamlMap, errorLine } from '../../../data/sources/yaml-file.ts';
+} from '../../../../data/helpers/files/apps.ts';
+import { findingText, type TextCatalog } from '../../../../data/helpers/finding-text.ts';
+import type { AppRow, Finding } from '../../../../data/model/index.ts';
+import { parseYamlMap, errorLine } from '../../../../data/sources/yaml-file.ts';
+import { ENGINE_ROOT } from '../../../files/files.ts';
+import { DEFAULT_ACTIVATION, parseEvent } from './activation.ts';
 
 /** The version of the bridge this oculus speaks, the only value `bridge` may hold. */
 const BRIDGE = 1;
@@ -69,7 +79,16 @@ export const appShape = z.strictObject({
         .optional(),
     reads: z.array(z.string()).optional(),
     writes: z.array(z.string()).optional(),
-    connects: z.array(z.string()).optional()
+    connects: z.array(z.string()).optional(),
+    host: z
+        .string()
+        .regex(/\.m?js$/)
+        .refine((host) => pathSegmentsOpen(host))
+        .optional(),
+    files: z.array(z.string()).optional(),
+    secrets: z.literal(true).optional(),
+    activation: z.array(z.string()).optional(),
+    depends: z.array(z.string().regex(APP_NAME)).optional()
 });
 
 /** What the shape refuses of a manifest: the keys it does not name and the keys that do not fit. */
@@ -87,17 +106,23 @@ function flawsOf(map: Record<string, unknown>): Flaws {
     return flaws;
 }
 
-/** What a manifest says once every key passed. */
-type Manifest = {
-    name: string;
-    title: string;
-    description: string;
-    glyph: string;
-    entry: string;
-    reads: string[];
-    writes: string[];
-    connects: string[];
-};
+/** What a manifest says once every key passed: the fields of a row that the manifest names. */
+type Manifest = Pick<
+    AppRow,
+    | 'name'
+    | 'title'
+    | 'description'
+    | 'glyph'
+    | 'entry'
+    | 'reads'
+    | 'writes'
+    | 'connects'
+    | 'host'
+    | 'readFolders'
+    | 'secrets'
+    | 'activation'
+    | 'depends'
+>;
 
 /** What the reader needs to know about the folder and the install around the manifest. */
 export type ManifestInput = {
@@ -107,8 +132,12 @@ export type ManifestInput = {
     folder: string;
     /** The root key, and the empty string for a machine app. */
     root: string;
-    /** The paths of the app's recorded files, for the `entry` check. */
+    /** The paths of the app's recorded files, for the `entry` and `host` checks. */
     files: ReadonlySet<string>;
+    /** The keys of the roots the file browser shows, which the roots of `files` entries are. */
+    rootKeys: readonly string[];
+    /** The folders `closed_paths` names, or null while the key is missing or is no list. */
+    closedPaths: readonly string[] | null;
     /** The glyph names of config/catalogs/glyphs.yml. */
     glyphs: ReadonlySet<string>;
     /** The port oculus listens on, which an `http:` origin may not name. */
@@ -155,6 +184,8 @@ const CARRIES: Record<string, (catalog: TextCatalog) => string> = {
     apps: (catalog) => findingText(catalog, 'findings.apps.carries.apps'),
     pty: (catalog) => findingText(catalog, 'findings.apps.carries.pty'),
     processes: (catalog) => findingText(catalog, 'findings.apps.carries.processes'),
+    'app-hosts': (catalog) => findingText(catalog, 'findings.apps.carries.app_hosts'),
+    'app-messages': (catalog) => findingText(catalog, 'findings.apps.carries.app_messages'),
     inbox: (catalog) => findingText(catalog, 'findings.apps.carries.inbox'),
     calendar: (catalog) => findingText(catalog, 'findings.apps.carries.calendar'),
     sessions: (catalog) => findingText(catalog, 'findings.apps.carries.sessions'),
@@ -237,6 +268,106 @@ function originsOf(
         }
     }
     return origins;
+}
+
+/** The strings of a list key, or null with one refusal when the value is no list of strings. */
+function stringsOf(
+    value: unknown,
+    key: string,
+    catalog: TextCatalog,
+    refuse: (message: string) => void
+): string[] | null {
+    if (value === undefined) return [];
+    if (Array.isArray(value) && value.every((one) => typeof one === 'string')) {
+        return value;
+    }
+    refuse(findingText(catalog, 'findings.apps.list_shape', key));
+    return null;
+}
+
+/** The entries of a list each once, and a refusal for an entry written twice. */
+function onceEach(
+    entries: string[],
+    key: string,
+    catalog: TextCatalog,
+    refuse: (message: string) => void
+): string[] {
+    const seen = new Set<string>();
+    for (const entry of entries) {
+        if (seen.has(entry))
+            refuse(findingText(catalog, 'findings.apps.list_repeated', entry, key));
+        seen.add(entry);
+    }
+    return [...seen];
+}
+
+/**
+ * The `files` entries of a machine app, each once and each checked: not the root `engine`, a path
+ * of the segment rule that `closed_paths` does not close. An entry naming no shown root is kept.
+ */
+function foldersOf(
+    value: unknown,
+    input: ManifestInput,
+    refuse: (message: string) => void
+): string[] {
+    const { catalog } = input;
+    const listed = stringsOf(value, 'files', catalog, refuse);
+    if (listed === null) return [];
+    if (listed.length > 0 && input.root !== '') {
+        refuse(findingText(catalog, 'findings.apps.files_root_app'));
+        return [];
+    }
+    const entries = onceEach(listed, 'files', catalog, refuse);
+    for (const entry of entries) {
+        const place = filesPlace(entry, input.rootKeys);
+        if (place.root === ENGINE_ROOT) {
+            refuse(findingText(catalog, 'findings.apps.files_engine', entry));
+        } else if (place.root === '' || (place.path !== '' && !pathSegmentsOpen(place.path))) {
+            refuse(findingText(catalog, 'findings.apps.files_shape', entry));
+        } else if (input.closedPaths === null || inClosedPaths(place.path, input.closedPaths)) {
+            refuse(findingText(catalog, 'findings.apps.files_closed', entry));
+        }
+    }
+    return entries;
+}
+
+/** The activation events of a host, each once and each an event the grammar reads. */
+function eventsOf(
+    value: unknown,
+    hasHost: boolean,
+    catalog: TextCatalog,
+    refuse: (message: string) => void
+): string[] {
+    const listed = stringsOf(value, 'activation', catalog, refuse);
+    if (listed === null) return [];
+    if (value !== undefined && !hasHost) {
+        refuse(findingText(catalog, 'findings.apps.activation_no_host'));
+        return [];
+    }
+    for (const text of listed) {
+        const event = parseEvent(text);
+        if (event === 'unknown') refuse(findingText(catalog, 'findings.apps.event_unknown', text));
+        else if (event === 'empty') refuse(findingText(catalog, 'findings.apps.event_empty', text));
+        else if (event === 'glob') refuse(findingText(catalog, 'findings.apps.event_glob', text));
+    }
+    const events = onceEach(listed, 'activation', catalog, refuse);
+    return events.length === 0 ? [DEFAULT_ACTIVATION] : events;
+}
+
+/** The names of the machine apps a host depends on, each once, none the app's own name. */
+function dependenciesOf(
+    value: unknown,
+    own: string,
+    catalog: TextCatalog,
+    refuse: (message: string) => void
+): string[] {
+    const listed = stringsOf(value, 'depends', catalog, refuse);
+    if (listed === null) return [];
+    for (const name of listed) {
+        if (!APP_NAME.test(name)) refuse(findingText(catalog, 'findings.apps.depends_name', name));
+        else if (name === own) refuse(findingText(catalog, 'findings.apps.depends_self', name));
+    }
+    return onceEach(listed, 'depends', catalog, refuse);
 }
 
 /**
@@ -334,6 +465,21 @@ export function readManifest(input: ManifestInput): ManifestRead {
     const reads = namesOf(map.reads, 'reads', flaws, catalog, refuse);
     const writes = namesOf(map.writes, 'writes', flaws, catalog, refuse);
     const connects = originsOf(map.connects, input.port, flaws, catalog, refuse);
+    let host = '';
+    if (map.host !== undefined) {
+        host = shown(map.host);
+        if (flaws.bad.has('host') || typeof map.host !== 'string') {
+            refuse(findingText(catalog, 'findings.apps.host_shape', host));
+        } else if (!input.files.has(host)) {
+            refuse(findingText(catalog, 'findings.apps.host_missing', host));
+        }
+    }
+    const readFolders = foldersOf(map.files, input, refuse);
+    if (map.secrets !== undefined && map.secrets !== true) {
+        refuse(findingText(catalog, 'findings.apps.secrets_value', shown(map.secrets)));
+    }
+    const activation = eventsOf(map.activation, map.host !== undefined, catalog, refuse);
+    const depends = dependenciesOf(map.depends, input.folder, catalog, refuse);
     for (const name of reads) {
         const access = channelAccess(name);
         if (access.access === 'unknown') {
@@ -356,7 +502,21 @@ export function readManifest(input: ManifestInput): ManifestRead {
 
     if (outcome.refused) return { manifest: null, findings: found, bytes };
     return {
-        manifest: { name: input.folder, title, description, glyph, entry, reads, writes, connects },
+        manifest: {
+            name: input.folder,
+            title,
+            description,
+            glyph,
+            entry,
+            reads,
+            writes,
+            connects,
+            host,
+            readFolders,
+            secrets: map.secrets === true,
+            activation,
+            depends
+        },
         findings: found,
         bytes
     };

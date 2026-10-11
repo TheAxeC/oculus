@@ -7,8 +7,8 @@
 // What it holds: the name pattern and the view id an app is known by, with the form the id takes in
 // the `x-oculus-app` header; the channels an app may read and the ones closed to every app or to a
 // root app; the write kinds an app may ask for, the ones it may not, and the ones that ask the
-// reader first; and the two rules a file path is judged by, the segment rule and the `closed_paths`
-// match.
+// reader first; the two rules a file path is judged by, the segment rule and the `closed_paths`
+// match; the root a `files` entry names; and the rule of a secret's key and value.
 
 import { joinPath, pathUnder } from './paths.ts';
 
@@ -81,7 +81,7 @@ const READ_OPEN = ['portfolio', 'feeds', 'hpc', 'audit', 'config', 'git', 'files
 const READ_MACHINE = ['inbox', 'calendar', 'sessions', 'usage'] as const;
 
 /** The channels closed to every app, by the name the reason is kept under. */
-const CLOSED_CHANNELS = ['apps', 'pty', 'processes'] as const;
+const CLOSED_CHANNELS = ['apps', 'pty', 'processes', 'app-hosts', 'app-messages'] as const;
 type ClosedChannel = (typeof CLOSED_CHANNELS)[number];
 
 /**
@@ -202,3 +202,58 @@ export function inAppsFolder(folders: readonly string[], dir: string, path: stri
     const full = joinPath(dir, path);
     return folders.some((folder) => pathUnder(folder, full) !== null);
 }
+
+/**
+ * The root and the path a `files` entry names: the longest key of the shown roots that the entry
+ * equals or that is followed by `/` in it, and the rest of the entry as the path, empty for the
+ * whole root. Null when no shown root is named; root keys are per workspace, so such an entry is
+ * kept and reads as missing.
+ */
+function splitFilesEntry(
+    entry: string,
+    rootKeys: readonly string[]
+): { root: string; path: string } | null {
+    let best: string | null = null;
+    for (const key of rootKeys) {
+        const named = entry === key || entry.startsWith(`${key}/`);
+        if (named && (best === null || key.length > best.length)) best = key;
+    }
+    return best === null ? null : { root: best, path: entry.slice(best.length + 1) };
+}
+
+/**
+ * The root and the path a `files` entry names, an entry naming no shown root read as a root key up
+ * to its first `/` and a path after it, so the entry still names a place that answers `missing`.
+ */
+export function filesPlace(
+    entry: string,
+    rootKeys: readonly string[]
+): { root: string; path: string } {
+    const shown = splitFilesEntry(entry, rootKeys);
+    if (shown !== null) return shown;
+    const slash = entry.indexOf('/');
+    return slash < 0
+        ? { root: entry, path: '' }
+        : { root: entry.slice(0, slash), path: entry.slice(slash + 1) };
+}
+
+/**
+ * Whether a path of a root lies in a folder a `files` entry lists: the entry's root is the root,
+ * and the entry's path is empty or is the path or a folder above it, compared segment by segment.
+ */
+export function inFilesEntry(
+    entry: string,
+    rootKeys: readonly string[],
+    root: string,
+    path: string
+): boolean {
+    const place = filesPlace(entry, rootKeys);
+    if (place.root !== root) return false;
+    return place.path === '' || path === place.path || path.startsWith(`${place.path}/`);
+}
+
+/** The pattern a secret's key matches: 1 to 64 letters, digits, dots, underscores and hyphens. */
+export const SECRET_KEY = /^[A-Za-z0-9._-]{1,64}$/;
+
+/** The most bytes a secret's value may hold, as UTF-8. */
+export const SECRET_MAX_BYTES = 2048;

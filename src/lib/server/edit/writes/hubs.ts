@@ -14,7 +14,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { HUB_ROOT, ofHub, splitHubId } from '../../../data/helpers/hub-names.ts';
 import { inside } from '../../core/paths.ts';
 import { hubManifests, type HubTarget } from '../../files/roots.ts';
-import type { HeldApp } from '../../machine/apps/held.ts';
+import type { HeldApp } from '../../machine/apps/read/held.ts';
 import type { WriteTarget } from '../writes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
 

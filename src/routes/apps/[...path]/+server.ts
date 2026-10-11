@@ -10,8 +10,9 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { appsSettings } from '$lib/data/sources/config';
-import oculus from '$lib/server/machine/apps/oculus.js?raw';
-import { serveApp } from '$lib/server/machine/apps/serve';
+import oculus from '$lib/server/machine/apps/serve/oculus.js?raw';
+import { reachOf, routeOptions } from '$lib/server/machine/apps/routes/routes';
+import { serveApp } from '$lib/server/machine/apps/serve/serve';
 import type { RequestHandler } from './$types';
 
 /** The bytes of penpal's module as the package ships it, or null when they cannot be read. */
@@ -32,7 +33,8 @@ const answer: RequestHandler = ({ request, locals }) =>
             return { files: settings.maxFiles, bytes: settings.maxMb * 1024 * 1024 };
         },
         penpal,
-        oculus
+        oculus,
+        reach: () => reachOf(routeOptions(locals.server, () => locals.config().config))
     });
 
 export const GET: RequestHandler = answer;

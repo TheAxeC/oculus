@@ -1,28 +1,39 @@
-// Layer 2, server. The three /api/ routes of the apps, each as a function of the request and what
-// it reads: POST /api/approve, GET /api/app-store and GET /api/app-open. A route module may export
-// only its verbs, so everything a request does is here and the files under src/routes/api/(apps)/
-// are the lines that join them.
+// Layer 2, server. The /api/ routes of the apps that approve and read, each as a function of the
+// request and what it reads: POST /api/approve, GET /api/app-store and GET /api/app-open. A route
+// module may export only its verbs, so everything a request does is here (or in host.ts and
+// manage.ts for the host, the secrets and the management of apps) and the files under
+// src/routes/api/(apps)/ are the lines that join them.
 //
 // The two GET routes are the page's own reads. They write nothing, answer for any app the watcher
 // holds, and are called by the page alone: they sit under /api/, so the origin guard of
-// src/hooks.server.ts refuses the opaque origin of an app's frame before they run. The POST carries
-// the write token and runs behind the process's write chain, as the other writes of the approvals
-// file do; the watcher is told after its own write, so the app's key is in the held row before the
-// answer is sent and a revoke stops serving at once.
+// src/hooks.server.ts refuses the opaque origin of an app's frame before they run. A disabled app
+// is refused `closed` by both. The POST carries the write token and runs behind the process's write
+// chain, as the other writes of the approvals file do; the watcher is told after its own write, so
+// the app's key is in the held row before the answer is sent and a revoke stops serving at once.
 
 import { json } from '@sveltejs/kit';
+import trash from 'trash';
 import { z } from 'zod';
-import { tokenedBody } from '../../core/auth.ts';
-import { chained, type FsWrites } from '../../core/json.ts';
-import { appsSettings, closedPaths, configDir, textCatalog } from '../../../data/sources/config.ts';
-import { browserRoots } from '../../files/roots.ts';
-import type { Root } from '../../files/files.ts';
-import { approveApp, defaultApprovalsPath, revokeApp } from '../approvals/approvals.ts';
-import { appById, type AppsHeld } from './held.ts';
-import { checkOpen, diskFs, type OpenFs } from './open.ts';
-import { readStore } from './store.ts';
+import { tokenedBody } from '../../../core/auth.ts';
+import { chained, type FsWrites } from '../../../core/json.ts';
+import {
+    appsSettings,
+    closedPaths,
+    configDir,
+    textCatalog
+} from '../../../../data/sources/config.ts';
+import { browserRoots } from '../../../files/roots.ts';
+import type { Root } from '../../../files/files.ts';
+import { approveApp, defaultApprovalsPath, revokeApp } from '../../approvals/approvals.ts';
+import type { AppHosts } from '../host/manager.ts';
+import { appById, type AppsHeld } from '../read/held.ts';
+import type { WalkLimits } from '../read/record.ts';
+import { checkOpen, diskFs, type OpenFs } from '../reach/open.ts';
+import type { FsContext } from '../reach/fs.ts';
+import type { AppSecrets } from '../secrets/secrets.ts';
+import { readStore } from '../store/store.ts';
 
-const NO_STORE = { 'cache-control': 'no-store' };
+export const NO_STORE = { 'cache-control': 'no-store' };
 
 /** What the routes need of the watcher. */
 type AppsAccess = {
@@ -31,6 +42,12 @@ type AppsAccess = {
     reread(): void;
     keep(id: string, manifestHash: string): void;
     unkeep(id: string): void;
+    /** The record file of the disabled apps. */
+    stateFile(): string;
+    /** The key the current workspace has in that file. */
+    workspace(): string;
+    /** The machine's apps folder, which may not exist yet. */
+    folder(): string;
 };
 
 /** What the routes read of the process. */
@@ -49,11 +66,20 @@ export type AppsRouteOptions = {
     /** The text catalog the token refusal is worded from, read when a refusal is made. */
     text: () => Record<string, string>;
     fs: OpenFs;
+    /** The most names a folder lists, and the limits a copied app folder is held to. */
+    scanEntries: () => number;
+    limits: () => WalkLimits;
+    hosts: AppHosts;
+    secrets: AppSecrets;
+    /** Move a path to the system trash. */
+    trash: (path: string) => Promise<void>;
 };
 
 /** What the options are made from: the parts of the process's server context the routes read. */
 export type AppsRouteServer = {
     apps: AppsAccess;
+    hosts: AppHosts;
+    secrets: AppSecrets;
     fsWrites: FsWrites;
     engine: string;
     local: { hub: string; approvals?: string; workspaces?: string };
@@ -76,11 +102,30 @@ export function routeOptions(
         configDir: configDir(server.engine),
         closedPaths: () => closedPaths(config()).folders,
         text: () => textCatalog(config()),
-        fs: diskFs
+        fs: diskFs,
+        scanEntries: () => appsSettings(config()).scanEntries,
+        limits: () => {
+            const settings = appsSettings(config());
+            return { files: settings.maxFiles, bytes: settings.maxMb * 1024 * 1024 };
+        },
+        hosts: server.hosts,
+        secrets: server.secrets,
+        trash: (path) => trash(path, { glob: false })
     };
 }
 
-const refuse = (error: string, status: number): Response =>
+/** What a read of a root's files by an app is judged by, for the app files route. */
+export function reachOf(options: AppsRouteOptions): FsContext {
+    return {
+        roots: options.roots(),
+        configDir: options.configDir,
+        closedPaths: options.closedPaths(),
+        fs: options.fs,
+        scanEntries: options.scanEntries()
+    };
+}
+
+export const refuse = (error: string, status: number): Response =>
     json({ error }, { status, headers: NO_STORE });
 
 /** The body of a POST: an approval of the hash shown, or a revoke. */
@@ -96,8 +141,8 @@ const approveShape = z.discriminatedUnion('action', [
 
 /**
  * POST /api/approve. An approval is of the hash the reader was shown: it is refused with 409
- * `changed` when the app's current hash is another one, and `keep` is refused for a root app,
- * whose files a pull writes. Every app is read again first, so the answer is of the disk now.
+ * `changed` when the app's current hash is another one. `keep` holds for a machine app and a root
+ * app alike. Every app is read again first, so the answer is of the disk now.
  */
 export async function handleApprovePost(
     request: Request,
@@ -120,7 +165,6 @@ export async function handleApprovePost(
             options.apps.unkeep(app.id);
         } else {
             if (action.hash !== app.row.hash) return refuse('changed', 409);
-            if (action.keep === true && app.row.root !== '') return refuse('keep', 400);
             const label =
                 app.row.root === '' ? app.row.title : `${app.row.title} (${app.row.root})`;
             const done = approveApp(file, { hash: app.row.hash, folder: app.row.folder, label });
@@ -145,6 +189,7 @@ export function handleStoreGet(request: Request, options: AppsRouteOptions): Res
     if (view === null) return refuse('view must be given once', 400);
     const app = appById(options.apps.held(), view);
     if (app === undefined) return refuse('missing', 404);
+    if (app.row.disabled) return refuse('closed', 403);
     const store = readStore(app.row.storeFile, options.storeMaxKb());
     return json({ version: store.version, value: store.value }, { headers: NO_STORE });
 }
@@ -160,6 +205,7 @@ export function handleOpenGet(request: Request, options: AppsRouteOptions): Resp
     }
     const app = appById(options.apps.held(), view);
     if (app === undefined) return refuse('missing', 404);
+    if (app.row.disabled) return json({ result: 'closed' }, { headers: NO_STORE });
     const result = checkOpen(
         { app, root, path },
         {

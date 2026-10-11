@@ -22,6 +22,26 @@ text:
         failed_status: ps ended with status {0}
         failed_timeout: the process table did not answer within {0} seconds
         head: '{0}, {1}'
+        hosts_title: App programs
+        host_app: '{0}'
+        host_app_root: '{0} ({1})'
+        host_pid: 'pid {0}'
+        host_started: 'started {0}'
+        host_running: running
+        host_starting: starting
+        host_ended_code: 'ended with exit code {0}'
+        host_ended_signal: 'ended by the signal {0}'
+        host_wait_approval: waiting for you to approve its changed files
+        host_wait_dependency: 'waiting for the app {0}, which cannot run'
+        host_wait_missing: 'waiting for the app {0}, which is not installed'
+        host_wait_cycle: not started, because the apps it needs and itself need each other first
+        host_stopped_by: 'stopped because the approval of the app {0} was revoked'
+        host_restart: Restart
+        host_approve: Approve
+        host_output_show: Show output
+        host_output_hide: Hide output
+        host_output_empty: The program has written nothing.
+        host_stop_question: 'Stop the program of {0}? It is asked to finish, then ended.'
         head_agent_one: 1 agent running
         head_agents: '{0} agents running'
         head_project_one: 1 project in flight

@@ -135,3 +135,17 @@ export function folderIn(
     }
     return null;
 }
+
+/**
+ * The frames a message from an app's host goes to: the frames of that app, restricted to the tab
+ * the message names, or all of them when it names none.
+ */
+export function hostTargets<T extends { id: string; instance: string }>(
+    frames: Iterable<T>,
+    message: { app: string; tab: string }
+): T[] {
+    return [...frames].filter(
+        (frame) =>
+            frame.id === message.app && (message.tab === '' || message.tab === frame.instance)
+    );
+}

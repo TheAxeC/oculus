@@ -11,6 +11,7 @@
 import type { QueryClient, QueryKey } from '@tanstack/query-core';
 import type {
     AppsPayload,
+    AppHostsPayload,
     AuditPayload,
     CalendarPayload,
     ConfigPayload,
@@ -49,6 +50,7 @@ export type Payloads = {
     debug: DebugPayload;
     'debug-console': DebugConsoleAppend;
     jump: Jump;
+    'app-hosts': AppHostsPayload;
 };
 
 /** What every channel of the wire reads as, one instance per client. */
@@ -78,6 +80,8 @@ export type EntitiesStore = {
     usage: () => UsagePayload | null;
     audit: () => AuditPayload | null;
     apps: () => AppsPayload | null;
+    /** The host of every app that names one, or null before the first message. */
+    appHosts: () => AppHostsPayload | null;
     /** The debug session's state, or null before the server's first message. */
     debug: () => DebugPayload | null;
 };
@@ -216,7 +220,7 @@ export type WritesStore = {
      */
     renewToken: () => Promise<void>;
     /** Post one command to an endpoint of its own with the write token, and read its answer. */
-    postCommand: (path: string, body: unknown) => Promise<Posted>;
+    postCommand: (path: string, body: unknown, headers?: Record<string, string>) => Promise<Posted>;
     pending: () => boolean;
     lastError: () => string | null;
     writeManifest: (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;

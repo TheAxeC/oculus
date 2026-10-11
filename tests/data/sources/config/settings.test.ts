@@ -109,8 +109,12 @@ const DEFAULTS: Record<string, unknown> = {
     'apps.writes_per_min': 40,
     'apps.opens_per_min': 41,
     'apps.keys_per_s': 25,
+    'apps.messages_per_min': 700,
     'apps.max_files': 600,
-    'apps.max_mb': 25
+    'apps.max_mb': 25,
+    'apps.host_output_kb': 300,
+    'apps.host_stop_seconds': 6,
+    'apps.scan_entries': 12000
 };
 
 /** A merged map whose catalog gives each setting a synthetic default, with the given keys set. */
@@ -642,8 +646,12 @@ describe('appsSettings', () => {
         writesPerMin: 40,
         opensPerMin: 41,
         keysPerS: 25,
+        messagesPerMin: 700,
         maxFiles: 600,
         maxMb: 25,
+        hostOutputKb: 300,
+        hostStopSeconds: 6,
+        scanEntries: 12000,
         closedPaths: undefined
     };
     const closed = (held: unknown) => {

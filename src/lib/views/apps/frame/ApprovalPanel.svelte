@@ -9,8 +9,15 @@
     // markup. The channels and the writes are worded by the catalog (`apps.read.<channel>` and
     // `apps.write.<kind>`); a root app's `git` and `files` are the root's own part, worded
     // `apps.read_root.<channel>`.
+    //
+    // An app with a host says first that it runs a program on this machine, with the reader's
+    // rights, and which file the program is. The folders its page may read, the keyring, the apps
+    // it needs and what a program that reads files could send to the addresses it reaches follow.
+    // The panel also holds the choices of the app's menu (disable, enable, remove) and, for an app
+    // that is approved and reviewed again, a way back to the app.
 
     import type { AppRow } from '$lib/state/system/apps/apps.svelte';
+    import type { AppChoice } from '$lib/state/system/apps/flows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { readWords, writeWords } from '$lib/state/system/apps/words';
@@ -24,9 +31,15 @@
         pending: boolean;
         onapprove: (keep: boolean) => void;
         onfolder: () => void;
+        /** The choices of the app's menu, and what a pick of one does. */
+        choices: AppChoice[];
+        onchoice: (choice: string) => void;
+        /** Leave the panel for the app, for an app that is already approved. */
+        onback?: () => void;
     };
 
-    let { row, changed, error, pending, onapprove, onfolder }: Props = $props();
+    let { row, changed, error, pending, onapprove, onfolder, choices, onchoice, onback }: Props =
+        $props();
 
     const root = $derived(row.root !== '');
     const title = $derived(root ? `${row.title} (${row.root})` : row.title);
@@ -53,6 +66,18 @@
     <p class="meta">{t('apps.size_line', row.files.toString(), size(row.bytes))}</p>
     <p class="question">{t('apps.approve_question')}</p>
     <ul>
+        {#if row.host !== ''}
+            <li>{t('apps.host_line', row.host)}</li>
+        {/if}
+        {#each row.readFolders as folder (folder)}
+            <li>{t('apps.files_line', folder)}</li>
+        {/each}
+        {#if row.secrets}
+            <li>{t('apps.secrets_line')}</li>
+        {/if}
+        {#if row.depends.length > 0}
+            <li>{t('apps.depends_line', row.depends.join(', '))}</li>
+        {/if}
         {#each row.reads as channel (channel)}
             <li>{readWords(channel, root)}</li>
         {:else}
@@ -71,6 +96,9 @@
         <li>
             {root ? t('apps.store_root', row.storeFile) : t('apps.store_machine', row.storeFile)}
         </li>
+        {#if (root || row.readFolders.length > 0) && row.connects.length > 0}
+            <li>{t('apps.send_line', row.connects.join(', '))}</li>
+        {/if}
     </ul>
     {#if error !== ''}
         <p class="error" role="alert">{error}</p>
@@ -82,14 +110,18 @@
             disabled={pending}
             onclick={() => onapprove(false)}
         />
-        {#if !root}
-            <ToolButton
-                label={t('apps.keep_approved')}
-                disabled={pending}
-                onclick={() => onapprove(true)}
-            />
-        {/if}
+        <ToolButton
+            label={t('apps.keep_approved')}
+            disabled={pending}
+            onclick={() => onapprove(true)}
+        />
         <ToolButton label={t('apps.open_folder')} onclick={onfolder} />
+        {#if onback !== undefined}
+            <ToolButton label={t('apps.back')} onclick={onback} />
+        {/if}
+        {#each choices as choice (choice.id)}
+            <ToolButton label={choice.label} onclick={() => onchoice(choice.id)} />
+        {/each}
     </div>
 </div>
 

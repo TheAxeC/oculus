@@ -11,25 +11,27 @@
 // root's `.oculus/apps` that resolves outside the root's real path is not read, and the root
 // `engine` is oculus's own config folder, which holds no apps. A folder with no `app.yml` is not an
 // app and gets no finding, since nothing in it claims to be one. This module is a pure function of
-// the disk and its input: it holds nothing between reads, and the keeping of a machine app is the
-// caller's map, edited here only to end a keeping whose manifest changed.
+// the disk and its input: it holds nothing between reads, and the keeping of an app is the
+// caller's map, edited here only to end a keeping whose manifest changed. Which apps are disabled
+// is the state the caller read from `~/.oculus/apps.json` (read/state.ts).
 
 import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { appViewId } from '../../../data/helpers/files/apps.ts';
-import { HUB_ROOT, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
-import { findingText, type TextCatalog } from '../../../data/helpers/finding-text.ts';
-import type { AppRow, Finding } from '../../../data/model/index.ts';
-import { textCatalog, type AppsSettings } from '../../../data/sources/config.ts';
-import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
-import { below, realPath } from '../../core/paths.ts';
-import { ENGINE_ROOT, type Root } from '../../files/files.ts';
-import { addressKey } from './address.ts';
+import { appViewId } from '../../../../data/helpers/files/apps.ts';
+import { HUB_ROOT, ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
+import { findingText, type TextCatalog } from '../../../../data/helpers/finding-text.ts';
+import type { AppRow, Finding } from '../../../../data/model/index.ts';
+import { closedPaths, textCatalog, type AppsSettings } from '../../../../data/sources/config.ts';
+import { mapShape, readAs } from '../../../../data/shapes/shapes.ts';
+import { below, realPath } from '../../../core/paths.ts';
+import { ENGINE_ROOT, type Root } from '../../../files/files.ts';
+import { addressKey } from '../serve/address.ts';
 import { noApps, type AppsHeld, type HeldApp } from './held.ts';
 import { findingKey, readManifest } from './manifest.ts';
 import { hashApp, walkApp } from './record.ts';
-import { readStore, ROOT_DATA, storeFile } from './store.ts';
+import { standingOf, type AppsState } from './state.ts';
+import { readStore, ROOT_DATA, storeFile } from '../store/store.ts';
 
 /** What a read needs of the install around the folders. */
 export type ScanInput = {
@@ -47,9 +49,13 @@ export type ScanInput = {
     port: number;
     /** The content hashes the approvals file holds as approved apps. */
     approved: ReadonlySet<string>;
-    /** The machine apps kept approved while edited: view id to the hash of the approved manifest.
-     * */
+    /** The apps kept approved while edited: view id to the hash of the approved manifest. */
     kept: Map<string, string>;
+    /** What `~/.oculus/apps.json` says of the disabled apps, and the file it was read from. */
+    state: AppsState;
+    stateFile: string;
+    /** The key the current workspace has in that file. */
+    workspace: string;
     /** The second secret the address keys are made with. */
     secret: string;
     /** The folder the machine apps' stores are written in. */
@@ -102,9 +108,16 @@ export function scanApps(input: ScanInput): AppsHeld {
         bytes: input.settings.maxMb * 1024 * 1024
     };
 
+    const rootKeys = input.roots.map((root) => root.key);
+    const folders = closedPaths(input.config).folders;
+
     const note = (key: string, file: string, message: string): void => {
         held.findings.push({ file, key, message } satisfies Finding);
     };
+    if (input.state.problem !== null) {
+        const message = findingText(catalog, 'findings.apps.state_unread', input.state.problem);
+        note('apps_state', input.stateFile, message);
+    }
 
     const readApp = (folder: string, name: string, root: string, rootReal: string): void => {
         const key = findingKey(root, name);
@@ -125,6 +138,8 @@ export function scanApps(input: ScanInput): AppsHeld {
             folder: name,
             root,
             files: new Set(walk.files.map((one) => one.path)),
+            rootKeys,
+            closedPaths: folders,
             glyphs,
             port: input.port,
             catalog
@@ -145,9 +160,11 @@ export function scanApps(input: ScanInput): AppsHeld {
         }
         const id = appViewId(root, name);
         const keptHash = input.kept.get(id);
-        const kept = root === '' && keptHash === manifestHash;
+        const kept = keptHash === manifestHash;
         if (keptHash !== undefined && !kept) input.kept.delete(id);
-        const approved = kept || input.approved.has(hash);
+        const hashApproved = input.approved.has(hash);
+        const approved = kept || hashApproved;
+        const standing = standingOf(input.state, input.workspace, id);
         const dataFolder = root === '' ? input.appData : join(rootReal, ROOT_DATA);
         const file = storeFile(dataFolder, name);
         const store = readStore(file, input.settings.storeMaxKb, false);
@@ -162,10 +179,19 @@ export function scanApps(input: ScanInput): AppsHeld {
             reads: manifest.reads,
             writes: manifest.writes,
             connects: manifest.connects,
+            host: manifest.host,
+            readFolders: manifest.readFolders,
+            secrets: manifest.secrets,
+            activation: manifest.activation,
+            depends: manifest.depends,
+            disabled: standing.disabled,
+            machineDisabled: standing.machine,
+            workspaceState: standing.workspace,
             files: walk.files.length,
             bytes: walk.bytes,
             hash,
             approved,
+            hashApproved,
             kept,
             key: approved ? addressKey(input.secret, id, hash) : '',
             storeBytes: store.bytes,

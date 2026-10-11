@@ -936,7 +936,7 @@ options:
         apps.writes_per_min:
             heading: apps
             section: App limits
-            help: How many writes, `setStore` included, one frame may send in a minute.
+            help: How many writes, `setStore` included, one frame or one host may send in a minute; a host's store updates and a secret's stores and deletes count here.
             default: 30
             control: number
             min: 1
@@ -944,8 +944,16 @@ options:
         apps.opens_per_min:
             heading: apps
             section: App limits
-            help: How many calls of `open` one frame may send in a minute.
+            help: How many calls of `open` or `commands.run` one frame may send in a minute.
             default: 30
+            control: number
+            min: 1
+            whole: true
+        apps.messages_per_min:
+            heading: apps
+            section: App limits
+            help: How many calls of `sendToPage` one host may make in a minute.
+            default: 600
             control: number
             min: 1
             whole: true
@@ -970,6 +978,30 @@ options:
             section: App limits
             help: How many megabytes an app's files may total before the app is refused.
             default: 20
+            control: number
+            min: 1
+            whole: true
+        apps.host_output_kb:
+            heading: apps
+            section: App limits
+            help: How many kilobytes of a host's output are kept, beside the last 1000 lines.
+            default: 256
+            control: number
+            min: 1
+            whole: true
+        apps.host_stop_seconds:
+            heading: apps
+            section: App limits
+            help: How many seconds a host's `deactivate` is given to settle before the host is sent SIGTERM.
+            default: 5
+            control: number
+            min: 1
+            whole: true
+        apps.scan_entries:
+            heading: apps
+            section: App limits
+            help: How many entries per root a `workspaceContains` look and a `readDirectory` read at most.
+            default: 10000
             control: number
             min: 1
             whole: true

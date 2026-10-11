@@ -36,6 +36,8 @@ import type { UsageRefreshWatcher } from '../../machine/usage/refresh.ts';
 import type { UsageWatcher } from '../../machine/usage/watch.ts';
 import type { HookTarget } from '../hooks.ts';
 import type { ConfigCache } from './config-cache.ts';
+import type { AppHosts } from '../../machine/apps/host/manager.ts';
+import type { AppSecrets } from '../../machine/apps/secrets/secrets.ts';
 import type { AppsWatcher } from '../watch/apps.ts';
 import type { GitWatcher } from '../watch/git.ts';
 
@@ -68,6 +70,10 @@ export type ServerContext = {
     schedules: SchedulesWatcher;
     /** The apps found in the machine's folder and in the roots, and the keeping of an app. */
     apps: AppsWatcher;
+    /** The host process of each app that names one. */
+    hosts: AppHosts;
+    /** The secrets of the apps, kept in the operating system's keyring. */
+    secrets: AppSecrets;
     token: string;
     /**
      * The second secret of the process, which the address key of every approved app is made with

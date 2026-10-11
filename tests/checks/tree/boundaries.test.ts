@@ -59,7 +59,9 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // a pattern before it sends, and the server reads the file and runs the timer by the same rule, so
 // the two cannot disagree on what runs; `data/helpers/run/marker`, the line a project command's
 // chain prints before each command, which the server writes into the chain's line and the page
-// reads the task's output by; `data/helpers/editor`, the order that resolves a tab's editor options
+// reads the task's output by; `data/helpers/run/limiter`, the sliding-window count of the app
+// limits, which the page applies to a frame's calls and the server to a host's, so the two count
+// by one rule; `data/helpers/editor`, the order that resolves a tab's editor options
 // (`resolveEditor`) and their types, which the source tab and the diff view resolve a tab's options
 // through; and `data/helpers/search/**`, the Search view refusing a query before it sends it and
 // the search route refusing the same query when it arrives, from one rule and one argument list
@@ -258,6 +260,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/run/schedules',
         'data/helpers/run/cron',
         'data/helpers/run/marker',
+        'data/helpers/run/limiter',
         'data/helpers/editor',
         'data/helpers/search/**',
         'data/file-ops',

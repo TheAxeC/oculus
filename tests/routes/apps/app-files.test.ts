@@ -1,6 +1,6 @@
 // Layer 2, route tests. What /apps/ answers: an approved app's recorded file, the two shared
 // files, and an empty 404 for everything else. The route is the lines of src/routes/apps/ that hand
-// the request to serveApp (lib/server/machine/apps/serve.ts), which is what this calls.
+// the request to serveApp (lib/server/machine/apps/serve/serve.ts), which is what this calls.
 //
 // Every folder is synthetic, under the system temporary directory. What this does NOT cover: the
 // browser applying the policy the answer carries (the scratch-server runs of the step's report
@@ -9,9 +9,9 @@
 import { chmodSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { appPolicy } from '../../../src/lib/server/machine/apps/address.ts';
-import { appOf } from '../../../src/lib/server/machine/apps/held.ts';
-import { serveApp } from '../../../src/lib/server/machine/apps/serve.ts';
+import { appPolicy } from '../../../src/lib/server/machine/apps/serve/address.ts';
+import { appOf } from '../../../src/lib/server/machine/apps/read/held.ts';
+import { serveApp } from '../../../src/lib/server/machine/apps/serve/serve.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { approvedHeld, notesFiles, PAGE, plant, PORT, serveInput } from './apps-fixture.ts';
 
@@ -90,6 +90,39 @@ const ROWS: Row[] = [
             cors: '*',
             policy: true,
             scripts: true
+        }
+    ],
+    [
+        'the policy, which lets an app compile its own wasm in script-src alone',
+        () => {
+            const held = approvedHeld(plant({ machine: notesFiles() }));
+            const key = keyOf(held);
+            const header = ask(held, `${NOTES}${key}/index.html`).headers.get(
+                'content-security-policy'
+            );
+            const directives = Object.fromEntries(
+                (header ?? '')
+                    .split('; ')
+                    .map((one) => [one.split(' ')[0], one.split(' ').slice(1)])
+            );
+            return {
+                script: directives['script-src'].map((one) => one.replace(key, '<key>')),
+                others: Object.entries(directives)
+                    .filter(([name]) => name !== 'script-src')
+                    .some(([, values]) => values.includes("'wasm-unsafe-eval'")),
+                eval: header?.includes("'unsafe-eval'"),
+                default: directives['default-src']
+            };
+        },
+        {
+            script: [
+                `localhost:${PORT}${NOTES}<key>/`,
+                `localhost:${PORT}/apps/-/`,
+                "'wasm-unsafe-eval'"
+            ],
+            others: false,
+            eval: false,
+            default: ["'none'"]
         }
     ],
     [

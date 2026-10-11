@@ -60,7 +60,6 @@ import { hubDirs } from '../../data/helpers/files/private-folders.ts';
 import { expandHome, hubRoots } from '../files/files.ts';
 import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
-import { createOpenFiles } from '../files/fs/open-files.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultApprovalsPath } from '../machine/approvals/approvals.ts';
@@ -115,6 +114,7 @@ import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { createConfigCache } from './process/config-cache.ts';
 import type { ServerContext } from './process/server-context.ts';
 import { LISTEN_HOST, type PortMove } from './mover.ts';
+import { startHosts } from './process/apps-hosts.ts';
 import { watchApps, type AppsWatcher, type AppsWatchOptions } from './watch/apps.ts';
 import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
@@ -171,6 +171,7 @@ export type ContextDependencies = {
     watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
     watchLocal: (engine: string, changed: () => void) => LocalWatcher;
     watchApps: (hub: Hub, options: AppsWatchOptions) => AppsWatcher;
+    startHosts: typeof startHosts;
     watchUsageRefresh: typeof watchUsageRefresh;
     watchUsage: typeof watchUsage;
 };
@@ -196,6 +197,7 @@ const dependencies: ContextDependencies = {
     watchMail,
     watchLocal: (engine, changed) => watchLocal(engine, changed),
     watchApps: (hub, options) => watchApps(hub, options),
+    startHosts,
     watchUsageRefresh,
     watchUsage
 };
@@ -225,13 +227,14 @@ function openerOf(local: LocalConfig): Opener {
 
 /**
  * Build every process-owned server object once. `portMove` is how the process that owns the HTTP
- * server moves it when local.yml names another port; a context given none keeps its port.
- * Tests may replace constructors with recorders.
+ * server moves it when local.yml names another port (none keeps the port); no app host starts
+ * before `ready` settles, the server listening. Tests may replace constructors with recorders.
  */
 export function createServerContext(
     engine: string,
     replacements: Partial<ContextDependencies> = {},
-    portMove?: PortMove
+    portMove?: PortMove,
+    ready?: Promise<void>
 ): ServerContext {
     const make = { ...dependencies, ...replacements };
     const initial = make.readLocal(engine, true);
@@ -441,14 +444,16 @@ export function createServerContext(
     const usageRefresh = startUsageRefresh();
     const usage = startUsage({ sessions, usageRefresh });
     const git = startGitWatcher();
-    // The roots are read again after a configuration push or a change of the saved workspaces, as
-    // the git watcher's are, so a root added to sources.yml or saved in a workspace while the
-    // server runs is followed by the next tick of each open file.
-    const openFiles = createOpenFiles({
+    const hosts = make.startHosts({
         hub,
-        roots: () => browserRoots({ config: load().config, engine, local }),
-        workspacesFile: () => local.workspaces ?? defaultWorkspacesPath(local.hub)
+        apps,
+        engine,
+        local: () => local,
+        config: () => load().config,
+        target: () => target(engine, load().config, context),
+        ready
     });
+    const { openFiles } = hosts;
     const autofetch = startAutofetchWatcher();
     const bookmarks = startBookmarks();
     const schedules = startSchedules();
@@ -537,6 +542,8 @@ export function createServerContext(
             close: () => owned().schedules.close()
         },
         apps,
+        hosts: hosts.hosts,
+        secrets: hosts.secrets,
         token,
         appsSecret,
         host,
@@ -574,6 +581,7 @@ export function createServerContext(
             built.live?.close();
             localWatch.close();
             openFiles.close();
+            hosts.stop();
             apps.close();
             const held = owned();
             held.usageRefresh.close();

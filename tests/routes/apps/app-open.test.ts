@@ -1,6 +1,6 @@
-// Layer 2, route tests. GET /api/app-open (lib/server/machine/apps/routes.ts `handleOpenGet`,
-// which src/routes/api/(apps)/app-open/+server.ts calls): whether an app may have a file of a root
-// opened, answered `ok`, `closed` or `missing` in the order of the checks.
+// Layer 2, route tests. GET /api/app-open (lib/server/machine/apps/routes/routes.ts
+// `handleOpenGet`, which src/routes/api/(apps)/app-open/+server.ts calls): whether an app may have
+// a file of a root opened, answered `ok`, `closed` or `missing` in the order of the checks.
 //
 // Every root is synthetic, under the system temporary directory, and the machine's own config
 // folder stands in as a folder of the `hub` root. What this does NOT cover: the origin guard
@@ -9,9 +9,9 @@
 import { symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { appById } from '../../../src/lib/server/machine/apps/held.ts';
-import { checkOpen, diskFs, type OpenFs } from '../../../src/lib/server/machine/apps/open.ts';
-import { handleOpenGet } from '../../../src/lib/server/machine/apps/routes.ts';
+import { appById } from '../../../src/lib/server/machine/apps/read/held.ts';
+import { checkOpen, diskFs, type OpenFs } from '../../../src/lib/server/machine/apps/reach/open.ts';
+import { handleOpenGet } from '../../../src/lib/server/machine/apps/routes/routes.ts';
 import { present } from '../../fixtures/present.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { notesFiles, PAGE, routeSetup } from './apps-fixture.ts';

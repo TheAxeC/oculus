@@ -164,3 +164,219 @@ The two widened checks, judged by reading:
 - Brief case 24 against item 9 on dot-led paths. That is the orchestrator's ruling (Spec 4).
 
 Reviewer usage: a7d94dafa7d50c3a1, claude-opus-5-5, 114,844 tokens, 113 tool uses, 19.9 minutes.
+
+## Repair round 1, refuted
+
+**Not closed: item 3 of the round (old hosts stopped before a dev reload starts new ones).** The handover the builder added does not carry over a real Vite restart, because Vite rebuilds the plugin, and with it the handover object, on every restart. Item 5 of the brief therefore still breaks, as the first review's Behaviour 3 found. Spec 1 below has the details. The other 13 round items are closed, apart from the minor findings below.
+
+Every command ran from `tools/oculus` in `.agents/worktrees/D62`. Node is v24.21.0.
+
+**How the round's delta was read.** I took the base files from `git diff 398537672`, reversed onto the worktree; the 11 deleted files came from the base copy. I applied `agents/reviews/D62-before-round1.patch` to those base files in a scratch folder. That rebuilt the 132 files as they stood when the round was sent. I then diffed each one against the worktree. 42 files changed in the round: 41 of them, plus `src/lib/server/root/vite-plugin.ts`, which the patch does not contain. I ran no git command other than `git diff 398537672` and `git status --short`.
+
+```
+npm run test:quick -- --base 398537672
+test:quick: 149 changed file(s), from git since 398537672
+test:quick: 140 test file(s), 10 essential
+ok      ASCII gate (1.0 s)
+ok      prettier (2.5 s): All matched files use Prettier code style!
+ok      eslint (1.9 s)
+ok      svelte-kit sync (2.8 s)
+ok      svelte-check (7.2 s): 1791676667712 COMPLETED 464 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (38.6 s): Duration  32.51s (transform 31.91s, setup 0ms, import 59.64s, tests 60.53s, environment 304ms)
+test:quick: 39.6 s (limit 45.0 s); every command passed
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+exit 0
+(two more runs: "test:quick: 31.2 s (limit 45.0 s); every command passed" and "test:quick: 32.9 s (limit 45.0 s); every command passed")
+
+npm run test:checks
+ Test Files  17 passed (17)
+      Tests  271 passed (271)
+exit 0
+
+npx vitest run oculus-frame.test.ts manage.test.ts host-manager.test.ts app-manage.test.ts host-output.test.ts apps-handover.test.ts
+ Test Files  6 passed (6)
+      Tests  76 passed (76)
+npx vitest run host-runner.test.ts eslint-switch.test.ts manifest.test.ts app-gate.test.ts
+ Test Files  4 passed (4)
+      Tests  100 passed (100)
+--reporter verbose: oculus-frame 4 tests 51, 24, 25, 25 ms; host-output 3 tests 0-1 ms; apps-handover 'hands each context the promise of the hosts of the one before it' 961ms
+
+sh utils/unused-exports.sh (exit 0), diffed with .agents/worktrees/D62-base/tools/oculus/unused-exports.txt
+81c81
+< src/lib/server/machine/apps/oculus.js: connect
+---
+> src/lib/server/machine/apps/serve/oculus.js: connect
+
+sh utils/folder-check.sh: no output, exit 0 (src/lib/state/system/apps holds 10 items)
+
+wc -l: context.ts 880, model-machine.ts 862, host/manager.ts 652, row-menu.ts 632, AppFrame.svelte 319, AppHosts.svelte 173, Processes.svelte 125, apps-hosts.ts 138, vite-plugin.ts 93, oculus.js 275, manage.ts 158; every source file at or under 880, every component at or under 520
+
+LC_ALL=C grep -c '[^ -~]' over the 138 added or changed files listed by git status --short: no file above 0
+
+Commands the round section quotes, rerun:
+grep -n "app-messages" DESIGN.md docs/apps.md  -> DESIGN.md:122, :380, :469, :471, docs/apps.md:136 (as claimed)
+grep -n "Keep approved while I edit" docs/apps.md -> 59, 421; line 421 ends "use Keep approved while I edit for an app you are editing" (as claimed)
+sed -n 17,31p src/lib/server/machine/apps/host/plan.ts -> six members ok, nohost, disabled, approval, cycle, dependency; dependency carries approval and absent (as claimed)
+npx prettier --check DESIGN.md docs/apps.md HELP.md README.md -> All matched files use Prettier code style!
+LC_ALL=C grep -c '[^ -~]' DESIGN.md docs/apps.md HELP.md -> 0, 0, 0
+sed -n 40,46p processes.yml; grep -n '^$' processes.yml -> no blank line (as claimed)
+npx vitest run tests/server/machine/apps/manifest.test.ts -> Tests  68 passed (68)
+Per-file counts claimed (oculus-frame 4, manage 17, host-manager 35, app-manage 16, host-output 3, apps-handover 1) add up to the 76 above.
+```
+
+Not run:
+- `npm run diagrams`. It writes `docs/diagrams/`, and this review changes no file.
+- The new tests of items 3 and 5 on the tree as it stood before the round. That would bring back the code under test in order to watch a test fail, which this review's limits forbid. Those tests are judged by reading, under Proof 1.
+
+### Verdicts
+
+Items of D62.md "What to build", for the whole diff since the base:
+
+- 1 (manifest): holds. The five keys are in `read/manifest.ts`; `manifest-host.test.ts` and `manifest.test.ts` pass (68 rows in manifest.test.ts). The case-6 wording is now in place (case 6 below).
+- 2 (approval panel): holds by reading `ApprovalPanel.svelte` (184 lines). How it looks is left to the look.
+- 3 (keep approved for root apps): holds. `approve.test.ts` and the `manifest-host.test.ts` keep rows pass, and `docs/apps.md:421` is now true.
+- 4 (WebAssembly): holds. `serve/address.ts` script-src gains `'wasm-unsafe-eval'` and nothing else; the `app-files.test.ts` policy row passes.
+- 5 (the host): violated, Spec 1. The dev-reload sentence of the item fails under a real Vite restart. Everything else in the item holds: start, argument array, environment, the deactivate, SIGTERM, SIGKILL sequence, Restart and the output limits (host-runner, host-manager and manage pass). The output now reaches the Processes view by the `app-host` route (Z789 (a)).
+- 6 (activation): holds; host-manager glob, language and scan_entries rows pass.
+- 7 (protocol): holds. Not touched by the round, and the DESIGN.md table is unchanged in substance.
+- 8 (secrets): holds on macOS (`secrets.test.ts`). The Linux store selection is under Declined to judge.
+- 9 (frame methods): holds. `flat(page)` (`serve/oculus.js:174-180`) builds one function per name in `METHODS` (`:152-168`). `oculus-frame.test.ts` 'hands the app a function for every method the page builds' asserts that the flat keys of the connected object, sorted, equal the keys of `createMethods`, sorted. That is the list equality the round brief asks for, and it passes. Another test carries `getTheme`, `read`, `getStore`, `fs.readFile`, `commands.run` and `host.request` to the page's handlers with their arguments and answers; it passes.
+- 10 (Processes view): holds by reading `AppHosts.svelte` and `Processes.svelte`. The output pane reads through `createOutputReader`, and the look remains for landing.
+- 11 (one app using another): holds. `remove.ts:103` calls `stop(app.id, { dependentsFirst: true })`, which runs `#stopDependents` before the app's own `process.stop()` (`host/manager.ts:449-466`). `manage.test.ts` 'stops the host of an app that depends on it first and its own host last' expects `['a', 'base', 'trash']` and passes.
+- 12 (managing apps): holds; manage, app-manage, flows, add-app and app-badges pass.
+- 13 (documents): violated in one sentence, `DESIGN.md:438` on the dev reload, which is false while Spec 1 stands. Everything else holds: `app-messages` is in DESIGN.md:469 and docs/apps.md:136 with its payload; `app-hosts` carries `outputBytes`; `host_wait_missing` is in docs/apps.md:274 and :432; the troubleshooting row reads as it should. Standards 6 has a smaller wording point.
+- 14 (size and folders): holds. folder-check exits 0, `context.ts` is at exactly 880, and no file is over its limit.
+
+Cases:
+
+- 1 to 5: met (`manifest-host.test.ts`).
+- 6: met. `host-manager.test.ts` 'says a dependency that no app provides is missing, and one that is refused, disabled or unapproved is not' expects `absent: ['missing', 'nonesuch']` and `dependency` for the other three, and passes.
+- 7, 8: met (host-manager start rows, the G7 argument row, the unapproved, disabled and changed-kept rows).
+- 9: partial. Disable, revoke, change, remove and close are met (host-manager, host-runner). The dev-reload part is unmet under a real Vite restart, Spec 1.
+- 10: met on the server (the Restart row). The tab line is read in `AppFrame.svelte`; how it is drawn is for the look.
+- 11, 12: met (`host-runner.test.ts`).
+- 13: met. host-manager and methods cover the server and page; `oculus-frame.test.ts` covers the frame's `host.request`. The `host_down` rows pass.
+- 14: met. `hostTargets` (`rules.test.ts`), the `app-messages` publish (host-manager) and the frame's `onHost` (`oculus.js`, the `onHost` handler in `connect`) are read and run. The page-to-frame direction is not run by `oculus-frame.test.ts` (Declined to judge).
+- 15: met. The host store rows, `app-store.test.ts`, and the frame's `getStore` through `oculus-frame.test.ts`; `setStore` goes through the same flat path, by reading.
+- 16 to 19: met (host-manager).
+- 20 to 23: met. `app-fs.test.ts` and `methods.test.ts`; the frame's `fs.readFile` through `oculus-frame.test.ts`.
+- 24: met under Z788 (a). A dot-led segment answers `closed`, and the report notes the ruling in its case-24 row.
+- 25: met (`commands.test.ts`, `methods.test.ts`, the frame's `commands.run` in `oculus-frame.test.ts`).
+- 26, 27, 28: met (`secrets.test.ts`, `methods.test.ts`, the `app-manage.test.ts` header row). The frame's `secrets.*` follow the nested path, by reading `oculus.js:219-224`.
+- 29: met (the `opening` tests, and `AppFrame.svelte` through `tabForKind`).
+- 30, 31: met.
+- 32: met on the server and page state. "The frame draws" is for the look; it is no longer blocked by `connect()`.
+- 33: met.
+- 34: met, the stop order now included (`manage.test.ts` row above).
+- 35 to 43: met as in the first report. Row 38 is the `messages_per_min` row; 41 the output cap row, now read through `hosts.output`; 42 the closed-channel rows.
+
+### Findings
+
+**Spec**
+
+- 1. Item 3 of the round, the dev-reload handover (closure claimed, not reproduced by reading).
+  - Where:
+    - `src/lib/server/root/vite-plugin.ts:56`: `const handover: HostsHandover = { until: Promise.resolve() };`, made inside `oculusViteServer`.
+    - `vite.config.ts:92`: `const development = oculusViteServer(engineDir(), { out: folders.adapter });`, called inside the `defineConfig(({ mode }) => ...)` function.
+  - What is wrong: a dev server restart under Vite 8.3.0 loads the configuration again, so every restart makes a new plugin and a new `handover`. The chain in `node_modules/vite/dist/node/chunks/node.js`:
+    - `restartServer` calls `_createServer(inlineConfig, ...)` (line 24707).
+    - That calls `resolveConfig`, which calls `loadConfigFromFile` (line 36906).
+    - That calls `configExport(configEnv)` (line 37307). This runs the config function again, so `oculusViteServer` runs again.
+  - Result: the new context's `handover.until` is a promise that has already settled. The promise the old context's `stop` resolves sits on the old, dropped object.
+  - The round brief's premise does not hold. It said the handover would travel through "the object that already carries state from one `configureServer` call to the next (`vite-plugin.ts`, `process/serve.ts`)". In fact, one closure of `oculusViteServer` serves exactly one server's `configureServer`.
+  - The two new tests share one handover between two contexts they build by hand, which Vite never does: `host-manager.test.ts:184` and `apps-handover.test.ts:36`. The head comment of `apps-handover.test.ts` says it does not cover Vite's restart. Under Proof, these tests would still pass with the dev-reload behaviour absent in the real run.
+  - Also false while this stands: `DESIGN.md:438` ("held by the Vite plugin for all its contexts ... so no host of one app runs twice"), the report's judgment call 7, and the report's first line.
+  - Failure scenario: an app with `activation: [onStartupFinished]` and a running host. The reader edits a file `vite.config.ts` imports, such as `src/lib/server/root/context.ts`, and Vite restarts. Vite builds the new server, and so the new context, before it closes the old one. The new `AppHosts` holds only for one microtask and then starts the host. The old host only gets `oculus/deactivate` when the old server closes, and then up to `host_stop_seconds` plus 2 s. For up to 7 s two hosts of the app run and write one store file through two store queues. This is the first review's Behaviour 3, unchanged.
+  - What a fix needs: something that outlives a reload of the configuration. Under the rules file's ban on globals, that is a record outside the process's memory, for example a per-app lock or pid record that the runner holds and the next start waits on. That record is a new file shape (under `~/.oculus` or the temporary folder), so it is a decision for the orchestrator, or for Axel if it is user-visible.
+  - Verdict: item 5 violated; item 13 violated in the DESIGN.md:438 sentence; case 9 partial.
+
+**Proof**
+
+- 1. The failing runs for items 3 and 5.
+  - Where: the report's "Repair round 1", items 3 and 5, and the round section's opening line ("for item 3 the failing run quoted is the same tests with the new option left out, ... for item 5 no failing run exists").
+  - Item 3: the "before" runs are of temporary copies, `tests/server/machine/apps/tmp-before.test.ts` and `tests/server/root/tmp-handover.test.ts`, built "with the new option left out". That is a run with the behaviour removed, which the rules file's "What every package obeys" forbids ("no run with the behaviour removed"). It is also not the tests in their after-change form on the tree as it stood. Those copies are no longer in the tree (`git status --short` lists neither).
+    - By reading, `host-manager.test.ts:184` in its after-change form would run on the tree before the round, since the extra `after` option is simply ignored there. It would fail at `early: []`. That run is the one the brief asks for, and it is not quoted.
+  - Item 5: no failure is quoted for `host-manager.test.ts` 'carries the size of the output in its row and none of the text...', for `app-manage.test.ts` 'answers the kept output of the host of the view...', or for the three `host-output.test.ts` tests. By reading:
+    - The host-manager row would fail before the round (`outputBytes` absent, so `counted` is 0 rather than 26, and `hasOutputField` is true).
+    - The app-manage row would get 400 from the old `commandShape`.
+    - `host-output.test.ts` fails on import (`createOutputReader` does not exist).
+    - So these read as real tests of their behaviour, not audits. The missing quoted failure is the gap.
+  - The G1 row 'app-host output answers 403' guards a behaviour that is preserved, since `tokenedBody` comes first; its pass before the round is not quoted.
+  - Failure scenario: the orchestrator books the item 3 tests as proof of the dev-reload fix, but the only red run shown came from a removed-behaviour copy; the real path is broken (Spec 1).
+  - Verdict: none on its own (Spec 1 carries item 5).
+- 2. The report's first line, "Everything in the brief and in the 14 items of repair round 1 is done, and no item is open", is false while Spec 1 stands. Failure scenario: a reader of the first line lands item 3 as closed. Verdict: see Spec 1.
+- 3. The report's verbatim quote of test:quick (round section, under "The verify list of the round") prints `test:quick: not covered: tests outside the selection, tests/checks, slow tests,` twice. Three reruns print it once. The quote is not verbatim; no decision rests on it.
+
+**Standards**
+
+- 1. Git commands in the round.
+  - What happened: "Accidental git commands" names three run in this round, `git diff --stat`, `git status` and `git --version`. The round brief said "you run no git command of any kind, read-only ones included", and the rules file says so under "Where you work". The build's count is now six; the report adds `git mv` with no arguments.
+  - The report names all nine and declines to write the "none in this round" sentence the round brief asked for, which is correct. The breach itself stands.
+  - No effect on the tree: `git status --short` lists only the step's paths.
+  - Failure scenario: none in the code; it is a breach of the spec the orchestrator should record.
+  - Verdict: none.
+- 2. Tests without a guarded entry.
+  - What is wrong: the rules file's "What every package obeys" says a test exists only as the test of one `agents/guarded.md` entry, a builder writes no other test, and a test exists only for behaviour whose failure costs something.
+    - The three `tests/state/system/apps/host-output.test.ts` tests were not asked for by the round brief and have no entry. Their failure costs nothing in that sense: the output pane shows stale lines.
+    - The `host-manager.test.ts` row 'carries the size of the output in its row and none of the text...' was asked for by round item 5, but no entry names it. Its guarantee is a bandwidth shape (Z789), not one that fits G49 or G75.
+    - The `app-manage.test.ts` row 'answers the kept output...' is placed under G49. G49 is "an app reaches only what its approval names", and this row does not test that.
+  - Failure scenario: three tests and two rows land with no entry, against the one-entry rule.
+  - Disposition is the orchestrator's: name an entry, or ask Axel for one, for the two rows the round brief asked for; remove `host-output.test.ts`. Verdict: none.
+- 3. Fixed sleeps in new tests.
+  - Where: `tests/server/machine/apps/oculus-frame.test.ts:122` `await new Promise((resolve) => setTimeout(resolve, 20));` in `afterEach`, and `tests/server/machine/apps/host-manager.test.ts:204` `await new Promise((resolve) => setTimeout(resolve, 0));`.
+  - What is wrong: the rules file says "A test waits on a signal (an event, a promise, a fake clock), never on a fixed sleep or a wall-clock margin". Six base test files already sleep this way; that is precedent, not a waiver.
+  - Failure scenario: on a loaded machine, penpal's teardown comes after 20 ms. The globals are then unstubbed with the teardown still pending, and a later file sees a broken `window`. The builder's run 1 shows the same kind of leak: 11 `bar-actions.test.ts` failures from a left stub.
+  - Verdict: none.
+- 4. File-scope mutables in new tests: `oculus-frame.test.ts:45` `let script: ... | null = null;` and `apps-handover.test.ts:22` `const live: ServerContext[] = [];`. The rules file's no-globals rule says it "holds in test fixtures and helpers too". The base tree has 14 such lines in tests. Minor. Verdict: none.
+- 5. The `apps-handover.test.ts` test took 961 ms in this review's run and is not tagged slow. The rules file says "A test runs in well under a second; one that cannot ... is tagged slow." Failure scenario: test:quick's 45 s limit gets nearer on loaded runs (the builder saw 46.9 s and 50.5 s). Verdict: none.
+- 6. Public names and the docs.
+  - Undocumented names: the `oculus` object an app gets now also holds `fsAddress`, `commandsRun`, `secretsGet`, `secretsStore`, `secretsDelete` and `hostRequest` as flat functions beside `fs`, `commands`, `secrets` and `host` (`serve/oculus.js:152-168`, `:205`). `grep -n "fsAddress\|commandsRun\|secretsGet\|hostRequest" docs/apps.md DESIGN.md` prints nothing. This follows round item 1's wording, "every flat method of the object `createMethods` returns", so the disposition is the orchestrator's: either document the six names in `docs/apps.md`, or leave them off the app's object and compare the test against the flat keys minus those six.
+  - `DESIGN.md:438` says the view asks "again after each row update while it stays open". `createOutputReader` (`state/system/apps/manage.ts`) asks again only when `outputBytes` changed; `docs/apps.md:271` describes it correctly ("whenever the output has grown").
+  - The head comment of `src/routes/api/(apps)/app-host/+server.ts:1` still names only "the page's Stop and Restart", without Output.
+  - Failure scenario: an app builder calls `oculus.fsAddress` and depends on a name the docs never promised.
+  - Verdict: none.
+
+**Behaviour**
+
+- 1. The dev restart still runs two hosts of one app, as Spec 1 says. The report says the dev reload is "shown by tests and by reading only" and marks it closed, with no before and after for the restart that still runs two hosts. Verdict: item 5 violated (Spec 1).
+
+The other visible changes of the round are stated in the report's "Visible changes" items 2 and 4: the Processes output read from the server when it is opened, and the "not installed" line. Remove's stop order is a server ordering with no new visible state.
+
+**The points the brief asked to be judged**
+
+- Item 1: `flat(page)` reaches every method of `createMethods`, and the test asserts the list equality (Verdict 9).
+- Items 3 and 5 evidence: Proof 1.
+- Item 3, file-scope mutables: `HostsHandover` adds no new file-scope mutable. `handover` is a `const` inside `oculusViteServer` (`vite-plugin.ts:56`) and `#holding` is an instance field (`host/manager.ts:123`). That same placement is why it does not survive a restart (Spec 1).
+- Item 5, the `output` action: it is under the token and the same refusals. `handleHostPost` runs `tokenedBody` before it parses the command (`routes/host.ts`, start of `handleHostPost`), and an unknown view answers 404 `missing` as Stop and Restart do. A frame cannot send it: frame calls go through the page's `hostRequest`, which posts `action: 'request'`. The 403 row passes.
+- The git commands: Standards 1.
+- The two new tests with no guarded entry: Standards 2.
+
+### Declined to judge
+
+- The Linux keyring store selection (`findCredentialsAsync` takes no `{ linux: { store } }`). It cannot be run on macOS; a Linux machine with both keyutils and Secret Service would settle it.
+- The page-to-frame direction of the bridge (`onChannel`, `onTheme`, `onStore`, `onHost` called by the page into a real sandboxed iframe). `oculus-frame.test.ts` runs only frame-to-page calls over a fake shared window. The look on landing settles it.
+- How every view looks: the "not installed" line in a tab and a Processes row, the output pane read from the route, the disabled mark, the approval panel. These are for the look on TEST.
+- Whether Vite 8.3.0's restart closes the old HTTP server, and so runs `context.close()`, before or after the new context's first host start: the order is read from `restartServer`, not run. Spec 1 holds either way, because the handover object is new on each restart.
+- `npm run diagrams` was not rerun, because it writes files. The diagram files the round changed (`channels`, `layer-views`, `layers`, `.dot` and `.svg`) were not regenerated to compare.
+- The cost of the unmemoized `cyclesOf` walk in `host/plan.ts` on a large `depends` graph, which was not measured.
+
+Reviewer usage: a0fa01e25cf725e2b, claude-opus-5-5, 272,184 tokens, 67 tool uses, 18.0 minutes.
+
+## Closed
+
+The run over repair round 1 is the last run; its findings go to landing, none back to the builder. The first run's findings are closed by the round as the run over it states, except Spec 2 and Behaviour 3, closed at landing with the round run's Spec 1.
+
+- Round run Spec 1, first run Spec 2 and Behaviour 3, round run Behaviour 1 (a dev restart runs two hosts of one app): fixed at landing. Vite 8.3.0's `restartServer` makes the next server with a new plugin, then awaits `server._closeServer('restart')`, which awaits every plugin's `closeServer` hook after the old HTTP server closed, and only then listens on the next server. The plugin (`src/lib/server/root/vite-plugin.ts`) now holds the context it served and its `closeServer` hook awaits `served.hosts.close()`; each context gets `ready`, a promise that settles when its own server listens, and `AppHosts` starts no host before it (`after: options.ready` in `process/apps-hosts.ts`). `HostsHandover` is removed. `tests/server/root/vite-restart.test.ts` drives two real plugins over real HTTP servers in Vite's order and asserts `['old hosts stopped', 'old server closed', 'next hosts may start']`; it passes on main and, written against D62's tree before the fix, failed with "TypeError: next.ready(...).then is not a function". `DESIGN.md`'s sentence on the restart says how it holds.
+- Round run Proof 1 (no failing run on the unchanged tree for items 3 and 5): item 3's tests are replaced by the landing's restart test, whose failing run is quoted above; item 5's tests are removed (Standards 2 below).
+- Round run Proof 2 (the report's first line): stands as a statement of the builder's report; the landing report states the end state.
+- Round run Proof 3 (a doubled line in a verbatim quote): noted; no decision rests on it.
+- Round run Standards 1 (nine git commands across the build, three in the round, all read-only): recorded in the booking; the tree shows no effect.
+- Round run Standards 2 (tests with no guarded entry): `tests/state/system/apps/host-output.test.ts`, the host-manager row 'carries the size of the output in its row and none of the text...' and the app-manage row 'answers the kept output...' are removed, since a stale output pane costs nothing the rules file names. Every other new test of the step is named under exactly one entry of `agents/guarded.md` (G1, G2, G7, G9, G10, G13, G31, G49, and the new G75 and G76), the add-app tests under G10 and `appsSettings` under G13.
+- Round run Standards 3 (fixed sleeps): the host-manager row waits on deferred promises, and `oculus-frame.test.ts`'s `pair()` returns a `finish()` that waits until both ends removed their `message` listeners from the shared window before it unstubs.
+- Round run Standards 4 (file-scope mutables): `oculus-frame.test.ts`'s `script` cache is removed and the script is loaded fresh in each case; `live` went with `apps-handover.test.ts`.
+- Round run Standards 5 (a 961 ms test not tagged slow): closed with Spec 1, the file removed.
+- Round run Standards 6 (public names): `oculus.js` hands an app only the nine names `read`, `getTheme`, `getState`, `setState`, `getStore`, `setStore`, `write`, `open` and `key` beside `fs`, `commands`, `secrets` and `host`; the six flat names the page builds for those groups are no longer on the app's object. `oculus-frame.test.ts` asserts that the flat keys equal the page's keys minus those six and that the six are all page keys. `DESIGN.md` says "whenever the output has grown", and the head comment of `src/routes/api/(apps)/app-host/+server.ts` names the read of a host's output.
+- First run declined point, the Linux store of `findCredentialsAsync`: no defect. Every entry is pinned to `secret-service`, which throws when that store is absent, and `findCredentialsAsync` with no option reads the Secret Service first and falls back to the kernel keyring only when the Secret Service is absent (`node_modules/@napi-rs/keyring/index.d.ts:218-223`), when no entry can have been written.
+- Round run declined point, the page-to-frame direction: the look ran a real sandboxed frame in Chrome; `getTheme`, `host.request` and the theme paint at connect were seen working. A call from the page into the frame (`onChannel`, `onTheme`, `onStore`, `onHost`) was not exercised in the look.
+- The other declined points (`vscode-jsonrpc`'s lazy `require` paths, a `commands.run` press racing a reader's press, the cost of `cyclesOf` on a large graph): not checked at landing; none is a finding.

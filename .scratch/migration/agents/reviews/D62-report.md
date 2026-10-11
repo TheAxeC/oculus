@@ -1,4 +1,4 @@
-Everything in the brief is done. Not verified: three tests of `npm run test:checks` fail in this worktree because the hub folder `.oculus/config` is not in it (`ls -d .../D62/.oculus/config` answers `No such file or directory`, the main checkout has it): `config-folder.test.ts` 'reads the roots of sources.yml without a finding' and 'names a group of its own and a path under the hub for every document', and `integrity.test.ts` 'validates with no findings'. They are not run on a tree that has the folder.
+Everything in the brief and in the 14 items of repair round 1 is done, and no item is open. The app, Electron and a browser were never started, so the frame, the Processes view and the dev reload are shown by tests and by reading only; for item 3 the failing run quoted is the same tests with the new option left out and for item 5 there is no failing run, since the code of both was written before their tests. The section "Repair round 1" holds each item with its check and the lines of the final verify run.
 
 # D62 report: apps, the host, the bridge and app management
 
@@ -162,7 +162,7 @@ The first run of every case on the unchanged tree was handed back before any cha
 | 21 | no fs methods | `app-fs.test.ts`: a root app reading its own root, and the root of another; `methods.test.ts`: an address for a root app reading its own root, and another root |
 | 22 | no fs methods | `app-fs.test.ts`: a file of 300 MB, answered as a stream with its length and no buffer made of it |
 | 23 | no fs methods | `app-fs.test.ts`: a listing of a folder, which leaves out a dot-led name and a folder closed_paths names |
-| 24 | vacuous pass: 404 because the route does not exist | `app-fs.test.ts`: a wrong key; a dot-led root key; no root key; a read with no path; an app that is not approved; an app that is disabled, each the empty 404 |
+| 24 | vacuous pass: 404 because the route does not exist | `app-fs.test.ts`: a wrong key; a dot-led root key; no root key; a read with no path; an app that is not approved; an app that is disabled, each the empty 404. A dot-led segment answers `closed`, as built (ruling Z788 (a), `plan.md:1741`), and `app-fs.test.ts` asserts `closed` for it |
 | 25 | no commands method | `commands.test.ts` (7 rows); `methods.test.ts`: a command the page ran with the outcome ok, declined, missing, failed |
 | 26 | no secrets method | `secrets.test.ts` (15 rows); `methods.test.ts`: a secret of an app that did not declare secrets; a store, a get and a delete of an app that declared them |
 | 27 | no secrets method | `app-manage.test.ts`: answers the secrets of the app in the header alone, and none of another app |
@@ -189,29 +189,34 @@ All commands run from `tools/oculus` in the worktree with node from `$HOME/.nvm/
 
 ### The verify list
 
+The rows are the end state after repair round 1. All commands run from `tools/oculus` in the worktree with node from `$HOME/.nvm/versions/node/v24.21.0/bin`. The run quoted is the fifth full run of the round (see "Number of full-list runs").
+
 | # | Check | Result |
 |---|---|---|
-| 1 | `npm run test:quick -- --base 398537672` after the last change | exit 0; every line below as printed |
-| 2 | `LC_ALL=C grep -n '[^ -~]'` over the 132 files the step adds or changes (diagram SVGs included) | prints nothing; grep exit status 1 (no match). The ASCII gate line of test:quick is in row 1 |
-| 3 | each slow test file alone with `npx vitest run <file>` | `host-runner.test.ts` `Tests  11 passed (11)`; `manifest.test.ts` `Tests  68 passed (68)`; `app-gate.test.ts` `Tests  20 passed (20)`; `eslint-switch.test.ts` `Tests  1 passed (1)` |
-| 4 | `sh utils/unused-exports.sh` against the base's `unused-exports.txt` | the diff is below, each line with what was done |
-| 5 | `wc -l` and `sh utils/folder-check.sh` | no source file over 880, no component over 520 (largest: `src/lib/server/root/context.ts` 878, `src/lib/data/sources/config/settings.ts` 872, `src/lib/server/machine/apps/host/manager.ts` 623); `folder-check.sh` exit 0; `src/lib/server/machine/apps/` holds 8 items |
-| 6 | each new or changed test on the unchanged tree and after the change | the section "Failing line on the unchanged tree" and the counts below |
-| 7 | each new or changed list item and sentence read against the standards pages' rules on list items and sentence length | not verified: no separate pass of that reading was made, and no departure is named; the one-line-per-paragraph rule of `agents/spec.md:54` was followed in writing and is not checked by a command |
+| 1 | `npm run diagrams`, then `npm run test:quick -- --base 398537672` after the last change | exit 0 for both; the lines are below |
+| 2 | `LC_ALL=C grep -n '[^ -~]'` over the 123 existing files of "Files with line counts" and the 18 files of `docs/diagrams/` | prints nothing |
+| 3 | each slow test file alone with `npx vitest run <file>` | `host-runner.test.ts` `Tests  11 passed (11)`; `manifest.test.ts` `Tests  68 passed (68)`; `app-gate.test.ts` `Tests  20 passed (20)`; `eslint-switch.test.ts` `Tests  1 passed (1)`; the four together `Tests  100 passed (100)` |
+| 4 | `sh utils/unused-exports.sh` against the base's `unused-exports.txt` | one differing line, below |
+| 5 | `wc -l` of every file and `sh utils/folder-check.sh` | no source file over 880, no component over 520 (largest: `src/lib/server/root/context.ts` 880, `src/lib/data/sources/config/settings.ts` 872, `src/lib/data/model/model-machine.ts` 862, `src/lib/server/machine/apps/host/manager.ts` 652; largest component `AppFrame.svelte` 319); `folder-check.sh` exit 0 with no output; `src/lib/server/machine/apps/` holds 8 items, `src/lib/state/system/apps/` 10, `src/lib/server/root/` 10 |
+| 6 | each new or changed test on the unchanged tree and after the change | the section "Failing line on the unchanged tree" for the build, and the item entries of "Repair round 1" for the round |
+| 7 | each new or changed list item and sentence read against the standards pages' rules on list items and sentence length | done; the result is item 9 of "Repair round 1" |
 
 The lines of test:quick (the last command, `npm run test:quick -- --base 398537672`):
 
 ```
-test:quick: 143 changed file(s), from git since 398537672
-test:quick: 137 test file(s), 10 essential
-ok      prettier (0.5 s): All matched files use Prettier code style!
+test:quick: 149 changed file(s), from git since 398537672
+test:quick: 140 test file(s), 10 essential
 ok      ASCII gate (0.6 s)
-ok      eslint (1.5 s)
-ok      svelte-kit sync (2.1 s)
-ok      svelte-check (5.4 s): 1791668720955 COMPLETED 464 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
-ok      vitest (30.3 s): Duration  25.68s (transform 27.13s, setup 0ms, import 49.10s, tests 45.53s, environment 242ms)
-test:quick: 30.9 s (limit 45.0 s); every command passed
+ok      prettier (1.9 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.3 s)
+ok      eslint (7.8 s)
+ok      svelte-check (19.8 s): 1791675294393 COMPLETED 464 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (49.8 s): Duration  44.61s (transform 68.10s, setup 0ms, import 96.60s, tests 64.30s, environment 736ms)
+test:quick: 50.5 s (limit 45.0 s); every command passed
+test:quick: over the time limit
 test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
 ```
 
 Counts of each new or changed test file, each run alone with `npx vitest run <file>` after the last change:
@@ -219,56 +224,41 @@ Counts of each new or changed test file, each run alone with `npx vitest run <fi
 - `tests/data/sources/config/settings.test.ts`: `Tests  74 passed (74)`
 - `tests/routes/apps/app-files.test.ts`: `Tests  27 passed (27)`
 - `tests/routes/apps/app-fs.test.ts`: `Tests  21 passed (21)`
-- `tests/routes/apps/app-manage.test.ts`: `Tests  14 passed (14)`
+- `tests/routes/apps/app-manage.test.ts`: `Tests  16 passed (16)`
 - `tests/routes/apps/app-open.test.ts`: `Tests  37 passed (37)`
 - `tests/routes/apps/app-store.test.ts`: `Tests  8 passed (8)`
 - `tests/routes/apps/approve.test.ts`: `Tests  10 passed (10)`
 - `tests/routes/edit/app-gate.test.ts`: `Tests  20 passed (20)`
 - `tests/server/edit/app-store.test.ts`: `Tests  15 passed (15)`
-- `tests/server/machine/apps/host-manager.test.ts`: `Tests  32 passed (32)`
+- `tests/server/machine/apps/host-manager.test.ts`: `Tests  35 passed (35)`
 - `tests/server/machine/apps/host-runner.test.ts`: `Tests  11 passed (11)`
-- `tests/server/machine/apps/manage.test.ts`: `Tests  16 passed (16)`
+- `tests/server/machine/apps/manage.test.ts`: `Tests  17 passed (17)`
 - `tests/server/machine/apps/manifest-host.test.ts`: `Tests  29 passed (29)`
 - `tests/server/machine/apps/manifest.test.ts`: `Tests  68 passed (68)`
 - `tests/server/machine/apps/secrets.test.ts`: `Tests  15 passed (15)`
+- `tests/server/machine/apps/oculus-frame.test.ts`: `Tests  4 passed (4)`
+- `tests/server/root/apps-handover.test.ts`: `Tests  1 passed (1)`
 - `tests/server/root/eslint-switch.test.ts`: `Tests  1 passed (1)`
 - `tests/state/system/apps/commands.test.ts`: `Tests  7 passed (7)`
 - `tests/state/system/apps/flows.test.ts`: `Tests  16 passed (16)`
+- `tests/state/system/apps/host-output.test.ts`: `Tests  3 passed (3)`
 - `tests/state/system/apps/methods.test.ts`: `Tests  75 passed (75)`
 - `tests/state/system/apps/rules.test.ts`: `Tests  3 passed (3)`
 - `tests/views/shared/explorer/add-app.test.ts`: `Tests  7 passed (7)`
 - `tests/views/system/workbench/app-badges.test.ts`: `Tests  5 passed (5)`
 
-`npm run test:checks`: `Test Files  2 failed | 15 passed (17)`, `Tests  3 failed | 268 passed (271)`; the three failures are the three named in the first line. `npx svelte-check --threshold error --output machine`: `COMPLETED 464 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` (the line in test:quick above).
+`npm run test:checks`: `Test Files  17 passed (17)`, `Tests  271 passed (271)`. `npx svelte-check --threshold error --output machine`: `COMPLETED 464 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` (the line in test:quick above).
 
-`sh utils/unused-exports.sh` against the base, lines the step added or changed:
+`sh utils/unused-exports.sh` against the base, the one differing line:
 
 ```
-1c1
-< Unused exports (246)
----
-> Unused exports (247)
-81c81,82
+81c81
 < src/lib/server/machine/apps/oculus.js: connect
 ---
-> src/lib/server/machine/apps/read/state.ts: DEFAULT_KEY
 > src/lib/server/machine/apps/serve/oculus.js: connect
-238c239
-< src/lib/views/shared/explorer/tree/menu/row-menu.ts: ROW_OPEN_SIDE, ROW_OPEN_PROGRAM, ROW_REVEAL, ROW_TERMINAL, ROW_FIND, ROW_DOWNLOAD, ROW_COPY_PATH, ROW_COPY_RELATIVE, ROW_ADD_ROOT, ROW_REMOVE_ROOT, ROW_PREVIEW, ROW_DECK, ROW_RUN, rowPaths, shellFolder
----
-> src/lib/views/shared/explorer/tree/menu/row-menu.ts: ROW_OPEN_SIDE, ROW_OPEN_PROGRAM, ROW_REVEAL, ROW_TERMINAL, ROW_FIND, ROW_DOWNLOAD, ROW_COPY_PATH, ROW_COPY_RELATIVE, ROW_ADD_ROOT, ROW_REMOVE_ROOT, ROW_PREVIEW, ROW_DECK, ROW_ADD_APP, ROW_RUN, rowPaths, shellFolder
-248c249
-< Unused exported types (117)
----
-> Unused exported types (118)
-336a338
-> src/lib/state/system/apps/flows.ts: AppAsk
 ```
 
-- `src/lib/server/machine/apps/read/state.ts: DEFAULT_KEY`: the key the default workspace has in `apps.json`; `manifest-fixture.ts`, `manage.test.ts` and `apps-fixture.ts` import it to name the default workspace. Kept exported for those tests; the other lines moved with the file or are the same as the base's.
-- `src/lib/views/shared/explorer/tree/menu/row-menu.ts: ROW_ADD_APP`: the same form as the `ROW_*` names beside it, imported by `add-app.test.ts`.
-- `src/lib/state/system/apps/flows.ts: AppAsk`: the question type the flows hand to `ask`, imported by `flows.test.ts`.
-- `src/lib/server/machine/apps/serve/oculus.js: connect` is the base's `oculus.js: connect` at its new path.
+That line is the base's `oculus.js: connect` at its new path. The step adds no unused export.
 
 ### The items of "What to build"
 
@@ -561,9 +551,9 @@ Counted with `wc -l` after the last change. The diagram files under `docs/diagra
 - 124 `src/lib/server/machine/apps/host/connection.ts`
 - 133 `src/lib/server/machine/apps/host/handlers.ts`
 - 213 `src/lib/server/machine/apps/host/host-runner.mjs`
-- 623 `src/lib/server/machine/apps/host/manager.ts`
-- 62 `src/lib/server/machine/apps/host/output.ts`
-- 69 `src/lib/server/machine/apps/host/plan.ts`
+- 652 `src/lib/server/machine/apps/host/manager.ts`
+- 72 `src/lib/server/machine/apps/host/output.ts`
+- 75 `src/lib/server/machine/apps/host/plan.ts`
 - 195 `src/lib/server/machine/apps/host/process.ts`
 - 88 `src/lib/server/machine/apps/host/triggers.ts`
 - 29 `src/lib/server/machine/apps/host/verify.ts`
@@ -578,38 +568,42 @@ Counted with `wc -l` after the last change. The diagram files under `docs/diagra
 - 95 `src/lib/server/machine/apps/read/record.ts`
 - 276 `src/lib/server/machine/apps/read/scan.ts`
 - 150 `src/lib/server/machine/apps/read/state.ts`
-- 98 `src/lib/server/machine/apps/routes/host.ts`
+- 105 `src/lib/server/machine/apps/routes/host.ts`
 - 119 `src/lib/server/machine/apps/routes/manage.ts`
 - 219 `src/lib/server/machine/apps/routes/routes.ts`
 - 165 `src/lib/server/machine/apps/secrets/secrets.ts`
 - 114 `src/lib/server/machine/apps/serve/address.ts`
-- 239 `src/lib/server/machine/apps/serve/oculus.js`
+- 275 `src/lib/server/machine/apps/serve/oculus.js`
 - 186 `src/lib/server/machine/apps/serve/serve.ts`
 - 106 `src/lib/server/machine/apps/store/store.ts`
-- 122 `src/lib/server/root/process/apps-hosts.ts`
+- 138 `src/lib/server/root/process/apps-hosts.ts`
 - 54 `src/lib/state/system/apps/commands.ts`
 - 179 `src/lib/state/system/apps/flows.ts`
-- 98 `src/lib/state/system/apps/manage.ts`
-- 153 `src/lib/views/system/machine/processes/AppHosts.svelte`
+- 158 `src/lib/state/system/apps/manage.ts`
+- 173 `src/lib/views/system/machine/processes/AppHosts.svelte`
 - 14 `src/routes/api/(apps)/app-add/+server.ts`
 - 14 `src/routes/api/(apps)/app-host/+server.ts`
 - 14 `src/routes/api/(apps)/app-manage/+server.ts`
 - 14 `src/routes/api/(apps)/app-secrets/+server.ts`
 - 314 `tests/routes/apps/app-fs.test.ts`
-- 312 `tests/routes/apps/app-manage.test.ts`
-- 560 `tests/server/machine/apps/host-manager.test.ts`
-- 186 `tests/server/machine/apps/host-runner.test.ts`
+- 335 `tests/routes/apps/app-manage.test.ts`
+- 644 `tests/server/machine/apps/host-manager.test.ts`
+- 192 `tests/server/machine/apps/host-runner.test.ts`
 - 71 `tests/server/machine/apps/hosts-fixture.ts`
 - 370 `tests/server/machine/apps/hosts-world.ts`
-- 390 `tests/server/machine/apps/manage.test.ts`
+- 420 `tests/server/machine/apps/manage.test.ts`
 - 113 `tests/server/machine/apps/manifest-fixture.ts`
 - 237 `tests/server/machine/apps/manifest-host.test.ts`
 - 141 `tests/server/machine/apps/secrets.test.ts`
 - 85 `tests/state/system/apps/commands.test.ts`
-- 214 `tests/state/system/apps/flows.test.ts`
+- 217 `tests/state/system/apps/flows.test.ts`
 - 30 `tests/state/system/apps/rules.test.ts`
-- 95 `tests/views/shared/explorer/add-app.test.ts`
+- 99 `tests/views/shared/explorer/add-app.test.ts`
 - 41 `tests/views/system/workbench/app-badges.test.ts`
+- 185 `tests/server/machine/apps/oculus-frame.test.ts`
+- 71 `tests/server/root/apps-handover.test.ts`
+- 81 `tests/server/root/inert-context.ts`
+- 90 `tests/state/system/apps/host-output.test.ts`
 
 **Changed**
 
@@ -619,18 +613,18 @@ Counted with `wc -l` after the last change. The diagram files under `docs/diagra
 - 1507 `config/catalogs/options.yml`
 - 286 `config/text/findings.yml`
 - 331 `config/text/server.yml`
-- 119 `config/text/views/apps/apps.yml`
+- 120 `config/text/views/apps/apps.yml`
 - 291 `config/text/views/sources/files.yml`
 - 52 `config/text/views/system/machine/processes.yml`
-- 643 `DESIGN.md`
-- 433 `docs/apps.md`
+- 645 `DESIGN.md`
+- 434 `docs/apps.md`
 - 465 `HELP.md`
 - 9548 `package-lock.json`
 - 127 `package.json`
 - 48 `README.md`
 - 259 `src/lib/data/helpers/files/apps.ts`
 - 711 `src/lib/data/model/index.ts`
-- 857 `src/lib/data/model/model-machine.ts`
+- 862 `src/lib/data/model/model-machine.ts`
 - 872 `src/lib/data/sources/config/settings.ts`
 - 174 `src/lib/server/core/json.ts`
 - 765 `src/lib/server/edit/writes.ts`
@@ -639,7 +633,7 @@ Counted with `wc -l` after the last change. The diagram files under `docs/diagra
 - 192 `src/lib/server/edit/writes/hubs.ts`
 - 540 `src/lib/server/edit/writes/undo.ts`
 - 343 `src/lib/server/machine/approvals/approvals.ts`
-- 878 `src/lib/server/root/context.ts`
+- 880 `src/lib/server/root/context.ts`
 - 162 `src/lib/server/root/process/server-context.ts`
 - 459 `src/lib/server/root/watch/apps.ts`
 - 33 `src/lib/server/root/watch/own-schemas.ts`
@@ -652,11 +646,11 @@ Counted with `wc -l` after the last change. The diagram files under `docs/diagra
 - 133 `src/lib/state/system/apps/bridge.ts`
 - 438 `src/lib/state/system/apps/methods.ts`
 - 151 `src/lib/state/system/apps/rules.ts`
-- 318 `src/lib/views/apps/frame/AppFrame.svelte`
+- 319 `src/lib/views/apps/frame/AppFrame.svelte`
 - 184 `src/lib/views/apps/frame/ApprovalPanel.svelte`
 - 256 `src/lib/views/shared/explorer/tree/control/picks.svelte.ts`
 - 632 `src/lib/views/shared/explorer/tree/menu/row-menu.ts`
-- 124 `src/lib/views/system/machine/processes/Processes.svelte`
+- 125 `src/lib/views/system/machine/processes/Processes.svelte`
 - 384 `src/lib/views/system/workbench/Catalogue.svelte`
 - 55 `src/routes/+page.server.ts`
 - 13 `src/routes/api/(apps)/app-open/+server.ts`
@@ -677,8 +671,9 @@ Counted with `wc -l` after the last change. The diagram files under `docs/diagra
 - 304 `tests/server/edit/app-store.test.ts`
 - 658 `tests/server/machine/apps/manifest.test.ts`
 - 201 `tests/server/root/context-fixture.ts`
-- 155 `tests/server/root/eslint-switch.test.ts`
+- 90 `tests/server/root/eslint-switch.test.ts`
 - 737 `tests/state/system/apps/methods.test.ts`
+- 93 `src/lib/server/root/vite-plugin.ts`
 
 **Moved (the base path no longer exists; the new path is in "Added")**
 
@@ -696,18 +691,21 @@ Counted with `wc -l` after the last change. The diagram files under `docs/diagra
 
 Files the step changed that the brief's "Paths this step writes" does not name, each because the change could not be made without it: `src/lib/server/core/json.ts` (`writePrivateJson`, the one private write that `approvals.ts` and `read/state.ts` share, so no write is held twice), `src/lib/data/sources/config/settings.ts` (the four new `apps.*` keys), `src/lib/state/shared/stores/shapes.ts` and `src/lib/state/client/writes.svelte.ts` (the `app-hosts` payload and the headers of `postCommand`), `src/lib/server/root/process/server-context.ts` and `src/lib/server/root/process/apps-hosts.ts` (the hosts and the secrets on the context), `config/text/server.yml`, `config/catalogs/glyphs.yml` and `config/catalogs/icons.yml` (the host's sentences, the disabled glyph), `README.md`, `tests/fixtures/entities-fixture.ts`, `tests/data/sources/config/settings.test.ts`, `tests/server/root/eslint-switch.test.ts`, `tests/checks/tree/boundaries.test.ts` and `tests/checks/source/keys.test.ts`.
 
+Repair round 1 also changes paths outside the brief's "Paths this step writes", each with its reason: `src/lib/server/root/vite-plugin.ts` (the `HostsHandover` object of item 3; `src/lib/server/root/` lists `context.ts` and the files its split makes, and the round brief names the plugin), `tests/server/root/apps-handover.test.ts` and `tests/server/root/inert-context.ts` (the handover test and the stand-ins it shares with `eslint-switch.test.ts`, which already builds a context in `tests/server/root/`; no listed test folder builds a server context), `tests/views/shared/explorer/add-app.test.ts` (the test of the Add as App item of `row-menu.ts`, which the brief lists, kept in `tests/views/shared/explorer/` with the other tests of that menu; it changed because it no longer imports the test-only export `ROW_ADD_APP`) and `tests/views/system/workbench/app-badges.test.ts` (the test of `registerApps` in `src/routes/views.ts`, which the brief lists, kept in `tests/views/system/workbench/` with the tests of the Views catalogue; the build added it and the round did not change it).
+
+
 ## Judgment calls
 
-1. **The frame's nested names.** The page answers flat methods (`fsAddress`, `commandsRun`, `secretsGet`, `secretsStore`, `secretsDelete`, `hostRequest`); `serve/oculus.js` nests them as `oculus.fs.readFile`, `readDirectory`, `stat`, `oculus.commands.run`, `oculus.secrets.get`, `store`, `delete` and `oculus.host.request`. `fs` is a fetch of the address `fsAddress` answers, so the bytes never pass through Penpal. Penpal 8.0.1 carries flat names, which is why the client nests them.
+1. **The frame's nested names.** The page answers 15 flat methods (`read`, `getTheme`, `getState`, `setState`, `getStore`, `setStore`, `write`, `open`, `key`, `fsAddress`, `commandsRun`, `secretsGet`, `secretsStore`, `secretsDelete` and `hostRequest`, the list `METHODS` in `serve/oculus.js:152`). Penpal's remote proxy has no own keys, so `flat(page)` (`serve/oculus.js:174`) builds one function per name that calls the proxy by name, and `nested()` (`:186`) returns those 15 functions beside `oculus.fs.readFile`, `readDirectory`, `stat`, `oculus.commands.run`, `oculus.secrets.get`, `store`, `delete` and `oculus.host.request`. `fs` is a fetch of the address `fsAddress` answers, so the bytes never pass through Penpal. `oculus-frame.test.ts` holds the 15 names equal to the keys of `createMethods`.
 2. **`hostTargets`** in `src/lib/state/system/apps/rules.ts` picks the frames a host message reaches (the named tab, or every tab of the app), so `rules.test.ts` tests the rule without a store.
 3. **`commands.ts`** (moved from `state/client/app-commands.ts` to `state/system/apps/commands.ts`) takes its dependencies as a structural type, because `state/system` may not import `state/client`; `client/context.ts` imports it.
-4. **`src/lib/server/root/process/apps-hosts.ts`** holds the composition of the hosts, so `context.ts` stays at 878 lines and `src/lib/server/root/` stays at 10 items or fewer (`folder-check.sh` exit 0).
-5. **`tests/server/root/eslint-switch.test.ts`** is changed (an `inertApps` stand-in that lets the hosts register their listeners), a path the brief does not list. The context now starts the hosts, and the test builds a context.
+4. **`src/lib/server/root/process/apps-hosts.ts`** holds the composition of the hosts, so `context.ts` stays at 880 lines and `src/lib/server/root/` stays at 10 items or fewer (`folder-check.sh` exit 0).
+5. **`tests/server/root/eslint-switch.test.ts`** is changed (the `inertApps` stand-in that lets the hosts register their listeners, now in `tests/server/root/inert-context.ts` with the other stand-ins and `scratchReadLocal`, which `apps-handover.test.ts` shares), a path the brief does not list. The context now starts the hosts, and the test builds a context.
 6. **The row `data/helpers/run/limiter` in the state row of `tests/checks/tree/boundaries.test.ts`.** The limiter (sliding window per frame or host) moved from `state/system/apps/limits.ts` to `data/helpers/run/limiter.ts` because the server's host manager counts the same limits and `server` may import `data/**` and not `state/**`; two copies would be a rule written twice (`duplication.test.ts`). `state` may import `data/helpers/run/limiter` only through that row, which is the row's own mechanism for a pure helper both sides use (the comment above the rows names each such helper and why). Without the row, `state` and `server` would each hold a copy of the limiter, which `duplication.test.ts` refuses. This widens a check's allow list, in a file outside the brief's path list, and is for the orchestrator to read.
-7. **No process-wide registry of hosts.** The context's `close()` calls `hosts.stop()` (`src/lib/server/root/context.ts`), which `wireServer` runs on the server's `close` event, so a restart of the dev server stops its hosts the same way as the built server; `DESIGN.md` says so. A second context started in the same process while the first is still open (not something the entries do) would run a second set of hosts: not tested.
+7. **No process-wide registry of hosts, and a dev reload waits for the old hosts.** The context's `close()` calls `hosts.stop()` (`src/lib/server/root/context.ts`), which `wireServer` runs on the server's `close` event, so a restart of the dev server stops its hosts the same way as the built server. Vite creates the new server and its context before it closes the old one, so a context made by the Vite plugin takes the `until` promise of the `HostsHandover` the plugin holds (`vite-plugin.ts:56`, `apps-hosts.ts:64-70`), hands it to the manager as `after` (`host/manager.ts:82`), and replaces it with a promise that settles when its own hosts have stopped; the manager starts no host until `after` has settled. `DESIGN.md:438` says so. A context built without a `handover` (the fourth parameter of `createServerContext`, `context.ts:237`) starts its hosts at once.
 8. **The `app_disabled` glyph** has the stand-in `[-]` (the stand-in rule allows one to three printable ASCII characters), the icon `ban`, and is named by the constant `DISABLED_GLYPH` in `src/routes/views.ts` so the glyph check finds its reader.
 9. **`manifest.test.ts` is split** into `manifest.test.ts` (66 rows plus the two closed-channel rows, slow), `manifest-host.test.ts` (the host keys and the kept root app) and `manifest-fixture.ts` (the shared reader helpers), because the one file reached 895 lines against the 880 of the standing spec.
-10. **`Verdict` in `host/plan.ts`** is a union of four members (no host, disabled, approval, cycle) so the manager's branches are exhaustive.
+10. **`Verdict` in `host/plan.ts`** is a union of six members: `ok`, and the failing causes `nohost`, `disabled`, `approval`, `cycle` and `dependency`, so the manager's branches are exhaustive. The `dependency` member carries the name that lacks, `approval` (its files are not approved) and `absent` (no app of that name is held and no folder of that name was refused).
 11. **`writePrivateJson`** in `src/lib/server/core/json.ts` is the one write of a 0600 JSON file in a 0700 folder with a read-back; `approvals.ts` and `read/state.ts` both call it.
 
 ## Visible changes, before and after
@@ -715,9 +713,9 @@ Files the step changed that the brief's "Paths this step writes" does not name, 
 For the look on landing (not taken here; each is from the code and the config).
 
 1. **Views catalogue (the Workbench Views list), Apps group.** Before: one row per app, with a lock (not approved) or an edit mark (kept approved). After: a disabled app has the glyph `app_disabled` (`[-]` in a terminal) and the words 'This app is disabled'; the right-click menu of an app lists its two existing open items, then Disable, Disable (Workspace), Enable, Enable (Workspace) as the app's standing allows, and Remove for a machine app; the group ends with 'Add app from folder', drawn when the group holds no app too; the disabled app's words are 'This app is disabled'. State to put it in: one enabled machine app, one disabled in this workspace, one root app.
-2. **An app's tab.** Before: the frame, the approval panel while not approved. After: a disabled app draws 'This app is disabled, so it reads, writes and runs nothing.' with an Enable button instead of its frame; an app whose host ended draws a line above the frame, 'The program of this app ended with exit code 0.' or 'The program of this app was ended by the signal 0.', with Restart; a host that waits shows 'The program of this app waits for you to approve its changed files.' with Approve, or the sentence that names the app it waits for. State: an app with `host`, killed from the Processes view.
+2. **An app's tab.** Before: the frame, the approval panel while not approved. After: a disabled app draws 'This app is disabled, so it reads, writes and runs nothing.' with an Enable button instead of its frame; an app whose host ended draws a line above the frame, 'The program of this app ended with exit code 0.' or 'The program of this app was ended by the signal 0.', with Restart; a host that waits shows 'The program of this app waits for you to approve its changed files.' with Approve, or the sentence that names the app it waits for, or 'The program of this app waits for the app 0, which is not installed.' when no app of that name exists. State: an app with `host`, killed from the Processes view.
 3. **Approval panel.** Before: channels read and written, origins, Approve and Keep approved (machine apps only). After: for an app with `host`, 'Run a program on this machine, with your rights, which can read and write your files and reach any address. The program is the file 0.'; for `files`, 'Read the files in 0.'; for `secrets`, 'Store secrets in the keyring of this machine.'; for `depends`, 'Need the apps 0, whose programs start first.'; Keep approved is offered to root apps too; Disable, Enable and Remove (machine app) beside Approve.
-4. **Processes view.** Before: the process table. After: a group 'App programs' with a row per host: app title (root key for a root app), pid, start time, state, Stop behind the question 'Stop the program of 0? It is asked to finish, then ended.', Restart for an ended host, and the host's output. State: a running host.
+4. **Processes view.** Before: the process table. After: a group 'App programs' with a row per host: app title (root key for a root app), pid, start time, state, Stop behind the question 'Stop the program of 0? It is asked to finish, then ended.', Restart for an ended host, and the host's output, which the view asks the server for when the output opens and again after each update of the row while it stays open. State: a running host.
 5. **Files view.** Before: a folder's right-click menu without app items. After: 'Add as App' on a folder or root of a shown root whose listing holds an `app.yml` (not on a file, not on the up row, not on a folder without it).
 6. **`open({ file })` from an app.** Before: every file opened as source text. After: the tab of the file's kind as the Files view chooses it (a PDF in the file view), a file of an apps folder still as source.
 7. **Settings, App limits.** New keys in `config/behavior.yml` `apps:` with their option entries: `messages_per_min` 600, `host_output_kb` 256, `host_stop_seconds` 5, `scan_entries` 10000.
@@ -736,7 +734,8 @@ For the look on landing (not taken here; each is from the code and the config).
 
 - `tests/routes/apps/approve.test.ts`, row 'a machine app and a root app both kept on request' (before 'a machine app kept on request, and a root app refused the keep'): before, the root app was refused `[400, { error: 'keep' }, false]`; now `rootKept: [200, ['app:one/notes'], true]`, because item 3 lets a root app be kept.
 - `tests/data/sources/config/settings.test.ts`: the expected `apps` settings gain `messagesPerMin`, `hostOutputKb`, `hostStopSeconds` and `scanEntries`, and the pushed keys gain `apps.messages_per_min`, `apps.host_output_kb`, `apps.host_stop_seconds` and `apps.scan_entries` (before 9 fields and 9 keys of the block, now 13 fields).
-- `tests/server/root/eslint-switch.test.ts`: `watchApps: () => inert()` is now `() => inertApps()` (see judgment call 5).
+- `tests/server/root/eslint-switch.test.ts`: `watchApps: () => inert()` is now `() => inertApps()`, taken with the other stand-ins and `scratchReadLocal` from `tests/server/root/inert-context.ts` (see judgment call 5).
+- `tests/server/machine/apps/host-runner.test.ts` (lines 32, 81, 101, 102, 158) and `tests/server/machine/apps/host-manager.test.ts` (lines 254, 598): the output of a host is read with `w.hosts.output(NOTES)` where the row's `output` field was read, since the row now carries `outputBytes` and no text (item 5 of the round).
 - `tests/state/system/apps/methods.test.ts`: the context stand-in gains `runCommand`, `secrets`, `host` and `rootKeys`; no existing assertion changed.
 - `tests/routes/apps/app-files.test.ts`, `app-open.test.ts`, `app-store.test.ts`, `tests/routes/edit/app-gate.test.ts`, `tests/server/edit/app-store.test.ts`: import paths and head comments only, plus the new rows named under G49 and G9.
 - `tests/server/machine/apps/manifest.test.ts`: the helpers moved to `manifest-fixture.ts`; the existing rows are unchanged.
@@ -918,10 +917,237 @@ Notes on that list:
 
 ## Number of full-list runs
 
-`npm run test:quick -- --base 398537672` ran 9 times: the first failed only the ASCII gate (a non-ASCII letter in `secrets.test.ts`), and 8 passed. After the third run the changes were the fixes the checks in `tests/checks` called for (comment width, the layer boundary, the process-wide state check, the duplicated blocks, the glyph stand-in), the split of `manifest.test.ts`, two closed-channel rows and one kept-app row in the manifest tests, the removal of `storeKeys` and `storeValue` from `src`, and test titles; the last run is the one quoted above. One of the eight passing runs printed `over the time limit` (51.8 s).
+`npm run test:quick -- --base 398537672` ran 9 times: the first failed only the ASCII gate (a non-ASCII letter in `secrets.test.ts`), and 8 passed. After the third run the changes were the fixes the checks in `tests/checks` called for (comment width, the layer boundary, the process-wide state check, the duplicated blocks, the glyph stand-in), the split of `manifest.test.ts`, two closed-channel rows and one kept-app row in the manifest tests, the removal of `storeKeys` and `storeValue` from `src`, and test titles; the last run of the build passed every line. One of the eight passing runs printed `over the time limit` (51.8 s).
 
-`tests/checks/source/comment-width.test.ts` failed once in a combined run of `tests/checks/source` and `tests/checks/tree`; its output was not kept and it did not fail again: it passed alone, in the next combined run and in `npm run test:checks` (final run above). The cause is not known.
+`tests/checks/source/comment-width.test.ts` failed once in a combined run of `tests/checks/source` and `tests/checks/tree`; its output was not kept and it did not fail again: it passed alone, in the next combined run and in `npm run test:checks` at the end of the build. The cause is not known. In repair round 1 it failed in run 2 on four comment lines past column 100, which were rewrapped, and passed in runs 3, 4 and 5.
+
+Repair round 1: the verify list ran in full 5 times (`npm run diagrams`, `npm run test:quick -- --base 398537672`, `npm run test:checks`, the scoped test files, `sh utils/unused-exports.sh`, `sh utils/folder-check.sh`). Run 1 stopped at test:quick (11 tests of `tests/views/sources/bar-actions.test.ts` failed because the new `oculus-frame.test.ts` left `window` stubbed; both pass together once it unstubs its globals); run 2 passed test:quick and failed three tests of `npm run test:checks` (four comment lines past column 100, a block held twice in `apps-handover.test.ts` and `eslint-switch.test.ts`, and `src/lib/state/system/apps/` at 11 items); run 3 passed every line; run 4 followed the sentence splits of item 9 and passed every line; run 5 followed the last wording fixes (the `app-hosts` sentence of `DESIGN.md:380`, the kept-app sentence, four head comments that still said the row holds the output) and passed every line, and is the run quoted in "The verify list". `test:quick` took 32.5 s in run 2 and 33.7 s in run 4 (limit 45.0 s); in runs 3 and 5 it took 46.9 s and 50.5 s and printed `test:quick: over the time limit` with exit 0 and every command passed, while another agent's build ran on the machine (load not measured).
 
 ## Accidental git commands
 
-Five git commands were run by accident, all read-only (four reads of repository state, one `git diff --no-index` of two empty paths); `npm run test:quick` runs git itself, as it is allowed to. Nothing was changed through git.
+Six git commands were run during the build and three in repair round 1. All nine are reads, a usage message, or `git --version`; none changed anything. They are named here from a search of the session's transcript for Bash commands that contain `git`. The earlier count of five for the build was one short: it left out `git mv`.
+
+Build:
+
+1. `git show HEAD:tools/oculus/package-lock.json`, run in the main checkout, output discarded.
+2. `git diff --stat HEAD -- config`, output discarded.
+3. `git mv` with no arguments, which printed its usage and moved nothing; the file was moved by the shell's `mv`.
+4. `git -C <worktree> status --short`.
+5. `git -C .. status --short`, output discarded.
+6. `git diff --no-index --stat /dev/null /dev/null`, output discarded.
+
+Repair round 1 (the round brief's item 14 asks the report to say none was run in this round; that is not true, so it is not written):
+
+7. `git diff --stat`, output discarded.
+8. `git status`, output discarded.
+9. `git --version`, output discarded.
+
+`npm run test:quick` runs git itself, as it is allowed to.
+
+## Repair round 1
+
+All 14 items of `agents/briefs/D62-round1.md` are closed and no item is open; for item 3 the failing run quoted is the same tests with the new option left out, since the item's code was written before its tests, and for item 5 no failing run exists.
+
+Each item below gives what changed (file and line) and the check that shows it. A "before" run is a run of the test against the tree as it stood, or, where said, with the new option left out.
+
+**1. The frame's methods (Behaviour 1).**
+- Changed: `src/lib/server/machine/apps/serve/oculus.js:152-168` (`METHODS`, the 15 flat names), `:174-180` (`flat(page)`, one function per name that calls Penpal's remote proxy by name), `:205` (`nested()` returns `{ ...flat(page), fs, commands, secrets, host }`). New `tests/server/machine/apps/oculus-frame.test.ts` (4 tests): it plants `oculus.js` beside a copy of Penpal's module as the server serves them, loads it, and connects it to the page's `connectFrame` (`state/system/apps/bridge.ts`) over one shared fake window, with a spy for every key `createMethods` returns. `:134-143` asserts the app's flat functions equal the keys of `createMethods`; `:145` asserts `getTheme`, `read`, `getStore`, `fs.readFile`, `commands.run` and `host.request` each reach the page's handler with their arguments and return its answer; `:126` asserts the theme is painted; `:177` asserts a refusal word rejects as that word.
+- Check, before (the tree as it stood):
+
+```
+------- Failed Tests 4 -------
+ FAIL  |unit| tests/server/machine/apps/oculus-frame.test.ts > oculus.js against the page end of the bridge > connects and paints the theme the page hands over
+TypeError: page.getTheme is not a function
+ FAIL  |unit| tests/server/machine/apps/oculus-frame.test.ts > oculus.js against the page end of the bridge > hands the app a function for every method the page builds
+TypeError: page.getTheme is not a function
+ FAIL  |unit| tests/server/machine/apps/oculus-frame.test.ts > oculus.js against the page end of the bridge > reaches the page with the arguments of the call and answers what the page answers
+TypeError: page.getTheme is not a function
+ FAIL  |unit| tests/server/machine/apps/oculus-frame.test.ts > oculus.js against the page end of the bridge > rejects with the word the page refused with
+TypeError: page.getTheme is not a function
+      Tests  4 failed (4)
+```
+
+  After: `tests/server/machine/apps/oculus-frame.test.ts` `Tests  4 passed (4)`. Judgment call 1 is corrected.
+
+**2. Remove's stop order (Spec 1).**
+- Changed: `src/lib/server/machine/apps/host/manager.ts:235-241` (`stop(id, { dependentsFirst })` stops the hosts of the dependents first and the app's own host last, as Disable does), `src/lib/server/machine/apps/manage/remove.ts:103` (`await deps.hosts.stop(app.id, { dependentsFirst: true })` before the folder and the store file go to the trash). `tests/server/machine/apps/manage.test.ts:289` 'stops the host of an app that depends on it first and its own host last': `a` depends on `base`, `base` is removed, and the stops and the trash come in the order `a`, `base`, `trash`.
+- Check, before (the tree as it stood):
+
+```
+- Expected
++ Received
+
+  {
+    "done": true,
+    "stops": [
+-     "a",
+      "base",
+      "trash",
+    ],
+  }
+```
+
+  After: `manage.test.ts` `Tests  17 passed (17)`.
+
+**3. A dev reload stops the old hosts first (Spec 2, Behaviour 3).**
+- Changed: `src/lib/server/root/process/apps-hosts.ts:38` (`HostsHandover = { until: Promise<void> }`), `:49-50` (the `handover` option), `:64-70` (the context takes `until` as the manager's `after` and replaces `until` with a promise that settles when its own hosts have stopped), `:120` (`stop` releases it after `hosts.close()`); `src/lib/server/root/context.ts:237` (fourth parameter `handover` of `createServerContext`, passed on at `:454`); `src/lib/server/root/vite-plugin.ts:56` (the `handover` object made once in `createOculusViteServer`'s closure, so no new file-scope mutable) and `:73` (passed to each context the plugin makes); `src/lib/server/machine/apps/host/manager.ts:82` (the `after` option), `:123-136` (`#holding`, released by `reconcile`), `:150` (`reconcile` returns while held), `:347` (`#ensure` waits). `DESIGN.md:438` says so. Tests: `host-manager.test.ts:184` 'starts no host of a second context before the hosts of the first one have stopped' (the stop of the first host is seen before the start of the second) and `tests/server/root/apps-handover.test.ts:36` 'hands each context the promise of the hosts of the one before it'. Judgment call 7 is corrected.
+- Check, before: the code of this item was written before its tests, so there is no run of these two tests on the tree as it stood. The runs below give the same inputs with the new option left out (the second manager built with no `after`, the second context built with no `handover`), which is what the tree did before the item:
+
+```
+     x starts no host of a second context before the hosts of the first one have stopped
+ FAIL  |unit| tests/server/machine/apps/tmp-before.test.ts > x > starts no host of a second context before the hosts of the first one have stopped
+AssertionError: expected { ...(2) } to deeply equal { early: [], seen: [ ...(2) ] }
+-   "early": [],
++   "early": [
++     "second host started",
+    "seen": [
+-     "first host stopped",
+      "second host started",
++     "first host stopped",
+      Tests  1 failed (1)
+```
+
+```
+FAIL  |unit| tests/server/root/tmp-handover.test.ts > the server contexts a dev reload makes one after the other > hands each context the promise of the hosts of the one before it
+AssertionError: expected true to be false // Object.is equality
+      Tests  1 failed (1)
+```
+
+  After: `host-manager.test.ts` `Tests  35 passed (35)`, `apps-handover.test.ts` `Tests  1 passed (1)`.
+
+**4. The `app-messages` channel (Spec 3, ruling Z787 (a)).**
+- Changed: `DESIGN.md:469` names `app-messages` with its payload `{ messages: [{ app, tab, method, params }] }`, says the page passes each message to the frames of the app named in it alone, and says both `app-hosts` and `app-messages` are closed to every app (a manifest that lists either is refused with `findings.apps.carries.app_hosts` or `app_messages`); `docs/apps.md:136` lists `app-messages` among the channels no app can read, with the payload shape. The code is unchanged.
+- Check: `tests/server/machine/apps/manifest.test.ts` (closed-channel rows) `Tests  68 passed (68)`; `grep -n "app-messages" DESIGN.md docs/apps.md` prints `DESIGN.md:122`, `:380`, `:469`, `:471` and `docs/apps.md:136`.
+
+**5. The host output in the row (Behaviour 2, ruling Z789 (a)).**
+- Changed: `src/lib/data/model/model-machine.ts:86` (`outputBytes: number` replaces `output`), `src/lib/server/machine/apps/host/output.ts:5-21` (`taken()`, the bytes taken since the output was made, dropped ones included, so it changes with every write), `host/manager.ts:284` (`output(id): string[]`) and `:557` (the row carries `outputBytes`), `src/lib/server/machine/apps/routes/host.ts:30` and `:66-68` (the action `output` of `POST /api/app-host` answers `{ ok: true, output }` under the write token and the refusals of Stop and Restart, 404 `missing` for a view the server holds no app of), `src/lib/state/system/apps/manage.ts:48` and `:107` (`hostOutput`) and `:128` (`createOutputReader`: asks when an output opens and again only when the size in its row changes while it stays open, drops a reply that a newer ask has passed), `src/lib/views/system/machine/processes/AppHosts.svelte:14,22,30` and `Processes.svelte:71` (the view asks through the reader). `DESIGN.md:380` (the closed channels: `app-hosts` carries the process id, state and output size of every host), `:438`, `:469` and `docs/apps.md:136,271` say so; the head comments of `host/manager.ts:17,53`, `Processes.svelte` and `AppHosts.svelte` say the row holds the output size. Tests: `host-manager.test.ts:606` 'carries the size of the output in its row and none of the text, which grows with every write'; `app-manage.test.ts:104` (the output action refuses a request without the write token) and `:315` 'answers the kept output of the host of the view in the body, and a view it does not hold with 404'; `tests/state/system/apps/host-output.test.ts:54,71,80` (3 tests of the reader).
+- Check: `host-manager.test.ts` `Tests  35 passed (35)`, `app-manage.test.ts` `Tests  16 passed (16)`, `host-output.test.ts` `Tests  3 passed (3)`. Before: the code of this item was written before its tests, so there is no failing run of these rows; they are written against the new shape and are not shown failing.
+
+**6. Case 24 (Spec 4, ruling Z788 (a)).** Nothing changes in the code. The ruling is noted under case 24 in the table "Where each case is kept" (row 24): a dot-led segment answers `closed`, as built.
+
+**7. The troubleshooting row (Spec 5).** `docs/apps.md:421` reads "read the panel and approve again; use Keep approved while I edit for an app you are editing", with no limit to machine apps, and `docs/apps.md:59` says "Machine apps and root apps both offer it". Check: `grep -n "Keep approved while I edit" docs/apps.md` prints lines 59 and 421.
+
+**8. A missing dependency named as missing (Spec 6).**
+- Changed: `src/lib/server/machine/apps/host/plan.ts:31` and `:68-71` (the `dependency` verdict carries `absent`: no app of that name is held and no folder of that name was refused), `host/manager.ts:585` (`waiting: verdict.absent ? 'missing' : 'dependency'`), `model-machine.ts:61` (`AppHostWait` gains `'missing'`), `config/text/views/apps/apps.yml:89` (`host_wait_missing`: 'The program of this app waits for the app {0}, which is not installed.') read at `AppFrame.svelte:232`, `config/text/views/system/machine/processes.yml:36` (`host_wait_missing`: 'waiting for the app {0}, which is not installed') read at `AppHosts.svelte:64`; the present lines stay for a dependency that is refused, disabled or unapproved. `DESIGN.md:442,481` and `docs/apps.md:274,432` say so. Test: `host-manager.test.ts:485` 'says a dependency that no app provides is missing, and one that is refused, disabled or unapproved is not'.
+- Check, before (the tree as it stood):
+
+```
+FAIL  |unit| tests/server/machine/apps/host-manager.test.ts > starts the dependencies of a host first and lets it call their API > says a dependency that no app provides is missing, and one that is refused, disabled or unapproved is not
+AssertionError: expected { Object (absent, unapproved, ...) } to deeply equal { ...(4) }
+    "absent": [
+-     "missing",
++     "dependency",
+      "nonesuch",
+    ],
+    "refused": [
+-     "missing",
++     "dependency",
+      "base",
+      Tests  1 failed | 34 skipped (35)
+```
+
+  After: `host-manager.test.ts` `Tests  35 passed (35)`; the `keys` check (every catalog key has a reader) is inside `npm run test:checks`, below.
+
+**9. The report's first line and verify item 7 (Proof 1, Proof 2).**
+- The first line of this report states only what is true after the round; the sentence about three failing tests is gone, since `npm run test:checks` runs 271 of 271 with the hub's `.oculus/` folder in the worktree.
+- The new and changed sentences and list items were read. A computation took the sentence set of each changed document against the base's sentence set (`DESIGN.md`, `docs/apps.md`, `HELP.md`, `README.md` and the changed files under `config/text/` and `config/catalogs/`) and found 454 new or changed sentences and list items; this is only the list of what to read. The standard is `agents/spec.md:54` (one line per paragraph or bullet, no hard wrapping) and the "Writing docs" rules of the hub `CLAUDE.md` (short plain sentences, no negation-contrast, no AI-tell); neither names a number of words per sentence, so the reading used 45 words as the point at which a sentence is read again. A search of the new sentences for `not ..., but`, `rather than` and `instead of` found no negation-contrast beyond the sentence on the two kinds of app, which the split rewrote, and the finding text `secrets_value` ('secrets must be true or left out, not {0}, ...'), where `{0}` is the value the manifest gave. 40 sentences were over it. 26 were prose with independent clauses and were split into sentences of their own with every fact kept (`DESIGN.md`: the Processes rule, the kinds of app, `files`, the badge mark, `{ file }`, the host paragraph, the process, the approval panel, the kept app, the hook, standard output, the output rows, `workspaceContains`, the dependency wording, the open checks, `commands.run`, a disabled app, Remove, the stop sequence, the add checks and the add copy; `docs/apps.md`: Remove, `commands.run` and `workspaceContains`; `HELP.md`: Processes). 14 stay in one sentence because they enumerate: the manifest findings (`DESIGN.md` "What refuses an app"), the app row fields, the refusal words, the closed channels, the words of the `apps` group (122 words, one key after another), the `apps:` settings keys, the host's channel row fields, the enable file's shape, the wire table row for streams, `docs/apps.md` rows of the findings, closed channels, `not_declared` and `refused:<reason>` (table cells that list the cases of one word), and the `README.md` dependency list (466 words, one name and licence after another, the base's own paragraph with two entries added). A list of names is read by looking for one name, and splitting it into sentences would repeat the verb of each.
+- Check: `npx prettier --check DESIGN.md docs/apps.md HELP.md README.md` prints `All matched files use Prettier code style!`; `LC_ALL=C grep -c '[^ -~]' DESIGN.md docs/apps.md HELP.md` prints 0 for each.
+
+**10. The judgment call on `Verdict` (Proof 5).** Judgment call 10 names the six members of `Verdict` in `host/plan.ts:17-31`: `ok`, `nohost`, `disabled`, `approval`, `cycle` and `dependency`. Check: `sed -n 17,31p src/lib/server/machine/apps/host/plan.ts`.
+
+**11. The three test-only exports (Standards 2).** `DEFAULT_KEY` (`src/lib/server/machine/apps/read/state.ts:22`), `ROW_ADD_APP` (`src/lib/views/shared/explorer/tree/menu/row-menu.ts:88`) and `AppAsk` (`src/lib/state/system/apps/flows.ts:20`) are local. The tests that used them reach the behaviour another way: the fixtures name the default workspace with `workspaceKey('')` (`read/state.ts:87`, which production code calls), `add-app.test.ts` finds the item by its label `t('files.menu_add_app')`, and `flows.test.ts:22` derives the type from `createFlows`. Check: `sh utils/unused-exports.sh` against the base's `unused-exports.txt` differs in one line, the move of `connect` to `serve/oculus.js` (below); none of the three is listed.
+
+**12. The blank line (Standards 3).** `config/text/views/system/machine/processes.yml` has no blank line between its keys (52 lines; `sed -n 40,46p` shows `host_output_hide` through `head_agents` in a row).
+
+**13. The paths outside the write list (Standards 4).** "Files with line counts" marks `tests/views/shared/explorer/add-app.test.ts` and `tests/views/system/workbench/app-badges.test.ts` as outside the write list, each with its reason, and does the same for `vite-plugin.ts`, `apps-handover.test.ts` and `inert-context.ts`, the files this round adds or changes outside it.
+
+**14. The git commands (Standards 1).** "Accidental git commands" names each of the six commands of the build and the three of this round. The round brief says to state that none was run in this round; three were (`git diff --stat`, `git status`, `git --version`), all read-only with their output discarded, so that statement is not made.
+
+### The verify list of the round, the lines verbatim
+
+`npm run diagrams` exit 0 (the line `docs/diagrams/writes.svg` is its last). `npm run test:quick -- --base 398537672`, exit 0:
+
+```
+test:quick: 149 changed file(s), from git since 398537672
+test:quick: 140 test file(s), 10 essential
+ok      ASCII gate (0.6 s)
+ok      prettier (1.9 s): All matched files use Prettier code style!
+ok      svelte-kit sync (2.3 s)
+ok      eslint (7.8 s)
+ok      svelte-check (19.8 s): 1791675294393 COMPLETED 464 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (49.8 s): Duration  44.61s (transform 68.10s, setup 0ms, import 96.60s, tests 64.30s, environment 736ms)
+test:quick: 50.5 s (limit 45.0 s); every command passed
+test:quick: over the time limit
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+test:quick: not covered: tests outside the selection, tests/checks, slow tests,
+            build, lint of unchanged files; npm run test:landing runs them
+```
+
+`npm run test:checks`:
+
+```
+Test Files  17 passed (17)
+Tests  271 passed (271)
+```
+
+The new and changed test files of items 1, 2, 3, 5 and 8, alone with `npx vitest run` (`oculus-frame`, `manage`, `host-manager`, `app-manage`, `host-output`, `apps-handover`):
+
+```
+Test Files  6 passed (6)
+Tests  76 passed (76)
+```
+
+The slow files alone (`host-runner`, `eslint-switch`, `manifest`, `app-gate`):
+
+```
+Test Files  4 passed (4)
+Tests  100 passed (100)
+```
+
+`sh utils/unused-exports.sh` against `.agents/worktrees/D62-base/tools/oculus/unused-exports.txt`:
+
+```
+81c81
+< src/lib/server/machine/apps/oculus.js: connect
+---
+> src/lib/server/machine/apps/serve/oculus.js: connect
+```
+
+The ASCII gate over the 123 existing files of "Files with line counts" and the 18 files of `docs/diagrams/`: `LC_ALL=C grep -n '[^ -~]'` prints nothing (and `ok      ASCII gate` in test:quick above). `sh utils/folder-check.sh`: exit 0, no output. `wc -l`: `src/lib/server/root/context.ts` 880, `src/lib/data/sources/config/settings.ts` 872, `src/lib/data/model/model-machine.ts` 862, `src/lib/server/machine/apps/host/manager.ts` 652, `AppFrame.svelte` 319, `AppHosts.svelte` 173; the rest of "Files with line counts" holds the others.
+
+Number of full-list runs: 5 (see "Number of full-list runs"); the lines above are the fifth.
+
+### Rows for `agents/guarded.md` added by the round
+
+The tests the round adds under existing entries (file and title, as `npx vitest list` prints them):
+
+**G1.** A new route that writes, runs or opens something refuses a request without the page's token.
+- `tests/routes/apps/app-manage.test.ts` (1 new row)
+  - refuses a request without the write token, before it reads or changes anything > app-host output answers 403 and leaves the record alone
+
+**G49.** An app reaches only what its approval names.
+- `tests/server/machine/apps/oculus-frame.test.ts` (4 new tests)
+  - oculus.js against the page end of the bridge > connects and paints the theme the page hands over
+  - oculus.js against the page end of the bridge > hands the app a function for every method the page builds
+  - oculus.js against the page end of the bridge > reaches the page with the arguments of the call and answers what the page answers
+  - oculus.js against the page end of the bridge > rejects with the word the page refused with
+- `tests/routes/apps/app-manage.test.ts` (1 new test)
+  - answers a frame's call to its host and its secrets under its own app header > answers the kept output of the host of the view in the body, and a view it does not hold with 404
+- `tests/server/machine/apps/host-manager.test.ts` (1 new test)
+  - starts the dependencies of a host first and lets it call their API > says a dependency that no app provides is missing, and one that is refused, disabled or unapproved is not
+
+**G75.** An app's host runs only from its approved, enabled, unchanged files, and stops when they change, when the app is disabled, revoked or removed, and when the server ends.
+- `tests/server/machine/apps/host-manager.test.ts` (1 new test)
+  - stops the host when its app is disabled, revoked, changed or removed, the workspace changes, and at close > starts no host of a second context before the hosts of the first one have stopped
+- `tests/server/root/apps-handover.test.ts` (1 new test)
+  - the server contexts a dev reload makes one after the other > hands each context the promise of the hosts of the one before it
+- `tests/server/machine/apps/manage.test.ts` (1 new test)
+  - removes a machine app with its store and its secrets, after the reader says yes > stops the host of an app that depends on it first and its own host last
+
+Two new tests have no guarded entry that names what they hold, and no row is written for them: `tests/server/machine/apps/host-manager.test.ts` 'keeps the output of a host and publishes the rows on app-hosts > carries the size of the output in its row and none of the text, which grows with every write', and the three tests of `tests/state/system/apps/host-output.test.ts` (the Processes view's reads of a host's output). They are for the orchestrator to place.
+
+### What the round's checks do not cover
+
+- The app, Electron and a browser were never started: the frame against a real iframe, the Processes view's output pane drawn, the line for a missing dependency drawn in a tab and the dev reload through Vite are shown by tests and by reading only. `oculus-frame.test.ts` uses a fake window shared by the page end and the frame end, so the browser's sandboxed frame and its origin checks are outside it.
+- `apps-handover.test.ts` makes real contexts with inert watchers; a host that is running at the moment of the reload (the order of its stop and the next start) is covered at the manager by `host-manager.test.ts:184` and not through Vite's own restart.
+- Item 3's failing run is the same tests with the new option left out; item 5 has none. Both tests were read after the code of their item was written.

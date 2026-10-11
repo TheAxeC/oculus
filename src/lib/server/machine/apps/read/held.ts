@@ -7,8 +7,8 @@
 // compares. The `apps` channel carries rows, findings and folders; everything else here stays on
 // the server.
 
-import { appViewId } from '../../../data/helpers/files/apps.ts';
-import type { AppRow, AppsPayload, Finding } from '../../../data/model/index.ts';
+import { appViewId } from '../../../../data/helpers/files/apps.ts';
+import type { AppRow, AppsPayload, Finding } from '../../../../data/model/index.ts';
 import type { AppFile } from './record.ts';
 
 export type HeldApp = {

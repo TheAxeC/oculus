@@ -214,11 +214,19 @@ export function createWrites(
      * wrong rather than thrown, so a press whose request did not come back says so in its view
      * instead of ending in a rejection nobody reads.
      */
-    async function postCommand(path: string, body: unknown): Promise<Posted> {
+    async function postCommand(
+        path: string,
+        body: unknown,
+        headers: Record<string, string> = {}
+    ): Promise<Posted> {
         const send = (): Promise<Response> =>
             fetch(path, {
                 method: 'POST',
-                headers: { 'content-type': 'application/json', 'x-oculus-token': token },
+                headers: {
+                    ...headers,
+                    'content-type': 'application/json',
+                    'x-oculus-token': token
+                },
                 body: JSON.stringify(body)
             });
         let response: Response;

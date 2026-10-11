@@ -301,15 +301,23 @@ apps:
   state_max_kb: 64
   # Kilobytes of an app's store that `setStore` accepts and `getStore` reads.
   store_max_kb: 256
-  # Writes, `setStore` included, that pass per frame per minute.
+  # Writes, `setStore` included, that pass per frame or per host per minute; a host's store updates and a secret's stores and deletes count here.
   writes_per_min: 30
-  # Calls of `open` that pass per frame per minute.
+  # Calls of `open` or `commands.run` that pass per frame per minute.
   opens_per_min: 30
+  # Calls of `sendToPage` that pass per host per minute.
+  messages_per_min: 600
   # Key events per second the page takes from a frame.
   keys_per_s: 20
   # Files an app's folder may hold.
   max_files: 500
   # Megabytes an app's files may total.
   max_mb: 20
+  # Kilobytes of a host's output kept, beside the last 1000 lines.
+  host_output_kb: 256
+  # Seconds a host's `deactivate` is given to settle before the host is sent SIGTERM.
+  host_stop_seconds: 5
+  # Entries per root that a `workspaceContains` look and a `readDirectory` read at most.
+  scan_entries: 10000
   # Folders, each relative to a root and applied to every root, that `open({ file })` never reaches for an app, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
   closed_paths: [secrets]

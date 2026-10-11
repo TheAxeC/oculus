@@ -51,6 +51,53 @@ export type ProcessesPayload = {
     error?: string;
 };
 
+/** Where an app's host stands: starting, running, ended, or waiting on something. */
+type AppHostState = 'starting' | 'running' | 'ended' | 'waiting';
+
+/**
+ * What a waiting host waits on: an approval of changed files, a dependency that cannot run, a
+ * dependency no app provides, a cycle of dependencies.
+ */
+type AppHostWait = '' | 'approval' | 'dependency' | 'missing' | 'cycle';
+
+/**
+ * One app's host as the `app-hosts` channel carries it. `pid` is 0 and `started` empty while no
+ * process runs. `code` and `signal` say how an ended host ended (one of them is set). `dependency`
+ * names the dependency a waiting host waits for, and `stoppedBy` the dependency whose revoke
+ * stopped the host. `outputBytes` is how many bytes of output the host has written since the
+ * server started, which grows with every write; the text is not in the row, the page asks the
+ * `app-host` route for it.
+ */
+export type AppHostRow = {
+    /** The app's view id. */
+    app: string;
+    name: string;
+    root: string;
+    title: string;
+    pid: number;
+    /** When the process started, an ISO time in UTC. */
+    started: string;
+    state: AppHostState;
+    code: number | null;
+    signal: string;
+    waiting: AppHostWait;
+    dependency: string;
+    stoppedBy: string;
+    outputBytes: number;
+};
+
+/** The `app-hosts` channel: one complete read of every host the server knows. */
+export type AppHostsPayload = { rows: AppHostRow[] };
+
+/**
+ * One message a host sent to the page, on the `app-messages` channel: to the tab `tab` of the
+ * app, or to every open tab of it when `tab` is empty.
+ */
+export type AppMessage = { app: string; tab: string; method: string; params: unknown };
+
+/** The `app-messages` channel: the messages sent since the page's last one, in order. */
+export type AppMessagesPayload = { messages: AppMessage[] };
+
 /** Every word that names why a schedule does not run or a start of it was refused. */
 export const SCHEDULE_WORDS = [
     'name-missing',

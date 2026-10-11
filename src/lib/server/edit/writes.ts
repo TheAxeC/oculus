@@ -41,10 +41,10 @@ import { FILES_KIND } from '../../data/file-ops.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
-import { APP_STORE, writeAppStore } from './writes/apps/store.ts';
+import { APP_STORE, queuedStore, writeAppStore } from './writes/apps/store.ts';
 import { gateWrite, storeWrite } from './writes/apps/gate.ts';
-import { defaultAppData } from '../machine/apps/store.ts';
-import type { AppsHeld, HeldApp } from '../machine/apps/held.ts';
+import { defaultAppData } from '../machine/apps/store/store.ts';
+import type { AppsHeld, HeldApp } from '../machine/apps/read/held.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import {
     entities as entitiesOf,
@@ -180,11 +180,17 @@ export type WriteTarget = {
     files?: FilesTarget;
     /**
      * What a write from an app's frame needs: the apps the server holds, the folder the machine
-     * apps' stores and the undo folder are under, the largest store in kilobytes, and the call that
-     * tells the apps watcher a store changed. A target built without it refuses every write that
-     * carries an app header.
+     * apps' stores and the undo folder are under, the largest store in kilobytes, the call that
+     * tells the apps watcher a store changed, and the chain every write of one store file waits on.
+     * A target built without it refuses every write that carries an app header.
      */
-    apps?: { held: () => AppsHeld; data: string; maxKb: number; stored?: () => void };
+    apps?: {
+        held: () => AppsHeld;
+        data: string;
+        maxKb: number;
+        stored?: () => void;
+        queue?: (file: string) => FsWrites;
+    };
 };
 
 export type WriteOutcome = {
@@ -271,7 +277,11 @@ export function target(
         hub: HubLike;
         fsWrites: FsWrites;
         opsWrites?: FsWrites;
-        apps?: { held: () => AppsHeld; rereadStores?: () => void };
+        apps?: {
+            held: () => AppsHeld;
+            rereadStores?: () => void;
+            storeQueue?: (file: string) => FsWrites;
+        };
     },
     appData: string = defaultAppData()
 ): WriteTarget {
@@ -318,7 +328,8 @@ export function target(
                           server.apps?.held() ?? { apps: [], findings: [], folders: [], links: [] },
                       data: appData,
                       maxKb: appsSettings(merged).storeMaxKb,
-                      stored: () => server.apps?.rereadStores?.()
+                      stored: () => server.apps?.rereadStores?.(),
+                      queue: server.apps.storeQueue
                   }
     };
 }
@@ -683,17 +694,17 @@ export async function handleWrite(
 }
 
 /**
- * What every write answers with when it was asked something this route knows, and the one place the
- * change log is written: the records the writer made are stamped with this kind and appended before
- * the page is answered, so a page that has seen its own write can read the log and find it.
+ * Append the records a write made to the change log: stamped with this kind, their files named as
+ * the log names them and the app the write came from marked. It is the one place the log is
+ * written for a write, so the host's store update records through it as a frame's does.
  */
-async function answer(
+export async function recordWrite(
     outcome: WriteOutcome,
     kind: string,
     into: WriteTarget,
     undoes?: string,
     app?: HeldApp
-): Promise<Response> {
+): Promise<void> {
     const records = outcome.records?.map((record) => ({
         ...record,
         file: pathOf(into.hub, record.file),
@@ -703,6 +714,21 @@ async function answer(
         ...(app === undefined ? {} : { app: app.id })
     }));
     await logChanges(into.changes, kind, records, undoes);
+}
+
+/**
+ * What every write answers with when it was asked something this route knows: the records are in
+ * the change log before the page is answered, so a page that has seen its own write can read the
+ * log and find it.
+ */
+async function answer(
+    outcome: WriteOutcome,
+    kind: string,
+    into: WriteTarget,
+    undoes?: string,
+    app?: HeldApp
+): Promise<Response> {
+    await recordWrite(outcome, kind, into, undoes, app);
     return json({
         ok: true,
         changed: outcome.changed,
@@ -720,13 +746,20 @@ function notFound(target: SubtaskTarget): string {
 
 /** The answer to a store write of an app: written and recorded, or refused with its word. */
 async function storeAnswer(into: WriteTarget, app: HeldApp, value: unknown): Promise<Response> {
-    let outcome;
-    try {
-        outcome = writeAppStore(into, app, value);
-    } catch {
-        // A folder that cannot be written is the app's refusal to word, not a failure of the route.
-        return json({ ok: true, changed: [], refused: [{ field: 'store', reason: 'unwritable' }] });
-    }
-    if ('error' in outcome) return json({ error: outcome.error }, { status: 500 });
-    return answer(outcome, APP_STORE, into, undefined, app);
+    return queuedStore(into, app, async () => {
+        let outcome;
+        try {
+            outcome = writeAppStore(into, app, value);
+        } catch {
+            // A folder that cannot be written is the app's refusal to word, not a failure of the
+            // route.
+            return json({
+                ok: true,
+                changed: [],
+                refused: [{ field: 'store', reason: 'unwritable' }]
+            });
+        }
+        if ('error' in outcome) return json({ error: outcome.error }, { status: 500 });
+        return answer(outcome, APP_STORE, into, undefined, app);
+    });
 }

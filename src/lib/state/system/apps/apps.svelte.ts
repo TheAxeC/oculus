@@ -14,22 +14,45 @@
 // question of the same tab is open waits its turn, and every question that is left when the frame
 // ends is answered no, so no write is left unsettled.
 //
+// A frame's calls to its app's host, its secrets and its files go through the methods too: the
+// host and secrets calls are POSTs of the write token that name the app in the `x-oculus-app`
+// header, and a file is fetched by the frame itself from the address the page judged. A message
+// the host sends arrives on the `app-messages` channel and goes to the frames of that app, to the
+// tab it names or to every tab. The rows of the hosts are the `app-hosts` channel's.
+//
 // The approval and the revoke are the two POSTs of /api/approve; the server answers after its
 // watcher has read the new approval, so the row the page holds next carries the app's key.
 
-import { SvelteMap } from 'svelte/reactivity';
+import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import { appAddress, appViewId, inAppsFolder } from '../../../data/helpers/files/apps.ts';
-import type { AppRow, Finding, Message, Project } from '../../../data/model/index.ts';
+import { APP_HEADER, appHeaderValue } from '../../../data/helpers/files/apps.ts';
+import type {
+    AppHostRow,
+    AppMessagesPayload,
+    AppRow,
+    Finding,
+    Message,
+    Project
+} from '../../../data/model/index.ts';
 import type { AppsSettings } from '../../../data/sources/config/settings.ts';
 import { t } from '../../shared/words/text.ts';
 import type { EntitiesStore, WritesStore } from '../../shared/stores/shapes.ts';
 import { connectFrame } from './bridge.ts';
 import { appTab, appTabState } from './instance.ts';
-import { createMethods, type KeyInit, type OpenResult, type Theme } from './methods.ts';
-import { folderIn, partOf, readAccess } from './rules.ts';
+import { createFlows, type FlowsStore } from './flows.ts';
+import { createManage, type ManageStore } from './manage.ts';
+import {
+    createMethods,
+    type CommandOutcome,
+    type KeyInit,
+    type OpenResult,
+    type ServerAnswer,
+    type Theme
+} from './methods.ts';
+import { REFUSED, failedWith, folderIn, hostTargets, partOf, readAccess } from './rules.ts';
 import { createStoreCache, type StoreAnswer } from './store-cache.ts';
 
-export type { AppRow };
+export type { AppHostRow, AppRow };
 
 /**
  * What the apps store reads of the rest of the client. The workbench's stores sit above this folder
@@ -37,7 +60,18 @@ export type { AppRow };
  * state/client/context.ts hands over the stores themselves.
  */
 export type AppsDeps = {
-    entities: Pick<EntitiesStore, 'apps' | 'message' | 'afterReceive'>;
+    entities: Pick<EntitiesStore, 'apps' | 'appHosts' | 'message' | 'afterReceive'>;
+    /** The socket's subscription, which the host and message channels are added to. */
+    socket: {
+        subscribe: (channels: string[]) => void;
+        onLink: (listener: () => void) => () => void;
+    };
+    /**
+     * Run the command of that name from the commands file of a repository, as a press of it does:
+     * the chain approval is asked of the reader and the terminal is shown. The repository is the
+     * app's own root, or the hub for a machine app.
+     */
+    commands: { run: (root: string, name: string) => Promise<CommandOutcome> };
     writes: Pick<WritesStore, 'sendFromApp' | 'postCommand'>;
     ui: {
         instanceState: (id: string) => unknown;
@@ -54,9 +88,7 @@ export type AppsDeps = {
         switchPage: (id: string) => void;
         showFolderInFiles: (path: string, root?: string) => string;
     };
-    notices: { post: (message: string) => unknown };
-    /** The state that opens a file of a root as a source tab. */
-    sourceState: (root: string, path: string) => unknown;
+    notices: { post: (message: string, options?: { tone?: 'error' }) => unknown };
     settings: () => AppsSettings;
     /** The roots the file browser serves, with the folder of each. */
     served: () => { key: string; dir: string }[];
@@ -78,6 +110,8 @@ type MountOptions = {
     focused: () => boolean;
     /** Raise a key event of the frame on the page's chords. */
     forwardKey: (init: KeyInit) => void;
+    /** The view and the state that open a file of a root, as the Files view opens it. */
+    tabFor: (root: string, path: string) => { view: string; state: unknown };
 };
 
 /** One question a write of an app asks the reader; `answer` settles the write, once. */
@@ -106,36 +140,47 @@ type Mount = {
 /** What an approve or a revoke came to. */
 type ApprovalOutcome = { ok: true } | { ok: false; error: string };
 
-export type AppsStore = {
-    rows: () => AppRow[];
-    findings: () => Finding[];
-    folders: () => string[];
-    /** The row of this view id, or undefined. */
-    rowOf: (id: string) => AppRow | undefined;
-    mount: (options: MountOptions) => Mount;
-    /** The theme or the wallpaper changed: tell the frame of this tab. */
-    themeChanged: (instance: string) => void;
-    /** The run of a tab. */
-    run: (instance: string) => AppRun;
-    /** Load the app of a tab again, which is what the reader asks after a failed load. */
-    reload: (instance: string) => void;
-    approve: (id: string, hash: string, keep: boolean) => Promise<ApprovalOutcome>;
-    revoke: (id: string) => Promise<ApprovalOutcome>;
-    /** Show the app's folder in the file browser. */
-    showFolder: (id: string) => void;
-    /**
-     * Whether the configuration the limits come from has arrived. A frame is drawn only then, since
-     * its handshake timeout and its rate limits are read from it.
-     */
-    ready: () => boolean;
-    /** The address of an app's entry file, or the empty string while the app is not approved. */
-    srcOf: (row: AppRow) => string;
-    /**
-     * Whether a file of a root, by the root's key and the path under it, lies in an apps folder,
-     * which opens as source text and never as a page.
-     */
-    holds: (root: string, path: string) => boolean;
-};
+export type AppsStore = ManageStore &
+    FlowsStore & {
+        rows: () => AppRow[];
+        /** The host of every app that names one, as the Processes view and the tabs draw them. */
+        hosts: () => AppHostRow[];
+        /** The host row of this view id, or undefined while the app has none to show. */
+        hostOf: (id: string) => AppHostRow | undefined;
+        findings: () => Finding[];
+        folders: () => string[];
+        /** The row of this view id, or undefined. */
+        rowOf: (id: string) => AppRow | undefined;
+        /** Show the approval panel of an app in its tab, which opens when it is not open. */
+        review: (id: string) => void;
+        /** Whether the approval panel of this app is being shown in place of its frame. */
+        reviewing: (id: string) => boolean;
+        /** Put the approval panel away. */
+        endReview: (id: string) => void;
+        mount: (options: MountOptions) => Mount;
+        /** The theme or the wallpaper changed: tell the frame of this tab. */
+        themeChanged: (instance: string) => void;
+        /** The run of a tab. */
+        run: (instance: string) => AppRun;
+        /** Load the app of a tab again, which is what the reader asks after a failed load. */
+        reload: (instance: string) => void;
+        approve: (id: string, hash: string, keep: boolean) => Promise<ApprovalOutcome>;
+        revoke: (id: string) => Promise<ApprovalOutcome>;
+        /** Show the app's folder in the file browser. */
+        showFolder: (id: string) => void;
+        /**
+         * Whether the configuration the limits come from has arrived. A frame is drawn only then,
+         * since its handshake timeout and its rate limits are read from it.
+         */
+        ready: () => boolean;
+        /** The address of an app's entry file, or the empty string while the app is unapproved. */
+        srcOf: (row: AppRow) => string;
+        /**
+         * Whether a file of a root, by the root's key and the path under it, lies in an apps
+         * folder, which opens as source text and never as a page.
+         */
+        holds: (root: string, path: string) => boolean;
+    };
 
 /** One mounted frame, as the fan-out sees it. */
 type Mounted = {
@@ -144,6 +189,8 @@ type Mounted = {
     deliver: (message: Message) => void;
     store: (value: unknown) => void;
     theme: () => void;
+    /** Hand the frame what its host sent to this tab. */
+    host: (method: string, params: unknown) => void;
 };
 
 /** A question waiting for its turn, with what settles the write that asked it. */
@@ -151,6 +198,7 @@ type Waiting = { message: string; detail: string; resolve: (yes: boolean) => voi
 
 export function createApps(deps: AppsDeps): AppsStore {
     const mounted = new Set<Mounted>();
+    const reviews = new SvelteSet<string>();
     const runs = new SvelteMap<string, AppRun>();
     const waiting = new Map<string, Waiting[]>();
     const run = (instance: string): AppRun => runs.get(instance) ?? NO_RUN;
@@ -216,6 +264,22 @@ export function createApps(deps: AppsDeps): AppsStore {
     const rowOf = (id: string): AppRow | undefined =>
         rows().find((one) => appViewId(one.root, one.name) === id);
     const get = deps.fetch ?? ((...args: Parameters<typeof fetch>) => fetch(...args));
+    // The host rows and the host's messages are channels the page subscribes to once its socket is
+    // open; the subscription is asked again at every link change, since a connect names the
+    // channels it starts with and a reconnect asks for them again.
+    const hostChannels = (): void => deps.socket.subscribe(['app-hosts', 'app-messages']);
+    hostChannels();
+    deps.socket.onLink(hostChannels);
+    const post = (path: string, body: unknown): ReturnType<typeof deps.writes.postCommand> =>
+        deps.writes.postCommand(path, body);
+    const manage = createManage(post);
+    const flows = createFlows({
+        manage,
+        rowOf: (id) => rowOf(id),
+        post,
+        notices: deps.notices
+    });
+    const hosts = (): AppHostRow[] => deps.entities.appHosts()?.rows ?? [];
 
     async function fetchStore(id: string): Promise<StoreAnswer | null> {
         try {
@@ -245,6 +309,13 @@ export function createApps(deps: AppsDeps): AppsStore {
             cache.pushed();
             return;
         }
+        if (message.channel === 'app-messages') {
+            for (const one of (message.payload as AppMessagesPayload).messages) {
+                for (const frame of hostTargets(mounted, one)) frame.host(one.method, one.params);
+            }
+            return;
+        }
+        if (message.channel === 'app-hosts') return;
         const held = $state.snapshot(message);
         for (const one of [...mounted]) one.deliver(held);
     });
@@ -285,6 +356,23 @@ export function createApps(deps: AppsDeps): AppsStore {
             else deps.notices.post(t('apps.rate', title));
         };
 
+        /** One POST of the app's frame to a server route that names the app in the header. */
+        async function appCall(path: string, body: unknown): Promise<ServerAnswer | null> {
+            const posted = await deps.writes.postCommand(path, body, {
+                [APP_HEADER]: appHeaderValue(options.id)
+            });
+            if (!posted.ok) {
+                if (posted.status === 0) return null;
+                return {
+                    ok: false,
+                    word: posted.status === 404 ? REFUSED.missing : failedWith(posted.status)
+                };
+            }
+            const { ok, value, word } = posted.body;
+            if (ok === true) return { ok: true, value };
+            return typeof word === 'string' ? { ok: false, word } : null;
+        }
+
         const methods = createMethods({
             alive: () => alive,
             row,
@@ -298,6 +386,7 @@ export function createApps(deps: AppsDeps): AppsStore {
             },
             dir,
             shown: (root) => deps.served().some((one) => one.key === root),
+            rootKeys: () => deps.served().map((one) => one.key),
             getState: () => $state.snapshot(appTab(deps.ui.instanceState(options.instance)).value),
             setState: (value) => {
                 const tab = appTab(deps.ui.instanceState(options.instance));
@@ -322,8 +411,23 @@ export function createApps(deps: AppsDeps): AppsStore {
             },
             check: (root, path) => checkOpen(options.id, root, path),
             openFile: (root, path) => {
-                deps.layout.openView('source', deps.sourceState(root, path));
+                const tab = options.tabFor(root, path);
+                deps.layout.openView(tab.view, tab.state);
             },
+            runCommand: (name) => deps.commands.run(row()?.root ?? '', name),
+            secrets: (action, key, value) =>
+                appCall('/api/app-secrets', {
+                    action,
+                    key,
+                    ...(value === undefined ? {} : { value })
+                }),
+            host: (method, params) =>
+                appCall('/api/app-host', {
+                    action: 'request',
+                    method,
+                    params,
+                    tab: options.instance
+                }),
             openUrl: (address) => {
                 window.open(address, '_blank', 'noopener,noreferrer');
             },
@@ -363,10 +467,15 @@ export function createApps(deps: AppsDeps): AppsStore {
             },
             store(value) {
                 link.store(value);
+            },
+            host(method, params) {
+                link.host(method, params);
             }
         };
         mounted.add(entry);
         setRun(options.instance, { failed: false });
+        // A tab of the app is drawn: the host of an app that names `onTab` starts.
+        void appCall('/api/app-host', { action: 'tab' });
         return {
             destroy() {
                 alive = false;
@@ -385,10 +494,22 @@ export function createApps(deps: AppsDeps): AppsStore {
     }
 
     return {
+        ...manage,
+        ...flows,
         rows,
+        hosts,
+        hostOf: (id) => hosts().find((one) => one.app === id),
         findings: () => deps.entities.apps()?.findings ?? [],
         folders: () => deps.entities.apps()?.folders ?? [],
         rowOf,
+        review: (id) => {
+            reviews.add(id);
+            deps.layout.openView(id);
+        },
+        reviewing: (id) => reviews.has(id),
+        endReview: (id) => {
+            reviews.delete(id);
+        },
         mount,
         themeChanged: (instance) => {
             for (const one of mounted) if (one.instance === instance) one.theme();

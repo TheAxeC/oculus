@@ -15,6 +15,7 @@
 
 import {
     accessSync,
+    chmodSync,
     closeSync,
     constants,
     existsSync,
@@ -22,7 +23,7 @@ import {
     openSync,
     readFileSync
 } from 'node:fs';
-import { dirname } from 'node:path';
+import { basename, dirname } from 'node:path';
 import writeFileAtomic from 'write-file-atomic';
 
 /** Read one JSON file. Missing, unreadable or unparseable all come back as null. */
@@ -71,6 +72,35 @@ export function writeJsonAtomic(path: string, payload: unknown): void {
 /** Write text atomically, preserving an existing mode or using newMode for a new file. */
 export function writeTextAtomic(path: string, content: string, newMode?: number): void {
     writeAtomic(path, content, newMode);
+}
+
+/** What a private write answers: done, or the sentence of why the file was left as it was. */
+export type PrivateWrite = { ok: true } | { ok: false; error: string };
+
+/**
+ * Write the JSON `payload` whole, as the owner's file (mode 0600) in a folder made 0700 when it is
+ * new, then read it back. `prepare` runs after the folder exists and before the write. A failure
+ * answers the sentence naming the file, so a caller hands it to the reader.
+ */
+export function writePrivateJson(
+    file: string,
+    payload: unknown,
+    prepare: (folder: string) => void = () => undefined
+): PrivateWrite {
+    const content = `${JSON.stringify(payload, null, 2)}\n`;
+    try {
+        mkdirSync(dirname(file), { recursive: true, mode: 0o700 });
+        prepare(dirname(file));
+        writeAtomic(file, content, 0o600);
+        chmodSync(file, 0o600);
+        if (readFileSync(file, 'utf8') !== content) {
+            return { ok: false, error: `${basename(file)} was not written as asked: ${file}` };
+        }
+    } catch (error) {
+        const why = error instanceof Error ? error.message : String(error);
+        return { ok: false, error: `${basename(file)} cannot be written: ${why}` };
+    }
+    return { ok: true };
 }
 
 /**

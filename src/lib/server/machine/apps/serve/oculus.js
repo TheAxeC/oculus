@@ -8,8 +8,13 @@
 // sandboxed document; the page's origin is the origin this file was loaded from.
 //
 // The page exposes `read`, `getTheme`, `getState`, `setState`, `getStore`, `setStore`, `write`,
-// `open` and `key`; the app exposes `onChannel`, `onTheme` and `onStore`. A refusal rejects with
-// one fixed word as a plain string.
+// `open` and `key`, and under flat names the calls this file nests as `oculus.fs`,
+// `oculus.commands`, `oculus.secrets` and `oculus.host`; the app exposes `onChannel`, `onTheme`,
+// `onStore` and `onHost`. A refusal rejects with one fixed word as a plain string.
+//
+// `oculus.fs.readFile`, `readDirectory` and `stat` ask the page for an address on the app's own
+// address and fetch the bytes, the listing or the stat from it, so a file never passes through the
+// page. A refusal of the server is the plain-text word it answers, and rejects with that word.
 //
 // A press on a link that leads outside the app's own address does not navigate the frame: it is
 // sent to the page as `open({ url })`, which refuses an address that is not `http:` or `https:` and
@@ -27,6 +32,7 @@
  * @property {(channel: string, version: number, payload: unknown) => unknown} [onChannel]
  * @property {(theme: Theme) => unknown} [onTheme]
  * @property {(value: unknown) => unknown} [onStore]
+ * @property {(method: string, params: unknown) => unknown} [onHost]
  */
 
 /**
@@ -40,6 +46,34 @@
  */
 
 /**
+ * @typedef {object} Place
+ * @property {string} root The key of a root the file browser shows.
+ * @property {string} path The path under the root.
+ */
+
+/**
+ * @typedef {object} Stat
+ * @property {number} type VS Code's FileType: 1 file, 2 folder, 64 added for a link.
+ * @property {number} ctime
+ * @property {number} mtime
+ * @property {number} size
+ */
+
+/**
+ * @typedef {object} Files
+ * @property {(place: Place) => Promise<Uint8Array>} readFile
+ * @property {(place: Place) => Promise<[string, number][]>} readDirectory
+ * @property {(place: Place) => Promise<Stat>} stat
+ */
+
+/**
+ * @typedef {object} Secrets
+ * @property {(key: string) => Promise<string | undefined>} get
+ * @property {(key: string, value: string) => Promise<void>} store
+ * @property {(key: string) => Promise<void>} delete
+ */
+
+/**
  * @typedef {object} Oculus
  * @property {(channel: string) => Promise<{ version: number; payload: unknown } | null>} read
  * @property {() => Promise<Theme>} getTheme
@@ -50,6 +84,10 @@
  * @property {(kind: string, body: unknown) => Promise<void>} write
  * @property {(target: unknown) => Promise<void>} open
  * @property {(init: KeyInit) => Promise<void>} key
+ * @property {Files} fs
+ * @property {{ run: (name: string) => Promise<void> }} commands
+ * @property {Secrets} secrets
+ * @property {{ request: (method: string, params?: unknown) => Promise<unknown> }} host
  */
 
 /**
@@ -106,6 +144,88 @@ function outsideLink(/** @type {MouseEvent} */ event) {
 }
 
 /**
+ * The page's methods an app calls by their own names. The page also builds `fsAddress`,
+ * `commandsRun`, `secretsGet`, `secretsStore`, `secretsDelete` and `hostRequest`, which an app
+ * reaches under `fs`, `commands`, `secrets` and `host` (`nested` below). This file imports nothing
+ * from the page, so it holds the list itself; tests/server/machine/apps/oculus-frame.test.ts holds
+ * it and the nested names equal to the keys of the object `createMethods` returns
+ * (lib/state/system/apps/methods.ts).
+ */
+const METHODS = [
+    'read',
+    'getTheme',
+    'getState',
+    'setState',
+    'getStore',
+    'setStore',
+    'write',
+    'open',
+    'key'
+];
+
+/**
+ * One function for each method an app calls by its own name. Penpal's remote proxy has no own keys
+ * to copy, so each function calls the proxy by its name.
+ */
+function flat(/** @type {any} */ page) {
+    return /** @type {Omit<Oculus, 'fs' | 'commands' | 'secrets' | 'host'>} */ (
+        Object.fromEntries(
+            METHODS.map((name) => [name, (/** @type {unknown[]} */ ...args) => page[name](...args)])
+        )
+    );
+}
+
+/**
+ * The page's methods as the nested object an app uses. Penpal carries them under flat names, so
+ * `oculus.fs.readFile` is `fsAddress('read', ...)` and a fetch of the address it answers.
+ */
+function nested(/** @type {any} */ page) {
+    /**
+     * Fetch the address the page gave for a read of a root. A refusal of the server is its
+     * plain-text word, which rejects as a plain string; a response that is no answer rejects
+     * `failed:<status>`.
+     */
+    async function fetched(
+        /** @type {string} */ op,
+        /** @type {Place} */ place,
+        /** @type {(response: Response) => Promise<any>} */ read
+    ) {
+        const address = await page.fsAddress(op, place?.root, place?.path);
+        const response = await fetch(address);
+        if (response.ok) return read(response);
+        const word = (await response.text().catch(() => '')).trim();
+        // A refusal is one word, as every other.
+        throw word === '' ? `failed:${response.status}` : word;
+    }
+    return {
+        ...flat(page),
+        fs: {
+            readFile: (/** @type {Place} */ place) =>
+                fetched(
+                    'read',
+                    place,
+                    async (response) => new Uint8Array(await response.arrayBuffer())
+                ),
+            readDirectory: (/** @type {Place} */ place) =>
+                fetched('dir', place, (response) => response.json()),
+            stat: (/** @type {Place} */ place) =>
+                fetched('stat', place, (response) => response.json())
+        },
+        commands: { run: (/** @type {string} */ name) => page.commandsRun(name) },
+        secrets: {
+            get: (/** @type {string} */ key) => page.secretsGet(key),
+            store: (/** @type {string} */ key, /** @type {string} */ value) =>
+                page.secretsStore(key, value),
+            delete: (/** @type {string} */ key) => page.secretsDelete(key)
+        },
+        host: {
+            request: (/** @type {string} */ method, /** @type {unknown} */ params) =>
+                page.hostRequest(method, params)
+        }
+    };
+}
+
+/**
  * Connect to the page that holds this frame. Resolves with the page's methods once the handshake
  * completes; the theme is painted before it resolves, a key press holding Control, Meta or Alt, or
  * Escape, is forwarded to the page from then on, and so is a press on a link outside the app.
@@ -130,10 +250,11 @@ export async function connect(handlers = {}) {
             paint(theme);
             return handlers.onTheme?.(theme);
         },
-        onStore: (/** @type {unknown} */ value) => handlers.onStore?.(value)
+        onStore: (/** @type {unknown} */ value) => handlers.onStore?.(value),
+        onHost: (/** @type {string} */ method, /** @type {unknown} */ params) =>
+            handlers.onHost?.(method, params)
     };
-    /** @type {Oculus} */
-    const page = await link({ messenger, methods }).promise;
+    const page = nested(await link({ messenger, methods }).promise);
     paint(await page.getTheme());
     window.addEventListener('keydown', (event) => {
         if (!forwarded(event)) return;

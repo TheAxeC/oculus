@@ -27,6 +27,13 @@
     // A root app is drawn only while the registered app of its view id has the folder this tab
     // recorded: a root key is per workspace, so after a switch the same key can name another
     // folder.
+    //
+    // A disabled app draws a line with an Enable button in place of its frame. An app whose host
+    // ended, or waits, draws a line above its frame: the exit code or signal with Restart, the
+    // approval of changed files with Approve (which shows the approval panel and never approves),
+    // the dependency the host waits for, or the dependency whose revoke stopped it. The approval
+    // panel is also where Disable, Enable and Remove are offered beside the Disable and Enable of
+    // the line.
 
     import { untrack } from 'svelte';
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
@@ -38,6 +45,8 @@
     import { drawFrame, useTabFrames, type FrameSpec } from '$lib/ui/tabs/tab-frames.svelte';
     import { WALL_CLASS, tokenNames } from '$lib/ui/theme';
     import { t } from '$lib/state/shared/words/text';
+    import { typeOfFile } from '$lib/state/sources/fs';
+    import { tabForKind } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
     import { appTab, appTabState, drawsFolder } from '$lib/state/system/apps/instance';
     import type { KeyInit, Theme } from '$lib/state/system/apps/methods';
@@ -53,6 +62,9 @@
     const row = $derived(apps.rowOf(id));
     const tab = $derived(appTab(ui.instanceState(instance.id)));
     const run = $derived(apps.run(instance.id));
+    const host = $derived(apps.hostOf(id));
+    const reviewing = $derived(apps.reviewing(id));
+    let asked: Ask | null = $state(null);
     const title = $derived(row === undefined ? id : row.title);
 
     /** The app's entry as an address, empty while the app is not approved. */
@@ -126,6 +138,8 @@
             frame: node,
             theme,
             focused: () => document.activeElement === node,
+            tabFor: (root: string, path: string) =>
+                tabForKind(typeOfFile(path).kind, root, path, undefined, apps.holds),
             forwardKey: (init: KeyInit) =>
                 (frames?.slotOf(mine) ?? node).dispatchEvent(
                     new KeyboardEvent('keydown', { ...init, bubbles: true, cancelable: true })
@@ -136,7 +150,13 @@
 
     /** The frame the tab holds: one while the app is approved, drawn and loaded without failing. */
     const frame = $derived<FrameSpec | null>(
-        row !== undefined && draws && row.approved && !run.failed && apps.ready()
+        row !== undefined &&
+            draws &&
+            row.approved &&
+            !row.disabled &&
+            !reviewing &&
+            !run.failed &&
+            apps.ready()
             ? {
                   kind: 'app',
                   view: instance.view,
@@ -179,12 +199,41 @@
         error = '';
         const outcome = await apps.approve(id, row.hash, keep);
         pending = false;
-        if (outcome.ok) return;
+        if (outcome.ok) {
+            apps.endReview(id);
+            return;
+        }
         error =
             outcome.error === 'changed'
                 ? t('apps.changed_meanwhile')
                 : t('apps.approve_failed', outcome.error);
     }
+
+    /** Enable the app where it is disabled: in the workspace when that is what disables it. */
+    function enable(): void {
+        if (row === undefined) return;
+        const choice = row.workspaceState === 'disabled' ? 'enable-workspace' : 'enable';
+        void apps.pick(id, choice, (question) => (asked = question));
+    }
+
+    /** The sentence of why the host of the app is not running, or the empty string. */
+    function hostLine(): string {
+        if (host === undefined) return '';
+        if (host.state === 'ended') {
+            return host.code === null
+                ? t('apps.host_ended_signal', host.signal)
+                : t('apps.host_ended_code', host.code.toString());
+        }
+        if (host.state !== 'waiting') return host.stoppedBy === '' ? '' : stopped(host.stoppedBy);
+        if (host.waiting === 'approval') return t('apps.host_wait_approval');
+        if (host.waiting === 'cycle') return t('apps.host_wait_cycle');
+        if (host.stoppedBy !== '') return stopped(host.stoppedBy);
+        return host.waiting === 'missing'
+            ? t('apps.host_wait_missing', host.dependency)
+            : t('apps.host_wait_dependency', host.dependency);
+    }
+
+    const stopped = (name: string): string => t('apps.host_stopped_by', name);
 
     async function revoke(): Promise<void> {
         error = '';
@@ -197,14 +246,25 @@
     <div class="app" data-instance={instance.id} data-app={id}>
         {#if row === undefined || !draws}
             <Empty message={t('ui.unknown_view', id)} />
-        {:else if !row.approved}
+        {:else if row.disabled}
+            <Empty message={t('apps.disabled_line')}>
+                {#snippet action()}
+                    <ToolButton label={t('apps.enable')} onclick={enable} />
+                {/snippet}
+            </Empty>
+        {:else if !row.approved || reviewing}
             <ApprovalPanel
                 {row}
-                changed={tab.seen !== '' && tab.seen !== row.hash}
+                changed={(tab.seen !== '' && tab.seen !== row.hash) ||
+                    (row.approved && !row.hashApproved)}
                 {error}
                 {pending}
                 onapprove={approve}
                 onfolder={() => apps.showFolder(id)}
+                choices={apps.choices(row)}
+                onchoice={(choice: string) =>
+                    void apps.pick(id, choice, (question) => (asked = question))}
+                onback={row.approved ? () => apps.endReview(id) : undefined}
             />
         {:else if run.failed}
             <Empty message={t('apps.load_failed')} error>
@@ -213,10 +273,24 @@
                 {/snippet}
             </Empty>
         {:else if apps.ready()}
+            {#if hostLine() !== ''}
+                <div class="host" role="status" data-host-line>
+                    <span>{hostLine()}</span>
+                    {#if host?.state === 'ended'}
+                        <ToolButton
+                            label={t('apps.restart')}
+                            onclick={() => apps.restartHost(id)}
+                        />
+                    {:else if host?.waiting === 'approval'}
+                        <ToolButton label={t('apps.review')} onclick={() => apps.review(id)} />
+                    {/if}
+                </div>
+            {/if}
             <FrameSlot id={instance.id} />
         {/if}
     </div>
     <AskConfirm {asking} onclose={closed} />
+    <AskConfirm asking={asked} onclose={() => (asked = null)} />
 </Pane>
 
 {#snippet toolbar()}
@@ -226,6 +300,15 @@
 {/snippet}
 
 <style>
+    .host {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        color: var(--c-amber-txt, var(--c-amber));
+    }
+
     .app {
         width: 100%;
         height: 100%;

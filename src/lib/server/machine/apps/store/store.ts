@@ -17,7 +17,7 @@ import { createHash } from 'node:crypto';
 import { lstatSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
-import { below, realPath } from '../../core/paths.ts';
+import { below, realPath } from '../../../core/paths.ts';
 
 /** The folder under a root that holds its apps' stores, and the apps folder beside it. */
 export const ROOT_DATA = join('.oculus', 'app-data');

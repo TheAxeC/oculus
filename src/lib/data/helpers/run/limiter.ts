@@ -1,6 +1,7 @@
-// Layer 2, client state. How many calls one frame may make in a window of time: the limit of
-// `apps.writes_per_min`, `apps.opens_per_min` and `apps.keys_per_s`, counted per frame so one
-// noisy app cannot spend another's.
+// Layer 1, data. How many calls one counter may make in a window of time: the limits of
+// `apps.writes_per_min`, `apps.opens_per_min`, `apps.keys_per_s` and `apps.messages_per_min`,
+// counted per frame or per host so one noisy app cannot spend another's. The page counts a frame's
+// calls with it and the server a host's.
 //
 // The window slides: a call passes while fewer than `limit` calls passed in the `windowMs` before
 // it. The limit is read at each call, so a changed setting applies to the next call without the

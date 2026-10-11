@@ -47,7 +47,8 @@ beforeEach(() => {
     registerCollections(client.registry, collectionKeys(config));
     registerApps(client.registry, [
         fixtureApp({ name: 'draft', approved: false, key: '' }),
-        fixtureApp({ name: 'kept', kept: true })
+        fixtureApp({ name: 'kept', kept: true }),
+        fixtureApp({ name: 'off', disabled: true })
     ]);
 });
 

@@ -574,7 +574,7 @@
 </g>
 <!-- lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/apps/store.ts -->
 <g id="edge42" class="edge">
-<title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/apps/store.ts: writeAppStore</title>
+<title>lib/server/edit/writes.ts&#45;&gt;lib/server/edit/writes/apps/store.ts: queuedStore, writeAppStore</title>
 <path fill="none" stroke="currentColor" d="M200.28,-415.64C253.1,-434.24 371.24,-481.8 424.75,-505.98"/>
 <polygon fill="currentColor" stroke="currentColor" points="423.84,-507.88 430.17,-508.47 425.59,-504.06 423.84,-507.88"/>
 </g>
@@ -996,7 +996,7 @@
 </g>
 <!-- lib/server/edit/writes/apps/store.ts&#45;&gt;lib/server/core/json.ts -->
 <g id="edge60" class="edge">
-<title>lib/server/edit/writes/apps/store.ts&#45;&gt;lib/server/core/json.ts: writeTextAtomic</title>
+<title>lib/server/edit/writes/apps/store.ts&#45;&gt;lib/server/core/json.ts: chained, writeTextAtomic</title>
 <path fill="none" stroke="currentColor" d="M480.2,-525.84C499.31,-529.62 525.88,-534.27 549.5,-536.24 592.65,-539.83 603.76,-539.7 646.92,-536.24 673.26,-534.13 702.76,-529.25 724.8,-525.11"/>
 <polygon fill="currentColor" stroke="currentColor" points="724.98,-527.21 730.48,-524.02 724.2,-523.08 724.98,-527.21"/>
 </g>

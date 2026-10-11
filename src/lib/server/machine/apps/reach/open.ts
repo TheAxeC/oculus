@@ -14,10 +14,10 @@
 
 import { readlinkSync, statSync } from 'node:fs';
 import { isAbsolute, basename, dirname, join, relative, resolve, sep } from 'node:path';
-import { inClosedPaths, pathSegmentsOpen } from '../../../data/helpers/files/apps.ts';
-import { below, realPath } from '../../core/paths.ts';
-import { ENGINE_ROOT, type Root } from '../../files/files.ts';
-import type { HeldApp } from './held.ts';
+import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps.ts';
+import { below, realPath } from '../../../core/paths.ts';
+import { ENGINE_ROOT, type Root } from '../../../files/files.ts';
+import type { HeldApp } from '../read/held.ts';
 
 /** What the checks ask of the disk. */
 export type OpenFs = {
@@ -92,40 +92,63 @@ function hiddenUnder(rootReal: string, real: string, closed: readonly string[]):
     return !pathSegmentsOpen(under) || inClosedPaths(under, closed);
 }
 
+/** What the checks found: the answer, and for `ok` the real path of what the path names. */
+export type Located = { answer: 'closed' | 'missing' } | { answer: 'ok'; real: string };
+
+/**
+ * Run the checks on a path of a root and answer where it lies. `folder` lets the path name the
+ * root itself, with the empty path, and a folder, which `open` never reaches; every other check is
+ * the same, in the same order.
+ */
+export function locate(
+    ask: { app: HeldApp; root: string; path: string },
+    context: OpenContext,
+    folder = false
+): Located {
+    const { app, root, path } = ask;
+    const { closedPaths, fs } = context;
+    if (closedPaths === null) return { answer: 'closed' };
+    const whole = folder && path === '';
+    if (!whole && (!pathSegmentsOpen(path) || inClosedPaths(path, closedPaths))) {
+        return { answer: 'closed' };
+    }
+    if (root === ENGINE_ROOT) return { answer: 'closed' };
+    if (app.row.root !== '' && root !== app.row.root) return { answer: 'closed' };
+    const shown = context.roots.find((one) => one.key === root);
+    if (shown === undefined) return { answer: 'missing' };
+
+    const rootReal = fs.realPath(shown.dir);
+    if (rootReal === null) return { answer: 'missing' };
+    const configReal = fs.realPath(context.configDir);
+    const full = whole ? shown.dir : join(shown.dir, path);
+    const folderReal = resolved(dirname(full), fs);
+    if (!whole) {
+        if (folderReal === null || !within(folderReal, rootReal)) return { answer: 'closed' };
+        const guess = join(folderReal, basename(full));
+        if (configReal !== null && within(guess, configReal)) return { answer: 'closed' };
+        if (hiddenUnder(rootReal, guess, closedPaths)) return { answer: 'closed' };
+    }
+
+    const real = fs.realPath(full);
+    if (real === null) {
+        const target = fs.linkTarget(full);
+        if (target === null) return { answer: 'missing' };
+        const at = isAbsolute(target) ? target : resolve(dirname(full), target);
+        const through = resolved(at, fs);
+        return { answer: through !== null && within(through, rootReal) ? 'missing' : 'closed' };
+    }
+    if (!within(real, rootReal)) return { answer: 'closed' };
+    if (configReal !== null && within(real, configReal)) return { answer: 'closed' };
+    if (!whole && hiddenUnder(rootReal, real, closedPaths)) return { answer: 'closed' };
+    return { answer: 'ok', real };
+}
+
 /** Answer whether the app may have this file of this root opened. */
 export function checkOpen(
     ask: { app: HeldApp; root: string; path: string },
     context: OpenContext
 ): OpenAnswer {
-    const { app, root, path } = ask;
-    const { closedPaths, fs } = context;
-    if (closedPaths === null) return 'closed';
-    if (!pathSegmentsOpen(path) || inClosedPaths(path, closedPaths)) return 'closed';
-    if (root === ENGINE_ROOT) return 'closed';
-    if (app.row.root !== '' && root !== app.row.root) return 'closed';
-    const shown = context.roots.find((one) => one.key === root);
-    if (shown === undefined) return 'missing';
-
-    const rootReal = fs.realPath(shown.dir);
-    if (rootReal === null) return 'missing';
-    const configReal = fs.realPath(context.configDir);
-    const full = join(shown.dir, path);
-    const folderReal = resolved(dirname(full), fs);
-    if (folderReal === null || !within(folderReal, rootReal)) return 'closed';
-    const guess = join(folderReal, basename(full));
-    if (configReal !== null && within(guess, configReal)) return 'closed';
-    if (hiddenUnder(rootReal, guess, closedPaths)) return 'closed';
-
-    const real = fs.realPath(full);
-    if (real === null) {
-        const target = fs.linkTarget(full);
-        if (target === null) return 'missing';
-        const at = isAbsolute(target) ? target : resolve(dirname(full), target);
-        const through = resolved(at, fs);
-        return through !== null && within(through, rootReal) ? 'missing' : 'closed';
-    }
-    if (!within(real, rootReal)) return 'closed';
-    if (configReal !== null && within(real, configReal)) return 'closed';
-    if (hiddenUnder(rootReal, real, closedPaths)) return 'closed';
-    return fs.isFile(real) ? 'ok' : 'missing';
+    const found = locate(ask, context);
+    if (found.answer !== 'ok') return found.answer;
+    return context.fs.isFile(found.real) ? 'ok' : 'missing';
 }

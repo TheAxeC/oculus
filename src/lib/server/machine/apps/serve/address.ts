@@ -15,8 +15,8 @@
 // origins its manifest declares and nothing else. The sandbox flags it grants are listed once here.
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { typeOf } from '../../files/files.ts';
-import { appAddress } from '../../../data/helpers/files/apps.ts';
+import { typeOf } from '../../../files/files.ts';
+import { appAddress } from '../../../../data/helpers/files/apps.ts';
 
 /** The segment the shared files are served under. */
 export const SHARED = '-';
@@ -90,7 +90,7 @@ export function appPolicy(input: PolicyInput): string {
     return [
         `sandbox ${SANDBOX.join(' ')}`,
         "default-src 'none'",
-        `script-src ${base} ${shared}`,
+        `script-src ${base} ${shared} 'wasm-unsafe-eval'`,
         `style-src ${base} 'unsafe-inline'`,
         `img-src ${base} data:`,
         `font-src ${base}`,

@@ -389,8 +389,12 @@ export type AppsSettings = {
     writesPerMin: number;
     opensPerMin: number;
     keysPerS: number;
+    messagesPerMin: number;
     maxFiles: number;
     maxMb: number;
+    hostOutputKb: number;
+    hostStopSeconds: number;
+    scanEntries: number;
     closedPaths: ClosedPaths;
 };
 
@@ -410,7 +414,7 @@ export function closedPaths(config: Record<string, unknown>): ClosedPaths {
     return { folders, shaped: folders.length === new Set(held).size };
 }
 
-/** Read `apps:`'s eight limits, each its default when it is missing or wrong, and `closed_paths`.
+/** Read `apps:`'s twelve limits, each its default when it is missing or wrong, and `closed_paths`.
  * */
 export function appsSettings(
     config: Record<string, unknown>,
@@ -424,8 +428,12 @@ export function appsSettings(
         writesPerMin: read.number('apps.writes_per_min'),
         opensPerMin: read.number('apps.opens_per_min'),
         keysPerS: read.number('apps.keys_per_s'),
+        messagesPerMin: read.number('apps.messages_per_min'),
         maxFiles: read.number('apps.max_files'),
         maxMb: read.number('apps.max_mb'),
+        hostOutputKb: read.number('apps.host_output_kb'),
+        hostStopSeconds: read.number('apps.host_stop_seconds'),
+        scanEntries: read.number('apps.scan_entries'),
         closedPaths: closedPaths(config)
     };
 }

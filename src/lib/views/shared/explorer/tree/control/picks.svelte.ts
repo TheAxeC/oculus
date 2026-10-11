@@ -115,6 +115,7 @@ export function createPicks(deps: PicksDeps) {
             bookmark: deps.bookmark,
             addRoot: deps.addRoot,
             removeRoot: deps.removeRoot,
+            addApp: (folder: string) => void client.apps.addPath(folder),
             runCommand: (repo: string, name: string, source: CommandSource) =>
                 void client.commands.press(repo, name, source),
             acting: acted

@@ -5,6 +5,21 @@ text:
         permission_chip: waiting on you
         stop: Session finished
     server:
+        apps:
+            host_activate_failed: 'The host failed to start: {0}'
+            host_deactivate_failed: 'The host failed to deactivate: {0}'
+            host_ended_code: The host exited with code {0}
+            host_ended_signal: The host was ended by signal {0}
+            host_listener_failed: 'A store change handler of the host failed: {0}'
+            host_no_activate: '{0} does not export an activate function'
+            host_no_api: The host returned no API
+            host_no_function: The API of the host has no function {0}
+            host_no_handler: The host registered no request handler
+            host_not_started: 'The host could not be started: {0}'
+            host_refused_import: 'The host loaded {0} (import of {1}), which is not one of the recorded files of the app, so oculus refused it'
+            host_stream_broken: 'The host wrote to the message stream ({0}), so oculus is stopping it'
+            host_stream_error: 'The message stream of the host failed: {0}'
+            secrets_unavailable: The keyring of this machine is not available
         auth:
             body_not_json: The body is not JSON
             token_refused: The write token is missing or stale

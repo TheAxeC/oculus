@@ -5,6 +5,9 @@
 // cannot reach the methods however it spells its message. A sandboxed frame has the opaque origin
 // `null`, so the origin list is `*`; the source check is what holds the connection to this frame.
 //
+// A message from the app's host goes to the frame as `onHost(method, params)`, one call per message
+// in the order the host sent them.
+//
 // The frame is told of changes with at most one call in flight per channel: a payload that arrives
 // while a call is out replaces the one queued behind it, so a slow app is told the newest state
 // once and never a backlog. `destroy` ends the connection; a call that settles afterwards replies
@@ -19,6 +22,7 @@ type Remote = {
     onChannel: (channel: string, version: number, payload: unknown) => unknown;
     onTheme: (theme: Theme) => unknown;
     onStore: (value: unknown) => unknown;
+    onHost: (method: string, params: unknown) => unknown;
 };
 
 export type FrameLink = {
@@ -28,6 +32,8 @@ export type FrameLink = {
     theme: (theme: Theme) => void;
     /** Tell the frame its store holds this value now. */
     store: (value: unknown) => void;
+    /** Tell the frame its host sent it a message. */
+    host: (method: string, params: unknown) => void;
     /** End the connection. */
     destroy: () => void;
 };
@@ -60,7 +66,7 @@ export function connectFrame(options: FrameOptions): FrameLink {
     if (target === null) {
         // A frame outside the document has no window to talk to; it is drawn as failed to load.
         options.failed();
-        return { deliver: noop, theme: noop, store: noop, destroy: noop };
+        return { deliver: noop, theme: noop, store: noop, host: noop, destroy: noop };
     }
     const messenger = new WindowMessenger({
         remoteWindow: target,
@@ -113,6 +119,10 @@ export function connectFrame(options: FrameOptions): FrameLink {
         store(value: unknown): void {
             if (remote === null || destroyed) return;
             Promise.resolve(remote.onStore(value)).catch(() => undefined);
+        },
+        host(method: string, params: unknown): void {
+            if (remote === null || destroyed) return;
+            Promise.resolve(remote.onHost(method, params)).catch(() => undefined);
         },
         destroy(): void {
             destroyed = true;

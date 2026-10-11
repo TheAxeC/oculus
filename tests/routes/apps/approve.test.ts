@@ -1,6 +1,6 @@
-// Layer 2, route tests. POST /api/approve (lib/server/machine/apps/routes.ts `handleApprovePost`,
-// which src/routes/api/(apps)/approve/+server.ts calls): an approval of the hash the reader was
-// shown, a revoke by folder, and the write token that guards both.
+// Layer 2, route tests. POST /api/approve (lib/server/machine/apps/routes/routes.ts
+// `handleApprovePost`, which src/routes/api/(apps)/approve/+server.ts calls): an approval of the
+// hash the reader was shown, a revoke by folder, and the write token that guards both.
 //
 // The approvals file and every app folder are synthetic, under the system temporary directory; a
 // case never reads or writes `~/.oculus`. What this does NOT cover: the origin guard of
@@ -10,8 +10,8 @@ import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { describe, expect } from 'vitest';
 import { TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import { approvedApps } from '../../../src/lib/server/machine/approvals/approvals.ts';
-import { appById, type AppsHeld } from '../../../src/lib/server/machine/apps/held.ts';
-import { handleApprovePost } from '../../../src/lib/server/machine/apps/routes.ts';
+import { appById, type AppsHeld } from '../../../src/lib/server/machine/apps/read/held.ts';
+import { handleApprovePost } from '../../../src/lib/server/machine/apps/routes/routes.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { MANIFEST, notesFiles, PAGE, plant, routeSetup, type RouteSetup } from './apps-fixture.ts';
 
@@ -130,7 +130,7 @@ const APPROVALS: Row[] = [
         [status, false]
     ]),
     [
-        'a machine app kept on request, and a root app refused the keep',
+        'a machine app and a root app both kept on request',
         async () => {
             start(NOTES_ONLY);
             const kept = await post({
@@ -142,7 +142,7 @@ const APPROVALS: Row[] = [
             const keptList = [...setup.kept];
             start(TWO_ROOTS);
             const root = appById(held(), 'app:one/notes');
-            const refused = await post({
+            const rootKept = await post({
                 action: 'approve',
                 view: 'app:one/notes',
                 hash: root?.row.hash,
@@ -150,10 +150,10 @@ const APPROVALS: Row[] = [
             });
             return {
                 kept: [kept.status, keptList],
-                refused: [refused.status, await refused.json(), written()]
+                rootKept: [rootKept.status, [...setup.kept], written()]
             };
         },
-        { kept: [200, ['app:notes']], refused: [400, { error: 'keep' }, false] }
+        { kept: [200, ['app:notes']], rootKept: [200, ['app:one/notes'], true] }
     ],
     [
         'a revoke, which empties the key before it answers',

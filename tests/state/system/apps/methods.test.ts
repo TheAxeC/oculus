@@ -13,8 +13,10 @@ import { appsSettings, engineDir, loadConfig } from '../../../../src/lib/data/so
 import type { WriteAnswer } from '../../../../src/lib/state/shared/stores/shapes.ts';
 import {
     createMethods,
+    type CommandOutcome,
     type MethodsContext,
-    type OpenResult
+    type OpenResult,
+    type ServerAnswer
 } from '../../../../src/lib/state/system/apps/methods.ts';
 import { fixtureApp } from '../../../fixtures/entities-fixture.ts';
 import { it } from '../../../fixtures/scratch.ts';
@@ -48,7 +50,14 @@ function context(over: Partial<MethodsContext> = {}) {
         openFile: vi.fn((_root: string, _path: string) => undefined),
         openUrl: vi.fn((_address: string) => undefined),
         check: vi.fn((_root: string, _path: string) => Promise.resolve<OpenResult | null>('ok')),
-        refused: vi.fn((_kind: string, _name: string) => undefined)
+        refused: vi.fn((_kind: string, _name: string) => undefined),
+        runCommand: vi.fn((_name: string) => Promise.resolve<CommandOutcome>('ok')),
+        secrets: vi.fn((_action: string, _key: unknown, _value?: unknown) =>
+            Promise.resolve<ServerAnswer | null>({ ok: true, value: null })
+        ),
+        host: vi.fn((_method: unknown, _params: unknown) =>
+            Promise.resolve<ServerAnswer | null>({ ok: true, value: null })
+        )
     };
     const ctx: MethodsContext = {
         alive: () => true,
@@ -57,6 +66,7 @@ function context(over: Partial<MethodsContext> = {}) {
         held: () => null,
         dir: () => null,
         shown: (root) => root === 'hub',
+        rootKeys: () => ['hub'],
         getState: () => null,
         setState: () => undefined,
         getStore: () => Promise.resolve(null),
@@ -68,6 +78,9 @@ function context(over: Partial<MethodsContext> = {}) {
         hasProject: (key) => key === 'alpha',
         openProject: calls.openProject,
         check: calls.check,
+        runCommand: calls.runCommand,
+        secrets: calls.secrets,
+        host: calls.host,
         openFile: calls.openFile,
         openUrl: calls.openUrl,
         theme: () => ({ name: 'dark', tokens: {}, wall: false }),
@@ -128,6 +141,269 @@ const notJson = (): unknown[] => {
     cycle.self = cycle;
     return [cycle, undefined, NaN, new Map(), new Date(0)];
 };
+
+/** A machine app that may read `hub/projects`, whose address key is `k`. */
+const READER = fixtureApp({ readFolders: ['hub/projects'] });
+
+/** A root app of the root `one`. */
+const ROOT_APP = fixtureApp({ name: 'todo', root: 'one' });
+
+/** The address a read of the root `hub` at this path is fetched from, for the app `notes`. */
+const FS = (marker: string, path: string): string => `/apps/notes/k/${marker}/hub/${path}`;
+
+/** What `fsAddress` answers: an address or one refusal word. */
+const addressed = async (
+    row: AppRow,
+    args: [unknown, unknown, unknown],
+    over: Partial<MethodsContext> = {}
+): Promise<unknown> => {
+    const { methods } = context({ row: () => row, ...over });
+    return methods.fsAddress(...args).then(
+        (address) => address,
+        (word: unknown) => `rejected:${String(word)}`
+    );
+};
+
+const FS_ROWS: Row[] = (
+    [
+        [
+            'a read of a file inside a declared folder',
+            READER,
+            ['read', 'hub', 'projects/a/README.md'],
+            FS('.fs', 'projects/a/README.md')
+        ],
+        [
+            'a listing of a declared folder',
+            READER,
+            ['dir', 'hub', 'projects'],
+            FS('.dir', 'projects')
+        ],
+        [
+            'a stat of a declared folder',
+            READER,
+            ['stat', 'hub', 'projects/a'],
+            FS('.stat', 'projects/a')
+        ],
+        [
+            'a file outside the declared folders',
+            READER,
+            ['read', 'hub', 'feeds/x.yml'],
+            'rejected:not_declared'
+        ],
+        [
+            'a path that climbs out of the declared folder',
+            READER,
+            ['read', 'hub', 'projects/../secrets/k'],
+            'rejected:closed'
+        ],
+        [
+            'a path under a dot-led folder',
+            READER,
+            ['read', 'hub', 'projects/.git/config'],
+            'rejected:closed'
+        ],
+        [
+            'a path of a closed folder',
+            fixtureApp({ readFolders: ['hub'] }),
+            ['read', 'hub', 'secrets/k'],
+            'rejected:closed'
+        ],
+        [
+            'the engine root',
+            fixtureApp({ readFolders: ['engine'] }),
+            ['read', 'engine', 'x'],
+            'rejected:closed'
+        ],
+        [
+            'a root that is not shown',
+            fixtureApp({ readFolders: ['other/x'] }),
+            ['read', 'other', 'x/a'],
+            'rejected:missing'
+        ],
+        [
+            'an operation that is none of the three',
+            READER,
+            ['write', 'hub', 'projects/a'],
+            'rejected:closed'
+        ],
+        ['a path that is not text', READER, ['read', 'hub', 5], 'rejected:closed'],
+        [
+            'a root app reading its own root',
+            ROOT_APP,
+            ['read', 'one', 'src/x.ts'],
+            '/apps/@one/todo/k/.fs/one/src/x.ts'
+        ],
+        [
+            'a root app reading another root',
+            ROOT_APP,
+            ['read', 'hub', 'src/x.ts'],
+            'rejected:closed'
+        ],
+        [
+            'an app that is disabled',
+            fixtureApp({ readFolders: ['hub/projects'], disabled: true }),
+            ['read', 'hub', 'projects/a'],
+            'rejected:closed'
+        ],
+        [
+            'an app with no address key',
+            fixtureApp({ readFolders: ['hub/projects'], key: '' }),
+            ['read', 'hub', 'projects/a'],
+            'rejected:closed'
+        ]
+    ] as [string, AppRow, [unknown, unknown, unknown], string][]
+).map(([label, row, args, expected]): Row => [
+    `an address for ${label}, answered ${expected.startsWith('rejected') ? expected.slice(9) : 'the address'}`,
+    () =>
+        addressed(row, args, {
+            shown: (root) => ['hub', 'one'].includes(root),
+            rootKeys: () => ['hub', 'one']
+        }),
+    expected
+]);
+
+const COMMAND_ROWS: Row[] = (
+    [
+        ['ok', 'resolved'],
+        ['declined', 'declined'],
+        ['missing', 'missing'],
+        ['failed', 'failed:0']
+    ] as [CommandOutcome, string][]
+).map(([result, word]): Row => [
+    `a command the page ran with the outcome ${result}, answered ${word}`,
+    async () => {
+        const { methods, calls } = context({ runCommand: () => Promise.resolve(result) });
+        return [await outcome(methods.commandsRun('build')), calls.refused.mock.calls];
+    },
+    [word, []]
+]);
+
+const SECRETS_APP = fixtureApp({ secrets: true });
+
+const SECRET_ROWS: Row[] = [
+    [
+        'a secret of an app that did not declare secrets, answered not_declared before any request',
+        async () => {
+            const { methods, calls } = context();
+            return [await outcome(methods.secretsGet('token')), calls.secrets.mock.calls];
+        },
+        ['not_declared', []]
+    ],
+    [
+        'a store, a get and a delete of an app that declared them, each sent to the server with its key',
+        async () => {
+            const sent: unknown[][] = [];
+            const { methods } = context({
+                row: () => SECRETS_APP,
+                secrets: (action, key, value) => {
+                    sent.push(value === undefined ? [action, key] : [action, key, value]);
+                    return Promise.resolve({
+                        ok: true as const,
+                        value: action === 'get' ? 'x' : null
+                    });
+                }
+            });
+            await methods.secretsStore('token', 'x');
+            const got = await methods.secretsGet('token');
+            await methods.secretsDelete('token');
+            return [got, sent];
+        },
+        [
+            'x',
+            [
+                ['store', 'token', 'x'],
+                ['get', 'token'],
+                ['delete', 'token']
+            ]
+        ]
+    ],
+    [
+        'a word the server refuses with, which the app is rejected with',
+        async () => {
+            const { methods } = context({
+                row: () => SECRETS_APP,
+                secrets: () => Promise.resolve({ ok: false as const, word: 'refused:key' })
+            });
+            return outcome(methods.secretsGet('a b'));
+        },
+        'refused:key'
+    ],
+    [
+        'a request that got no answer, rejected failed:0',
+        async () => {
+            const { methods } = context({
+                row: () => SECRETS_APP,
+                secrets: () => Promise.resolve(null)
+            });
+            return outcome(methods.secretsStore('token', 'x'));
+        },
+        'failed:0'
+    ],
+    [
+        'the 31st store of a minute, rejected rate and the reader told once',
+        async () => {
+            const { methods, calls } = context({
+                row: () => SECRETS_APP,
+                secrets: () => Promise.resolve({ ok: true as const, value: null })
+            });
+            const outcomes: unknown[] = [];
+            for (let call = 0; call < 31; call += 1)
+                outcomes.push(await outcome(methods.secretsStore('token', 'x')));
+            return [
+                outcomes.slice(0, 30).every((one) => one === 'resolved'),
+                outcomes[30],
+                calls.refused.mock.calls
+            ];
+        },
+        [true, 'rate', [['rate', 'rate']]]
+    ]
+];
+
+const HOST_ROWS: Row[] = [
+    [
+        'a host request of an app with no host, answered not_declared before any request',
+        async () => {
+            const { methods, calls } = context();
+            return [await outcome(methods.hostRequest('ping', {})), calls.host.mock.calls];
+        },
+        ['not_declared', []]
+    ],
+    [
+        'a host request with params that are not JSON, refused before any request',
+        async () => {
+            const { methods, calls } = context({ row: () => fixtureApp({ host: 'host.mjs' }) });
+            const result = await outcome(methods.hostRequest('ping', () => 1));
+            return [result === 'resolved', calls.host.mock.calls];
+        },
+        [false, []]
+    ],
+    [
+        'a host request, sent with its method and params and answered with the value',
+        async () => {
+            const sent: unknown[][] = [];
+            const { methods } = context({
+                row: () => fixtureApp({ host: 'host.mjs' }),
+                host: (method, params) => {
+                    sent.push([method, params]);
+                    return Promise.resolve({ ok: true as const, value: { pong: 1 } });
+                }
+            });
+            return [await methods.hostRequest('ping', { n: 1 }), sent];
+        },
+        [{ pong: 1 }, [['ping', { n: 1 }]]]
+    ],
+    [
+        'a host that cannot start, rejected host_down',
+        async () => {
+            const { methods } = context({
+                row: () => fixtureApp({ host: 'host.mjs' }),
+                host: () => Promise.resolve({ ok: false as const, word: 'host_down' })
+            });
+            return outcome(methods.hostRequest('ping', null));
+        },
+        'host_down'
+    ]
+];
 
 const ROWS: Row[] = [
     ...OPENS.map(opens),
@@ -447,7 +723,11 @@ const ROWS: Row[] = [
             }
         },
         [[], false]
-    ]
+    ],
+    ...FS_ROWS,
+    ...COMMAND_ROWS,
+    ...SECRET_ROWS,
+    ...HOST_ROWS
 ];
 
 describe("refuses an open target or a write by the page's own checks before any request", () => {

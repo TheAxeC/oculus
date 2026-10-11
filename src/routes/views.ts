@@ -93,11 +93,16 @@ export function registerCollections(registry: RegistryStore, keys: string[]): vo
     }
 }
 
+/** The badge glyphs of an app view: disabled, not approved, and kept approved. */
+const DISABLED_GLYPH = 'app_disabled';
+const LOCK_GLYPH = 'lock';
+const EDIT_GLYPH = 'edit';
+
 /**
  * The registration of one app: its view id, the manifest's title and glyph as data, the group
  * `apps`, and the order the section gives (the machine apps by name, then the apps of each root).
- * The badge is a lock while the app is not approved and the editing glyph while it is kept
- * approved, with the words each mark has.
+ * The badge is the disabled glyph while the app is disabled, a lock while it is not approved and
+ * the editing glyph while it is kept approved, with the words each mark has.
  */
 function registrationOfApp(row: AppRow, index: number): ViewRegistration {
     return {
@@ -108,8 +113,13 @@ function registrationOfApp(row: AppRow, index: number): ViewRegistration {
         glyphName: row.glyph,
         group: 'apps',
         order: index,
-        badgeGlyph: () => (!row.approved ? 'lock' : row.kept ? 'edit' : ''),
-        badgeMark: row.kept ? 'apps.editing_mark' : 'apps.unapproved_mark'
+        badgeGlyph: () =>
+            row.disabled ? DISABLED_GLYPH : !row.approved ? LOCK_GLYPH : row.kept ? EDIT_GLYPH : '',
+        badgeMark: row.disabled
+            ? 'apps.disabled_mark'
+            : row.kept
+              ? 'apps.editing_mark'
+              : 'apps.unapproved_mark'
     };
 }
 

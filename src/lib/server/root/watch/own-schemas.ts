@@ -11,7 +11,7 @@ import {
     type SchemaSet
 } from '../../../data/snapshot/schema/set.ts';
 import { launchFileShape } from '../../machine/debug/launch.ts';
-import { appShape } from '../../machine/apps/manifest.ts';
+import { appShape } from '../../machine/apps/read/manifest.ts';
 import { commandsFileShape } from '../../machine/runs/commands/files.ts';
 
 /** The shapes and the files each one governs, relative to a served root. */

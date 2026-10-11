@@ -11,97 +11,23 @@ import { chmodSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
-import { engineDir, loadConfig } from '../../../../src/lib/data/sources/config.ts';
-import { appsSettings, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { addressKey } from '../../../../src/lib/server/machine/apps/address.ts';
-import { scanApps } from '../../../../src/lib/server/machine/apps/scan.ts';
+import { addressKey } from '../../../../src/lib/server/machine/apps/serve/address.ts';
 import { it, plantScratch } from '../../../fixtures/scratch.ts';
-
-const { config } = loadConfig(engineDir());
-const catalog = textCatalog(config);
-const settings = appsSettings(config);
-
-const PORT = 8787;
-
-/** The sentence of an apps finding. */
-const words = (key: string, ...args: (string | number)[]): string =>
-    findingText(catalog, `findings.apps.${key}`, ...args);
-
-const MANIFEST = 'name: notes\ntitle: Reading notes\nbridge: 1\n';
-const PAGE = '<!doctype html><title>notes</title>\n';
-
-/** A folder `notes` holding a manifest of the given text and an `index.html`. */
-const notes = (manifest: string): Record<string, string> => ({
-    'notes/app.yml': manifest,
-    'notes/index.html': PAGE
-});
-
-type Layout = {
-    /** The files of the machine's apps folder, by path under it. */
-    machine?: Record<string, string>;
-    /** The files of each root, by root key and path under the root. */
-    roots?: Record<string, Record<string, string>>;
-};
-
-/** The apps `layout` holds read as the watcher reads them, the approved hashes given. */
-function read(layout: Layout, approved: ReadonlySet<string> = new Set()) {
-    const files: Record<string, string> = {};
-    for (const [path, body] of Object.entries(layout.machine ?? {})) {
-        files[`machine/${path}`] = body;
-    }
-    for (const [key, held] of Object.entries(layout.roots ?? {})) {
-        for (const [path, body] of Object.entries(held)) files[`roots/${key}/${path}`] = body;
-    }
-    const base = plantScratch('oculus-apps-manifest-', files, ['machine']);
-    const scanned = scanApps({
-        machine: join(base, 'machine'),
-        localFile: join(base, 'local.yml'),
-        roots: Object.keys(layout.roots ?? {}).map((key) => ({
-            key,
-            dir: join(base, 'roots', key)
-        })),
-        config,
-        settings,
-        port: PORT,
-        approved,
-        kept: new Map(),
-        secret: 'secret',
-        appData: join(base, 'data')
-    });
-    return { base, scanned };
-}
-
-/** The same folders read again with the given roots and `apps_dir`, for a case that edits them. */
-function again(
-    base: string,
-    machine: string | null,
-    roots: { key: string; dir: string }[],
-    approved: ReadonlySet<string> = new Set()
-) {
-    return scanApps({
-        machine,
-        localFile: join(base, 'local.yml'),
-        roots,
-        config,
-        settings,
-        port: PORT,
-        approved,
-        kept: new Map(),
-        secret: 'secret',
-        appData: join(base, 'data')
-    });
-}
-
-/** The finding keys and sentences of a read, in order. */
-const found = (layout: Layout) =>
-    read(layout).scanned.findings.map((one) => [one.key, one.message] as const);
-
-/** The ids of the apps a read offers. */
-const offered = (layout: Layout) => read(layout).scanned.apps.map((one) => one.id);
-
-/** A finding sentence as the table compares it: a parse failure names a file, so its start is. */
-const plain = (message: string): string =>
-    message.startsWith('does not parse') ? 'does not parse' : message;
+import {
+    MANIFEST,
+    PAGE,
+    PORT,
+    again,
+    catalog,
+    found,
+    notes,
+    offered,
+    plain,
+    read,
+    words,
+    type Layout,
+    type Row
+} from './manifest-fixture.ts';
 
 type Folder = [string, Record<string, string>, string[], (readonly [string, string])[]];
 
@@ -306,6 +232,38 @@ const FOLDERS: Folder[] = [
             ]
         ]
     ],
+    [
+        'a read of the app-hosts channel',
+        notes(`${MANIFEST}reads: [app-hosts]\n`),
+        [],
+        [
+            [
+                'apps[notes]',
+                words(
+                    'channel_closed',
+                    'app-hosts',
+                    words('who_every'),
+                    words('carries.app_hosts').trim()
+                )
+            ]
+        ]
+    ],
+    [
+        'a read of the app-messages channel',
+        notes(`${MANIFEST}reads: [app-messages]\n`),
+        [],
+        [
+            [
+                'apps[notes]',
+                words(
+                    'channel_closed',
+                    'app-messages',
+                    words('who_every'),
+                    words('carries.app_messages').trim()
+                )
+            ]
+        ]
+    ],
     ['a machine app reading the inbox', notes(`${MANIFEST}reads: [inbox]\n`), ['app:notes'], []],
     [
         'a write of an undo',
@@ -377,9 +335,6 @@ const FOLDERS: Folder[] = [
         [['apps[notes]', words('glyph_unknown', 'app')]]
     ]
 ];
-
-/** One row of the table: what is read, the outcome observed, and the outcome expected. */
-type Row = [string, () => unknown, unknown];
 
 const oneFolder = ([label, machine, ids, findings]: Folder): Row => [
     label,

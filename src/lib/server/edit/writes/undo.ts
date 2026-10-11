@@ -21,7 +21,7 @@ import { z } from 'zod';
 import { scalar } from '../../../data/helpers/guards.ts';
 import { HUB_LAYER } from '../../../data/helpers/hub-names.ts';
 import { keptValues, same } from '../../core/changes.ts';
-import { appById } from '../../machine/apps/held.ts';
+import { appById } from '../../machine/apps/read/held.ts';
 import { APP_STORE, storeNow, writeAppStore } from './apps/store.ts';
 import { mapShape, stringItemsShape } from '../../../data/shapes/shapes.ts';
 import { feedValueShape } from './bodies.ts';

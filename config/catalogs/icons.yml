@@ -193,6 +193,7 @@ icons:
     clear_all: list-x
     app: blocks
     app_view: layout-panel-top
+    app_disabled: ban
     # language servers
     symbol_file: file
     symbol_module: braces

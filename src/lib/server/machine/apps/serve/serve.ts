@@ -12,11 +12,12 @@
 //    `null`; the Host-built origin is also what stops a rebound host name);
 //  - the address parses, each segment decoded alone, and the path holds no empty, dot or dot-led
 //    segment and no backslash, NUL or slash after decoding;
-//  - the root part, when there is one, and the name name an app the watcher holds as approved, and
-//    the key equals the app's current key;
-//  - the path is one of the app's recorded files, its stat equals the record (or the app, hashed
-//    again, equals the approved hash, or for an app kept approved its manifest is unchanged),
-//    and its real path lies inside the app's real folder.
+//  - the root part, when there is one, and the name name an app the watcher holds as approved and
+//    not disabled, and the key equals the app's current key;
+//  - a first segment after the key that is `.fs`, `.dir` or `.stat` is a read of a root's files
+//    (reach/fs.ts); any other path is one of the app's recorded files, its stat equals the record
+//    (or the app, hashed again, equals the approved hash, or for an app kept approved its manifest
+//    is unchanged), and its real path lies inside the app's real folder.
 //
 // The two shared files need no app, key or approval: GET or HEAD from this machine, and the path
 // after `/apps/-/` is exactly one of their names.
@@ -24,10 +25,10 @@
 import { lstatSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { APP_NAME, pathSegmentsOpen } from '../../../data/helpers/files/apps.ts';
-import { allowedOrigin } from '../../core/auth.ts';
-import { below, realPath } from '../../core/paths.ts';
-import { typeOf } from '../../files/files.ts';
+import { APP_NAME, pathSegmentsOpen } from '../../../../data/helpers/files/apps.ts';
+import { allowedOrigin } from '../../../core/auth.ts';
+import { below, realPath } from '../../../core/paths.ts';
+import { typeOf } from '../../../files/files.ts';
 import {
     appAddress,
     appPolicy,
@@ -37,8 +38,9 @@ import {
     SHARED,
     SHARED_FILES
 } from './address.ts';
-import { appOf, type AppsHeld, type HeldApp } from './held.ts';
-import { hashApp, walkApp, type AppFile, type WalkLimits } from './record.ts';
+import { appOf, type AppsHeld, type HeldApp } from '../read/held.ts';
+import { hashApp, walkApp, type AppFile, type WalkLimits } from '../read/record.ts';
+import { FS_MARKERS, serveFs, type FsContext } from '../reach/fs.ts';
 
 /** What a request for an app file is answered from. */
 export type ServeInput = {
@@ -51,6 +53,8 @@ export type ServeInput = {
     penpal: () => Uint8Array | null;
     /** The text of oculus.js, the app half of the bridge. */
     oculus: string;
+    /** What a read of a root's files is judged by; read only when a request asks for one. */
+    reach: () => FsContext;
 };
 
 const NOT_FOUND = (): Response => new Response(null, { status: 404 });
@@ -128,12 +132,24 @@ export function serveApp(input: ServeInput): Response {
     const key = text[lead - 1];
     const segments = text.slice(lead);
     if (rooted && root === '') return NOT_FOUND();
-    if (!APP_NAME.test(name) || segments.some((one) => one.includes('/'))) return NOT_FOUND();
-    const path = segments.join('/');
-    if (!pathSegmentsOpen(path)) return NOT_FOUND();
+    const reading = Object.hasOwn(FS_MARKERS, segments[0]);
+    // The root key of a read is one segment that may hold a slash; no other segment may.
+    const plain = reading ? segments.filter((_, at) => at !== 1) : segments;
+    if (!APP_NAME.test(name) || plain.some((one) => one.includes('/'))) return NOT_FOUND();
 
     const app = appOf(held, root, name);
-    if (app === undefined || !app.row.approved || !sameKey(app.row.key, key)) return NOT_FOUND();
+    if (app === undefined || !app.row.approved || app.row.disabled) return NOT_FOUND();
+    if (!sameKey(app.row.key, key)) return NOT_FOUND();
+    const host = url.host;
+    const policy = appPolicy({
+        host,
+        base: `${host}${appAddress(root, name, key)}`,
+        shared: `${host}/apps/${SHARED}/`,
+        connects: app.row.connects
+    });
+    if (reading) return fsAnswer(input, app, segments, policy);
+    const path = segments.join('/');
+    if (!pathSegmentsOpen(path)) return NOT_FOUND();
     const file = app.files.find((one) => one.path === path);
     if (file === undefined || !stillApproved(app, file, input.limits)) return NOT_FOUND();
     const full = join(app.row.folder, path);
@@ -145,12 +161,26 @@ export function serveApp(input: ServeInput): Response {
     } catch {
         return NOT_FOUND();
     }
-    const host = url.host;
-    const policy = appPolicy({
-        host,
-        base: `${host}${appAddress(root, name, key)}`,
-        shared: `${host}/apps/${SHARED}/`,
-        connects: app.row.connects
-    });
     return answer(request, bytes, appType(path), { 'content-security-policy': policy });
+}
+
+/**
+ * A read of a root's files: `<marker>/<root key>/<path...>`, the root key one encoded segment. A
+ * dot-led segment before the path, or a path of no root, is the empty 404; one inside the path is
+ * the refusal `closed` the checks of the read give.
+ */
+function fsAnswer(input: ServeInput, app: HeldApp, segments: string[], policy: string): Response {
+    const [marker, root, ...rest] = segments;
+    if (segments.length < 2 || root === '' || root.startsWith('.')) return NOT_FOUND();
+    const op = FS_MARKERS[marker];
+    if (op !== 'dir' && op !== 'stat' && rest.length === 0) return NOT_FOUND();
+    return serveFs({
+        request: input.request,
+        app,
+        op,
+        root,
+        path: rest.join('/'),
+        policy,
+        context: input.reach()
+    });
 }

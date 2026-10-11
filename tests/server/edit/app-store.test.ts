@@ -10,14 +10,19 @@
 import { existsSync, mkdirSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { beforeAll, describe, expect, vi } from 'vitest';
-import type { HeldApp } from '../../../src/lib/server/machine/apps/held.ts';
+import type { HeldApp } from '../../../src/lib/server/machine/apps/read/held.ts';
 import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { writeAppStore } from '../../../src/lib/server/edit/writes/apps/store.ts';
+import { updateHostStore } from '../../../src/lib/server/edit/writes/apps/host-store.ts';
 import { readChanges } from '../../../src/lib/server/core/changes.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { present } from '../../fixtures/present.ts';
 import { MANIFEST, notesFiles, PAGE, routeSetup } from '../../routes/apps/apps-fixture.ts';
 import { request, target, TOKEN, warmConfig } from '../../routes/edit/write-fixture.ts';
+
+/** The map the store file of an app holds now. */
+const stored = (app: HeldApp): Record<string, unknown> =>
+    JSON.parse(readFileSync(app.row.storeFile, 'utf8')) as Record<string, unknown>;
 
 beforeAll(warmConfig);
 
@@ -227,6 +232,63 @@ const ROWS: Row[] = [
             ];
         },
         [[['store'], ['store']], true]
+    ],
+    [
+        'a host update of one key, which keeps the other keys, and is recorded',
+        async () => {
+            const { into, app } = world();
+            const notes = app('app:notes');
+            await updateHostStore(into, notes, 'a', 1);
+            await updateHostStore(into, notes, 'b', { n: 2 });
+            const changes = readChanges(present(into.changes, 'the change log'));
+            return {
+                file: JSON.parse(readFileSync(notes.row.storeFile, 'utf8')) as unknown,
+                recorded: changes.map((one) => [one.kind, one.key, one.field, one.app])
+            };
+        },
+        {
+            file: { a: 1, b: { n: 2 } },
+            recorded: [
+                ['app-store', 'app:notes', 'store', 'app:notes'],
+                ['app-store', 'app:notes', 'store', 'app:notes']
+            ]
+        }
+    ],
+    [
+        'a host update of undefined, which deletes the key and keeps the rest',
+        async () => {
+            const { into, app } = world();
+            const notes = app('app:notes');
+            await updateHostStore(into, notes, 'a', 1);
+            await updateHostStore(into, notes, 'b', 2);
+            const answer = await updateHostStore(into, notes, 'a', undefined);
+            return [answer, Object.keys(stored(notes)), stored(notes).a];
+        },
+        [{ ok: true }, ['b'], undefined]
+    ],
+    [
+        'a host update over a store file that holds 5, which leaves a map holding the one key',
+        async () => {
+            const { into, app } = world();
+            const notes = app('app:notes');
+            mkdirSync(dirname(notes.row.storeFile), { recursive: true });
+            writeFileSync(notes.row.storeFile, '5');
+            const answer = await updateHostStore(into, notes, 'a', 1);
+            return [answer, JSON.parse(readFileSync(notes.row.storeFile, 'utf8')) as unknown];
+        },
+        [{ ok: true }, { a: 1 }]
+    ],
+    [
+        'a host update over the limit, answered too_large with the store as it was, and an empty key refused',
+        async () => {
+            const { into, app } = world();
+            const notes = app('app:notes');
+            await updateHostStore(into, notes, 'a', 1);
+            const big = await updateHostStore(into, notes, 'big', 'x'.repeat(257 * 1024));
+            const empty = await updateHostStore(into, notes, '', 1);
+            return [big, empty, Object.keys(stored(notes))];
+        },
+        [{ ok: false, word: 'too_large' }, { ok: false, word: 'refused:key' }, ['a']]
     ],
     [
         'a target that holds no apps, answered unwritable',

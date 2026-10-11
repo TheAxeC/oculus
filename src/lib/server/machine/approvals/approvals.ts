@@ -26,15 +26,12 @@
 // is refused with the reason, so the bytes the reader put there are never replaced.
 
 import { createHash } from 'node:crypto';
-import { chmodSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { chmodSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, dirname, join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import { z } from 'zod';
 import type { ChainLine } from '../../../data/model/index.ts';
-import { readJsonChecked, writeTextAtomic } from '../../core/json.ts';
-
-/** The mode of the file: the texts it holds name commands of this machine's repositories. */
-const FILE_MODE = 0o600;
+import { readJsonChecked, writePrivateJson, type PrivateWrite } from '../../core/json.ts';
 
 /** The mode a folder made for the file gets. */
 const FOLDER_MODE = 0o700;
@@ -131,24 +128,13 @@ function privateFolder(folder: string): void {
 }
 
 /** What a write of the file answers: done, or the reason the file was left as it was. */
-export type ApprovalWrite = { ok: true } | { ok: false; error: string };
+export type ApprovalWrite = PrivateWrite;
 
 /** Write the approved entries whole by a rename, read them back, and say what went wrong. */
 function store(file: string, approved: Approvals['approved']): ApprovalWrite {
-    const content = `${JSON.stringify({ version: 1, approved }, null, 2)}\n`;
-    try {
-        mkdirSync(dirname(file), { recursive: true, mode: FOLDER_MODE });
-        if (file === defaultApprovalsPath()) privateFolder(dirname(file));
-        writeTextAtomic(file, content, FILE_MODE);
-        chmodSync(file, FILE_MODE);
-        if (readFileSync(file, 'utf8') !== content) {
-            return { ok: false, error: `${basename(file)} was not written as asked: ${file}` };
-        }
-    } catch (error) {
-        const why = error instanceof Error ? error.message : String(error);
-        return { ok: false, error: `${basename(file)} cannot be written: ${why}` };
-    }
-    return { ok: true };
+    return writePrivateJson(file, { version: 1, approved }, (folder) => {
+        if (file === defaultApprovalsPath()) privateFolder(folder);
+    });
 }
 
 /**

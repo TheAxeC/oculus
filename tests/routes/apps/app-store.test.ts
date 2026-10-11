@@ -1,7 +1,8 @@
-// Layer 2, route tests. GET /api/app-store (lib/server/machine/apps/routes.ts `handleStoreGet`,
-// which src/routes/api/(apps)/app-store/+server.ts calls): the version and the value of one held
-// app's store, and the 400 or 404 for every other request. The 405 for a verb other than GET is
-// SvelteKit's, since the route module exports no other verb, so no case reaches it here.
+// Layer 2, route tests. GET /api/app-store (lib/server/machine/apps/routes/routes.ts
+// `handleStoreGet`, which src/routes/api/(apps)/app-store/+server.ts calls): the version and the
+// value of one held app's store, and the 400 or 404 for every other request. The 405 for a verb
+// other than GET is SvelteKit's, since the route module exports no other verb, so no case reaches
+// it here.
 //
 // Every store file is under the system temporary directory. What this does NOT cover: the origin
 // guard that refuses the opaque origin of an app's frame before this runs (src/hooks.server.ts).
@@ -9,7 +10,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { handleStoreGet } from '../../../src/lib/server/machine/apps/routes.ts';
+import { handleStoreGet } from '../../../src/lib/server/machine/apps/routes/routes.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { notesFiles, routeSetup } from './apps-fixture.ts';
 

@@ -85,9 +85,12 @@ export const ROW_ADD_ROOT = 'add-root';
 export const ROW_REMOVE_ROOT = 'remove-root';
 export const ROW_PREVIEW = 'preview';
 export const ROW_DECK = 'present';
+const ROW_ADD_APP = 'add-app';
 
 /** The file a folder holds to be a deck, and the name that file is shown under. */
 const DECK_FILE = 'present.yml';
+/** The file a folder holds to be an app. */
+const APP_FILE = 'app.yml';
 const ROW_TIMELINE = 'timeline';
 export const ROW_RUN = 'run-command';
 
@@ -134,6 +137,11 @@ export type RowMenuFacts = {
      * is where New Presentation... is offered.
      */
     newDeck?: boolean;
+    /**
+     * Whether the row is a folder or root whose listing was read and holds an `app.yml` directly,
+     * which is where Add as App is offered.
+     */
+    app?: boolean;
     /**
      * Whether a workbench can be opened for the row: a folder or a root whose root the page serves,
      * and not the up row.
@@ -259,6 +267,12 @@ export function rowFacts(
             !(entriesOf(row.root, row.path) ?? [{ kind: 'file', name: DECK_FILE }]).some(
                 (one) => one.kind === 'file' && one.name === DECK_FILE
             ),
+        app:
+            kind !== 'file' &&
+            row.up !== true &&
+            (entriesOf(row.root, row.path) ?? []).some(
+                (one) => one.kind === 'file' && one.name === APP_FILE
+            ),
         hints,
         commands,
         writing,
@@ -275,17 +289,18 @@ export function rowFacts(
  * is its own group after Reveal in Finder and the terminal, on a `present.yml` file and on a folder
  * or root whose listing holds one: the listing the fs store holds, else the one the menu read when
  * it opened (picks.svelte.ts); New Presentation... is in that group on a folder or root whose
- * listing holds none, and New Presentation from Outline on a Markdown file. A folder: New File...
- * and New Folder..., Reveal in Finder, Open in New Files (the workbench of the folder, on a folder
- * or root of a served root) and its shell, Find in Folder... with Fix All Writing Problems in
- * Folder... (a folder Fix All of the writing rules, disabled while `lint.writing` is off), Cut,
- * Copy and Paste, Upload..., the two copies, then Rename... and Delete. A folder or root that is a
- * repository with project commands also offers Run Command, a submenu of them. A root: those of a
- * folder without Cut, Copy, Rename... and Delete, and Add Folder to Workspace... with Remove Folder
- * from Workspace on a root the reader added. Compare with Selected needs a file selected for
- * compare. With two or more rows selected the menu is the one for the selection: Compare Selected
- * for exactly two files, Cut and Copy, the two copies of every path, and Delete. Each item carries
- * the key hint its id has in `hints`.
+ * listing holds none, and New Presentation from Outline on a Markdown file. Add as App is in the
+ * group after the presentation items on a folder or root whose listing holds an `app.yml`. A
+ * folder: New File... and New Folder..., Reveal in Finder, Open in New Files (the workbench of the
+ * folder, on a folder or root of a served root) and its shell, Find in Folder... with Fix All
+ * Writing Problems in Folder... (a folder Fix All of the writing rules, disabled while
+ * `lint.writing` is off), Cut, Copy and Paste, Upload..., the two copies, then Rename... and
+ * Delete. A folder or root that is a repository with project commands also offers Run Command, a
+ * submenu of them. A root: those of a folder without Cut, Copy, Rename... and Delete, and Add
+ * Folder to Workspace... with Remove Folder from Workspace on a root the reader added. Compare with
+ * Selected needs a file selected for compare. With two or more rows selected the menu is the one
+ * for the selection: Compare Selected for exactly two files, Cut and Copy, the two copies of every
+ * path, and Delete. Each item carries the key hint its id has in `hints`.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => {
@@ -309,6 +324,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         ...(facts.newDeck === true ? [item(ROW_NEW_DECK, t('files.menu_new_present'))] : []),
         ...(facts.markdown ? [item(ROW_DECK_OUTLINE, t('files.menu_present_outline'))] : [])
     ];
+    const appItems = facts.app === true ? [item(ROW_ADD_APP, t('files.menu_add_app'))] : [];
     const bookmark =
         facts.bookmarked === null || facts.bookmarked === undefined
             ? []
@@ -391,6 +407,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
             created,
             place,
             decks,
+            appItems,
             find,
             run,
             [...cutCopy, paste],
@@ -404,6 +421,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         created,
         place,
         decks,
+        appItems,
         find,
         run,
         [paste],
@@ -507,6 +525,8 @@ export type RowPickDeps = RowStores & {
     bookmark: (row: TreeRow) => void;
     addRoot: () => void;
     removeRoot: (root: string) => void;
+    /** Add the folder at an absolute path as an app. */
+    addApp: (folder: string) => void;
     /** Run the project command of that name and source in the repository at an absolute folder. */
     runCommand: (repo: string, name: string, source: CommandSource) => void;
     /**
@@ -598,6 +618,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_OPEN_PDF_TAB) deps.keepPreview(openPdf(deps, row));
         else if (pick === ROW_OPEN_PDF_WINDOW) deps.openInWindow(openPdf(deps, row));
         else if (pick === ROW_DECK) present(row);
+        else if (pick === ROW_ADD_APP) deps.addApp(paths.absolute);
         else if (pick === ROW_TIMELINE) deps.showTimeline(row.path, row.root);
         else if (pick.startsWith(RUN_PREFIX)) {
             const command = keyOf(pick.slice(RUN_PREFIX.length));

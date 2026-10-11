@@ -178,6 +178,8 @@ const debugShape: z.ZodType<Payloads['debug']> = z.object({
 
 const debugConsoleShape: z.ZodType<Payloads['debug-console']> = debugAppendShape;
 
+const appHostsShape = unchangedAs<Payloads['app-hosts']>(z.object({ rows: listShape }));
+
 const jumpShape: z.ZodType<Payloads['jump']> = z.object({
     owner: z.string().min(1),
     root: z.string().min(1),
@@ -207,5 +209,6 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     apps: appsShape,
     debug: debugShape,
     'debug-console': debugConsoleShape,
-    jump: jumpShape
+    jump: jumpShape,
+    'app-hosts': appHostsShape
 };

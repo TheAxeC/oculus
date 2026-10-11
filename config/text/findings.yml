@@ -257,6 +257,20 @@ text:
             folder_outside: 'the apps folder resolves to {0}, which lies outside the root, so none of its apps is offered'
             repeated: '{0} is already read as an earlier apps folder or app folder, so it is left out'
             apps_dir_not_folder: 'apps_dir names {0}, which is not a folder, so there are no machine apps'
+            host_shape: 'the host {0} must be a relative path of names that do not start with a dot, ending in .js or .mjs, so the folder is not an app'
+            host_missing: 'the host {0} is not a file of the app, so the folder is not an app'
+            files_root_app: 'files lists folders to read, which only a machine app may name: a root app reads its own root, so the folder is not an app'
+            files_engine: "files names {0}, which is oculus's own configuration folder and is closed to every app, so the folder is not an app"
+            files_shape: 'files names {0}, which is not a root key, or a root key and a path of names that do not start with a dot, so the folder is not an app'
+            files_closed: 'files names {0}, which a folder of closed_paths closes, so the folder is not an app'
+            secrets_value: 'secrets must be true or left out, not {0}, so the folder is not an app'
+            activation_no_host: 'activation names events for a host, and the app names no host, so the folder is not an app'
+            event_unknown: 'activation names {0}, which is no event of the host (onTab, onStartupFinished, onCommand:<id>, onLanguage:<id>, onView:<id> or workspaceContains:<glob>), so the folder is not an app'
+            event_empty: 'activation names {0}, which has no id or glob after its colon or an id with white space, so the folder is not an app'
+            event_glob: 'activation names {0}, whose glob starts with a slash or holds a .. segment, so the folder is not an app'
+            depends_name: 'depends names {0}, which does not start with a lowercase letter and hold only lowercase letters, digits and hyphens, 40 characters at most, so the folder is not an app'
+            depends_self: 'depends names {0}, the app itself, so the folder is not an app'
+            state_unread: '{0}, so every app is disabled until the file is put right'
             closed_paths_shape: '{0} in {1} must be a list of folder paths, each relative to a root with no empty, dot or dot-led name, so an entry that is not is left out and, while the key is missing or no list, no app can open a file'
             who_every: every app
             who_root: a root app
@@ -264,6 +278,8 @@ text:
                 apps: the address key of every approved app
                 pty: whatever a terminal printed, secrets included
                 processes: "the machine's process table: program names, arguments and folders"
+                app_hosts: the output and process ids of the hosts of every app
+                app_messages: what the host of an app sent to its pages
                 inbox: mail subjects, senders and previews of the message text
                 calendar: event titles, times, places and links
                 sessions: titles, prompts, paths and events taken from session transcripts

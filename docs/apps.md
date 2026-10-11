@@ -1,12 +1,13 @@
 # Building an oculus app
 
-An app is a folder of web files that oculus draws in a tab. This guide is the reference for building one: the manifest, the approval, every bridge method, channel and write, the refusal words, the limits, what an app cannot do and a worked example. The rest of the manual is [HELP.md](../HELP.md).
+An app is a folder of web files that oculus draws in a tab. This guide is the reference for building one: the manifest, the approval, managing apps, the host, every bridge method, channel and write, the refusal words, the limits, what an app cannot do and a worked example. The rest of the manual is [HELP.md](../HELP.md).
 
 ## What an app is
 
 - An app is a folder holding an HTML page, its scripts and styles, and a manifest `app.yml`. oculus finds the folder while it runs and lists the app in the Views catalogue under Apps. A new or edited folder is picked up with no build and no restart.
 - An approved app is drawn in an iframe with `sandbox="allow-scripts allow-downloads"`. It has an opaque origin: no cookies, no storage, no popups and no access to the rest of oculus. The only way out is the bridge, a client at `/apps/-/oculus.js` that the app's script imports.
-- A machine app lives in the hub's `.oculus/apps/` folder and may read every channel an app can read. A root app lives in the `.oculus/apps/` folder of any other root shown in the Files view and travels with that repository. A root app is offered fewer channels, cannot be kept approved while it changes, and opens files only from its own root.
+- A machine app lives in the hub's `.oculus/apps/` folder and may read every channel an app can read. A root app lives in the `.oculus/apps/` folder of any other root shown in the Files view and travels with that repository. A root app is offered fewer channels, reads files only from its own root, lists no `files`, and has no Remove.
+- An app whose manifest names a `host` also runs a program on this machine, the host, described in The host. An app is enabled or disabled, and a machine app can be removed or added from a folder, described in Managing apps.
 - An app opens from the Apps button on the rail, from the Views catalogue (a root app's title is followed by its root's key in parentheses), or by the chord `v` and the digit the catalogue shows beside it.
 
 ## Where the files go
@@ -21,7 +22,7 @@ An app is a folder of web files that oculus draws in a tab. This guide is the re
 
 ## The manifest
 
-`app.yml` is one map of the nine keys below. Any other key refuses the app (`key_unknown`).
+`app.yml` is one map of the fourteen keys below. Any other key refuses the app (`key_unknown`).
 
 | Key | Required | Type and limits | Findings |
 |-----|----------|-----------------|----------|
@@ -34,36 +35,53 @@ An app is a folder of web files that oculus draws in a tab. This guide is the re
 | `reads` | no | list of channel names, each once | `list_shape`, `list_repeated`, `channel_unknown`, `channel_closed` |
 | `writes` | no | list of write kinds, each once | `list_shape`, `list_repeated`, `write_unknown`, `write_closed` |
 | `connects` | no | list of origins, each once | `list_shape`, `list_repeated`, `connect_shape` |
+| `host` | no | relative path ending in `.js` or `.mjs` naming a file of the app, run as the app's host | `host_shape`, `host_missing` |
+| `files` | no | machine apps only: list of folders the app's page may read, each `<root key>` or `<root key>/<path>` | `files_root_app`, `files_engine`, `files_shape`, `files_closed`, `list_shape`, `list_repeated` |
+| `secrets` | no | `true` | `secrets_value` |
+| `activation` | no | list of events, each once: `onTab`, `onStartupFinished`, `onCommand:<id>`, `onView:<id>`, `onLanguage:<id>`, `workspaceContains:<glob>`; absent means `[onTab]`; needs `host` | `activation_no_host`, `event_unknown`, `event_empty`, `event_glob`, `list_shape`, `list_repeated` |
+| `depends` | no | list of machine app names, each once, never the app's own | `depends_name`, `depends_self`, `list_shape`, `list_repeated` |
 
+- A `files` entry names a root the Files view shows: the root key is the longest key of those roots that the entry equals or that is followed by `/` in it, and the rest is the path under it. The path has no empty or dot-led segment and names no folder of `closed_paths`, and the root is never `engine`. An entry that names no shown root is kept and answers `missing` at the read, since root keys belong to a workspace. `hub` beside `hub/projects` keeps both, the wider one deciding. A root app reads its own root and nothing else, so `files` on a root app refuses the app.
+- A `workspaceContains` glob is matched against paths relative to a root, and one that starts with `/` or holds a `..` segment refuses the app. `onLanguage:<id>` takes the language ids of the editor.
+- A `depends` entry that is absent, refused, disabled or not approved does not refuse the folder: the host of the depending app waits and says which app it waits for.
 - A finding other than `glyph_unknown` means the folder is not an app: it is not offered, registered or served. The Findings view shows each one with the file, the key `apps[<name>]` (`apps[<root>/<name>]` for a root app) and a sentence.
 - A `connects` origin is `https://host` or `https://host:port`; `http:` is accepted only for `localhost` and `127.0.0.1` on a port other than oculus's own. No user name, path, query or wildcard is allowed, a trailing slash is dropped, and `wss:` gives `connect_shape`. An origin admits requests of its own scheme only.
 - `app.yml` that does not parse gives `does not parse: <reason>`, and one that is not a map gives `is not a map of keys`. A file that cannot be read gives `file_unreadable`, and a folder over the file or size limit gives `too_large`.
-- Four findings concern a folder as a whole: `folder_outside` (a root's `.oculus/apps` resolves outside the root), `repeated` (a folder whose real path an earlier one holds), `apps_dir_not_folder` (`apps_dir` names a file) and `closed_paths_shape` (the `closed_paths` setting is missing or not a list).
+- Five findings concern a folder or the machine as a whole: `folder_outside` (a root's `.oculus/apps` resolves outside the root), `repeated` (a folder whose real path an earlier one holds), `apps_dir_not_folder` (`apps_dir` names a file) `closed_paths_shape` (the `closed_paths` setting is missing or not a list) and `state_unread` (`~/.oculus/apps.json` does not read, so every app is disabled).
 
 ## Approval and change
 
-An app runs only after you approve it. The panel in the app's tab names what it reads and writes, the outside addresses it reaches, where it keeps its data, its folder and its size, and offers three controls.
+An app runs only after you approve it. The panel in the app's tab names what it reads and writes, the outside addresses it reaches, where it keeps its data, its folder and its size, and offers three controls. An app with a `host` is also said to run a program on this machine with your rights, which can read and write your files and reach any address, and the panel names the host file. It names the folders `files` lists, says "Store secrets in the keyring of this machine" for `secrets: true`, and names the apps `depends` lists. An app that can read files (a machine app with `files`, or any root app) and has `connects` is said to be able to send what it reads from your files to those addresses.
 
 | Control | Effect |
 |---------|--------|
 | Approve | Approves exactly the files shown. If a file changed meanwhile the approval is refused with "The app changed while you read it, so it was not approved. Read what it asks for now." |
-| Keep approved while I edit | Machine apps only. Approves the same way and keeps the app approved while its files change, until the oculus server process ends. |
+| Keep approved while I edit | Approves the same way and keeps the app approved while its files change, until the oculus server process ends. Machine apps and root apps both offer it. |
 | Open the app's folder | Shows the folder in the Files view; when no root shows it, the notice is "The folder of this app, <folder>, is inside no root the file browser shows." |
 
 - Any change to any file changes the hash, and the tab shows the panel again: "This app changed since you approved it. Read what it asks for again and approve it to run it." A root app changed by a `git pull` asks again the same way. Revoke in the toolbar takes an approval back.
-- A kept machine app stays approved when any file except `app.yml` changes: the frame reloads and no question is asked. A change to `app.yml` ends the keeping, because the manifest names what you approved.
+- A kept app stays approved when any file except `app.yml` changes: the frame reloads and no question is asked. A change to `app.yml` ends the keeping, because the manifest names what you approved. The host of a kept app does not run files other than the approved ones: while its files differ from the approved hash the host stops or does not start, and the tab says it waits for you to approve the changed files.
 - Keeping is held in server memory. After a restart an app is approved by the entry Approve wrote to the approvals file, `~/.oculus/approvals.json` unless the `approvals` key of `config/local.yml` names another, and it asks at the first change.
-- A tab shows a lock mark while its app is not approved and an edit mark while it is kept approved. A removed folder leaves the tab as `Unknown view: app:<name>` with its state kept, and the app is drawn again when the folder returns.
+- A tab shows a lock mark while its app is not approved, an edit mark while it is kept approved and a disabled mark while it is disabled. A removed folder leaves the tab as `Unknown view: app:<name>` with its state kept, and the app is drawn again when the folder returns.
+
+## Managing apps
+
+- **Disable and enable.** Disable, Disable (Workspace), Enable and Enable (Workspace) are on an app's right-click menu in the Views catalogue, on its approval panel and on its tab. A disabled app stays in the catalogue with a disabled mark, its tabs show a line with an Enable button in place of the frame, its host stops, and it reads no channel, store, secret, file or command. The server refuses its file route, its fs route, its secrets, its host requests, its writes and its store while it is disabled.
+- Disable and Enable change the state for the whole machine. Disable (Workspace) and Enable (Workspace) change it for the current workspace only. An app is disabled in a workspace when its view id is in that workspace's `disabled` list, or in the machine-wide list and not in that workspace's `enabled` list. A switch of workspace starts and stops hosts as the new state says.
+- The state is kept in `~/.oculus/apps.json`: `{ "version": 1, "disabled": [<view id>], "workspaces": { "<workspace name, or default>": { "disabled": [<view id>], "enabled": [<view id>] } } }`. A file that does not parse reads every app as disabled, the Findings view names the file (`state_unread`), and Disable and Enable are refused with that reason and leave the file as it was until you put it right. An entry for a view id no app has is kept, so an app removed from a root and put back keeps its state.
+- **Remove** is on a machine app's right-click menu and approval panel. The question names the app's folder and the number of secrets it holds. On yes, the host stops, and the folder and its store file move to the system trash (a link in the folder moves as a link, never its target). Every secret of the app is deleted from the keyring, its approval is revoked and its entry in `apps.json` is dropped. When the keyring is not available the question says the secrets could not be counted and will not be deleted, and Remove goes ahead. A root app offers no Remove: it is deleted from its repository. The tabs of a removed app stay and show the unknown view, as for a removed folder.
+- **Add app from folder** is an action in the Apps group of the Views catalogue, and Add as App is on the right-click menu of a folder in the Files view that holds an `app.yml`. The folder must hold `app.yml`, have a name that matches the name pattern and that no entry of the machine apps folder holds, lie neither inside the apps folder nor hold it, and fit `max_files` and `max_mb`. It is copied without links and dot-led names, as the approval hash leaves them out, into a temporary folder beside the apps folder and renamed into place. A refusal says why in one line and copies nothing. Where the folder panel is not available the catalogue's action says so and names Add as App. The copied app asks for approval like any other.
+- **Depends.** Disable or Remove of an app that enabled apps depend on asks first, naming those apps, and on yes disables them too and stops their hosts, the dependency's host last. A revoke of a dependency stops the hosts that depend on it, and each tab and Processes row says which app's revoke stopped it.
 
 ## The bridge
 
 ```js
 import { connect } from '/apps/-/oculus.js';
 
-const oculus = await connect({ onChannel, onTheme, onStore });
+const oculus = await connect({ onChannel, onTheme, onStore, onHost });
 ```
 
-`connect(handlers)` resolves with the nine methods once the handshake completes; all three handlers are optional. Before it resolves it paints the theme on the document, and afterwards it forwards key chords and clicks on outside links to oculus. Every app calls `connect`; one that does not finish within `connect_timeout_s` shows "The app did not answer in time." with a Reload the app button.
+`connect(handlers)` resolves with the page methods once the handshake completes; all four handlers are optional. Before it resolves it paints the theme on the document, and afterwards it forwards key chords and clicks on outside links to oculus. Every app calls `connect`; one that does not finish within `connect_timeout_s` shows "The app did not answer in time." with a Reload the app button.
 
 ### The handlers
 
@@ -72,10 +90,13 @@ const oculus = await connect({ onChannel, onTheme, onStore });
 | `onChannel(channel, version, payload)` | the channel name, its version and payload | each time oculus receives a message of a channel in `reads`; one call in flight per channel, a newer payload replacing a queued one |
 | `onTheme(theme)` | `{ name, tokens, wall }` | after the theme, wallpaper, CRT overlay or text size changes, and each time the app's view is drawn again |
 | `onStore(value)` | the parsed store | when the store file changes, in every tab of the app, the writing tab included |
+| `onHost(method, params)` | what the host passed to `sendToPage` | for each message the app's host sends to this tab, or to every open tab when it names none |
 
 `onChannel` and `onTheme` are not called for what oculus already holds at connect: use `read(channel)` and `getTheme()` for the first values.
 
 ### The nine methods
+
+The methods for files, commands, secrets and the host are under Files, commands, secrets and the host.
 
 | Method | Resolves with | Rejects with |
 |--------|---------------|--------------|
@@ -112,7 +133,7 @@ An app reads a channel by listing it in `reads`. `read` resolves with a copy of 
 | `sessions` | machine only | Claude and Codex session records with prompts and paths, and oculus's terminals |
 | `usage` | machine only | token usage and plan windows of each account |
 
-No app can read `apps` (the address key of every approved app), `processes` (the process table) or `pty:<id>` (whatever a terminal printed). A channel added to oculus is closed to apps until it is named here. A root app listing a machine-only channel gets `channel_closed`.
+No app can read `apps` (the address key of every approved app), `processes` (the process table), `pty:<id>` (whatever a terminal printed), `app-hosts` (`{ rows }`: the process id, state and output size of every host) or `app-messages` (`{ messages: [{ app, tab, method, params }] }`: what hosts sent to their pages, which the page hands to the frames of the app named in each message alone). A channel added to oculus is closed to apps until it is named here. A root app listing a machine-only channel gets `channel_closed`.
 
 ### Channel payloads
 
@@ -193,7 +214,7 @@ A `roots:` entry of the hub marked `hub: true` is a hub of its own, merged into 
 |--------|-------|---------|
 | `{ view: '<id>' }` | a view of the Views catalogue with no state (`terminal` opens a Terminal tab) | `closed` for a view opened only for something (`project`, `editor`, `document`, `file`, `source` and the like), `missing` for an unknown id |
 | `{ project: '<key>' }` | the project's tab | `missing` when the portfolio has no such project |
-| `{ file: { root, path } }` | the file as source text, with no program started | `closed`, `missing`, `failed:0` |
+| `{ file: { root, path } }` | the file as the Files view opens it: a PDF in the file view, other files as source text, a file of an apps folder always as source text | `closed`, `missing`, `failed:0` |
 | `{ url: '<address>' }` | the address in a new browser tab, after you confirm | `closed` for a scheme other than `http:` or `https:`, an address over 2048 characters or one with a user name or password; `declined` on Cancel |
 
 A `{ file }` target is checked in this order: exactly `root` and `path`, both text; no empty, `.`, `..` or dot-led segment, backslash or NUL in the path; no leading folder of `closed_paths` (by segment, ignoring letter case); a root other than `engine`, and a root app naming only its own root (else `closed` for each); a root the Files view shows (else `missing`); then on the server a real path inside the root, outside oculus's `config/` folder and passing the same rules (else `closed`), that is a file (else `missing`). With no answer from the server the call rejects `failed:0`.
@@ -204,19 +225,70 @@ A `{ file }` target is checked in this order: exactly `root` and `path`, both te
 
 `getTheme()` and `onTheme` carry `{ name, tokens, wall }`: the theme's class on the body, every custom property of oculus's `tokens.css`, and whether the wallpaper is on. `connect` writes the tokens on the document's root element, toggles a `wall` class there and puts `color-scheme: light dark` ahead of the app's style sheet, so CSS can use `var(--bg)` and `var(--ink)`; with the wallpaper on the frame paints nothing. `connect` forwards `keydown` as `key({ key, code, altKey, ctrlKey, metaKey, shiftKey })`.
 
+### Files, commands, secrets and the host
+
+The client nests these calls as `oculus.fs`, `oculus.commands`, `oculus.secrets` and `oculus.host`.
+
+| Method | Needs | Resolves with | Rejects with |
+|--------|-------|---------------|--------------|
+| `fs.readFile({ root, path })` | `files` (machine app) or its own root (root app) | a `Uint8Array` of the file | `not_declared`, `closed`, `missing`, `failed:<status>` |
+| `fs.readDirectory({ root, path })` | as above | a list of `[name, type]` pairs | as above |
+| `fs.stat({ root, path })` | as above | `{ type, ctime, mtime, size }`, times in milliseconds | as above |
+| `commands.run(name)` | nothing | nothing, once a terminal running the command is open | `missing`, `declined`, `rate` |
+| `secrets.get(key)` | `secrets: true` | the stored text, or `undefined` | `not_declared`, `refused:<reason>` |
+| `secrets.store(key, value)` | `secrets: true` | nothing | `not_declared`, `too_large`, `rate`, `refused:<reason>` |
+| `secrets.delete(key)` | `secrets: true` | nothing | `not_declared`, `rate`, `refused:<reason>` |
+| `host.request(method, params)` | `host` | what the host's handler answers | `not_declared`, `host_down`, `refused:<message>` |
+
+- `type` is the editor's `FileType`: 1 for a file, 2 for a folder, with 64 added for a link. `readDirectory` lists no dot-led name and no name `closed_paths` closes, and at most `apps.scan_entries` names in the order the disk gives them.
+- For a machine app the folder must lie in a `files` entry, else `not_declared`. The checks of `open({ file })` follow in their order: the segment rule, `closed_paths`, never `engine`, a root the Files view shows, then on the server a real path inside the root and outside oculus's `config/` folder. A dot-led segment in the path is `closed`, a file that is not there is `missing`, and a FIFO, socket or device file is `closed` without being opened.
+- The bytes go from the server to the frame over the app's own address, a route on a dot-led first segment that no app file can have, answered only under the app's current key while the app is approved and enabled. The page never holds the bytes and no size limit applies. The answer is `application/octet-stream` with `nosniff` and `Content-Disposition: attachment`, so a file of a root is never drawn as a page.
+- `commands.run(name)` runs the command of that name from the `commands.yml` in `.oculus/` of the app's root (the hub's for a machine app) in a terminal you see, through the same approval a command gets there. A command that is not yet approved asks you first. A command saved through the form is not reachable. It counts under `apps.opens_per_min`.
+- A secret key is 1 to 64 of `A-Z a-z 0-9 . _ -`, else `refused:key`; a value is at most 2048 bytes of UTF-8, else `too_large`. A store or delete counts under `apps.writes_per_min`. A machine without a secret store refuses with a line that says so, as `refused:<line>`.
+- `host.request` starts the host when it is not running. The handler in the host is called with `(method, params, tab)`, where `tab` is the id of the asking tab; its answer is the result and a throw rejects `refused:<the error's message>`.
+
+## The host
+
+An app whose manifest names `host` gets one host process while it is approved, enabled and unchanged. The host is a program that runs on this machine with your rights, in the background, with no window. It can read and write your files, start processes, reach any address and watch folders with Node's own modules, and the approval panel says so before you approve the app. The page and the host talk through oculus: the page calls `oculus.host.request`, the host answers, and the host calls `sendToPage` to reach the page.
+
+```js
+// host.mjs, named by `host: host.mjs` in app.yml
+export async function activate(oculus) {
+    oculus.onRequest(async (method, params, tab) => {
+        if (method === 'ping') return { n: params.n + 1 };
+        throw new Error(`no method ${method}`);
+    });
+    await oculus.store.update('started', Date.now());
+    return { double: (n) => n * 2 };
+}
+
+export function deactivate() {}
+```
+
+- **The file.** `host` names a `.js` or `.mjs` file of the app. oculus loads it as an ES module and calls its exported `activate(oculus)` once with the connection object, then `deactivate()` before it stops the host when the file exports one. A file that exports no `activate`, or whose `activate` throws, ends the host with the error in its output. What `activate` returns is the host's API for the apps that depend on it.
+- **The process.** The program is the one that runs oculus, with `ELECTRON_RUN_AS_NODE=1` added to oculus's own environment, started with an argument array and never through a shell, in the app's real folder. The host needs no package of its own to talk to oculus.
+- **Only approved files run.** The host starts only while the app's current hash is the approved one, and the hash is taken again right before each start. A module hook refuses every file import, dynamic `import()` and `createRequire` load whose real path is not a recorded file of the app, and the error names the file. Built-in `node:` modules load. A package the host needs is shipped inside the app's folder, where it is recorded, counted under `max_files` and `max_mb`, and approved.
+- **Output.** What the host writes to standard output is sent to standard error, so it never breaks the messages. A write to file descriptor 1 that skips this breaks the message stream, and oculus stops the host and names the broken stream in its output. Standard error is the host's output: the last 1000 lines and at most `apps.host_output_kb` kilobytes are kept and shown in the Processes view, which asks oculus for the lines when you open an output and again whenever the output has grown. No app reads them.
+- **Start.** At the first of its `activation` events. `onTab`: a tab of the app is drawn. `onStartupFinished`: oculus has read its apps after it started, or the app becomes approved and enabled. `workspaceContains:<glob>`: a file matching the glob exists in a root the Files view shows (the app's own root for a root app, every shown root for a machine app). The look reads at most `apps.scan_entries` entries per root and enters no dot-led folder and no `node_modules`. `onLanguage:<id>`: a source tab of a file of that language opens. `onCommand:<id>` and `onView:<id>` are accepted and fire when the commands and views of apps exist. A request from a tab always starts the host. Two events at once start one process.
+- **The connection object.** `oculus.onRequest(handler)` sets the handler of `oculus.host.request`, called with `(method, params, tab)`. `oculus.store` is the app's store file as a map: `get(key)`, `update(key, value)` (`undefined` deletes the key), `keys()` and `onDidChange(handler)`, called with the changed keys when a frame or another writer changes the store. An `update` is a store write: it counts under `apps.store_max_kb` and `apps.writes_per_min`, is recorded in the change log and undone from History, and reaches every tab's `onStore`. `oculus.secrets` has `get`, `store` and `delete` as the frame's do. `oculus.sendToPage(method, params, tab)` calls `onHost` of that tab, or of every open tab of the app when `tab` is left out, and counts under `apps.messages_per_min`. `oculus.apps.get(name)` answers an object whose functions call the API that app's `activate` returned, with JSON arguments and result; it rejects `not_declared` for a name not in `depends` and `host_down` for a dependency that is not running and cannot start.
+- **Dependencies.** Before a host starts, the host of each app in its `depends` starts. A dependency that is refused, disabled or not approved leaves the depending host waiting, and the tab and the Processes row name it as an app that cannot run; a dependency that no app provides is named as not installed. Apps that depend on each other in a cycle start none of the apps in it, and the Processes view says so.
+- **Stop.** When the app is disabled, revoked, changed or removed, when Stop is pressed in the Processes view, and when oculus closes, oculus calls `deactivate()`, gives the host `apps.host_stop_seconds` to settle, sends SIGTERM and 2 seconds later SIGKILL. A host also ends when its standard input closes, so a server that is killed leaves none running. A request in flight when the host stops rejects `host_down`.
+- **A host that ends on its own** is not started again. Each open tab of the app shows a line with the exit code or signal and a Restart button, and the Processes view shows the same row with Restart.
+
 ## Refusal words
 
 | Word | Raised by | Cause |
 |------|-----------|-------|
-| `not_declared` | `read`, `write` | the channel is not in `reads`, or the kind is not in `writes` or is closed to apps |
-| `closed` | `read`, `open` | a listed channel closed to the app's kind; an `open` target that is not allowed |
-| `too_large` | `setState`, `setStore` | the JSON is over `apps.state_max_kb` or `apps.store_max_kb` |
+| `not_declared` | `read`, `write`, `fs.*`, `secrets.*`, `host.request`, `apps.get` | the channel is not in `reads`, the kind is not in `writes` or is closed to apps, the folder is in no `files` entry, the app lacks `secrets: true` or `host`, or the app is not in `depends` |
+| `closed` | `read`, `open`, `fs.*` | a listed channel closed to the app's kind; an `open` target or a file that is not allowed |
+| `too_large` | `setState`, `setStore`, `secrets.store` | the JSON is over `apps.state_max_kb` or `apps.store_max_kb`, or a secret is over 2048 bytes |
 | `not_json` | `setState`, `setStore` | the value is not plain JSON |
-| `rate` | `write`, `setStore`, `open` | more than `apps.writes_per_min` or `apps.opens_per_min` calls in a sliding minute from one frame |
-| `declined` | `write`, `open` | you pressed Cancel on the question |
-| `missing` | `read`, `getStore`, `write`, `open` | oculus holds no row for the app, a view id nothing registers, a project not in the portfolio, or a root or file that is not there |
-| `refused:<reason>` | `write`, `setStore` | the write route refused with a 4xx status and a sentence, or answered 200 and refused the first field it could not write; `<reason>` is that sentence |
-| `failed:<status>` | `write`, `setStore`, `getStore`, `open` | the route answered 500 or more, or a 4xx with no error text; `0` is no answer |
+| `rate` | `write`, `setStore`, `open`, `commands.run`, `secrets.store`, `secrets.delete`, and the host's `update` and `sendToPage` | more than `apps.writes_per_min`, `apps.opens_per_min` or `apps.messages_per_min` calls in a sliding minute from one frame or host |
+| `declined` | `write`, `open`, `commands.run` | you pressed Cancel on the question |
+| `missing` | `read`, `getStore`, `write`, `open`, `fs.*`, `commands.run` | oculus holds no row for the app, a view id nothing registers, a project not in the portfolio, or a root or file that is not there |
+| `refused:<reason>` | `write`, `setStore`, `secrets.*`, `host.request` | the write route refused with a 4xx status and a sentence, or answered 200 and refused the first field it could not write; `<reason>` is that sentence; for a secret it is `key` or the line that says the keyring is not available, and for a host request it is the message of the error the handler threw |
+| `host_down` | `host.request`, `apps.get`, a call to a dependency | the host is not running and cannot start, or stopped while the request was in flight |
+| `failed:<status>` | `write`, `setStore`, `getStore`, `open`, `fs.*` | the route answered 500 or more, or a 4xx with no error text; `0` is no answer |
 
 ### Reasons
 
@@ -238,31 +310,35 @@ Other reasons are the writer's own sentences, such as `the entry is not in the f
 
 ## Limits
 
-Nine keys of the `apps:` block of `config/behavior.yml` set the limits, each a setting under Apps on the Settings view. A number is a whole number of at least 1, and a missing or wrong value takes its default. A kilobyte is 1024 bytes, and a reload of the frame starts the per-frame counts again.
+Thirteen keys of the `apps:` block of `config/behavior.yml` set the limits, each a setting under Apps on the Settings view. A number is a whole number of at least 1, and a missing or wrong value takes its default. A kilobyte is 1024 bytes, and a reload of the frame starts the per-frame counts again.
 
 | Key | Default | What it limits | Past the limit |
 |-----|---------|----------------|----------------|
 | `connect_timeout_s` | 10 | seconds a frame is given to complete the handshake | "The app did not answer in time." |
 | `state_max_kb` | 64 | kilobytes of one tab's state | `too_large` |
 | `store_max_kb` | 256 | kilobytes of the store | `too_large`; `getStore` answers `null` for a larger file |
-| `writes_per_min` | 30 | writes, `setStore` included, per frame | `rate` |
-| `opens_per_min` | 30 | calls of `open` per frame | `rate` |
+| `writes_per_min` | 30 | writes, `setStore`, `secrets.store` and `secrets.delete` included, per frame, and store updates per host | `rate` |
+| `opens_per_min` | 30 | calls of `open` and `commands.run` per frame | `rate` |
+| `messages_per_min` | 600 | calls of `sendToPage` per host | `rate` for the host's call; the message is dropped |
 | `keys_per_s` | 20 | key events per second taken from a frame | the extra events are dropped |
 | `max_files` | 500 | files in an app folder | the finding `too_large` |
 | `max_mb` | 20 | megabytes in an app folder | the finding `too_large` |
+| `host_output_kb` | 256 | kilobytes of a host's output kept | the oldest lines are dropped |
+| `host_stop_seconds` | 5 | seconds a host is given to settle `deactivate` | SIGTERM, then SIGKILL 2 seconds later |
+| `scan_entries` | 10000 | entries read per root by a `workspaceContains` look, and names listed by `fs.readDirectory` | the look ends; the listing is cut |
 | `closed_paths` | `[secrets]` | folders, relative to a root and applied to every root, that `open({ file })` never reaches | `closed` |
 
 `closed_paths` takes folder paths with no empty, dot or dot-led segment; an invalid entry is left out and a duplicate counts once. A value that is missing or not a list closes every file for every app and raises `closed_paths_shape`.
 
 ## What an app cannot do
 
-- Run a process or server code, or read a file outside its folder. `open({ file })` shows source text in oculus and gives the app no content.
+- Run a process, run server code or read a file outside its folder from its page. A page reads a file of a root only through `fs`, within the folders its `files` names. Server code and processes belong to the app's host, which you approve with the app. `open({ file })` shows the file in oculus and gives the app no content.
 - Read another app's files or store, any `/api/` route, the write token or oculus's own page. The frame's origin is opaque and the address key is held by nobody else.
 - Use cookies, `localStorage`, `sessionStorage` or IndexedDB; open a popup, submit a form, show a modal dialog, lock the pointer or navigate the frame.
-- Run an inline script. The Content-Security-Policy allows scripts from the app's own files and the shared bridge files only, so scripts are files loaded with `<script type="module" src>`.
+- Run an inline script. The Content-Security-Policy allows scripts from the app's own files and the shared bridge files only, so scripts are files loaded with `<script type="module" src>`. A script can compile a `.wasm` file of its own folder, since `script-src` holds `'wasm-unsafe-eval'`.
 - Load anything from outside the app's folder except `data:` images and the bridge files. The `connects` origins are allowed for `fetch` and other connections only, so an `<img>` or a `<script>` cannot load from them. Styles may be inline.
 - Run a file type oculus does not type. Only `.html`, `.js`, `.mjs`, `.css`, `.json`, `.svg`, `.png`, `.jpg`, `.gif`, `.webp`, `.woff2`, `.txt` and `.wasm` get a content type; any other file, a `.ts` included, is sent as `application/octet-stream` with `nosniff`.
-- Read `apps`, `processes` or `pty:*`, a root app's `inbox`, `calendar`, `sessions` or `usage`, or write a closed kind. Open `local.yml`, a file under oculus's `config/` folder, a dot-led path or a path under `closed_paths`. Edit your bookmarks.
+- Read `apps`, `processes` or `pty:*`, a root app's `inbox`, `calendar`, `sessions` or `usage`, or write a closed kind. Open or read `local.yml`, a file under oculus's `config/` folder, a dot-led path or a path under `closed_paths`. Edit your bookmarks. Use a secret, a host or a file folder its manifest does not declare, or reach the secrets of another app.
 
 Your approval of the app's files and of its `connects` origins is the boundary against an app sending what it read to another machine. The policy does not stop a frame from reaching a STUN server through WebRTC, resolving a host name through a DNS prefetch link or making a preconnect. An address passed to `open({ url })` can also carry what the app read, which is why the question shows the whole address.
 
@@ -342,11 +418,17 @@ The write changes the project's manifest file, and the History view undoes it. R
 |--------------|-------|------------|
 | The app is not in the Views catalogue | the folder is not an app: no `app.yml`, a dot-led name, a file instead of a folder, a name outside the pattern, or a folder outside the apps folder | look for `apps[<name>]` in the Findings view; a folder with no `app.yml` gives no finding |
 | The Findings view shows `apps[<name>]` | the manifest or the folder broke a rule of the manifest section | fix the file named in the finding; it clears when the folder is read again |
-| The approval panel appears again | a file of the app changed, or a root app arrived by `git pull` | read the panel and approve again; use Keep approved while I edit for a machine app you are editing |
+| The approval panel appears again | a file of the app changed, or a root app arrived by `git pull` | read the panel and approve again; use Keep approved while I edit for an app you are editing |
 | "The app did not answer in time." | the script never completed `connect` within `connect_timeout_s`: it is not loaded, threw first or is inline | call `connect` first, in a script file loaded with `<script type="module" src>` |
 | A script or style does not load, or the page never updates | an inline `<script>` does not run; a `.ts` file is not typed; the file is dot-led or a link | put the code in `.js` and `.css` files with plain names |
 | A fetch to an outside address fails | the origin is not in `connects` | add it to `connects`; the panel asks again |
 | `not_declared` or `refused:kind` | the manifest lacks the channel or kind, or the body does not match the kind | add it to `reads` or `writes`, or fix the body |
 | A call never answers | the tab closed or reloaded, or a question waits for you | answer the question in the app's tab |
 | A link in the app only asks a question | a link that leaves the app goes through `open({ url })` | confirm, or link to a page of the app |
+| The tab shows "This app is disabled, so it reads, writes and runs nothing." | the app is disabled, machine-wide or in this workspace | press Enable, or Enable (Workspace) when you disabled it for the workspace |
+| The tab says the program of the app ended with an exit code or a signal | the host ended on its own and is not started again | read its output in the Processes view, then press Restart |
+| The tab says the program waits for you to approve its changed files | a file of a kept app or a root app changed and the hash is not approved | press Approve, read the panel and approve |
+| The tab says the program waits for an app that cannot run | an app in `depends` is refused, disabled, not approved or itself waiting | enable or approve that app, or take it out of `depends` |
+| The tab says the program waits for an app that is not installed | no app of the name in `depends` exists | install that app, or take the name out of `depends` |
+| The host ends at once with a refused file in its output | it imported a file that is not a recorded file of the app | put the file or package inside the app's folder |
 | A root app is missing after a workspace change | its root is not in the workspace's Files view | add the root again; the tab keeps its state |
