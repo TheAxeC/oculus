@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D65 (one kind of project): builder running, launched 2026-10-11 from 5aa5c52e4.
+- D65 (one kind of project): repair round 1 sent to its builder (review: agents/reviews/D65-refuter.md, brief: agents/briefs/D65-round1.md).
 
 Paused after D65 lands (Axel, 2026-10-11: pause once D62 and D65 have landed; D62 has); nothing below starts until he says to go on.
 
@@ -12,7 +12,7 @@ Queued, in order (4 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D62 (apps: the host and the bridge), 2026-10-11, the landing commit.
+- D62 (apps: the host and the bridge), 2026-10-11, d7d1198de.
 - D60 (repositories read as projects of the hub), 2026-10-10, 856f2ba34.
 - D61 (the Workbenches view and the status bar's repository), 2026-10-10, b39d35652.
 - D59 (the hub fixes and personal projects), 2026-10-10, 776696a28.
