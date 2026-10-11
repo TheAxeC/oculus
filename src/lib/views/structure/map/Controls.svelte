@@ -17,9 +17,9 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { toneOf, typeTone } from '$lib/state/shared/words/tones';
+    import { typeTone } from '$lib/state/shared/words/tones';
 
-    type Status = { status: string; color?: string };
+    type Status = { status: string; tone: string };
     type TypeFilter = { type: string; count: number; shown: boolean };
     type LineFilter = { id: string; title: string; count: number; shown: boolean };
     type Props = {
@@ -113,9 +113,7 @@
                 <span class="group">{t('map.archived')}</span>
                 {#each statuses as item (item.status)}
                     <span class="archive">
-                        <span
-                            class="archive-dot"
-                            style={`--archive-tone: var(--c-${item.color === undefined ? 'grey' : toneOf(item.color)})`}
+                        <span class="archive-dot" style={`--archive-tone: var(--c-${item.tone})`}
                         ></span>
                         <Checkbox
                             checked={enabled.includes(item.status)}

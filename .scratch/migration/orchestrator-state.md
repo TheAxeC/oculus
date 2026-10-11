@@ -25,17 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D66
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a34b743a90b70fe6a (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D66
-  base: 8c3c52cb6
-  launched: 2026-10-11
-  report: agents/reviews/D66-report.md
-  brief_check: agents/reviews/D66-brief-check.md (a040ddeba649f939d, claude-opus-5-5, 167,802 tokens, 65 tool uses, 7.3 min; closed in the brief by the orchestrator under "Closed"; part (3) added to the brief after the check, from the diagnosis)
-  landing: not-started
-  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -178,6 +167,7 @@ None.
 
 ## Closed items
 
+- 2026-10-11: Open item 53, where `local.yml` lives once oculus is its own repository, ruled (a) by Axel: `~/.oculus/local.yml`, `hub` required, built in O33 part (1), G3 following the file (plan.md Rulings, Open item 53). The lazy option was (c), leaving it in the oculus checkout.
 - 2026-10-11: Open item 52, the six repository manifests, ruled (a) by Axel: the orchestrator rewrote `.oculus/project.yml` in cathedra (75a7eeca), game-engine (41c9b69, with Axel's `waiting-on: [cathedra]`), ordo (2c945eb), scotoma (6aca8ee), officium (2690f9f) and youtube-downloader (740b7ca) to `type: active`, `tier: personal` and the chips of ruling 47 (G), one commit in each repository. The lazy option was (c), leaving them off the boards.
 - 2026-10-10: Open item 51, the two choices of D65 rulings 47, 48 and 50 left open, ruled by Axel: (1) (a), the deck's `find:` gains `types:`; (2) (d), a project's deadline, follow-ups and subtasks always show, its lane card and waiting tallies follow its `focus:` (plan.md Rulings, Open item 51).
 - 2026-10-10: Open item 46, D62's fifteen choices, ruled by Axel: every choice as recommended (plan.md Rulings, Open item 46).
@@ -251,6 +241,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-11 (D66 landed). D66, the Map colours, the Usage live rows and the float's tab strip, landed (booking in plan.md; `agents/reviews/D66-landing.md`) with no repair round, the review's five findings closed at landing (`agents/reviews/D66-refuter.md`, Closed), one fix at landing (the comment above the reveal effect in `ui/tabs/Tabs.svelte`); `npm run test:landing` passed on main; the look on a scratch oculus. Open item 53 ruled by Axel ((a), local.yml at `~/.oculus/local.yml`, folded into O33) and his word that `~/.oculus` is bookmarked booked as step D67; Z805 and Z806 taken in automode for D63. In flight (0 of 6). Next: close D63's brief-check findings under its report's Closed (the guarded-entry rule clash, G77, goes to Axel as an open item), its preparation commit and launch; then /spec D67, D64, Q72 and O33.
 - 2026-10-11 (D66 prepared). D66 gained part (3), the float's tab strip (Axel: "switching tabs is weird in the float (usage, hpc, workbenches)"), booked as ruling Float tab strip; its cause found by `/diagnose oculus/migration D66 premise` in this session with Axel present (`agents/reviews/D66-diagnosis.md`, D66's Step 0: the reveal effect in `ui/tabs/Tabs.svelte` re-runs on every layout write). Brief `agents/briefs/D66.md` with the brief check's closures (`agents/reviews/D66-brief-check.md`, Closed) and part (3) added after the check. Builder a34b743a90b70fe6a (claude-sonnet-5-5) launched in `.agents/worktrees/D66` at base 8c3c52cb6, base copy in `.agents/worktrees/D66-base`. In flight (1 of 6): D66. Next: /spec D63 beside it, then D64, Q72 and O33.
 - 2026-10-11 (the pause lifted). Axel lifted the pause and said D63 and D66 can run at the same time; this session now runs on the account claude-backup (`CLAUDE_CONFIG_DIR=~/.claude-backup`). Next: /spec D63, its builder, then /spec D66 beside it.
 - 2026-10-11 (D65 landed, paused). D65, one kind of project, landed (booking in plan.md; `agents/reviews/D65-landing.md`) after one repair round and the review over it, its findings fixed on main at landing (`agents/reviews/D65-refuter.md`, Closed): `projectAbove` through links, the finding of a refused workspace root, the refusal sentences as literals, 15 spaced hyphens, the hub `CLAUDE.md` paragraph, G29 and G13, the diagrams, and the stats strip's word; the look on a scratch oculus from the gate. Open item 52 ruled (a) by Axel and done: the six repository manifests rewritten and committed in their repositories. Worktree `.agents/worktrees/D65` and its branches removed. Nothing in flight. Paused at Axel's word: nothing is prepared, dispatched, refuted or landed until he says go. Next on his go: D63, D64, D66, Q72, O33. D66 (two view fixes: the Map's colours from `type_color` alone, and the Usage view's live-session rows at the card's text size) booked at Axel's word after the landing.

@@ -8,15 +8,9 @@
 import { z } from 'zod';
 import type { Project, Snapshot } from '../../../data/model/index.ts';
 import { byKey, strings } from '../../../data/helpers/guards.ts';
-import {
-    anyNumberShape,
-    fieldItemsShape,
-    mapShape,
-    optionalTextShape,
-    readAs,
-    wordShape
-} from '../../../data/shapes/shapes.ts';
+import { anyNumberShape, fieldItemsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { personNames } from '../person.ts';
+import { typeTone } from '../../shared/words/tones.ts';
 
 export type GraphKind = 'project' | 'line' | 'collaborator';
 export type EdgeKind = 'membership' | 'collaborator' | 'related';
@@ -310,23 +304,17 @@ export function lineCounts(graph: Graph): Record<string, number> {
 
 /**
  * The archive statuses the Map offers a toggle for: every type of an archived or coauthor project,
- * each with the colour `arch_color` of the merged config gives it where it gives one.
+ * each with the tone `type_color` of the merged config gives that type, the tone its board card and
+ * its node are drawn in.
  */
-export function archiveStatuses(
-    snapshot: Snapshot | null,
-    colors: unknown
-): { status: string; color?: string }[] {
+export function archiveStatuses(snapshot: Snapshot | null): { status: string; tone: string }[] {
     const found = new Set<string>();
     for (const project of Object.values(snapshot?.entities.projects ?? {})) {
         if ((project.tier === 'archive' || project.tier === 'coauthor') && project.type) {
             found.add(project.type);
         }
     }
-    const map = readAs(mapShape, colors) ?? {};
-    return [...found].map((status) => {
-        const color = readAs(optionalTextShape, map[status]) ?? undefined;
-        return { status, ...(color === undefined ? {} : { color }) };
-    });
+    return [...found].map((status) => ({ status, tone: typeTone(status) }));
 }
 
 /**

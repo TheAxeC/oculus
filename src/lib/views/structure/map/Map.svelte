@@ -64,7 +64,7 @@
         setInstanceState(instance.id, { ...held, ...next });
     }
     const snapshot = $derived(portfolio());
-    const statuses = $derived(archiveStatuses(snapshot, configMap().arch_color));
+    const statuses = $derived(archiveStatuses(snapshot));
     /**
      * The graph the filters narrow, which is what the chips are drawn from: a type or a line stays
      * on the row while nothing of it is drawn, so a reader can press it back.

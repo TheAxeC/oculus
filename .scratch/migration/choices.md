@@ -4,6 +4,108 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z806 (2026-10-11, step D67 and D63, the orchestrator, automode): the bookmark of `~/.oculus`
+
+- Options: (a) a root `oculus-state` over `~/.oculus` in Axel's workspace beside `claude`, a bookmark that names a root's top (an empty path), and the private folders closed to every app (a `files:` entry under one refuses the app, an `oculus.fs` read under one answers `closed`), built in D63; (b) a root over the home folder with a bookmark of `.oculus`, which serves the whole home folder; (c) the root alone, the lazy option. Taken: (a).
+
+Where it applies: D63 (the private folders closed to apps) and D67 (the bookmark). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z805 (2026-10-11, step D63, the orchestrator, automode): how a host's contributions and requests reach the page and come back
+
+- Options: (a) a new channel `app-shell`, closed to every app like `app-hosts` and `app-messages` (`CLOSED_CHANNELS` in `data/helpers/files/apps.ts`, a manifest that lists it refused with `findings.apps.carries.app_shell`), carrying for each app with a running host what it registered (command handlers, status items, tree views with a change count per element handle, panels, context keys set by `setContext`) and the open requests of `oculus/ui` (quick pick, input box, message, progress), each with an id; the page asks and answers through `POST /api/app-host` with new actions under the write token: `run` (a command, with its arguments), `provide` (a tree's children or item, a `validateInput`), `answer` (a request's result or its cancel) and `settings`; a request shows on every page the server serves and the first answer settles it, the others withdrawing it; what a manifest declares stays on the `apps` channel's `AppRow`, which gains `contributes`; (b) the registrations inside the `app-hosts` rows, which mixes a stream of requests into a per-host state row read by the Processes view, as Z787 already declined for messages; (c) the page polling the host, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z804 (2026-10-11, step D63, the orchestrator, automode): the library that reads a `when` clause
+
+- Options: (a) `ContextKeyExpr` of monaco-editor 0.57.0 (MIT, Microsoft, released 2026-09-24, already pinned in `package.json` and the editor oculus draws), imported as `monaco-editor/platform/contextkey/common/contextkey` through the package's `./*` export: VS Code's own parser and evaluator, so a clause means in oculus what it means in VS Code; `ContextKeyExpr.deserialize` answers `undefined` for a clause that does not parse, which the manifest reader turns into the refusal, and `evaluate` reads a context of oculus's keys; it runs in Node and in the page (probed: `editorLangId == python && !editorReadonly || view =~ /^ghost./` evaluates true over `{ editorLangId: 'python' }`, and `a && (` deserializes to `undefined`); the import names an internal path of the package, held by the exact pin; key strings (`ctrl+shift+p`, two-part chords) are read by hand with the key names of the same package's `KeyCodeUtils`; (b) `@codingame/monaco-vscode-api` 37.3.11 (MIT, CodinGame), which brings VS Code's whole service graph (49 MB unpacked, seven service-override packages) and replaces oculus's shell rather than a parser; (c) a hand-written parser, the lazy option measured against (a): more code for a grammar the editor already ships. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z803 (2026-10-11, step D63, the orchestrator, automode): the tests of D63
+
+- Options: (a) G49 gains the manifest reader's rows for `contributes`; a new entry G77, "An app's contribution acts only for an approved, enabled, unchanged app and only within its own ids and scope: a command, key, menu item, status item, view, tree, editor, setting or theme of an app that is unapproved, disabled, removed or changed is not drawn or run; an app's key never takes a key oculus resolves; an app reads only its own settings; a custom editor saves only the file it opened, inside the scope `open({ file })` allows", its tests the contribution registry, the key resolver's app bindings, the settings read and the custom editor's save route; G28 gains a row for a custom editor's unsaved mark asking on close; (b) no new entry, which leaves the save path of a custom editor untested though a wrong save loses work; (c) a test per contribution kind, which tests drawing that costs nothing when wrong. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z802 (2026-10-11, step D63, the orchestrator, automode): colour and icon themes
+
+- Options: (a) `themes` entries `{ label, uiTheme: vs | vs-dark | hc-black | hc-light, path }` naming a VS Code colour theme file of the app (its `include` chain inside the app), converted when the app is read by the converter's mapping moved from `utils/migrations/convert-vscode-themes.ts` into `src/lib/themes/` (the script then imports it), offered in the theme picker and `:theme` as `<label> (<app title>)` under the name `app:<view id>/<label>`, its `tokenColors` giving the code colours as the 19 VS Code themes do; `iconThemes` entries `{ id, label, path }` naming a VS Code file icon theme file (`iconDefinitions` with `iconPath` or `fontCharacter` and its `fonts`, `file`, `folder`, `folderExpanded`, `fileExtensions`, `fileNames`, `folderNames`, `languageIds`, `light`), chosen by a new `appearance.yml` key `file_icons: seti`, a choice in the Settings view and `:icons` in Cmd-K, drawn in every place a file icon is drawn, the icon files served from the app's address; a theme or icon theme of an app that becomes unapproved or disabled falls back to the default with a finding; (b) colour themes alone, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z801 (2026-10-11, step D63, the orchestrator, automode): messages, quick pick, input box and progress
+
+- Options: (a) VS Code's `showInformationMessage`, `showWarningMessage` and `showErrorMessage(message, options, ...items)` as a notification of that tone with the items as its actions, resolving with the item pressed or undefined when the notification is cleared, `modal: true` as oculus's Confirm; `showQuickPick(items, { title, placeHolder, canPickMany, matchOnDescription, matchOnDetail })` and `showInputBox({ title, prompt, value, placeHolder, password, validateInput })` as oculus's quick input over the page (the palette's rows and field), one at a time, a second one cancelling the first as in VS Code, `validateInput` of a host asked through `oculus/provide` kind `validateInput` 150 ms after each change, a frame's input box taking no function; `withProgress({ location: Notification | Window, title, cancellable }, task)` as a notification with a progress bar, its message and Cancel, or a spinner and title in the status bar's left group, Cancel reaching the task's token; each counted under `apps.messages_per_min`; host `oculus.window.*`, frame `oculus.ui.quickPick`, `ui.inputBox`, `ui.message` and `ui.progress` as DESIGN.md names them; (b) messages only, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z800 (2026-10-11, step D63, the orchestrator, automode): settings an app declares
+
+- Options: (a) `configuration` `{ title, properties: { '<app>.<key>': { type, default, description or markdownDescription, enum, enumDescriptions, minimum, maximum, items } } }` with `type` boolean, number, integer, string or array of strings; each is a row of the Settings view under the heading `apps`, its section the configuration's title, its control from its type (toggle, number, text, choice, list); a value is written to the hub layer's `behavior.yml` under `app_settings:` keyed by the setting's key, and a value outside its type or bounds is a finding while the reader uses the default; the host reads `oculus.workspace.getConfiguration(section).get(key)` (`oculus/settings/get`) and hears `onDidChangeConfiguration` (`oculus/event` kind `settings`), a frame `oculus.settings.get(key)` and `onSettings(keys)`; an app reads its own keys alone; (b) a machine file `~/.oculus/app-settings.json`, which the Settings view's layers do not hold; (c) the app's store, the lazy option, which the Settings view cannot show. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z799 (2026-10-11, step D63, the orchestrator, automode): custom editors
+
+- Options: (a) `customEditors` entries `{ viewType, displayName, selector: [{ filenamePattern }], priority: default | option, entry }`; a file whose name matches a `default` editor opens in it from every opener (`tabForKind` and its six callers), a file of an apps folder staying source text; `option` adds Open With... to a Files row's menu and Reopen Editor With... to a tab's menu, each listing Text Editor and every editor that matches, in VS Code's words; the editor's frame gets `document.read()` (the file's bytes, under the checks of `fs.readFile` for the file it opened, a root app only in its own root), `document.save(bytes)` (writes that file and no other through the file save the source editor uses, refused for a closed path or a file outside a root), `document.dirty(flag)` (the tab's unsaved mark, so closing asks), and the handlers `onSave()` for Cmd+S and `onRevert()` for Revert File; (b) read-only custom editors, which leaves an editor unable to edit; (c) Open With only, no default, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z798 (2026-10-11, step D63, the orchestrator, automode): webview views and panels
+
+- Options: (a) a view of `type: webview` is drawn as a frame of the app's file its `entry` names (an `.html` file of the app), with the bridge, its own tab state and the handler `onVisibility(visible)`; a panel is `oculus.window.createWebviewPanel(viewType, title, { entry, preserveFocus })` from the host or `oculus.createPanel(...)` from a frame, a tab of the app drawing that entry, with `title`, `reveal()`, `dispose()` and `onDidDispose`; the host reaches it through `sendToPage` with the panel's tab id; (b) VS Code's `webview.html` string set by the host, which needs inline scripts the app policy refuses and draws HTML the reader never approved; (c) no panels, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z797 (2026-10-11, step D63, the orchestrator, automode): tree views
+
+- Options: (a) a view of `type: tree` gets its rows from the host: `oculus.window.registerTreeDataProvider(viewId, provider)` or `createTreeView(viewId, { treeDataProvider, showCollapseAll, canSelectMany })`, the provider's `getChildren(element)` and `getTreeItem(element)` answering VS Code's TreeItem (`label`, `description`, `tooltip`, `iconPath` as `$(glyph)` or a file of the app, `collapsibleState`, `command`, `contextValue`, `id`, `resourceUri` as `{ root, path }`), elements kept in the host and passed to oculus as handles, `onDidChangeTreeData` sent as `oculus/changed`; the TreeView answers `reveal`, `title`, `description`, `message`, `badge` and `onDidChangeSelection`, `onDidExpandElement`, `onDidCollapseElement`, `onDidChangeVisibility`; drawn with oculus's tree (`ui/tree`), its keys and its virtual rows; a tree view of an app with no host draws a line saying the app has no program to fill it; (b) a frame-driven tree, which a closed tab cannot fill; (c) a flat list, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z796 (2026-10-11, step D63, the orchestrator, automode): views in the side bar and panel
+
+- Options: (a) `viewsContainers.activitybar` and `viewsContainers.panel` entries `{ id, title, icon }`, and `views` keyed by a container id or by `explorer`, each view `{ id, name, type: tree | webview, when, entry }`; each view is a view of the Views catalogue in the Apps group, under its container's title as a heading, opened as a tab and found by Cmd-K; the first opening of a view of an `activitybar` container puts it in a float docked left (the side bar), of a `panel` container in a float docked bottom (the panel), and of `explorer` in the pane that holds the Files view on the page, else beside the active pane; `onView:<id>` fires when a view is drawn; the rail gains no button, since the rail is the reader's `layout.yml`; (b) a rail button per `activitybar` container, which writes into the reader's rail; (c) catalogue tabs with no placement, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z795 (2026-10-11, step D63, the orchestrator, automode): status bar items
+
+- Options: (a) `oculus.window.createStatusBarItem(id, alignment, priority)` in the host, and `oculus.register('statusItem', id, options)` with `oculus.changed` in a frame, each item VS Code's `{ text, tooltip, command, name, backgroundColor of warning or error, accessibilityInformation }` with `show()`, `hide()` and `dispose()`; `$(name)` in the text draws a glyph of `glyphs.yml` and an unknown name as its text; left items are drawn after `latex` and right items before `sessions`, each side by priority, higher first, then by app view id; the bar's right-click menu lists each as `<name> (<app title>)` and hides it as it hides oculus's items; a frame's items go when the app's last tab closes, a host's when the host stops; (b) one Apps item opening a list, which VS Code does not do; (c) no status items, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z794 (2026-10-11, step D63, the orchestrator, automode): menus
+
+- Options: (a) the VS Code menu ids D63 builds: `commandPalette` (a `when` hides a command from Cmd-K), `editor/context` (the source editor's right-click), `editor/title` (the tab bar's actions of a source tab or custom editor: group `navigation` as buttons with the command's icon, the rest in its More Actions menu), `editor/title/context` (a tab's right-click), `explorer/context` (a Files row's right-click), `view/title` (an app view's title actions) and `view/item/context` (an app tree row's right-click, group `inline` as row buttons); an entry `{ command, when, group, alt }`, groups ordered as VS Code orders them (`navigation` first, then by name, `@<n>` inside a group), an app's groups after oculus's own in each menu; another menu id (`scm/*`, `debug/*`, `terminal/*`, ...) drops the entry with a finding naming it, the app offered, since D64 builds the tools' menus; (b) one Apps submenu per menu, which hides app items a level down unlike VS Code; (c) the command palette alone, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z793 (2026-10-11, step D63, the orchestrator, automode): `when` clauses and context keys
+
+- Options: (a) VS Code's when grammar: `!`, `&&`, `||`, parentheses, `==`, `!=`, `=~` with a `/regex/flags`, `<`, `<=`, `>`, `>=`, `in` and `not in`, and a bare key as its truth; the keys oculus sets: `editorTextFocus`, `editorFocus`, `editorLangId`, `resourceExtname`, `resourceFilename`, `resourceLangId`, `resourcePath` (`<root>/<path>`), `explorerResourceIsFolder`, `view`, `viewItem`, `focusedView`, `activeCustomEditorId`, `activeWebviewPanelId`, `isMac`, `isLinux`, `isWindows`, plus each key an app sets with `executeCommand('setContext', key, value)`, whose key must start with the app's name and a dot; a key nothing set is undefined, as in VS Code; a clause that does not parse refuses the app with a finding naming it; (b) no `when`, every item always drawn, which floods menus; (c) only `!` and `&&`, the lazy option, which breaks clauses VS Code extension authors write. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z792 (2026-10-11, step D63, the orchestrator, automode): keybindings
+
+- Options: (a) `contributes.keybindings` entries `{ command, key, mac, linux, win, when, args }` in VS Code's key syntax, a two-part chord included (`ctrl+k ctrl+c`), `mac` taking the place of `key` on macOS; oculus's own keys and the editor's come first: a binding equal to a key oculus resolves is not bound and is a finding naming both, the app still offered; two apps binding one key in one `when` give it to the app first in the Views catalogue's order, with a finding on the other; a binding is resolved after oculus's keys and before the browser, while no field or overlay holds the keyboard unless its `when` asks for `editorTextFocus`; the key sheet (`?`) lists app bindings under Apps, and Cmd-K shows a command's key as its hint; (b) app keys before oculus's, which lets an app take Cmd+S; (c) no keybindings, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z791 (2026-10-11, step D63, the orchestrator, automode): commands, and the host's and frame's API for the shell
+
+- Options: (a) a declared command (`command`, `title`, `category`, `icon` as `$(glyph)` naming a glyph of `glyphs.yml` or a file of the app, `enablement` as a when clause) is listed in Cmd-K as `<category>: <title>` with the app's title as its hint while its app is approved and enabled; choosing it fires `onCommand:<id>` through the manager's `activate`, then runs the handler the host registered with `oculus.commands.registerCommand(id, handler)` (`oculus/register` kind `command`, run by `oculus/provide` kind `command` with the arguments), else the handler of an open tab of the app that registered it with `oculus.register('command', id)` (the frame's handler `onCommand(id, args)`), else a notice naming the command and the app; the host's new members follow VS Code's namespaces, `oculus.commands`, `oculus.window` and `oculus.workspace`, beside the members it has; `oculus.commands.executeCommand(id, ...args)` (`oculus/commands/execute`) runs a command of any approved and enabled app, `setContext` (Z793) and oculus's own palette commands as `oculus.<name>` with one text argument (`oculus.theme`, `oculus.workspace`, ...), and refuses any other id `missing`; (b) a frame-only command handler, which loses commands of apps whose tab is closed; (c) commands listed but run only by opening the app's tab, the lazy option. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z790 (2026-10-11, step D63, the orchestrator, automode): how an app declares what it adds to the shell
+
+- Options: (a) one manifest key `contributes:`, a map holding VS Code's contribution points by their own names and shapes, written in YAML: `commands`, `keybindings`, `menus`, `viewsContainers`, `views`, `customEditors`, `configuration`, `themes` and `iconThemes`; every id an app adds (a command, a container, a view, a custom editor's `viewType`, a setting key, a context key) starts with the app's name and a dot, so two apps never take one id; `appShape` checks the map and a fault refuses the app as every manifest key does, except a menu id or a container D63 does not build, which drops that entry with a finding and leaves the app offered; what an app declares is drawn from its approval on, before its host runs, and an unapproved, disabled, removed or changed app adds nothing; the approval panel lists what the app adds, by kind and count; (b) one top-level key per kind, which an author who knows VS Code's `package.json` has to learn again; (c) registration at run time alone, the lazy option, which leaves a reader nothing to approve and makes `onCommand` and `onView` activation impossible, since nothing is listed before the host runs. Taken: (a).
+
+Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
 ## Z786 (2026-10-10, step D61, the orchestrator, automode): what New workbench in the Workbenches view opens
 
 - Options: (a) a menu of the served roots' tops and Open Folder..., which shows the folder panel Add Folder to Workspace uses (POST /api/folders/pick): a folder inside a served root opens its workbench at that root and path, and a folder outside every served root is added to the workspace by the same act as Add Folder to Workspace and its workbench then opens, as VS Code's Open Folder opens any folder; (b) the same, refusing a folder outside every served root with a line that says to add it first, which leaves the reader to do by hand what the act already does; (c) the roots' tops only, the lazy option, which drops the step line's "New workbench from a folder". Taken: (a).

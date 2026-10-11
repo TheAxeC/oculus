@@ -90,7 +90,6 @@ const vocabFileShape = z.strictObject({
     archive_dead: z.array(text).optional(),
     leads_fit: textMap.optional(),
     lifecycle: lifecycle.optional(),
-    arch_color: textMap.optional(),
     data_access: textMap.optional(),
     venue_categories: z.array(text).optional(),
     venue_tiers: z.array(keyed).optional(),

@@ -14,10 +14,12 @@
     // every node is pushed and pulled; every release, a click and a cancel included, frees it
     // (release()) and lets the simulation cool with the freed node in it again.
     //
-    // The labels are one layer over every node. By the rule of views/structure/map/labels.ts a
-    // label is hidden when it would overlap a label already drawn or any node but its own, the
-    // pillars' labels placed first, until its node is hovered or holds the keyboard; those labels
-    // are drawn whatever they overlap, and last, so they sit on top.
+    // The nodes are one layer of their own, Nodes.svelte, which draws them and reports a press, the
+    // node under the pointer and the node holding the keyboard back here. The labels are one layer
+    // over every node. By the rule of views/structure/map/labels.ts a label is hidden when it would
+    // overlap a label already drawn or any node but its own, the pillars' labels placed first,
+    // until its node is hovered or holds the keyboard; those labels are drawn whatever they
+    // overlap, and last, so they sit on top.
 
     import { tick, untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -32,7 +34,8 @@
         shownLabels,
         type LabelSize
     } from './labels';
-    import { nodeTone, viewOf } from './node-view';
+    import { viewOf } from './node-view';
+    import Nodes from './Nodes.svelte';
     import { dragTarget, movedEnough, nearestProject, toBox, toGraph } from './pointer';
     import { DEFAULT_BOUNDS, type Graph, type PointNode } from '$lib/state/boards/structure/graph';
     import {
@@ -57,7 +60,6 @@
         entities: { portfolio },
         graphviz,
         layout: { openView },
-        selectors: { configMap },
         ui: { textScale },
         writes: { writeManifest }
     } = useState();
@@ -351,49 +353,14 @@
                     y2={pointer.y}
                 ></line>
             {/if}
-            {#each positions as node (node.id)}
-                <g
-                    class="node"
-                    class:archived={node.archived !== undefined}
-                    class:target={node.id === linkTarget?.id}
-                    data-node={node.id}
-                    role="button"
-                    tabindex="0"
-                    aria-label={node.label}
-                    onpointerdown={(event) => nodeDown(event, node)}
-                    onpointerenter={() => (hovered = node.id)}
-                    onpointerleave={() => {
-                        if (hovered === node.id) hovered = null;
-                    }}
-                    onfocus={() => (focused = node.id)}
-                    onblur={() => {
-                        if (focused === node.id) focused = null;
-                    }}
-                    onkeydown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') open(node);
-                    }}
-                >
-                    {#if node.kind === 'project'}
-                        <circle
-                            cx={node.x}
-                            cy={node.y}
-                            r={node.radius}
-                            style={`--node-fill: var(--c-${nodeTone(node, configMap().arch_color)})`}
-                        ></circle>
-                    {:else}
-                        <rect
-                            class:line-node={node.kind === 'line'}
-                            class:collaborator-node={node.kind === 'collaborator'}
-                            x={node.x - node.radius}
-                            y={node.y - node.radius}
-                            width={node.radius * 2}
-                            height={node.radius * 2}
-                            rx="3"
-                        ></rect>
-                    {/if}
-                    <title>{node.label}</title>
-                </g>
-            {/each}
+            <Nodes
+                nodes={positions}
+                targetId={linkTarget?.id}
+                bind:hovered
+                bind:focused
+                onpress={nodeDown}
+                onopen={open}
+            />
             <g class="labels">
                 {#each labelled as node (node.id)}
                     <text
@@ -472,31 +439,6 @@
     line.mutual {
         stroke: var(--map-mutual);
         stroke-width: 2.8;
-    }
-
-    circle {
-        fill: var(--node-fill);
-    }
-
-    rect.line-node {
-        fill: var(--map-line);
-    }
-
-    rect.collaborator-node {
-        fill: var(--map-collab);
-    }
-
-    .node {
-        cursor: grab;
-    }
-
-    .node.archived {
-        opacity: 0.6;
-    }
-
-    .node.target circle {
-        stroke: var(--accent);
-        stroke-width: 4;
     }
 
     text {

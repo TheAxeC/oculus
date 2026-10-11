@@ -228,7 +228,6 @@ describe("oculus's own config directory", () => {
             'archive_dead',
             'leads_fit',
             'lifecycle',
-            'arch_color',
             'data_access',
             'venue_categories',
             'venue_tiers',

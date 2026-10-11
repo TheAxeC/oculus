@@ -334,13 +334,12 @@
         gap: 0 10px;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         border-top: 1px solid var(--line);
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     .session {
         color: var(--muted-txt, var(--muted));
         font-family: var(--font-num);
-        font-size: var(--fs-sm);
     }
 
     /* The refresh control is drawn as its card says, ui/frame/Card.svelte's `--card-reveal`: under

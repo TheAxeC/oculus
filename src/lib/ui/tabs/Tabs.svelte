@@ -48,7 +48,7 @@
     import { createTabScroll } from '$lib/ui/tabs/tab-scroll.svelte';
     import { heldStop, nextStop } from '$lib/ui/tree/roving';
     import { focusIsFree } from '$lib/ui/frame/quiet-focus';
-    import { type Snippet } from 'svelte';
+    import { type Snippet, untrack } from 'svelte';
     import TabFace from './TabFace.svelte';
     import ToolButton from '../controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -166,9 +166,18 @@
         return () => observer.disconnect();
     });
 
+    // The showing tab is brought in whole when the showing tab changes: a selection, and the
+    // strip's first draw. `tabs` is read untracked, since every layout write hands the strip a new
+    // array, and a reveal on each would carry the strip back to the showing tab after the reader
+    // had scrolled it with the controls or pressed a half-hidden tab. A tab added, moved or closed
+    // with the same tab showing is left to `resized()` of tab-scroll.svelte.ts, which brings the
+    // showing tab back only when the change took it out of sight, as it does for a change of width.
+    let revealedFor: string | undefined = undefined;
     $effect(() => {
         const selected = active;
-        const index = tabs.findIndex((tab) => tab.id === selected);
+        if (selected === revealedFor) return;
+        revealedFor = selected;
+        const index = untrack(() => tabs.findIndex((tab) => tab.id === selected));
         queueMicrotask(() => scrolling.reveal(index));
     });
 
