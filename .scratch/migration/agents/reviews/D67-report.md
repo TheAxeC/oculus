@@ -128,3 +128,151 @@ Put the Files view on the TEST page of a scratch oculus, default workspace, with
 ## Anything in the brief that was wrong or impossible
 
 Nothing. The brief's item 2 needed the `bookmark` group added to the root branch of `rowMenu` as well as the fact at `row-menu.ts:253`, which the brief states; the brief's write list lacked `state/workbench/navigation/rail.ts`, `server/files/fs.ts` and `state/sources/fs-transport.ts`, each used only as stated under "Files".
+
+# Repair round 1
+
+Everything in the round is done. Not verified: the drawn rail hover and the History view's Undo button, which are the landing look (listed under "Visible changes"). One slow test outside G9, `tests/server/machine/lsp/adapters/markdown-created.test.ts`, times out in `npm run test:slow` (3 tests, "Test timed out in 30000ms"); it is an LSP adapter test that reaches none of the changed files, and it was not run on the base copy (no installed dependencies there), so whether it fails there is not verified.
+
+Round 0's text above names `bookmarkPlace` (the DONE table row 3, the "Judgment calls" item 1, the check 4 line) and says no test was changed; both are replaced by this section: `bookmarkPlace` no longer exists (`grep -rn "bookmarkPlace" src tests config HELP.md DESIGN.md README.md` prints nothing) and two test files carry new rows.
+
+## Rulings
+
+| Ruling | Change | Evidence |
+| --- | --- | --- |
+| 1. The undo of adding a root's bookmark answers `moved` | `createEntry` (`src/lib/server/edit/writes/entries.ts:479-496`) parses the block it rendered (`parse(block)` from `yaml`, first list item) and records that map as `after`, falling back to `values` only when the parse is not a map. A field the renderer leaves out for its empty value (`path: ''`, `status: ''`) is not in the record, so `same(now.value, change.after)` in `undo.ts` holds. `bookmark-actions.ts` still sends `path: ''`. | New rows run failing, then passing (below). `undo.test.ts:270` first answered `expected 409 to be 200` (the `moved` answer); after the fix the row passes and the title is out of the file. |
+| 2. The undo of a rename answers `gone` | `writeEntry` (`entries.ts:296-312`) keys every record of the write by the identity the file lists the entry under after the write (`keyed = held.ident in writing ? scalar(writing[held.ident]) : value`) and appends the identity field's record first, so the history, which undoes the newest record first, puts the other fields back while the entry is listed under the new value and the identity last. The undo of a rename is itself a write that changes the identity, so its records are keyed by the restored identity and the undo of that undo renames again. `undo.ts` and `changes.ts` are not edited. No code reads an older form of a logged record: a rename logged before this change keeps its old key and answers `gone`. | New rows run failing, then passing (below). |
+| 3. `bookmarkPlace` copies `placeOf` | `bookmarkPlace` is removed from `bookmark-rows.ts`. `placeOf` (`reveal.ts:152`) is exported with a doc comment naming its three users; `Bookmarks.svelte:45,94` imports it from `$lib/state/sources/fs`, `shell/rail/rail.ts:9,31` from `$lib/state/workbench/navigation/rail`, whose line 31 re-exports it (`export { placeOf } from '../../sources/fs.ts';`, replacing the `bookmarkPlace` re-export), and the reveal outcome lines (`reveal.ts:159,164`) call it as before. | `grep -rn "bookmarkPlace" src tests config HELP.md DESIGN.md README.md` prints nothing. `npx vitest run tests/checks/tree/boundaries.test.ts`: `Test Files  1 passed (1)`, `Tests  11 passed (11)`. `sh utils/unused-exports.sh` equals the base list (below). |
+| 4. HELP.md:28 | Now reads: "Bookmarks at the foot of the rail is the star menu of `bookmarks.yml` in the hub's `.oculus` folder, which the Files view adds to and takes from; a press on a file bookmark opens the file in a tab, and a press on a folder or root bookmark shows its row in the Files view." | `sed -n 28p HELP.md`. |
+| 5. `files.bookmark_missing_title` | `config/text/views/sources/files.yml:14` reads `The path is gone, or its root is not in this workspace`. | `sed -n 14p config/text/views/sources/files.yml`; its two users are `shell/rail/rail.ts:31` and `Bookmarks.svelte:141` (`grep -rn "bookmark_missing_title" src config tests`). |
+
+## New test rows: failing run before the fix, passing run after
+
+The new rows were run on the tree with `entries.ts` as the base copy has it (round 0 did not edit that file), then after the fix. The rename and empty-field rows use `expect.soft` so one run shows every assertion that fails.
+
+Before the fix, `npx vitest run tests/routes/edit/undo/undo.test.ts`:
+
+```
+ FAIL  ... > taking a change back > takes a created entry out again and puts a deleted one back
+AssertionError: expected 409 to be 200 // Object.is equality
+ > tests/routes/edit/undo/undo.test.ts:270:54
+ FAIL  ... > taking a change back > puts a collection entry field and a feed field back
+AssertionError: expected 404 to be 200 // Object.is equality
+ > tests/routes/edit/undo/undo.test.ts:350:58
+ ... (the same test: undo.test.ts:351 file text differs, :353 expected 404 to be 200, :365 and :366 expected 404 to be 200, :367 file text differs)
+ Test Files  1 failed (1)
+      Tests  2 failed | 32 passed (34)
+```
+
+Before the fix, `npx vitest run tests/server/core/changes.test.ts`: two soft failures in 'records a collection entry field, a new entry, a reorder and a deletion': `changes.test.ts:238 expected { title: 'A fourth task', status: '' } to deeply equal { title: 'A fourth task' }`, and the rename records keyed `"Another task"` where `"A renamed task"` was expected, for both the `status` and the `title` record.
+
+After the fix, `npx vitest run tests/server/core/changes.test.ts tests/routes/edit/undo/undo.test.ts`:
+
+```
+ Test Files  2 passed (2)
+      Tests  46 passed (46)
+```
+
+The 404 at `undo.test.ts:350` is the `gone` answer of ruling 2; the 409 at `:270` is the `moved` answer of ruling 1, which after the fix answers 200.
+
+## Edits to existing test files, `diff` against the base copy
+
+One row per added line group; no existing line is changed or removed.
+
+`tests/server/core/changes.test.ts` (428 to 451 lines), inside 'records a collection entry field, a new entry, a reorder and a deletion':
+
+```diff
+230a231,253
+> 
+>         // A field the renderer leaves out of the file is left out of the record of a new entry.
+>         const emptied = await written(into, {
+>             kind: 'new-entry',
+>             collection: 'tasks',
+>             fields: { title: 'A fourth task', status: '' }
+>         });
+>         expect.soft(emptied[0].after).toEqual({ title: 'A fourth task' });
+> 
+>         // Every record of a rename is keyed by the identity the file lists the entry under after
+>         // the write, so the undo of any one of them finds the entry.
+>         const renamed = await written(into, {
+>             kind: 'entry',
+>             collection: 'tasks',
+>             id: 'Another task',
+>             fields: { title: 'A renamed task', status: 'done' }
+>         });
+>         expect
+>             .soft(renamed.slice(0, 2).map((row) => [row.field, row.key, row.before, row.after]))
+>             .toEqual([
+>                 ['status', 'A renamed task', 'open', 'done'],
+>                 ['title', 'A renamed task', 'Another task', 'A renamed task']
+>             ]);
+```
+
+`tests/routes/edit/undo/undo.test.ts` (557 to 594 lines), rows in 'takes a created entry out again and puts a deleted one back' and 'puts a collection entry field and a feed field back' (the same `diff`, ASCII):
+
+```diff
+262a263,271
+> 
+>         const emptied = await made(into, {
+>             kind: 'new-entry',
+>             collection: 'tasks',
+>             fields: { title: 'A fourth task', status: '' }
+>         });
+>         expect(tasksOf(into)).toContain('A fourth task');
+>         expect((await undone(into, emptied)).status).toBe(200);
+>         expect(tasksOf(into)).not.toContain('A fourth task');
+330a340,367
+> 
+>         const original = tasksOf(into);
+>         const rename = await made(into, {
+>             kind: 'entry',
+>             collection: 'tasks',
+>             id: 'Review the draft',
+>             fields: { title: 'Renamed draft' }
+>         });
+>         const renamed = tasksOf(into);
+>         expect(renamed).toContain('Renamed draft');
+>         expect.soft((await undone(into, rename)).status).toBe(200);
+>         expect.soft(tasksOf(into)).toBe(original);
+>         const [back] = changesOf(into);
+>         expect.soft((await undone(into, back)).status).toBe(200);
+>         expect.soft(tasksOf(into)).toBe(renamed);
+> 
+>         const both = tasksOf(into);
+>         await made(into, {
+>             kind: 'entry',
+>             collection: 'tasks',
+>             id: 'Another task',
+>             fields: { title: 'Second task', status: 'done' }
+>         });
+>         const [status, title] = changesOf(into);
+>         expect([status.field, title.field]).toEqual(['status', 'title']);
+>         expect.soft((await undone(into, status)).status).toBe(200);
+>         expect.soft((await undone(into, title)).status).toBe(200);
+>         expect.soft(tasksOf(into)).toBe(both);
+```
+
+## Checks, run from `tools/oculus` in the worktree after the last edit
+
+1. `npm run diagrams` then `npm run test:quick`: `ok      ASCII gate (0.5 s)`, `ok      prettier (0.6 s): All matched files use Prettier code style!`, `ok      svelte-kit sync (2.1 s)`, `ok      eslint (7.4 s)`, `ok      svelte-check (7.0 s): 1791723951505 COMPLETED 464 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok      vitest (29.7 s): Duration  24.00s`, `test:quick: 30.3 s (limit 45.0 s); every command passed`. Not covered, as the line says: tests outside the selection, `tests/checks`, slow tests, build.
+2. `wc -l`, base to now: `entries.ts` 490 to 503, `reveal.ts` 163 to 167, `bookmark-rows.ts` 101 to 106, `shell/rail/rail.ts` 153 to 151, `state/workbench/navigation/rail.ts` 131 to 134, `Bookmarks.svelte` 177 to 183, `undo.test.ts` 557 to 594, `changes.test.ts` 428 to 451; the other files are as in the table of round 0 (`bookmark-rows.ts` is 106, not 114, and `rail.ts` of the shell 151, not 154). `sh utils/folder-check.sh`: printed nothing, exit status 0.
+3. `npx vitest run tests/views/shared/explorer/opening-apps.test.ts tests/server/core/changes.test.ts tests/routes/edit/undo/undo.test.ts`: `Test Files  3 passed (3)`, `Tests  56 passed (56)`.
+4. `sh utils/unused-exports.sh` sorted and compared with the sorted `unused-exports.txt` of the base by `diff`: identical (361 lines each). `placeOf` has importers in `Bookmarks.svelte`, `shell/rail/rail.ts` and `navigation/rail.ts`.
+5. `npm test` (every test not tagged slow, `tests/checks` excluded): `Test Files  161 passed | 31 skipped (192)`, `Tests  1498 passed | 258 skipped (1756)`. This covers the G9 tests of `tests/routes/edit/`, `tests/routes/files/`, `tests/routes/replace/` and `tests/server/edit/` that are not slow; the slow-tagged `changes.test.ts` is run alone in check 3.
+6. `npm run test:slow`: `Test Files  1 failed | 39 passed | 152 skipped (192)`, `Tests  3 failed | 255 passed`; the one failing file is the Markdown LSP adapter test named in the first paragraph.
+7. `LC_ALL=C grep -n '[^ -~]'` over `entries.ts`, `changes.test.ts`, `undo.test.ts` and `HELP.md` printed nothing; no added line exceeds 100 columns (`awk 'length>100'` on `entries.ts` prints only line 186, which the base has as line 185).
+
+## Visible changes
+
+- The History view's Undo of an added root bookmark (and of any entry added with an empty field): before, the answer 409 (`moved`) and the entry stayed in `bookmarks.yml`; after, the undo answers 200 and the entry is taken out.
+- The History view's Undo of a rename of a bookmark's label (and of any collection entry's identity, alone or in a write with other fields): before, `gone` and the file stayed renamed; after, the file returns to its text before the write, and the undo of that undo renames again. A multi-field write is undone record by record, newest first, so the identity record, listed first by the write, is the last to go back.
+- The rail's hover of a bookmark whose path is gone or whose root this workspace does not serve (also the Bookmarks section's row title): before, "The path is not on this machine any more"; after, "The path is gone, or its root is not in this workspace".
+- The hover and the Bookmarks section's detail for a root's top, and the reveal's outcome lines, read as in round 0 (the root alone) and as before (root/path): one function says them now.
+- HELP.md:28: before, a press on a bookmark "opens the file or shows the folder"; after, a file bookmark opens in a tab and a folder or root bookmark shows its row in the Files view.
+
+## Limitations and sharp edges
+
+- A rename logged before this change keeps the old key in the change log and its undo answers `gone`; no code reads that form.
+- The records of a multi-field rename are all keyed by the new label, so the other-field records must be undone before the identity record; undone in the reverse order, an other-field record finds no entry under the new label and answers `gone`. Read from `undo.ts` (`valueNow`), not run; the History view's order of presenting the records is not verified.
+- `createEntry`'s record now holds what the file holds after the write, so for a field value the YAML parse reads differently from the value sent (for example a text that parses as a number), the record holds the parsed value. The undo compares against the entry read from the file, so the parsed form is the one that can match. Read from the code, not run for such a value.
+- The rail hover, the History view's Undo button and the History row text are not seen on a page (spec rule: a builder runs no page); the landing look covers them.
+- Paths used outside the brief's round-0 list and inside this round's list: `entries.ts`, `reveal.ts`, the two test files. `undo.ts` and `changes.ts` are unchanged.

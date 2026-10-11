@@ -4,6 +4,12 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z817 (2026-10-11, step D67, the orchestrator, automode): D67's landing order
+
+- D67's code adds no reach for any app (it lets a bookmark name a root's top); only the root `oculus-state` over `~/.oculus` needs D63's closure of the private folders, since on main a machine app whose `files:` lists a served root reads any file under it (`server/machine/apps/reach/fs.ts` `serveFs`, `reach/open.ts` `locate`, neither consults `privateFolders`). Options: (a) D67 lands when its review is closed, whatever D63's state, and the root and the bookmark are added at D63's landing (or at D67's if D63 is on main by then), with the look of the real entry taken there; (b) D67 waits for D63, which holds a finished step back on a data change it does not contain; the lazy option is (b), since it needs no change to the plan. Taken: (a).
+
+Where it applies: D67 and D63's landings. Booked in `plan.md` Rulings.
+
 ## Z816 (2026-10-11, step D67, the orchestrator, automode): how a bookmark of a root's top is stored
 
 - The writer writes no line for an empty field, so a bookmark added with `path: ''` is stored with no `path` line. Options: (a) an entry with a `root` and no `path` names that root's top, the readers taking a missing path as the empty text, the writer unchanged; (b) `path: ""` written explicitly, which changes the renderer every collection write uses; the lazy option is to leave the root's star unwritable. Taken: (a).
