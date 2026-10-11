@@ -36,6 +36,18 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D63-brief-check.md (a9f32751f0ea11e48, claude-opus-5-5, 333,908 tokens, 108 tool uses, 15.8 min; closed in the brief by the orchestrator under "Closed"; open item 54's ruling put into the brief after)
   landing: not-started
   round: 0
+- step: D67
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a5bdbb53b40134897 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D67
+  base: c8b4da890
+  launched: 2026-10-11
+  report: agents/reviews/D67-report.md
+  brief_check: agents/reviews/D67-brief-check.md (a47181bc2fd7feaf6, claude-opus-5-5, 192,390 tokens, 86 tool uses, 9.0 min; closed in the brief by the orchestrator under "Closed")
+  shared_paths: D63's brief names whole folders that hold D67's files, `src/lib/views/shared/explorer/` (row-menu.ts, FileRow.svelte, bookmark-actions.ts, opening.ts), `src/lib/shell/` (rail/rail.ts), `config/text/` (ui.yml, views/sources/files.yml), HELP.md, DESIGN.md and docs/diagrams/. The merge is simple: D67 lands after D63 (its landing needs D63's closure of `~/.oculus` to apps), its changes are a few lines in each file, a file D63 moves when it splits a full folder is followed by the cherry-pick's rename detection, D63's HELP.md changes are at lines 91, 258, 300 and 432 and the apps sections while D67's is at 292, and a conflict at landing is resolved by the orchestrator; the regenerated diagrams are written again on main after D67's cherry-pick.
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -253,6 +265,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-11 (D67 launched). D67, a bookmark of a root's top, prepared (base c8b4da890, brief `agents/briefs/D67.md` with every brief-check finding closed under the report's Closed) and its builder launched in `.agents/worktrees/D67` (claude-sonnet-5-5) beside D63's, the shared paths judged simple in its dispatch entry. Next: each builder's report, then /refute and /land, D63 first; D67 lands after D63, with the root `oculus-state`, the `~/.oculus` bookmark and the reworded `.oculus/bookmarks.yml` comment added by the orchestrator.
 - 2026-10-11 (D63 launched). Axel ruled open item 54 (a): G77 a new guarded entry, replacing Z803. D63 prepared (base e38d174ef, brief `agents/briefs/D63.md` with every brief-check finding closed and the ruling put in) and its builder launched in `.agents/worktrees/D63` (claude-sonnet-5-5), base copy in `.agents/worktrees/D63-base`. D67's brief is written and its brief check is running. In flight (1 of 6): D63. Next: close D67's brief check, its preparation and launch beside D63.
 - 2026-10-11 (D63 stopped at /spec). D63's brief check closed in the brief (`agents/reviews/D63-brief-check.md`, Closed), with Z807 to Z815 taken in automode and Z791 amended by Z808; open item 54 raised (the new guarded entry G77 needs Axel's yes), so D63 waits on his ruling, its brief and brief-check report committed. In flight (0 of 6). Next: /spec D67 (`~/.oculus` bookmarked), which does not wait on D63 until its landing.
 - 2026-10-11 (D66 landed). D66, the Map colours, the Usage live rows and the float's tab strip, landed (booking in plan.md; `agents/reviews/D66-landing.md`) with no repair round, the review's five findings closed at landing (`agents/reviews/D66-refuter.md`, Closed), one fix at landing (the comment above the reveal effect in `ui/tabs/Tabs.svelte`); `npm run test:landing` passed on main; the look on a scratch oculus. Open item 53 ruled by Axel ((a), local.yml at `~/.oculus/local.yml`, folded into O33) and his word that `~/.oculus` is bookmarked booked as step D67; Z805 and Z806 taken in automode for D63. In flight (0 of 6). Next: close D63's brief-check findings under its report's Closed (the guarded-entry rule clash, G77, goes to Axel as an open item), its preparation commit and launch; then /spec D67, D64, Q72 and O33.

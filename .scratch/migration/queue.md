@@ -1,9 +1,9 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - D63 (apps in the shell): building.
+- D67 (`~/.oculus` bookmarked): building; it lands after D63, and its landing adds the root `oculus-state` and the bookmark.
 
-Queued, in order (4 steps):
+Queued, in order (3 steps):
 - D64 (apps in the tools): after D63.
-- D67 (`~/.oculus` bookmarked): /spec next; its landing adds the root and the bookmark only once D63 is on main.
 - Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
 
