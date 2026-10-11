@@ -4,6 +4,12 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z816 (2026-10-11, step D67, the orchestrator, automode): how a bookmark of a root's top is stored
+
+- The writer writes no line for an empty field, so a bookmark added with `path: ''` is stored with no `path` line. Options: (a) an entry with a `root` and no `path` names that root's top, the readers taking a missing path as the empty text, the writer unchanged; (b) `path: ""` written explicitly, which changes the renderer every collection write uses; the lazy option is to leave the root's star unwritable. Taken: (a).
+
+Where it applies: D67. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
 ## Z815 (2026-10-11, step D63, the orchestrator, automode): the machine's state placed outside `~/.oculus`
 
 - `local.yml` may place the machine's state files and folders outside `~/.oculus` (`sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks`, `notes`, `changes`, `history`, `approvals`, `schedules`, `schedule_record`, `accounts`, `calendar_dir`, `apps_dir`, `mail_dir`), and `privateFolders` names only `~/.oculus` and each hub's `secrets`. Options: (a) every path those keys name is closed to apps as the private folders are, the set one function of the server's apps folder, `privateFolders` unchanged; (b) `privateFolders` itself widened, which changes what the library rules and the language servers withhold, outside this step; the lazy option is to state the limit and close only `~/.oculus`. Taken: (a).
@@ -73,12 +79,6 @@ Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log
 ## Z804 (2026-10-11, step D63, the orchestrator, automode): the library that reads a `when` clause
 
 - Options: (a) `ContextKeyExpr` of monaco-editor 0.57.0 (MIT, Microsoft, released 2026-09-24, already pinned in `package.json` and the editor oculus draws), imported as `monaco-editor/platform/contextkey/common/contextkey` through the package's `./*` export: VS Code's own parser and evaluator, so a clause means in oculus what it means in VS Code; `ContextKeyExpr.deserialize` answers `undefined` for a clause that does not parse, which the manifest reader turns into the refusal, and `evaluate` reads a context of oculus's keys; it runs in Node and in the page (probed: `editorLangId == python && !editorReadonly || view =~ /^ghost./` evaluates true over `{ editorLangId: 'python' }`, and `a && (` deserializes to `undefined`); the import names an internal path of the package, held by the exact pin; key strings (`ctrl+shift+p`, two-part chords) are read by hand with the key names of the same package's `KeyCodeUtils`; (b) `@codingame/monaco-vscode-api` 37.3.11 (MIT, CodinGame), which brings VS Code's whole service graph (49 MB unpacked, seven service-override packages) and replaces oculus's shell rather than a parser; (c) a hand-written parser, the lazy option measured against (a): more code for a grammar the editor already ships. Taken: (a).
-
-Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
-
-## Z803 (2026-10-11, step D63, the orchestrator, automode): the tests of D63
-
-- Options: (a) G49 gains the manifest reader's rows for `contributes`; a new entry G77, "An app's contribution acts only for an approved, enabled, unchanged app and only within its own ids and scope: a command, key, menu item, status item, view, tree, editor, setting or theme of an app that is unapproved, disabled, removed or changed is not drawn or run; an app's key never takes a key oculus resolves; an app reads only its own settings; a custom editor saves only the file it opened, inside the scope `open({ file })` allows", its tests the contribution registry, the key resolver's app bindings, the settings read and the custom editor's save route; G28 gains a row for a custom editor's unsaved mark asking on close; (b) no new entry, which leaves the save path of a custom editor untested though a wrong save loses work; (c) a test per contribution kind, which tests drawing that costs nothing when wrong. Taken: (a).
 
 Where it applies: D63. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
 

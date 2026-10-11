@@ -2011,3 +2011,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-11. Open item 53 ruled (a) by Axel: `local.yml` at `~/.oculus/local.yml`, built in O33 part (1). Axel asked for `~/.oculus` bookmarked: Z806 (a) taken in automode, step D67 booked after D66, the private folders closed to apps added to D63's brief as item 17.
 - 2026-10-11. D66 landed (`agents/reviews/D66-landing.md`).
 - 2026-10-11. D63's brief check closed in the brief: Z807 to Z815 taken in automode (two apps of one name, oculus's commands from an app, what goes when a host stops, a custom editor's reach, `getConfiguration` synchronous, app settings' write and read, the words File Icon Theme and key, app theme saved names, state placed outside `~/.oculus`); Z791 amended by Z808. Open item 54 raised: Z803's new guarded entry G77 needs Axel's yes; D63 stopped at /spec until he rules.
+- 2026-10-11. D67's preparation: Z816 taken in automode (a bookmark of a root's top stored with no `path` line).
+- 2026-10-11. Open item 54 ruled (a) by Axel: G77 a new guarded entry; Z803 replaced; D63 goes on to its preparation.
