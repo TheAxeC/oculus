@@ -1,9 +1,9 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- D66 (three view fixes: the Map's colours, the live-session rows, the float's tab strip): building.
 
-Queued, in order (5 steps):
+Queued, in order (4 steps):
 - D63 (apps in the shell): /spec next, beside D66.
 - D64 (apps in the tools): after D63.
-- D66 (three view fixes: the Map's colours from `type_color` alone, the Usage view's live-session rows at the card's text size, and the float's tab strip reaching every tab): prepared, builder next.
 - Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
 
