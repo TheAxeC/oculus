@@ -52,7 +52,7 @@ domains: {}
 
 
 # Project-card colours: by tier (type_color) or by archive outcome (arch_color).
-type_color: { active: "#ea580c", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", paused: "#f59e0b",  tech-report: "#0891b2", software: "#7c3aed", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1", finished: "#16a34a", archived: "#16a34a" }
+type_color: { active: "#ea580c", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", paused: "#9ca3af",  tech-report: "#0891b2", software: "#7c3aed", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1", finished: "#16a34a", archived: "#16a34a" }
 
 # Primary board button order: every tab (Projects / Personal / Archive / Coauthor) splits its first-class button row by `type`, in THIS order, and a board shows the types its projects hold.
 type_order: [active, published, submitted, in-prep, paused, idea, tech-report, software, nogo, dropped, disproved, abandoned, exploring, phd, finished, archived]

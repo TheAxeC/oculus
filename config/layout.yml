@@ -121,7 +121,7 @@ workbench:
 
 # The floats a browser with no saved layout starts with, and Reset all pages gives back: panes over every page, each one a pane of tabs (`view` is one view id or a list of them, as in an arrangement's pane) placed either docked on an edge of the window, `{ view, dock: left | right | bottom, size }` where `size` is the fraction of the window's width (its height for `bottom`) from 0.1 to 0.6, or free, `{ view, x, y, w, h }` in fractions of the window with `x + w` and `y + h` at most 1 and `w` and `h` at least 0.1. One float may be docked on an edge; of two on one edge the first stays. After that first load the floats are the reader's own, kept in the saved layout beside the pages. An entry that does not add up is left out and the rest kept.
 floats:
-  - { view: [hpc, usage], dock: right, size: 0.3 }
+  - { view: [hpc, usage, workbenches], dock: right, size: 0.2 }
 
 
 # Board (Projects / Personal / Archive / Coauthor) chrome: list-view column headers and the per-board search placeholder.
