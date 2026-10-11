@@ -260,6 +260,15 @@ describe('taking a change back', () => {
             (await handleWrite(request({ kind: 'undo', at: removed.at }), TOKEN, into)).status
         ).toBe(200);
         expect(tasksOf(into)).toContain('Another task');
+
+        const emptied = await made(into, {
+            kind: 'new-entry',
+            collection: 'tasks',
+            fields: { title: 'A fourth task', status: '' }
+        });
+        expect(tasksOf(into)).toContain('A fourth task');
+        expect((await undone(into, emptied)).status).toBe(200);
+        expect(tasksOf(into)).not.toContain('A fourth task');
     });
 
     it('puts a deleted entry back with its subtasks, each as the file held it', async () => {
@@ -328,6 +337,59 @@ describe('taking a change back', () => {
             (await handleWrite(request({ kind: 'undo', at: feed.at }), TOKEN, into)).status
         ).toBe(200);
         expect(radar()).not.toContain('dismissed: true');
+
+        const original = tasksOf(into);
+        const rename = await made(into, {
+            kind: 'entry',
+            collection: 'tasks',
+            id: 'Review the draft',
+            fields: { title: 'Renamed draft' }
+        });
+        const renamed = tasksOf(into);
+        expect(renamed).toContain('Renamed draft');
+        expect.soft((await undone(into, rename)).status).toBe(200);
+        expect.soft(tasksOf(into)).toBe(original);
+        const [back] = changesOf(into);
+        expect.soft((await undone(into, back)).status).toBe(200);
+        expect.soft(tasksOf(into)).toBe(renamed);
+
+        const both = tasksOf(into);
+        await made(into, {
+            kind: 'entry',
+            collection: 'tasks',
+            id: 'Another task',
+            fields: { title: 'Second task', status: 'done' }
+        });
+        const [status, title] = changesOf(into);
+        expect([status.field, title.field]).toEqual(['status', 'title']);
+        expect.soft((await undone(into, status)).status).toBe(200);
+        expect.soft((await undone(into, title)).status).toBe(200);
+        expect.soft(tasksOf(into)).toBe(both);
+
+        // The records of a rename are undone in the order the reader presses them: the rename
+        // first, then the other field, puts the file back as well.
+        await made(into, {
+            kind: 'entry',
+            collection: 'tasks',
+            id: 'Another task',
+            fields: { title: 'Second task', status: 'done' }
+        });
+        const [later, renaming] = changesOf(into);
+        expect.soft((await undone(into, renaming)).status).toBe(200);
+        expect.soft((await undone(into, later)).status).toBe(200);
+        expect.soft(tasksOf(into)).toBe(both);
+
+        // A write whose new identity is refused leaves the entry where it was, and the undo of the
+        // field it did write finds the entry there.
+        const refused = await made(into, {
+            kind: 'entry',
+            collection: 'tasks',
+            id: 'Another task',
+            fields: { title: null, status: 'done' }
+        });
+        expect(refused.field).toBe('status');
+        expect.soft((await undone(into, refused)).status).toBe(200);
+        expect.soft(tasksOf(into)).toBe(both);
     });
 
     it('puts a collection order back', async () => {

@@ -3,9 +3,10 @@
 // them, their own bookmarks and their scratch notes.
 //
 // The bookmarks and the notes are read here and written through this route because they are the
-// file browser's: a bookmark is a file under a root and a note is a file in a folder. What each one
-// is kept in is its own module, fs/bookmarks.ts and fs/notes.ts; a bookmark is written by the
-// collection write path instead, since it is a collection file and the entry writers edit it.
+// file browser's: a bookmark is a file, a folder or the top of a root and a note is a file in a
+// folder. What each one is kept in is its own module, fs/bookmarks.ts and fs/notes.ts; a bookmark
+// is written by the collection write path instead, since it is a collection file and the entry
+// writers edit it.
 //
 // A listing is one level deep and read at the call. The tree asks for a folder when the folder is
 // opened, so nothing walks a root: a home directory with a hundred thousand files under it costs

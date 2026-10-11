@@ -11,7 +11,7 @@ text:
         bookmark_failed: 'The bookmark was not written: {0}'
         bookmark_glyph: star
         bookmark_label: Label
-        bookmark_missing_title: The path is not on this machine any more
+        bookmark_missing_title: The path is gone, or its root is not in this workspace
         bookmark_open_title: Open {0}
         bookmark_remove_title: Remove the bookmark {0}
         bookmark_rename: Rename Bookmark...
@@ -19,7 +19,7 @@ text:
         bookmark_rename_do: Rename
         bookmark_rename_title: Change the label of the bookmark {0}
         bookmarks: Bookmarks
-        bookmarks_empty: No bookmark yet. The star on a file adds one.
+        bookmarks_empty: No bookmark yet. The star on a file, a folder or a root adds one.
         bookmarks_failed: 'The bookmarks could not be read: {0}'
         cancel: cancel
         collapse_title: Close {0}

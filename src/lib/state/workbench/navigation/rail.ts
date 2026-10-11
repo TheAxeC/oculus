@@ -27,6 +27,9 @@ export { sourceTabState } from '../../sessions/source/draft.ts';
 /** One choice of the rail's Bookmarks menu, as the file browser's module defines it. */
 export type { BookmarkRow as Bookmark } from '../../sources/fs.ts';
 
+/** The words that say where a bookmark points, which the rail's hover and the Files view share. */
+export { placeOf } from '../../sources/fs.ts';
+
 /**
  * One rail button and the arrangement its page is made from the first time it is pressed: the
  * arrangement of config/layout.yml with the hub's documents of the page's group added as tabs, and

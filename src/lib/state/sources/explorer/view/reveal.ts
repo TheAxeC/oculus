@@ -144,8 +144,12 @@ export function revealScrolled(now: FilesView, ask: RevealAsk): Partial<FilesVie
     return ask.settled && sameAsk(now.reveal, ask) ? { reveal: null } : null;
 }
 
-/** A row as the outcome line names it: the root, then the path under it. */
-function placeOf(row: RowRef): string {
+/**
+ * A place as a reader is told it: the root, then the path under it, or the root alone for its top.
+ * The outcome lines of an ask to show a path, a bookmark's row in the Files view and the rail's
+ * Bookmarks menu all say a place this way.
+ */
+export function placeOf(row: RowRef): string {
     return row.path === '' ? row.root : t('files.reveal_place', row.root, row.path);
 }
 

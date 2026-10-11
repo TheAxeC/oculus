@@ -19,7 +19,10 @@ export type Opener = {
     openView: ClientState['layout']['openView'];
     keepPreview: ClientState['layout']['keepPreview'];
     readFileKind: ClientState['fs']['readFileKind'];
-    /** Show a folder in the Files view of the page, open and selected, for a folder bookmark. */
+    /**
+     * Show a folder in the Files view of the page, open and selected, for a folder or root
+     * bookmark.
+     */
     showInFiles?: ClientState['layout']['showInFiles'];
     /** Whether a file lies in an apps folder, which opens as source text. */
     holds: ClientState['apps']['holds'];
@@ -89,12 +92,14 @@ export async function openRowBeside(opener: BesideOpener, row: TreeRow): Promise
 
 /**
  * Open what one bookmark names, under the label the reader gave it: a folder is shown open and
- * selected in the Files view of the page, a file opens in the view that can show it.
+ * selected in the Files view of the page, and so is a root's top (the empty path), whether or not
+ * the root is served, since the Files view says when it is not. A file opens in the view that can
+ * show it.
  */
 export function openBookmark(opener: Opener, entry: Entry & { kind?: BookmarkKind }): void {
     const ref = bookmarkRef(entry.fields);
     if (ref === null) return;
-    if (entry.kind === 'folder' && opener.showInFiles !== undefined) {
+    if ((entry.kind === 'folder' || ref.path === '') && opener.showInFiles !== undefined) {
         opener.showInFiles(ref.path, ref.root, true);
         return;
     }

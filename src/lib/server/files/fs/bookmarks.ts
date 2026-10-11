@@ -41,13 +41,13 @@ export function defaultBookmarksPath(hub: string): string {
 
 /**
  * The file a machine with no bookmarks is given. The schema types a bookmark for the writers: a
- * label the entry is found by, the root key the file sits under, and the path inside that root. The
- * root is a select with no options of its own, so a root added after the file was written is still
- * one a bookmark may name.
+ * label the entry is found by, the root key the file sits under, and the path inside that root,
+ * which an entry naming the root's top leaves out. The root is a select with no options of its own,
+ * so a bookmark may name a root added after the file was written.
  */
 const SCAFFOLD = [
     "# The hub's bookmarks, written by oculus from the Files view.",
-    '# Each entry is a file or a folder under one of the roots the file browser serves.',
+    '# Each entry is a file, a folder or the top of one of the roots the file browser serves.',
     'title: Bookmarks',
     '',
     'schema:',
@@ -66,7 +66,8 @@ export function ensureBookmarksFile(file: string): void {
 }
 
 /**
- * What a bookmark names now: a file, a folder, or nothing, because the path or the root is gone.
+ * What a bookmark names now: a file, a folder (a root's top is one), or nothing, because the path
+ * or the root is gone.
  */
 export type BookmarkKind = 'file' | 'folder' | 'missing';
 
@@ -85,23 +86,28 @@ export type BookmarksAnswer = { entries: BookmarkEntry[] };
 /** The part of the file this module reads: the `entries:` list, empty when it is odd. */
 const bookmarksFileShape = z.object({ entries: z.array(z.unknown()).catch(() => []) });
 
-/** One entry of the file as the page reads it, or null for an item that is not a map. */
+/**
+ * One entry of the file as the page reads it, or null for an item that is not a map. An entry with
+ * no `path` line names its root's top, which the page reads as the empty path so that every reader
+ * of an entry sees one shape.
+ */
 function bookmark(item: unknown, file: string, index: number): Entry | null {
     const held = bookmarkItemShape.safeParse(item);
     if (!held.success) return null;
     const named = bookmarkLabelShape.safeParse(held.data[BOOKMARK_IDENTITY]);
     if (!named.success || named.data === '') return null;
-    return { id: named.data, title: named.data, fields: { ...held.data }, file, index };
+    return { id: named.data, title: named.data, fields: { path: '', ...held.data }, file, index };
 }
 
 /**
- * What a bookmark's root and path name now, from a stat under the root. A root that is not served,
- * a path outside it and a path that is not there are all `missing`.
+ * What a bookmark's root and path name now, from a stat under the root. The empty path is the
+ * root's own folder. A root that is not served, a path outside it and a path that is not there are
+ * all `missing`.
  */
 export function bookmarkKind(roots: Root[], entry: Entry): BookmarkKind {
     const root = entry.fields.root;
     const path = entry.fields.path;
-    if (typeof root !== 'string' || typeof path !== 'string' || path === '') return 'missing';
+    if (typeof root !== 'string' || typeof path !== 'string') return 'missing';
     const found = resolveRootPath(roots, root, path);
     if ('error' in found) return 'missing';
     try {

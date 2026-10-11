@@ -60,7 +60,7 @@ import {
     writeSubtask,
     writeSubtaskAdd
 } from './subtasks.ts';
-import { entryOf, readCollection, type Collection } from '../../files/fs/collections.ts';
+import { entryId, entryOf, readCollection, type Collection } from '../../files/fs/collections.ts';
 import type { FeedKind } from '../../../data/model/index.ts';
 import type { Change, ChangeRecord } from '../../core/changes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
@@ -189,7 +189,10 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
     if (collection === null) return { found: false, value: null };
     if (namesOldIdentity(collection.held, change)) return { found: false, value: null };
     if (change.kind === 'reorder') return { found: true, value: identityOrder(collection.held) };
-    const entry = entryOf(collection.held, change.key);
+    const entry =
+        change.kind === 'entry'
+            ? renamedEntry(collection.held, change)
+            : entryOf(collection.held, change.key);
     if (change.kind === 'entry') {
         return { found: entry !== undefined, value: entry?.[change.field] ?? null };
     }
@@ -512,9 +515,26 @@ function collectionUndo(into: WriteTarget, change: Change): WriteOutcome | null 
     if (change.kind === 'delete-entry') {
         return createEntry(hub, config, key, mapBeforeShape.parse(change.before), bookmarks);
     }
-    const id = idOfIdentity(held, change.key);
-    if (id === null) return null;
-    return writeEntry(hub, config, key, id, { [change.field]: change.before }, bookmarks);
+    const entry = renamedEntry(held, change);
+    if (entry === undefined) return null;
+    return writeEntry(
+        hub,
+        config,
+        key,
+        entryId(entry, held.ident),
+        { [change.field]: change.before },
+        bookmarks
+    );
+}
+
+/**
+ * The entry a field record is about: the one listed under its key, else, for a record of a write
+ * that renamed the entry, the one listed under the identity before it, which is where the entry is
+ * once another record of that write has been undone.
+ */
+function renamedEntry(held: Collection, change: Change): ReturnType<typeof entryOf> {
+    const found = entryOf(held, change.key);
+    return found !== undefined || change.was === undefined ? found : entryOf(held, change.was);
 }
 
 /** An overrides write as the outcome every other writer answers with. */

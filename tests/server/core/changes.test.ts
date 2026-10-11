@@ -228,6 +228,33 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         expect(rows[1].after).toEqual(['Another task', 'Review the draft', 'A third task']);
         expect(rows[2].before).toBe(null);
         expect(rows[3]).toMatchObject({ key: 'Review the draft', before: 'open', after: 'done' });
+
+        // A field the renderer leaves out of the file is left out of the record of a new entry.
+        const emptied = await written(into, {
+            kind: 'new-entry',
+            collection: 'tasks',
+            fields: { title: 'A fourth task', status: '' }
+        });
+        expect.soft(emptied[0].after).toEqual({ title: 'A fourth task' });
+
+        // Every record of a rename is keyed by the identity the file lists the entry under after
+        // the write and carries the one before it, so the undo of any one of them finds the entry.
+        const renamed = await written(into, {
+            kind: 'entry',
+            collection: 'tasks',
+            id: 'Another task',
+            fields: { status: 'done', title: 'A renamed task' }
+        });
+        expect
+            .soft(
+                renamed
+                    .slice(0, 2)
+                    .map((row) => [row.field, row.key, row.was, row.before, row.after])
+            )
+            .toEqual([
+                ['title', 'A renamed task', 'Another task', 'Another task', 'A renamed task'],
+                ['status', 'A renamed task', 'Another task', 'open', 'done']
+            ]);
     });
 
     it.each(SUBTASK_ROWS)(

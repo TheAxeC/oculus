@@ -2,25 +2,30 @@
     import { z } from 'zod';
     import { wordShape } from '$lib/data/shapes/shapes';
 
-    /** The root and the path a bookmark names, each as text and the empty text when it is not. */
+    /**
+     * The root and the path a bookmark names, each as text and the empty text when it is not; the
+     * empty path is the root's top.
+     */
     const whereShape = z.object({ root: wordShape, path: wordShape });
 </script>
 
 <script lang="ts">
     // Layer 3, partial of views/sources/files/Files.svelte. The reader's own bookmarks as a section
     // under the trees: a head that opens and closes it, and one explorer row per bookmark, opening
-    // the file or showing the folder it names, with two controls: Rename Bookmark..., which asks
-    // for the new label in a prompt, and Remove Bookmark. A row drags to another place and moves
-    // with Alt+Up and Alt+Down, which write the bookmarks file in the new order. A folder has the
-    // folder glyph, and a path that is gone is drawn muted and struck through.
+    // the file or showing the folder or root it names, with two controls: Rename Bookmark..., which
+    // asks for the new label in a prompt, and Remove Bookmark. A row drags to another place and
+    // moves with Alt+Up and Alt+Down, which write the bookmarks file in the new order. A folder and
+    // a root's top have the folder glyph, and a path or root that is gone is drawn muted and struck
+    // through.
     //
     // The head is drawn in every state: with no bookmark the section says so in one muted row, and
     // with a bookmarks file that could not be read it says why in that row instead, with the
     // control that reads it again beside it, as every other row of the tree carries its controls.
     // The section is one stop of the focus order through ui/tree/TreeView.svelte.
     //
-    // The star on a file adds a bookmark. The rail draws the same bookmarks as buttons, which is
-    // where they are pressed from; this is where they are renamed, removed and put in order.
+    // The star on a file, a folder or a root adds a bookmark. The rail draws the same bookmarks as
+    // buttons, which is where they are pressed from; this is where they are renamed, removed and
+    // put in order.
 
     import Failed from '$lib/views/shared/explorer/tree/Failed.svelte';
     import Section from '$lib/views/shared/explorer/sections/Section.svelte';
@@ -37,6 +42,7 @@
         type ListSectionProps
     } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import type { BookmarkEntry } from '$lib/state/sources/fs.svelte';
+    import { placeOf } from '$lib/state/sources/fs';
     import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
 
@@ -82,10 +88,10 @@
         };
     }
 
-    /** The root and the path one bookmark names, which is what a row says after its label. */
+    /** The place one bookmark names, which is what a row says after its label. */
     function whereOf(entry: BookmarkEntry): string {
         const { root, path } = readOr(whereShape, entry.fields, { root: '', path: '' });
-        return `${root}/${path}`;
+        return placeOf({ root, path });
     }
 </script>
 

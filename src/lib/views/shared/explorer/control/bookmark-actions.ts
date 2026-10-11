@@ -1,8 +1,8 @@
 // Layer 3, view partial of rooted-tree.svelte.ts. What the bookmark star on a row and the bookmark
-// rows of the Files view write: a file bookmarked or the bookmark on it taken away, a bookmark
-// renamed, and a bookmark removed from its row. Each answer is said on the refusal line of the
-// instance the press was made in, which the reader may have switched away from by the time it
-// lands.
+// rows of the Files view write: a file, folder or root bookmarked or the bookmark on it taken
+// away, a bookmark renamed, and a bookmark removed from its row. Each answer is said on the refusal
+// line of the instance the press was made in, which the reader may have switched away from by the
+// time it lands.
 
 import type { ClientState } from '$lib/state/client/context';
 import { markLabel, type TreeRow } from '$lib/state/sources/fs';
@@ -27,9 +27,10 @@ export function bookmarkActions(deps: BookmarkActionsDeps) {
     }
 
     /**
-     * Bookmark one file or folder, or take the bookmark on it away again. The label is the name, or
-     * its path under the root when another bookmark already carries that name; a label that is
-     * taken even so is refused rather than written over, and the refusal is said.
+     * Bookmark one file, folder or root, or take the bookmark on it away again. The label is the
+     * name, or its path under the root when another bookmark already carries that name; a label
+     * that is taken even so (a root's name has no path under the root) is refused rather than
+     * written over, and the refusal is said.
      */
     async function bookmark(row: TreeRow): Promise<void> {
         const owner = deps.id();

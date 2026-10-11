@@ -120,7 +120,7 @@
 {/snippet}
 
 {#snippet actions(reach: number)}
-    {#if row.up !== true && row.path !== ''}
+    {#if row.up !== true}
         <ToolButton
             label={t('files.row_bookmark')}
             title={marked

@@ -167,7 +167,10 @@ export function markRefusal(answer: WriteAnswer): string {
     return answer.ok ? answer.refused.map((one) => one.reason).join('; ') : (answer.error ?? '');
 }
 
-/** The bookmark over one file of one root, or null when the reader has not made one. */
+/**
+ * The bookmark over one path of one root (the empty path is the root's top), or null when the
+ * reader has not made one.
+ */
 export function bookmarkAt(entries: Entry[], root: string, path: string): Entry | null {
     return entries.find((one) => one.fields.root === root && one.fields.path === path) ?? null;
 }

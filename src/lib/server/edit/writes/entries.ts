@@ -19,10 +19,12 @@
 // into `WriteAnswer`), so the page is told where the entry now is after a rename rather than
 // reading the file's id rule a second time.
 
+import { parse } from 'yaml';
 import { z } from 'zod';
 import { ISO_DATE } from '../../../data/helpers/dates.ts';
 import { KEYED_FIELDS, LIST } from '../../../data/helpers/files/yaml/collection-text.ts';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';
+import { mapShape } from '../../../data/shapes/shapes.ts';
 import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
@@ -107,6 +109,9 @@ function fitting(fields: Record<string, unknown>, refused: Refusal[]): Record<st
 }
 
 /** One item of a collection schema that declares a metalist field. */
+/** The block `renderEntry` makes for one new entry: a list of that one entry. */
+const renderedShape = z.tuple([mapShape]);
+
 const metalistItemShape = z.looseObject({ type: z.literal('metalist'), field: z.string() });
 
 /**
@@ -292,10 +297,15 @@ export function writeEntry(
     );
     // The entry the edit was computed against is the value before it, and `writing` is the value
     // the edit put there, so the record is made where both halves are in hand rather than by
-    // reading the file again.
+    // reading the file again. A write that renamed the entry leaves it listed under the value it
+    // wrote, so each of its records is keyed by that value and carries the one before it (`was`):
+    // the reader may undo the write's records in any order, and each undo finds the entry under
+    // one or the other.
+    const renamed = out.changed.includes(held.ident) ? scalar(writing[held.ident]) : null;
     const records: ChangeRecord[] = out.changed.map((field) => ({
         file: held.file,
-        key: value,
+        key: renamed ?? value,
+        ...(renamed === null ? {} : { was: value }),
         field,
         before: plain(entry?.[field]),
         after: plain(writing[field]),
@@ -468,6 +478,10 @@ export function createEntry(
             ? startEntries(held.source, LIST, block)
             : appendEntry(held.source, held.list, block);
     const out = saved(held.file, held.source, edit);
+    // The record holds the entry as the file holds it after the write, read back from the block the
+    // renderer made: a field it leaves out for its empty value is not in the record, so the undo
+    // finds the entry as the record says it is.
+    const [written] = renderedShape.parse(parse(block));
     const records: ChangeRecord[] =
         out.changed.length === 0
             ? []
@@ -477,7 +491,7 @@ export function createEntry(
                       key: value,
                       field: 'entries',
                       before: null,
-                      after: values,
+                      after: written,
                       undo: 'create'
                   }
               ];

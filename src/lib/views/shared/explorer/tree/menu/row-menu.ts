@@ -5,9 +5,9 @@
 // press opens it but in a pane beside (opening.ts), a file the configuration names an application
 // for (`open.program_ext`) handed to that application through the open endpoint, a picture, a PDF
 // or an HTML page opened in a browser tab of its own (a PDF also in a tab of the page and in a
-// window of its own), a file or folder bookmarked or its bookmark taken out as the row's star does,
-// a file or folder revealed in Finder through the open endpoint, a folder or root opened as the
-// workbench of that folder (Open in New Files), a shell started in the folder
+// window of its own), a file, folder or root bookmarked or its bookmark taken out as the row's star
+// does, a file or folder revealed in Finder through the open endpoint, a folder or root opened as
+// the workbench of that folder (Open in New Files), a shell started in the folder
 // (state/shared/stores/shell.ts, `openShell`), the file's bytes saved from api/file as the file
 // view's link saves them, the Search view opened on the folder, the view's add-root form, and its
 // removal behind its question. Fix All Writing Problems in Folder... is picked in
@@ -123,10 +123,7 @@ export type RowMenuFacts = {
     program?: boolean;
     /** Whether the row is a file a browser tab shows: a picture, a PDF or an HTML page. */
     browser?: boolean;
-    /**
-     * Whether the row is bookmarked, or null for a row the star is not drawn on: the up row and a
-     * root's own line.
-     */
+    /** Whether the row is bookmarked, or null for a row the star is not drawn on: the up row. */
     bookmarked?: boolean | null;
     /** Whether the row is a PDF, which a tab of the page and a window of its own also show. */
     pdf?: boolean;
@@ -253,7 +250,7 @@ export function rowFacts(
         markdown: kind === 'file' && languageOf(row.path, languages) === 'markdown',
         program: kind === 'file' && opensInProgram(row.path, programs),
         browser: kind === 'file' && BROWSER_KINDS.includes(typeOfFile(row.name).kind),
-        bookmarked: row.up !== true && row.path !== '' ? bookmarked : null,
+        bookmarked: row.up !== true ? bookmarked : null,
         pdf: kind === 'file' && typeOfFile(row.name).kind === 'pdf',
         present:
             kind === 'file'
@@ -294,13 +291,14 @@ export function rowFacts(
  * folder: New File... and New Folder..., Reveal in Finder, Open in New Files (the workbench of the
  * folder, on a folder or root of a served root) and its shell, Find in Folder... with Fix All
  * Writing Problems in Folder... (a folder Fix All of the writing rules, disabled while
- * `lint.writing` is off), Cut, Copy and Paste, Upload..., the two copies, then Rename... and
- * Delete. A folder or root that is a repository with project commands also offers Run Command, a
- * submenu of them. A root: those of a folder without Cut, Copy, Rename... and Delete, and Add
- * Folder to Workspace... with Remove Folder from Workspace on a root the reader added. Compare with
- * Selected needs a file selected for compare. With two or more rows selected the menu is the one
- * for the selection: Compare Selected for exactly two files, Cut and Copy, the two copies of every
- * path, and Delete. Each item carries the key hint its id has in `hints`.
+ * `lint.writing` is off), Cut, Copy and Paste, Upload..., the two copies, Add Bookmark or Remove
+ * Bookmark, then Rename... and Delete. A folder or root that is a repository with project commands
+ * also offers Run Command, a submenu of them. A root: those of a folder without Cut, Copy,
+ * Rename... and Delete, and Add Folder to Workspace... with Remove Folder from Workspace on a root
+ * the reader added. Compare with Selected needs a file selected for compare. With two or more rows
+ * selected the menu is the one for the selection: Compare Selected for exactly two files, Cut and
+ * Copy, the two copies of every path, and Delete. Each item carries the key hint its id has in
+ * `hints`.
  */
 export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string): MenuItem => {
@@ -427,6 +425,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         [paste],
         upload,
         copies,
+        bookmark,
         [
             ...(facts.addable
                 ? [{ ...item(ROW_ADD_ROOT, t('files.menu_add_root')), disabled: facts.panelOpen }]

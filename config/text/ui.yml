@@ -6,7 +6,7 @@ text:
         answer_unreadable: "The server's answer could not be read (HTTP {0})."
         bookmarks_glyph: star
         bookmarks_none: No bookmarks
-        bookmarks_none_tip: The star on a file in the Files view adds one.
+        bookmarks_none_tip: The star on a file, a folder or a root in the Files view adds one.
         close_glyph: dismiss
         close_tab: Close tab
         code_theme: Code theme

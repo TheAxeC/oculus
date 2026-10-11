@@ -128,6 +128,11 @@ export type ChangeRecord = {
     kept?: { before: unknown; after: unknown };
     /** The view id of the app whose frame sent the write, on a write an app made. */
     app?: string;
+    /**
+     * The identity an entry had before a write that renamed it, on each record of that write and on
+     * no other: `key` is the identity the write gave it, and an undo finds the entry under either.
+     */
+    was?: string;
 };
 
 /** One line of the log. */
