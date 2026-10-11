@@ -24,7 +24,31 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []   # steps in flight, up to six (Z632)
+dispatch:   # steps in flight, up to six (Z632)
+- step: D68
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a3e55090e05050b84 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D68
+  base: ff113f762
+  launched: 2026-10-12
+  report: agents/reviews/D68-report.md
+  brief_check: agents/reviews/D68-brief-check.md (a8997d9ca2c7cbe23, claude-opus-5-5, 237,719 tokens, 72 tool uses, 11.1 min; closed in the brief by the orchestrator under "Brief check, Closed", with Z827 to Z831 and open items 58 and 59)
+  shared_paths: DESIGN.md (line 246, which D68 rewrites for the wallpaper folder and D69 extends for Monaco's widgets; one sentence, resolved by hand at the second landing), HELP.md (different sections), and `src/` as D68's write list names it broadly while D69's files (the editor, the status bar, ToolButton, MenuOpener) are ones D68's items do not reach; judged simple
+  landing: not-started
+  round: 0
+- step: D69
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a399b985009bb1ae1 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D69
+  base: ff113f762
+  launched: 2026-10-12
+  report: agents/reviews/D69-report.md
+  brief_check: agents/reviews/D69-brief-check.md (ad3b6d05a2013035b, claude-opus-5-5, 210,006 tokens, 74 tool uses, 9.7 min; closed in the brief by the orchestrator under "Brief check, Closed", with Z825 and Z826)
+  shared_paths: as D68's entry says; judged simple
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -247,6 +271,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-12 (D68 and D69 launched). D68, workspaces as files, and D69, two clipping defects, prepared at base ff113f762 with every brief-check finding closed in their briefs (Z825 to Z831 taken in automode) and their builders launched in `.agents/worktrees/D68` and `.agents/worktrees/D69` (claude-sonnet-5-5), base copies beside them. Open items 58 and 59 raised for D68's landing. In flight (2 of 6): D68, D69. Next: each builder's report, /refute, /land; D64 waits for D68.
 - 2026-10-12 (D63 landed). D63, apps in the shell, landed (booking in plan.md under D63, `agents/reviews/D63-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D63-refuter.md`, Closed) and seven defects the look found fixed at landing; `npm run test:landing` passed in the gate at main's head with the step, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. Two defects the look found in code D63 does not change booked as D69 (Z819, automode). In flight (0 of 6). Next: /spec D68 (workspaces as files) and /spec D69 (two clipping defects) beside it; then D64, Q72, O33.
 - 2026-10-11 (D68 booked). Axel ruled Workspaces as files (open item 56): step D68 after D63 and before D64, `local.yml` in each hub's `.oculus/` (replacing open item 53's place), O33 no longer moves it. `writeJsonAtomic` writes indented JSON (9bd7021bd, at Axel's word, inline). D63's builder is building; nothing else is unblocked until D63 lands (D68, then D64, then Q72, then O33).
 - 2026-10-11 (D67 landed). D67, a bookmark of a root's top, landed (booking in plan.md under D67, `agents/reviews/D67-landing.md`). Its landing met a red line the step did not cause, diagnosed in `agents/reviews/D67-diagnosis.md` (main's `node_modules` replaced by a worktree's link at the cherry-pick); Axel ruled open item 55 (a): main's `node_modules` a real copy again, both `.gitignore` files read `node_modules`, the servers.ts fix folded into O33. The D63 builder was stopped at Axel's word and resumed when he lifted every pause; it is building. Next: D63's report, its review and landing (remove the D63 worktree's `node_modules` link before `land.sh`; the root `oculus-state` and the `~/.oculus` bookmark were added at Axel's word after D67's landing, so D63's landing adds nothing for them), then D64, Q72, O33.
