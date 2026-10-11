@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- D63 (apps in the shell): building.
 
-Queued, in order (5 steps):
-- D63 (apps in the shell): stopped at /spec on open item 54 (the new guarded entry G77 needs Axel's yes); its brief is written with every other brief-check finding closed.
+Queued, in order (4 steps):
 - D64 (apps in the tools): after D63.
 - D67 (`~/.oculus` bookmarked): /spec next; its landing adds the root and the bookmark only once D63 is on main.
 - Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
