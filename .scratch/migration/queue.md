@@ -5,7 +5,7 @@ Paused (Axel, 2026-10-11: pause once D62 and D65 have landed; both have). Nothin
 Queued, in order (5 steps):
 - D63 (apps in the shell): after D62.
 - D64 (apps in the tools): after D63.
-- D66 (the Map's colours from `type_color` alone): independent of D63 and D64, so it can run beside them; before Q72.
+- D66 (two view fixes: the Map's colours from `type_color` alone, and the Usage view's live-session rows at the card's text size): independent of D63 and D64, so it can run beside them; before Q72.
 - Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
 
