@@ -11,7 +11,7 @@
 
 import { isTextBytes } from '../../../data/helpers/files/text-kind.ts';
 import { extensionOf } from '../../../data/helpers/files/opens-in-program.ts';
-import type { LanguageMap } from '../../../data/helpers/files/languages.ts';
+import { PLAIN_LANGUAGE, type LanguageMap } from '../../../data/helpers/files/languages.ts';
 import { nameOf } from '../../../data/helpers/files/paths.ts';
 import { t } from '../../shared/words/text.ts';
 
@@ -26,26 +26,11 @@ export type FileKind = 'html' | 'text' | 'image' | 'pdf' | 'other' | 'missing';
 /** A file's type: how it opens. */
 export type FileType = { kind: FileKind };
 
-/** What the editor calls a file the map has no language for. */
-const PLAIN = 'plaintext';
-
 /** The extensions drawn as a picture. */
 const IMAGES = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
 
 /** The extensions that open in the document view, which is the one type this view hands on. */
 const PAGES = ['.html', '.htm'];
-
-/**
- * The name of the language a file opens in: the map's entry for its whole name lowercased, else for
- * its extension, else plain text. A name that starts with a dot has no extension to read, so a
- * dotfile is plain text, and the whole-name lookup leaves it alone for the same reason: `.py` is a
- * file called `.py`, not an extension.
- */
-export function languageOf(name: string, map: LanguageMap): string {
-    const bare = nameOf(name).toLowerCase();
-    const whole = bare.startsWith('.') ? undefined : map.get(bare);
-    return whole ?? map.get(extensionOf(name)) ?? PLAIN;
-}
 
 /**
  * How a file opens. The three formats a browser draws itself are the name's: an SVG is a picture
@@ -65,7 +50,7 @@ export function typeOfFile(name: string, bytes?: Uint8Array): FileType {
 
 /** Every language a name can resolve to: those the map names, and plain text. */
 export function languages(map: LanguageMap): string[] {
-    return [...new Set([...map.values(), PLAIN])];
+    return [...new Set([...map.values(), PLAIN_LANGUAGE])];
 }
 
 /** The id of the view that shows one Markdown file rendered, alone. */

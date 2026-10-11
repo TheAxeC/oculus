@@ -13,10 +13,10 @@
     import { onMount } from 'svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { savedTheme, themeClass } from '$lib/state/shared/words/appearance';
+    import { savedTheme } from '$lib/state/shared/words/appearance';
     import { t } from '$lib/state/shared/words/text';
     import { createTipIds, provideTipIds } from '$lib/ui/menu/tip-ids';
-    import { applyTheme } from '$lib/ui/theme';
+    import { drawSavedTheme } from '$lib/ui/theme/app-theme';
     import { desktopOf } from '$lib/state/shared/stores/desktop';
 
     provideTipIds(createTipIds());
@@ -58,7 +58,7 @@
 
     onMount(() => {
         const theme = savedTheme(localStorage.getItem('oculus.ui.v1'));
-        applyTheme(document, themeClass(theme), false);
+        void drawSavedTheme(document, theme);
         input?.focus();
         const stop = [
             bridge?.on('found', (count) => {

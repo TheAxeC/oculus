@@ -119,3 +119,56 @@ text:
         add_too_large: the folder holds more files or bytes than an app may
         add_copy: the folder could not be copied
         rate: 'The app {0} sent calls faster than oculus lets an app send them, so some were refused.'
+        progress_cancel: Cancel
+        command_unhandled: 'Nothing handled the command {0} of the app {1}.'
+        command_failed: 'The command {0} of the app {1} failed.'
+        command_host_down: 'The command {0} of the app {1} did not run, because the program of the app stopped.'
+        document_changed: 'The app {0} saves {1}, which changed on disk since it was opened. Replace it?'
+        theme_unavailable: 'The theme {0} is not available, so the default theme is drawn.'
+        heading_explorer: Explorer
+        panel_label: App panel
+        editor_label: App editor
+        view_when_line: This view is not shown right now.
+        tree_no_host: This app has no program to fill this view.
+        tree_host_stopped: 'The program of this app stopped, so this view is empty.'
+        tree_loading: Loading...
+        tree_empty: Nothing to show.
+        view_unapproved: 'The app {0} is not approved, so this view is empty.'
+        open_app: Open the app
+        tree_collapse: Collapse All
+        view_actions: View actions
+        tree_failed: 'The program of this app did not answer: {0}'
+        title_actions: Editor actions
+        message_ok: OK
+        quick_ok: OK
+        quick_none: No matching choice
+        quick_picked: '{0} chosen'
+        text_editor: Text Editor
+        editor_default: Default
+        open_with_title: "Select Editor for '{0}'"
+        open_with: Open With...
+        reopen_with: Reopen Editor With...
+        editor_save: Save
+        editor_revert: Revert File
+        dirty_question: '{0} has custom editors with unsaved changes. Closing them discards the changes.'
+        dirty_confirm: Discard Changes
+        editor_lost: 'The files of {0} changed, so its approval ended and the unsaved changes to {1} were lost.'
+        adds_line: 'Add {0} to oculus.'
+        adds:
+            commands_one: 1 command
+            commands_other: '{0} commands'
+            keys_one: 1 key
+            keys_other: '{0} keys'
+            menus_one: 1 menu entry
+            menus_other: '{0} menu entries'
+            views_one: 1 view
+            views_other: '{0} views'
+            editors_one: 1 custom editor
+            editors_other: '{0} custom editors'
+            settings_one: 1 setting
+            settings_other: '{0} settings'
+            themes_one: 1 colour theme
+            themes_other: '{0} colour themes'
+            icons_one: 1 file icon theme
+            icons_other: '{0} file icon themes'
+        icons_seti: Seti

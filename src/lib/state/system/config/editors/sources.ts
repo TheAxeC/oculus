@@ -1,9 +1,9 @@
 // Layer 2, client state, pure. The lists the Settings view's controls offer, built from what the
 // page already holds: the merged configuration, the portfolio snapshot, the registry's view ids,
-// the usage store's tiers, the theme classes of the sheet, and the file browser's listings of hub
-// folders. The lists the merged configuration alone holds are read through `configItems` of the
-// options catalog's module, which the server's write checks read as well, so the page and the
-// server cannot disagree on them.
+// the usage store's tiers, the theme classes of the sheet, the file icon themes the apps offer, and
+// the file browser's listings of hub folders. The lists the merged configuration alone holds are
+// read through `configItems` of the options catalog's module, which the server's write checks read
+// as well, so the page and the server cannot disagree on them.
 //
 // A list that is not there yet answers `loading` (no snapshot, no usage payload, a listing in
 // flight) and one that could not be read answers `failed` with the reason, so a control says
@@ -15,7 +15,7 @@ import { PICTURE_EXTENSIONS } from '../../../../data/file-ops.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { registered } from '../../../../data/prose/languages.ts';
-import { codeThemeIds, CODE_TOKENS } from '../../../../data/helpers/code-themes.ts';
+import { codeThemeIds, CODE_TOKENS } from '../../../../data/helpers/editor/code-themes.ts';
 import {
     configItems,
     hueNames,
@@ -25,6 +25,8 @@ import {
 } from '../../../../data/sources/config/catalog/options.ts';
 import type { FsEntry } from '../../../sources/explorer/view/place.ts';
 import { glyphNames } from '../../../../data/sources/config/rail.ts';
+import type { AppOffers } from '../../../../data/helpers/files/apps/choices.ts';
+import { fileIconThemes } from '../../../shared/words/appearance.ts';
 
 /** The items of one list, or why there are none. */
 export type SourceItems =
@@ -52,6 +54,8 @@ export type ListInputs = {
     tiers: string[] | null;
     /** The classes the theme sheets hold a block for. */
     themeClasses: string[];
+    /** The themes the acting apps offer. */
+    offers: AppOffers;
     /** One hub folder, by its path under the hub (the empty string is the hub itself). */
     folder: (path: string) => Folder;
 };
@@ -62,6 +66,8 @@ export type Lists = {
     items: (source: Source) => SourceItems;
     /** The names of the glyph vocabulary. */
     glyphs: string[];
+    /** The words a listed item is drawn under where they differ from the item itself. */
+    labels: ReadonlyMap<string, string>;
     /** The names of the palette's hues. */
     hues: string[];
     folder: (path: string) => Folder;
@@ -110,6 +116,8 @@ export function listsOf(inputs: ListInputs): Lists {
                     : READY(slideTagClasses(portfolio.projects));
             case 'usage_tiers':
                 return inputs.tiers === null ? { state: 'loading' } : READY(inputs.tiers);
+            case 'file_icon_themes':
+                return READY(fileIconThemes(inputs.offers).map((one) => one.name));
             case 'wallpapers': {
                 const folder = inputs.folder(wallpaperDir(config));
                 if (folder.state !== 'ready') return folder;
@@ -126,6 +134,7 @@ export function listsOf(inputs: ListInputs): Lists {
         config,
         items,
         glyphs: glyphNames(config) ?? [],
+        labels: new Map(fileIconThemes(inputs.offers).map((one) => [one.name, one.label])),
         hues: hueNames(config),
         folder: inputs.folder
     };

@@ -1,6 +1,6 @@
 // Layer 2, client state test. What the page holds of the apps' stores
-// (lib/state/system/apps/store-cache.ts): one fetch for any number of readers, an answer dropped
-// when a later push contradicts it, and a reader told when a store changed under it.
+// (lib/state/system/apps/frame/store-cache.ts): one fetch for any number of readers, an answer
+// dropped when a later push contradicts it, and a reader told when a store changed under it.
 //
 // The fetch and the rows are plain functions the case drives by hand. What this does NOT cover:
 // the store route's own answers (tests/routes/apps/app-store.test.ts) and a frame receiving the
@@ -11,7 +11,7 @@ import type { AppRow } from '../../../../src/lib/data/model/index.ts';
 import {
     createStoreCache,
     type StoreAnswer
-} from '../../../../src/lib/state/system/apps/store-cache.ts';
+} from '../../../../src/lib/state/system/apps/frame/store-cache.ts';
 import { fixtureApp } from '../../../fixtures/entities-fixture.ts';
 import { it } from '../../../fixtures/scratch.ts';
 

@@ -24,10 +24,9 @@
 export { opensInProgram } from '../../data/helpers/files/opens-in-program.ts';
 export { pathUnder } from '../../data/helpers/files/paths.ts';
 export { isLatexLanguage } from '../../data/prose/latex.ts';
-export type { LanguageMap } from '../../data/helpers/files/languages.ts';
+export { languageOf, type LanguageMap } from '../../data/helpers/files/languages.ts';
 export {
     extensionOf,
-    languageOf,
     languages,
     markdownPreviewState,
     MARKDOWN_PREVIEW_VIEW,

@@ -87,6 +87,11 @@ crt:
 code_theme: tokens
 
 
+# === File icons =============================================================
+# The file icon theme: `seti` draws the icons of VS Code's default theme, and the saved name of an icon theme an approved, enabled app offers (`<app view id>/<id>`, which the File Icon Theme row of the Settings view and `:file-icons` in Cmd-K write) draws that theme's icons in the Files view, the tabs, Cmd-K and the diff headers. A value naming no such theme is reported as a finding and read as `seti`.
+file_icons: seti
+
+
 # === Pane strip =============================================================
 # What the top row of every pane draws, as VS Code's workbench.editor.showTabs and workbench.editor.editorActionsLocation do. The strip menu's Tab Bar and Editor Actions Position submenus write these two keys.
 # `multiple` draws every tab, `single` draws the active tab alone, `none` draws no tab and leaves a title row that holds the actions.

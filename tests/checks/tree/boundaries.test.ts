@@ -29,50 +29,51 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // it too and it may reach no other view's partials.
 //
 // `data/helpers/guards`, `data/accounts/calendar`, `data/accounts/mail`, `data/accounts/connect`,
-// `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/editor`, `data/accounts/leads`,
-// `data/helpers/worktrees`, `data/helpers/files/text-kind`, `data/helpers/files/opens-in-program`,
-// `data/helpers/files/languages`, `data/helpers/run/tasks`, `data/helpers/run/marker`,
-// `data/helpers/search/**`, `data/helpers/finding-text` and `data/helpers/code-themes` join
-// `data/model` in the state row as pure helpers with no reader and no I/O. `data/accounts/calendar`
-// and `data/accounts/mail` are there because how a connector account is named, and how old a thread
-// is, are read by the server that builds the credential file and reads the mailbox and by the page
-// that presses Connect and draws the age on a card; `data/accounts/connect` because the rule a new
-// account's label and a provider's client half are held to is read by the Add form and the setup
-// page before they send and by the server before it writes, and a copy on each side would let them
-// disagree; `data/accounts/leads` for the same reason, since the statuses that close a lead are
-// read by the Position Leads view, its badge and the ticker on the client, and by the summary the
-// snapshot carries on the server; `data/helpers/worktrees` likewise, the Repositories view naming
-// the path a worktree will take and the write making it; `data/helpers/files/text-kind`, the file
-// browser deciding which tab a file opens in and the source route refusing a save over bytes no
-// editor could have read; `data/helpers/files/save-text`, the trim and the final newline a save
-// applies to a source tab's text; `data/helpers/files/opens-in-program`, the open endpoint opening
-// only a file whose extension `open.program_ext` lists and the cards and the file view offering the
-// control for that name alone; `data/helpers/files/languages`, the reader of the `languages:` map:
-// the server words its findings from it, and the file browser, the source tab and the diff and
-// merge views read a file's language through it, so the two cannot disagree about which entries the
-// map dropped; `data/helpers/files/nesting`, the reader of the `patterns:` map of file-nesting.yml
-// and the rule that nests a folder's names: the server words its findings from it and the Files
-// view nests the rows it draws through it, so the two cannot disagree about which patterns were
-// dropped; `data/helpers/run/tasks`, the server starting an update task and the tray listing the
-// four; `data/helpers/run/schedules` and `data/helpers/run/cron`, the rule for one entry of the
-// schedules file and the runs a cron pattern has: the schedule dialog checks an entry and previews
-// a pattern before it sends, and the server reads the file and runs the timer by the same rule, so
-// the two cannot disagree on what runs; `data/helpers/run/marker`, the line a project command's
-// chain prints before each command, which the server writes into the chain's line and the page
-// reads the task's output by; `data/helpers/run/limiter`, the sliding-window count of the app
-// limits, which the page applies to a frame's calls and the server to a host's, so the two count
-// by one rule; `data/helpers/editor`, the order that resolves a tab's editor options
-// (`resolveEditor`) and their types, which the source tab and the diff view resolve a tab's options
-// through; and `data/helpers/search/**`, the Search view refusing a query before it sends it and
-// the search route refusing the same query when it arrives, from one rule and one argument list
-// (`query`), and the Search view drawing the replacement of each hit with the rules the server
-// writes it by (`replace`); and `data/helpers/finding-text`, whose placeholder rule is the one the
-// client's t() fills a catalog string with and the one the server words every finding with before
-// the snapshot carries it; `data/helpers/code-themes`, the list of Shiki's bundled themes (ids,
-// display names, dark or light), which the server words the finding for a bad `code_theme:` from,
-// the appearance store checks a saved pick against and the Settings view draws as the Code theme
-// menu; and `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which
-// the page drawing the rail, the Settings view editing it and the server writing it and wording its
+// `data/helpers/dates`, `data/helpers/files/paths`, `data/helpers/editor/editor`,
+// `data/accounts/leads`, `data/helpers/worktrees`, `data/helpers/files/text-kind`,
+// `data/helpers/files/opens-in-program`, `data/helpers/files/languages`, `data/helpers/run/tasks`,
+// `data/helpers/run/marker`, `data/helpers/search/**`, `data/helpers/finding-text` and
+// `data/helpers/editor/code-themes` join `data/model` in the state row as pure helpers with no
+// reader and no I/O. `data/accounts/calendar` and `data/accounts/mail` are there because how a
+// connector account is named, and how old a thread is, are read by the server that builds the
+// credential file and reads the mailbox and by the page that presses Connect and draws the age on a
+// card; `data/accounts/connect` because the rule a new account's label and a provider's client half
+// are held to is read by the Add form and the setup page before they send and by the server before
+// it writes, and a copy on each side would let them disagree; `data/accounts/leads` for the same
+// reason, since the statuses that close a lead are read by the Position Leads view, its badge and
+// the ticker on the client, and by the summary the snapshot carries on the server;
+// `data/helpers/worktrees` likewise, the Repositories view naming the path a worktree will take and
+// the write making it; `data/helpers/files/text-kind`, the file browser deciding which tab a file
+// opens in and the source route refusing a save over bytes no editor could have read;
+// `data/helpers/files/save-text`, the trim and the final newline a save applies to a source tab's
+// text; `data/helpers/files/opens-in-program`, the open endpoint opening only a file whose
+// extension `open.program_ext` lists and the cards and the file view offering the control for that
+// name alone; `data/helpers/files/languages`, the reader of the `languages:` map: the server words
+// its findings from it, and the file browser, the source tab and the diff and merge views read a
+// file's language through it, so the two cannot disagree about which entries the map dropped;
+// `data/helpers/files/nesting`, the reader of the `patterns:` map of file-nesting.yml and the rule
+// that nests a folder's names: the server words its findings from it and the Files view nests the
+// rows it draws through it, so the two cannot disagree about which patterns were dropped;
+// `data/helpers/run/tasks`, the server starting an update task and the tray listing the four;
+// `data/helpers/run/schedules` and `data/helpers/run/cron`, the rule for one entry of the schedules
+// file and the runs a cron pattern has: the schedule dialog checks an entry and previews a pattern
+// before it sends, and the server reads the file and runs the timer by the same rule, so the two
+// cannot disagree on what runs; `data/helpers/run/marker`, the line a project command's chain
+// prints before each command, which the server writes into the chain's line and the page reads the
+// task's output by; `data/helpers/run/limiter`, the sliding-window count of the app limits, which
+// the page applies to a frame's calls and the server to a host's, so the two count by one rule;
+// `data/helpers/editor`, the order that resolves a tab's editor options (`resolveEditor`) and their
+// types, which the source tab and the diff view resolve a tab's options through; and
+// `data/helpers/search/**`, the Search view refusing a query before it sends it and the search
+// route refusing the same query when it arrives, from one rule and one argument list (`query`), and
+// the Search view drawing the replacement of each hit with the rules the server writes it by
+// (`replace`); and `data/helpers/finding-text`, whose placeholder rule is the one the client's t()
+// fills a catalog string with and the one the server words every finding with before the snapshot
+// carries it; `data/helpers/editor/code-themes`, the list of Shiki's bundled themes (ids, display
+// names, dark or light), which the server words the finding for a bad `code_theme:` from, the
+// appearance store checks a saved pick against and the Settings view draws as the Code theme menu;
+// and `data/sources/config/rail`, the rule over the `rail:` list of config/layout.yml, which the
+// page drawing the rail, the Settings view editing it and the server writing it and wording its
 // findings all read, so the three agree on which entries are pages; and
 // `data/sources/config/settings`, the typed readers of single settings, which the page reads by the
 // rule the server reads by: the Files view `files.confirm_delete`, so a delete asks only while the
@@ -99,7 +100,7 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // the status bar read a root or a repository by, so the three agree on which one holds a file.
 // `data/helpers/files/address` holds the one address `/api/file` answers a file at, which the
 // page's reads and downloads, the editor's picture addresses and a Present slide's figure all
-// build, so the escaping of a name is one rule. `data/helpers/files/apps` holds what an app may
+// build, so the escaping of a name is one rule. `data/helpers/files/apps/` holds what an app may
 // name (the channels it reads, the write kinds it asks for, the confirmations) and the two rules a
 // file path an app names is judged by (the segment rule and the `closed_paths` match): the page
 // refuses an app's request by them before it sends it and the server refuses the same request by
@@ -140,6 +141,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // one finding for each list that lost a row from the same read. The same module reads the symbols
 // of config/catalogs/unimath.yml the same way for the editor's completion.
 //
+// `state/shared/words/appearance` is in the primitives' row because the theme list it holds names
+// the body class of an app's colour theme, which ui/theme converts a theme file into a block for
+// and the editor's token rules are read by, so the class is written once.
+//
 // The shell's row names the state modules the workbench is made of, one at a time, and the folder
 // `state/workbench/navigation/`, whose modules (the rail's pages, the view catalogue and its keys,
 // what a page is called and what closing it asks) the shell and the views both read. The one drag
@@ -149,10 +154,6 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // there is, so the row alone would no longer hold the shell to its own: the stores a shell file may
 // take out of the object are SHELL_STORES below, and the second rule checks each destructuring
 // against that list.
-//
-// `state/system/machine/debug/debug` is in the shell's row because the keys resolve the debugger's
-// keys with its pure `debugKeyOf`, and the debugger's questions, toolbar and status bar item read
-// the debug store.
 //
 // `state/system/machine/lsp/lsp.svelte` and `state/system/machine/lsp/symbols` are in the shell's
 // row because the status bar's language server items and the palette's choice rows draw the
@@ -175,6 +176,18 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // status bar's linter items and the palette's ESLint configuration list draw the linters' states
 // and names.
 //
+// `data/helpers/keys/oculus/**` is the code that takes the workbench's keys, free of the DOM: the
+// key resolver, the palette's keys, the debugger's keys, the editor's presses and the desktop
+// menu's accelerators. The workbench, the terminal grid, the editor and the menu answer a press
+// through it, and the audit of an app's keybindings (the rest of `data/helpers/keys/`, in the state
+// row) resolves a key through the same code, so the keys oculus takes are written once.
+//
+// `data/helpers/files/apps/choices` and `data/helpers/files/languages` are in the ui row because
+// the app colour theme's class and the file icon theme's `languageIds` rules are drawn by
+// primitives: `ui/theme/app-theme.ts` tells an app theme with no offers before the `apps` channel
+// arrives (`NO_OFFERS`), and `ui/display/icon-theme/held.svelte.ts` looks a file name's language
+// up (`languageOf`). Both are pure functions over the data they are handed.
+//
 // `data/snapshot/place` is the place of any project's folder: the server finds the folder for the
 // chat, the document route and the file listing through it, and the page draws a project's card,
 // project view and manifest form from the same function, so the two cannot disagree about where a
@@ -188,10 +201,14 @@ const ALLOWED: Record<string, string[]> = {
         'ui/**',
         'themes/**',
         'state/shared/words/text',
+        'state/shared/words/appearance',
         'data/prose/markdown',
         'data/prose/lsp-servers',
         'data/prose/lsp-addresses',
-        'data/prose/text-edits'
+        'data/prose/text-edits',
+        'data/helpers/keys/oculus/**',
+        'data/helpers/files/apps/choices',
+        'data/helpers/files/languages'
     ],
     shell: [
         'shell/**',
@@ -208,7 +225,6 @@ const ALLOWED: Record<string, string[]> = {
         'state/workbench/palette-source',
         'state/workbench/selection',
         'state/workbench/navigation/**',
-        'state/system/machine/debug/debug',
         'state/system/machine/lsp/lsp.svelte',
         'state/system/machine/lsp/symbols',
         'state/system/machine/lsp/workspace-symbols',
@@ -221,7 +237,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/prose/latex',
         'data/shapes/shapes',
         'data/prose/lsp-servers',
-        'data/prose/symbol-kinds'
+        'data/prose/symbol-kinds',
+        'data/helpers/keys/oculus/**'
     ],
     views: [
         'ui/**',
@@ -230,7 +247,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/shapes/shapes',
         'data/prose/linkedin-idea',
         'data/prose/lsp-servers',
-        'data/prose/text-edits'
+        'data/prose/text-edits',
+        'data/helpers/keys/oculus/**'
     ],
     state: [
         'state/**',
@@ -243,7 +261,8 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/dates',
         'data/helpers/files/paths',
         'data/helpers/files/address',
-        'data/helpers/files/apps',
+        'data/helpers/files/apps/**',
+        'data/helpers/keys/**',
         'data/helpers/files/private-folders',
         'data/helpers/hub-names',
         'data/snapshot/place',
@@ -263,10 +282,10 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/run/cron',
         'data/helpers/run/marker',
         'data/helpers/run/limiter',
-        'data/helpers/editor',
+        'data/helpers/editor/editor',
         'data/helpers/search/**',
         'data/file-ops',
-        'data/helpers/code-themes',
+        'data/helpers/editor/code-themes',
         'data/helpers/finding-text',
         'data/sources/config/rail',
         'data/sources/config/settings',
@@ -397,12 +416,18 @@ function findGlobalState(sourceRoot: string): string[] {
  * they both read.
  *
  * And the editor's load, ui/controls/editor/kit/load.ts's `loading`: Monaco keeps one theme, one
- * set of key rules and its workers for the whole page, not per client, so the promise that loads
- * it once per page is page state by Monaco's own design, and a second load would register
- * everything twice.
+ * set of key rules and its workers for the whole page, not per client, so the promise that loads it
+ * once per page is page state by Monaco's own design, and a second load would register everything
+ * twice. The same holds for the rules of the app colour theme in force, ui/theme/app-rules.ts's
+ * `held`: the editor reads them for the one theme Monaco holds. The file icon theme of an app is
+ * held once for the page the same way, ui/display/icon-theme/held.svelte.ts's `held`, with what the
+ * theme is drawn under (whether the colour theme is dark, and the language each file name has):
+ * every file icon of the page reads them, from `ui/`, where there is no client object.
  */
 const FROZEN = [
     'lib/ui/controls/editor/kit/load.ts:loading',
+    'lib/ui/theme/app-rules.ts:held',
+    'lib/ui/display/icon-theme/held.svelte.ts:held',
     'lib/server/content/audit/publications.ts:STOPWORDS',
     'lib/server/machine/pty/channel.ts:CHANGE_EVENTS',
     'lib/server/machine/pty/tmux.ts:SINGLES',
@@ -448,7 +473,9 @@ const FROZEN = [
  * the status bar's LaTeX item reads the build of the root in front through `latex` and asks the
  * root of a file through `latexActions`, and the workbench and the browser's float windows read
  * which float a page draws through `float`, and the tab menu opens one through `windows`, and the
- * windows of the desktop app name the page that opens a float's window through `pageId`.
+ * windows of the desktop app name the page that opens a float's window through `pageId`, and the
+ * workbench's save key saves the custom editor of an app in front through `apps`, and the app items
+ * of the status bar, the quick input and the modal messages read `appShell`.
  */
 const SHELL_STORES = [
     'commands',
@@ -478,7 +505,9 @@ const SHELL_STORES = [
     'latexActions',
     'float',
     'windows',
-    'pageId'
+    'pageId',
+    'appShell',
+    'apps'
 ];
 
 /**

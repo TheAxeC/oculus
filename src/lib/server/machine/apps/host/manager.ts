@@ -20,8 +20,8 @@
 import { spawn as nodeSpawn } from 'node:child_process';
 import { env as processEnv } from 'node:process';
 import { isDeepStrictEqual } from 'node:util';
-import { appViewId } from '../../../../data/helpers/files/apps.ts';
-import type { LanguageMap } from '../../../../data/helpers/files/languages.ts';
+import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
+import { languageOf, type LanguageMap } from '../../../../data/helpers/files/languages.ts';
 import { createLimiter } from '../../../../data/helpers/run/limiter.ts';
 import { ENGINE_ROOT } from '../../../../data/helpers/hub-names.ts';
 import type {
@@ -36,15 +36,17 @@ import type { Hub } from '../../../core/channels.ts';
 import { systemClock, type Clock, type Timer } from '../../../core/file-poll.ts';
 import { words } from '../../../core/words.ts';
 import type { Root } from '../../../files/files.ts';
-import { names, type ActivationEvent } from '../read/activation.ts';
+import { declaredEvent, names, type ActivationEvent } from '../read/activation.ts';
 import { appById, type AppsHeld, type HeldApp } from '../read/held.ts';
 import type { AppSecrets } from '../secrets/secrets.ts';
+import { AppShell } from '../shell/registry.ts';
+import { shellHandlers, shellNotices } from '../shell/host-calls.ts';
 import { Refused } from './connection.ts';
 import { changedKeys, hostHandlers, type HostStore } from './handlers.ts';
 import { createOutput, type HostOutput } from './output.ts';
 import { cyclesOf, judge } from './plan.ts';
 import { HostProcess, type HostEnd } from './process.ts';
-import { diskList, languageOfPath, rootHolds, type List } from './triggers.ts';
+import { diskList, rootHolds, type List } from './triggers.ts';
 import { approvedFiles } from './verify.ts';
 
 /** What a request to a host came to: its answer, or the word it is refused with. */
@@ -67,6 +69,8 @@ export type HostsOptions = {
     secrets: AppSecrets;
     /** The server's text catalog. */
     text: () => Record<string, string>;
+    /** The resolved values of the settings an app declares, by whole key. */
+    values: (app: HeldApp) => Record<string, unknown>;
     /** The program the runner is started under, the runner and `vscode-jsonrpc`'s node entry. */
     node: string;
     runner: string;
@@ -102,8 +106,11 @@ type Entry = {
     output: HostOutput;
     writes: ReturnType<typeof createLimiter>;
     messages: ReturnType<typeof createLimiter>;
+    opens: ReturnType<typeof createLimiter>;
     wrote: Map<string, unknown>;
     snapshot: Record<string, unknown>;
+    /** The setting values the host was last told. */
+    values: Record<string, unknown>;
 };
 
 /** How a stop treats the host's dependents: not at all, or stopped first under a blame. */
@@ -123,10 +130,22 @@ export class AppHosts {
     #holding: Promise<void> | null = null;
     #timer: Timer | null = null;
     #published = '';
+    /** What the hosts have registered in the shell, and the questions they ask the reader. */
+    readonly shell: AppShell;
 
     constructor(options: HostsOptions) {
         this.#options = options;
         this.#clock = options.clock ?? systemClock;
+        this.shell = new AppShell({
+            hub: options.hub,
+            apps: options.apps,
+            hosts: {
+                request: (id, method, params) => this.#link(id).request(method, params),
+                notify: (id, method, params) =>
+                    this.#entries.get(id)?.process?.notify(method, params),
+                ensure: (id, event) => this.activateWhole(id, event)
+            }
+        });
         if (options.after !== undefined) {
             const release = (): void => {
                 this.#holding = null;
@@ -186,16 +205,58 @@ export class AppHosts {
         this.#publish(true);
     }
 
-    /** An activation event happened: start the host of the app when it names the event. */
+    /**
+     * An activation event happened: start the host of the app when it names the event. A command
+     * or a view the app declares is an event of the app whatever its `activation` lists.
+     */
     async activate(id: string, event: ActivationEvent): Promise<void> {
         const app = this.#app(id);
-        if (app === undefined || app.row.host === '' || !names(app.row.activation, event)) return;
+        if (app === undefined || app.row.host === '') return;
+        if (!names(app.row.activation, event) && !declaredEvent(app.row.contributes, event)) return;
         await this.#ensure(id, event);
     }
 
-    /** A tab of the app is drawn. */
-    tab(id: string): Promise<void> {
-        return this.activate(id, { kind: 'onTab' });
+    /** Activate for an event, then answer whether the host of the app runs. */
+    async activateWhole(id: string, event: ActivationEvent): Promise<boolean> {
+        await this.activate(id, event);
+        return this.running(id);
+    }
+
+    /** Whether the host of the app has a process that has not ended. */
+    running(id: string): boolean {
+        const process = this.#entries.get(id)?.process;
+        return process !== undefined && process !== null && !process.over;
+    }
+
+    /** A tab of the app is drawn, for a view of it when it names one. */
+    async tab(id: string, view = ''): Promise<void> {
+        await this.activate(id, { kind: 'onTab' });
+        if (view !== '') await this.activate(id, { kind: 'onView', id: view });
+    }
+
+    /** The running host of an app, for a request of the shell; `host_down` when none runs. */
+    #link(id: string): HostProcess {
+        const process = this.#entries.get(id)?.process;
+        if (process === undefined || process === null || process.over) {
+            throw new Refused('host_down');
+        }
+        return process;
+    }
+
+    /**
+     * Tell the running hosts the settings of their apps that changed, after the configuration or
+     * the apps were read again.
+     */
+    settingsChanged(): void {
+        for (const entry of this.#entries.values()) {
+            const app = this.#app(entry.id);
+            if (app === undefined || entry.process === null) continue;
+            const now = this.#options.values(app);
+            const keys = changedKeys(entry.values, now);
+            if (keys.length === 0) continue;
+            entry.values = now;
+            this.shell.settingsChanged(entry.id, keys, now);
+        }
     }
 
     /** A source tab of a file of this language opened on a page. */
@@ -207,7 +268,21 @@ export class AppHosts {
 
     /** A source tab of this path of a root opened: the language of the file is an event. */
     opened(path: string): void {
-        this.language(languageOfPath(path, this.#options.languages()));
+        this.language(languageOf(path, this.#options.languages()));
+    }
+
+    /** The resolved values of the settings an app declares, by whole key. */
+    valuesOf(app: HeldApp): Record<string, unknown> {
+        return this.#options.values(app);
+    }
+
+    /** One question of the shell to the running host of an app (`oculus/provide`). */
+    async provide(id: string, params: unknown): Promise<HostResult> {
+        try {
+            return { ok: true, value: await this.#link(id).request('oculus/provide', params) };
+        } catch (error) {
+            return { ok: false, word: error instanceof Refused ? error.word : 'host_down' };
+        }
     }
 
     /** One request of a page to the host of an app. */
@@ -334,8 +409,10 @@ export class AppHosts {
                 output: createOutput(() => settings().hostOutputKb),
                 writes: createLimiter(() => settings().writesPerMin, 60_000),
                 messages: createLimiter(() => settings().messagesPerMin, 60_000),
+                opens: createLimiter(() => settings().opensPerMin, 60_000),
                 wrote: new Map(),
-                snapshot: {}
+                snapshot: {},
+                values: {}
             };
             this.#entries.set(app.id, entry);
         }
@@ -384,6 +461,14 @@ export class AppHosts {
         });
         if (files === null) return false;
         const text = this.#options.text;
+        entry.values = this.#options.values(app);
+        const shell = {
+            shell: this.shell,
+            app: () => this.#app(entry.id),
+            messages: entry.messages,
+            opens: entry.opens,
+            values: this.#options.values
+        };
         let process: HostProcess;
         try {
             process = new HostProcess({
@@ -399,7 +484,10 @@ export class AppHosts {
                 texts: this.#runnerTexts(),
                 event,
                 output: entry.output,
-                handlers: hostHandlers(this.#context(entry)),
+                name: app.row.name,
+                settings: entry.values,
+                handlers: { ...hostHandlers(this.#context(entry)), ...shellHandlers(shell) },
+                notices: shellNotices(shell),
                 stopSeconds: () => this.#options.settings().hostStopSeconds,
                 clock: this.#clock,
                 spawn: this.#options.spawn,
@@ -431,6 +519,7 @@ export class AppHosts {
     #ended(entry: Entry, process: HostProcess, end: HostEnd): void {
         if (entry.process !== process) return;
         entry.process = null;
+        this.shell.stopped(entry.id);
         if (entry.intended) {
             entry.intended = false;
         } else {
@@ -530,6 +619,7 @@ export class AppHosts {
             failed: words(text, 'server.apps.host_activate_failed', '{0}'),
             stream: words(text, 'server.apps.host_stream_error', '{0}'),
             listenerFailed: words(text, 'server.apps.host_listener_failed', '{0}'),
+            eventFailed: words(text, 'server.apps.host_event_failed', '{0}'),
             deactivateFailed: words(text, 'server.apps.host_deactivate_failed', '{0}'),
             noHandler: words(text, 'server.apps.host_no_handler'),
             noApi: words(text, 'server.apps.host_no_api'),

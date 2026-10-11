@@ -92,6 +92,7 @@
     import { createTabAsks } from './status/tab-asks.svelte';
     import { createTabFile } from './status/tab-file.svelte';
     import { createLibraryTab } from './status/library-tab.svelte';
+    import { appEditorActions } from './status/app-actions';
     import { tabFacts } from './status/tab-state';
     import { instanceMap } from '$lib/state/workbench/layout';
     import { tabShown } from './status/tab-shown';
@@ -113,6 +114,7 @@
 
     const client = useState();
     const {
+        appShell,
         editorStatus,
         explorer,
         fs: { fileText, roots: currentRoots, workspaces },
@@ -388,7 +390,21 @@
             select: tabLanguage.lsp.select
         }
     });
-    const own = $derived(asks.own);
+    const own = $derived([
+        ...asks.own,
+        ...appEditorActions(
+            appShell.menu(
+                'editor/context',
+                appShell.place(
+                    { id: instance.id, view: instance.view, state: instance.state },
+                    { language },
+                    true
+                )
+            ),
+            { root, path },
+            (offer, args) => void appShell.runOffer(offer, args)
+        )
+    ]);
 
     // The bar's actions go up to the pane while the tab is mounted and one of them applies
     // (ui/tabs/tab-actions.svelte.ts).

@@ -12,6 +12,7 @@
 // the app's key is in the held row before the answer is sent and a revoke stops serving at once.
 
 import { json } from '@sveltejs/kit';
+import { homedir } from 'node:os';
 import trash from 'trash';
 import { z } from 'zod';
 import { tokenedBody } from '../../../core/auth.ts';
@@ -20,15 +21,18 @@ import {
     appsSettings,
     closedPaths,
     configDir,
-    textCatalog
+    textCatalog,
+    type LocalConfig
 } from '../../../../data/sources/config.ts';
 import { browserRoots } from '../../../files/roots.ts';
 import type { Root } from '../../../files/files.ts';
+import { defaultHistoryDir } from '../../../files/fs/history.ts';
 import { approveApp, defaultApprovalsPath, revokeApp } from '../../approvals/approvals.ts';
 import type { AppHosts } from '../host/manager.ts';
 import { appById, type AppsHeld } from '../read/held.ts';
 import type { WalkLimits } from '../read/record.ts';
 import { checkOpen, diskFs, type OpenFs } from '../reach/open.ts';
+import { closedToApps } from '../reach/private.ts';
 import type { FsContext } from '../reach/fs.ts';
 import type { AppSecrets } from '../secrets/secrets.ts';
 import { readStore } from '../store/store.ts';
@@ -63,12 +67,16 @@ export type AppsRouteOptions = {
     configDir: string;
     /** The folders `closed_paths` names, or null while the key is missing or is no list. */
     closedPaths: () => readonly string[] | null;
+    /** The real paths of the folders and files closed to every app. */
+    privateReal: () => readonly string[];
     /** The text catalog the token refusal is worded from, read when a refusal is made. */
     text: () => Record<string, string>;
     fs: OpenFs;
     /** The most names a folder lists, and the limits a copied app folder is held to. */
     scanEntries: () => number;
     limits: () => WalkLimits;
+    /** The local history's folder, where a save copies the file it replaces. */
+    history: () => string;
     hosts: AppHosts;
     secrets: AppSecrets;
     /** Move a path to the system trash. */
@@ -82,7 +90,9 @@ export type AppsRouteServer = {
     secrets: AppSecrets;
     fsWrites: FsWrites;
     engine: string;
-    local: { hub: string; approvals?: string; workspaces?: string };
+    local: LocalConfig;
+    /** The home folder; the machine's own when absent. */
+    home?: string;
 };
 
 /**
@@ -101,6 +111,17 @@ export function routeOptions(
         roots: () => browserRoots({ config: config(), engine: server.engine, local: server.local }),
         configDir: configDir(server.engine),
         closedPaths: () => closedPaths(config()).folders,
+        privateReal: () =>
+            closedToApps({
+                home: server.home ?? homedir(),
+                engine: server.engine,
+                local: server.local,
+                roots: browserRoots({
+                    config: config(),
+                    engine: server.engine,
+                    local: server.local
+                })
+            }),
         text: () => textCatalog(config()),
         fs: diskFs,
         scanEntries: () => appsSettings(config()).scanEntries,
@@ -108,6 +129,7 @@ export function routeOptions(
             const settings = appsSettings(config());
             return { files: settings.maxFiles, bytes: settings.maxMb * 1024 * 1024 };
         },
+        history: () => server.local.history ?? defaultHistoryDir(),
         hosts: server.hosts,
         secrets: server.secrets,
         trash: (path) => trash(path, { glob: false })
@@ -120,6 +142,7 @@ export function reachOf(options: AppsRouteOptions): FsContext {
         roots: options.roots(),
         configDir: options.configDir,
         closedPaths: options.closedPaths(),
+        privateReal: options.privateReal(),
         fs: options.fs,
         scanEntries: options.scanEntries()
     };
@@ -212,6 +235,7 @@ export function handleOpenGet(request: Request, options: AppsRouteOptions): Resp
             roots: options.roots(),
             configDir: options.configDir,
             closedPaths: options.closedPaths(),
+            privateReal: options.privateReal(),
             fs: options.fs
         }
     );

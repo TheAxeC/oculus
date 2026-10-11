@@ -26,7 +26,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
-    import { resetBrowserRow } from '$lib/state/system/config/browser';
+    import { resetBrowserRow } from '$lib/state/system/config/other-rows/browser';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
     import type { Lists } from '$lib/state/system/config/editors/sources';
     import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
@@ -40,14 +40,16 @@
     import Origins from '../editors/Origins.svelte';
     import PagesReset from '../PagesReset.svelte';
     import RailEditor from '../RailEditor.svelte';
-    import BrowserControl from './BrowserControl.svelte';
+    import AppControl from './other-rows/AppControl.svelte';
+    import BrowserControl from './other-rows/BrowserControl.svelte';
     import Control from './Control.svelte';
     import Gear from './Gear.svelte';
     import { defaultWords, said } from './said';
 
     const {
         layout: { openView },
-        ui
+        ui,
+        writes: { writeAppSetting }
     } = useState();
 
     type Props = {
@@ -119,6 +121,8 @@
     function reset(): void {
         if (row.kind === 'browser') {
             resetBrowserRow(ui, row);
+        } else if (row.kind === 'app') {
+            void writeAppSetting(row.setting.key, row.setting.default);
         } else if (row.kind === 'config' && ['list', 'multi', 'parked'].includes(row.control)) {
             editors.clear(row);
             ui.setInstanceState(id, withSavedDraft(ui.instanceState(id), row.file, row.key, null));
@@ -180,6 +184,8 @@
         <p class="path"><CodeText text={`\`${row.path}\``} /></p>
     {:else if row.kind === 'browser'}
         <BrowserControl {row} onsaid={(next: Message | null) => (browserSaid = next)} />
+    {:else if row.kind === 'app'}
+        <AppControl {row} {lists} />
     {:else}
         {#if control === 'family' || control === 'rail' || control === 'arrangements' || control === 'workbench'}
             {#if fields.length > 0}
@@ -205,6 +211,13 @@
     {#each lines as line (line)}
         <p class="said" role="status">{line}</p>
     {/each}
+    {#if row.kind === 'app'}
+        <div class="foot">
+            <span class="default">
+                {defaultWords({ control: row.control, default: row.setting.default })}
+            </span>
+        </div>
+    {/if}
     {#if row.kind === 'config'}
         <div class="foot">
             {#if defaultWords(row) !== ''}

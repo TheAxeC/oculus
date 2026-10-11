@@ -71,7 +71,8 @@
     provideTipIds(createTipIds());
     provideSpelling(desktop?.bridge.spelling);
     const {
-        apps: { findings: appFindings, holds, rows: appRows },
+        apps: { findings: appFindings, rows: appRows },
+        appShell,
         debug: { load: loadDebug, stopFollowing: stopFollowingDebug },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { bookmarks: savedBookmarks, workspaces },
@@ -251,7 +252,7 @@
      * table does not name that store; the rail is handed what to draw. Which view opens one is a
      * question about a file name, which state/sources/fs.ts answers.
      */
-    const saved = $derived<Bookmark[]>(bookmarkRows(savedBookmarks().entries, holds));
+    const saved = $derived<Bookmark[]>(bookmarkRows(savedBookmarks().entries, appShell.opens));
 
     /**
      * Rewrite the rail's `rail:` list as the rail asks, a page button moved or hidden, through the

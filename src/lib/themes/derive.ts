@@ -30,8 +30,8 @@
 // the bar's ink, so the ink reads on it at least as well as on the orange.
 //
 // The rule is WCAG relative luminance, a 0.02 lightness step, a bound of 50 steps, and the grounds
-// tried in a fixed order. Nothing here touches the document; ui/theme.ts sets the theme class and
-// applies these tokens. Pure functions over one import, culori, whose wcagLuminance and
+// tried in a fixed order. Nothing here touches the document; ui/theme/theme.ts sets the theme class
+// and applies these tokens. Pure functions over one import, culori, whose wcagLuminance and
 // wcagContrast are the WCAG measure, so the contrast test can run them over every theme in a plain
 // node run. The HLS conversion, the mixing and the hex writing stay here: they are Python's
 // colorsys and a truncating byte, which the derived colours are computed with, and culori's

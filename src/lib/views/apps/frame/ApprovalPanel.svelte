@@ -13,6 +13,8 @@
     // An app with a host says first that it runs a program on this machine, with the reader's
     // rights, and which file the program is. The folders its page may read, the keyring, the apps
     // it needs and what a program that reads files could send to the addresses it reaches follow.
+    // What the app adds to oculus (commands, keys, menu entries, views, custom editors, settings
+    // and themes) is one line with each count, before the channels it reads.
     // The panel also holds the choices of the app's menu (disable, enable, remove) and, for an app
     // that is approved and reviewed again, a way back to the app.
 
@@ -20,7 +22,7 @@
     import type { AppChoice } from '$lib/state/system/apps/flows';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
-    import { readWords, writeWords } from '$lib/state/system/apps/words';
+    import { addsWords, readWords, writeWords } from '$lib/state/system/apps/words';
 
     type Props = {
         row: AppRow;
@@ -77,6 +79,9 @@
         {/if}
         {#if row.depends.length > 0}
             <li>{t('apps.depends_line', row.depends.join(', '))}</li>
+        {/if}
+        {#if addsWords(row.contributes) !== ''}
+            <li>{addsWords(row.contributes)}</li>
         {/if}
         {#each row.reads as channel (channel)}
             <li>{readWords(channel, root)}</li>

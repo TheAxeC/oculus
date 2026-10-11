@@ -117,7 +117,8 @@ export { createInstances } from './instances.ts';
 export type { Instances } from './instances.ts';
 export { createOpening } from './open/opening.ts';
 export type { OpenOptions, Opening } from './open/opening.ts';
-export { createShowDeck, createShowInFiles } from './open/show.ts';
+export { createShowDeck, createShowInFiles, createShowPlaced } from './open/show.ts';
+export type { Dock, PlaceRule } from './open/show.ts';
 export { createAway } from './open/away.ts';
 export type { Away } from './open/away.ts';
 export type { ShowDeck, ShowInFiles } from './open/show.ts';
@@ -125,6 +126,7 @@ export {
     activePath,
     cardCursor,
     documentState,
+    editorTab,
     findInstance,
     findView,
     instanceFlag,
@@ -138,6 +140,8 @@ export {
     reconcileCardCursor,
     stateId,
     tabForKind,
+    tabWithEditor,
     tabsOf,
     withCardCursor
 } from './instance.ts';
+export type { AppOpens } from './instance.ts';

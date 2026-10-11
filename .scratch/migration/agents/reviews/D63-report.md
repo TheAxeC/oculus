@@ -965,3 +965,208 @@ changed  193  tests/views/shared/explorer/opening-apps.test.ts
 changed  98  tests/views/shared/explorer/opening.client.test.ts
 changed  391  utils/migrations/convert-vscode-themes.ts
 ```
+
+# Repair round 1
+
+Everything in the round is done: all 13 rulings are built and verified. The three reds of `tests/checks` are the sparse-checkout ones the brief names under "Not sent", and are unchanged by this round. The first of the three `npm run test:quick` runs took 52.6 s against the 45 s guideline (exit 0, "every command passed"); runs 2 and 3 took 38.0 s and 37.0 s.
+
+No red run on the first-build tree exists for rulings 2, 3, 4, 9, 6, 7 and 8, because their rows were written after the code change and nothing was run against the old code. Rulings 7, 8 and 6 already held on the first build tree. The rows that were run red first are those of rulings 1, 5, 11, 12 and 13, quoted below.
+
+## One row per ruling
+
+| # | Change | Evidence |
+|---|---|---|
+| 1 | `oculus.file-icons` is in the closed list of `data/helpers/files/apps/commands.ts` and out of the page commands; its branch is gone from `state/system/apps/shell/page-commands.ts`; the row in `shell-commands.test.ts` runs it and gets `closed` with `file_icons` unwritten; `docs/apps.md`, `DESIGN.md:491` and the context comment follow | red and green quoted below; `npx vitest run tests/server/machine/apps/shell/shell-commands.test.ts` |
+| 2 | `railChordLetters(config)` in `data/helpers/files/apps/keys/oculus/rail-letters.ts` reads the letters from `nav_groups` and `direct_chord`; `takenBy` takes them, `boundKeys(apps, platform, letters)` and `noteUnboundKeys(held, catalog, config)` pass them; the false comment is gone; `app-keys.test.ts` has a rail-letter describe with real chords `f`, `y`, `v` and a row where the config names no `f` chord, and no `NO_RAIL` is passed where a letter matters | `npx vitest run tests/state/system/apps/app-keys.test.ts` |
+| 3 | The hand-copied table is deleted. `takenBy` builds a keyboard event from the chord (`eventOfChord`) and calls the real `resolveKey`; the palette, debugger, editor and desktop-menu keys are exported by `keys/oculus/palette-keys.ts`, `debug-keys.ts`, `editor-keys.ts`, `desktop-keys.ts`, and `desktop/windows/menu.ts` sets its accelerators from `ACCELERATORS`; `app-keys.test.ts` checks a key from each source and a round trip of `eventOfChord` | same file, 71 rows; `npx vitest run tests/state/system/apps tests/server/machine/apps tests/shell/panes/strip/app-editor-close.test.ts`: 23 files, 480 passed |
+| 4 | Closing a panel's tab sends `view` in `state/system/apps/shell/show/panels.ts` (`panelDisposed`); the registry reads `params.view`; the row drives the page's own message and shows `onDidDispose` fired and the panel gone from the payload and the map | `shell-handlers.test.ts`, passing in the 115-row run below |
+| 5 | `state/system/apps/shell/frames.svelte.ts` keeps `commands` per tab instance, `appOf` (tab to app) and `items` per app; `attach(instance, app)` is called at mount in `apps.svelte.ts`; `drop` removes the tab's commands and removes the app's items only when no tab of the app remains; the head comment follows. Four rows in `tests/state/system/apps/shell.test.ts` | red and green quoted below |
+| 6 | `apps.mount` takes `MountOptions.connect`; `app-editor-close.test.ts` passes a connect double and has no `vi.mock('penpal')`; it throws a plain error if the mount handed no methods | `npm run test:quick` three times, 168 test files selected each run including `app-editor-close`, all exit 0 |
+| 7 | The `rate` row asserts the call after `advance(60_001)` is allowed | `shell-handlers.test.ts` passing |
+| 8 | The page-commands row runs the command with both pages present; the file is now `page-commands.client.test.ts` (it runs effects, which the plain node tests do not) | `page-commands.client.test.ts` passing |
+| 9 | `parsed` is gone from `when.ts` (`whenHolds` and `mentions` call `parseWhen` directly). The four lets of `appearance.ts` and `setAppThemes`/`setAppIconThemes` are gone; `state/system/apps/shell/shell.svelte.ts` holds `offers`, `fileIcons` and `languages` as derived values of the apps and the configuration, and the readers of `appearance.ts` take `offers: AppOffers` (`NO_OFFERS` for none). The four `FROZEN` entries are removed from `boundaries.test.ts` | four rows in `shell.test.ts` ("the themes the acting apps offer"), 26 passed; `tests/checks/tree/boundaries.test.ts` passes |
+| 10 | `docs/apps.md:538` and "What an app cannot do" say that a custom editor's page reads, through `document.read`, the bytes of the file the reader opened in it, whatever `files` names, and every other read goes through `fs` within `files` | `sed -n 538p docs/apps.md` |
+| 11 | `isOptions(value)` in `runner-shell.mjs` is the first non-null object without a `title` after the message; it is taken out of the arguments before the items are read | red and green quoted below |
+| 12 | The TreeView binding holds `selection` and `visible` as the last sent values (set before the events fire); `title`, `description`, `message` and `badge` read back what was set | red and green quoted below |
+| 13 | `affectsConfiguration(section)` is `key === section \|\| key.startsWith(section + '.')` over the changed keys | red and green quoted below |
+
+## New rows, failing run before and passing run after
+
+Ruling 1, `tests/server/machine/apps/shell/shell-commands.test.ts`:
+
+```
+ x answers `closed` for oculus.file-icons and asks no page 5003ms
+      Tests  1 failed | 11 passed (12)
+```
+
+After the fix: `Tests  12 passed (12)`.
+
+Ruling 5, `tests/state/system/apps/shell.test.ts`:
+
+```
+ x keeps a status item until the last tab of the app closes 2ms
+ x lets the tab left open change and unregister the item the closed tab registered 0ms
+ x ends the commands a tab registered with the tab 0ms
+ x does not hold an item of an app whose tabs are all closed 0ms
+TypeError: frames.attach is not a function   (four times)
+      Tests  4 failed | 18 passed (22)
+```
+
+The tree as left had no `attach`, so the four rows fail on the call that registers a tab with its app. After the fix: `Tests  22 passed (22)`.
+
+Rulings 11, 12, 13, `tests/server/machine/apps/shell/runner-shell.test.ts` (new file, an in-process fake connection):
+
+```
+ x posts one notice with the one action Open: an empty options object before the item: ('Saved', {}, 'Open') 4ms
+ x posts one notice with the one action Open: an options object with a detail: ({ detail }, 'Open') 0ms
+ x holds the selection and the visibility the page last sent, from before any to the last 1ms
+ x reads back the title, description, message and badge that were set 0ms
+ x matches whole dotted segments of the keys that changed 0ms
+      Tests  5 failed | 2 passed (7)
+```
+
+After the fix: `Tests  7 passed (7)`.
+
+## Checks, as printed
+
+Run in `tools/oculus` of the worktree after the last change.
+
+```
+npm run test:quick, run 1: test:quick: 52.6 s (limit 45.0 s); every command passed   (over the time limit)
+npm run test:quick, run 2: test:quick: 38.0 s (limit 45.0 s); every command passed
+npm run test:quick, run 3: test:quick: 37.0 s (limit 45.0 s); every command passed
+   (each: prettier ok, eslint ok, svelte-check 478 FILES 0 ERRORS 0 WARNINGS, vitest ok)
+npx vitest run tests/state/system/apps tests/server/machine/apps tests/shell/panes/strip/app-editor-close.test.ts --testTimeout 20000
+   Test Files  23 passed (23)   Tests  480 passed (480)
+npx vitest run tests/state/system/apps/app-keys.test.ts tests/state/system/apps/page-commands.client.test.ts tests/server/machine/apps/shell/shell-handlers.test.ts tests/shell/panes/strip/app-editor-close.test.ts tests/server/machine/apps/shell/shell-commands.test.ts
+   Test Files  5 passed (5)   Tests  115 passed (115)
+sh utils/folder-check.sh              exit 0
+sh utils/unused-exports.sh            Unused exports (244)   Unused exported types (117)
+node utils/migrations/convert-vscode-themes.ts --check    19 themes up to date
+npx tsc --noEmit -p .                 3 errors, the baseline CardAction ones (card.ts, entry-actions.ts, task-card.ts)
+npx vitest run tests/checks --testTimeout 0 --hookTimeout 0
+   Test Files  2 failed | 15 passed (17)   Tests  3 failed | 268 passed (271)
+   FAIL config-folder.test.ts > reads the roots of sources.yml without a finding
+   FAIL config-folder.test.ts > names a group of its own and a path under the hub for every document
+   FAIL integrity.test.ts > the real hub > validates with no findings
+```
+
+The slow files, each alone with `npx vitest run --testTimeout 20000 <file>`: `tests/server/machine/apps/shell/host-commands.test.ts` 5 passed; `tests/routes/edit/apps/app-setting.test.ts` 12 passed; `tests/routes/edit/apps/app-gate.test.ts` 20 passed; `tests/server/machine/apps/manifest/manifest.test.ts` 68 passed; `tests/routes/edit/roots.test.ts` 3 passed; `tests/routes/hubs/hub-writes.test.ts` 23 passed.
+
+The unused-exports counts equal the first build's. The one line that differs from the first-build list is `CHORD_MS, DOUBLE_G_MS`, which moved with `resolve.ts` from `shell/keys/keys.ts` and keeps its names.
+
+The ASCII scan of the changed text files (`LC_ALL=C grep -nP '[^\x00-\x7F]'`) printed nothing. Sizes (`wc -l`): `apps.svelte.ts` 848, `shell.svelte.ts` 453, `runner-shell.mjs` 544, `appearance.ts` 555, `workbench-keys.svelte.ts` 571, `keys/oculus/resolve.ts` 365, `shell/keys/keys.ts` 68; the size test of `tests/checks/tree` passes.
+
+## Edits to existing test files, against the base copy (this round's hunks)
+
+`tests/checks/config/config-folder.test.ts`:
+
+```diff
+-        const { initialKeyState, resolveKey } = await import('../../../src/lib/shell/keys/keys.ts');
++        const { initialKeyState, resolveKey } =
++            await import('../../../src/lib/data/helpers/files/apps/keys/oculus/resolve.ts');
+...
+-                { direct: [], chords: {} },
++                { chords: {} },
+```
+
+`tests/checks/look/themes.ts`: it imports `NO_OFFERS` from `data/helpers/files/apps/choices.ts` and calls `themes(NO_OFFERS)` and `themeClass(name, NO_OFFERS)` (the readers now take the offers).
+
+`tests/checks/tree/boundaries.test.ts`:
+
+```diff
+         'themes/**',
+         'state/shared/words/text',
++        'state/shared/words/appearance',
+...
+-        'data/prose/text-edits'
++        'data/prose/text-edits',
++        'data/helpers/files/apps/keys/oculus/**'
+```
+
+(the last two lines are in the `ui`, `shell` and `views` rows). The `shell` row loses `'state/system/machine/debug/debug'` and its comment paragraph, and a paragraph for `data/helpers/files/apps/keys/oculus/**` is added. The four `appearance.ts` entries (`appThemes`, `appIconThemes`, `fileIcons`, `languages`) are removed from `FROZEN`. The other hunks of the full diff against the base (the re-wrapped ALLOWED comment, `data/places/hub-address`, `vscode.css` in `themes.ts`) belong to the first build and are in the report above.
+
+## Visible changes, before and after
+
+- `executeCommand('oculus.file-icons', ...)` from an app: before, it wrote `file_icons` of `config/appearance.yml`; now it answers `closed`. `:file-icons` stays in Cmd-K for the reader.
+- An app keybinding whose first key is a letter of the rail chords (for example `f`, `y`, `v` in this configuration): before, no finding; now it gets the `key_oculus` finding, the same as other taken keys.
+- `Cmd+Alt+H` (hide others): before, accepted; now a key of the desktop menu, so it gets the finding on a Mac. `hide`, `hideOthers`, `quit` and `minimize` now have explicit accelerators in the menu.
+- Off a Mac, `ctrl+m` is an editor-taken key; on a Mac, `ctrl+shift+m` is a workbench-taken key. The `mod+...` notation is now concrete per platform.
+- A status item an app registered stays until the app's last tab closes (before: until any tab closed).
+- Closing a panel's tab fires `onDidDispose` in the host and removes the panel from the `app-shell` payload.
+- `showInformationMessage('Saved', {}, 'Open')` and one with `{ detail: 'x' }` give one notice with the one action `Open` (before: the object became a second action).
+- A TreeView's `selection`, `visible`, `title`, `description`, `message` and `badge` read back the last sent or set value.
+- `affectsConfiguration('notes.w')` is false when `notes.width` changed; `('notes')` and `('notes.width')` are true.
+- `docs/apps.md` (the page commands, the keys section, "What an app cannot do") and `DESIGN.md:491` and `:495` describe the above.
+
+## Limitations and sharp edges
+
+- The rail letters are every letter the configuration names in `nav_groups` and `direct_chord`. The live `order.chords` of a session is built from the same fields and can be a subset, so an app key on a configured letter that is not live gets a finding it need not have.
+- The taken-key probe resolves a key in the widest context (desktop app, cursor active, no overlay, no typing). A key taken only on the desktop or only with a cursor counts as taken everywhere.
+- A TreeView field set to `undefined` is sent to the page as `null`.
+- Ruling 9 reached more callers than the brief's path list, because the readers take the offers as an argument: `state/client/context.ts`, `state/workbench/ui.svelte.ts`, `state/workbench/palette.ts`, `state/system/config/editors/sources.ts`, `shell/window/appearance.svelte.ts`, `shell/keys/Palette.svelte`, `shell/keys/rows/CommandRows.svelte`, `ui/display/icon-theme/held.svelte.ts`, `ui/theme/app-theme.ts`, `views/system/workbench/Settings.svelte`, `views/system/workbench/settings/other-rows/BrowserControl.svelte`, `tests/checks/look/themes.ts`.
+- Rulings 2 and 3 added a data folder `data/helpers/files/apps/keys/oculus/` (6 files) because `data/helpers` and `data` are at the folder limit of 10; `boundaries.test.ts` lets `ui`, `shell` and `views` import it. `appearance.ts` re-exports `NO_OFFERS`, `languageOf` and `LanguageMap` (as it does `CODE_TOKENS`) so the ui layer needs no further ALLOWED entry.
+- `shell.svelte.ts` holds `offers` as a derived value of a JSON signature, so the page's themes and icon themes change only when the offers or the app keys change; two apps offering equal values compare structurally.
+- `page-commands.test.ts` is renamed `page-commands.client.test.ts` (it needs effects to run).
+- The three reds of `tests/checks` are the sparse-checkout ones and are run on main at landing.
+
+## Files changed this round (75, by modification time after the first report)
+
+- DESIGN.md
+- docs/apps.md
+- src/desktop/windows/menu.ts
+- src/lib/data/helpers/files/apps/choices.ts
+- src/lib/data/helpers/files/apps/commands.ts
+- src/lib/data/helpers/files/apps/keys/bound-keys.ts
+- src/lib/data/helpers/files/apps/keys/keys.ts
+- src/lib/data/helpers/files/apps/keys/oculus-keys.ts
+- src/lib/data/helpers/files/apps/keys/oculus/debug-keys.ts
+- src/lib/data/helpers/files/apps/keys/oculus/desktop-keys.ts
+- src/lib/data/helpers/files/apps/keys/oculus/editor-keys.ts
+- src/lib/data/helpers/files/apps/keys/oculus/palette-keys.ts
+- src/lib/data/helpers/files/apps/keys/oculus/rail-letters.ts
+- src/lib/data/helpers/files/apps/keys/oculus/resolve.ts
+- src/lib/data/helpers/files/apps/when.ts
+- src/lib/server/machine/apps/host/runner-shell.mjs
+- src/lib/server/machine/apps/read/across/key-notes.ts
+- src/lib/server/machine/apps/read/scan.ts
+- src/lib/server/machine/apps/shell/registry.ts
+- src/lib/shell/commands/debug-key.ts
+- src/lib/shell/keys/keys.ts
+- src/lib/shell/keys/Palette.svelte
+- src/lib/shell/keys/rows/CommandRows.svelte
+- src/lib/shell/keys/workbench-keys.svelte.ts
+- src/lib/shell/window/appearance.svelte.ts
+- src/lib/shell/Workbench.svelte
+- src/lib/state/client/context.ts
+- src/lib/state/shared/words/appearance.ts
+- src/lib/state/system/apps/apps.svelte.ts
+- src/lib/state/system/apps/shell/frames.svelte.ts
+- src/lib/state/system/apps/shell/page-commands.ts
+- src/lib/state/system/apps/shell/shell.svelte.ts
+- src/lib/state/system/apps/shell/show/panels.ts
+- src/lib/state/system/config/editors/sources.ts
+- src/lib/state/system/machine/debug/debug.ts
+- src/lib/state/workbench/navigation/catalogue.ts
+- src/lib/state/workbench/palette.ts
+- src/lib/state/workbench/ui.svelte.ts
+- src/lib/ui/controls/editor/chords.ts
+- src/lib/ui/controls/editor/types.ts
+- src/lib/ui/display/icon-theme/held.svelte.ts
+- src/lib/ui/theme/app-theme.ts
+- src/lib/views/sessions/terminal/grid/grid-keys.ts
+- src/lib/views/sources/source/latex/latex-tab.svelte.ts
+- src/lib/views/sources/source/status/ask-perform.ts
+- src/lib/views/system/workbench/Settings.svelte
+- src/lib/views/system/workbench/settings/other-rows/BrowserControl.svelte
+- tests/checks/config/config-folder.test.ts
+- tests/checks/look/themes.ts
+- tests/checks/tree/boundaries.test.ts
+- tests/server/machine/apps/shell/runner-shell.test.ts
+- tests/server/machine/apps/shell/shell-commands.test.ts
+- tests/server/machine/apps/shell/shell-handlers.test.ts
+- tests/shell/panes/strip/app-editor-close.test.ts
+- tests/state/system/apps/app-keys.test.ts
+- tests/state/system/apps/page-commands.client.test.ts
+- tests/state/system/apps/shell.test.ts
+- docs/diagrams/*.dot and *.svg (12 pairs), regenerated with `npm run diagrams`

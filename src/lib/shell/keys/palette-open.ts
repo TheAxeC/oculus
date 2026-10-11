@@ -6,14 +6,14 @@
 // An editor action opens nothing: it asks the source tab or diff pane it names to run the action,
 // and answers that tab's instance. Pin Editor and Unpin Editor are editor items too, and act on the
 // tab they name through the layout. A command a view offers runs the function the view handed in
-// and answers that view's instance.
+// and answers that view's instance. A command an app declares is run by the apps' shell store and
+// opens nothing here.
 //
 // `landOn` gives the keyboard to the tab head of the pane that shows an instance once the page has
 // drawn it.
 
+import type { ClientState } from '$lib/state/client/context';
 import { tick } from 'svelte';
-import { z } from 'zod';
-import { readOr, rowsShape } from '$lib/data/shapes/shapes';
 import { instanceMap } from '$lib/state/workbench/layout';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
 import type { PaletteItem } from '$lib/state/workbench/palette';
@@ -22,23 +22,27 @@ import type { UiStore } from '$lib/state/workbench/ui.svelte';
 import type { EditorStatusStore } from '$lib/state/workbench/navigation/editor-status.svelte';
 import { focusQuietly } from '$lib/ui/frame/quiet-focus';
 
-/** The names of the rows of the configuration's `themes` list that hold one as text. */
-const themeNamesShape = rowsShape(z.object({ name: z.string() }).transform((row) => row.name));
-
 /** The stores a result is opened through. */
 type Opener = {
     layout: LayoutStore;
     ui: UiStore;
     editorStatus: Pick<EditorStatusStore, 'ask'>;
     paletteSource: Pick<PaletteSourceStore, 'runOffered'>;
+    appShell: Pick<ClientState['appShell'], 'run'>;
 };
 
 /** Open one result and return the instance the layout activated or created. */
 export function openPaletteItem(
-    { layout, ui, editorStatus: editor, paletteSource: offers }: Opener,
+    { layout, ui, editorStatus: editor, paletteSource: offers, appShell }: Opener,
     item: PaletteItem
 ): string {
     if (item.kind === 'project') return layout.openView(item.view, item.state);
+    if (item.kind === 'app') {
+        const app = item.state?.app;
+        const command = item.state?.command;
+        if (typeof app === 'string' && typeof command === 'string') void appShell.run(app, command);
+        return '';
+    }
     if (item.kind === 'command') {
         const instance = item.state?.instance;
         const command = item.state?.command;
@@ -64,11 +68,6 @@ export function openPaletteItem(
     if (typeof reveal !== 'string' || reveal === '') return id;
     ui.setInstanceState(id, { ...instanceMap(ui.instanceState(id)), ...item.state, search: '' });
     return id;
-}
-
-/** The names of the themes the configuration lists, which the `:theme` command accepts. */
-export function configuredThemes(config: Record<string, unknown>): string[] {
-    return readOr(themeNamesShape, config.themes, []);
 }
 
 /** Give the keyboard to the selected tab head of the pane showing an instance, if one does. */

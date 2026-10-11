@@ -8,7 +8,7 @@
 import { flushSync } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
-import type { Autosave } from '../../../src/lib/data/helpers/editor.ts';
+import type { Autosave } from '../../../src/lib/data/helpers/editor/editor.ts';
 import { createAutosave } from '../../../src/lib/state/sessions/source/autosave.svelte.ts';
 import type { SourceDraft } from '../../../src/lib/state/sessions/source/draft.ts';
 import { setCatalog, t } from '../../../src/lib/state/shared/words/text.ts';

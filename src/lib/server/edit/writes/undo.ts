@@ -35,12 +35,13 @@ import {
     writeFeedField
 } from '../feeds.ts';
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
-import { deckSlidesNow, undoDeckSlides } from './config/deck/deck.ts';
+import { deckSlidesNow, undoDeckSlides } from './config/lists/deck/deck.ts';
+import { appSettingNow, undoAppSetting } from './config/app-setting.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
 import { takeOutAdded } from './config/config-checks.ts';
-import { railNow, writeRail } from './config/rail.ts';
-import { ROOTS, rootItemsShape, rootsValueNow, writeRoots } from './config/roots.ts';
+import { railNow, writeRail } from './config/lists/rail.ts';
+import { ROOTS, rootItemsShape, rootsValueNow, writeRoots } from './config/lists/roots.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
 import {
     createEntry,
@@ -165,6 +166,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
     if (change.kind === 'config-key') {
         return configKeyNow(into.engine, change.key, change.field, layerHub(into, change));
     }
+    if (change.kind === 'app-setting') return appSettingNow(into.engine, into.hub, change.field);
     if (change.kind === 'config-value') {
         return configValueNow(into.engine, change.key, change.field, layerHub(into, change));
     }
@@ -413,6 +415,9 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         );
         if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
         return { found: true, ...outcome };
+    }
+    if (change.kind === 'app-setting') {
+        return { found: true, ...undoAppSetting(into, change, madeBy(into, change)) };
     }
     if (change.kind === 'config-key' || change.kind === 'config-value') {
         const layer = layerHub(into, change);

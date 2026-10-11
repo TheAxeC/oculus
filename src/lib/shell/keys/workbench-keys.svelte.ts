@@ -18,18 +18,17 @@ import {
     scrollContainer,
     scrollRegion
 } from './key-dom';
+import { horizontalCursor, rowCursor, toggleView } from './keys';
+import type { DebugKey } from '$lib/data/helpers/keys/oculus/debug-keys';
 import {
-    horizontalCursor,
-    initialKeyState,
-    resolveKey,
-    rowCursor,
-    toggleView,
-    type KeyAction,
-    type RailOrder
-} from './keys';
-import { DOC_PICK } from '$lib/state/workbench/navigation/catalogue';
-import { paletteKeyOf, type PaletteKey, type PaletteMode } from '$lib/state/workbench/palette';
-import type { DebugKey } from '$lib/state/system/machine/debug/debug';
+    opensCommandLine,
+    paletteKeyOf,
+    togglesPalette,
+    type PaletteKey
+} from '$lib/data/helpers/keys/oculus/palette-keys';
+import { initialKeyState, resolveKey, type KeyAction } from '$lib/data/helpers/keys/oculus/resolve';
+import { DOC_PICK, type RailOrder } from '$lib/state/workbench/navigation/catalogue';
+import type { PaletteMode } from '$lib/state/workbench/palette';
 
 type Options = {
     drag: DragStore;
@@ -72,6 +71,12 @@ type Options = {
     debugging: () => boolean;
     /** Whether the source tab on screen is a `.rite` file. */
     riteOnScreen: () => boolean;
+    /**
+     * Offer a press to the apps' keybindings once oculus's own keys have passed on it: whether
+     * a text field or an editor holds the keyboard, and whether the source editor does. True when
+     * an app's binding took the press.
+     */
+    appKey: (event: KeyboardEvent, textual: boolean, editor: boolean) => boolean;
     /** Whether the command modifier is Cmd (macOS) and not Ctrl. */
     mac: boolean;
     /**
@@ -136,20 +141,13 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             else options.showPalette(wanted);
             return;
         }
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        if (togglesPalette(event)) {
             event.preventDefault();
             if (options.paletteOpen()) options.setPaletteOpen(false);
             else options.openPalette('');
             return;
         }
-        if (
-            event.key === ':' &&
-            !options.paletteOpen() &&
-            !event.metaKey &&
-            !event.ctrlKey &&
-            !event.altKey &&
-            !typingIn(event.target)
-        ) {
+        if (opensCommandLine(event) && !options.paletteOpen() && !typingIn(event.target)) {
             event.preventDefault();
             options.openPalette(':');
             return;
@@ -176,6 +174,16 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         if (result.swallow === true) event.preventDefault();
         if (result.action !== null) {
             if (perform(result.action, pane)) event.preventDefault();
+            return;
+        }
+        if (
+            !event.defaultPrevented &&
+            !options.paletteOpen() &&
+            !options.updateOpen() &&
+            !dialogShown() &&
+            options.appKey(event, typingIn(event.target), inEditor(event.target))
+        ) {
+            event.preventDefault();
             return;
         }
         if (event.key !== 'Escape' || event.defaultPrevented) return;

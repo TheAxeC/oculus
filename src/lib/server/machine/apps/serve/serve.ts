@@ -25,7 +25,7 @@
 import { lstatSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { APP_NAME, pathSegmentsOpen } from '../../../../data/helpers/files/apps.ts';
+import { APP_NAME, pathSegmentsOpen } from '../../../../data/helpers/files/apps/apps.ts';
 import { allowedOrigin } from '../../../core/auth.ts';
 import { below, realPath } from '../../../core/paths.ts';
 import { typeOf } from '../../../files/files.ts';

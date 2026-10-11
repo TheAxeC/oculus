@@ -3,10 +3,10 @@
 // that starts with a dot, a path holding a folder `closed_paths` names, and the folders of this
 // machine that hold its own state or secrets (the engine's `config/` folder, which holds
 // `local.yml`, `~/.oculus`, and the `secrets` folder of every hub). `closed_paths` is read as a
-// list of folders each relative to a root and applied to every root (data/helpers/files/apps.ts); a
-// path outside every root has no root to be relative to, so a folder is matched wherever its
-// segments follow each other in the path. A `closed_paths` key that is missing or is no list closes
-// every file, as it does for an app.
+// list of folders each relative to a root and applied to every root
+// (data/helpers/files/apps/apps.ts); a path outside every root has no root to be relative to, so a
+// folder is matched wherever its segments follow each other in the path. A `closed_paths` key that
+// is missing or is no list closes every file, as it does for an app.
 //
 // One exception is made to the dot rule: a Python library lives in a virtual environment or a
 // version manager's folder, whose path holds a dot segment (`.venv`, `.pyenv`), so a file under
@@ -18,7 +18,7 @@
 
 import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
-import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps.ts';
+import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps/apps.ts';
 import { privateFolders } from '../../../../data/helpers/files/private-folders.ts';
 import { namesInterpreterLibrary } from '../../../../data/prose/lsp-servers.ts';
 import { inside, realPath, under } from '../../../core/paths.ts';

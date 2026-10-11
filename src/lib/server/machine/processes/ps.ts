@@ -1,6 +1,6 @@
 // Layer 2, server. The process table of the machine from one run of `ps` that oculus starts itself.
 //
-// This module has one subprocess call site for the table, as server/files/search.ts has for
+// This module has one subprocess call site for the table, as server/files/search/search.ts has for
 // ripgrep: one list argument vector and no shell, an environment whose `LC_ALL` is `C` so `lstart`
 // is in its fixed English form, a time limit, and a read that is bounded and folded as the output
 // arrives. At the limit, on abort and when the output passes the bound the child is killed, so no

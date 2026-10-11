@@ -19,7 +19,7 @@ import type {
     LanguageRecord,
     LanguageRecords,
     WordWrap
-} from '../../helpers/editor.ts';
+} from '../../helpers/editor/editor.ts';
 import { byKey, isMap } from '../../helpers/guards.ts';
 import { registered } from '../../prose/languages.ts';
 import type { FieldSpec } from './catalog/options.ts';

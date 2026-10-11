@@ -147,6 +147,13 @@ options:
             default: tokens
             control: choice
             from: code_themes
+        file_icons:
+            heading: appearance
+            section: File icons
+            help: The file icon theme. seti draws the icons of VS Code's default theme. The icon theme of an approved, enabled app is saved as its app's view id, a slash and the theme's id with that id percent-encoded; it draws that theme's icons in the Files view, the tabs, Cmd-K and the diff headers. A value naming no such theme, because its app is unapproved, disabled, removed or changed, is reported as a finding and read as seti. The :file-icons command in Cmd-K writes this key.
+            default: seti
+            control: choice
+            from: file_icon_themes
         show_tabs:
             heading: appearance
             section: Pane tabs
@@ -936,7 +943,7 @@ options:
         apps.writes_per_min:
             heading: apps
             section: App limits
-            help: How many writes, `setStore` included, one frame or one host may send in a minute; a host's store updates and a secret's stores and deletes count here.
+            help: How many writes, `setStore` included, one frame or one host may send in a minute; a host's store updates, a secret's stores and deletes and a custom editor's saves count here.
             default: 30
             control: number
             min: 1
@@ -944,7 +951,7 @@ options:
         apps.opens_per_min:
             heading: apps
             section: App limits
-            help: How many calls of `open` or `commands.run` one frame may send in a minute.
+            help: How many calls of `open`, `commands.run`, `commands.execute` and `createPanel` one frame may send in a minute, and of `executeCommand` one host.
             default: 30
             control: number
             min: 1
@@ -952,7 +959,7 @@ options:
         apps.messages_per_min:
             heading: apps
             section: App limits
-            help: How many calls of `sendToPage` one host may make in a minute.
+            help: How many calls of `sendToPage` and of the `ui` calls (messages, quick pick, input box, progress) one host or frame may make in a minute.
             default: 600
             control: number
             min: 1
@@ -976,7 +983,7 @@ options:
         apps.max_mb:
             heading: apps
             section: App limits
-            help: How many megabytes an app's files may total before the app is refused.
+            help: How many megabytes an app's files may total before the app is refused, and the most a custom editor reads or saves in one file.
             default: 20
             control: number
             min: 1
@@ -1008,7 +1015,7 @@ options:
         apps.closed_paths:
             heading: apps
             section: Closed folders
-            help: The folders, each relative to a root and applied to every root, that an app's `open({ file })` never reaches, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
+            help: The folders, each relative to a root and applied to every root, that an app's `open({ file })` and custom editor never reach, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
             default: [secrets]
             control: list
     layout.yml:

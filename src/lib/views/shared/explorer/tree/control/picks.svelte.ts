@@ -3,13 +3,23 @@
 // name being typed (menu/row-ops.ts's rowNaming) and the drops (menu/row-drop.ts), all over the
 // explorer store.
 //
+// The entries apps add to `explorer/context` end the menu of a row, run with the row's root and
+// path.
+//
 // It holds the refusal line a pick said, until the next pick, and hands it to the caller's
 // `onrefused` when the caller says refusals on a line of its own, and the row a menu or a key was
 // opened on, which the pick the menu hands back acts on.
 
 import type { ClientState } from '$lib/state/client/context';
 import type { CommandSource, ProjectCommand } from '$lib/state/sessions/terminal/commands.svelte';
-import { nameOf, shownOf, type FsEntry, type FsRoot, type TreeRow } from '$lib/state/sources/fs';
+import {
+    languageOf,
+    nameOf,
+    shownOf,
+    type FsEntry,
+    type FsRoot,
+    type TreeRow
+} from '$lib/state/sources/fs';
 import type { DeckEditAct } from '$lib/state/shared/stores/shapes';
 import { rowsActed } from '$lib/state/sources/explorer/acts/selection';
 import { confirmDelete } from '$lib/state/sources/explorer/acts/confirm';
@@ -31,6 +41,9 @@ import { holdsContents, rowNaming, rowOpsPicker } from '../menu/row-ops';
 import type { Asking } from './asking.svelte';
 import { createFixing } from './fixing.svelte';
 import type { ViewAccess } from './view-access';
+
+/** What the ids of the choices apps add to the menu start with. */
+const APP_PICK = 'app';
 
 export type PicksDeps = {
     client: ClientState;
@@ -166,18 +179,30 @@ export function createPicks(deps: PicksDeps) {
 
     const dropper = rowDropper({ explorer, say, confirm: asking.ask }, t);
 
-    /** Run a pick on a row: the menu's, then the file operations'. */
-    function run(row: TreeRow, pick: string): void {
+    /** The entries of `explorer/context` the open menu ends with. */
+    let appOffers: ReturnType<ClientState['appShell']['choices']>['offers'] = [];
+
+    /** Run a pick on a row: an app's, else the menu's, then the file operations'. */
+    function run(row: TreeRow, pick: string, alt = false): void {
         say('');
         target = row;
+        if (pick.startsWith(`${APP_PICK}:`)) {
+            void client.appShell.runEntry(
+                appOffers,
+                pick,
+                [{ root: row.root, path: row.path }],
+                alt
+            );
+            return;
+        }
         if (pick === ROW_WRITING_FIX) void fixing.start(row, rootNameIn(deps.rows(), row.root));
         menuPicked(row, pick);
         opsPicked(row, pick);
     }
 
     /** Run the pick a menu handed back on the row it was opened on. */
-    function pickTarget(pick: string): void {
-        if (target !== null) run(target, pick);
+    function pickTarget(pick: string, event?: MouseEvent): void {
+        if (target !== null) run(target, pick, event?.altKey === true);
     }
 
     /**
@@ -198,8 +223,21 @@ export function createPicks(deps: PicksDeps) {
         const shown = shownOf(view.now());
         let commandsRead: readonly ProjectCommand[] = [];
         let listingRead: FsEntry[] | null = null;
-        const built = (): MenuItem[] =>
-            rowMenu(
+        const apps = client.appShell.choices(
+            'explorer/context',
+            {
+                resource: {
+                    root: here.root,
+                    path: here.path,
+                    language: languageOf(here.path, client.selectors.languages())
+                },
+                folder: here.kind !== 'file'
+            },
+            APP_PICK
+        );
+        appOffers = apps.offers;
+        const built = (): MenuItem[] => [
+            ...rowMenu(
                 rowFacts(
                     here,
                     deps.fixed(),
@@ -217,10 +255,13 @@ export function createPicks(deps: PicksDeps) {
                     client.selectors.programApps(),
                     deps.isMarked(here),
                     writingFixOffered(client.selectors.configMap()),
-                    client.folders.served(here.root)
+                    client.folders.served(here.root),
+                    client.appShell.editorsOf(here.root, here.path).length > 0
                 ),
                 t
-            );
+            ),
+            ...apps.items
+        ];
         const items: MenuItem[] = $state(built());
         const rebuild = (): void => {
             items.splice(0, items.length, ...built());

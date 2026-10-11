@@ -15,7 +15,7 @@ import { tick, untrack } from 'svelte';
 import { endText, trimText, type KeptPlace } from '../../../data/helpers/files/save-text.ts';
 import { sameDiskFile, type RootFolder } from '../../../data/helpers/hub-names.ts';
 import { editsBetween, type TextEdit } from '../../../data/prose/text-edits.ts';
-import type { WordWrap } from '../../../data/helpers/editor.ts';
+import type { WordWrap } from '../../../data/helpers/editor/editor.ts';
 import type {
     SocketStore,
     WriteAnswer,

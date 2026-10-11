@@ -34,7 +34,7 @@ function make(kind: string) {
             calls.push(`keep ${id}`);
         },
         readFileKind: () => Promise.resolve({ kind }) as ReturnType<Opener['readFileKind']>,
-        holds: () => false,
+        opens: { holds: () => false, editorFor: () => null },
         armKeep: (id, pressedAt) => {
             calls.push(`arm ${id} at ${pressedAt}`);
         },
@@ -88,6 +88,11 @@ describe('opening a file of the file browser', () => {
         const made = make(kind);
         await openRow(made.opener, ROW, true);
         expect(made.calls[0]).toBe(`open ${view} preview=true`);
-        expect(tabForKind(kind, ROW.root, ROW.path, ROW.size, () => false).view).toBe(view);
+        expect(
+            tabForKind(kind, ROW.root, ROW.path, ROW.size, {
+                holds: () => false,
+                editorFor: () => null
+            }).view
+        ).toBe(view);
     });
 });

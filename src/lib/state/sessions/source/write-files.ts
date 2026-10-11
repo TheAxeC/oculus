@@ -186,6 +186,7 @@ export function writtenFile(
         case 'config-value':
             return inConfig(text(body.file));
         case 'audit-mute':
+        case 'app-setting':
             return inConfig('behavior.yml');
         case 'undo':
             return look.changeFile(text(body.at));

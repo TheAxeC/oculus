@@ -32,7 +32,7 @@ import {
     survivorsShape,
     unchanged
 } from '../../data/shapes/shapes.ts';
-import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/files/apps.ts';
+import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/files/apps/apps.ts';
 import { failedAnswer, unreadableAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
 import {
@@ -212,16 +212,19 @@ export function createWrites(
      * write's answer, with the page's token. A 403 renews the token and posts once more, as a
      * write does. A fetch that fails and an answer that is not JSON are answered as what went
      * wrong rather than thrown, so a press whose request did not come back says so in its view
-     * instead of ending in a rejection nobody reads.
+     * instead of ending in a rejection nobody reads. A `keepalive` post outlives the page that
+     * sent it, which is how a page that is closing says so.
      */
     async function postCommand(
         path: string,
         body: unknown,
-        headers: Record<string, string> = {}
+        headers: Record<string, string> = {},
+        keepalive = false
     ): Promise<Posted> {
         const send = (): Promise<Response> =>
             fetch(path, {
                 method: 'POST',
+                keepalive,
                 headers: {
                     ...headers,
                     'content-type': 'application/json',
@@ -480,6 +483,16 @@ export function createWrites(
     }
 
     /**
+     * Set one setting an app declares: the endpoint writes the value under the setting's whole key
+     * in `app_settings` of the first hub's config/behavior.yml, and refuses, writing nothing, a key
+     * no approved app declares and a value that breaks its declaration. The change is recorded in
+     * History and can be taken back.
+     */
+    async function writeAppSetting(key: string, value: unknown): Promise<WriteAnswer> {
+        return send({ kind: 'app-setting', key, value });
+    }
+
+    /**
      * Set one list option or one family of a tracked config file as a whole: the endpoint rewrites
      * the key's lines in `file` at the dotted `key` with `value`, and refuses, writing nothing,
      * unless the file still holds `base` there (the value the caller read). A refusal is answered
@@ -732,6 +745,7 @@ export function createWrites(
         writeDeckEdit,
         writeRail,
         writeConfigKey,
+        writeAppSetting,
         writeConfigValue,
         muteFinding,
         addMemory,

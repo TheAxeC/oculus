@@ -1,6 +1,6 @@
 // Layer 2, server. What the server looks at to know that an activation event of a host has
 // happened without a page saying so: whether a root holds a file that a `workspaceContains` glob
-// matches, and the language id of a file whose source tab a page opened.
+// matches.
 //
 // The look at a root is a walk of its folders: at most `scanEntries` entries per root are read,
 // whatever they are, a dot-led folder and `node_modules` are never entered, a link is neither
@@ -10,9 +10,6 @@
 
 import { opendir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { extensionOf } from '../../../../data/helpers/files/opens-in-program.ts';
-import { nameOf } from '../../../../data/helpers/files/paths.ts';
-import type { LanguageMap } from '../../../../data/helpers/files/languages.ts';
 import { globTest } from '../../../../data/helpers/search/glob.ts';
 
 /** What a folder lists of one entry. */
@@ -20,9 +17,6 @@ type Listed = { name: string; kind: 'file' | 'folder' | 'other' };
 
 /** The first `limit` entries of a folder, in the order the disk gives them. */
 export type List = (folder: string, limit: number) => Promise<Listed[]>;
-
-/** The language the editor gives a file no entry of the map names. */
-const PLAIN = 'plaintext';
 
 /** The folders a look never enters, beside every dot-led one. */
 const SKIPPED = 'node_modules';
@@ -75,14 +69,4 @@ export async function rootHolds(
         }
     }
     return false;
-}
-
-/**
- * The language id the editor opens a file of this path in: the map's entry for its whole name
- * lowercased, else for its extension, else plain text.
- */
-export function languageOfPath(path: string, map: LanguageMap): string {
-    const bare = nameOf(path).toLowerCase();
-    const whole = bare.startsWith('.') ? undefined : map.get(bare);
-    return whole ?? map.get(extensionOf(path)) ?? PLAIN;
 }

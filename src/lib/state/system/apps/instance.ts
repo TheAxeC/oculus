@@ -27,9 +27,16 @@ export function appTab(raw: unknown): AppTab {
     return { value: held.value ?? null, folder: text(held.folder), seen: text(held.seen) };
 }
 
-/** The state to save after a change, with the fields that are empty left out. */
-export function appTabState(tab: AppTab): Record<string, unknown> {
+/**
+ * The state to save after a change, with the fields that are empty left out. A tab that was opened
+ * with fields of its own (a panel's, a custom editor's) keeps them: `base` is the state held now.
+ */
+export function appTabState(tab: AppTab, base: unknown = null): Record<string, unknown> {
+    const kept = Object.fromEntries(
+        Object.entries(fields(base)).filter(([key]) => !['value', 'folder', 'seen'].includes(key))
+    );
     return {
+        ...kept,
         value: tab.value,
         ...(tab.folder === '' ? {} : { folder: tab.folder }),
         ...(tab.seen === '' ? {} : { seen: tab.seen })

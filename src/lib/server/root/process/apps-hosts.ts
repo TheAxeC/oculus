@@ -4,13 +4,15 @@
 // through this module so `context.ts` holds one call.
 //
 // Three things the watchers raise reach the hosts here: every full read of the apps is a
-// `reconcile`, a change of a store file is a `storeChanged` for the apps it belongs to, and a
-// source tab opening a file is an `onLanguage` event for the language of that file.
+// `reconcile` and a look at the settings the hosts hold, a change of a store file is a
+// `storeChanged` for the apps it belongs to, and a source tab opening a file is an `onLanguage`
+// event for the language of that file.
 
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { parseSourceChannel } from '../../../data/helpers/files/address.ts';
+import { appSettingValues, settingValues } from '../../../data/helpers/files/apps/settings.ts';
 import { languageMap } from '../../../data/helpers/files/languages.ts';
 import { appsSettings, textCatalog, type LocalConfig } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
@@ -84,6 +86,11 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
         },
         secrets,
         text,
+        values: (app) =>
+            settingValues(
+                app.row.contributes.configuration?.properties ?? [],
+                appSettingValues(options.config())
+            ),
         after: options.ready,
         node: process.execPath,
         runner: join(ownFolder(), RUNNER),
@@ -98,7 +105,10 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
         workspacesFile: () =>
             options.local().workspaces ?? defaultWorkspacesPath(options.local().hub)
     });
-    const offRead = options.apps.onRead(() => hosts.reconcile());
+    const offRead = options.apps.onRead(() => {
+        hosts.reconcile();
+        hosts.settingsChanged();
+    });
     const offStores = options.apps.onStores((ids) => hosts.storeChanged(ids));
     hosts.reconcile();
     return {

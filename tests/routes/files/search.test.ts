@@ -1,6 +1,6 @@
 // Layer 2, route tests. What the /api/search route answers. The route itself is a few lines handing
-// the request to lib/server/files/search-routes.ts with the token ServerContext minted, which is
-// what this calls.
+// the request to lib/server/files/search/search-routes.ts with the token ServerContext minted,
+// which is what this calls.
 //
 // Nothing here runs ripgrep: the handler takes its runner as an option, so every case hands it a
 // stub the test owns, the roots are names rather than directories, and no file is read anywhere.
@@ -10,9 +10,9 @@ import { describe, expect, it } from 'vitest';
 import {
     handleSearch,
     type SearchRouteOptions
-} from '../../../src/lib/server/files/search-routes.ts';
+} from '../../../src/lib/server/files/search/search-routes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
-import type { RunOutcome } from '../../../src/lib/server/files/search.ts';
+import type { RunOutcome } from '../../../src/lib/server/files/search/search.ts';
 
 const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';

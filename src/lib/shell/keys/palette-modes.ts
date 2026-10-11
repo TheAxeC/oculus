@@ -231,7 +231,8 @@ export function listedRows(facts: ListedFacts): { count: number; values: string[
     const { parsed, line, languageMode, workspaceMode, saveMode, choiceMode } = facts;
     if (facts.files !== null) return { count: facts.files.length, values: facts.files };
     if (parsed === null) {
-        return { count: facts.matches.length, values: facts.matches.map((one) => one.item.id) };
+        const chosen = facts.matches.filter((one) => one.item.disabled !== true);
+        return { count: chosen.length, values: chosen.map((one) => one.item.id) };
     }
     if (line !== null)
         return facts.hasCaret ? { count: 1, values: ['line'] } : { count: 0, values: [] };

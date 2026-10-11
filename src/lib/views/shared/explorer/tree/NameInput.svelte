@@ -10,7 +10,7 @@
     // and is cancelled by leaving the input. The row's request is the caller's, handed the accepted
     // text.
 
-    import NameField from '$lib/ui/tree/NameField.svelte';
+    import NameField from '$lib/ui/tree/row/NameField.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { nameMessage } from './menu/row-ops';
 

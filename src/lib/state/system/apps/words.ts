@@ -4,6 +4,7 @@
 // (`apps.ask.<kind>`). Each is read by a closure with its key written whole, so a key that no
 // closure reads, or a closure naming a key the catalog lacks, is found by the key check.
 
+import type { AppContributes } from '../../../data/model/index.ts';
 import { t } from '../../shared/words/text.ts';
 
 /** The sentence for a channel an app reads, by channel; a channel with no sentence has no entry. */
@@ -72,4 +73,59 @@ export function writeWords(kind: string): string {
 export function askWords(kind: string): string {
     const held = ASK[kind];
     return held === undefined ? kind : held();
+}
+
+/** The number of the entries of a list of views by container. */
+function viewCount(views: AppContributes['views']): number {
+    return Object.values(views).reduce((sum, list) => sum + list.length, 0);
+}
+
+/**
+ * The sentence naming what an app adds to oculus: its commands, keys, menu entries, views, custom
+ * editors, settings and themes, each with its count. The empty string for an app that adds none.
+ */
+export function addsWords(contributes: AppContributes): string {
+    const menus = Object.values(contributes.menus).reduce((sum, list) => sum + list.length, 0);
+    const parts: [number, () => string, () => string][] = [
+        [
+            contributes.commands.length,
+            () => t('apps.adds.commands_one'),
+            () => t('apps.adds.commands_other', contributes.commands.length)
+        ],
+        [
+            contributes.keybindings.length,
+            () => t('apps.adds.keys_one'),
+            () => t('apps.adds.keys_other', contributes.keybindings.length)
+        ],
+        [menus, () => t('apps.adds.menus_one'), () => t('apps.adds.menus_other', menus)],
+        [
+            viewCount(contributes.views),
+            () => t('apps.adds.views_one'),
+            () => t('apps.adds.views_other', viewCount(contributes.views))
+        ],
+        [
+            contributes.customEditors.length,
+            () => t('apps.adds.editors_one'),
+            () => t('apps.adds.editors_other', contributes.customEditors.length)
+        ],
+        [
+            contributes.configuration?.properties.length ?? 0,
+            () => t('apps.adds.settings_one'),
+            () => t('apps.adds.settings_other', contributes.configuration?.properties.length ?? 0)
+        ],
+        [
+            contributes.themes.length,
+            () => t('apps.adds.themes_one'),
+            () => t('apps.adds.themes_other', contributes.themes.length)
+        ],
+        [
+            contributes.iconThemes.length,
+            () => t('apps.adds.icons_one'),
+            () => t('apps.adds.icons_other', contributes.iconThemes.length)
+        ]
+    ];
+    const named = parts.flatMap(([count, one, other]) =>
+        count === 0 ? [] : [count === 1 ? one() : other()]
+    );
+    return named.length === 0 ? '' : t('apps.adds_line', named.join(', '));
 }

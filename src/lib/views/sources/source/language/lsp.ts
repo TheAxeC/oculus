@@ -44,7 +44,7 @@ import { hierarchyBelow, hierarchyRoots } from '$lib/views/sources/source/langua
 import type { HierarchyDirection, HierarchyEntry } from '$lib/state/system/machine/lsp/hierarchy';
 import { isLibrary, libraryOf, placeOf, type Target } from '$lib/ui/controls/editor/kit/lsp/uris';
 import { readText } from '$lib/state/sources/fs-transport';
-import { languageOf } from '$lib/state/sources/explorer/file-type';
+import { languageOf } from '$lib/state/sources/fs';
 import {
     openLibraryFile,
     openReference,

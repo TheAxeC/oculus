@@ -192,7 +192,8 @@ export const HUB_LAYER = `${ROOT_FOLDER}/config`;
  * are set in (named relative to config/). Each is a dotted path into that file; a value the layer
  * holds at one of these paths replaces the engine's value whole, and a key outside the list is a
  * finding and is not applied. They are the keys that describe this hub rather than the engine: its
- * folders and registries, its domains and themes, and the cluster its jobs run on.
+ * folders and registries, its domains and themes, the cluster its jobs run on, and the values its
+ * apps' settings hold.
  */
 export const HUB_LIST: Readonly<Record<string, readonly string[]>> = {
     'sources.yml': [
@@ -215,7 +216,7 @@ export const HUB_LIST: Readonly<Record<string, readonly string[]>> = {
         'roots'
     ],
     'layout.yml': ['docs'],
-    'behavior.yml': ['slurm.resource', 'data_domains'],
+    'behavior.yml': ['slurm.resource', 'data_domains', 'app_settings'],
     'catalogs/vocab.yml': ['domains', 'venue_themes', 'data_themes']
 };
 

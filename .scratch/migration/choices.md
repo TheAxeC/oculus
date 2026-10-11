@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z819 (2026-10-12, D63's landing, the orchestrator, automode): a step for two clipping defects
+
+- Chosen: one new step D69, after D63 and beside D68, before Q72: the source and diff editors' right-click menu and pop-up widgets drawn whole over the page, never cut at the pane's edge; a crowded status bar never cuts an item mid-word, the items that give way following VS Code's status bar as read from its source in D69's /spec.
+- Not chosen: folding them into D64, which touches neither the editor's widgets nor the status bar's layout; a note in D63's landing report and no step, the lazy option.
+
+Where it applies: D69. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z817 (2026-10-11, step D67, the orchestrator, automode): D67's landing order
 
 - D67's code adds no reach for any app (it lets a bookmark name a root's top); only the root `oculus-state` over `~/.oculus` needs D63's closure of the private folders, since on main a machine app whose `files:` lists a served root reads any file under it (`server/machine/apps/reach/fs.ts` `serveFs`, `reach/open.ts` `locate`, neither consults `privateFolders`). Options: (a) D67 lands when its review is closed, whatever D63's state, and the root and the bookmark are added at D63's landing (or at D67's if D63 is on main by then), with the look of the real entry taken there; (b) D67 waits for D63, which holds a finished step back on a data change it does not contain; the lazy option is (b), since it needs no change to the plan. Taken: (a).

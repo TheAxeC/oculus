@@ -30,6 +30,7 @@ import {
     createInstances,
     createOpening,
     createShowDeck,
+    createShowPlaced,
     createShowInFiles,
     createFloatOps,
     createFolderOps,
@@ -80,6 +81,7 @@ import {
     type SaveTurn,
     type Storable,
     type Touched,
+    type PlaceRule,
     type UniqueRule,
     type ViewId,
     type Workbench
@@ -198,6 +200,12 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
          * or float made from the config takes it in. Until a rule is registered no view is unique.
          */
         registerUnique: (rule: UniqueRule) => void;
+        /**
+         * Say where a view opens the first time, which the registry knows and this store does not
+         * (registration.dock): on the left or the bottom edge as a docked float, or in the pane
+         * holding Files. Until a rule is registered every view opens where views land.
+         */
+        registerPlaced: (rule: PlaceRule) => void;
         /**
          * Rebuild one page from a rail button's arrangement: its tabs made fresh, its id and rail
          * key kept, its name the button's words, a unique view it names moved in from the page or
@@ -385,6 +393,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     /** Which views are held once, as the registry says once it is registered. */
     let uniqueRule: UniqueRule = () => false;
 
+    /** Where a view opens the first time, as the registry says once it is registered. */
+    let placeRule: PlaceRule = () => null;
+
     /**
      * What a page's pane that stays is left as when its last tab goes: an empty terminals pane for
      * a Terminal tab and an empty documents pane for any other view. Which panes stay is
@@ -420,6 +431,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         (view) => uniqueRule(view)
     );
     const floatOps = createFloatOps(access, keepRule);
+    const placed = createShowPlaced(access, attention, opening, floatOps, () => placeRule);
     const folderOps = createFolderOps(access, builds, {
         forgetTouched: attention.forgetTouched,
         forgetTabs: instances.forgetTabs,
@@ -756,7 +768,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         foldPane,
         expandChild,
         focused,
-        openView: opening.openView,
+        openView: placed.openView,
         openBeside: opening.openBeside,
         openInPane: opening.openInPane,
         openAway: away.openAway,
@@ -780,6 +792,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         },
         registerUnique: (rule) => {
             uniqueRule = rule;
+        },
+        registerPlaced: (rule) => {
+            placeRule = rule;
         },
         resetPage,
         resetPages

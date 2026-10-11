@@ -5,11 +5,11 @@
 //
 // The page never decides what is written. A request names each match by its line, the place it
 // starts at in that line and the text it covered, and the server runs ripgrep over the file as it
-// is now (through `runRipgrep` of server/files/search.ts, the one place a process is started) and
-// takes each named match from that run. A match the run does not find at that line and place with
-// that text means the file changed since the search, and the file is refused `changed` before
-// anything is written. The text written for a match is computed here from the current groups by
-// `replacementOf` of data/helpers/search/replace.ts, never taken from the page.
+// is now (through `runRipgrep` of server/files/search/search.ts, the one place a process is
+// started) and takes each named match from that run. A match the run does not find at that line and
+// place with that text means the file changed since the search, and the file is refused `changed`
+// before anything is written. The text written for a match is computed here from the current groups
+// by `replacementOf` of data/helpers/search/replace.ts, never taken from the page.
 //
 // Files are checked in the order `outside`, `missing`, `protected`, `denied` (the file's mode locks
 // it), `binary`, `too_large` (over what the history keeps a copy of, as the file is and as the
@@ -57,7 +57,7 @@ import {
     runRipgrep,
     type LineMatch,
     type SearchRunner
-} from '../search.ts';
+} from '../search/search.ts';
 import { stampOf } from './file-changes.ts';
 import { SAVE_MAX_BYTES, keepCopy } from './history.ts';
 

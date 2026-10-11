@@ -1,9 +1,9 @@
 // Layer 3, shared view partial, read by Source.svelte and the diff sections. What a source tab
 // hands its editor for the indentation, the word wrap and the rulers: the configured values, the
 // repository's `.oculus/settings.yml` read through the file store, the file's own indentation and
-// the tab's own choices, resolved in the order data/helpers/editor.ts's `resolveEditor` states.
-// The record looked up is the one of the language the editor draws the text in: the one chosen
-// from the status bar, else the name's, and plaintext for a text past the paint limit.
+// the tab's own choices, resolved in the order data/helpers/editor/editor.ts's `resolveEditor`
+// states. The record looked up is the one of the language the editor draws the text in: the one
+// chosen from the status bar, else the name's, and plaintext for a text past the paint limit.
 //
 // Every getter reads what it is handed afresh, so a `$derived` over one of them is made again when
 // the tab's draft, the configuration, the root's settings file or the file store moves. The

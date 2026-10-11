@@ -9,7 +9,7 @@
 // the usage store's tiers). The write never reaches for a list by itself: config-write.ts hands it
 // the pieces of the write target through SourceInputs.
 
-import { codeThemeIds, CODE_TOKENS } from '../../../../data/helpers/code-themes.ts';
+import { codeThemeIds, CODE_TOKENS } from '../../../../data/helpers/editor/code-themes.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { registered } from '../../../../data/prose/languages.ts';
 import {

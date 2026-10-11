@@ -11,6 +11,11 @@
 // the reader asks for here that ends well shows the PDF beside the tab, once per tab.
 
 import { untrack } from 'svelte';
+import {
+    LATEX_CHORD_FIRST,
+    LATEX_PRESSES,
+    latexMathFirst
+} from '$lib/data/helpers/keys/oculus/editor-keys';
 import { isLatexLanguage } from '$lib/state/sources/fs';
 import { onMac } from '$lib/ui/controls/editor/kit/load';
 import type { LatexCommands } from '$lib/ui/controls/editor/kit/latex/latex-editing';
@@ -272,10 +277,6 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
         return [first, second];
     }
 
-    function cmd(code: KeyPress['code'], alt = true): KeyPress {
-        return alt ? { code, cmd: true, alt: true } : { code, cmd: true };
-    }
-
     function actions(): EditorOwnAction[] {
         if (!applies) return [];
         const listed: EditorOwnAction[] = [];
@@ -298,17 +299,17 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
         // Build and SyncTeX from Cursor are in the right-click menu when `latex.context_menu` is
         // true.
         const menu = latex.settings()?.contextMenu === true ? 'navigation' : undefined;
-        add('oculus.latex.build', t('latex.cmd_build'), press.build, cmd('KeyB'), menu);
+        add('oculus.latex.build', t('latex.cmd_build'), press.build, LATEX_PRESSES.build, menu);
         add('oculus.latex.buildRecipe', t('latex.cmd_build_recipe'), askRecipe);
         if (building) add('oculus.latex.kill', t('latex.cmd_kill'), press.kill);
         add(
             'oculus.latex.clean',
             t('latex.cmd_clean'),
             () => void latexActions.clean(here.root, here.path),
-            cmd('KeyC')
+            LATEX_PRESSES.clean
         );
         if (!bib) {
-            add('oculus.latex.view', t('latex.cmd_view'), press.view, cmd('KeyV'));
+            add('oculus.latex.view', t('latex.cmd_view'), press.view, LATEX_PRESSES.view);
             add(
                 'oculus.latex.synctex',
                 t('latex.cmd_synctex'),
@@ -322,14 +323,14 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
                         input.instance()
                     );
                 },
-                cmd('KeyJ'),
+                LATEX_PRESSES.synctex,
                 menu
             );
             add(
                 'oculus.latex.mathPreview',
                 t('latex.cmd_math_preview'),
                 () => void client.layout.openBeside('math-preview', {}),
-                cmd('KeyM')
+                LATEX_PRESSES.mathPreview
             );
         }
         if (input.editing()) {
@@ -379,12 +380,10 @@ export function createLatexTab(input: LatexTabInput): LatexTab {
         const on = commands;
         if (on === null || !input.editing()) return listed;
         const { text, math } = latex.editing().chords;
-        const first: KeyPress = { code: 'KeyL', cmd: true };
-        const mathFirst: KeyPress = mac
-            ? { code: 'KeyM', ctrl: true, shift: true }
-            : { code: 'KeyM', cmd: true };
-        add('oculus.latex.promote', t('latex.cmd_promote'), on.promote, cmd('BracketLeft'));
-        add('oculus.latex.demote', t('latex.cmd_demote'), on.demote, cmd('BracketRight'));
+        const first = LATEX_CHORD_FIRST;
+        const mathFirst = latexMathFirst(mac);
+        add('oculus.latex.promote', t('latex.cmd_promote'), on.promote, LATEX_PRESSES.promote);
+        add('oculus.latex.demote', t('latex.cmd_demote'), on.demote, LATEX_PRESSES.demote);
         add('oculus.latex.navigate', t('latex.cmd_navigate'), on.navigate);
         add(
             'oculus.latex.selectEnvironment',

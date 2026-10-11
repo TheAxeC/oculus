@@ -10,7 +10,7 @@
 // setting and the server starts. A reader throws only when the catalog holds no rule for a key it
 // reads, or no default that reads, since without one no value can be read.
 
-import { closedPathEntryOk } from '../../helpers/files/apps.ts';
+import { closedPathEntryOk } from '../../helpers/files/apps/apps.ts';
 import type { ProgramApps } from '../../helpers/files/opens-in-program.ts';
 import { byKey } from '../../helpers/guards.ts';
 import {

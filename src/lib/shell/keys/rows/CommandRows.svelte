@@ -1,15 +1,17 @@
 <script lang="ts">
     // Layer 3, partial of shell/keys/Palette.svelte. The rows of the colon commands: each with its
-    // argument hint after its name and what it does at the end of the row, an unavailable one
-    // drawn and not run. Above them, a bare colon says which line the caret of the source tab on
-    // screen is on and how many the file has. A press runs the command: the commands that list
-    // choices type their name and a space, which opens their list; the others change the theme,
-    // the CRT overlay, the tabs or the folder shown, and close the palette. A tab a command showed
-    // takes the keyboard on its head once the page has drawn it, since the tab chosen is where the
-    // reader went. A refusal of Open Folder is said in the palette, which stays open.
+    // argument hint after its name and what it does at the end of the row, an unavailable one drawn
+    // and not run. Above them, a bare colon says which line the caret of the source tab on screen
+    // is on and how many the file has. A press runs the command: the commands that list choices
+    // type their name and a space, which opens their list; the others change the theme, the file
+    // icon theme, the CRT overlay, the tabs or the folder shown, and close the palette. A tab a
+    // command showed takes the keyboard on its head once the page has drawn it, since the tab
+    // chosen is where the reader went. A refusal of Open Folder is said in the palette, which stays
+    // open.
 
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
-    import { configuredThemes, landOn } from '$lib/shell/keys/palette-open';
+    import { landOn } from '$lib/shell/keys/palette-open';
+    import { fileIconThemeNamed, themeNamed } from '$lib/state/shared/words/appearance';
     import { opensAsMode } from '$lib/shell/keys/palette-modes';
     import {
         folderCommand,
@@ -24,8 +26,9 @@
         explorer,
         layout: { openView },
         paletteSource: { paletteSource },
-        ui: { setCrt, setTheme, crt },
-        registry: { views }
+        ui: { setCrt, setFileIcons, setTheme, crt },
+        registry: { views },
+        appShell: { offers }
     } = useState();
 
     type Props = {
@@ -68,9 +71,13 @@
             return;
         }
         if (command.name === 'theme') {
-            if (configuredThemes(current.config).includes(argument)) setTheme(argument);
+            const name = themeNamed(argument, offers());
+            if (name !== null) setTheme(name);
         } else if (command.name === 'crt') {
             setCrt(!crt());
+        } else if (command.name === 'file-icons') {
+            const name = fileIconThemeNamed(argument, offers());
+            if (name !== null) void setFileIcons(name);
         } else if (command.name === 'tab') {
             if (knownViews.some((view) => view.id === argument)) shown = openView(argument);
         } else if (command.name === 'goto') {

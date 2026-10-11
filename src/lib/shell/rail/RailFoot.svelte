@@ -14,6 +14,7 @@
         bookmarkChoices,
         bookmarkPicked,
         documentState,
+        editorTab,
         sourceTabState,
         type Bookmark
     } from '$lib/shell/rail/rail';
@@ -57,6 +58,11 @@
         }
         if (mark.view === 'source') {
             openView('source', sourceTabState(mark.root, mark.path));
+            return;
+        }
+        if (mark.view === 'editor' && mark.editor !== undefined) {
+            const tab = editorTab(mark.editor, mark.root, mark.path);
+            openView(tab.view, tab.state);
             return;
         }
         if (mark.view === 'file') {

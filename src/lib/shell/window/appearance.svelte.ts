@@ -1,12 +1,23 @@
-// Layer 3, shell. What a page puts on its document so that the theme, the wallpaper and the glyph
-// vocabulary the viewer chose are drawn: the theme's class and its derived tokens, the wallpaper's
-// layer and the properties its translucent surfaces read, the text scale, and which of the two
-// glyph vocabularies renders. Called once from the page's script body (Workbench.svelte), which
-// draws the wallpaper's layer from the two values it answers.
+// Layer 3, shell. What a page puts on its document so that the theme, the wallpaper, the glyph
+// vocabulary and the file icon theme the viewer chose are drawn: the theme's class and its derived
+// tokens, the wallpaper's layer and the properties its translucent surfaces read, the text scale,
+// which of the two glyph vocabularies renders, and the icon theme of an app when `file_icons` names
+// one. Called once from the page's script body (Workbench.svelte), which draws the wallpaper's
+// layer from the two values it answers.
 
-import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
-import { setGlyphMode } from '$lib/state/shared/words/text';
+import { WALL_CLASS, applyWallpaper } from '$lib/ui/theme/theme';
+import { drawTheme } from '$lib/ui/theme/app-theme';
 import {
+    holdIconTheme,
+    loadIconTheme,
+    setIconLanguages,
+    setIconsDark
+} from '$lib/ui/display/icon-theme/held.svelte';
+import { setGlyphMode, t } from '$lib/state/shared/words/text';
+import {
+    appThemeLabel,
+    appThemeState,
+    fileIconsState,
     terminalTheme,
     themeClass,
     wallpaperOnTheme,
@@ -26,9 +37,15 @@ export type Appearance = {
 };
 
 /** Put the viewer's appearance on the document, and keep it there as the choices change. */
-export function useAppearance({ ui }: Pick<ClientState, 'ui'>): Appearance {
+export function useAppearance({
+    ui,
+    notices,
+    appShell
+}: Pick<ClientState, 'ui' | 'notices' | 'appShell'>): Appearance {
     const { crt, icons, textScale, theme, wallpaper } = ui;
-    const wall = $derived(wallpaper() && wallpaperOnTheme(theme()));
+    /** The app themes the page said are unavailable, so a theme is told once. */
+    const told = new Set<string>();
+    const wall = $derived(wallpaper() && wallpaperOnTheme(theme(), appShell.offers()));
     const paper = $derived(wallpaperSettings());
     const image = $derived(
         `--wall-dim: ${paper === null ? 1 : 1 - paper.dim}; --wall-image-blur: ${paper === null ? 0 : paper.blur}px`
@@ -36,11 +53,60 @@ export function useAppearance({ ui }: Pick<ClientState, 'ui'>): Appearance {
 
     $effect(() => {
         document.documentElement.style.setProperty('--text-scale', String(textScale() ?? 1));
-        applyTheme(document, [themeClass(theme()), wall ? WALL_CLASS : ''].join(' '), crt());
         applyWallpaper(document, paper, wall);
         // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the icons;
         // every other theme draws the icon config/catalogs/icons.yml maps each glyph name to.
-        setGlyphMode(terminalTheme(theme()) && !icons() ? 'ascii' : 'icon');
+        setGlyphMode(terminalTheme(theme(), appShell.offers()) && !icons() ? 'ascii' : 'icon');
+    });
+
+    $effect(() => {
+        const choice = theme();
+        const offers = appShell.offers();
+        const state = appThemeState(choice, offers);
+        const extra = wall ? WALL_CLASS : '';
+        let current = true;
+        // A theme of an app is drawn when its file has been loaded. One that no acting app offers
+        // is the default theme, and the page says so once.
+        void drawTheme(
+            document,
+            {
+                choice,
+                app: state === 'ready',
+                classes: [themeClass(choice, offers), extra].join(' '),
+                extra,
+                crt: crt()
+            },
+            () => current
+        ).then((drawn) => {
+            if (current) setIconsDark(getComputedStyle(document.body).colorScheme === 'dark');
+            if (!current || (state !== 'missing' && drawn) || told.has(choice)) return;
+            told.add(choice);
+            notices.post(t('apps.theme_unavailable', appThemeLabel(choice)));
+        });
+        return () => {
+            current = false;
+        };
+    });
+
+    $effect(() => {
+        const choice = appShell.fileIcons();
+        let current = true;
+        // An app's icon theme is drawn when its file has been loaded; until then, and for a theme
+        // no acting app offers, the page draws Seti.
+        if (fileIconsState(choice, appShell.offers()) !== 'ready') {
+            holdIconTheme(document, null);
+            return;
+        }
+        void loadIconTheme(choice).then((loaded) => {
+            if (current) holdIconTheme(document, loaded);
+        });
+        return () => {
+            current = false;
+        };
+    });
+
+    $effect(() => {
+        setIconLanguages(appShell.languages());
     });
 
     return { wall: () => wall, image: () => image };

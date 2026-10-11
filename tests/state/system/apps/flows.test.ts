@@ -29,7 +29,11 @@ const answer = (body: Record<string, unknown>, ok = true): Posted => ({
 });
 
 /** Flows over a post that answers by the path and body of each call. */
-function flows(rows: AppRow[], reply: (path: string, body: Record<string, unknown>) => Posted) {
+function flows(
+    rows: AppRow[],
+    reply: (path: string, body: Record<string, unknown>) => Posted,
+    dirty: string[] = []
+) {
     const calls: [string, Record<string, unknown>][] = [];
     const waiting: [number, () => void][] = [];
     const post = vi.fn((path: string, body: unknown) => {
@@ -62,7 +66,8 @@ function flows(rows: AppRow[], reply: (path: string, body: Record<string, unknow
                 notices.push([message, options]);
                 for (const [count, release] of noticing) if (notices.length >= count) release();
             }
-        }
+        },
+        dirtyFiles: () => dirty
     });
     return { store, calls, notices, reached, noticed };
 }

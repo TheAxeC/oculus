@@ -20,7 +20,7 @@ import {
 import { isAbsolute, join, relative } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps.ts';
+import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps/apps.ts';
 import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import { MANIFEST, notesFiles, routeSetup } from '../apps/apps-fixture.ts';

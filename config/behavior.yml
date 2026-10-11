@@ -301,17 +301,17 @@ apps:
   state_max_kb: 64
   # Kilobytes of an app's store that `setStore` accepts and `getStore` reads.
   store_max_kb: 256
-  # Writes, `setStore` included, that pass per frame or per host per minute; a host's store updates and a secret's stores and deletes count here.
+  # Writes, `setStore` included, that pass per frame or per host per minute; a host's store updates, a secret's stores and deletes and a custom editor's `document.save` count here.
   writes_per_min: 30
-  # Calls of `open` or `commands.run` that pass per frame per minute.
+  # Calls of `open`, `commands.run`, `commands.execute` and `createPanel` that pass per frame per minute, and of `executeCommand` per host.
   opens_per_min: 30
-  # Calls of `sendToPage` that pass per host per minute.
+  # Calls of `sendToPage` per host and of the `ui` calls (messages, quick pick, input box, progress) per host or frame that pass per minute.
   messages_per_min: 600
   # Key events per second the page takes from a frame.
   keys_per_s: 20
   # Files an app's folder may hold.
   max_files: 500
-  # Megabytes an app's files may total.
+  # Megabytes an app's files may total, and the most a custom editor reads or saves in one file.
   max_mb: 20
   # Kilobytes of a host's output kept, beside the last 1000 lines.
   host_output_kb: 256
@@ -319,5 +319,7 @@ apps:
   host_stop_seconds: 5
   # Entries per root that a `workspaceContains` look and a `readDirectory` read at most.
   scan_entries: 10000
-  # Folders, each relative to a root and applied to every root, that `open({ file })` never reaches for an app, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
+  # Folders, each relative to a root and applied to every root, that `open({ file })` and a custom editor's document never reach for an app, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
   closed_paths: [secrets]
+
+# The values of the settings that apps declare under `contributes.configuration`, written by the Settings view into the first hub's layer of this file as a map from the setting's whole key (`notes.width` is one key) to its value. A value outside its setting's type, `enum` or bounds, and a key no approved app declares, is a finding and the app reads its default. The map is not set here; the hub's layer holds it.

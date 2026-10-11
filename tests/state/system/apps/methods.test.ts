@@ -1,11 +1,11 @@
 // Layer 2, client state test. The nine methods the page exposes to one app's frame
-// (lib/state/system/apps/methods.ts), judged by the page's own checks before any request: an open
-// target and a write refused by the manifest and the limits, with the word a refusal is.
+// (lib/state/system/apps/frame/methods.ts), judged by the page's own checks before any request: an
+// open target and a write refused by the manifest and the limits, with the word a refusal is.
 //
 // The context is plain functions, so no frame and no network is involved. What this does NOT
 // cover: penpal carrying a rejection to the frame, the server's second judgment of each call
-// (tests/routes/apps and tests/routes/edit/app-gate.test.ts) and the notice drawn once per name,
-// which the apps store (apps.svelte.ts) owns.
+// (tests/routes/apps and tests/routes/edit/apps/app-gate.test.ts) and the notice drawn once per
+// name, which the apps store (apps.svelte.ts) owns.
 
 import { describe, expect, vi } from 'vitest';
 import type { AppRow } from '../../../../src/lib/data/model/index.ts';
@@ -17,7 +17,7 @@ import {
     type MethodsContext,
     type OpenResult,
     type ServerAnswer
-} from '../../../../src/lib/state/system/apps/methods.ts';
+} from '../../../../src/lib/state/system/apps/frame/methods.ts';
 import { fixtureApp } from '../../../fixtures/entities-fixture.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { installRealText } from '../../../views/shared/real-text.ts';
@@ -86,6 +86,15 @@ function context(over: Partial<MethodsContext> = {}) {
         theme: () => ({ name: 'dark', tokens: {}, wall: false }),
         forwardKey: () => undefined,
         refused: calls.refused,
+        execute: () => Promise.resolve({ ok: true, value: null }),
+        register: () => null,
+        unregister: () => undefined,
+        changed: () => undefined,
+        pageExists: () => Promise.resolve(true),
+        openPanel: () => 'panel-1',
+        ask: () => ({ id: 'l1', answer: Promise.resolve(null) }),
+        setting: () => Promise.resolve({ ok: true, value: null }),
+        document: null,
         now: () => at,
         ...over
     };

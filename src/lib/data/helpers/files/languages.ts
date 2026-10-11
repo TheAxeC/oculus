@@ -6,9 +6,9 @@
 //
 // One rule, imported by both layers: the file browser, the source tab, the diff and the merge views
 // read a name's language through it, and the server words the entries it drops as findings
-// (data/sources/config/languages.ts) from the same read, so the two cannot disagree about what was
-// dropped. The page reads the map out of the configuration it was sent, which is empty until the
-// config channel's first message lands, so every file is plain text until then.
+// (data/sources/config/sections/languages.ts) from the same read, so the two cannot disagree about
+// what was dropped. The page reads the map out of the configuration it was sent, which is empty
+// until the config channel's first message lands, so every file is plain text until then.
 //
 // The names a language may take are the highlighter's registered names (data/prose/languages.ts),
 // which are the ones the editor has a grammar for and the status bar has words for; a language the
@@ -18,6 +18,8 @@
 import { z } from 'zod';
 import { isMap } from '../guards.ts';
 import { registered } from '../../prose/languages.ts';
+import { extensionOf } from './opens-in-program.ts';
+import { nameOf } from './paths.ts';
 
 /** A lowercased ending (an extension with its dot, or a whole file name) to its language. */
 export type LanguageMap = ReadonlyMap<string, string>;
@@ -94,4 +96,19 @@ export function readLanguages(config: Record<string, unknown>): LanguageRead {
 /** The map `languages:` holds; empty for a config that carries none. */
 export function languageMap(config: Record<string, unknown>): LanguageMap {
     return readLanguages(config).map;
+}
+
+/** What the editor calls a file the map has no language for. */
+export const PLAIN_LANGUAGE = 'plaintext';
+
+/**
+ * The name of the language a file opens in: the map's entry for its whole name lowercased, else for
+ * its extension, else plain text. A name that starts with a dot has no extension to read, so a
+ * dotfile is plain text, and the whole-name lookup leaves it alone for the same reason: `.py` is a
+ * file called `.py`, not an extension.
+ */
+export function languageOf(name: string, map: LanguageMap): string {
+    const bare = nameOf(name).toLowerCase();
+    const whole = bare.startsWith('.') ? undefined : map.get(bare);
+    return whole ?? map.get(extensionOf(name)) ?? PLAIN_LANGUAGE;
 }

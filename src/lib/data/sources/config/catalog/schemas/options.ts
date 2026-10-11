@@ -5,9 +5,9 @@
 //
 // The schema is the catalog's rule (catalog/value-rule.ts) in JSON Schema's words, so the editor
 // marks what the Settings view refuses: a toggle holds a flag, a number its range, a choice the
-// words of its `options` and of the sources it names, a list its items and its slots. A source
-// that only the page holds (the views, the theme classes, the usage tiers, the wallpapers) offers
-// its words nowhere else, so a choice drawn from one is any text.
+// words of its `options` and of the sources it names, a list its items and its slots. A source that
+// only the page holds (the views, the theme classes, the usage tiers, the wallpapers, the file icon
+// themes) offers its words nowhere else, so a choice drawn from one is any text.
 
 import type { CatalogEntry, FieldSpec, Source } from '../options.ts';
 import { hueNames, listedSources, pickedSources } from '../options.ts';
@@ -220,10 +220,14 @@ function entrySchema(path: string, entry: CatalogEntry, lists: OptionLists): Jso
 /** An object of the tree of key paths, before its leaves are known. */
 type Branch = { properties: Record<string, JsonSchema> };
 
-/** The schema of a config file from its section of the options catalog. */
+/**
+ * The schema of a config file from its section of the options catalog, with the top-level keys of
+ * `extra` after the catalog's own.
+ */
 export function optionsSchema(
     entries: Record<string, CatalogEntry>,
-    lists: OptionLists
+    lists: OptionLists,
+    extra: Record<string, JsonSchema> = {}
 ): JsonSchema {
     const root: JsonSchema = { type: 'object', properties: {}, additionalProperties: false };
     for (const [path, entry] of Object.entries(entries)) {
@@ -241,5 +245,26 @@ export function optionsSchema(
         }
         at.properties[names[names.length - 1]] = entrySchema(path, entry, lists);
     }
+    Object.assign((root as Branch).properties, extra);
     return root;
+}
+
+/**
+ * The schema of the `app_settings:` map of config/behavior.yml: a value for each whole key of a
+ * setting an app declares, a flag, a number, a text or a list of texts. Which keys exist and what
+ * each takes depends on the apps that are installed, which the file's schema does not know, so the
+ * apps watcher judges each value against its declaration.
+ */
+export function appSettingsSchema(): JsonSchema {
+    return {
+        type: 'object',
+        additionalProperties: {
+            anyOf: [
+                { type: 'boolean' },
+                { type: 'number' },
+                { type: 'string' },
+                { type: 'array', items: { type: 'string' } }
+            ]
+        }
+    };
 }

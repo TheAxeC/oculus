@@ -22,7 +22,7 @@ export type ReadAgain = {
 
 export async function readAgain(client: ClientState, tab: ReadAgain): Promise<void> {
     const {
-        apps: { holds },
+        appShell: { opens },
         fs: { readFileKind },
         layout: { closeInstance, instanceLayoutState, instanceView, openView },
         source: { loadSourceDraft, reloadHead }
@@ -39,7 +39,7 @@ export async function readAgain(client: ClientState, tab: ReadAgain): Promise<vo
         instanceText(state, 'path') === tab.path;
     if (!here) return;
     if (found.kind !== 'text' && found.kind !== 'missing') {
-        const next = tabForKind(found.kind, tab.root, tab.path, undefined, holds);
+        const next = tabForKind(found.kind, tab.root, tab.path, undefined, opens);
         const opened = openView(next.view, next.state, undefined, { preview: tab.preview });
         if (opened !== tab.id) closeInstance(tab.id);
         return;

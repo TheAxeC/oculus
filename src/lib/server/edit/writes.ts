@@ -51,9 +51,14 @@ import { setFlag, setOverride } from '../sessions/overrides.ts';
 import { glyphNames } from '../../data/sources/config/rail.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
 import { configWrite } from './writes/config/config-write.ts';
-import { writeDeckEdit } from './writes/config/deck/deck-acts.ts';
-import { undoDeckEdit } from './writes/config/deck/deck-undo.ts';
-import { rootItemsOf, rootsHeldIn, type RootItem, type RootsHeld } from './writes/config/roots.ts';
+import { writeDeckEdit } from './writes/config/lists/deck/deck-acts.ts';
+import { undoDeckEdit } from './writes/config/lists/deck/deck-undo.ts';
+import {
+    rootItemsOf,
+    rootsHeldIn,
+    type RootItem,
+    type RootsHeld
+} from './writes/config/lists/roots.ts';
 import { hubLayerPath } from '../../data/helpers/hub-names.ts';
 import { routed, routedEntry, routedOrder, routedRoot, routedTarget } from './writes/hubs.ts';
 import { firstHubConfig, hubManifests, hubTargets, type HubTarget } from '../files/roots.ts';
@@ -202,16 +207,16 @@ export type WriteOutcome = {
 
 // The writers and the parsers, re-exported under their own names.
 export { coerce, createIdea, fieldTypes, writeManifest } from './writes/manifest.ts';
-export { writeDeckSlides } from './writes/config/deck/deck.ts';
+export { writeDeckSlides } from './writes/config/lists/deck/deck.ts';
 export { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 export { collectionFile, identityField } from '../files/fs/collections.ts';
 export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
-export { writeMute } from './writes/config/audit-mute.ts';
-export { writeRail } from './writes/config/rail.ts';
+export { writeMute } from './writes/config/lists/audit-mute.ts';
+export { writeRail } from './writes/config/lists/rail.ts';
 export { writeConfigKey } from './writes/config/config-key.ts';
 export { writeConfigValue } from './writes/config/config-value.ts';
-export { addRootTo, removeRootFrom, writeRoots } from './writes/config/roots.ts';
+export { addRootTo, removeRootFrom, writeRoots } from './writes/config/lists/roots.ts';
 export {
     auditMuteWrite,
     configKeyWrite,

@@ -8,9 +8,11 @@
 // sandboxed document; the page's origin is the origin this file was loaded from.
 //
 // The page exposes `read`, `getTheme`, `getState`, `setState`, `getStore`, `setStore`, `write`,
-// `open` and `key`, and under flat names the calls this file nests as `oculus.fs`,
-// `oculus.commands`, `oculus.secrets` and `oculus.host`; the app exposes `onChannel`, `onTheme`,
-// `onStore` and `onHost`. A refusal rejects with one fixed word as a plain string.
+// `open`, `key`, `register`, `unregister`, `changed` and `createPanel`, and under flat names the
+// calls this file nests as `oculus.fs`, `oculus.commands`, `oculus.secrets`, `oculus.host`,
+// `oculus.ui`, `oculus.settings` and `oculus.document`; the app exposes `onChannel`, `onTheme`,
+// `onStore`, `onHost`, `onCommand`, `onVisibility`, `onSettings`, `onSave` and `onRevert`. A
+// refusal rejects with one fixed word as a plain string.
 //
 // `oculus.fs.readFile`, `readDirectory` and `stat` ask the page for an address on the app's own
 // address and fetch the bytes, the listing or the stat from it, so a file never passes through the
@@ -33,6 +35,11 @@
  * @property {(theme: Theme) => unknown} [onTheme]
  * @property {(value: unknown) => unknown} [onStore]
  * @property {(method: string, params: unknown) => unknown} [onHost]
+ * @property {(id: string, args: unknown[]) => unknown} [onCommand] A command the frame registered.
+ * @property {(visible: boolean) => unknown} [onVisibility] The view was shown or hidden.
+ * @property {(keys: string[]) => unknown} [onSettings] Settings of the app changed.
+ * @property {() => unknown} [onSave] The reader saved the custom editor's document.
+ * @property {() => unknown} [onRevert] The reader reverted the custom editor's document.
  */
 
 /**
@@ -74,6 +81,18 @@
  */
 
 /**
+ * @typedef {object} Commands
+ * @property {(name: string) => Promise<void>} run
+ * @property {(id: string, ...args: unknown[]) => Promise<unknown>} execute
+ */
+
+/** @typedef {'command' | 'statusItem'} RegisterKind */
+
+/** @typedef {'statusItem' | 'progress'} ChangedKind */
+
+/** @typedef {{ entry: string, preserveFocus?: boolean }} PanelOptions */
+
+/**
  * @typedef {object} Oculus
  * @property {(channel: string) => Promise<{ version: number; payload: unknown } | null>} read
  * @property {() => Promise<Theme>} getTheme
@@ -85,9 +104,53 @@
  * @property {(target: unknown) => Promise<void>} open
  * @property {(init: KeyInit) => Promise<void>} key
  * @property {Files} fs
- * @property {{ run: (name: string) => Promise<void> }} commands
+ * @property {Commands} commands
  * @property {Secrets} secrets
  * @property {{ request: (method: string, params?: unknown) => Promise<unknown> }} host
+ * @property {(kind: RegisterKind, id: string, options?: object) => Promise<void>} register
+ * @property {(kind: RegisterKind, id: string) => Promise<void>} unregister
+ * @property {(kind: ChangedKind, id: string, options: object) => Promise<void>} changed
+ * @property {(type: string, title: string, options: PanelOptions) => Promise<string>} createPanel
+ * @property {Ui} ui
+ * @property {{ get: (key: string) => Promise<unknown> }} settings
+ * @property {EditorDocument} document
+ */
+
+/**
+ * @typedef {object} MessageOptions
+ * @property {'info' | 'warning' | 'error'} [tone]
+ * @property {string[]} [items]
+ * @property {boolean} [modal]
+ */
+
+/** @typedef {(progress: Progress) => Promise<unknown>} ProgressTask */
+
+/**
+ * @typedef {object} ProgressOptions
+ * @property {'notification' | 'window'} [location]
+ * @property {string} [title]
+ * @property {boolean} [cancellable]
+ */
+
+/**
+ * @typedef {object} Ui
+ * @property {(message: string, options?: MessageOptions) => Promise<string | null>} message
+ * @property {(items: (string | object)[], options?: object) => Promise<unknown>} quickPick
+ * @property {(options?: object) => Promise<string | null>} inputBox
+ * @property {(options: ProgressOptions, task: ProgressTask) => Promise<unknown>} progress
+ */
+
+/**
+ * @typedef {object} Progress
+ * @property {(change: { message?: string, percent?: number }) => Promise<void>} report
+ * @property {() => boolean} cancelled Whether the reader pressed Cancel.
+ */
+
+/**
+ * @typedef {object} EditorDocument
+ * @property {() => Promise<Uint8Array>} read The bytes of the file the editor was opened on.
+ * @property {(bytes: Uint8Array) => Promise<void>} save Replace the file's bytes.
+ * @property {(dirty: boolean) => Promise<void>} dirty Mark the editor's tab unsaved or saved.
  */
 
 /**
@@ -145,11 +208,12 @@ function outsideLink(/** @type {MouseEvent} */ event) {
 
 /**
  * The page's methods an app calls by their own names. The page also builds `fsAddress`,
- * `commandsRun`, `secretsGet`, `secretsStore`, `secretsDelete` and `hostRequest`, which an app
- * reaches under `fs`, `commands`, `secrets` and `host` (`nested` below). This file imports nothing
- * from the page, so it holds the list itself; tests/server/machine/apps/oculus-frame.test.ts holds
- * it and the nested names equal to the keys of the object `createMethods` returns
- * (lib/state/system/apps/methods.ts).
+ * `commandsRun`, `commandsExecute`, `secretsGet`, `secretsStore`, `secretsDelete`, `hostRequest`,
+ * `ui`, `settingsGet`, `documentRead`, `documentSave` and `documentDirty`, which an app reaches
+ * under `fs`, `commands`, `secrets`, `host`, `ui`, `settings` and `document` (`nested` below). This
+ * file imports nothing from the page, so it holds the list itself;
+ * tests/server/machine/apps/oculus-frame.test.ts holds it and the nested names equal to the keys of
+ * the object `createMethods` returns (lib/state/system/apps/frame/methods.ts).
  */
 const METHODS = [
     'read',
@@ -160,7 +224,11 @@ const METHODS = [
     'setStore',
     'write',
     'open',
-    'key'
+    'key',
+    'register',
+    'unregister',
+    'changed',
+    'createPanel'
 ];
 
 /**
@@ -168,7 +236,7 @@ const METHODS = [
  * to copy, so each function calls the proxy by its name.
  */
 function flat(/** @type {any} */ page) {
-    return /** @type {Omit<Oculus, 'fs' | 'commands' | 'secrets' | 'host'>} */ (
+    return /** @type {Omit<Oculus, 'fs' | 'commands' | 'secrets' | 'host' | 'ui' | 'settings' | 'document'>} */ (
         Object.fromEntries(
             METHODS.map((name) => [name, (/** @type {unknown[]} */ ...args) => page[name](...args)])
         )
@@ -179,7 +247,7 @@ function flat(/** @type {any} */ page) {
  * The page's methods as the nested object an app uses. Penpal carries them under flat names, so
  * `oculus.fs.readFile` is `fsAddress('read', ...)` and a fetch of the address it answers.
  */
-function nested(/** @type {any} */ page) {
+function nested(/** @type {any} */ page, /** @type {Map<string, { cancelled: boolean }>} */ tasks) {
     /**
      * Fetch the address the page gave for a read of a root. A refusal of the server is its
      * plain-text word, which rejects as a plain string; a response that is no answer rejects
@@ -211,7 +279,11 @@ function nested(/** @type {any} */ page) {
             stat: (/** @type {Place} */ place) =>
                 fetched('stat', place, (response) => response.json())
         },
-        commands: { run: (/** @type {string} */ name) => page.commandsRun(name) },
+        commands: {
+            run: (/** @type {string} */ name) => page.commandsRun(name),
+            execute: (/** @type {string} */ id, /** @type {unknown[]} */ ...args) =>
+                page.commandsExecute(id, args)
+        },
         secrets: {
             get: (/** @type {string} */ key) => page.secretsGet(key),
             store: (/** @type {string} */ key, /** @type {string} */ value) =>
@@ -221,8 +293,56 @@ function nested(/** @type {any} */ page) {
         host: {
             request: (/** @type {string} */ method, /** @type {unknown} */ params) =>
                 page.hostRequest(method, params)
+        },
+        ui: {
+            message: (/** @type {string} */ message, options = {}) =>
+                page.ui({ kind: 'message', tone: 'info', items: [], ...options, message }),
+            quickPick: (/** @type {unknown[]} */ items, options = {}) =>
+                page.ui({ kind: 'quickPick', ...options, items }),
+            inputBox: (options = {}) => page.ui({ kind: 'inputBox', ...options }),
+            progress: (
+                /** @type {{ location?: string, title?: string, cancellable?: boolean }} */ options,
+                /** @type {(progress: Progress) => Promise<unknown>} */ task
+            ) => withProgress(page, tasks, options, task)
+        },
+        settings: { get: (/** @type {string} */ key) => page.settingsGet(key) },
+        document: {
+            read: () => page.documentRead(),
+            save: (/** @type {Uint8Array} */ bytes) => page.documentSave(bytes),
+            dirty: (/** @type {boolean} */ flag) => page.documentDirty(flag)
         }
     };
+}
+
+/**
+ * Run a task under a progress the page draws. The page answers the progress's id at once; Cancel
+ * on the reader's side reaches the task as `cancelled()` through the page's `onCancel(id)`, and the
+ * progress ends when the task does, whether it returns or throws.
+ */
+async function withProgress(
+    /** @type {any} */ page,
+    /** @type {Map<string, { cancelled: boolean }>} */ tasks,
+    /** @type {{ location?: string, title?: string, cancellable?: boolean }} */ options,
+    /** @type {(progress: Progress) => Promise<unknown>} */ task
+) {
+    const id = await page.ui({
+        kind: 'progress',
+        location: 'notification',
+        ...options,
+        message: '',
+        percent: null
+    });
+    const state = { cancelled: false };
+    tasks.set(id, state);
+    try {
+        return await task({
+            report: (change) => page.changed('progress', id, change),
+            cancelled: () => state.cancelled
+        });
+    } finally {
+        tasks.delete(id);
+        await page.changed('progress', id, { done: true }).catch(() => undefined);
+    }
 }
 
 /**
@@ -240,6 +360,8 @@ export async function connect(handlers = {}) {
         remoteWindow: window.parent,
         allowedOrigins: [new URL(import.meta.url).origin]
     });
+    /** @type {Map<string, { cancelled: boolean }>} */
+    const tasks = new Map();
     const methods = {
         onChannel: (
             /** @type {string} */ channel,
@@ -252,9 +374,19 @@ export async function connect(handlers = {}) {
         },
         onStore: (/** @type {unknown} */ value) => handlers.onStore?.(value),
         onHost: (/** @type {string} */ method, /** @type {unknown} */ params) =>
-            handlers.onHost?.(method, params)
+            handlers.onHost?.(method, params),
+        onCommand: (/** @type {string} */ id, /** @type {unknown[]} */ args) =>
+            handlers.onCommand?.(id, args),
+        onVisibility: (/** @type {boolean} */ visible) => handlers.onVisibility?.(visible),
+        onSettings: (/** @type {string[]} */ keys) => handlers.onSettings?.(keys),
+        onSave: () => handlers.onSave?.(),
+        onRevert: () => handlers.onRevert?.(),
+        onCancel: (/** @type {string} */ id) => {
+            const task = tasks.get(id);
+            if (task !== undefined) task.cancelled = true;
+        }
     };
-    const page = nested(await link({ messenger, methods }).promise);
+    const page = nested(await link({ messenger, methods }).promise, tasks);
     paint(await page.getTheme());
     window.addEventListener('keydown', (event) => {
         if (!forwarded(event)) return;

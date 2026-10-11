@@ -9,12 +9,13 @@
 // The real-path checks compare the real paths as the disk spells them, case included. They are
 // made on the file's folder first, so a path inside oculus's own config folder is answered
 // `closed` without a stat, a real path or a read of the file itself, and then on the file, so a
-// link out of the root or into a dot folder is `closed` too. The file system is an argument, so a
+// link out of the root or into a dot folder is `closed` too. A real path in a private folder is
+// `closed` whatever root covers it. The file system is an argument, so a
 // test records every read it was asked for.
 
 import { readlinkSync, statSync } from 'node:fs';
 import { isAbsolute, basename, dirname, join, relative, resolve, sep } from 'node:path';
-import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps.ts';
+import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps/apps.ts';
 import { below, realPath } from '../../../core/paths.ts';
 import { ENGINE_ROOT, type Root } from '../../../files/files.ts';
 import type { HeldApp } from '../read/held.ts';
@@ -58,12 +59,19 @@ export type OpenContext = {
     configDir: string;
     /** The folders `closed_paths` names, or null while the key is missing or is no list. */
     closedPaths: readonly string[] | null;
+    /** The real paths of the folders and files closed to every app (reach/private.ts). */
+    privateReal: readonly string[];
     fs: OpenFs;
 };
 
 /** Whether a real path is the folder or lies below it. */
 function within(path: string, folder: string): boolean {
     return path === folder || below(path, folder);
+}
+
+/** Whether a real path is one of the private folders or files, or lies below one. */
+export function isPrivate(real: string, context: Pick<OpenContext, 'privateReal'>): boolean {
+    return context.privateReal.some((closed) => within(real, closed));
 }
 
 /** The real path of a path that may not exist: its deepest existing folder and the rest after it.
@@ -126,6 +134,7 @@ export function locate(
         if (folderReal === null || !within(folderReal, rootReal)) return { answer: 'closed' };
         const guess = join(folderReal, basename(full));
         if (configReal !== null && within(guess, configReal)) return { answer: 'closed' };
+        if (isPrivate(guess, context)) return { answer: 'closed' };
         if (hiddenUnder(rootReal, guess, closedPaths)) return { answer: 'closed' };
     }
 
@@ -139,6 +148,7 @@ export function locate(
     }
     if (!within(real, rootReal)) return { answer: 'closed' };
     if (configReal !== null && within(real, configReal)) return { answer: 'closed' };
+    if (isPrivate(real, context)) return { answer: 'closed' };
     if (!whole && hiddenUnder(rootReal, real, closedPaths)) return { answer: 'closed' };
     return { answer: 'ok', real };
 }

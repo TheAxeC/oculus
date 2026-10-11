@@ -4,6 +4,7 @@
 // project every test builds from is here too, so a field added to Project is added once, and so is
 // the app row, so a field added to AppRow is.
 
+import { noContributes } from '../../src/lib/data/helpers/files/apps/contributes.ts';
 import type { AppRow, Career, Feeds, Project, Resource } from '../../src/lib/data/model/index.ts';
 
 /** No feed file on this hub, which is not the same answer as a feed with nothing in it. */
@@ -86,6 +87,7 @@ export function fixtureApp(change: Partial<AppRow> = {}): AppRow {
         secrets: false,
         activation: ['onTab'],
         depends: [],
+        contributes: noContributes(),
         disabled: false,
         machineDisabled: false,
         workspaceState: '',

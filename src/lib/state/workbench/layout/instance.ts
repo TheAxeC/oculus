@@ -6,6 +6,7 @@ import { z } from 'zod';
 import type { Instance, Layout, Pane, ViewId } from './index.ts';
 import { isMap, item } from '../../../data/helpers/guards.ts';
 import { nameOf } from '../../../data/helpers/files/paths.ts';
+import { EDITOR_VIEW } from '../../../data/helpers/files/apps/views.ts';
 import { sourceTabState } from '../../sessions/source/draft.ts';
 import {
     anyNumberShape,
@@ -127,25 +128,75 @@ export function documentState(mark: { label: string; root: string; path: string 
     };
 }
 
+/** What opening a file asks of the apps. */
+export type AppOpens = {
+    /**
+     * Whether a file of a root, by the root's key and the path under it, lies in an apps folder,
+     * which opens as source text and never as a page.
+     */
+    holds: (root: string, path: string) => boolean;
+    /** The custom editor a file opens in without being asked, or null for none. */
+    editorFor: (root: string, path: string) => { app: string; viewType: string } | null;
+};
+
+/**
+ * The view and the state a custom editor's tab is opened with. The `id` names the editor as well as
+ * the file, so one file opened in two editors is two tabs and a second press on one activates its
+ * tab.
+ */
+export function editorTab(
+    editor: { app: string; viewType: string },
+    root: string,
+    path: string
+): { view: string; state: unknown } {
+    return {
+        view: EDITOR_VIEW,
+        state: {
+            id: JSON.stringify([editor.viewType, root, path]),
+            app: editor.app,
+            viewType: editor.viewType,
+            root,
+            path,
+            label: nameOf(path)
+        }
+    };
+}
+
+/**
+ * The view and the state a file opens in once an editor is chosen for it: the text editor, which is
+ * the source tab, or a custom editor of an app.
+ */
+export function tabWithEditor(
+    choice: { kind: 'text' } | { kind: 'editor'; app: string; viewType: string },
+    root: string,
+    path: string
+): { view: string; state: unknown } {
+    return choice.kind === 'text'
+        ? { view: 'source', state: sourceTabState(root, path) }
+        : editorTab(choice, root, path);
+}
+
 /**
  * The view a file of one kind opens in, and the state that tab is given: a file in an apps folder
- * or a text file in the source tab, an HTML file in the document view, anything else in the file
- * view. A file the route says is gone opens in the source tab too, which says it cannot be opened.
- * The tree's rows know the size of a file; a caller that has only the path passes undefined. A file
- * in an apps folder opens as source text whatever its kind, since an app's page is code to read and
- * never a page to run in the document view; `holds` says whether a file lies in one. It sits here
- * beside `documentState`, which it builds, because the file browser, the palette and the source
- * tab's read-again all choose a view by it.
+ * or a text file in the source tab, a file a `default` custom editor of an app matches in that
+ * editor, an HTML file in the document view, anything else in the file view. A file the route says
+ * is gone opens in the source tab too, which says it cannot be opened. The tree's rows know the
+ * size of a file; a caller that has only the path passes undefined. A file in an apps folder opens
+ * as source text whatever its kind, since an app's page is code to read and never a page to run in
+ * the document view. It sits here beside `documentState`, which it builds, because the file
+ * browser, the palette and the source tab's read-again all choose a view by it.
  */
 export function tabForKind(
     kind: string,
     root: string,
     path: string,
     size: number | undefined,
-    holds: (root: string, path: string) => boolean
+    opens: AppOpens
 ): { view: string; state: unknown } {
     const label = nameOf(path);
-    if (holds(root, path)) return { view: 'source', state: sourceTabState(root, path) };
+    if (opens.holds(root, path)) return { view: 'source', state: sourceTabState(root, path) };
+    const editor = opens.editorFor(root, path);
+    if (editor !== null) return editorTab(editor, root, path);
     if (kind === 'html') return { view: 'document', state: documentState({ label, root, path }) };
     if (kind === 'text' || kind === 'missing') {
         return { view: 'source', state: sourceTabState(root, path) };

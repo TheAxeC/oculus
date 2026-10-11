@@ -27,6 +27,7 @@
 import { wcagLuminance } from 'culori';
 import type { ThemeRegistration } from 'shiki';
 import vscodeRules from '../../../../../themes/vscode-rules.json';
+import { appRulesFor } from '../../../../theme/app-rules';
 import { COLOURS } from './colours';
 
 /** One TextMate rule: the scopes it matches, the token it paints them with, its font style. */
@@ -194,13 +195,15 @@ type OwnRule = { scope: string[]; foreground?: string; fontStyle?: string };
  * The TextMate rules of the VS Code theme a class string names, in the form Shiki takes, or
  * undefined when none of the classes is a VS Code theme's. The string is the body's classes or a
  * code theme's id. The first class with an entry wins; a class that is no entry of the file
- * (`rice`, `crt`, `tokens`, an empty word) is passed over.
+ * (`rice`, `crt`, `tokens`, an empty word) is passed over. A string with the class of the app
+ * theme in force gives that theme's rules (ui/theme/app-rules.ts).
  */
 export function ownRules(classes: string): TokenColors | undefined {
     const themes: Record<string, OwnRule[]> = vscodeRules.themes;
     const found = classes.split(/\s+/).find((name) => Object.hasOwn(themes, name));
-    if (found === undefined) return undefined;
-    return themes[found].map((rule) => ({
+    const rules = found === undefined ? appRulesFor(classes) : themes[found];
+    if (rules === undefined) return undefined;
+    return rules.map((rule) => ({
         scope: rule.scope,
         settings: {
             ...(rule.foreground === undefined ? {} : { foreground: rule.foreground }),

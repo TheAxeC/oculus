@@ -346,3 +346,104 @@ Cases of the brief's "Cases":
 - My own git use: one read-only `git ls-tree --name-only e38d174ef .oculus/config/ ...`, which is outside the two git commands this review was allowed. No conclusion above rests on it. The red-check evidence is the `ls` and `grep` lines quoted in Verification.
 
 Reviewer usage: agent a3efd9c3f0ad5126e, claude-opus-5-5, about 600k tokens (context counter), about 160 tool uses, about 30 minutes in the current transcript (20:11 to 20:39 UTC). The time before the context compaction is not measured.
+
+## Repair round 1, refuted
+
+Reviewer ae76194b51d73c87d (claude-opus-5-5, the transcript's message.model), over the round's delta: the saved pre-round diff (shasum 864b74b2754f) against `git diff e38d174ef` now, 54 files.
+
+### Verification, run from tools/oculus in the worktree
+
+```
+npm run test:quick -- --base e38d174ef     (run 1, load 3.83)
+  ok ASCII gate | prettier ok | eslint ok | svelte-check 478 FILES 0 ERRORS 0 WARNINGS
+  313 changed file(s), 168 test file(s), 10 essential   (selection includes app-editor-close and the untracked new tests)
+  vitest 44.1 s
+  test:quick: 45.1 s (limit 45.0 s); every command passed          exit 0
+npm run test:quick -- --base e38d174ef     (run 2, load 8.32)
+  test:quick: 42.3 s (limit 45.0 s); every command passed          exit 0
+npm run test:quick -- --base e38d174ef     (run 3, load 8.10)
+  test:quick: 37.1 s (limit 45.0 s); every command passed          exit 0
+perl ASCII gate over src tests config                  0 bytes, exit 0
+perl ASCII gate over docs/apps.md DESIGN.md HELP.md     0 bytes, exit 0
+node utils/migrations/convert-vscode-themes.ts --check  19 themes up to date, exit 0
+sh utils/folder-check.sh                                no output, exit 0
+sh utils/unused-exports.sh                              Unused exports (244) | Unused exported types (117)   (base 243 / 116)
+npx tsc --noEmit -p .                                   exit 2, 3 errors, the base CardAction errors
+npx vitest run tests/checks --testTimeout 0 --hookTimeout 0
+  Test Files 2 failed | 15 passed (17) | Tests 3 failed | 268 passed (271)   exit 1
+  config-folder "reads the roots of sources.yml without a finding"; config-folder "names a group of its own and a path under the hub for every document"; integrity "the real hub > validates with no findings"
+  ls .oculus at the worktree root: No such file or directory   => the three sparse-checkout reds, no others
+npx vitest run tests/state/system/apps tests/server/machine/apps tests/shell/panes/strip/app-editor-close.test.ts --testTimeout 20000
+  Test Files 23 passed (23) | Tests 480 passed (480)
+the round's five quoted files:  Test Files 5 passed (5) | Tests 115 passed (115)
+single files: app-keys 71 | shell.test 26 | runner-shell 7 | shell-commands 12 | shell-handlers 17 | page-commands.client 12 | app-editor-close 3 | boundaries 11
+slow files: host-commands 5 | app-setting 12 | app-gate 20 | manifest 68 | roots 3 | hub-writes 23
+```
+
+### Closures
+
+Rulings 1 to 6, 11 and 13 hold. 7 and 8 hold with a fixed wait in the test (Standards 1, 2). 9 is partial (Spec 1, Behaviour 1). 10 is partial (Spec 3). 12 holds as asked (Behaviour 1). The widening of ruling 9 to 12 callers is correct, all inside the brief's write list. The ALLOWED entries for `data/helpers/files/apps/keys/oculus/**` are a correct fix, not a loosened check; its placement is Standards 3. The menu accelerators equal the old strings on macOS; off macOS see Behaviour 2. Configured versus live rail letters: not a defect (ruling 2 names the configured letters). The widest-context probe: not a defect (item 5). Undefined sent as null: a defect (Behaviour 1).
+
+### Verdicts
+
+Items: 1 to 8 hold; 9 violated (Behaviour 1); 10 to 14 hold; 15 violated (Spec 2, 3); 16 holds by its text (Standards 3); 17 holds. Cases: met 1 to 11, 16 to 21, 24, 26, 28 to 34, and the run parts of 25 and 27; not verifiable 12 to 15, 22, 23 and the look parts of 25 and 27 (the running app).
+
+### Spec
+
+1. `src/lib/ui/display/icon-theme/held.svelte.ts:28` and `setIconLanguages` `:79-80`: `languages` moved into the FROZEN `held` object, so the module state ruling 9 removed is still module state. Fix: pass `languages` to `themedFileIcon` from the shell store as `offers` is passed.
+2. `DESIGN.md:631` names `src/lib/shell/keys/keys.ts` for Show TeX View's key; `resolveKey` now lives in `data/helpers/files/apps/keys/oculus/resolve.ts`.
+3. `DESIGN.md:430` ("A frame reads no file outside its folder but its own store and the folders its `files` names") and the lead clause of `docs/apps.md:538` ("read a file outside its folder from its page") contradict `document.read` for a custom editor.
+
+### Proof
+
+1. Rulings 2, 3 and 4 have no red run before the fix; by reading, their rows fail on the before tree. No red run is asked for (it would need a revert). Ruling 9 changes no behaviour.
+2. "Rulings 7, 8 and 6 already held" has no quoted run; the reviewer's reruns pass.
+3. "On a Mac, ctrl+shift+m is a workbench-taken key" is wrong: it is editor-taken, before and now.
+4. The ui row's `state/shared/words/appearance` ALLOWED entry came with the first build, not this round.
+5. New refusals the report does not state: shift+escape, shift+enter, shift+arrows, ctrl+alt+1 to 9 (workbench); ctrl+shift+k, cmd+shift+k, ctrl+alt+k, cmd+alt+k, ctrl+cmd+k (palette). They follow from item 5 and are correct.
+
+### Standards
+
+1. `tests/server/machine/apps/shell/shell-handlers.test.ts:201` decides "allowed" when nothing answers in 20 ms. Fix: assert on `shell.payload().requests` holding the request.
+2. `tests/state/system/apps/page-commands.client.test.ts:80` waits a fixed 10 ms.
+3. The workbench's key resolver and the palette, debugger, editor and desktop keys sit under `data/helpers/files/apps/keys/oculus/` because `data/helpers` and `data` are full; the folder rule asks for a folder split by concern. An empty untracked folder `src/lib/data/helpers/keys/` is left.
+4. `src/lib/state/shared/words/appearance.ts:54-55` re-exports `NO_OFFERS`, `languageOf` and `LanguageMap` only so the ui layer needs no ALLOWED entry.
+5. Comments not rewrapped: `appearance.ts:12`, `palette.ts:398`, `runner-shell.test.ts:3`.
+6. `views/sessions/terminal/grid/grid-keys.ts` and `state/system/machine/debug/debug.ts` are outside the brief's write list and not marked in the report.
+7. `tests/state/system/apps/shell.test.ts`: the languages row and the seti row test behaviour outside any guarded entry; one "themes the acting apps offer" row derives its expected prefix from the actual value.
+
+### Behaviour
+
+1. `src/lib/server/machine/apps/shell/registry.ts:225-227` ignores null for title, description and message, so setting `view.message = undefined` leaves the old message drawn. Fix: null clears them, as for badge.
+2. `src/desktop/windows/menu.ts:47`, `:125`: quit and minimize now carry `Cmd+Q` and `Cmd+M` on every platform, where Electron's default was Ctrl+Q and Ctrl+M off macOS. The report does not state it.
+
+### Declined to judge
+
+- The look of cases 12 to 15, 22, 23 and the look parts of 25 and 27.
+- Whether macOS Option chords (ctrl+alt+1 to 9, cmd+alt+k) are over-refused, since `eventOfChord` builds the US character for `event.key`; settled by a real press on macOS.
+- A red run of rulings 2, 3 and 4 on the old code (it would need a revert).
+- Whether the desktop app is supported off macOS, which decides Behaviour 2.
+
+Reviewer usage: ae76194b51d73c87d, claude-opus-5-5, 72,718 tokens, 116 tool uses, 24.2 min (completion notice).
+
+## Closed
+
+Every finding of the run over round 1 is closed at landing, in the gate worktree `.agents/worktrees/gate`, and put on main with the step. None was raised to Axel.
+
+- Spec 1: closed. `held.svelte.ts` keeps only the dark flag and the language map, which the ui layer has no client object to hold; the FROZEN comment of `tests/checks/tree/boundaries.test.ts` says so, and `held.svelte.ts` imports the map from `data/helpers/files/languages`.
+- Spec 2: closed. `DESIGN.md:631` names `resolveKey` in `src/lib/data/helpers/keys/oculus/resolve.ts`.
+- Spec 3: closed. `DESIGN.md:430` adds the custom editor's `document.read`; the lead clause of `docs/apps.md:538` reads "Run a process or server code from its page, or read from its page a file outside its folder in any other way than these two."
+- Proof 1: closed by reading: the rows of rulings 2, 3 and 4 assert the new behaviour and fail on the old code by their text.
+- Proof 2: closed: the reviewer's reruns of rulings 6, 7 and 8 pass, quoted in its Verification.
+- Proof 3: closed: the report's claim is corrected in the booking (ctrl+shift+m on macOS is taken by the editor, before and now).
+- Proof 4: closed: corrected in the booking (the appearance ALLOWED entry came with the first build).
+- Proof 5: closed: the new refusals are stated in the booking as behaviour of the step.
+- Standards 1: closed. The rate row asserts `shell.payload().requests` holds 600, advances the clock, then waits with `vi.waitFor` until it holds 601.
+- Standards 2: closed. `page-commands.client.test.ts` waits with `vi.waitFor(() => expect(posts).toHaveLength(1))`.
+- Standards 3: closed. The key modules moved from `data/helpers/files/apps/keys/` to `data/helpers/keys/` (`bound-keys.ts`, `keys.ts`, `oculus-keys.ts`, `oculus/{debug,desktop,editor,palette,rail-letters,resolve}.ts`), and `data/helpers/editor.ts` and `code-themes.ts` to `data/helpers/editor/`; every importer changed, nothing re-exported, `sh utils/folder-check.sh` exits 0.
+- Standards 4: closed. The re-exports at `appearance.ts:54-55` removed; `app-theme.ts` imports `NO_OFFERS` from `data/helpers/files/apps/choices`, with the ui row's ALLOWED entries for `data/helpers/files/apps/choices` and `data/helpers/files/languages`.
+- Standards 5: closed. The three comments rewrapped, and three more found at landing (`source-options.ts:1-6`, `convert-vscode-themes.ts:10-14`, `editor-text.ts:22-23`).
+- Standards 6: closed, kept. `grid-keys.ts` and `debug.ts` lost their key code to `data/helpers/keys/oculus/`, which ruling 3 asks for (the taken keys read from the code that binds them); the booking names them.
+- Standards 7: closed. The languages and seti rows removed; the expectations are the literal ids `'app:notes/Paper'` and `'app:notes/dots'`.
+- Behaviour 1: closed. `registry.ts` `#changeTree` clears title, description and message to '' on null.
+- Behaviour 2: closed. `menu.ts` `roleKey()` sets the hide, hide-others, quit and minimize accelerators on macOS only, so Electron's defaults stand elsewhere.

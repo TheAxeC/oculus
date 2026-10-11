@@ -1,6 +1,7 @@
 // Layer 1, data. Portfolio aggregates and the public facade for every data and wire type.
 // Snapshot ownership stays here while leaf concerns remain small and existing imports stay stable.
 
+import type { AppContributes } from './model-apps.ts';
 import type {
     CollectionFile,
     Dataset,
@@ -295,6 +296,8 @@ export type AppRow = {
     activation: string[];
     /** The names of the machine apps this app's host needs started first. */
     depends: string[];
+    /** What the app adds to the shell, as the manifest's `contributes` key declares it. */
+    contributes: AppContributes;
     /** Whether the app is disabled in the current workspace, by either list that decides it. */
     disabled: boolean;
     /** Whether the machine-wide list disables the app. */
@@ -707,3 +710,27 @@ export type {
     CommandsAnswer,
     ProjectCommand
 } from './model-sessions.ts';
+export type {
+    AppCommand,
+    AppContainer,
+    AppContainerKind,
+    AppContributes,
+    AppCustomEditor,
+    AppKeybinding,
+    AppMenuEntry,
+    AppMessageRequest,
+    AppPanelRequest,
+    AppPanelState,
+    AppPickItem,
+    AppProgressRequest,
+    AppRequest,
+    AppRequestBody,
+    AppSetting,
+    AppSettingType,
+    AppShellHost,
+    AppShellPayload,
+    AppStatusItem,
+    AppTreeState,
+    AppViewEntry,
+    ContextValue
+} from './model-apps.ts';

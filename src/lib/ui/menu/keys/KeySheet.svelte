@@ -6,15 +6,17 @@
 
     import { Dialog } from 'bits-ui';
     import Modal from '../../frame/Modal.svelte';
-    import { sheetRows } from '$lib/ui/menu/keys/key-rows';
+    import { sheetRows, type KeySheetRow } from '$lib/ui/menu/keys/key-rows';
     type Props = {
         title: string;
         hint: string;
         rows: string;
+        /** The keys the apps bind, under their own heading; none draws no heading. */
+        apps?: { heading: string; rows: KeySheetRow[] };
         onclose: () => void;
     };
 
-    let { title, hint, rows, onclose }: Props = $props();
+    let { title, hint, rows, apps, onclose }: Props = $props();
     const entries = $derived(sheetRows(rows));
 </script>
 
@@ -38,6 +40,15 @@
                         <span>{entry.meaning}</span>
                     </div>
                 {/each}
+                {#if apps !== undefined && apps.rows.length > 0}
+                    <h3>{apps.heading}</h3>
+                    {#each apps.rows as entry (`${entry.key}:${entry.meaning}`)}
+                        <div class="row">
+                            <kbd>{entry.key}</kbd>
+                            <span>{entry.meaning}</span>
+                        </div>
+                    {/each}
+                {/if}
             </div>
         </div>
     {/snippet}
@@ -74,6 +85,15 @@
     h2 {
         margin: 0;
         font-size: var(--fs-xl);
+    }
+
+    h3 {
+        margin: 8px 0 0;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
     }
 
     header span {

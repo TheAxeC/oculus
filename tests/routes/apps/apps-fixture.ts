@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { appsSettings } from '../../../src/lib/data/sources/config.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { approvedApps } from '../../../src/lib/server/machine/approvals/approvals.ts';
+import { approveApp, approvedApps } from '../../../src/lib/server/machine/approvals/approvals.ts';
 import { scanApps } from '../../../src/lib/server/machine/apps/read/scan.ts';
 import { readAppsState, workspaceKey } from '../../../src/lib/server/machine/apps/read/state.ts';
 import type { AppsHeld } from '../../../src/lib/server/machine/apps/read/held.ts';
@@ -37,6 +37,8 @@ export function notesFiles(manifest: string = MANIFEST): Record<string, string> 
 export type Planted = {
     machine?: Record<string, string>;
     roots?: Record<string, Record<string, string>>;
+    /** The folders closed to every app, given the folder the case is planted in. */
+    privateFolders?: (base: string) => string[];
 };
 
 export type Fixture = {
@@ -79,6 +81,8 @@ export function plant(planted: Planted, prefix = 'oculus-apps-'): Fixture {
                 port: PORT,
                 approved,
                 kept,
+                privateFolders: planted.privateFolders?.(base) ?? [],
+                settingsFile: join(base, 'behavior.yml'),
                 state: readAppsState(join(base, 'apps.json')),
                 stateFile: join(base, 'apps.json'),
                 workspace: fixture.workspace,
@@ -107,6 +111,7 @@ export function serveInput(request: Request, held: AppsHeld): ServeInput {
             roots: [],
             configDir: '',
             closedPaths: null,
+            privateReal: [],
             fs: diskFs,
             scanEntries: settings.scanEntries
         })
@@ -155,13 +160,23 @@ export function routeSetup(planted: Planted, over: Partial<AppsRouteOptions> = {
         roots: () => fixture.roots,
         configDir: join(fixture.base, 'engine'),
         closedPaths: () => ['secrets'],
+        privateReal: () => planted.privateFolders?.(fixture.base) ?? [],
         fs: diskFs,
         scanEntries: () => settings.scanEntries,
         limits: () => ({ files: settings.maxFiles, bytes: settings.maxMb * 1024 * 1024 }),
+        history: () => join(fixture.base, 'history'),
         hosts,
         secrets,
         trash: () => Promise.resolve(),
         ...over
     };
     return { fixture, options, held: () => held, approvals, kept };
+}
+
+/** Approves every app the setup holds by the hash the reader shows, and reads the folders again. */
+export function approveAll(setup: RouteSetup): void {
+    for (const app of setup.held().apps) {
+        approveApp(setup.approvals, { hash: app.row.hash, folder: app.row.folder, label: app.id });
+    }
+    setup.options.apps.reread();
 }

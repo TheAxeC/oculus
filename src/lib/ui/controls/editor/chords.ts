@@ -16,16 +16,18 @@
 //
 // A key is named by Monaco's `KeyCode` member and the modifiers it is pressed with, so this module
 // holds no value of Monaco's and loads nowhere near it. It also names the save key, which the
-// shell resolves (shell/keys/keys.ts) and a Save control's tooltip shows, so both read one value.
+// shell resolves (data/helpers/keys/oculus/resolve.ts) and a Save control's tooltip
+// shows, so both read one value.
 
 import type { editor } from 'monaco-editor';
+import { SAVE_PRESS } from '$lib/data/helpers/keys/oculus/editor-keys';
 import type { EditorAction, EditorOwnAction, KeyPress } from './types';
 
 /** A chord the editor gave up: the action or command it ran and its keys in order. */
 export type RemovedChord = { id: string; keys: KeyPress[] };
 
 /** The save key: Cmd+S, Ctrl+S off macOS. */
-export const SAVE_KEY: KeyPress = { code: 'KeyS', cmd: true };
+export const SAVE_KEY: KeyPress = SAVE_PRESS;
 
 const CMD_K: KeyPress = { code: 'KeyK', cmd: true };
 const CTRL_K: KeyPress = { code: 'KeyK', ctrl: true };

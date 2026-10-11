@@ -9,7 +9,7 @@
 // root is not shown or the file holds no command of the name.
 
 import { HUB_ROOT } from '../../../data/helpers/hub-names.ts';
-import type { CommandOutcome } from './methods.ts';
+import type { CommandOutcome } from './frame/methods.ts';
 
 /**
  * What running an app's command needs of the commands store and the served roots. The store sits

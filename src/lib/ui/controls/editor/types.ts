@@ -50,6 +50,8 @@ export type EditorOwnAction = {
     label: string;
     key?: EditorKey;
     menu?: string;
+    /** The place in the menu's group, lowest first; absent leaves it to the editor. */
+    order?: number;
     /** Not runnable: the action is hidden from the editor's menu and left out of the palette. */
     disabled?: boolean;
     run: () => void;

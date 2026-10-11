@@ -18,7 +18,8 @@
 // never read. The body is `application/octet-stream` and `Content-Disposition: attachment` under
 // the app's sandbox policy, so an `.html` or `.svg` file of a root is never drawn as a document on
 // oculus's origin. A folder lists at most `apps.scan_entries` names, the first the disk gives, and
-// never a dot-led name, a name `closed_paths` closes or oculus's own config folder.
+// never a dot-led name, a name `closed_paths` closes, oculus's own config folder or a private
+// folder.
 
 import {
     closeSync,
@@ -34,11 +35,11 @@ import type { Stats } from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { ENGINE_ROOT } from '../../../files/files.ts';
-import { inClosedPaths, inFilesEntry } from '../../../../data/helpers/files/apps.ts';
+import { inClosedPaths, inFilesEntry } from '../../../../data/helpers/files/apps/apps.ts';
 import { below, realPath } from '../../../core/paths.ts';
 import type { HeldApp } from '../read/held.ts';
 import { fileHeaders } from '../serve/address.ts';
-import { locate, type OpenContext } from './open.ts';
+import { isPrivate, locate, type OpenContext } from './open.ts';
 
 /** The three reads, by the dot-led segment of their address. */
 export type FsOp = 'read' | 'dir' | 'stat';
@@ -234,7 +235,9 @@ export function serveFs(input: FsRequest): Response {
     const closed = context.closedPaths ?? [];
     const configReal = context.fs.realPath(context.configDir);
     const names = listing(found.real, rootReal, context, closed).filter(
-        ([name]) => configReal === null || join(found.real, name) !== configReal
+        ([name]) =>
+            (configReal === null || join(found.real, name) !== configReal) &&
+            !isPrivate(join(found.real, name), context)
     );
     return jsonAnswer(input.request, names, policy);
 }

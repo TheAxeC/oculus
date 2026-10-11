@@ -1,7 +1,8 @@
 // Layer 2, server test. The script an app loads as /apps/-/oculus.js
 // (lib/server/machine/apps/serve/oculus.js) run against the page's real end of the bridge
-// (lib/state/system/apps/bridge.ts) on penpal: the app's `connect()` resolves, and each method it
-// returns reaches the page's handler with its arguments and answers what the handler answers.
+// (lib/state/system/apps/frame/bridge.ts) on penpal: the app's `connect()` resolves, and each
+// method it returns reaches the page's handler with its arguments and answers what the handler
+// answers.
 //
 // The script is planted beside a copy of penpal's module, as the server serves them, and loaded
 // from there. The page and the frame share one fake `window` that carries a message from one
@@ -14,11 +15,11 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, vi } from 'vitest';
-import { connectFrame } from '../../../../src/lib/state/system/apps/bridge.ts';
+import { connectFrame } from '../../../../src/lib/state/system/apps/frame/bridge.ts';
 import {
     createMethods,
     type MethodsContext
-} from '../../../../src/lib/state/system/apps/methods.ts';
+} from '../../../../src/lib/state/system/apps/frame/methods.ts';
 import { plantScratch, it } from '../../../fixtures/scratch.ts';
 
 const FRAME_SCRIPT = new URL(
@@ -27,7 +28,7 @@ const FRAME_SCRIPT = new URL(
 );
 
 /** The groups the script nests calls under. */
-const NESTED = ['fs', 'commands', 'secrets', 'host'];
+const NESTED = ['fs', 'commands', 'secrets', 'host', 'ui', 'settings', 'document'];
 
 /** The page's methods an app reaches only through those groups. */
 const NESTED_CALLS = [
@@ -36,7 +37,13 @@ const NESTED_CALLS = [
     'secretsGet',
     'secretsStore',
     'secretsDelete',
-    'hostRequest'
+    'hostRequest',
+    'commandsExecute',
+    'ui',
+    'settingsGet',
+    'documentRead',
+    'documentSave',
+    'documentDirty'
 ];
 
 /** What the script hands an app, as far as the cases call it. */

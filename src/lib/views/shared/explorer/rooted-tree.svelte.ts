@@ -74,7 +74,7 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
     const {
         explorer,
         problems,
-        apps: { holds },
+        appShell: { opens },
         fs: { bookmarks, entries, heldEntries, listing, readFileKind },
         layout: { armKeep, askFocus, disarmKeep, keepPreview, openView, showInFiles },
         selectors: { configMap, gitFor, gitRoots },
@@ -98,7 +98,7 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
         keepPreview,
         readFileKind,
         showInFiles,
-        holds,
+        opens,
         armKeep: (id: string, pressedAt: number) => {
             if (!closed) armKeep(id, input.owner(), pressedAt);
         },

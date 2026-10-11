@@ -11,7 +11,7 @@
 
 import type { Entry } from '$lib/state/boards/collection';
 import { bookmarkRef, typeOfFile, type BookmarkKind, type TreeRow } from '$lib/state/sources/fs';
-import { documentState, tabForKind } from '$lib/state/workbench/layout';
+import { documentState, tabForKind, tabWithEditor } from '$lib/state/workbench/layout';
 import type { ClientState } from '$lib/state/client/context';
 
 /** The store calls opening a file needs. */
@@ -24,8 +24,8 @@ export type Opener = {
      * bookmark.
      */
     showInFiles?: ClientState['layout']['showInFiles'];
-    /** Whether a file lies in an apps folder, which opens as source text. */
-    holds: ClientState['apps']['holds'];
+    /** What opening a file asks of the apps: the apps folders and the custom editors. */
+    opens: ClientState['appShell']['opens'];
     /**
      * Let the next press on the opened preview tab keep it. A press that opened the tab is a first
      * click, and the second click of a double click lands on the tab, not on the row.
@@ -39,8 +39,8 @@ export type Opener = {
 export type BesideOpener = {
     openBeside: ClientState['layout']['openBeside'];
     readFileKind: ClientState['fs']['readFileKind'];
-    /** Whether a file lies in an apps folder, which opens as source text. */
-    holds: ClientState['apps']['holds'];
+    /** What opening a file asks of the apps: the apps folders and the custom editors. */
+    opens: ClientState['appShell']['opens'];
 };
 
 /**
@@ -50,10 +50,10 @@ export type BesideOpener = {
  * Document view.
  */
 export function openPage(
-    client: Pick<ClientState, 'apps' | 'layout'>,
+    client: Pick<ClientState, 'appShell' | 'layout'>,
     page: { root: string; path: string; label: string }
 ): string {
-    const tab = tabForKind('html', page.root, page.path, undefined, client.apps.holds);
+    const tab = tabForKind('html', page.root, page.path, undefined, client.appShell.opens);
     return client.layout.openView(
         tab.view,
         tab.view === 'document' ? documentState(page) : tab.state
@@ -75,7 +75,7 @@ export async function openRow(
     pressedAt?: number
 ): Promise<void> {
     const type = await opener.readFileKind(row.root, row.path);
-    const tab = tabForKind(type.kind, row.root, row.path, row.size, opener.holds);
+    const tab = tabForKind(type.kind, row.root, row.path, row.size, opener.opens);
     const id = opener.openView(tab.view, tab.state, undefined, { preview });
     if (!preview) {
         opener.keepPreview(id);
@@ -86,8 +86,24 @@ export async function openRow(
 /** Open one file in the view that can show it, in a new pane beside the one being read. */
 export async function openRowBeside(opener: BesideOpener, row: TreeRow): Promise<void> {
     const type = await opener.readFileKind(row.root, row.path);
-    const tab = tabForKind(type.kind, row.root, row.path, row.size, opener.holds);
+    const tab = tabForKind(type.kind, row.root, row.path, row.size, opener.opens);
     opener.openBeside(tab.view, tab.state);
+}
+
+/** The store calls Open With... needs. */
+export type WithOpener = Pick<Opener, 'openView' | 'keepPreview'> & {
+    chooseEditor: ClientState['appShell']['chooseEditor'];
+};
+
+/**
+ * Open a file in the editor the reader chooses: Text Editor or one of the custom editors that
+ * match it. The tab is kept, as a double click keeps one. Nothing opens when the pick is dismissed.
+ */
+export async function openWith(opener: WithOpener, row: TreeRow): Promise<void> {
+    const choice = await opener.chooseEditor(row.root, row.path);
+    if (choice === null) return;
+    const tab = tabWithEditor(choice, row.root, row.path);
+    opener.keepPreview(opener.openView(tab.view, tab.state, undefined, { preview: false }));
 }
 
 /**
@@ -104,8 +120,9 @@ export function openBookmark(opener: Opener, entry: Entry & { kind?: BookmarkKin
         return;
     }
     const kind = typeOfFile(ref.path).kind;
-    if (kind === 'html' || opener.holds(ref.root, ref.path)) {
-        const tab = tabForKind(kind, ref.root, ref.path, undefined, opener.holds);
+    const { holds, editorFor } = opener.opens;
+    if (kind === 'html' || holds(ref.root, ref.path) || editorFor(ref.root, ref.path) !== null) {
+        const tab = tabForKind(kind, ref.root, ref.path, undefined, opener.opens);
         const state =
             tab.view === 'document' ? documentState({ label: entry.title, ...ref }) : tab.state;
         opener.openView(tab.view, state);

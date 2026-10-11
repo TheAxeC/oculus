@@ -53,10 +53,10 @@
     // row and never for the keyboard's focus: a tooltip opened by an arrow key would cover the row
     // the next arrow key goes to.
 
-    import FileIcon from '../display/FileIcon.svelte';
     import Glyph from '../display/Glyph.svelte';
     import Tooltip from '../menu/Tooltip.svelte';
-    import TreeActions from './TreeActions.svelte';
+    import RowIcon from './row/RowIcon.svelte';
+    import TreeActions from './row/TreeActions.svelte';
     import { pressedByKey } from './tree-keys.ts';
     import type { TreeItemProps } from './item-props.ts';
 
@@ -64,8 +64,10 @@
         label,
         name,
         glyph,
+        picture,
         glyphStyle,
         file,
+        folder,
         depth = 0,
         level,
         expanded,
@@ -143,13 +145,7 @@
             <Glyph name="chevron" />
         {/if}
     </span>
-    {#if file !== undefined}
-        <FileIcon name={file} />
-    {:else if glyph !== undefined && glyphStyle !== undefined}
-        <span class="tint" style={glyphStyle}><Glyph name={glyph} /></span>
-    {:else if glyph !== undefined}
-        <Glyph name={glyph} />
-    {/if}
+    <RowIcon {file} {folder} {expanded} {glyph} {glyphStyle} {picture} />
     {#if words !== undefined}
         <span class="name" style={nameStyle}>{@render words()}</span>
     {:else}
@@ -248,11 +244,6 @@
 </div>
 
 <style>
-    /* A glyph given its own colour sits in a box that takes no place of its own. */
-    .tint {
-        display: contents;
-    }
-
     /* The row's height, one level's indent and the two type sizes are the tokens of
        themes/tokens.css, which an ancestor may set for a tree of its own, each multiplied here by
        the text size. */

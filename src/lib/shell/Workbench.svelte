@@ -50,7 +50,8 @@
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { useAppearance } from './window/appearance.svelte';
     import { paneAt, resize, type FloatSpec, type Layout } from '$lib/state/workbench/layout';
-    import { modeOf, type PaletteKey } from '$lib/state/workbench/palette';
+    import type { PaletteKey } from '$lib/data/helpers/keys/oculus/palette-keys';
+    import { modeOf } from '$lib/state/workbench/palette';
     import { COMMAND_PALETTE_EVENT } from '$lib/ui/controls/editor/chords';
     import {
         docState,
@@ -70,7 +71,7 @@
         type StatusGit,
         type StatusWords
     } from '$lib/state/workbench/navigation/status';
-    import Bell from './status/Bell.svelte';
+    import Bell from './status/notices/Bell.svelte';
     import StatusBar from './status/StatusBar.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -226,9 +227,16 @@
         walkProblem: (by) => walkProblem(by),
         saveSource: () => {
             const tab = sourceOnScreen(activeInstance(), client.editorStatus.statusOf);
-            if (tab !== null)
-                client.editorStatus.ask(tab.instance, { kind: 'action', id: SAVE_ACTION });
+            if (tab === null) void client.apps.save(activeInstance()?.id ?? '');
+            else client.editorStatus.ask(tab.instance, { kind: 'action', id: SAVE_ACTION });
         },
+        appKey: (event, textual, editor) =>
+            client.appShell.press(event, {
+                tab: activeMain,
+                status: client.editorStatus.statusOf(activeMain?.id ?? ''),
+                textual,
+                editor
+            }),
         mac: onMac(),
         app: client.desktop !== undefined,
         find: () => client.desktop?.bridge.showFind(),
@@ -432,6 +440,7 @@
         title={t('app.keys.title')}
         hint={t('app.keys.hint')}
         rows={keyRows}
+        apps={{ heading: t('app.keys.apps'), rows: client.appShell.keyRows() }}
         onclose={() => (sheetOpen = false)}
     />
 {/if}

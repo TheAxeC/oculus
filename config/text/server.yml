@@ -5,12 +5,23 @@ text:
         permission_chip: waiting on you
         stop: Session finished
     server:
+        app_setting:
+            enum: 'This setting takes one of: {0}'
+            maximum: 'This setting takes a number of at most {0}'
+            minimum: 'This setting takes a number of at least {0}'
+            not_declared: 'No approved app declares the setting {0}'
+            type_array: This setting takes a list of texts
+            type_boolean: This setting takes true or false
+            type_integer: This setting takes a whole number
+            type_number: This setting takes a finite number
+            type_string: This setting takes text
         apps:
             host_activate_failed: 'The host failed to start: {0}'
             host_deactivate_failed: 'The host failed to deactivate: {0}'
             host_ended_code: The host exited with code {0}
             host_ended_signal: The host was ended by signal {0}
             host_listener_failed: 'A store change handler of the host failed: {0}'
+            host_event_failed: 'A handler of an event of the shell failed in the host: {0}'
             host_no_activate: '{0} does not export an activate function'
             host_no_api: The host returned no API
             host_no_function: The API of the host has no function {0}

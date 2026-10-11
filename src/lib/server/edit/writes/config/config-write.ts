@@ -1,14 +1,15 @@
 // Layer 2, server. The writes of configuration files, as one dispatch: a deck group's slides, the
-// audit's mute list, the rail, one option of a tracked config file, one list or family of one,
-// and the default workspace's folders. Each is a file of the reader's own, and anything about it
-// can go wrong on this machine, so a writer that throws is told as `unwritable` and the file is
-// left alone.
+// audit's mute list, the rail, one option of a tracked config file, one setting an app declares,
+// one list or family of one, and the default workspace's folders. Each is a file of the reader's
+// own, and anything about it can go wrong on this machine, so a writer that throws is told as
+// `unwritable` and the file is left alone.
 //
 // The dispatch answers with the outcome and the kind the change log files it under, or with the
 // refusal and its status, and leaves the logging and the response to the endpoint in writes.ts,
 // which is the one place the change log is written.
 
 import {
+    appSettingWrite,
     auditMuteWrite,
     configKeyWrite,
     configValueWrite,
@@ -17,13 +18,14 @@ import {
     rootsWrite
 } from '../bodies.ts';
 import type { WriteOutcome, WriteTarget } from '../../writes.ts';
-import { writeMute } from './audit-mute.ts';
+import { writeMute } from './lists/audit-mute.ts';
+import { writeAppSetting } from './app-setting.ts';
 import { writeConfigKey } from './config-key.ts';
 import type { SourceInputs } from './config-sources.ts';
 import { writeConfigValue } from './config-value.ts';
-import { writeDeckSlides } from './deck/deck.ts';
-import { writeRail } from './rail.ts';
-import { addRootTo, orderRootsIn, removeRootFrom } from './roots.ts';
+import { writeDeckSlides } from './lists/deck/deck.ts';
+import { writeRail } from './lists/rail.ts';
+import { addRootTo, orderRootsIn, removeRootFrom } from './lists/roots.ts';
 
 /** A configuration write done, with the kind it is logged as, or the refusal and its status. */
 export type ConfigAnswer =
@@ -66,6 +68,12 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
     const rail = railWrite(body);
     if (rail !== null) {
         return settled('rail', () => writeRail(into.layoutFile, rail.rail, into.glyphs));
+    }
+    const stored = appSettingWrite(body);
+    if (stored !== null) {
+        return settled('app-setting', () =>
+            writeAppSetting(into, stored.key, stored.value, into.apps?.held())
+        );
     }
     const setting = configKeyWrite(body);
     if (setting !== null) {

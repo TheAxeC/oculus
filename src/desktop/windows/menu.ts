@@ -3,9 +3,14 @@
 // page, which closes the active tab; the Edit items keep their roles and their labels but do not
 // register their accelerators, so Cmd+Z, Cmd+C and the others reach the page, where Monaco and the
 // terminal answer them themselves, and a text field answers them as Chromium does. The menu's own
-// commands that the page answers (Settings, Help) are sent to a main window over the bridge.
+// commands that the page answers (Settings, Help) are sent to a main window over the bridge. Every
+// accelerator is one of ACCELERATORS (data/helpers/keys/oculus/desktop-keys.ts),
+// including on macOS those of the roles that quit, hide and minimize, so the list is every key the
+// menu takes there. Off macOS those roles keep the accelerator Electron gives them on that
+// platform.
 
 import { Menu, type MenuItemConstructorOptions } from 'electron';
+import { ACCELERATORS } from '../../lib/data/helpers/keys/oculus/desktop-keys.ts';
 import type { Words } from '../../lib/server/root/process/words.ts';
 
 /** What the menu's items ask of the app. */
@@ -16,6 +21,11 @@ export type MenuActions = {
     zoom: (step: 'in' | 'out' | 'reset') => void;
     switchToMain: () => void;
 };
+
+/** The accelerator of a role whose own key Electron chooses per platform: set on macOS alone. */
+function roleKey(accelerator: string): { accelerator?: string } {
+    return process.platform === 'darwin' ? { accelerator } : {};
+}
 
 /** The application menu, made from the catalog's words. */
 export function buildMenu(t: Words, actions: MenuActions): Menu {
@@ -28,15 +38,19 @@ export function buildMenu(t: Words, actions: MenuActions): Menu {
                 separator,
                 {
                     label: t('desktop.menu.settings'),
-                    accelerator: 'Cmd+,',
+                    accelerator: ACCELERATORS.settings,
                     click: () => actions.command('settings')
                 },
                 separator,
-                { role: 'hide', label: t('desktop.menu.hide') },
-                { role: 'hideOthers', label: t('desktop.menu.hide_others') },
+                { role: 'hide', label: t('desktop.menu.hide'), ...roleKey(ACCELERATORS.hide) },
+                {
+                    role: 'hideOthers',
+                    label: t('desktop.menu.hide_others'),
+                    ...roleKey(ACCELERATORS.hideOthers)
+                },
                 { role: 'unhide', label: t('desktop.menu.show_all') },
                 separator,
-                { role: 'quit', label: t('desktop.menu.quit') }
+                { role: 'quit', label: t('desktop.menu.quit'), ...roleKey(ACCELERATORS.quit) }
             ]
         },
         {
@@ -44,12 +58,12 @@ export function buildMenu(t: Words, actions: MenuActions): Menu {
             submenu: [
                 {
                     label: t('desktop.menu.new_window'),
-                    accelerator: 'Cmd+Shift+N',
+                    accelerator: ACCELERATORS.newWindow,
                     click: actions.newWindow
                 },
                 {
                     label: t('desktop.menu.close_window'),
-                    accelerator: 'Cmd+Shift+W',
+                    accelerator: ACCELERATORS.closeWindow,
                     click: actions.closeWindow
                 }
             ]
@@ -73,33 +87,37 @@ export function buildMenu(t: Words, actions: MenuActions): Menu {
         {
             label: t('desktop.menu.view'),
             submenu: [
-                { role: 'reload', label: t('desktop.menu.reload'), accelerator: 'Cmd+R' },
+                {
+                    role: 'reload',
+                    label: t('desktop.menu.reload'),
+                    accelerator: ACCELERATORS.reload
+                },
                 {
                     role: 'togglefullscreen',
                     label: t('desktop.menu.full_screen'),
-                    accelerator: 'Ctrl+Cmd+F'
+                    accelerator: ACCELERATORS.fullScreen
                 },
                 separator,
                 {
                     label: t('desktop.menu.zoom_in'),
-                    accelerator: 'Cmd+=',
+                    accelerator: ACCELERATORS.zoomIn,
                     click: () => actions.zoom('in')
                 },
                 {
                     label: t('desktop.menu.zoom_out'),
-                    accelerator: 'Cmd+-',
+                    accelerator: ACCELERATORS.zoomOut,
                     click: () => actions.zoom('out')
                 },
                 {
                     label: t('desktop.menu.zoom_reset'),
-                    accelerator: 'Cmd+0',
+                    accelerator: ACCELERATORS.zoomReset,
                     click: () => actions.zoom('reset')
                 },
                 separator,
                 {
                     role: 'toggleDevTools',
                     label: t('desktop.menu.devtools'),
-                    accelerator: 'Alt+Cmd+I'
+                    accelerator: ACCELERATORS.devTools
                 }
             ]
         },
@@ -107,7 +125,11 @@ export function buildMenu(t: Words, actions: MenuActions): Menu {
             label: t('desktop.menu.window'),
             role: 'window',
             submenu: [
-                { role: 'minimize', label: t('desktop.menu.minimize') },
+                {
+                    role: 'minimize',
+                    label: t('desktop.menu.minimize'),
+                    ...roleKey(ACCELERATORS.minimize)
+                },
                 { role: 'zoom', label: t('desktop.menu.zoom') },
                 { role: 'front', label: t('desktop.menu.front') },
                 separator,

@@ -12,6 +12,7 @@ import type { QueryClient, QueryKey } from '@tanstack/query-core';
 import type {
     AppsPayload,
     AppHostsPayload,
+    AppShellPayload,
     AuditPayload,
     CalendarPayload,
     ConfigPayload,
@@ -51,6 +52,7 @@ export type Payloads = {
     'debug-console': DebugConsoleAppend;
     jump: Jump;
     'app-hosts': AppHostsPayload;
+    'app-shell': AppShellPayload;
 };
 
 /** What every channel of the wire reads as, one instance per client. */
@@ -82,6 +84,8 @@ export type EntitiesStore = {
     apps: () => AppsPayload | null;
     /** The host of every app that names one, or null before the first message. */
     appHosts: () => AppHostsPayload | null;
+    /** What the running hosts registered in the shell and ask the reader, or null before a push. */
+    appShell: () => AppShellPayload | null;
     /** The debug session's state, or null before the server's first message. */
     debug: () => DebugPayload | null;
 };
@@ -209,6 +213,25 @@ export type Posted = {
     failed: PostFailure;
 };
 
+/**
+ * The part of the notices store that the stores below the workbench are handed: say something to
+ * the reader, change it in place, and take it out without telling whoever posted it.
+ */
+export type NoticeSink = {
+    post: (
+        message: string,
+        options?: {
+            tone?: 'info' | 'warning' | 'error';
+            actions?: { label: string; run: () => void }[];
+            progress?: { percent: number | null; cancel: (() => void) | null };
+            /** Called when the reader clears the notification. */
+            cleared?: () => void;
+        }
+    ) => number;
+    update: (id: number, next: { message?: string; percent?: number | null }) => void;
+    remove: (id: number) => void;
+};
+
 /** The page's end of the write endpoint, one per client. */
 export type WritesStore = {
     setToken: (next: string) => void;
@@ -220,7 +243,12 @@ export type WritesStore = {
      */
     renewToken: () => Promise<void>;
     /** Post one command to an endpoint of its own with the write token, and read its answer. */
-    postCommand: (path: string, body: unknown, headers?: Record<string, string>) => Promise<Posted>;
+    postCommand: (
+        path: string,
+        body: unknown,
+        headers?: Record<string, string>,
+        keepalive?: boolean
+    ) => Promise<Posted>;
     pending: () => boolean;
     lastError: () => string | null;
     writeManifest: (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
@@ -270,6 +298,8 @@ export type WritesStore = {
     ) => Promise<WriteAnswer>;
     /** Set one option of a tracked config file, by its file name and dotted key path. */
     writeConfigKey: (file: string, key: string, value: unknown) => Promise<WriteAnswer>;
+    /** Set one setting an app declares, by its whole key. */
+    writeAppSetting: (key: string, value: unknown) => Promise<WriteAnswer>;
     /**
      * Set one list option or family of a tracked config file whole, if the file still holds `base`.
      */

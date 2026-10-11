@@ -6,7 +6,7 @@
 
 import type { ClientState } from '$lib/state/client/context';
 import { t } from '$lib/state/shared/words/text';
-import type { Instance, WindowBounds } from '$lib/state/workbench/layout';
+import { tabWithEditor, type Instance, type WindowBounds } from '$lib/state/workbench/layout';
 import {
     bookmarkTabFile,
     fileOfTab,
@@ -18,6 +18,15 @@ import {
 import type { MenuItem } from '$lib/ui/menu/menu-items';
 import type { TabFile } from '$lib/state/workbench/navigation/status';
 import { copyTabPath, tabMenu, tabPicked, tabsToClose, type CloseKind } from './tab-menu';
+
+/** The entries apps add to a menu. */
+type AppOffers = ReturnType<ClientState['appShell']['choices']>['offers'];
+
+/** What the ids of the choices apps add to the menu start with. */
+const APP_PICK = 'app';
+
+/** The pick that opens the tab's file in another editor, and replaces the tab. */
+const REOPEN_WITH = 'reopen-with';
 
 /** What the menu reads of the pane it is in. */
 export type TabMenuDeps = {
@@ -45,6 +54,11 @@ export function createTabMenu(deps: TabMenuDeps) {
 
     /** The tab the open right-click menu is for, or null when it is the strip's. */
     let menuTab: string | null = null;
+
+    /**
+     * The entries of `editor/title/context` the open menu ends with, by the position in its ids.
+     */
+    let appOffers: AppOffers = [];
 
     /** What the last pick could not do, said under the strip until the next right-click. */
     let said = $state('');
@@ -78,20 +92,36 @@ export function createTabMenu(deps: TabMenuDeps) {
             programs: selectors.programApps(),
             engineAt
         });
-        return tabMenu(
-            {
-                pinned: found.pinned === true,
-                preview: found.preview === true,
-                file: served,
-                tabs: instances.length,
-                right: instances.length - at - 1,
-                compareWith: other !== null,
-                windows: deps.client.desktop !== undefined,
-                copyable: layout.copiesToWindow(found.id),
-                ...facts
-            },
-            t
+        const apps = deps.client.appShell.choices(
+            'editor/title/context',
+            file === null ? {} : { resource: { root: file.root, path: file.path, language: '' } },
+            APP_PICK
         );
+        appOffers = apps.offers;
+        const reopen =
+            file !== null &&
+            deps.client.appShell.reopens(found.view) &&
+            deps.client.appShell.editorsOf(file.root, file.path).length > 0
+                ? [{ id: REOPEN_WITH, label: t('apps.reopen_with') }]
+                : [];
+        return [
+            ...tabMenu(
+                {
+                    pinned: found.pinned === true,
+                    preview: found.preview === true,
+                    file: served,
+                    tabs: instances.length,
+                    right: instances.length - at - 1,
+                    compareWith: other !== null,
+                    windows: deps.client.desktop !== undefined,
+                    copyable: layout.copiesToWindow(found.id),
+                    ...facts
+                },
+                t
+            ),
+            ...reopen,
+            ...apps.items
+        ];
     }
 
     /** A bookmark made or taken out over the tab's file; a refusal is said under the strip. */
@@ -113,8 +143,20 @@ export function createTabMenu(deps: TabMenuDeps) {
         });
     }
 
+    /**
+     * Open the tab's file in the editor the reader chooses, in the tab's place: the new tab opens
+     * first and the old one closes through the guard, which asks first when it holds unsaved work.
+     */
+    async function reopen(tab: string, file: TabFile, preview: boolean): Promise<void> {
+        const choice = await deps.client.appShell.chooseEditor(file.root, file.path);
+        if (choice === null) return;
+        const next = tabWithEditor(choice, file.root, file.path);
+        const opened = layout.openView(next.view, next.state, deps.page(), { preview });
+        if (opened !== tab) deps.closeTab(tab);
+    }
+
     /** A pick: the strip's when the menu was the strip's, else the tab's. */
-    function pick(id: string): void {
+    function pick(id: string, event?: MouseEvent): void {
         const tab = menuTab;
         menuTab = null;
         const found = deps.instances().find((one) => one.id === tab);
@@ -123,6 +165,15 @@ export function createTabMenu(deps: TabMenuDeps) {
             return;
         }
         const file = fileOfTab(found, selectors.engineAtFor(found));
+        if (id.startsWith(`${APP_PICK}:`)) {
+            const args = file === null ? [] : [{ root: file.root, path: file.path }];
+            void deps.client.appShell.runEntry(appOffers, id, args, event?.altKey === true);
+            return;
+        }
+        if (id === REOPEN_WITH) {
+            if (file !== null) void reopen(tab, file, found.preview === true);
+            return;
+        }
         const dir = deps.roots().find((one) => one.key === file?.root)?.dir ?? '';
         tabPicked(id, {
             close: (kind) => close(kind, tab),

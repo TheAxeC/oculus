@@ -7,7 +7,7 @@
 // Each sentence is one catalog entry. It is cut at the root's place in it into `lead`, `label` and
 // `tail`, so the view draws the root as a link inside the sentence.
 
-import { REPO_SETTINGS } from '../../../../data/helpers/editor.ts';
+import { REPO_SETTINGS } from '../../../../data/helpers/editor/editor.ts';
 import type { RepoProblem, RepoSettings } from '../../../../data/sources/config/editor-options.ts';
 import { refusedAnswer } from '../../../shared/answers/answers.ts';
 import { t } from '../../../shared/words/text.ts';

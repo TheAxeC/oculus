@@ -22,14 +22,16 @@
     // orange the theme defines, with the ink derived for it.
     //
     // A right-click anywhere on the bar lists every item with a check, and unchecking one hides it;
-    // the hidden set is the ui store's, saved with the appearance.
+    // the hidden set is the ui store's, saved with the appearance. The items apps add stand last in
+    // the list, each named as `<name> (<app title>)` and kept hidden under `<view id>/<item id>`.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import Bell from './Bell.svelte';
+    import AppItems from './AppItems.svelte';
+    import Bell from './notices/Bell.svelte';
     import LatexItem from './LatexItem.svelte';
     import RepoItems from './RepoItems.svelte';
     import SourceItems from './SourceItems.svelte';
@@ -52,6 +54,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        appShell,
         debug,
         editorStatus: { statusOf },
         layout,
@@ -77,14 +80,24 @@
     /** The source tab on screen, when the tab on screen is one and has said what it holds. */
     const source = $derived(sourceOnScreen(activeInstance(), statusOf));
 
-    /** Every item in the right-click menu, checked while it is drawn. */
-    const choices = $derived<MenuItem[]>(
-        STATUS_ITEMS.map((item) => ({
+    /**
+     * Every item in the right-click menu, checked while it is drawn: the bar's own, then those the
+     * apps add, each as its name and the app's title.
+     */
+    const choices = $derived<MenuItem[]>([
+        ...STATUS_ITEMS.map((item) => ({
             id: item,
             label: itemName(item),
             active: !hidden.includes(item)
-        }))
-    );
+        })),
+        ...(['left', 'right'] as const).flatMap((side) =>
+            appShell.statusItems(side).map(({ key, appTitle, item }) => ({
+                id: key,
+                label: t('statusbar.item_app', item.name === '' ? item.id : item.name, appTitle),
+                active: !hidden.includes(key)
+            }))
+        )
+    ]);
 
     function shown(item: StatusItem): boolean {
         return !hidden.includes(item);
@@ -92,6 +105,7 @@
 
     function toggled(id: string): void {
         if (isStatusItem(id)) setStatusHidden(id, shown(id));
+        else setStatusHidden(id, !hidden.includes(id));
     }
 
     /** The problems of the page by severity, which the problems item counts. */
@@ -256,6 +270,7 @@
             {#if shown('latex')}
                 <LatexItem />
             {/if}
+            <AppItems side="left" {hidden} />
         </div>
         <div class="group" data-status-group="right">
             {#if source !== null}
@@ -266,6 +281,7 @@
                     {onpalette}
                 />
             {/if}
+            <AppItems side="right" {hidden} />
             {#if shown('sessions')}
                 <span data-status="sessions">
                     <ToolButton

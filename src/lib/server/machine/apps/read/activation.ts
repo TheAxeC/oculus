@@ -1,11 +1,14 @@
 // Layer 2, server. The activation events an app's manifest may name for its host, and the grammar
 // they are written in. The manifest reader refuses an event this does not parse; the host manager
-// compares the events of an app with the event a trigger raised.
+// compares the events of an app with the event a trigger raised, and counts a command or a view
+// the app declares as an event of it (`declaredEvent`).
 //
 // An event is one of `onTab`, `onStartupFinished`, `onCommand:<id>`, `onLanguage:<id>`,
 // `onView:<id>` or `workspaceContains:<glob>`. An id is text with no white space. A glob is
 // relative to a root: it holds no `..` segment and does not start with `/`, so it can name nothing
 // outside the root it is matched in.
+
+import type { AppContributes } from '../../../../data/model/index.ts';
 
 /** One activation event, parsed. */
 export type ActivationEvent =
@@ -50,4 +53,19 @@ export function names(events: readonly string[], raised: ActivationEvent): boole
         if ('glob' in own && 'glob' in raised) return own.glob === raised.glob;
         return true;
     });
+}
+
+/**
+ * Whether an event raised by a trigger is one the app's manifest makes by declaring a command or a
+ * view: VS Code starts an extension for a contributed command or view whatever its activation
+ * events list.
+ */
+export function declaredEvent(contributes: AppContributes, raised: ActivationEvent): boolean {
+    if (raised.kind === 'onCommand') {
+        return contributes.commands.some((one) => one.command === raised.id);
+    }
+    if (raised.kind !== 'onView') return false;
+    return Object.values(contributes.views).some((views) =>
+        views.some((one) => one.id === raised.id)
+    );
 }

@@ -28,6 +28,9 @@
     // unique view another page or a float holds is shown there by the menu, and a drop carries it
     // to where it is dropped.
     //
+    // A view an app contributes is listed under the title of its container, drawn as a subtitle
+    // above the run of views that share it.
+    //
     // The sections and the keys are the fold of state/workbench/navigation/catalogue.ts, the same
     // one the shell's keyboard counts its chords over, so the key drawn beside an entry is the key
     // that opens it.
@@ -66,6 +69,7 @@
     import {
         badgeOf,
         registrationGlyph,
+        registrationHeading,
         registrationLabel,
         type ViewProps
     } from '$lib/state/workbench/navigation/registry';
@@ -234,7 +238,11 @@
                     </h3>
                 {/if}
                 <div class="entries">
-                    {#each section.items as view (view.id)}
+                    {#each section.items as view, at (view.id)}
+                        {@const subtitle = registrationHeading(view)}
+                        {#if subtitle !== '' && subtitle !== registrationHeading(section.items[at - 1] ?? {})}
+                            <h4>{subtitle}</h4>
+                        {/if}
                         {@const badge = badgeOf(view, client)}
                         {@const key = keyOf(order, view.id)}
                         {@const label = registrationLabel(view)}
@@ -356,6 +364,14 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
+        color: var(--muted-txt, var(--muted));
+    }
+
+    h4 {
+        flex-basis: 100%;
+        margin: 4px 0 0;
+        font-size: var(--fs-xs);
+        font-weight: 600;
         color: var(--muted-txt, var(--muted));
     }
 

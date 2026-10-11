@@ -1,15 +1,16 @@
-In flight (1 of 6 slots in use):
-- D63 (apps in the shell): building.
+In flight (0 of 6 slots in use): none.
 
-Queued, in order (4 steps):
-- D68 (workspaces as files): after D63.
+Queued, in order (5 steps):
+- D68 (workspaces as files): after D63, which has landed; next to prepare.
+- D69 (two clipping defects: the editor's right-click menu cut at the pane's edge, the status bar cutting an item mid-word): after D63, which has landed; prepared beside D68.
 - D64 (apps in the tools): after D63 and D68.
-- Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
+- Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope), and for D68, D64 and D69, which land before it in the queue.
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D63 (apps in the shell), 2026-10-12, the commit "Land D63, apps in the shell".
 - D67 (`~/.oculus` bookmarked: a bookmark of a root's top, and the `~/.oculus` root and bookmark added), 2026-10-11, the commit "Land D67, a bookmark of a root's top".
 - D66 (the Map's colours, the live-session rows, the float's tab strip), 2026-10-11, the commit "Land D66, the Map colours, live rows and float tab strip".
 - D65 (one kind of project), 2026-10-11, the commit "Land D65, one kind of project".

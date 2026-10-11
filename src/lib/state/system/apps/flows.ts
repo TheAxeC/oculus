@@ -5,7 +5,8 @@
 // A question is handed to the view that raised the pick, which draws it once and runs `act` on a
 // yes. A disable that other enabled apps depend on is first sent without `cascade`; the server
 // answers with the titles of those apps, which the question names, and the yes sends it again with
-// `cascade`.
+// `cascade`. A disable, a removal or a revoke of an app whose custom editors hold changes their
+// frames have not saved first asks, naming the files, since the editors close and the changes go.
 
 import { t } from '../../shared/words/text.ts';
 import type { AppRow } from '../../../data/model/index.ts';
@@ -30,6 +31,8 @@ export type FlowsDeps = {
     rowOf: (id: string) => AppRow | undefined;
     post: (path: string, body: unknown) => Promise<Posted>;
     notices: { post: (message: string, options?: { tone?: 'error' }) => unknown };
+    /** The files of the custom editors of an app that hold changes not yet saved. */
+    dirtyFiles: (id: string) => string[];
 };
 
 /** The choices, the question and the additions of the apps. */
@@ -38,6 +41,11 @@ export type FlowsStore = {
     choices: (row: AppRow) => AppChoice[];
     /** Do what a choice of the menu of the app of this view id asks, giving a question to `ask`. */
     pick: (id: string, choice: string, ask: (question: AppAsk) => void) => Promise<void>;
+    /**
+     * Run `act` for the app now, or after a yes when its custom editors hold unsaved changes: the
+     * question names the files.
+     */
+    guarded: (id: string, ask: (question: AppAsk) => void, act: () => void) => void;
     /** Choose a folder in the folder panel and add it as an app. */
     addFromPanel: () => Promise<void>;
     /** Add the folder at this absolute path as an app. */
@@ -134,6 +142,20 @@ export function createFlows(deps: FlowsDeps): FlowsStore {
         }
     }
 
+    function guarded(id: string, ask: (question: AppAsk) => void, act: () => void): void {
+        const files = deps.dirtyFiles(id);
+        if (files.length === 0) {
+            act();
+            return;
+        }
+        ask({
+            message: t('apps.dirty_question', deps.rowOf(id)?.title ?? id),
+            detail: files.join('\n'),
+            confirm: t('apps.dirty_confirm'),
+            act
+        });
+    }
+
     async function addPath(path: string): Promise<void> {
         const outcome = await manage.add(path);
         if (outcome.ok) notices.post(t('apps.add_done', outcome.name));
@@ -156,9 +178,17 @@ export function createFlows(deps: FlowsDeps): FlowsStore {
             if (row.root === '') choices.push({ id: 'remove', label: t('apps.menu_remove') });
             return choices;
         },
+        guarded,
         async pick(id, choice, ask) {
-            if (choice === 'remove') return remove(id, ask);
-            return toggle(id, choice.startsWith('enable'), choice.endsWith('workspace'), ask);
+            const enabling = choice.startsWith('enable');
+            const act = (): Promise<void> =>
+                choice === 'remove'
+                    ? remove(id, ask)
+                    : toggle(id, enabling, choice.endsWith('workspace'), ask);
+            if (enabling) return act();
+            return new Promise((done) => {
+                guarded(id, ask, () => void act().then(done));
+            });
         },
         async addFromPanel() {
             const posted = await deps.post('/api/folders/pick', {});

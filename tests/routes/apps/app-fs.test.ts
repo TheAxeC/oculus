@@ -49,6 +49,7 @@ function world(keys: string, over: { approve?: boolean } = {}) {
         roots: fixture.roots,
         configDir: join(fixture.base, 'engine'),
         closedPaths: ['secrets'],
+        privateReal: [],
         fs: diskFs,
         scanEntries: 100
     });
@@ -197,6 +198,7 @@ const ROWS: Row[] = [
                     roots: w.fixture.roots,
                     configDir: join(w.fixture.base, 'engine'),
                     closedPaths: ['secrets'],
+                    privateReal: [],
                     fs: diskFs,
                     scanEntries: 2
                 })
@@ -297,6 +299,7 @@ const ROWS: Row[] = [
                     roots: w.fixture.roots,
                     configDir: '',
                     closedPaths: ['secrets'],
+                    privateReal: [],
                     fs: diskFs,
                     scanEntries: 100
                 })

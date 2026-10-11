@@ -13,7 +13,7 @@
 
 import type { Component } from 'svelte';
 import { SvelteMap } from 'svelte/reactivity';
-import type { Instance, ViewId } from '../layout/index.ts';
+import type { Dock, Instance, ViewId } from '../layout/index.ts';
 import type { LayoutStore } from '../layout.svelte.ts';
 import type { BadgeCell, RailBadgesStore } from '../rail-badges.svelte.ts';
 import type { CalendarStore } from '../../life/calendar.svelte.ts';
@@ -104,6 +104,18 @@ export type Registration = {
      * be open any number of times.
      */
     unique?: boolean;
+    /**
+     * Where the first tab of the view opens: docked on the left or bottom edge, or in the pane
+     * holding Files. Absent, the view opens where views land. Later openings show the tab where it
+     * is.
+     */
+    dock?: Dock;
+    /**
+     * A subtitle the catalogue draws above the run of views that carry it, as words (a view an app
+     * contributes names its container's title) or, for `headingKey`, a text-catalog key.
+     */
+    heading?: string;
+    headingKey?: string;
     /** Live text drawn beside the view's glyph in the catalogue; an empty string draws no badge. */
     badge?: (state: BadgeClient) => string;
     /** A glyph name drawn in the badge before its text, for a badge that is a mark, not a count. */
@@ -133,6 +145,14 @@ export type ViewRegistration = Omit<Registration, 'component'>;
 /** Resolve the label a registration carries: its own words, or the catalog key's value. */
 export function registrationLabel(registration: Pick<Registration, 'label' | 'words'>): string {
     return registration.words ?? lookup(registration.label);
+}
+
+/** The subtitle a registration is listed under, or the empty string for none. */
+export function registrationHeading(
+    registration: Pick<Registration, 'heading' | 'headingKey'>
+): string {
+    if (registration.heading !== undefined) return registration.heading;
+    return registration.headingKey === undefined ? '' : lookup(registration.headingKey);
 }
 
 /** Resolve the glyph a registration carries: its own glyph name, or the catalog key's value. */

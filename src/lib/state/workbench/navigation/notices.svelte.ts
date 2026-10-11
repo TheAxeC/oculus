@@ -6,6 +6,11 @@
 // centre lists everything, and the toasts show what came since. Do Not Disturb is the ui store's,
 // saved with the appearance: while it is on a post goes into the list and shows no toast.
 //
+// A notification may carry progress: a bar that fills as a task reports, with a Cancel while the
+// task can be cancelled, and it is changed in place by `update` and taken out by `remove` when the
+// task is done. A notification that was cleared by the reader, one at a time or all at once, tells
+// whoever posted it, which is how an app's message resolves when its notification is dismissed.
+//
 // The list lives as long as the page does. An action is a function, which no storage keeps, and a
 // notification is about something that happened while the page was open.
 
@@ -14,6 +19,9 @@ export type NoticeTone = 'info' | 'warning' | 'error';
 
 /** One thing a notification offers to do about itself, a button in its toast and its entry. */
 export type NoticeAction = { label: string; run: () => void };
+
+/** The progress a notification carries: the share done, null while unknown, and Cancel. */
+type NoticeProgress = { percent: number | null; cancel: (() => void) | null };
 
 export type Notice = {
     id: number;
@@ -26,11 +34,26 @@ export type Notice = {
     read: boolean;
     /** Whether it is showing as a toast. */
     toast: boolean;
+    /** The progress a task reports through it, or null for a notification that is only said. */
+    progress: NoticeProgress | null;
+};
+
+/** What a post may add to the words: the tone, the actions, progress and who hears a clear. */
+type PostOptions = {
+    tone?: NoticeTone;
+    actions?: NoticeAction[];
+    progress?: NoticeProgress;
+    /** Called when the reader clears the notification, one at a time or all together. */
+    cleared?: () => void;
 };
 
 export type NoticesStore = {
     /** Say something to the reader, answering the notification's id. */
-    post: (message: string, options?: { tone?: NoticeTone; actions?: NoticeAction[] }) => number;
+    post: (message: string, options?: PostOptions) => number;
+    /** Change the words and the progress of one notification in place. */
+    update: (id: number, next: { message?: string; percent?: number | null }) => void;
+    /** Take one notification out of the list without telling whoever posted it. */
+    remove: (id: number) => void;
     /** Every notification, newest first. */
     list: () => Notice[];
     /** How many the reader has not seen. */
@@ -54,11 +77,10 @@ export type Quiet = { statusQuiet: () => boolean };
 
 export function createNotices(ui: Quiet, now: () => number = Date.now): NoticesStore {
     const held: { notices: Notice[]; next: number } = $state({ notices: [], next: 1 });
+    /** Who hears a clear, by notification; a function is no state a rune should hold. */
+    const hearing = new Map<number, () => void>();
 
-    function post(
-        message: string,
-        options: { tone?: NoticeTone; actions?: NoticeAction[] } = {}
-    ): number {
+    function post(message: string, options: PostOptions = {}): number {
         const id = held.next;
         held.next += 1;
         const notice: Notice = {
@@ -68,10 +90,23 @@ export function createNotices(ui: Quiet, now: () => number = Date.now): NoticesS
             at: now(),
             actions: options.actions ?? [],
             read: false,
-            toast: !ui.statusQuiet()
+            toast: !ui.statusQuiet(),
+            progress: options.progress ?? null
         };
+        if (options.cleared !== undefined) hearing.set(id, options.cleared);
         held.notices = [notice, ...held.notices];
         return id;
+    }
+
+    /** Take notifications out of the list, telling the posters of those that asked to hear. */
+    function drop(wanted: (notice: Notice) => boolean, tell: boolean): void {
+        const gone = held.notices.filter(wanted);
+        held.notices = held.notices.filter((notice) => !wanted(notice));
+        for (const notice of gone) {
+            const listener = hearing.get(notice.id);
+            hearing.delete(notice.id);
+            if (tell) listener?.();
+        }
     }
 
     function change(edit: (notice: Notice) => Notice): void {
@@ -87,11 +122,21 @@ export function createNotices(ui: Quiet, now: () => number = Date.now): NoticesS
             change((notice) => (notice.id === id ? { ...notice, toast: false } : notice)),
         settleAll: () => change((notice) => ({ ...notice, toast: false })),
         markRead: () => change((notice) => ({ ...notice, read: true })),
-        clear: (id) => {
-            held.notices = held.notices.filter((notice) => notice.id !== id);
-        },
-        clearAll: () => {
-            held.notices = [];
-        }
+        clear: (id) => drop((notice) => notice.id === id, true),
+        clearAll: () => drop(() => true, true),
+        remove: (id) => drop((notice) => notice.id === id, false),
+        update: (id, next) =>
+            change((notice) =>
+                notice.id !== id
+                    ? notice
+                    : {
+                          ...notice,
+                          message: next.message ?? notice.message,
+                          progress:
+                              notice.progress === null || next.percent === undefined
+                                  ? notice.progress
+                                  : { ...notice.progress, percent: next.percent }
+                      }
+            )
     };
 }

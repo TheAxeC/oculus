@@ -16,7 +16,7 @@
 // is loaded when the first call needs it, so a machine whose binding does not load is a refusal of
 // the secrets and never a server that does not start.
 
-import { SECRET_KEY, SECRET_MAX_BYTES } from '../../../../data/helpers/files/apps.ts';
+import { SECRET_KEY, SECRET_MAX_BYTES } from '../../../../data/helpers/files/apps/apps.ts';
 import type { HeldApp } from '../read/held.ts';
 
 /** The calls the module makes on a keyring, each on one service and account. */

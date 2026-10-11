@@ -17,8 +17,8 @@
 
 import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
-import { appViewId } from '../../../../data/helpers/files/apps.ts';
+import { dirname, join } from 'node:path';
+import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
 import { HUB_ROOT, ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
 import { findingText, type TextCatalog } from '../../../../data/helpers/finding-text.ts';
 import type { AppRow, Finding } from '../../../../data/model/index.ts';
@@ -29,6 +29,10 @@ import { ENGINE_ROOT, type Root } from '../../../files/files.ts';
 import { addressKey } from '../serve/address.ts';
 import { noApps, type AppsHeld, type HeldApp } from './held.ts';
 import { findingKey, readManifest } from './manifest.ts';
+import { dropTakenIds } from './across/ids.ts';
+import { noteUnboundKeys } from './across/key-notes.ts';
+import { judgeStored } from './across/stored.ts';
+import { checkThemes } from './theme-files/themes.ts';
 import { hashApp, walkApp } from './record.ts';
 import { standingOf, type AppsState } from './state.ts';
 import { readStore, ROOT_DATA, storeFile } from '../store/store.ts';
@@ -60,6 +64,10 @@ export type ScanInput = {
     secret: string;
     /** The folder the machine apps' stores are written in. */
     appData: string;
+    /** The real paths of the folders closed to every app (reach/private.ts). */
+    privateFolders: readonly string[];
+    /** The file the `app_settings:` values are stored in, which a finding about them names. */
+    settingsFile: string;
 };
 
 /** The SHA-256 of some bytes as hex. */
@@ -108,7 +116,6 @@ export function scanApps(input: ScanInput): AppsHeld {
         bytes: input.settings.maxMb * 1024 * 1024
     };
 
-    const rootKeys = input.roots.map((root) => root.key);
     const folders = closedPaths(input.config).folders;
 
     const note = (key: string, file: string, message: string): void => {
@@ -133,12 +140,14 @@ export function scanApps(input: ScanInput): AppsHeld {
             note(key, manifestFile, message);
             return;
         }
+        const recorded = new Set(walk.files.map((one) => one.path));
         const read = readManifest({
             file: manifestFile,
             folder: name,
             root,
-            files: new Set(walk.files.map((one) => one.path)),
-            rootKeys,
+            files: recorded,
+            roots: input.roots,
+            privateFolders: input.privateFolders,
             closedPaths: folders,
             glyphs,
             port: input.port,
@@ -148,6 +157,15 @@ export function scanApps(input: ScanInput): AppsHeld {
         if (read.manifest === null || read.bytes === null) return;
         const manifest = read.manifest;
         const bytes = read.bytes;
+        const checked = checkThemes({
+            folder,
+            files: recorded,
+            contributes: manifest.contributes,
+            catalog,
+            key,
+            file: manifestFile
+        });
+        held.findings.push(...checked.findings);
         let hash: string;
         let manifestHash: string;
         try {
@@ -184,6 +202,7 @@ export function scanApps(input: ScanInput): AppsHeld {
             secrets: manifest.secrets,
             activation: manifest.activation,
             depends: manifest.depends,
+            contributes: checked.contributes,
             disabled: standing.disabled,
             machineDisabled: standing.machine,
             workspaceState: standing.workspace,
@@ -262,6 +281,14 @@ export function scanApps(input: ScanInput): AppsHeld {
         readFolder(real, root.key, rootReal);
     }
 
+    dropTakenIds(held, catalog);
+    noteUnboundKeys(held, catalog, input.config);
+    judgeStored(held, {
+        config: input.config,
+        catalog,
+        settingsFile: input.settingsFile,
+        appearanceFile: join(dirname(input.localFile), 'appearance.yml')
+    });
     return held;
 }
 

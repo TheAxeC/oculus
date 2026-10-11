@@ -11,7 +11,8 @@
     // A question raised by something other than the reader (an app's write or outside address)
     // opens with the keyboard on Cancel (`focus`), so a key meant for that app never confirms it.
     // A caller may give a box of its own (`option`, VS Code's "Do not ask me again"), whose state
-    // the confirm hands to `onconfirm`.
+    // the confirm hands to `onconfirm`, and further buttons (`others`) between Cancel and the
+    // confirm, each handing its place in the list to `onother`.
     // Drawn in a tab, it stays in that tab, and one left open in a tab the pane hides takes the
     // keyboard again when its tab shows; the keyboard comes back to the control it was raised from
     // when it goes, as the ground says.
@@ -27,6 +28,12 @@
         cancel: string;
         onconfirm: (checked: boolean) => void;
         oncancel: () => void;
+        /**
+         * The words of further buttons, already translated, drawn between Cancel and the confirm.
+         */
+        others?: readonly string[];
+        /** The button of `others` that was pressed, by its place in the list. */
+        onother?: (index: number) => void;
         /** The words of a box under the message; none draws no box. */
         option?: string;
         /**
@@ -45,6 +52,8 @@
         cancel,
         onconfirm,
         oncancel,
+        others = [],
+        onother,
         detail = '',
         option = '',
         level = 'dialog',
@@ -70,6 +79,11 @@
                 <button type="button" class="cancel" bind:this={no} onclick={oncancel}
                     >{cancel}</button
                 >
+                {#each others as other, index (index)}
+                    <button type="button" class="other" onclick={() => onother?.(index)}
+                        >{other}</button
+                    >
+                {/each}
                 <button type="button" class="yes" bind:this={yes} onclick={() => onconfirm(checked)}
                     >{confirm}</button
                 >

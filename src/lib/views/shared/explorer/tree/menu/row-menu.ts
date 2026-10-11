@@ -46,7 +46,7 @@ import { commandKey, commandLabel, commandTip, keyOf } from '../../../sessions/c
 import type { ClientState } from '$lib/state/client/context';
 import type { ExplorerStore } from '$lib/state/sources/explorer/ops.svelte';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
-import { openRowBeside } from '../../opening';
+import { openRowBeside, openWith } from '../../opening';
 import { openShell } from '$lib/state/shared/stores/shell';
 import {
     ROW_COMPARE_SELECTED,
@@ -68,6 +68,7 @@ type Words = (key: string, ...args: (string | number)[]) => string;
 
 export const ROW_OPEN_SIDE = 'open-side';
 export const ROW_OPEN_PROGRAM = 'open-program';
+const ROW_OPEN_WITH = 'open-with';
 const ROW_OPEN_BROWSER = 'open-browser';
 const ROW_OPEN_PDF_TAB = 'open-pdf-tab';
 const ROW_OPEN_PDF_WINDOW = 'open-pdf-window';
@@ -123,6 +124,8 @@ export type RowMenuFacts = {
     program?: boolean;
     /** Whether the row is a file a browser tab shows: a picture, a PDF or an HTML page. */
     browser?: boolean;
+    /** Whether the row is a file a custom editor of an app matches, which Open With... lists. */
+    editors?: boolean;
     /** Whether the row is bookmarked, or null for a row the star is not drawn on: the up row. */
     bookmarked?: boolean | null;
     /** Whether the row is a PDF, which a tab of the page and a window of its own also show. */
@@ -231,7 +234,8 @@ export function rowFacts(
     programs: Readonly<Record<string, string>> = {},
     bookmarked = false,
     writing = false,
-    workbench = false
+    workbench = false,
+    editors = false
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -250,6 +254,7 @@ export function rowFacts(
         markdown: kind === 'file' && languageOf(row.path, languages) === 'markdown',
         program: kind === 'file' && opensInProgram(row.path, programs),
         browser: kind === 'file' && BROWSER_KINDS.includes(typeOfFile(row.name).kind),
+        editors: kind === 'file' && editors,
         bookmarked: row.up !== true ? bookmarked : null,
         pdf: kind === 'file' && typeOfFile(row.name).kind === 'pdf',
         present:
@@ -358,7 +363,8 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
                     : []),
                 ...(facts.program === true
                     ? [item(ROW_OPEN_PROGRAM, t('files.menu_open_program'))]
-                    : [])
+                    : []),
+                ...(facts.editors === true ? [item(ROW_OPEN_WITH, t('apps.open_with'))] : [])
             ],
             [reveal, terminal],
             decks,
@@ -459,7 +465,8 @@ export type RowStores = {
     openInWindow: ClientState['windows']['openInWindow'];
     keepPreview: ClientState['layout']['keepPreview'];
     readFileKind: ClientState['fs']['readFileKind'];
-    holds: ClientState['apps']['holds'];
+    opens: ClientState['appShell']['opens'];
+    chooseEditor: ClientState['appShell']['chooseEditor'];
     openFile: ClientState['writes']['openFile'];
     revealPath: ClientState['writes']['revealPath'];
     openFolder: ClientState['writes']['openFolder'];
@@ -483,7 +490,8 @@ export function rowStores(client: ClientState): RowStores {
         openInWindow: client.windows.openInWindow,
         keepPreview: client.layout.keepPreview,
         readFileKind: client.fs.readFileKind,
-        holds: client.apps.holds,
+        opens: client.appShell.opens,
+        chooseEditor: client.appShell.chooseEditor,
         openFile: client.writes.openFile,
         revealPath: client.writes.revealPath,
         openFolder: client.writes.openFolder,
@@ -600,6 +608,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         const dir = deps.dirOf(row.root);
         const paths = rowPaths(dir, row.path);
         if (pick === ROW_OPEN_SIDE) void openRowBeside(deps, row);
+        else if (pick === ROW_OPEN_WITH) void openWith(deps, row);
         else if (pick === ROW_OPEN_PROGRAM) void program(row);
         else if (pick === ROW_OPEN_BROWSER)
             window.open(fileBytesUrl(row.root, row.path), '_blank', 'noopener');

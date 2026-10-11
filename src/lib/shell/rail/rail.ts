@@ -49,7 +49,7 @@ export function bookmarkPicked(saved: readonly Bookmark[], id: string): Bookmark
  * file browser opens a bookmark as well and the same document opened from the two places is one
  * tab; the rail re-exports it under the name its own readers know it by.
  */
-export { documentState } from '$lib/state/workbench/layout';
+export { documentState, editorTab } from '$lib/state/workbench/layout';
 export { sourceTabState } from '$lib/state/workbench/navigation/rail';
 
 /**

@@ -12,8 +12,9 @@
 // The palette also has a file mode, which finds files by name across the served roots. Its names
 // come from the search route and are matched in a worker (sources/search/file-match.ts). With
 // nothing typed the file mode lists the file tabs open on the page, which `openFileEntries` reads.
-// `paletteKeyOf` is the one place that says which mode a key opens, read by the workbench's key
-// handler and by the terminal, which keeps those keys from the program.
+// `paletteKeyOf` (data/helpers/keys/oculus/palette-keys.ts) is the one place that says
+// which mode a key opens, read by the workbench's key handler and by the terminal, which keeps
+// those keys from the program.
 
 import { z } from 'zod';
 import { HUB_ROOT, bareId, rootOf } from '../../data/helpers/hub-names.ts';
@@ -30,6 +31,8 @@ import { pickerLine, type PickRefusal } from '../sources/explorer/acts/folders.t
 import { refusal } from '../sources/explorer/acts/refusal.ts';
 import { workspaceMatches, type WorkspaceChoice } from '../sources/explorer/acts/workspaces.ts';
 import type { WorkspacesState } from '../sources/fs-transport.ts';
+import type { AppOffers } from '../../data/helpers/files/apps/choices.ts';
+import { appThemeLabels, fileIconThemes } from '../shared/words/appearance.ts';
 import { t } from '../shared/words/text.ts';
 import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
 import { instanceText, pageLeaves, panes, type Host, type Layout } from './layout/index.ts';
@@ -66,7 +69,7 @@ export type PaletteFeeds = Partial<Record<FeedKind, PaletteFeed>>;
 
 export type PaletteItem = {
     id: string;
-    kind: 'view' | 'project' | 'collection' | 'feed' | 'editor' | 'command';
+    kind: 'view' | 'project' | 'collection' | 'feed' | 'editor' | 'command' | 'app';
     label: string;
     title: string;
     text: string;
@@ -77,6 +80,10 @@ export type PaletteItem = {
      * record of a hub other than the first is of, so two hubs' records of one title are told apart.
      */
     hint?: string;
+    /** A word drawn muted after the hint: the key bound to an app's command. */
+    trail?: string;
+    /** Whether the row is drawn and cannot be chosen: an app command whose `enablement` fails. */
+    disabled?: boolean;
 };
 
 /** The hint of a record: the key of its hub when that is not the first, else none. */
@@ -88,6 +95,7 @@ export type PaletteCommand = {
     name:
         | 'theme'
         | 'crt'
+        | 'file-icons'
         | 'accent'
         | 'tab'
         | 'goto'
@@ -235,6 +243,36 @@ export function viewItems(
     }));
 }
 
+/** A command of an app as Cmd-K lists it. */
+export type AppCommandRow = {
+    offer: { app: string; appTitle: string; command: { command: string } };
+    /** `<category>: <title>`, or the title alone. */
+    label: string;
+    enabled: boolean;
+    /** The key bound to it, as a hint reads it, or the empty string. */
+    key: string;
+};
+
+/**
+ * The commands of the apps as palette items of kind `app`, the app's title as the hint and the
+ * bound key after it. Choosing one runs the command; one whose `enablement` fails is drawn and
+ * cannot be chosen.
+ */
+export function appItems(rows: readonly AppCommandRow[]): PaletteItem[] {
+    return rows.map((row) => ({
+        id: `app:${row.offer.app}/${row.offer.command.command}`,
+        kind: 'app',
+        label: row.label,
+        title: row.label,
+        text: `${row.offer.command.command} ${row.offer.appTitle}`,
+        view: '',
+        hint: row.offer.appTitle,
+        ...(row.key === '' ? {} : { trail: row.key }),
+        disabled: !row.enabled,
+        state: { app: row.offer.app, command: row.offer.command.command }
+    }));
+}
+
 /** The chord VS Code binds Pin Editor and Unpin Editor to, which the palette stands in for. */
 const PIN_CHORD = 'Cmd+K Shift+Enter';
 
@@ -306,7 +344,7 @@ export function kindWord(
     if (kind === 'project') return t('app.palette.kind_project');
     if (kind === 'collection') return t('app.palette.kind_collection');
     if (kind === 'editor') return t('app.palette.kind_editor');
-    if (kind === 'command') return t('app.palette.kind_command');
+    if (kind === 'command' || kind === 'app') return t('app.palette.kind_command');
     return t('app.palette.kind_feed');
 }
 
@@ -356,18 +394,20 @@ function choiceCommands(served: string): PaletteCommand[] {
 }
 
 /**
- * The command vocabulary and its argument hints, over the current theme and view configuration,
- * whether a source tab is on screen, which is what `language` changes, and the language a server
- * serves the tab in (empty for none), which is what `interpreter` and `compile-database` change,
- * and whether the folder panel is open, which leaves `folder` unavailable.
+ * The command vocabulary and its argument hints, over the current theme and view configuration and
+ * the themes the acting apps offer, whether a source tab is on screen, which is what `language`
+ * changes, and the language a server serves the tab in (empty for none), which is what
+ * `interpreter` and `compile-database` change, and whether the folder panel is open, which leaves
+ * `folder` unavailable.
  */
 export function commands(
     config: Record<string, unknown>,
+    offers: AppOffers,
     source = false,
     served = '',
     panelOpen = false
 ): PaletteCommand[] {
-    const themes = readAs(themeNamesShape, config.themes) ?? [];
+    const themes = [...(readAs(themeNamesShape, config.themes) ?? []), ...appThemeLabels(offers)];
     return [
         {
             name: 'theme',
@@ -376,6 +416,17 @@ export function commands(
             available: themes.length > 0
         },
         { name: 'crt', description: t('app.palette.cmd_crt'), hint: '', available: true },
+        {
+            name: 'file-icons',
+            description: t('app.palette.cmd_file_icons'),
+            hint: t(
+                'app.palette.cmd_file_icons_hint',
+                fileIconThemes(offers)
+                    .map((one) => one.label)
+                    .join(' | ')
+            ),
+            available: true
+        },
         {
             name: 'accent',
             description: t('app.palette.cmd_accent'),
@@ -469,39 +520,6 @@ export async function folderCommand(
 /** The sentence for what a workspace write or the folder panel refused with. */
 export { pickerLine, refusal as refusalLine };
 export type { WorkspaceChoice };
-
-/** Which mode of the palette a key opens: the colon commands or the file mode. */
-export type PaletteKey = 'commands' | 'files';
-
-/** The parts of a key event the palette keys read. */
-type PaletteKeyEvent = {
-    key: string;
-    metaKey?: boolean;
-    ctrlKey?: boolean;
-    shiftKey?: boolean;
-    altKey?: boolean;
-};
-
-/**
- * The mode a key opens, or null for any other key: F1 and Cmd+Shift+P open the command mode, and
- * Cmd+P the file mode, VS Code's three. Cmd is the Meta key on macOS and the Control key elsewhere,
- * the other of the two left to the editor, the terminal and the field (on macOS Ctrl+P is the
- * cursor up of a text and the previous line of a shell). The letter is the typed one, as Cmd+K's
- * is, since the browser's own key for it (print) is the typed letter's too. F1 answers with no
- * modifier held.
- */
-export function paletteKeyOf(event: PaletteKeyEvent, mac: boolean): PaletteKey | null {
-    const [meta, ctrl, shift, alt] = [
-        event.metaKey === true,
-        event.ctrlKey === true,
-        event.shiftKey === true,
-        event.altKey === true
-    ];
-    if (event.key === 'F1') return meta || ctrl || shift || alt ? null : 'commands';
-    if (event.key.toLowerCase() !== 'p' || alt) return null;
-    if (mac ? !meta || ctrl : !ctrl || meta) return null;
-    return shift ? 'commands' : 'files';
-}
 
 /** The views whose tabs show one file by a `root` and a `path` of their state. */
 const FILE_VIEWS: readonly string[] = ['source', 'file', 'document', MARKDOWN_PREVIEW_VIEW];

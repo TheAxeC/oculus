@@ -62,6 +62,7 @@ export function hostsFixture(
         store: { get: () => ({}), update: () => Promise.resolve({ ok: true }) },
         secrets,
         text: () => textCatalog(config),
+        values: () => ({}),
         node: process.execPath,
         runner: '/fixture/host-runner.mjs',
         jsonrpc: '/fixture/vscode-jsonrpc/node.js',

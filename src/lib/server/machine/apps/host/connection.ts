@@ -42,6 +42,9 @@ export class Refused extends Error {
 /** A handler for a request of the host: its params and the token the host's cancel ends. */
 export type HostHandler = (params: unknown, token: CancellationToken) => unknown;
 
+/** A handler for a notification of the host: its params. */
+export type HostNotice = (params: unknown) => void;
+
 /** One request to the host, with the cancellation and the progress it may ask for. */
 export type HostCall = {
     cancel?: CancellationToken;
@@ -62,6 +65,8 @@ export type LinkOptions = {
     input: Readable;
     output: Writable;
     handlers: Record<string, HostHandler>;
+    /** The handlers of the notifications of the host, by method. */
+    notices?: Record<string, HostNotice>;
     /** Called once when a message of the host cannot be read. */
     broken: (reason: string) => void;
 };
@@ -91,6 +96,15 @@ export function connectHost(options: LinkOptions): HostLink {
             } catch (error) {
                 if (error instanceof Refused) throw new ResponseError(REFUSED, error.word);
                 throw new ResponseError(REFUSED, 'failed');
+            }
+        });
+    }
+    for (const [method, notice] of Object.entries(options.notices ?? {})) {
+        connection.onNotification(method, (params: unknown) => {
+            try {
+                notice(params);
+            } catch {
+                // A notification has no answer to carry a refusal in, so a bad one is dropped.
             }
         });
     }

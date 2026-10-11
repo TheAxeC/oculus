@@ -1,6 +1,7 @@
 # Oculus text owned by the UI primitives.
 text:
     ui:
+        actions_more: More Actions...
         answer_refused: 'The server refused the request (HTTP {0}).'
         answer_unreachable: The server did not answer.
         answer_unreadable: "The server's answer could not be read (HTTP {0})."

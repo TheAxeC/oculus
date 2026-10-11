@@ -17,7 +17,7 @@
 // `on_focus_change` close, and an `after_delay` close when the delay is one second or less); the
 // tabs it could not save are the ones the close still asks about.
 
-import type { Autosave } from '../../../data/helpers/editor.ts';
+import type { Autosave } from '../../../data/helpers/editor/editor.ts';
 import { diskFileOf, type SourceDraft } from './draft.ts';
 import type { SaveRules, SourceStore } from './source.svelte.ts';
 import { t } from '../../shared/words/text.ts';

@@ -5,8 +5,8 @@
 // in: the state then holds `ask`, and the script is not run.
 //
 // The panel lists and serves nothing. It answers the paths the reader chose, and a path becomes a
-// root only through the add of a root (server/edit/writes/config/roots.ts or POST /api/fs), so
-// nothing outside a root is served because a panel returned it.
+// root only through the add of a root (server/edit/writes/config/lists/roots.ts or POST /api/fs),
+// so nothing outside a root is served because a panel returned it.
 //
 // The panel lives only while someone waits for its answer. Each press makes an AbortController,
 // which the state holds as `panel` while the panel is open, and the runner is given its signal, so

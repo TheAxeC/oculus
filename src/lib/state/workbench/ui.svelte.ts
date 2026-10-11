@@ -24,6 +24,8 @@
 import { z } from 'zod';
 import type { BusyTerminal } from '../sessions/terminal/pty/pty-io.ts';
 import { mapOfShape, mapShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
+import { isMap } from '../../data/helpers/guards.ts';
+import { NO_OFFERS, type AppOffers } from '../../data/helpers/files/apps/choices.ts';
 import { followKey } from '../shared/stores/storage-events.ts';
 import {
     codeThemeDefault,
@@ -208,6 +210,8 @@ export type UiStore = {
     /** Keep the repository chosen in the status bar's repository item; null forgets it. */
     setStatusRepository: (root: string | null) => void;
     setPaneStrip: (key: PaneStripKey, value: string) => void;
+    /** Write the file icon theme to `file_icons` of config/appearance.yml, for every page. */
+    setFileIcons: (name: string) => Promise<boolean>;
     setInstanceState: (id: string, state: unknown) => void;
     /**
      * Change a record from what the storage holds for it at this moment, which another browser
@@ -233,7 +237,8 @@ export type PaneStripKey = 'show_tabs' | 'editor_actions';
 export function createUi(
     writeConfigKey: (file: string, key: string, value: unknown) => Promise<unknown> = () =>
         Promise.resolve(null),
-    inApp = false
+    inApp = false,
+    offers: () => AppOffers = () => NO_OFFERS
 ): UiStore {
     /**
      * What a browser that has saved nothing starts on. Two of the seven come from
@@ -246,7 +251,7 @@ export function createUi(
      * turns that off and keeps the icons.
      */
     function defaultUi(): Ui {
-        const theme = themeFor(null, inApp);
+        const theme = themeFor(null, inApp, NO_OFFERS);
         return {
             theme,
             crt: crtDefault(),
@@ -313,7 +318,7 @@ export function createUi(
      */
     function wallpaper(): boolean {
         const picked = store.current.wallpaper;
-        return picked ?? wallpaperOnTheme(store.current.theme);
+        return picked ?? wallpaperOnTheme(store.current.theme, offers());
     }
 
     /** Whether the icons are kept on a terminal theme instead of their ASCII stand-ins. */
@@ -464,7 +469,7 @@ export function createUi(
 
     /** A theme name config/appearance.yml lists, and the start for one it does not. */
     function known(name: unknown): string {
-        return themeFor(name, inApp);
+        return themeFor(name, inApp, offers());
     }
 
     /**
@@ -729,6 +734,12 @@ export function createUi(
         void writeConfigKey('appearance.yml', key, value);
     }
 
+    /** Write the file icon theme to config/appearance.yml; whether the write was accepted. */
+    async function setFileIcons(name: string): Promise<boolean> {
+        const answer = await writeConfigKey('appearance.yml', 'file_icons', name);
+        return isMap(answer) && answer.ok === true;
+    }
+
     return {
         theme,
         crt,
@@ -772,6 +783,7 @@ export function createUi(
         setStatusQuiet,
         setStatusRepository,
         setPaneStrip,
+        setFileIcons,
         setInstanceState,
         updateInstanceState,
         clearInstanceState,

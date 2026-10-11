@@ -8,7 +8,7 @@
 // file come off the request's ServerContext; the roots are folded once, so one request reads the
 // workspaces file once.
 
-import { handleSearch } from '$lib/server/files/search-routes';
+import { handleSearch } from '$lib/server/files/search/search-routes';
 import { browserRoots } from '$lib/server/files/roots';
 import { searchSettings } from '$lib/data/sources/config';
 import type { RequestHandler } from './$types';

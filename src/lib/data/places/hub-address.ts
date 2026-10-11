@@ -6,9 +6,9 @@
 // for on disk. A second copy of the rule on either side would let the two disagree, so a link the
 // card opens as a web page would be reported missing from the disk, or one it serves from the hub
 // never checked. `webAddress` is the one check of an address the page opens: an app's `open`
-// (state/system/apps/methods.ts), and a linter's documentation link, which the lint readers keep
-// only when it passes (server/machine/runs/lint/readers.ts) and the editor, the markers and the
-// Problems view check again before they open it. The file is pure, two regular expressions and
+// (state/system/apps/frame/methods.ts), and a linter's documentation link, which the lint readers
+// keep only when it passes (server/machine/runs/lint/readers.ts) and the editor, the markers and
+// the Problems view check again before they open it. The file is pure, two regular expressions and
 // two functions, so the server can import it as the client does.
 
 /**

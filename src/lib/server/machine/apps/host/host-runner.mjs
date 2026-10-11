@@ -9,19 +9,20 @@
 // methods are in DESIGN.md's "Apps added while oculus runs". The process ends when its standard
 // input closes, so a server that is killed leaves no host running.
 //
-// The first `oculus/activate` request carries the real paths of the app's recorded files and the
-// sentences the runner writes to the host's output, worded from oculus's catalog. The
-// runner then installs a module hook that refuses every `file:` import, dynamic `import()` and
-// `require` of a file that is not one of them, loads the host file, and calls its exported
-// `activate(oculus)` once with the connection object. Whatever the host writes to standard output
-// goes to standard error, so the messages are the only thing on standard output; a write to file
-// descriptor 1 that skips this redirection breaks the message stream, which oculus then reports and
-// answers by stopping the host.
+// The first `oculus/activate` request carries the app's name, the resolved values of the settings
+// it declares, the real paths of the app's recorded files and the sentences the runner writes to
+// the host's output, worded from oculus's catalog. The runner then installs a module hook that
+// refuses every `file:` import, dynamic `import()` and `require` of a file that is not one of them,
+// loads the host file, and calls its exported `activate(oculus)` once with the connection object.
+// Whatever the host writes to standard output goes to standard error, so the messages are the only
+// thing on standard output; a write to file descriptor 1 that skips this redirection breaks the
+// message stream, which oculus then reports and answers by stopping the host.
 
 import { realpathSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import { Socket } from 'node:net';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createShell } from './runner-shell.mjs';
 
 const [hostFile, jsonrpcEntry] = process.argv.slice(2);
 
@@ -85,6 +86,13 @@ function guard(files) {
     });
 }
 
+/** The shell's namespaces of the object a host receives, and the answers to its two messages. */
+const shell = createShell({
+    connection,
+    report: (error) =>
+        process.stderr.write(`${fill(texts?.eventFailed ?? '{0}', [messageOf(error)])}\n`)
+});
+
 let hostModule = null;
 let api = null;
 let activated = false;
@@ -92,6 +100,7 @@ let requestHandler = null;
 const storeListeners = [];
 
 const oculus = {
+    ...shell.api,
     onRequest(handler) {
         requestHandler = handler;
     },
@@ -141,6 +150,7 @@ connection.onRequest('oculus/activate', async (params) => {
     if (activated) return null;
     activated = true;
     texts = params.texts;
+    shell.start(params.name, params.settings);
     try {
         await activate(params.files);
     } catch (error) {
@@ -185,6 +195,16 @@ connection.onRequest('oculus/apiCall', async (params) => {
         throw new ResponseError(REFUSED, messageOf(error));
     }
 });
+
+connection.onRequest('oculus/provide', async (params) => {
+    try {
+        return (await shell.provide(params)) ?? null;
+    } catch (error) {
+        throw new ResponseError(REFUSED, messageOf(error));
+    }
+});
+
+connection.onNotification('oculus/event', (params) => shell.event(params));
 
 connection.onNotification('oculus/storeChanged', (params) => {
     for (const listener of storeListeners) {

@@ -62,7 +62,7 @@ export type SourceBody = {
 };
 
 /** The part of a stat that says a file was written: what a second stat is compared with. */
-type Stamp = { ino: number; size: number; mtimeMs: number; ctimeMs: number };
+export type Stamp = { ino: number; size: number; mtimeMs: number; ctimeMs: number };
 
 /** How a save asks the system about a file, which a test replaces to move a file in between. */
 export type StatOf = (path: string) => Stamp;
@@ -177,7 +177,7 @@ function sameFile(one: string, other: string): boolean {
 }
 
 /** The stamp of a file, or null when the system cannot stat it, as for a file gone since. */
-function stampOf(stat: StatOf, path: string): Stamp | null {
+export function stampOf(stat: StatOf, path: string): Stamp | null {
     try {
         return stat(path);
     } catch {
@@ -186,13 +186,13 @@ function stampOf(stat: StatOf, path: string): Stamp | null {
 }
 
 /** Whether a read failed because the file went away after its stamp was taken. */
-function goneSince(error: unknown): boolean {
+export function goneSince(error: unknown): boolean {
     const code = (error as NodeJS.ErrnoException | null)?.code;
     return code === 'ENOENT' || code === 'ENOTDIR';
 }
 
 /** Two stamps of one file are the same when no write, replace or move happened between them. */
-function sameStamp(one: Stamp, other: Stamp): boolean {
+export function sameStamp(one: Stamp, other: Stamp): boolean {
     return (
         one.ino === other.ino &&
         one.size === other.size &&
@@ -206,7 +206,7 @@ function sameStamp(one: Stamp, other: Stamp): boolean {
  * file is over the limit) or must not be made: the machine's own file is never copied. The copy is
  * of the bytes the compare read.
  */
-function historyRefusal(
+export function historyRefusal(
     list: Root[],
     path: string,
     bytes: Buffer,

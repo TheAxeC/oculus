@@ -13,7 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps.ts';
+import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps/apps.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import {
     GOOD,

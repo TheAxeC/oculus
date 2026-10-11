@@ -6,6 +6,7 @@ import type { RegistryStore } from '../../workbench/navigation/registry.ts';
 import type { AgentsStore } from '../../sessions/agents.svelte.ts';
 import type { ChangesStore } from '../../sessions/changes.svelte.ts';
 import type { AppsStore } from '../../system/apps/apps.svelte.ts';
+import type { AppShellStore } from '../../system/apps/shell/shell.svelte.ts';
 import type { AuditStore } from '../../system/audit.svelte.ts';
 import type { AccountsStore } from '../../life/accounts.svelte.ts';
 import type { CalendarStore } from '../../life/calendar.svelte.ts';
@@ -165,6 +166,10 @@ export type ClientState = {
     registry: RegistryStore;
     /** The apps found while oculus runs, and the frames drawn for them. */
     apps: AppsStore;
+    /**
+     * What the apps added to the shell: commands, keys, menus, views and the hosts' registrations.
+     */
+    appShell: AppShellStore;
     /** The copy of these stores a tab provides for its subtree. */
     tabScope: TabScopeStore;
 };

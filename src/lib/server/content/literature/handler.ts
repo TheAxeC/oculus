@@ -1,6 +1,6 @@
 // Layer 2, server. The /api/literature endpoint. A route module may export only its verbs, so
 // everything the request does is here and src/routes/api/(docs)/literature/+server.ts is the few
-// lines that join them, the pattern lib/server/files/search-routes.ts holds.
+// lines that join them, the pattern lib/server/files/search/search-routes.ts holds.
 //
 // A request carries the write token like every route that sends something out: a literature search
 // puts the reader's query in a request to a third party, and it spends the keys of local.yml. The

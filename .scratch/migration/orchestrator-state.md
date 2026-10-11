@@ -24,20 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D63
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: ad834ceece00db11d (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D63
-  base: e38d174ef
-  launched: 2026-10-11
-  report: agents/reviews/D63-report.md
-  builder_usage: 211,578 tokens, 330 tool uses, 114.1 min (the completion notice after the resume; the run before Axel's pause was stopped with no notice)
-  reviewer_report: agents/reviews/D63-refuter.md (a3efd9c3f0ad5126e, claude-opus-5-5, 255,070 tokens, 155 tool uses, 30.1 min)
-  brief_check: agents/reviews/D63-brief-check.md (a9f32751f0ea11e48, claude-opus-5-5, 333,908 tokens, 108 tool uses, 15.8 min; closed in the brief by the orchestrator under "Closed"; open item 54's ruling put into the brief after)
-  landing: not-started
-  round: 1 (agents/briefs/D63-round1.md, sent 2026-10-11)
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -259,6 +246,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-12 (D63 landed). D63, apps in the shell, landed (booking in plan.md under D63, `agents/reviews/D63-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D63-refuter.md`, Closed) and seven defects the look found fixed at landing; `npm run test:landing` passed in the gate at main's head with the step, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. Two defects the look found in code D63 does not change booked as D69 (Z819, automode). In flight (0 of 6). Next: /spec D68 (workspaces as files) and /spec D69 (two clipping defects) beside it; then D64, Q72, O33.
 - 2026-10-11 (D68 booked). Axel ruled Workspaces as files (open item 56): step D68 after D63 and before D64, `local.yml` in each hub's `.oculus/` (replacing open item 53's place), O33 no longer moves it. `writeJsonAtomic` writes indented JSON (9bd7021bd, at Axel's word, inline). D63's builder is building; nothing else is unblocked until D63 lands (D68, then D64, then Q72, then O33).
 - 2026-10-11 (D67 landed). D67, a bookmark of a root's top, landed (booking in plan.md under D67, `agents/reviews/D67-landing.md`). Its landing met a red line the step did not cause, diagnosed in `agents/reviews/D67-diagnosis.md` (main's `node_modules` replaced by a worktree's link at the cherry-pick); Axel ruled open item 55 (a): main's `node_modules` a real copy again, both `.gitignore` files read `node_modules`, the servers.ts fix folded into O33. The D63 builder was stopped at Axel's word and resumed when he lifted every pause; it is building. Next: D63's report, its review and landing (remove the D63 worktree's `node_modules` link before `land.sh`; the root `oculus-state` and the `~/.oculus` bookmark were added at Axel's word after D67's landing, so D63's landing adds nothing for them), then D64, Q72, O33.
 - 2026-10-11 (D67 launched). D67, a bookmark of a root's top, prepared (base c8b4da890, brief `agents/briefs/D67.md` with every brief-check finding closed under the report's Closed) and its builder launched in `.agents/worktrees/D67` (claude-sonnet-5-5) beside D63's, the shared paths judged simple in its dispatch entry. Next: each builder's report, then /refute and /land, D63 first; D67 lands after D63, with the root `oculus-state`, the `~/.oculus` bookmark and the reworded `.oculus/bookmarks.yml` comment added by the orchestrator.

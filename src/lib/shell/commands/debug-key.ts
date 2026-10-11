@@ -3,7 +3,7 @@
 // a session that can take them, so a key pressed with nothing to act on does nothing. It answers
 // true for every key, which tells the key handler the press was taken.
 
-import type { DebugKey } from '$lib/state/system/machine/debug/debug';
+import type { DebugKey } from '$lib/data/helpers/keys/oculus/debug-keys';
 import type { ClientState } from '$lib/state/client/context';
 
 /** Carry out one debug key. */

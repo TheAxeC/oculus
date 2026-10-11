@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { warmConfig } from '../edit/write-fixture.ts';
 import { savesOf } from '../../../src/lib/server/files/fs/history.ts';
-import { runSearch } from '../../../src/lib/server/files/search.ts';
+import { runSearch } from '../../../src/lib/server/files/search/search.ts';
 import { emptyQuery } from '../../../src/lib/data/helpers/search/query.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import {

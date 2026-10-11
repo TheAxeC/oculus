@@ -17,7 +17,7 @@ import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { dirAsWritten } from '../../../src/lib/server/edit/writes/config/roots.ts';
+import { dirAsWritten } from '../../../src/lib/server/edit/writes/config/lists/roots.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TOKEN, changesOf, request, target, warmConfig } from './write-fixture.ts';
 

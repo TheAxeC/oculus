@@ -347,6 +347,9 @@
                                 level={row.depth + 1}
                                 glyph={row.kind === 'dir' ? t('files.folder_glyph') : undefined}
                                 file={row.kind === 'file' && row.name !== '' ? row.name : undefined}
+                                folder={row.kind === 'dir' && row.name !== ''
+                                    ? row.name
+                                    : undefined}
                                 depth={row.depth}
                                 selected
                             >

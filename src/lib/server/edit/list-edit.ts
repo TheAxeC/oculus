@@ -15,9 +15,9 @@
 // flow-style map has no line to replace and no line to append to. Rather than knowing every shape
 // it cannot keep, each caller reads its own result back and compares it with the original before
 // anything is written, through readBack and othersThan below: server/edit/deck-edit.ts for a deck
-// group's `slides:`, server/edit/writes/config/audit-mute.ts for the audit's mute list,
-// server/edit/writes/config/rail.ts for the rail's list of pages and
-// server/edit/writes/config/roots.ts for the default workspace's folders.
+// group's `slides:`, server/edit/writes/config/lists/audit-mute.ts for the audit's mute list,
+// server/edit/writes/config/lists/rail.ts for the rail's list of pages and
+// server/edit/writes/config/lists/roots.ts for the default workspace's folders.
 //
 // `isMap` names data/helpers/guards.ts's test of a parsed value in every file, so the yaml
 // library's own node test is imported as `isYamlMap`.

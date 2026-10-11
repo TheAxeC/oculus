@@ -13,6 +13,7 @@
     let {
         label,
         glyph,
+        picture,
         turning = false,
         active = false,
         expanded,
@@ -23,12 +24,14 @@
         title,
         checked,
         disabled = false,
+        inert = false,
         compact = false,
         small = false,
         rail = false,
         bare = false,
         status = false,
         warning = false,
+        fill,
         cell = false,
         plain = false,
         primary = false,
@@ -44,7 +47,7 @@
         children
     }: Props = $props();
 
-    const iconOnly = $derived((compact || bare) && glyph !== undefined);
+    const iconOnly = $derived((compact || bare) && (glyph !== undefined || picture !== undefined));
     const tip = $derived(title ?? (iconOnly ? label : ''));
     const named = $derived(iconOnly || cell || children !== undefined);
     const attributes = $derived(
@@ -70,11 +73,14 @@
         class:bare
         class:status
         class:warning
+        class:fill-warning={fill === 'warning'}
+        class:fill-error={fill === 'error'}
         class:cell
         class:plain
         class:primary
         class:joined
         class:cut
+        class:inert
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
         aria-expanded={expanded}
@@ -86,7 +92,7 @@
         data-card-toggle={dataCardToggle || undefined}
         data-stop={stop}
         {tabindex}
-        {disabled}
+        disabled={disabled || inert}
         {onclick}
         {ondblclick}
         {onkeydown}
@@ -94,6 +100,8 @@
     >
         {#if glyph !== undefined}
             <Glyph name={glyph} {turning} />
+        {:else if picture !== undefined}
+            <img class="picture" src={picture} alt="" />
         {/if}
         {#if cell}
             {#if children !== undefined}
@@ -110,6 +118,14 @@
 </Tooltip>
 
 <style>
+    /* A picture takes the glyph's box. */
+    .picture {
+        flex: none;
+        width: calc(var(--icon-box) * var(--text-scale, 1));
+        height: calc(var(--icon-box) * var(--text-scale, 1));
+        object-fit: contain;
+    }
+
     /* A text button, VS Code's: 12px words on a 16px line, 4px above and below and 8px beside
        them, a 1px border and the input radius, which make it 26 px high. */
     .tool {
@@ -243,6 +259,16 @@
         font-weight: var(--status-warning-weight, normal);
     }
 
+    .tool.status.fill-warning {
+        background: var(--c-amber-bg);
+        color: var(--c-amber);
+    }
+
+    .tool.status.fill-error {
+        background: var(--c-red-bg);
+        color: var(--c-red-d);
+    }
+
     /* Its icon at the size VS Code draws a status bar icon, and a stand-in at the words' size. */
     .tool.status {
         --glyph-size: var(--status-icon);
@@ -352,7 +378,8 @@
         white-space: nowrap;
     }
 
-    .tool.cell:disabled {
+    .tool.cell:disabled,
+    .tool.inert:disabled {
         opacity: 1;
     }
 

@@ -20,7 +20,8 @@ import {
     Refused,
     type HostCall,
     type HostHandler,
-    type HostLink
+    type HostLink,
+    type HostNotice
 } from './connection.ts';
 import type { HostOutput } from './output.ts';
 
@@ -44,10 +45,16 @@ export type HostProcessOptions = {
     files: string[];
     /** The sentences the runner writes to the host's output. */
     texts: Record<string, string>;
+    /** The app's `name`, the prefix of the ids and settings it owns. */
+    name: string;
+    /** The resolved values of the settings the app declares, which the host reads at once. */
+    settings: Record<string, unknown>;
     event: ActivationEvent;
     output: HostOutput;
     /** The handlers of the requests a host makes of oculus. */
     handlers: Record<string, HostHandler>;
+    /** The handlers of the notifications a host sends oculus. */
+    notices?: Record<string, HostNotice>;
     stopSeconds: () => number;
     clock: Clock;
     spawn?: typeof nodeSpawn;
@@ -94,6 +101,7 @@ export class HostProcess {
             input: child.stdout,
             output: child.stdin,
             handlers: options.handlers,
+            notices: options.notices,
             broken: (reason) => {
                 options.output.note(options.streamBroken(reason));
                 void this.stop();
@@ -139,7 +147,9 @@ export class HostProcess {
             this.#link.request('oculus/activate', {
                 event: options.event,
                 files: options.files,
-                texts: options.texts
+                texts: options.texts,
+                name: options.name,
+                settings: options.settings
             }),
             lost
         ]);

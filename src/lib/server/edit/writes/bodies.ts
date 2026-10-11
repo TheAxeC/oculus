@@ -170,6 +170,12 @@ export type RailWrite = { kind: 'rail'; rail: { label: string; glyph: string; pa
 export type ConfigKeyWrite = { kind: 'config-key'; file: string; key: string; value: unknown };
 
 /**
+ * One setting an app declares set to a value: the setting's whole key and the value, which the
+ * writer checks against the declaration.
+ */
+export type AppSettingWrite = { kind: 'app-setting'; key: string; value: unknown };
+
+/**
  * One list option or one family of a tracked config file set to a whole value: the file's name,
  * the dotted key path, the value, and the value the page read there (`base`), which the file must
  * still hold for the write to land.
@@ -395,6 +401,13 @@ const configKeyShape = z.object({
     value: z.unknown()
 }) satisfies z.ZodType<ConfigKeyWrite>;
 
+/** The `value` key must be there, whatever it holds; an absent one is not a write. */
+const appSettingShape = z.object({
+    kind: z.literal('app-setting'),
+    key: wordShape,
+    value: z.unknown()
+}) satisfies z.ZodType<AppSettingWrite>;
+
 /** Both `value` and `base` must be there, whatever they hold; an absent one is not a write. */
 const configValueShape = z.object({
     kind: z.literal('config-value'),
@@ -546,6 +559,15 @@ export function rootsWrite(body: unknown): RootsWrite | null {
  */
 export function configKeyWrite(body: unknown): ConfigKeyWrite | null {
     return readAs(configKeyShape, body);
+}
+
+/**
+ * The body as an app-setting write, or null when it is not one: a non-empty key and a value that
+ * is present, whatever it is. Whether the key is a declared setting and the value fits it is the
+ * writer's to say.
+ */
+export function appSettingWrite(body: unknown): AppSettingWrite | null {
+    return readAs(appSettingShape, body);
 }
 
 /**

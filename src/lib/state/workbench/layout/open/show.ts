@@ -3,6 +3,8 @@
 // Present tab. The TeX view is one more such ask: it opens as a tab of the pane that holds the
 // page's Files tab, so the two sit together as LaTeX Workshop's TeX view sits in the activity bar.
 //
+// A view an app contributes opens where its container says the first time (`createShowPlaced`).
+//
 // A file browser ask is written into the Files instance's own state rather than acted on here: the
 // folders on the way are read by the view, which is what draws them, and an ask written into the
 // state is still there for a tab that mounts after it. A deck is named in the layout state of its
@@ -12,7 +14,10 @@ import { HUB_ROOT, nameOf, normalisePath, revealAsked, rootedState } from '../..
 import { findView, panes } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
-import type { ViewId } from '../model.ts';
+import { floatHost, type ViewId } from '../model.ts';
+import { heldView } from './float/pages.ts';
+import type { FloatOps } from './float/store.ts';
+import type { OpenOptions, Opening } from './opening.ts';
 import { paneAt } from '../tree.ts';
 import { focusedPane } from '../workbench.ts';
 import { deckState, type DeckRef } from '../../../life/present.ts';
@@ -124,4 +129,56 @@ export function createShowDeck(
         return open('present', deckState(label === '' ? {} : { label }, ref));
     }
     return { showDeck };
+}
+
+/** Where the first tab of a view opens: docked on an edge, or in the pane holding Files. */
+export type Dock = 'left' | 'bottom' | 'files';
+
+/** Where a view opens the first time, or null for a view that opens where views land. */
+export type PlaceRule = (view: ViewId) => Dock | null;
+
+export type ShowPlaced = { openView: Opening['openView'] };
+
+/**
+ * `openView` for the views that say where their first tab goes. While some page or float holds a
+ * tab of the view, and for a view with no place, it opens as `opening.openView` does. Otherwise
+ * the tab opens as the only tab of a float docked on the left or the bottom edge, or as a tab of
+ * the pane that holds Files on the page, else beside the pane the reader was in.
+ */
+export function createShowPlaced(
+    access: LayoutAccess,
+    attention: Attention,
+    opening: Pick<Opening, 'openView' | 'openBeside' | 'openInPane'>,
+    floats: Pick<FloatOps, 'floatTab' | 'dockFloat'>,
+    rule: () => PlaceRule
+): ShowPlaced {
+    /** Whether any page or float holds a tab of the view. */
+    function held(view: ViewId): boolean {
+        const { pages, floats: apart } = access.held();
+        return heldView([...pages, ...apart.map(floatHost)], view) !== null;
+    }
+
+    function openView(view: ViewId, state?: unknown, page?: string, options?: OpenOptions): string {
+        const dock = rule()(view);
+        if (dock === null || held(view)) return opening.openView(view, state, page, options);
+        if (dock === 'files') {
+            const host = page ?? attention.touched().id;
+            const home = panes(access.layout(host)).find(({ pane }) =>
+                pane.tabs.some((tab) => tab.view === 'files')
+            );
+            const id =
+                home === undefined ? '' : opening.openInPane(view, state ?? {}, host, home.path);
+            return id === '' ? opening.openBeside(view, state, page) : id;
+        }
+        const id = opening.openView(view, state, page, options);
+        if (id === '') return id;
+        floats.floatTab(id, { x: 0.1, y: 0.1 });
+        const float = access
+            .held()
+            .floats.find((one) => one.pane.tabs.some((tab) => tab.id === id));
+        if (float !== undefined) floats.dockFloat(float.id, dock);
+        return id;
+    }
+
+    return { openView };
 }

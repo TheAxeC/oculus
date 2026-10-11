@@ -16,11 +16,12 @@ import {
     KIND_HEADER,
     appViewIdFromHeader,
     writeAccess
-} from '../../../../data/helpers/files/apps.ts';
+} from '../../../../data/helpers/files/apps/apps.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import type { AppsHeld, HeldApp } from '../../../machine/apps/read/held.ts';
 import { appById } from '../../../machine/apps/read/held.ts';
 import {
+    appSettingWrite,
     auditMuteWrite,
     configKeyWrite,
     configValueWrite,
@@ -80,6 +81,7 @@ function matchedKind(body: unknown): string | null {
         ['deck-edit', deckEditWrite],
         ['audit-mute', auditMuteWrite],
         ['rail', railWrite],
+        ['app-setting', appSettingWrite],
         ['config-key', configKeyWrite],
         ['config-value', configValueWrite],
         ['roots', rootsWrite],

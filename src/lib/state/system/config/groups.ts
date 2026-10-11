@@ -30,7 +30,8 @@ import {
 import type { FileText } from '../../sources/fs-transport.ts';
 import { t } from '../../shared/words/text.ts';
 import { ENGINE_ROOT, HUB_ROOT } from '../../sources/explorer/view/place.ts';
-import type { BrowserRow } from './browser.ts';
+import type { AppSettingRow } from './other-rows/app-rows.ts';
+import type { BrowserRow } from './other-rows/browser.ts';
 import { LOCAL_NAME, describedAs } from './config-files.ts';
 import type { Message } from './messages.ts';
 import type { FileRow, Listed } from './view/folders.ts';
@@ -75,7 +76,7 @@ const SCHEMAS_GROUP = 'schemas';
 export const TEXTS_GROUP = 'texts';
 
 /** Every kind of row a group holds and a search reads. */
-export type Row = ConfigRow | LocalRow | BrowserRow | FileRow;
+export type Row = ConfigRow | LocalRow | BrowserRow | AppSettingRow | FileRow;
 
 /** One section of a group: its title, a table-of-contents id, and its rows. */
 export type Section = { id: string; title: string; rows: Row[] };
@@ -223,13 +224,15 @@ function layerLine(file: string, layer: LayerResult): FileLine {
  * the catalog describes and no other. `layers` answers the hub layer's file of a tracked file, and
  * is asked for the files that hold keys of the hub list; without it no file has a layer. `folders`
  * are the listings of the catalog, schema and text folders, and none leaves the three groups out.
+ * `apps` are the rows of the settings the apps declare, which stand last in the Apps heading.
  */
 export function settingsGroups(
     catalog: Catalog,
     texts: (file: string) => FileText,
     browser: BrowserRow[],
     folders?: FolderListings,
-    layers?: (file: string) => HubLayer
+    layers?: (file: string) => HubLayer,
+    apps: AppSettingRow[] = []
 ): Group[] {
     const groups: Group[] = [];
     if (browser.length > 0) {
@@ -277,7 +280,7 @@ export function settingsGroups(
             about: '',
             lines,
             said: null,
-            sections: sectionsOf(id, rows)
+            sections: sectionsOf(id, id === 'apps' ? [...rows, ...apps] : rows)
         });
     }
     if (Object.hasOwn(catalog, LOCAL_NAME)) {

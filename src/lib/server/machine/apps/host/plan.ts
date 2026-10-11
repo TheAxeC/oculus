@@ -9,7 +9,7 @@
 // and the verdict names it, saying whether no app of that name exists at all. A verdict is read
 // again at every change of the apps, so it never outlives the state it judged.
 
-import { appViewId } from '../../../../data/helpers/files/apps.ts';
+import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
 import { appById, type AppsHeld, type HeldApp } from '../read/held.ts';
 import { findingKey } from '../read/manifest.ts';
 

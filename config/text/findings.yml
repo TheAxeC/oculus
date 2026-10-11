@@ -254,11 +254,42 @@ text:
             files_engine: "files names {0}, which is oculus's own configuration folder and is closed to every app, so the folder is not an app"
             files_shape: 'files names {0}, which is not a root key, or a root key and a path of names that do not start with a dot, so the folder is not an app'
             files_closed: 'files names {0}, which a folder of closed_paths closes, so the folder is not an app'
+            files_private: "files names {0}, which lies in a folder of this machine's own state or secrets and is closed to every app, so the folder is not an app"
             secrets_value: 'secrets must be true or left out, not {0}, so the folder is not an app'
             activation_no_host: 'activation names events for a host, and the app names no host, so the folder is not an app'
             event_unknown: 'activation names {0}, which is no event of the host (onTab, onStartupFinished, onCommand:<id>, onLanguage:<id>, onView:<id> or workspaceContains:<glob>), so the folder is not an app'
             event_empty: 'activation names {0}, which has no id or glob after its colon or an id with white space, so the folder is not an app'
             event_glob: 'activation names {0}, whose glob starts with a slash or holds a .. segment, so the folder is not an app'
+            event_command: 'activation names {0}, which is no command the app declares in contributes.commands, so the folder is not an app'
+            event_view: 'activation names {0}, which is no view the app declares in contributes.views, so the folder is not an app'
+            contributes_shape: '{0} is missing, or holds a value of another kind than VS Code gives it, so the folder is not an app'
+            contributes_id: "{0} must start with the app's name and a dot ({1}), so the folder is not an app"
+            contributes_reserved: "{0} is in the {1} namespace, which is oculus's own, so the folder is not an app"
+            contributes_repeated: '{0} names {1}, which the app declares twice, so the folder is not an app'
+            contributes_when: '{0} holds the clause {1}, which is not a when clause, so the folder is not an app'
+            contributes_key: "{0} holds the key {1}, which spells no key of VS Code's key syntax, so the folder is not an app"
+            contributes_icon: '{0} holds the icon {1}, which is neither $(name) of a glyph oculus draws nor a file of the app, so the folder is not an app'
+            contributes_file: '{0} names {1}, which is not a file of the app of the kind the key takes, so the folder is not an app'
+            contributes_container: '{0} names the container {1}, which the app does not declare and which is not explorer, so the folder is not an app'
+            contributes_tree_entry: '{0} names an entry, which only a view of type webview takes, so the folder is not an app'
+            contributes_setting_kind: '{0} sets a bound or a list of values that its type does not take, so the folder is not an app'
+            contributes_default: '{0} has the default {1}, which breaks its own type, list of values or bounds, so the folder is not an app'
+            contributes_command_unknown: '{0} names the command {1}, which the app does not declare in contributes.commands, so the folder is not an app'
+            contributes_menu_dropped: 'menus names {0}, which is no menu oculus draws, so its entries are left out'
+            contributes_submenu_dropped: '{0} is a submenu, which oculus does not draw, so the entry is left out'
+            contributes_container_dropped: 'viewsContainers names {0}, which is neither activitybar nor panel, so its entries are left out'
+            key_oculus: 'the key {0} of the command {1} is a key {2} takes, so the app does not bind it'
+            key_app: 'the key {0} of the command {1} is bound by {2}, which comes before it in the Views list under the same condition, so this app does not bind it'
+            id_taken: 'the app {0} declares the id {1}, which {2} declares too and comes before it in the Views list, so the folder is not an app'
+            setting_undeclared: 'app_settings holds {0}, which no approved app declares as a setting, so the value is not used'
+            setting_type: 'app_settings holds a value for {0} of the app {1} that is not of the type the app declares, so the app reads its default'
+            setting_enum: 'app_settings holds a value for {0} of the app {1} that is not one of the values the app declares, so the app reads its default'
+            setting_minimum: 'app_settings holds a value for {0} of the app {1} below the least the app declares, so the app reads its default'
+            setting_maximum: 'app_settings holds a value for {0} of the app {1} above the most the app declares, so the app reads its default'
+            theme_unreadable: 'the colour theme {0} names {1}, which is not a theme file ({2}), so the theme is not offered'
+            theme_include: 'the colour theme {0} names {1}, whose include {2} is not a file of the app or closes a cycle, so the theme is not offered'
+            icon_theme_unreadable: 'the icon theme {0} names {1}, which is not an icon theme file ({2}), so the theme is not offered'
+            icon_theme_unavailable: 'file_icons names {0}, which no approved and enabled app offers, so the file icons of Seti are drawn'
             depends_name: 'depends names {0}, which does not start with a lowercase letter and hold only lowercase letters, digits and hyphens, 40 characters at most, so the folder is not an app'
             depends_self: 'depends names {0}, the app itself, so the folder is not an app'
             state_unread: '{0}, so every app is disabled until the file is put right'
@@ -271,6 +302,7 @@ text:
                 processes: "the machine's process table: program names, arguments and folders"
                 app_hosts: the output and process ids of the hosts of every app
                 app_messages: what the host of an app sent to its pages
+                app_shell: what the host of an app registered in oculus and the questions it asks the reader
                 inbox: mail subjects, senders and previews of the message text
                 calendar: event titles, times, places and links
                 sessions: titles, prompts, paths and events taken from session transcripts

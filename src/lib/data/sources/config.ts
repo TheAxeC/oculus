@@ -83,9 +83,9 @@ export {
     slurmSettings,
     usageTiers
 } from './config/settings.ts';
-export { languageFindings } from './config/languages.ts';
+export { languageFindings } from './config/sections/languages.ts';
 export { latexEditingFindings, latexUnimathFindings } from './config/catalog/latex-editing.ts';
 export { nestingFindings } from './config/catalog/nesting.ts';
 export { optionFindings } from './config/catalog/option-findings.ts';
 export { schemaFindings } from './config/catalog/schema-findings.ts';
-export { themeFindings } from './config/themes.ts';
+export { themeFindings } from './config/sections/themes.ts';

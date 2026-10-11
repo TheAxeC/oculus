@@ -152,6 +152,7 @@
     {nav}
     level={row.depth + 1}
     file={row.kind === 'file' ? row.name : undefined}
+    folder={row.kind === 'dir' ? row.name : undefined}
     glyph={row.kind === 'dir' ? t('files.folder_glyph') : undefined}
     depth={row.depth}
     expanded={opens ? row.open : undefined}

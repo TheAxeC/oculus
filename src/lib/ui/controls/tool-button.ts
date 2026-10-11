@@ -10,6 +10,11 @@ export type ToolButtonProps = {
     label: string;
     /** A name in `glyphs:`, drawn in front of the label. */
     glyph?: string;
+    /**
+     * The address of a picture drawn in the glyph's place, for a control whose icon is a file of
+     * an app. A button with a glyph draws the glyph.
+     */
+    picture?: string;
     /** Turn the glyph round and round, for an action that is under way. */
     turning?: boolean;
     /** Draw it as the one in force. */
@@ -36,6 +41,11 @@ export type ToolButtonProps = {
      * belongs in `title`: a button that cannot be pressed and does not say why is a dead end.
      */
     disabled?: boolean;
+    /**
+     * Takes no press and says nothing is unavailable: drawn at full strength, with no fill under
+     * the pointer, as VS Code draws a status bar item that runs no command.
+     */
+    inert?: boolean;
     /**
      * The glyph alone, with the words as the tooltip and the accessible name: for a control
      * that sits on every card of a board, where the words on each would cost a line. A button
@@ -67,6 +77,8 @@ export type ToolButtonProps = {
     status?: boolean;
     /** A status bar item in the warning tone: its words and glyph in the amber of a warning. */
     warning?: boolean;
+    /** A status bar item filled with the warning or the error tone behind its words. */
+    fill?: 'warning' | 'error';
     /**
      * A cell of a grid it sits in, a gutter's line number or change mark: no border, fill,
      * padding or brackets of its own, the size, colour and alignment of the cell around it,

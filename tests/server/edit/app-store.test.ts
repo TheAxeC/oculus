@@ -4,8 +4,8 @@
 //
 // The store module's folder is a temporary one in every case and the resolved path is asserted
 // inside it before any write; a case never reaches `~/.oculus`. What this does NOT cover: the
-// endpoint's gate for the app header (tests/routes/edit/app-gate.test.ts) and the undo of a store
-// write (tests/routes/edit/undo/undo.test.ts).
+// endpoint's gate for the app header (tests/routes/edit/apps/app-gate.test.ts) and the undo of a
+// store write (tests/routes/edit/undo/undo.test.ts).
 
 import { existsSync, mkdirSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';

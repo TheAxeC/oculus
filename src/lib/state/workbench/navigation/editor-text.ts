@@ -11,21 +11,21 @@ import type { SaveRules } from '../../sessions/source/source.svelte.ts';
 import { languageOf, type LanguageMap } from '../../sources/fs.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { PLAIN } from '../../shared/words/languages.ts';
-import { REPO_SETTINGS, resolveEditor } from '../../../data/helpers/editor.ts';
+import { REPO_SETTINGS, resolveEditor } from '../../../data/helpers/editor/editor.ts';
 import type {
     EditorOptions as ConfiguredEditor,
     LanguageRecords
-} from '../../../data/helpers/editor.ts';
+} from '../../../data/helpers/editor/editor.ts';
 import type { RepoSettings } from '../../../data/sources/config/editor-options.ts';
 
 export type { Indent };
 
-// The configured options and the order that resolves them for a tab, which data/helpers/editor.ts
-// holds, as the views read them.
-export { REPO_SETTINGS, resolveEditor, toggleWrap } from '../../../data/helpers/editor.ts';
+// The configured options and the order that resolves them for a tab, which
+// data/helpers/editor/editor.ts holds, as the views read them.
+export { REPO_SETTINGS, resolveEditor, toggleWrap } from '../../../data/helpers/editor/editor.ts';
 export type { RepoSettings };
 export type { ConfiguredEditor, LanguageRecords };
-export type { WordWrap } from '../../../data/helpers/editor.ts';
+export type { WordWrap } from '../../../data/helpers/editor/editor.ts';
 
 /** The two line endings a text file is written with. */
 export type LineEnding = 'LF' | 'CRLF';

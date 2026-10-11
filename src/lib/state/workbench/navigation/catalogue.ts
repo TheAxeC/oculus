@@ -15,6 +15,7 @@
 
 import { z } from 'zod';
 import { registrationGlyph, type Registration } from './registry.ts';
+import { chordShape } from '../../../data/helpers/keys/oculus/rail-letters.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { hasHiddenSegment, joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
 import { optionalTextShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
@@ -246,9 +247,6 @@ export function groupGlyph(section: Section): string {
     if (section.items.length === 0) return t('views.doc_glyph');
     return registrationGlyph(section.items[0]);
 }
-
-/** A chord: one lowercase letter. */
-const chordShape = z.string().regex(/^[a-z]$/);
 
 /** One group of `nav_groups`: a label, and a glyph and a chord when they are readable. */
 const navGroupShape = z.object({

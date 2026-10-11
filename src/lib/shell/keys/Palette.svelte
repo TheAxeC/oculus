@@ -55,7 +55,7 @@
     import { Command } from 'bits-ui';
     import Modal from '$lib/ui/frame/Modal.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
-    import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
+    import SearchRows from '$lib/shell/keys/rows/SearchRows.svelte';
     import CommandRows from '$lib/shell/keys/rows/CommandRows.svelte';
     import FileRows from '$lib/shell/keys/rows/FileRows.svelte';
     import LineRows from '$lib/shell/keys/rows/LineRows.svelte';
@@ -74,11 +74,11 @@
     } from '$lib/shell/keys/palette-modes';
     import { landOn, openPaletteItem } from '$lib/shell/keys/palette-open';
     import {
+        appItems,
         buildIndex,
         commands,
         editorItems,
         fileValue,
-        kindWord,
         lineQuery,
         modeOf,
         openFileEntries,
@@ -110,6 +110,7 @@
 
     const {
         editorStatus: { statusOf },
+        appShell,
         explorer,
         fs: { workspaces },
         layout: { activeInstance, currentPage, floats, hosts },
@@ -173,7 +174,10 @@
                   ...buildIndex(current.snapshot, current.feeds, knownViews),
                   ...editorItems(acting),
                   ...pinItems(pinnable, t),
-                  ...viewItems(tab?.id ?? null, offered)
+                  ...viewItems(tab?.id ?? null, offered),
+                  ...appItems(
+                      appShell.commandRows(appShell.place(tab, source?.status ?? null, false))
+                  )
               ]
             : []
     );
@@ -226,6 +230,7 @@
             ? []
             : commands(
                   current.config,
+                  appShell.offers(),
                   source !== null,
                   served?.language ?? '',
                   explorer.panelOpen()
@@ -366,18 +371,7 @@
                                                         {onclose}
                                                     />
                                                 {:else if parsed === null}
-                                                    {#each matches as found (found.item.id)}
-                                                        <PaletteRow
-                                                            row={{
-                                                                value: found.item.id,
-                                                                kind: kindWord(found.item.kind, t),
-                                                                label: found.item.label,
-                                                                parts: found.title,
-                                                                hint: found.item.hint,
-                                                                pick: () => choose(found.item)
-                                                            }}
-                                                        />
-                                                    {/each}
+                                                    <SearchRows {matches} onpick={choose} />
                                                 {:else if line !== null}
                                                     <LineRows
                                                         {line}

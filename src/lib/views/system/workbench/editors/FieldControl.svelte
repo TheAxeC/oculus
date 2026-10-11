@@ -114,7 +114,7 @@
     const choices = $derived(
         (pool.state === 'ready' ? pool.items : held === '' ? [] : [held]).map((id) => ({
             id,
-            label: id
+            label: lists.labels.get(id) ?? id
         }))
     );
 

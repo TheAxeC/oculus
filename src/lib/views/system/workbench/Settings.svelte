@@ -47,16 +47,18 @@
     //
     // The partials are in settings/: Header (search, count, filter, the table's toggle), Contents
     // (table of contents), List (groups and sections), Item (one setting), Control (one option's
-    // control), BrowserControl (the controls of this browser's values), Gear (the item's menu); the
+    // control), BrowserControl (the controls of this browser's values), AppControl (the control of
+    // a setting an app declares), Gear (the item's menu); the
     // controls themselves and the editors of lists, multis and families are in editors/.
 
     import { tick, untrack } from 'svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import { ENGINE_ROOT, HUB_ROOT } from '$lib/state/sources/fs';
-    import { themeClasses } from '$lib/ui/theme';
+    import { themeClasses } from '$lib/ui/theme/theme';
     import { t } from '$lib/state/shared/words/text';
     import { wallpaperOnTheme } from '$lib/state/shared/words/appearance';
-    import { thisBrowserRows } from '$lib/state/system/config/browser';
+    import { appSettingRows } from '$lib/state/system/config/other-rows/app-rows';
+    import { thisBrowserRows } from '$lib/state/system/config/other-rows/browser';
     import { CATALOGS, SCHEMAS } from '$lib/state/system/config/config-files';
     import { hasSavedDraft, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { listsOf, type Folder } from '$lib/state/system/config/editors/sources';
@@ -86,6 +88,7 @@
     import { reactiveEditors } from './editors/writer.svelte';
 
     const {
+        appShell,
         entities: { config, message, portfolio, usage },
         fs: { fileText, listing, refresh },
         registry,
@@ -155,6 +158,7 @@
             views: registry.views().map((one) => one.id),
             tiers: usage()?.accounts.map((account) => account.tier) ?? null,
             themeClasses: classes,
+            offers: appShell.offers(),
             folder
         });
     });
@@ -166,13 +170,14 @@
         settingsGroups(
             catalogOf(config()?.config ?? {}),
             (file) => fileText(ENGINE_ROOT, file),
-            thisBrowserRows(ui, wallpaperOnTheme(ui.theme())),
+            thisBrowserRows(ui, wallpaperOnTheme(ui.theme(), appShell.offers())),
             {
                 catalogs: listedFiles(CATALOGS, (path) => listing(ENGINE_ROOT, path)),
                 schemas: listedFiles(SCHEMAS, (path) => listing(ENGINE_ROOT, path)),
                 texts: listedFiles(TEXT, (path) => listing(ENGINE_ROOT, path))
             },
-            (file) => hubLayerText(file, hubListing, (path) => fileText(HUB_ROOT, path))
+            (file) => hubLayerText(file, hubListing, (path) => fileText(HUB_ROOT, path)),
+            appSettingRows(appShell.acting(), config()?.config ?? {})
         )
     );
 

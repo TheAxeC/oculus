@@ -16,7 +16,7 @@
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { typeOf } from '../../../files/files.ts';
-import { appAddress } from '../../../../data/helpers/files/apps.ts';
+import { appAddress } from '../../../../data/helpers/files/apps/apps.ts';
 
 /** The segment the shared files are served under. */
 export const SHARED = '-';
@@ -39,7 +39,10 @@ const TYPED = [
     '.jpg',
     '.gif',
     '.webp',
+    '.woff',
     '.woff2',
+    '.ttf',
+    '.otf',
     '.txt',
     '.wasm'
 ];

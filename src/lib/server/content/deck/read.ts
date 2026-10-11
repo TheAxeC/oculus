@@ -11,8 +11,8 @@
 // rule the file route answers by (`resolveRootPath`), ahead of any read. A folder inside a
 // root that holds no deck is answered with the empty state of the deck, not refused: the view
 // draws a sentence naming it. The reader (data/sources/deck/read.ts) does the reading, and the
-// write of a group's `slides:` (server/edit/writes/config/deck/deck.ts) reads the group's members,
-// candidates and missing names through the same function.
+// write of a group's `slides:` (server/edit/writes/config/lists/deck/deck.ts) reads the group's
+// members, candidates and missing names through the same function.
 
 import { basename } from 'node:path';
 import { LOCAL_NAME } from '../../../data/sources/config.ts';

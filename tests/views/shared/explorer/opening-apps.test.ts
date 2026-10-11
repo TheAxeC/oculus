@@ -6,7 +6,7 @@
 // raises the press, which the look does.
 
 import { describe, expect } from 'vitest';
-import { inAppsFolder } from '../../../../src/lib/data/helpers/files/apps.ts';
+import { inAppsFolder } from '../../../../src/lib/data/helpers/files/apps/apps.ts';
 import type { Entry } from '../../../../src/lib/state/boards/collection.ts';
 import { bookmarkRows } from '../../../../src/lib/state/sources/explorer/view/bookmark-rows.ts';
 import {
@@ -26,6 +26,9 @@ const FOLDERS = ['/hub/.oculus/apps'];
 /** The page's `holds`: whether a file of the root `hub` lies in an apps folder. */
 const holds = (root: string, path: string): boolean =>
     inAppsFolder(FOLDERS, root === 'hub' ? '/hub' : '', path);
+
+/** What opening a file asks of the apps, with no custom editor. */
+const opens = { holds, editorFor: () => null };
 
 const APP_PAGE = '.oculus/apps/notes/index.html';
 const PLAIN_PAGE = 'docs/manual.html';
@@ -58,7 +61,7 @@ function opener(kind = 'html', over: Partial<Opener> = {}) {
         },
         keepPreview: () => undefined,
         readFileKind: () => Promise.resolve({ kind }) as ReturnType<Opener['readFileKind']>,
-        holds,
+        opens,
         ...over
     };
     return { made, opened };
@@ -72,7 +75,7 @@ const BESIDE = (opened: string[]): BesideOpener => ({
         return 'tab-2';
     },
     readFileKind: () => Promise.resolve({ kind: 'html' }),
-    holds
+    opens
 });
 
 const ROWS: Row[] = [
@@ -88,14 +91,14 @@ const ROWS: Row[] = [
         ] as [string, string, string][]
     ).map(([label, path, view]): Row => [
         `${label}, in the ${view} view from the tab choice`,
-        () => tabForKind('html', 'hub', path, undefined, holds).view,
+        () => tabForKind('html', 'hub', path, undefined, opens).view,
         view
     ]),
     [
         'a page of an app, as source text whatever kind the first bytes give',
         () =>
             ['html', 'text', 'other', 'image', 'pdf', 'missing'].map(
-                (kind) => tabForKind(kind, 'hub', APP_PAGE, 12, holds).view
+                (kind) => tabForKind(kind, 'hub', APP_PAGE, 12, opens).view
             ),
         Array<string>(6).fill('source')
     ],
@@ -138,7 +141,10 @@ const ROWS: Row[] = [
         () => {
             const linked = (root: string, path: string): boolean =>
                 inAppsFolder(['/real/apps'], root === 'hub' ? '/real' : '', path);
-            return tabForKind('html', 'hub', 'apps/notes/index.html', undefined, linked).view;
+            return tabForKind('html', 'hub', 'apps/notes/index.html', undefined, {
+                holds: linked,
+                editorFor: () => null
+            }).view;
         },
         'source'
     ],
@@ -155,7 +161,7 @@ const ROWS: Row[] = [
                         kind: 'folder'
                     }
                 ],
-                holds
+                opens
             ).map((one) => one.view),
         ['source', 'document', 'files']
     ],
@@ -164,7 +170,7 @@ const ROWS: Row[] = [
         () => {
             const views: string[] = [];
             const client = {
-                apps: { holds },
+                appShell: { opens },
                 layout: {
                     openView: (view: string) => {
                         views.push(view);

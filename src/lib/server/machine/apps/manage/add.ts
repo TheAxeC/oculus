@@ -11,7 +11,7 @@
 
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, renameSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { APP_NAME } from '../../../../data/helpers/files/apps.ts';
+import { APP_NAME } from '../../../../data/helpers/files/apps/apps.ts';
 import { below, realPath } from '../../../core/paths.ts';
 import { walkApp, type WalkLimits } from '../read/record.ts';
 

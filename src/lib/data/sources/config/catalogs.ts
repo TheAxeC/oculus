@@ -23,7 +23,7 @@ import { closedPaths, settingProblems } from './settings.ts';
  * the chip vocabulary state/shared/words/tones.ts reads, and the theme list, the wallpaper and the
  * CRT default, the code theme, and the pane strip's three settings state/shared/words/appearance.ts
  * reads. `domains` is the research domains of config/catalogs/vocab.yml; `themes`, `wallpaper`,
- * `crt`, `code_theme`, `show_tabs`, `editor_actions`, `wrap_tabs` and `terminal` are
+ * `crt`, `code_theme`, `file_icons`, `show_tabs`, `editor_actions`, `wrap_tabs` and `terminal` are
  * config/appearance.yml's.
  */
 export const VOCAB_KEYS = [
@@ -37,6 +37,7 @@ export const VOCAB_KEYS = [
     'wallpaper',
     'crt',
     'code_theme',
+    'file_icons',
     'show_tabs',
     'editor_actions',
     'wrap_tabs',

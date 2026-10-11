@@ -22,7 +22,7 @@ import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path
 import { Readable } from 'node:stream';
 import mime from 'mime';
 import { z } from 'zod';
-import { inAppsFolder } from '../../data/helpers/files/apps.ts';
+import { inAppsFolder } from '../../data/helpers/files/apps/apps.ts';
 import { ENGINE_ROOT, HUB_ROOT, MANIFEST, ROOT_FOLDER } from '../../data/helpers/hub-names.ts';
 import { findingText } from '../../data/helpers/finding-text.ts';
 import { folderOnDisk } from '../../data/places/folder-on-disk.ts';

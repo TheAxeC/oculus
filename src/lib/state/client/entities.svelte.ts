@@ -110,6 +110,10 @@ export function createEntities(): EntitiesStore {
         apps: () => payload('apps'),
         /** The host of every app that names one, or null before the first push. */
         appHosts: () => payload('app-hosts'),
+        /**
+         * What the running hosts registered in the shell and ask the reader, or null before a push.
+         */
+        appShell: () => payload('app-shell'),
         /** The debug session's state, or null before the server's first message. */
         debug: () => payload('debug')
     };

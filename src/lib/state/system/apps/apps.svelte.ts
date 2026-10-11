@@ -2,8 +2,8 @@
 // mounted for them, and everything that happens between a frame and the rest of the page.
 //
 // A view draws its frame through `mount`, which builds the methods of that frame over this page
-// (state/system/apps/methods.ts), connects them on penpal (bridge.ts) and registers the frame to
-// hear the channels its app reads, the theme and its store. One listener on the entities store
+// (frame/methods.ts), connects them on penpal (frame/bridge.ts) and registers the frame to hear the
+// channels its app reads, the theme and its store. One listener on the entities store
 // fans every push out: an `apps` push moves the store cache, any other push goes to each mounted
 // frame whose app reads that channel, and a root app is given only its own root's part.
 //
@@ -23,12 +23,19 @@
 // The approval and the revoke are the two POSTs of /api/approve; the server answers after its
 // watcher has read the new approval, so the row the page holds next carries the app's key.
 
+import { untrack } from 'svelte';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
-import { appAddress, appViewId, inAppsFolder } from '../../../data/helpers/files/apps.ts';
-import { APP_HEADER, appHeaderValue } from '../../../data/helpers/files/apps.ts';
+import { appAddress, appViewId, inAppsFolder } from '../../../data/helpers/files/apps/apps.ts';
+import { APP_HEADER, appHeaderValue } from '../../../data/helpers/files/apps/apps.ts';
+import { oculusCommandKind } from '../../../data/helpers/files/apps/commands.ts';
+import { PANEL_VIEW } from '../../../data/helpers/files/apps/views.ts';
+import { fields } from '../../../data/helpers/guards.ts';
+import { appSettingValues, settingValues } from '../../../data/helpers/files/apps/settings.ts';
 import type {
     AppHostRow,
     AppMessagesPayload,
+    AppPanelRequest,
+    AppRequestBody,
     AppRow,
     Finding,
     Message,
@@ -36,8 +43,9 @@ import type {
 } from '../../../data/model/index.ts';
 import type { AppsSettings } from '../../../data/sources/config/settings.ts';
 import { t } from '../../shared/words/text.ts';
-import type { EntitiesStore, WritesStore } from '../../shared/stores/shapes.ts';
-import { connectFrame } from './bridge.ts';
+import type { EntitiesStore, NoticeSink, WritesStore } from '../../shared/stores/shapes.ts';
+import { connectFrame, type FrameLink, type FrameOptions } from './frame/bridge.ts';
+import { createDocument } from './frame/documents.ts';
 import { appTab, appTabState } from './instance.ts';
 import { createFlows, type FlowsStore } from './flows.ts';
 import { createManage, type ManageStore } from './manage.ts';
@@ -48,9 +56,20 @@ import {
     type OpenResult,
     type ServerAnswer,
     type Theme
-} from './methods.ts';
-import { REFUSED, failedWith, folderIn, hostTargets, partOf, readAccess } from './rules.ts';
-import { createStoreCache, type StoreAnswer } from './store-cache.ts';
+} from './frame/methods.ts';
+import {
+    REFUSED,
+    failedWith,
+    folderIn,
+    hostTargets,
+    partOf,
+    readAccess,
+    refusedWith
+} from './frame/rules.ts';
+import { createStoreCache, type StoreAnswer } from './frame/store-cache.ts';
+import { panelDisposed } from './shell/show/panels.ts';
+import { createFrameShell, type FrameItem } from './shell/frames.svelte.ts';
+import { createRequests, type CommandResult, type RequestsStore } from './shell/requests.svelte.ts';
 
 export type { AppHostRow, AppRow };
 
@@ -60,7 +79,10 @@ export type { AppHostRow, AppRow };
  * state/client/context.ts hands over the stores themselves.
  */
 export type AppsDeps = {
-    entities: Pick<EntitiesStore, 'apps' | 'appHosts' | 'message' | 'afterReceive'>;
+    entities: Pick<
+        EntitiesStore,
+        'apps' | 'appHosts' | 'appShell' | 'config' | 'message' | 'afterReceive'
+    >;
     /** The socket's subscription, which the host and message channels are added to. */
     socket: {
         subscribe: (channels: string[]) => void;
@@ -76,7 +98,15 @@ export type AppsDeps = {
     ui: {
         instanceState: (id: string) => unknown;
         setInstanceState: (id: string, state: unknown) => void;
+        /** Register what answers whether a tab holds unsaved text, which a close asks about. */
+        registerUnsaved: (reports: (id: string) => boolean) => void;
     };
+    /** The id of this page, which the panels it opened are held under. */
+    pageId: string;
+    /** Whether a source tab holds unsaved text of this file. */
+    unsavedFile: (root: string, path: string) => boolean;
+    /** Run one of oculus's own page commands, `oculus.<name>`, on this page. */
+    pageCommand: (id: string, args: unknown[]) => Promise<CommandResult>;
     registry: { viewFor: (view: string) => { listed?: boolean } | undefined };
     layout: {
         openView: (view: string, state?: unknown) => string;
@@ -88,7 +118,7 @@ export type AppsDeps = {
         switchPage: (id: string) => void;
         showFolderInFiles: (path: string, root?: string) => string;
     };
-    notices: { post: (message: string, options?: { tone?: 'error' }) => unknown };
+    notices: NoticeSink;
     settings: () => AppsSettings;
     /** The roots the file browser serves, with the folder of each. */
     served: () => { key: string; dir: string }[];
@@ -112,6 +142,14 @@ type MountOptions = {
     forwardKey: (init: KeyInit) => void;
     /** The view and the state that open a file of a root, as the Files view opens it. */
     tabFor: (root: string, path: string) => { view: string; state: unknown };
+    /** The id the host knows a panel's tab by, or the empty string for any other tab. */
+    name: string;
+    /** The declared id of the view a tab of a contributed view draws, else the empty string. */
+    view: string;
+    /** The file a custom editor's tab was opened on, or null for any other tab. */
+    document: { root: string; path: string } | null;
+    /** Connect the page's methods to the frame; the bridge to the frame's window when absent. */
+    connect?: (options: FrameOptions) => FrameLink;
 };
 
 /** One question a write of an app asks the reader; `answer` settles the write, once. */
@@ -173,13 +211,34 @@ export type AppsStore = ManageStore &
          * since its handshake timeout and its rate limits are read from it.
          */
         ready: () => boolean;
-        /** The address of an app's entry file, or the empty string while the app is unapproved. */
-        srcOf: (row: AppRow) => string;
+        /**
+         * The address of one of an app's files, its entry file by default, or the empty string
+         * while the app is unapproved.
+         */
+        srcOf: (row: AppRow, entry?: string) => string;
         /**
          * Whether a file of a root, by the root's key and the path under it, lies in an apps
          * folder, which opens as source text and never as a page.
          */
         holds: (root: string, path: string) => boolean;
+        /** A tab of the contributed view `view` of the app `id` is drawn: `onView` fires. */
+        drawn: (id: string, view: string) => Promise<void>;
+        /** What the apps ask of the reader, and the work they ask this page to do. */
+        requests: RequestsStore;
+        /** The status bar items of the open frames. */
+        frameItems: () => FrameItem[];
+        /**
+         * Run a command that only an open tab of the app registered, through that tab; null when
+         * no tab holds it.
+         */
+        runInTab: (app: string, command: string, args: unknown[]) => Promise<CommandResult | null>;
+        /** Tell the frame of a tab its view was shown or hidden. */
+        visible: (instance: string, visible: boolean) => void;
+        /** Whether a custom editor's tab holds changes its frame has not saved. */
+        dirty: (instance: string) => boolean;
+        /** Ask a custom editor's frame to save its document, or to revert it. */
+        save: (instance: string) => Promise<void>;
+        revert: (instance: string) => Promise<void>;
     };
 
 /** One mounted frame, as the fan-out sees it. */
@@ -191,6 +250,13 @@ type Mounted = {
     theme: () => void;
     /** Hand the frame what its host sent to this tab. */
     host: (method: string, params: unknown) => void;
+    /** The id the host knows the tab by when it is a panel, else the empty string. */
+    name: string;
+    command: (id: string, args: unknown[]) => Promise<unknown>;
+    visibility: (visible: boolean) => void;
+    settings: (keys: string[]) => void;
+    save: () => Promise<unknown>;
+    revert: () => Promise<unknown>;
 };
 
 /** A question waiting for its turn, with what settles the write that asked it. */
@@ -267,7 +333,8 @@ export function createApps(deps: AppsDeps): AppsStore {
     // The host rows and the host's messages are channels the page subscribes to once its socket is
     // open; the subscription is asked again at every link change, since a connect names the
     // channels it starts with and a reconnect asks for them again.
-    const hostChannels = (): void => deps.socket.subscribe(['app-hosts', 'app-messages']);
+    const hostChannels = (): void =>
+        deps.socket.subscribe(['app-hosts', 'app-messages', 'app-shell']);
     hostChannels();
     deps.socket.onLink(hostChannels);
     const post = (path: string, body: unknown): ReturnType<typeof deps.writes.postCommand> =>
@@ -277,9 +344,100 @@ export function createApps(deps: AppsDeps): AppsStore {
         manage,
         rowOf: (id) => rowOf(id),
         post,
-        notices: deps.notices
+        notices: deps.notices,
+        dirtyFiles: (id) => dirtyFilesOf(id)
     });
     const hosts = (): AppHostRow[] => deps.entities.appHosts()?.rows ?? [];
+    const frames = createFrameShell();
+    const dirtyTabs = new SvelteSet<string>();
+    deps.ui.registerUnsaved((id) => dirtyTabs.has(id));
+
+    /** The files of the custom editors of an app that hold changes not yet saved. */
+    function dirtyFilesOf(app: string): string[] {
+        return [...dirtyTabs].flatMap((instance) => {
+            const held = fields(deps.ui.instanceState(instance));
+            return held.app === app && typeof held.path === 'string' ? [held.path] : [];
+        });
+    }
+    let nextPanel = 0;
+    /** Whether the view drawing each tab's frame is shown, as the frame was last told. */
+    const shown = new Map<string, boolean>();
+
+    /** Run a command that only an open tab of the app registered, through that tab. */
+    async function runInTab(
+        app: string,
+        command: string,
+        args: unknown[]
+    ): Promise<CommandResult | null> {
+        const instance = frames.tabFor(app, command);
+        const frame =
+            instance === undefined
+                ? undefined
+                : [...mounted].find((one) => one.instance === instance);
+        if (frame === undefined) return null;
+        try {
+            return { ok: true, value: (await frame.command(command, args)) ?? null };
+        } catch (word) {
+            return { ok: false, word: typeof word === 'string' ? word : 'failed:0' };
+        }
+    }
+
+    /**
+     * Open the tab of a panel: the page that has the focus takes a host's, a frame opens its own.
+     */
+    function openPanel(
+        request: Pick<AppPanelRequest, 'viewType' | 'title' | 'entry' | 'preserveFocus'> & {
+            app: string;
+            panel: string;
+        },
+        host: boolean
+    ): void {
+        deps.layout.openView(PANEL_VIEW, {
+            app: request.app,
+            name: request.panel,
+            entry: request.entry,
+            label: request.title,
+            viewType: request.viewType,
+            host
+        });
+    }
+
+    const requests = createRequests({
+        requests: () => deps.entities.appShell()?.requests ?? [],
+        post,
+        notices: deps.notices,
+        pageId: deps.pageId,
+        pageCommand: deps.pageCommand,
+        runInTab,
+        openPanel: (request) => openPanel(request, true)
+    });
+
+    // The values of each app's settings that a frame was last told, so a change of the stored
+    // values reaches the frames of an app as the keys that differ.
+    const told = new Map<string, Record<string, unknown>>();
+    $effect.root(() => {
+        $effect(() => {
+            const stored = appSettingValues(deps.entities.config()?.config ?? {});
+            const all = rows();
+            untrack(() => {
+                for (const row of all) {
+                    const id = appViewId(row.root, row.name);
+                    const now = settingValues(
+                        row.contributes.configuration?.properties ?? [],
+                        stored
+                    );
+                    const before = told.get(id);
+                    told.set(id, now);
+                    if (before === undefined) continue;
+                    const keys = Object.keys(now).filter(
+                        (key) => JSON.stringify(now[key]) !== JSON.stringify(before[key])
+                    );
+                    if (keys.length === 0) continue;
+                    for (const one of mounted) if (one.id === id) one.settings(keys);
+                }
+            });
+        });
+    });
 
     async function fetchStore(id: string): Promise<StoreAnswer | null> {
         try {
@@ -315,10 +473,21 @@ export function createApps(deps: AppsDeps): AppsStore {
             }
             return;
         }
-        if (message.channel === 'app-hosts') return;
+        if (message.channel === 'app-hosts' || message.channel === 'app-shell') return;
         const held = $state.snapshot(message);
         for (const one of [...mounted]) one.deliver(held);
     });
+
+    /**
+     * A panel's tab ended: when the tab is closed and not only drawn again, tell its host, which
+     * fires `onDidDispose`.
+     */
+    function endPanel(app: string, panel: string, instance: string): void {
+        setTimeout(() => {
+            if (deps.layout.holding(instance) !== null) return;
+            void deps.writes.postCommand('/api/app-host', panelDisposed(app, panel, deps.pageId));
+        }, 0);
+    }
 
     async function checkOpen(id: string, root: string, path: string): Promise<OpenResult | null> {
         const query = new URLSearchParams({ app: id, root, path });
@@ -373,6 +542,27 @@ export function createApps(deps: AppsDeps): AppsStore {
             return typeof word === 'string' ? { ok: false, word } : null;
         }
 
+        /** The ids of the requests this frame made and has not seen end. */
+        const asked = new Set<string>();
+
+        const file = options.document;
+        const document =
+            file === null
+                ? null
+                : createDocument({
+                      app: options.id,
+                      title: () => row()?.title ?? options.id,
+                      file,
+                      get,
+                      post: deps.writes.postCommand,
+                      unsaved: deps.unsavedFile,
+                      ask: (question) => ask(options.instance, question),
+                      mark: (flag) => {
+                          if (flag) dirtyTabs.add(options.instance);
+                          else dirtyTabs.delete(options.instance);
+                      }
+                  });
+
         const methods = createMethods({
             alive: () => alive,
             row,
@@ -389,8 +579,11 @@ export function createApps(deps: AppsDeps): AppsStore {
             rootKeys: () => deps.served().map((one) => one.key),
             getState: () => $state.snapshot(appTab(deps.ui.instanceState(options.instance)).value),
             setState: (value) => {
-                const tab = appTab(deps.ui.instanceState(options.instance));
-                deps.ui.setInstanceState(options.instance, appTabState({ ...tab, value }));
+                const held = deps.ui.instanceState(options.instance);
+                deps.ui.setInstanceState(
+                    options.instance,
+                    appTabState({ ...appTab(held), value }, held)
+                );
             },
             getStore: () => cache.read(options.id),
             send: (kind, body) => deps.writes.sendFromApp(body, options.id, kind),
@@ -435,10 +628,68 @@ export function createApps(deps: AppsDeps): AppsStore {
             forwardKey: (init) => {
                 if (options.focused()) options.forwardKey(init);
             },
-            refused
+            refused,
+            execute: async (id, args) => {
+                if (!id.startsWith('oculus.')) {
+                    return appCall('/api/app-host', { action: 'run', command: id, args });
+                }
+                const kind = oculusCommandKind(id);
+                if (kind === null) return { ok: false, word: REFUSED.missing };
+                if (kind === 'closed') return { ok: false, word: REFUSED.closed };
+                return deps.pageCommand(id, args);
+            },
+            register: (kind, id, held) => {
+                const name = row()?.name;
+                if (name === undefined) return refusedWith('id');
+                return frames.register(options.instance, { id: options.id, name }, kind, id, held);
+            },
+            unregister: (kind, id) => frames.unregister(options.instance, kind, id),
+            changed: (kind, id, held) => {
+                if (kind === 'statusItem') {
+                    frames.changed(options.instance, id, held);
+                } else if (asked.has(id)) {
+                    if (held.done === true) requests.withdraw(id);
+                    else {
+                        requests.progress(id, {
+                            message: typeof held.message === 'string' ? held.message : undefined,
+                            percent: typeof held.percent === 'number' ? held.percent : undefined
+                        });
+                    }
+                }
+            },
+            pageExists: async (entry) => {
+                const held = row();
+                if (held === undefined || held.key === '') return false;
+                const address =
+                    appAddress(held.root, held.name, held.key) +
+                    entry.split('/').map(encodeURIComponent).join('/');
+                try {
+                    return (await get(address, { method: 'HEAD' })).ok;
+                } catch {
+                    return false;
+                }
+            },
+            openPanel: (viewType, title, entry, preserveFocus) => {
+                nextPanel += 1;
+                const panel = `f${nextPanel}`;
+                openPanel({ app: options.id, panel, viewType, title, entry, preserveFocus }, false);
+                return panel;
+            },
+            ask: (body: AppRequestBody) => {
+                const made = requests.ask(options.id, body);
+                asked.add(made.id);
+                if (body.kind === 'progress') {
+                    void made.answer.then((result) => {
+                        if (result === null && alive) link.cancel(made.id);
+                    });
+                }
+                return made;
+            },
+            setting: (key) => appCall('/api/app-host', { action: 'settings', key }),
+            document
         });
 
-        const link = connectFrame({
+        const link = (options.connect ?? connectFrame)({
             frame: options.frame,
             methods,
             timeoutS: deps.settings().connectTimeoutS,
@@ -470,18 +721,37 @@ export function createApps(deps: AppsDeps): AppsStore {
             },
             host(method, params) {
                 link.host(method, params);
-            }
+            },
+            name: options.name,
+            command: (id, args) => link.command(id, args),
+            visibility: (visible) => link.visibility(visible),
+            settings: (keys) => link.settings(keys),
+            save: () => link.save(),
+            revert: () => link.revert()
         };
         mounted.add(entry);
         setRun(options.instance, { failed: false });
+        frames.attach(options.instance, options.id);
         // A tab of the app is drawn: the host of an app that names `onTab` starts.
-        void appCall('/api/app-host', { action: 'tab' });
+        void appCall('/api/app-host', { action: 'tab', view: options.view });
         return {
             destroy() {
                 alive = false;
                 mounted.delete(entry);
                 link.destroy();
                 endQuestions(options.instance);
+                for (const id of asked) requests.withdraw(id);
+                frames.drop(options.instance);
+                // An editor drawn while its app was approved and gone because the approval ended
+                // takes its unsaved changes with it, which the reader is told.
+                const left = row();
+                if (file !== null && dirtyTabs.has(options.instance) && left?.approved === false) {
+                    deps.notices.post(t('apps.editor_lost', left.title, file.path), {
+                        tone: 'warning'
+                    });
+                }
+                dirtyTabs.delete(options.instance);
+                if (options.name !== '') endPanel(options.id, options.name, options.instance);
             }
         };
     }
@@ -534,11 +804,39 @@ export function createApps(deps: AppsDeps): AppsStore {
                 return false;
             }
         },
-        srcOf: (row) =>
+        srcOf: (row, entry = row.entry) =>
             !row.approved || row.key === ''
                 ? ''
                 : appAddress(row.root, row.name, row.key) +
-                  row.entry.split('/').map(encodeURIComponent).join('/'),
+                  entry.split('/').map(encodeURIComponent).join('/'),
+        drawn: async (id, view) => {
+            await deps.writes.postCommand(
+                '/api/app-host',
+                { action: 'tab', view },
+                { [APP_HEADER]: appHeaderValue(id) }
+            );
+        },
+        requests,
+        frameItems: () => frames.items(),
+        runInTab,
+        visible: (instance, visible) => {
+            const seen = shown.get(instance);
+            if (seen === visible) return;
+            shown.set(instance, visible);
+            const send = (): void => {
+                if (shown.get(instance) !== visible) return;
+                for (const one of mounted) if (one.instance === instance) one.visibility(visible);
+            };
+            if (visible) send();
+            else setTimeout(send, 0);
+        },
+        dirty: (instance) => dirtyTabs.has(instance),
+        save: async (instance) => {
+            for (const one of mounted) if (one.instance === instance) await one.save();
+        },
+        revert: async (instance) => {
+            for (const one of mounted) if (one.instance === instance) await one.revert();
+        },
         showFolder: (id) => {
             const held = rowOf(id);
             if (held === undefined) return;

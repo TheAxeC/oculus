@@ -68,7 +68,7 @@ import { chained, writeBytesAtomic, type FsWrites } from '../../core/json.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
 import { ENGINE_ROOT, resolveRootPath, type Root } from '../files.ts';
 import { isBinaryFile } from '../source.ts';
-import type { SearchRunner } from '../search.ts';
+import type { SearchRunner } from '../search/search.ts';
 import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
 import { defaultHistoryDir, historyPath, readCopy } from './history.ts';
 import { lspEditFiles } from './lsp-edit.ts';

@@ -7,7 +7,7 @@
     // enables, disables and removes every breakpoint. The list is flat: there is no tree by folder.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import NameField from '$lib/ui/tree/NameField.svelte';
+    import NameField from '$lib/ui/tree/row/NameField.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';

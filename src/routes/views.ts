@@ -3,10 +3,12 @@
 
 import type { Component } from 'svelte';
 import { z } from 'zod';
-import { appViewId } from '$lib/data/helpers/files/apps';
+import { appActive, appViewId } from '$lib/data/helpers/files/apps/apps';
+import { EDITOR_VIEW, PANEL_VIEW, contributedViewId } from '$lib/data/helpers/files/apps/views';
 import type { AppRow } from '$lib/data/model';
 import { collectionKeys } from '$lib/data/snapshot/normalise';
 import { itemsShape, readAs } from '$lib/data/shapes/shapes';
+import { viewOffers, type ViewOffer } from '$lib/state/system/apps/shell/contributions';
 import type {
     RegistryStore,
     ViewProps,
@@ -123,25 +125,116 @@ function registrationOfApp(row: AppRow, index: number): ViewRegistration {
     };
 }
 
+/** The first position of the views apps contribute, after the apps themselves. */
+const CONTRIBUTED_FROM = 1000;
+
+/** Where the first tab of a view of each container kind opens. */
+const DOCKS = { activitybar: 'left', panel: 'bottom', explorer: 'files' } as const;
+
 /**
- * Register one view per app row, each drawn by the one component that exports `appRegistration`,
- * and drop the views of every app the rows do not hold. A tab on a dropped view stays open and
- * draws as an unknown view until the app returns. It runs again on every push of the `apps`
- * channel, which is what keeps a badge and a title following the row.
- *
- * A config push runs registerCollections alone: the factory it calls is the module's
- * `registration` export, which AppFrame does not have, so neither call touches the other's views.
+ * The registration of a view an app contributes: its declared name, the app's glyph, the group
+ * `apps`, a place after the apps in the order of the contributions, the subtitle of its container
+ * (the Files view's name for `explorer`) and the edge or pane its first tab opens in. A view of an
+ * app that does not act stays registered, so its tab draws the app's state, and is not listed.
  */
-export function registerApps(registry: RegistryStore, rows: AppRow[]): void {
-    const module = Object.values(viewModules).find(
-        (one) => (one as { appRegistration?: unknown }).appRegistration !== undefined
+function registrationOfView(
+    offer: ViewOffer,
+    row: AppRow | undefined,
+    index: number
+): ViewRegistration {
+    return {
+        id: contributedViewId(offer.app, offer.view.id),
+        label: 'apps.label',
+        glyph: 'apps.glyph',
+        words: offer.view.name,
+        glyphName: row?.glyph,
+        group: 'apps',
+        order: CONTRIBUTED_FROM + index,
+        listed: row !== undefined && appActive(row),
+        dock: DOCKS[offer.kind],
+        ...(offer.kind === 'explorer'
+            ? { headingKey: 'apps.heading_explorer' }
+            : { heading: offer.containerTitle })
+    };
+}
+
+/** The registrations of the panel and the custom editor tabs, which no catalogue lists. */
+const OPENED: ViewRegistration[] = [
+    {
+        id: PANEL_VIEW,
+        label: 'apps.panel_label',
+        glyph: 'apps.glyph',
+        group: '',
+        order: 0,
+        listed: false
+    },
+    {
+        id: EDITOR_VIEW,
+        label: 'apps.editor_label',
+        glyph: 'apps.glyph',
+        group: '',
+        order: 0,
+        listed: false
+    }
+];
+
+/** The module a registerApps kind is drawn by: the one that exports `appRegistration` as it. */
+function drawerOf(kind: string): ViewModule | undefined {
+    return Object.values(viewModules).find(
+        (one) => (one as { appRegistration?: unknown }).appRegistration === kind
     ) as ViewModule | undefined;
-    if (module === undefined) return;
-    const wanted = rows.map(registrationOfApp);
+}
+
+/** Drop the registrations a component drew that are not among the wanted ones, tabs left open. */
+function dropOthers(
+    registry: RegistryStore,
+    module: ViewModule,
+    wanted: readonly ViewRegistration[]
+): void {
     const ids = new Set(wanted.map((registration) => registration.id));
     for (const registration of registry.views()) {
-        if (registration.component !== module.default) continue;
-        if (!ids.has(registration.id)) registry.dropView(registration.id);
+        if (registration.component === module.default && !ids.has(registration.id)) {
+            registry.dropView(registration.id);
+        }
     }
-    registry.registerComponent(module.default, wanted);
+}
+
+/**
+ * Register one view per app row and one per view an app contributes, and drop the views of every
+ * app the rows do not hold. The app, its webview views, its panels and its custom editors are
+ * drawn by the component that exports `appRegistration` as `frame`, its tree views by the one that
+ * exports `tree`. A tab on a dropped view stays open and draws as an unknown view until the app
+ * returns. It runs again on every push of the `apps` channel, which is what keeps a badge and a
+ * title following the row.
+ *
+ * A config push runs registerCollections alone: the factory it calls is the module's
+ * `registration` export, which these components do not have, so neither call touches the other's
+ * views.
+ */
+export function registerApps(registry: RegistryStore, rows: AppRow[]): void {
+    const frame = drawerOf('frame');
+    const tree = drawerOf('tree');
+    if (frame === undefined || tree === undefined) return;
+    const apps = rows.map(registrationOfApp);
+    const offers = viewOffers(rows.map((row) => ({ id: appViewId(row.root, row.name), row })));
+    const rowOf = (app: string): AppRow | undefined =>
+        rows.find((row) => appViewId(row.root, row.name) === app);
+    const views = offers.map((offer, at) => ({
+        offer,
+        registration: registrationOfView(offer, rowOf(offer.app), at)
+    }));
+    const framed = views.filter(({ offer }) => offer.view.type === 'webview');
+    const wanted = [...apps, ...framed.map(({ registration }) => registration), ...OPENED];
+    const treed = views.filter(({ offer }) => offer.view.type === 'tree');
+    dropOthers(registry, frame, wanted);
+    dropOthers(
+        registry,
+        tree,
+        treed.map(({ registration }) => registration)
+    );
+    registry.registerComponent(frame.default, wanted);
+    registry.registerComponent(
+        tree.default,
+        treed.map(({ registration }) => registration)
+    );
 }

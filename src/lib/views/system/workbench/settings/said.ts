@@ -18,7 +18,7 @@ export function plainText(value: unknown): string {
 }
 
 /** The line saying what a row's default is, or the empty string for a family, which has none. */
-export function defaultWords(row: ConfigRow): string {
+export function defaultWords(row: Pick<ConfigRow, 'control' | 'default'>): string {
     if (row.control === 'family') return '';
     const value = row.default;
     const items = listShape.safeParse(value);

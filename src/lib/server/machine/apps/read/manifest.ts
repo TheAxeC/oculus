@@ -8,8 +8,9 @@
 // the app when its folder is read, before there is anything to approve, so the reader never
 // approves something other than what runs. A refused folder is not offered, registered or served.
 // The rules of what an app may name (the name pattern, the channels, the write kinds, the path
-// segment rule) are `data/helpers/files/apps.ts`'s, which the page applies too. Only a glyph that
-// is not usable leaves the app offered: it is drawn with the default glyph and the finding says so.
+// segment rule) are `data/helpers/files/apps/apps.ts`'s, which the page applies too. Only a glyph
+// that is not usable leaves the app offered: it is drawn with the default glyph and the finding
+// says so.
 //
 // The keys of the host are checked here too: `host` names a recorded file, `files` the folders a
 // machine app's page may read (the root of an entry is the longest shown root key it starts with,
@@ -18,6 +19,7 @@
 // is absent, refused, disabled or unapproved does not refuse the folder: the host waits.
 
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { z } from 'zod';
 import {
     APP_NAME,
@@ -26,12 +28,15 @@ import {
     filesPlace,
     pathSegmentsOpen,
     writeAccess
-} from '../../../../data/helpers/files/apps.ts';
+} from '../../../../data/helpers/files/apps/apps.ts';
 import { findingText, type TextCatalog } from '../../../../data/helpers/finding-text.ts';
 import type { AppRow, Finding } from '../../../../data/model/index.ts';
 import { parseYamlMap, errorLine } from '../../../../data/sources/yaml-file.ts';
+import { below, realPath } from '../../../core/paths.ts';
 import { ENGINE_ROOT } from '../../../files/files.ts';
 import { DEFAULT_ACTIVATION, parseEvent } from './activation.ts';
+import { declaredIds, readContributes } from './contributes/reader.ts';
+import { contributesShape } from './contributes/shape.ts';
 
 /** The version of the bridge this oculus speaks, the only value `bridge` may hold. */
 const BRIDGE = 1;
@@ -88,7 +93,8 @@ export const appShape = z.strictObject({
     files: z.array(z.string()).optional(),
     secrets: z.literal(true).optional(),
     activation: z.array(z.string()).optional(),
-    depends: z.array(z.string().regex(APP_NAME)).optional()
+    depends: z.array(z.string().regex(APP_NAME)).optional(),
+    contributes: contributesShape.optional()
 });
 
 /** What the shape refuses of a manifest: the keys it does not name and the keys that do not fit. */
@@ -100,6 +106,8 @@ function flawsOf(map: Record<string, unknown>): Flaws {
     const read = appShape.safeParse(map);
     if (read.success) return flaws;
     for (const issue of read.error.issues) {
+        // The faults inside `contributes` are the contributions reader's, which names each one.
+        if (issue.path[0] === 'contributes') continue;
         if (issue.code === 'unrecognized_keys') flaws.unknown.push(...issue.keys);
         else if (typeof issue.path[0] === 'string') flaws.bad.add(issue.path[0]);
     }
@@ -122,6 +130,7 @@ type Manifest = Pick<
     | 'secrets'
     | 'activation'
     | 'depends'
+    | 'contributes'
 >;
 
 /** What the reader needs to know about the folder and the install around the manifest. */
@@ -134,8 +143,10 @@ export type ManifestInput = {
     root: string;
     /** The paths of the app's recorded files, for the `entry` and `host` checks. */
     files: ReadonlySet<string>;
-    /** The keys of the roots the file browser shows, which the roots of `files` entries are. */
-    rootKeys: readonly string[];
+    /** The roots the file browser shows, whose keys are the roots of `files` entries. */
+    roots: readonly { key: string; dir: string }[];
+    /** The real paths of the folders closed to every app (reach/private.ts). */
+    privateFolders: readonly string[];
     /** The folders `closed_paths` names, or null while the key is missing or is no list. */
     closedPaths: readonly string[] | null;
     /** The glyph names of config/catalogs/glyphs.yml. */
@@ -186,6 +197,7 @@ const CARRIES: Record<string, (catalog: TextCatalog) => string> = {
     processes: (catalog) => findingText(catalog, 'findings.apps.carries.processes'),
     'app-hosts': (catalog) => findingText(catalog, 'findings.apps.carries.app_hosts'),
     'app-messages': (catalog) => findingText(catalog, 'findings.apps.carries.app_messages'),
+    'app-shell': (catalog) => findingText(catalog, 'findings.apps.carries.app_shell'),
     inbox: (catalog) => findingText(catalog, 'findings.apps.carries.inbox'),
     calendar: (catalog) => findingText(catalog, 'findings.apps.carries.calendar'),
     sessions: (catalog) => findingText(catalog, 'findings.apps.carries.sessions'),
@@ -318,23 +330,40 @@ function foldersOf(
         return [];
     }
     const entries = onceEach(listed, 'files', catalog, refuse);
+    const rootKeys = input.roots.map((root) => root.key);
     for (const entry of entries) {
-        const place = filesPlace(entry, input.rootKeys);
+        const place = filesPlace(entry, rootKeys);
         if (place.root === ENGINE_ROOT) {
             refuse(findingText(catalog, 'findings.apps.files_engine', entry));
         } else if (place.root === '' || (place.path !== '' && !pathSegmentsOpen(place.path))) {
             refuse(findingText(catalog, 'findings.apps.files_shape', entry));
         } else if (input.closedPaths === null || inClosedPaths(place.path, input.closedPaths)) {
             refuse(findingText(catalog, 'findings.apps.files_closed', entry));
+        } else if (inPrivateFolder(place, input)) {
+            refuse(findingText(catalog, 'findings.apps.files_private', entry));
         }
     }
     return entries;
+}
+
+/**
+ * Whether the folder a `files` entry names lies in a folder closed to every app, or is one. A
+ * folder that holds such a folder does not: the app reaches the rest of it, and the closed folder
+ * is refused when a file of it is asked for (reach/open.ts).
+ */
+function inPrivateFolder(place: { root: string; path: string }, input: ManifestInput): boolean {
+    const root = input.roots.find((one) => one.key === place.root);
+    if (root === undefined) return false;
+    const folder = place.path === '' ? root.dir : join(root.dir, place.path);
+    const real = realPath(folder, true) ?? folder;
+    return input.privateFolders.some((closed) => real === closed || below(real, closed));
 }
 
 /** The activation events of a host, each once and each an event the grammar reads. */
 function eventsOf(
     value: unknown,
     hasHost: boolean,
+    declared: { commands: readonly string[]; views: readonly string[] },
     catalog: TextCatalog,
     refuse: (message: string) => void
 ): string[] {
@@ -349,6 +378,11 @@ function eventsOf(
         if (event === 'unknown') refuse(findingText(catalog, 'findings.apps.event_unknown', text));
         else if (event === 'empty') refuse(findingText(catalog, 'findings.apps.event_empty', text));
         else if (event === 'glob') refuse(findingText(catalog, 'findings.apps.event_glob', text));
+        else if (event.kind === 'onCommand' && !declared.commands.includes(event.id)) {
+            refuse(findingText(catalog, 'findings.apps.event_command', text));
+        } else if (event.kind === 'onView' && !declared.views.includes(event.id)) {
+            refuse(findingText(catalog, 'findings.apps.event_view', text));
+        }
     }
     const events = onceEach(listed, 'activation', catalog, refuse);
     return events.length === 0 ? [DEFAULT_ACTIVATION] : events;
@@ -478,7 +512,18 @@ export function readManifest(input: ManifestInput): ManifestRead {
     if (map.secrets !== undefined && map.secrets !== true) {
         refuse(findingText(catalog, 'findings.apps.secrets_value', shown(map.secrets)));
     }
-    const activation = eventsOf(map.activation, map.host !== undefined, catalog, refuse);
+    const contributes = readContributes(
+        map.contributes,
+        { name: input.folder, files: input.files, glyphs: input.glyphs, catalog },
+        { refuse, note }
+    );
+    const activation = eventsOf(
+        map.activation,
+        map.host !== undefined,
+        declaredIds(contributes),
+        catalog,
+        refuse
+    );
     const depends = dependenciesOf(map.depends, input.folder, catalog, refuse);
     for (const name of reads) {
         const access = channelAccess(name);
@@ -515,7 +560,8 @@ export function readManifest(input: ManifestInput): ManifestRead {
             readFolders,
             secrets: map.secrets === true,
             activation,
-            depends
+            depends,
+            contributes
         },
         findings: found,
         bytes

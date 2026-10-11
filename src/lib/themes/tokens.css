@@ -16,9 +16,9 @@
     --chip: #f1f5f9;
     --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
     --accent: #bd5d38;
-    /* Three colours derive.ts computes for every theme and ui/theme.ts sets on the root element:
-       the selected-row surface and the scrollbar's thumb and track. These are the default theme's
-       values, so the first paint, before a theme is applied, draws them as well. */
+    /* Three colours derive.ts computes for every theme and ui/theme/theme.ts sets on the root
+       element: the selected-row surface and the scrollbar's thumb and track. These are the
+       default theme's values, so the first paint, before a theme is applied, draws them as well. */
     --accent-bg: #e6d6d2;
     --scroll-thumb: #8593a7;
     --scroll-track: #fff;
@@ -190,25 +190,25 @@
     --tree-badge-size: 18px;
     --tree-badge-font: 11px;
     --graph-lane: 11px;
-    /* How much of a surface shows over a wallpaper. ui/theme.ts's applyWallpaper sets it on the
-       page while a wallpaper is on; with none the surface is whole. Under `body.wall` each
-       component that paints a surface declares in its own style block what the surface does, and
-       the rule they follow is one translucent layer over the picture and never two, since two such
-       layers read as one nearly solid one: the shell's pane box and the box a view fills paint
-       nothing, a view that draws its text straight into its box asks the box for the translucent
-       surface, and everything the box holds that paints a surface of its own keeps `panel_opacity`
-       of its colour with `panel_blur` of backdrop blur, as the rail and the tab strip do, while a
-       surface inside one of those paints nothing in turn. A strip that stays in place over rows
-       scrolling in the same box keeps a mix of its own (`popover_opacity` of the panel's colour for
-       the Calendar's header rows, `panel_opacity` for a table's sticky header row), a floating
-       surface keeps `popover_opacity`, and the small controls stay solid, being what text is read
-       off. The code spans and blocks of prose drawn on a translucent surface paint nothing, since
-       a blur behind a span that wraps covers the prose between its halves. A blurred surface is
-       the containing block and the stacking context of every fixed thing inside it, so a pane's
-       tab strip carries depth 1 over its pane body and stays under the drag layer at 10, and a
-       tooltip's bubble, a menu's list, the notification centre, toasts and confirm are drawn on the
-       document body through bits-ui's `Portal` instead of inside the surface their control sits
-       on. */
+    /* How much of a surface shows over a wallpaper. ui/theme/theme.ts's applyWallpaper sets it
+       on the page while a wallpaper is on; with none the surface is whole. Under `body.wall`
+       each component that paints a surface declares in its own style block what the surface
+       does, and the rule they follow is one translucent layer over the picture and never two,
+       since two such layers read as one nearly solid one: the shell's pane box and the box a
+       view fills paint nothing, a view that draws its text straight into its box asks the box
+       for the translucent surface, and everything the box holds that paints a surface of its own
+       keeps `panel_opacity` of its colour with `panel_blur` of backdrop blur, as the rail and
+       the tab strip do, while a surface inside one of those paints nothing in turn. A strip that
+       stays in place over rows scrolling in the same box keeps a mix of its own
+       (`popover_opacity` of the panel's colour for the Calendar's header rows, `panel_opacity`
+       for a table's sticky header row), a floating surface keeps `popover_opacity`, and the
+       small controls stay solid, being what text is read off. The code spans and blocks of prose
+       drawn on a translucent surface paint nothing, since a blur behind a span that wraps covers
+       the prose between its halves. A blurred surface is the containing block and the stacking
+       context of every fixed thing inside it, so a pane's tab strip carries depth 1 over its
+       pane body and stays under the drag layer at 10, and a tooltip's bubble, a menu's list, the
+       notification centre, toasts and confirm are drawn on the document body through bits-ui's
+       `Portal` instead of inside the surface their control sits on. */
     --wall-panel: 100%;
     /* The box of an icon in a tree row: a file's Seti icon, the status letter's decoration box and
        the glyph of a row's icon control, at the text's own size. */

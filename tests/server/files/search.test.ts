@@ -1,8 +1,12 @@
-// What server/files/search.ts does with a query and with a request for names: which roots it runs
-// over.
+// What server/files/search/search.ts does with a query and with a request for names: which roots it
+// runs over.
 
 import { describe, expect } from 'vitest';
-import { runNames, runSearch, type RunOutcome } from '../../../src/lib/server/files/search.ts';
+import {
+    runNames,
+    runSearch,
+    type RunOutcome
+} from '../../../src/lib/server/files/search/search.ts';
 import { emptyQuery, type SearchQuery } from '../../../src/lib/data/helpers/search/query.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it } from '../../fixtures/scratch.ts';

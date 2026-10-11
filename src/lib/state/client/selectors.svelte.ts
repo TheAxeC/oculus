@@ -29,7 +29,7 @@ import { byKey } from '../../data/helpers/guards.ts';
 import { HUB_ROOT, collectionsOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
-import type { EditorOptions } from '../../data/helpers/editor.ts';
+import type { EditorOptions } from '../../data/helpers/editor/editor.ts';
 import {
     editorOptions,
     parseRepoSettings,

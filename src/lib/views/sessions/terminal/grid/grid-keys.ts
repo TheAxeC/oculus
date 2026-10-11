@@ -6,8 +6,8 @@
 // on to the workbench's key handler, which runs it. With no session the program gets every key but
 // these.
 
-import { debugKeyOf } from '$lib/state/system/machine/debug/debug';
-import { paletteKeyOf } from '$lib/state/workbench/palette';
+import { debugKeyOf } from '$lib/data/helpers/keys/oculus/debug-keys';
+import { paletteKeyOf } from '$lib/data/helpers/keys/oculus/palette-keys';
 import { findKey, type FindAction } from '../terminal-list';
 
 /** What the handler reads of the grid and of the debugger, each read as the key arrives. */

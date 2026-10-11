@@ -185,6 +185,7 @@ const ROWS: Row[] = [
                     roots: context.setup.fixture.roots,
                     configDir: context.setup.options.configDir,
                     closedPaths: ['secrets'],
+                    privateReal: [],
                     fs: context.setup.options.fs
                 }
             );

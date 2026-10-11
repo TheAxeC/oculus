@@ -128,14 +128,18 @@ const WHOLE_FINDING_KEY = /^(['"])findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+\1$
 
 /**
  * The `findingText` calls whose key is not a whole literal, each with the file and the argument
- * text: the audit's collector words a key its rules named through `sentence(`, and the deck
+ * text: the audit's collector words a key its rules named through `sentence(`, the deck
  * reader and the readers of the `scan:` and `new_project_dir:` values (lib/data/index.ts) word the
- * key their callers name as a whole literal in each `raise(` call, which the reader scan holds.
+ * key their callers name as a whole literal in each `raise(` call, and the readers of an app's
+ * `contributes` and of the settings stored for apps word the key their callers name as a whole
+ * literal in each call, which the reader scan holds.
  */
 const COMPUTED_FINDING_KEYS = [
     { file: 'lib/server/content/audit/rules.ts', key: 'key' },
     { file: 'lib/data/sources/deck/read.ts', key: 'id' },
-    { file: 'lib/data/index.ts', key: 'id' }
+    { file: 'lib/data/index.ts', key: 'id' },
+    { file: 'lib/server/machine/apps/read/contributes/reader.ts', key: 'key' },
+    { file: 'lib/server/machine/apps/read/across/stored.ts', key: 'text' }
 ] as const;
 
 /** Every `findingText` call under `root` whose key is not one whole `findings.` literal. */
@@ -297,6 +301,13 @@ const COMPUTED_PREFIXES = [
             LINT_IDS.filter((id) => id !== 'eslint' && id !== 'writing').map(
                 (id) => `statusbar.lint_tip_not_found_${id}`
             )
+    },
+    {
+        // The subtitle a catalogue lists an app's explorer views under is a catalog key the
+        // registration of those views names.
+        file: 'lib/state/workbench/navigation/registry.ts',
+        start: 'lookup(registration.headingKey)',
+        keys: () => ['apps.heading_explorer']
     },
     {
         // A symbol of the palette's `#` list is worded by its kind, the protocol's own list.

@@ -24,7 +24,7 @@ import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { foldsCase, under } from '../../../src/lib/server/core/paths.ts';
 import { browserRoots } from '../../../src/lib/server/files/roots.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
-import { handleSearch } from '../../../src/lib/server/files/search-routes.ts';
+import { handleSearch } from '../../../src/lib/server/files/search/search-routes.ts';
 import { withheldFolders } from '../../../src/lib/server/machine/lsp/library/rules.ts';
 import { isPrivateFile as isPrivateForServer } from '../../../src/lib/server/machine/lsp/adapters/yaml/machine-file.ts';
 import { isPrivateFile as isPrivateForPage } from '../../../src/lib/state/system/config/config-files.ts';

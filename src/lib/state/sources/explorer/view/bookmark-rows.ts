@@ -55,7 +55,9 @@ export type BookmarkRow = {
     label: string;
     root: string;
     path: string;
-    view: 'document' | 'file' | 'files' | 'source';
+    view: 'document' | 'editor' | 'file' | 'files' | 'source';
+    /** The custom editor of an app the file opens in, for the view `editor`. */
+    editor?: { app: string; viewType: string };
     kind?: Exclude<BookmarkKind, 'file'>;
 };
 
@@ -63,32 +65,40 @@ export type BookmarkRow = {
  * The bookmarks the rail draws: one row per entry whose root is a filled text and whose path is a
  * text, in the order the file holds them. An entry with either missing names nothing and is left
  * out. A folder and a root's top (the empty path) open in the Files view, a file in an apps folder
- * (`holds`) opens as source text, a path that is a page opens in the document view and any other
- * in the file view. An entry the read gave no kind is a file.
+ * (`holds`) opens as source text, a file a `default` custom editor matches (`editorFor`) opens in
+ * that editor, a path that is a page opens in the document view and any other in the file view. An
+ * entry the read gave no kind is a file.
  */
 export function bookmarkRows(
     entries: { title: string; fields: Record<string, unknown>; kind?: BookmarkKind }[],
-    holds: (root: string, path: string) => boolean = () => false
+    opens: {
+        holds: (root: string, path: string) => boolean;
+        editorFor: (root: string, path: string) => { app: string; viewType: string } | null;
+    } = { holds: () => false, editorFor: () => null }
 ): BookmarkRow[] {
     return entries.flatMap((entry) => {
         const ref = readAs(namedRefShape, entry.fields);
         if (ref === null) return [];
         const kind = entry.kind ?? 'file';
         const page = typeOfFile(ref.path).kind === 'html';
+        const editor = kind === 'folder' ? null : opens.editorFor(ref.root, ref.path);
         const view =
             kind === 'folder' || ref.path === ''
                 ? 'files'
-                : holds(ref.root, ref.path)
+                : opens.holds(ref.root, ref.path)
                   ? 'source'
-                  : page
-                    ? 'document'
-                    : 'file';
+                  : editor !== null
+                    ? 'editor'
+                    : page
+                      ? 'document'
+                      : 'file';
         return [
             {
                 label: entry.title,
                 root: ref.root,
                 path: ref.path,
                 view,
+                ...(view === 'editor' && editor !== null ? { editor } : {}),
                 ...(kind === 'file' ? {} : { kind })
             }
         ];

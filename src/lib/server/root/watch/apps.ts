@@ -23,9 +23,10 @@
 // or the process ends) is held here, in memory, as the hash of the manifest approved.
 
 import { existsSync, lstatSync, watch, type FSWatcher } from 'node:fs';
+import { homedir } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
-import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { ROOT_FOLDER, hubLayerPath } from '../../../data/helpers/hub-names.ts';
 import type { AppRow } from '../../../data/model/index.ts';
 import { appsSettings, localFile, type LocalConfig } from '../../../data/sources/config.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
@@ -42,6 +43,7 @@ import { expandHome, type Root } from '../../files/files.ts';
 import { defaultWorkspacesPath, readSaved } from '../../files/fs.ts';
 import { approvedApps, defaultApprovalsPath } from '../../machine/approvals/approvals.ts';
 import { noApps, payloadOf, type AppsHeld } from '../../machine/apps/read/held.ts';
+import { closedToApps } from '../../machine/apps/reach/private.ts';
 import { scanApps } from '../../machine/apps/read/scan.ts';
 import {
     defaultAppsStatePath,
@@ -104,6 +106,8 @@ export type AppsWatchOptions = {
     roots: () => Root[];
     /** The folder the machine apps' stores live in; `~/.oculus/app-data` when absent. */
     appData?: string;
+    /** The home folder; the machine's own when absent. */
+    home?: string;
     /** The record file of the disabled apps; `~/.oculus/apps.json` when absent. */
     stateFile?: string;
     clock?: Clock;
@@ -300,6 +304,13 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
             machine: machineFolder(local, options.engine),
             localFile: localFile(options.engine),
             roots: roots.map((root) => ({ ...root, dir: expandHome(root.dir) })),
+            settingsFile: join(local.hub, hubLayerPath('behavior.yml')),
+            privateFolders: closedToApps({
+                home: options.home ?? homedir(),
+                engine: options.engine,
+                local,
+                roots
+            }),
             config,
             settings,
             port: local.port,

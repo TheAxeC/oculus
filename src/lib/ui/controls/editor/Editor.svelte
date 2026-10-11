@@ -275,9 +275,10 @@
             });
         });
         const said = listed.map(({ id, label, hint }): EditorAction => ({ id, label, hint }));
-        for (const { id, label, key, menu, disabled, run } of actions) {
+        for (const { id, label, key, menu, order, disabled, run } of actions) {
             const keybindings = key === undefined ? [] : [keysCode(loaded.monaco, key)];
-            const group = menu === undefined ? {} : { contextMenuGroupId: menu };
+            const at = order === undefined ? {} : { contextMenuOrder: order };
+            const group = menu === undefined ? {} : { contextMenuGroupId: menu, ...at };
             const precondition = disabled === true ? { precondition: 'false' } : {};
             added.push(
                 made.addAction({

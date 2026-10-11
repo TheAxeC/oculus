@@ -28,6 +28,8 @@ text:
         item_sessions: Live sessions
         item_unsaved: Unsaved tabs
         item_bell: Notifications
+        item_app: '{0} ({1})'
+        app_progress_cancel: 'Cancel {0}'
         host_waiting: waiting
         host_tip: oculus runs on {0} and is served at {1}. Open Status.
         host_waiting_tip: The server has not said which machine it runs on yet. Open Status.

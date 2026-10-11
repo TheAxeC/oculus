@@ -76,6 +76,18 @@ export type OptionNow = { found: boolean; value: unknown };
 /** Where a write of one option lands: the engine's file, or the hub layer's. */
 export type Place = { layer: 'engine' | 'hub'; path: string };
 
+/** Remove a file a write created, and the folders it created above it, innermost first. */
+export function removeMade(path: string, made: readonly string[]): void {
+    rmSync(path, { force: true });
+    for (const folder of made.filter((one) => one !== path).reverse()) {
+        try {
+            rmdirSync(folder);
+        } catch {
+            break;
+        }
+    }
+}
+
 /**
  * The file a write of one key lands in: the hub layer's file when a hub is given and the key is one
  * of the hub list, else the engine's.
@@ -497,18 +509,8 @@ export function takeOutAdded(
     const reason = refusedBy(engine, hub, file, edited, loaded, 'hub');
     if (reason !== null) return { changed: [], refused: [{ field: `${file}:${key}`, reason }] };
     const gone = edited.trim() === '' && made.includes(place.path);
-    if (gone) {
-        rmSync(place.path, { force: true });
-        for (const folder of made.filter((one) => one !== place.path).reverse()) {
-            try {
-                rmdirSync(folder);
-            } catch {
-                break;
-            }
-        }
-    } else {
-        writeTextAtomic(place.path, edited);
-    }
+    if (gone) removeMade(place.path, made);
+    else writeTextAtomic(place.path, edited);
     return {
         changed: [`${file}:${key}`],
         refused: [],

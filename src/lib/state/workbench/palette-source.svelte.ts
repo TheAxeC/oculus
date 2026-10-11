@@ -14,7 +14,7 @@ import { untrack } from 'svelte';
 import type { EntitiesStore, WriteAnswer } from '../shared/stores/shapes.ts';
 import type { FeedsStore } from '../feeds/feeds.svelte.ts';
 import type { PaletteFeeds } from './palette.ts';
-import { tabForKind } from './layout/index.ts';
+import { tabForKind, type AppOpens } from './layout/index.ts';
 import type { Snapshot } from '../../data/model/index.ts';
 import { withSettingsQuery } from '../system/config/typed.ts';
 import type { LayoutStore } from './layout.svelte.ts';
@@ -27,14 +27,14 @@ const LANGUAGE_SETTINGS = '@id:editor.languages';
 
 /**
  * What the palette acts through: the configuration write, the layout, the UI store, the read of a
- * file's kind and whether a file lies in an apps folder, which opens as source text.
+ * file's kind and what opening a file asks of the apps.
  */
 export type PaletteActions = {
     writeConfigValue: Parameters<typeof associateEnding>[0];
     layout: Pick<LayoutStore, 'openView' | 'currentPage' | 'keepPreview' | 'askFocus'>;
     ui: Pick<UiStore, 'instanceState' | 'setInstanceState'>;
     readFileKind: (root: string, path: string) => Promise<{ kind: string }>;
-    holds: (root: string, path: string) => boolean;
+    opens: AppOpens;
 };
 
 /** One command a view offers the palette: the label it is listed by, and what choosing it does. */
@@ -115,7 +115,7 @@ export function createPaletteSource(
 
     async function openFile(root: string, path: string): Promise<string> {
         const type = await actions.readFileKind(root, path);
-        const tab = tabForKind(type.kind, root, path, undefined, actions.holds);
+        const tab = tabForKind(type.kind, root, path, undefined, actions.opens);
         const id = actions.layout.openView(tab.view, tab.state, undefined, { preview: false });
         actions.layout.keepPreview(id);
         actions.layout.askFocus(id);

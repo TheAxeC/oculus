@@ -120,6 +120,7 @@ describe("oculus's own config directory", () => {
             'memories',
             'crt',
             'code_theme',
+            'file_icons',
             'show_tabs',
             'editor_actions',
             'wrap_tabs',
@@ -526,11 +527,12 @@ describe("oculus's own config directory", () => {
             trayOpen: false,
             confirmOpen: false
         };
-        const { initialKeyState, resolveKey } = await import('../../../src/lib/shell/keys/keys.ts');
+        const { initialKeyState, resolveKey } =
+            await import('../../../src/lib/data/helpers/keys/oculus/resolve.ts');
         const bound = letters.filter((letter) => {
             const answer = resolveKey(
                 { key: letter },
-                { direct: [], chords: {} },
+                { chords: {} },
                 quiet,
                 initialKeyState(),
                 1000

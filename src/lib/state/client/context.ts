@@ -25,6 +25,9 @@ import { createRegistry } from '../workbench/navigation/registry.ts';
 import { createAgents } from '../sessions/agents.svelte.ts';
 import { createChanges } from '../sessions/changes.svelte.ts';
 import { createApps } from '../system/apps/apps.svelte.ts';
+import { themeNamed } from '../shared/words/appearance.ts';
+import { createAppShell } from '../system/apps/shell/shell.svelte.ts';
+import { runPageCommand } from '../system/apps/shell/page-commands.ts';
 import { appCommands } from '../system/apps/commands.ts';
 import { createAudit } from '../system/audit.svelte.ts';
 import { createAccounts } from '../life/accounts.svelte.ts';
@@ -167,7 +170,7 @@ export function createClientState(
         }
     );
     const socket = createSocket(entities, writes);
-    const ui = createUi(writes.writeConfigKey, desktop !== undefined);
+    const ui = createUi(writes.writeConfigKey, desktop !== undefined, () => appShell.offers());
     // A tab's close, a pane's close and a page's close forget the state of every instance they take
     // away, and the layout is the one store that knows an instance closed. The project cards an
     // instance draws keep their file trees in records under its id, so the layout is handed a
@@ -451,7 +454,10 @@ export function createClientState(
         layout,
         ui,
         readFileKind: fs.readFileKind,
-        holds: (root, path) => apps.holds(root, path)
+        opens: {
+            holds: (root, path) => apps.holds(root, path),
+            editorFor: (root, path) => appShell.opens.editorFor(root, path)
+        }
     });
     const editorStatus = createEditorStatus();
     const headings = createHeadings();
@@ -644,6 +650,8 @@ export function createClientState(
     // A view whose registration says `unique` is held once: the layout shows the instance a page or
     // float holds instead of opening a second, and the rule reaches it the same way.
     layout.registerUnique((view) => registry.viewFor(view)?.unique === true);
+    // A view whose registration says `dock` opens the first time on an edge or in the Files pane.
+    layout.registerPlaced((view) => registry.viewFor(view)?.dock ?? null);
     const apps = createApps({
         entities,
         writes,
@@ -655,7 +663,44 @@ export function createClientState(
         notices,
         settings: () => appsSettings(entities.config()?.config ?? {}),
         served: servedRoots,
-        projectOf: selectors.projectOf
+        projectOf: selectors.projectOf,
+        pageId,
+        unsavedFile: (root, path) => source.unsavedFile(root, path),
+        pageCommand: (id, args) =>
+            Promise.resolve(
+                runPageCommand(
+                    {
+                        themeNamed: (text) => themeNamed(text, appShell.offers()),
+                        setTheme: ui.setTheme,
+                        crt: ui.crt,
+                        setCrt: ui.setCrt,
+                        hasView: (view) => registry.views().some((one) => one.id === view),
+                        openView: (view) => void layout.openView(view),
+                        projectLabel: (id) => {
+                            const project = selectors.projectOf(id);
+                            return project === null ? null : (project.short ?? project.title);
+                        },
+                        openProject: (id, label) => void layout.openView('project', { id, label })
+                    },
+                    id,
+                    args
+                )
+            )
+    });
+    const appShell = createAppShell({
+        entities,
+        post: writes.postCommand,
+        notices,
+        pageId,
+        requests: apps.requests,
+        frameItems: apps.frameItems,
+        picture: (app, path) => {
+            const row = apps.rowOf(app);
+            return row === undefined ? '' : apps.srcOf(row, path);
+        },
+        runInTab: apps.runInTab,
+        holds: apps.holds,
+        fileOfTab
     });
     const tabScope: TabScopeStore = {
         wrap: (state, shown) =>
@@ -737,6 +782,7 @@ export function createClientState(
         notices,
         registry,
         apps,
+        appShell,
         tabScope
     };
 }

@@ -55,6 +55,7 @@ text:
         kind_new_idea: idea scaffolded
         kind_audit_mute: audit mute
         kind_rail: rail list
+        kind_app_setting: app setting
         kind_config_key: setting
         kind_config_value: list or family
         kind_files: file operation

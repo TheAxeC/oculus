@@ -7,7 +7,7 @@
 // These schemas serve the editor. The readers of their files report their own findings.
 
 import type { z } from 'zod';
-import { codeThemeIds, CODE_TOKENS } from '../../../../helpers/code-themes.ts';
+import { codeThemeIds, CODE_TOKENS } from '../../../../helpers/editor/code-themes.ts';
 import { ENGINE_IN_HUB } from '../../../../helpers/hub-names.ts';
 import type { PortfolioConfig, RawPortfolio } from '../../../../model/index.ts';
 import { registered } from '../../../../prose/languages.ts';
@@ -21,7 +21,8 @@ import { LOCAL_NAME } from '../../local.ts';
 import { catalogOf, configItems, type Source } from '../options.ts';
 import { shapeSchema, type JsonSchema } from '../../../../snapshot/schema/json.ts';
 import { SCHEMA_BLOCK, SCHEMA_DEFINITIONS } from '../../../../snapshot/schema/record.ts';
-import { optionsSchema, type OptionLists } from './options.ts';
+import { APP_SETTINGS_KEY } from '../../../../helpers/files/apps/settings.ts';
+import { appSettingsSchema, optionsSchema, type OptionLists } from './options.ts';
 import { settingsSchema } from './settings.ts';
 import type { NamedSchema } from '../../../../snapshot/schema/set.ts';
 import { SCHEMA_FILES } from '../../../../snapshot/schema/static.ts';
@@ -81,9 +82,11 @@ export function engineSchemas(raw: RawPortfolio, config: PortfolioConfig): Named
     const found: NamedSchema[] = [];
     for (const [file, entries] of Object.entries(catalog)) {
         if (file === LOCAL_NAME) continue;
+        const extra: Record<string, JsonSchema> =
+            file === 'behavior.yml' ? { [APP_SETTINGS_KEY]: appSettingsSchema() } : {};
         found.push({
             name: `config/${file.replace(/\.yml$/, '')}`,
-            schema: optionsSchema(entries, lists),
+            schema: optionsSchema(entries, lists, extra),
             rule: configRule(file)
         });
     }
