@@ -12,7 +12,7 @@ The builder a5bdbb53b40134897 and both reviewers (a11a9c46a17c44a11, acdd14ebdba
 
 ## NOT DONE
 
-- The real entry, case 11: the root `oculus-state` over `~/.oculus` in Axel's workspace and the bookmark `~/.oculus` in the hub's `.oculus/bookmarks.yml` are added at D63's landing, which closes the private folders to apps (Z817), and looked at there.
+Nothing. The real entry, case 11 (the root `oculus-state` over `~/.oculus` in `.oculus/workspaces.json` and the bookmark `~/.oculus` in `.oculus/bookmarks.yml`), was added after the landing commit at Axel's word.
 
 ## What landed
 
@@ -40,7 +40,7 @@ No A/B (no `bench:`).
 
 ## The look
 
-On a scratch oculus at main's head with the step applied (port 8796, HOME under the scratchpad): the star on the hub root's row and its press writing the entry with no `path` line, the section's row with the folder glyph, the root's menu with Remove Bookmark, the rail menu's row and title, a missing entry disabled with its new title, a press from the rail and from the section opening the root's row from a scrolled sub-folder and with the root collapsed, the second press removing the entry. Not looked at: the real `~/.oculus` entry (at D63's landing), the dark theme.
+On a scratch oculus at main's head with the step applied (port 8796, HOME under the scratchpad): the star on the hub root's row and its press writing the entry with no `path` line, the section's row with the folder glyph, the root's menu with Remove Bookmark, the rail menu's row and title, a missing entry disabled with its new title, a press from the rail and from the section opening the root's row from a scrolled sub-folder and with the root collapsed, the second press removing the entry. Not looked at: the dark theme.
 
 ## Agents
 

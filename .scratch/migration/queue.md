@@ -9,7 +9,7 @@ Queued, in order (3 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D67 (`~/.oculus` bookmarked: a bookmark of a root's top; the real entry added at D63's landing), 2026-10-11, the commit "Land D67, a bookmark of a root's top".
+- D67 (`~/.oculus` bookmarked: a bookmark of a root's top, and the `~/.oculus` root and bookmark added), 2026-10-11, the commit "Land D67, a bookmark of a root's top".
 - D66 (the Map's colours, the live-session rows, the float's tab strip), 2026-10-11, the commit "Land D66, the Map colours, live rows and float tab strip".
 - D65 (one kind of project), 2026-10-11, the commit "Land D65, one kind of project".
 - D62 (apps: the host and the bridge), 2026-10-11, d7d1198de.
