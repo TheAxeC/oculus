@@ -1,8 +1,9 @@
 In flight (1 of 6 slots in use):
 - D63 (apps in the shell): building.
 
-Queued, in order (3 steps):
-- D64 (apps in the tools): after D63.
+Queued, in order (4 steps):
+- D68 (workspaces as files): after D63.
+- D64 (apps in the tools): after D63 and D68.
 - Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
 
