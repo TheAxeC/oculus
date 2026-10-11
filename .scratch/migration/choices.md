@@ -4,6 +4,90 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z831 (2026-10-12, D68's brief check, the orchestrator, automode): the wire formats the change adds
+
+- Chosen: `~/.oculus/workspace.json` as `{ open, recent, unsaved: { folders, primary } }`; the workspaces answer `{ open, folders, primary, recent, available }` with `hub` and `missing` flags; a write body with no `root` means the primary and is refused with none; a record's `root` is its hub's name, absent for the primary's; images served as `<hub name>/<file name>`; each memory carries `hub`.
+- Not chosen: (b) left to the builder, the lazy option, which leaves a public shape apps read (`docs/apps.md`) unnamed.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z830 (2026-10-12, D68's brief check, the orchestrator, automode): the workspace's user-visible details
+
+- Chosen: VS Code's: the wallpaper picker under the wallpaper rows as a thumbnail grid grouped by hub with Random and None tiles, through a new `ui/` primitive; the recent list keeps 10, a gone file drawn as missing and taken off when chosen; the unsaved workspace named "Untitled (Workspace)"; a workspace name two hubs share shown with its hub and taken by the palette as `<hub>/<name>`; apps closed from oculus's `config/` alone, today's scope (DESIGN.md:410).
+- Not chosen: (b) each left to the builder, the lazy option.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z829 (2026-10-12, D68's brief check, the orchestrator, automode): a switch to a workspace whose primary sets another port or other state paths
+
+- Chosen: the port and the state paths are read at start only; a switch that would change them keeps the running values and gives a finding naming the key and that a restart takes it.
+- Not chosen: (b) the state paths followed on a switch, which moves the change log and the approvals mid-process and loses undo; (c) the server restarted by a switch, which drops every terminal and running session.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z828 (2026-10-12, D68's brief check, the orchestrator, automode): what each use of `local.hub` becomes
+
+- Chosen: by what the use spans: the primary's folder for what is one per oculus (bookmarks, notes, schedules, machine apps, the portfolio chat, the terminal's default folder, the hub settings layer), with no primary empty sections whose adds say why, the portfolio chat refused, the terminal in the home folder; the project's own hub by its record's name for deposit, LaTeX, HPC, sessions, decks and project files; every workspace folder for search, git and the roots.
+- Not chosen: (b) every use takes the first hub of the workspace, which gives a meaning to folder order that nothing names and sends a project's deposit to another hub's folder; (c) leaving the uses for the builder, the lazy option.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z827 (2026-10-12, D68's brief check, the orchestrator, automode): how the Settings view reads oculus's own config once the `engine` root goes
+
+- Chosen: a read-only route over oculus's `config/` alone gives the view the files' text and the listings of `catalogs/`, `schemas/` and `text/`, as the docs route serves oculus's documents, and the open in the editor goes through a workspace folder that holds the files.
+- Not chosen: (b) the Catalogs, Schemas and Texts groups and the file statuses dropped, which removes a feature; (c) the `engine` root kept for the view, which Axel's ruling removed.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z826 (2026-10-12, D69's brief check, the orchestrator, automode): the status bar's keyboard order and the items that left the row
+
+- Chosen: the right group's markup reversed as VS Code's is, so Tab walks it right to left as in VS Code, and an item that left the row is no tab stop and hidden from screen readers until it comes back.
+- Not chosen: (b) wrapped items left focusable, the lazy option, which focuses an item nobody can see.
+
+Where it applies: D69. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z825 (2026-10-12, D69's brief check, the orchestrator, automode): where Monaco's widgets are drawn
+
+- Chosen: one node on the document body, through `fixedOverflowWidgets`, `overflowWidgetsDomNode` and a layout-service override at every create, so the right-click menu, the hover and the suggest list are whole and above every float, as oculus's own menus are drawn through `Portal` (DESIGN.md:246).
+- Not chosen: (b) the blur moved off every editor ancestor onto a pseudo-element, which leaves the hover and the suggest list cut by `overflow` in every theme and the menu under any float over it; (c) Monaco's options alone, the lazy option, which leaves the menu cut under the wallpaper.
+
+Where it applies: D69. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z824 (2026-10-12, D68's preparation, the orchestrator, automode): the memories and wallpaper keys
+
+- Chosen: `memories_dir` and `wallpaper_dir` in each hub's `sources.yml`, named as `linkedin_dir` and `new_project_dir` are; the choice `wallpaper.image` in the primary's appearance layer as `<hub>/<file>`, `random` or empty; thumbnails drawn small in the browser from the image route.
+- Not chosen: (b) `memories: { dir }` and `wallpaper: { dir }` maps in `sources.yml`, a second shape for a folder key in that file; (c) server-side thumbnails through `sharp`, a native dependency for thirteen images.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z823 (2026-10-12, D68's preparation, the orchestrator, automode): what is one per oculus
+
+- Chosen: bookmarks, notes, schedules and apps are the primary's; every `local.yml` key other than `accounts`, `calendars` and `mail` is read from the primary's file only and a finding in another hub's; with no primary they take their defaults and the adds say why.
+- Not chosen: (b) bookmarks and apps joined over every hub, which needs a rule for where each new one is written and for apps repeated across hubs; the lazy option is leaving them on the old hub path.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z822 (2026-10-12, D68's preparation, the orchestrator, automode): where the open workspace is kept, and Save Workspace As
+
+- Chosen: `~/.oculus/workspace.json` holds the open file's path, the recent list and an unsaved workspace's folders, written by oculus alone; with none, an empty unsaved workspace (VS Code's empty Explorer); Save Workspace As writes `.oculus/workspaces/<name>.yml` into the primary, else the first hub, refused with no hub or over an existing file.
+- Not chosen: (b) keep the default root `~/workspace`, a hidden folder the ruling ends; (c) no unsaved workspace, which leaves a machine with no hub unable to add its first folder.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z821 (2026-10-12, D68's preparation, the orchestrator, automode): ids and served names once `hub` goes
+
+- Chosen: the primary's files are served under its folder name and its records keep bare ids; every other hub's records, and every hub's when there is no primary, carry `<name>:`; a saved page naming `hub:` or `engine:` shows that view as unknown (no migration code).
+- Not chosen: (b) every hub prefixed always, which renames every id of Axel's portfolio; (c) the first listed hub bare, which makes the folder order change ids.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z820 (2026-10-12, D68's preparation, the orchestrator, automode): the workspace file's shape
+
+- Chosen: the list key is `folders`, VS Code's, each `{ name, path }`, with `primary: <name>` at the top level.
+- Not chosen: (b) `roots:` with `key` and `dir`, today's words, which Axel's ruling replaced by `name` and `path`; (c) a `primary: true` flag on a folder, which lets two folders claim it.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
 ## Z819 (2026-10-12, D63's landing, the orchestrator, automode): a step for two clipping defects
 
 - Chosen: one new step D69, after D63 and beside D68, before Q72: the source and diff editors' right-click menu and pop-up widgets drawn whole over the page, never cut at the pane's edge; a crowded status bar never cuts an item mid-word, the items that give way following VS Code's status bar as read from its source in D69's /spec.
