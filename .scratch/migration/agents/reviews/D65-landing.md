@@ -4,7 +4,7 @@ Position: the oculus migration plan; D65, one kind of project, landed. Nothing i
 
 ## Open items
 
-- Open item 52: the six repository manifests outside the hub are not rewritten. D65's brief has the orchestrator rewrite `~/workspace/{cathedra,game-engine,ordo,scotoma,officium,youtube-downloader}/.oculus/project.yml` at landing to the shape of ruling 47 (G): each `status: <word>` line becomes `type: active`, `tier: personal` and `status:` with `chips: [<chip>]`, the chips cathedra `paused`, game-engine (Missal) `paused`, ordo `building`, scotoma `paused`, officium `running`, youtube-downloader `finished`. The runner's permission check refused the write as a change to shared resources outside this repository. Until they are rewritten, each of the six is two findings ("key tier is required", "key type is required") and on no board. game-engine's manifest also holds an uncommitted change of Axel's (`waiting-on: "cathedra"` to `waiting-on: [cathedra]`). Options: (a) Axel allows the write and the orchestrator rewrites and commits each in its repository, game-engine's together with his change (recommended); (b) Axel edits the six lines himself; (c) leave them, the six off the boards (the lazy option).
+None. Open item 52 (the six repository manifests outside the hub) was ruled (a) by Axel after the landing; the six were rewritten and committed in their repositories (cathedra 75a7eeca, game-engine 41c9b69, ordo 2c945eb, scotoma 6aca8ee, officium 2690f9f, youtube-downloader 740b7ca).
 
 ## The check before the landing
 
@@ -12,7 +12,6 @@ The runner's agent listing (ListAgents) shows no agent of the step: the builder 
 
 ## NOT DONE
 
-- The six repository manifests outside the hub (open item 52).
 - Not looked at: the Focus lanes with a personal project, the dark theme, the Edit Manifest form.
 
 ## What landed

@@ -1,6 +1,6 @@
 In flight (0 of 6 slots in use): none.
 
-Paused (Axel, 2026-10-11: pause once D62 and D65 have landed; both have). Nothing below starts until he says to go on. Open item 52: the six repository manifests outside the hub, whose rewrite the runner refused.
+Paused (Axel, 2026-10-11: pause once D62 and D65 have landed; both have). Nothing below starts until he says to go on.
 
 Queued, in order (4 steps):
 - D63 (apps in the shell): after D62.
