@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
 - D63 (apps in the shell): building.
-- D67 (`~/.oculus` bookmarked): building; it lands after D63, and its landing adds the root `oculus-state` and the bookmark.
+- D67 (`~/.oculus` bookmarked): repair round 1; it lands after D63, and its landing adds the root `oculus-state` and the bookmark.
 
 Queued, in order (3 steps):
 - D64 (apps in the tools): after D63.

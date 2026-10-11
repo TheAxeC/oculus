@@ -44,10 +44,12 @@ dispatch:   # steps in flight, up to six (Z632)
   base: c8b4da890
   launched: 2026-10-11
   report: agents/reviews/D67-report.md
+  builder_usage: 303,674 tokens, 96 tool uses, 16.7 min
+  reviewer_report: agents/reviews/D67-refuter.md (a11a9c46a17c44a11, claude-opus-5-5, 235,203 tokens, 84 tool uses, 21.0 min)
   brief_check: agents/reviews/D67-brief-check.md (a47181bc2fd7feaf6, claude-opus-5-5, 192,390 tokens, 86 tool uses, 9.0 min; closed in the brief by the orchestrator under "Closed")
   shared_paths: D63's brief names whole folders that hold D67's files, `src/lib/views/shared/explorer/` (row-menu.ts, FileRow.svelte, bookmark-actions.ts, opening.ts), `src/lib/shell/` (rail/rail.ts), `config/text/` (ui.yml, views/sources/files.yml), HELP.md, DESIGN.md and docs/diagrams/. The merge is simple: D67 lands after D63 (its landing needs D63's closure of `~/.oculus` to apps), its changes are a few lines in each file, a file D63 moves when it splits a full folder is followed by the cherry-pick's rename detection, D63's HELP.md changes are at lines 91, 258, 300 and 432 and the apps sections while D67's is at 292, and a conflict at landing is resolved by the orchestrator; the regenerated diagrams are written again on main after D67's cherry-pick.
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D67-round1.md, sent 2026-10-11)
 ```
 
 ## The standing demands (from Axel, in force)
