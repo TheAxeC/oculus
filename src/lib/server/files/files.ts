@@ -16,18 +16,18 @@
 // Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
 // (`inside`, `realPath`).
 
-import { createReadStream, statSync } from 'node:fs';
+import { createReadStream, existsSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import mime from 'mime';
 import { z } from 'zod';
 import { inAppsFolder } from '../../data/helpers/files/apps.ts';
-import { ENGINE_ROOT, HUB_ROOT, REPOSITORY_TIERS } from '../../data/helpers/hub-names.ts';
+import { ENGINE_ROOT, HUB_ROOT, MANIFEST, ROOT_FOLDER } from '../../data/helpers/hub-names.ts';
 import { findingText } from '../../data/helpers/finding-text.ts';
 import { folderOnDisk } from '../../data/places/folder-on-disk.ts';
 import { configDir, textCatalog } from '../../data/sources/config.ts';
-import type { Finding, Project, RepositoryTier } from '../../data/model/index.ts';
+import type { Finding, Project } from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
 
 /**
@@ -51,11 +51,12 @@ export function projectDirectory(
 
 /**
  * One directory the server may serve files from: the key a URL names it by, and where it is. A root
- * marked `hub` is built as a hub of its own and merged into the portfolio. A root with a `tier` is
- * a repository read as a research project of the first hub; `personal` and no `tier` read the same,
- * as a side project, so the type holds no second spelling of it.
+ * marked `hub` is built as a hub of its own and merged into the portfolio. A root whose
+ * `.oculus/project.yml` is there is a project of the first hub with the key for its id, unless
+ * `noProject` is set, which `readRoots` does when the key or the directory forbids it and which
+ * leaves the root served and read by nothing else.
  */
-export type Root = { key: string; dir: string; hub?: true; tier?: RepositoryTier };
+export type Root = { key: string; dir: string; hub?: true; noProject?: true };
 
 /** Anything mime does not name is bytes: the browser is told nothing it cannot check. */
 const FALLBACK = 'application/octet-stream';
@@ -148,8 +149,8 @@ export const rootShape = z.object({
 }) satisfies z.ZodType<Root>;
 
 /**
- * One entry of the `roots:` list: a map, whose `key`, `dir`, `hub` and `tier` are checked one at a
- * time.
+ * One entry of the `roots:` list: a map, whose `key`, `dir` and `hub` are checked one at a time and
+ * whose `tier` is named when it is there.
  */
 const rootEntryShape = z.looseObject({
     key: z.unknown().optional(),
@@ -162,10 +163,10 @@ const rootEntryShape = z.looseObject({
 const rootListShape = z.array(z.unknown());
 
 /**
- * The keys a hub root or a research repository may not carry: each is a prefix or a fixed root the
- * merged ids already use.
+ * The keys a hub root or a repository project may not carry: each is a fixed root the merged ids
+ * already use.
  */
-const RESERVED_HUB_KEYS: readonly string[] = ['side', 'root', HUB_ROOT, ENGINE_ROOT];
+const RESERVED_HUB_KEYS: readonly string[] = [HUB_ROOT, ENGINE_ROOT];
 
 /**
  * A directory's place on disk, links followed, or the directory as written when it is not there.
@@ -204,44 +205,137 @@ function hubRefusal(
     return null;
 }
 
+/** Whether a directory holds the manifest that makes it a project. */
+function holdsManifest(dir: string): boolean {
+    return existsSync(join(dir, ROOT_FOLDER, MANIFEST));
+}
+
+/** Why a root that holds a manifest is no project: the three reasons `projectRefusalKind` names. */
+type ProjectRefusal = 'reserved_key' | 'is_first' | 'same_dir';
+
 /**
- * The sentence saying why an entry's `tier` is read as none, or null when `tier` is honoured: a
- * research tier whose key holds a colon, a slash or whitespace or is reserved (the key becomes a
- * project's id), whose directory is, lies inside or holds the first hub, or whose real directory an
- * earlier root with a research tier has. `taken` are the roots listed above it.
+ * The reason a root that holds a manifest is no project, or null when it is one: a key that holds
+ * a colon, a slash or whitespace or is reserved (the key becomes the project's id), a directory
+ * that is, lies inside or holds the first hub, or whose real directory an earlier project root
+ * has. `taken` are the roots listed above it.
  */
-function tierRefusal(
+function projectRefusalKind(
+    key: string,
+    dir: string,
+    first: string,
+    taken: readonly Root[]
+): ProjectRefusal | null {
+    if (RESERVED_HUB_KEYS.includes(key) || /[:/\s]/.test(key)) return 'reserved_key';
+    const place = placeOf(dir);
+    const home = placeOf(first);
+    if (inside(place, home) || inside(home, place)) return 'is_first';
+    if (taken.some((one) => isProject(one) && placeOf(one.dir) === place)) return 'same_dir';
+    return null;
+}
+
+/** The sentence of each reason a root holding a manifest is no project. */
+function refusalText(catalog: Record<string, string>, kind: ProjectRefusal | 'in_hub'): string {
+    switch (kind) {
+        case 'reserved_key':
+            return findingText(catalog, 'findings.roots.project_reserved_key');
+        case 'is_first':
+            return findingText(catalog, 'findings.roots.project_is_first');
+        case 'same_dir':
+            return findingText(catalog, 'findings.roots.project_same_dir');
+        case 'in_hub':
+            return findingText(catalog, 'findings.roots.project_in_hub');
+    }
+}
+
+/** The sentence of `projectRefusalKind`, or null when the root can be a project. */
+function projectRefusal(
     catalog: Record<string, string>,
     key: string,
     dir: string,
     first: string,
     taken: readonly Root[]
 ): string | null {
-    if (RESERVED_HUB_KEYS.includes(key) || /[:/\s]/.test(key)) {
-        return findingText(catalog, 'findings.roots.tier_reserved_key');
-    }
-    const place = placeOf(dir);
-    const home = placeOf(first);
-    if (inside(place, home) || inside(home, place)) {
-        return findingText(catalog, 'findings.roots.tier_is_first');
-    }
-    if (taken.some((one) => one.tier !== undefined && placeOf(one.dir) === place)) {
-        return findingText(catalog, 'findings.roots.tier_same_dir');
-    }
-    return null;
+    const kind = projectRefusalKind(key, dir, first, taken);
+    return kind === null ? null : refusalText(catalog, kind);
+}
+
+/** Whether a project root's directory is, lies inside or holds the directory of a hub root. */
+function overlapsHub(root: Root, roots: readonly Root[]): boolean {
+    const place = placeOf(root.dir);
+    return roots
+        .filter((one) => one.hub === true)
+        .map((one) => placeOf(one.dir))
+        .some((hub) => inside(place, hub) || inside(hub, place));
+}
+
+/**
+ * The roots a reader added in the file browser that hold a manifest and cannot be a project, each
+ * with the reason `readRoots` refuses a configured root for: the key, a directory that overlaps
+ * the first hub or a hub root, or one a root above it already reads. `configured` are the roots
+ * listed before them.
+ */
+function addedRefusals(
+    configured: readonly Root[],
+    added: readonly Root[],
+    first: string
+): { root: Root; kind: ProjectRefusal | 'in_hub' | null }[] {
+    const listed: Root[] = [...configured];
+    return added.map((one) => {
+        const kind = !holdsManifest(one.dir)
+            ? null
+            : (projectRefusalKind(one.key, one.dir, first, listed) ??
+              (overlapsHub(one, listed) ? 'in_hub' : null));
+        const root: Root = kind === null ? one : { ...one, noProject: true };
+        listed.push(root);
+        return { root, kind };
+    });
+}
+
+/**
+ * The roots a reader added in the file browser, each marked `noProject` that holds a manifest and
+ * cannot be a project (`addedRefusals`). The manifest of an added root is read as a project of the
+ * first hub exactly when a configured root's is.
+ */
+export function markAddedProjects(
+    configured: readonly Root[],
+    added: readonly Root[],
+    first: string
+): Root[] {
+    return addedRefusals(configured, added, first).map((one) => one.root);
+}
+
+/**
+ * A finding on the saved workspaces file `file` for each root a reader added that holds a
+ * manifest and is no project, in the words a configured root refused for the same reason gets, so
+ * a folder added to the workspace never drops off the boards without saying why.
+ */
+export function addedProjectFindings(
+    configured: readonly Root[],
+    added: readonly Root[],
+    first: string,
+    file: string,
+    catalog: Record<string, string>
+): Finding[] {
+    return addedRefusals(configured, added, first).flatMap(({ root, kind }) =>
+        kind === null ? [] : [{ file, key: root.key, message: refusalText(catalog, kind) }]
+    );
+}
+
+/** Whether a root is read as a project: no hub, none refused, and its manifest is there. */
+function isProject(root: Root): boolean {
+    return root.hub !== true && root.noProject !== true && holdsManifest(root.dir);
 }
 
 /**
  * The `roots:` list of the merged sources.yml (the hub layer's list), and a finding for every entry
  * that is not usable: one that is not a pair of strings, a key two entries share, a directory that
- * is not on this machine, a `hub: true` that cannot be honoured and a `tier` that cannot be
- * honoured. A finding is reported and never repaired, so a root whose directory has moved shows up
- * in the Findings view rather than as a tab that silently serves nothing. A root whose `hub` is not
- * true, or whose `hub: true` is refused, is a plain root, and so is one whose `tier` is refused or
- * is `personal`. The `tier` of a plain root, a refused hub mark included, is read by the same
- * rules; a root that stands as a hub takes no `tier`, and a `tier` on it is a finding. `first` is
- * the first hub's directory, which no hub root and no research repository may overlap, and no
- * research repository may overlap a hub root that stands.
+ * is not on this machine, a `hub: true` that cannot be honoured, a `tier` key (an entry takes key,
+ * dir and hub only, and the entry is read without it) and a root holding a project manifest that
+ * cannot be a project. A finding is reported and never repaired, so a root whose directory has
+ * moved shows up in the Findings view rather than as a tab that silently serves nothing. A root
+ * whose `hub` is not true, or whose `hub: true` is refused, is a plain root. `first` is the first
+ * hub's directory, which no hub root and no project root may overlap, and no project root may
+ * overlap a hub root that stands.
  */
 export function readRoots(
     config: Record<string, unknown>,
@@ -307,6 +401,13 @@ export function readRoots(
             continue;
         }
         const root: Root = { key: key.data, dir };
+        if (entry.data.tier !== undefined) {
+            findings.push({
+                file,
+                key: key.data,
+                message: findingText(catalog, 'findings.roots.tier_key')
+            });
+        }
         if (realPath(dir) === null) {
             findings.push({
                 file,
@@ -331,58 +432,28 @@ export function readRoots(
                     message: findingText(catalog, 'findings.roots.hub_not_boolean')
                 });
             }
-            if (root.hub === true) {
-                // A hub is a root of its own and has no tier to read.
-                if (entry.data.tier !== undefined) {
-                    findings.push({
-                        file,
-                        key: key.data,
-                        message: findingText(catalog, 'findings.roots.tier_on_hub')
-                    });
-                }
-            } else {
-                // A root that is no hub, a refused hub mark included, has its `tier` read by the
-                // rules of any plain root.
-                const tier = tierOf(entry.data.tier);
-                if (tier === null) {
-                    findings.push({
-                        file,
-                        key: key.data,
-                        message: findingText(catalog, 'findings.roots.tier_unknown')
-                    });
-                } else if (tier !== undefined && tier !== 'personal') {
-                    const refusal = tierRefusal(catalog, key.data, dir, first, roots);
-                    if (refusal === null) root.tier = tier;
-                    else findings.push({ file, key: key.data, message: refusal });
+            if (root.hub !== true && holdsManifest(dir)) {
+                const refusal = projectRefusal(catalog, key.data, dir, first, roots);
+                if (refusal !== null) {
+                    root.noProject = true;
+                    findings.push({ file, key: key.data, message: refusal });
                 }
             }
         }
         roots.push(root);
     }
-    // A research tier never reads the folder of a hub root that stands, whichever of the two the
+    // A project root never reads the folder of a hub root that stands, whichever of the two the
     // list names first, so one folder is never both a hub and a project of the first hub.
     for (const root of roots) {
-        if (root.tier === undefined) continue;
-        const place = placeOf(root.dir);
-        const hubs = roots.filter((one) => one.hub === true).map((one) => placeOf(one.dir));
-        if (!hubs.some((hub) => inside(place, hub) || inside(hub, place))) continue;
-        delete root.tier;
+        if (!isProject(root) || !overlapsHub(root, roots)) continue;
+        root.noProject = true;
         findings.push({
             file,
             key: root.key,
-            message: findingText(catalog, 'findings.roots.tier_in_hub')
+            message: findingText(catalog, 'findings.roots.project_in_hub')
         });
     }
     return { roots, findings };
-}
-
-/**
- * The tier a `tier` value names: one of the three research tiers, `personal`, nothing when the
- * entry has no `tier`, and null for any other value, text or not.
- */
-function tierOf(value: unknown): RepositoryTier | 'personal' | null | undefined {
-    if (value === undefined || value === 'personal') return value;
-    return REPOSITORY_TIERS.find((one) => one === value) ?? null;
 }
 
 /** The roots among the given ones that are hubs, in the order of `roots:`. */

@@ -46,8 +46,7 @@ export const RESOURCES: Record<string, Resource> = frozen({
 export function fixtureProject(over: Partial<Project> = {}): Project {
     return {
         id: 'one',
-        tier: 'active',
-        ghost: false,
+        tier: 'projects',
         title: 'One',
         chips: [],
         results: [],

@@ -288,16 +288,28 @@ text:
             name: latex {0} {1}/{2}
         manifest_write:
             group: 'the field is a group; set its children, or clear it whole'
+            id_read_only: 'the id is the name of the folder, or for a repository the key of its roots: entry; rename that to change it'
             idea_exists: '{0}/{1} is already there'
-            idea_folder: not a folder name
+            idea_folder_empty: a new project needs a folder
+            idea_folder_in_project: 'the folder {0} lies inside the project in {1}'
+            idea_folder_outside: 'the folder {0} is not inside a folder the hub scans for projects'
             idea_id: an id is lower case letters, digits and hyphens
+            idea_id_taken: 'a project with the id {0} already exists'
+            idea_next_archive: Scope the idea; cited-novelty lit check; decide go/no-go.
+            idea_next_coauthor: Scope the idea; cited-novelty lit check; decide go/no-go.
+            idea_next_projects: Scope the idea; cited-novelty lit check; decide go/no-go.
+            idea_no_folder: 'the hub names no folder for new projects of the tier {0}'
+            idea_status_archive: 'New idea: scope and novelty check open.'
+            idea_status_coauthor: 'New idea: scope and novelty check open.'
+            idea_status_personal: New project.
+            idea_status_projects: 'New idea: scope and novelty check open.'
+            idea_tier: 'a new project cannot have the tier {0}'
             idea_unparsed: the scaffold did not parse; nothing was written
             list_not_strings: the list holds something not a string
             map_field: a map field is not written by the form
             not_in_hub: the manifest is not inside the hub
             not_in_schema: the manifest schema does not name the field
             not_list: the value is not a list
-            not_own_file: "the manifest is not the side project's own project.yml"
             not_repository_file: the manifest is not the .oculus/project.yml of the repository
             not_text: the value is not text
             read_only: the field is read-only

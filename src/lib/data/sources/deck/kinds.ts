@@ -30,8 +30,8 @@ export type DeckProject = {
     folder: string;
     /** The root and folder of the repository the project is read from, when it is in one. */
     repository?: { root: string; dir: string };
-    /** The scan tier the project is in. */
-    tier: string;
+    /** The manifest's `tier`, absent when it names none of the five. */
+    tier?: string;
     chips: string[];
     short: string;
     title: string;

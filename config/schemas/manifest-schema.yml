@@ -1,6 +1,6 @@
 # ===========================================================================
 # manifest-schema.yml
-# oculus's own configuration - the project.yml edit form as data: which fields there are, what each
+# oculus's own configuration, the project.yml edit form as data: which fields there are, what each
 # one is called, which widget edits it, which section it sits in, and where a widget's choices come
 # from. Merged with the other config/*.yml by loadConfig(); `manifest_schema` is its top-level key.
 # ===========================================================================
@@ -8,8 +8,7 @@
 
 # The form. `sections:` names the seven groups, in the order they are drawn; a field's `section:` is
 # one of those names. `type:` is the widget:
-#   readonly  shown, never written (id and tier are the folder's; `type` is the tier's on a flat scan
-#             rule, and the write refuses all three)
+#   readonly  shown, never written (`id` is the folder's name, and the write refuses it)
 #   text      one line | textarea several lines | lines one list item per line
 #   select    one of a list | chips several of a list, with a filter | tags several free strings
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
@@ -32,9 +31,9 @@ manifest_schema:
     Outcome: Outcome
     "Overrides (rare)": "Overrides (rare)"
   fields:
-    id:            { label: "id", type: readonly, section: Core, help: "The project's folder name. Set by the folder the project is in; rename the folder to change it." }
-    tier:          { label: "Tier", type: readonly, section: Core, help: "Which board the project is on: projects, software, archive or coauthor. Set by the folder the project is in; move the folder to change it." }
-    type:          { label: "Type / outcome", type: select, from: vocab.type_order, section: Core, help: "On the Projects board, the project's stage (active, manuscript or idea); on Archive and Coauthor, how it ended (published, nogo, dropped and so on); on Software, software. The stage follows the folder the project is in, so move the folder rather than pick another stage here." }
+    id:            { label: "id", type: readonly, section: Core, help: "The project's folder name, or for a repository the key of its roots: entry. Never set by a write: rename the folder or the key to change it." }
+    tier:          { label: "Tier", type: select, options: [projects, coauthor, archive, personal, software], required: true, section: Core, help: "Which board the project is on: projects, coauthor, archive or personal; software is on no board. The project is shown with a finding when the key is missing or is not one of these five." }
+    type:          { label: "Type / outcome", type: select, from: vocab.type_order, required: true, section: Core, help: "The project's stage (active or idea) on the Projects and Personal boards; how it ended (published, nogo, dropped and so on) on Archive and Coauthor; software on a software project. The folder the project is in decides neither the tier nor the type." }
     short:         { label: "Short handle", type: text, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
     title:         { label: "Title", type: text, section: Core, help: "The full title of the project or paper." }
     lead:          { label: "Lead (first author)", type: text, section: Core, help: "The first author or the person who leads the project." }
@@ -45,6 +44,7 @@ manifest_schema:
     priority:      { label: "Priority", type: select, from: vocab.priority_levels, section: Core, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }
     pin:           { label: "Pin to top", type: checkbox, section: Core, help: "Tick to keep the card at the top of its board. Search and filters still hide it when it does not match." }
     venue_id:      { label: "Venue", type: select, from: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
+    links:         { label: "Links", type: tags, section: Core, help: "Web addresses or paths that belong to the project, one per entry." }
     year:          { label: "Year", type: text, section: Core, help: "The year of the paper or of the project, as a whole number." }
     eli5:          { label: "ELI5", type: textarea, section: Content, help: "The project in two plain sentences for a reader outside the field." }
     next:          { label: "Next", type: textarea, section: Content, help: "The next action on the project, the first thing to do when it is picked up again." }
@@ -58,7 +58,7 @@ manifest_schema:
     "waiting-on":  { label: "Waiting on", type: tags, from: [people, projects], section: Connections, help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
     related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "Other projects this one builds on or feeds, picked from the project list." }
     datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "The datasets this project uses, picked from the data list." }
-    deadline:      { label: "Deadline", type: date, section: Dates, help: "The day the next deadline falls on; it shows on the Focus radar while the project is live." }
+    deadline:      { label: "Deadline", type: date, section: Dates, help: "The day the next deadline falls on; it shows on the Focus radar until the project carries a chip that meets it, such as submitted. Text that is not a date shows as open work." }
     "followup.do": { label: "Follow-up: do", type: textarea, section: Dates, help: "A note of something to do later; it shows in the Follow-ups group on the Focus board." }
     "followup.after": { label: "Follow-up: not until", type: date, section: Dates, help: "Leave empty to show the note now, or pick the date before which it stays hidden." }
     snooze:        { label: "Snooze until", type: date, section: Dates, help: "Pick a date to keep this project off the ticker until then; clear it to bring the project back." }

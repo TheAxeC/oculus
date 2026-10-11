@@ -2,10 +2,10 @@
 // defines one, each scanned by the spec of its kind (specs.ts, scan.ts).
 //
 // The files are the ones the build reads. The hub's data files and the manifests come as the texts
-// `runSchemas` read, so no file is read twice; the side-project manifests inside the hub, the
-// decks (the portfolio deck's `present.yml` and each project's `present/present.yml`) and oculus's
-// own configuration files that carry a reference (`behavior.yml`, `sources.yml` and the others the
-// options catalog describes, and `catalogs/vocab.yml`) are read here. A file under the hub's
+// `runSchemas` read, so no file is read twice; the decks (the portfolio deck's `present.yml` and
+// each project's `present/present.yml`) and oculus's own configuration files that carry a
+// reference (`behavior.yml`, `sources.yml` and the others the options catalog describes, and
+// `catalogs/vocab.yml`) are read here. A file under the hub's
 // `secrets` folder, `config/local.yml` and a repository's `.oculus/project.yml` outside the hub
 // are never read.
 //
@@ -22,7 +22,6 @@ import type {
     PortfolioConfig,
     RawDeck,
     RawManifest,
-    RawPersonal,
     RegistryName,
     SchemaField
 } from '../../model/index.ts';
@@ -56,7 +55,6 @@ export type ReferenceSources = {
     /** The texts the schema run read. */
     read: ReadTexts;
     manifests: RawManifest[];
-    personal: RawPersonal[];
     /** The projects' own decks, which the build found. */
     decks: Record<string, RawDeck>;
     /** The files of oculus's own configuration that name a hub key, read from the catalog. */
@@ -140,16 +138,11 @@ function hubScans(
     const manifest = manifestRecord(manifestFields(config.schema));
     const ids = new Map(sources.manifests.map((one) => [one.file, one.id]));
     for (const file of sources.read.manifests) {
+        if (!inside(file.file, hub)) continue;
         const id = ids.get(file.file);
         const defines =
             id === undefined ? { kind: 'none' as const } : { kind: 'manifest' as const, id };
         add(posix(relative(hub, file.file)), file.text, { spec: manifest, defines });
-    }
-    const side = schemaRecord(schemaFile(config.merged, 'side_project_schema'));
-    for (const one of sources.personal) {
-        if (!inside(one.file, hub)) continue;
-        const text = read(one.file);
-        if (text !== undefined) add(posix(relative(hub, one.file)), text, reads(side));
     }
     const deck = schemaRecord(schemaFile(config.merged, 'deck_schema'));
     const decks = Object.values(sources.decks).map((one) => join(one.path, sources.deckFile));

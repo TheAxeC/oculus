@@ -1,17 +1,12 @@
 // Layer 1, data. The names of the hub's files and folders that the readers of data/sources, the
 // schema generator of data/snapshot, the file server and the page all hold: the manifest's file
-// name, the side-projects tier and the folder of a repository that holds oculus's own files, the
-// two keys the hub and the engine's config folder are served under, and how each registry file
-// names its entry list and its id field.
+// name, the five tier words and the folder of a repository that holds oculus's own files, the
+// two keys the hub and the engine's config folder are served under, how each registry file
+// names its entry list and its id field, and which folders the project scan walks: the scan
+// reader (data/sources/manifests.ts), the `new_project_dir` check (data/index.ts) and the new
+// project form (state/boards/board/new-project.ts) share those, so they agree on what is scanned.
 
-import type {
-    Collection,
-    Id,
-    RegistryName,
-    RepositoryTier,
-    Rooted,
-    ScanRule
-} from '../model/index.ts';
+import type { Collection, Id, RegistryName, Rooted, Tier } from '../model/index.ts';
 
 /** The key the hub itself is served under, so a collection's `link` to a file in the hub opens. */
 export const HUB_ROOT = 'hub';
@@ -178,17 +173,16 @@ export const CAREER_FILE = 'registries/career.yml';
 /** The one filename a scan tier's folder is read for. */
 export const MANIFEST = 'project.yml';
 
-/** The tier whose folders are side projects, which the Personal board and the Focus ticker read. */
-const SIDE_TIER = 'side-projects';
+/** The five tiers a manifest's `tier` may name, in the order the tier select offers them. */
+export const TIERS: readonly Tier[] = ['projects', 'coauthor', 'archive', 'personal', 'software'];
 
-/** The folder of a repository that holds its side-project manifest. */
+/** The tier a manifest's `tier` value names, and undefined when it names none of the five. */
+export function tierOf(value: unknown): Tier | undefined {
+    return TIERS.find((one) => one === value);
+}
+
+/** The folder of a repository that holds its project manifest. */
 export const ROOT_FOLDER = '.oculus';
-
-/**
- * The tiers a `roots:` entry may read its repository in as a research project of the first hub,
- * beside `personal`, which reads it as a side project exactly as an entry with no `tier` does.
- */
-export const REPOSITORY_TIERS: readonly RepositoryTier[] = ['projects', 'coauthor', 'archive'];
 
 /** The hub's own config folder under `.oculus`, which holds the second layer of the settings. */
 export const HUB_LAYER = `${ROOT_FOLDER}/config`;
@@ -212,6 +206,7 @@ export const HUB_LIST: Readonly<Record<string, readonly string[]>> = {
         'organisations_file',
         'resources_file',
         'collections',
+        'new_project_dir',
         'leads_file',
         'radar_file',
         'publications_file',
@@ -237,11 +232,6 @@ export function hubLayerPath(name: string): string {
 /** Whether a `from` value (see loadConfig) names a file of the hub's layer. */
 export function fromHubLayer(file: string): boolean {
     return file.startsWith(`${HUB_LAYER}/`);
-}
-
-/** Whether a scan rule names the side-projects tier, by the last segment of its `dir`. */
-export function isSideTier(rule: ScanRule): boolean {
-    return (rule.dir.split('/').pop() ?? rule.dir) === SIDE_TIER;
 }
 
 /**
@@ -270,3 +260,33 @@ export const REGISTRY_SHAPES: Record<
  * that names both rather than a value quietly read under two names.
  */
 export const RENAMED_FIELDS: Record<string, string> = { program: 'pillar' };
+
+/** The folder name no walk enters besides the dot folders: a package tree holds no project. */
+const PACKAGES = 'node_modules';
+
+/** Whether the walk enters a folder of this name: not a dot folder and not a package tree. */
+export function entersFolder(name: string): boolean {
+    return !name.startsWith('.') && name !== PACKAGES;
+}
+
+/** A folder as the scan rules write it: no leading `./` and no trailing slash. */
+export function folderOf(path: string): string {
+    return path.replace(/^\.\//, '').replace(/\/+$/, '');
+}
+
+/**
+ * Whether a hub-relative folder is one of the scan folders, or lies inside one on a path the scan
+ * walks, so a project made there is read.
+ */
+export function inScan(folder: string, dirs: readonly string[]): boolean {
+    const path = folderOf(folder);
+    return dirs.some((entry) => {
+        const dir = folderOf(entry);
+        if (path === dir) return true;
+        if (!path.startsWith(`${dir}/`)) return false;
+        return path
+            .slice(dir.length + 1)
+            .split('/')
+            .every(entersFolder);
+    });
+}

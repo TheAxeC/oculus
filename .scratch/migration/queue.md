@@ -1,7 +1,6 @@
-In flight (1 of 6 slots in use):
-- D65 (one kind of project): repair round 1 sent to its builder (review: agents/reviews/D65-refuter.md, brief: agents/briefs/D65-round1.md).
+In flight (0 of 6 slots in use): none.
 
-Paused after D65 lands (Axel, 2026-10-11: pause once D62 and D65 have landed; D62 has); nothing below starts until he says to go on.
+Paused (Axel, 2026-10-11: pause once D62 and D65 have landed; both have). Nothing below starts until he says to go on. Open item 52: the six repository manifests outside the hub, whose rewrite the runner refused.
 
 Queued, in order (4 steps):
 - D63 (apps in the shell): after D62.
@@ -12,6 +11,7 @@ Queued, in order (4 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D65 (one kind of project), 2026-10-11, the commit "Land D65, one kind of project".
 - D62 (apps: the host and the bridge), 2026-10-11, d7d1198de.
 - D60 (repositories read as projects of the hub), 2026-10-10, 856f2ba34.
 - D61 (the Workbenches view and the status bar's repository), 2026-10-10, b39d35652.

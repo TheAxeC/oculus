@@ -26,7 +26,7 @@ export type VenuesState = {
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const LIVE_TYPES = ['active', 'manuscript'];
+const LIVE_TYPES = ['active'];
 
 /** The projects included in venue use and concentration counts. */
 export function realProjects(projects: Project[], dead: string[]): Project[] {
@@ -37,7 +37,7 @@ export function realProjects(projects: Project[], dead: string[]): Project[] {
     );
 }
 
-/** Projects targeting one venue, with the active/manuscript concentration marker. */
+/** Projects targeting one venue, with the active concentration marker. */
 export function venueUsers(venue: Venue, projects: Project[]): VenueUse {
     const users = projects.filter((project) => project.venueId === venue.id);
     return {

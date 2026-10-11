@@ -145,7 +145,7 @@ function collectionFor(
  */
 export function valueNow(into: WriteTarget, change: Change): { found: boolean; value: unknown } {
     if (change.kind === 'manifest') {
-        return manifestValue(into.hub, into.config, into.sideProjects(), change.key, change.field);
+        return manifestValue(into.hub, into.config, change.key, change.field);
     }
     if (change.kind === 'session') {
         const held = overrides(into.overrides);
@@ -169,13 +169,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         return configValueNow(into.engine, change.key, change.field, layerHub(into, change));
     }
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
-        return subtaskValue(
-            into.hub,
-            into.config,
-            into.sideProjects(),
-            subtaskTarget(into, change),
-            change.field
-        );
+        return subtaskValue(into.hub, into.config, subtaskTarget(into, change), change.field);
     }
     if (
         change.kind === 'feed-field' ||
@@ -359,7 +353,6 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         return writeManifest(
             hub,
             config,
-            into.sideProjects(),
             change.key,
             { [change.field]: change.before },
             'record',
@@ -462,13 +455,12 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     if (change.kind === 'subtask') {
         const target = subtaskTarget(into, change);
         const before = mapBeforeShape.parse(change.before);
-        const sides = into.sideProjects();
-        if (change.undo === 'delete') return writeSubtaskAdd(hub, config, sides, target, before);
-        return restoreSubtask(hub, config, sides, target, change.field, before);
+        if (change.undo === 'delete') return writeSubtaskAdd(hub, config, target, before);
+        return restoreSubtask(hub, config, target, change.field, before);
     }
     if (change.kind === 'subtask-add') {
         const target = subtaskTarget(into, change);
-        return writeSubtask(hub, config, into.sideProjects(), target, change.field, 'delete');
+        return writeSubtask(hub, config, target, change.field, 'delete');
     }
     if (
         change.kind === 'feed-field' ||

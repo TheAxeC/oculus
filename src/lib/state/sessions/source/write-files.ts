@@ -16,7 +16,7 @@ import {
     ROOT_FOLDER
 } from '../../../data/helpers/hub-names.ts';
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
-import { placeOf } from '../../../data/snapshot/as-project.ts';
+import { placeOf } from '../../../data/snapshot/place.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
 
 /** The lookups the page makes of its own stores to name a file a write carries only an id of. */

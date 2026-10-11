@@ -1,17 +1,13 @@
 // Layer 1, data. The `manifest_schema` of config/schemas/manifest-schema.yml as the JSON Schema of
-// a project.yml, and the `side_project_schema` of config/schemas/side-project-schema.yml as the
-// JSON Schema of a side project's manifest. The schema is the project.yml edit form as data, so
-// each widget is read as the type of value it writes: a `select` and a `chips` field are held to
-// the keys of their `from` sources, `readonly` and `keymap` fields hold whatever the file has, and
-// a dotted name (`status.chips`) is a key inside a map the file holds under its first part. A map
-// such as `followup` may also be written as one line of text, and is then not looked into. The
-// side project's rows use the widget words of the research rows for the keys the two manifests
-// share, so both kinds go through one translation and a key means one thing in both.
+// a project.yml. The schema is the project.yml edit form as data, so each widget is read as the
+// type of value it writes: a `select` and a `chips` field are held to the keys of their `from`
+// sources and their `options`, `readonly` and `keymap` fields hold whatever the file has, and a
+// dotted name (`status.chips`) is a key inside a map the file holds under its first part. A map
+// such as `followup` may also be written as one line of text, and is then not looked into.
 
 import { z } from 'zod';
 import type { SchemaField } from '../../model/index.ts';
 import { filledTextShape, optionalItemsShape, readAs } from '../../shapes/shapes.ts';
-import { fieldsOf } from './field.ts';
 import type { JsonSchema } from './json.ts';
 import { fieldSchema, type Context } from './record.ts';
 
@@ -24,7 +20,8 @@ const rowShape = z.object({
         .union([z.string(), z.array(z.string())])
         .optional()
         .catch(undefined),
-    options: optionalItemsShape
+    options: optionalItemsShape,
+    required: z.literal(true).optional().catch(undefined)
 });
 
 /** The `fields:` map of the schema, a row for each name. */
@@ -64,17 +61,10 @@ export function manifestFields(schema: unknown): SchemaField[] {
             ...(row.label === undefined ? {} : { label: row.label }),
             ...(row.help === undefined ? {} : { help: row.help }),
             ...(row.options === undefined ? {} : { options: row.options }),
+            ...(row.required === undefined ? {} : { required: true }),
             ...(from === undefined ? {} : { from })
         };
     });
-}
-
-/**
- * The fields of the side-project schema as schema fields, each read by the widget words of the
- * manifest schema, or undefined when the schema does not read as a list of fields.
- */
-function sideFields(schema: unknown): SchemaField[] | undefined {
-    return fieldsOf(schema)?.map((field) => ({ ...field, type: recordType(field.type) }));
 }
 
 /**
@@ -113,12 +103,6 @@ function manifestOf(fields: SchemaField[], ctx: Context): JsonSchema {
 /** The JSON Schema of a project.yml, from the manifest schema's `fields:` map. */
 export function manifestSchema(schema: unknown, ctx: Context): JsonSchema {
     return manifestOf(manifestFields(schema), ctx);
-}
-
-/** The JSON Schema of a side project's manifest, or null when the schema reads as no fields. */
-export function sideSchema(schema: unknown, ctx: Context): JsonSchema | null {
-    const fields = sideFields(schema);
-    return fields === undefined ? null : manifestOf(fields, ctx);
 }
 
 /**

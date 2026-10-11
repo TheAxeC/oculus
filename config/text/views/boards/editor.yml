@@ -22,8 +22,6 @@ text:
         saved_none: nothing to save
         saving: saving
         search: filter
-        side_label_links: Links
-        side_label_status: Status
         status: Manifest status
         title: Manifest
         toolbar: Manifest editor

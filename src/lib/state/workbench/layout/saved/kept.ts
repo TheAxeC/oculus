@@ -2,15 +2,12 @@
 // the item it was opened for, and the layouts of the folder pages that were closed. Each part is
 // read apart from the rest, so a value that does not add up costs only itself: a folder that reads
 // as none makes the page a plain one, and a kept layout that does not read is dropped while the
-// other kept layouts and every page are kept. A Files or LaTeX tab of a workbench whose saved label
-// is the folder's name loses the label, so the tab reads Files or LaTeX; a label the reader gave it
-// stays.
+// other kept layouts and every page are kept.
 
 import { z } from 'zod';
-import { instanceLabel, instanceMap, tabsOf } from '../instance.ts';
+import { tabsOf } from '../instance.ts';
 import {
     KEPT_MAX,
-    folderName,
     sameFolder,
     type FolderItem,
     type FolderRef,
@@ -18,7 +15,6 @@ import {
     type Page,
     type Workbench
 } from '../model.ts';
-import { restate } from '../tree.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import { readAs } from '../../../../data/shapes/shapes.ts';
 
@@ -55,27 +51,6 @@ export function itemOf(value: unknown): FolderItem | null {
     return item === null ? null : { view: item.view, state: item.state };
 }
 
-/** Whether a workbench names this view's tab by the view: Files and LaTeX. */
-function namedByView(view: string): boolean {
-    return view === 'files' || view === 'latex';
-}
-
-/**
- * The workbench of a folder with the folder's name taken off its Files and LaTeX tabs: a tab of
- * those views whose saved `label` is the folder's name loses the label, so the tab reads Files or
- * LaTeX as a new workbench's does. A label that is not the folder's name stays.
- */
-export function withoutFolderLabels(workbench: Workbench, folder: FolderRef): Workbench {
-    const name = folderName(folder);
-    let root = workbench.root;
-    for (const tab of tabsOf(root)) {
-        if (!namedByView(tab.view) || instanceLabel(tab.state) !== name) continue;
-        const { label: _label, ...rest } = instanceMap(tab.state);
-        root = restate(root, tab.id, rest);
-    }
-    return { ...workbench, root };
-}
-
 /**
  * The kept layouts of a saved envelope, oldest first. A value that is no list holds none. An entry
  * is dropped for a folder that does not read, a folder an earlier entry holds, a tree that does not
@@ -110,9 +85,8 @@ function keptEntry(
     const folder = readAs(folderShape, held?.folder);
     if (held === null || folder === null) return null;
     if (earlier.some((one) => sameFolder(one.folder, folder))) return null;
-    const read = readWorkbench(held.workbench);
-    if (read === null) return null;
-    const workbench = withoutFolderLabels(read, folder);
+    const workbench = readWorkbench(held.workbench);
+    if (workbench === null) return null;
     const own = tabsOf(workbench.root).map((tab) => tab.id);
     if (own.some((id) => ids.has(id))) return null;
     if (!isMap(held.states)) return null;

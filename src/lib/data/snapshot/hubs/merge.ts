@@ -24,7 +24,6 @@ import type {
     RegistryName,
     Relations,
     Rooted,
-    SideProject,
     Snapshot
 } from '../../model/index.ts';
 import { byId, pairs } from '../normalise.ts';
@@ -61,15 +60,6 @@ function rekeyed<T extends { id: Id }>(table: Record<Id, T>, fix: (one: T) => T)
 /** The records of one kind of the first hub, each marked as the first hub's. */
 function marked<T extends { id: Id } & Rooted>(table: Record<Id, T>): Record<Id, T> {
     return rekeyed(table, (one) => ({ ...one, root: HUB_ROOT }));
-}
-
-/** An optional list a side project may hold, prefixed when it is there. */
-function sideLists(put: (id: Id) => Id, one: SideProject): Partial<SideProject> {
-    const out: Partial<SideProject> = {};
-    if (one.waitingOn !== undefined) out.waitingOn = one.waitingOn.map(put);
-    if (one.relatedIds !== undefined) out.relatedIds = one.relatedIds.map(put);
-    if (one.collaborators !== undefined) out.collaborators = one.collaborators.map(put);
-    return out;
 }
 
 /** Whether the hub's entities of a `from:` source hold a record under the id. */
@@ -187,12 +177,6 @@ function entitiesOf(key: string, entities: Entities, peopleFile: string): Entiti
         })),
         resources: rekeyed(entities.resources, (one) => ({ ...one, ...own, id: put(one.id) })),
         collections: rekeyed(entities.collections, (one) => collectionOf(put, key, one, entities)),
-        personal: rekeyed(entities.personal, (one) => ({
-            ...one,
-            ...own,
-            ...sideLists(put, one),
-            id: put(one.id)
-        })),
         feeds: entities.feeds,
         career: null
     };
@@ -283,7 +267,6 @@ function ambiguousIds(first: FirstHub, keys: readonly string[], text: TextCatalo
     };
     const { entities } = first.snapshot;
     for (const one of Object.values(entities.projects)) note(one.id, one.file);
-    for (const one of Object.values(entities.personal)) note(one.id, one.file);
     for (const one of Object.values(entities.collections)) {
         note(one.id, one.file);
         for (const entry of one.entries) note(entry.id, one.file);
@@ -333,8 +316,7 @@ export function mergeHubs(
         'people',
         'organisations',
         'resources',
-        'collections',
-        'personal'
+        'collections'
     ] as const;
     const entities = { ...base.entities };
     entities.projects = marked(base.entities.projects);
@@ -351,7 +333,6 @@ export function mergeHubs(
         root: HUB_ROOT,
         entries: one.entries.map((entry) => ({ ...entry, root: HUB_ROOT }))
     }));
-    entities.personal = marked(base.entities.personal);
     for (const one of prefixed) {
         for (const kind of kinds) {
             Object.assign(entities[kind], one.entities[kind]);

@@ -1,6 +1,10 @@
 <script lang="ts">
-    // Layer 3, shared view partial. The new-idea form used by the Projects board and Lit Watch.
-    // Optional seed values let a radar spark pre-fill the same form without duplicating its write.
+    // Layer 3, shared view partial. The new-project form used by the four project boards and Lit
+    // Watch. A board gives its tier, and the form then offers a Folder field starting with the
+    // tier's `new_project_dir` entry and sends the tier and the folder with the write; Lit Watch
+    // gives none, and the server creates the project in the tier `projects` under that tier's
+    // `new_project_dir`. Optional seed values let a radar spark pre-fill the same form without
+    // duplicating its write.
     // Escape closes it only while it is on screen: a pane keeps the view of a tab it hides mounted,
     // and a key pressed in another tab is not one this form was asked to answer.
 
@@ -12,18 +16,21 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        selectors: { domainChoices },
+        selectors: { domainChoices, newProjectFolder },
         writes: { newIdea }
     } = useState();
 
     type Props = {
         onclose: () => void;
         onsaid: (said: string) => void;
+        /** The tier of the board that opened the form; none for Lit Watch. */
+        tier?: string;
         seed?: { id: string; eli5: string; title?: string };
         oncreated?: () => void | Promise<void>;
     };
 
-    let { onclose, onsaid, seed, oncreated }: Props = $props();
+    let { onclose, onsaid, tier, seed, oncreated }: Props = $props();
+    let folder = $state(untrack(() => (tier === undefined ? '' : newProjectFolder(tier))));
     let id = $state(untrack(() => seed?.id ?? ''));
     let title = $state(untrack(() => seed?.title ?? ''));
     let short = $state('');
@@ -40,6 +47,7 @@
         if (id.trim() === '') return;
         const answer = await newIdea({
             id: id.trim(),
+            ...(tier === undefined ? {} : { tier, folder: folder.trim() }),
             ...(title.trim() === '' ? {} : { title: title.trim() }),
             ...(short.trim() === '' ? {} : { short: short.trim() }),
             ...(domain === '' ? {} : { domain }),
@@ -60,6 +68,14 @@
 <svelte:window onkeydown={keyed} />
 
 <div class="form" bind:this={box}>
+    {#if tier !== undefined}
+        <TextInput
+            value={folder}
+            label={t('board.new_idea_folder')}
+            placeholder={t('board.new_idea_folder')}
+            oninput={(next: string) => (folder = next)}
+        />
+    {/if}
     <TextInput
         value={id}
         label={t('board.new_idea_id')}

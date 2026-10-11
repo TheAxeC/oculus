@@ -8,21 +8,23 @@
 import { join } from 'node:path';
 import { z } from 'zod';
 import { isMap, str, strings } from './helpers/guards.ts';
-import {
-    filledTextShape,
-    keysOfShape,
-    optionalTextShape,
-    readAs,
-    readOr,
-    rowsShape
-} from './shapes/shapes.ts';
-import { manifestDir, readHubManifests, readPersonal } from './sources/manifests.ts';
+import { filledTextShape, keysOfShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
+import { manifestDir, readHubManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
 import { readCareer } from './sources/career.ts';
 import { feedItems, readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
-import { CAREER_FILE, HUB_ROOT } from './helpers/hub-names.ts';
+import { findingText, type TextCatalog } from './helpers/finding-text.ts';
+import {
+    CAREER_FILE,
+    HUB_ROOT,
+    TIERS,
+    folderOf,
+    hubLayerPath,
+    inScan,
+    tierOf
+} from './helpers/hub-names.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
 import { loadConfig, textCatalog } from './sources/config.ts';
@@ -60,26 +62,24 @@ import type {
     RepositoryRoot,
     ScanRule,
     Snapshot,
+    Tier,
     Vocabulary
 } from './model/index.ts';
 
+/** The keys a `scan:` entry takes. */
+const SCAN_KEYS = ['dir', 'optional'];
+
 /**
- * One `scan:` rule: a map with a `dir` that is a text, carrying its `type` and its `tier` word when
- * those are texts and its `nested` and `optional` marks when they are true.
+ * One `scan:` rule: a map with a `dir` that is a text, carrying its `optional` mark when it is
+ * true. Any other key is not read; `scanFindings` names it.
  */
 const scanRuleShape = z
     .object({
         dir: z.string(),
-        type: optionalTextShape,
-        tier: optionalTextShape,
-        nested: z.literal(true).optional().catch(undefined),
         optional: z.literal(true).optional().catch(undefined)
     })
     .transform((item): ScanRule => {
         const rule: ScanRule = { dir: item.dir };
-        if (item.type !== undefined) rule.type = item.type;
-        if (item.tier !== undefined) rule.tier = item.tier;
-        if (item.nested !== undefined) rule.nested = item.nested;
         if (item.optional !== undefined) rule.optional = item.optional;
         return rule;
     }) satisfies z.ZodType<ScanRule>;
@@ -92,6 +92,90 @@ const scanRulesShape = rowsShape(scanRuleShape);
  */
 function scanRules(value: unknown): ScanRule[] {
     return readOr(scanRulesShape, value, []);
+}
+
+/**
+ * What is wrong with the `scan:` value, each finding filed on `file`, the sources file that holds
+ * it: a value that is no list, an entry that is no map or names no `dir`, and every key of an entry
+ * besides `dir` and `optional`, which the entry is read without.
+ */
+function scanFindings(value: unknown, file: string, text: TextCatalog): Finding[] {
+    const found: Finding[] = [];
+    const raise = (id: string, ...args: (string | number)[]): void => {
+        found.push({ file, key: 'scan', message: findingText(text, id, ...args) });
+    };
+    if (value === undefined) return found;
+    if (!Array.isArray(value)) {
+        raise('findings.manifests.scan_not_a_list');
+        return found;
+    }
+    for (const [index, entry] of value.entries()) {
+        if (!isMap(entry) || typeof entry.dir !== 'string') {
+            raise('findings.manifests.scan_no_dir', index + 1);
+            continue;
+        }
+        for (const key of Object.keys(entry)) {
+            if (!SCAN_KEYS.includes(key)) raise('findings.manifests.scan_key', entry.dir, key);
+        }
+    }
+    return found;
+}
+
+/** The sources files the values of `scan:` and `new_project_dir:` were read from. */
+export type SourcesFiles = { scan: string; newProjectDir: string };
+
+/**
+ * What is wrong with the values `scan:` and `new_project_dir:` hold in a merged config, each
+ * finding filed on the sources file its value was read from.
+ */
+export function sourcesFindings(merged: Record<string, unknown>, files: SourcesFiles): Finding[] {
+    const text = textCatalog(merged);
+    const scan = scanRules(merged.scan);
+    return [
+        ...scanFindings(merged.scan, files.scan, text),
+        ...newProjectDirs(merged.new_project_dir, scan, files.newProjectDir, text).findings
+    ];
+}
+
+/**
+ * The `new_project_dir:` value read as the folder a new project of each tier is made in, with a
+ * finding naming the key of every entry that is not used: a value that is no map, a key that is not
+ * one of the five tiers, a value that is no folder text, and a folder outside every scan folder.
+ */
+function newProjectDirs(
+    value: unknown,
+    scan: ScanRule[],
+    file: string,
+    text: TextCatalog
+): { dirs: Partial<Record<Tier, string>>; findings: Finding[] } {
+    const dirs: Partial<Record<Tier, string>> = {};
+    const findings: Finding[] = [];
+    const raise = (id: string, ...args: (string | number)[]): void => {
+        findings.push({ file, key: 'new_project_dir', message: findingText(text, id, ...args) });
+    };
+    if (value === undefined) return { dirs, findings };
+    if (!isMap(value)) {
+        raise('findings.manifests.new_project_dir_not_a_map');
+        return { dirs, findings };
+    }
+    for (const [key, folder] of Object.entries(value)) {
+        const tier = TIERS.find((one) => one === key);
+        if (tier === undefined) {
+            raise('findings.manifests.new_project_dir_tier', key, TIERS.join(', '));
+        } else if (typeof folder !== 'string' || folderOf(folder) === '') {
+            raise('findings.manifests.new_project_dir_folder', key);
+        } else if (
+            !inScan(
+                folder,
+                scan.map((rule) => rule.dir)
+            )
+        ) {
+            raise('findings.manifests.new_project_dir_outside', key, folder);
+        } else {
+            dirs[tier] = folderOf(folder);
+        }
+    }
+    return { dirs, findings };
 }
 
 /** One entry of the `collections:` list: a key and a hub-relative file, both texts. */
@@ -156,8 +240,6 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
     };
 
     const vocab: Vocabulary = { statuses: readOr(keysOfShape, merged.status_palette, []) };
-    const sideStatuses = readAs(keysOfShape, merged.side_project_status);
-    if (sideStatuses !== null) vocab.sideStatuses = sideStatuses;
 
     const feeds: FeedFiles = {
         leads: path('leads_file', FEED_FILES.leads),
@@ -165,8 +247,12 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
         linkedin: path('linkedin_dir', FEED_FILES.linkedin)
     };
 
+    const scan = scanRules(merged.scan);
+    const text = textCatalog(merged);
     return {
-        scan: scanRules(merged.scan),
+        scan,
+        repositories: [],
+        newProjectDir: newProjectDirs(merged.new_project_dir, scan, '', text).dirs,
         registries,
         collections,
         feeds,
@@ -178,7 +264,7 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
         portfolioDeck: readAs(filledTextShape, merged.portfolio_deck) ?? null,
         tagTones: tagTones(merged.defaults),
         domains: readOr(keysOfShape, merged.domains, []),
-        text: textCatalog(merged)
+        text
     };
 }
 
@@ -200,13 +286,15 @@ function deckProjects(manifests: RawManifest[]): DeckProject[] {
             id: manifest.id,
             file: manifest.file,
             folder: manifest.folder,
-            tier: manifest.tier,
             chips: strings(status.chips),
             short: str(manifest.short) ?? '',
             title: str(manifest.title) ?? manifest.id
         };
         if (manifest.repository !== undefined) project.repository = manifest.repository;
-        if (manifest.type !== undefined) project.type = manifest.type;
+        const tier = tierOf(manifest.tier);
+        if (tier !== undefined) project.tier = tier;
+        const type = str(manifest.type);
+        if (type !== undefined) project.type = type;
         const domain = str(manifest.domain);
         if (domain !== undefined && domain !== '') project.domain = domain;
         return project;
@@ -243,15 +331,13 @@ export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet; reference
  * Read the hub, check what was read, and hand back the snapshot with the schemas the check used.
  * The steps are the modules: the sources say what is on disk, validate and the schemas say what is
  * wrong with it, and normalise turns it into the wire model with the findings carried inside it.
- * `roots` are the directories whose `.oculus/project.yml` is read, as handed: a research project of
- * the hub when the root names a research `tier` (`readHubManifests`), else a side project beside
- * the hub's own side-projects tier; `repositoriesOf` of server/files/roots.ts decides which roots
- * of the file browser they are. `checker` keeps the compiled validators from one build to the next,
+ * `roots` are the directories whose `.oculus/project.yml` is read, as handed, each a project of the
+ * hub (`readHubManifests`); `repositoriesOf` of server/files/roots.ts decides which roots of the
+ * file browser they are. `checker` keeps the compiled validators from one build to the next,
  * so a rebuild whose schemas did not change compiles nothing. `engine` is the engine's config
  * folder, whose files that carry a reference are indexed beside the hub's; none when it is null.
  * `root` is the key the hub's files are named under in the reference index: `hub` for the first
- * hub, the key of its root for another. `rootsFile` is the file the first hub's `roots:` list is
- * written in, on which a finding about one of its entries is filed.
+ * hub, the key of its root for another.
  */
 export function buildPortfolioWithSchemas(
     hub: string,
@@ -260,11 +346,9 @@ export function buildPortfolioWithSchemas(
     roots: RepositoryRoot[] = [],
     checker: Checker = createChecker(),
     engine: string | null = null,
-    root: string = HUB_ROOT,
-    rootsFile = ''
+    root: string = HUB_ROOT
 ): PortfolioBuild {
-    const manifests = readHubManifests(hub, config.scan, roots, config.text, rootsFile);
-    const personal = readPersonal(hub, config.scan, manifests.side, config.text);
+    const manifests = readHubManifests(hub, config.scan, roots, config.text);
     const registries = readRegistries(hub, config.registries, config.text);
     const collections = readCollections(hub, config.collections, config.text);
     const feeds = readFeeds(hub, config.feeds, config.text);
@@ -276,7 +360,6 @@ export function buildPortfolioWithSchemas(
 
     const raw: RawPortfolio = {
         manifests: manifests.manifests,
-        personal: personal.personal,
         registries,
         collections: collections.collections,
         feeds: feeds.feeds,
@@ -285,7 +368,6 @@ export function buildPortfolioWithSchemas(
         decks: deck.decks,
         findings: [
             ...manifests.findings,
-            ...personal.findings,
             ...registries.findings,
             ...collections.findings,
             ...feeds.findings,
@@ -312,13 +394,12 @@ export function buildPortfolioWithSchemas(
         engine,
         read: run.read,
         manifests: raw.manifests,
-        personal: raw.personal,
         decks: raw.decks,
         options: optionFiles(catalogOf(config.merged)),
         deckFile: DECK_FILE
     });
     return {
-        snapshot: normalise(raw, findings, version, config.vocab.sideStatuses),
+        snapshot: normalise(raw, findings, version),
         schemas: withSchemas(run.set, engineSchemas(raw, config)),
         references
     };
@@ -347,7 +428,15 @@ export function portfolioConfigOfOther(merged: Record<string, unknown>): Portfol
 export function readSecondHub(engine: string, root: HubRoot): SecondHub {
     const { config, findings } = loadConfig(engine, { hub: root.dir });
     const portfolio = { ...portfolioConfigOfOther(config), career: null, portfolioDeck: null };
-    return { ...root, portfolio, findings };
+    const sources = join(root.dir, hubLayerPath('sources.yml'));
+    return {
+        ...root,
+        portfolio,
+        findings: [
+            ...findings,
+            ...sourcesFindings(config, { scan: sources, newProjectDir: sources })
+        ]
+    };
 }
 
 /** The merged build and each hub's own snapshot, the first hub's under the key `hub`. */

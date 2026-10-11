@@ -32,8 +32,7 @@ export type WaitingLine = { kind: 'people' | 'review' | 'blocked'; text: string 
 /**
  * What a project is waiting on. Explicit people win over submission review, which wins over a
  * generic external block. A `waiting-on:` value is a person drawn by name or another project
- * drawn by its label, through the one rule of waiting.ts. A side project has no chips and no venue,
- * so only its explicit people can apply.
+ * drawn by its label, through the one rule of waiting.ts.
  */
 export function waitingLine(
     project: Pick<Project, 'waitingOn'> & Partial<Pick<Project, 'chips' | 'venueId'>>,

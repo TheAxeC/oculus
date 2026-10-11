@@ -1,21 +1,19 @@
-// Layer 1, data. The schemas that do not describe a hub data file: the side projects' manifest, the
-// decks, a repository's `.oculus/cpp.yml`, and the files of oculus's own configuration. Each is
-// made from a schema file under config/schemas/ (written in the hub's `schema:` vocabulary) or from
-// the reader of the file, and each is matched to files by a rule: the globs of the files it
-// governs, relative to the root they are served from. The side projects' manifest is made through
-// the translation the research manifest's schema goes through (schema/manifest.ts).
+// Layer 1, data. The schemas that do not describe a hub data file: the decks, a repository's
+// `.oculus/cpp.yml`, and the files of oculus's own configuration. Each is made from a schema file
+// under config/schemas/ (written in the hub's `schema:` vocabulary) or from the reader of the file,
+// and each is matched to files by a rule: the globs of the files it governs, relative to the root
+// they are served from.
 //
 // These schemas serve the editor. The readers of their files report their own findings, so the gate
 // of the snapshot does not check these files again.
 
-import { isSideTier, MANIFEST } from '../../helpers/hub-names.ts';
 import type { PortfolioConfig, RegistryName, SchemaField } from '../../model/index.ts';
 import { fieldsOf } from './field.ts';
 import { fileSchema } from './hub.ts';
 import type { JsonSchema } from './json.ts';
 import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files.ts';
 import { REGISTRIES, VOCAB_PREFIX } from './lists.ts';
-import { manifestSchema, sideSchema } from './manifest.ts';
+import { manifestSchema } from './manifest.ts';
 import type { Context, Lists, SchemaProblem } from './record.ts';
 import type { NamedSchema } from './set.ts';
 
@@ -33,7 +31,6 @@ function sections(value: unknown, lists: Lists, problems: SchemaProblem[] = []):
 /** The schema files of config/schemas/, each with the merged key its content is read under. */
 export const SCHEMA_FILES = [
     { key: 'manifest_schema', file: 'manifest-schema.yml' },
-    { key: 'side_project_schema', file: 'side-project-schema.yml' },
     { key: 'deck_schema', file: 'deck-schema.yml' },
     { key: 'cpp_schema', file: 'cpp-schema.yml' }
 ] as const;
@@ -55,36 +52,15 @@ export function schemaFileProblems(
         const problems: SchemaProblem[] = [];
         const ctx: Context = { lists, problems, at: '' };
         if (key === 'manifest_schema') manifestSchema(merged[key], ctx);
-        else if (key === 'side_project_schema') sideSchema(merged[key], ctx);
         else sections(merged[key], lists, problems);
         return { file, problems };
     });
 }
 
-/** The schemas of the side projects, the decks and the C++ file. */
+/** The schemas of the decks and the C++ file. */
 export function projectFileSchemas(config: PortfolioConfig, lists: Lists): NamedSchema[] {
     const found: NamedSchema[] = [];
-    const scans = config.scan
-        .filter((rule) => !isSideTier(rule))
-        .map((rule) => rule.dir.replace(/\/+$/, ''));
-    const side = config.scan.filter(isSideTier).map((rule) => rule.dir.replace(/\/+$/, ''));
-    const sideProject = sideSchema(config.merged.side_project_schema, {
-        lists,
-        problems: [],
-        at: ''
-    });
-    if (sideProject !== null) {
-        // The manifest of a repository read as a research project is governed by the manifest
-        // schema (run.ts, repositoryReach), whose rule comes first.
-        found.push({
-            name: 'side-project',
-            schema: sideProject,
-            rule: {
-                hub: side.map((dir) => `${dir}/*/${MANIFEST}`),
-                every: [`${OCULUS}/${MANIFEST}`]
-            }
-        });
-    }
+    const scans = config.scan.map((rule) => rule.dir.replace(/\/+$/, ''));
     const deck = sections(config.merged.deck_schema, lists);
     if (deck !== null) {
         const decks = scans.map((dir) => `${dir}/**/present/present.yml`);

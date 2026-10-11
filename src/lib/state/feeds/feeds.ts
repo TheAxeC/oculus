@@ -84,8 +84,8 @@ export function attention(
     if (since !== null && since > cadence) out.push({ kind: 'linkedin', count: since });
 
     const warn = setting(config, 'venue_conc_warn', 4);
-    const projects = Object.values(snapshot.entities.projects).filter((project) =>
-        ['ideas', 'active', 'manuscripts'].includes(project.tier)
+    const projects = Object.values(snapshot.entities.projects).filter(
+        (project) => project.tier === 'projects'
     );
     for (const one of venueLoad(projects, snapshot.entities.venues, warn)) {
         out.push({ kind: 'venue', id: one.id, count: one.count, label: one.label });

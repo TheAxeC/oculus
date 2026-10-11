@@ -56,8 +56,6 @@ text:
             files_title: Files
             folder_failed: 'The folder could not be shown in Finder: {0}'
             funding_glyph: funding
-            ghost_badge_tip: no project.yml - run /project-new
-            ghostmsg: No manifest yet - folder discovered by prefix. Add <code>project.yml</code>.
             hpc_glyph: hpc
             ideas: Ideas / avenues
             latest: Latest
@@ -67,7 +65,6 @@ text:
             more_tags: '+{0}'
             more_tags_tip: show the rest of {0}
             next: Next
-            no_manifest: no manifest
             not_until: not until {0}
             open_in: open in {0}
             outcome: Outcome
@@ -78,6 +75,7 @@ text:
             present_glyph: poster
             present_tip: open this project's own deck in the Present view
             pillar_glyph: pillar
+            related: related
             repro_glyph: check
             reproduced: Reproduced
             show_less: Show less

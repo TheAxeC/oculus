@@ -311,7 +311,13 @@ function seedSource(options: TerminalOptions): SeedSource {
     const local = localOf(options);
     const merged = options.configFor();
     const hubs = hubTargets({ config: merged, engine: options.engine, local });
-    return { hub: options.hubFor?.() ?? local.hub, merged, engine: options.engine, hubs };
+    return {
+        hub: options.hubFor?.() ?? local.hub,
+        merged,
+        engine: options.engine,
+        workspaces: local.workspaces,
+        hubs
+    };
 }
 
 /** The task reference of a seed or approve-seed request, or the refusal for a missing one. */

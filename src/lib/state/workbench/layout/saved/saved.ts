@@ -8,34 +8,23 @@
 //
 // The envelope is `{ version, pages, current, floats, kept }`, each float `{ id, pane, place }`; a
 // page may carry `folder` (`{ root, path }`) and `item` (`{ view, state }`), and `kept` lists the
-// layouts of the folder pages that were closed (kept.ts reads them). A version 6 envelope has no
-// folder page and no kept layout and is read with every page and tab kept; a version 4 or 3
-// envelope is read with no floats. The shipped floats of config/layout.yml reach the page with the
-// configuration, after the saved layout is read, so a layout read from a version 4 envelope is
-// written back at version 4 by `serialiseFloatless` until the shipped floats have been taken in
-// (`needsFloats`, and the store's `pendingFloats`), and at the current version from then on; a
-// float-less layout written at a version with floats would read as a reader who has no floats, and
-// the shipped ones would never arrive. A float that does not add up (no tab, a place past the
-// window, an id a page or another float already uses, a tab id held twice, a second float docked on
-// one edge, a window place with a size that is not finite or is under 200) is dropped on reading
-// and the rest kept, and so is a kept layout that does not add up. A pane carries `locked` (a pane
-// without the field reads as unlocked), `added` (a pane without the field reads as one its page's
-// arrangement defined, and a float's pane never carries it), `documents` (a pane without the field
-// reads as not the documents pane of a workbench, and a float's pane never carries it) and
-// `recent`, the ids of the other tabs it showed (a version 5 envelope holds none), and a saved pane
-// whose pinned tabs are not first is put in that order on reading.
+// layouts of the folder pages that were closed (kept.ts reads them). Only an envelope of
+// LAYOUT_VERSION is read; any other version is not, and the text of one is kept under UNREAD_KEY by
+// the load (load.ts) while the default pages show. A float that does not add up (no tab, a place
+// past the window, an id a page or another float already uses, a tab id held twice, a second float
+// docked on one edge, a window place with a size that is not finite or is under 200) is dropped on
+// reading and the rest kept, and so is a kept layout that does not add up. A pane carries `locked`
+// (a pane without the field reads as unlocked), `added` (a pane without the field reads as one its
+// page's arrangement defined, and a float's pane never carries it), `documents` (a pane without the
+// field reads as not the documents pane of a workbench, and a float's pane never carries it) and
+// `recent`, the ids of the other tabs it showed, and a saved pane whose pinned tabs are not first
+// is put in that order on reading.
 
 import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
 import {
-    FLOATLESS_VERSION,
-    FLOATS_VERSION,
     LAYOUT_VERSION,
     MIN_SIZE,
-    PAGES_VERSION,
-    PINS_VERSION,
-    WORKBENCH_VERSION,
-    newPage,
     pageLeaf,
     pinnedTabsFirst,
     show,
@@ -49,11 +38,8 @@ import {
     type Workbench
 } from '../model.ts';
 import { placeFits } from '../open/float/pages.ts';
-import { withInfoFolded, withSystemLabel } from './fold.ts';
-import { folderOf, itemOf, keptOf, withoutFolderLabels } from './kept.ts';
-import { treeWithoutRetired, withoutRetiredTabs } from './migrate.ts';
+import { folderOf, itemOf, keptOf } from './kept.ts';
 import { refusedLeaves, settlePageLeaves, type Refusal } from '../nested.ts';
-import { normaliseSizes } from '../tree.ts';
 import { focusedPane, settleFocus } from '../workbench.ts';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import { filledTextShape, mapShape, readAs, unchanged } from '../../../../data/shapes/shapes.ts';
@@ -100,24 +86,9 @@ const pathShape = unchanged(z.array(wholeNumberShape.pipe(z.number().nonnegative
 /** A saved focus: the path of the pane it names. */
 const focusShape = z.object({ path: pathShape });
 
-/** A saved focus of two trees: which tree it named and the path inside it. */
-const dockedFocusShape = z.object({ target: z.enum(['main', 'panel']), path: pathShape });
-
 /** A saved one-tree workbench: its tree and its focus, each read where it is used. */
 const workbenchShape = z.object({
     root: z.unknown().optional(),
-    focus: z.unknown().optional()
-});
-
-/** The share of the window a saved panel took when its own share cannot be read. */
-const PANEL_SHARE = 0.3;
-
-/** A saved workbench of two trees: where the panel docks, and how much of the window it took. */
-const dockedShape = z.object({
-    main: z.unknown().optional(),
-    panel: z.unknown().optional(),
-    dock: z.enum(['right', 'bottom', 'hidden']),
-    panelSize: z.number().catch(PANEL_SHARE),
     focus: z.unknown().optional()
 });
 
@@ -359,9 +330,8 @@ function readPane(
             problems.push(`${where}: tab ${index} repeats the instance id ${held.id}`);
         ids.add(held.id);
         const tab: Instance = { id: held.id, view, state: held.state };
-        // The flags are optional, so a layout saved before there were preview tabs reads as one
-        // whose tabs are all kept, and one saved before there were pinned tabs as one with none. A
-        // tab is never both: a pin keeps a preview.
+        // The flags are optional: a tab without `preview` is kept and one without `pinned` is not
+        // pinned. A tab is never both: a pin keeps a preview.
         if (held.pinned === true) tab.pinned = true;
         else if (held.preview === true) tab.preview = true;
         tabs.push(tab);
@@ -384,7 +354,7 @@ function readPane(
     if (recent.length > 0) read.recent = recent;
     // Only an empty pane keeps a kind: the pane a Terminal tab left stays a terminals pane.
     if (tabs.length === 0 && value.keeps === 'terminals') read.keeps = 'terminals';
-    // A pane saved before panes could be locked has no field, which reads as unlocked.
+    // A pane without `locked` is unlocked.
     if (value.locked === true) read.locked = true;
     // A pane saved without `added`, or with any other value, is one its page's arrangement defined.
     if (value.added === true) read.added = true;
@@ -396,8 +366,8 @@ function readPane(
 
 /**
  * The order a saved pane showed its tabs in: the ids that name another tab of the pane, each once,
- * in their saved order. A pane saved before the order was kept, and a value that is no list, show
- * the active tab alone.
+ * in their saved order. A pane without the field, and a value that is no list, show the active tab
+ * alone.
  */
 function recentOf(value: unknown, tabs: readonly Instance[], active: string): string[] {
     const listed = readAs(recentShape, value) ?? [];
@@ -517,53 +487,17 @@ function keptField(pages: Pages): { kept?: KeptWorkbench[] } {
 }
 
 /**
- * The pages in the envelope of the version before floats, for a layout read from one that has not
- * yet taken the shipped floats in: it holds the pages and nothing else, as it was read.
+ * Read valid pages from an envelope of LAYOUT_VERSION; any other version, or text that is no
+ * envelope, is null. A page is read as its id, label, tree, rail key, folder and the item it was
+ * opened for; any other field a saved page carries is dropped, so the next save writes it no more.
+ * A leaf naming a page this envelope does not hold, or one that would make a page show itself,
+ * becomes an empty added pane: the rest of the arrangement is still the one the viewer left. The
+ * layouts kept of closed folder pages are read apart, and one that does not add up is dropped with
+ * the rest kept.
  */
-export function serialiseFloatless(pages: Pages): string {
-    return JSON.stringify({
-        version: FLOATLESS_VERSION,
-        pages: pages.pages,
-        current: pages.current,
-        ...keptField(pages)
-    });
-}
-
-/**
- * Whether a saved envelope was written before floats: the layout holds none, so the shipped floats
- * are still to be taken in by the store that loaded it.
- */
-export function needsFloats(value: unknown): boolean {
-    const version = asEnvelope(value)?.version;
-    return typeof version === 'number' && version < FLOATS_VERSION;
-}
-
-/**
- * Read valid pages from the current envelope, or from any supported older one by migration: a page
- * that held two trees and a docked panel becomes a page holding one tree. A page is read as its id,
- * label, tree, rail key, folder and the item it was opened for; any other field a saved page
- * carries is dropped, so the next save writes it no more. The layouts kept of closed folder pages
- * are read apart, and one that does not add up is dropped with the rest kept.
- */
-export function parseLayout(value: unknown, label: string): Pages | null {
+export function parseLayout(value: unknown): Pages | null {
     const envelope = asEnvelope(value);
-    if (envelope === null) return null;
-    if (envelope.version === WORKBENCH_VERSION) {
-        const only = readDockedWorkbench(envelope.workbench);
-        return only === null
-            ? null
-            : defaultPagesOf(newPage(label, { ...only, root: treeWithoutRetired(only.root) }));
-    }
-    const version = envelope.version;
-    if (
-        version !== LAYOUT_VERSION &&
-        version !== PINS_VERSION &&
-        version !== FLOATS_VERSION &&
-        version !== FLOATLESS_VERSION &&
-        version !== PAGES_VERSION
-    ) {
-        return null;
-    }
+    if (envelope?.version !== LAYOUT_VERSION) return null;
     const held = readAs(pagesEnvelopeShape, envelope);
     if (held === null) return null;
     const { current } = held;
@@ -571,10 +505,7 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     for (const raw of held.pages) {
         const entry = readAs(savedPageShape, raw);
         if (entry === null) return null;
-        const workbench =
-            version === PAGES_VERSION
-                ? readDockedWorkbench(entry.workbench)
-                : readWorkbench(entry.workbench);
+        const workbench = readWorkbench(entry.workbench);
         if (workbench === null) return null;
         const page: Page = { id: entry.id, label: entry.label, workbench };
         const rail = railKey(entry.rail, pages);
@@ -586,25 +517,13 @@ export function parseLayout(value: unknown, label: string): Pages | null {
         const folder = folderOf(entry.folder, pages);
         if (folder !== null) {
             page.folder = folder;
-            page.workbench = withoutFolderLabels(page.workbench, folder);
             const item = itemOf(entry.item);
             if (item !== null) page.item = item;
         }
         pages.push(page);
     }
-    // A saved info page is folded into the views page, which takes the System label (fold.ts), and
-    // a `config` tab becomes a `settings` tab (migrate.ts); a leaf naming a page this envelope does
-    // not hold, or one that would make a page show itself, then becomes an empty added pane: the
-    // rest of the arrangement is still the one the viewer left. A saved `changes` or `agents` tab
-    // is carried to a `session-detail` tab by the same step.
-    const floats =
-        version === LAYOUT_VERSION || version === PINS_VERSION || version === FLOATS_VERSION
-            ? readFloats(held.floats, pages)
-            : [];
-    const migrated = withSystemLabel(
-        withInfoFolded(withoutRetiredTabs({ pages, current, floats }))
-    );
-    const read: Pages = settlePageLeaves(migrated);
+    const floats = readFloats(held.floats, pages);
+    const read: Pages = settlePageLeaves({ pages, current, floats });
     if (checkPages(read).length > 0) return null;
     const kept = keptOf(held.kept, readWorkbench, instanceIds(read));
     return kept.length === 0 ? read : { ...read, kept };
@@ -678,21 +597,9 @@ function railKey(value: string | undefined, earlier: Page[]): string | null {
     return earlier.some((page) => page.rail === value) ? null : value;
 }
 
-/** Make a one-page collection from a supported one-workbench envelope. */
-function defaultPagesOf(page: Page): Pages {
-    return { pages: [page], current: page.id, floats: [] };
-}
-
 /** Read an envelope object, parsing JSON when needed. */
 function asEnvelope(value: unknown): Record<string, unknown> | null {
     return readAs(envelopeShape, value);
-}
-
-/** Read one workbench from the envelope a browser held before a page was one tree. */
-export function parseWorkbench(value: unknown): Workbench | null {
-    const envelope = asEnvelope(value);
-    if (envelope?.version !== WORKBENCH_VERSION) return null;
-    return readDockedWorkbench(envelope.workbench);
 }
 
 /** Read one saved workbench after its envelope has been removed. */
@@ -705,43 +612,6 @@ function readWorkbench(value: unknown): Workbench | null {
     const workbench: Workbench = { root };
     const focus = readAs(focusShape, held.focus);
     return focus === null ? workbench : settleFocus({ ...workbench, focus: { path: focus.path } });
-}
-
-/**
- * One saved workbench of two trees as one tree. A panel holding no tab at all is dropped and the
- * main area is the root; otherwise the root is a split of the two, a row for a panel on the right
- * and a column for one along the bottom, at the shares the panel had. A hidden panel that still
- * holds tabs is that same split with the panel child folded, so no tab is lost; a pane maximised
- * inside that hidden panel is not carried, since a folded child cannot be the one shown alone.
- */
-function readDockedWorkbench(value: unknown): Workbench | null {
-    const saved = readAs(dockedShape, value);
-    if (saved === null) return null;
-    const { dock } = saved;
-    const problems: string[] = [];
-    const ids = new Set<string>();
-    const main = readTree(saved.main, 'main', problems, ids);
-    const panel = readTree(saved.panel, 'panel', problems, ids);
-    if (main === null || panel === null || problems.length > 0) return null;
-    const held = tabsOf(panel).length > 0;
-    const focus = readAs(dockedFocusShape, saved.focus);
-    if (!held) {
-        const only: Workbench = { root: main };
-        const inMain = focus !== null && focus.target === 'main';
-        return settleFocus(inMain ? { ...only, focus: { path: focus.path } } : only);
-    }
-    const size = saved.panelSize;
-    const split: Layout = {
-        kind: 'split',
-        dir: dock === 'bottom' ? 'col' : 'row',
-        sizes: normaliseSizes([1 - size, size]),
-        children: [main, panel]
-    };
-    if (dock === 'hidden') split.folded = [1];
-    const workbench: Workbench = { root: split };
-    if (focus === null || (dock === 'hidden' && focus.target === 'panel')) return workbench;
-    const at = focus.target === 'main' ? 0 : 1;
-    return settleFocus({ ...workbench, focus: { path: [at, ...focus.path] } });
 }
 
 /** Read one saved tree and prefix its violations with the tree name. */

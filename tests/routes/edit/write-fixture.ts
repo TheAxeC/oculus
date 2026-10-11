@@ -26,7 +26,7 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { LOCAL_NAME, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import type { Project, SideProject, Tier } from '../../../src/lib/data/model/index.ts';
+import type { PortfolioConfig, Project, Tier } from '../../../src/lib/data/model/index.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
@@ -35,9 +35,11 @@ import { present } from '../../fixtures/present.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
+import { firstHubConfig } from '../../../src/lib/server/files/roots.ts';
+import { defaultWorkspacesPath, writeSaved } from '../../../src/lib/server/files/fs.ts';
 
 export const MANIFEST =
-    'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
+    'id: alpha\ntier: projects\ntype: active\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
 /** A collection file and a career file, at the hub paths config/sources.yml names. */
 const TASKS =
@@ -116,7 +118,8 @@ export function warmConfig(): void {
 
 /**
  * The write target over a synthetic hub whose overrides file, bookmarks and change log were
- * checked to be inside it, over the engine's own configuration with one scanned folder.
+ * checked to be inside it, over the engine's own configuration with two scanned folders and the
+ * folder a new project of the tier `projects` is made in.
  */
 export function targetOver(
     dir: string,
@@ -127,12 +130,15 @@ export function targetOver(
     const real = portfolioConfigFrom(merged);
     return {
         hub: dir,
-        config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
+        config: {
+            ...real,
+            scan: [{ dir: 'projects/manuscripts' }, { dir: 'projects/ideas', optional: true }],
+            newProjectDir: { projects: 'projects/ideas' }
+        },
         engine: engineDir(),
         career: careerRules(merged),
         overrides: files.overrides,
         projects: () => [],
-        sideProjects: () => [],
         bookmarks: files.bookmarks,
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),
@@ -228,7 +234,7 @@ export const DECK = `deck:
 groups:
     # the pillars
     pillars:
-        find: { folders: projects/*/*/present, tiers: [active] }
+        find: { folders: projects/*/*/present, tiers: [projects] }
         slides:
             - alpha
     # the rest
@@ -259,7 +265,7 @@ function deckProject(id: string, tier: Tier): Project {
     return fixtureProject({
         id,
         tier,
-        type: tier === 'active' ? 'active' : 'archive',
+        type: tier === 'projects' ? 'active' : 'published',
         title: id,
         folder: `projects/${tier}/${id}`,
         file: `projects/${tier}/${id}/project.yml`
@@ -280,8 +286,8 @@ export function deckTarget(): WriteTarget {
     writeFileSync(file, DECK);
     writeFileSync(join(dir, DECK_FOLDER, 'intro.md'), '# Intro\n');
     const projects = [
-        deckProject('alpha', 'active'),
-        deckProject('beta', 'active'),
+        deckProject('alpha', 'projects'),
+        deckProject('beta', 'projects'),
         deckProject('gamma', 'archive')
     ];
     for (const project of projects) {
@@ -299,7 +305,6 @@ export function deckTarget(): WriteTarget {
         engine: engineDir(),
         career: careerRules(loadConfig(engineDir()).config),
         projects: () => projects,
-        sideProjects: () => [],
         files: { roots: () => [{ key: 'hub', dir }] },
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
@@ -309,10 +314,17 @@ export function deckTarget(): WriteTarget {
     };
 }
 
-/** The manifest of each side project `plantSides` plants, with the research keys a write takes. */
-export const SIDE_MANIFEST = [
+/**
+ * The manifest of each personal project `plantPersonal` plants, with the research keys a write
+ * takes.
+ */
+export const PERSONAL_MANIFEST = [
+    'tier: personal',
+    'type: idea',
     'title: "An idea"',
-    'status: idea',
+    'status:',
+    '  chips: [nascent]',
+    '  line: "New project."',
     'eli5: "what it is"',
     'snooze: 2026-11-01',
     'subtasks:',
@@ -320,118 +332,104 @@ export const SIDE_MANIFEST = [
     ''
 ].join('\n');
 
-/** The scan rule that names the hub's side-projects folder. */
-export const SIDE_SCAN = { dir: 'side-projects', type: 'side-project' };
+/** The scan rule that names the hub's folder of personal projects. */
+export const PERSONAL_SCAN = { dir: 'side-projects' };
 
-/** What `plantSides` plants: the served root, the file of each side project and the projects. */
-export type PlantedSides = {
-    /** The served root that holds the second side project's `.oculus/project.yml`. */
+/** The key of the root `personalTarget` serves, which is also the id of its project. */
+export const PERSONAL_ROOT = 'r';
+
+/** What `plantPersonal` plants: the served root and the manifest file of each project by its id. */
+export type PlantedPersonal = {
+    /** The served root that holds the second project's `.oculus/project.yml`. */
     served: string;
-    /** The manifest file of each side project, by its id. */
-    files: Record<'side:idea' | 'root:r', string>;
-    /** The two side projects as the server's published portfolio holds them. */
-    sides: SideProject[];
+    /** The manifest file of the hub project `idea` and of the repository project `r`. */
+    files: Record<'idea' | 'r', string>;
 };
 
 /**
- * Two side projects planted, both holding `SIDE_MANIFEST`: `side:idea` in the `side-projects/`
- * folder of `hubDir`, and `root:r` at `.oculus/project.yml` of a served root under the system
- * temporary directory. Every path is asserted to be inside the folder it is planted in.
+ * Two personal projects planted, both holding `PERSONAL_MANIFEST`: `idea` in the `side-projects/`
+ * folder of `hubDir`, and `r` at `.oculus/project.yml` of a served root under the system temporary
+ * directory. Every path is asserted to be inside the folder it is planted in.
  */
-export function plantSides(hubDir: string): PlantedSides {
+export function plantPersonal(hubDir: string): PlantedPersonal {
     const served = scratchDir('oculus-served-');
     const files = {
-        'side:idea': join(hubDir, 'side-projects', 'idea', 'project.yml'),
-        'root:r': join(served, '.oculus', 'project.yml')
+        idea: join(hubDir, 'side-projects', 'idea', 'project.yml'),
+        r: join(served, '.oculus', 'project.yml')
     };
     for (const [id, file] of Object.entries(files)) {
-        const inside = id === 'root:r' ? served : hubDir;
+        const inside = id === 'r' ? served : hubDir;
         expect(resolve(file).startsWith(resolve(inside) + sep)).toBe(true);
         mkdirSync(join(file, '..'), { recursive: true });
-        writeFileSync(file, SIDE_MANIFEST);
+        writeFileSync(file, PERSONAL_MANIFEST);
     }
-    const record = (id: string, file: string, source: SideProject['source']): SideProject => ({
-        id,
-        title: 'An idea',
-        status: 'idea',
-        eli5: 'what it is',
-        next: '',
-        links: [],
-        source,
-        file,
-        folder: source.kind === 'hub' ? source.folder : source.dir,
-        docs: []
+    return { served, files };
+}
+
+/**
+ * The configuration of a target with one more root named, after the roots it holds: its merged
+ * configuration lists the root, and its repositories are the ones the server reads from that list.
+ */
+function withRoot(base: WriteTarget, entry: { key: string; dir: string }): PortfolioConfig {
+    const held: unknown = base.config.merged.roots;
+    const roots: unknown[] = Array.isArray(held) ? held : [];
+    const merged = { ...base.config.merged, roots: [...roots, entry] };
+    const { repositories } = firstHubConfig({
+        config: merged,
+        engine: base.engine,
+        local: { hub: base.hub }
     });
-    return {
-        served,
-        files,
-        sides: [
-            record('side:idea', files['side:idea'], { kind: 'hub', folder: 'side-projects/idea' }),
-            record('root:r', files['root:r'], { kind: 'root', key: 'r', dir: served })
-        ]
-    };
+    return { ...base.config, merged, repositories };
 }
 
-/** What `sideTarget` plants: the target, and the manifest file of each side project by its id. */
-export type SideTarget = { into: WriteTarget; files: PlantedSides['files'] };
+/** What `personalTarget` plants: the target, and the manifest file of each project by its id. */
+export type PersonalTarget = { into: WriteTarget; files: PlantedPersonal['files'] };
 
 /**
- * The target with the two side projects of `plantSides` planted, its scan naming the hub's
- * `side-projects/` folder, and the target publishing both.
+ * The target with the two personal projects of `plantPersonal` planted, its scan naming the hub's
+ * `side-projects/` folder and its `roots:` naming the served root `r`.
  */
-export function sideTarget(base: WriteTarget = target()): SideTarget {
-    const { files, sides } = plantSides(base.hub);
-    const scan = [...base.config.scan, SIDE_SCAN];
-    return {
-        into: { ...base, config: { ...base.config, scan }, sideProjects: () => sides },
-        files
-    };
+export function personalTarget(base: WriteTarget = target()): PersonalTarget {
+    const { served, files } = plantPersonal(base.hub);
+    const scan = [...base.config.scan, PERSONAL_SCAN];
+    const rooted = withRoot(base, { key: PERSONAL_ROOT, dir: served });
+    return { into: { ...base, config: { ...rooted, scan } }, files };
 }
 
 /**
- * The target with a side project of a second hub, the hub `two`, added to the two of `sideTarget`:
- * its manifest is planted at `side-projects/idea/project.yml` of a folder of its own under the
- * system temporary directory, and the target publishes it as `two:side:idea` and names the hub.
+ * The target with a personal project of a second hub, the hub `two`, added to the two of
+ * `personalTarget`: its manifest is planted at `side-projects/idea/project.yml` of a folder of its
+ * own under the system temporary directory, and the target names the hub, whose project is
+ * `two:idea`.
  */
-export function secondHubSide(base: WriteTarget = target()): SideTarget & { second: string } {
-    const first = sideTarget(base);
+export function secondHubPersonal(
+    base: WriteTarget = target()
+): PersonalTarget & { second: string } {
+    const first = personalTarget(base);
     const second = scratchDir('oculus-second-');
     const file = join(second, 'side-projects', 'idea', 'project.yml');
     expect(resolve(file).startsWith(resolve(second) + sep)).toBe(true);
     mkdirSync(join(file, '..'), { recursive: true });
-    writeFileSync(file, SIDE_MANIFEST);
-    const record: SideProject = {
-        id: 'two:side:idea',
-        root: 'two',
-        title: 'An idea',
-        status: 'idea',
-        eli5: 'what it is',
-        next: '',
-        links: [],
-        source: { kind: 'hub', folder: 'side-projects/idea' },
-        file,
-        folder: 'side-projects/idea',
-        docs: []
-    };
-    const sides = first.into.sideProjects();
+    writeFileSync(file, PERSONAL_MANIFEST);
+    const config = { ...first.into.config, scan: [PERSONAL_SCAN], repositories: [] };
     return {
-        into: {
-            ...first.into,
-            hubs: [{ key: 'two', hub: second, config: first.into.config }],
-            sideProjects: () => [...sides, record]
-        },
+        into: { ...first.into, hubs: [{ key: 'two', hub: second, config }] },
         files: first.files,
         second: file
     };
 }
 
-/** The id of the research project `repositoryTarget` plants, which is the key of its root. */
+/** The id of the project `repositoryTarget` plants, which is the key of its root. */
 export const REPOSITORY_ID = 'gamma';
 
 /** The manifest of the repository `repositoryTarget` plants. */
 export const REPOSITORY_MANIFEST = [
+    'tier: personal',
+    'type: active',
     'title: "A repository"',
-    'type: manuscript',
+    'status:',
+    '  chips: [building]',
+    '  line: "the line"',
     'snooze: 2026-11-01',
     'subtasks:',
     '  - { do: read it }',
@@ -442,26 +440,51 @@ export const REPOSITORY_MANIFEST = [
 export type RepositoryTarget = { into: WriteTarget; dir: string; file: string };
 
 /**
- * The target with a repository planted as a research project of the first hub: a folder under the
- * system temporary directory holding `.oculus/project.yml` and a README, named by an entry of
- * `roots:` with `tier: projects`, and the scan rule of the manuscripts folder carrying the same
- * tier word. The target's published projects stay empty, so a write finds the repository by
+ * The target with a repository planted as a project: a folder under the system temporary
+ * directory holding a README and, unless `manifest` is false, `.oculus/project.yml`, named by an
+ * entry of `roots:`. The target's published projects stay empty, so a write finds the repository by
  * reading the roots in force, as the server's writers do.
  */
-export function repositoryTarget(
-    base: WriteTarget = target(),
-    tier: string | null = 'projects'
-): RepositoryTarget {
+export function repositoryTarget(base: WriteTarget = target(), manifest = true): RepositoryTarget {
     const dir = scratchDir('oculus-repository-');
     const file = join(dir, '.oculus', 'project.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     mkdirSync(join(dir, '.oculus'), { recursive: true });
-    writeFileSync(file, REPOSITORY_MANIFEST);
+    if (manifest) writeFileSync(file, REPOSITORY_MANIFEST);
     writeFileSync(join(dir, 'README.md'), '# A repository\n');
-    const entry = { key: REPOSITORY_ID, dir, ...(tier === null ? {} : { tier }) };
-    const scan = [{ dir: 'projects/manuscripts', type: 'manuscript', tier: 'projects' }];
-    const merged = { ...base.config.merged, roots: [entry] };
-    return { into: { ...base, config: { ...base.config, scan, merged } }, dir, file };
+    return { into: { ...base, config: withRoot(base, { key: REPOSITORY_ID, dir }) }, dir, file };
+}
+
+/** The id of the project `workspaceTarget` plants, which is the key its root is saved under. */
+export const WORKSPACE_ID = 'added';
+
+/** What `workspaceTarget` plants: the target, the workspace's added folder and its manifest. */
+export type WorkspaceTarget = { into: WriteTarget; dir: string; file: string };
+
+/**
+ * The target with a folder added to the workspace as a project: a folder under the system
+ * temporary directory holding `.oculus/project.yml`, saved in the hub's workspaces file under the
+ * workspace in force and named by no `roots:` entry. The target's repositories are the ones the
+ * server reads from the configured and the saved roots.
+ */
+export function workspaceTarget(base: WriteTarget = target()): WorkspaceTarget {
+    const dir = scratchDir('oculus-workspace-');
+    const file = join(dir, '.oculus', 'project.yml');
+    expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+    mkdirSync(join(dir, '.oculus'), { recursive: true });
+    writeFileSync(file, REPOSITORY_MANIFEST);
+    const saved = {
+        current: 'work',
+        workspaces: [{ name: 'work', roots: [{ key: WORKSPACE_ID, dir }] }],
+        dropped: []
+    };
+    writeSaved(defaultWorkspacesPath(base.hub), saved);
+    const { repositories } = firstHubConfig({
+        config: base.config.merged,
+        engine: base.engine,
+        local: { hub: base.hub }
+    });
+    return { into: { ...base, config: { ...base.config, repositories } }, dir, file };
 }
 
 /** The path of the portfolio deck's file under the hub of a deck target. */

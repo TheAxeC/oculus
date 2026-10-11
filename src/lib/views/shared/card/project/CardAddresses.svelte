@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, shared view. The `links:` of a side project's manifest, one line each. An entry is
+    // Layer 3, shared view. The `links:` of a project's manifest, one line each. An entry is
     // an address only when views/shared/forms/posting.ts says it names a web page; every other
     // entry is drawn as the words it is.
 

@@ -2,9 +2,7 @@
 // drawn in the view catalogue and on pane tabs.
 // The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
 
-import { z } from 'zod';
 import { scalar, isMap, numericSetting } from '../../data/helpers/guards.ts';
-import { readAs, rowsShape } from '../../data/shapes/shapes.ts';
 import type { EntitiesStore } from '../shared/stores/shapes.ts';
 import type { FeedsStore, FeedState } from '../feeds/feeds.svelte.ts';
 import type { AuditStore } from '../system/audit.svelte.ts';
@@ -30,12 +28,6 @@ import type { Collection, GitState } from '../../data/model/index.ts';
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };
 
-/** A `scan` row that names the board tier it belongs to and the project type it holds. */
-const scanTypeShape = z.object({ tier: z.unknown().optional(), type: z.string() });
-
-/** The rows of `scan` that name a type, and none for a value that is not a list. */
-const scanTypesShape = rowsShape(scanTypeShape);
-
 /** A socket feed with readable entries that can supply a badge count. */
 function available(feed: FeedState | null): feed is FeedState {
     return feed?.ok === true && feed.error === undefined && feed.missing !== true;
@@ -59,7 +51,6 @@ function cellsTitle(cells: BadgeCell[]): string {
 /** The reactive view badges of one client. */
 export type RailBadgesStore = {
     boardBadge: (view: string) => string;
-    personalBadge: () => string;
     collectionBadge: (key: string) => string;
     collectionBadgeTone: (key: string) => string;
     collectionBadgeTitle: (key: string) => string;
@@ -103,15 +94,9 @@ export function createRailBadges(
     problems: Pick<ProblemsStore, 'total'>,
     selectors: BadgeSelectors
 ): RailBadgesStore {
-    /** The number of cards on one of the three project boards. */
+    /** The number of cards on one of the four project boards. */
     function boardBadge(view: string): string {
         return String(selectors.board(selectors.boardPreset(view)).length);
-    }
-
-    /** The number of side projects on the Personal board, none before the first snapshot. */
-    function personalBadge(): string {
-        const snapshot = entities.portfolio();
-        return String(snapshot === null ? 0 : Object.keys(snapshot.entities.personal).length);
     }
 
     /** The number of entries in one collection's configured `nav_live` status set. */
@@ -222,11 +207,10 @@ export function createRailBadges(
         return countText(total);
     }
 
-    /** The project-board types from `scan`, in the vocabulary's configured type order. */
+    /** The types the Projects board's projects hold, in the vocabulary's configured type order. */
     function projectTypeOrder(): string[] {
         const preset = selectors.boardPreset('projects');
-        const rows = readAs(scanTypesShape, selectors.configMap().scan) ?? [];
-        const types = new Set(rows.filter((row) => row.tier === preset.id).map((row) => row.type));
+        const types = new Set(selectors.board(preset).map((item) => item.project.type));
         return preset.typeOrder.filter((type) => types.has(type));
     }
 
@@ -292,7 +276,6 @@ export function createRailBadges(
 
     return {
         boardBadge,
-        personalBadge,
         collectionBadge,
         collectionBadgeTone,
         collectionBadgeTitle,

@@ -1,7 +1,6 @@
 // Layer 2, client state. The lines the ticker is made of, and the builders that make them: the
 // shape of a line, the glyph of each category, the follow-ups that are due and the pending lines of
-// one checklist. The research projects' and entries' lines are built in ticker.ts and the side
-// projects' in side-lines.ts, both out of these builders.
+// one checklist. The projects' and entries' lines are built in ticker.ts out of these builders.
 
 import type { Followup, Id, Rooted } from '../../../data/model/index.ts';
 import { HUB_ROOT, rootOf } from '../../../data/helpers/hub-names.ts';
@@ -9,10 +8,6 @@ import { z } from 'zod';
 import { keyedRowsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { snoozed } from '../focus.ts';
 import { daysUntil } from './index.ts';
-import type { SideTarget } from './personal.ts';
-
-/** The manifest a side project's line opens: the Files root and path of the file, and its words. */
-export type SideManifest = SideTarget & { label: string };
 
 /** The glyph each category is drawn with, by the names of config/catalogs/glyphs.yml. */
 export const GLYPHS: Record<string, string> = {
@@ -22,7 +17,6 @@ export const GLYPHS: Record<string, string> = {
     teaching: 'teaching',
     collab: 'collab',
     task: 'tasks',
-    side: 'spark',
     position: 'scout',
     conference: 'conference',
     overdue: 'overdue',
@@ -57,8 +51,8 @@ export type TickerTarget = {
 /**
  * One line of the ticker. `kind` says what it is, which the view turns into words; `days` is whole
  * days to the date, negative when it has passed and null when the line carries no date. At most one
- * of `id` (a research project) and `entry` (the collection key of an entry) is set, and a line with
- * neither is not something the board can open, unless it carries `side`.
+ * of `id` (a project) and `entry` (the collection key of an entry) is set, and a line with neither
+ * is not something the board can open.
  */
 export type TickerItem = {
     kind: string;
@@ -87,12 +81,6 @@ export type TickerItem = {
      * counts in months rather than days. It is set only on such a line, and `days` is then null.
      */
     months?: number;
-    /**
-     * The manifest of the side project a line belongs to, as the Files root and path that open it
-     * in a source tab. Only a line of a side project carries it, and its buttons write that
-     * manifest through the target's `side:<slug>` or `root:<key>` id.
-     */
-    side?: SideManifest;
     /** The key of the hub the line's record is of, present only for a hub other than the first. */
     root?: string;
     snoozed: boolean;

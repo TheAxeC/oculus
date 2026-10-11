@@ -512,13 +512,19 @@ export function createWrites(
         return send({ name, data }, MEMORIES_PATH);
     }
 
-    /** Scaffold one idea project: a manifest and a README under projects/ideas/<id>. */
+    /**
+     * Scaffold one new project: a manifest and a README under `<folder>/<id>`. `tier` and `folder`
+     * are the board's; a call that names neither is made in the tier `projects`, under that tier's
+     * `new_project_dir`.
+     */
     async function newIdea(fields: {
         id: string;
         title?: string;
         short?: string;
         domain?: string;
         eli5?: string;
+        tier?: string;
+        folder?: string;
     }): Promise<WriteAnswer> {
         return send({ kind: 'new-idea', fields });
     }

@@ -25,11 +25,12 @@ import {
     DECK_ORDER,
     DECK_PATH,
     deckTarget,
-    sideTarget,
+    personalTarget,
     targetOver
 } from '../../routes/edit/write-fixture.ts';
 
-const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
+const MANIFEST =
+    'id: alpha\ntier: projects\ntype: active\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
 const TASKS =
     'title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
@@ -109,12 +110,12 @@ async function written(into: WriteTarget, body: unknown, row = ''): Promise<Chan
     return readChanges(logOf(into));
 }
 
-type Files = ReturnType<typeof sideTarget>['files'];
+type Files = ReturnType<typeof personalTarget>['files'];
 
 /**
- * The manifest writes of the first table: the research project, then a side project of the hub,
- * whose file is recorded by its path inside the hub, and a repository's, whose file is outside
- * the hub and is recorded by its absolute path.
+ * The manifest writes of the first table: the research project, then a personal project of the hub,
+ * whose file is recorded by its path inside the hub, and a repository's, whose file is outside the
+ * hub and is recorded by its absolute path.
  */
 const MANIFEST_ROWS = [
     {
@@ -127,8 +128,8 @@ const MANIFEST_ROWS = [
         after: 'a new line'
     },
     {
-        name: 'a side project of the hub',
-        id: 'side:idea',
+        name: 'a personal project of the hub',
+        id: 'idea',
         fields: { snooze: '2026-12-01' },
         file: (): string => join('side-projects', 'idea', 'project.yml'),
         field: 'snooze',
@@ -136,10 +137,10 @@ const MANIFEST_ROWS = [
         after: '2026-12-01'
     },
     {
-        name: 'a side project of a served root',
-        id: 'root:r',
+        name: 'a project of a served root',
+        id: 'r',
         fields: { snooze: '2026-12-01' },
-        file: (files: Files): string => files['root:r'],
+        file: (files: Files): string => files.r,
         field: 'snooze',
         before: '2026-11-01',
         after: '2026-12-01'
@@ -155,16 +156,16 @@ const SUBTASK_ROWS = [
         file: (): string => join('tasks', 'tasks.yml')
     },
     {
-        name: 'a side project of the hub',
-        host: { id: 'side:idea' },
-        key: 'side:idea',
+        name: 'a personal project of the hub',
+        host: { id: 'idea' },
+        key: 'idea',
         file: (): string => join('side-projects', 'idea', 'project.yml')
     },
     {
-        name: 'a side project of a served root',
-        host: { id: 'root:r' },
-        key: 'root:r',
-        file: (files: Files): string => files['root:r']
+        name: 'a project of a served root',
+        host: { id: 'r' },
+        key: 'r',
+        file: (files: Files): string => files.r
     }
 ];
 
@@ -172,7 +173,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
     it.each(MANIFEST_ROWS)(
         'records one manifest field with the value it had and the value written',
         async (row) => {
-            const { into, files } = sideTarget(target());
+            const { into, files } = personalTarget(target());
             const rows = await written(
                 into,
                 { kind: 'manifest', id: row.id, fields: row.fields },
@@ -232,7 +233,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
     it.each(SUBTASK_ROWS)(
         'records a subtask ticked, a subtask added and a subtask taken out',
         async (row) => {
-            const { into, files } = sideTarget(target());
+            const { into, files } = personalTarget(target());
             const ticked = await written(
                 into,
                 {

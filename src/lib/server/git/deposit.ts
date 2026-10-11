@@ -437,7 +437,7 @@ export async function push(
 
     const status = deposit.visibility === 'private' ? 'review-anon' : 'deposited';
     const { into: at, id: inner } = owned(into, id);
-    const outcome = writeManifest(at.hub, at.config, at.sideProjects(), inner, {
+    const outcome = writeManifest(at.hub, at.config, inner, {
         'code_availability.status': status,
         'code_availability.url': url,
         'code_availability.date': today()

@@ -27,7 +27,8 @@ import {
     buildPortfolioWithSchemas,
     joinHubs,
     portfolioConfigFrom,
-    readSecondHub
+    readSecondHub,
+    sourcesFindings
 } from '../../../data/index.ts';
 import { mergedFeeds } from '../../../data/snapshot/hubs/feeds.ts';
 import type { HubSnapshot } from '../../../data/snapshot/hubs/merge.ts';
@@ -66,7 +67,7 @@ import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
 import { HUB_ROOT, hubRoots, readRoots, type Root } from '../../files/files.ts';
-import { repositoriesOf } from '../../files/roots.ts';
+import { withRepositories, workspaceFindings } from '../../files/roots.ts';
 import { buildFeeds, isLinkedinFile } from '../../edit/feeds.ts';
 import type {
     AuditFinding,
@@ -90,9 +91,7 @@ export type WatchPaths = {
     host: HostInfo;
     /**
      * The directories the file browser serves, read at every rebuild. `repositoriesOf` decides
-     * which of them are repositories whose `.oculus/project.yml` is read, as a research project of
-     * the hub when the entry names a `tier` or as a side project of the Personal board and the
-     * Focus ticker when it names none.
+     * which of them are repositories whose `.oculus/project.yml` is read as a project of the hub.
      */
     roots: () => Root[];
     /**
@@ -638,6 +637,23 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                             sourceFile(paths.engine, paths.hub, from, 'roots'),
                             paths.hub
                         ).findings,
+                        ...workspaceFindings(
+                            {
+                                config,
+                                engine: paths.engine,
+                                local: { hub: paths.hub, workspaces: paths.workspacesFile }
+                            },
+                            textCatalog(config)
+                        ),
+                        ...sourcesFindings(config, {
+                            scan: sourceFile(paths.engine, paths.hub, from, 'scan'),
+                            newProjectDir: sourceFile(
+                                paths.engine,
+                                paths.hub,
+                                from,
+                                'new_project_dir'
+                            )
+                        }),
                         ...docFindings(
                             config,
                             paths.hub,
@@ -649,8 +665,13 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 hub.publish('config', payload);
                 if (closed) return;
             }
-            const portfolio = portfolioConfigFrom(config);
-            const roots = repositoriesOf(listed, paths.hub, engineConfig);
+            const portfolio = withRepositories(
+                portfolioConfigFrom(config),
+                listed,
+                paths.hub,
+                engineConfig
+            );
+            const roots = portfolio.repositories;
             const byHub = [
                 namedByConfig(paths.hub, portfolio, roots),
                 ...others.map((one) => namedByConfig(one.dir, one.portfolio))
@@ -672,8 +693,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 roots,
                 checker,
                 engineConfig,
-                HUB_ROOT,
-                sourceFile(paths.engine, paths.hub, from, 'roots')
+                HUB_ROOT
             );
             const built = joinHubs(
                 base,

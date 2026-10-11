@@ -1,6 +1,6 @@
 # ===========================================================================
 # deck-schema.yml
-# oculus's own configuration - the keys of a deck's `present.yml`, as the hub's `schema:` blocks write
+# oculus's own configuration, the keys of a deck's `present.yml`, as the hub's `schema:` blocks write
 # them. It governs `deck/present.yml` and every project's `present/present.yml`. oculus turns it into
 # a JSON Schema, so the YAML editor completes the keys, shows each help line and marks a key the
 # deck reader does not read. A group's `slides:` are project ids, checked against the projects like
@@ -25,7 +25,7 @@ deck_schema:
     map: true
     help: "A map from a group name to its find rule, its sort, whether it discovers further decks and its slides."
     fields:
-      - { field: find, type: raw, help: "Which project folders the group finds: their folder globs, the tiers and the statuses they may have." }
+      - { field: find, type: raw, help: "Which project folders the group finds: their folder globs, the tiers, the types and the statuses they may have." }
       - { field: sort, type: text, help: "How the found decks are ordered: folder or title." }
       - { field: discover, type: checkbox, help: "Whether the group also takes the decks it finds beyond the slides it names." }
       - { field: slides, type: tags, from: projects, help: "The projects whose decks the group shows, in order, each named by its project id." }

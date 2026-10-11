@@ -119,7 +119,9 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // language server is given a file of, the `secrets` folder of every hub and `~/.oculus`, which the
 // relay refuses by and the page refuses a tab by, so the two agree. `data/shapes/vocab-keys` reads
 // the keys of a vocabulary key of vocab.yml, which the schema check and the entry forms read the
-// same way.
+// same way. `data/helpers/hub-names` also holds which folders a project scan enters and whether a
+// folder lies in a scan folder: the scan reader, the server's check of a new project's folder and
+// the page's new-project form ask the same question, so they cannot disagree.
 //
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
@@ -173,10 +175,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // status bar's linter items and the palette's ESLint configuration list draw the linters' states
 // and names.
 //
-// `data/snapshot/as-project` is the side project seen as a project and the place of any project's
-// folder: the server hands the chat, the document route and the file listing a side project through
-// it, and the page draws a side project's card, project view and manifest form from the same
-// record, so the two cannot disagree about where a repository's folder is.
+// `data/snapshot/place` is the place of any project's folder: the server finds the folder for the
+// chat, the document route and the file listing through it, and the page draws a project's card,
+// project view and manifest form from the same function, so the two cannot disagree about where a
+// repository's folder is.
 //
 // `state/client/context` is where the client's stores are wired together, and it names nothing of
 // layer 3: the view registry is a state module, and the page root makes the primitives' tooltip
@@ -244,7 +246,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/apps',
         'data/helpers/files/private-folders',
         'data/helpers/hub-names',
-        'data/snapshot/as-project',
+        'data/snapshot/place',
         'data/shapes/vocab-keys',
         'data/accounts/leads',
         'data/helpers/worktrees',

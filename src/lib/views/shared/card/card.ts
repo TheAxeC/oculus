@@ -91,13 +91,10 @@ export function openDocument(
 
 /**
  * Open the workbench of a project's folder, under the Files root that holds it, named by the
- * project's title, with the project view in its documents pane; a ghost has no project view and
- * opens none.
+ * project's title, with the project view in its documents pane.
  */
 export function openWorkbench(client: ClientState, item: BoardItem, tab: string): void {
-    const first = item.project.ghost
-        ? undefined
-        : { view: 'project', state: { id: item.id, label: tab } };
+    const first = { view: 'project', state: { id: item.id, label: tab } };
     const { root, path } = placeOf(item.project);
     client.folders.open({ root, path }, { label: item.project.title, item: first });
 }

@@ -11,7 +11,7 @@ import { defaultOverridesPath } from '../../../sessions/overrides.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
 import { words } from '../../../core/words.ts';
 import { projectDirectory } from '../../../files/files.ts';
-import { hubTargets } from '../../../files/roots.ts';
+import { firstHubConfig, hubTargets } from '../../../files/roots.ts';
 import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from '../sessions.ts';
 import { shellWord } from '../shell-word.ts';
@@ -112,7 +112,11 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const seed = portfolio
         ? words(catalog, 'server.chat.seed_portfolio')
         : words(catalog, 'server.chat.seed_focus', project.title);
-    writeTextAtomic(index, portfolioContext(local.hub, config), 0o600);
+    writeTextAtomic(
+        index,
+        portfolioContext(local.hub, firstHubConfig({ config, engine, local })),
+        0o600
+    );
     try {
         return await startTerminal(
             {

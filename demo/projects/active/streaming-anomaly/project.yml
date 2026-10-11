@@ -1,5 +1,6 @@
 id: streaming-anomaly
 type: active
+tier: projects
 short: Stream-Anomaly
 title: Low-rank streaming anomaly detection
 lead: A. Example

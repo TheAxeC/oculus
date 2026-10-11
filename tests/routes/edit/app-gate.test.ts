@@ -19,8 +19,8 @@ import { MANIFEST, notesFiles, PAGE, routeSetup } from '../apps/apps-fixture.ts'
 import {
     changesOf,
     request,
-    SIDE_MANIFEST,
-    sideTarget,
+    PERSONAL_MANIFEST,
+    personalTarget,
     target,
     TOKEN,
     warmConfig
@@ -220,22 +220,21 @@ const ROWS: Row[] = [
         [403, { error: 'kind' }, []]
     ],
     [
-        'the endpoint lets an app write a side project of the hub and answers not found for a repository root, leaving its file as it was',
+        'the endpoint lets an app write a personal project of the hub and answers not found for a repository root, leaving its file as it was',
         async () => {
             const { into } = appTarget();
-            const planted = sideTarget(into);
+            const planted = personalTarget(into);
             const headers = { [APP_HEADER]: 'app:notes', [KIND_HEADER]: 'manifest' };
             const send = async (id: string): Promise<number> => {
                 const body = { kind: 'manifest', id, fields: { snooze: '2026-12-01' } };
                 return (await handleWrite(request(body, headers), TOKEN, planted.into)).status;
             };
-            const status = { hub: await send('side:idea'), root: await send('root:r') };
-            const held = (id: 'side:idea' | 'root:r'): string =>
-                readFileSync(planted.files[id], 'utf8');
+            const status = { hub: await send('idea'), root: await send('r') };
+            const held = (id: 'idea' | 'r'): string => readFileSync(planted.files[id], 'utf8');
             return {
                 ...status,
-                hubWritten: held('side:idea') === SIDE_MANIFEST.replace('2026-11-01', '2026-12-01'),
-                rootKept: held('root:r') === SIDE_MANIFEST
+                hubWritten: held('idea') === PERSONAL_MANIFEST.replace('2026-11-01', '2026-12-01'),
+                rootKept: held('r') === PERSONAL_MANIFEST
             };
         },
         { hub: 200, root: 404, hubWritten: true, rootKept: true }

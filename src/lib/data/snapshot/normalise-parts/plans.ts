@@ -1,8 +1,7 @@
 // Layer 1, data. The two lists of dated work a manifest or a collection entry holds: its
 // `followup:` notes and its `subtasks:` checklist. They are read here, in one place, because a
-// research project's manifest, a side project's manifest (normalise-parts/personal.ts) and a
-// collection entry (normalise.ts) all write them in the same shapes, so one reading serves all
-// three and two readers cannot disagree about what a note or a line is.
+// project's manifest and a collection entry (normalise.ts) write them in the same shapes, so one
+// reading serves both and two readers cannot disagree about what a note or a line is.
 
 import { z } from 'zod';
 import { compact } from '../compact.ts';

@@ -22,6 +22,7 @@ import {
     sentence,
     type Raised,
     scopeOf,
+    isPersonal,
     slurp,
     isFolder,
     fileIn,
@@ -55,13 +56,13 @@ const FOLDERS: [string, string][] = [
 ];
 
 /** The project types a live project is, which are the ones asked for results and a dataset. */
-const LIVE = ['active', 'manuscript'];
+const LIVE = ['active'];
 
 /** The project types that should carry a venue once they are out of the author's hands. */
 const PLACED = ['published', 'submitted'];
 
-/** The tiers whose work the one-README standard covers. */
-const STANDARD = ['idea', 'active', 'manuscript'];
+/** The types whose work the one-README standard covers. */
+const STANDARD = ['idea', 'active'];
 
 /**
  * Every folder-relative path and folder name the scan reads off the disk. The portfolio watcher
@@ -149,7 +150,7 @@ function hasDataSection(folder: string): boolean {
 /** The open markers of one project's documents and of every collection entry. */
 export function markers(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
-        if (project.ghost) continue;
+        if (isPersonal(project)) continue;
         const folder = folderOnDisk(input.hub, project);
         for (const name of [...SCANNED, ...deckDocuments(folder)]) {
             const path = join(folder, name);
@@ -206,7 +207,7 @@ function relative(hub: string, path: string): string {
 export function gaps(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
-        if (project.ghost) continue;
+        if (isPersonal(project)) continue;
         const scope = scopeOf(project);
         const folder = folderOnDisk(input.hub, project);
         if (
@@ -292,12 +293,11 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
 }
 
 /**
- * The type a project's folder says it has, and none when the folder says nothing: the type the
- * scan rule gives on a flat tier, the outcome folder of an archived project and `abandoned` for a
- * coauthor project filed under `abandoned`.
+ * The type a project's filing folder says it has, and none when the folder says nothing: the
+ * outcome folder of an archived project and `abandoned` for a coauthor project filed under
+ * `abandoned`.
  */
 function folderType(project: Project, rules: AuditRules): string | undefined {
-    if (project.typeWritten !== undefined) return project.type;
     if (project.tier === 'archive') {
         const outcome = project.category;
         return outcome !== undefined && rules.archiveOutcomes.has(outcome) ? outcome : undefined;
@@ -310,7 +310,7 @@ function folderType(project: Project, rules: AuditRules): string | undefined {
 /** The tier-conformance rules: the one README, the retired documents and the folder names. */
 export function conformance(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
-        if (project.ghost) continue;
+        if (isPersonal(project)) continue;
         const scope = scopeOf(project);
         const folder = folderOnDisk(input.hub, project);
         if (
@@ -362,7 +362,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
             });
         }
         const expected = folderType(project, input.rules);
-        const written = project.typeWritten ?? project.type;
+        const written = project.type;
         if (expected !== undefined && written !== undefined && written !== expected) {
             add({
                 scope,
@@ -382,7 +382,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
 export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
-        if (project.ghost) continue;
+        if (isPersonal(project)) continue;
         const scope = scopeOf(project);
         const chips = new Set(project.chips);
         const finished = project.tier === 'archive' || project.tier === 'coauthor';
@@ -408,7 +408,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                 });
             }
         }
-        // A project on one of the three open tiers that has been accepted belongs under
+        // A project on the Projects board that has been accepted belongs under
         // archive/published/ rather than on the board it was written on.
         if (!finished && chips.has('published')) {
             add({
@@ -449,7 +449,7 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
 export function readability(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
     for (const project of input.projects) {
-        if (project.ghost) continue;
+        if (isPersonal(project)) continue;
         const scope = scopeOf(project);
         const fields: [string, string | undefined][] = [
             ['status.line', project.statusLine],
@@ -502,7 +502,7 @@ const entryFieldsShape = z.object({
  */
 export function collections(input: AuditInput, add: (f: Raised) => void): void {
     const { rules } = input;
-    const ids = new Set(input.projects.filter((one) => !one.ghost).map((one) => one.id));
+    const ids = new Set(input.projects.map((one) => one.id));
     for (const collection of input.collections) {
         const where = relative(input.hub, collection.file);
         if (!existsSync(collection.file)) {

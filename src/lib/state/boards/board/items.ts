@@ -14,13 +14,14 @@ import {
     type BoardItem,
     type BoardPreset,
     type BoardTag,
+    type RelatedTag,
     type SessionsOf
 } from './presets.ts';
 
 /**
  * The name a cross-link tag carries: the short handle when the manifest has one, else the title.
  */
-export function tagLabel(project: Pick<Project, 'title' | 'short'>): string {
+function tagLabel(project: Pick<Project, 'title' | 'short'>): string {
     const short = project.short?.trim() ?? '';
     return short === '' ? project.title : short;
 }
@@ -49,6 +50,14 @@ function softwareTags(project: Project, snapshot: Snapshot): BoardTag[] {
         tags.push({ id, label: tagLabel(found) });
     }
     return tags.sort((left, right) => left.label.localeCompare(right.label));
+}
+
+/** The projects a project's `related:` names, by their short name or title. */
+function relatedTags(project: Project, snapshot: Snapshot): RelatedTag[] {
+    return project.relatedIds.map((id: Id): RelatedTag => {
+        const held = byKey(snapshot.entities.projects, id);
+        return { id, label: held === undefined ? id : tagLabel(held), held: held !== undefined };
+    });
 }
 
 /** Everything the search reads, from the project and from what it was joined with. */
@@ -128,7 +137,8 @@ function itemOf(
         reproduced: project.reproduced !== undefined,
         year: project.year === undefined ? '' : String(project.year),
         sessions: sessionsOf(project),
-        chips: project.chips
+        chips: project.chips,
+        related: relatedTags(project, snapshot)
     };
     return { ...item, haystack: haystack(project, item) };
 }
@@ -171,14 +181,9 @@ export function boardItems(
 ): BoardItem[] {
     const names = personNames(snapshot);
     const items = Object.values(snapshot.entities.projects)
-        .filter((project) => preset.tiers.includes(project.tier))
+        .filter((project) => project.tier !== undefined && preset.tiers.includes(project.tier))
         .map((project) => itemOf(project, snapshot, preset, names, sessionsOf));
     return items.sort((left, right) => compare(left, right, preset.typeOrder));
-}
-
-/** Whether a project's README is there to open, which is all a ghost project's title can open. */
-export function hasReadme(project: Project): boolean {
-    return project.docs.some((doc) => doc.name === 'README.md' && doc.present);
 }
 
 /** The Markdown a project's tab can draw: the fixed documents the folder holds. */

@@ -1,12 +1,12 @@
-// Layer 4, data test. The `hub: true` mark and the `tier` of a `roots:` entry as readRoots reads
-// them (lib/server/files/files.ts): a mark that cannot be honoured is a finding that names the
-// root, and the root is then read as a plain root, so a wrong value never builds a second hub or a
-// research project.
+// Layer 4, data test. The `hub: true` mark of a `roots:` entry, a `tier` key it should not carry
+// and the roots whose `.oculus/project.yml` cannot be read as a project, as readRoots reads them
+// (lib/server/files/files.ts): a mark that cannot be honoured is a finding that names the root, and
+// the root is then read as a plain root, so a wrong value never builds a second hub or a project.
 //
 // Every directory is made under the system temporary directory by scratchDir, and the entries are
 // handed to readRoots as a list, so nothing reads a hub or the checkout.
 
-import { mkdirSync, symlinkSync } from 'node:fs';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
@@ -87,7 +87,7 @@ describe('a hub root', () => {
     it('is a plain root with a finding when its key is reserved or holds a colon', () => {
         const base = scratchDir('oculus-hub-roots-');
         const first = folder(base, 'hub');
-        const keys = ['side', 'root', 'hub', 'engine', 'a:b'];
+        const keys = ['hub', 'engine', 'a:b'];
         const out = read(
             keys.map((key) => ({ key, dir: folder(base, key.replace(':', '-')), hub: true })),
             first
@@ -134,7 +134,7 @@ describe('a hub root', () => {
     });
 });
 
-/** The folders a row of the tier table is made over, all under one scratch directory. */
+/** The folders a row of the table is made over, all under one scratch directory. */
 type Folders = {
     /** The first hub, inside `parent`. */
     first: string;
@@ -150,159 +150,137 @@ type Folders = {
 type Row = {
     name: string;
     entries: (at: Folders) => unknown[];
-    /** The tier each root is read with, by key, and undefined for a root with none. */
-    tiers: [string, string | undefined][];
-    /** Whether each root stands as a hub, by key, for a row that is about the hub mark. */
-    hubs?: [string, boolean][];
+    /** Each root by key: whether it stands as a hub and whether it is refused as a project. */
+    roots: [string, boolean, boolean][];
     /** The finding of each entry that has one: its key and the catalog key of its sentence. */
     findings: [string, string][];
 };
 
-/** An entry of the tier table: one key and dir with the `tier` the row gives. */
-const entryOf = (key: string, dir: string, tier: unknown, hub?: boolean): unknown => ({
+/** An entry with the extra keys a row gives it. */
+const entryOf = (key: string, dir: string, extra: Record<string, unknown> = {}): unknown => ({
     key,
     dir,
-    tier,
-    ...(hub === undefined ? {} : { hub })
+    ...extra
 });
 
-const TIER_ROWS: Row[] = [
+/** A folder that holds the manifest which makes a root a project, and the folder. */
+function project(dir: string): string {
+    mkdirSync(join(dir, '.oculus'), { recursive: true });
+    writeFileSync(join(dir, '.oculus', 'project.yml'), 'tier: personal\ntype: active\n');
+    return dir;
+}
+
+const KEYS_REFUSED = ['root:foo', 'a/b', 'a b', 'hub', 'engine'];
+
+const ROWS: Row[] = [
     {
-        name: 'the three research tiers as they are written, and personal as none',
+        name: 'a tier key of any word or kind as a finding on the key, the root read as it is',
         entries: (at) => [
-            entryOf('p', at.a, 'projects'),
-            entryOf('c', at.b, 'coauthor'),
-            entryOf('r', at.c, 'archive'),
-            entryOf('s', at.parent, 'personal')
+            entryOf('p', at.a, { tier: 'projects' }),
+            entryOf('c', at.b, { tier: 'coauthor' }),
+            entryOf('s', at.c, { tier: 'personal' }),
+            entryOf('n', at.parent, { tier: 3 })
         ],
-        tiers: [
-            ['p', 'projects'],
-            ['c', 'coauthor'],
-            ['r', 'archive'],
-            ['s', undefined]
+        roots: [
+            ['p', false, false],
+            ['c', false, false],
+            ['s', false, false],
+            ['n', false, false]
         ],
+        findings: [
+            ['p', 'findings.roots.tier_key'],
+            ['c', 'findings.roots.tier_key'],
+            ['s', 'findings.roots.tier_key'],
+            ['n', 'findings.roots.tier_key']
+        ]
+    },
+    {
+        name: 'a tier key on a hub root as a finding on the key, the hub standing',
+        entries: (at) => [entryOf('lab', at.a, { tier: 'projects', hub: true })],
+        roots: [['lab', true, false]],
+        findings: [['lab', 'findings.roots.tier_key']]
+    },
+    {
+        name: 'a root that holds a project, with no tier key, as a project with no finding',
+        entries: (at) => [entryOf('alpha', project(at.a))],
+        roots: [['alpha', false, false]],
         findings: []
     },
     {
-        name: 'a tier of another word or of another kind as none, with a finding naming the four',
-        entries: (at) => [entryOf('a', at.a, 'software'), entryOf('b', at.b, 3)],
-        tiers: [
-            ['a', undefined],
-            ['b', undefined]
-        ],
-        findings: [
-            ['a', 'findings.roots.tier_unknown'],
-            ['b', 'findings.roots.tier_unknown']
-        ]
+        name: 'a root with no manifest as no project and no finding',
+        entries: (at) => [entryOf('plain', at.a)],
+        roots: [['plain', false, false]],
+        findings: []
     },
     {
-        name: 'a tier on a hub root as a hub with no tier, with a finding',
-        entries: (at) => [entryOf('lab', at.a, 'projects', true)],
-        tiers: [['lab', undefined]],
-        hubs: [['lab', true]],
-        findings: [['lab', 'findings.roots.tier_on_hub']]
-    },
-    {
-        name: 'a tier on a hub mark refused on the folder of a hub as a plain root with no tier, with both findings',
+        name: 'a project root on the first hub, a folder inside it and a folder holding it as no project',
         entries: (at) => [
-            entryOf('lab', at.a, undefined, true),
-            entryOf('again', at.a, 'archive', true)
+            entryOf('same', project(at.first)),
+            entryOf('inner', project(folder(at.first, 'projects'))),
+            entryOf('outer', project(at.parent))
         ],
-        tiers: [
-            ['lab', undefined],
-            ['again', undefined]
-        ],
-        hubs: [
-            ['lab', true],
-            ['again', false]
+        roots: [
+            ['same', false, true],
+            ['inner', false, true],
+            ['outer', false, true]
         ],
         findings: [
-            ['again', 'findings.roots.hub_same_dir'],
-            ['again', 'findings.roots.tier_in_hub']
+            ['same', 'findings.roots.project_is_first'],
+            ['inner', 'findings.roots.project_is_first'],
+            ['outer', 'findings.roots.project_is_first']
         ]
     },
     {
-        name: 'a research tier on the folder of a hub listed after it, or inside it, as none',
+        name: 'a project root on a second key of one directory, and on its link, as no project',
         entries: (at) => [
-            entryOf('repo', at.a, 'projects'),
-            entryOf('lab', at.a, undefined, true),
-            entryOf('inner', folder(at.a, 'inner'), 'coauthor')
+            entryOf('first', project(at.a)),
+            entryOf('again', at.a),
+            entryOf('linked', at.link)
         ],
-        tiers: [
-            ['repo', undefined],
-            ['lab', undefined],
-            ['inner', undefined]
-        ],
-        hubs: [
-            ['repo', false],
-            ['lab', true],
-            ['inner', false]
+        roots: [
+            ['first', false, false],
+            ['again', false, true],
+            ['linked', false, true]
         ],
         findings: [
-            ['repo', 'findings.roots.tier_in_hub'],
-            ['inner', 'findings.roots.tier_in_hub']
+            ['again', 'findings.roots.project_same_dir'],
+            ['linked', 'findings.roots.project_same_dir']
         ]
     },
     {
-        name: 'a research tier on the first hub, a folder inside it and a folder holding it as none',
-        entries: (at) => [
-            entryOf('same', at.first, 'projects'),
-            entryOf('inner', folder(at.first, 'projects'), 'archive'),
-            entryOf('outer', at.parent, 'coauthor')
-        ],
-        tiers: [
-            ['same', undefined],
-            ['inner', undefined],
-            ['outer', undefined]
-        ],
-        findings: [
-            ['same', 'findings.roots.tier_is_first'],
-            ['inner', 'findings.roots.tier_is_first'],
-            ['outer', 'findings.roots.tier_is_first']
-        ]
-    },
-    {
-        name: 'a research tier on a second key of one directory, and on its link, as none',
-        entries: (at) => [
-            entryOf('first', at.a, 'projects'),
-            entryOf('again', at.a, 'projects'),
-            entryOf('linked', at.link, 'archive')
-        ],
-        tiers: [
-            ['first', 'projects'],
-            ['again', undefined],
-            ['linked', undefined]
-        ],
-        findings: [
-            ['again', 'findings.roots.tier_same_dir'],
-            ['linked', 'findings.roots.tier_same_dir']
-        ]
-    },
-    {
-        name: 'a research tier on a key with a colon, a slash, a space or a reserved word as none',
+        name: 'a project root on a key with a colon, a slash, a space or a reserved word as no project',
         entries: (at) =>
-            ['root:foo', 'a/b', 'a b', 'side', 'root', 'hub', 'engine'].map((key, at_) =>
-                entryOf(key, folder(at.a, `n${at_}`), 'projects')
-            ),
-        tiers: ['root:foo', 'a/b', 'a b', 'side', 'root', 'hub', 'engine'].map((key) => [
-            key,
-            undefined
-        ]),
-        findings: ['root:foo', 'a/b', 'a b', 'side', 'root', 'hub', 'engine'].map((key) => [
-            key,
-            'findings.roots.tier_reserved_key'
-        ])
+            KEYS_REFUSED.map((key, at_) => entryOf(key, project(folder(at.a, `n${at_}`)))),
+        roots: KEYS_REFUSED.map((key) => [key, false, true]),
+        findings: KEYS_REFUSED.map((key) => [key, 'findings.roots.project_reserved_key'])
     },
     {
-        name: 'a research tier on a directory that is not on this machine as the missing directory alone',
-        entries: (at) => [entryOf('gone', join(at.parent, 'nowhere'), 'coauthor')],
-        tiers: [['gone', undefined]],
+        name: 'a project root on the folder of a hub root listed after it, or inside it, as no project',
+        entries: (at) => [
+            entryOf('repo', project(at.a)),
+            entryOf('lab', at.a, { hub: true }),
+            entryOf('inner', project(folder(at.a, 'inner')))
+        ],
+        roots: [
+            ['repo', false, true],
+            ['lab', true, false],
+            ['inner', false, true]
+        ],
+        findings: [
+            ['repo', 'findings.roots.project_in_hub'],
+            ['inner', 'findings.roots.project_in_hub']
+        ]
+    },
+    {
+        name: 'a root on a directory that is not on this machine as the missing directory alone',
+        entries: (at) => [entryOf('gone', join(at.parent, 'nowhere'))],
+        roots: [['gone', false, false]],
         findings: [['gone', 'findings.roots.missing_dir']]
     }
 ];
 
-describe('the tier of a roots entry', () => {
-    it.each(TIER_ROWS)('reads $name', (row) => {
+describe('a roots entry with a tier key', () => {
+    it.each(ROWS)('reads $name', (row) => {
         const base = scratchDir('oculus-tier-roots-');
         const parent = folder(base, 'parent');
         const at: Folders = {
@@ -319,10 +297,10 @@ describe('the tier of a roots entry', () => {
             'sources.yml',
             at.first
         );
-        expect(roots.map((one) => [one.key, one.tier])).toEqual(row.tiers);
-        if (row.hubs !== undefined) {
-            expect(roots.map((one) => [one.key, one.hub === true])).toEqual(row.hubs);
-        }
+        expect(roots.map((one) => [one.key, one.hub === true, one.noProject === true])).toEqual(
+            row.roots
+        );
+        for (const one of roots) expect(one).not.toHaveProperty('tier');
         const catalog = textCatalog(settings);
         const words = (key: string): string =>
             key === 'findings.roots.missing_dir'

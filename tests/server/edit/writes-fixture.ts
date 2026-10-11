@@ -9,13 +9,15 @@ import { expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { PortfolioConfig } from '../../../src/lib/data/model/index.ts';
+import { firstHubConfig } from '../../../src/lib/server/files/roots.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
-import { SIDE_SCAN, plantSides } from '../../routes/edit/write-fixture.ts';
-import type { PlantedSides } from '../../routes/edit/write-fixture.ts';
+import { PERSONAL_ROOT, PERSONAL_SCAN, plantPersonal } from '../../routes/edit/write-fixture.ts';
+import type { PlantedPersonal } from '../../routes/edit/write-fixture.ts';
 
 export const MANIFEST = [
     'id: alpha',
-    'type: manuscript',
+    'tier: projects',
+    'type: active',
     'title: "A title"',
     'pin: true',
     'year: 2026',
@@ -26,10 +28,23 @@ export const MANIFEST = [
     ''
 ].join('\n');
 
-/** The real schema and vocabulary over a scan that names one synthetic tier. */
+/**
+ * The real schema and vocabulary over a scan of the research folder, the folders a new project of
+ * the tiers `projects` and `archive` is made in, and the folder of personal projects, with the
+ * hub's `new_project_dir` for the tiers `projects` and `personal`.
+ */
 export function configFor(): PortfolioConfig {
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
-    return { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] };
+    return {
+        ...real,
+        scan: [
+            { dir: 'projects/manuscripts' },
+            { dir: 'projects/ideas', optional: true },
+            { dir: 'projects/archive', optional: true },
+            { ...PERSONAL_SCAN, optional: true }
+        ],
+        newProjectDir: { projects: 'projects/ideas', personal: 'side-projects' }
+    };
 }
 
 /** A hub with one project in it, under the system temporary directory. */
@@ -121,23 +136,27 @@ export function tasksOf(root: string): string {
     return readFileSync(join(root, 'tasks', 'tasks.yml'), 'utf8');
 }
 
-/** The hub path and the root path of the two side manifests of `sideWorld`. */
-export type SideWorld = PlantedSides & {
-    /** The hub, with its research project and a side project at `side-projects/idea`. */
+/** The hub path and the root path of the two personal manifests of `personalWorld`. */
+export type PersonalWorld = PlantedPersonal & {
+    /** The hub, with its research project and a personal project at `side-projects/idea`. */
     root: string;
-    /** The portfolio configuration, scanning the research folder and the side-projects folder. */
+    /** The portfolio configuration, scanning the research folder and the personal folder. */
     config: PortfolioConfig;
 };
 
 /**
- * A hub with a side project in its `side-projects/` folder and a served root with another at
- * `.oculus/project.yml`, both holding `SIDE_MANIFEST`.
+ * A hub with a personal project in its `side-projects/` folder and a served root with another at
+ * `.oculus/project.yml`, both holding `PERSONAL_MANIFEST`.
  */
-export function sideWorld(): SideWorld {
+export function personalWorld(): PersonalWorld {
     const root = hub();
-    const config = {
-        ...configFor(),
-        scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }, SIDE_SCAN]
-    };
-    return { root, config, ...plantSides(root) };
+    const planted = plantPersonal(root);
+    const base = configFor();
+    const merged = { ...base.merged, roots: [{ key: PERSONAL_ROOT, dir: planted.served }] };
+    const { repositories } = firstHubConfig({
+        config: merged,
+        engine: engineDir(),
+        local: { hub: root }
+    });
+    return { root, config: { ...base, merged, repositories }, ...planted };
 }

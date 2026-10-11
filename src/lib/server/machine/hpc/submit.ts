@@ -157,7 +157,6 @@ function folderOf(project: Project, deps: PlanDeps): string | null {
 function projectOf(asked: string, deps: PlanDeps): Project | null {
     const held = new Map<string, Project>();
     for (const project of deps.projects()) {
-        if (project.ghost) continue;
         try {
             const folder = folderOf(project, deps);
             const real = folder === null ? null : realPath(folder, true);

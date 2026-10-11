@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/projects/Projects.svelte. The strip above the Projects
+    // Layer 3, view partial of views/boards/projects/Projects.svelte. The strip above the project
     // board: how many projects it holds, how many are ready to go out, how many are waiting on
     // somebody, how many are dated, and where they are aimed.
     //
@@ -19,7 +19,7 @@
 </script>
 
 <div class="stats" aria-label={t('board.stats')}>
-    <span class="st">{t('board.stat_active', stats.active)}</span>
+    <span class="st">{t('board.stat_projects', stats.active)}</span>
     <span class="st">{t('board.stat_submit_ready', stats.submitReady)}</span>
     <span class="st">{t('board.stat_blocked', stats.blocked)}</span>
     {#if stats.dated > 0}

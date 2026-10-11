@@ -1,5 +1,6 @@
 id: graph-transfer
 type: active
+tier: projects
 short: Graph-Transfer
 title: Transfer learning across graph domains
 lead: A. Example

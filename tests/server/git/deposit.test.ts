@@ -50,7 +50,8 @@ function codeOf(id: string): string {
 function manifest(id: string, repo: string, url = ''): string {
     return [
         `id: ${id}`,
-        'type: manuscript',
+        'tier: projects',
+        'type: active',
         `title: "The title of ${id}"`,
         'status:',
         '  line: "the line"',
@@ -125,12 +126,11 @@ test.beforeAll(() => {
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     into = {
         hub,
-        config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
+        config: { ...real, scan: [{ dir: 'projects/manuscripts' }] },
         engine: engineDir(),
         career: careerRules(loadConfig(engineDir()).config),
         overrides: join(dir, 'sessions.json'),
         projects: () => [],
-        sideProjects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),

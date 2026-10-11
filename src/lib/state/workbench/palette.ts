@@ -160,19 +160,6 @@ export function buildIndex(
                 ...hubHint(rootOf(project))
             });
         }
-        for (const side of Object.values(snapshot.entities.personal)) {
-            const fields = [side.title, side.short, side.eli5, side.next, side.latest, side.status];
-            found.push({
-                id: `project:${side.id}`,
-                kind: 'project',
-                label: side.title,
-                title: side.title,
-                text: nestedStrings(fields).join(' '),
-                view: 'project',
-                state: { id: side.id, label: side.short ?? side.title },
-                ...hubHint(rootOf(side))
-            });
-        }
         for (const collection of Object.values(snapshot.entities.collections)) {
             for (const entry of collection.entries) {
                 found.push({

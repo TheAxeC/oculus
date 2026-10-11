@@ -40,28 +40,13 @@ import { languageMap, type LanguageMap } from '../../data/helpers/files/language
 import type { ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { movable } from '../boards/focus.ts';
-import {
-    choicesFor,
-    formFields,
-    formSections,
-    isSideRecord,
-    sideFormFields,
-    sideFormSections
-} from '../forms/schema.ts';
-import { projectOfSide } from '../../data/snapshot/as-project.ts';
+import { choicesFor, formFields, formSections } from '../forms/schema.ts';
+import { newProjectFolder as folderOfNewProjects } from '../boards/board/new-project.ts';
 import { pinnedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
 import { isEngineDoc } from '../workbench/navigation/pages.ts';
 import type { SelectionStore } from '../workbench/selection.svelte.ts';
 import type { BoardItem, BoardPreset, BoardStats, Dissemination } from '../boards/board/index.ts';
-import {
-    sideCardOf as cardOfSide,
-    sideCards as cardsOf,
-    sideItem as itemOfSide,
-    sideStatuses as statusesOf,
-    type SideCard,
-    type SideStatus
-} from '../boards/board/personal.ts';
 import type { Choice, FormField } from '../forms/schema.ts';
 import type {
     Area,
@@ -104,8 +89,8 @@ export function folderOf(project: Project): string {
 /**
  * The absolute folder of the hub a project is of: its folder less the part relative to the hub.
  * Empty for a project that has no folder of its own or whose manifest does not lie in it. A
- * project read from a repository (a side project, or a research project of a `roots:` entry with a
- * research `tier`) is in the root of its own, so its folder is the whole of it.
+ * project read from a repository (a `roots:` entry holding its own manifest) is in the root of its
+ * own, so its folder is the whole of it.
  */
 function hubOfProject(project: Project): string {
     if (project.repository !== undefined) return project.repository.dir;
@@ -141,6 +126,7 @@ export type SelectorsStore = {
     staleLag: () => number;
     disseminatedFor: (id: Id) => Dissemination[];
     domainChoices: () => Choice[];
+    newProjectFolder: (tier: string) => string;
     hubRoot: () => string;
     engineAtFor: (tab: { view: string; state: unknown }) => string;
     /**
@@ -152,16 +138,13 @@ export type SelectorsStore = {
     collectionOf: (key: string) => Collection | null;
     collectionsOfKey: (key: string) => Collection[];
     boardItemOf: (id: Id) => BoardItem | null;
-    sideItem: (card: SideCard) => BoardItem | null;
     projectOf: (id: Id) => Project | null;
     projects: () => Project[];
-    sideStatuses: () => SideStatus[];
-    sideCards: () => SideCard[];
     venues: () => Venue[];
     datasets: () => Dataset[];
     archiveDead: () => string[];
-    manifestFields: (project?: Project | null) => FormField[];
-    manifestSections: (project?: Project | null) => string[];
+    manifestFields: () => FormField[];
+    manifestSections: () => string[];
     fieldChoices: (field: FormField, project?: Project | null) => Choice[];
     contextWindow: () => number;
     waitingCount: () => number;
@@ -345,40 +328,25 @@ export function createSelectors(
     function boardItemOf(id: Id): BoardItem | null {
         const snapshot = entities.portfolio();
         if (snapshot === null) return null;
-        const side = byKey(snapshot.entities.personal, id);
-        if (side !== undefined) {
-            return sideItem(cardOfSide(side, sideStatuses()));
-        }
         const project = byKey(snapshot.entities.projects, id);
         if (project === undefined) return null;
         const merged = configMap();
-        const view = BOARDS.find((name) => presetFor(name, merged).tiers.includes(project.tier));
+        const tier = project.tier;
+        const view = BOARDS.find(
+            (name) => tier !== undefined && presetFor(name, merged).tiers.includes(tier)
+        );
         const preset = presetFor(view ?? BOARDS[0], merged);
         return boardItemFor(snapshot, project, preset, sessionsOf);
     }
 
     /**
-     * A side project's card as the shared project card draws it, or null until the first snapshot.
-     * The preset is the first board's, since the join reads a preset for its rollup and its type
-     * order alone.
-     */
-    function sideItem(card: SideCard): BoardItem | null {
-        const snapshot = entities.portfolio();
-        if (snapshot === null) return null;
-        return itemOfSide(snapshot, card, presetFor(BOARDS[0], configMap()), sessionsOf);
-    }
-
-    /**
      * One project of the snapshot, or null before the first one arrives and for an id it does not
-     * hold. A side project's id gives the record it stands for as a project.
+     * hold.
      */
     function projectOf(id: Id): Project | null {
         const snapshot = entities.portfolio();
         if (snapshot === null) return null;
-        const held = byKey(snapshot.entities.projects, id);
-        if (held !== undefined) return held;
-        const side = byKey(snapshot.entities.personal, id);
-        return side === undefined ? null : projectOfSide(side);
+        return byKey(snapshot.entities.projects, id) ?? null;
     }
 
     /**
@@ -390,21 +358,6 @@ export function createSelectors(
     function projects(): Project[] {
         const snapshot = entities.portfolio();
         return snapshot === null ? [] : Object.values(snapshot.entities.projects);
-    }
-
-    /** The statuses of `side_project_status` in the config's order, none before any config. */
-    function sideStatuses(): SideStatus[] {
-        return statusesOf(configMap());
-    }
-
-    /**
-     * The Personal board's cards: every side project of the snapshot under its status, in the
-     * status order and then by title. Before the first snapshot an empty list.
-     */
-    function sideCards(): SideCard[] {
-        const snapshot = entities.portfolio();
-        if (snapshot === null) return [];
-        return cardsOf(Object.values(snapshot.entities.personal), sideStatuses());
     }
 
     /** Every venue in catalogue order, before the first snapshot an empty list. */
@@ -424,23 +377,14 @@ export function createSelectors(
         return readAs(stringItemsShape, configMap().archive_dead) ?? [];
     }
 
-    /**
-     * The edit form as config/schemas/manifest-schema.yml describes it, in file order, and a side
-     * project's as the rows of side-project-schema.yml describe it.
-     */
-    function manifestFields(project: Project | null = null): FormField[] {
-        const config = configMap();
-        return project !== null && isSideRecord(project)
-            ? sideFormFields(config)
-            : formFields(config);
+    /** The edit form as config/schemas/manifest-schema.yml describes it, in file order. */
+    function manifestFields(): FormField[] {
+        return formFields(configMap());
     }
 
     /** The form's sections, in the order the schema lists them. */
-    function manifestSections(project: Project | null = null): string[] {
-        const config = configMap();
-        return project !== null && isSideRecord(project)
-            ? sideFormSections(config)
-            : formSections(config);
+    function manifestSections(): string[] {
+        return formSections(configMap());
     }
 
     /**
@@ -629,6 +573,7 @@ export function createSelectors(
         staleLag,
         disseminatedFor,
         domainChoices,
+        newProjectFolder: (tier) => folderOfNewProjects(configMap(), tier),
         hubRoot,
         engineAtFor,
         engineAtSettled,
@@ -636,11 +581,8 @@ export function createSelectors(
         collectionOf,
         collectionsOfKey,
         boardItemOf,
-        sideItem,
         projectOf,
         projects,
-        sideStatuses,
-        sideCards,
         venues,
         datasets,
         archiveDead,

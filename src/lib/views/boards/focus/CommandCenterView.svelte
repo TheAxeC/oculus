@@ -17,7 +17,7 @@
         hpc: { pillText }
     } = useState();
 
-    type RowGroup = { kind: string; side: boolean; rows: TickerRow[] };
+    type RowGroup = { kind: string; rows: TickerRow[] };
     type ViewRows = {
         overdue: TickerRow[];
         categories: { category: string; rows: TickerRow[] }[];
@@ -95,7 +95,7 @@
     {#if groups.length > 0}
         <div class="grp">
             <p class="lbl"><Glyph name={glyph} />{label}</p>
-            {#each groups as one (`${one.side}:${one.kind}`)}
+            {#each groups as one (one.kind)}
                 <p class="sub">{runHeading(one)}</p>
                 <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} {marked} />
             {/each}

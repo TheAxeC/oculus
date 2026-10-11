@@ -529,7 +529,7 @@ export function equalSizes(count: number): number[] {
  * the difference taken from the others in proportion. Raising one child can push another below the
  * floor, so that repeats; a set of sizes too crowded to satisfy at all falls back to equal shares.
  */
-export function normaliseSizes(raw: number[]): number[] {
+function normaliseSizes(raw: number[]): number[] {
     const count = raw.length;
     if (count === 0) return [];
     if (MIN_SIZE * count > 1 + SUM_EPS) return equalSizes(count);

@@ -1,5 +1,6 @@
 id: robust-embeddings
-type: manuscript
+type: active
+tier: projects
 short: Robust-Emb
 title: Robust representation learning under distribution shift
 lead: A. Example

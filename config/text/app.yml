@@ -25,8 +25,8 @@ text:
             cmd_compile_database_hint: '<name>'
             cmd_crt: Turn the CRT overlay on or off
             cmd_folder: Open a folder in the Files view
-            cmd_goto: Open a project or a side project in a tab
-            cmd_goto_hint: '<project id, side:slug or root:key>'
+            cmd_goto: Open a project in a tab
+            cmd_goto_hint: '<project id>'
             cmd_eslint_config: Approve or stop running the ESLint configuration of the repository
             cmd_help: Show the help
             cmd_interpreter: Choose the Python interpreter of the repository

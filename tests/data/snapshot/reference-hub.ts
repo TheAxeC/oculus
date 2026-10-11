@@ -176,11 +176,7 @@ export const HUB_FILES: Record<string, string> = {
 /** The engine's configuration files the index reads, planted with the keys the rows name. */
 export const ENGINE_FILES: Record<string, string> = {
     'behavior.yml': ['data_domains: [heart]', 'slurm:', '  resource: hpc', ''].join('\n'),
-    'sources.yml': [
-        'scan:',
-        '  - { dir: projects/manuscripts, type: manuscript, tier: projects }',
-        ''
-    ].join('\n'),
+    'sources.yml': ['scan:', '  - { dir: projects/manuscripts }', ''].join('\n'),
     'catalogs/vocab.yml': [
         'domains:',
         '  heart: { color: "#e2374d", label: Heart }',

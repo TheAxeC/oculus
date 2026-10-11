@@ -18,13 +18,9 @@ src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts c0785dd03b7f the same 
 src/lib/state/workbench/layout/instance.ts src/lib/state/workbench/layout/tree.ts cb7b0e6155d3 the same 12 lines at 132 and 58, to fold into one place
 src/lib/views/boards/focus/lanes/Lanes.svelte src/lib/views/shared/forms/Subtasks.svelte 2f5da5c5461b the same 13 lines at 123 and 58, to fold into one place
 src/lib/views/boards/focus/lanes/Lanes.svelte src/lib/views/shared/forms/entry/EntryCard.svelte f494adcc1949 the same 10 lines at 130 and 218, to fold into one place
-tests/data/snapshot/normalise.test.ts tests/state/boards/board/board-fixture.ts c1398a1e73c9 the same 11 lines at 289 and 160, to fold into one place
-tests/data/sources/collections.test.ts tests/data/sources/manifests.test.ts 009d9fe6ad5d the same 17 lines at 26 and 26, to fold into one place
 tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 33a8d3a93398 the same 19 lines at 26 and 15, to fold into one place
-tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts dd605d6cb92e the same 14 lines at 36 and 25, to fold into one place
 tests/routes/edit/write-fixture.ts tests/routes/git/deposit.test.ts 01fefb490553 the same 14 lines at 143 and 52, to fold into one place
 tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts ea172e16ebfe the same 11 lines at 76 and 64, to fold into one place
 tests/routes/files/fs.test.ts tests/server/files/fs.test.ts 9fcd8308df69 the same 19 lines at 35 and 61, to fold into one place
 tests/server/git/deposit.test.ts tests/server/git/git-write.test.ts b9a8c9c31c31 the same 10 lines at 82 and 88, to fold into one place
 tests/server/git/git-ops.test.ts tests/server/git/git-write.test.ts 1ef8898fbc76 the same 9 lines at 95 and 93, to fold into one place
-tests/state/boards/board/board-fixture.ts tests/state/workbench/rail-badges-fixture.ts 90416d85f4a4 the same 13 lines at 73 and 65, to fold into one place

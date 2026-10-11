@@ -27,15 +27,17 @@ import {
     manifestOf,
     overridesOf,
     REPOSITORY_ID,
+    WORKSPACE_ID,
     repositoryTarget,
     request,
-    sideTarget,
-    SIDE_MANIFEST,
+    personalTarget,
+    PERSONAL_MANIFEST,
     target,
     tasksOf,
     undoneBack,
     undone,
-    warmConfig
+    warmConfig,
+    workspaceTarget
 } from '../write-fixture.ts';
 import { it, test } from '../../../fixtures/scratch.ts';
 import { present } from '../../../fixtures/present.ts';
@@ -43,10 +45,10 @@ import { MANIFEST as APP_MANIFEST, notesFiles, routeSetup } from '../../apps/app
 
 test.beforeAll(warmConfig);
 
-type Files = ReturnType<typeof sideTarget>['files'];
+type Files = ReturnType<typeof personalTarget>['files'];
 
 /**
- * The manifest writes of the first table: the research project, then each side project's snooze
+ * The manifest writes of the first table: the research project, then each personal project's snooze
  * set and woken. `now` is the value the write left and `was` the value it took the field from.
  */
 const FIELD_ROWS = [
@@ -59,14 +61,14 @@ const FIELD_ROWS = [
         original: MANIFEST,
         read: (into: WriteTarget): string => manifestOf(into)
     },
-    ...(['side:idea', 'root:r'] as const).flatMap((id) => [
+    ...(['idea', 'r'] as const).flatMap((id) => [
         {
             name: `${id}: a snooze set`,
             body: { kind: 'manifest', id, fields: { snooze: '2026-12-01' } },
             field: 'snooze',
             now: '2026-12-01',
             was: '2026-11-01',
-            original: SIDE_MANIFEST,
+            original: PERSONAL_MANIFEST,
             read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
         },
         {
@@ -75,13 +77,15 @@ const FIELD_ROWS = [
             field: 'snooze',
             now: null,
             was: '2026-11-01',
-            original: SIDE_MANIFEST,
+            original: PERSONAL_MANIFEST,
             read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
         }
     ])
 ];
 
-/** The subtask writes of the second table: a collection entry's line, then each side project's. */
+/**
+ * The subtask writes of the second table: a collection entry's line, then each personal project's.
+ */
 const LINE_ROWS = [
     {
         name: 'a collection entry: a tick',
@@ -93,7 +97,7 @@ const LINE_ROWS = [
         },
         read: (into: WriteTarget): string => tasksOf(into)
     },
-    ...(['side:idea', 'root:r'] as const).flatMap((id) => [
+    ...(['idea', 'r'] as const).flatMap((id) => [
         {
             name: `${id}: a tick`,
             body: { kind: 'subtask', target: { id }, key: '0', action: 'done' },
@@ -119,7 +123,7 @@ describe('taking a change back', () => {
     it.each(FIELD_ROWS)(
         'writes a manifest field back, logs the undo, and undoes the undo',
         async (row) => {
-            const { into, files } = sideTarget();
+            const { into, files } = personalTarget();
             const read = (): string => row.read(into, files);
             const change = await made(into, row.body, row.name);
             const written = read();
@@ -149,42 +153,87 @@ describe('taking a change back', () => {
         }
     );
 
-    /** The writes to a repository's research project the undo takes back, each by its body. */
-    const REPOSITORY_ROWS = [
+    /**
+     * The writes to a hub project of the tier personal and to a repository project the undo takes
+     * back, each by its body, with the file the project's manifest is in.
+     */
+    const PROJECT_ROWS = (['idea', REPOSITORY_ID] as const).flatMap((id) => [
         {
-            name: 'a snooze set',
-            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { snooze: '2026-12-01' } }
+            name: `${id}: a snooze set`,
+            id,
+            body: { kind: 'manifest', id, fields: { snooze: '2026-12-01' } }
         },
         {
-            name: 'a snooze woken',
-            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { snooze: '' } }
+            name: `${id}: a snooze woken`,
+            id,
+            body: { kind: 'manifest', id, fields: { snooze: '' } }
+        },
+        {
+            name: `${id}: a tier written`,
+            id,
+            body: { kind: 'manifest', id, fields: { tier: 'coauthor' } }
+        },
+        {
+            name: `${id}: a type written`,
+            id,
+            body: { kind: 'manifest', id, fields: { type: 'paused-stage' } }
+        },
+        {
+            name: `${id}: a tick`,
+            id,
+            body: { kind: 'subtask', target: { id }, key: '0', action: 'done' }
+        },
+        {
+            name: `${id}: an added line`,
+            id,
+            body: { kind: 'subtask-add', target: { id }, fields: { do: 'write it up' } }
+        }
+    ]);
+
+    it.each(PROJECT_ROWS)(
+        "puts a project's manifest field back, a hub project of any tier and a repository project",
+        async (row) => {
+            const hub = personalTarget();
+            const { into, file } = repositoryTarget(hub.into);
+            const path = row.id === REPOSITORY_ID ? file : hub.files.idea;
+            const original = readFileSync(path, 'utf8');
+            const change = await made(into, row.body, row.name);
+            expect(readFileSync(path, 'utf8'), row.name).not.toBe(original);
+
+            const response = await undone(into, change);
+            expect(response.status, row.name).toBe(200);
+            expect(readFileSync(path, 'utf8'), row.name).toBe(original);
+            expect(changesOf(into)[0], row.name).toMatchObject({ undoes: change.at });
+        }
+    );
+
+    /** The writes to a project of a folder added to the workspace that the undo takes back. */
+    const WORKSPACE_ROWS = [
+        {
+            name: 'a snooze set',
+            body: { kind: 'manifest', id: WORKSPACE_ID, fields: { snooze: '2026-12-01' } }
         },
         {
             name: 'a tick',
-            body: { kind: 'subtask', target: { id: REPOSITORY_ID }, key: '0', action: 'done' }
-        },
-        {
-            name: 'an added line',
-            body: {
-                kind: 'subtask-add',
-                target: { id: REPOSITORY_ID },
-                fields: { do: 'write it up' }
-            }
+            body: { kind: 'subtask', target: { id: WORKSPACE_ID }, key: '0', action: 'done' }
         }
     ];
 
-    it.each(REPOSITORY_ROWS)(
-        "puts a repository's research project's manifest field back",
+    it.each(WORKSPACE_ROWS)(
+        "writes a folder added to the workspace's project in its own file only, and takes it back: $name",
         async (row) => {
-            const { into, file } = repositoryTarget();
+            const { into, file } = workspaceTarget();
+            const hubFile = join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml');
             const original = readFileSync(file, 'utf8');
+            const hubOriginal = readFileSync(hubFile, 'utf8');
             const change = await made(into, row.body, row.name);
             expect(readFileSync(file, 'utf8'), row.name).not.toBe(original);
+            expect(readFileSync(hubFile, 'utf8'), row.name).toBe(hubOriginal);
 
             const response = await undone(into, change);
             expect(response.status, row.name).toBe(200);
             expect(readFileSync(file, 'utf8'), row.name).toBe(original);
-            expect(changesOf(into)[0], row.name).toMatchObject({ undoes: change.at });
+            expect(readFileSync(hubFile, 'utf8'), row.name).toBe(hubOriginal);
         }
     );
 
@@ -308,7 +357,7 @@ describe('taking a change back', () => {
     });
 
     it.each(LINE_ROWS)('puts a subtask line back as it was', async (row) => {
-        const { into, files } = sideTarget();
+        const { into, files } = personalTarget();
         const read = (): string => row.read(into, files);
         const original = read();
         const change = await made(into, row.body, row.name);

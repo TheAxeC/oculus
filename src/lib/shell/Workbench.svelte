@@ -250,7 +250,6 @@
         if (first !== undefined) {
             client.layout.startOnRailPage(first.page, first.label, first.node, shipped);
         } else client.layout.keepDefaultPage(shipped);
-        client.layout.adoptFloats(shipped);
     });
 
     // A page of the rail, saved or adopted by its button, is given each of the hub's documents it

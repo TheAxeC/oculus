@@ -27,8 +27,7 @@ const KINDS = [
     'people',
     'organisations',
     'resources',
-    'collections',
-    'personal'
+    'collections'
 ] as const;
 
 /** A record of any kind as far as its id and the hub it came from are concerned. */

@@ -15,17 +15,14 @@ import {
     rootMark,
     subtaskLines,
     subtasksOf,
-    type SideManifest,
     type TickerItem,
     type TickerTarget
 } from './board/ticker-lines.ts';
-import { sideLines } from './board/side-lines.ts';
 import { entryDate, manifestsBehind, type ManifestBehind } from './focus-lanes.ts';
 import {
     deadlineMet,
     entriesOf,
     focusLabel,
-    live,
     setting,
     settled,
     snoozed,
@@ -35,7 +32,7 @@ import {
     type Tally
 } from './focus.ts';
 
-export { dueFollowups, type SideManifest, type TickerItem, type TickerTarget };
+export { dueFollowups, type TickerItem, type TickerTarget };
 
 /**
  * The deadline categories, in the order the ticker groups them. They are different jobs: your own
@@ -49,9 +46,11 @@ export const CATEGORIES = [
     'position',
     'collab',
     'task',
-    'side',
     'conference'
 ];
+
+/** The key of the funding collection, whose entries the scheme loops read. */
+const FUNDING = 'funding';
 
 /** Which collection each category of entry comes from, for the tab a click on it opens. */
 const COLLECTIONS: Record<string, string> = {
@@ -106,29 +105,29 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const months = setting(config, 'conf_horizon_months', 1);
     const warn = setting(config, 'venue_conc_warn', 4);
     const labelMode = config.focus_label_mode;
-    const projects = Object.values(snapshot.entities.projects).filter(live);
+    const projects = Object.values(snapshot.entities.projects);
+    const boardProjects = projects.filter((one) => one.tier === 'projects');
     const collections = snapshot.entities.collections;
 
     const overdue: TickerItem[] = [];
     const dated: { category: string; line: TickerItem }[] = [];
     const followups: TickerItem[] = [];
-    const sides = sideLines(snapshot, config, now);
-    const subtasks: TickerItem[] = [...sides.subtasks];
+    const subtasks: TickerItem[] = [];
     const openEntries: TickerItem[] = [];
     const asleep: TickerItem[] = [];
-    overdue.push(...sides.overdue);
-    dated.push(...sides.dated.map((line) => ({ category: 'side', line })));
-    asleep.push(...sides.asleep);
 
     /**
-     * A project's own submission deadline: overdue behind it, on the paper group before it. A line
-     * that shows folds its conference into itself, so the call is not listed a second time below.
+     * A project's own deadline, for a project of any tier: overdue behind it, on the paper group
+     * before it. It stops only at a chip the palette marks `deadline_met`. A deadline that is no
+     * date is open work and is a task line. A line that shows folds its conference into itself,
+     * so the call is not listed a second time below.
      */
     const folded = new Set<string>();
     for (const project of projects) {
-        const days = daysUntil(project.deadline ?? '', now);
-        if (days === null || settled(project, config)) continue;
-        if (days > horizon) continue;
+        const deadline = (project.deadline ?? '').trim();
+        if (deadline === '' || settled(project, config)) continue;
+        const days = daysUntil(deadline, now);
+        if (days !== null && days > horizon) continue;
         const line = item('paper', GLYPHS.paper, focusLabel(project, labelMode), days, {
             id: project.id,
             ...rootMark(project),
@@ -136,6 +135,10 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         });
         if (snoozed(project.snooze, now)) {
             asleep.push({ ...line, snoozed: true });
+            continue;
+        }
+        if (days === null) {
+            openEntries.push(line);
             continue;
         }
         if (days < 0) {
@@ -256,7 +259,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
 
     /** Follow-ups: a project's, then every collection entry's, oldest due first. */
-    const notes: { days: number | null; line: TickerItem }[] = [...sides.notes];
+    const notes: { days: number | null; line: TickerItem }[] = [];
     for (const project of Object.values(snapshot.entities.projects)) {
         for (const { note, days } of dueFollowups(project.followups, now)) {
             notes.push({
@@ -292,6 +295,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
     for (const collection of Object.values(collections)) {
         const key = bareId(collection);
+        // The funding collection's entries are the schemes read above.
+        if (key === FUNDING) continue;
         for (const entry of collection.entries) {
             if (terminal(config, str(entry.fields.status))) continue;
             const held = followupsOf(entry.fields.followup);
@@ -348,6 +353,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
     for (const collection of Object.values(collections)) {
         const key = bareId(collection);
+        if (key === FUNDING) continue;
         for (const entry of collection.entries) {
             const status = str(entry.fields.status);
             if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
@@ -366,7 +372,6 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     }
     subtasks.sort(
         (a, b) =>
-            Number(a.side !== undefined) - Number(b.side !== undefined) ||
             (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0) ||
             (a.days ?? Number.MAX_SAFE_INTEGER) - (b.days ?? Number.MAX_SAFE_INTEGER)
     );
@@ -384,9 +389,9 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         followups,
         subtasks: subtasks.filter((one) => one.days !== null),
         tasks: [...openNotes, ...subtasks.filter((one) => one.days === null), ...openEntries],
-        venueLoad: venueLoad(projects, snapshot.entities.venues, warn),
+        venueLoad: venueLoad(boardProjects, snapshot.entities.venues, warn),
         snoozed: asleep,
-        behind: manifestsBehind(projects, config)
+        behind: manifestsBehind(boardProjects, config)
     };
 }
 
@@ -460,20 +465,14 @@ export function daysTone(days: number | null): string | undefined {
 }
 
 /**
- * The lines in runs of one kind each, in the order given: a kind met again opens a new run. A line
- * of a side project is never in a run with a research line of the same kind, since the empty kind
- * of a project's checklist and a side project's are different headings.
+ * The lines in runs of one kind each, in the order given: a kind met again opens a new run.
  */
-export function runsByKind(
-    lines: TickerItem[]
-): { kind: string; side: boolean; lines: TickerItem[] }[] {
-    const runs: { kind: string; side: boolean; lines: TickerItem[] }[] = [];
+export function runsByKind(lines: TickerItem[]): { kind: string; lines: TickerItem[] }[] {
+    const runs: { kind: string; lines: TickerItem[] }[] = [];
     for (const line of lines) {
         const held = runs.at(-1);
-        const side = line.side !== undefined;
-        if (held?.kind !== line.kind || held.side !== side) {
-            runs.push({ kind: line.kind, side, lines: [line] });
-        } else held.lines.push(line);
+        if (held?.kind !== line.kind) runs.push({ kind: line.kind, lines: [line] });
+        else held.lines.push(line);
     }
     return runs;
 }
@@ -491,25 +490,22 @@ export function deadlinesByCategory<C extends string>(
         .filter((one) => one.lines.length > 0);
 }
 
-/** The four groups of the tasks section, each holding its lines in the order given. */
+/** The three groups of the tasks section, each holding its lines in the order given. */
 export type TaskGroups = {
     followups: TickerItem[];
     subtasks: TickerItem[];
     tasks: TickerItem[];
-    /** The undated follow-ups and the open subtasks of the live side projects. */
-    side: TickerItem[];
 };
 
 /**
- * The tasks section's lines by group: a line of a side project is in the side group, a subtask
- * carries the key of its own line, and a follow-up says so in its kind, which is what a scheme's
- * note has instead of a target; every other line is a task.
+ * The tasks section's lines by group: a subtask carries the key of its own line, and a follow-up
+ * says so in its kind, which is what a scheme's note has instead of a target; every other line is
+ * a task.
  */
 export function taskGroups(lines: readonly TickerItem[]): TaskGroups {
-    const groups: TaskGroups = { followups: [], subtasks: [], tasks: [], side: [] };
+    const groups: TaskGroups = { followups: [], subtasks: [], tasks: [] };
     for (const line of lines) {
-        if (line.side !== undefined) groups.side.push(line);
-        else if (line.target?.subtask !== undefined) groups.subtasks.push(line);
+        if (line.target?.subtask !== undefined) groups.subtasks.push(line);
         else if (line.kind === 'followup') groups.followups.push(line);
         else groups.tasks.push(line);
     }
@@ -518,13 +514,7 @@ export function taskGroups(lines: readonly TickerItem[]): TaskGroups {
 
 /** Whether any group of the tasks section holds a line. */
 export function hasTasks(groups: TaskGroups): boolean {
-    return (
-        groups.followups.length +
-            groups.subtasks.length +
-            groups.tasks.length +
-            groups.side.length >
-        0
-    );
+    return groups.followups.length + groups.subtasks.length + groups.tasks.length > 0;
 }
 
 /**

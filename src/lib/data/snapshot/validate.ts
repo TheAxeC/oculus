@@ -32,7 +32,6 @@ import {
     wordShape
 } from '../shapes/shapes.ts';
 import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
-import { personalFindings } from './normalise-parts/personal.ts';
 import { isWords } from './schema/check.ts';
 import { checkResources } from './validate-kinds.ts';
 
@@ -403,7 +402,6 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkEntryStatus(raw, rules.vocab.statuses, catalog, findings);
     checkEntryIdentity(raw, catalog, findings);
     checkRetiredLabels(raw, rules, findings);
-    findings.push(...personalFindings(raw.personal, rules.vocab.sideStatuses, catalog));
 
     return sortFindings(findings);
 }

@@ -31,7 +31,7 @@
 <g id="node23" class="node">
 <title>server to data</title>
 <polygon fill="none" stroke="none" points="473.88,-70.08 456.12,-70.08 456.12,-57.6 473.88,-57.6 473.88,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="465" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">379</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="465" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">372</text>
 </g>
 <!-- server&#45;&gt;server to data -->
 <g id="edge21" class="edge">
@@ -48,7 +48,7 @@
 <g id="node30" class="node">
 <title>state to data</title>
 <polygon fill="none" stroke="none" points="607.88,-70.08 590.12,-70.08 590.12,-57.6 607.88,-57.6 607.88,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="599" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">336</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="599" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">332</text>
 </g>
 <!-- state&#45;&gt;state to data -->
 <g id="edge35" class="edge">
@@ -154,7 +154,7 @@
 <g id="node35" class="node">
 <title>views to state</title>
 <polygon fill="none" stroke="none" points="648.88,-286.8 627.12,-286.8 627.12,-274.32 648.88,-274.32 648.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="638" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1121</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="638" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1112</text>
 </g>
 <!-- views&#45;&gt;views to state -->
 <g id="edge45" class="edge">
@@ -165,7 +165,7 @@
 <g id="node36" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="738.88,-286.8 721.12,-286.8 721.12,-274.32 738.88,-274.32 738.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="730" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">896</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="730" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">889</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge47" class="edge">
@@ -188,7 +188,7 @@
 <g id="node15" class="node">
 <title>routes to data</title>
 <polygon fill="none" stroke="none" points="790.88,-70.08 777.12,-70.08 777.12,-57.6 790.88,-57.6 790.88,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="784" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">27</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="784" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">26</text>
 </g>
 <!-- routes&#45;&gt;routes to data -->
 <g id="edge5" class="edge">
@@ -210,7 +210,7 @@
 <g id="node17" class="node">
 <title>routes to server</title>
 <polygon fill="none" stroke="none" points="545.88,-397.44 528.12,-397.44 528.12,-384.96 545.88,-384.96 545.88,-397.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="537" y="-388.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">108</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="537" y="-388.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">107</text>
 </g>
 <!-- routes&#45;&gt;routes to server -->
 <g id="edge9" class="edge">

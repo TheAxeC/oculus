@@ -18,14 +18,14 @@ import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import {
     GOOD,
     MANIFEST,
+    PERSONAL_MANIFEST,
     REPOSITORY_ID,
-    REPOSITORY_MANIFEST,
-    SIDE_MANIFEST,
     TOKEN,
     manifestOf,
+    personalTarget,
     repositoryTarget,
     request,
-    secondHubSide,
+    secondHubPersonal,
     target,
     warmConfig
 } from './write-fixture.ts';
@@ -60,46 +60,94 @@ describe('the write endpoint', () => {
         expect(readFileSync(path, 'utf8')).toBe('{"sessions": ');
     });
 
-    it("writes a second hub's side project in that hub's file and no other", async () => {
-        const planted = secondHubSide();
-        const body = { kind: 'manifest', id: 'two:side:idea', fields: { snooze: '2026-12-01' } };
+    it("writes a second hub's personal project in that hub's file and no other", async () => {
+        const planted = secondHubPersonal();
+        const body = { kind: 'manifest', id: 'two:idea', fields: { snooze: '2026-12-01' } };
         const response = await handleWrite(request(body), TOKEN, planted.into);
         expect(response.status).toBe(200);
         expect(readFileSync(planted.second, 'utf8')).toBe(
-            SIDE_MANIFEST.replace('2026-11-01', '2026-12-01')
+            PERSONAL_MANIFEST.replace('2026-11-01', '2026-12-01')
         );
-        expect(readFileSync(planted.files['side:idea'], 'utf8')).toBe(SIDE_MANIFEST);
-        expect(readFileSync(planted.files['root:r'], 'utf8')).toBe(SIDE_MANIFEST);
+        expect(readFileSync(planted.files.idea, 'utf8')).toBe(PERSONAL_MANIFEST);
+        expect(readFileSync(planted.files.r, 'utf8')).toBe(PERSONAL_MANIFEST);
     });
 
-    it("writes a repository's research project in its .oculus/project.yml and no other, and answers an app not found", async () => {
-        const planted = repositoryTarget();
+    it('writes a project of any tier in its own file and no other, and answers an app not found for a repository', async () => {
+        const hubSide = personalTarget();
+        const planted = repositoryTarget(hubSide.into);
         const { into, dir, file } = planted;
-        const hubManifest = manifestOf(into);
-        const body = { kind: 'manifest', id: REPOSITORY_ID, fields: { next: 'write it up' } };
+        const projects = [
+            {
+                id: 'alpha',
+                file: join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml')
+            },
+            { id: 'idea', file: hubSide.files.idea },
+            { id: 'r', file: hubSide.files.r },
+            { id: REPOSITORY_ID, file }
+        ];
+        const edits = [
+            {
+                field: 'next',
+                value: 'write it up',
+                line: (text: string) => `${text}next: write it up\n`
+            },
+            {
+                field: 'tier',
+                value: 'coauthor',
+                line: (text: string) => text.replace(/^tier: .*$/m, 'tier: coauthor')
+            },
+            {
+                field: 'type',
+                value: 'paused-stage',
+                line: (text: string) => text.replace(/^type: .*$/m, 'type: paused-stage')
+            }
+        ];
+        for (const one of projects) {
+            for (const edit of edits) {
+                const held = projects.map((other) => readFileSync(other.file, 'utf8'));
+                const body = { kind: 'manifest', id: one.id, fields: { [edit.field]: edit.value } };
+                const row = `${one.id}: ${edit.field}`;
+                const response = await handleWrite(request(body), TOKEN, into);
+                expect(response.status, row).toBe(200);
+                expect(await response.json(), row).toMatchObject({ refused: [] });
+                projects.forEach((other, at) => {
+                    const now = readFileSync(other.file, 'utf8');
+                    expect(now, `${row} in ${other.id}`).toBe(
+                        other.id === one.id ? edit.line(held[at]) : held[at]
+                    );
+                });
+                for (const other of projects)
+                    writeFileSync(other.file, held[projects.indexOf(other)]);
+            }
+            const before = readFileSync(one.file, 'utf8');
+            const id = await handleWrite(
+                request({ kind: 'manifest', id: one.id, fields: { id: 'renamed' } }),
+                TOKEN,
+                into
+            );
+            const outcome = (await id.json()) as {
+                changed: string[];
+                refused: { field: string }[];
+            };
+            expect(outcome.changed, one.id).toEqual([]);
+            expect(
+                outcome.refused.map((item) => item.field),
+                one.id
+            ).toEqual(['id']);
+            expect(readFileSync(one.file, 'utf8'), one.id).toBe(before);
+        }
 
-        const page = await handleWrite(request(body), TOKEN, into);
-        expect(page.status).toBe(200);
-        const written = readFileSync(file, 'utf8');
-        expect(written).toBe(`${REPOSITORY_MANIFEST}next: write it up\n`);
-        expect(readFileSync(join(dir, 'README.md'), 'utf8')).toBe('# A repository\n');
-        expect(manifestOf(into)).toBe(hubManifest);
-
+        const body = { kind: 'manifest', id: REPOSITORY_ID, fields: { next: 'x' } };
         const apps = routeSetup({ machine: notesFiles(`${APP_MANIFEST}writes: [manifest]\n`) });
         const held = { ...into, apps: { held: apps.held, data: join(dir, 'data'), maxKb: 256 } };
         const headers = { [APP_HEADER]: 'app:notes', [KIND_HEADER]: 'manifest' };
-        const app = await handleWrite(
-            request({ ...body, fields: { next: 'x' } }, headers),
-            TOKEN,
-            held
-        );
+        const before = readFileSync(file, 'utf8');
+        const app = await handleWrite(request(body, headers), TOKEN, held);
         expect(app.status).toBe(404);
-        expect(readFileSync(file, 'utf8')).toBe(written);
+        expect(readFileSync(file, 'utf8')).toBe(before);
 
-        const removed = repositoryTarget(target(), null);
-        const before = readFileSync(removed.file, 'utf8');
+        const removed = repositoryTarget(target(), false);
         const without = await handleWrite(request(body), TOKEN, removed.into);
         expect(without.status).toBe(404);
-        expect(readFileSync(removed.file, 'utf8')).toBe(before);
     });
 });

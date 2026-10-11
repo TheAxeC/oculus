@@ -16,7 +16,7 @@
     import LaneHead from './LaneHead.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { DEADLINE_SOON, daysUntil, hasReadme } from '$lib/state/boards/board';
+    import { DEADLINE_SOON, daysUntil } from '$lib/state/boards/board';
     import {
         backlog,
         CLUSTERS,
@@ -36,10 +36,8 @@
         type Project,
         type Venue
     } from '$lib/state/boards/focus';
-    import { rootOf } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
-    import { openPage } from '$lib/views/shared/explorer/opening';
 
     const client = useState();
     const {
@@ -146,21 +144,6 @@
         said(await writeManifest(project.id, { priority: nextPriority(levels, project.priority) }));
     }
 
-    /** An unplaced ghost has no project tab; its README is the only title-like destination. */
-    function openMissing(project: Project): void {
-        if (project.ghost) {
-            if (hasReadme(project)) {
-                openPage(client, {
-                    root: rootOf(project),
-                    path: `${project.folder}/README.md`,
-                    label: 'README.md'
-                });
-            }
-            return;
-        }
-        onproject(project.id);
-    }
-
     /**
      * How many flames a card draws: none means one, faint, so the badge can be clicked to set one.
      */
@@ -226,7 +209,7 @@
                     items={menuFor(project)}
                     onpick={(id: string) => void choose(project, id)}
                     oncycle={() => void cyclePriority(project)}
-                    onopen={() => openMissing(project)}
+                    onopen={() => onproject(project.id)}
                     ondragstart={(event: DragEvent) => started(project, event)}
                     ondragend={ended}
                 />
@@ -285,7 +268,7 @@
                 plain
                 label={t('focus.hint_count', missing.length)}
                 title={t('focus.hint_link')}
-                onclick={() => openMissing(missing[0])}
+                onclick={() => onproject(missing[0].id)}
             />
         </span>
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->

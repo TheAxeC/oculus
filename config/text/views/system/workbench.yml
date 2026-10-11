@@ -25,7 +25,6 @@ text:
         desc_meta: 'The tool identity: the title and the subtitle the window carries.'
         desc_options: 'Every option of every config file: what it does, its default, and the control it is set with.'
         desc_present: 'What every deck the Present view draws starts from: the hue each tag class of a project slide wears.'
-        desc_side_project_schema: "The keys of a side project's project.yml, in the hub's side-projects folder and in the .oculus folder of a repository whose roots entry has tier personal or no tier, which the editor completes and checks."
         desc_sources: "What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from (the folders of the default workspace, which the Files view's Add Folder to Workspace and Remove Folder from Workspace write, keeping the file's comments), and the language each file name opens in."
         desc_unimath: 'The Unicode math symbols the LaTeX completion offers after a backslash while latex.unimath_symbols is true: per command, its glyph (and the package that defines it) and its words.'
         desc_vocab: 'Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers, the venue and dataset theme words and the radar buckets.'

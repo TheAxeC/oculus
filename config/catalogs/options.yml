@@ -183,7 +183,7 @@ options:
         data_domains:
             heading: boards
             section: Audit checks
-            help: Domains expected to have a dataset. The audit reports an active or manuscript project in one of these domains that has no datasets entry. This is a setting of the hub, kept in the hub's .oculus/config/behavior.yml, and a hub that sets none expects no dataset.
+            help: Domains expected to have a dataset. The audit reports an active project in one of these domains that has no datasets entry. This is a setting of the hub, kept in the hub's .oculus/config/behavior.yml, and a hub that sets none expects no dataset.
             default: []
             control: multi
             from: domains
@@ -1146,7 +1146,7 @@ options:
         board.cols_project:
             heading: boards
             section: Board columns and search
-            help: The list-view column headings of the Projects board, written in the order of the fixed columns title, authors, venue, status, focus and next. A column with no heading here shows its cell name.
+            help: The list-view column headings of the Projects and Personal boards, written in the order of the fixed columns title, authors, venue, status, focus and next. A column with no heading here shows its cell name.
             default: [Project, Authors, Venue, Status, Focus, Next]
             control: list
             slots: [title, authors, venue, status, focus, next]
@@ -1162,6 +1162,12 @@ options:
             section: Board columns and search
             help: The placeholder of the Projects board's search box.
             default: Search title | eli5 | results | ideas | doc text ...
+            control: text
+        board.search.personal:
+            heading: boards
+            section: Board columns and search
+            help: The placeholder of the Personal board's search box.
+            default: Search personal | title | eli5 | next | doc text ...
             control: text
         board.search.archive:
             heading: boards
@@ -1181,22 +1187,22 @@ options:
             help: The colours of the count split on the Projects tab button, one cell per project type. A type with no colour here, or one that is not a lowercase hue name, draws in the unknown tone.
             fields:
                 key:
-                    help: a project type, active, manuscript or idea
+                    help: a project type, active or idea
                     control: choice
-                    options: [active, manuscript, idea]
+                    options: [active, idea]
                 value:
                     help: the palette hue name the type's count wears
                     control: hue
         tab_rollup:
             heading: boards
             section: Tab badges
-            help: The count buckets of each board. The Archive and Coauthor tab buttons draw their counts split by bucket, and the category facet of a board's filter takes the bucket's colour. Buckets are mutually exclusive, and a card lands in the first bucket whose keys its type or one of its status chips matches.
+            help: The count buckets of each board. The Personal, Archive and Coauthor tab buttons draw their counts split by bucket, and the category facet of a board's filter takes the bucket's colour. Buckets are mutually exclusive, and a card lands in the first bucket whose keys its type or one of its status chips matches.
             holds: lists
             fields:
                 key:
-                    help: a board id, projects, archive or coauthor
+                    help: a board id, projects, personal, archive or coauthor
                     control: choice
-                    options: [projects, archive, coauthor]
+                    options: [projects, personal, archive, coauthor]
                 label: the words of the bucket, which also give its id
                 keys:
                     help: the project types and status chips the bucket counts
@@ -1233,7 +1239,7 @@ options:
         project_label_mode:
             heading: boards
             section: Project labels
-            help: How the Projects board names a project when it opens. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
+            help: How the Projects and Personal boards name a project when they open. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
             default: short
             control: choice
             options: [short, full]
@@ -1274,27 +1280,28 @@ options:
         scan:
             heading: sources
             section: Project scan
-            help: Where to find projects, with paths relative to the hub. A project is any subfolder that holds a project.yml, and its tier is the last segment of the rule's dir (projects/active gives active). The side-projects tier is the exception. Its folders feed the Personal board and the Focus ticker, and no research reader (the boards, the Focus lanes, the audit, the chat context and the deposit) finds them. A rule with no dir is dropped, and a folder that is not there is a finding unless the rule is optional.
+            help: Where to find projects, with paths relative to the hub. A project is any folder that holds a project.yml, at any depth under the rule's dir; the walk stops at a project and does not enter a dot folder, node_modules or a symbolic link, and a project's tier and type are the manifest's own tier and type lines, not the folder's. When a project lies deeper than one level, the first folder under the rule's dir is its category. A rule with no dir is a finding, so is a key other than dir and optional, and a folder that is not there is a finding unless the rule is optional.
             fields:
                 dir:
                     help: the folder scanned, relative to the hub
                     control: folder
                     allow_missing: optional
-                type:
-                    help: the type every project of the folder takes, absent when a nested rule reads it from each manifest
-                    control: choice
-                    options: [side-project]
-                    from: project_types
-                nested:
-                    help: true when the folder holds category folders of projects, so that the type comes from each manifest
-                    control: toggle
                 optional:
                     help: true when a hub without the folder reports nothing
                     control: toggle
-                tier:
-                    help: the board whose tab splits its count by this rule's type; projects puts the rule's type in the split of the Projects tab, and any other word adds no type to it
+        new_project_dir:
+            heading: sources
+            section: Project scan
+            help: The folder a new project is made in, for each tier. The New project form of a board offers it in its Folder field, and an app's new-project write with no folder uses it. A folder must be a scan folder or lie under one, so the project is read once made; an entry for a word that is not a tier, or one that names a folder outside the scan, is a finding. A tier with no entry has no folder to offer and its form asks for one. This is a setting of the hub kept in the hub's .oculus/config/sources.yml; the engine's map is empty.
+            fields:
+                key:
+                    help: the tier the folder is for, projects, coauthor, archive or personal
                     control: choice
-                    options: [projects, personal, software, coauthor, archive]
+                    options: [projects, coauthor, archive, personal]
+                value:
+                    help: the folder new projects of the tier are made in, relative to the hub
+                    control: folder
+                    allow_missing: optional
         languages:
             heading: editor
             section: File languages
@@ -1395,16 +1402,12 @@ options:
         roots:
             heading: sources
             section: Roots
-            help: The roots the server may serve local files from, one directory per key. A relative dir is a finding, and a dir that is not on this machine is a finding and its root serves nothing. Nothing outside a root is served, since both ends are resolved through realpath. These are the folders of the default workspace, a setting of the hub kept in the hub's .oculus/config/sources.yml; the engine's list is empty. The Files view's Add Folder to Workspace appends an entry here and Remove Folder from Workspace removes one, and a saved workspace keeps its own folders in its file.
+            help: "The roots the server may serve local files from, one directory per key. A root that is not marked hub: true and holds a .oculus/project.yml is a project of the first hub, with the key for its id, whose tier and type are the manifest's own, with LaTeX and no Deposit. A relative dir is a finding, and a dir that is not on this machine is a finding and its root serves nothing. Nothing outside a root is served, since both ends are resolved through realpath. These are the folders of the default workspace, a setting of the hub kept in the hub's .oculus/config/sources.yml; the engine's list is empty. The Files view's Add Folder to Workspace appends an entry here and Remove Folder from Workspace removes one, and a saved workspace keeps its own folders in its file."
             fields:
                 key: the root's key, which the file address api/file/key/path and a bookmark use
                 dir:
                     help: the directory, absolute or starting with ~/
                     control: path
-                tier:
-                    help: "what the repository's .oculus/project.yml is read as. projects, coauthor and archive read it as a research project of the first hub on the Projects, Coauthor or Archive board (on the Projects board the manifest's type line picks the column), with the key as its id, LaTeX and no Deposit. personal, or no tier, reads it as a side project of the Personal board. The empty item leaves the key out of the entry. A root marked hub: true takes no tier, and a key with a colon, a slash or a space, or one of side, root, hub and engine, cannot be given a research tier"
-                    control: choice
-                    options: [projects, coauthor, archive, personal]
         repository_scan_depth:
             heading: sources
             section: Roots

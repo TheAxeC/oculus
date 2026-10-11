@@ -57,7 +57,7 @@ text:
         msg_type_not_folder: "type {0} is not the folder's {1}"
         msg_no_author_chip: 'archive/coauthor entry has no author-role chip (lead / coauthor)'
         msg_terminal_live: 'terminal ({0}) but still carries live chip(s) {1}: stale; clear them or re-open the project'
-        msg_projects_published: 'projects-tier carries `published`: it got accepted; move the folder to archive/published/'
+        msg_projects_published: 'the Projects board carries `published`: it got accepted; move the folder to archive/published/'
         msg_contradictory_chips: 'contradictory status chips `{0}` + `{1}`'
         msg_missing: missing
         msg_too_long: '{0} chars (>{1}): trim to a glance; detail belongs in the prose docs'

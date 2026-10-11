@@ -364,58 +364,6 @@ export function resetAll(
     return held.kept === undefined ? next : { ...next, kept: held.kept };
 }
 
-/**
- * The pages with the shipped floats taken in, for a layout saved before there were floats. The
- * first tab of a view a shipped float holds is moved out of the page that holds it into that
- * float, its id kept, so what it held stays, and every other tab of that view leaves its page, so
- * no page draws the view beside the float; a view no page holds is made new. A float whose edge
- * another float already holds is not made. A pane of a page that loses its last tab to a float is
- * left as `keep` says.
- */
-export function adoptFloats(held: Pages, specs: FloatSpec[], keep: KeepRule): Pages {
-    let next = held;
-    for (const spec of specs) {
-        if (spec.place.kind === 'dock' && dockedOn(next.floats, spec.place.edge) !== undefined) {
-            continue;
-        }
-        const tabs: Instance[] = [];
-        for (const tab of spec.pane.tabs) {
-            const found = tabNamedBy(next, tab.view);
-            if (found === null) {
-                tabs.push({ ...kept(tab), id: crypto.randomUUID() });
-                continue;
-            }
-            tabs.push(found);
-            for (
-                let left: Instance | null = found;
-                left !== null;
-                left = tabNamedBy(next, tab.view)
-            ) {
-                next = withoutTab(next, left.id, keep);
-            }
-        }
-        if (tabs.length === 0) continue;
-        const at = spec.pane.tabs.findIndex((tab) => tab.id === spec.pane.active);
-        const active = tabs[Math.max(at, 0)];
-        const float: Float = {
-            id: crypto.randomUUID(),
-            pane: repane(spec.pane, tabs, active.id),
-            place: spec.place
-        };
-        next = withFloats(next, [...next.floats, float]);
-    }
-    return next.floats.length === held.floats.length ? held : next;
-}
-
-/** The first tab of a view a page holds, which a shipped float takes in. */
-function tabNamedBy(held: Pages, view: string): Instance | null {
-    for (const page of held.pages) {
-        const found = tabsOf(page.workbench.root).find((tab) => tab.view === view);
-        if (found !== undefined) return found;
-    }
-    return null;
-}
-
 /** The pages with one tab gone from the page that holds it, the pane it left cleaned. */
 function withoutTab(held: Pages, id: string, keep?: KeepRule): Pages {
     return {

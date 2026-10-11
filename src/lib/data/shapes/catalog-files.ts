@@ -49,9 +49,6 @@ const drawn = z.strictObject({
     color: colour.optional()
 });
 
-/** One status of a side project: drawn like a word of the maps above, live unless it says not. */
-const sideStatus = drawn.extend({ live: z.boolean().optional() });
-
 /** A research domain: its colour and label. */
 const domain = z.strictObject({ color: colour.optional(), label: text.optional() });
 
@@ -88,7 +85,6 @@ const vocabFileShape = z.strictObject({
     fund_stages: z.array(fundStage).optional(),
     focus_lane_tones: textMap.optional(),
     career_host_status: z.record(z.string(), drawn).optional(),
-    side_project_status: z.record(z.string(), sideStatus).optional(),
     career_score_dims: z.array(scoreDim).optional(),
     archive_categories: z.array(text).optional(),
     archive_dead: z.array(text).optional(),
@@ -381,7 +377,8 @@ const manifestField = z.strictObject({
     section: text.optional(),
     help: text.optional(),
     from: z.union([text, z.array(text)]).optional(),
-    options: z.array(text).optional()
+    options: z.array(text).optional(),
+    required: z.literal(true).optional()
 });
 
 /** config/schemas/manifest-schema.yml: the project edit form as data. */
@@ -392,24 +389,6 @@ export const manifestSchemaFileShape = z.strictObject({
             fields: z.record(z.string(), manifestField).optional()
         })
         .optional()
-});
-
-/** One row of config/schemas/side-project-schema.yml: a field of a side project's manifest. */
-const sideProjectField = z.strictObject({
-    field: text,
-    type: z.enum(MANIFEST_WIDGETS),
-    help: text.optional(),
-    from: z.union([text, z.array(text)]).optional(),
-    options: z.array(text).optional(),
-    required: z.boolean().optional()
-});
-
-/**
- * config/schemas/side-project-schema.yml: the keys of a side project's manifest, one row each, with
- * the widget words of the project edit form.
- */
-export const sideProjectSchemaFileShape = z.strictObject({
-    side_project_schema: z.array(sideProjectField).optional()
 });
 
 /** The shape a file of the config folder is read through, by its name relative to config/. */

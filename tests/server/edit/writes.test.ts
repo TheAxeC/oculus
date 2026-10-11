@@ -9,7 +9,7 @@
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
 // tagged slow.
 
-import { readFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
@@ -22,29 +22,31 @@ import {
 } from '../../../src/lib/server/edit/writes.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
-import { it } from '../../fixtures/scratch.ts';
+import { it, scratchDir } from '../../fixtures/scratch.ts';
 import {
     MANIFEST,
     configFor,
     record,
     manifestPath,
-    sideWorld,
-    type SideWorld,
+    personalWorld,
+    type PersonalWorld,
     tasksPath,
     TASKS,
     CAREER,
     wider,
     tasksOf
 } from './writes-fixture.ts';
-import { SIDE_MANIFEST } from '../../routes/edit/write-fixture.ts';
+import { PERSONAL_MANIFEST } from '../../routes/edit/write-fixture.ts';
 
-/** The files a row of the tables below writes in: a research manifest and two side manifests. */
-type Subject = 'alpha' | 'side:idea' | 'root:r';
+/**
+ * The files a row of the tables below writes in: a research manifest and two personal manifests.
+ */
+type Subject = 'alpha' | 'idea' | 'r';
 
-const SUBJECTS: Subject[] = ['alpha', 'side:idea', 'root:r'];
+const SUBJECTS: Subject[] = ['alpha', 'idea', 'r'];
 
 /** The file of each subject in a world. */
-function fileOf(world: SideWorld, subject: Subject): string {
+function fileOf(world: PersonalWorld, subject: Subject): string {
     return subject === 'alpha' ? manifestPath(world.root) : world.files[subject];
 }
 
@@ -58,7 +60,7 @@ type FieldRow = {
     answer: (file: string) => unknown;
 };
 
-const SIDE_ROWS = (['side:idea', 'root:r'] as const).flatMap((id): FieldRow[] => [
+const PERSONAL_ROWS = (['idea', 'r'] as const).flatMap((id): FieldRow[] => [
     {
         name: `${id}: a snooze set`,
         id,
@@ -84,7 +86,7 @@ const SIDE_ROWS = (['side:idea', 'root:r'] as const).flatMap((id): FieldRow[] =>
                 {
                     ...(record(file, id, 'snooze', '2026-11-01', null) as object),
                     removed: {
-                        offset: SIDE_MANIFEST.indexOf('snooze'),
+                        offset: PERSONAL_MANIFEST.indexOf('snooze'),
                         text: 'snooze: 2026-11-01\n',
                         next: 'subtasks:'
                     }
@@ -105,7 +107,7 @@ const SIDE_ROWS = (['side:idea', 'root:r'] as const).flatMap((id): FieldRow[] =>
         })
     },
     {
-        name: `${id}: a field outside side_project_schema`,
+        name: `${id}: a field outside the manifest schema`,
         id,
         fields: { venue: 'somewhere' },
         changes: null,
@@ -113,6 +115,23 @@ const SIDE_ROWS = (['side:idea', 'root:r'] as const).flatMap((id): FieldRow[] =>
             found: true,
             changed: [],
             refused: [{ field: 'venue', reason: 'the manifest schema does not name the field' }],
+            records: []
+        })
+    },
+    {
+        name: `${id}: the id, which no write sets`,
+        id,
+        fields: { id: 'renamed' },
+        changes: null,
+        answer: () => ({
+            found: true,
+            changed: [],
+            refused: [
+                {
+                    field: 'id',
+                    reason: 'the id is the name of the folder, or for a repository the key of its roots: entry; rename that to change it'
+                }
+            ],
             records: []
         })
     }
@@ -131,8 +150,8 @@ const FIELD_ROWS: FieldRow[] = [
             records: [record(file, 'alpha', 'status.line', 'the line', 'a new line')]
         })
     },
-    ...SIDE_ROWS,
-    ...['side:gone', 'root:gone'].map((id): FieldRow => ({
+    ...PERSONAL_ROWS,
+    ...['gone'].map((id): FieldRow => ({
         name: `${id}: an id the published portfolio does not hold`,
         id,
         fields: { snooze: '2026-12-01' },
@@ -143,12 +162,12 @@ const FIELD_ROWS: FieldRow[] = [
 
 describe('the file itself', () => {
     it.each(FIELD_ROWS)('writes the changed field and nothing else', (row) => {
-        const world = sideWorld();
+        const world = personalWorld();
         const before = Object.fromEntries(
             SUBJECTS.map((one) => [one, readFileSync(fileOf(world, one), 'utf8')])
         );
         const file = row.changes === null ? '' : fileOf(world, row.changes.subject);
-        const out = writeManifest(world.root, world.config, world.sides, row.id, row.fields);
+        const out = writeManifest(world.root, world.config, row.id, row.fields);
         expect(out, row.name).toEqual(row.answer(file));
         for (const one of SUBJECTS) {
             const written = row.changes?.subject === one;
@@ -168,16 +187,16 @@ const LINE_ROWS: LineRow[] = [
         first: 0,
         added: 'subtasks:\n  - { do: write it }\n'
     },
-    { name: 'side:idea', subject: 'side:idea', first: 1, added: '  - { do: write it }\n' },
-    { name: 'root:r', subject: 'root:r', first: 1, added: '  - { do: write it }\n' }
+    { name: 'a hub project', subject: 'idea', first: 1, added: '  - { do: write it }\n' },
+    { name: 'a repository project', subject: 'r', first: 1, added: '  - { do: write it }\n' }
 ];
 
 describe('writing one subtask line', () => {
     it.each(LINE_ROWS)('ticks and reopens a line of a manifest', { tags: ['slow'] }, (row) => {
-        const world = sideWorld();
+        const world = personalWorld();
         const file = fileOf(world, row.subject);
         const original = readFileSync(file, 'utf8');
-        const into = [world.root, world.config, world.sides] as const;
+        const into = [world.root, world.config] as const;
         const host = { id: row.subject };
         const key = String(row.first);
         expect(writeManifest(...into, row.subject, {}).changed, row.name).toEqual([]);
@@ -195,7 +214,7 @@ describe('writing one subtask line', () => {
         expect(readFileSync(file, 'utf8'), row.name).not.toContain('write it');
         for (const one of SUBJECTS.filter((other) => other !== row.subject))
             expect(readFileSync(fileOf(world, one), 'utf8'), `${row.name}: ${one}`).toBe(
-                one === 'alpha' ? MANIFEST : SIDE_MANIFEST
+                one === 'alpha' ? MANIFEST : PERSONAL_MANIFEST
             );
         if (row.subject !== 'alpha') expect(readFileSync(file, 'utf8'), row.name).toBe(original);
     });
@@ -240,7 +259,7 @@ describe('writing one career host', () => {
     });
 });
 
-describe('adding an entry and an idea', () => {
+describe('adding an entry', () => {
     it('appends a new entry rendered from the file schema', () => {
         const root = wider();
         const out = createEntry(root, configFor(), 'tasks', {
@@ -268,35 +287,178 @@ describe('adding an entry and an idea', () => {
         });
         expect(tasksOf(root)).toBe(`${TASKS}\n  - title: A new task\n    status: open\n`);
     });
+});
 
-    it('scaffolds an idea folder with a manifest and a README', () => {
+const RESEARCH_STATUS = 'New idea: scope and novelty check open.';
+const RESEARCH_NEXT = 'Scope the idea; cited-novelty lit check; decide go/no-go.';
+
+/** The manifest `createIdea` writes for a project named `new-idea`, from the lines that differ. */
+function ideaManifest(tier: string, focus: boolean, line: string, next: string | null): string {
+    return [
+        'id: new-idea',
+        `tier: ${tier}`,
+        'type: idea',
+        'title: A new idea',
+        ...(focus ? ['focus: holding'] : []),
+        'status:',
+        '  chips: [nascent]',
+        `  line: ${line.includes(':') ? `"${line}"` : line}`,
+        'eli5: what it is',
+        ...(next === null ? [] : [`next: ${next}`]),
+        ''
+    ].join('\n');
+}
+
+const FORM = { id: 'new-idea', title: 'A new idea', eli5: 'what it is' };
+
+const IDEA_ROWS = [
+    {
+        name: 'the Projects board, in the hub folder of the tier',
+        fields: { ...FORM, tier: 'projects' },
+        parent: 'projects/ideas',
+        manifest: ideaManifest('projects', true, RESEARCH_STATUS, RESEARCH_NEXT),
+        readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
+    },
+    {
+        name: 'the Personal board, in the hub folder of the tier',
+        fields: { ...FORM, tier: 'personal' },
+        parent: 'side-projects',
+        manifest: ideaManifest('personal', true, 'New project.', null),
+        readme: '# A new idea\n\nwhat it is\n'
+    },
+    {
+        name: 'the Archive board, in a folder the reader typed',
+        fields: { ...FORM, tier: 'archive', folder: 'projects/archive/old' },
+        parent: 'projects/archive/old',
+        manifest: ideaManifest('archive', false, RESEARCH_STATUS, RESEARCH_NEXT),
+        readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
+    },
+    {
+        name: 'a write that names no tier and no folder, as Lit Watch makes it',
+        fields: FORM,
+        parent: 'projects/ideas',
+        manifest: ideaManifest('projects', true, RESEARCH_STATUS, RESEARCH_NEXT),
+        readme: `# A new idea\n\nwhat it is\n\n## Next\n\n${RESEARCH_NEXT}\n`
+    }
+];
+
+describe('adding an idea', () => {
+    it.each(IDEA_ROWS)('scaffolds an idea folder with a manifest and a README on $name', (row) => {
         const root = wider();
-        const out = createIdea(root, configFor().text, {
-            id: 'new-idea',
-            title: 'A new idea',
-            eli5: 'what it is'
-        });
+        const out = createIdea(root, configFor(), row.fields);
         expect(out.changed).toEqual([
-            'projects/ideas/new-idea/project.yml',
-            'projects/ideas/new-idea/README.md'
+            `${row.parent}/new-idea/project.yml`,
+            `${row.parent}/new-idea/README.md`
         ]);
-        const folder = join(root, 'projects', 'ideas', 'new-idea');
-        expect(readFileSync(join(folder, 'project.yml'), 'utf8')).toBe(
-            [
-                'id: new-idea',
-                'type: idea',
-                'title: A new idea',
-                'focus: holding',
-                'status:',
-                '  chips: [nascent]',
-                '  line: New idea - scope + novelty check open.',
-                'eli5: what it is',
-                'next: Scope the idea; cited-novelty lit check; decide go/no-go.',
-                ''
-            ].join('\n')
-        );
-        expect(readFileSync(join(folder, 'README.md'), 'utf8')).toBe(
-            '# A new idea\n\nwhat it is\n\n## Next\n\nScope the idea; cited-novelty lit check; decide go/no-go.\n'
-        );
+        const folder = join(root, row.parent, 'new-idea');
+        expect(readFileSync(join(folder, 'project.yml'), 'utf8')).toBe(row.manifest);
+        expect(readFileSync(join(folder, 'README.md'), 'utf8')).toBe(row.readme);
+    });
+
+    const NONE = { ...configFor(), newProjectDir: {} };
+
+    const REFUSALS = [
+        {
+            name: 'an archive project sent with no folder, since the hub names none for the tier',
+            fields: { ...FORM, tier: 'archive' },
+            field: 'folder',
+            reason: 'the hub names no folder for new projects of the tier archive'
+        },
+        {
+            name: 'a write with no tier and no folder over a hub that names none for projects',
+            fields: FORM,
+            config: NONE,
+            field: 'folder',
+            reason: 'the hub names no folder for new projects of the tier projects'
+        },
+        {
+            name: 'an empty folder',
+            fields: { ...FORM, tier: 'personal', folder: '' },
+            field: 'folder',
+            reason: 'a new project needs a folder'
+        },
+        {
+            name: 'a folder outside every scan folder',
+            fields: { ...FORM, tier: 'projects', folder: 'elsewhere' },
+            field: 'folder',
+            reason: 'the folder elsewhere is not inside a folder the hub scans for projects'
+        },
+        {
+            name: 'a folder inside an existing project',
+            fields: { ...FORM, tier: 'projects', folder: 'projects/manuscripts/alpha/sub' },
+            field: 'folder',
+            reason: 'the folder projects/manuscripts/alpha/sub lies inside the project in projects/manuscripts/alpha'
+        },
+        {
+            name: 'a folder that is already there',
+            fields: { ...FORM, id: 'taken', tier: 'projects', folder: 'projects/ideas' },
+            field: 'id',
+            reason: 'projects/ideas/taken is already there'
+        },
+        {
+            name: 'a tier that cannot be made',
+            fields: { ...FORM, tier: 'software' },
+            field: 'tier',
+            reason: 'a new project cannot have the tier software'
+        }
+    ];
+
+    it.each(REFUSALS)('refuses $name with its sentence and writes nothing', (row) => {
+        const root = wider();
+        mkdirSync(join(root, 'projects', 'ideas', 'taken'), { recursive: true });
+        const listing = (): string[] => readdirSync(root, { recursive: true }).map(String).sort();
+        const before = listing();
+        const out = createIdea(root, row.config ?? configFor(), row.fields);
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([{ field: row.field, reason: row.reason }]);
+        expect(listing()).toEqual(before);
+    });
+
+    const LINKS = [
+        { name: 'a folder outside the hub', target: (outside: string) => outside },
+        { name: 'a folder that is not there', target: (outside: string) => join(outside, 'gone') }
+    ];
+
+    it.each(LINKS)(
+        'refuses a folder typed through a link to $name and writes nothing on either side',
+        (row) => {
+            const root = wider();
+            const outside = scratchDir('oculus-outside-');
+            mkdirSync(join(root, 'side-projects'), { recursive: true });
+            symlinkSync(row.target(outside), join(root, 'side-projects', 'link'));
+            const listing = (dir: string): string[] =>
+                readdirSync(dir, { recursive: true }).map(String).sort();
+            const before = { hub: listing(root), outside: listing(outside) };
+            const folder = 'side-projects/link/inner';
+            const out = createIdea(root, configFor(), { ...FORM, tier: 'personal', folder });
+            expect(out.changed).toEqual([]);
+            expect(out.refused).toEqual([
+                {
+                    field: 'folder',
+                    reason: `the folder ${folder} is not inside a folder the hub scans for projects`
+                }
+            ]);
+            expect({ hub: listing(root), outside: listing(outside) }).toEqual(before);
+        }
+    );
+
+    it('refuses a folder typed through a link into a subfolder of a project and writes nothing', () => {
+        const root = wider();
+        const inner = join(root, 'projects', 'manuscripts', 'alpha', 'docs');
+        mkdirSync(inner, { recursive: true });
+        mkdirSync(join(root, 'side-projects'), { recursive: true });
+        symlinkSync(inner, join(root, 'side-projects', 'link'));
+        const listing = (): string[] => readdirSync(root, { recursive: true }).map(String).sort();
+        const before = listing();
+        const folder = 'side-projects/link';
+        const out = createIdea(root, configFor(), { ...FORM, tier: 'personal', folder });
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([
+            {
+                field: 'folder',
+                reason: `the folder ${folder} lies inside the project in projects/manuscripts/alpha`
+            }
+        ]);
+        expect(listing()).toEqual(before);
     });
 });

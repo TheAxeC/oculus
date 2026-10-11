@@ -5,7 +5,7 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { portfolioConfigFrom } from '../../../../data/index.ts';
+import type { PortfolioConfig } from '../../../../data/model/index.ts';
 import { hubManifests } from '../../../files/roots.ts';
 
 const COLLECTION_ORDER = [
@@ -28,13 +28,11 @@ function addFile(parts: string[], hub: string, path: string, suffix = ''): void 
  * What a portfolio chat is handed to read first, from oculus's configured source paths: the venue
  * catalogue, the project manifests, the pillars, then the six private collections in that order.
  */
-export function portfolioContext(hub: string, merged: Record<string, unknown>): string {
-    const config = portfolioConfigFrom(merged);
+export function portfolioContext(hub: string, config: PortfolioConfig): string {
     const parts: string[] = [];
     addFile(parts, hub, config.registries.venues, ' (venue catalogue)');
     parts.push('# PROJECT MANIFESTS (status/venue source of truth)\n');
-    for (const { file, folder, ghost } of hubManifests(hub, config)) {
-        if (ghost) continue;
+    for (const { file, folder } of hubManifests(hub, config)) {
         parts.push(`## ${folder}\n${readFileSync(file, 'utf8')}`);
     }
     addFile(parts, hub, config.registries.pillars);

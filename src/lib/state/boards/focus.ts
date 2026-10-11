@@ -24,7 +24,6 @@ import {
 // the Focus view names reach it from here, beside the functions that take and return them.
 export type { Id, Project, Venue } from '../../data/model/index.ts';
 import { daysUntil } from './board/index.ts';
-import { sideLive } from './board/personal.ts';
 export { setting } from './board/index.ts';
 import { UNKNOWN_TONE, toneOf } from '../shared/words/tones.ts';
 import { waitingLabel } from './waiting.ts';
@@ -86,12 +85,13 @@ export function deadlineMet(config: Record<string, unknown>, status: string): bo
 }
 
 /**
- * Whether a project's own deadline has stopped being yours to act on: any chip the palette marks
- * terminal, or marks `deadline_met` (which is what `submitted` carries). Reading the palette is
- * what keeps the rule in config/catalogs/vocab.yml rather than in a list of chip names here.
+ * Whether a project's own deadline has stopped being yours to act on: a chip the palette marks
+ * `deadline_met` (which is what `submitted` and `under-review` carry). A terminal chip alone does
+ * not end it. Reading the palette is what keeps the rule in config/catalogs/vocab.yml rather than
+ * in a list of chip names here.
  */
 export function settled(project: Project, config: Record<string, unknown>): boolean {
-    return project.chips.some((chip) => terminal(config, chip) || deadlineMet(config, chip));
+    return project.chips.some((chip) => deadlineMet(config, chip));
 }
 
 /**
@@ -177,27 +177,18 @@ function laneOrder(a: Project, b: Project): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
 
-/**
- * The three open tiers the Projects board shows. The backlog reads them alone; the waiting tallies
- * read them beside the projects drawn on a lane.
- */
-export function live(project: Project): boolean {
-    return ['ideas', 'active', 'manuscripts'].includes(project.tier);
-}
-
-/** The tiers expected on a lane, so a project of one that names none is reported as unplaced. */
-function onBoard(project: Project): boolean {
-    return project.tier === 'active' || project.tier === 'manuscripts';
+/** Whether a project is of a tier whose projects may sit in the backlog: Projects or Personal. */
+function backlogTier(project: Project): boolean {
+    return project.tier === 'projects' || project.tier === 'personal';
 }
 
 /**
  * What sits on each lane, by lane key, sorted deadline first then title. `holding` is not a lane
  * and neither is a `focus:` no lane names, so a project carrying either is on no lane: `backlog`
- * takes a live project in `holding` and an idea on no lane, `unplaced` names an active or
- * manuscript project with no focus, and a project of another tier is drawn by neither. A project of
- * any tier is drawn on the lane its `focus:` names: the tier says where the folder lives, and a
- * coauthor, archive or software project whose manifest names a lane is still work the reader placed
- * there.
+ * takes a project of the Projects or Personal board in `holding` and an idea on no lane, `unplaced`
+ * names an active project of the Projects board with no focus, and a project of another tier is
+ * drawn by neither. A project of any tier is drawn on the lane its `focus:` names: a project
+ * whose manifest names a lane is work the reader placed there.
  */
 export function laneItems(projects: Project[], all: Lane[]): Record<string, Project[]> {
     const out: Record<string, Project[]> = {};
@@ -214,21 +205,21 @@ export function laneItems(projects: Project[], all: Lane[]): Record<string, Proj
 
 /**
  * Whether the board may move a project to a `focus:` value. Any project may go to a lane, and only
- * a project of a live tier may go to `holding`: the backlog draws the live tiers alone, so a
- * project of another tier sent there would leave the board.
+ * a project of the Projects or Personal board may go to `holding`: the backlog draws those two
+ * alone, so a project of another tier sent there would leave the board.
  */
 export function movable(project: Project, focus: string): boolean {
-    return focus !== 'holding' || live(project);
+    return focus !== 'holding' || backlogTier(project);
 }
 
 /**
- * The ideas backlog: anything parked in `holding`, and any idea whose `focus:` names no lane, which
- * covers an idea that has none at all.
+ * The ideas backlog: any project of the Projects or Personal board parked in `holding`, and any
+ * idea of those boards whose `focus:` names no lane, which covers an idea that has none at all.
  */
 export function backlog(projects: Project[], all: Lane[]): Project[] {
     const keys = all.map((lane) => lane.key);
     const out = projects.filter((project) => {
-        if (!live(project)) return false;
+        if (!backlogTier(project)) return false;
         const focus = project.focus ?? '';
         if (focus === 'holding') return true;
         return project.type === 'idea' && !keys.includes(focus);
@@ -236,9 +227,12 @@ export function backlog(projects: Project[], all: Lane[]): Project[] {
     return out.sort((a, b) => (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
 }
 
-/** Projects that belong on a lane and name none, so the board is not showing them. */
+/** Active projects of the Projects board that name no lane, so the board is not showing them. */
 export function unplaced(projects: Project[]): Project[] {
-    return projects.filter((project) => onBoard(project) && (project.focus ?? '') === '');
+    return projects.filter(
+        (project) =>
+            project.tier === 'projects' && project.type === 'active' && (project.focus ?? '') === ''
+    );
 }
 
 /** A tally sorted the way the strip reads it: the biggest first, then alphabetically. */
@@ -256,13 +250,11 @@ export function venueLabel(venue: Venue | undefined): string {
 }
 
 /**
- * The awaiting-a-response strip. The people and venue tallies count every live project, whether
- * or not a card draws it, and every project of another tier that laneItems draws on a lane, so
- * every card that says "Waiting on" is counted. For each, the people named in `waiting-on:` first,
- * then the venue holding it when it is `submitted`. The blocked tally is over every project of
- * every tier on its own, whatever else the project is waiting for. A `waiting-on:` value is a
- * people key or another project's id, drawn by waiting.ts. The people tally also counts the
- * `waiting-on:` of every live side project, since a side project is read by the Focus board.
+ * The awaiting-a-response strip. Every tally follows `focus:` alone: only a project laneItems draws
+ * on a lane is counted, so a project with no `focus:` or in `holding` is in none. For each, the
+ * people named in `waiting-on:` first, then the venue holding it when it is `submitted`. The
+ * blocked tally counts the projects on a lane that carry the chip, whatever else the project is
+ * waiting for. A `waiting-on:` value is a people key or another project's id, drawn by waiting.ts.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -280,12 +272,9 @@ export function waiting(
     const held: Record<string, number> = {};
     let blocked = 0;
     for (const project of Object.values(projects)) {
-        // The blocked tally is over every tier and over every project, where the people and venue
-        // tallies are over every live project and every project a lane draws: a blocked archive or
-        // coauthor paper is still blocked, and a blocked project also waiting on somebody is
-        // blocked as well as waited on.
+        // A blocked project that is also waiting on somebody is blocked as well as waited on.
+        if (!onLanes.has(project.id)) continue;
         if (project.chips.includes('blocked')) blocked += 1;
-        if (!live(project) && !onLanes.has(project.id)) continue;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
                 const name = waitingLabel(key, names, projects);
@@ -297,13 +286,6 @@ export function waiting(
             const venue = project.venueId === undefined ? undefined : venues[project.venueId];
             const name = venueLabel(venue);
             held[name] = (held[name] ?? 0) + 1;
-        }
-    }
-    for (const side of Object.values(snapshot.entities.personal)) {
-        if (!sideLive(side, config)) continue;
-        for (const key of side.waitingOn ?? []) {
-            const name = waitingLabel(key, names, projects);
-            people[name] = (people[name] ?? 0) + 1;
         }
     }
     const grants = Object.values(snapshot.entities.funding)
@@ -339,9 +321,9 @@ export function focusLabel(project: Pick<Project, 'title' | 'short'>, mode: unkn
     return mode === 'full' ? project.title : labelOf(project);
 }
 
-/** The projects quick add may write to: those of the three live tiers, in the order given. */
+/** The projects quick add may write to: those of the Projects board, in the order given. */
 export function liveProjects(projects: Project[]): Project[] {
-    return projects.filter((one) => ['ideas', 'active', 'manuscripts'].includes(one.tier));
+    return projects.filter((one) => one.tier === 'projects');
 }
 
 /**

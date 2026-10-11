@@ -10,7 +10,7 @@
 //
 // The folder walked is the reader's, never the request's: the id names a manifest hubManifests
 // already found under the scan directories of the hub the id names (`<root key>:<id>` for a hub
-// other than the first) or in a repository the first hub's `roots:` reads as a research project,
+// other than the first) or in a repository the first hub's `roots:` reads as a project,
 // and the folder is joined to that hub (or is the repository) and checked against it again before
 // anything is read. A request naming anything else is a 404. The answer's `folder` is relative to
 // the root that holds the project: its own hub, or empty for a repository.
@@ -21,14 +21,12 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { portfolioConfigFrom } from '../../data/index.ts';
 import { splitHubId } from '../../data/helpers/hub-names.ts';
-import { placeOf } from '../../data/snapshot/as-project.ts';
 import { loadLocal } from '../../data/sources/config.ts';
 import { manifestDir } from '../../data/sources/manifests.ts';
-import type { PortfolioConfig, Project } from '../../data/model/index.ts';
+import type { PortfolioConfig } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
-import { hubManifests, hubTargets, type HubTarget } from './roots.ts';
+import { firstHubConfig, hubManifests, hubTargets, type HubTarget } from './roots.ts';
 import { anyNumberShape } from '../../data/shapes/shapes.ts';
 
 /**
@@ -41,8 +39,6 @@ export type FilesTarget = {
     hubs?: HubTarget[];
     /** The merged config of config/*.yml, read for `file_index` and nothing else. */
     settings: Record<string, unknown>;
-    /** One side project of the portfolio the server holds, as a project, by its id. */
-    side?: (id: string) => Project | null;
 };
 
 /**
@@ -204,17 +200,6 @@ function listIn(
 }
 
 /**
- * The files of a side project: those of its folder of the hub, or of its repository. The answer's
- * `folder` is against the Files root that holds the project, so it is the folder of a hub side
- * project and empty for a repository.
- */
-function listSideFiles(side: Project, hub: string, settings: Record<string, unknown>): Response {
-    const place = placeOf(side);
-    const folder = side.repository === undefined ? join(hub, side.folder) : place.dir;
-    return listIn(folder, side.repository === undefined ? hub : place.dir, place.path, settings);
-}
-
-/**
  * The files of the project the request names. Every refusal says what was wrong: a request with no
  * id at all is a 400, an id the reader does not know is a 404, and so is a folder that would leave
  * its root. A project of a repository is listed from the repository, against its own root.
@@ -230,8 +215,6 @@ export function listFiles(into: FilesTarget, id: string): Response {
         hub: into.hub,
         config: into.config
     };
-    const side = into.side?.(id) ?? null;
-    if (side !== null) return listSideFiles(side, owner.hub, into.settings);
     const manifest = hubManifests(owner.hub, owner.config).find((one) => one.id === named.id);
     if (manifest === undefined)
         return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
@@ -244,20 +227,15 @@ export function listFiles(into: FilesTarget, id: string): Response {
 /**
  * What the route reads: the hub every write lands in, and the request's merged config beside it.
  * The hub and the scan rules come from the readers target() in lib/server/edit/writes.ts takes them
- * from, loadLocal and portfolioConfigFrom, rather than from a second reader of local.yml.
+ * from, loadLocal and firstHubConfig, rather than from a second reader of local.yml.
  */
-export function filesTarget(
-    engine: string,
-    settings: Record<string, unknown>,
-    side?: FilesTarget['side']
-): FilesTarget {
+export function filesTarget(engine: string, settings: Record<string, unknown>): FilesTarget {
     const local = loadLocal(engine);
     return {
         hub: local.hub,
-        config: portfolioConfigFrom(settings),
+        config: firstHubConfig({ config: settings, engine, local }),
         hubs: hubTargets({ config: settings, engine, local }),
-        settings,
-        side
+        settings
     };
 }
 

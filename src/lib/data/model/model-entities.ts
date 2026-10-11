@@ -23,9 +23,11 @@ export type Finding = {
     line?: number;
 };
 
-/** The seven scan tiers, the basename of each `dir` in the scan rules. */
-export type Tier =
-    'ideas' | 'active' | 'manuscripts' | 'software' | 'coauthor' | 'archive' | 'side-projects';
+/**
+ * The five tiers a manifest's `tier` names. A tier says which board a project is on; a project
+ * of the tier `software` is on none.
+ */
+export type Tier = 'projects' | 'coauthor' | 'archive' | 'personal' | 'software';
 
 /** The eight registries, one per file readRegistries is given. */
 export type RegistryName =
@@ -70,32 +72,21 @@ export type FeedFiles = {
 };
 
 /**
- * One scan rule, the shape of an entry under `scan:` in the layout config.
- * A flat rule (no `nested`) reads `<hub>/<dir>/<name>/project.yml` and gives every manifest the
- * rule's `type`. A nested rule walks `<hub>/<dir>` to any depth and takes `type` from the manifest.
+ * One scan rule, the shape of an entry under `scan:` in the layout config. `dir` is walked to any
+ * depth: a folder holding a project.yml is a project and its subfolders are not walked.
  */
 export type ScanRule = {
     /** Hub-relative directory, `projects/ideas`. */
     dir: string;
-    /** The type every manifest under a flat rule gets. Absent on a nested rule. */
-    type?: string;
-    /** True for the tiers whose projects sit under free-form filing folders. */
-    nested?: boolean;
     /** True for a directory the hub need not have: absent, it is skipped rather than reported. */
     optional?: boolean;
-    /**
-     * The word that says which `roots:` tier a repository is read under (`projects`, `personal`,
-     * `software`, `coauthor` or `archive`): a repository takes the rule that carries its tier.
-     */
-    tier?: string;
 };
 
 /**
  * A project.yml as it was read, plus provenance. Every key the YAML held is present untouched,
- * except that the provenance names below are set by the reader: `id` is the folder's basename (the
- * root's key for a repository) and the manifest's own `id` is kept as `manifestId`, and `type` on a
- * flat tier comes from the rule while the manifest's own differing `type` is kept as `typeWritten`.
- * A disagreement of `id` is a finding and one of `type` is the Audit's, never a repair.
+ * `tier` and `type` included, except that the provenance names below are set by the reader: `id` is
+ * the folder's basename (the root's key for a repository) and the manifest's own `id` is kept as
+ * `manifestId`. A disagreement of `id` is a finding, never a repair.
  */
 export type RawManifest = {
     [key: string]: unknown;
@@ -114,21 +105,17 @@ export type RawManifest = {
     folder: string;
     /** The folder's basename, which is the project's id; for a repository, its root's key. */
     id: Id;
-    tier: Tier;
-    /** The first folder under the tier directory, on nested rules only: `published`, `nogo`. */
+    /**
+     * The first folder under the scan folder when the project lies deeper than one level, and
+     * absent otherwise: `published`, `nogo`.
+     */
     category?: string;
-    /** From the scan rule on a flat tier, from the manifest itself on a nested one. */
-    type?: string;
-    /** The manifest's own `type` on a flat tier when it differs from the rule's, else absent. */
-    typeWritten?: string;
-    /** True only when the scan found a flat-tier folder with no project.yml. */
-    ghost: boolean;
     /** The manifest's own `id` value, exactly as read, whatever its type. */
     manifestId?: unknown;
     /**
-     * Set on the project of a repository named by a `roots:` entry with a research `tier`: the key
-     * of that root and its folder, which is where `<dir>/.oculus/project.yml` and the project's
-     * documents and deck are read from. A project of a scan folder has none.
+     * Set on the project of a repository named by a `roots:` entry: the key of that root and its
+     * folder, which is where `<dir>/.oculus/project.yml` and the project's documents and deck are
+     * read from. A project of a scan folder has none.
      */
     repository?: { root: string; dir: string };
 };
@@ -282,13 +269,14 @@ export type Subtask = {
  */
 export type Project = Rooted & {
     id: Id;
-    tier: Tier;
-    /** A discovered folder that has no project.yml. */
-    ghost: boolean;
+    /**
+     * The manifest's `tier`; absent when it names none of the five, and the project is then on no
+     * board.
+     */
+    tier?: Tier;
     category?: string;
+    /** The manifest's `type`, a stage word of `type_order`. */
     type?: string;
-    /** The manifest's own `type` on a flat tier when it differs from the folder's. */
-    typeWritten?: string;
     title: string;
     short?: string;
     lead?: string;
@@ -381,12 +369,11 @@ export type Project = Rooted & {
     file: string;
     /**
      * Where the project's folder is when it is a repository served as a Files root of its own: the
-     * root's key and the repository's absolute path. A side project's record is made with it
-     * (snapshot/as-project.ts), and so is a research project read from a repository named by a
-     * `roots:` entry with a research `tier`. A project of a hub folder has none.
+     * root's key and the repository's absolute path: a project read from a repository named by a
+     * `roots:` entry. A project of a hub folder has none.
      */
     repository?: { root: string; dir: string };
-    /** The web addresses or paths a side project's manifest lists; only its record holds them. */
+    /** The web addresses or paths the manifest's `links:` lists. */
     links?: string[];
 };
 
@@ -579,84 +566,9 @@ export type Funding = Rooted & {
 };
 
 /**
- * Where a side project was read from: a folder of the hub's `side-projects/` tier, or the `.oculus`
- * folder of a Files root. The two never share an id, which is built from this.
+ * A directory a repository's manifest is read from: the key a Files root is served under and where
+ * it is as an absolute path. The readers take the roots they are handed as they come; the server
+ * decides which roots of the file browser are handed to them. It has the shape of the file
+ * browser's root, which the data layer cannot import.
  */
-export type PersonalSource =
-    { kind: 'hub'; folder: string } | { kind: 'root'; key: string; dir: string };
-
-/** The tiers a `roots:` entry may read its repository in as a research project of the first hub. */
-export type RepositoryTier = 'projects' | 'coauthor' | 'archive';
-
-/**
- * A directory a repository's manifest is read from: the key a Files root is served under, where it
- * is as an absolute path, and the research tier its entry names, absent for a side project. The
- * readers take the roots they are handed as they come; the server decides which roots of the file
- * browser are handed to them. It has the shape of the file browser's root, which the data layer
- * cannot import.
- */
-export type RepositoryRoot = { key: string; dir: string; tier?: RepositoryTier };
-
-/** A side project's manifest as it parsed, with where it came from and nothing checked. */
-export type RawPersonal = {
-    source: PersonalSource;
-    /** Absolute path of the project.yml that was read. */
-    file: string;
-    data: Record<string, unknown>;
-    /** Absolute path of the project's folder: its folder of the hub, or the repository. */
-    dir: string;
-    /** Which of the fixed project documents the folder holds, from sources/docs.ts. */
-    docs: DocPresence[];
-    /**
-     * The path of the folder's `present/` folder against the Files root that holds the project,
-     * present when `present/present.yml` is there.
-     */
-    deck?: string;
-};
-
-/**
- * The research keys a side project's manifest takes besides its own five, each named and typed as
- * on `Project`. A key the manifest does not hold is absent from the record.
- */
-type SideResearchKeys = Partial<
-    Pick<
-        Project,
-        | 'short'
-        | 'pin'
-        | 'priority'
-        | 'latest'
-        | 'deadline'
-        | 'waitingOn'
-        | 'followups'
-        | 'snooze'
-        | 'subtasks'
-        | 'relatedIds'
-        | 'collaborators'
-    >
->;
-
-/**
- * One side project of the Personal board and the Focus ticker: a hub folder under `side-projects/`
- * or a repository with a `.oculus/project.yml`. The id is `side:<slug>` for the first and
- * `root:<key>` for the second, and a hub other than the first has its root key in front of either.
- * `status` is a key of `side_project_status`, or `unknown` for any other value. Its `folder` is
- * `side-projects/<slug>` against the hub for a hub folder and the repository's absolute path for a
- * repository; `docs` is which of the fixed project documents the folder holds, and `deck` is the
- * path of its `present/` folder against the Files root that holds the project (the hub for a hub
- * folder, the repository's root for a repository), present when `present/present.yml` is there.
- */
-export type SideProject = SideResearchKeys &
-    Rooted & {
-        id: Id;
-        title: string;
-        status: string;
-        eli5: string;
-        next: string;
-        links: string[];
-        source: PersonalSource;
-        /** Absolute path of the manifest. */
-        file: string;
-        folder: string;
-        docs: DocFlag[];
-        deck?: string;
-    };
+export type RepositoryRoot = { key: string; dir: string };

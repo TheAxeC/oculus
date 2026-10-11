@@ -15,8 +15,8 @@ import { realProjects } from '../../sources/venues.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.ts';
 
-const LIVE = ['active', 'manuscript', 'idea'];
-const FLIGHT = ['active', 'manuscript'];
+const LIVE = ['active', 'idea'];
+const FLIGHT = ['active'];
 
 export type TierRow = { key: string; label: string; color?: string };
 export type TierCount = TierRow & { count: number };
@@ -48,7 +48,7 @@ export function lineMembers(line: Pillar, projects: Project[], dead: string[] = 
     return realProjects(projects, dead).filter((project) => project.pillarIds.includes(line.id));
 }
 
-/** Active and manuscript projects, the two types counted as currently in flight. */
+/** Active projects, the type counted as currently in flight. */
 export function inFlight(projects: Project[]): Project[] {
     return projects.filter((project) => FLIGHT.includes(project.type ?? ''));
 }
@@ -89,7 +89,7 @@ export function archival(projects: Project[], dead: string[]): ArchiveGroup[] {
         .filter((group) => group.count > 0);
 }
 
-/** A card is dormant when it has no active, manuscript or idea member. */
+/** A card is dormant when it has no active or idea member. */
 export function isDormant(members: Project[]): boolean {
     return !members.some((project) => LIVE.includes(project.type ?? ''));
 }

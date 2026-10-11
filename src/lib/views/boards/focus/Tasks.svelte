@@ -4,7 +4,7 @@
     // same buttons.
     //
     // It counts nothing. The lines are state/boards/ticker.ts's `tasks` list, already in the order
-    // the four groups are drawn in; the rows, their buttons and what a button writes are
+    // the three groups are drawn in; the rows, their buttons and what a button writes are
     // views/boards/focus/rows.ts, which the command center draws its own rows with. A group with no
     // line draws nothing, and a section with no group at all draws nothing either.
 
@@ -17,7 +17,6 @@
     import { t } from '$lib/state/shared/words/text';
     import { act, fileBlock, openLine, rowMaker, type SectionProps } from './rows';
     import { useState } from '$lib/state/client/use';
-    import { openSourceFile } from '$lib/views/shared/links/source-file';
 
     const client = useState();
 
@@ -35,8 +34,7 @@
             kept,
             followups: rows(lines.followups),
             subtasks: rows(lines.subtasks),
-            tasks: rows(lines.tasks),
-            side: rows(lines.side)
+            tasks: rows(lines.tasks)
         };
     });
 
@@ -45,7 +43,7 @@
     function pick(id: string): void {
         const line = view.index[id];
         if (line !== undefined) {
-            openLine(client.layout, line, onproject, (file) => openSourceFile(client, file));
+            openLine(client.layout, line, onproject);
         }
     }
 
@@ -103,8 +101,6 @@
             )}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render group(t('focus.tasks.grp_tasks_label'), '', view.tasks)}
-            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-            {@render group(t('focus.command.dlcat_side'), t('views.personal_glyph'), view.side)}
         {/if}
     </section>
 {/if}

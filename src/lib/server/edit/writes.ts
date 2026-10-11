@@ -29,7 +29,6 @@
 
 import { json } from '@sveltejs/kit';
 import { join } from 'node:path';
-import { portfolioConfigFrom } from '../../data/index.ts';
 import {
     appsSettings,
     changesKeep,
@@ -46,11 +45,7 @@ import { gateWrite, storeWrite } from './writes/apps/gate.ts';
 import { defaultAppData } from '../machine/apps/store/store.ts';
 import type { AppsHeld, HeldApp } from '../machine/apps/read/held.ts';
 import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
-import {
-    entities as entitiesOf,
-    projects as projectsOf,
-    sideProjects as sideProjectsOf
-} from '../sessions/stores/hooks.ts';
+import { entities as entitiesOf, projects as projectsOf } from '../sessions/stores/hooks.ts';
 import type { HubLike } from '../sessions/stores/hooks.ts';
 import { setFlag, setOverride } from '../sessions/overrides.ts';
 import { glyphNames } from '../../data/sources/config/rail.ts';
@@ -61,7 +56,7 @@ import { undoDeckEdit } from './writes/config/deck/deck-undo.ts';
 import { rootItemsOf, rootsHeldIn, type RootItem, type RootsHeld } from './writes/config/roots.ts';
 import { hubLayerPath } from '../../data/helpers/hub-names.ts';
 import { routed, routedEntry, routedOrder, routedRoot, routedTarget } from './writes/hubs.ts';
-import { hubManifests, hubTargets, type HubTarget } from '../files/roots.ts';
+import { firstHubConfig, hubManifests, hubTargets, type HubTarget } from '../files/roots.ts';
 import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
@@ -99,7 +94,7 @@ import type { ChangeLog, ChangeRecord } from '../core/changes.ts';
 import type { FsWrites } from '../core/json.ts';
 import type { Refusal } from './yaml/yaml-edit.ts';
 import type { CareerRules, SubtaskTarget } from './writes/subtasks.ts';
-import type { PortfolioConfig, Project, SideProject } from '../../data/model/index.ts';
+import type { PortfolioConfig, Project } from '../../data/model/index.ts';
 
 /**
  * What a write needs to know: which hub to write in, what its manifests are checked against, where
@@ -125,13 +120,6 @@ export type WriteTarget = {
      * published no portfolio yet names no projects, and the write refuses with a reason.
      */
     projects: () => Project[];
-    /**
-     * The side projects of the portfolio this server last published, which a manifest or subtask
-     * write that names a `side:` or `root:` id finds the file of: the id is looked up here, never
-     * through the hub's research manifests. A process that has published no portfolio yet names
-     * none, and a write naming a side project answers not found.
-     */
-    sideProjects: () => SideProject[];
     /**
      * One entity map (the domains, the resources) of the portfolio this server last published, or
      * null while it has published none, which the config writes check a choice against. A target
@@ -288,12 +276,11 @@ export function target(
     const local = loadLocal(engine);
     return {
         hub: local.hub,
-        config: portfolioConfigFrom(merged),
+        config: firstHubConfig({ config: merged, engine, local }),
         engine,
         career: careerRules(merged),
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
-        sideProjects: () => (server === undefined ? [] : sideProjectsOf(server.hub)),
         entities: server === undefined ? undefined : (kind) => entitiesOf(server.hub, kind),
         bookmarks: local.bookmarks ?? defaultBookmarksPath(local.hub),
         behaviorFile: join(configDir(engine), BEHAVIOR),
@@ -338,20 +325,9 @@ export function target(
 const NOT_FOUND: WriteOutcome = { found: false, changed: [], refused: [] };
 
 /**
- * The side projects a manifest or subtask write may name. The page's own writes reach every side
- * project; an app's reach only those in a folder of the hub's side-projects tier, so a repository's
- * `.oculus/project.yml` outside the hub answers not found to an app.
- */
-function sidesFor(into: WriteTarget, app: HeldApp | null): SideProject[] {
-    const all = into.sideProjects();
-    return app === null ? all : all.filter((one) => one.source.kind === 'hub');
-}
-
-/**
  * Whether a write from `app` (null for the page) may name the project `id` of `into`. An app's
- * write does not reach a research project read from a repository, as it does not reach a
- * repository's side project (`sidesFor`): the repository's `.oculus/project.yml` is outside the
- * hub.
+ * write does not reach a project read from a repository: the repository's `.oculus/project.yml` is
+ * outside the hub.
  */
 function reaches(into: WriteTarget, id: string, app: HeldApp | null): boolean {
     if (app === null) return true;
@@ -423,7 +399,6 @@ export async function handleWrite(
                 : writeManifest(
                       at.into.hub,
                       at.into.config,
-                      sidesFor(at.into, app),
                       at.id,
                       write.fields,
                       'form',
@@ -466,7 +441,6 @@ export async function handleWrite(
                 : writeSubtask(
                       at.into.hub,
                       at.into.config,
-                      sidesFor(at.into, app),
                       at.target,
                       subtask.key,
                       subtask.action,
@@ -482,13 +456,7 @@ export async function handleWrite(
         const outcome =
             at === null || !reaches(at.into, at.target.id, app)
                 ? NOT_FOUND
-                : writeSubtaskAdd(
-                      at.into.hub,
-                      at.into.config,
-                      sidesFor(at.into, app),
-                      at.target,
-                      added.fields
-                  );
+                : writeSubtaskAdd(at.into.hub, at.into.config, at.target, added.fields);
         if (!outcome.found) return json({ error: notFound(added.target) }, { status: 404 });
         return answer(outcome, 'subtask-add', into, undefined, app ?? undefined);
     }
@@ -654,7 +622,7 @@ export async function handleWrite(
     const idea = newIdea(body);
     if (idea !== null) {
         return answer(
-            createIdea(into.hub, into.config.text, idea.fields),
+            createIdea(into.hub, into.config, idea.fields),
             'new-idea',
             into,
             undefined,

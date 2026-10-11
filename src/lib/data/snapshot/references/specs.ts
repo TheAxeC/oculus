@@ -2,7 +2,7 @@
 // schemas themselves and from nothing else: a field whose `from` names a source is a place a key
 // is written, and the source says which keys are valid there.
 //
-// The hub's data files, the manifests, the side-project manifests and the decks come from the
+// The hub's data files, the manifests and the decks come from the
 // `SchemaField`s of their schemas (`records` fields nested at any depth, a `map` field as a map
 // from a name to a record, a dotted manifest name such as `status.chips` as a key inside a map).
 // The files of oculus's own configuration come from the options catalog, read by

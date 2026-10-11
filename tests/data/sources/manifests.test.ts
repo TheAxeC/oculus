@@ -1,9 +1,10 @@
-// Layer 1, data tests. readManifests against a synthetic hub in a temporary directory. Nothing
-// outside it is read or written, and every write asserts its path is inside the temporary directory
-// first.
+// Layer 1, data tests. The scan and the repositories read into projects (readHubManifests through
+// buildPortfolioWithSchemas) against a synthetic hub in a temporary directory. Nothing outside it
+// is read or written. A project is any folder holding a project.yml, whichever folder or repository
+// it lies in, and the manifest's own `tier` and `type` say where it is shown.
 
-import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { symlinkSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { stringify } from 'yaml';
 import {
@@ -12,7 +13,6 @@ import {
     portfolioConfigFrom,
     readSecondHub
 } from '../../../src/lib/data/index.ts';
-import { readManifests } from '../../../src/lib/data/sources/manifests.ts';
 import {
     configDir,
     engineDir,
@@ -21,146 +21,29 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
-import type { RawManifest, ScanRule, Snapshot } from '../../../src/lib/data/model/index.ts';
+import type { Snapshot } from '../../../src/lib/data/model/index.ts';
 import { readRoots } from '../../../src/lib/server/files/files.ts';
-import { repositoriesOf } from '../../../src/lib/server/files/roots.ts';
-import { present } from '../../fixtures/present.ts';
-import { it, plantScratch, scratchDir } from '../../fixtures/scratch.ts';
-
-/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
-const CATALOG = textCatalog(loadConfig(engineDir()).config);
-
-const SCAN: ScanRule[] = [
-    { dir: 'projects/ideas', type: 'idea' },
-    { dir: 'projects/active', type: 'active' },
-    { dir: 'projects/manuscripts', type: 'manuscript' },
-    { dir: 'projects/software', type: 'software', optional: true },
-    { dir: 'projects/coauthor', nested: true },
-    { dir: 'projects/archive', nested: true }
-];
-
-function scratch(): string {
-    const dir = scratchDir('oculus-manifests-');
-    return dir;
-}
-
-function write(hub: string, rel: string, body: string): void {
-    const full = join(hub, rel);
-    expect(resolve(full).startsWith(resolve(hub) + sep)).toBe(true);
-    mkdirSync(dirname(full), { recursive: true });
-    writeFileSync(full, body);
-}
-
-/**
- * A hub with the five tiers that always exist, a flat and a nested project each, and the awkward
- * cases. The optional software tier is deliberately absent, since that is the hub every test but
- * the two software ones below is read against.
- */
-function buildHub(): string {
-    const hub = scratch();
-    for (const tier of ['ideas', 'active', 'manuscripts', 'coauthor', 'archive']) {
-        mkdirSync(join(hub, 'projects', tier), { recursive: true });
-    }
-
-    write(
-        hub,
-        'projects/ideas/tensor-spark/project.yml',
-        'id: tensor-spark\ntype: idea\ntitle: Tensor spark\n'
-    );
-    write(
-        hub,
-        'projects/active/loewner/project.yml',
-        'id: loewner\ntype: active\ntitle: Loewner layers\n'
-    );
-    write(
-        hub,
-        'projects/manuscripts/btfno/project.yml',
-        'id: btfno\ntype: manuscript\ntitle: BT-FNO\nvenue_id: aaai\n'
-    );
-
-    // Nested: one category deep, and one filed a second level down by year.
-    write(
-        hub,
-        'projects/coauthor/active/clinical-hccnet/project.yml',
-        'id: clinical-hccnet\ntype: in-prep\ntitle: Clinical HCCNet\n'
-    );
-    write(
-        hub,
-        'projects/archive/published/2026/abduction/project.yml',
-        'id: abduction\ntype: published\ntitle: Abduction\n'
-    );
-    // Nested, no category folder: the project sits straight under the tier.
-    write(hub, 'projects/archive/orphan/project.yml', 'id: orphan\ntype: dropped\ntitle: Orphan\n');
-
-    // A flat-tier folder with no project.yml becomes a ghost project.
-    mkdirSync(join(hub, 'projects', 'ideas', 'empty-folder'), { recursive: true });
-    write(hub, 'projects/ideas/empty-folder/README.md', 'no manifest here\n');
-
-    // The manifest's own id disagrees with its folder.
-    write(hub, 'projects/ideas/renamed/project.yml', 'id: old-name\ntype: idea\ntitle: Renamed\n');
-
-    // Not valid YAML.
-    write(hub, 'projects/ideas/broken/project.yml', 'title: "unterminated\n  - [\n');
-
-    // Parses, but to a list rather than a map.
-    write(hub, 'projects/ideas/listy/project.yml', '- one\n- two\n');
-
-    // Decoys the walk must never pick up.
-    write(hub, 'projects/manuscripts/btfno/code/project.yml', 'id: decoy\ntitle: Decoy\n');
-    write(
-        hub,
-        'projects/archive/published/2026/abduction/attic/project.yml',
-        'id: attic-decoy\ntitle: Attic decoy\n'
-    );
-    write(
-        hub,
-        'projects/coauthor/active/clinical-hccnet/code/deep/project.yml',
-        'id: deep-decoy\ntitle: Deep decoy\n'
-    );
-
-    return hub;
-}
-
-function byId(manifests: RawManifest[], id: string): RawManifest {
-    const found = manifests.find((m) => m.id === id);
-    expect(found, `no manifest with id ${id}`).toBeDefined();
-    return present(found, `manifest ${id}`);
-}
-
-describe('readManifests', () => {
-    it('carries the provenance of a flat project', () => {
-        const hub = buildHub();
-        const { manifests } = readManifests(hub, SCAN, CATALOG);
-        const project = byId(manifests, 'btfno');
-
-        expect(project.file).toBe(join(hub, 'projects/manuscripts/btfno/project.yml'));
-        expect(project.folder).toBe('projects/manuscripts/btfno');
-        expect(project.tier).toBe('manuscripts');
-        expect(project.type).toBe('manuscript');
-        expect(project.category).toBeUndefined();
-        expect(project.manifestId).toBe('btfno');
-        expect(project.title).toBe('BT-FNO');
-        expect(project.venue_id).toBe('aaai');
-    });
-});
+import { withRepositories } from '../../../src/lib/server/files/roots.ts';
+import { it, plantScratch } from '../../fixtures/scratch.ts';
 
 const MERGED = loadConfig(engineDir()).config;
 
-/** The hub every row of the repository table is read over: two registries and three projects. */
+/** The hub every row is read over: two registries and three projects. */
 const HUB_FILES: Record<string, string> = {
     'registries/venues.yml': 'entries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
     'registries/people.yml': 'entries:\n  - { key: rivera, name: Ana Rivera }\n',
-    'projects/ideas/tensor-spark/project.yml': 'title: Tensor spark\n',
-    'projects/ideas/beta/project.yml': 'title: Beta\n',
-    'projects/active/loewner/project.yml': 'title: Loewner layers\n'
+    'projects/ideas/tensor-spark/project.yml': 'title: Tensor spark\ntier: projects\ntype: idea\n',
+    'projects/ideas/beta/project.yml': 'title: Beta\ntier: projects\ntype: idea\n',
+    'projects/active/loewner/project.yml': 'title: Loewner layers\ntier: projects\ntype: active\n'
 };
 
-/** A repository's manifest: a manuscript with a venue and a collaborator of the registries. */
-const MANUSCRIPT = 'title: Alpha\ntype: manuscript\nvenue_id: jmlr\ncollaborators: [rivera]\n';
+/** A repository's manifest: a personal project with a venue, a collaborator and a link. */
+const PERSONAL =
+    'title: Alpha\ntier: personal\ntype: active\nstatus:\n  chips: [building]\nlinks: [https://example.org]\nvenue_id: jmlr\ncollaborators: [rivera]\n';
 
 const MANIFEST_FILE = '.oculus/project.yml';
 
-/** The ids of the hub's own projects, which no row changes. */
+/** The ids of the hub's own projects, which no row removes unless it sets its own scan. */
 const HUB_IDS = ['beta', 'loewner', 'tensor-spark'];
 
 /** Where a row's folders are. */
@@ -168,44 +51,38 @@ type Places = {
     /** The repository folder. */
     repo: string;
     hub: string;
-    /** A symbolic link to the hub's folder `projects/ideas/beta`. */
-    hubLink: string;
     /** A symbolic link to the repository folder. */
     repoLink: string;
-    /** The file the first hub's `roots:` list is written in, on which an entry's findings sit. */
-    rootsFile: string;
 };
-
-/** What a row is read into: the snapshot of the build and the places of the row. */
-type Read = { snapshot: Snapshot; at: Places };
 
 type Row = {
     name: string;
+    /** The scan list the row is read with, the engine's seven folders unless a row sets its own. */
+    scan?: unknown[];
     /** The entries of the first hub's `roots:`. */
-    entries: (at: Places) => unknown[];
+    entries?: (at: Places) => unknown[];
     /** The repository's `.oculus/project.yml`, or null for a repository with none. */
-    manifest: string | null;
-    /** The repository folder's name, `alpha` unless a row says another. */
-    folder?: string;
+    manifest?: string | null;
     /** Files of the hub besides HUB_FILES. */
     hub?: Record<string, string>;
-    /** Keys of the merged configuration the row changes. */
-    merged?: Record<string, unknown>;
+    /** Made after the folders are planted: a link, for a row about links. */
+    setup?: (at: Places) => void;
     /** The entries of `roots:` in the layer of a second hub `lab` the first hub names, if any. */
     second?: (at: Places) => unknown[];
     check: (read: Read) => void;
 };
 
-/** One entry of `roots:` naming the repository `alpha`. */
-const entry = (at: Places, tier?: unknown): unknown[] => [
-    { key: 'alpha', dir: at.repo, ...(tier === undefined ? {} : { tier }) }
-];
+/** What a row is read into: the snapshot of the build and the places of the row. */
+type Read = { snapshot: Snapshot; at: Places };
 
-/** The ids of the research projects and of the side projects a read holds. */
-const idsOf = (read: Read): { projects: string[]; personal: string[] } => ({
-    projects: Object.keys(read.snapshot.entities.projects).sort(),
-    personal: Object.keys(read.snapshot.entities.personal).sort()
-});
+/** One entry of `roots:` naming the repository `alpha`. */
+const entry = (at: Places): unknown[] => [{ key: 'alpha', dir: at.repo }];
+
+/** The ids of the projects a read holds. */
+const idsOf = (read: Read): string[] => Object.keys(read.snapshot.entities.projects).sort();
+
+/** The ids the hub holds besides these, sorted. */
+const withHub = (...ids: string[]): string[] => [...HUB_IDS, ...ids].sort();
 
 /** The messages of the findings on `key` of a file that ends with `file`. */
 function findingsOn(read: Read, key: string, file = ''): string[] {
@@ -219,30 +96,132 @@ function said(key: string, ...values: (string | number)[]): string {
     return findingText(textCatalog(MERGED), `findings.manifests.${key}`, ...values);
 }
 
-/** A read in which the repository is a side project and a finding sits on `key` of `file`. */
-function sideWithFinding(read: Read, key: string, file: string, message: string): void {
-    expect(idsOf(read)).toEqual({ projects: HUB_IDS, personal: ['root:alpha'] });
-    expect(findingsOn(read, key, file)).toContain(message);
+/** A file of the hub's projects folder written in a row. */
+function plain(...files: [string, string][]): Record<string, string> {
+    return Object.fromEntries(files);
 }
-
-/** The rows that give the repository a type its manifest cannot honour under tier projects. */
-const BAD_TYPES: [string, string, string][] = [
-    ['a type no flat scan rule of the tier carries', 'type: idea2', 'repository_type_unknown'],
-    ['no type', 'author: x', 'repository_type_missing'],
-    ['a type that is not text', 'type: 3', 'repository_type_missing']
-];
 
 const ROWS: Row[] = [
     {
-        name: 'a manuscript repository with tier projects as a project of the manuscripts board',
-        entries: (at) => entry(at, 'projects'),
-        manifest: MANUSCRIPT,
+        name: 'a scan of the folder above the stages, each manifest with its own tier and type, a category and no personal map',
+        scan: [{ dir: 'projects' }, { dir: 'side-projects', optional: true }],
+        hub: plain(
+            ['projects/x/a/project.yml', 'tier: projects\ntype: idea\ntitle: A\n'],
+            ['projects/b/project.yml', 'tier: archive\ntype: published\ntitle: B\n'],
+            [
+                'side-projects/c/project.yml',
+                'tier: personal\ntype: active\ntitle: C\nstatus:\n  chips: [running]\n'
+            ]
+        ),
+        check: (read) => {
+            const { projects } = read.snapshot.entities;
+            expect(idsOf(read)).toEqual(withHub('a', 'b', 'c'));
+            expect(projects.a).toMatchObject({
+                tier: 'projects',
+                type: 'idea',
+                category: 'x',
+                folder: 'projects/x/a',
+                file: join(read.at.hub, 'projects/x/a/project.yml')
+            });
+            expect(projects.b).toMatchObject({ tier: 'archive', type: 'published' });
+            expect(projects.b.category).toBeUndefined();
+            expect(projects.c).toMatchObject({
+                tier: 'personal',
+                type: 'active',
+                chips: ['running']
+            });
+            expect(read.snapshot.entities).not.toHaveProperty('personal');
+        }
+    },
+    {
+        name: 'a folder with no manifest as a filing folder with no record of its own, and a project below it',
+        hub: plain(['projects/ideas/d/e/project.yml', 'tier: projects\ntype: idea\n']),
+        check: (read) => {
+            expect(idsOf(read)).toEqual(withHub('e'));
+            expect(read.snapshot.entities.projects.e.category).toBe('d');
+        }
+    },
+    {
+        name: 'a manifest inside a project as no project, and a link to a project folder not entered',
+        hub: plain(
+            ['projects/active/f/project.yml', 'tier: projects\ntype: active\n'],
+            ['projects/active/f/code/project.yml', 'tier: projects\ntype: active\n'],
+            ['projects/active/f/sub/project.yml', 'tier: projects\ntype: active\n']
+        ),
+        setup: (at) => {
+            symlinkSync(join(at.hub, 'projects/ideas/beta'), join(at.hub, 'projects/ideas/linked'));
+        },
+        check: (read) => {
+            expect(idsOf(read)).toEqual(withHub('f'));
+        }
+    },
+    {
+        name: 'a dot folder and node_modules as folders the walk does not enter',
+        hub: plain(
+            ['projects/ideas/.hidden/project.yml', 'tier: projects\ntype: idea\n'],
+            ['projects/ideas/node_modules/pkg/project.yml', 'tier: projects\ntype: idea\n']
+        ),
+        check: (read) => {
+            expect(idsOf(read)).toEqual(withHub());
+        }
+    },
+    {
+        name: 'two folders of one name as one project, the first in folder order, and one finding naming both files',
+        hub: plain(
+            ['projects/ideas/z/project.yml', 'tier: projects\ntype: idea\ntitle: First\n'],
+            ['projects/archive/old/z/project.yml', 'tier: archive\ntype: dropped\ntitle: Second\n']
+        ),
+        check: (read) => {
+            const first = join(read.at.hub, 'projects/ideas/z/project.yml');
+            const second = join(read.at.hub, 'projects/archive/old/z/project.yml');
+            expect(idsOf(read)).toEqual(withHub('z'));
+            expect(read.snapshot.entities.projects.z.title).toBe('First');
+            expect(findingsOn(read, 'id')).toEqual([said('id_twice', 'z', first, second)]);
+            expect(findingsOn(read, 'id', second)).toHaveLength(1);
+        }
+    },
+    {
+        name: 'a scan entry on a project folder as that one project, its subfolders not read',
+        scan: [{ dir: 'projects/x' }],
+        hub: plain(
+            ['projects/x/project.yml', 'tier: projects\ntype: active\ntitle: X\n'],
+            ['projects/x/sub/project.yml', 'tier: projects\ntype: active\n']
+        ),
+        check: (read) => {
+            expect(idsOf(read)).toEqual(['x']);
+            expect(read.snapshot.entities.projects.x.category).toBeUndefined();
+        }
+    },
+    {
+        name: 'a scan entry above another one as each project read once, with no duplicate finding',
+        scan: [{ dir: 'projects' }, { dir: 'projects/ideas' }],
+        check: (read) => {
+            expect(idsOf(read)).toEqual(withHub());
+            expect(findingsOn(read, 'id')).toEqual([]);
+        }
+    },
+    {
+        name: 'a manifest with the tier personal inside the ideas folder as a personal project',
+        hub: plain(['projects/ideas/p/project.yml', 'tier: personal\ntype: idea\ntitle: P\n']),
+        check: (read) => {
+            expect(read.snapshot.entities.projects.p).toMatchObject({
+                tier: 'personal',
+                type: 'idea'
+            });
+        }
+    },
+    {
+        name: 'a repository whose manifest says personal as a personal project under the root key, with its links',
+        entries: entry,
+        manifest: PERSONAL,
         check: (read) => {
             const alpha = read.snapshot.entities.projects.alpha;
             expect(alpha).toMatchObject({
                 id: 'alpha',
-                tier: 'manuscripts',
-                type: 'manuscript',
+                tier: 'personal',
+                type: 'active',
+                chips: ['building'],
+                links: ['https://example.org'],
                 folder: read.at.repo,
                 repository: { root: 'alpha', dir: read.at.repo },
                 deck: 'present',
@@ -251,178 +230,84 @@ const ROWS: Row[] = [
             });
             expect(alpha.root).toBeUndefined();
             expect(alpha.file).toBe(join(read.at.repo, MANIFEST_FILE));
-            expect(idsOf(read).personal).toEqual([]);
+            expect(idsOf(read)).toEqual(withHub('alpha'));
+            expect(read.snapshot.entities).not.toHaveProperty('personal');
         }
     },
     {
-        name: 'a repository with tier archive as a project of the archive board, its type its own',
-        entries: (at) => entry(at, 'archive'),
-        manifest: 'title: Alpha\ntype: published\n',
-        check: (read) => {
-            expect(read.snapshot.entities.projects.alpha).toMatchObject({
-                tier: 'archive',
-                type: 'published',
-                repository: { root: 'alpha', dir: read.at.repo }
-            });
-            expect(read.snapshot.entities.projects.alpha.category).toBeUndefined();
-            expect(idsOf(read).personal).toEqual([]);
-        }
-    },
-    {
-        name: 'a repository with tier coauthor as a project of the coauthor board',
-        entries: (at) => entry(at, 'coauthor'),
-        manifest: 'title: Alpha\ntype: in-prep\n',
+        name: 'a repository whose manifest says coauthor as a project of the coauthor board',
+        entries: entry,
+        manifest: 'title: Alpha\ntier: coauthor\ntype: in-prep\n',
         check: (read) => {
             expect(read.snapshot.entities.projects.alpha).toMatchObject({
                 tier: 'coauthor',
-                type: 'in-prep'
+                type: 'in-prep',
+                repository: { root: 'alpha', dir: read.at.repo }
             });
         }
     },
     {
-        name: 'a repository with tier personal as a side project',
-        entries: (at) => entry(at, 'personal'),
-        manifest: MANUSCRIPT,
-        check: (read) => {
-            expect(idsOf(read)).toEqual({ projects: HUB_IDS, personal: ['root:alpha'] });
-        }
-    },
-    {
-        name: 'a repository with no tier as a side project',
-        entries: (at) => entry(at),
-        manifest: MANUSCRIPT,
-        check: (read) => {
-            expect(idsOf(read)).toEqual({ projects: HUB_IDS, personal: ['root:alpha'] });
-        }
-    },
-    ...BAD_TYPES.map(([name, line, finding]): Row => ({
-        name: `tier projects with ${name} as a side project, with a finding on the type`,
-        entries: (at) => entry(at, 'projects'),
-        manifest: `title: Alpha\n${line}\n`,
-        check: (read) => {
-            const message =
-                finding === 'repository_type_unknown'
-                    ? said(finding, 'idea2', 'projects')
-                    : said(finding);
-            sideWithFinding(read, 'type', join(read.at.repo, MANIFEST_FILE), message);
-        }
-    })),
-    {
-        name: 'tier projects on the id of a hub project as a side project, with a finding on the entry',
-        entries: (at) => [{ key: 'tensor-spark', dir: at.repo, tier: 'projects' }],
-        manifest: MANUSCRIPT,
-        check: (read) => {
-            const kept = read.snapshot.entities.projects['tensor-spark'];
-            expect(kept.repository).toBeUndefined();
-            expect(kept.folder).toBe('projects/ideas/tensor-spark');
-            expect(idsOf(read).personal).toEqual(['root:tensor-spark']);
-            expect(findingsOn(read, 'tensor-spark', read.at.rootsFile)).toEqual([
-                said('repository_id_taken')
-            ]);
-        }
-    },
-    {
-        name: 'tier coauthor with no .oculus/project.yml as a finding on the entry and no project',
-        entries: (at) => entry(at, 'coauthor'),
+        name: 'a root with no manifest, and one whose directory is not on this machine, as no project and no finding',
+        entries: (at) => [
+            { key: 'alpha', dir: at.repo },
+            { key: 'gone', dir: join(at.repo, 'nowhere') }
+        ],
         manifest: null,
         check: (read) => {
-            expect(idsOf(read)).toEqual({ projects: HUB_IDS, personal: [] });
-            expect(findingsOn(read, 'alpha', read.at.rootsFile)).toEqual([
-                said('repository_no_manifest')
-            ]);
+            expect(idsOf(read)).toEqual(withHub());
+            expect(findingsOn(read, 'alpha')).toEqual([]);
+            expect(findingsOn(read, 'gone')).toEqual([]);
         }
     },
     {
-        name: 'a tier no scan rule carries as a side project, with a finding on the entry',
-        entries: (at) => entry(at, 'coauthor'),
-        manifest: MANUSCRIPT,
-        merged: {
-            scan: (MERGED.scan as { tier?: string }[]).filter((rule) => rule.tier !== 'coauthor')
-        },
-        check: (read) => {
-            expect(idsOf(read).personal).toEqual(['root:alpha']);
-            expect(findingsOn(read, 'alpha', read.at.rootsFile)).toEqual([
-                said('repository_tier_no_rule', 'coauthor')
-            ]);
-        }
-    },
-    {
-        name: 'a second hub that lists a repository with tier projects as no project of either hub',
-        entries: () => [],
-        second: (at) => [{ key: 'gamma', dir: at.repo, tier: 'projects' }],
-        manifest: MANUSCRIPT,
+        name: 'a second hub that lists a repository as no project of either hub',
+        manifest: PERSONAL,
+        second: (at) => [{ key: 'gamma', dir: at.repo }],
         check: (read) => {
             const labs = HUB_IDS.map((id) => `lab:${id}`);
-            expect(idsOf(read)).toEqual({ projects: [...HUB_IDS, ...labs].sort(), personal: [] });
+            expect(idsOf(read)).toEqual([...HUB_IDS, ...labs].sort());
         }
     },
-    ...[
-        ['the hub itself', (at: Places) => at.hub],
-        ['a folder inside the hub', (at: Places) => join(at.hub, 'projects/active/loewner')],
-        ['a link to a hub project folder', (at: Places) => at.hubLink]
-    ].map(([name, dir]): Row => ({
-        name: `tier projects on ${name as string} as no project`,
+    {
+        name: 'one directory under two keys, or under a key and a link, as one project read under the first key',
         entries: (at) => [
-            { key: 'inner', dir: (dir as (at: Places) => string)(at), tier: 'projects' }
+            { key: 'alpha', dir: at.repo },
+            { key: 'alpha2', dir: at.repo },
+            { key: 'alpha3', dir: at.repoLink }
         ],
-        manifest: MANUSCRIPT,
+        manifest: PERSONAL,
         check: (read) => {
-            expect(idsOf(read)).toEqual({ projects: HUB_IDS, personal: [] });
-        }
-    })),
-    ...[
-        ['one directory under two keys', (at: Places) => at.repo],
-        ['one directory under a key and a link', (at: Places) => at.repoLink]
-    ].map(([name, dir]): Row => ({
-        name: `tier projects on ${name as string} as one project, read under the first key`,
-        entries: (at) => [
-            { key: 'alpha', dir: at.repo, tier: 'projects' },
-            { key: 'alpha2', dir: (dir as (at: Places) => string)(at), tier: 'projects' }
-        ],
-        manifest: MANUSCRIPT,
-        check: (read) => {
-            expect(idsOf(read)).toEqual({ projects: [...HUB_IDS, 'alpha'].sort(), personal: [] });
-        }
-    })),
-    {
-        name: 'a research root and a root added from a workspace of one directory as one research project',
-        entries: (at) => [...entry(at, 'projects'), { key: 'added', dir: at.repo }],
-        manifest: MANUSCRIPT,
-        check: (read) => {
-            expect(idsOf(read)).toEqual({ projects: [...HUB_IDS, 'alpha'].sort(), personal: [] });
+            expect(idsOf(read)).toEqual(withHub('alpha'));
         }
     },
     {
-        name: 'a key beside a hub folder of the repository folder name as no folder-name finding',
-        entries: (at) => entry(at, 'projects'),
-        folder: 'beta',
-        manifest: MANUSCRIPT,
+        name: 'a key equal to a project folder of the scan as the folder project, with one finding naming both manifests',
+        entries: entry,
+        manifest: PERSONAL,
+        hub: plain([
+            'projects/ideas/alpha/project.yml',
+            'tier: projects\ntype: idea\ntitle: Hub alpha\n'
+        ]),
         check: (read) => {
-            expect(read.snapshot.entities.projects.alpha).toMatchObject({ folder: read.at.repo });
-            expect(findingsOn(read, 'folder')).toEqual([]);
-        }
-    },
-    {
-        name: 'a key beside a hub folder of its own name as a side project, with a finding on the entry',
-        entries: (at) => entry(at, 'projects'),
-        manifest: MANUSCRIPT,
-        hub: { 'projects/ideas/alpha/project.yml': 'title: Hub alpha\n' },
-        check: (read) => {
-            expect(read.snapshot.entities.projects.alpha.repository).toBeUndefined();
-            expect(idsOf(read).personal).toEqual(['root:alpha']);
-            expect(findingsOn(read, 'alpha', read.at.rootsFile)).toEqual([
-                said('repository_id_taken')
+            const alpha = read.snapshot.entities.projects.alpha;
+            expect(alpha.repository).toBeUndefined();
+            expect(alpha.folder).toBe('projects/ideas/alpha');
+            expect(findingsOn(read, 'id', join(read.at.repo, MANIFEST_FILE))).toEqual([
+                said(
+                    'id_twice',
+                    'alpha',
+                    join(read.at.hub, 'projects/ideas/alpha/project.yml'),
+                    join(read.at.repo, MANIFEST_FILE)
+                )
             ]);
         }
     },
     {
         name: 'a manifest whose id is another as a project, with the id finding and its own id kept',
-        entries: (at) => entry(at, 'projects'),
-        manifest: 'id: other\ntitle: Alpha\ntype: manuscript\n',
+        entries: entry,
+        manifest: 'id: other\ntitle: Alpha\ntier: personal\ntype: active\n',
         check: (read) => {
-            const alpha = read.snapshot.entities.projects.alpha;
-            expect(alpha).toBeDefined();
-            expect(idsOf(read).personal).toEqual([]);
+            expect(read.snapshot.entities.projects.alpha).toBeDefined();
             expect(findingsOn(read, 'id', join(read.at.repo, MANIFEST_FILE))).toEqual([
                 said('id_not_folder', '"other"', 'alpha')
             ]);
@@ -430,12 +315,12 @@ const ROWS: Row[] = [
     },
     {
         name: 'a hub project that names the repository in related and waiting-on without a finding',
-        entries: (at) => entry(at, 'projects'),
-        manifest: MANUSCRIPT,
-        hub: {
-            'projects/active/loewner/project.yml':
-                'title: Loewner layers\nrelated: [alpha]\nwaiting-on: [alpha]\n'
-        },
+        entries: entry,
+        manifest: PERSONAL,
+        hub: plain([
+            'projects/active/loewner/project.yml',
+            'title: Loewner layers\ntier: projects\ntype: active\nrelated: [alpha]\nwaiting-on: [alpha]\n'
+        ]),
         check: (read) => {
             expect(findingsOn(read, 'related')).toEqual([]);
             expect(findingsOn(read, 'waiting-on')).toEqual([]);
@@ -447,48 +332,34 @@ const ROWS: Row[] = [
     }
 ];
 
-/** The hub, the repository and the links of a row planted. */
+/** The hub, the repository and the link of a row planted. */
 function plant(row: Row): Places {
     const hub = plantScratch('oculus-repository-hub-', { ...HUB_FILES, ...row.hub });
-    const folder = row.folder ?? 'alpha';
+    const manifest = row.manifest === undefined ? PERSONAL : row.manifest;
     const parent = plantScratch(
         'oculus-repository-',
-        row.manifest === null
-            ? { [`${folder}/README.md`]: '# alpha\n' }
+        manifest === null
+            ? { 'alpha/README.md': '# alpha\n' }
             : {
-                  [`${folder}/${MANIFEST_FILE}`]: row.manifest,
-                  [`${folder}/present/present.yml`]: 'slides: []\n',
-                  [`${folder}/README.md`]: '# alpha\n'
+                  [`alpha/${MANIFEST_FILE}`]: manifest,
+                  'alpha/present/present.yml': 'slides: []\n',
+                  'alpha/README.md': '# alpha\n'
               }
     );
-    const at = {
-        repo: join(parent, folder),
-        hub,
-        hubLink: join(parent, 'hub-link'),
-        repoLink: join(parent, 'repo-link'),
-        rootsFile: join(hub, '.oculus/config/sources.yml')
-    };
-    symlinkSync(join(hub, 'projects/ideas/beta'), at.hubLink);
+    const at = { repo: join(parent, 'alpha'), hub, repoLink: join(parent, 'repo-link') };
     symlinkSync(at.repo, at.repoLink);
+    row.setup?.(at);
     return at;
 }
 
-/** A row read the way the watcher reads it: the roots read, the side roots chosen, the build. */
+/** A row read the way the watcher reads it: the roots read, the repositories chosen, the build. */
 function read(row: Row): Read {
     const at = plant(row);
-    const config = portfolioConfigFrom({ ...MERGED, ...row.merged, roots: row.entries(at) });
+    const merged = { ...MERGED, ...(row.scan === undefined ? {} : { scan: row.scan }) };
+    const config = portfolioConfigFrom({ ...merged, roots: row.entries?.(at) ?? [] });
     const listed = readRoots(config.merged, 'sources.yml', at.hub).roots;
-    const roots = repositoriesOf(listed, at.hub, configDir(engineDir()));
-    const base = buildPortfolioWithSchemas(
-        at.hub,
-        config,
-        0,
-        roots,
-        undefined,
-        null,
-        undefined,
-        at.rootsFile
-    );
+    const roots = withRepositories(config, listed, at.hub, configDir(engineDir())).repositories;
+    const base = buildPortfolioWithSchemas(at.hub, config, 0, roots);
     if (row.second === undefined) return { snapshot: base.snapshot, at };
     const lab = plantScratch('oculus-repository-lab-', {
         ...HUB_FILES,
@@ -499,7 +370,7 @@ function read(row: Row): Read {
     return { snapshot: built.snapshot, at };
 }
 
-describe('a repository read as a research project of the first hub', () => {
+describe("the scan and the manifest's own tier and type", () => {
     it.each(ROWS)('reads $name', (row) => {
         row.check(read(row));
     });

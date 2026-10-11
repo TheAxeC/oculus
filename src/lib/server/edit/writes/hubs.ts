@@ -5,7 +5,7 @@
 // carries is left as it is and finds no record, which is the answer for any other unknown id.
 //
 // The target a writer is handed for another hub is the request's own target with that hub's folder,
-// settings, projects and side projects in place of the first hub's, so the writers know one hub and
+// settings and projects in place of the first hub's, so the writers know one hub and
 // never see the others. The change log and the answer stay with the request's own target, which is
 // why a file of another hub is recorded by its absolute path and the undo of it finds the hub by
 // the folder that holds the file.
@@ -25,7 +25,6 @@ function within(into: WriteTarget, one: HubTarget): WriteTarget {
         hub: one.hub,
         config: one.config,
         projects: () => ofHub(into.projects(), one.key),
-        sideProjects: () => ofHub(into.sideProjects(), one.key),
         hubs: []
     };
 }
@@ -177,16 +176,15 @@ export function routedOrder(
 
 /**
  * The target of the hub whose folder holds the file a change names, the request's own for a file of
- * the first hub, of the reader's bookmarks, of a side project or of a repository read as a research
- * project of the first hub (its `.oculus/project.yml`, which lies outside the hub's folder), and
- * null for a file that no hub holds: the hub it was written in has left `roots:`.
+ * the first hub, of the reader's bookmarks or of a repository read as a project of the first hub
+ * (its `.oculus/project.yml`, which lies outside the hub's folder), and null for a file that no hub
+ * holds: the hub it was written in has left `roots:`.
  */
 export function holding(into: WriteTarget, file: string): WriteTarget | null {
     const path = resolve(isAbsolute(file) ? file : join(into.hub, file));
     if (inside(path, into.hub) || path === resolve(into.bookmarks)) return into;
     const one = (into.hubs ?? []).find((held) => inside(path, held.hub));
     if (one !== undefined) return within(into, one);
-    if (into.sideProjects().some((side) => resolve(side.file) === path)) return into;
     const repositories = hubManifests(into.hub, into.config).filter((one) => one.repository);
     return repositories.some((project) => resolve(project.file) === path) ? into : null;
 }

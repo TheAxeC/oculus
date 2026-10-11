@@ -11,11 +11,11 @@ text:
         career_score_tip: '{0}: {1}'
         career_shots: Shots left
         career_situation: Situation
-        cluster_incubate: Incubation - idea to project
-        cluster_now: Now - do these
+        cluster_incubate: 'Incubation: idea to project'
+        cluster_now: 'Now: do these'
         cluster_parked: Parked / on hold
         command:
-            behind_refresh: behind their docs - refresh
+            behind_refresh: 'behind their docs: refresh'
             command_center: Command center
             command_center_glyph: live
             conference_call: call closes in {0}d
@@ -28,7 +28,6 @@ text:
             dlcat_funding: funding
             dlcat_paper: papers
             dlcat_position: positions
-            dlcat_side: side projects
             dlcat_task: tasks
             dlcat_teaching: teaching
             emails: emails to reply / act on
@@ -62,18 +61,17 @@ text:
             overdue_generic: '{0} {1}d ago'
             position_deadline: position deadline in {0}d
             refresh_glyph: refresh_live
-            refresh_inbox_plain: Inbox - triaged {0}d ago | run /research-cockpit inbox
-            refresh_litwatch_plain: Lit Watch - {0} | run /research-cockpit litwatch
-            refresh_scout_plain: Position scout - ran {0}d ago | run /research-cockpit scout
+            refresh_inbox_plain: 'Inbox: triaged {0}d ago | run /research-cockpit inbox'
+            refresh_litwatch_plain: 'Lit Watch: {0} | run /research-cockpit litwatch'
+            refresh_scout_plain: 'Position scout: ran {0}d ago | run /research-cockpit scout'
             scout_glyph: scout
-            side_deadline: deadline in {0}d
             since_linkedin: since your last LinkedIn post
             snoozed: Snoozed ({0})
             snoozed_glyph: snooze
             submission_deadline: submission deadline in {0}d
             this_month: this month
             venue_count: '{0} x{1}'
-            venue_load_tail: (>={0} in flight - consider spreading)
+            venue_load_tail: (>={0} in flight; consider spreading)
             word_application: application
             word_collaboration: joint work
             word_commitment: commitment
@@ -94,14 +92,14 @@ text:
         hint_tail: not on the board (set their <code>focus:</code>)
         host: 'host: {0}'
         host_pipeline: Host pipeline
-        idea_backlog: idea backlog - drag onto a lane to start, or drop here to park
+        idea_backlog: 'idea backlog: drag onto a lane to start, or drop here to park'
         ideas: Ideas
         ideas_glyph: idea
         in_days: in {0}d
         in_flight: '- {0} in flight'
         jobs_glyph: scout
         jobs_lane: Job applications
-        jobs_sub: positions - awaiting outcome
+        jobs_sub: positions awaiting outcome
         move_to: Move to
         next: Next
         none: '- none -'

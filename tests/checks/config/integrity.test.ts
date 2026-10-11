@@ -75,6 +75,7 @@ function deckProjects(projects: Project[]): DeckProject[] {
         file: project.file,
         folder: project.folder,
         tier: project.tier,
+        type: project.type,
         chips: project.chips,
         short: project.short ?? '',
         title: project.title
@@ -132,15 +133,12 @@ function countEntries(relative: string, listKey: string): number {
     return Array.isArray(list) ? list.length : -1;
 }
 
-/** The scan tier whose manifests are side projects, held apart from the research tiers. */
-const SIDE_TIER = 'side-projects';
+/** The scan folder whose projects carry the tier `personal`. */
+const PERSONAL_DIR = 'side-projects';
 
 function derivedCounts(): Record<string, number> {
-    const counts: Record<string, number> = { projects: 0, personal: 0 };
-    for (const rule of config.scan) {
-        const kind = rule.dir.split('/').pop() === SIDE_TIER ? 'personal' : 'projects';
-        counts[kind] += countManifests(join(hub, rule.dir));
-    }
+    const counts: Record<string, number> = { projects: 0 };
+    for (const rule of config.scan) counts.projects += countManifests(join(hub, rule.dir));
     for (const [name, listKey] of Object.entries(REGISTRY_LISTS)) {
         counts[name] = countEntries(
             config.registries[name as keyof typeof config.registries],
@@ -171,18 +169,19 @@ describe.skipIf(!present)('the real hub', () => {
         expect(held).toEqual(counts);
     });
 
-    it('reads every side project of the hub with no finding, each as a card of the personal map', () => {
-        const folders = globSync('*/project.yml', { cwd: join(hub, SIDE_TIER) })
+    it('reads every project of the personal folder with no finding, each with the tier personal', () => {
+        const folders = globSync('*/project.yml', { cwd: join(hub, PERSONAL_DIR) })
             .map((file) => file.split('/')[0])
             .sort();
         expect(folders.length).toBeGreaterThanOrEqual(3);
-        const personal = snapshot?.entities.personal ?? {};
-        expect(Object.keys(personal).sort()).toEqual(folders.map((folder) => `side:${folder}`));
-        for (const one of Object.values(personal)) {
+        const projects = Object.values(snapshot?.entities.projects ?? {});
+        const personal = projects.filter((project) => project.tier === 'personal');
+        expect(personal.map((project) => project.id).sort()).toEqual(folders);
+        for (const one of personal) {
             expect(one.title).not.toBe('');
-            expect(config.vocab.sideStatuses ?? []).toContain(one.status);
+            expect(one.type).toBe('idea');
         }
-        expect(snapshot?.findings.filter((finding) => finding.file.includes(SIDE_TIER))).toEqual(
+        expect(snapshot?.findings.filter((finding) => finding.file.includes(PERSONAL_DIR))).toEqual(
             []
         );
     });

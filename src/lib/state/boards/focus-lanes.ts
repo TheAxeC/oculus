@@ -52,7 +52,7 @@ export type Band = {
     education: BandItem[];
 };
 
-/** Active and manuscript projects whose manifest lags their documents past the configured grace. */
+/** Active projects whose manifest lags their documents past the configured grace. */
 export function manifestsBehind(
     projects: Project[],
     config: Record<string, unknown>
@@ -62,7 +62,7 @@ export function manifestsBehind(
     const stale = projects
         .filter(
             (project) =>
-                (project.type === 'active' || project.type === 'manuscript') &&
+                project.type === 'active' &&
                 project.staleDays !== undefined &&
                 project.staleDays >= grace
         )

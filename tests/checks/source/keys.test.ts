@@ -26,6 +26,7 @@ import {
 import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import { CHKTEX_FIXABLE, LINT_IDS } from '../../../src/lib/data/model/index.ts';
+import { TIERS } from '../../../src/lib/data/helpers/hub-names.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
 import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
 import { symbolKindName } from '../../../src/lib/data/prose/symbol-kinds.ts';
@@ -128,12 +129,13 @@ const WHOLE_FINDING_KEY = /^(['"])findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+\1$
 /**
  * The `findingText` calls whose key is not a whole literal, each with the file and the argument
  * text: the audit's collector words a key its rules named through `sentence(`, and the deck
- * reader words the key its callers name as a whole literal in each `raise(` call, which the
- * reader scan holds.
+ * reader and the readers of the `scan:` and `new_project_dir:` values (lib/data/index.ts) word the
+ * key their callers name as a whole literal in each `raise(` call, which the reader scan holds.
  */
 const COMPUTED_FINDING_KEYS = [
     { file: 'lib/server/content/audit/rules.ts', key: 'key' },
-    { file: 'lib/data/sources/deck/read.ts', key: 'id' }
+    { file: 'lib/data/sources/deck/read.ts', key: 'id' },
+    { file: 'lib/data/index.ts', key: 'id' }
 ] as const;
 
 /** Every `findingText` call under `root` whose key is not one whole `findings.` literal. */
@@ -169,7 +171,18 @@ const COMPUTED_PREFIXES = [
     {
         file: 'lib/views/boards/projects/Projects.svelte',
         start: 'lookup(`views.${preset.id}`',
-        keys: () => ['projects', 'coauthor', 'archive'].map((id) => `views.${id}`)
+        keys: () => ['projects', 'coauthor', 'archive', 'personal'].map((id) => `views.${id}`)
+    },
+    {
+        // The words a new project of each tier gets are keyed by the tier itself, so a tier added
+        // to hub-names.ts with words in config/text/server.yml is read here without a second list.
+        file: 'lib/server/edit/writes/manifest.ts',
+        start: 'idea_',
+        keys: () =>
+            TIERS.flatMap((tier) => [
+                `server.manifest_write.idea_status_${tier}`,
+                `server.manifest_write.idea_next_${tier}`
+            ])
     },
     {
         // One description per file of the engine's config folder and of its catalogs and schemas

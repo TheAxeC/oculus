@@ -16,7 +16,6 @@ import { fieldsOf } from './schema/field.ts';
 import { career } from './normalise-parts/career.ts';
 import { followups, subtasks } from './normalise-parts/plans.ts';
 import { docFlags } from './normalise-parts/folder.ts';
-import { sideProjects } from './normalise-parts/personal.ts';
 import { indexing } from './indexing.ts';
 import type {
     CodeAvailability,
@@ -47,6 +46,7 @@ import type {
     Venue
 } from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
+import { tierOf } from '../helpers/hub-names.ts';
 import { mapShape, readOr, rowsShape, stringItemsShape } from '../shapes/shapes.ts';
 
 /**
@@ -92,8 +92,7 @@ export const ENTITY_KINDS = [
     'people',
     'organisations',
     'resources',
-    'collections',
-    'personal'
+    'collections'
 ];
 
 /**
@@ -213,11 +212,9 @@ function project(
     const lag = staleDays(found, manifest.fileMtime);
     return compact({
         id: manifest.id,
-        tier: manifest.tier,
-        ghost: manifest.ghost,
+        tier: tierOf(manifest.tier),
         category: str(manifest.category),
         type: str(manifest.type),
-        typeWritten: str(manifest.typeWritten),
         title: str(manifest.title) ?? '',
         short: str(manifest.short),
         lead: str(manifest.lead),
@@ -257,7 +254,8 @@ function project(
         deckTags: deck !== undefined && deck.tags.length > 0 ? deck.tags : undefined,
         folder: manifest.folder,
         file: manifest.file,
-        repository: manifest.repository
+        repository: manifest.repository,
+        links: Array.isArray(manifest.links) ? strings(manifest.links) : undefined
     });
 }
 
@@ -629,14 +627,8 @@ function relations(
 /**
  * The snapshot the socket carries. `version` is the caller's, monotonic and incremented by the
  * watcher on every rebuild; `findings` is what validate returned, carried as it stands.
- * `sideStatuses` are the keys of `side_project_status`, which a side project's status is held to.
  */
-export function normalise(
-    raw: RawPortfolio,
-    findings: Finding[],
-    version = 0,
-    sideStatuses?: string[]
-): Snapshot {
+export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): Snapshot {
     const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
         entries.filter((item) => item.key.length > 0);
 
@@ -717,7 +709,6 @@ export function normalise(
             organisations: byId(organisations),
             resources: byId(resources),
             collections: byId(collections),
-            personal: byId(sideProjects(raw.personal, sideStatuses)),
             feeds: feeds(raw.feeds),
             career: career(raw.career)
         },

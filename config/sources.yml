@@ -6,15 +6,19 @@
 # ===========================================================================
 
 
-# Where to find projects: each `dir` is relative to the hub root. A project is any subfolder that contains a project.yml; a flat rule gives every manifest its type, a nested rule reads the type from each manifest, and the folder name is the id.
+# Where to find projects: each `dir` is relative to the hub root. A project is any folder that contains a project.yml, at any depth under the `dir`; the walk stops at a project and does not enter a dot folder, `node_modules` or a symbolic link. The project's tier and type are the manifest's own `tier` and `type` lines, and its id is the folder's name. When a project lies deeper than one level, the first folder under the `dir` is its category.
 scan:
-  - { dir: projects/ideas,       type: idea,       tier: projects }
-  - { dir: side-projects,        type: side-project, tier: personal, optional: true }   # read by the Personal board and the Focus ticker; no research reader reads it
-  - { dir: projects/active,      type: active,     tier: projects }
-  - { dir: projects/manuscripts, type: manuscript, tier: projects }
-  - { dir: projects/software,    type: software,   tier: software, optional: true }   # optional; a hub without the folder reports nothing
-  - { dir: projects/coauthor,    nested: true, tier: coauthor }   # nested; type (the outcome) read from each manifest
-  - { dir: projects/archive,     nested: true, tier: archive }    # nested; type (the outcome) read from each manifest
+  - { dir: projects/ideas }
+  - { dir: side-projects, optional: true }   # optional; a hub without the folder reports nothing
+  - { dir: projects/active }
+  - { dir: projects/manuscripts }
+  - { dir: projects/software, optional: true }   # optional; a hub without the folder reports nothing
+  - { dir: projects/coauthor }
+  - { dir: projects/archive }
+
+
+# The folder a new project is made in, for each tier. The engine names none: a hub sets `new_project_dir` in its .oculus/config/sources.yml, a map from a tier (projects, coauthor, archive or personal) to a folder that is a scan folder or lies under one. A tier with no entry has no folder to offer, and a new project of it needs the folder given.
+new_project_dir: {}
 
 
 # The portfolio deck: the folder, relative to the hub, whose present.yml and Markdown slides the Present view opens when a pane names no deck. A project's deck is its own present/ folder and a custom deck is any folder, so this key names the one deck that belongs to the hub as a whole.
@@ -73,7 +77,7 @@ radar_file: feeds/literature-radar.yml
 career_file: registries/career.yml
 
 
-# Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. The engine names none: a hub sets its roots in .oculus/config/sources.yml, each a dir that is absolute or starts with `~/`. The bookmarks that open as tabs are the entries of bookmarks.yml in the hub's .oculus folder, each naming a root by its key. An entry may carry `tier:` with one of `projects`, `coauthor`, `archive` or `personal`: the first three read the repository's .oculus/project.yml as a project of that tier of the hub, with the key for its id, and `personal` or no `tier` reads it as a side project; an entry marked `hub: true` takes no `tier`.
+# Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. The engine names none: a hub sets its roots in .oculus/config/sources.yml, each a dir that is absolute or starts with `~/`. The bookmarks that open as tabs are the entries of bookmarks.yml in the hub's .oculus folder, each naming a root by its key. An entry is `key`, `dir` and, for a hub root, `hub: true`. A root that is not a hub root and holds a `.oculus/project.yml` is a project of the first hub, with the key for its id and the manifest's own `tier` and `type`.
 roots: []
 # How many folder levels below each root the Repositories view looks for repositories, 0 to 3.
 repository_scan_depth: 1

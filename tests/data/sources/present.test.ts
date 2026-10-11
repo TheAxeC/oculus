@@ -18,8 +18,8 @@ const CATALOG = textCatalog(loadConfig(engineDir()).config);
 function project(id: string, tier: string, extra: Partial<DeckProject> = {}): DeckProject {
     return {
         id,
-        file: `projects/${tier}/${id}/project.yml`,
-        folder: `projects/${tier}/${id}`,
+        file: `projects/manuscripts/${id}/project.yml`,
+        folder: `projects/manuscripts/${id}`,
         tier,
         chips: [],
         short: id,
@@ -142,7 +142,7 @@ describe('the deck reader', () => {
                 'deck: { title: Portfolio }',
                 'groups:',
                 '    pillars:',
-                '        find: { folders: projects/*/*/present, tiers: [manuscripts] }',
+                '        find: { folders: projects/*/*/present, tiers: [projects] }',
                 '        slides:',
                 '            - alpha',
                 '            - beta',
@@ -167,8 +167,8 @@ describe('the deck reader', () => {
         const reader = createReader({
             hub: { key: 'hub', dir },
             projects: [
-                project('alpha', 'manuscripts', { domain: 'heart', short: 'Alpha' }),
-                project('beta', 'manuscripts', { domain: 'heart', short: 'Beta' })
+                project('alpha', 'projects', { domain: 'heart', short: 'Alpha' }),
+                project('beta', 'projects', { domain: 'heart', short: 'Beta' })
             ],
             domains: ['heart'],
             tagTones: { measured: 'green' },

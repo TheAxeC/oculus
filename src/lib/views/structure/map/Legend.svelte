@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, Map partial. The relationship legend under the heading: the three project types as
+    // Layer 3, Map partial. The relationship legend under the heading: the two project types as
     // chips in their tones and the pillar line mark. It holds no control; the filters are the
     // bar's (Controls.svelte).
 
@@ -10,7 +10,6 @@
 
 <div class="legend">
     <Chip label={t('map.legend_active')} tone={typeTone('active')} filled />
-    <Chip label={t('map.legend_manuscript')} tone={typeTone('manuscript')} filled />
     <Chip label={t('map.legend_idea')} tone={typeTone('idea')} filled />
     <span class="line-dot"></span>
     <span>{t('map.legend_line')}</span>

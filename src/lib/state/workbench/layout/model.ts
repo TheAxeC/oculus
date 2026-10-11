@@ -202,41 +202,12 @@ export const MAX_CHILDREN = Math.floor(1 / MIN_SIZE);
 export const MAIN_VIEW = 'status';
 
 /**
- * The envelope version serialiseLayout writes and parseLayout demands: the list of pages, one tree
- * each, with the folder a page belongs to, the floats beside them, with the tabs a pane pins and
- * the order it showed them in, and the layouts of the folder pages that were closed.
+ * The envelope version serialiseLayout writes and the only one parseLayout reads: the list of
+ * pages, one tree each, with the folder a page belongs to, the floats beside them, with the tabs a
+ * pane pins and the order it showed them in, and the layouts of the folder pages that were closed.
+ * An envelope of any other version is not read.
  */
 export const LAYOUT_VERSION = 7;
-
-/**
- * The envelope version that held no folder page and no kept layout. It is read as it is: every page
- * and tab is kept and no folder page is closed.
- */
-export const PINS_VERSION = 6;
-
-/**
- * The envelope version that held floats before a tab could be pinned. It is still read as it is: no
- * tab is pinned, and the floats it holds are kept.
- */
-export const FLOATS_VERSION = 5;
-
-/**
- * The envelope version that held the pages without floats. It is still read, with no floats, and
- * the shipped floats are taken in when the layout is loaded.
- */
-export const FLOATLESS_VERSION = 4;
-
-/**
- * The envelope version whose page held two trees and a docked panel. It is still read, and its
- * pages are migrated to one tree each, so a browser holding one loses no tab.
- */
-export const PAGES_VERSION = 3;
-
-/**
- * The envelope version that held one two-tree workbench, before a page was a thing. It is still
- * read and migrated the same way, so a browser that holds one opens it as a page.
- */
-export const WORKBENCH_VERSION = 2;
 
 /** A float as a host: a workbench of its one pane, with no maximised pane. */
 export function floatHost(float: Float): Host {

@@ -16,7 +16,7 @@ deck:
 groups:
     # the pillars
     pillars:
-        find: { folders: projects/*/*/present, tiers: [active] }
+        find: { folders: projects/*/*/present, tiers: [projects] }
         # named by hand
         slides:
             - alpha

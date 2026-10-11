@@ -113,17 +113,17 @@ const ROWS: Row[] = [
         ]
     },
     {
-        name: 'a collaborators value of a side project manifest that names a person',
-        at: ['hub', 'side-projects/idea/project.yml', 2, 16],
+        name: 'a collaborators value of a personal project manifest that names a person',
+        at: ['hub', 'side-projects/idea/project.yml', 3, 16],
         hub: {
             'side-projects/idea/project.yml':
-                'title: An idea\nstatus: idea\ncollaborators: [amir]\n'
+                'title: An idea\ntier: personal\ntype: idea\ncollaborators: [amir]\n'
         },
         engine: {
             'sources.yml': [
                 'scan:',
-                '  - { dir: projects/manuscripts, type: manuscript, tier: projects }',
-                '  - { dir: side-projects, type: side-project, tier: personal, optional: true }',
+                '  - { dir: projects/manuscripts }',
+                '  - { dir: side-projects, optional: true }',
                 ''
             ].join('\n')
         },
@@ -134,7 +134,7 @@ const ROWS: Row[] = [
             'hub:network/joint-work.yml:5:13',
             'hub:projects/active/alpha/project.yml:6:13',
             'hub:projects/active/alpha/project.yml:7:16',
-            'hub:side-projects/idea/project.yml:2:16'
+            'hub:side-projects/idea/project.yml:3:16'
         ]
     },
     {
@@ -250,10 +250,18 @@ const ROWS: Row[] = [
     {
         name: 'a vocabulary key of a map in vocab.yml, listed by the options file that names its list',
         at: ['engine', 'catalogs/vocab.yml', 3, 34],
+        engine: {
+            'layout.yml': [
+                'tab_rollup:',
+                '  projects:',
+                '    - { label: in progress, keys: [manuscript], color: "#16a34a" }',
+                ''
+            ].join('\n')
+        },
         kind: 'definition',
         key: 'manuscript',
         targets: ['engine:catalogs/vocab.yml:3'],
-        references: ['engine:sources.yml:1:39']
+        references: ['engine:layout.yml:2:35']
     },
     {
         name: 'a key of the domains: map of vocab.yml, a reference to the domains registry',

@@ -14,8 +14,10 @@ export type Raise = (key: string, id: string, ...args: (string | number)[]) => v
 export type FindSpec = {
     /** Globs of folders, relative to the root the deck was found in. */
     folders: string[];
-    /** The scan tiers a deck's project must be in; absent keeps every deck. */
+    /** The manifest tiers a deck's project must be in; absent keeps every tier. */
     tiers?: string[];
+    /** The manifest types a deck's project must have; absent keeps every type. */
+    types?: string[];
     /** The status chips a deck's project must hold one of; absent keeps every deck. */
     status?: string[];
 };
@@ -99,6 +101,7 @@ function find(name: string, value: unknown, raise: Raise): FindSpec | undefined 
     if (folders.length === 0) raise(`groups.${name}.find`, 'findings.deck.find_no_folders', name);
     const spec: FindSpec = { folders };
     if (value.tiers !== undefined) spec.tiers = strings(value.tiers);
+    if (value.types !== undefined) spec.types = strings(value.types);
     if (value.status !== undefined) spec.status = strings(value.status);
     return spec;
 }

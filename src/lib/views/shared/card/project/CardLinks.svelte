@@ -9,8 +9,8 @@
     // The software kind is the one link between two projects, so its entries open a project tab
     // rather than a registered view, and its label says which end of the link the card is on: a
     // paper lists the software that implements it, and a software project lists the papers it
-    // names. The related kind, which only a side project's card carries, opens a project tab too,
-    // except for an id that no project holds, which is drawn as its tag with no press.
+    // names. The related kind, which every project's card carries, opens a project tab
+    // too, except for an id that no project holds, which is drawn as its tag with no press.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -27,14 +27,14 @@
     /** The kind whose entries are projects, opened as a tab rather than in a view of their own. */
     const SOFTWARE = 'software';
 
-    /** The kind of a side project's `related:`, whose entries are projects. */
+    /** The kind of a project's `related:`, whose entries are projects. */
     const RELATED = 'related';
 
     /** The kind whose entries are people, each opening the Person view for its own key. */
     const COLLABORATORS = 'collaborators';
 
     type Props = {
-        /** The joined board item or side project whose cross-links are shown. */
+        /** The joined board item whose cross-links are shown. */
         item: LinkedItem;
     };
     let { item }: Props = $props();
@@ -83,7 +83,7 @@
         },
         {
             key: RELATED,
-            label: t('personal.related'),
+            label: t('project.card.related'),
             glyph: t('project.card.software_glyph'),
             tags: item.related ?? []
         }

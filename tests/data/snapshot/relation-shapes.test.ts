@@ -63,7 +63,7 @@ describe('the relation fields of a manifest', () => {
         const hub = plantScratch(
             'oculus-relation-shapes-',
             {
-                'projects/active/alpha/project.yml': `id: alpha\ntype: active\ntitle: alpha\n${written}\n`
+                'projects/active/alpha/project.yml': `id: alpha\ntier: projects\ntype: active\ntitle: alpha\n${written}\n`
             },
             ['registries']
         );
@@ -80,7 +80,7 @@ describe('the relation fields of a manifest', () => {
             'oculus-relation-shapes-',
             {
                 'projects/active/alpha/project.yml':
-                    'id: alpha\ntype: active\ntitle: alpha\nvenue_id:\nfunding:\ncompute:\n'
+                    'id: alpha\ntier: projects\ntype: active\ntitle: alpha\nvenue_id:\nfunding:\ncompute:\n'
             },
             ['registries']
         );
@@ -97,9 +97,9 @@ describe('the relation fields of a manifest', () => {
                 'registries/people.yml':
                     'schema:\n  - { field: key, type: text, required: true, help: The person key. }\n  - { field: name, type: text, required: true, help: The name. }\nentries:\n  - { key: ada, name: Ada }\n',
                 'projects/active/alpha/project.yml':
-                    'id: alpha\ntype: active\ntitle: alpha\nwaiting-on: ada\n',
+                    'id: alpha\ntier: projects\ntype: active\ntitle: alpha\nwaiting-on: ada\n',
                 'projects/active/beta/project.yml':
-                    'id: beta\ntype: active\ntitle: beta\nwaiting-on: [ada, alpha]\n'
+                    'id: beta\ntier: projects\ntype: active\ntitle: beta\nwaiting-on: [ada, alpha]\n'
             },
             ['registries']
         );

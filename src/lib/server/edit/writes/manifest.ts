@@ -1,18 +1,11 @@
 // Layer 2, server. The manifest half of the write path: what a form value becomes, which paths may
 // be written at all, one project.yml edited, and one new idea folder scaffolded.
 //
-// A research manifest's path is the reader's, never the request's: the id names a manifest
-// hubManifests already found, under the hub's own scan directories or as the `.oculus/project.yml`
-// of a repository whose `roots:` entry has a research `tier`, and insideHub (for a scan folder) or
-// isRepositoryFile (for a repository) checks the resolved path again before the write.
-//
-// A side project is the one other manifest a write reaches. Its id (`side:<slug>` or `root:<key>`)
-// is found among the side projects of the portfolio the server last published, which carry the
-// absolute file readPersonal found, and not through hubManifests, so the server's two readers stay
-// apart. The file must be the side project's own project.yml (the folder of the hub's side-projects
-// tier, or `.oculus/project.yml` of its served root), and no other file is opened for writing. The
-// fields a write may name are the rows of `side_project_schema`, where a research manifest's are
-// the fields of `manifest_schema`.
+// A manifest's path is the reader's, never the request's: the id names a manifest hubManifests
+// already found, under the hub's own scan directories or as the `.oculus/project.yml` of a
+// repository whose `roots:` entry holds one, and insideHub (for a scan folder) or isRepositoryFile
+// (for a repository) checks the resolved path again before the write. The fields a write may name
+// are the fields of `manifest_schema`, whatever the project's tier.
 //
 // Every reason a write refuses with is a line of config/text/server.yml under
 // `server.manifest_write`, worded with `words` from the configuration's text catalog.
@@ -30,12 +23,12 @@
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`).
 
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
-import { ROOT_FOLDER, isSideTier } from '../../../data/helpers/hub-names.ts';
+import { ROOT_FOLDER, inScan, tierOf } from '../../../data/helpers/hub-names.ts';
 import { hubManifests } from '../../files/roots.ts';
 import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
@@ -49,57 +42,46 @@ import { insertRemoved, insertReplaced } from './restore.ts';
 import type { ChangeRecord, RemovedText, ReplacedText } from '../../core/changes.ts';
 import type { Refusal, SetFieldsResult } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import type {
-    PortfolioConfig,
-    RawManifest,
-    SchemaField,
-    SideProject
-} from '../../../data/model/index.ts';
+import type { PortfolioConfig, RawManifest, SchemaField, Tier } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
-import { below } from '../../core/paths.ts';
+import { below, inside, realPath } from '../../core/paths.ts';
 
 /** The name of the manifest file, which is the only name this module ever writes. */
 const MANIFEST = 'project.yml';
 
+/**
+ * The fields no write touches. `id` is the name of the project's folder, or the key of its root,
+ * which data/sources/manifests.ts reads it from, so writing it would put the file at odds with its
+ * own location.
+ */
+const READ_ONLY = ['id'];
+
 /** One field of a schema, which declares a type when it holds a text `type`. */
 const fieldTypeShape = z.looseObject({ type: z.string() });
 
-/** One row of a schema written as a list: a text `field` and a text `type`. */
-const fieldRowShape = z.looseObject({ field: z.string(), type: z.string() });
-
 /**
  * The type of every field of a schema that declares one, keyed by the field's name in the order
- * the schema gives them. The schema is a `fields` map (`manifest_schema`) or a list of rows with a
- * `field` key (`side_project_schema`); an entry that is no map or has no text `type` is left out,
- * and a schema of neither form declares none.
+ * the schema gives them, out of the schema's `fields` map. An entry that is no map or has no text
+ * `type` is left out, and a schema of no `fields` map declares none.
  */
 const fieldTypesShape = z
-    .union([
-        z.object({ fields: mapShape }).transform((schema) => {
-            const types: Record<string, string> = {};
-            for (const [name, entry] of Object.entries(schema.fields)) {
-                const declared = fieldTypeShape.safeParse(entry);
-                if (declared.success) types[name] = declared.data.type;
-            }
-            return types;
-        }),
-        z.array(z.unknown()).transform((rows) => {
-            const types: Record<string, string> = {};
-            for (const row of rows) {
-                const declared = fieldRowShape.safeParse(row);
-                if (declared.success) types[declared.data.field] = declared.data.type;
-            }
-            return types;
-        })
-    ])
+    .object({ fields: mapShape })
+    .transform((schema) => {
+        const types: Record<string, string> = {};
+        for (const [name, entry] of Object.entries(schema.fields)) {
+            const declared = fieldTypeShape.safeParse(entry);
+            if (declared.success) types[name] = declared.data.type;
+        }
+        return types;
+    })
     .catch(() => ({}));
 
 /**
- * The field types, read out of the same `manifest_schema` the client's state/forms/schema.ts reads,
- * and out of the list form of `side_project_schema`. The two readers are separate because the
- * boundary table of DESIGN.md lets `state/` import `data/model` and `data/helpers/guards` and
- * nothing else of layer 1, so a shared module would be a boundary violation rather than a saving;
- * what they share is the config file, which is the point of config as data.
+ * The field types, read out of the same `manifest_schema` the client's state/forms/schema.ts reads.
+ * The two readers are separate because the boundary table of DESIGN.md lets `state/` import
+ * `data/model` and `data/helpers/guards` and nothing else of layer 1, so a shared module would be a
+ * boundary violation rather than a saving; what they share is the config file, which is the point
+ * of config as data.
  */
 export function fieldTypes(schema: unknown): Record<string, string> {
     return fieldTypesShape.parse(schema);
@@ -116,25 +98,12 @@ const sourcedShape = z.looseObject({ type: z.string(), from: fromShape });
 
 /**
  * The fields of a manifest schema in the shape the walk of data/snapshot/hubs/references.ts reads,
- * from the `fields` map (`manifest_schema`) or the list of rows (`side_project_schema`).
+ * from the `fields` map of `manifest_schema`.
  */
 const schemaFieldsShape = z
-    .union([
-        z
-            .object({ fields: mapShape })
-            .transform((schema) => sourced(Object.entries(schema.fields))),
-        z
-            .array(z.unknown())
-            .transform((rows) =>
-                sourced(rows.map((row) => [isMap(row) ? fieldNameOf(row.field) : '', row]))
-            )
-    ])
+    .object({ fields: mapShape })
+    .transform((schema) => sourced(Object.entries(schema.fields)))
     .catch(() => []);
-
-/** A row's field name, and '' for one that is not text. */
-function fieldNameOf(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
 
 /** The named entries that read as a field with a type, each as a schema field. */
 function sourced(entries: [string, unknown][]): SchemaField[] {
@@ -279,36 +248,8 @@ type Home = {
     refusal: string | null;
 };
 
-/** The manifest's keys as the file holds them, or null when the file is unreadable or no map. */
-function heldKeys(file: string): Record<string, unknown> | null {
-    try {
-        const parsed: unknown = parse(readFileSync(file, 'utf8'));
-        return isMap(parsed) ? parsed : null;
-    } catch {
-        return null;
-    }
-}
-
 /**
- * Whether a side project's file is its own project.yml: the file in the folder its source names,
- * under one of the hub's side-projects folders for a hub project, and `.oculus/project.yml` of the
- * served root for a repository.
- */
-function isOwnFile(hub: string, config: PortfolioConfig, side: SideProject): boolean {
-    const file = resolve(side.file);
-    if (basename(file) !== MANIFEST) return false;
-    if (side.source.kind === 'root') {
-        return file === resolve(join(side.source.dir, ROOT_FOLDER, MANIFEST));
-    }
-    const own = resolve(join(hub, side.source.folder, MANIFEST));
-    return (
-        file === own &&
-        config.scan.some((rule) => isSideTier(rule) && below(file, join(hub, rule.dir)))
-    );
-}
-
-/**
- * Whether a repository's research manifest is the `.oculus/project.yml` of the repository it was
+ * Whether a repository's manifest is the `.oculus/project.yml` of the repository it was
  * read from.
  */
 function isRepositoryFile(manifest: RawManifest): boolean {
@@ -318,45 +259,25 @@ function isRepositoryFile(manifest: RawManifest): boolean {
 }
 
 /**
- * The manifest an id names, or null when there is none. A research project is found by
- * hubManifests among the hub's scan directories and the repositories its `roots:` read as research
- * projects; any other id is looked for among the side projects of the portfolio the server last
- * published, whose manifest must read as a map. A research id is never taken for a side project.
+ * The manifest an id names, or null when there is none. It is found by hubManifests among the
+ * hub's scan directories and the repositories its `roots:` read as projects.
  */
-function homeOf(
-    hub: string,
-    config: PortfolioConfig,
-    sides: readonly SideProject[],
-    id: string
-): Home | null {
+function homeOf(hub: string, config: PortfolioConfig, id: string): Home | null {
     const manifest = hubManifests(hub, config).find((one) => one.id === id);
-    if (manifest !== undefined) {
-        const own =
-            manifest.repository === undefined
-                ? insideHub(hub, config, manifest.file)
-                : isRepositoryFile(manifest);
-        const refused =
-            manifest.repository === undefined
-                ? words(config.text, 'server.manifest_write.not_in_hub')
-                : words(config.text, 'server.manifest_write.not_repository_file');
-        return {
-            file: manifest.file,
-            data: manifest,
-            schema: config.schema,
-            refusal: own ? null : refused
-        };
-    }
-    const side = sides.find((one) => one.id === id);
-    if (side === undefined) return null;
-    const data = heldKeys(side.file);
-    if (data === null) return null;
+    if (manifest === undefined) return null;
+    const own =
+        manifest.repository === undefined
+            ? insideHub(hub, config, manifest.file)
+            : isRepositoryFile(manifest);
+    const refused =
+        manifest.repository === undefined
+            ? words(config.text, 'server.manifest_write.not_in_hub')
+            : words(config.text, 'server.manifest_write.not_repository_file');
     return {
-        file: side.file,
-        data,
-        schema: config.merged.side_project_schema,
-        refusal: isOwnFile(hub, config, side)
-            ? null
-            : words(config.text, 'server.manifest_write.not_own_file')
+        file: manifest.file,
+        data: manifest,
+        schema: config.schema,
+        refusal: own ? null : refused
     };
 }
 
@@ -367,10 +288,9 @@ function homeOf(
 export function manifestSource(
     hub: string,
     config: PortfolioConfig,
-    sides: readonly SideProject[],
     id: string
 ): { file: string; source: string } | null {
-    const home = homeOf(hub, config, sides, id);
+    const home = homeOf(hub, config, id);
     if (home === null) return null;
     if (home.refusal !== null) return null;
     try {
@@ -388,11 +308,10 @@ export function manifestSource(
 export function manifestValue(
     hub: string,
     config: PortfolioConfig,
-    sides: readonly SideProject[],
     id: string,
     field: string
 ): { found: boolean; value: unknown } {
-    const home = homeOf(hub, config, sides, id);
+    const home = homeOf(hub, config, id);
     if (home === null) return { found: false, value: null };
     const value = currentOf(home.data, field);
     return { found: true, value: value === undefined ? null : value };
@@ -480,7 +399,6 @@ function putBack(
 export function writeManifest(
     hub: string,
     config: PortfolioConfig,
-    sides: readonly SideProject[],
     id: string,
     given: Record<string, unknown>,
     reading: ValueReading = 'form',
@@ -488,7 +406,7 @@ export function writeManifest(
     replaced?: unknown,
     hubKey?: string
 ): WriteOutcome {
-    const manifest = homeOf(hub, config, sides, id);
+    const manifest = homeOf(hub, config, id);
     if (manifest === null) return { found: false, changed: [], refused: [] };
     if (manifest.refusal !== null) {
         return {
@@ -532,6 +450,13 @@ export function writeManifest(
                 reason: groups.has(field)
                     ? words(config.text, 'server.manifest_write.group')
                     : words(config.text, 'server.manifest_write.not_in_schema')
+            });
+            continue;
+        }
+        if (READ_ONLY.includes(field.split('.')[0])) {
+            refused.push({
+                field,
+                reason: words(config.text, 'server.manifest_write.id_read_only')
             });
             continue;
         }
@@ -603,13 +528,8 @@ export function writeManifest(
     };
 }
 
-/** Where a new idea is scaffolded, and what an idea id may be. */
-const IDEA_DIR = 'projects/ideas';
+/** What a new project's id may be. */
 const IDEA_ID = /^[a-z0-9][a-z0-9-]*$/;
-
-/** The two lines the scaffold states for itself; the user rewrites them when the idea is scoped. */
-const IDEA_STATUS = 'New idea - scope + novelty check open.';
-const IDEA_NEXT = 'Scope the idea; cited-novelty lit check; decide go/no-go.';
 
 /** One text field of a form, trimmed, or the empty string when it is not text. */
 const trimmedShape = z
@@ -617,69 +537,172 @@ const trimmedShape = z
     .transform((raw) => raw.trim())
     .catch('');
 
-/** The five text fields of the new-idea form. */
+/** The text fields of the new-project form. */
 const ideaFormShape = z.object({
     id: trimmedShape,
     title: trimmedShape,
     eli5: trimmedShape,
     short: trimmedShape,
-    domain: trimmedShape
+    domain: trimmedShape,
+    tier: trimmedShape
 });
 
+/** One refused field of a new project, with the sentence of the text catalog that says why. */
+function ideaRefusal(field: string, reason: string): WriteOutcome {
+    return { found: true, changed: [], refused: [{ field, reason }] };
+}
+
+/** The hub-relative folder as a path with forward slashes and no `.` or trailing slash. */
+function relativeFolder(text: string): string {
+    return normalize(text).split(sep).join('/').replace(/\/+$/, '');
+}
+
 /**
- * Scaffold one idea project: `projects/ideas/<id>/project.yml` and a README beside it. A bad id and
- * a folder that is already there are both refused, so nothing existing is ever written over.
+ * The first folder, from `folder` up to the hub, that holds a project.yml, hub-relative, or null.
+ * The walk starts where the folder lands once every link on the way is followed, so a link into a
+ * project's subfolder is walked up from its real place.
+ */
+function projectAbove(hub: string, folder: string): string | null {
+    const home = intendedPath(hub);
+    const start = intendedPath(join(hub, folder));
+    if (home === null || start === null) return null;
+    for (let dir = start; below(dir, home); dir = dirname(dir)) {
+        if (existsSync(join(dir, MANIFEST))) return relative(home, dir).split(sep).join('/');
+    }
+    return null;
+}
+
+/**
+ * Where a path ends up on disk, links followed: the real path of the deepest folder that exists on
+ * the way to it, with the folders that do not exist yet added under it. Null when a link on the way
+ * leads nowhere, since a folder made through it lands where nothing says.
+ */
+function intendedPath(path: string): string | null {
+    const missing: string[] = [];
+    let at = resolve(path);
+    for (;;) {
+        const real = realPath(at, true);
+        if (real !== null) return join(real, ...missing.reverse());
+        try {
+            lstatSync(at);
+            return null;
+        } catch {
+            // Nothing is there: the folder is made, so the check goes one folder up.
+        }
+        const up = dirname(at);
+        if (up === at) return null;
+        missing.push(basename(at));
+        at = up;
+    }
+}
+
+/**
+ * Whether a folder made at `folder` lands inside the hub and inside one of the scan folders once
+ * every link on the way is followed, so a link in the typed folder cannot lead the write out of
+ * either.
+ */
+function reachesInside(folder: string, hub: string, scans: string[]): boolean {
+    const there = intendedPath(folder);
+    const home = intendedPath(hub);
+    if (there === null || home === null || !inside(there, home)) return false;
+    return scans.some((scan) => {
+        const place = intendedPath(scan);
+        return place !== null && inside(there, place);
+    });
+}
+
+/**
+ * Scaffold one new project: `<folder>/<id>/project.yml` and a README beside it. The manifest holds
+ * the project's `id`, its `tier` and `type: idea`; its status line, its `next` and its README are
+ * the words of config/text/server.yml for that tier (`idea_status_<tier>`, `idea_next_<tier>`, a
+ * tier with no `next` word gets no `next`). `fields.tier` is the tier of the board that sent the
+ * form and `fields.folder` the folder it was made in; a write that names neither is made in the
+ * tier `projects` under that tier's `new_project_dir`. A bad id, an id a project already holds, a
+ * tier with no words, a hub that names no folder for the tier, an empty folder, a folder outside
+ * every scan folder, a folder inside a project and a folder that is already there are all refused,
+ * so nothing existing is ever written over.
  */
 export function createIdea(
     hub: string,
-    catalog: Record<string, string>,
+    config: PortfolioConfig,
     fields: Record<string, unknown>
 ): WriteOutcome {
+    const catalog = config.text;
     const form = ideaFormShape.parse(fields);
     const { id } = form;
     if (!IDEA_ID.test(id)) {
-        return {
-            found: true,
-            changed: [],
-            refused: [{ field: 'id', reason: words(catalog, 'server.manifest_write.idea_id') }]
-        };
+        return ideaRefusal('id', words(catalog, 'server.manifest_write.idea_id'));
     }
-    const folder = resolve(join(hub, IDEA_DIR, id));
-    if (!below(folder, join(hub, IDEA_DIR))) {
-        return {
-            found: true,
-            changed: [],
-            refused: [{ field: 'id', reason: words(catalog, 'server.manifest_write.idea_folder') }]
-        };
+    if (hubManifests(hub, config).some((one) => one.id === id)) {
+        return ideaRefusal('id', words(catalog, 'server.manifest_write.idea_id_taken', id));
     }
+    const tier: Tier | undefined = tierOf(fields.tier === undefined ? 'projects' : form.tier);
+    const statusText =
+        tier === undefined
+            ? undefined
+            : byKey(catalog, `server.manifest_write.idea_status_${tier}`);
+    if (tier === undefined || statusText === undefined) {
+        return ideaRefusal('tier', words(catalog, 'server.manifest_write.idea_tier', form.tier));
+    }
+    const named =
+        fields.folder === undefined
+            ? config.newProjectDir[tier]
+            : trimmedShape.parse(fields.folder);
+    if (named === undefined) {
+        return ideaRefusal('folder', words(catalog, 'server.manifest_write.idea_no_folder', tier));
+    }
+    if (named === '') {
+        return ideaRefusal('folder', words(catalog, 'server.manifest_write.idea_folder_empty'));
+    }
+    const parent = relativeFolder(named);
+    if (
+        isAbsolute(parent) ||
+        parent.split('/').includes('..') ||
+        !inScan(
+            parent,
+            config.scan.map((rule) => rule.dir)
+        )
+    ) {
+        return ideaRefusal(
+            'folder',
+            words(catalog, 'server.manifest_write.idea_folder_outside', parent)
+        );
+    }
+    const scans = config.scan.map((rule) => join(hub, rule.dir));
+    if (!reachesInside(join(hub, parent), hub, scans)) {
+        return ideaRefusal(
+            'folder',
+            words(catalog, 'server.manifest_write.idea_folder_outside', parent)
+        );
+    }
+    const holder = projectAbove(hub, parent);
+    if (holder !== null) {
+        return ideaRefusal(
+            'folder',
+            words(catalog, 'server.manifest_write.idea_folder_in_project', parent, holder)
+        );
+    }
+    const folder = resolve(join(hub, parent, id));
     if (existsSync(folder)) {
-        return {
-            found: true,
-            changed: [],
-            refused: [
-                {
-                    field: 'id',
-                    reason: words(catalog, 'server.manifest_write.idea_exists', IDEA_DIR, id)
-                }
-            ]
-        };
+        return ideaRefusal('id', words(catalog, 'server.manifest_write.idea_exists', parent, id));
     }
 
+    const nextText = byKey(catalog, `server.manifest_write.idea_next_${tier}`);
     const title = form.title || id;
     const eli5 = form.eli5 || title;
-    const lines = [`id: ${id}`, 'type: idea'];
+    const lines = [`id: ${id}`, `tier: ${tier}`, 'type: idea'];
     const { short, domain } = form;
     if (short !== '') lines.push(`short: ${renderScalar(short)}`);
     if (domain !== '') lines.push(`domain: ${renderScalar(domain)}`);
+    lines.push(`title: ${renderScalar(title)}`);
+    if (tier === 'projects' || tier === 'personal') lines.push('focus: holding');
     lines.push(
-        `title: ${renderScalar(title)}`,
-        'focus: holding',
         'status:',
         '  chips: [nascent]',
-        `  line: ${renderScalar(IDEA_STATUS)}`,
-        `eli5: ${renderScalar(eli5)}`,
-        `next: ${renderScalar(IDEA_NEXT)}`
+        `  line: ${renderScalar(statusText)}`,
+        `eli5: ${renderScalar(eli5)}`
     );
+    if (nextText !== undefined) lines.push(`next: ${renderScalar(nextText)}`);
     const manifest = `${lines.join('\n')}\n`;
     let parsed: unknown;
     try {
@@ -688,21 +711,20 @@ export function createIdea(
         parsed = undefined;
     }
     if (!isMap(parsed)) {
-        return {
-            found: true,
-            changed: [],
-            refused: [{ field: '', reason: words(catalog, 'server.manifest_write.idea_unparsed') }]
-        };
+        return ideaRefusal('', words(catalog, 'server.manifest_write.idea_unparsed'));
     }
-    const readme = `# ${title}\n\n${eli5}\n\n## Next\n\n${IDEA_NEXT}\n`;
+    const readme =
+        nextText === undefined
+            ? `# ${title}\n\n${eli5}\n`
+            : `# ${title}\n\n${eli5}\n\n## Next\n\n${nextText}\n`;
 
     mkdirSync(dirname(folder), { recursive: true });
     mkdirSync(folder);
-    writeTextAtomic(join(folder, 'project.yml'), manifest);
+    writeTextAtomic(join(folder, MANIFEST), manifest);
     writeTextAtomic(join(folder, 'README.md'), readme);
     return {
         found: true,
-        changed: [`${IDEA_DIR}/${id}/project.yml`, `${IDEA_DIR}/${id}/README.md`],
+        changed: [`${parent}/${id}/${MANIFEST}`, `${parent}/${id}/README.md`],
         refused: [],
         // A scaffolded folder has no inverse writer, so the record says what was made and offers no
         // way back: deleting a project folder is the researcher's own act, not a control of a list.

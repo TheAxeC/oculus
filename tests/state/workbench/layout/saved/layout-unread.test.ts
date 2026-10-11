@@ -10,11 +10,12 @@ import { setCatalog } from '../../../../../src/lib/state/shared/words/text.ts';
 import { LAYOUT_KEY } from '../../../../../src/lib/state/workbench/layout.svelte.ts';
 import { serialiseLayout } from '../../../../../src/lib/state/workbench/layout/index.ts';
 import { createClientState } from '../../../../fixtures/client.ts';
-import { fakeStorage, heldPages, pageAround, pane } from '../layout-fixture.ts';
+import { docked, fakeStorage, heldPages, pageAround, pane } from '../layout-fixture.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 const UNREAD_KEY = 'oculus.layout.unread';
+const PREVIOUS_KEY = 'oculus.layout.previous';
 
 describe('a saved layout that cannot be read', () => {
     it('is kept under the unread key when the next change writes the default', () => {
@@ -44,5 +45,48 @@ describe('a saved layout that cannot be read', () => {
         const none = fakeStorage();
         createClientState().layout.loadLayout(none);
         expect(UNREAD_KEY in none.held).toBe(false);
+    });
+
+    const OLDER = [
+        {
+            name: 'an envelope of version 6',
+            raw: JSON.stringify({
+                version: 6,
+                pages: [{ id: 'page-0', label: 'Old', workbench: { root: pane(['a']) } }],
+                current: 'page-0',
+                floats: []
+            })
+        },
+        {
+            name: 'an envelope of version 2',
+            raw: JSON.stringify({
+                version: 2,
+                workbench: docked(pane(['a']), pane(['p']))
+            })
+        },
+        {
+            name: 'the two-tree workbench of a browser, without its envelope',
+            raw: JSON.stringify(docked(pane(['a']), pane(['p'])))
+        }
+    ];
+
+    it.each(OLDER)('keeps $name under the unread key and shows the default pages', ({ raw }) => {
+        const client = createClientState();
+        const storage = fakeStorage(raw);
+        expect(client.layout.loadLayout(storage)).toBe(false);
+        expect(storage.held[UNREAD_KEY]).toBe(raw);
+        expect(client.layout.pages().map((page) => page.label)).toEqual(['Page 1']);
+    });
+
+    it('shows the default pages for a workbench under the previous key and nothing under the layout key', () => {
+        const client = createClientState();
+        const storage = fakeStorage();
+        storage.held[PREVIOUS_KEY] = JSON.stringify({
+            version: 2,
+            workbench: docked(pane(['a']), pane(['p']))
+        });
+        expect(client.layout.loadLayout(storage)).toBe(false);
+        expect(client.layout.pages().map((page) => page.label)).toEqual(['Page 1']);
+        expect(UNREAD_KEY in storage.held).toBe(false);
     });
 });

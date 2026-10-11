@@ -16,14 +16,14 @@ import type {
     Project,
     RawCollection,
     RawManifest,
-    RawPersonal,
     RawRegistry,
     RegistryFiles,
     RegistryName,
+    RepositoryRoot,
     Resource,
     Rooted,
     ScanRule,
-    SideProject,
+    Tier,
     Venue
 } from './model-entities.ts';
 import type {
@@ -50,8 +50,6 @@ export type RawDeck = {
 
 export type RawPortfolio = {
     manifests: RawManifest[];
-    /** The side projects of the hub's side-projects tier and of the Files roots, unchecked. */
-    personal: RawPersonal[];
     registries: Record<RegistryName, RawRegistry>;
     collections: Record<string, RawCollection>;
     /** What the four feed files hold, from sources/feeds.ts. */
@@ -75,13 +73,10 @@ export type RawPortfolio = {
 
 /**
  * The controlled vocabularies validate checks values against, each a list of the allowed words.
- * `statuses` is a collection entry's `status`. `sideStatuses` are the keys of
- * `side_project_status`, the words a side project's `status:` may use; absent when the config
- * holds no such vocabulary, and a side project's status is then a free string and is not checked.
+ * `statuses` is a collection entry's `status`.
  */
 export type Vocabulary = {
     statuses: string[];
-    sideStatuses?: string[];
 };
 
 /**
@@ -107,6 +102,15 @@ export type ValidationRules = {
 /** Everything a portfolio build needs: where to read, and what to check what it read against. */
 export type PortfolioConfig = {
     scan: ScanRule[];
+    /**
+     * The repositories this hub reads as projects, one `.oculus/project.yml` each: the roots of the
+     * file browser that can be projects. The server sets them for the first hub
+     * (server/files/roots.ts, `firstHubConfig`); a hub built without them, a second hub among
+     * them, reads none.
+     */
+    repositories: RepositoryRoot[];
+    /** The folder a new project of each tier is made in, `new_project_dir:` of sources.yml. */
+    newProjectDir: Partial<Record<Tier, string>>;
     registries: RegistryFiles;
     collections: CollectionFile[];
     /** The four generated feed files, hub-relative. */
@@ -119,7 +123,7 @@ export type PortfolioConfig = {
     schema: unknown;
     vocab: Vocabulary;
     /**
-     * The merged configuration. The schemas of the side projects, the decks, the C++ file and
+     * The merged configuration. The schemas of the decks, the C++ file and
      * oculus's own files, and the lists a `vocab.<key>` reads, are made from it.
      */
     merged: Record<string, unknown>;
@@ -148,8 +152,6 @@ export type Entities = {
     organisations: Record<Id, Organisation>;
     resources: Record<Id, Resource>;
     collections: Record<Id, Collection>;
-    /** The side projects of the Personal board and the Focus ticker, by `side:` or `root:` id. */
-    personal: Record<Id, SideProject>;
     /** What the generated feeds say, which is a summary rather than a set of entities. */
     feeds: Feeds;
     /** The career strategy, and null when the hub holds no career file. */
@@ -422,24 +424,20 @@ export type {
     Organisation,
     Person,
     Pillar,
-    PersonalSource,
     Project,
     RawCollection,
     RawEntry,
     RawManifest,
-    RawPersonal,
     RawRegistry,
     RawRegistryEntry,
     RegistryFiles,
     RegistryMeta,
     RegistryName,
     RepositoryRoot,
-    RepositoryTier,
     Reproduced,
     Resource,
     Rooted,
     ScanRule,
-    SideProject,
     Subtask,
     Tier,
     Venue

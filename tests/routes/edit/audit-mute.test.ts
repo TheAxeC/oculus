@@ -68,7 +68,6 @@ function muteTarget(body = BEHAVIOR): WriteTarget {
         engine: engineDir(),
         career: careerRules(merged),
         projects: () => [],
-        sideProjects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: file,
         layoutFile: join(dir, 'layout.yml'),

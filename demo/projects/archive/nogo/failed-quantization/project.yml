@@ -1,5 +1,6 @@
 id: failed-quantization
 type: nogo
+tier: archive
 short: Quant-NoGo
 status:
   chips: [lead]

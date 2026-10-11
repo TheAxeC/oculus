@@ -223,6 +223,11 @@ export function scopeOf(project: Pick<Project, 'folder' | 'repository'>): string
     return project.repository?.root ?? project.folder;
 }
 
+/** Whether a project is on the Personal board, which the research rules do not cover. */
+export function isPersonal(project: Pick<Project, 'tier'>): boolean {
+    return project.tier === 'personal';
+}
+
 /**
  * The path of the file a finding is about, relative to `base`: the path given when it names a file
  * on disk whose real path, links followed, lies below the real path of `base`, and the empty text

@@ -92,13 +92,6 @@ export type SetFieldsResult = EditResult & {
     replaced: Record<string, ReplacedText>;
 };
 
-/**
- * Fields no write ever touches. `id` and `tier` are the folder's, not the form's, and `type` is the
- * tier's on a flat scan rule; data/sources/manifests.ts derives all three from where the folder
- * sits, so writing them here would put the file at odds with its own location.
- */
-export const READ_ONLY = ['id', 'tier', 'type'];
-
 /** The lists the tree writes in the block style; every other list is written flow. */
 export const BLOCK_LISTS = ['results', 'ideas'];
 
@@ -756,9 +749,6 @@ export function lineFrom(text: string, at: number): string {
 export function settable(field: string): { path: string[] } | { reason: string } {
     const path = pathOf(field);
     if (path === null) return { reason: 'not a field name' };
-    if (READ_ONLY.includes(path[0])) {
-        return { reason: `${path[0]} is set by the folder, never by a write` };
-    }
     return { path };
 }
 

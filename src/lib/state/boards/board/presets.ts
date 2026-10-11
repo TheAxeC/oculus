@@ -6,7 +6,6 @@ import type { Id, Project, Resource, Tier, Venue } from '../../../data/model/ind
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
 import { fields, strings, text as str } from '../../../data/helpers/guards.ts';
 import { fieldItemsShape, readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
-import type { StatusRow } from '../../shared/words/status-rows.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -28,7 +27,7 @@ export type RollupBucket = { id: string; label: string; keys: string[]; color: s
 
 /** What one board is, as the config describes it. */
 export type BoardPreset = {
-    /** The view id this preset belongs to: `projects`, `archive` or `coauthor`. */
+    /** The view id this preset belongs to: `projects`, `coauthor`, `archive` or `personal`. */
     id: string;
     /** The tiers whose projects the board shows. */
     tiers: Tier[];
@@ -56,20 +55,19 @@ export type SessionsOf = (project: Project) => string;
 /** A tag on a card: the id a filter names it by, and the words the chip carries. */
 export type BoardTag = { id: Id; label: string };
 
-/** A tag for a project a side project names: `held` is false when no project has the id. */
+/** A tag for a project a personal project names: `held` is false when no project has the id. */
 export type RelatedTag = BoardTag & { held: boolean };
 
 /**
- * What a card's cross-link lines read. A project's board item is one, and so is the item of a side
- * project, which has no tier and no pillars, funding, datasets or software, and may name related
- * projects instead.
+ * What a card's cross-link lines read: a project's board item, and the related projects a
+ * personal project names.
  */
 export type LinkedItem = Pick<
     BoardItem,
     'id' | 'pillars' | 'funding' | 'datasets' | 'collaborators' | 'software'
 > & {
     project?: Pick<BoardItem['project'], 'tier'>;
-    /** The projects a side project's `related:` names. */
+    /** The projects a project's `related:` names. */
     related?: RelatedTag[];
 };
 
@@ -113,12 +111,7 @@ export type BoardItem = {
     chips: string[];
     /** Everything the search reads, lower case, one string. */
     haystack: string;
-    /**
-     * A side project's status as the Personal board draws it: its words, its glyph and its hue.
-     * Absent for a research project, whose status is its chips.
-     */
-    sideStatus?: StatusRow;
-    /** The projects a side project's `related:` names; absent for a research project. */
+    /** The projects a project's `related:` names. */
     related?: RelatedTag[];
 };
 
@@ -192,14 +185,15 @@ export type QuickFilters = {
 };
 
 /**
- * The three boards and the tiers each one shows. A view id outside this map is the first board, and
+ * The four boards and the tier each one shows. A view id outside this map is the first board, and
  * a tier no board names has no board: a software project is reached from the Code view and its own
  * tab rather than from a card list.
  */
 const TIERS: Record<string, Tier[]> = {
-    projects: ['ideas', 'active', 'manuscripts'],
+    projects: ['projects'],
+    coauthor: ['coauthor'],
     archive: ['archive'],
-    coauthor: ['coauthor']
+    personal: ['personal']
 };
 
 /** The board view ids, in the order presetFor knows them. A project of a board tier sits on one. */
@@ -208,6 +202,7 @@ export const BOARDS = Object.keys(TIERS);
 /** Which `board:` column list a board takes its headings from. */
 const COLUMN_KEY: Record<string, string> = {
     projects: 'cols_project',
+    personal: 'cols_project',
     archive: 'cols_archive',
     coauthor: 'cols_archive'
 };
@@ -221,6 +216,7 @@ const COLUMNS: Record<string, string[]> = {
 /** Which `*_label_mode` of config/layout.yml a board starts in. */
 const LABEL_KEY: Record<string, string> = {
     projects: 'project_label_mode',
+    personal: 'project_label_mode',
     archive: 'archive_label_mode',
     coauthor: 'archive_label_mode'
 };

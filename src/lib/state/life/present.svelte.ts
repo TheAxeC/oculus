@@ -29,7 +29,7 @@
 import { SvelteMap } from 'svelte/reactivity';
 import { str } from '../../data/helpers/guards.ts';
 import { joinPath } from '../../data/helpers/files/paths.ts';
-import { placeOf } from '../../data/snapshot/as-project.ts';
+import { placeOf } from '../../data/snapshot/place.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import type { Deck } from '../../data/model/index.ts';
 import { readAnswer } from '../sources/fs-transport.ts';

@@ -31,8 +31,7 @@ function manifest(data: Record<string, unknown>, id: string): RawManifest {
         file: `/hub/projects/active/${id}/project.yml`,
         folder: `projects/active/${id}`,
         id,
-        tier: 'active',
-        ghost: false,
+        tier: 'projects',
         type: 'active',
         ...data
     };
@@ -64,7 +63,6 @@ function collection(key: string, items: Record<string, unknown>[]): RawCollectio
  */
 function portfolio(): RawPortfolio {
     return {
-        personal: [],
         manifests: [
             manifest(
                 {
@@ -244,8 +242,7 @@ describe('normalise, the field mapping', () => {
     it('fills a project from the manifest keys of the same meaning', () => {
         expect(alpha).toEqual({
             id: 'alpha',
-            tier: 'active',
-            ghost: false,
+            tier: 'projects',
             type: 'active',
             title: 'Alpha',
             short: 'a',

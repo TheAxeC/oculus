@@ -13,11 +13,10 @@
 
 import { resolve } from 'node:path';
 import type { ComposeStart, PortfolioConfig, TaskRef } from '../../../../data/model/index.ts';
-import { portfolioConfigFrom } from '../../../../data/index.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
 import { splitHubId } from '../../../../data/helpers/hub-names.ts';
 import { textCatalog } from '../../../../data/sources/config.ts';
-import type { HubTarget } from '../../../files/roots.ts';
+import { firstHubConfig, type HubTarget } from '../../../files/roots.ts';
 import { realPath } from '../../../core/paths.ts';
 import { approveTexts, isApproved } from '../../approvals/approvals.ts';
 import { TerminalRefused } from '../../pty/refusal.ts';
@@ -31,6 +30,8 @@ export type SeedSource = {
     hub: string;
     merged: Record<string, unknown>;
     engine: string;
+    /** The saved workspaces file this machine reads its added roots from, when not the default. */
+    workspaces?: string;
     hubs?: HubTarget[];
 };
 
@@ -45,7 +46,13 @@ export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
         hubs.map((one) => one.key)
     );
     const owner = hubs.find((one) => one.key === named.root);
-    const config: PortfolioConfig = owner?.config ?? portfolioConfigFrom(source.merged);
+    const config: PortfolioConfig =
+        owner?.config ??
+        firstHubConfig({
+            config: source.merged,
+            engine: source.engine,
+            local: { hub: source.hub, workspaces: source.workspaces }
+        });
     const bare: TaskRef = owner === undefined ? ref : withoutHub(ref, owner.key);
     const answer = taskSeed(bare, owner?.hub ?? source.hub, config, textCatalog(source.merged));
     if (!answer.ok) throw new TerminalRefused(answer.word);

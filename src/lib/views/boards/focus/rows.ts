@@ -20,7 +20,6 @@
 import type { TickerAction, TickerRow } from '$lib/ui/display/ticker/ticker-rows';
 import {
     daysTone,
-    type SideManifest,
     type Ticker,
     type TickerItem,
     type TickerTarget
@@ -145,11 +144,11 @@ function agentAction(): TickerAction {
 /**
  * The reference of the task a line is: an entry of the tasks collection, or a subtask of a project,
  * a funding scheme or an entry with the key and the `do` text the line shows. Any other line is
- * no task, and neither is a line of a side project, which the terminals store has no project for.
+ * no task.
  */
 function taskRef(line: TickerItem): TaskRef | null {
     const target = line.target;
-    if (target === undefined || line.side !== undefined) return null;
+    if (target === undefined) return null;
     if (target.subtask === undefined) {
         const entry = target.kind === 'entry' && target.collection === TASKS;
         return entry ? { id: target.id, collection: TASKS } : null;
@@ -252,12 +251,7 @@ function agentActions(line: TickerItem): TickerAction[] {
 
 /** Whether a line names something the board can open, which decides if its name is a button. */
 function opens(line: TickerItem): boolean {
-    return (
-        line.id !== undefined ||
-        line.entry !== undefined ||
-        line.side !== undefined ||
-        line.target?.kind === 'lead'
-    );
+    return line.id !== undefined || line.entry !== undefined || line.target?.kind === 'lead';
 }
 
 /** How far off a line's own date is, and nothing for a line that carries none. */
@@ -312,17 +306,14 @@ export function rowMaker(prefix: string, blocked: (line: TickerItem) => string =
 }
 
 /**
- * A ticker line opens what it names: a side project's manifest in a source tab, a project's tab, or
- * the collection file's own tab.
+ * A ticker line opens what it names: a project's tab or the collection file's own tab.
  */
 export function openLine(
     layout: LayoutStore,
     line: TickerItem,
-    onproject: (id: string) => void,
-    onfile: (file: SideManifest) => void
+    onproject: (id: string) => void
 ): void {
-    if (line.side !== undefined) onfile(line.side);
-    else if (line.id !== undefined) onproject(line.id);
+    if (line.id !== undefined) onproject(line.id);
     else if (line.entry !== undefined) layout.openView(line.entry);
 }
 
@@ -406,15 +397,13 @@ export function categoryLabel(category: string): string {
     if (category === 'position') return t('focus.command.dlcat_position');
     if (category === 'collab') return t('focus.command.dlcat_collab');
     if (category === 'task') return t('focus.command.dlcat_task');
-    if (category === 'side') return t('focus.command.dlcat_side');
     return t('focus.command.dlcat_conference');
 }
 
 /**
- * The heading of one run of subtasks: the side projects' heading for a run of theirs, the kind of
- * what holds the checklist otherwise, and "other" for a checklist whose holder names no kind.
+ * The heading of one run of subtasks: the kind of what holds the checklist, and "other" for a
+ * checklist whose holder names no kind.
  */
-export function runHeading(run: { kind: string; side: boolean }): string {
-    if (run.side) return t('focus.command.dlcat_side');
+export function runHeading(run: { kind: string }): string {
     return run.kind === '' ? t('focus.command.kind_other') : run.kind;
 }

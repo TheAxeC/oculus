@@ -585,9 +585,12 @@ export type CrossGroup = {
     warn: boolean;
 };
 
-/** The type a cross-link group is keyed by: the project's own `type:`, or its tier without one. */
+/**
+ * The type a cross-link group is keyed by: the project's own `type:`, its tier without one, and an
+ * empty word for a project that names neither, which is left out of every group.
+ */
 function typeOf(project: Project): string {
-    return project.type ?? project.tier;
+    return project.type ?? project.tier ?? '';
 }
 
 /**
@@ -667,10 +670,10 @@ export function groupProjects(projects: Project[], archiveDead: string[]): Cross
 }
 
 /** The project types the Funding view's synthetic card counts: the work that is still running. */
-const LIVE_TYPES = ['active', 'manuscript'];
+const LIVE_TYPES = ['active'];
 
 /**
- * The active and manuscript projects no funding scheme of the file covers, which is the Funding
+ * The active projects no funding scheme of the file covers, which is the Funding
  * tab's one synthetic card. A project naming a scheme the file does not hold is not covered by it,
  * so the schemes are the file's own keys rather than whatever a manifest happens to name.
  */

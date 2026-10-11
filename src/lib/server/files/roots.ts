@@ -6,10 +6,15 @@
 // request against them. The fold reads two things, the configured roots of the request's own config
 // and the saved workspaces file, and nothing else.
 
-import { portfolioConfigOfOther } from '../../data/index.ts';
+import { portfolioConfigFrom, portfolioConfigOfOther } from '../../data/index.ts';
 import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
-import type { PortfolioConfig, RawManifest, RepositoryRoot } from '../../data/model/index.ts';
-import { loadConfig } from '../../data/sources/config.ts';
+import type {
+    Finding,
+    PortfolioConfig,
+    RawManifest,
+    RepositoryRoot
+} from '../../data/model/index.ts';
+import { configDir, loadConfig } from '../../data/sources/config.ts';
 import { readHubManifests } from '../../data/sources/manifests.ts';
 import { realPath } from '../core/paths.ts';
 import {
@@ -17,7 +22,8 @@ import {
     ENGINE_ROOT,
     expandHome,
     hubRoots,
-    readRoots,
+    addedProjectFindings,
+    markAddedProjects,
     rootsFrom,
     type Root
 } from './files.ts';
@@ -35,18 +41,37 @@ export type RootsTarget = {
 
 /**
  * The roots the file browser serves: the fixed two, the configured ones, then the workspace's own.
+ * A root of the workspace that holds a project manifest and cannot be a project is marked
+ * `noProject` by the rules that mark a configured one, so the readers of projects treat the two
+ * kinds of root alike.
  */
 export function browserRoots(target: RootsTarget): Root[] {
+    const { fixed, added } = rootsOfTarget(target);
+    return [...fixed, ...markAddedProjects(fixed, added, target.local.hub)];
+}
+
+/**
+ * The findings on the saved workspaces file: one for each folder added to the workspace that holds
+ * a project manifest and cannot be a project, which `browserRoots` marks `noProject`.
+ */
+export function workspaceFindings(target: RootsTarget, catalog: Record<string, string>): Finding[] {
+    const { fixed, added, file } = rootsOfTarget(target);
+    return addedProjectFindings(fixed, added, target.local.hub, file, catalog);
+}
+
+/** The fixed and configured roots of a target, the roots its workspace adds, and the saved file. */
+function rootsOfTarget(target: RootsTarget): { fixed: Root[]; added: Root[]; file: string } {
     const fixed = rootsFrom(
         configuredRootsOf(target.config, target.engine, target.local.hub),
         target.local.hub,
         target.engine
     );
+    const file = target.local.workspaces ?? defaultWorkspacesPath(target.local.hub);
     const saved = readSaved(
-        target.local.workspaces ?? defaultWorkspacesPath(target.local.hub),
+        file,
         fixed.map((one) => one.key)
     );
-    return [...fixed, ...addedRoots(fixed, saved)];
+    return { fixed, added: addedRoots(fixed, saved), file };
 }
 
 /**
@@ -86,11 +111,12 @@ function identityOf(path: string): string {
  * a root is dropped whose real path is the hub's, the engine's config folder's (when it is given)
  * or an earlier root's, so a second key, a second spelling or a link to a directory read already
  * draws no second card, and a root added from a workspace never shadows a configured one. A root
- * whose directory is not on this machine is kept, for the readers to find nothing in. The `tier` of
- * an entry travels with it; whether the repository is a research project or a side project is
- * decided where its manifest is read (data/sources/manifests.ts, `readHubManifests`).
+ * whose directory is not on this machine is kept, for the readers to find nothing in. A root that
+ * `readRoots` marked `noProject` is dropped. Whether the repository is a project is decided where
+ * its manifest is read (data/sources/manifests.ts, `readHubManifests`): a root with no manifest is
+ * none.
  */
-export function repositoriesOf(
+function repositoriesOf(
     listed: readonly Root[],
     hub: string,
     engineConfig: string | null
@@ -100,26 +126,52 @@ export function repositoriesOf(
     const keys = new Set<string>();
     const roots: RepositoryRoot[] = [];
     for (const root of listed) {
-        if (root.hub === true || root.key === HUB_ROOT || root.key === ENGINE_ROOT) continue;
+        if (root.hub === true || root.noProject === true) continue;
+        if (root.key === HUB_ROOT || root.key === ENGINE_ROOT) continue;
         if (keys.has(root.key)) continue;
         const dir = expandHome(root.dir);
         const identity = identityOf(dir);
         if (seen.has(identity)) continue;
         seen.add(identity);
         keys.add(root.key);
-        roots.push({ key: root.key, dir, ...(root.tier === undefined ? {} : { tier: root.tier }) });
+        roots.push({ key: root.key, dir });
     }
     return roots;
 }
 
 /**
- * Every research manifest of the first hub the configuration reads: the scan folders' and the
- * repositories' that its `roots:` entries name with a research `tier`. The build reads the same
- * set from the roots it is handed, so a reader that holds only the merged configuration (a write,
- * a chat's context, a project's files) finds the projects the snapshot holds.
+ * The settings of the first hub with the repositories it reads as projects: the roots in `listed`
+ * (what `browserRoots` serves, the configured ones and the workspace's own) that `repositoriesOf`
+ * keeps. The build takes its settings through this, and so does `firstHubConfig`.
+ */
+export function withRepositories(
+    portfolio: PortfolioConfig,
+    listed: readonly Root[],
+    hub: string,
+    engineConfig: string | null
+): PortfolioConfig {
+    return { ...portfolio, repositories: repositoriesOf(listed, hub, engineConfig) };
+}
+
+/**
+ * The settings of the first hub as a write, a chat's context, a task's seed or a project's files
+ * read them: the same settings and the same repositories the build reads, so each of them finds the
+ * projects the snapshot holds.
+ */
+export function firstHubConfig(target: RootsTarget): PortfolioConfig {
+    return withRepositories(
+        portfolioConfigFrom(target.config),
+        browserRoots(target),
+        target.local.hub,
+        configDir(target.engine)
+    );
+}
+
+/**
+ * Every project manifest of a hub: the scan folders' and the repositories' that its settings name
+ * (`PortfolioConfig.repositories`). It is the one reader of a hub's projects after the build, so a
+ * reader that holds only the settings finds the projects the snapshot holds.
  */
 export function hubManifests(hub: string, config: PortfolioConfig): RawManifest[] {
-    const listed = readRoots(config.merged, 'sources.yml', hub).roots;
-    return readHubManifests(hub, config.scan, repositoriesOf(listed, hub, null), config.text)
-        .manifests;
+    return readHubManifests(hub, config.scan, config.repositories, config.text).manifests;
 }

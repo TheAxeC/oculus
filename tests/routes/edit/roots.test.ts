@@ -17,7 +17,7 @@ import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { dirAsWritten, writeRoots } from '../../../src/lib/server/edit/writes/config/roots.ts';
+import { dirAsWritten } from '../../../src/lib/server/edit/writes/config/roots.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TOKEN, changesOf, request, target, warmConfig } from './write-fixture.ts';
 
@@ -38,23 +38,23 @@ languages:
   bash:          [.sh, .bash]
 `;
 
-/** A list whose entries carry a `tier` and a `hub` mark, which every write of the list keeps. */
-const TIERED = SOURCES.replace(
+/** A list with an entry marked `hub: true`, which every write of the list keeps. */
+const MARKED = SOURCES.replace(
     /roots:\n(?: {2}- .*\n)+/,
     [
         'roots:',
-        '  - { key: cathedra,    dir: ~/workspace/cathedra, tier: archive }',
+        '  - { key: cathedra,    dir: ~/workspace/cathedra }',
         '  - { key: lab,         dir: ~/workspace/lab, hub: true }',
-        '  - { key: ordo,        dir: ~/workspace/ordo,     tier: projects }',
+        '  - { key: ordo,        dir: ~/workspace/ordo }',
         ''
     ].join('\n')
 );
 
-/** The entries of `TIERED` as the write reads them. */
-const TIERED_ITEMS = [
-    { key: 'cathedra', dir: '~/workspace/cathedra', tier: 'archive' },
+/** The entries of `MARKED` as the write reads them. */
+const MARKED_ITEMS = [
+    { key: 'cathedra', dir: '~/workspace/cathedra' },
     { key: 'lab', dir: '~/workspace/lab', hub: true },
-    { key: 'ordo', dir: '~/workspace/ordo', tier: 'projects' }
+    { key: 'ordo', dir: '~/workspace/ordo' }
 ];
 
 /** A target whose sources.yml is a copy under the system temporary directory. */
@@ -280,41 +280,31 @@ describe('the roots write', () => {
         expect(sourcesOf(held)).toBe(heldBefore);
     });
 
-    it("keeps each entry's tier and hub through an add, a remove and an order, and refuses a write that would drop one", async () => {
-        const lines = TIERED.split('\n').filter((line) => line.startsWith('  - {'));
+    it("keeps each entry's hub mark through an add, a remove and an order", async () => {
+        const lines = MARKED.split('\n').filter((line) => line.startsWith('  - {'));
         const keeps = (text: string, kept: string[]): void => {
             for (const line of lines.filter((one) => kept.some((key) => one.includes(key)))) {
                 expect(text).toContain(`${line}\n`);
             }
         };
 
-        const into = rootsTarget(TIERED);
+        const into = rootsTarget(MARKED);
         const dir = folderNamed('thesis');
         expect((await add(into, dir)).status).toBe(200);
         keeps(sourcesOf(into), ['cathedra', 'lab', 'ordo']);
-        expect(rootsOf(into)).toEqual([...TIERED_ITEMS, { key: 'thesis', dir: dirAsWritten(dir) }]);
+        expect(rootsOf(into)).toEqual([...MARKED_ITEMS, { key: 'thesis', dir: dirAsWritten(dir) }]);
         const [added] = changesOf(into);
-        expect(added).toMatchObject({ before: TIERED_ITEMS });
+        expect(added).toMatchObject({ before: MARKED_ITEMS });
         expect((await send(into, { kind: 'undo', at: added.at })).status).toBe(200);
-        expect(sourcesOf(into)).toBe(TIERED);
+        expect(sourcesOf(into)).toBe(MARKED);
 
         expect((await remove(into, 'lab')).status).toBe(200);
         keeps(sourcesOf(into), ['cathedra', 'ordo']);
-        expect(rootsOf(into)).toEqual([TIERED_ITEMS[0], TIERED_ITEMS[2]]);
+        expect(rootsOf(into)).toEqual([MARKED_ITEMS[0], MARKED_ITEMS[2]]);
 
-        const ordered = rootsTarget(TIERED);
+        const ordered = rootsTarget(MARKED);
         expect((await order(ordered, ['ordo', 'lab', 'cathedra'])).status).toBe(200);
         keeps(sourcesOf(ordered), ['cathedra', 'lab', 'ordo']);
-        expect(rootsOf(ordered)).toEqual([TIERED_ITEMS[2], TIERED_ITEMS[1], TIERED_ITEMS[0]]);
-
-        const dropped = rootsTarget(TIERED);
-        const wanted = TIERED_ITEMS.map(({ key, dir, hub }) => ({
-            key,
-            dir,
-            ...(hub ? { hub } : {})
-        }));
-        expect(writeRoots(dropped.sources?.file ?? '', wanted)).toEqual({ error: 'invalid' });
-        expect(sourcesOf(dropped)).toBe(TIERED);
-        expect(changesOf(dropped)).toEqual([]);
+        expect(rootsOf(ordered)).toEqual([MARKED_ITEMS[2], MARKED_ITEMS[1], MARKED_ITEMS[0]]);
     });
 });

@@ -22,19 +22,10 @@ import type { SaveAnswer } from '../../../shared/stores/desktop.ts';
 import { followKey } from '../../../shared/stores/storage-events.ts';
 import { tabsOf } from '../instance.ts';
 import { hostsOf, type Pages } from '../model.ts';
-import { serialiseFloatless, serialiseLayout } from './saved.ts';
+import { serialiseLayout } from './saved.ts';
 
 /** The key the arrangement is saved under. The envelope inside it carries the version. */
 export const LAYOUT_KEY = 'oculus.layout.v1';
-
-/**
- * The key the workbench a named arrangement replaced was kept under, by the rail control pages
- * retired. Nothing writes it any more: loadLayout reads it once, so the arrangement that control
- * replaced becomes a page of its own, and then writes it empty. It holds a whole serialised
- * workbench, or the empty string: the store never removes a key, so a Storage it is handed needs
- * only get and set.
- */
-export const PREVIOUS_KEY = 'oculus.layout.previous';
 
 /**
  * The key a value under LAYOUT_KEY that parseLayout cannot read is copied under when the default
@@ -167,12 +158,11 @@ export type LayoutStorage = {
     /** Write one string under a key, or do nothing when there is nowhere to write yet. */
     remember: (key: string, value: string) => void;
     /**
-     * Write a set of pages under LAYOUT_KEY, which is what every change to them ends in. A layout
-     * read from an envelope written before floats is written in that envelope's form while it holds
-     * no float, so the shipped floats are still to be taken in at the next load. `call` names the
-     * layout store operation asking, and the write is then added to the record under WRITES_KEY.
+     * Write a set of pages under LAYOUT_KEY, which is what every change to them ends in. `call`
+     * names the layout store operation asking, and the write is then added to the record under
+     * WRITES_KEY.
      */
-    write: (next: Pages, floatless?: boolean, call?: string) => void;
+    write: (next: Pages, call?: string) => void;
     /**
      * The envelope the host held when it refused the last save, once: the save wrote nothing and
      * the caller takes this envelope and asks again. Null when no save was refused since the last
@@ -227,11 +217,10 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
         }
     }
 
-    function write(next: Pages, floatless = false, call = ''): void {
+    function write(next: Pages, call = ''): void {
         if (backing === null) return;
         try {
-            const held = floatless && next.floats.length === 0;
-            const text = held ? serialiseFloatless(next) : serialiseLayout(next);
+            const text = serialiseLayout(next);
             if (turn !== undefined) {
                 const answer = turn(text, known);
                 if (!answer.admitted) {

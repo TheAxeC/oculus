@@ -72,30 +72,24 @@
     role="listitem"
     data-card={project.id}
     data-cursor={current || undefined}
-    draggable={!project.ghost}
+    draggable="true"
     title={project.title}
     {ondragstart}
     {ondragend}
 >
     <div class="card-h">
-        {#if project.ghost}
-            <span class="chipicon" title={t('project.card.ghost_badge_tip')}>
-                <Glyph name={t('board.warn_glyph')} />
-            </span>
-        {:else}
-            <span class="flames" class:unset>
-                <ToolButton
-                    plain
-                    label={project.priority ?? t('focus.set_priority')}
-                    title={project.priority ?? t('focus.set_priority')}
-                    onclick={oncycle}
-                >
-                    {#each { length: flames } as _, at (at)}
-                        <Glyph name={t('focus.fire_glyph')} />
-                    {/each}
-                </ToolButton>
-            </span>
-        {/if}
+        <span class="flames" class:unset>
+            <ToolButton
+                plain
+                label={project.priority ?? t('focus.set_priority')}
+                title={project.priority ?? t('focus.set_priority')}
+                onclick={oncycle}
+            >
+                {#each { length: flames } as _, at (at)}
+                    <Glyph name={t('focus.fire_glyph')} />
+                {/each}
+            </ToolButton>
+        </span>
         {#each project.chips.slice(0, CARD_CHIPS) as chip (chip)}
             <span class="mark">
                 <Tag
@@ -113,11 +107,9 @@
                 <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />
             </span>
         {/if}
-        {#if !project.ghost}
-            <span class="move">
-                <Menu label={t('focus.move_to')} {items} small placement="down" {onpick} />
-            </span>
-        {/if}
+        <span class="move">
+            <Menu label={t('focus.move_to')} {items} small placement="down" {onpick} />
+        </span>
     </div>
     {#if wait !== ''}
         <p class="wait">{wait}</p>
@@ -179,12 +171,6 @@
     .flames.unset:hover,
     .flames.unset:has(:global(:focus-visible)) {
         opacity: 0.6;
-    }
-
-    /* The ghost badge: a line icon whose words are its tooltip. */
-    .chipicon {
-        flex: 0 0 auto;
-        line-height: 1;
     }
 
     /* A status mark is its glyph and its word in the status's hue. It keeps its whole width, so a

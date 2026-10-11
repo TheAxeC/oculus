@@ -1,5 +1,6 @@
 id: early-benchmark
 type: published
+tier: archive
 short: Early-Bench
 status:
   chips: [lead, conference]

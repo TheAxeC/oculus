@@ -36,14 +36,7 @@ export type {
     TypeCount,
     VenueCount
 } from './presets.ts';
-export {
-    absentDocs,
-    boardItemFor,
-    boardItems,
-    hasReadme,
-    markdownDocNames,
-    newestDocDate
-} from './items.ts';
+export { absentDocs, boardItemFor, boardItems, markdownDocNames, newestDocDate } from './items.ts';
 export { facetValues, facets } from './facets.ts';
 export {
     facetHeading,

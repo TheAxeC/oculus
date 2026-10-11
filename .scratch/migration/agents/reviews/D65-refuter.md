@@ -245,3 +245,110 @@ The orchestrator's points:
 - The docs.ts, latex endpoint, apps.md and DATA-MAP diffs beyond the lines cited above were sampled, not read in full.
 
 Reviewer usage: agent a6b133f897aac2f1a, claude-opus-5-5, 144,370 tokens, 125 tool uses, 19m 08s (from its completion notice).
+
+# Repair round 1, refuted
+
+The round closes thirteen of its fifteen items as ruled. Item 9 holds in code, but the report misquotes the grep output (Proof 1). Item 15 is partial: the file table still names nine files outside the path list, while the tree now has thirteen, and `pty/routes.ts` is named nowhere (Proof 2). One escape is left under item 11 of the brief: the "inside an existing project" refusal of `createIdea` still walks the typed text, so a symbolic link into a project's subfolder gets past it (Behaviour 1). The builder ran one git command in this round, and the build's four intent-to-add index entries are still there.
+
+The reviewer wrote no file. The only git commands it ran were `git diff 5aa5c52e4` and `git status --short`.
+
+## Verification (rerun by the reviewer, from tools/oculus in the worktree)
+
+```
+npm run test:quick -- --base 5aa5c52e4   (two complete runs)
+ok ASCII gate | ok prettier | ok svelte-kit sync | ok eslint
+ok svelte-check: 458 FILES 0 ERRORS 0 WARNINGS
+ok vitest
+test:quick: 31.9 s and 34.3 s (limit 45.0 s); every command passed; EXIT 0
+tests/tiers/quick.mjs:291 only prints "over the time limit"; the exit code at :294 depends on red commands alone.
+npm run test:checks: Test Files 17 passed (17), Tests 271 passed (271), EXIT 0
+each file alone:
+  registry-glyphs.test.ts 72 passed
+  undo.test.ts 34 passed
+  writes.test.ts 30 passed
+  items.test.ts 2 passed
+  audit.test.ts 2 passed
+  layout-unread.test.ts 7 passed
+slow rows: app-gate, roots, deposit: 25 passed
+write, changes, manifests, hub-roots, project-files: 48 passed
+unused exports: 243 against the base's 246; unused exported types 116 against 117; no line added
+sh utils/folder-check.sh: no output, exit 0
+ASCII gates: print nothing
+git status --short: the round's three new tests are untracked; four intent-to-add entries remain:
+  place.ts, new-project.ts, tier-type.test.ts, scan.test.ts
+outside-paths.mjs: 13 source files:
+  rules.ts, yaml-edit.ts, pty/routes.ts, pty/start/chat.ts, task-start.ts, Workbench.svelte,
+  present.svelte.ts, write-files.ts, page/hubs.ts, shapes.ts, and the docs, project-files and terminal +server.ts
+spaced-hyphen grep over the 24 changed .yml/.md files: 15 base lines hold one standing for a dash:
+  layout.yml:168, :176
+  deck-schema.yml:3
+  ui.yml:130
+  focus.yml:14, 15, 18, 64, 65, 66, 74, 95, 102
+  map.yml:13
+  pillars.yml:12, :14
+the same grep over the step's added lines (git diff): nothing
+```
+
+## Verdicts
+
+Round items:
+- 1 to 8: hold.
+- 9: holds for the code; the report's quote of the grep is wrong (Proof 1).
+- 10 to 14: hold.
+- 15: partial (Proof 2).
+
+The orchestrator's points:
+- (a) No path can now write an `id` it could not write before, and the refusal holds on every path that writes a manifest:
+  - `restore.ts` runs over `wanted`, which a refused `id` never enters.
+  - `setFields` runs over `wanted` and over config keys; no config key begins with `id`.
+  - Undo and deposit go through `writeManifest`.
+  - Entry writes never called `settable`.
+- (b) The build and `firstHubConfig` read the same set, the second hub reads none, and every caller of `hubManifests` gets `repositories`. The one `portfolioConfigFrom` call left (the deck route) reads no projects.
+- (c) `reachesInside` holds for a dangling link, a link to another scan folder and a hub path through a link. `projectAbove` is still textual (Behaviour 1).
+- (d) The version-2 row and the previous-key row match the base's saved shapes.
+- (e) The dd605d6cb92e entry stays out: `test:checks` passes without it, and the stale-entry test would fail a restored entry.
+- (f) Standards 1.
+
+Whole step:
+- Item 11 is partial (Behaviour 1). Every other item holds.
+- Every case is met. Case 13 is met under round item 12's ruling (Spec 1).
+
+## Findings
+
+**Behaviour 1.** `src/lib/server/edit/writes/manifest.ts:563-565`, `projectAbove`, walks `resolve(join(hub, folder))` upward as text. A Folder `side-projects/link`, where `side-projects/link` links to `<hub>/projects/archive/old/proj/docs` and `proj` holds `project.yml`, passes `inScan`, `reachesInside` and `projectAbove`. `createIdea` then writes `proj/docs/<id>/project.yml`, which the scan never reads. Item 11 partial.
+
+**Behaviour 2.** `src/lib/server/files/files.ts:272-290`, `markAddedProjects`, marks a refused workspace root `noProject` with no finding. A configured root refused for the same reason gets a finding. A folder added to the workspace inside a hub root and holding a manifest showed before the round; now it shows nothing and nothing says why. The report does not state it. No verdict.
+
+**Spec 1.** `layout-unread.test.ts:90` asserts that a PREVIOUS_KEY workbench is not kept under `oculus.layout.unread`. Case 13 says the raw text is kept there; item 14 removes PREVIOUS_KEY and its handling. No verdict; the conflict is under Declined.
+
+**Proof 1.** The round report says the spaced-hyphen grep printed only list markers and HELP.md:127; the same grep prints the 15 base lines above. The round also changed manifest-schema.yml:3 and left the identical line deck-schema.yml:3. Round item 15 partial.
+
+**Proof 2.** Report line 754 names nine files outside the path list; outside-paths.mjs prints thirteen. `src/lib/server/machine/pty/routes.ts` is named nowhere. Round item 15 partial.
+
+**Standards 1.** The builder ran `git diff --stat 2>/dev/null | head -0` against the rule that a builder runs no git command (spec.md "Where you work", and the round brief).
+
+**Standards 2.** The four intent-to-add index entries from the build remain.
+
+## Declined to judge
+
+- The before-runs the round quotes. Each needs a file written, and by reading each is consistent with the pre-round tree.
+- Case 13's unread clause against item 14 and the no-migration-code ruling.
+- Whether a refused added root should raise a finding.
+- The regenerated diagrams.
+- The builder's 48.9 s timing; the reviewer's runs gave 31.9 s and 34.3 s.
+
+Reviewer usage: agent ac6277e62a30bdbbd, claude-opus-5-5, 281,123 tokens, 73 tool uses, 16m 19s (from its completion notice).
+
+# Closed
+
+The first run's findings went to the builder as the fifteen items of repair round 1 (`agents/briefs/D65-round1.md`); the run over round 1 found thirteen of them closed and item 9 closed in code. The findings of the run over round 1, the last round, are closed here.
+
+- Behaviour 1 (`projectAbove` walks the typed text): fixed at landing. `projectAbove` in `src/lib/server/edit/writes/manifest.ts` now starts its walk from `intendedPath(join(hub, folder))`, the folder with every link on the way followed. The row 'refuses a folder typed through a link into a subfolder of a project and writes nothing' of `tests/server/edit/writes.test.ts` fails on the step's tree (it writes `side-projects/link/new-idea/project.yml` and `README.md`) and passes on main.
+- Behaviour 2 (a refused workspace root has no finding): fixed at landing. `addedRefusals` and `addedProjectFindings` (`src/lib/server/files/files.ts`) give a refused added root the finding a configured root gets for the same reason, on the saved `workspaces.json` under the root's key; `workspaceFindings` (`src/lib/server/files/roots.ts`) is read into the config findings in `server/root/watch/portfolio.ts`. Test: `tests/data/hubs/workspace-findings.test.ts`. HELP.md and DESIGN.md say it.
+- Spec 1 (case 13's unread clause): ruled. The no-migration-code ruling and item 14 of the brief remove `PREVIOUS_KEY` and its handling, so a `PREVIOUS_KEY` workbench is not read and nothing is kept under the unread key; case 13's clause was an error of the brief, booked as a premise correction. The test asserts the ruled behaviour.
+- Proof 1 (the spaced-hyphen grep misquoted): fixed at landing. The 15 base lines it names (`layout.yml:168, 176`, `deck-schema.yml:3`, `ui.yml:130`, the nine of `focus.yml`, `map.yml:13`, `pillars.yml:12, 14`) are reworded; every file parses with `yaml.safe_load`.
+- Proof 2 (the files outside the path list): booked. The thirteen source files `outside-paths.mjs` prints, `pty/routes.ts` among them, are named in the booking, each following from a rename or deletion the brief asks for.
+- Standards 1 (a git command in the round): booked with the build's nine.
+- Standards 2 (four intent-to-add entries): closed by the landing's wip commit, which staged the four files.
+- The builder's 48.9 s for `test:quick`: no finding. The limit prints a message and decides no exit (`tests/tiers/quick.mjs:291`, `:294`); the reviewer measured 31.9 s and 34.3 s.
+- The first run's Behaviour 4 (the stats strip and quick chips on Archive and Coauthor): stated in the booking and the landing report.

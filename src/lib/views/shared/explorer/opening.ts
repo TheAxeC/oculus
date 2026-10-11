@@ -43,7 +43,7 @@ export type BesideOpener = {
 /**
  * Open a file as a page in the Document view, or as source text when it lies in an apps folder.
  * Every opener of a page that does not know the file's kind (a project's documents, an entry's
- * link, a ghost project's README) goes through here, so a page of an app is never run in the
+ * link, a project's README) goes through here, so a page of an app is never run in the
  * Document view.
  */
 export function openPage(

@@ -8,14 +8,13 @@
 //
 // A request names one of four things, and one that names several is answered for the first of
 // `manual`, `engine`, `hub` and `project`, in that order. `project` with `name` is one of that
-// project's own documents, its id `<root key>:<id>` for a project of a hub other than the first; a
-// side project is named by its own id, and the documents of a project read from a repository (a
-// side project, or a research project of a `roots:` entry with a research `tier`) are read from the
-// repository; `hub` is a path relative to the research hub, which is what the `docs:` list of
-// config/layout.yml lists in the view catalogue, and `root` beside it names the hub it is relative
-// to; `engine` is a Markdown file of oculus's own folder, named by a path relative to that folder,
-// wherever the folder sits; `manual` is the engine's own HELP.md and takes no path. Everything else
-// is a 404 naming what was wrong.
+// project's own documents, its id `<root key>:<id>` for a project of a hub other than the first;
+// the documents of a project read from a repository (a `roots:` entry holding its own manifest) are
+// read from the repository; `hub` is a path relative to the research hub, which is what the `docs:`
+// list of config/layout.yml lists in the view catalogue, and `root` beside it names the hub it is
+// relative to; `engine` is a Markdown file of oculus's own folder, named by a path relative to that
+// folder, wherever the folder sits; `manual` is the engine's own HELP.md and takes no path.
+// Everything else is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
@@ -27,7 +26,7 @@
 //
 // The folder comes from the snapshot the request carries, so one document costs one file read. A
 // process that has published no portfolio yet has no snapshot to ask, and the folder is then the
-// project's own folder under the hub's scan directories, found by the id it is named after.
+// project's own folder under the hub's scan folders, found by the id it is named after.
 //
 // Every file answered carries an entity tag of this server process, the file's size and its
 // modification time, and a request that sends the tag it holds back in If-None-Match is answered
@@ -57,7 +56,7 @@
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { decodeHTML } from 'entities';
@@ -66,8 +65,9 @@ import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import { hasHiddenSegment } from '../../data/helpers/files/paths.ts';
 import { renderDocumentParts } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
+import { readManifests } from '../../data/sources/manifests.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
-import { hubId, isSideTier, splitHubId } from '../../data/helpers/hub-names.ts';
+import { hubId, splitHubId } from '../../data/helpers/hub-names.ts';
 import { HUB_ROOT } from '../files/files.ts';
 import type { HubTarget } from '../files/roots.ts';
 import type {
@@ -208,59 +208,19 @@ function escapes(path: string, hub: string): boolean {
     return !inside(full, realPath(hub) ?? hub);
 }
 
-/** Folders a project never sits under: a project's own deposit and its attic. */
-const NEVER_DESCEND = ['code', 'attic'];
-
-/** Whether a folder name may be joined to a scan directory: one segment, and not a walk upwards. */
-function isFolderName(id: string): boolean {
-    return id !== '' && !id.includes('/') && !id.includes(sep) && id !== '.' && id !== '..';
-}
-
 /**
- * The folder named `id` under one scan directory, at any depth, nearest first. A directory without
- * a project.yml in it is not a project, so the walk goes on past it.
- */
-function under(hub: string, dir: string, id: string): string | null {
-    const queue = [dir];
-    for (let at = queue.shift(); at !== undefined; at = queue.shift()) {
-        const here = join(at, id);
-        if (existsSync(join(hub, here, 'project.yml'))) return here;
-        let held;
-        try {
-            held = readdirSync(join(hub, at), { withFileTypes: true });
-        } catch {
-            continue;
-        }
-        for (const one of held) {
-            if (!one.isDirectory()) continue;
-            if (one.name.startsWith('.') || NEVER_DESCEND.includes(one.name)) continue;
-            queue.push(join(at, one.name));
-        }
-    }
-    return null;
-}
-
-/**
- * The project's folder relative to the hub: the one the snapshot holds, or the folder the id names
- * under the scan rules when the server has published no portfolio yet. A flat rule holds its
- * projects directly; a nested one is walked, since its categories are folders of their own.
+ * The project's folder relative to the hub: the one the snapshot holds, or the folder of the
+ * project the id names among the scan folders' projects when the server has published no portfolio
+ * yet. The scan reader (data/sources/manifests.ts) is the one that decides what a project is, so a
+ * folder it does not reach holds no document.
  */
 function folderOf(into: DocTarget, id: string): string | null {
     const held = into.project?.(id) ?? null;
     if (held !== null && held.folder !== '') return held.folder;
-    if (!isFolderName(id)) return null;
-    for (const rule of into.config.scan) {
-        // A side project is no research project, so no project document is read from its folder.
-        if (isSideTier(rule)) continue;
-        const found =
-            rule.nested === true
-                ? under(into.hub, rule.dir, id)
-                : existsSync(join(into.hub, rule.dir, id, 'project.yml'))
-                  ? join(rule.dir, id)
-                  : null;
-        if (found !== null) return found;
-    }
-    return null;
+    const found = readManifests(into.hub, into.config.scan, into.config.text).manifests.find(
+        (one) => one.id === id
+    );
+    return found === undefined ? null : found.folder;
 }
 
 /**

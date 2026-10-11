@@ -25,7 +25,7 @@ import type {
     ScanRule,
     SchemaField
 } from '../../model/index.ts';
-import { isSideTier, MANIFEST, ROOT_FOLDER } from '../../helpers/hub-names.ts';
+import { MANIFEST, ROOT_FOLDER } from '../../helpers/hub-names.ts';
 import { checkDocument, isWords, type Checker, type SchemaDoc } from './check.ts';
 import { fileSchema, writtenFields, type FileKind } from './hub.ts';
 import { schemaText, type JsonSchema } from './json.ts';
@@ -35,21 +35,6 @@ import { fieldsOf } from './field.ts';
 import { problemText, type Context, type SchemaProblem } from './record.ts';
 import type { SchemaRule, SchemaSet } from './set.ts';
 import { projectFileSchemas } from './static.ts';
-
-/**
- * The reach of the manifest schema into the repositories read as research projects: the manifest of
- * each, in the root of its key. The rule is tried before the side project's, whose reach is every
- * root, so a research repository's manifest is edited against this schema and a side one's against
- * the side project's.
- */
-function repositoryReach(raw: RawPortfolio): Pick<SchemaRule, 'roots'> {
-    const roots: Record<string, string[]> = {};
-    for (const one of raw.manifests) {
-        if (one.repository !== undefined)
-            roots[one.repository.root] = [`${ROOT_FOLDER}/${MANIFEST}`];
-    }
-    return Object.keys(roots).length === 0 ? {} : { roots };
-}
 
 /** A hub data file the build read: its text and the fields of its `schema:` block, if it reads. */
 type HubFileRead = {
@@ -153,12 +138,12 @@ export function runSchemas(
         rules.push({ name, ...rule });
     };
 
-    const scans = config.scan.filter((rule) => !isSideTier(rule)).map(dirOf);
+    const scans = config.scan.map(dirOf);
     const manifest = context('');
     if (config.schema !== undefined) {
         add('manifest', manifestSchema(config.schema, manifest), {
             hub: scans.map((dir) => `${dir}/**/${MANIFEST}`),
-            ...repositoryReach(raw)
+            every: [`${ROOT_FOLDER}/${MANIFEST}`]
         });
         for (const one of raw.manifests) docs.push({ name: 'manifest', file: one.file, text: '' });
     }

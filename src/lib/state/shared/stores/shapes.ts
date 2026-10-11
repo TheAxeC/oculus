@@ -287,6 +287,8 @@ export type WritesStore = {
         short?: string;
         domain?: string;
         eli5?: string;
+        tier?: string;
+        folder?: string;
     }) => Promise<WriteAnswer>;
     /** Take one recorded change back, by the moment the change log stamped it. */
     undoWrite: (at: string) => Promise<WriteAnswer>;

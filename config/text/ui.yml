@@ -44,7 +44,6 @@ text:
         page_leaf_close: Stop showing this page here
         page_leaf_close_glyph: dismiss
         page_new: New page
-        page_sessions: Sessions
         page_shortcut: '{0}, key {1}'
         pane_close: Close pane
         pane_close_confirm: Close this pane and the {0} tabs in it?
@@ -128,7 +127,7 @@ text:
         unknown_view: 'Unknown view: {0}'
         untitled_word: Untitled-
         wallpaper: Wallpaper
-        wallpaper_title: Wallpaper behind the panels - and the slight transparency that goes with it
+        wallpaper_title: Wallpaper behind the panels, and the slight transparency that goes with it
         window_copy: Copy into New Window
         window_move: Move into New Window
         window_restore: Restore into Main Window

@@ -1,6 +1,5 @@
 // Layer 1, data. What a project's folder holds, as the snapshot says it: the fixed documents by
-// presence. A research project and a side project say it the same way, so the one function is here
-// for normalise.ts and for the side project's reader.
+// presence, read for normalise.ts.
 
 import type { DocFlag, DocPresence } from '../../model/index.ts';
 import { compact } from '../compact.ts';

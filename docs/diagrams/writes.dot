@@ -2,6 +2,10 @@ digraph writes {
     graph [bgcolor="transparent", rankdir=LR, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.8];
     node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
     edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
+    subgraph "cluster_lib/data" {
+        label="lib/data"; style=solid;
+        "lib/data/index.ts" [label="index.ts"];
+    }
     subgraph "cluster_lib/data/snapshot" {
         label="lib/data/snapshot"; style=solid;
         "lib/data/snapshot/normalise.ts" [label="normalise.ts"];
@@ -9,7 +13,6 @@ digraph writes {
     subgraph "cluster_lib/data/snapshot/schema" {
         label="lib/data/snapshot/schema"; style=solid;
         "lib/data/snapshot/schema/field.ts" [label="field.ts"];
-        "lib/data/snapshot/schema/manifest.ts" [label="manifest.ts"];
         "lib/data/snapshot/schema/static.ts" [label="static.ts"];
     }
     subgraph "cluster_lib/data/sources/config" {
@@ -22,10 +25,6 @@ digraph writes {
         "lib/data/sources/config/catalog/latex-editing.ts" [label="latex-editing.ts"];
         "lib/data/sources/config/catalog/latex-tables.ts" [label="latex-tables.ts"];
         "lib/data/sources/config/catalog/schema-findings.ts" [label="schema-findings.ts"];
-    }
-    subgraph "cluster_lib/server/content/deck" {
-        label="lib/server/content/deck"; style=solid;
-        "lib/server/content/deck/read.ts" [label="read.ts"];
     }
     subgraph "cluster_lib/server/core" {
         label="lib/server/core"; style=solid;
@@ -72,7 +71,6 @@ digraph writes {
     }
     subgraph "cluster_lib/server/files" {
         label="lib/server/files"; style=solid;
-        "lib/server/files/files.ts" [label="files.ts"];
         "lib/server/files/fs.ts" [label="fs.ts"];
         "lib/server/files/roots.ts" [label="roots.ts"];
     }
@@ -93,11 +91,13 @@ digraph writes {
     }
     subgraph "cluster_lost" {
         label="not placed"; style=dashed;
+        "? src/lib/data/index.ts:162" [label="src/lib/data/index.ts:162 TIERS.find("];
+        "? src/lib/data/index.ts:164" [label="src/lib/data/index.ts:164 TIERS.join("];
         "? src/lib/data/snapshot/schema/field.ts:59" [label="src/lib/data/snapshot/schema/field.ts:59 optionalTextShape.parse("];
         "? src/lib/data/snapshot/schema/field.ts:60" [label="src/lib/data/snapshot/schema/field.ts:60 optionalItemsShape.parse("];
         "? src/lib/data/snapshot/schema/field.ts:63" [label="src/lib/data/snapshot/schema/field.ts:63 optionalTextShape.parse("];
-        "? src/lib/data/snapshot/schema/static.ts:50" [label="src/lib/data/snapshot/schema/static.ts:50 REGISTRIES.includes("];
-        "? src/lib/data/snapshot/schema/static.ts:52" [label="src/lib/data/snapshot/schema/static.ts:52 VOCAB_FILE_KEYS.includes("];
+        "? src/lib/data/snapshot/schema/static.ts:47" [label="src/lib/data/snapshot/schema/static.ts:47 REGISTRIES.includes("];
+        "? src/lib/data/snapshot/schema/static.ts:49" [label="src/lib/data/snapshot/schema/static.ts:49 VOCAB_FILE_KEYS.includes("];
         "? src/lib/data/sources/config/catalog/latex-tables.ts:114" [label="src/lib/data/sources/config/catalog/latex-tables.ts:114 mapShape.safeParse("];
         "? src/lib/data/sources/config/catalog/latex-tables.ts:121" [label="src/lib/data/sources/config/catalog/latex-tables.ts:121 mapShape.safeParse("];
         "? src/lib/data/sources/config/catalog/latex-tables.ts:122" [label="src/lib/data/sources/config/catalog/latex-tables.ts:122 mapShape.safeParse("];
@@ -109,21 +109,20 @@ digraph writes {
         "? src/lib/data/sources/config/catalogs.ts:118" [label="src/lib/data/sources/config/catalogs.ts:118 standInShape.safeParse("];
         "? src/lib/server/edit/writes/config/audit-mute.ts:65" [label="src/lib/server/edit/writes/config/audit-mute.ts:65 SIGNATURE.test("];
         "? src/lib/server/edit/writes/entries.ts:74" [label="src/lib/server/edit/writes/entries.ts:74 ISO_DATE.test("];
-        "? src/lib/server/edit/writes/undo.ts:219" [label="src/lib/server/edit/writes/undo.ts:219 mapShape.safeParse("];
-        "? src/lib/server/edit/writes/undo.ts:414" [label="src/lib/server/edit/writes/undo.ts:414 rootItemsShape.parse("];
-        "? src/lib/server/files/files.ts:385" [label="src/lib/server/files/files.ts:385 REPOSITORY_TIERS.find("];
+        "? src/lib/server/edit/writes/undo.ts:213" [label="src/lib/server/edit/writes/undo.ts:213 mapShape.safeParse("];
+        "? src/lib/server/edit/writes/undo.ts:407" [label="src/lib/server/edit/writes/undo.ts:407 rootItemsShape.parse("];
         "? src/lib/server/files/fs.ts:236" [label="src/lib/server/files/fs.ts:236 rootShape.safeParse("];
     }
     "file on disk" [shape=cylinder];
+    "lib/data/index.ts" -> "? src/lib/data/index.ts:162" [style=dashed];
+    "lib/data/index.ts" -> "? src/lib/data/index.ts:164" [style=dashed];
     "lib/data/snapshot/normalise.ts" -> "lib/data/snapshot/schema/field.ts" [tooltip="fieldsOf"];
     "lib/data/snapshot/schema/field.ts" -> "? src/lib/data/snapshot/schema/field.ts:59" [style=dashed];
     "lib/data/snapshot/schema/field.ts" -> "? src/lib/data/snapshot/schema/field.ts:60" [style=dashed];
     "lib/data/snapshot/schema/field.ts" -> "? src/lib/data/snapshot/schema/field.ts:63" [style=dashed];
-    "lib/data/snapshot/schema/manifest.ts" -> "lib/data/snapshot/schema/field.ts" [tooltip="fieldsOf"];
-    "lib/data/snapshot/schema/static.ts" -> "? src/lib/data/snapshot/schema/static.ts:50" [style=dashed];
-    "lib/data/snapshot/schema/static.ts" -> "? src/lib/data/snapshot/schema/static.ts:52" [style=dashed];
+    "lib/data/snapshot/schema/static.ts" -> "? src/lib/data/snapshot/schema/static.ts:47" [style=dashed];
+    "lib/data/snapshot/schema/static.ts" -> "? src/lib/data/snapshot/schema/static.ts:49" [style=dashed];
     "lib/data/snapshot/schema/static.ts" -> "lib/data/snapshot/schema/field.ts" [tooltip="fieldsOf"];
-    "lib/data/snapshot/schema/static.ts" -> "lib/data/snapshot/schema/manifest.ts" [tooltip="manifestSchema, sideSchema"];
     "lib/data/sources/config/catalog/latex-editing.ts" -> "lib/data/sources/config/catalog/latex-tables.ts" [tooltip="readLatexEditing, readLatexUnimath"];
     "lib/data/sources/config/catalog/latex-tables.ts" -> "? src/lib/data/sources/config/catalog/latex-tables.ts:114" [style=dashed];
     "lib/data/sources/config/catalog/latex-tables.ts" -> "? src/lib/data/sources/config/catalog/latex-tables.ts:121" [style=dashed];
@@ -136,7 +135,6 @@ digraph writes {
     "lib/data/sources/config/catalog/schema-findings.ts" -> "lib/data/snapshot/schema/static.ts" [tooltip="schemaFileProblems"];
     "lib/data/sources/config/catalogs.ts" -> "? src/lib/data/sources/config/catalogs.ts:118" [style=dashed];
     "lib/data/sources/config/themes.ts" -> "lib/data/sources/config/catalogs.ts" [tooltip="glyphCatalog"];
-    "lib/server/content/deck/read.ts" -> "lib/server/files/files.ts" [tooltip="resolveRootPath"];
     "lib/server/core/changes.ts to file on disk (calls)" [label="appendFileSync, mkdirSync, rmSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/core/changes.ts" -> "lib/server/core/changes.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/core/changes.ts to file on disk (calls)" -> "file on disk" [];
@@ -151,7 +149,7 @@ digraph writes {
     "lib/server/edit/feeds.ts" -> "lib/server/core/changes.ts" [tooltip="plain"];
     "lib/server/edit/feeds.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];
     "lib/server/edit/feeds.ts" -> "lib/server/edit/writes/config/config-checks.ts" [tooltip="replacedText"];
-    "lib/server/edit/feeds.ts" -> "lib/server/edit/writes/entries.ts" [tooltip="saved"];
+    "lib/server/edit/feeds.ts" -> "lib/server/edit/writes/entries.ts" [tailport=s, tooltip="saved"];
     "lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" [label="tokenedBody", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" [arrowhead=none, style=dashed];
     "lib/server/edit/writes.ts to lib/server/core/auth.ts (refuses)" -> "lib/server/core/auth.ts" [style=dashed];
@@ -164,23 +162,23 @@ writeFeedField"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses)" [arrowhead=none, style=dashed];
     "lib/server/edit/writes.ts to lib/server/edit/feeds.ts (refuses)" -> "lib/server/edit/feeds.ts" [style=dashed];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/apps/gate.ts" [tooltip="gateWrite, storeWrite"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/apps/store.ts" [tooltip="queuedStore, writeAppStore"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/apps/store.ts" [tooltip="APP_STORE", style=dotted];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/apps/store.ts" [tailport=se, tooltip="queuedStore, writeAppStore"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/apps/store.ts" [tailport=se, tooltip="APP_STORE", style=dotted];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/config/config-write.ts" [tooltip="configWrite"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/config/deck/deck-acts.ts" [tailport=se, tooltip="writeDeckEdit"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/config/deck/deck-undo.ts" [tailport=n, tooltip="undoDeckEdit"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/config/roots.ts" [tailport=se, tooltip="rootItemsOf, rootsHeldIn"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/entries.ts" [headport=sw, tooltip="createEntry, removeEntry, reorderCollection
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/config/deck/deck-acts.ts" [tooltip="writeDeckEdit"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/config/deck/deck-undo.ts" [tooltip="undoDeckEdit"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/config/roots.ts" [tailport=ne, tooltip="rootItemsOf, rootsHeldIn"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/entries.ts" [tailport=s, tooltip="createEntry, removeEntry, reorderCollection
 writeEntry"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/file-undo.ts" [tooltip="filesTargetOf, undoFiles"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/file-undo.ts" [tailport=se, tooltip="filesTargetOf, undoFiles"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/hubs.ts" [headport=sw, tooltip="routed, routedEntry, routedOrder
 routedRoot, routedTarget"];
     "lib/server/edit/writes.ts" -> "lib/server/edit/writes/manifest.ts" [headport=sw, tooltip="createIdea, writeManifest"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/subtasks.ts" [tailport=se, tooltip="careerRules, writeHost, writeSubtask
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/subtasks.ts" [tailport=n, tooltip="careerRules, writeHost, writeSubtask
 writeSubtaskAdd"];
-    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/undo.ts" [tailport=se, tooltip="undoChange"];
-    "lib/server/edit/writes.ts" -> "lib/server/files/fs/bookmarks.ts" [headport=sw, tooltip="defaultBookmarksPath"];
-    "lib/server/edit/writes.ts" -> "lib/server/files/roots.ts" [headport=sw, tooltip="hubManifests, hubTargets"];
+    "lib/server/edit/writes.ts" -> "lib/server/edit/writes/undo.ts" [tooltip="undoChange"];
+    "lib/server/edit/writes.ts" -> "lib/server/files/fs/bookmarks.ts" [tailport=ne, tooltip="defaultBookmarksPath"];
+    "lib/server/edit/writes.ts" -> "lib/server/files/roots.ts" [headport=sw, tooltip="firstHubConfig, hubManifests, hubTargets"];
     "lib/server/edit/writes.ts" -> "lib/server/sessions/overrides.ts" [tooltip="setFlag, setOverride"];
     "lib/server/edit/writes/apps/gate.ts" -> "lib/server/edit/writes/apps/store.ts" [tooltip="APP_STORE", style=dotted];
     "lib/server/edit/writes/apps/store.ts to file on disk (calls)" [label="rmSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -188,7 +186,7 @@ writeSubtaskAdd"];
     "lib/server/edit/writes/apps/store.ts to file on disk (calls)" -> "file on disk" [];
     "lib/server/edit/writes/apps/store.ts" -> "lib/server/core/json.ts" [tooltip="chained, writeTextAtomic"];
     "lib/server/edit/writes/config/audit-mute.ts" -> "? src/lib/server/edit/writes/config/audit-mute.ts:65" [style=dashed];
-    "lib/server/edit/writes/config/audit-mute.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];
+    "lib/server/edit/writes/config/audit-mute.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/config/config-checks.ts to file on disk (calls)" [label="mkdirSync, rmSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/config/config-checks.ts" -> "lib/server/edit/writes/config/config-checks.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/edit/writes/config/config-checks.ts to file on disk (calls)" -> "file on disk" [];
@@ -196,7 +194,7 @@ writeSubtaskAdd"];
     "lib/server/edit/writes/config/config-checks.ts" -> "lib/data/sources/config/catalog/schema-findings.ts" [tooltip="schemaFindings"];
     "lib/server/edit/writes/config/config-checks.ts" -> "lib/data/sources/config/catalogs.ts" [tooltip="behaviorFindings, iconFindings"];
     "lib/server/edit/writes/config/config-checks.ts" -> "lib/data/sources/config/themes.ts" [tooltip="themeFindings"];
-    "lib/server/edit/writes/config/config-checks.ts" -> "lib/server/core/json.ts" [tailport=se, tooltip="writeTextAtomic"];
+    "lib/server/edit/writes/config/config-checks.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/config/config-key.ts" -> "lib/server/edit/writes/config/config-checks.ts" [tooltip="absentIn, insertKey, kept
 mergedAt, optionNow, optionOf
 placeOf, placeText, refusedBy
@@ -217,26 +215,21 @@ openDeck, remove"];
     "lib/server/edit/writes/config/deck/deck-files.ts to file on disk (calls)" [label="writeFileSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/config/deck/deck-files.ts" -> "lib/server/edit/writes/config/deck/deck-files.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/edit/writes/config/deck/deck-files.ts to file on disk (calls)" -> "file on disk" [];
-    "lib/server/edit/writes/config/deck/deck-files.ts" -> "lib/server/content/deck/read.ts" [tooltip="readDeck"];
-    "lib/server/edit/writes/config/deck/deck-files.ts" -> "lib/server/core/json.ts" [tailport=se, tooltip="writeTextAtomic"];
-    "lib/server/edit/writes/config/deck/deck-files.ts" -> "lib/server/files/files.ts" [headport=sw, tooltip="resolveRootPath"];
+    "lib/server/edit/writes/config/deck/deck-files.ts" -> "lib/server/core/json.ts" [tailport=ne, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/config/deck/deck-new.ts to file on disk (calls)" [label="mkdirSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/config/deck/deck-new.ts" -> "lib/server/edit/writes/config/deck/deck-new.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/edit/writes/config/deck/deck-new.ts to file on disk (calls)" -> "file on disk" [];
-    "lib/server/edit/writes/config/deck/deck-new.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
-    "lib/server/edit/writes/config/deck/deck-new.ts" -> "lib/server/edit/writes/config/deck/deck-files.ts" [tailport=se, tooltip="actKey, recordFor"];
-    "lib/server/edit/writes/config/deck/deck-new.ts" -> "lib/server/files/files.ts" [headport=sw, tooltip="resolveRootPath"];
+    "lib/server/edit/writes/config/deck/deck-new.ts" -> "lib/server/core/json.ts" [headport=nw, tooltip="writeTextAtomic"];
+    "lib/server/edit/writes/config/deck/deck-new.ts" -> "lib/server/edit/writes/config/deck/deck-files.ts" [tooltip="actKey, recordFor"];
     "lib/server/edit/writes/config/deck/deck-undo.ts to file on disk (calls)" [label="mkdirSync, rmSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/config/deck/deck-undo.ts" -> "lib/server/edit/writes/config/deck/deck-undo.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/edit/writes/config/deck/deck-undo.ts to file on disk (calls)" -> "file on disk" [];
     "lib/server/edit/writes/config/deck/deck-undo.ts" -> "lib/server/core/changes.ts" [tooltip="writtenWith"];
-    "lib/server/edit/writes/config/deck/deck-undo.ts" -> "lib/server/core/json.ts" [headport=nw, tooltip="writeTextAtomic"];
+    "lib/server/edit/writes/config/deck/deck-undo.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/config/deck/deck-undo.ts" -> "lib/server/edit/writes/config/deck/deck-files.ts" [tooltip="hashOf, textOf"];
     "lib/server/edit/writes/config/deck/deck-undo.ts" -> "lib/server/edit/writes/config/deck/deck-files.ts" [tooltip="IMAGE_BYTES", style=dotted];
-    "lib/server/edit/writes/config/deck/deck.ts" -> "lib/server/content/deck/read.ts" [tooltip="readDeck"];
     "lib/server/edit/writes/config/deck/deck.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/config/deck/deck.ts" -> "lib/server/edit/writes/config/deck/deck-files.ts" [tooltip="hubSpelling"];
-    "lib/server/edit/writes/config/deck/deck.ts" -> "lib/server/files/files.ts" [headport=sw, tooltip="resolveRootPath"];
     "lib/server/edit/writes/config/rail.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/config/roots.ts to file on disk (calls)" [label="mkdirSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/config/roots.ts" -> "lib/server/edit/writes/config/roots.ts to file on disk (calls)" [arrowhead=none];
@@ -244,47 +237,46 @@ openDeck, remove"];
     "lib/server/edit/writes/config/roots.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/config/roots.ts" -> "lib/server/edit/writes/config/config-checks.ts" [tooltip="absentIn, insertKey, madeAt
 replacedText"];
-    "lib/server/edit/writes/config/roots.ts" -> "lib/server/files/files.ts" [tailport=n, tooltip="expandHome"];
     "lib/server/edit/writes/config/roots.ts" -> "lib/server/files/fs.ts" [tooltip="defaultWorkspacesPath, folderToAdd, rootKey"];
     "lib/server/edit/writes/config/roots.ts" -> "lib/server/files/roots.ts" [tooltip="browserRoots"];
     "lib/server/edit/writes/entries.ts" -> "? src/lib/server/edit/writes/entries.ts:74" [style=dashed];
     "lib/server/edit/writes/entries.ts" -> "lib/data/snapshot/normalise.ts" [tooltip="collectionSchema"];
-    "lib/server/edit/writes/entries.ts" -> "lib/server/core/changes.ts" [tailport=se, tooltip="plain"];
-    "lib/server/edit/writes/entries.ts" -> "lib/server/core/json.ts" [tailport=ne, tooltip="writeTextAtomic"];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/core/changes.ts" [tooltip="plain"];
+    "lib/server/edit/writes/entries.ts" -> "lib/server/core/json.ts" [tooltip="writeTextAtomic"];
     "lib/server/edit/writes/entries.ts" -> "lib/server/files/fs/collections.ts" [tooltip="entryId, entryOf, identityOf
 identityText, readCollection"];
     "lib/server/edit/writes/file-undo.ts to file on disk (calls)" [label="mkdir, rename", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/file-undo.ts" -> "lib/server/edit/writes/file-undo.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/edit/writes/file-undo.ts to file on disk (calls)" -> "file on disk" [];
-    "lib/server/edit/writes/file-undo.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="chained"];
-    "lib/server/edit/writes/file-undo.ts" -> "lib/server/files/fs/file-changes.ts" [tailport=s, tooltip="holds, recordOf, stampKept
+    "lib/server/edit/writes/file-undo.ts" -> "lib/server/core/json.ts" [tooltip="chained"];
+    "lib/server/edit/writes/file-undo.ts" -> "lib/server/files/fs/file-changes.ts" [tooltip="holds, recordOf, stampKept
 stampOf"];
-    "lib/server/edit/writes/file-undo.ts" -> "lib/server/files/fs/history.ts" [headport=sw, tooltip="defaultHistoryDir, keepCopy, readCopy
+    "lib/server/edit/writes/file-undo.ts" -> "lib/server/files/fs/history.ts" [tooltip="defaultHistoryDir, keepCopy, readCopy
 restoreCopy"];
     "lib/server/edit/writes/hubs.ts" -> "lib/server/files/roots.ts" [tooltip="hubManifests"];
     "lib/server/edit/writes/manifest.ts to file on disk (calls)" [label="mkdirSync", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "lib/server/edit/writes/manifest.ts" -> "lib/server/edit/writes/manifest.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/edit/writes/manifest.ts to file on disk (calls)" -> "file on disk" [];
-    "lib/server/edit/writes/manifest.ts" -> "lib/server/core/changes.ts" [headport=sw, tooltip="plain"];
-    "lib/server/edit/writes/manifest.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
+    "lib/server/edit/writes/manifest.ts" -> "lib/server/core/changes.ts" [tooltip="plain"];
+    "lib/server/edit/writes/manifest.ts" -> "lib/server/core/json.ts" [headport=nw, tooltip="writeTextAtomic"];
     "lib/server/edit/writes/manifest.ts" -> "lib/server/files/roots.ts" [tooltip="hubManifests"];
     "lib/server/edit/writes/subtasks.ts" -> "lib/server/core/changes.ts" [tooltip="plain"];
     "lib/server/edit/writes/subtasks.ts" -> "lib/server/edit/writes/entries.ts" [tooltip="saved"];
     "lib/server/edit/writes/subtasks.ts" -> "lib/server/edit/writes/manifest.ts" [tooltip="manifestSource"];
     "lib/server/edit/writes/subtasks.ts" -> "lib/server/files/fs/collections.ts" [tooltip="identityOf, readCollection"];
-    "lib/server/edit/writes/undo.ts" -> "? src/lib/server/edit/writes/undo.ts:219" [style=dashed];
-    "lib/server/edit/writes/undo.ts" -> "? src/lib/server/edit/writes/undo.ts:414" [style=dashed];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/core/changes.ts" [headport=sw, tooltip="keptValues, same"];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/feeds.ts" [tailport=s, tooltip="deleteFeedEntry, isFeedKind, readFeedFile
+    "lib/server/edit/writes/undo.ts" -> "? src/lib/server/edit/writes/undo.ts:213" [style=dashed];
+    "lib/server/edit/writes/undo.ts" -> "? src/lib/server/edit/writes/undo.ts:407" [style=dashed];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/core/changes.ts" [tailport=se, tooltip="keptValues, same"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/feeds.ts" [headport=sw, tooltip="deleteFeedEntry, isFeedKind, readFeedFile
 removeRadarEntry, restoreFeedEntry, writeFeedField"];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/feeds.ts" [tailport=s, tooltip="FEED_RULES", style=dotted];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/feeds.ts" [headport=sw, tooltip="FEED_RULES", style=dotted];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/apps/store.ts" [tooltip="storeNow, writeAppStore"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/apps/store.ts" [tooltip="APP_STORE", style=dotted];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/config-checks.ts" [headport=sw, tooltip="takeOutAdded"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/config-key.ts" [headport=sw, tooltip="configKeyNow, writeConfigKey"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/config-value.ts" [headport=sw, tooltip="configValueNow, putBackConfigValue, writeConfigValue"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/deck/deck.ts" [headport=sw, tooltip="deckSlidesNow, undoDeckSlides"];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/rail.ts" [tailport=s, tooltip="railNow, writeRail"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/rail.ts" [headport=sw, tooltip="railNow, writeRail"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/roots.ts" [headport=sw, tooltip="rootsValueNow, writeRoots"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/config/roots.ts" [headport=sw, tooltip="ROOTS, rootItemsShape", style=dotted];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/entries.ts" [tooltip="createEntry, idOfIdentity, identityOrder
@@ -293,13 +285,10 @@ removeEntry, reorderCollection, writeEntry"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/manifest.ts" [tooltip="manifestValue, writeManifest"];
     "lib/server/edit/writes/undo.ts" -> "lib/server/edit/writes/subtasks.ts" [tooltip="hostStatus, restoreSubtask, subtaskValue
 writeHost, writeSubtask, writeSubtaskAdd"];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/files/fs/collections.ts" [headport=sw, tooltip="entryOf, readCollection"];
-    "lib/server/edit/writes/undo.ts" -> "lib/server/sessions/overrides.ts" [tooltip="overrides, setFlag, setOverride"];
-    "lib/server/files/files.ts" -> "? src/lib/server/files/files.ts:385" [style=dashed];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/files/fs/collections.ts" [tooltip="entryOf, readCollection"];
+    "lib/server/edit/writes/undo.ts" -> "lib/server/sessions/overrides.ts" [tailport=n, tooltip="overrides, setFlag, setOverride"];
     "lib/server/files/fs.ts" -> "? src/lib/server/files/fs.ts:236" [style=dashed];
-    "lib/server/files/fs.ts" -> "lib/server/core/json.ts" [tooltip="readJson"];
-    "lib/server/files/fs.ts" -> "lib/server/files/files.ts" [tooltip="expandHome"];
-    "lib/server/files/fs.ts" -> "lib/server/files/files.ts" [tooltip="rootShape", style=dotted];
+    "lib/server/files/fs.ts" -> "lib/server/core/json.ts" [tailport=s, tooltip="readJson"];
     "lib/server/files/fs/bookmarks.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeTextAtomic"];
     "lib/server/files/fs/collections.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="ensureBookmarksFile"];
     "lib/server/files/fs/collections.ts" -> "lib/server/files/fs/bookmarks.ts" [tooltip="BOOKMARKS", style=dotted];
@@ -308,9 +297,8 @@ writeHost, writeSubtask, writeSubtaskAdd"];
     "lib/server/files/fs/history.ts" -> "lib/server/files/fs/history.ts to file on disk (calls)" [arrowhead=none];
     "lib/server/files/fs/history.ts to file on disk (calls)" -> "file on disk" [];
     "lib/server/files/fs/history.ts" -> "lib/server/core/json.ts" [headport=sw, tooltip="writeBytesAtomic, writeTextAtomic"];
-    "lib/server/files/roots.ts" -> "lib/server/files/files.ts" [tooltip="configuredRootsOf, expandHome, hubRoots
-readRoots, rootsFrom"];
-    "lib/server/files/roots.ts" -> "lib/server/files/fs.ts" [tooltip="defaultWorkspacesPath, readSaved"];
+    "lib/server/files/roots.ts" -> "lib/data/index.ts" [tooltip="portfolioConfigFrom, portfolioConfigOfOther"];
+    "lib/server/files/roots.ts" -> "lib/server/files/fs.ts" [tooltip="addedRoots, defaultWorkspacesPath, readSaved"];
     "lib/server/sessions/overrides.ts" -> "lib/server/core/changes.ts" [tooltip="plain"];
     "lib/server/sessions/overrides.ts" -> "lib/server/core/json.ts" [tooltip="readJson, readJsonChecked, writeJsonAtomic"];
     "routes/api/write/+server.ts" -> "lib/server/edit/writes.ts" [tooltip="handleWrite, target"];

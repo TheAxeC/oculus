@@ -1,5 +1,6 @@
 id: spectral-clustering-collab
 type: published
+tier: coauthor
 short: Spectral Collab
 status:
   chips: [journal, coauthor]

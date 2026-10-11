@@ -14,6 +14,7 @@ import {
     sentence,
     type Raised,
     scopeOf,
+    isPersonal,
     slurp,
     scalarShape
 } from './rules.ts';
@@ -191,9 +192,9 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
     const sectionsOf = (paper: SitePaper): string[] =>
         [...(sections.get(paper.key) ?? new Set([paper.section]))].sort();
 
-    const live = input.projects.filter((one) => !one.ghost);
     const claimed = new Set<string>();
-    for (const project of live) {
+    for (const project of input.projects) {
+        if (isPersonal(project)) continue;
         const type = project.type ?? '';
         const key = normalTitle(project.title);
         if (key === '' || NEGATIVE.includes(type) || DEADEND.includes(type)) continue;
@@ -239,7 +240,8 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
     }
 
     const deadClaimed = new Set<string>();
-    for (const project of live) {
+    for (const project of input.projects) {
+        if (isPersonal(project)) continue;
         const type = project.type ?? '';
         if (!NEGATIVE.includes(type) && !DEADEND.includes(type)) continue;
         const key = normalTitle(project.title);

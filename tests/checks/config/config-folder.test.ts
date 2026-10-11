@@ -189,11 +189,11 @@ describe("oculus's own config directory", () => {
         'schemas/cpp-schema.yml': ['cpp_schema'],
         'schemas/deck-schema.yml': ['deck_schema'],
         'schemas/manifest-schema.yml': ['manifest_schema'],
-        'schemas/side-project-schema.yml': ['side_project_schema'],
         'catalogs/meta.yml': ['meta'],
         'catalogs/options.yml': ['options'],
         'sources.yml': [
             'scan',
+            'new_project_dir',
             'venues_file',
             'datasets_file',
             'pillars_file',
@@ -234,8 +234,7 @@ describe("oculus's own config directory", () => {
             'venue_tiers',
             'venue_themes',
             'data_themes',
-            'radar_buckets',
-            'side_project_status'
+            'radar_buckets'
         ]
     };
 
@@ -257,7 +256,6 @@ describe("oculus's own config directory", () => {
         'views/boards/entry.yml',
         'views/boards/focus.yml',
         'views/boards/person.yml',
-        'views/boards/personal.yml',
         'views/boards/project.yml',
         'views/boards/projects.yml',
         'views/feeds/inbox.yml',
@@ -404,21 +402,14 @@ describe("oculus's own config directory", () => {
         const glyphs = glyphCatalog(config);
         const hosts = config.career_host_status as Record<string, { icon: string }>;
         const statuses = config.status_legend as { key: string; icon: string }[];
-        const sides = config.side_project_status as Record<string, { icon: string }>;
         const icons = [
             ...Object.values(hosts).map((entry) => entry.icon),
-            ...statuses.map((entry) => entry.icon),
-            ...Object.values(sides).map((entry) => entry.icon)
+            ...statuses.map((entry) => entry.icon)
         ];
         expect(
             Object.entries(hosts)
                 .filter(([, entry]) => !(entry.icon in glyphs))
                 .map(([key]) => key)
-        ).toEqual([]);
-        expect(
-            Object.entries(sides)
-                .filter(([, entry]) => !(entry.icon in glyphs))
-                .map(([key, entry]) => `${key}: ${entry.icon}`)
         ).toEqual([]);
         expect(icons.filter((name) => !(name in glyphs))).toEqual([]);
     });

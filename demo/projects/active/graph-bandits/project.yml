@@ -1,5 +1,6 @@
 id: graph-bandits
 type: active
+tier: projects
 short: Graph-Bandits
 title: Bandit algorithms over evolving graphs
 lead: A. Example

@@ -69,11 +69,11 @@ function plain(value: string): string {
     return value.replace(/[\u0000-\u001f\u007f]/g, ' ').trim();
 }
 
-/** The projects of the hub's manifests that are not ghosts, by id, with their absolute folder. */
+/** The projects of the hub's manifests by id, with their absolute folder. */
 function projectFolders(hub: string, config: PortfolioConfig): Record<string, string> {
     const found: Record<string, string> = {};
     for (const manifest of hubManifests(hub, config)) {
-        if (!manifest.ghost) found[manifest.id] = manifestDir(hub, manifest);
+        found[manifest.id] = manifestDir(hub, manifest);
     }
     return found;
 }
@@ -82,7 +82,7 @@ function projectFolders(hub: string, config: PortfolioConfig): Record<string, st
 function hostOf(ref: TaskRef, hub: string, config: PortfolioConfig): Host | null {
     if (ref.collection === undefined) {
         if (ref.subtask === undefined) return null;
-        const manifest = hubManifests(hub, config).find((one) => one.id === ref.id && !one.ghost);
+        const manifest = hubManifests(hub, config).find((one) => one.id === ref.id);
         if (manifest === undefined) return null;
         return {
             title: str(manifest.title) ?? '',

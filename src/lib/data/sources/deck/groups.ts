@@ -1,11 +1,11 @@
 // Layer 1, data. The groups of a deck: which decks each one finds, which it names, which it adds by
 // discovery, and what is wrong with the names.
 //
-// A group looks for decks with `find:` (globs of folders under the root, kept by the tiers and the
-// status chips of the deck's project) and lists them in `slides:`. The members are the decks
-// `slides:` names, in its order, then, under `discover: true`, every found deck that no group of
-// the deck names, in the order `sort:` gives. Two groups that discover the same unnamed deck both
-// lose it, and say so. A group with no `find:` names project decks of the hub.
+// A group looks for decks with `find:` (globs of folders under the root, kept by the tiers, the
+// types and the status chips of the deck's project) and lists them in `slides:`. The members are
+// the decks `slides:` names, in its order, then, under `discover: true`, every found deck that no
+// group of the deck names, in the order `sort:` gives. Two groups that discover the same unnamed
+// deck both lose it, and say so. A group with no `find:` names project decks of the hub.
 //
 // Nothing here reads a file: the reader hands in the decks each glob found.
 
@@ -51,11 +51,16 @@ export type Resolved = {
     conflicts: { doc: Doc; others: string[] }[];
 };
 
-/** Whether a found deck passes the tiers and status chips of a `find:`. */
+/** Whether a found deck passes the tiers, types and status chips of a `find:`. */
 function keeps(find: FindSpec, doc: Doc): boolean {
     const project = doc.project;
-    if (find.tiers !== undefined && (project === null || !find.tiers.includes(project.tier))) {
-        return false;
+    if (find.tiers !== undefined) {
+        const tier = project?.tier;
+        if (tier === undefined || !find.tiers.includes(tier)) return false;
+    }
+    if (find.types !== undefined) {
+        const type = project?.type;
+        if (type === undefined || !find.types.includes(type)) return false;
     }
     if (find.status === undefined) return true;
     const wanted = find.status;

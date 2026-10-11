@@ -14,11 +14,10 @@
     // first being one of the controls. The card is a positioned box whose content may reach past
     // its edge, so the More menu of its controls is not cut off at the foot of a short card.
     //
-    // A side project is drawn by this card too, through the record that stands for it
-    // (data/snapshot/as-project.ts): its status replaces the chips
-    // (views/shared/card/project/CardStatus.svelte), its `links:` are listed under the next action,
-    // and its folder is the one `placeOf` names, a repository's own Files root for a repository.
-    // The caller leaves `deposit` off for it and for a research project read from a repository.
+    // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
+    // next action, and its folder is the one `placeOf` names, a repository's own Files root for a
+    // project read from a repository. The caller leaves `deposit` off for a project read from a
+    // repository.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
@@ -34,11 +33,10 @@
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import Clamp from './Clamp.svelte';
     import Subtasks from '../forms/Subtasks.svelte';
-    import { codeLabel, deadline, deckOf, openDocument, openWorkbench } from './card';
+    import { codeLabel, deadline, deckOf, openWorkbench } from './card';
     import { placeOf } from '$lib/state/shared/page/hubs';
     import {
         firstSentence,
-        hasReadme,
         isStale,
         newestDocDate,
         waitingLine,
@@ -138,18 +136,14 @@
     });
     const actions = $derived.by((): CardAction[] => {
         const rows: CardAction[] = [];
-        if (!item.project.ghost) {
-            rows.push({
-                id: 'pin',
-                label:
-                    item.project.pin === true
-                        ? t('project.card.unpin')
-                        : t('project.card.pin_to_top'),
-                glyph: t('project.card.pin_glyph'),
-                active: item.project.pin === true,
-                onclick: pin
-            });
-        }
+        rows.push({
+            id: 'pin',
+            label:
+                item.project.pin === true ? t('project.card.unpin') : t('project.card.pin_to_top'),
+            glyph: t('project.card.pin_glyph'),
+            active: item.project.pin === true,
+            onclick: pin
+        });
         rows.push({
             id: 'copy',
             label: copied ? t('project.card.copied') : t('project.helper.copy_context'),
@@ -157,15 +151,13 @@
             glyph: 'copy',
             onclick: copyContext
         });
-        if (!item.project.ghost) {
-            rows.push({
-                id: 'ask',
-                label: t('project.helper.ask'),
-                title: t('project.helper.ask_tip'),
-                glyph: 'chat',
-                onclick: ask
-            });
-        }
+        rows.push({
+            id: 'ask',
+            label: t('project.helper.ask'),
+            title: t('project.helper.ask_tip'),
+            glyph: 'chat',
+            onclick: ask
+        });
         rows.push({
             id: 'folder',
             label: t('project.helper.folder'),
@@ -215,37 +207,35 @@
                 }
             });
         }
-        if (!item.project.ghost) {
-            if (item.project.subtasks.length === 0) {
-                rows.push({
-                    id: 'subtask',
-                    label: t('project.action.add_subtask'),
-                    title: t('project.action.add_subtask_tip'),
-                    glyph: t('project.action.add_subtask_glyph'),
-                    active: addingSubtask,
-                    onclick: () => {
-                        addingSubtask = !addingSubtask;
-                    }
-                });
-            }
+        if (item.project.subtasks.length === 0) {
             rows.push({
-                id: 'edit',
-                label: t('project.card.edit_manifest'),
-                glyph: t('project.card.edit_glyph'),
+                id: 'subtask',
+                label: t('project.action.add_subtask'),
+                title: t('project.action.add_subtask_tip'),
+                glyph: t('project.action.add_subtask_glyph'),
+                active: addingSubtask,
                 onclick: () => {
-                    openBeside('editor', { id: item.id });
+                    addingSubtask = !addingSubtask;
                 }
             });
-            if (deposit) {
-                rows.push({
-                    id: 'deposit',
-                    label: t('project.card.deposit'),
-                    glyph: t('project.card.deposit_glyph'),
-                    onclick: () => {
-                        openBeside('deposit', { id: item.id });
-                    }
-                });
+        }
+        rows.push({
+            id: 'edit',
+            label: t('project.card.edit_manifest'),
+            glyph: t('project.card.edit_glyph'),
+            onclick: () => {
+                openBeside('editor', { id: item.id });
             }
+        });
+        if (deposit) {
+            rows.push({
+                id: 'deposit',
+                label: t('project.card.deposit'),
+                glyph: t('project.card.deposit_glyph'),
+                onclick: () => {
+                    openBeside('deposit', { id: item.id });
+                }
+            });
         }
         return rows;
     });
@@ -262,20 +252,9 @@
                 : t('editor.failed', answer.error ?? '')
         );
     }
-    /** Open the project, or the readable README carried by a ghost project. */
+    /** Open the project. */
     function openTitle(): void {
-        if (item.project.ghost) {
-            if (hasReadme(item.project)) {
-                openDocument(client, item.project.folder, 'README.md', hub);
-            }
-            return;
-        }
         openView('project', { id: item.id, label: tab });
-    }
-    /** The title opener, omitted only when a ghost has no readable README. */
-    function titleOpener(): (() => void) | undefined {
-        if (!item.project.ghost) return openTitle;
-        return hasReadme(item.project) ? openTitle : undefined;
     }
     /** Copy the project's generated context to the clipboard and expose failures. */
     async function copyContext(): Promise<void> {
@@ -319,7 +298,7 @@
         title={label}
         tone={item.tone}
         pinned={item.project.pin === true}
-        ontitle={titleOpener()}
+        ontitle={openTitle}
     >
         {#snippet meta()}
             <RootChip record={item.project} />
@@ -337,15 +316,6 @@
                     <Tag
                         label={t('project.card.stale_behind', item.project.staleDays ?? 0)}
                         glyph={t('board.stale_glyph')}
-                        tone="amber"
-                    />
-                </span>
-            {/if}
-            {#if item.project.ghost}
-                <span title={t('project.card.ghost_badge_tip')}>
-                    <Tag
-                        label={t('project.card.no_manifest')}
-                        glyph={t('board.warn_glyph')}
                         tone="amber"
                     />
                 </span>
@@ -386,10 +356,7 @@
         {/if}
         <CardLinks {item} />
         <CardSessions {item} />
-        {#if item.project.ghost}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-            <p class="ghostmsg">{@html t('project.card.ghostmsg')}</p>
-        {:else if item.project.eli5}
+        {#if item.project.eli5}
             <div class="eli5">
                 <span class="label">{t('project.card.eli5')}</span>
                 {#if onmore === undefined}
@@ -405,10 +372,10 @@
             <p class="next"><CodeText text={firstSentence(item.project.next, CARD_NEXT)} /></p>
         {/if}
         <CardAddresses {item} />
-        {#if open && !item.project.ghost}
+        {#if open}
             <CardDetails {item} {onsaid} {documents} {now} />
         {/if}
-        {#if !item.project.ghost && (open || addingSubtask)}
+        {#if open || addingSubtask}
             <Subtasks
                 target={{ id: item.id }}
                 subtasks={item.project.subtasks}
@@ -484,8 +451,7 @@
     }
 
     .next,
-    .waiting,
-    .ghostmsg {
+    .waiting {
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
@@ -504,10 +470,6 @@
 
     .waiting.review {
         color: var(--c-violet-txt);
-    }
-
-    .ghostmsg {
-        margin: 6px 0 0;
     }
 
     .label {

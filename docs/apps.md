@@ -121,7 +121,7 @@ An app reads a channel by listing it in `reads`. `read` resolves with a copy of 
 
 | Channel | Who | What it carries |
 |---------|-----|-----------------|
-| `portfolio` | every app | projects, venues, datasets, pillars, domains, funding, people, organisations, resources, collections, side projects, the feeds summary and the career file |
+| `portfolio` | every app | projects, venues, datasets, pillars, domains, funding, people, organisations, resources, collections, the feeds summary and the career file |
 | `feeds` | every app | the Lit Watch radar, the position leads and the LinkedIn posts, each with its entries |
 | `hpc` | every app | the cluster queue, recent jobs, partitions and quota |
 | `audit` | every app | the audit findings and the signatures parked |
@@ -143,7 +143,7 @@ Every payload is plain JSON. `list of X` is a list of `X`, `map of X` a map from
 
 | Key | Record fields |
 |-----|---------------|
-| `projects` | `id`, `title`, `folder` (against the hub; the repository's absolute path for a project read from a repository), `file` (an absolute path), `repository?` (`{ root, dir }`, the Files root and the absolute folder of a project read from a repository), `tier` (`ideas`, `active`, `manuscripts`, `software`, `coauthor`, `archive` or `side-projects`), `ghost` (boolean), `chips`, `results`, `ideas` (lists of text), `docs` (list of `{ name, label, present, human, mtime? }`), lists of ids `waitingOn`, `resourceIds`, `relatedIds`, `fundingIds`, `datasetIds`, `pillarIds`, `domainIds`, `collaborators`, `followups` (list of `{ do, after? }`), `subtasks` (list of `{ key, do, deadline?, done, snooze? }`); text `category?`, `type?`, `typeWritten?`, `short?`, `lead?`, `statusLine?`, `focus?`, `priority?`, `eli5?`, `next?`, `latest?`, `deadline?`, `snooze?`, `doi?`, `outcome?`, `venue?`, `deck?`, `venueId?` (an id); `authors?` (text or list of text), `year?` and `staleDays?` (number), `pin?` (boolean), `deckTags?` (list of text), `codeAvailability?` (`{ status?, date?, url?, doi?, repo? }`), `reproduced?` (`{ date?, note? }`) |
+| `projects` | `id`, `title`, `folder` (against the hub; the repository's absolute path for a project read from a repository), `file` (an absolute path), `repository?` (`{ root, dir }`, the Files root and the absolute folder of a project read from a repository), `chips`, `results`, `ideas` (lists of text), `docs` (list of `{ name, label, present, human, mtime? }`), lists of ids `waitingOn`, `resourceIds`, `relatedIds`, `fundingIds`, `datasetIds`, `pillarIds`, `domainIds`, `collaborators`, `followups` (list of `{ do, after? }`), `subtasks` (list of `{ key, do, deadline?, done, snooze? }`); text `tier?` (`projects`, `coauthor`, `archive`, `personal` or `software`; absent when the manifest names none of these), `category?` (the first folder under the scan folder, for a project that lies deeper than one level), `type?` (the manifest's stage word), `short?`, `lead?`, `statusLine?`, `focus?`, `priority?`, `eli5?`, `next?`, `latest?`, `deadline?`, `snooze?`, `doi?`, `outcome?`, `venue?`, `deck?`, `venueId?` (an id); `authors?` (text or list of text), `year?` and `staleDays?` (number), `pin?` (boolean), `deckTags?` (list of text), `codeAvailability?` (`{ status?, date?, url?, doi?, repo? }`), `reproduced?` (`{ date?, note? }`), `links?` (list of text, the addresses or paths the manifest's `links:` lists) |
 | `venues` | `id`, `name`, `themes` (list of text); text `short?`, `tier?`, `category?`, `jif?`, `quartile?`, `wos?`, `scopus?`, `free?`, `format?`, `wants?`, `link?`, `deadline?`, `deadlineMonth?`, `heldMonth?`, `timing?`, `call?`, `email?`; `wosMark?` and `scopusMark?` are `yes` or `no` |
 | `datasets` | `id`, `name`, `themes`, `projectIds`; text `modality?`, `description?`, `size?`, `access?`, `source?`, `hpcPath?`; `retrieval?` (a map) |
 | `pillars`, `domains` | `id`, `title`, `projectIds`; text `blurb?`; a pillar also has `fundingIds` and text `color?`, `kind?`, `goal?` |
@@ -152,7 +152,6 @@ Every payload is plain JSON. `list of X` is a list of `X`, `map of X` a map from
 | `organisations` | `id`, `name`, `links`, `personIds`, `fundingIds`; text `kind?`, `country?` |
 | `resources` | `id`, `name`, `kind` (`cluster`, `machine` or `storage`), `links`, `order` (number); text `host?`, `access?` |
 | `collections` | `id`, `title`, `file`, `entries` (list of Entry), `intro?`, `schema?` (list of `{ field, type, label?, options?, from?, required?, help?, when?, open?, map?, fields? }`) |
-| `personal` | side projects: `id`, `title`, `status`, `eli5`, `next`, `links`, `source` (`{ kind: 'hub', folder }` or `{ kind: 'root', key, dir }`), `file`, `folder` (`side-projects/<slug>` against the hub for a hub folder, the repository's absolute path for a repository), `docs` (list of `{ name, label, present, human, mtime? }`, the fixed project documents the folder holds); `deck?` (the path of the folder's `present/` folder against the Files root that holds the project, present when `present/present.yml` is there); and, when the side manifest holds them, `short?`, `priority?`, `latest?`, `deadline?`, `snooze?`, `pin?`, `waitingOn?`, `relatedIds?`, `collaborators?`, `followups?`, `subtasks?` as in a project |
 | `feeds` | `leads` (list of `{ title, deadline, status, fit, root? }`, the middle three text or null, or null), `radar` and `scout` (`{ lastRun }` or null), `linkedin` (`{ lastPost }` or null) |
 | `career` | the career file of the hub, or null: `title`, `milestone?`, `situation` (list of `{ label, value }`), `order` (list of `{ task, when?, note? }`), `orderNote?`, `hosts` (list of `{ name, inst?, tag?, status, scores, note? }`), `hostCriteria` (list of text), `notHosts` (list of `{ who, why? }`), `eligibility` (`{ rule, shots, caveat? }` or null), `dropped` (list of `{ what, why? }`) |
 
@@ -179,7 +178,7 @@ A `roots:` entry of the hub marked `hub: true` is a hub of its own, merged into 
 
 | Kind | Body | Asks first |
 |------|------|------------|
-| `manifest` | `{ kind, id, fields }` for the project `id` or a hub side project `side:<slug>` (`root:<key>` and the id of a project read from a repository answer not found to an app) | no |
+| `manifest` | `{ kind, id, fields }` for the project `id`, of any tier, in a folder of the hub (the id of a project read from a repository answers not found to an app) | no |
 | `entry` | `{ kind, collection, id, fields }` | no |
 | `subtask` | `{ kind, target: { id, collection? }, key, action, value? }`, `action` one of `done`, `reopen`, `snooze`, `delete` | no |
 | `subtask-add` | `{ kind, target: { id, collection? }, fields }`, `fields.do` the text | no |
@@ -193,9 +192,10 @@ A `roots:` entry of the hub marked `hub: true` is a hub of its own, merged into 
 | `radar-add` | `{ kind, fields }`, `fields.title` required | no |
 | `linkedin-idea` | `{ kind, title, category? }` | yes, no undo |
 | `linkedin-post` | `{ kind, file, root? }`, `file` an `xx-*.md` idea | yes, no undo |
-| `new-idea` | `{ kind, fields }`, `fields.id` the idea's id | yes, no undo |
+| `new-idea` | `{ kind, fields }`, `fields.id` the project's id, `fields.tier` and `fields.folder` optional | yes, no undo |
 
 - `root` on `feed-field`, `feed-delete` and `linkedin-post` names the hub whose feed holds the item, absent or `hub` for the first hub; an app writes the first hub's feeds alone, so another `root` answers not found.
+- A `new-idea` write with no `fields.tier` and no `fields.folder` creates the project in the tier `projects`, in the folder the hub's `new_project_dir` names for `projects`; when the hub names none, the write is refused with a sentence saying so and nothing is written.
 - The five kinds that ask first show "The app <title> asks to <words>: <body>" with the body as JSON cut at 300 characters. The words are `delete an entry of a collection`, `delete a feed item`, `create an idea project`, `move a LinkedIn idea` and `move a LinkedIn post`. The keyboard is on Cancel, which rejects `declined`.
 - Every write is recorded in the change log with the app's id, and the History view undoes it. The three kinds marked no undo are not undoable.
 - Closed to apps, and refused with `write_closed` in a manifest: `undo`, `rail`, `audit-mute`, `config-key`, `config-value`, `session`, `deck-slides`, `deck-edit`, `roots`, `app-store`, `calendar`, `connect`, `mail`, `memories`, `fs`, `open`, `source`, `deposit`, `git`, `hpc`, `usage/refresh`, `hook` and `terminal`. Any route that runs processes, writes arbitrary files, reaches a remote or acts on an account is among them.

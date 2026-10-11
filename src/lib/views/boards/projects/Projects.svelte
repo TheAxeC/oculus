@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. One board component owns the three portfolio board registrations,
+    // Layer 3, view registration. One board component owns the four portfolio board registrations,
     // the Projects page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
@@ -17,21 +17,22 @@
     export const registration: ViewRegistration[] = [
         boardRegistration('projects', 1),
         boardRegistration('coauthor', 2),
-        boardRegistration('archive', 3)
+        boardRegistration('archive', 3),
+        boardRegistration('personal', 4)
     ];
 </script>
 
 <script lang="ts">
     // Layer 3, view. The project board: cards or a table, a search, quick filters, type toggles,
-    // one filter menu headed by every way the board can be split, and a short or full title. It is
-    // registered three times, as `projects`, `archive` and `coauthor`, and reads which board it is
-    // from the instance it was mounted as, so the three board tabs over separate tier sets are one
-    // component here.
+    // one filter menu headed by every way the board can be split, a stats strip and a short or full
+    // title. It is registered four times, as `projects`, `coauthor`, `archive` and `personal`, and
+    // reads which board it is from the instance it was mounted as, so the four board tabs over
+    // separate tiers are one component here.
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
     // joined, and the facets, the filter menu's groups, the filters, the counts and the sentence
     // cut are the pure functions of state/board. The strip is views/boards/projects/Stats.svelte
-    // and the new-idea form views/boards/projects/NewIdea.svelte, which is the partials rule of
+    // and the new-project form views/boards/projects/NewIdea.svelte, which is the partials rule of
     // DESIGN.md's boundary table: a view too large for one file is split into its own folder. The
     // card is views/shared/card/ProjectCard.svelte, since views/boards/project/Project.svelte draws
     // the same one.
@@ -80,9 +81,6 @@
     /** How much of `next` a list row shows. */
     const ROW_NEXT = 110;
 
-    /** The board the stats strip and the two quick filters belong to. */
-    const STATS_BOARD = 'projects';
-
     const preset = $derived(boardPreset(instance.view));
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
@@ -105,7 +103,7 @@
     /** What the last write on this board answered, shown under the toolbar until the next one. */
     let said = $state('');
 
-    /** True while the new-idea form is open under the toolbar. */
+    /** True while the new-project form is open under the toolbar. */
     let adding = $state(false);
 
     /**
@@ -279,22 +277,20 @@
             }}
             placement="down"
         />
-        {#if preset.id === STATS_BOARD}
-            <Chip
-                label={t('board.quick_stale')}
-                title={t('board.quick_stale_tip')}
-                glyph={t('board.stale_glyph')}
-                pressed={held.stale}
-                onclick={() => write({ stale: !held.stale })}
-            />
-            <Chip
-                label={t('board.quick_deadline')}
-                title={t('board.quick_deadline_tip')}
-                glyph={t('project.card.deadline_glyph')}
-                pressed={held.dated}
-                onclick={() => write({ dated: !held.dated })}
-            />
-        {/if}
+        <Chip
+            label={t('board.quick_stale')}
+            title={t('board.quick_stale_tip')}
+            glyph={t('board.stale_glyph')}
+            pressed={held.stale}
+            onclick={() => write({ stale: !held.stale })}
+        />
+        <Chip
+            label={t('board.quick_deadline')}
+            title={t('board.quick_deadline_tip')}
+            glyph={t('project.card.deadline_glyph')}
+            pressed={held.dated}
+            onclick={() => write({ dated: !held.dated })}
+        />
         {#each types as one (one.type)}
             <Chip
                 label={`${one.type} ${one.count}`}
@@ -317,13 +313,12 @@
     <div class="board" data-instance={instance.id} data-board={preset.id}>
         {#if adding}
             <NewIdea
+                tier={preset.tiers[0]}
                 onclose={() => (adding = false)}
                 onsaid={(answer: string) => (said = answer)}
             />
         {/if}
-        {#if preset.id === STATS_BOARD}
-            <Stats stats={strip} />
-        {/if}
+        <Stats stats={strip} />
         {#if said !== ''}
             <p class="said">{said}</p>
         {/if}

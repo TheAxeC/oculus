@@ -19,7 +19,7 @@ import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { FilesTarget } from '../../../src/lib/server/files/project-files.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
-const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\n';
+const MANIFEST = 'id: alpha\ntier: projects\ntype: active\ntitle: "A title"\n';
 
 const HOST = '127.0.0.1:8791';
 
@@ -38,7 +38,7 @@ function target(files: string[] = ['README.md', 'code/run.py']): FilesTarget {
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     return {
         hub: dir,
-        config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
+        config: { ...real, scan: [{ dir: 'projects/manuscripts' }] },
         settings: { file_index: { enabled: true, max_per_project: 400, ext: ['.md', '.py'] } }
     };
 }

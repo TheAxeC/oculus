@@ -2,13 +2,10 @@
 // modules keep their implementation helpers private to the folder.
 
 export {
-    FLOATLESS_VERSION,
     LAYOUT_VERSION,
     MAIN_VIEW,
     MAX_CHILDREN,
     MIN_SIZE,
-    PAGES_VERSION,
-    WORKBENCH_VERSION,
     defaultLayout,
     defaultPages,
     defaultWorkbench,
@@ -107,15 +104,9 @@ export {
 } from './nested.ts';
 export type { Refusal } from './nested.ts';
 export { focusedPane, maximise, restore, settleFocus, splitWith } from './workbench.ts';
-export {
-    checkLayout,
-    checkPages,
-    checkWorkbench,
-    serialiseFloatless,
-    serialiseLayout
-} from './saved/saved.ts';
+export { checkLayout, checkPages, checkWorkbench, serialiseLayout } from './saved/saved.ts';
 export type { LayoutAccess } from './access.ts';
-export { LAYOUT_KEY, PREVIOUS_KEY, createStorage } from './saved/storage.ts';
+export { LAYOUT_KEY, createStorage } from './saved/storage.ts';
 export type { LayoutStorage, SaveTurn, Storable } from './saved/storage.ts';
 export { createLoad } from './saved/load.ts';
 export type { DocSource } from './saved/docs.ts';

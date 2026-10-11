@@ -52,10 +52,10 @@ domains: {}
 
 
 # Project-card colours: by tier (type_color) or by archive outcome (arch_color).
-type_color: { active: "#ea580c", manuscript: "#0d9488", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", tech-report: "#0891b2", software: "#7c3aed", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1" }
+type_color: { active: "#ea580c", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", tech-report: "#0891b2", software: "#7c3aed", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1" }
 
-# Primary board button order: every tab (Projects / Archive / Coauthor) splits its first-class button row by `type`, in THIS order.
-type_order: [active, manuscript, idea, published, submitted, in-prep, tech-report, software, nogo, dropped, disproved, abandoned, exploring, phd]
+# Primary board button order: every tab (Projects / Personal / Archive / Coauthor) splits its first-class button row by `type`, in THIS order, and a board shows the types its projects hold.
+type_order: [active, idea, published, submitted, in-prep, tech-report, software, nogo, dropped, disproved, abandoned, exploring, phd]
 
 
 # Status chips: the per-project project.yml manifests are the source of truth for status.
@@ -84,7 +84,10 @@ status_legend:
   - { key: nascent,         icon: white, label: "nascent (concept)" }
   - { key: scoping,         icon: yellow, label: "scoping (lit-check and framing)" }
   - { key: de-risking,      icon: blue, label: "de-risking (feasibility experiment)" }
-  - { key: parked,          icon: black, label: "parked" }
+  - { key: building,        icon: active, label: "building" }
+  - { key: running,         icon: live, label: "running" }
+  - { key: finished,        icon: done, label: "finished" }
+  - { key: paused,          icon: black, label: "paused" }
   # publication-type chips (on published works), orthogonal to outcome/role; feed the Status facet
   - { key: journal,         icon: journals, label: "journal article" }
   - { key: conference,      icon: conference, label: "conference paper" }
@@ -93,8 +96,11 @@ status_legend:
   - { key: poster,          icon: poster, label: "poster" }
 
 
-# Collection-entry status colours and terminal-state rules for the deadline radar.
+# Status colours of the chips of a project and of a collection entry, and the rules the deadline radar reads. A `terminal` status ends a collection entry's deadline; a project's deadline ends only at a status marked `deadline_met`.
 status_palette:
+  building:        { color: "#d4a017" }
+  running:         { color: "#16a34a" }
+  paused:          { color: "#9ca3af" }
   # live / in-flight (still shows on the deadline radar)
   planned:         { color: "#7c5cff" }
   in-prep:         { color: "#7c5cff" }
@@ -115,7 +121,7 @@ status_palette:
   collaborator:    { color: "#0891b2" }
   todo:            { color: "#b45309" }
   doing:           { color: "#16a34a" }
-  # terminal / done / closed (drops off the deadline radar)
+  # these statuses close a project, and only a status with deadline_met ends its deadline
   ongoing:         { color: "#16a34a", terminal: true, live_subtasks: true }
   completed:       { color: "#0ea5e9", terminal: true }
   published:       { color: "#0ea5e9", terminal: true }
@@ -186,14 +192,6 @@ career_host_status:
   dropped:   { icon: fail, label: "dropped",         color: "#9ca3af" }
 
 
-# Side-project statuses (Personal board): status -> icon / label / colour. Order = the board's order of cards and of its status toggles; a status outside the list is drawn as unknown and sorted last. `live: false` marks a status whose projects the Focus board leaves out: they draw no line and count in no waiting tally. A status with no `live` is live.
-side_project_status:
-  running:  { icon: live,   label: "running",  color: "#16a34a" }
-  building: { icon: active, label: "building", color: "#d4a017" }
-  idea:     { icon: idea,   label: "idea",     color: "#0891b2" }
-  parked:   { icon: snooze, label: "parked",   color: "#9ca3af", live: false }
-
-
 # Career score dimensions (Focus career card host chips): `field` = the registries/career.yml host key scored, `badge` = the terse chip letter, `label` = the hover tooltip. Author-specific (the host-scoring axes).
 career_score_dims:
   - { field: proposal,     badge: "P",  label: "proposal" }
@@ -206,14 +204,14 @@ career_score_dims:
 archive_categories: [published, submitted, in-prep, abandoned, nogo, dropped, disproved, tech-report, software]
 
 # Dead / paused outcomes = the ONLY things that count as "not real" (the Pillars Archival band, excluded from membership). DENYLIST by design: any other type (published/submitted/in-prep/tech-report/software/phd/exploring or a future live type) is real by DEFAULT, so a new active type never silently falls into Archival. Order = the Archival card's category order. (Single source of truth: `_is_real`, `_xlink_groups`, and the Archival card.)
-archive_dead: [nogo, dropped, disproved, abandoned, parked]
+archive_dead: [nogo, dropped, disproved, abandoned, paused]
 
 
 # Position-lead fit -> chip colour.
 leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }
 
 
-# Project lifecycle vocab: the single source for the status guardrails the Audit view reports. `archive_outcomes` = the `type:` set on archiving, and the archive/<outcome>/ filing folder (archive is a NESTED tier, so the engine does not read the folder; the Audit lists an archived project whose `type:` differs from its outcome folder). `live_chips` = in-flight chips a terminal project must not still carry; clear them when you archive, or the guardrail flags it. `terminal_types` = done/closed outcomes.
+# Project lifecycle vocab: the single source for the status guardrails the Audit view reports. `archive_outcomes` = the `type:` set on archiving, and the archive/<outcome>/ filing folder (the folder decides no tier or type, only the project's category; the Audit lists an archived project whose `type:` differs from its outcome folder). `live_chips` = in-flight chips a terminal project must not still carry; clear them when you archive, or the guardrail flags it. `terminal_types` = done/closed outcomes.
 lifecycle:
   archive_outcomes: [published, nogo, dropped, disproved, phd]
   live_chips: [submit-ready, submitted, revision, accepted, in-prep, blocked, numbers-pending, results-positive, admin-prep]

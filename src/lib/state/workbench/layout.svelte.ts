@@ -46,7 +46,6 @@ import {
     LAYOUT_KEY,
     maximise,
     newPage,
-    PREVIOUS_KEY,
     rebuiltPage,
     resetAll,
     restore,
@@ -90,7 +89,7 @@ import { parseArrangement } from './navigation/arrangement.ts';
 import { arrangedPages, resetPlan, type RailSource } from './navigation/pages.ts';
 import { t } from '../shared/words/text.ts';
 
-export { LAYOUT_KEY, PREVIOUS_KEY };
+export { LAYOUT_KEY };
 export type { OpenOptions };
 
 /** How many times an operation is run again on the envelope the host refused its save with. */
@@ -154,12 +153,6 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         startingFresh: () => boolean;
         /** The rail list came and names no page: the default page stays, and is drawn. */
         keepDefaultPage: (floats: FloatSpec[]) => void;
-        /**
-         * Take the shipped floats into a layout that was saved before there were floats, once: each
-         * tab of a view a shipped float holds moves into it. A layout saved with floats is the
-         * reader's own and changes nothing.
-         */
-        adoptFloats: (floats: FloatSpec[]) => void;
         /**
          * Give every rail page the documents its source lists that it has not been given: a tab
          * after the page's first tab, recorded so a tab the reader closes is not given again.
@@ -284,13 +277,6 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
 
     /** The page on screen before the current one, which previousPage answers while it is there. */
     let previous: string | null = $state(null);
-
-    /**
-     * Whether the pages were read from an envelope written before floats and the shipped floats
-     * are not taken in yet. Until they are, a save keeps that envelope's form while no float is
-     * held, so a reload before they arrive still finds a layout that needs them.
-     */
-    let pendingFloats = false;
 
     /** Whether the saved arrangement has been read, so a page of the app knows what it draws. */
     let loaded = $state(false);
@@ -446,9 +432,6 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         setFresh: (value) => {
             fresh = value;
         },
-        setPendingFloats: (value) => {
-            pendingFloats = value;
-        },
         clearAttention: attention.clear,
         setLoaded: () => {
             loaded = true;
@@ -463,10 +446,6 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         fresh: () => fresh,
         settleFresh: () => {
             fresh = false;
-        },
-        pendingFloats: () => pendingFloats,
-        floatsTaken: () => {
-            pendingFloats = false;
         }
     });
 
@@ -555,10 +534,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         fresh = false;
         if (next.current !== store.current.current) previous = store.current.current;
         store.current = next;
-        // A reader who made a float on a layout still waiting for the shipped floats keeps their
-        // own.
-        if (next.floats.length > 0) pendingFloats = false;
-        storage.write(next, pendingFloats, writing);
+        storage.write(next, writing);
     }
 
     /** Apply an operation to a page's tree, which is how every tree edit reaches the store. */
@@ -749,7 +725,6 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         startOnRailPage: rail.startOnRailPage,
         startingFresh: () => fresh,
         keepDefaultPage: rail.keepDefaultPage,
-        adoptFloats: rail.adoptFloats,
         giveDocuments: rail.giveDocuments,
         ...floatOps,
         openFolderPage: folderOps.openFolderPage,

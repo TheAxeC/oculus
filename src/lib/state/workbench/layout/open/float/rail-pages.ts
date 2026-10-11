@@ -13,7 +13,6 @@ import { giveDocuments as giveDocumentsIn, type DocSource } from '../../saved/do
 import { newPage } from '../../model.ts';
 import type { KeepRule } from '../../tree.ts';
 import {
-    adoptFloats as adoptFloatsIn,
     adoptedPage,
     keptDefault,
     startedOn,
@@ -36,10 +35,6 @@ export type RailPageGrounds = {
     fresh: () => boolean;
     /** The default page stays the reader's, so the pages are the reader's. */
     settleFresh: () => void;
-    /** Whether the envelope was written without floats and the shipped floats are not taken in. */
-    pendingFloats: () => boolean;
-    /** The shipped floats were taken in. */
-    floatsTaken: () => void;
 };
 
 /** The operations over the rail buttons' pages. */
@@ -47,7 +42,6 @@ export type RailPages = {
     openRailPage: (key: string, label: string, raw: unknown) => boolean;
     startOnRailPage: (key: string, label: string, raw: unknown, floats: FloatSpec[]) => void;
     keepDefaultPage: (floats: FloatSpec[]) => void;
-    adoptFloats: (floats: FloatSpec[]) => void;
     giveDocuments: (sources: readonly DocSource[]) => void;
 };
 
@@ -112,17 +106,6 @@ export function createRailPages(access: LayoutAccess, grounds: RailPageGrounds):
         if (shipped.length > 0) access.save(keptDefault(access.held(), shipped, grounds.builds));
     }
 
-    /**
-     * Take the shipped floats into pages read from an envelope written without floats. It happens
-     * once: the save that follows writes the current envelope, which a later load takes as the
-     * reader's own.
-     */
-    function adoptFloats(shipped: FloatSpec[]): void {
-        if (!grounds.pendingFloats()) return;
-        grounds.floatsTaken();
-        access.save(adoptFloatsIn(access.held(), shipped, grounds.keepRule));
-    }
-
     /** Every rail page given the documents its source lists that it has not been given. */
     function giveDocuments(sources: readonly DocSource[]): void {
         const held = access.held();
@@ -130,5 +113,5 @@ export function createRailPages(access: LayoutAccess, grounds: RailPageGrounds):
         if (next !== held) access.save(next);
     }
 
-    return { openRailPage, startOnRailPage, keepDefaultPage, adoptFloats, giveDocuments };
+    return { openRailPage, startOnRailPage, keepDefaultPage, giveDocuments };
 }

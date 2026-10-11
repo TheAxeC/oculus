@@ -5,4 +5,4 @@
 // in, or where a project's folder is, imports it from here.
 
 export { HUB_ROOT, fileUnder, rootOf } from '../../../data/helpers/hub-names.ts';
-export { placeOf } from '../../../data/snapshot/as-project.ts';
+export { placeOf } from '../../../data/snapshot/place.ts';
