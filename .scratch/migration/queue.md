@@ -2,10 +2,11 @@ In flight (0 of 6 slots in use): none.
 
 Paused (Axel, 2026-10-11: pause once D62 and D65 have landed; both have). Nothing below starts until he says to go on.
 
-Queued, in order (4 steps):
+Queued, in order (5 steps):
 - D63 (apps in the shell): after D62.
 - D64 (apps in the tools): after D63.
-- Q72 (the architecture re-read): waits for D60 to D65, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
+- D66 (the Map's colours from `type_color` alone): independent of D63 and D64, so it can run beside them; before Q72.
+- Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope).
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
