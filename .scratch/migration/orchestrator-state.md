@@ -173,7 +173,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-
+- **74 (2026-10-12, Axel's question), the two feeds, leads and radar.** `feeds/position-leads.yml` (60 entries, `schema:` at line 52) is drawn by the Leads view, whose cards have Applied, Decline, Reopen and Delete and no page, editor or Add (`views/feeds/leads/LeadCard.svelte:120-155`); `feeds/literature-radar.yml` (`schema:` at line 13) is drawn by the Radar view, whose cards have Dismiss, Restore and a new idea and no page, editor, Add or Delete (`views/feeds/radar/RadarCard.svelte:88-155`). Both are filled by the `/research-cockpit` scout. Options: (a) both get D72's page, editor, Add and Delete beside the actions they have, the radar's Dismiss staying the way to hide an entry the scout would find again; recommended, every file with a schema then has the same model. (b) They stay as they are, the lazy option, since a lead found by hand or a wrong field can then only be fixed in the file. Recommendation (a). Blocks: D72's preparation.
 
 
 
