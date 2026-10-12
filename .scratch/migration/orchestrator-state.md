@@ -37,6 +37,18 @@ dispatch:   # steps in flight, up to six (Z632)
   shared_paths: with D70, `src/lib/server/machine/lsp/relay.ts` (D70 removes `#config()` and its one use; D64 moves the file into `lsp/relay/`), `lsp/servers.ts` (D70 changes two refusals at 684 and 801), `lsp/adapters/markdown/places.ts` (`Reach.config`), `lsp/library/rules.ts` (`withheldFolders`), `views/sources/source/language/lsp.ts` (one import at 134), and the sentence sweeps of DESIGN.md, HELP.md, `docs/` and `config/text/`; simple, since each of D70's edits is a few lines in a region D64 does not change, and the second to land carries the other's lines by hand
   landing: not-started
   round: 0
+- step: D71
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: ae73bc8b538d2b3d0 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D71
+  base: 1568cf1ed
+  launched: 2026-10-12
+  report: agents/reviews/D71-report.md
+  brief_check: agents/reviews/D71-brief-check.md (af360c0361730ba65, claude-opus-5-5, 252,367 tokens, 96 tool uses, 14.6 min; closed in the brief by the orchestrator, under the report's Closed heading)
+  shared_paths: with D64, `src/lib/views/sources/repositories/Repositories.svelte` (D64 adds source-control markup; D71 adds one menu item), `src/lib/state/client/selectors.svelte.ts` (D64 one region; D71 the renamed internal `repository` field at :85 and the comment at :332), `src/lib/server/root/context.ts` (watcher wiring), the palette files, `config/text/app.yml`, `findings.yml`, `server.yml`, `views/sources/repositories.yml`, `config/catalogs/glyphs.yml` and `icons.yml` (additions in separate groups), `src/lib/data/model/index.ts`, and the sentence sweeps of DESIGN.md, HELP.md and `docs/`; simple, since D71 keeps off the four Repositories files D64 rewrites and each shared file takes additions in separate regions, which the second to land carries by hand
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)

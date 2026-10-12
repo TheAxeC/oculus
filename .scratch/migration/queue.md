@@ -1,9 +1,9 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - D64 (apps in the tools): building.
+- D71 (workspaces and repositories): building.
 
-Queued, in order (3 steps):
-- Q72 (the architecture re-read): after D64.
-- D71 (workspaces and repositories): being prepared, beside D64.
+Queued, in order (2 steps):
+- Q72 (the architecture re-read): after D64 and D71.
 - O33 (oculus in its own repository; inline): after Q72.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
