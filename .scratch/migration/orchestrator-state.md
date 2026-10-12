@@ -45,10 +45,12 @@ dispatch:   # steps in flight, up to six (Z632)
   base: ff113f762
   launched: 2026-10-12
   report: agents/reviews/D69-report.md
+  builder_usage: 169,827 tokens, 136 tool uses, 45.0 min
   brief_check: agents/reviews/D69-brief-check.md (ad3b6d05a2013035b, claude-opus-5-5, 210,006 tokens, 74 tool uses, 9.7 min; closed in the brief by the orchestrator under "Brief check, Closed", with Z825 and Z826)
   shared_paths: as D68's entry says; judged simple
+  reviewer_report: agents/reviews/D69-refuter.md (ae91041e053613856, claude-opus-5-5, 331,344 tokens, 125 tool uses, 25.3 min)
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D69-round1.md, sent 2026-10-12)
 ```
 
 ## The standing demands (from Axel, in force)
