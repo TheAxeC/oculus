@@ -19,8 +19,9 @@
 // The scan reads the disk (a document's text, whether a folder is there), so it runs once per
 // rebuild in the portfolio watcher and never per request. It is pure over its arguments: the hub
 // path, the projects and collections of the snapshot, the rules read out of the configuration, and
-// the text catalog the messages are written in. A hub other than the first is scanned with its key
-// as `root`, which prefixes its findings' scope and leaves the publication list to the first hub.
+// the text catalog the messages are written in. A hub other than the primary is scanned with its
+// key as `root`, which prefixes its findings' scope and leaves the publication list to the primary
+// hub.
 
 import type { AuditFinding, AuditKind } from '../../../data/model/index.ts';
 import { markers, gaps, conformance, guardrails, readability, collections } from './projects.ts';

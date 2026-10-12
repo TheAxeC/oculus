@@ -4,20 +4,19 @@
 //
 // The order is what keeps the answer for a hidden path from depending on the disk or on which roots
 // are shown: the segment rule and `closed_paths` on the path as given (the page ran them already,
-// and a request to this route runs them again); the key `engine`; for a root app, any root but its
-// own; whether the root is shown; the checks on the real path; and last whether the file exists.
-// The real-path checks compare the real paths as the disk spells them, case included. They are
-// made on the file's folder first, so a path inside oculus's own config folder is answered
-// `closed` without a stat, a real path or a read of the file itself, and then on the file, so a
-// link out of the root or into a dot folder is `closed` too. A real path in a private folder is
-// `closed` whatever root covers it. The file system is an argument, so a
-// test records every read it was asked for.
+// and a request to this route runs them again); for a root app, any root but its own; whether the
+// root is shown; the checks on the real path; and last whether the file exists. The real-path
+// checks compare the real paths as the disk spells them, case included. They are made on the file's
+// folder first, so a path inside oculus's own config folder is answered `closed` without a stat, a
+// real path or a read of the file itself, and then on the file, so a link out of the root or into a
+// dot folder is `closed` too. A real path in a private folder is `closed` whatever root covers it.
+// The file system is an argument, so a test records every read it was asked for.
 
 import { readlinkSync, statSync } from 'node:fs';
 import { isAbsolute, basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps/apps.ts';
 import { below, realPath } from '../../../core/paths.ts';
-import { ENGINE_ROOT, type Root } from '../../../files/files.ts';
+import type { Root } from '../../../files/files.ts';
 import type { HeldApp } from '../read/held.ts';
 
 /** What the checks ask of the disk. */
@@ -120,7 +119,6 @@ export function locate(
     if (!whole && (!pathSegmentsOpen(path) || inClosedPaths(path, closedPaths))) {
         return { answer: 'closed' };
     }
-    if (root === ENGINE_ROOT) return { answer: 'closed' };
     if (app.row.root !== '' && root !== app.row.root) return { answer: 'closed' };
     const shown = context.roots.find((one) => one.key === root);
     if (shown === undefined) return { answer: 'missing' };

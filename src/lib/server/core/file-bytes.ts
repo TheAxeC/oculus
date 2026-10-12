@@ -1,11 +1,11 @@
 // Layer 2, server. What the server does with a file's bytes when it replaces the file: the SHA-256
 // that says whether the file is the one a caller read, and the UTF-8 byte order mark a file keeps.
 //
-// A save (server/files/source.ts) and an edit a language server asks for (server/files/fs/
-// lsp-edit.ts) both compare the bytes they read with the bytes the caller says it was working
-// from, by this hash, and both write a file back with the byte order mark it started with, since
-// the editor works on the text after the mark and a write without it would change the file's
-// bytes. The rule for which bytes are text at all is data/helpers/files/text-kind.ts.
+// A save (server/files/source/source.ts) and an edit a language server asks for (server/files/fs/
+// lsp-edit.ts) both compare the bytes they read with the bytes the caller says it was working from,
+// by this hash, and both write a file back with the byte order mark it started with, since the
+// editor works on the text after the mark and a write without it would change the file's bytes. The
+// rule for which bytes are text at all is data/helpers/files/text-kind.ts.
 
 import { createHash } from 'node:crypto';
 import { BOM_BYTES, startsWithBom } from '../../data/helpers/files/text-kind.ts';

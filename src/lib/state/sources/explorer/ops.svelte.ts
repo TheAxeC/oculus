@@ -104,7 +104,7 @@ export type ExplorerLayout = {
     /** Open a view on the page the reader is in, or activate it; the instance id, '' for none. */
     openView: (view: string) => string;
     /** Show one folder as a Files tab rooted at it; the instance id, '' for none. */
-    showFolderInFiles: (path: string, root?: string) => string;
+    showFolderInFiles: (path: string, root: string) => string;
 };
 
 /**
@@ -645,15 +645,14 @@ export function createExplorer(
         }
     }
 
-    /** The roots of the workspace in force. */
+    /** The folders of the open workspace. */
     function currentRoots(): FsRoot[] {
-        const current = fs.workspaces();
-        return current.workspaces.find((one) => one.name === current.current)?.roots ?? [];
+        return fs.workspaces().folders;
     }
 
     /**
-     * Add folders to the workspace in force, one write each: how many were added and the first
-     * refusal, whose code is empty when none was refused.
+     * Add folders to the open workspace, one write each: how many were added and the first refusal,
+     * whose code is empty when none was refused.
      */
     async function addRoots(dirs: string[]): Promise<{ added: number; refused: string }> {
         let added = 0;
@@ -689,8 +688,7 @@ export function createExplorer(
         if (added === 0) return { folder: null, line };
         // The write marked the workspaces stale; the new root's key is the one the server gave it.
         const now = await fs.workspacesNow();
-        const current = now.workspaces.find((one) => one.name === now.current)?.roots ?? [];
-        const made = rootHolding(current, choice.dir);
+        const made = rootHolding(now.folders, choice.dir);
         return made === null
             ? { folder: null, line: t('workbench.workbenches_unserved', choice.dir) }
             : { folder: { root: made.root.key, path: made.path }, line };

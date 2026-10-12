@@ -11,7 +11,8 @@
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { ENGINE_ROOT } from '$lib/state/sources/fs';
+    import { OCULUS_CONFIG_ROOT } from '$lib/state/sources/fs';
+    import { openTarget } from '$lib/state/system/config/config-files';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import type { Group } from '$lib/state/system/config/groups';
@@ -23,6 +24,7 @@
     import { said } from './said';
 
     const {
+        fs: { workspaces },
         layout: { openView }
     } = useState();
 
@@ -36,9 +38,13 @@
 
     let { groups, id, writer, editors, lists }: Props = $props();
 
-    /** Open one file of a root in a source tab: the engine's config tree, or the hub's layer. */
+    /** Where a file opens in a source tab: through the workspace folder that holds it, if any. */
+    const targetOf = (root: string, file: string) => openTarget(root, file, workspaces());
+
+    /** Open one file of oculus's config tree, or of the primary hub's layer, in a source tab. */
     function openFile(root: string, file: string): void {
-        openView('source', sourceTabState(root, file));
+        const target = targetOf(root, file);
+        if (target !== null) openView('source', sourceTabState(target.root, target.path));
     }
 </script>
 
@@ -54,13 +60,19 @@
                     {#if line.local}
                         <Tag label={t('settings.local_tag')} />
                     {/if}
-                    <ToolButton
-                        label={t('views.open_source')}
-                        glyph="edit"
-                        title={t('views.open_source_tip', line.file)}
-                        compact
-                        onclick={() => openFile(line.root, line.file)}
-                    />
+                    {#if targetOf(line.root, line.file) !== null}
+                        <ToolButton
+                            label={t('views.open_source')}
+                            glyph="edit"
+                            title={t('views.open_source_tip', line.file)}
+                            compact
+                            onclick={() => openFile(line.root, line.file)}
+                        />
+                    {:else}
+                        <span class="unavailable">
+                            {t('workbench.settings_open_unavailable', line.file)}
+                        </span>
+                    {/if}
                 </div>
                 {#if line.description !== ''}
                     <p class="about"><CodeText text={line.description} /></p>
@@ -86,13 +98,19 @@
                         <div class="file" data-file={row.file}>
                             <div class="file-head">
                                 <span class="file-path">{row.file}</span>
-                                <ToolButton
-                                    label={t('views.open_source')}
-                                    glyph="edit"
-                                    title={t('views.open_source_tip', row.file)}
-                                    compact
-                                    onclick={() => openFile(ENGINE_ROOT, row.file)}
-                                />
+                                {#if targetOf(OCULUS_CONFIG_ROOT, row.file) !== null}
+                                    <ToolButton
+                                        label={t('views.open_source')}
+                                        glyph="edit"
+                                        title={t('views.open_source_tip', row.file)}
+                                        compact
+                                        onclick={() => openFile(OCULUS_CONFIG_ROOT, row.file)}
+                                    />
+                                {:else}
+                                    <span class="unavailable">
+                                        {t('workbench.settings_open_unavailable', row.file)}
+                                    </span>
+                                {/if}
                             </div>
                             {#if row.help !== ''}
                                 <p class="about"><CodeText text={row.help} /></p>
@@ -156,6 +174,11 @@
 
     .file .about {
         padding: 0;
+    }
+
+    .unavailable {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 
     .file .note {

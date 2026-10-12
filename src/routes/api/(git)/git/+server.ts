@@ -7,9 +7,8 @@
 // view's operations hold: the roots the file browser serves, the machine's local.yml, and the write
 // chain `opsWrites`, so a discard and a Files operation over one file are ordered.
 
-import { localFile } from '$lib/data/sources/config';
+import { configDir } from '$lib/data/sources/config';
 import { protectedFiles } from '$lib/server/files/fs/ops';
-import { browserRoots } from '$lib/server/files/roots';
 import { handleGit, handleGitGet } from '$lib/server/git/git-routes';
 import { allowedRoots } from '$lib/server/git/git-write';
 import { gitRoots } from '$lib/server/sessions/stores/hooks';
@@ -20,18 +19,18 @@ const options = (locals: App.Locals) => {
     return {
         config: locals.config().config,
         claudeBin: server.local.claudeBin,
-        rootsFor: () => allowedRoots(gitRoots(server.hub), server.local.hub),
+        rootsFor: () =>
+            allowedRoots([
+                ...gitRoots(server.hub),
+                ...server.workspace.open().roots.map((root) => root.dir)
+            ]),
         refresh: (root: string) => server.git.refresh(root),
         writes: server.opsWrites,
         running: server.gitRunning,
         guard: () =>
             protectedFiles({
-                roots: browserRoots({
-                    config: locals.config().config,
-                    engine: server.engine,
-                    local: server.local
-                }),
-                local: localFile(server.engine)
+                roots: server.workspace.open().roots,
+                config: configDir(server.engine)
             })
     };
 };

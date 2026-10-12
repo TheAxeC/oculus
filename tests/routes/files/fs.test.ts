@@ -1,19 +1,19 @@
 // Layer 2, route tests. What the /api/fs route answers. The route itself is a few lines handing the
-// request to lib/server/files/fs.ts with the workspaces file of local.yml, the roots of
-// config/sources.yml and the process's write chain, which is what this calls: handleFsWrite takes
-// a Request and the target to read and write.
+// request to lib/server/files/fs.ts with the open workspace, the bookmarks and notes places and the
+// process's write chain, which is what this calls: handleFsWrite takes a Request and the target to
+// read and write.
 //
-// Every root and every workspaces file here is synthetic, under the system temporary directory, and
-// every path written is asserted to be inside it first. What this does NOT cover: the route module
-// reading the machine's own config/local.yml.
+// Every folder and the workspace state here are synthetic, under the system temporary directory,
+// and every path written is asserted to be inside it first. What this does NOT cover: the route
+// module reading the machine's own hub `.oculus/local.yml` files.
 
 import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { ignoredCache, handleFsWrite, type FsTarget } from '../../../src/lib/server/files/fs.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { workspaceWith } from '../../fixtures/hubs/workspace.ts';
 
 const HOST = '127.0.0.1:8791';
 const TOKEN = 'a-write-token';
@@ -45,13 +45,13 @@ function folder(files: Record<string, string> = {}, dirs: string[] = []): string
 function target(): FsTarget & { hub: string } {
     const hub = folder({ 'README.md': '# hub\n' }, ['code']);
     const store = scratchDir('oculus-fsstore-');
-    const fixed: Root[] = [{ key: 'hub', dir: hub }];
     return {
         hub,
-        file: join(store, 'workspaces.json'),
+        engine: folder(),
+        workspace: workspaceWith([{ name: 'hub', dir: hub }]),
+        machine: { set: [], defaults: {} },
         bookmarks: join(store, 'bookmarks.yml'),
         notes: join(store, 'notes'),
-        fixed,
         writes: fsWrites(),
         ignored: ignoredCache()
     };

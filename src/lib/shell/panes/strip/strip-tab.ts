@@ -7,7 +7,11 @@
 import type { ClientState } from '$lib/state/client/context';
 import type { Instance } from '$lib/state/workbench/layout';
 import { instanceLabel } from '$lib/state/workbench/layout';
-import { engineDocName, shownFileOfTab } from '$lib/state/workbench/navigation/pages';
+import {
+    engineDocName,
+    shownFileOfTab,
+    type DocPlace
+} from '$lib/state/workbench/navigation/pages';
 import {
     badgeOf,
     registrationGlyph,
@@ -26,8 +30,8 @@ export type StripTabFacts = {
     client: ClientState;
     mark: (instance: Instance) => { glyph?: string; token?: string };
     pathOf: (instance: Instance) => string | null;
-    /** The place of oculus's own folder in the hub for a document tab of that folder, else ''. */
-    engineAt: (instance: Instance) => string;
+    /** Where a document tab's file is: the primary hub, and the hub holding oculus's own folder. */
+    place: (instance: Instance) => DocPlace;
     dirty: (id: string) => boolean;
     /** Whether a file is off the disk, read from the listing of its folder. */
     gone: (file: { root: string; path: string }) => boolean;
@@ -43,7 +47,7 @@ export function stripTab(instance: Instance, facts: StripTabFacts, t: Words): Ta
     const own = instanceLabel(instance.state) ?? engineDocName(instance);
     const badge = badgeOf(found, facts.client);
     const preview = instance.preview === true;
-    const shown = shownFileOfTab(instance, facts.engineAt(instance));
+    const shown = shownFileOfTab(instance, facts.place(instance));
     const gone = shown !== null && facts.gone(shown);
     const problem = shown === null ? null : facts.problemsOf(shown);
     return {

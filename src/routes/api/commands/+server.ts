@@ -7,7 +7,7 @@
 // fold, and the saves wait on the process's write chain beside the workspace and bookmark writes.
 
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
-import { target } from '$lib/server/edit/writes';
+import { carriedOf, target } from '$lib/server/edit/writes';
 import { repositoryRoots } from '$lib/server/files/roots';
 import { handleCommandsGet, handleCommandsPost } from '$lib/server/machine/runs/commands/routes';
 import type { RequestHandler } from './$types';
@@ -15,16 +15,11 @@ import type { RequestHandler } from './$types';
 const options = (locals: App.Locals) => {
     const server = locals.server;
     return {
-        rootsFor: () =>
-            repositoryRoots({
-                config: locals.config().config,
-                engine: server.engine,
-                local: server.local
-            }),
+        rootsFor: () => repositoryRoots(server.workspace.open()),
         approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
         configFor: () => locals.config().config,
         writes: server.fsWrites,
-        changes: target(server.engine, locals.config().config, server).changes
+        changes: target(server.engine, locals.config().config, carriedOf(server), server).changes
     };
 };
 

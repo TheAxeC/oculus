@@ -5,11 +5,11 @@
 // linking document's own folder, in the space that document is read in, and opens the file in a
 // tab instead of leaving the page.
 //
-// A document is read in one of two spaces (the answer's `engine`): the hub, whose paths are
-// relative to the research hub, or the engine folder, whose paths are relative to oculus's own
-// folder. The manual and the engine's guides are read in the engine's space, so their links reach
-// one another on a hub that does not hold them, and `openingOf` says where a link opens in
-// either space: the Help view, a document of the engine, or a document of the hub.
+// A document is read in one of two spaces (the answer's `engine`): a hub, whose paths are relative
+// to that hub's folder, or the engine folder, whose paths are relative to oculus's own folder. The
+// manual and the engine's guides are read in the engine's space, so their links reach one another
+// on a hub that does not hold them, and `openingOf` says where a link opens in either space: the
+// Help view, a document of the engine, or a document of the hub.
 
 import { normalisePath } from '$lib/state/sources/explorer/view/place';
 import {
@@ -32,7 +32,9 @@ export type DocLink = {
 
 /** Where a link between documents opens: the Help view, or a document tab of one of two kinds. */
 export type DocOpening =
-    { kind: 'help' } | { kind: 'engine'; path: string } | { kind: 'hub'; path: string };
+    | { kind: 'help' }
+    | { kind: 'engine'; path: string }
+    | { kind: 'hub'; path: string; hub: string };
 
 /** An address the browser resolves on its own: a scheme, a protocol-relative or absolute path. */
 const OWN_ADDRESS = /^(?:[a-z][a-z0-9+.-]*:|\/)/i;
@@ -71,36 +73,40 @@ function climbsOut(path: string): boolean {
 }
 
 /** Where a path of the hub opens: the Help view for the manual, else the engine or the hub. */
-function inHub(path: string, manual: string, engineAt: string): DocOpening {
+function inHub(path: string, manual: string, engineAt: string, hub: string): DocOpening {
     if (path === manual) return { kind: 'help' };
     const inner = engineRelative(path, engineAt);
-    return inner === null ? { kind: 'hub', path } : { kind: 'engine', path: inner };
+    return inner === null ? { kind: 'hub', path, hub } : { kind: 'engine', path: inner };
 }
 
 /**
  * Where a link opens, read from the document that holds it. In the engine's space the manual opens
  * the Help view and any other file of the engine folder opens as a document of the engine; a link
  * that climbs out of the folder, or names a place the engine read never serves, is read in the hub
- * at `engineAt` when the engine folder lies in the hub, and opens nothing when it does not. In the
- * hub's space the manual opens the Help view first, a path inside the engine folder opens as the
- * engine's document, so one document is one tab whichever document linked to it, and any other
- * path opens as a document of the hub. Null for a link with no path and for one that leaves the
- * hub.
+ * at `engineAt` in the hub `engineHub` that holds the engine folder, and opens nothing when no hub
+ * does. In a hub's space the manual opens the Help view first, a path inside the engine folder
+ * opens as the engine's document, so one document is one tab whichever document linked to it, and
+ * any other path opens as a document of the same hub. Null for a link with no path and for one that
+ * leaves the hub.
  */
 export function openingOf(
     link: DocLink,
-    doc: Pick<DocState, 'engine' | 'engineAt' | 'manual'>
+    doc: Pick<DocState, 'engine' | 'engineAt' | 'engineHub' | 'hub' | 'manual'>
 ): DocOpening | null {
     const { engineAt } = doc;
     if (link.path === '') return null;
-    if (!doc.engine) return climbsOut(link.path) ? null : inHub(link.path, doc.manual, engineAt);
+    if (!doc.engine) {
+        return climbsOut(link.path) ? null : inHub(link.path, doc.manual, engineAt, doc.hub);
+    }
     if (link.path === doc.manual) return { kind: 'help' };
     if (!climbsOut(link.path) && engineServes(link.path)) {
         return { kind: 'engine', path: link.path };
     }
-    if (engineAt === '') return null;
+    if (engineAt === '' || doc.engineHub === '') return null;
     const up = normalisePath(engineHubPath(link.path, engineAt));
-    return climbsOut(up) ? null : inHub(up, engineHubPath(doc.manual, engineAt), engineAt);
+    return climbsOut(up)
+        ? null
+        : inHub(up, engineHubPath(doc.manual, engineAt), engineAt, doc.engineHub);
 }
 
 /**

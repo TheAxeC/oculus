@@ -22,6 +22,7 @@ import {
     queryOf,
     records,
     replacePost,
+    refusesOculusLocal,
     replaceWorld,
     stamps,
     TIMEOUT
@@ -94,17 +95,25 @@ describe('what stops a replace', () => {
         }
     );
 
-    it("refuses `protected` for the machine's local file of the engine root, which it never opens", async () => {
+    it("refuses `protected` for the machine's local file of a hub, which it never opens", async () => {
         const w = replaceWorld({ 'a.txt': 'foo\n' });
-        const before = readFileSync(join(w.engine, 'local.yml'), 'utf8');
+        const before = readFileSync(join(w.dot, 'local.yml'), 'utf8');
         const answer = await replacePost(w, {
             query: queryOf('needle'),
             replace: 'X',
-            items: [{ root: 'engine', path: 'local.yml', hits: [hit(2, 0, 'needle')] }]
+            items: [{ root: 'dot', path: 'local.yml', hits: [hit(2, 0, 'needle')] }]
         });
-        expect(answer.body).toMatchObject({ error: 'protected', failed: 'engine/local.yml' });
-        expect(readFileSync(join(w.engine, 'local.yml'), 'utf8')).toBe(before);
+        expect(answer.body).toMatchObject({ error: 'protected', failed: 'dot/local.yml' });
+        expect(readFileSync(join(w.dot, 'local.yml'), 'utf8')).toBe(before);
     });
+
+    refusesOculusLocal((w, _before, root, path) =>
+        replacePost(w, {
+            query: queryOf('needle'),
+            replace: 'X',
+            items: [{ root, path, hits: [hit(2, 0, 'needle')] }]
+        })
+    );
 });
 
 describe('what a replace records', () => {

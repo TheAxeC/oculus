@@ -13,7 +13,7 @@ import { expect, describe } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
 import type { Change } from '../../../../src/lib/server/core/changes.ts';
-import type { WriteTarget } from '../../../../src/lib/server/edit/writes.ts';
+import type { PrimaryTarget } from '../../../../src/lib/server/edit/writes.ts';
 import {
     AREA,
     GOOD,
@@ -27,7 +27,6 @@ import {
     manifestOf,
     overridesOf,
     REPOSITORY_ID,
-    WORKSPACE_ID,
     repositoryTarget,
     request,
     personalTarget,
@@ -36,8 +35,7 @@ import {
     tasksOf,
     undoneBack,
     undone,
-    warmConfig,
-    workspaceTarget
+    warmConfig
 } from '../write-fixture.ts';
 import { it, test } from '../../../fixtures/scratch.ts';
 import { present } from '../../../fixtures/present.ts';
@@ -59,7 +57,7 @@ const FIELD_ROWS = [
         now: 'a new line',
         was: 'the line',
         original: MANIFEST,
-        read: (into: WriteTarget): string => manifestOf(into)
+        read: (into: PrimaryTarget): string => manifestOf(into)
     },
     ...(['idea', 'r'] as const).flatMap((id) => [
         {
@@ -69,7 +67,7 @@ const FIELD_ROWS = [
             now: '2026-12-01',
             was: '2026-11-01',
             original: PERSONAL_MANIFEST,
-            read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
+            read: (_into: PrimaryTarget, files: Files): string => readFileSync(files[id], 'utf8')
         },
         {
             name: `${id}: a snooze woken`,
@@ -78,7 +76,7 @@ const FIELD_ROWS = [
             now: null,
             was: '2026-11-01',
             original: PERSONAL_MANIFEST,
-            read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
+            read: (_into: PrimaryTarget, files: Files): string => readFileSync(files[id], 'utf8')
         }
     ])
 ];
@@ -95,25 +93,25 @@ const LINE_ROWS = [
             key: '0',
             action: 'done'
         },
-        read: (into: WriteTarget): string => tasksOf(into)
+        read: (into: PrimaryTarget): string => tasksOf(into)
     },
     ...(['idea', 'r'] as const).flatMap((id) => [
         {
             name: `${id}: a tick`,
             body: { kind: 'subtask', target: { id }, key: '0', action: 'done' },
-            read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
+            read: (_into: PrimaryTarget, files: Files): string => readFileSync(files[id], 'utf8')
         },
         {
             name: `${id}: an added line`,
             body: { kind: 'subtask-add', target: { id }, fields: { do: 'write it up' } },
-            read: (_into: WriteTarget, files: Files): string => readFileSync(files[id], 'utf8')
+            read: (_into: PrimaryTarget, files: Files): string => readFileSync(files[id], 'utf8')
         }
     ])
 ];
 
 describe('taking a change back', () => {
     /** One write, and the change it left at the head of the log. */
-    async function made(into: WriteTarget, body: unknown, row = ''): Promise<Change> {
+    async function made(into: PrimaryTarget, body: unknown, row = ''): Promise<Change> {
         expect((await handleWrite(request(body), TOKEN, into)).status, row).toBe(200);
         const [change] = changesOf(into);
         expect(change).toBeDefined();
@@ -207,22 +205,22 @@ describe('taking a change back', () => {
         }
     );
 
-    /** The writes to a project of a folder added to the workspace that the undo takes back. */
-    const WORKSPACE_ROWS = [
+    /** The writes to the project of a folder of the workspace that the undo takes back. */
+    const FOLDER_ROWS = [
         {
             name: 'a snooze set',
-            body: { kind: 'manifest', id: WORKSPACE_ID, fields: { snooze: '2026-12-01' } }
+            body: { kind: 'manifest', id: REPOSITORY_ID, fields: { snooze: '2026-12-01' } }
         },
         {
             name: 'a tick',
-            body: { kind: 'subtask', target: { id: WORKSPACE_ID }, key: '0', action: 'done' }
+            body: { kind: 'subtask', target: { id: REPOSITORY_ID }, key: '0', action: 'done' }
         }
     ];
 
-    it.each(WORKSPACE_ROWS)(
-        "writes a folder added to the workspace's project in its own file only, and takes it back: $name",
+    it.each(FOLDER_ROWS)(
+        'writes the project of a folder of the workspace in its own file only, and takes it back: $name',
         async (row) => {
-            const { into, file } = workspaceTarget();
+            const { into, file } = repositoryTarget();
             const hubFile = join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml');
             const original = readFileSync(file, 'utf8');
             const hubOriginal = readFileSync(hubFile, 'utf8');

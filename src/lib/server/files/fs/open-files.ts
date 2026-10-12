@@ -12,16 +12,16 @@
 //
 // A name is `source:`, a root key, a slash and a path. It is resolved with `resolveRootPath` over
 // the browser roots (the source route's list), and a name that does not resolve inside a root, or
-// has an empty root key or an empty path, is never polled and never published; the socket leaves
-// it out of the hub subscription. A name that resolves is polled with `pollFile`, a stat each tick
-// of the path the name spells, on the server's clock: a darwin fs.watch can miss a write that
-// lands while it registers (core/file-poll.ts). The name is resolved again at every tick, against
-// the roots as the configuration and the saved workspaces last left them, because a link may now
-// point out of every root or a root key may be gone from sources.yml or name another folder; such
-// a name has no path to stat, publishes null at the tick it stops resolving and reads nothing,
-// and is followed again when it resolves. Otherwise the file is read and hashed. A file over
-// the read limit is not read, and its message is `stat:` and the hash of its inode, size, mtime
-// and ctime. A message that repeats the one before it is not published again.
+// has an empty root key or an empty path, is never polled and never published; the socket leaves it
+// out of the hub subscription. A name that resolves is polled with `pollFile`, a stat each tick of
+// the path the name spells, on the server's clock: a darwin fs.watch can miss a write that lands
+// while it registers (core/file-poll.ts). The name is resolved again at every tick, against the
+// roots as the configuration and the open workspace last left them, because a link may now point
+// out of every root or a folder may be gone from the workspace or carry another name; such a name
+// has no path to stat, publishes null at the tick it stops resolving and reads nothing, and is
+// followed again when it resolves. Otherwise the file is read and hashed. A file over the read
+// limit is not read, and its message is `stat:` and the hash of its inode, size, mtime and ctime. A
+// message that repeats the one before it is not published again.
 //
 // A poll lives while some socket holds its channel. When the last sink drops a name, by an
 // unsubscribe message or by closing, the poll closes and the hub forgets the channel's message, so
@@ -66,10 +66,10 @@ export type OpenFilesOptions = {
     /** The roots the names are resolved against; read again after the configuration moved. */
     roots: () => Root[];
     /**
-     * The saved workspaces file, whose change adds or drops roots. A function names the file at
-     * each tick, so a poll follows the file when the hub it lies in changes.
+     * Call the listener when the open workspace moves, which adds or drops roots; the answer takes
+     * the listener away.
      */
-    workspacesFile?: string | (() => string);
+    follow?: (listener: () => void) => () => void;
     clock?: Clock;
     every?: number;
     /** Read the bytes of a file to hash them; the file system's read unless a test gives one. */
@@ -121,9 +121,9 @@ export function createOpenFiles(options: OpenFilesOptions): OpenFiles {
     const polls = new Map<string, Entry>();
     const held = new Map<Sink, Set<string>>();
 
-    // The roots are read when a name first needs them and again after the configuration or the
-    // saved workspaces moved, since reading them parses the configuration and every tick of every
-    // poll resolves its name against them.
+    // The roots are read when a name first needs them and again after the configuration or the open
+    // workspace moved, since reading them parses the configuration and every tick of every poll
+    // resolves its name against them.
     let served: Root[] | null = null;
     const roots = (): Root[] => (served ??= options.roots());
     const moved: Sink = {
@@ -134,13 +134,10 @@ export function createOpenFiles(options: OpenFilesOptions): OpenFiles {
         close: () => undefined
     };
     hub.subscribe(moved, ['config'], false);
-    const workspaces: FilePoll | null =
-        options.workspacesFile === undefined
-            ? null
-            : pollFile(options.workspacesFile, { clock, every }, () => {
-                  served = null;
-                  workspaces?.reading();
-              });
+    const unfollow =
+        options.follow?.(() => {
+            served = null;
+        }) ?? null;
 
     /** Publish what the file says now, unless it is what the channel said last. */
     function tell(channel: string, entry: Entry): void {
@@ -224,7 +221,7 @@ export function createOpenFiles(options: OpenFilesOptions): OpenFiles {
             for (const entry of polls.values()) entry.poll.close();
             polls.clear();
             held.clear();
-            workspaces?.close();
+            unfollow?.();
             hub.remove(moved);
         }
     };

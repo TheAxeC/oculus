@@ -1,5 +1,5 @@
 // Layer 2, server. One value of a setting an app declares, written into the `app_settings:` map of
-// the first hub's config layer (`<hub>/.oculus/config/behavior.yml`), and taken back again.
+// the primary hub's config layer (`<hub>/.oculus/config/behavior.yml`), and taken back again.
 //
 // The map's keys are the settings' whole keys: `notes.width` is one key of the map and is never
 // split at its dot, which is why this is not `writeConfigKey`, whose keys are the options catalog's
@@ -25,6 +25,7 @@ import { loadConfig, textCatalog } from '../../../../data/sources/config.ts';
 import type { Change } from '../../../core/changes.ts';
 import { words } from '../../../core/words.ts';
 import type { AppsHeld } from '../../../machine/apps/read/held.ts';
+import { hubOption } from '../../../files/workspace/paths.ts';
 import type { WriteTarget } from '../../writes.ts';
 import { readBack } from '../../list-edit.ts';
 import {
@@ -93,11 +94,11 @@ function storedMap(parsed: unknown): unknown {
 }
 
 /**
- * The value the first hub's layer holds for a key now, and whether the key's file can be read: an
+ * The value the primary hub's layer holds for a key now, and whether the key's file can be read: an
  * undo compares it with the value the write left. A key the layer does not hold is a found option
  * with no value, since there is nothing there for the write to have changed.
  */
-export function appSettingNow(engine: string, hub: string, key: string): OptionNow {
+export function appSettingNow(engine: string, hub: string | undefined, key: string): OptionNow {
     try {
         const text = placeText(placeOf(engine, hub, FILE, APP_SETTINGS_KEY)) ?? '';
         const doc = parseDocument(text);
@@ -119,7 +120,7 @@ export function writeAppSetting(
     value: unknown,
     declarations?: AppsHeld
 ): ConfigKeyOutcome {
-    const before = loadConfig(into.engine, { hub: into.hub });
+    const before = loadConfig(into.engine, hubOption(into.hub));
     const text = textCatalog(before.config);
     const refuse = refusing(FILE, `${APP_SETTINGS_KEY}.${key}`);
     if (declarations !== undefined) {
@@ -129,7 +130,7 @@ export function writeAppSetting(
         const flaw = settingFlaw(setting, value);
         if (flaw !== null) return refuse(flawText(text, setting, flaw));
     }
-    const place = placeOf(into.engine, into.hub, FILE, APP_SETTINGS_KEY);
+    const place = placeOf(into.engine, into.hub ?? undefined, FILE, APP_SETTINGS_KEY);
     const onDisk = placeText(place);
     const source = onDisk ?? '';
     const doc = parseDocument(source);
@@ -161,7 +162,7 @@ export function writeAppSetting(
     if (read === null || !isDeepStrictEqual(read.after, expected)) {
         return refuse(words(text, 'server.config_key.not_kept'));
     }
-    const reason = refusedBy(into.engine, into.hub, FILE, edited, before, 'hub');
+    const reason = refusedBy(into.engine, into.hub ?? undefined, FILE, edited, before, 'hub');
     if (reason !== null) return refuse(reason);
     return written(
         place.path,
@@ -185,7 +186,7 @@ export function undoAppSetting(
 ): ConfigKeyOutcome {
     const earlier = change.before === null ? undefined : change.before;
     const outcome = writeAppSetting(into, change.field, earlier);
-    const place = placeOf(into.engine, into.hub, FILE, APP_SETTINGS_KEY);
+    const place = placeOf(into.engine, into.hub ?? undefined, FILE, APP_SETTINGS_KEY);
     if (outcome.refused.length > 0 || !made.includes(place.path)) return outcome;
     const left = placeText(place);
     if (left === null || parseDocument(left).contents !== null) return outcome;

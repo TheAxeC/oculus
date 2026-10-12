@@ -11,7 +11,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ProgramButton from '../../links/ProgramButton.svelte';
     import { hrefOf, hubPathsOf, isHubPath } from '$lib/state/boards/collection';
-    import { HUB_ROOT, opensInProgram } from '$lib/state/sources/fs';
+    import { opensInProgram } from '$lib/state/sources/fs';
     import { openPage } from '$lib/views/shared/explorer/opening';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -26,11 +26,11 @@
         field: string;
         value: string;
         /** The root of the hub the entry is of, which a path of the value is under. */
-        root?: string;
+        root: string;
         onsaid: (said: string) => void;
     };
 
-    let { field, value, root = HUB_ROOT, onsaid }: Props = $props();
+    let { field, value, root, onsaid }: Props = $props();
 
     /** Whether the link names an HTML file of the hub, which the document view holds as a tab. */
     const document = $derived(

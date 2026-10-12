@@ -32,7 +32,8 @@ import type { Windows } from '../../workbench/layout/open/float/browser.ts';
 import type { LayoutStore } from '../../workbench/layout.svelte.ts';
 import type { LinesStore } from '../../system/lines.svelte.ts';
 import type { ManifestDraftStore } from '../../forms/manifest-draft.ts';
-import type { MemoriesStore } from '../../life/memories.svelte.ts';
+import type { MemoriesStore } from '../../life/pictures/memories.svelte.ts';
+import type { WallpapersStore } from '../../life/pictures/wallpapers.svelte.ts';
 import type { NoticesStore } from '../../workbench/navigation/notices.svelte.ts';
 import type { PaletteSourceStore } from '../../workbench/palette-source.svelte.ts';
 import type { PresentStore } from '../../life/present.svelte.ts';
@@ -127,6 +128,7 @@ export type ClientState = {
     accounts: AccountsStore;
     audit: AuditStore;
     memories: MemoriesStore;
+    wallpapers: WallpapersStore;
     /** The Status view's line counts of oculus's own files. */
     lines: LinesStore;
     present: PresentStore;

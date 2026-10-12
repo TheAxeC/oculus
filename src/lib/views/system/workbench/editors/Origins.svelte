@@ -17,8 +17,8 @@
         selectors: { repoSettings }
     } = useState();
 
-    /** The root of every saved workspace, each once, in the order the workspaces give them. */
-    const roots = $derived(workspaces().workspaces.flatMap((one) => one.roots));
+    /** The folders of the open workspace, in the order the workspace gives them. */
+    const roots = $derived(workspaces().folders);
     const origins = $derived(repoOrigins(roots, fileText, repoSettings));
 </script>
 

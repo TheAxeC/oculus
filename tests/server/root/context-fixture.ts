@@ -24,6 +24,8 @@ import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { LiteratureDesk } from '../../../src/lib/server/content/literature/desk.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
 import { noop } from '../../fixtures/doubles.ts';
+import { hubOption } from '../../../src/lib/server/files/workspace/paths.ts';
+import { workspaceWith } from '../../fixtures/hubs/workspace.ts';
 import { hostsFixture } from '../machine/apps/hosts-fixture.ts';
 
 const ROUTE_TOKEN = 'the-write-token-of-this-context';
@@ -43,7 +45,6 @@ function terminalDriver(): TerminalDriver {
 export function contextFixture(overrides: Partial<ServerContext> = {}): ServerContext {
     const hub = overrides.hub ?? new Hub();
     const local: LocalConfig = overrides.local ?? {
-        hub: '/fixture/hub',
         port: 8791,
         claudeBin: 'claude',
         riteDapBin: 'rite_dap',
@@ -85,9 +86,10 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
     const eslint = new HeldEslints({ roots: () => [] });
     const comments = new HeldComments();
     let closed = false;
+    const workspace = overrides.workspace ?? workspaceWith([]);
     const context: ServerContext = {
         hub,
-        memories: { refused: new Set<string>() },
+        workspace,
         terminals,
         relay,
         debug,
@@ -153,13 +155,15 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         appsSecret: 'the-apps-secret-of-this-context',
         host: hostInfo(local.port),
         local,
+        machine: () => local,
+        machineSet: () => [],
         engine,
         configCache:
             overrides.configCache ??
             createConfigCache({
                 engine,
-                hub: () => local.hub,
-                load: () => loadConfig(engine, { hub: local.hub }),
+                hub: () => workspace.open().primaryDir,
+                load: () => loadConfig(engine, hubOption(workspace.open().primaryDir)),
                 report: () => undefined
             }),
         fsWrites: overrides.fsWrites ?? fsWrites(),
@@ -176,7 +180,9 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         mailDir: overrides.mailDir ?? '/fixture/mail',
         providerDir: overrides.providerDir ?? '/fixture/connect',
         accounts: overrides.accounts ?? {
-            file: '/fixture/engine/config/local.yml',
+            file: () => '/fixture/hub/.oculus/local.yml',
+            fileOf: () => '/fixture/hub/.oculus/local.yml',
+            noPrimary: () => 'the workspace has no primary hub',
             writes: overrides.fsWrites ?? fsWrites(),
             reload: noop
         },

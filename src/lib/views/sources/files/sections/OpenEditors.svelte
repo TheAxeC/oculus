@@ -57,7 +57,7 @@
         layout: { activateInstance, closeInstance, currentPage, layout, transferInstance },
         fs: { gone },
         problems,
-        selectors: { engineAtFor },
+        selectors: { docPlaceFor },
         ui: { saveBeforeClose, unsaved },
         source: { saveSourceDraft }
     } = useState();
@@ -69,7 +69,7 @@
             held,
             (tab) => instanceLabel(tab.state) ?? '',
             (id) => unsaved(id),
-            (tab) => fileOfTab(tab, engineAtFor(tab))
+            (tab) => fileOfTab(tab, docPlaceFor(tab))
         )
     );
     const several = $derived(groups.length > 1);

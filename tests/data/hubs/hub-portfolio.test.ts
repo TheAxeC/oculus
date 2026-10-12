@@ -5,7 +5,7 @@
 //
 // The hubs are two copies of demo/ under the system temporary directory (hubs-fixture.ts), so every
 // id of the second hub is also an id of the first, which is the case the prefix exists for.
-// tests/data/hubs/hub-roots.test.ts reads the mark that makes a root a hub.
+// tests/data/hubs/hub-folders.test.ts reads what makes a folder of a workspace a hub.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,7 +14,7 @@ import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { Entry, Relations, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { it } from '../../fixtures/scratch.ts';
-import { copies, nameRoots, published } from './hubs-fixture.ts';
+import { copies, published } from './hubs-fixture.ts';
 
 /** The kinds of record the snapshot keeps in a table by id. */
 const KINDS = [
@@ -39,10 +39,15 @@ function builds(from: ReturnType<typeof copies>): {
     alone: Snapshot;
     merged: Snapshot;
 } {
-    const first = published(from.base, from.hub).snapshot;
-    const alone = published(from.base, from.lab).snapshot;
-    nameRoots(from.hub, [{ key: 'lab', dir: from.lab, hub: true }]);
-    const merged = published(from.base, from.hub).snapshot;
+    const first = published([{ name: 'hub', dir: from.hub }], 'hub').snapshot;
+    const alone = published([{ name: 'lab', dir: from.lab }], 'lab').snapshot;
+    const merged = published(
+        [
+            { name: 'hub', dir: from.hub },
+            { name: 'lab', dir: from.lab }
+        ],
+        'hub'
+    ).snapshot;
     return { first, alone, merged };
 }
 
@@ -53,13 +58,13 @@ function seen(findings: Snapshot['findings']): string[][] {
 
 describe('the portfolio of several hubs', () => {
     it(
-        'is the first hub as it is built alone when no hub root is named',
+        'is the primary hub as it is built alone when the workspace lists one hub',
         { tags: ['slow'] },
         () => {
             const from = copies();
             const config = portfolioConfigFrom(loadConfig(engineDir(), { hub: from.hub }).config);
             const direct = buildPortfolioWithSchemas(from.hub, config).snapshot;
-            const watched = published(from.base, from.hub).snapshot;
+            const watched = published([{ name: 'hub', dir: from.hub }], 'hub').snapshot;
             expect(JSON.stringify(watched)).not.toContain('"root"');
             for (const kind of KINDS) {
                 expect(Object.keys(watched.entities[kind]), kind).toEqual(
@@ -71,7 +76,7 @@ describe('the portfolio of several hubs', () => {
     );
 
     it(
-        'holds every record of both hubs, the second hub under the key of its root',
+        'holds every record of both hubs, the second hub under the name of its folder',
         { tags: ['slow'] },
         () => {
             const from = copies();
@@ -83,7 +88,7 @@ describe('the portfolio of several hubs', () => {
                 const records = Object.values(merged.entities[kind]) as RootedId[];
                 for (const record of records) {
                     expect(record.root, `${kind} ${record.id}`).toBe(
-                        record.id.startsWith('lab:') ? 'lab' : 'hub'
+                        record.id.startsWith('lab:') ? 'lab' : undefined
                     );
                 }
                 const prefixed = Object.keys(merged.entities[kind]).filter((id) =>
@@ -199,7 +204,7 @@ describe('the portfolio of several hubs', () => {
     );
 
     it(
-        'prefixes a value its hub cannot resolve too, so it never reads as a record of the first hub (G32)',
+        'prefixes a value its hub cannot resolve too, so it never reads as a record of the primary hub (G32)',
         { tags: ['slow'] },
         () => {
             const from = copies();
@@ -231,7 +236,7 @@ describe('the portfolio of several hubs', () => {
     );
 
     it(
-        'names a first-hub lead whose title begins with the key of a hub root and a colon (G32)',
+        'names a primary-hub lead whose title begins with the name of a hub folder and a colon (G32)',
         { tags: ['slow'] },
         () => {
             const from = copies();
@@ -250,7 +255,7 @@ describe('the portfolio of several hubs', () => {
     );
 
     it(
-        'names a first-hub id that begins with the key of a hub root and a colon as a finding',
+        'names a primary-hub id that begins with the name of a hub folder and a colon as a finding',
         { tags: ['slow'] },
         () => {
             const from = copies();

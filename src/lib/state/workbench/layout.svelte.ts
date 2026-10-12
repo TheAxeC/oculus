@@ -225,17 +225,19 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
          * Show one path in the file browser: the Files tab of the page the reader is in is
          * activated (the panes are restored first when it sits behind a maximised pane), or one is
          * opened there when the page has none, and it is asked to open the folders on the way,
-         * select the path and scroll it into view; with `open` a folder is shown open too. A path
-         * given with no root is a path of the hub. The returned id names the Files instance.
+         * select the path and scroll it into view; with `open` a folder is shown open too. The root
+         * is the key of the workspace folder the path lies in. The returned id names the Files
+         * instance.
          */
-        showInFiles: (path: string, root?: string, open?: boolean) => string;
+        showInFiles: (path: string, root: string, open?: boolean) => string;
         /**
          * Show one file in the file browser as showInFiles does, and open the Timeline section on
-         * it, scrolled to the top of the pane. A path given with no root is a path of the hub.
+         * it, scrolled to the top of the pane. The root is the key of the workspace folder the path
+         * lies in.
          */
         showTimeline: ShowInFiles['showTimeline'];
         /** Show one folder as a Files tab rooted at it, found again by the folder. */
-        showFolderInFiles: (path: string, root?: string) => string;
+        showFolderInFiles: (path: string, root: string) => string;
         /** Show the TeX view: its tab, or a new tab in the pane holding the Files tab. */
         showTexView: () => string;
         /** Show a deck in a Present tab, beside the tab being read when asked. */

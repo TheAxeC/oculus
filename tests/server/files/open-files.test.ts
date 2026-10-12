@@ -20,9 +20,9 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { Hub, type Sink } from '../../../src/lib/server/core/channels.ts';
 import { TEXT_LIMIT } from '../../../src/lib/data/file-ops.ts';
-import type { Clock } from '../../../src/lib/server/core/file-poll.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import { createOpenFiles } from '../../../src/lib/server/files/fs/open-files.ts';
+import { manualClock } from '../../fixtures/doubles.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** The paths the server read the bytes of, recorded by the reader the test hands it. */
@@ -33,28 +33,6 @@ const PER_SOCKET = 200;
 const PER_SERVER = 1000;
 
 const hashOf = (content: string): string => createHash('sha256').update(content).digest('hex');
-
-/** A clock that runs a scheduled call only when the test says so. */
-function manualClock(): Clock & { due: () => number; tick: () => void } {
-    const scheduled = new Map<number, () => void>();
-    let next = 1;
-    return {
-        setTimeout: (run) => {
-            const id = next++;
-            scheduled.set(id, run);
-            return id;
-        },
-        clearTimeout: (timer) => {
-            scheduled.delete(timer as number);
-        },
-        due: () => scheduled.size,
-        tick: () => {
-            const running = [...scheduled.entries()];
-            scheduled.clear();
-            for (const [, run] of running) run();
-        }
-    };
-}
 
 function sink(): Sink {
     return { send: () => Promise.resolve(), close: () => undefined };

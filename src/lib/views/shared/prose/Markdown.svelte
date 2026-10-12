@@ -99,13 +99,18 @@
         }
         const listed = readDocs(client.entities.config()?.config.docs);
         if (opening.kind === 'hub') {
-            const entry = listed.find((one) => one.path === opening.path);
+            const ownHub = opening.hub === '' || opening.hub === client.fs.primary();
+            const entry = ownHub ? listed.find((one) => one.path === opening.path) : undefined;
             const named = entry ?? { label: '', path: opening.path, group: '' };
-            client.layout.openView('doc', { ...docState(named), ...state });
+            const hubState = ownHub
+                ? {}
+                : { id: `${opening.hub}:${opening.path}`, hub: opening.hub };
+            client.layout.openView('doc', { ...docState(named), ...hubState, ...state });
             return;
         }
         const at = engineHubPath(opening.path, doc.engineAt);
-        const entry = listed.find((one) => at !== '' && one.path === at);
+        const inPrimary = doc.engineHub === client.fs.primary();
+        const entry = listed.find((one) => inPrimary && at !== '' && one.path === at);
         const label = entry?.label ?? heldLabel(opening.path);
         client.layout.openView('doc', { ...engineDocState(opening.path, label), ...state });
     }

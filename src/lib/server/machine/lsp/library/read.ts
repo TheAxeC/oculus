@@ -14,7 +14,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import type { LspReadRefusal, LspToPage, LspToServer } from '../../../../data/model/index.ts';
 import { TEXT_LIMIT } from '../../../../data/file-ops.ts';
-import { isBinaryFile } from '../../../files/source.ts';
+import { isBinaryFile } from '../../../files/source/source.ts';
 import { realPath } from '../../../core/paths.ts';
 import { normal } from '../uris.ts';
 import type { Library } from './tokens.ts';

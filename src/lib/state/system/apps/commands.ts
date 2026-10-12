@@ -8,7 +8,6 @@
 // `declined` when the reader answered no, `failed` when the run was refused, `missing` when the
 // root is not shown or the file holds no command of the name.
 
-import { HUB_ROOT } from '../../../data/helpers/hub-names.ts';
 import type { CommandOutcome } from './frame/methods.ts';
 
 /**
@@ -25,6 +24,10 @@ export type AppCommandsDeps = {
         ) => () => void;
     };
     served: () => { key: string; dir: string }[];
+    /**
+     * The name of the open workspace's primary hub, whose machine apps have no root of their own.
+     */
+    primary: () => string | null;
 };
 
 /** The runner of an app's commands, called with the app's root key (empty for a machine app). */
@@ -33,7 +36,7 @@ export function appCommands(deps: AppCommandsDeps): {
 } {
     return {
         async run(root, name) {
-            const key = root === '' ? HUB_ROOT : root;
+            const key = root === '' ? deps.primary() : root;
             const repo = deps.served().find((one) => one.key === key)?.dir;
             if (repo === undefined) return 'missing';
             const listed = await deps.commands.load(repo);

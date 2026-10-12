@@ -48,7 +48,7 @@
         type LinkedinEntry,
         type LinkedinState
     } from '$lib/state/feeds/linkedin';
-    import { HUB_ROOT, rootOf } from '$lib/state/shared/page/hubs';
+    import { rootOf } from '$lib/state/shared/page/hubs';
     import { IDEA_BODY_LINE } from '$lib/data/prose/linkedin-idea';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
@@ -80,11 +80,12 @@
     const picked = $derived(pickIdea(split.ideas, today));
     let said = $state('');
 
-    /** The folder of the hub a post is of: the feed's own for the first hub, else the hub's. */
+    /** The folder of the hub a post is of: the feed's own for the primary hub, else the hub's. */
     function folderOf(entry: LinkedinEntry): string {
-        const root = rootOf(entry);
+        if (entry.root === undefined) return data?.file ?? '';
+        const root = rootOf(entry, client.fs.primary());
         const held = data?.hubFiles ?? {};
-        return root === HUB_ROOT ? (data?.file ?? '') : Object.hasOwn(held, root) ? held[root] : '';
+        return Object.hasOwn(held, root) ? held[root] : '';
     }
 
     function write(next: Partial<LinkedinState>): void {
@@ -122,9 +123,10 @@
             return;
         }
         said = '';
-        if (data === null || answer.id === undefined) return;
+        const root = client.fs.primary();
+        if (data === null || answer.id === undefined || root === null) return;
         openSourceFile(client, {
-            root: HUB_ROOT,
+            root,
             path: linkedinSourcePath(data.file, answer.id),
             line: IDEA_BODY_LINE
         });

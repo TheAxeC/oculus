@@ -80,7 +80,7 @@
     const {
         entities: { portfolio },
         folders,
-        fs: { listing },
+        fs: { listing, primary },
         layout: { openView, showFolderInFiles, showInFiles },
         selectors: { archiveDead },
         source: { unsavedFile },
@@ -168,7 +168,7 @@
     let addingSubtask = $state(false);
 
     /** The root of the hub the entry is of, which every path of its fields is under. */
-    const root = $derived(rootOf(entry));
+    const root = $derived(rootOf(entry, primary()));
 
     /** The entries of one folder of the hub, from the file store's listing of it. */
     const listed = (folder: string): ReturnType<typeof listing>['entries'] =>

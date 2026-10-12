@@ -15,12 +15,7 @@ import type { RequestHandler } from './$types';
 const options = (locals: App.Locals) => {
     const server = locals.server;
     return {
-        rootsFor: () =>
-            repositoryRoots({
-                config: locals.config().config,
-                engine: server.engine,
-                local: server.local
-            }),
+        rootsFor: () => repositoryRoots(server.workspace.open()),
         approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
         configFor: () => locals.config().config,
         writes: server.fsWrites,

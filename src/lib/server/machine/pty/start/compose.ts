@@ -39,7 +39,7 @@ import {
     withCacheModels
 } from '../../../../data/sources/config/catalog/agents.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
-import { configDir, loadLocal, type LocalConfig } from '../../../../data/sources/config.ts';
+import { configDir, type LocalConfig } from '../../../../data/sources/config.ts';
 import {
     confirmValues,
     type AgentAccount,
@@ -260,11 +260,7 @@ const NO_STORE = { 'cache-control': 'no-store' };
  * cache, with the accounts and whatever the catalog was refused. A read, so same-origin only.
  * `account` names the Codex account whose cache the model picker is read from.
  */
-export function handleAgents(
-    request: Request,
-    engine: string,
-    local: LocalConfig = loadLocal(engine)
-): Response {
+export function handleAgents(request: Request, engine: string, local: LocalConfig): Response {
     const read = readAgentsFile(engine);
     const accounts = agentAccounts(local);
     const asked = new URL(request.url).searchParams.get('account') ?? '';

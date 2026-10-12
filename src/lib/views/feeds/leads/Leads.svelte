@@ -99,7 +99,9 @@
     const shownLog = $derived(held.logAll ? log : log.slice(0, LOG_LINES));
     /** The feed file this view is drawn from, offered once the feed says the file is there. */
     const source = $derived(
-        data === null || data.missing ? null : viewSourceFile('leads', configMap())
+        data === null || data.missing
+            ? null
+            : viewSourceFile('leads', configMap(), client.fs.primary())
     );
     /** Why the controls that write the leads file are disabled, '' when they are not. */
     const blocked = $derived(
@@ -125,7 +127,7 @@
      * file holds it. A refused Add writes nothing to the lead.
      */
     async function toApplication(entry: LeadEntry): Promise<void> {
-        const file = viewSourceFile('collection', configMap(), APPLICATIONS);
+        const file = viewSourceFile('collection', configMap(), client.fs.primary(), APPLICATIONS);
         const schema = collectionOf(APPLICATIONS)?.schema;
         if (file === null) return;
         const placed = await placeInFile(

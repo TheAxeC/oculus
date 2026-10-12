@@ -47,7 +47,7 @@ import { createFiles } from '../sources/files.svelte.ts';
 import { cardTreePrefix } from '../sources/explorer/view/card-tree.ts';
 import { createFolderPages } from '../workbench/layout/open/float/folder-opener.ts';
 import { createFs } from '../sources/fs.svelte.ts';
-import { HUB_ROOT, fileUnder, rootOf } from '../../data/helpers/hub-names.ts';
+import { fileNamed } from '../../data/helpers/hub-names.ts';
 import { filesLineTyped } from '../sources/fs.ts';
 import { createHpc } from '../system/machine/hpc/hpc.svelte.ts';
 import { createProcesses } from '../system/machine/processes/processes.svelte.ts';
@@ -71,7 +71,8 @@ import { createLayout } from '../workbench/layout.svelte.ts';
 import { appsSettings } from '../../data/sources/config/settings.ts';
 import { createLines } from '../system/lines.svelte.ts';
 import { createManifestDraft } from '../forms/manifest-draft.ts';
-import { createMemories } from '../life/memories.svelte.ts';
+import { createMemories } from '../life/pictures/memories.svelte.ts';
+import { createWallpapers } from '../life/pictures/wallpapers.svelte.ts';
 import { createNotices } from '../workbench/navigation/notices.svelte.ts';
 import { createNoticeSources } from '../workbench/navigation/notice-sources.ts';
 import { createPaletteSource } from '../workbench/palette-source.svelte.ts';
@@ -149,24 +150,29 @@ export function createClientState(
         return store;
     }
     const entities = createEntities();
-    // The write path refuses a write over a file a source tab holds unsaved text of, and names a
-    // file a write carries only an id of out of the snapshot and the change log; the source store
-    // and the change log are made after it, so both are read when a write is made.
+    // The write path refuses a write over a file a source tab holds unsaved text of (or that the
+    // unread roots leave unknown), and names a file a write carries only an id of out of the
+    // snapshot and the change log; the source store and the change log are made after it, so both
+    // are read when a write is made.
     const writes = createWrites(
         () => entities.config()?.config ?? null,
         (file) => source.unsavedFile(file.root, file.path),
         {
-            projectFolder: (id) => folderOfProject(entities.portfolio()?.entities.projects[id]),
+            primary: () => fs.primary(),
+            engine: () => fs.workspaces().engine,
+            projectFolder: (id) =>
+                folderOfProject(entities.portfolio()?.entities.projects[id], fs.primary()),
             collectionFile: (id) => {
                 const held = entities.portfolio()?.entities.collections[id];
-                if (held === undefined || rootOf(held) === HUB_ROOT) return null;
-                return fileUnder(held.file, fs.roots());
+                if (held?.root === undefined) return null;
+                return fileNamed(held.file, fs.roots(), fs.primary());
             },
             feeds: () => entities.feeds(),
             changeFile: (at) => {
                 const file = changes.rows().find((row) => row.at === at)?.file;
-                return file === undefined ? null : fileUnder(file, fs.roots());
-            }
+                return file === undefined ? null : fileNamed(file, fs.roots(), fs.primary());
+            },
+            unsavedUnknown: (file) => source.unsavedUnknown(file.root, file.path)
         }
     );
     const socket = createSocket(entities, writes);
@@ -225,7 +231,11 @@ export function createClientState(
         selected: selection.selected,
         select: selection.select,
         hubRoot: () => selectors.hubRoot(),
-        portfolioHeard: () => entities.portfolio() !== null,
+        defaultFolder: async () => {
+            const read = await fs.workspacesNow();
+            const own = read.folders.find((one) => one.key === read.primary);
+            return own?.dir ?? read.home;
+        },
         paneTab: (page, path) => {
             const pane = paneAt(layout.workbench(page).root, path);
             if (pane === null) return null;
@@ -250,9 +260,9 @@ export function createClientState(
     const fs = withQueries('fs', createFs(writes, entities, queries));
     /**
      * The roots a root key is resolved against on the page: the current workspace's roots only,
-     * which are the ones the server's file route serves (`addedRoots`, server/files/fs.ts). A key
-     * can name another folder in another workspace (state/system/apps/instance.ts), so the roots of
-     * the other workspaces are never searched.
+     * which are the ones the server's file route serves (`roots` of the open workspace,
+     * server/files/workspace/open.ts). A key can name another folder in another workspace
+     * (state/system/apps/instance.ts), so the roots of the other workspaces are never searched.
      */
     const servedRoots = (): { key: string; dir: string }[] => fs.roots();
     const docs = withQueries('docs', createDocs(entities, queries));
@@ -380,10 +390,11 @@ export function createClientState(
     const accounts = createAccounts(entities, writes, (view) => void layout.openView(view));
     const audit = createAudit(entities);
     const memories = withQueries('memories', createMemories(queries));
+    const wallpapers = withQueries('wallpapers', createWallpapers(queries));
     const lines = withQueries('lines', createLines(queries));
     const present = withQueries(
         'present',
-        createPresent(entities, queries, writes.writeToken, fs.roots)
+        createPresent(entities, queries, writes.writeToken, fs.roots, fs.primary)
     );
     // The Source Control views open a repository's file in a source tab by the root the file routes
     // serve it under, and point the Repositories view at a commit through its remembered state.
@@ -426,8 +437,9 @@ export function createClientState(
         entities,
         layout,
         selection,
-        docs.engineAt,
-        docs.engineAtSettled
+        docs.enginePlace,
+        docs.enginePlaceSettled,
+        fs.workspaces
     );
     const manifestDraft = createManifestDraft(ui, selectors.projectOf);
     ui.registerUnsaved(manifestDraft.manifestDirty);
@@ -656,7 +668,7 @@ export function createClientState(
         entities,
         writes,
         socket,
-        commands: appCommands({ commands, served: servedRoots }),
+        commands: appCommands({ commands, served: servedRoots, primary: fs.primary }),
         ui,
         registry,
         layout,
@@ -758,6 +770,7 @@ export function createClientState(
         accounts,
         audit,
         memories,
+        wallpapers,
         lines,
         present,
         repositories,

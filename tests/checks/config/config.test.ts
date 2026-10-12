@@ -1,22 +1,19 @@
-// Layer 4, tree check. The readers of the config folder (loadLocal, loadConfig, behaviorFindings,
+// Layer 4, tree check. The readers of the config folder (loadConfig, behaviorFindings,
 // settingFindings, themeFindings, vocabCatalog, optionFindings) over synthetic files in a temporary
 // directory, and the one real config they are run over for no finding. The sentences checkLocal
-// answers, and readLocal's problems, are rows of tests/data/sources/config/local.test.ts. The
-// config folder oculus ships is read by tests/checks/config/config-folder.test.ts.
+// answers, and readLocal's problems, are rows of tests/data/sources/config/local.test.ts, and the
+// join of the hubs' local.yml files is tests/data/sources/config/machine.test.ts. The config folder
+// oculus ships is read by tests/checks/config/config-folder.test.ts.
 
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
-import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
-import type { MockInstance } from 'vitest';
+import { describe, expect, vi } from 'vitest';
 import {
-    DEFAULT_PORT,
     LOCAL_NAME,
     behaviorFindings,
     checkLocal,
     engineDir,
     loadConfig,
-    loadLocal,
     sourceFile,
     optionFindings,
     settingFindings,
@@ -24,7 +21,6 @@ import {
     themeFindings,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
-import { ENGINE_ROOT, engineRoot } from '../../../src/lib/server/files/files.ts';
 import { readEditorOptions } from '../../../src/lib/data/sources/config/editor-options.ts';
 import { layoutFile } from '../../../src/lib/server/content/docs.ts';
 import { parse } from 'yaml';
@@ -36,22 +32,6 @@ function scratch(): string {
     const dir = scratchDir('oculus-config-');
     return dir;
 }
-
-/**
- * The machine's own file where loadLocal reads it by default: inside the engine's config folder.
- */
-function writeLocal(dir: string, body: string): void {
-    const folder = join(dir, 'config');
-    const file = join(folder, LOCAL_NAME);
-    expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
-    mkdirSync(folder, { recursive: true });
-    writeFileSync(file, body);
-}
-
-const DEFAULT_ACCOUNTS = [
-    { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
-    { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
-];
 
 /** The sentence file oculus ships, which loadConfig words its own findings from. */
 const FINDINGS_FILE = join(engineDir(), 'config', 'text', 'findings.yml');
@@ -75,89 +55,9 @@ function writeConfig(engine: string, name: string, body: string): string {
     return file;
 }
 
-describe('loadLocal', () => {
-    let warn: MockInstance<typeof console.warn>;
-
-    beforeEach(() => {
-        warn = vi.spyOn(console, 'warn').mockImplementation(noop);
-    });
-
-    afterEach(() => {
-        warn.mockRestore();
-    });
-
-    it('reads the file inside the config folder and not one beside it', () => {
-        const dir = scratch();
-        writeLocal(dir, 'hub: /srv/in-the-config-folder\n');
-        writeFileSync(join(dir, LOCAL_NAME), 'hub: /srv/beside-the-config-folder\n');
-        expect(loadLocal(dir).hub).toBe('/srv/in-the-config-folder');
-    });
-
-    it('reports an unknown key once and ignores it', () => {
-        const dir = scratch();
-        writeLocal(dir, 'hub: /srv/research-hub\ncolour: teal\n');
-        expect(loadLocal(dir)).toEqual({
-            hub: '/srv/research-hub',
-            port: DEFAULT_PORT,
-            claudeBin: 'claude',
-            riteDapBin: 'rite_dap',
-            calendars: [],
-            mail: [],
-            accounts: DEFAULT_ACCOUNTS
-        });
-        expect(warn).toHaveBeenCalledTimes(1);
-        expect(String(warn.mock.calls[0][0])).toContain('colour');
-    });
-
-    it('accepts distinct Claude labels on equal folder basenames and a matching Codex label', () => {
-        const dir = scratch();
-        writeLocal(
-            dir,
-            JSON.stringify({
-                accounts: [
-                    { tool: 'claude', dir: 'a/.claude', label: 'Work' },
-                    { tool: 'claude', dir: 'b/.claude', label: 'Personal' },
-                    { tool: 'codex', dir: 'codex', label: 'Work' }
-                ]
-            })
-        );
-        expect(loadLocal(dir).accounts.map((account) => account.label)).toEqual([
-            'Work',
-            'Personal',
-            'Work'
-        ]);
-    });
-
-    // The engine directory is the whole of what says which machine-local file is read: a server
-    // started over another one reads that one's, which is how a run keeps off the checkout's.
-    it('reads the file of the engine it is given and never another engine own', () => {
-        const one = scratch();
-        writeLocal(one, 'hub: /srv/from-one\nport: 8791\n');
-        const other = scratch();
-        writeLocal(other, 'hub: /srv/from-the-other\nport: 8792\n');
-        expect(loadLocal(one)).toEqual({
-            hub: '/srv/from-one',
-            port: 8791,
-            claudeBin: 'claude',
-            riteDapBin: 'rite_dap',
-            calendars: [],
-            mail: [],
-            accounts: DEFAULT_ACCOUNTS
-        });
-        expect(loadLocal(other)).toEqual({
-            hub: '/srv/from-the-other',
-            port: 8792,
-            claudeBin: 'claude',
-            riteDapBin: 'rite_dap',
-            calendars: [],
-            mail: [],
-            accounts: DEFAULT_ACCOUNTS
-        });
-    });
-});
-
 // The check the source endpoint makes before it writes the machine's own file: it reads a body the
-// way loadLocal does and prints nothing for a key it does not know, which loadLocal warns about.
+// way readMachine does and prints nothing for a key it does not know, which readMachine warns
+// about.
 describe('checkLocal', () => {
     it('says nothing, and prints nothing, about an unknown key', () => {
         const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
@@ -180,14 +80,11 @@ describe('the config folder of an engine', () => {
         expect(loadConfig(copy).config.stale_days).toBe(7);
     });
 
-    it('is the folder the engine root serves and the file a root finding names', () => {
-        // The page lists and saves through that root, so a run over a copy never reaches the
-        // checkout's own folder, and the machine's own local.yml it lists is the one loadLocal
-        // read.
+    it('is the folder a finding about one of its keys names', () => {
+        // A run over a copy never reaches the checkout's own folder.
         const engine = scratch();
-        writeConfig(engine, 'sources.yml', 'roots: []\n');
-        expect(engineRoot(engine)).toEqual({ key: ENGINE_ROOT, dir: join(engine, 'config') });
-        expect(sourceFile(engine, engine, loadConfig(engine).from, 'roots')).toBe(
+        writeConfig(engine, 'sources.yml', 'scan: []\n');
+        expect(sourceFile(engine, engine, loadConfig(engine).from, 'scan')).toBe(
             join(engine, 'config', 'sources.yml')
         );
         expect(layoutFile(engine)).toBe(join(engine, 'config', 'layout.yml'));
@@ -278,24 +175,15 @@ describe('loadConfig', () => {
         ]);
     });
 
-    it('leaves the machine own file out of the merge, clashing key and all', () => {
+    it('leaves a local.yml in the config folder out of the merge, clashing key and all', () => {
         const engine = scratch();
         writeConfig(engine, 'behavior.yml', 'stale_days: 30\n');
-        writeConfig(engine, LOCAL_NAME, 'hub: /srv/research-hub\nstale_days: 7\n');
+        writeConfig(engine, LOCAL_NAME, 'port: 8800\nstale_days: 7\n');
 
         const { config, findings } = loadConfig(engine);
         expect(Object.keys(config)).toEqual(['stale_days']);
         expect(config.stale_days).toBe(30);
         expect(findings).toEqual([]);
-        // The same file is the one loadLocal reads, so nothing about it is unreadable, only
-        // unmerged. It warns about the merged key it carries, which is this case's own doing and is
-        // not printed.
-        const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
-        try {
-            expect(loadLocal(engine).hub).toBe('/srv/research-hub');
-        } finally {
-            warn.mockRestore();
-        }
     });
 
     // With no config directory there is no catalog to word the finding from, so it is written as
@@ -403,7 +291,7 @@ describe('loadConfig with the hub layer', () => {
         const engine = engineCopy();
         const hub = scratch();
         layer(hub, 'behavior.yml', 'slurm:\n  resource: other\n');
-        layer(hub, 'sources.yml', 'roots:\n  - { key: mine, dir: /nowhere/mine }\n');
+        layer(hub, 'sources.yml', 'memories_dir: .oculus/photos\n');
         const { config, findings, from } = loadConfig(engine, { hub });
         expect(findings).toEqual([]);
         const slurm = config.slurm as Record<string, unknown>;
@@ -411,9 +299,9 @@ describe('loadConfig with the hub layer', () => {
         expect(slurm.poll_min).toBe(
             (loadConfig(engine).config.slurm as Record<string, unknown>).poll_min
         );
-        expect(config.roots).toEqual([{ key: 'mine', dir: '/nowhere/mine' }]);
+        expect(config.memories_dir).toBe('.oculus/photos');
         expect(from['slurm.resource']).toBe('.oculus/config/behavior.yml');
-        expect(from.roots).toBe('.oculus/config/sources.yml');
+        expect(from.memories_dir).toBe('.oculus/config/sources.yml');
         expect(from.slurm).toBe('behavior.yml');
     });
 
@@ -462,9 +350,9 @@ describe('loadConfig with the hub layer', () => {
         const engine = engineCopy();
         const hub = scratch();
         expect(loadConfig(engine, { hub }).findings).toEqual([]);
-        expect(loadConfig(engine, { hub }).config.roots).toEqual([]);
-        layer(hub, 'sources.yml', 'roots:\n  - { key: mine, dir: /nowhere/mine }\n');
-        expect(loadConfig(engine).config.roots).toEqual([]);
+        expect(loadConfig(engine, { hub }).config.memories_dir).toBe('.oculus/memories');
+        layer(hub, 'sources.yml', 'memories_dir: .oculus/photos\n');
+        expect(loadConfig(engine).config.memories_dir).toBe('.oculus/memories');
     });
 });
 

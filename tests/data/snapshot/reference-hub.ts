@@ -5,7 +5,6 @@
 
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { HUB_ROOT, ENGINE_ROOT, ENGINE_IN_HUB } from '../../../src/lib/data/helpers/hub-names.ts';
 import {
     graphOf,
     hitAt,
@@ -17,6 +16,15 @@ import {
 import type { FileScan, ReferenceIndex } from '../../../src/lib/data/snapshot/references/model.ts';
 import { plantScratch } from '../../fixtures/scratch.ts';
 import { join } from 'node:path';
+
+/**
+ * The names the planted workspace gives its two folders: the hub and the folder of oculus's config.
+ */
+const HUB_FOLDER = 'hub';
+const CONFIG_FOLDER = 'engine';
+
+/** Where the config folder lies inside the hub when oculus's folder is inside the hub folder. */
+const CONFIG_IN_HUB = 'tools/oculus/config';
 
 const LOADED = loadConfig(engineDir()).config;
 export const CONFIG = portfolioConfigFrom(LOADED);
@@ -224,7 +232,7 @@ export function plantHub(
     const engineFiles = { ...ENGINE_FILES, ...engineChanges };
     const inHub = options.engineInHub === true;
     const placed = Object.fromEntries(
-        Object.entries(engineFiles).map(([name, text]) => [`${ENGINE_IN_HUB}/${name}`, text])
+        Object.entries(engineFiles).map(([name, text]) => [`${CONFIG_IN_HUB}/${name}`, text])
     );
     const hub = plantScratch(
         'oculus-reference-hub-',
@@ -232,13 +240,24 @@ export function plantHub(
         ['secrets']
     );
     const engine = inHub
-        ? join(hub, ENGINE_IN_HUB)
+        ? join(hub, CONFIG_IN_HUB)
         : plantScratch('oculus-reference-engine-', engineFiles);
     const config = options.deck === undefined ? CONFIG : { ...CONFIG, portfolioDeck: options.deck };
-    const index = buildPortfolioWithSchemas(hub, config, 0, [], undefined, engine).references;
+    const held = inHub
+        ? { root: HUB_FOLDER, path: CONFIG_IN_HUB }
+        : { root: CONFIG_FOLDER, path: '' };
+    const index = buildPortfolioWithSchemas(
+        hub,
+        config,
+        0,
+        [],
+        undefined,
+        { dir: engine, held: [held] },
+        HUB_FOLDER
+    ).references;
     const roots = [
-        { key: HUB_ROOT, dir: hub },
-        { key: ENGINE_ROOT, dir: engine }
+        { key: HUB_FOLDER, dir: hub },
+        ...(inHub ? [] : [{ key: CONFIG_FOLDER, dir: engine }])
     ];
     const file = (root: 'hub' | 'engine', path: string): FileScan => {
         const found = index.files.find((one) => one.file.root === root && one.file.path === path);
@@ -258,7 +277,7 @@ export function plantHub(
                 return { real: join(home === 'hub' ? hub : engine, rest), text };
             });
             const laid = overlay(index, roots, texts);
-            const graph = graphOf(laid);
+            const graph = graphOf(laid, HUB_FOLDER);
             const scan = scanOf(laid, roots, join(root === 'hub' ? hub : engine, path));
             if (scan === undefined) throw new Error(`the index holds no ${root}:${path}`);
             return { hit: hitAt(graph, scan, at), graph };

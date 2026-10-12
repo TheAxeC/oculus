@@ -1,7 +1,8 @@
 // Layer 2, server tests. The first-run check refuses a start for what oculus cannot run without: a
 // Node outside 24.15 or later on the 24 line and 26 or later, installed packages that are not what
-// package-lock.json says, and a hub that is no folder or cannot be read. One table holds a row per
-// input that gives a different verdict, each over a scratch directory.
+// package-lock.json says. A start with no workspace, an unparseable workspace state or a workspace
+// that names a hub that is not there is no lack, since the server then serves an empty workspace.
+// One table holds a row per input that gives a different verdict, each over a scratch directory.
 
 import { chmodSync } from 'node:fs';
 import { join } from 'node:path';
@@ -69,20 +70,18 @@ function installed(
 }
 
 /**
- * The second part over a scratch engine at `<root>/tools/oculus`, with the four programs on a PATH
- * of their own so only the hub can be a lack. `hub` is written to the engine's local.yml, or left
- * to its default (two folders above the engine) when null.
+ * The second part over a scratch state folder holding `state` as its `workspace.json` (none when
+ * null), with the four programs on a PATH of their own so only the workspace could be a lack.
  */
-async function hubLacks(root: string, hub: string | null, extra: string[] = []) {
-    const engine = join(root, 'tools', 'oculus');
-    const localFile = join(engine, 'config', 'local.yml');
-    if (hub !== null) plantFile(engine, 'config/local.yml', `hub: ${hub}\n`);
+async function startLacks(root: string, state: string | null) {
+    const stateFolder = join(root, 'state');
+    if (state !== null) plantFile(stateFolder, 'workspace.json', state);
     for (const program of ['git', 'tmux', 'perl', 'claude']) {
         chmodSync(plantFile(root, `bin/${program}`, '#!/bin/sh\n'), 0o755);
     }
     const env = { PATH: join(root, 'bin') };
-    const lacks = machineLacks(await machineFacts(engine, 8811, env), t);
-    return { lacks, mentions: hub === null ? [] : [hub, localFile, 'hub', ...extra] };
+    const lacks = machineLacks(await machineFacts(8811, env, stateFolder), t);
+    return { lacks, mentions: [] };
 }
 
 type Row = {
@@ -160,38 +159,31 @@ const ROWS: Row[] = [
         kinds: []
     },
     {
-        title: 'a hub that is no folder is one lack naming the path and the local.yml key',
+        title: 'no workspace state is no lack',
+        run: () => startLacks(plantScratch(PREFIX, {}), null),
+        kinds: []
+    },
+    {
+        title: 'a workspace state that does not parse is no lack',
+        run: () => startLacks(plantScratch(PREFIX, {}), '{ "open": '),
+        kinds: []
+    },
+    {
+        title: 'a workspace state naming a workspace file that is gone is no lack',
         run: () => {
             const root = plantScratch(PREFIX, {});
-            return hubLacks(root, join(root, 'nowhere'));
+            const gone = join(root, 'hub', '.oculus', 'workspaces', 'gone.yml');
+            return startLacks(root, JSON.stringify({ open: gone, recent: [gone] }));
         },
-        kinds: ['hub']
+        kinds: []
     },
     {
-        title: 'a hub that is a file is one lack naming the path and the local.yml key',
+        title: 'an unsaved workspace listing a folder that is not there is no lack',
         run: () => {
-            const root = plantScratch(PREFIX, { 'a-file': 'text' });
-            return hubLacks(root, join(root, 'a-file'));
+            const root = plantScratch(PREFIX, {});
+            const state = { unsaved: { folders: [{ name: 'hub', path: join(root, 'nowhere') }] } };
+            return startLacks(root, JSON.stringify({ open: null, recent: [], ...state }));
         },
-        kinds: ['hub']
-    },
-    {
-        title: 'a hub whose folder cannot be read is one lack naming the path and EACCES',
-        run: async () => {
-            const root = plantScratch(PREFIX, {}, ['locked']);
-            const locked = join(root, 'locked');
-            chmodSync(locked, 0o000);
-            try {
-                return await hubLacks(root, join(locked, 'hub'), ['EACCES']);
-            } finally {
-                chmodSync(locked, 0o755);
-            }
-        },
-        kinds: ['hub']
-    },
-    {
-        title: 'no local.yml and the default hub two folders above the engine is no lack',
-        run: () => hubLacks(plantScratch(PREFIX, {}, ['tools/oculus/config']), null),
         kinds: []
     }
 ];

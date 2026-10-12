@@ -6,15 +6,29 @@
 import { describe, expect, it } from 'vitest';
 import { docLinkOf, openingOf } from '../../../../src/lib/views/shared/prose/doc-link.ts';
 
-/** The answer of a document of the hub, the engine folder at `engineAt`. */
-function hubDoc(engineAt: string): { engine: boolean; engineAt: string; manual: string } {
+/** What an openingOf call reads of a document answer. */
+type Doc = { engine: boolean; engineAt: string; engineHub: string; hub: string; manual: string };
+
+/**
+ * The answer of a document of the hub `hub`, the engine folder at `engineAt` in the same hub, or in
+ * no hub when `engineAt` is empty.
+ */
+function hubDoc(engineAt: string, hub = 'hub'): Doc {
     const manual = engineAt === '' ? '' : `${engineAt}/HELP.md`;
-    return { engine: false, engineAt, manual };
+    return { engine: false, engineAt, engineHub: engineAt === '' ? '' : hub, hub, manual };
 }
 
-/** The answer of a document of the engine, the engine folder at `engineAt`. */
-function engineDoc(engineAt: string): { engine: boolean; engineAt: string; manual: string } {
-    return { engine: true, engineAt, manual: 'HELP.md' };
+/**
+ * The answer of a document of the engine, the engine folder at `engineAt` in the hub `engineHub`.
+ */
+function engineDoc(engineAt: string, engineHub = 'hub'): Doc {
+    return {
+        engine: true,
+        engineAt,
+        engineHub: engineAt === '' ? '' : engineHub,
+        hub: '',
+        manual: 'HELP.md'
+    };
 }
 
 const ROWS = [
@@ -37,7 +51,7 @@ const ROWS = [
         doc: hubDoc('tools/oculus'),
         from: 'docs/DATA-MAP.md',
         href: 'RESEARCH-APPROACH.md',
-        opens: { kind: 'hub', path: 'docs/RESEARCH-APPROACH.md' }
+        opens: { kind: 'hub', path: 'docs/RESEARCH-APPROACH.md', hub: 'hub' }
     },
     {
         row: 'a hub link to the manual opens the Help view',
@@ -72,7 +86,21 @@ const ROWS = [
         doc: engineDoc('tools/oculus'),
         from: 'docs/apps.md',
         href: '../../../x.md',
-        opens: { kind: 'hub', path: 'x.md' }
+        opens: { kind: 'hub', path: 'x.md', hub: 'hub' }
+    },
+    {
+        row: 'a link between documents of a second hub opens a document of that hub',
+        doc: hubDoc('', 'lab'),
+        from: 'docs/DATA-MAP.md',
+        href: 'RESEARCH-APPROACH.md',
+        opens: { kind: 'hub', path: 'docs/RESEARCH-APPROACH.md', hub: 'lab' }
+    },
+    {
+        row: 'an engine link out of the engine opens a document of the hub that holds the engine',
+        doc: engineDoc('tools/oculus', 'lab'),
+        from: 'docs/apps.md',
+        href: '../../../x.md',
+        opens: { kind: 'hub', path: 'x.md', hub: 'lab' }
     },
     {
         row: 'an engine link out of the engine and the hub opens nothing',

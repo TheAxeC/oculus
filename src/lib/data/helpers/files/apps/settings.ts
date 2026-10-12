@@ -1,11 +1,11 @@
 // Layer 1, data. The settings apps declare. The values stored for them are the `app_settings:` map
 // of config/behavior.yml, whose keys are the settings' whole keys (`notes.width` is one key, never
-// split at its dot) and whose values are what the Settings view wrote; the first hub's layer of the
-// file is where the map lives, so the merged configuration holds it. A value is judged against the
-// setting its app declared for it, by its type, its `enum` and its bounds: the apps watcher judges
-// each stored value with it and reads the default for one that fails, and the Settings view's
-// control refuses such a value before it is written, so the page and the server cannot disagree
-// about which values a setting takes.
+// split at its dot) and whose values are what the Settings view wrote; the primary hub's layer of
+// the file is where the map lives, so the merged configuration holds it. A value is judged against
+// the setting its app declared for it, by its type, its `enum` and its bounds: the apps watcher
+// judges each stored value with it and reads the default for one that fails, and the Settings
+// view's control refuses such a value before it is written, so the page and the server cannot
+// disagree about which values a setting takes.
 
 import type { AppSetting } from '../../../model/index.ts';
 import { isMap } from '../../guards.ts';

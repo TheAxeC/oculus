@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, view partial. The account rows the Calendar and the Inbox share: the state word, the
-    // label, the provider, when it was last read, the Connect control, and a row menu whose Remove
-    // asks first, naming the account.
+    // label, the provider, the hub whose local.yml holds the account, when it was last read, the
+    // Connect control, and a row menu whose Remove asks first, naming the account.
     //
     // A published calendar link signs in nowhere, so its row has no Connect: it is read, or it
     // says why not in its hint, at every poll. Its Remove says that the file keeping its link goes.
@@ -15,6 +15,7 @@
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import RemoveAccount from './RemoveAccount.svelte';
+    import RootChip from '../card/RootChip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -32,6 +33,7 @@
     type Row = {
         provider: AccountProvider;
         label: string;
+        hub?: string;
         status: ConnectAccountStatus;
         lastOk?: string;
         hint?: string;
@@ -103,6 +105,7 @@
                 <Tag label={word(row)} tone={tone(row)} />
                 <span class="label">{row.label}</span>
                 <span class="provider">{provider(row)}</span>
+                <RootChip record={{ root: row.hub }} />
                 {#if row.lastOk}
                     <span class="when">{t('accounts.last_ok', clock(row.lastOk))}</span>
                 {/if}

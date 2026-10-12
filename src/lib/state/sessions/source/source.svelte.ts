@@ -13,7 +13,7 @@
 
 import { tick, untrack } from 'svelte';
 import { endText, trimText, type KeptPlace } from '../../../data/helpers/files/save-text.ts';
-import { sameDiskFile, type RootFolder } from '../../../data/helpers/hub-names.ts';
+import { diskRelation, type RootFolder } from '../../../data/helpers/hub-names.ts';
 import { editsBetween, type TextEdit } from '../../../data/prose/text-edits.ts';
 import type { WordWrap } from '../../../data/helpers/editor/editor.ts';
 import type {
@@ -90,6 +90,11 @@ export type SourceStore = {
      * disk at that root and path.
      */
     unsavedFile: (root: string, path: string) => boolean;
+    /**
+     * Whether it cannot be told yet if a source tab holds unsaved text of the file at that root and
+     * path: the roots are not read, and a tab with unsaved text names a file that may be it.
+     */
+    unsavedUnknown: (root: string, path: string) => boolean;
     loadSourceDraft: (id: string, root: string, path: string, head?: HeadStage) => Promise<void>;
     /**
      * Read the text of a tab over a library file with the read the caller makes of the language
@@ -277,13 +282,22 @@ export function createSource(
         });
     }
 
-    function unsavedFile(root: string, path: string): boolean {
+    /** Whether a dirty tab's file stands to the file at `root` and `path` as `wanted` says. */
+    function dirtyTabAt(root: string, path: string, wanted: 'same' | 'unread'): boolean {
         const roots = deps.roots();
         return openDrafts().some((id) => {
             const place = diskFileOf(sourceDraft(id).file);
-            return place !== null && sameDiskFile({ root, path }, place, roots) && sourceDirty(id);
+            return (
+                place !== null &&
+                diskRelation({ root, path }, place, roots) === wanted &&
+                sourceDirty(id)
+            );
         });
     }
+
+    const unsavedFile = (root: string, path: string): boolean => dirtyTabAt(root, path, 'same');
+    const unsavedUnknown = (root: string, path: string): boolean =>
+        dirtyTabAt(root, path, 'unread');
 
     /** What a read that landed makes of the draft it was for. */
     function taken(
@@ -793,6 +807,7 @@ export function createSource(
         sourceDirty,
         openDrafts,
         unsavedFile,
+        unsavedUnknown,
         loadSourceDraft,
         loadLibraryDraft,
         loadUntitledDraft,

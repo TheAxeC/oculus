@@ -6,8 +6,8 @@
 // The schema is the catalog's rule (catalog/value-rule.ts) in JSON Schema's words, so the editor
 // marks what the Settings view refuses: a toggle holds a flag, a number its range, a choice the
 // words of its `options` and of the sources it names, a list its items and its slots. A source that
-// only the page holds (the views, the theme classes, the usage tiers, the wallpapers, the file icon
-// themes) offers its words nowhere else, so a choice drawn from one is any text.
+// only the page holds (the views, the theme classes, the usage tiers, the file icon themes) offers
+// its words nowhere else, so a choice drawn from one is any text.
 
 import type { CatalogEntry, FieldSpec, Source } from '../options.ts';
 import { hueNames, listedSources, pickedSources } from '../options.ts';

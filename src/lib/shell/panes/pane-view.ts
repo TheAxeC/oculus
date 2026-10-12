@@ -17,7 +17,13 @@ import {
     type Layout,
     type Page
 } from '$lib/state/workbench/layout';
-import { fileOfTab, shownPath, type TabRoot } from '$lib/state/workbench/navigation/pages';
+import {
+    fileOfTab,
+    NO_PLACE,
+    shownPath,
+    type DocPlace,
+    type TabRoot
+} from '$lib/state/workbench/navigation/pages';
 
 /** What tells a move-to-page item from the menu's fixed items. */
 export const PAGE = 'page:';
@@ -487,16 +493,16 @@ export function tabHint(
 
 /**
  * The path of the file a tab shows as a reader writes it, from its root's folder with the home
- * folder as `~`, or null when the tab shows no file or the server serves no such root. `engineAt`
- * is the place of oculus's own folder in the hub, which places a document tab of that folder.
+ * folder as `~`, or null when the tab shows no file or the server serves no such root. `place` is
+ * where a document tab's file is (`fileOfTab`).
  */
 export function shownTabPath(
     tab: Pick<Instance, 'id' | 'view' | 'state'>,
     roots: readonly TabRoot[],
     home: string,
-    engineAt = ''
+    place: DocPlace = NO_PLACE
 ): string | null {
-    const file = fileOfTab(tab, engineAt);
+    const file = fileOfTab(tab, place);
     const root = roots.find((one) => one.key === file?.root);
     return file === null || root === undefined ? null : shownPath(root.dir, file.path, home);
 }

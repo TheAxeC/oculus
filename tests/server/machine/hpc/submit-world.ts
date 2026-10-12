@@ -52,7 +52,7 @@ export function world(
         Promise.resolve({ stdout: '12345;utwente\n', stderr: '', code: 0 })
     );
     const deps: SubmitDeps = {
-        roots: () => [{ key: 'hub', dir: hub }],
+        roots: () => [{ key: 'hub', dir: hub, hub: true }],
         projects: () => [
             fixtureProject({
                 id: 'p',
@@ -65,7 +65,7 @@ export function world(
                 file: join(hub, 'projects', 'q', 'project.yml')
             })
         ],
-        hub,
+        primary: 'hub',
         catalog: () => ({}),
         where: () => ({ host: 'utwente' }),
         kept,

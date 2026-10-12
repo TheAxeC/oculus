@@ -13,11 +13,11 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One file the Customizations section listed, read only: an account's
-    // CLAUDE.md, a skill, a subagent, a settings file. The file server serves the configured roots
-    // and nothing outside them, and an account's folder is outside every one, so this view reads
-    // the file through GET /api/customizations, which answers only a path its own listing gives
-    // for the same agent, account and workspace. Nothing here writes.
+    // Layer 3, view. One file the Customizations section listed, read only: an account's CLAUDE.md,
+    // a skill, a subagent, a settings file. The file server serves the folders of the workspace and
+    // nothing outside them, and an account's folder is outside every one, so this view reads the
+    // file through GET /api/customizations, which answers only a path its own listing gives for the
+    // same agent, account and workspace. Nothing here writes.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';

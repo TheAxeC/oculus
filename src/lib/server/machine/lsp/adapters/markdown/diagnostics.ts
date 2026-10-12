@@ -34,7 +34,7 @@ export function markdownDiagnostics(
     params: Record<string, unknown>,
     view: DiagnosticView
 ): Record<string, unknown> {
-    const reach = { root: view.root, roots: view.roots };
+    const reach = { root: view.root, roots: view.roots, config: view.config };
     const given: unknown[] = Array.isArray(params.diagnostics) ? params.diagnostics : [];
     const kept = given.flatMap((one) => {
         const mark = one as { code?: unknown; message?: unknown };

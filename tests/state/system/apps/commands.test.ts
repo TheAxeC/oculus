@@ -1,6 +1,7 @@
 // Layer 2, client state test. How an app's `commands.run` is answered by the page
 // (lib/state/system/apps/commands.ts): the command is looked up by name in the commands file of the
-// app's root, the hub's for a machine app, and the call settles with how the press of it ended.
+// app's root, the primary hub's for a machine app, and the call settles with how the press of it
+// ended.
 //
 // The commands store is a double that answers a press as the case says. What this does NOT cover:
 // the approval question and the terminal a real press opens (the commands store's own tests)
@@ -13,7 +14,11 @@ import { it } from '../../../fixtures/scratch.ts';
 type End = { repo: string; name: string; outcome: { kind: string } };
 
 /** A commands store whose press ends with the outcome `kind`, and the presses it was asked for. */
-function store(kind: string, listed = [{ name: 'build', source: 'file' }]) {
+function store(
+    kind: string,
+    listed = [{ name: 'build', source: 'file' }],
+    primary: string | null = 'hub'
+) {
     const listeners = new Set<(end: End) => void>();
     const pressed: [string, string, string][] = [];
     const run = appCommands({
@@ -32,7 +37,8 @@ function store(kind: string, listed = [{ name: 'build', source: 'file' }]) {
         served: () => [
             { key: 'hub', dir: '/hub' },
             { key: 'cathedra', dir: '/cathedra' }
-        ]
+        ],
+        primary: () => primary
     });
     return { run: run.run, pressed, listeners };
 }
@@ -48,7 +54,7 @@ describe('runs the command of an app root and settles with how the press ended',
         expect(listeners.size).toBe(0);
     });
 
-    it('presses the command of the hub for a machine app and of its own root for a root app', async () => {
+    it('presses the command of the primary hub for a machine app and of its own root for a root app', async () => {
         const { run, pressed } = store('started');
         await run('', 'build');
         await run('cathedra', 'build');
@@ -80,6 +86,12 @@ describe('runs the command of an app root and settles with how the press ended',
     ])('answers missing for %s and presses nothing', async (_row, root, name, listed) => {
         const { run, pressed } = store('started', listed);
         expect(await run(root, name)).toBe('missing');
+        expect(pressed).toEqual([]);
+    });
+
+    it('answers missing for a machine app while the workspace has no primary hub', async () => {
+        const { run, pressed } = store('started', [{ name: 'build', source: 'file' }], null);
+        expect(await run('', 'build')).toBe('missing');
         expect(pressed).toEqual([]);
     });
 });

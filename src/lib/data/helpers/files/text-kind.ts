@@ -3,13 +3,13 @@
 // Two rules over one definition of text, both imported by the two layers. The head rule
 // (`isTextBytes`) runs over the first bytes of a file and decides which tab a file opens in: the
 // page runs it over the head it fetched (state/sources/explorer/file-type.ts), and the server runs
-// it over the head of a file it reads without a tab (`isBinaryFile` in server/files/source.ts, for
-// Replace, the file compare and the language server library). The whole-file rule (`isWholeText`)
-// runs over every byte of a file: the page runs it over a file it read whole to decide whether the
-// tab may edit it, and the server runs it over the bytes it read before it replaces a file
-// (server/files/source.ts, server/files/fs/lsp-edit.ts), so a save never replaces bytes an editor
-// could not have read. A list of extensions would have to agree with itself in several places and
-// would be wrong about a name nobody put on it.
+// it over the head of a file it reads without a tab (`isBinaryFile` in
+// server/files/source/source.ts, for Replace, the file compare and the language server library).
+// The whole-file rule (`isWholeText`) runs over every byte of a file: the page runs it over a file
+// it read whole to decide whether the tab may edit it, and the server runs it over the bytes it
+// read before it replaces a file (server/files/source/source.ts, server/files/fs/lsp-edit.ts), so a
+// save never replaces bytes an editor could not have read. A list of extensions would have to agree
+// with itself in several places and would be wrong about a name nobody put on it.
 //
 // Text is: no NUL byte, and the bytes decode as UTF-8 by the platform's own decoder. For the head
 // rule the bytes are the window, and a multi-byte sequence the window cut in half is the window's

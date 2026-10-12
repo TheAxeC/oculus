@@ -9,11 +9,11 @@
 // nothing.
 //
 // The folder walked is the reader's, never the request's: the id names a manifest hubManifests
-// already found under the scan directories of the hub the id names (`<root key>:<id>` for a hub
-// other than the first) or in a repository the first hub's `roots:` reads as a project,
-// and the folder is joined to that hub (or is the repository) and checked against it again before
-// anything is read. A request naming anything else is a 404. The answer's `folder` is relative to
-// the root that holds the project: its own hub, or empty for a repository.
+// already found under the scan directories of the hub the id names (`<hub name>:<id>` for a hub
+// other than the primary) or in a folder of the workspace that holds a project, and the folder is
+// joined to that hub (or is the project folder) and checked against it again before anything is
+// read. A request naming anything else is a 404. The answer's `folder` is relative to the root that
+// holds the project: its own hub, or empty for a repository.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
@@ -22,20 +22,22 @@ import { z } from 'zod';
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { splitHubId } from '../../data/helpers/hub-names.ts';
-import { loadLocal } from '../../data/sources/config.ts';
 import { manifestDir } from '../../data/sources/manifests.ts';
 import type { PortfolioConfig } from '../../data/model/index.ts';
 import { inside } from '../core/paths.ts';
-import { firstHubConfig, hubManifests, hubTargets, type HubTarget } from './roots.ts';
+import type { OpenWorkspace } from './workspace/open.ts';
+import { primaryConfig, hubManifests, hubTargets, type HubTarget } from './roots.ts';
 import { anyNumberShape } from '../../data/shapes/shapes.ts';
 
 /**
- * What a file listing needs: the hub, its scan rules, and the merged config `file_index` sits in.
+ * What a file listing needs: the primary hub and its scan rules, the other hubs, and the merged
+ * config `file_index` sits in.
  */
 export type FilesTarget = {
-    hub: string;
+    /** The primary hub's name and folder, or null when the workspace has none. */
+    primary: { key: string; dir: string } | null;
     config: PortfolioConfig;
-    /** The hubs other than the first, whose projects are named `<root key>:<id>`. */
+    /** The hubs other than the primary, whose projects are named `<hub name>:<id>`. */
     hubs?: HubTarget[];
     /** The merged config of config/*.yml, read for `file_index` and nothing else. */
     settings: Record<string, unknown>;
@@ -209,12 +211,14 @@ export function listFiles(into: FilesTarget, id: string): Response {
     const hubs = into.hubs ?? [];
     const named = splitHubId(
         id,
-        hubs.map((one) => one.key)
+        hubs.map((one) => one.key),
+        into.primary?.key ?? null
     );
-    const owner = hubs.find((one) => one.key === named.root) ?? {
-        hub: into.hub,
-        config: into.config
-    };
+    const other = hubs.find((one) => one.key === named.root);
+    const owner =
+        other ?? (into.primary === null ? null : { hub: into.primary.dir, config: into.config });
+    if (owner === null)
+        return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
     const manifest = hubManifests(owner.hub, owner.config).find((one) => one.id === named.id);
     if (manifest === undefined)
         return json({ error: `no project with the id ${id}` }, { status: 404, headers: NO_STORE });
@@ -225,16 +229,22 @@ export function listFiles(into: FilesTarget, id: string): Response {
 }
 
 /**
- * What the route reads: the hub every write lands in, and the request's merged config beside it.
- * The hub and the scan rules come from the readers target() in lib/server/edit/writes.ts takes them
- * from, loadLocal and firstHubConfig, rather than from a second reader of local.yml.
+ * What the route reads: the primary hub every write lands in, the other hubs of the open workspace,
+ * and the request's merged config beside them. The hubs and the scan rules come from the same
+ * readers target() in lib/server/edit/writes.ts takes them from, primaryConfig and hubTargets.
  */
-export function filesTarget(engine: string, settings: Record<string, unknown>): FilesTarget {
-    const local = loadLocal(engine);
+export function filesTarget(
+    engine: string,
+    settings: Record<string, unknown>,
+    open: OpenWorkspace
+): FilesTarget {
     return {
-        hub: local.hub,
-        config: firstHubConfig({ config: settings, engine, local }),
-        hubs: hubTargets({ config: settings, engine, local }),
+        primary:
+            open.primary === null || open.primaryDir === null
+                ? null
+                : { key: open.primary, dir: open.primaryDir },
+        config: primaryConfig(settings, open),
+        hubs: hubTargets(engine, open),
         settings
     };
 }

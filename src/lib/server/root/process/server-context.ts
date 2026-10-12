@@ -12,7 +12,6 @@ import type { ConnectStates } from '../../accounts/connect/oauth.ts';
 import type { MailWatcher } from '../../accounts/mail/poll.ts';
 import type { IconMemory } from '../../../data/sources/config.ts';
 import type { LiteratureDesk } from '../../content/literature/desk.ts';
-import type { MemoriesMemory } from '../../content/memories.ts';
 import type { WallpaperMemory } from '../../content/wallpaper.ts';
 import type { Hub } from '../../core/channels.ts';
 import type { RunningGit } from '../../core/git/running.ts';
@@ -36,6 +35,7 @@ import type { UsageRefreshWatcher } from '../../machine/usage/refresh.ts';
 import type { UsageWatcher } from '../../machine/usage/watch.ts';
 import type { HookTarget } from '../hooks.ts';
 import type { ConfigCache } from './config-cache.ts';
+import type { Workspace } from '../../files/workspace/follow.ts';
 import type { AppHosts } from '../../machine/apps/host/manager.ts';
 import type { AppSecrets } from '../../machine/apps/secrets/secrets.ts';
 import type { AppsWatcher } from '../watch/apps.ts';
@@ -43,6 +43,11 @@ import type { GitWatcher } from '../watch/git.ts';
 
 export type ServerContext = {
     hub: Hub;
+    /**
+     * The open workspace: its folders are the roots, and its primary hub gives the machine's
+     * values.
+     */
+    workspace: Workspace;
     terminals: Terminals;
     /** The language servers behind the `lsp:` channels of the socket. */
     relay: Relay;
@@ -85,7 +90,17 @@ export type ServerContext = {
      * moves.
      */
     host: HostInfo;
+    /**
+     * The machine's values as the running server holds them, replaced in place when a file changes.
+     */
     local: LocalConfig;
+    /**
+     * The machine's values read now from the open workspace's hubs, with the port and the paths of
+     * the machine's state held at the values the server was started with.
+     */
+    machine: () => LocalConfig;
+    /** The names of the keys the primary hub's `local.yml` sets; no value. */
+    machineSet: () => readonly string[];
     /**
      * The directory the configuration was read from, so a route names a config file without a walk.
      */
@@ -95,7 +110,7 @@ export type ServerContext = {
      * a request reads it once through `locals.config`.
      */
     configCache: ConfigCache;
-    /** The write chain of the workspaces file, so two POSTs cannot lose one another's change. */
+    /** The write chain of the workspace file, so two POSTs cannot lose one another's change. */
     fsWrites: FsWrites;
     /**
      * The write chain of the file operations under the served roots, apart from `fsWrites` so a
@@ -149,10 +164,8 @@ export type ServerContext = {
     openPath: PathOpener;
     /** The last deposit plan per project. */
     depositPlans: Map<string, Plan>;
-    /** The wallpaper pick and the refused directories. */
+    /** The random wallpaper pick, kept for the life of the process. */
     wallpaper: WallpaperMemory;
-    /** The Memories wall's refused directories, so a bad setting is reported once. */
-    memories: MemoriesMemory;
     /**
      * The drawing of every icon config/catalogs/icons.yml names, read once here and again whenever
      * the watcher publishes a config push, so a page load reads what is held rather than the disk.

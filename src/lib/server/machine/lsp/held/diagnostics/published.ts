@@ -14,6 +14,8 @@ import { docKey, type Held, type Page } from '../held.ts';
 /** What the relay gives a published message's way to the page. */
 export type Publishing = {
     roots(): readonly ServedRoot[];
+    /** Oculus's own config folder. */
+    config(): string;
     catalog(): Record<string, string>;
     mapper(page: Page, held: Held): Mapper;
     send(page: Page, channel: string, payload: LspRpc | LspToPage): void;
@@ -34,6 +36,7 @@ export function publish(context: Publishing, held: Held, message: LspRpc): void 
         text: doc.text,
         root: held.root,
         roots: context.roots(),
+        config: context.config(),
         catalog: context.catalog()
     };
     const shown =

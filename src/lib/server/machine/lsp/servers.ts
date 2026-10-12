@@ -33,6 +33,7 @@
 // Every command is an argument array: a root's path is one argument whatever characters it
 // holds, and nothing is passed through a shell.
 
+import { configDir } from '../../../data/sources/config/folder.ts';
 import { existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -269,6 +270,8 @@ export type OpenDocument = {
 /** What an entry's `answers` knows of the page it answers. */
 export type PageView = {
     roots: readonly ServedRoot[];
+    /** Oculus's own config folder. */
+    config: string;
     /** The index of the hub keys the latest snapshot build made. */
     references: ReferenceIndex;
     /** The flat text catalog, which the words of an answer are read from. */
@@ -677,7 +680,8 @@ function yaml(options: ServersOptions): ServerEntry {
             { method: 'yaml/registerCustomSchemaRequest' },
             { method: 'yaml/registerContentRequest' }
         ],
-        refuses: (real, roots) => isMachineFile(real, roots) || isPrivateFile(real, roots),
+        refuses: (real, roots) =>
+            isMachineFile(real, roots, configDir(options.oculus)) || isPrivateFile(real, roots),
         answers: answerHubKeys,
         capabilities: (language) => ({
             textDocumentSync: INCREMENTAL,
@@ -791,8 +795,10 @@ function markdown(options: ServersOptions): ServerEntry {
         pulls: true,
         fileEvents: () => extensions().map((extension) => `**/*.${extension}`),
         introduce: (changes) => introduceMarkdown(changes, extensions()),
-        filesUnder: (folder, root, roots) => markdownFiles({ root, roots }, extensions(), folder),
-        refuses: (real, roots) => isMachineFile(real, roots) || isPrivateFile(real, roots),
+        filesUnder: (folder, root, roots) =>
+            markdownFiles({ root, roots, config: configDir(options.oculus) }, extensions(), folder),
+        refuses: (real, roots) =>
+            isMachineFile(real, roots, configDir(options.oculus)) || isPrivateFile(real, roots),
         diagnostics: markdownDiagnostics,
         answers: answerMarkdown,
         results: markdownResults,

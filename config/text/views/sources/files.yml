@@ -142,7 +142,7 @@ text:
         name_taken: "A file or folder '{0}' already exists at this location. Please choose a different name."
         name_whitespace: Leading or trailing whitespace detected in file or folder name.
         names_more: ...and {0} more
-        none: No roots yet. Add a folder to this workspace.
+        none: No folders yet. Add a folder to this workspace.
         none_glyph: info
         note_delete: delete
         note_delete_confirm: Delete this note? Its file goes off this machine.
@@ -181,25 +181,27 @@ text:
         read_again: read again
         read_again_bookmarks: Read the bookmarks again
         read_again_notes: Read the notes again
-        read_failed: 'The roots could not be read: {0}'
+        read_failed: 'The folders could not be read: {0}'
         read_offline: there is no page to read from
+        refused_bad_name: "A workspace name is made of letters, digits, '.', '_' and '-'."
         refused_bad_query: The search behind this request cannot be run.
         refused_binary: That is not a text file.
         refused_changed: The file changed since it was searched.
         refused_denied: The folder does not allow that change.
         refused_exists: A file or folder of that name is already there.
+        refused_gone: That workspace file is gone. It is taken off the recent list.
         refused_into_itself: A folder cannot be put inside itself.
         refused_invalid_name: That is not a name a file or folder can have.
         refused_marker: The file or the replace text holds a character the search keeps for itself.
         refused_missing: It is not there any more.
-        refused_name_held: A workspace already carries that name.
+        refused_name_held: A workspace file of that name is already there.
         refused_network: The server could not be reached.
         refused_no_dir: Type the path of a folder.
+        refused_no_hub: This workspace has no hub folder (a folder that holds .oculus/config) to keep the file in.
         refused_no_name: Type a name for the workspace.
         refused_no_such_dir: There is no folder at that path.
         refused_no_such_note: That note is not on this machine.
         refused_no_such_root: This workspace has no such root.
-        refused_no_such_workspace: There is no workspace of that name.
         refused_not_a_directory: That path is a file, not a folder.
         refused_not_a_folder: That is not a folder.
         refused_not_absolute: A root is an absolute path, or one starting with ~/.
@@ -210,21 +212,21 @@ text:
         refused_outside: It is not inside a served root.
         refused_protected: "This machine's settings file cannot be changed here."
         refused_root: A root cannot be changed here.
-        refused_root_fixed: A configured root is in every workspace and cannot be removed.
-        refused_root_held: That folder is already a root of this workspace.
-        refused_roots_changed: The roots changed since this list was read; it has been read again.
-        refused_roots_invalid: The roots in .oculus/config/sources.yml in the hub cannot be rewritten without losing a line, so the file is left as it is.
+        refused_root_held: That folder is already in this workspace.
+        refused_roots_changed: The folders changed since this list was read; it has been read again.
+        refused_roots_invalid: The folders in the workspace file cannot be rewritten without losing a line, so the file is left as it is.
         refused_search_failed: The search could not be run on the file.
         refused_token: The write token was refused; reload the page.
         refused_too_large: That file is larger than an upload may be.
         refused_trash_failed: The Trash could not take it.
+        refused_unreadable: '{0} does not read, so oculus leaves it as it is; the Problems view says why'
+        refused_unwritable: The file could not be written.
         remove_root: remove
         remove_root_confirm: Take {0} out of this workspace?
         remove_root_detail: The folder stays on this machine; this workspace stops serving it.
         replace_button: Replace
         replace_detail_upload: 'This action is irreversible!'
         replace_question: "A file or folder with the name '{0}' already exists in the destination folder. Do you want to replace it?"
-        reserved: 'Left out of this workspace, since the configuration owns the name: {0}'
         reveal_failed: 'Finder could not show it: {0}'
         reveal_missing: '{0} is not there; {1}, the nearest folder on its way, is selected.'
         reveal_no_root: '{0} cannot be shown: this workspace has no root {1}.'
@@ -269,7 +271,7 @@ text:
         undo_question: "Would you like to undo '{0}'?"
         upload_done: 'Files uploaded: {0}.'
         upload_refused: '{0} was not uploaded: {1}'
-        workspace_default: Configured roots
+        workspace_untitled: Untitled (Workspace)
         writing_fix_button: Fix {0} Files
         writing_fix_button_one: Fix 1 File
         writing_fix_changed: The file changed after the writing rules read it.

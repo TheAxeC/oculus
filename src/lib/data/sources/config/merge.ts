@@ -96,8 +96,9 @@ function mergeText(
  * Root config files, the catalogs and schemas folders' files and every text fragment, all named
  * relative to config and sorted.
  *
- * local.yml is left out by name: it is the machine's own and loadLocal reads it, so a key it
- * carries is never merged into the map and never reported as defined in two files.
+ * local.yml is left out by name: the machine's own values are read from each hub's
+ * `.oculus/local.yml` by readMachine (config/machine.ts) and nothing reads one in this folder, so a
+ * key it carries is never merged into the map and never reported as defined in two files.
  */
 function configNames(dir: string): string[] {
     const names = readdirSync(dir)
@@ -260,19 +261,19 @@ export function loadConfig(
 
 /**
  * The path of the file a key of the merged map was read from, by the `from` loadConfig returned:
- * the hub layer's file under `hub` when `from` names one, else the engine's file in its config
- * folder. A key `from` does not hold is looked up by its first segment, and one neither holds names
- * the config folder.
+ * the hub layer's file under `hub` when `from` names one (there is none without a hub), else the
+ * engine's file in its config folder. A key `from` does not hold is looked up by its first segment,
+ * and one neither holds names the config folder.
  */
 export function sourceFile(
     engine: string,
-    hub: string,
+    hub: string | null,
     from: Readonly<Partial<Record<string, string>>>,
     key: string
 ): string {
     const name = from[key] ?? from[key.split('.')[0]];
     if (name === undefined) return configDir(engine);
-    return fromHubLayer(name) ? join(hub, name) : join(configDir(engine), name);
+    return fromHubLayer(name) && hub !== null ? join(hub, name) : join(configDir(engine), name);
 }
 
 /** The `.yml` files under the hub's config layer, named relative to it with `/`, sorted. */

@@ -1,87 +1,95 @@
 // Layer 1, data. The names of the hub's files and folders that the readers of data/sources, the
 // schema generator of data/snapshot, the file server and the page all hold: the manifest's file
-// name, the five tier words and the folder of a repository that holds oculus's own files, the
-// two keys the hub and the engine's config folder are served under, how each registry file
-// names its entry list and its id field, and which folders the project scan walks: the scan
-// reader (data/sources/manifests.ts), the `new_project_dir` check (data/index.ts) and the new
-// project form (state/boards/board/new-project.ts) share those, so they agree on what is scanned.
+// name, the five tier words and the folder of a repository that holds oculus's own files, how a
+// record of the merged portfolio names the hub it was read from, how each registry file names its
+// entry list and its id field, and which folders the project scan walks: the scan reader
+// (data/sources/manifests.ts), the `new_project_dir` check (data/index.ts) and the new project form
+// (state/boards/board/new-project.ts) share those, so they agree on what is scanned.
+//
+// A workspace lists folders, and the ones that hold `.oculus/config/` are hubs. The primary is the
+// hub named by the workspace file's `primary` key: its records carry no `root` and keep their bare
+// ids, and a record of every other hub carries the hub's folder name in `root` and in front of its
+// id. With no primary every hub's records are prefixed. Each function below that tells a record's
+// hub or id apart takes the primary's name, or null when the workspace names none.
 
 import type { Collection, Id, RegistryName, Rooted, Tier } from '../model/index.ts';
 
-/** The key the hub itself is served under, so a collection's `link` to a file in the hub opens. */
-export const HUB_ROOT = 'hub';
-
 /**
- * The key the engine's own `config/` folder is served under. The Settings view lists that folder's
- * files and opens one in a source tab, and an edit saved there is an ordinary write under a root,
- * which the config watcher sees like any other. `local.yml` is a file of that folder and is
- * served, read and saved like the tracked ones. Nothing above the folder is served: the root is the
- * folder itself, so the rest of the engine directory stays outside every route.
+ * The name of the hub a record was read from: the `root` it carries, else the primary, else the
+ * empty name for a record of no hub (a project folder of a workspace with no primary).
  */
-export const ENGINE_ROOT = 'engine';
-
-/**
- * The key of the hub a record was read from: the `root` it carries, and `hub` for a record that
- * carries none, which is a record of the first hub or of a portfolio of one hub.
- */
-export function rootOf(record: Rooted): string {
-    return record.root ?? HUB_ROOT;
+export function rootOf(record: Rooted, primary: string | null): string {
+    return record.root ?? primary ?? '';
 }
 
 /**
- * The id a record of the hub served under `root` has in the merged portfolio: a record of the first
- * hub keeps its id, and one of another hub has the hub's key and a colon in front of it.
+ * The id a record of the hub named `root` has in the merged portfolio: a record of the primary
+ * keeps its id, and one of another hub has the hub's name and a colon in front of it.
  */
-export function hubId(root: string, id: string): string {
-    return root === HUB_ROOT ? id : `${root}:${id}`;
+export function hubId(root: string, id: string, primary: string | null): string {
+    return root === primary || root === '' ? id : `${root}:${id}`;
 }
 
 /**
  * The id a value naming a record has in the merged portfolio, read inside the hub of the record
- * `holder` that holds it: a value of a hub other than the first gets that hub's key in front unless
- * it carries it already (the merge prefixed a field whose `from:` names the record's source), so a
- * reference in a field the schema gives no `from:` never resolves to another hub's record.
+ * `holder` that holds it: a value of a hub other than the primary gets that hub's name in front
+ * unless it carries it already (the merge prefixed a field whose `from:` names the record's
+ * source), so a reference in a field the schema gives no `from:` never resolves to another hub's
+ * record.
  */
-export function inHubOf(holder: Rooted, value: string): string {
-    const root = rootOf(holder);
-    return root === HUB_ROOT || value.startsWith(`${root}:`) ? value : hubId(root, value);
+export function inHubOf(holder: Rooted, value: string, primary: string | null): string {
+    const root = rootOf(holder, primary);
+    return root === primary || root === '' || value.startsWith(`${root}:`)
+        ? value
+        : hubId(root, value, primary);
 }
 
 /**
- * The hub an id of the merged portfolio belongs to and the id inside that hub, given the keys of
- * the hubs other than the first: `lab:alpha` under the keys `lab` is `{ root: 'lab', id: 'alpha' }`
- * and any other id is the first hub's own.
+ * The hub an id of the merged portfolio belongs to and the id inside that hub, given the names of
+ * the hubs other than the primary: `lab:alpha` under the names `lab` is
+ * `{ root: 'lab', id: 'alpha' }` and any other id is the primary's own, whose name is `primary`
+ * (the empty name with none).
  */
-export function splitHubId(id: string, keys: readonly string[]): { root: string; id: string } {
+export function splitHubId(
+    id: string,
+    keys: readonly string[],
+    primary: string | null
+): { root: string; id: string } {
     const key = keys.find((one) => id.startsWith(`${one}:`));
-    return key === undefined ? { root: HUB_ROOT, id } : { root: key, id: id.slice(key.length + 1) };
+    return key === undefined
+        ? { root: primary ?? '', id }
+        : { root: key, id: id.slice(key.length + 1) };
 }
 
 /** The id a record has inside its own hub's files: its merged id with the hub's prefix off. */
 export function bareId(record: Rooted & { id: string }): string {
-    const root = rootOf(record);
-    return root === HUB_ROOT ? record.id : splitHubId(record.id, [root]).id;
+    const { root } = record;
+    return root === undefined ? record.id : splitHubId(record.id, [root], null).id;
 }
 
 /**
- * The records of the hub served under `key`, each with the id its own hub's files give it: the
- * records of the merged portfolio that carry the key, the hub's prefix taken off their ids.
+ * The records of the hub named `key`, each with the id its own hub's files give it: the records of
+ * the merged portfolio of that hub, the hub's prefix taken off their ids.
  */
-export function ofHub<T extends { id: string; root?: string }>(records: T[], key: string): T[] {
+export function ofHub<T extends { id: string; root?: string }>(
+    records: T[],
+    key: string,
+    primary: string | null
+): T[] {
     return records
-        .filter((record) => rootOf(record) === key)
+        .filter((record) => rootOf(record, primary) === key)
         .map((record) => ({ ...record, id: bareId(record) }));
 }
 
 /**
- * The collections of the key `key` across the hubs: the first hub's, then each other hub's
- * (`<root key>:<key>` in the merged portfolio) in the order of `roots:`. A portfolio of one hub
- * answers its own collection alone, and none when it holds no such file.
+ * The collections of the key `key` across the hubs: the primary's, then each other hub's
+ * (`<hub name>:<key>` in the merged portfolio) in the order of the workspace's folders. A portfolio
+ * of one hub answers its own collection alone, and none when it holds no such file.
  */
 export function collectionsOf(collections: Record<Id, Collection>, key: string): Collection[] {
     const first = Object.hasOwn(collections, key) ? [collections[key]] : [];
     const others = Object.values(collections).filter(
-        (one) => rootOf(one) !== HUB_ROOT && bareId(one) === key
+        (one) => one.root !== undefined && bareId(one) === key
     );
     return [...first, ...others];
 }
@@ -94,9 +102,6 @@ export function joinedEntries(
     return collectionsOf(collections, key).flatMap((one) => one.entries);
 }
 
-/** Where the engine's config folder lies inside the hub, its files served there under `hub`. */
-export const ENGINE_IN_HUB = 'tools/oculus/config';
-
 /** A file named by the root it is served under and its path inside that root. */
 export type FileName = { root: string; path: string };
 
@@ -106,10 +111,14 @@ export type RootFolder = { key: string; dir: string; real?: string };
 /**
  * The name of a file that lies under one of the roots: the root whose folder holds it most closely
  * and the path under that root, or null when no root holds it. A path that is not absolute is
- * already relative to the hub.
+ * already relative to the primary's folder, and names no file when the workspace has no primary.
  */
-export function fileUnder(file: string, roots: readonly RootFolder[]): FileName | null {
-    if (!file.startsWith('/')) return { root: HUB_ROOT, path: file };
+export function fileUnder(
+    file: string,
+    roots: readonly RootFolder[],
+    primary: string | null
+): FileName | null {
+    if (!file.startsWith('/')) return primary === null ? null : { root: primary, path: file };
     let best: FileName | null = null;
     let depth = -1;
     for (const root of roots) {
@@ -122,13 +131,18 @@ export function fileUnder(file: string, roots: readonly RootFolder[]): FileName 
 }
 
 /**
- * The name a file has under `hub` when it lies in the engine's config folder of the hub itself,
- * else its own. It is the whole decision while no root is known.
+ * The name of the file an absolute path stands for in a record: its name under a root, or while no
+ * root is read a name under no root, which `diskRelation` then answers `unread` against every other
+ * name. Null for a path no root holds once the roots are read.
  */
-function byPrefix(file: FileName): FileName {
-    const prefix = `${ENGINE_IN_HUB}/`;
-    if (file.root !== HUB_ROOT || !file.path.startsWith(prefix)) return file;
-    return { root: ENGINE_ROOT, path: file.path.slice(prefix.length) };
+export function fileNamed(
+    file: string,
+    roots: readonly RootFolder[],
+    primary: string | null
+): FileName | null {
+    const under = fileUnder(file, roots, primary);
+    if (under !== null) return under;
+    return roots.length === 0 && file.startsWith('/') ? { root: '', path: file } : null;
 }
 
 /**
@@ -146,25 +160,35 @@ export function diskPath(file: FileName, roots: readonly RootFolder[]): string |
 
 /**
  * Whether two names are one file on disk. Each name stands for its root's folder joined with its
- * path, so the engine's config folder reached as `engine:layout.yml` and as
- * `hub:tools/oculus/config/layout.yml` is one file when the engine root is served from the hub's
- * own config folder, and two files when it is served from another checkout's. A name that stands
- * for no path on disk (see `diskPath`) is one file with itself alone. While the roots are not
- * known, the engine's config folder inside the hub counts as the engine root's. A file reached
- * through a symbolic link inside a root is another file than its target.
+ * path, so a folder listed twice under two names, or inside another listed folder, reaches one file
+ * by two names. A name that stands for no path on disk (see `diskPath`) is one file with itself
+ * alone. A file reached through a symbolic link inside a root is another file than its target.
  */
 export function sameDiskFile(
     one: FileName,
     other: FileName,
     roots: readonly RootFolder[]
 ): boolean {
-    if (roots.length === 0) {
-        const [first, second] = [byPrefix(one), byPrefix(other)];
-        return first.root === second.root && first.path === second.path;
-    }
     const [first, second] = [diskPath(one, roots), diskPath(other, roots)];
     if (first !== null && second !== null) return first === second;
     return one.root === other.root && one.path === other.path;
+}
+
+/** How two names stand to each other on disk: one file, two files, or not yet knowable. */
+export type DiskRelation = 'same' | 'other' | 'unread';
+
+/**
+ * Whether two names are one file on disk, as `sameDiskFile` decides, with a third answer for the
+ * time before the roots are read: with no root listed no name reaches a folder, so two different
+ * names may still be one file, and `unread` says that is not known.
+ */
+export function diskRelation(
+    one: FileName,
+    other: FileName,
+    roots: readonly RootFolder[]
+): DiskRelation {
+    if (sameDiskFile(one, other, roots)) return 'same';
+    return roots.length === 0 ? 'unread' : 'other';
 }
 
 /** The career file's path in the hub, which the config falls back to when it names none. */
@@ -213,8 +237,10 @@ export const HUB_LIST: Readonly<Record<string, readonly string[]>> = {
         'publications_file',
         'linkedin_dir',
         'career_file',
-        'roots'
+        'memories_dir',
+        'wallpaper_dir'
     ],
+    'appearance.yml': ['wallpaper.image'],
     'layout.yml': ['docs'],
     'behavior.yml': ['slurm.resource', 'data_domains', 'app_settings'],
     'catalogs/vocab.yml': ['domains', 'venue_themes', 'data_themes']

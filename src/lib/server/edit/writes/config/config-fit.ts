@@ -268,6 +268,7 @@ function fullProblem(
             return parkedProblem(value as string[], ctx);
         case 'folder':
         case 'file':
+            if (sources.hub === null) return words(ctx.fit.text, 'server.workspace.no_primary');
             return hubPathProblem(spec, value as string, ctx, sources.hub);
         case 'records':
             return recordsProblem(spec, value as unknown[], ctx);

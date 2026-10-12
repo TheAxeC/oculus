@@ -1,6 +1,6 @@
 # ===========================================================================
 # appearance.yml
-# oculus's own configuration - what the chrome looks like: the UI theme picker's list, the wallpaper
+# oculus's own configuration - what the chrome looks like: the UI theme picker's list, the look of the wallpaper
 # behind the panels, the CRT overlay's default, the code theme of the editors, and the terminal grid's text size, cursor and Option key. Merged with the other config/*.yml by loadConfig().
 # ===========================================================================
 
@@ -53,12 +53,9 @@ terminal:
   cursor_blinking: false      # true makes the cursor blink
 
 
-# === Wallpaper ==============================================================
-# `dir` is relative to the hub and must remain inside it. No image means no backdrop.
+# === Look ===================================================================
+# How the wallpaper and the panels over it are drawn. Which image is the wallpaper is the `wallpaper.image` key of the primary hub's own .oculus/config/appearance.yml (a hub name and a file name joined by a slash, `random`, or empty for none), set from the picker under the wallpaper rows of the Settings view; the folder each hub keeps its wallpaper images in is `wallpaper_dir` of its .oculus/config/sources.yml.
 wallpaper:
-  dir: .oculus/wallpaper
-  file: "wallhaven-83"       # name the image to use (full name or any unique part of it). Empty = use `pick:` below
-  pick: first    # `first` = the first image in the folder | `random` = a different one each build
   dim: 0.72      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85
   blur: 0        # px of blur on the IMAGE itself. 0 = sharp; raise it only if the picture is busy
   themes: rice   # `rice` = terminal themes only | `all` = light and dark too
@@ -67,12 +64,6 @@ wallpaper:
                            # `panel_opacity` you read them through two translucent layers. Unset =
                            # three quarters of the way from `panel_opacity` to solid.
   panel_blur: 2         # px of backdrop blur behind each window (keeps text crisp without smearing the image)
-
-
-# === Memories ===============================================================
-# The photo wall's folder, the same shape as `wallpaper:` above: `dir` is relative to the hub and must remain inside it. Every .jpg / .jpeg / .png / .webp in it is a tile, and the wall's own control adds one.
-memories:
-  dir: .oculus/memories
 
 
 # The CRT overlay (scanlines and vignette, cosmetic only): what a browser that has never been told

@@ -6,6 +6,7 @@
 // instead of the bridge to the last published payload, so only the synthetic hub and state folder
 // are read.
 
+import { homedir } from 'node:os';
 import { describe, expect } from 'vitest';
 import { it, test } from '../../fixtures/scratch.ts';
 import { handleTerminal, handleTerminalList } from '../../../src/lib/server/machine/pty/routes.ts';
@@ -25,7 +26,8 @@ import {
     source,
     request,
     answer,
-    configOf
+    configOf,
+    worldOf
 } from './terminal-fixture.ts';
 
 /** This file's scratch folder and what the fixture planted in it, made before its first case. */
@@ -45,7 +47,7 @@ describe('GET /api/terminal after a write', () => {
         const started = await handleTerminal(
             request({ action: 'start', kind: 'claude', cwd: HERE, cols: 80, rows: 24 }),
             TOKEN,
-            { engine: task.engine, configFor: configOf(task.engine), run: driver.run }
+            { ...worldOf(), engine: task.engine, configFor: configOf(task.engine), run: driver.run }
         );
         expect(started.status).toBe(200);
         const terminal = (await answer(started)).terminal as { id: string };
@@ -72,6 +74,7 @@ describe('POST /api/terminal, the resume action', () => {
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 100, rows: 30 }),
             TOKEN,
             {
+                ...worldOf(),
                 engine: task.engine,
                 configFor: configOf(task.engine),
                 run: driver.run,
@@ -114,6 +117,7 @@ describe('POST /api/terminal, the resume action', () => {
             request({ action: 'resume', tool: 'claude', id: SESSION }, 'stale'),
             TOKEN,
             {
+                ...worldOf(),
                 engine: task.engine,
                 configFor: configOf(engineDir()),
                 run: driver.run,
@@ -132,11 +136,11 @@ describe('POST /api/terminal, the recover action', () => {
             request({ action: 'recover', key: 'mimic-iv', cols: 96, rows: 28 }),
             TOKEN,
             {
+                ...worldOf(task.chatHub),
                 engine: task.engine,
                 configFor: configOf(task.engine),
                 run: driver.run,
-                datasetIdsFor: () => ['mimic-iv'],
-                hubFor: () => HERE
+                datasetIdsFor: () => ['mimic-iv']
             }
         );
         expect(response.status).toBe(200);
@@ -144,9 +148,27 @@ describe('POST /api/terminal, the recover action', () => {
         const terminal = body.terminal as { id: string; name: string };
         expect(terminal.name).toBe('recover mimic-iv');
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
-        expect(started[started.indexOf('-c') + 1]).toBe(HERE);
+        expect(started[started.indexOf('-c') + 1]).toBe(task.chatHub);
         expect(started[started.indexOf('-x') + 1]).toBe('96');
         expect(started[started.indexOf('-y') + 1]).toBe('28');
         expect(lineOf(started)).toEqual(["python3 tools/data/redownload.py 'mimic-iv'"]);
+    });
+
+    it('starts the named shell in the home folder while the workspace has no primary hub', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'recover', key: 'mimic-iv', cols: 96, rows: 28 }),
+            TOKEN,
+            {
+                ...worldOf(),
+                engine: task.engine,
+                configFor: configOf(task.engine),
+                run: driver.run,
+                datasetIdsFor: () => ['mimic-iv']
+            }
+        );
+        expect(response.status).toBe(200);
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.indexOf('-c') + 1]).toBe(homedir());
     });
 });

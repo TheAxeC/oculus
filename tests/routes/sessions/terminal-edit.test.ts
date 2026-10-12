@@ -24,6 +24,7 @@ import {
     configOf,
     makeTaskConfig,
     request,
+    worldOf,
     type TaskConfig
 } from './terminal-fixture.ts';
 
@@ -113,6 +114,7 @@ function tmux(sessions: Record<string, Session>, failing: string[] = []) {
 
 function options(run: NonNullable<TerminalOptions['run']>, shell = '/bin/zsh'): TerminalOptions {
     return {
+        ...worldOf(),
         engine: task.engine,
         configFor: configOf(engineDir()),
         run,

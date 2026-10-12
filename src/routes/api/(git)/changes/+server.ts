@@ -7,11 +7,16 @@
 // local.yml decides where it is.
 
 import { handleChanges } from '$lib/server/core/changes';
-import { target } from '$lib/server/edit/writes';
+import { carriedOf, target } from '$lib/server/edit/writes';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request, locals }) =>
     handleChanges(
         request,
-        target(locals.server.engine, locals.config().config, locals.server).changes
+        target(
+            locals.server.engine,
+            locals.config().config,
+            carriedOf(locals.server),
+            locals.server
+        ).changes
     );

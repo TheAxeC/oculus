@@ -6,15 +6,14 @@
 // The file browser's roots are the second source because the Repositories view is over every
 // repository the reader has told oculus about, not only the ones an agent happens to be working in.
 // They are read through the `roots` option at start, again on a `config` push, which is what says
-// the configured roots moved, and again whenever the saved workspaces file changes, which is the
-// other way a root is added while the server runs. The text catalog a failed read is worded from
-// and the depth the repositories are looked for at are read with them.
+// the folders of the workspace moved, and again whenever the open workspace moves (the `follow`
+// option), which is the way a folder is added while the server runs. The text catalog a failed read
+// is worded from and the depth the repositories are looked for at are read with them.
 //
-// The workspaces file is polled rather than watched (server/core/file-poll.ts says why): a root the
-// page adds just as the server starts would otherwise stay off the channel until something else
-// moved the roots. A root that could not be watched (missing at its first watch, or one the watch
-// refused) is tried again at each poll and each config push, so a root that appears later is
-// watched from then on.
+// The open workspace's own poll (workspace/follow.ts) tells this watcher of a move, so a folder the
+// page adds just as the server starts is seen at the next tick. A root that could not be watched
+// (missing at its first watch, or one the watch refused) is tried again at each move and each
+// config push, so a root that appears later is watched from then on.
 //
 // Which workspaces those are is the sessions payload's answer, and this watcher takes it from the
 // hub rather than from the sessions watcher: it subscribes a sink of its own to the `sessions` and
@@ -24,15 +23,14 @@
 //
 // A configured root holds repositories below it as well as, when it is one, itself (a `~/workspace`
 // of clones, a monorepo with repositories inside). Every folder down to `repository_scan_depth`
-// levels under such a root that holds a `.git`, a folder or a file, is on the channel after it.
-// The walk skips links, `.git` and the ignored folders below, and runs when the roots are read (at
-// start, on a config push and when the workspaces file moves) and when a `rename` event names a
-// path of at most `depth` segments, or a path ending in `/.git` of at most `depth + 1` segments,
-// which is how a repository cloned or initialised while the server runs is found.
+// levels under such a root that holds a `.git`, a folder or a file, is on the channel after it. The
+// walk skips links, `.git` and the ignored folders below, and runs when the roots are read (at
+// start, on a config push and when the open workspace moves) and when a `rename` event names a path
+// of at most `depth` segments, or a path ending in `/.git` of at most `depth + 1` segments, which
+// is how a repository cloned or initialised while the server runs is found.
 //
-// The hub root is on the channel whether or not a session names it, since the deposit and the pin
-// controls read the hub's own git state; the `always` option is what names it, and the root it
-// names is opened before the first sessions message and never dropped for one.
+// The root the `always` option names is on the channel whether or not a session names it; it is
+// opened before the first sessions message and never dropped for one.
 //
 // Two handles per workspace. `<root>/.git` non-recursively catches the index, HEAD and the refs,
 // which is what a commit or a checkout moves; the worktree recursively catches an edit to a file.
@@ -81,14 +79,7 @@ import type {
     SessionsPayload
 } from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
-import {
-    POLL,
-    pollFile,
-    systemClock,
-    type Clock,
-    type FilePoll,
-    type Timer
-} from '../../core/file-poll.ts';
+import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
 import { readState, type StateRead } from '../../core/git/state.ts';
 import { TIMEOUT_MS } from '../../core/git/run.ts';
 import { APP_FOLDERS, PLAIN_FOLDERS } from '../process/build-folders.ts';
@@ -111,20 +102,19 @@ export const IGNORED = [
 export type GitWatchOptions = {
     /** Milliseconds one root is re-read at most once in. */
     throttle?: number;
-    /** The timer pair the throttle and the workspaces poll run on; the globals when absent. */
+    /** The timer pair the throttle runs on; the globals when absent. */
     clock?: Clock;
     /** Milliseconds one git command is given; server/core/git/run.ts's default when absent. */
     timeout?: number;
     /**
-     * A root watched whether or not a session names it. The hub itself is one: the deposit and the
-     * pin controls read the hub's own git state, and a hub nobody has a session in would otherwise
-     * show the state it had when the page opened.
+     * A root watched whether or not a session names it, so a folder nobody has a session in shows
+     * the state it has now and not the one it had when the page opened.
      */
     always?: string;
     /**
      * The directories the file browser serves, in the order it lists them, asked again on a config
-     * push and whenever the saved workspaces file changes. It reads the configuration as it is at
-     * the call rather than a copy taken at start. They come before the sessions' workspaces, so the
+     * push and whenever the open workspace moves. It reads the configuration as it is at the call
+     * rather than a copy taken at start. They come before the sessions' workspaces, so the
      * payload's keys are in the order the Repositories view draws its sections.
      */
     roots?: () => string[];
@@ -139,11 +129,10 @@ export type GitWatchOptions = {
      */
     depth?: () => number;
     /**
-     * The saved workspaces file, polled so a root added in the page is watched from the next tick.
+     * Call the listener when the open workspace moves, so a folder added in the page is watched
+     * from the next tick; the answer takes the listener away.
      */
-    workspacesFile?: string;
-    /** Milliseconds between two stats of the workspaces file. */
-    poll?: number;
+    follow?: (listener: () => void) => () => void;
 };
 
 /**
@@ -273,13 +262,11 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const configured = options.roots ?? ((): string[] => []);
     const catalogOf = options.text ?? ((): Record<string, string> => ({}));
     const depthOf = options.depth ?? ((): number => 1);
-    const poll = options.poll ?? POLL;
-    const workspacesFile = options.workspacesFile;
     /** The roots the newest sessions payload named, kept so a rescan can compose the whole list. */
     let named: string[] = [];
     /**
      * The file browser's roots as last read. Reading them parses the configuration, so they are
-     * read at start, on a config push and when the workspaces file changes, and a sessions push
+     * read at start, on a config push and when the open workspace moves, and a sessions push
      * composes its list from this copy.
      */
     let browser: string[] = [];
@@ -290,8 +277,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const inside = new Map<string, string[]>();
     /** The roots an event says may hold a repository that is not listed yet. */
     const rescan = new Set<string>();
-    /** The poll of the saved workspaces file, when there is one. */
-    let workspaces: FilePoll | null = null;
+    /** The listener the open workspace calls on a move, taken away at close. */
+    let unfollow: (() => void) | null = null;
     const handles = new Map<string, FSWatcher[]>();
     /**
      * Which opening of a root a read began under and when that watch was opened, so a read of a
@@ -577,7 +564,6 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
      * workspaces, each named once.
      */
     const readRoots = (): void => {
-        workspaces?.reading();
         // The file browser's roots, the catalog and the depth are read off config and a file the
         // reader edits, so a broken one leaves the channel with what it can name rather than
         // stopping the watcher.
@@ -675,10 +661,10 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
                     named = rootsOf(held.payload as SessionsPayload);
                     follow();
                 }
-                // A config push is how a root added to sources.yml reaches this watcher: the roots
-                // option reads the configuration as it is now, so reading it again and following
-                // is the whole work. A sessions push keeps the copy: it says nothing about config.
-                // The workspaces are said to have moved too, since the configured roots are part of
+                // A config push is how a changed configuration reaches this watcher: the roots
+                // option reads the workspace as it is now, so reading it again and following is the
+                // whole work. A sessions push keeps the copy: it says nothing about config. The
+                // workspaces are said to have moved too, since the folders of the workspace are
                 // what the file browser serves.
                 if (held.channel === 'config') {
                     readRoots();
@@ -694,16 +680,14 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             // The probe holds no handle, so closing it frees nothing.
         }
     };
-    // The saved workspaces file is read again when its signature moved. A machine that has saved no
-    // workspace has no file and perhaps no folder yet, which is a signature like any other, so the
-    // first save is seen without anything opened at the folder.
-    if (workspacesFile !== undefined) {
-        workspaces = pollFile(workspacesFile, { clock, every: poll }, () => {
+    // The folders are read again when the open workspace moves, so a folder added by the page or by
+    // hand is watched at the next tick.
+    unfollow =
+        options.follow?.(() => {
             readRoots();
             follow();
             announceWorkspaces();
-        });
-    }
+        }) ?? null;
     // The always-watched root and the file browser's are opened before the first sessions message,
     // so a hub nobody has a session in is on the channel from the start.
     try {
@@ -727,8 +711,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         close(): void {
             closed = true;
             hub.remove(sink);
-            workspaces?.close();
-            workspaces = null;
+            unfollow?.();
+            unfollow = null;
             for (const root of [...handles.keys()]) drop(root);
             slots.clear();
             state = {};

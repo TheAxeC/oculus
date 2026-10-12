@@ -58,6 +58,8 @@ function problemSentence(word: ScheduleWord, names: readonly string[]): string {
             return catalogText('app.schedules.problem_unattended_command');
         case 'needs-approval':
             return catalogText('app.schedules.problem_needs_approval', first);
+        case 'no-primary':
+            return catalogText('app.schedules.problem_no_primary');
         case 'record-locked':
             return catalogText('app.schedules.problem_record_locked');
         case 'record-unread':

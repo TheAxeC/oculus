@@ -4,7 +4,7 @@
 // NOT cover: the origin rule, which hooks.server.ts applies to every request under /api/ ahead of a
 // route seeing it (tests/server/root/hooks-server.test.ts).
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, vi } from 'vitest';
 import { handleSchedules } from '../../../src/lib/server/machine/runs/schedules/routes.ts';
 import type { SchedulesWatcher } from '../../../src/lib/server/machine/runs/schedules/watch.ts';
@@ -56,5 +56,44 @@ describe('POST /api/schedules', () => {
         expect(readFileSync(w.files.schedules, 'utf8')).toBe(held);
         expect(reload).not.toHaveBeenCalled();
         expect(runNow).not.toHaveBeenCalled();
+    });
+
+    it('answers no-primary to every write while the workspace has no primary and writes nothing', async () => {
+        const w = world();
+        const reload = vi.fn();
+        const schedules: SchedulesWatcher = {
+            reload,
+            runNow: vi.fn(() => Promise.resolve({ refused: 'no-primary', names: [] })),
+            close: vi.fn()
+        };
+        const options = {
+            ...routeOptions(w, schedules),
+            files: () => ({ ...w.files, schedules: null }),
+            hubFor: () => null
+        };
+        const entry = {
+            name: 'Daily radar',
+            runs: { task: 'scout' },
+            when: '0 9 * * *',
+            paused: false,
+            unattended: false
+        };
+        const bodies = [
+            { action: 'save', at: null, was: null, entry },
+            { action: 'delete', at: 0, name: 'Weekly radar' },
+            { action: 'pause', at: 0, name: 'Weekly radar' },
+            { action: 'resume', at: 0, name: 'Weekly radar' }
+        ];
+        for (const body of bodies) {
+            const response = await handleSchedules(
+                pagePost(`${HOST}/api/schedules`, body, TOKEN),
+                TOKEN,
+                options
+            );
+            expect(response.status, body.action).toBe(400);
+            expect(await response.json(), body.action).toEqual({ error: 'no-primary', names: [] });
+        }
+        expect(existsSync(w.files.schedules)).toBe(false);
+        expect(reload).not.toHaveBeenCalled();
     });
 });

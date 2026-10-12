@@ -11,8 +11,10 @@ import { symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { handleDocs, type DocTarget } from '../../../src/lib/server/content/docs.ts';
+import { handleDocs, renderHubDoc, type DocTarget } from '../../../src/lib/server/content/docs.ts';
+import { words } from '../../../src/lib/server/core/words.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { TEXT } from '../../server/text.ts';
 
 /**
  * An engine folder with a manual, a guide, a hidden folder, a `node_modules` folder, a folder named
@@ -28,7 +30,7 @@ function planted(): { dir: string; into: (hub: string) => DocTarget } {
             'hub/engine/docs/shout.MD': '# Shout\n',
             'hub/engine/.scratch/plan.md': '# Plan\n',
             'hub/engine/node_modules/pack/README.md': '# Pack\n',
-            'hub/engine/config/local.yml': 'hub: nowhere\n',
+            'hub/engine/config/other.yml': 'key: nowhere\n',
             'hub/other.md': '# Other\n',
             'elsewhere/secret.md': '# Secret\n'
         },
@@ -40,7 +42,11 @@ function planted(): { dir: string; into: (hub: string) => DocTarget } {
     const config = portfolioConfigFrom({});
     return {
         dir,
-        into: (hub) => ({ hub, engine: join(dir, 'hub', 'engine'), config })
+        into: (hub) => ({
+            primary: { key: 'hub', dir: hub },
+            engine: join(dir, 'hub', 'engine'),
+            config
+        })
     };
 }
 
@@ -74,8 +80,8 @@ describe('the engine read of the docs route', () => {
             { row: 'an empty path', query: 'engine=', error: 'no engine document named' },
             {
                 row: 'a file of another kind',
-                query: 'engine=config%2Flocal.yml',
-                error: 'not a Markdown file: config/local.yml'
+                query: 'engine=config%2Fother.yml',
+                error: 'not a Markdown file: config/other.yml'
             },
             {
                 row: 'a capital extension',
@@ -154,5 +160,23 @@ describe('the engine read of the docs route', () => {
         expect(((await second.json()) as { path: string }).path, 'engine wins over hub').toBe(
             'docs/guide.md'
         );
+    });
+});
+
+describe('the hub read of the docs route when no hub can be read', () => {
+    it('answers the catalog sentence for a workspace with no primary and for a hub the workspace lacks', async () => {
+        const { dir, into } = planted();
+        const base = into(join(dir, 'hub'));
+        const worded: DocTarget = { ...base, config: { ...base.config, text: TEXT } };
+        const none = renderHubDoc({ ...worded, primary: null }, 'other.md');
+        expect(none.status).toBe(404);
+        expect(await none.json()).toEqual({
+            error: words(TEXT, 'server.workspace.no_primary_doc')
+        });
+        const missing = renderHubDoc(worded, 'other.md', '', 'lab');
+        expect(missing.status).toBe(404);
+        expect(await missing.json()).toEqual({
+            error: words(TEXT, 'server.workspace.no_hub_named', 'lab')
+        });
     });
 });

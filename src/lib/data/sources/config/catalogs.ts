@@ -14,7 +14,8 @@ import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
 import { mustBe } from './catalog/value-words.ts';
 import { readEditorOptions, type EditorProblem } from './editor-options.ts';
 import { configDir } from './folder.ts';
-import { localFile, type LocalProblem } from './local.ts';
+import type { LocalProblem } from './local.ts';
+import type { MachineProblem } from './machine.ts';
 import { CATALOGS_DIR, textCatalog } from './merge.ts';
 import { closedPaths, settingProblems } from './settings.ts';
 
@@ -271,6 +272,13 @@ function localText(catalog: TextCatalog, problem: LocalProblem): string {
             return findingText(catalog, 'findings.config.local_row', problem.key, problem.words);
         case 'repeat':
             return findingText(catalog, 'findings.config.local_repeat', problem.key);
+        case 'other-hub':
+            return findingText(
+                catalog,
+                'findings.config.local_other_hub',
+                problem.key,
+                problem.hub
+            );
         case 'unparsed':
             return findingText(catalog, 'findings.config.local_unparsed');
         case 'not-a-map':
@@ -281,18 +289,16 @@ function localText(catalog: TextCatalog, problem: LocalProblem): string {
 }
 
 /**
- * One finding for each key or row of the machine's own file that does not read, or for the file
- * as a whole, against local.yml and the key. The config payload reaches every page, so a finding
+ * One finding for each key or row of a hub's `.oculus/local.yml` that does not read, or for a file
+ * as a whole, against that file and the key. The config payload reaches every page, so a finding
  * never holds a value the file holds, a label or the parser's text.
  */
 export function localFindings(
-    engine: string,
     config: Record<string, unknown>,
-    problems: readonly LocalProblem[]
+    problems: readonly MachineProblem[]
 ): Finding[] {
-    const file = localFile(engine);
     const catalog = textCatalog(config);
-    return problems.map((problem) => ({
+    return problems.map(({ file, problem }) => ({
         file,
         key: problem.key,
         message: localText(catalog, problem)

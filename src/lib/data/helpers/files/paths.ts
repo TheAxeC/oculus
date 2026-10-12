@@ -24,6 +24,45 @@ export function nameOf(path: string): string {
     );
 }
 
+/** The folder of a hub's wallpaper pictures when its `sources.yml` names none. */
+export const WALLPAPER_DIR = '.oculus/wallpaper';
+
+/** The folder of a hub's photo wall when its `sources.yml` names none. */
+export const MEMORIES_DIR = '.oculus/memories';
+
+/**
+ * The path a hub-relative or absolute path comes to once its `.` and `..` segments are folded, or
+ * null when it lies outside the hub. Both the hub and an absolute path are written with `/`.
+ */
+function underHub(hub: string, path: string): string | null {
+    const root = trimSlash(hub);
+    const out: string[] = [];
+    for (const part of (path.startsWith('/') ? path : `${root}/${path}`).split('/')) {
+        if (part === '' || part === '.') continue;
+        if (part === '..') out.pop();
+        else out.push(part);
+    }
+    const folded = `/${out.join('/')}`;
+    return folded === root || folded.startsWith(`${root}/`) ? folded : null;
+}
+
+/**
+ * The folder a hub's `sources.yml` key (`wallpaper_dir`, `memories_dir`) names, resolved under the
+ * hub: `fallback` when the key is absent, and `fallback` with a problem when the value is no text
+ * (`text`) or leaves the hub (`outside`), so a value that is wrong is said and never served.
+ */
+export function hubFolderIn(
+    hub: string,
+    value: unknown,
+    fallback: string
+): { dir: string; problem: 'text' | 'outside' | null } {
+    const standard = underHub(hub, fallback) ?? trimSlash(hub);
+    if (value === undefined) return { dir: standard, problem: null };
+    if (typeof value !== 'string' || value.trim() === '') return { dir: standard, problem: 'text' };
+    const dir = underHub(hub, value.trim());
+    return dir === null ? { dir: standard, problem: 'outside' } : { dir, problem: null };
+}
+
 /** A folder without its trailing slashes, the root `/` kept as it is. */
 export function trimSlash(dir: string): string {
     return dir.replace(/(.)\/+$/, '$1');

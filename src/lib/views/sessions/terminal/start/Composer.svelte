@@ -96,10 +96,7 @@
     const record = $derived(composerOf(instanceState(owner)));
     const hub = $derived(hubRoot());
     const places = $derived(
-        offeredPlaces(
-            composerPlaces(hub, workspaces().workspaces, sessionsByWorkspace(true)),
-            record
-        )
+        offeredPlaces(composerPlaces(hub, workspaces().folders, sessionsByWorkspace(true)), record)
     );
     const workspace = $derived(composerWorkspace(record, places, hub));
     const branch = $derived(branchOf(workspace, git()));

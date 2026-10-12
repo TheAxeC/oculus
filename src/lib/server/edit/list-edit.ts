@@ -17,7 +17,7 @@
 // anything is written, through readBack and othersThan below: server/edit/deck-edit.ts for a deck
 // group's `slides:`, server/edit/writes/config/lists/audit-mute.ts for the audit's mute list,
 // server/edit/writes/config/lists/rail.ts for the rail's list of pages and
-// server/edit/writes/config/lists/roots.ts for the default workspace's folders.
+// server/edit/writes/config/lists/folders.ts for the open workspace's folders.
 //
 // `isMap` names data/helpers/guards.ts's test of a parsed value in every file, so the yaml
 // library's own node test is imported as `isYamlMap`.

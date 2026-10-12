@@ -22,12 +22,12 @@ export type AccountProvider = ConnectProvider | 'ics';
 
 /**
  * One account row of `calendars:` or `mail:` as the rows, the files and the cadence handle it
- * alike, whatever its provider.
+ * alike, whatever its provider. `hub` is the name of the hub whose `.oculus/local.yml` holds it.
  */
-export type AccountRow = { provider: AccountProvider; label: string };
+export type AccountRow = { provider: AccountProvider; label: string; hub?: string };
 
 /** One account row of a provider that signs in, which is every row of `mail:`. */
-export type ConnectAccountConfig = { provider: ConnectProvider; label: string };
+export type ConnectAccountConfig = { provider: ConnectProvider; label: string; hub?: string };
 
 /** One account: `not-connected` until its credential file holds a refresh token. */
 export type ConnectAccountStatus = 'connected' | 'not-connected' | 'error';

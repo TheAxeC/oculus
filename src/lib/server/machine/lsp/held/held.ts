@@ -72,6 +72,8 @@ export type HeldHost = {
     spawn: Spawn;
     /** The roots the file browser serves now. */
     roots(): readonly ServedRoot[];
+    /** Oculus's own config folder. */
+    config(): string;
     watchFolder?: typeof watch;
     /** The client capabilities the page sent, for the server's own `initialize`. */
     initialize(held: Held, setup: Setup): Record<string, unknown>;
@@ -454,6 +456,7 @@ export class Held {
         const ask: ServerAsk = {
             root: this.root,
             roots: this.#host.roots(),
+            config: this.#host.config(),
             schemas: this.#host.schemas?.() ?? emptySchemaSet(),
             follow: (id, real, parents, notice) => {
                 this.#followed ??= new Followed({

@@ -4,19 +4,20 @@
 // by their texts.
 //
 // A file is matched by its path inside a served root and nothing else, with `node:path`'s
-// `matchesGlob`. The hub root, the engine's config root and every other root are told apart: a rule
-// names the globs of each kind of root it governs. A file no rule matches has no schema.
+// `matchesGlob`. A schema is generated for a hub's files (`hub`) and for oculus's own config folder
+// (`engine`), and `resolvedSchemas` turns those into the globs of the workspace folders that hold
+// them, so a rule that reaches `schemaFor` names roots by their workspace names. A file no rule
+// matches has no schema.
 
 import { matchesGlob } from 'node:path';
-import { ENGINE_ROOT, HUB_ROOT } from '../../helpers/hub-names.ts';
 import { schemaText, type JsonSchema } from './json.ts';
 
 /**
  * One schema's reach: the globs, relative to a served root, of the files it governs. `hub` applies
- * in the hub root, `engine` in the engine's config folder, `roots` in the hub root of another hub
- * (the globs by that root's key) and `every` in any root. `within` narrows the rule to files that
- * also match one of its globs, which is how a path condition of a schema gives a variant its own
- * reach.
+ * in the hub the schema was generated for, `engine` in oculus's own config folder, `roots` in the
+ * workspace folder of that name (the globs by the folder's name) and `every` in any root. `within`
+ * narrows the rule to files that also match one of its globs, which is how a path condition of a
+ * schema gives a variant its own reach.
  */
 export type SchemaRule = {
     name: string;
@@ -45,21 +46,55 @@ export function withSchemas(set: SchemaSet, added: NamedSchema[]): SchemaSet {
 }
 
 /**
- * The schemas of a hub other than the first, as rules for the files of its root alone: each rule
- * that governs files of the hub keeps its `hub` globs as the globs of the root `key`, and each name
- * gets the key in front so it cannot meet a schema of another hub. The rules for the engine's
- * config folder and for any root are the first hub's set to hold.
+ * Where oculus's own config folder lies in the workspace: the folder holding it and the path in it.
+ */
+export type EngineConfigAt = { root: string; path: string };
+
+/**
+ * The set with its `hub` globs as the globs of the workspace folder `root` that holds the hub, and
+ * its `engine` globs as the globs of each folder that holds oculus's own config folder, written
+ * below the path of the config folder in it. A rule left with no root to govern is dropped.
+ */
+export function resolvedSchemas(
+    set: SchemaSet,
+    root: string,
+    engine: readonly EngineConfigAt[]
+): SchemaSet {
+    const rules: SchemaRule[] = [];
+    for (const { hub, engine: own, ...rule } of set.rules) {
+        const roots: Record<string, string[]> = { ...rule.roots };
+        const add = (key: string, globs: string[]): void => {
+            roots[key] = [...(roots[key] ?? []), ...globs];
+        };
+        if (hub !== undefined) add(root, hub);
+        if (own !== undefined) {
+            for (const at of engine) {
+                add(at.root, at.path === '' ? own : own.map((glob) => `${at.path}/${glob}`));
+            }
+        }
+        if (Object.keys(roots).length === 0 && rule.every === undefined) continue;
+        rules.push({ ...rule, ...(Object.keys(roots).length === 0 ? {} : { roots }) });
+    }
+    return { rules, texts: set.texts };
+}
+
+/**
+ * The schemas of a hub other than the primary, as rules for the files of its root alone: each rule
+ * that governs files of the hub keeps its globs for the root `key`, and each name gets the key in
+ * front so it cannot meet a schema of another hub. The rules for oculus's own config folder and for
+ * any root are the primary's set to hold.
  */
 export function scopedSchemas(key: string, set: SchemaSet): SchemaSet {
     const rules: SchemaRule[] = [];
     const texts: Record<string, string> = {};
     for (const rule of set.rules) {
-        if (rule.hub === undefined || !Object.hasOwn(set.texts, rule.name)) continue;
+        const globs = rule.roots?.[key];
+        if (globs === undefined || !Object.hasOwn(set.texts, rule.name)) continue;
         const name = `${key}:${rule.name}`;
         texts[name] = set.texts[rule.name];
         rules.push({
             name,
-            roots: { [key]: rule.hub },
+            roots: { [key]: globs },
             ...(rule.within === undefined ? {} : { within: rule.within })
         });
     }
@@ -104,9 +139,7 @@ function matches(globs: string[] | undefined, path: string): boolean {
  */
 export function schemaFor(set: SchemaSet, root: string, path: string): string | undefined {
     for (const rule of set.rules) {
-        const kind =
-            root === HUB_ROOT ? rule.hub : root === ENGINE_ROOT ? rule.engine : rule.roots?.[root];
-        if (!matches(kind, path) && !matches(rule.every, path)) continue;
+        if (!matches(rule.roots?.[root], path) && !matches(rule.every, path)) continue;
         if (rule.within !== undefined && !matches(rule.within, path)) continue;
         if (Object.hasOwn(set.texts, rule.name)) return rule.name;
     }

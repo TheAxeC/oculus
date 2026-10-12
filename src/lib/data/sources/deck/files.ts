@@ -52,7 +52,7 @@ export function resolveIn(
     if (base === null || isAbsolute(path)) return { error: 'outside' };
     const candidate = resolve(from, path);
     const real = realOf(candidate);
-    // The machine's own config/local.yml is never read into a deck, whichever root holds it.
+    // A hub's `.oculus/local.yml` is never read into a deck, whichever root holds it.
     if (real !== null && basename(real) === LOCAL_NAME) return { error: 'outside' };
     if (real !== null) {
         return holds(base, real)

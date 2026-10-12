@@ -5,8 +5,8 @@
 // as they were: the stamp of each folder, the path, size, inode and times of every entry, is the
 // same, and so is the hub the parse was made for. Adding, removing or writing a file of either
 // folder moves the stamp, at any depth, so the next request parses again. The hub's layer is
-// `<hub>/.oculus/config/` and the hub is read from `local.hub` at each request; a hub without the
-// folder is stamped as absent, so making the folder moves the stamp.
+// `<hub>/.oculus/config/` and the hub is the open workspace's primary at each request; a hub
+// without the folder is stamped as absent, so making the folder moves the stamp.
 //
 // A stamp that cannot be made (an entry that cannot be read, such as a dangling link) says
 // nothing about whether the folder changed, so a parse made under it is returned and not kept,
@@ -52,18 +52,18 @@ function folderStamp(dir: string): string {
 }
 
 /** What the engine's folder and the hub's layer hold, and which hub the layer is of. */
-function configStamp(engine: string, hub: string): string {
+function configStamp(engine: string, hub: string | null): string {
     const engineStamp = folderStamp(configDir(engine));
-    const layerStamp = hub === '' ? ABSENT : folderStamp(join(hub, HUB_LAYER));
+    const layerStamp = hub === null ? ABSENT : folderStamp(join(hub, HUB_LAYER));
     if (engineStamp === UNREADABLE || layerStamp === UNREADABLE) return UNREADABLE;
-    return `${engineStamp}\n--hub ${hub}\n${layerStamp}`;
+    return `${engineStamp}\n--hub ${hub ?? ''}\n${layerStamp}`;
 }
 
 /** What the cache needs of the server: where the folders are, how to parse, where findings go. */
 export type ConfigCacheDeps = {
     engine: string;
-    /** The hub folder, read at each request. */
-    hub: () => string;
+    /** The primary hub's folder, read at each request; null while the workspace has no primary. */
+    hub: () => string | null;
     load: () => LoadedConfig;
     report: (findings: Finding[]) => void;
 };

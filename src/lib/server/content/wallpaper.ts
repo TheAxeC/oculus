@@ -4,115 +4,151 @@
 //
 // The image is served rather than inlined: the picture is megabytes, the document is not, and a
 // browser caches a URL. Which extensions are pictures, what is inside a folder and the streamed
-// response are server/content/images.ts's, shared with the Memories wall;
-// what is here is the one thing this route has of its own, which is choosing a file when the reader
-// named a fragment or asked for a random one.
+// response are server/content/images.ts's, shared with the Memories wall; what is here is the one
+// thing this route has of its own, which is choosing the file.
+//
+// The choice is `wallpaper.image` in the primary hub's `.oculus/config/appearance.yml`: empty for
+// none, `random` for one image of any hub chosen once per server process, or
+// `<hub name>/<file name>` for one file of the wallpaper folder of that hub. A value that names a
+// hub the workspace does not list, a file the folder does not hold, a name that is a path rather
+// than a file, or neither form, serves no image and is a finding. The picker in Settings lists
+// every hub's images and serves each of them as `<hub name>/<file name>` (`?image=`).
 
-import { resolve } from 'node:path';
-import { z } from 'zod';
-import { byKey } from '../../data/helpers/guards.ts';
-import { folderOf, images, stream } from './images.ts';
+import { json } from '@sveltejs/kit';
+import { isMap } from '../../data/helpers/guards.ts';
+import { findingText, type TextCatalog } from '../../data/helpers/finding-text.ts';
+import type { Finding } from '../../data/model/index.ts';
+import { images, isName, stream, type HubPictures } from './images.ts';
 
 export { images } from './images.ts';
 
-/**
- * What serving needs of the configuration; a test passes its own rather than reading the config.
- */
-export type Wallpaper = {
-    /** The absolute directory the images are read from. */
-    dir: string;
-    /** Full name or any part of one, naming the image to use. Empty leaves it to `pick`. */
-    file?: string;
-    /** `first` is the first by name; `random` is one image per server process. */
-    pick: 'first' | 'random';
-};
+/** The `random` value of `wallpaper.image`. */
+const RANDOM = 'random';
 
 /**
- * What the owning server context remembers: the random pick per directory, and the directories
- * refused once.
+ * What the owning server context remembers: the random pick, as `<hub name>/<file name>`, so one
+ * image is shown for the life of the process.
  */
-export type WallpaperMemory = { chosen: Record<string, string>; refused: Set<string> };
+export type WallpaperMemory = { chosen: string | null };
 
 export function wallpaperMemory(): WallpaperMemory {
-    return { chosen: {}, refused: new Set() };
+    return { chosen: null };
+}
+
+/** One image of the wallpaper folders: its hub, its file name and the folder holding it. */
+type WallpaperImage = { hub: string; file: string; dir: string };
+
+/** Every image of every hub's wallpaper folder, hubs in the workspace's order, files by name. */
+function wallpaperImages(pictures: readonly HubPictures[]): WallpaperImage[] {
+    return pictures.flatMap((one) =>
+        images(one.wallpaper).map((file) => ({ hub: one.hub, file, dir: one.wallpaper }))
+    );
+}
+
+/** The `wallpaper.image` value of the merged config as text, empty when it holds none. */
+export function wallpaperValue(config: Record<string, unknown>): string {
+    const block = isMap(config.wallpaper) ? config.wallpaper : {};
+    return typeof block.image === 'string' ? block.image.trim() : '';
 }
 
 /**
- * The file name the settings name, or null when the directory holds no image. `file` matches a full
- * name first and then any name that contains it, which is what makes a fragment enough. A `file`
- * carrying a path separator or `..` names no file here and is refused rather than falling back: it
- * is an attempt to leave the directory, not a fragment that failed to match.
+ * The image a value names, or the id of the finding it is wrong by: `form` for a value that is
+ * neither `random` nor `<hub name>/<file name>`, `name` for a file part that is a path, `hub` for a
+ * hub the workspace does not list, `gone` for a file the folder does not hold. An empty value names
+ * none and is no fault.
  */
-export function choose(settings: Wallpaper, memory: WallpaperMemory): string | null {
-    const found = images(settings.dir);
-    if (found.length === 0) return null;
-    const want = (settings.file ?? '').trim();
-    if (want !== '') {
-        if (want.includes('/') || want.includes('\\') || want.includes('..')) return null;
-        const exact = found.find((name) => name === want);
-        if (exact !== undefined) return exact;
-        const part = found.find((name) => name.toLowerCase().includes(want.toLowerCase()));
-        if (part !== undefined) return part;
-        return found[0];
+function named(
+    value: string,
+    pictures: readonly HubPictures[]
+): WallpaperImage | { fault: 'form' | 'name' | 'hub' | 'gone' } | null {
+    if (value === '' || value === RANDOM) return null;
+    const cut = value.indexOf('/');
+    if (cut < 1) return { fault: 'form' };
+    const hub = value.slice(0, cut);
+    const file = value.slice(cut + 1);
+    if (!isName(file)) return { fault: 'name' };
+    const held = pictures.find((one) => one.hub === hub);
+    if (held === undefined) return { fault: 'hub' };
+    return images(held.wallpaper).includes(file)
+        ? { hub, file, dir: held.wallpaper }
+        : { fault: 'gone' };
+}
+
+/**
+ * The image to serve for a value of `wallpaper.image`, or null when it serves none. `random` keeps
+ * one image per process across every hub's images, taken again only when the kept one is no longer
+ * listed.
+ */
+export function choose(
+    value: string,
+    pictures: readonly HubPictures[],
+    memory: WallpaperMemory
+): WallpaperImage | null {
+    if (value === RANDOM) {
+        const all = wallpaperImages(pictures);
+        if (all.length === 0) return null;
+        const kept = all.find((one) => `${one.hub}/${one.file}` === memory.chosen);
+        if (kept !== undefined) return kept;
+        const pick = all[Math.floor(Math.random() * all.length)];
+        memory.chosen = `${pick.hub}/${pick.file}`;
+        return pick;
     }
-    if (settings.pick === 'random') {
-        const key = resolve(settings.dir);
-        const held = byKey(memory.chosen, key);
-        if (held === undefined || !found.includes(held)) {
-            memory.chosen[key] = found[Math.floor(Math.random() * found.length)];
-        }
-        return memory.chosen[key];
-    }
-    return found[0];
+    const found = named(value, pictures);
+    return found === null || 'fault' in found ? null : found;
 }
 
 /**
  * The image, its type and its cache header, streamed from disk. 404 covers every way there is no
- * image to send: no directory, no image in it, a name that leaves the directory, a file that has
- * gone since the listing.
+ * image to send: no value, a value that names no image, a file that has gone since the listing.
  */
-export function serve(settings: Wallpaper | null, memory: WallpaperMemory): Response {
-    if (settings === null) return new Response(null, { status: 404 });
-    return stream(settings.dir, choose(settings, memory));
+export function serve(
+    value: string,
+    pictures: readonly HubPictures[],
+    memory: WallpaperMemory
+): Response {
+    const image = choose(value, pictures, memory);
+    return image === null ? new Response(null, { status: 404 }) : stream(image.dir, image.file);
 }
 
-/** How an image is chosen: the first by name, or one at random. */
-const pickShape = z.enum(['first', 'random']) satisfies z.ZodType<Wallpaper['pick']>;
+/** One image asked for by `<hub name>/<file name>`, as the picker draws its thumbnails. */
+export function serveImage(asked: string, pictures: readonly HubPictures[]): Response {
+    const found = named(asked, pictures);
+    return found === null || 'fault' in found
+        ? new Response(null, { status: 404 })
+        : stream(found.dir, found.file);
+}
+
+/** The images of every hub, grouped by hub, as the picker lists them. */
+export function listing(pictures: readonly HubPictures[]): Response {
+    return json({
+        hubs: pictures.map((one) => ({ hub: one.hub, images: images(one.wallpaper) }))
+    });
+}
 
 /**
- * The `wallpaper:` block: a map with a directory, the part of an image's name that picks it when it
- * is text, and the way to choose, which is checked on its own so a refusal can name it as it came.
+ * The finding a `wallpaper.image` value is wrong by, filed on the appearance file that holds it:
+ * none for an empty value, `random` and a name that resolves to a file.
  */
-const wallpaperBlockShape = z.object({
-    dir: z.string().min(1),
-    file: z.string().optional().catch(undefined),
-    pick: z.unknown().optional()
-});
-
-/**
- * The configured wallpaper, or null when there is nothing to serve. The config is the request's own
- * read, so an edit shows on reload. A missing `dir`, or one outside the hub, serves nothing.
- */
-export function settings(
-    memory: WallpaperMemory,
+export function wallpaperFindings(
     config: Record<string, unknown>,
-    engine: string
-): Wallpaper | null {
-    const raw = config.wallpaper;
-    const held = wallpaperBlockShape.safeParse(raw);
-    if (!held.success) return null;
-    const pick = pickShape.safeParse(held.data.pick);
-    if (!pick.success) {
-        const key = `pick:${String(held.data.pick)}`;
-        if (!memory.refused.has(key)) {
-            memory.refused.add(key);
-            console.error(
-                `wallpaper: pick must be first or random, not ${String(held.data.pick)}; serving no image`
-            );
-        }
-        return null;
-    }
-    const dir = folderOf(raw, engine, memory.refused, 'wallpaper');
-    if (dir === null) return null;
-    return { dir, file: held.data.file, pick: pick.data };
+    pictures: readonly HubPictures[],
+    file: string,
+    text: TextCatalog
+): Finding[] {
+    const value = wallpaperValue(config);
+    const found = named(value, pictures);
+    if (found === null || !('fault' in found)) return [];
+    return [{ file, key: 'wallpaper.image', message: faultText(found.fault, text, value) }];
+}
+
+/** The sentence of one fault of a `wallpaper.image` value, worded from the text catalog. */
+function faultText(
+    fault: 'form' | 'name' | 'hub' | 'gone',
+    text: TextCatalog,
+    value: string
+): string {
+    if (fault === 'form') return findingText(text, 'findings.wallpaper.form', value);
+    if (fault === 'name') return findingText(text, 'findings.wallpaper.name', value);
+    if (fault === 'hub') return findingText(text, 'findings.wallpaper.hub', value);
+    return findingText(text, 'findings.wallpaper.gone', value);
 }

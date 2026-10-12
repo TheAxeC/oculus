@@ -16,7 +16,6 @@ const TOKEN = 'the-write-token-of-this-case';
 const GOOGLE_ID = '1234-abcd.apps.googleusercontent.com';
 const SECRET = 'the-google-secret-no-answer-may-carry';
 const LOCAL = `# the machine's own file
-hub: /machine/hub
 calendars:
   # the university
   - { provider: microsoft, label: uni }

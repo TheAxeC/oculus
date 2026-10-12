@@ -102,7 +102,11 @@ describe('a wrong scan or new_project_dir value', () => {
             scan: row.scan ?? [{ dir: 'projects/ideas' }],
             new_project_dir: row.newProjectDir ?? {}
         };
-        const found = sourcesFindings(merged, { scan: SOURCES, newProjectDir: SOURCES });
+        const found = sourcesFindings(
+            merged,
+            { scan: SOURCES, newProjectDir: SOURCES, memoriesDir: SOURCES, wallpaperDir: SOURCES },
+            hub
+        );
         const read = readManifests(hub, portfolioConfigFrom(merged).scan, CATALOG);
         const all = [...found, ...read.findings];
         expect(read.manifests.map((one) => one.id)).toEqual(row.ids);

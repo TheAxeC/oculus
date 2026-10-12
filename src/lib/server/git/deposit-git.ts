@@ -13,6 +13,8 @@
 //     gh repo edit <owner/repo> --description ... --homepage ... --add-topic ...
 //     gh repo edit <owner/repo> --default-branch main
 //
+// `defaultBranchOf` and `urlOf` read the two fields of the answer of `gh repo view`.
+//
 // This module exists rather than growing git-write.ts because the force option appears nowhere in
 // that file, and the snapshot mode of the deposit needs it exactly once (DESIGN.md, "Git",
 // "Fixed git choices": the one forced push in oculus). Here it appears at one call site,
@@ -30,6 +32,7 @@
 import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
+import { z } from 'zod';
 import { endWith } from '../core/git/running.ts';
 import { GIT } from '../core/git/run.ts';
 import { inside } from '../core/paths.ts';
@@ -365,4 +368,33 @@ export function slugOf(url: string): string {
     const bare = url.replace(/\/+$/, '').replace(/\.git$/, '');
     const at = bare.indexOf('github.com/');
     return at === -1 ? bare : bare.slice(at + 'github.com/'.length);
+}
+
+/** What `gh repo view --json url,defaultBranchRef` says, each part as text. */
+const repoViewShape = z.object({
+    url: z.string().catch(''),
+    defaultBranchRef: z.object({ name: z.string().catch('') }).catch(() => ({ name: '' }))
+});
+
+/** The view of `gh repo view --json url,defaultBranchRef`, or one with nothing in it. */
+function repoView(output: string): z.output<typeof repoViewShape> {
+    try {
+        const view = repoViewShape.safeParse(JSON.parse(output));
+        if (view.success) return view.data;
+    } catch {
+        // Output that is not JSON has no view in it.
+    }
+    return { url: '', defaultBranchRef: { name: '' } };
+}
+
+/**
+ * The `defaultBranchRef.name` of `gh repo view --json url,defaultBranchRef`, or the empty string.
+ */
+export function defaultBranchOf(output: string): string {
+    return repoView(output).defaultBranchRef.name;
+}
+
+/** The `url` of `gh repo view --json url,defaultBranchRef`, or the empty string. */
+export function urlOf(output: string): string {
+    return repoView(output).url;
 }

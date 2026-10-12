@@ -49,6 +49,8 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
             return catalogText('sessions.refused_no_file', first);
         case 'no-selection':
             return catalogText('sessions.refused_no_selection', first);
+        case 'no-primary':
+            return catalogText('sessions.refused_no_primary');
         case 'nul-value':
             return catalogText('sessions.refused_nul_value', first);
         case 'task-unknown':

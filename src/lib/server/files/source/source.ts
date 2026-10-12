@@ -21,7 +21,7 @@
 // A save copies the file as the compare read it into the local history (server/files/fs/
 // history.ts), after every refusal above and before the write. A copy that cannot be made does not
 // stop the save: the answer is `ok` and carries `refused: [{ field: 'history', reason }]`, which
-// the tab says. The machine's own config/local.yml is never copied, compared by device and inode.
+// the tab says. The `.oculus/local.yml` of every hub is never copied, compared by device and inode.
 //
 // The GET answers the one fact the tab needs before it draws anything, whether the file is writable
 // on this machine, so the editor can say so rather than letting a reader type into something that
@@ -39,14 +39,18 @@ import {
     statSync
 } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { LOCAL_NAME, checkLocal } from '../../data/sources/config.ts';
-import { TEXT_SNIFF_READ, isTextBytes, isWholeText } from '../../data/helpers/files/text-kind.ts';
-import { tokenedBody } from '../core/auth.ts';
-import { hashOf, splitMark, withMark } from '../core/file-bytes.ts';
-import { writeBytesAtomic } from '../core/json.ts';
-import { realPath } from '../core/paths.ts';
-import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
-import { keepBytes } from './fs/history.ts';
+import { LOCAL_NAME, checkLocal } from '../../../data/sources/config.ts';
+import {
+    TEXT_SNIFF_READ,
+    isTextBytes,
+    isWholeText
+} from '../../../data/helpers/files/text-kind.ts';
+import { tokenedBody } from '../../core/auth.ts';
+import { hashOf, splitMark, withMark } from '../../core/file-bytes.ts';
+import { writeBytesAtomic } from '../../core/json.ts';
+import { namesMachineFile, isMachineFile } from '../workspace/machine-file.ts';
+import { resolveRootFileResult, resolveRootPath, type Root } from '../files.ts';
+import { keepBytes } from '../fs/history.ts';
 
 /**
  * A save: the root and path of the file, the text to write, the hash of the bytes the tab last read
@@ -143,37 +147,17 @@ export function sourceBody(value: unknown): SourceBody | null {
     return body.success ? body.data : null;
 }
 
-/** The real path of the machine's own file, whether or not it is there yet; null without a root. */
-function ownLocalPath(list: Root[]): string | null {
-    const own = resolveRootPath(list, ENGINE_ROOT, LOCAL_NAME);
-    if ('path' in own) return own.path;
-    const engine = list.find((one) => one.key === ENGINE_ROOT);
-    const dir = engine === undefined ? null : realPath(engine.dir);
-    return dir === null ? null : join(dir, LOCAL_NAME);
-}
-
 /**
  * The sentence a save of the machine's own file is refused with, or null for any other file and for
- * a body whose every key reads. That one file of the config folder is read by its own rules rather
- * than merged, and a key it gets wrong is read as its default: saved, the wrong value would cost
- * the machine that key without a word at the save, so the save is refused with the sentence naming
- * it. The path is resolved through the same resolver the request went through, so the two strings
- * are comparable.
+ * a body whose every key reads. The `local.yml` of each hub of the workspace and the one in
+ * oculus's config folder `config` are read by their own rules rather than merged, and a key one
+ * gets wrong is read as its default: saved, the wrong value would cost the machine that key without
+ * a word at the save, so the save is refused with the sentence naming it. The file is recognised by
+ * its device and inode, so any spelling of its path is it.
  */
-function localRefusal(list: Root[], path: string, content: string): string | null {
-    if (ownLocalPath(list) !== path) return null;
+function localRefusal(list: Root[], config: string, path: string, content: string): string | null {
+    if (!namesMachineFile(path, list, config)) return null;
     return checkLocal(content, LOCAL_NAME);
-}
-
-/** Whether two paths are one file: the same device and inode, under whatever spelling. */
-function sameFile(one: string, other: string): boolean {
-    try {
-        const left = statSync(one);
-        const right = statSync(other);
-        return left.ino === right.ino && left.dev === right.dev;
-    } catch {
-        return false;
-    }
 }
 
 /** The stamp of a file, or null when the system cannot stat it, as for a file gone since. */
@@ -208,13 +192,13 @@ export function sameStamp(one: Stamp, other: Stamp): boolean {
  */
 export function historyRefusal(
     list: Root[],
+    config: string,
     path: string,
     bytes: Buffer,
     history: string | undefined
 ): string | null {
     if (history === undefined) return null;
-    const own = resolveRootPath(list, ENGINE_ROOT, LOCAL_NAME);
-    if ('path' in own && sameFile(own.path, path)) return null;
+    if (isMachineFile(path, list, config)) return null;
     const kept = keepBytes(history, path, bytes, 'save');
     return kept.ok ? null : kept.reason;
 }
@@ -264,7 +248,7 @@ function bytesOf(content: string, marked: boolean): Buffer {
  * Make a file that is not there, in a folder of its root. A folder that is not there, or that is a
  * file, is the missing file's 404; a folder in the file's place is refused `changed`.
  */
-function createFile(rootList: Root[], body: SourceBody, folder: boolean): Response {
+function createFile(rootList: Root[], config: string, body: SourceBody, folder: boolean): Response {
     if (folder) return changed('path', 'folder');
     const parent = resolveRootPath(rootList, body.root, dirname(body.path));
     if ('error' in parent) {
@@ -280,7 +264,7 @@ function createFile(rootList: Root[], body: SourceBody, folder: boolean): Respon
         return json({ ok: false, error: 'the file is not there' }, { status: 404 });
     }
     const target = join(parent.path, basename(body.path));
-    const refusal = localRefusal(rootList, target, body.content);
+    const refusal = localRefusal(rootList, config, target, body.content);
     if (refusal !== null) return json({ ok: false, error: refusal }, { status: 400 });
     const written = bytesOf(body.content, false);
     try {
@@ -300,6 +284,7 @@ export async function handleSource(
     token: string,
     text: () => Record<string, string>,
     rootList: Root[],
+    config: string,
     history?: string,
     stat: StatOf = statSync
 ): Promise<Response> {
@@ -332,7 +317,7 @@ export async function handleSource(
         }
     }
     if (real === null) {
-        if (body.create === true) return createFile(rootList, body, folder);
+        if (body.create === true) return createFile(rootList, config, body, folder);
         return body.base === undefined
             ? json({ ok: false, error: 'the file is not there' }, { status: 404 })
             : changed('base', 'changed');
@@ -348,11 +333,11 @@ export async function handleSource(
     }
     if (!isWholeText(bytes)) return refuse('binary');
     if (body.base !== undefined && hashOf(bytes) !== body.base) return changed('base', 'changed');
-    const refusal = localRefusal(rootList, real, body.content);
+    const refusal = localRefusal(rootList, config, real, body.content);
     if (refusal !== null) return json({ ok: false, error: refusal }, { status: 400 });
     const after = stampOf(stat, real);
     if (after === null || !sameStamp(before, after)) return changed('base', 'changed');
-    const unkept = historyRefusal(rootList, real, bytes, history);
+    const unkept = historyRefusal(rootList, config, real, bytes, history);
     const written = bytesOf(body.content, splitMark(bytes).marked);
     try {
         writeBytesAtomic(real, written);

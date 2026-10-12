@@ -20,6 +20,7 @@ import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps/apps.ts';
 import { privateFolders } from '../../../../data/helpers/files/private-folders.ts';
+import { machineFilesOf } from '../../../files/workspace/machine-file.ts';
 import { namesInterpreterLibrary } from '../../../../data/prose/lsp-servers.ts';
 import { inside, realPath, under } from '../../../core/paths.ts';
 
@@ -36,9 +37,19 @@ export type LibraryRules = {
 /** Rules that name no file: what a relay has until it is given its own. */
 export const NO_LIBRARY: LibraryRules = { closed: null, withheld: [] };
 
-/** The folders of this machine that hold its own state or secrets, from the engine and the hubs. */
+/**
+ * The folders and files of this machine that hold its own state or secrets: oculus's config folder,
+ * the state folder and the `secrets` folder of each hub, and the machine's `local.yml` files.
+ */
 export function withheldFolders(engineConfig: string, hubs: readonly string[]): string[] {
-    return [engineConfig, ...privateFolders(hubs, homedir())];
+    return [
+        engineConfig,
+        ...privateFolders(hubs, homedir()),
+        ...machineFilesOf(
+            hubs.map((dir) => ({ dir, hub: true })),
+            engineConfig
+        )
+    ];
 }
 
 /** The server a path is asked for, and what it is the interpreter's folders of. */

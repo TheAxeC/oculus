@@ -8,17 +8,20 @@
 import { t } from '../../../shared/words/text.ts';
 
 /** What one refusal code from the endpoint says to the reader. */
-export function refusal(code: string): string {
+export function refusal(code: string, reason?: string): string {
     if (code === 'no-dir') return t('files.refused_no_dir');
     if (code === 'not-absolute') return t('files.refused_not_absolute');
     if (code === 'no-such-dir') return t('files.refused_no_such_dir');
     if (code === 'not-a-directory') return t('files.refused_not_a_directory');
     if (code === 'root-held') return t('files.refused_root_held');
-    if (code === 'root-fixed') return t('files.refused_root_fixed');
     if (code === 'no-such-root') return t('files.refused_no_such_root');
     if (code === 'no-name') return t('files.refused_no_name');
     if (code === 'name-held') return t('files.refused_name_held');
-    if (code === 'no-such-workspace') return t('files.refused_no_such_workspace');
+    if (code === 'bad-name') return t('files.refused_bad_name');
+    if (code === 'no-hub') return t('files.refused_no_hub');
+    if (code === 'gone') return t('files.refused_gone');
+    if (code === 'unreadable') return t('files.refused_unreadable', reason ?? '');
+    if (code === 'unwritable') return t('files.refused_unwritable');
     if (code === 'no-such-note') return t('files.refused_no_such_note');
     if (code === 'notes-order-unreadable') return t('files.refused_notes_order_unreadable');
     if (code === 'roots-changed') return t('files.refused_roots_changed');

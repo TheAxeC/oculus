@@ -1,7 +1,7 @@
-// Layer 2, client state. Which file of the hub a view is drawn from: one of the three feeds by its
-// kind, one of the five registry views with a pane of its own, or one collection by its key. All of
-// them are read from the merged configuration the config channel carries, so every view that offers
-// the file shares one rule and one answer.
+// Layer 2, client state. Which file of the primary hub a view is drawn from: one of the three feeds
+// by its kind, one of the five registry views with a pane of its own, or one collection by its key.
+// All of them are read from the merged configuration the config channel carries, so every view that
+// offers the file shares one rule and one answer.
 //
 // It reads the configuration and nothing else. A kind the config names no path for is null, which
 // is the view drawing no control rather than a control that opens nothing, and a path that names a
@@ -10,7 +10,6 @@
 
 import { z } from 'zod';
 import { readAs } from '../../data/shapes/shapes.ts';
-import { HUB_ROOT } from '../sources/fs.ts';
 import type { FeedKind } from '../../data/model/index.ts';
 
 /** One file of the hub, addressed the way the source tab addresses it. */
@@ -55,15 +54,20 @@ function collectionPath(config: Record<string, unknown>, key: string | undefined
     return null;
 }
 
-/** The hub file one view draws, and null when the configuration names none for it. */
+/**
+ * The file of the primary hub (`primary` is its folder name) one view draws, and null when the
+ * configuration names none for it and when the workspace has no primary.
+ */
 export function viewSourceFile(
     kind: ViewSourceKind,
     config: Record<string, unknown>,
+    primary: string | null,
     collection?: string
 ): ViewSource | null {
+    if (primary === null) return null;
     const file =
         kind === 'collection'
             ? collectionPath(config, collection)
             : readAs(pathShape, config[FILE_KEYS[kind]]);
-    return file === null ? null : { root: HUB_ROOT, path: file };
+    return file === null ? null : { root: primary, path: file };
 }

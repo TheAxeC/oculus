@@ -31,7 +31,7 @@ manifest_schema:
     Outcome: Outcome
     "Overrides (rare)": "Overrides (rare)"
   fields:
-    id:            { label: "id", type: readonly, section: Core, help: "The project's folder name, or for a repository the key of its roots: entry. Never set by a write: rename the folder or the key to change it." }
+    id:            { label: "id", type: readonly, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
     tier:          { label: "Tier", type: select, options: [projects, coauthor, archive, personal, software], required: true, section: Core, help: "Which board the project is on: projects, coauthor, archive or personal; software is on no board. The project is shown with a finding when the key is missing or is not one of these five." }
     type:          { label: "Type / outcome", type: select, from: vocab.type_order, required: true, section: Core, help: "The project's stage (active or idea) on the Projects and Personal boards; how it ended (published, nogo, dropped and so on) on Archive and Coauthor; software on a software project. The folder the project is in decides neither the tier nor the type." }
     short:         { label: "Short handle", type: text, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }

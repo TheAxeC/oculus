@@ -32,7 +32,7 @@
 
     let { entry, id, cursor, folder, posted = false, onsaid }: Props = $props();
 
-    const hub = $derived(rootOf(entry));
+    const hub = $derived(rootOf(entry, client.fs.primary()));
     const number = $derived(/^\d+/.exec(entry.file)?.[0] ?? '');
     const path = $derived(linkedinSourcePath(folder, entry.file));
 

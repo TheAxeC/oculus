@@ -99,7 +99,7 @@ function itemOf(
         project.venueId === undefined ? undefined : byKey(entities.venues, project.venueId);
     const tag = (id: Id, label: string): BoardTag => ({ id, label });
     // A tag named by its id shows the id inside the project's own hub, without that hub's key.
-    const own = (id: Id): string => splitHubId(id, [rootOf(project)]).id;
+    const own = (id: Id): string => splitHubId(id, [rootOf(project, null)], null).id;
 
     const item: Omit<BoardItem, 'haystack'> = {
         id: project.id,

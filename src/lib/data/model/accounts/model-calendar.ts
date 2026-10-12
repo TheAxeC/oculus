@@ -22,8 +22,8 @@ import type { ConnectAccountStatus, ConnectProvider, ConnectStatus } from './mod
 /** The three providers a calendar account is read from, in the order they are offered. */
 export type CalendarProvider = ConnectProvider | 'ics';
 
-/** One account of `calendars:` in the machine's own config/local.yml. */
-export type CalendarAccountConfig = { provider: CalendarProvider; label: string };
+/** One account of `calendars:` in a hub's `.oculus/local.yml`. */
+export type CalendarAccountConfig = { provider: CalendarProvider; label: string; hub?: string };
 
 /** The connector as a whole: `unconfigured` when the machine names no account. */
 export type CalendarStatus = ConnectStatus;
@@ -40,6 +40,8 @@ export type CalendarListEntry = { id: string; name: string };
 export type CalendarAccount = {
     provider: CalendarProvider;
     label: string;
+    /** The hub whose `.oculus/local.yml` holds the account. */
+    hub?: string;
     status: CalendarAccountStatus;
     /** One line saying what is wrong with the account, absent while nothing is. */
     hint?: string;

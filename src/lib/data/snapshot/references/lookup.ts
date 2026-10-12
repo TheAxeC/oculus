@@ -11,7 +11,7 @@
 // a tab that holds a file under another root, or under another checkout's engine root, replaces
 // the right file of the index and no other.
 
-import { ENGINE_ROOT, HUB_ROOT, diskPath, type RootFolder } from '../../helpers/hub-names.ts';
+import { diskPath, type RootFolder } from '../../helpers/hub-names.ts';
 import type { Candidate, Definition, FileScan, Mention, Place, ReferenceIndex } from './model.ts';
 import { scanText } from './scan.ts';
 
@@ -64,7 +64,11 @@ export function overlay(
         const text = real === null ? undefined : open.get(same(real));
         return text === undefined
             ? scan
-            : { ...scanText(scan.file, text, scan.reading), open: true as const };
+            : {
+                  ...scanText(scan.file, text, scan.reading),
+                  ...(scan.engine === true ? { engine: true as const } : {}),
+                  open: true as const
+              };
     });
     return { files };
 }
@@ -86,11 +90,9 @@ export function scanOf(
  * The index with every reference matched by key, over the files of one root and oculus's own
  * configuration, so a key of one hub is never matched with a definition of another.
  */
-export function graphOf(whole: ReferenceIndex, root: string = HUB_ROOT): Graph {
+export function graphOf(whole: ReferenceIndex, root: string): Graph {
     const index: ReferenceIndex = {
-        files: whole.files.filter(
-            (scan) => scan.file.root === root || scan.file.root === ENGINE_ROOT
-        )
+        files: whole.files.filter((scan) => scan.file.root === root || scan.engine === true)
     };
     const definitions = new Map<string, DefinitionAt[]>();
     const references = new Map<string, ReferenceAt[]>();

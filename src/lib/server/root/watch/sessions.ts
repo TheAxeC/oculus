@@ -1,8 +1,8 @@
 // Layer 2, server. The `sessions` channel: scan the session stores at start, then rescan and
-// publish whenever one changes. DESIGN.md, "Watchers": sessions watches, for every account
-// config/local.yml's `accounts` names, `<dir>/projects` (transcripts) and `<dir>/sessions` (the
-// registry) of each Claude account and `<dir>/sessions` (the rollouts) of each Codex account, every
-// folder once by its real path (sessions/folders.ts).
+// publish whenever one changes. DESIGN.md, "Watchers": sessions watches, for every account the
+// `accounts` of the hubs' `.oculus/local.yml` files name, `<dir>/projects` (transcripts) and
+// `<dir>/sessions` (the registry) of each Claude account and `<dir>/sessions` (the rollouts) of
+// each Codex account, every folder once by its real path (sessions/folders.ts).
 //
 // One debounce over every handle, lodash's `debounce` with a quiet (DEBOUNCE) and a maximum wait
 // (MAX_WAIT). A transcript is appended to as a session works, so a change there is an ordinary

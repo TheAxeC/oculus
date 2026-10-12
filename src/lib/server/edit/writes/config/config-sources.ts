@@ -21,7 +21,8 @@ import {
 
 /** What a write target holds that a list can be built from. */
 export type SourceInputs = {
-    hub: string;
+    /** The primary hub's folder, or null while the workspace has no primary. */
+    hub: string | null;
     /**
      * The projects of the portfolio this server last published, none when it has published none.
      */
@@ -32,7 +33,7 @@ export type SourceInputs = {
 
 /** The lists of one write, over the merged configuration the write was made against. */
 export type Sources = {
-    hub: string;
+    hub: string | null;
     config: Record<string, unknown>;
     /** The items of a list, or null when the server does not hold it. */
     items: (source: Source) => string[] | null;

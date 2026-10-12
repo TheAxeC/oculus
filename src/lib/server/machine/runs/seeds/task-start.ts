@@ -12,27 +12,25 @@
 // changed seed or a moved folder asks again.
 
 import { resolve } from 'node:path';
-import type { ComposeStart, PortfolioConfig, TaskRef } from '../../../../data/model/index.ts';
+import type { ComposeStart, TaskRef } from '../../../../data/model/index.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
 import { splitHubId } from '../../../../data/helpers/hub-names.ts';
 import { textCatalog } from '../../../../data/sources/config.ts';
-import { firstHubConfig, type HubTarget } from '../../../files/roots.ts';
+import { primaryConfig, hubTargets } from '../../../files/roots.ts';
+import type { OpenWorkspace } from '../../../files/workspace/open.ts';
 import { realPath } from '../../../core/paths.ts';
 import { approveTexts, isApproved } from '../../approvals/approvals.ts';
 import { TerminalRefused } from '../../pty/refusal.ts';
 import { taskSeed } from './task-seed.ts';
 
 /**
- * What the task steps read of the request's server: the first hub, the merged config, the engine
- * and the hubs other than the first, whose tasks are named `<root key>:<id>`.
+ * What the task steps read of the request's server: the open workspace (its primary hub, and the
+ * other hubs whose tasks are named `<hub name>:<id>`), the merged config and the engine.
  */
 export type SeedSource = {
-    hub: string;
+    open: OpenWorkspace;
     merged: Record<string, unknown>;
     engine: string;
-    /** The saved workspaces file this machine reads its added roots from, when not the default. */
-    workspaces?: string;
-    hubs?: HubTarget[];
 };
 
 /** The seed, folder and terminal name of a task, as the page is shown them. */
@@ -40,28 +38,26 @@ export type SeedFacts = { seed: string; cwd: string; name: string };
 
 /** The facts a reference names, or the refusal word thrown as a TerminalRefused. */
 export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
-    const hubs = source.hubs ?? [];
+    const hubs = hubTargets(source.engine, source.open);
     const named = splitHubId(
         ref.collection ?? ref.id,
-        hubs.map((one) => one.key)
+        hubs.map((one) => one.key),
+        source.open.primary
     );
     const owner = hubs.find((one) => one.key === named.root);
-    const config: PortfolioConfig =
-        owner?.config ??
-        firstHubConfig({
-            config: source.merged,
-            engine: source.engine,
-            local: { hub: source.hub, workspaces: source.workspaces }
-        });
+    const home = owner?.hub ?? source.open.primaryDir;
+    // A bare id belongs to the primary, so a workspace with no primary has no such task.
+    if (home === null) throw new TerminalRefused('no-primary');
+    const config = owner?.config ?? primaryConfig(source.merged, source.open);
     const bare: TaskRef = owner === undefined ? ref : withoutHub(ref, owner.key);
-    const answer = taskSeed(bare, owner?.hub ?? source.hub, config, textCatalog(source.merged));
+    const answer = taskSeed(bare, home, config, textCatalog(source.merged));
     if (!answer.ok) throw new TerminalRefused(answer.word);
     return { seed: answer.seed, cwd: answer.cwd, name: answer.name };
 }
 
 /** The reference with the hub's prefix off the ids of its collection and its task. */
 function withoutHub(ref: TaskRef, key: string): TaskRef {
-    const bare = (id: string): string => splitHubId(id, [key]).id;
+    const bare = (id: string): string => splitHubId(id, [key], null).id;
     return {
         ...ref,
         id: bare(ref.id),

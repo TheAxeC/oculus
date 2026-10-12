@@ -13,6 +13,8 @@ import { describe, expect } from 'vitest';
 import { appOf } from '../../../src/lib/server/machine/apps/read/held.ts';
 import { diskFs } from '../../../src/lib/server/machine/apps/reach/open.ts';
 import { serveApp } from '../../../src/lib/server/machine/apps/serve/serve.ts';
+import { closedToApps } from '../../../src/lib/server/machine/apps/reach/private.ts';
+import { localDefaults } from '../../../src/lib/data/sources/config.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { approvedHeld, notesFiles, PAGE, plant, PORT, serveInput } from './apps-fixture.ts';
 
@@ -37,27 +39,50 @@ const TODO = {
     'src/x.ts': 'let x = 1;\n'
 };
 
-/** A world: the app `notes` with these keys, a root `hub` and a root app in the root `one`. */
+/**
+ * A world: the app `notes` with these keys, a root `hub` and a root app in the root `one`. The root
+ * `oculus` holds oculus's own `config/` folder, and the hub `lab` has a folder over its `.oculus`
+ * as the root `labdot`, which the set of folders closed to every app covers.
+ */
 function world(keys: string, over: { approve?: boolean } = {}) {
     const fixture = plant({
         machine: app(keys),
-        roots: { hub: HUB, one: TODO, two: { 'y.txt': 'y' } }
+        roots: {
+            hub: HUB,
+            one: TODO,
+            two: { 'y.txt': 'y' },
+            oculus: { 'config/layout.yml': 'x: 1\n', 'README.md': 'readme' },
+            lab: { '.oculus/local.yml': 'port: 8801\n' }
+        }
     });
+    fixture.roots.push({ key: 'labdot', dir: join(fixture.base, 'roots', 'lab', '.oculus') });
     outside(fixture.roots.find((one) => one.key === 'hub')?.dir ?? '', fixture.base);
     const held = over.approve === false ? fixture.scan(new Set()) : approvedHeld(fixture);
-    const reach = () => ({
-        roots: fixture.roots,
-        configDir: join(fixture.base, 'engine'),
-        closedPaths: ['secrets'],
-        privateReal: [],
-        fs: diskFs,
-        scanEntries: 100
-    });
+    const reach = () => reachOf(fixture, 100);
     const key = appOf(held, '', 'notes')?.row.key ?? '';
     const todoKey = appOf(held, 'one', 'todo')?.row.key ?? '';
     const ask = (path: string, init: RequestInit = {}) =>
         serveApp({ ...serveInput(new Request(`${ORIGIN}${path}`, init), held), reach });
     return { fixture, held, key, todoKey, ask };
+}
+
+/**
+ * What the route reads the folders from: the world's folders, oculus's config and the private set.
+ */
+function reachOf(fixture: ReturnType<typeof plant>, scanEntries: number) {
+    return {
+        roots: fixture.roots,
+        configDir: join(fixture.base, 'roots', 'oculus', 'config'),
+        closedPaths: ['secrets'],
+        privateReal: closedToApps({
+            home: join(fixture.base, 'home'),
+            config: join(fixture.base, 'roots', 'oculus', 'config'),
+            local: localDefaults(),
+            roots: [{ key: 'lab', dir: join(fixture.base, 'roots', 'lab'), hub: true }]
+        }),
+        fs: diskFs,
+        scanEntries
+    };
 }
 
 /** A file outside the root, and a link to it from inside the root's `projects`. */
@@ -132,7 +157,24 @@ const ROWS: Row[] = [
                 `${READ}/link.txt`,
                 [403, 'closed']
             ],
-            ['the engine root', 'files: [hub]\n', '.fs/engine/x', [403, 'closed']],
+            [
+                'the config folder of oculus, through the folder that holds it',
+                'files: [oculus]\n',
+                '.fs/oculus/config/layout.yml',
+                [403, 'closed']
+            ],
+            [
+                'a file of that folder outside the config folder',
+                'files: [oculus]\n',
+                '.fs/oculus/README.md',
+                [200, 'readme']
+            ],
+            [
+                'the local.yml of a hub, through a folder over its .oculus',
+                'files: [labdot]\n',
+                '.fs/labdot/local.yml',
+                [403, 'closed']
+            ],
             [
                 'a file that is not there',
                 'files: [hub/projects]\n',
@@ -140,10 +182,10 @@ const ROWS: Row[] = [
                 [404, 'missing']
             ],
             [
-                'a root that is not shown',
+                'a folder name no workspace folder has, which leaves no app to ask',
                 'files: [nosuchroot/x]\n',
                 '.fs/nosuchroot/x/a',
-                [404, 'missing']
+                [404, '']
             ]
         ] as [string, string, string, [number, string]][]
     ).map(([label, keys, path, expected]): Row => [
@@ -194,14 +236,7 @@ const ROWS: Row[] = [
                     new Request(`${ORIGIN}/apps/notes/${w.key}/.dir/hub/projects`),
                     w.held
                 ),
-                reach: () => ({
-                    roots: w.fixture.roots,
-                    configDir: join(w.fixture.base, 'engine'),
-                    closedPaths: ['secrets'],
-                    privateReal: [],
-                    fs: diskFs,
-                    scanEntries: 2
-                })
+                reach: () => reachOf(w.fixture, 2)
             });
             return ((await small.json()) as unknown[]).length;
         },

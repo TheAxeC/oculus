@@ -147,7 +147,10 @@
                     label={finding.where}
                     title={t('audit.open_place_tip', finding.file)}
                     onclick={() =>
-                        openSourceFile(client, { root: rootOf(finding), path: finding.file })}
+                        openSourceFile(client, {
+                            root: rootOf(finding, client.fs.primary()),
+                            path: finding.file
+                        })}
                 />
             </span>
         {:else if finding.where !== ''}

@@ -180,7 +180,7 @@ export type RepositoriesStore = {
 export type ViewOpener = {
     openView: (view: string, state?: unknown) => string;
     openBeside: (view: string, state?: unknown, page?: string, asker?: string) => string;
-    showInFiles: (path: string, root?: string) => string;
+    showInFiles: (path: string, root: string) => string;
 };
 
 /**

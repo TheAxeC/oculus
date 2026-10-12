@@ -113,16 +113,17 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // the server checks when the name arrives. The model's own concern modules (`data/model-*`) are
 // reached through the facade only, which is why they are not listed here.
 //
-// `data/helpers/hub-names` holds the two keys the hub and the engine's config folder are served
-// under and the id and root of a record of a hub other than the first, which the file server, the
-// file browser's place vocabulary, the schema set, the write routes and the page's lookups each
-// read, so the word is written once. `data/helpers/files/private-folders` holds the folders no YAML
-// language server is given a file of, the `secrets` folder of every hub and `~/.oculus`, which the
-// relay refuses by and the page refuses a tab by, so the two agree. `data/shapes/vocab-keys` reads
-// the keys of a vocabulary key of vocab.yml, which the schema check and the entry forms read the
-// same way. `data/helpers/hub-names` also holds which folders a project scan enters and whether a
-// folder lies in a scan folder: the scan reader, the server's check of a new project's folder and
-// the page's new-project form ask the same question, so they cannot disagree.
+// `data/helpers/hub-names` holds how a record names its hub: the primary's records keep their bare
+// ids and carry no root, and a record of every other hub carries the hub's folder name as root and
+// as the front of its id. The file server, the file browser's place vocabulary, the schema set, the
+// write routes and the page's lookups each read it, so the rule is written once.
+// `data/helpers/files/private-folders` holds the folders no YAML language server is given a file
+// of, the `secrets` folder of every hub and `~/.oculus`, which the relay refuses by and the page
+// refuses a tab by, so the two agree. `data/shapes/vocab-keys` reads the keys of a vocabulary key
+// of vocab.yml, which the schema check and the entry forms read the same way.
+// `data/helpers/hub-names` also holds which folders a project scan enters and whether a folder lies
+// in a scan folder: the scan reader, the server's check of a new project's folder and the page's
+// new-project form ask the same question, so they cannot disagree.
 //
 // `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the

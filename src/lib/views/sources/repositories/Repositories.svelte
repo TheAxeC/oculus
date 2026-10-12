@@ -121,9 +121,7 @@
     let { instance }: ViewProps = $props();
 
     /** The folder of every root the server serves, which a root that is gone is listed by. */
-    const served = $derived(
-        workspaces().workspaces.flatMap((one) => one.roots.map((root) => root.dir))
-    );
+    const served = $derived(workspaces().folders.map((root) => root.dir));
     /** The folder a workbench limits this tab to, or null for a tab limited to none. */
     const folder = $derived(limitOf(instanceState(instance.id)));
     const every = $derived(

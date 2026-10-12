@@ -6,25 +6,19 @@
 import { symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { stringify } from 'yaml';
 import {
     buildPortfolioWithSchemas,
     joinHubs,
     portfolioConfigFrom,
-    readSecondHub
+    readOtherHub
 } from '../../../src/lib/data/index.ts';
-import {
-    configDir,
-    engineDir,
-    loadConfig,
-    textCatalog
-} from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
-import { readRoots } from '../../../src/lib/server/files/files.ts';
-import { withRepositories } from '../../../src/lib/server/files/roots.ts';
+import { repositoriesOf } from '../../../src/lib/server/files/roots.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { plantHub, workspaceWith, type FolderSpec } from '../../fixtures/hubs/workspace.ts';
 
 const MERGED = loadConfig(engineDir()).config;
 
@@ -59,24 +53,24 @@ type Row = {
     name: string;
     /** The scan list the row is read with, the engine's seven folders unless a row sets its own. */
     scan?: unknown[];
-    /** The entries of the first hub's `roots:`. */
-    entries?: (at: Places) => unknown[];
+    /** The folders of the workspace besides the hub, which is its primary. */
+    entries?: (at: Places) => FolderSpec[];
     /** The repository's `.oculus/project.yml`, or null for a repository with none. */
     manifest?: string | null;
     /** Files of the hub besides HUB_FILES. */
     hub?: Record<string, string>;
     /** Made after the folders are planted: a link, for a row about links. */
     setup?: (at: Places) => void;
-    /** The entries of `roots:` in the layer of a second hub `lab` the first hub names, if any. */
-    second?: (at: Places) => unknown[];
+    /** Whether the workspace lists a second hub `lab`, a copy of the hub's files. */
+    second?: boolean;
     check: (read: Read) => void;
 };
 
 /** What a row is read into: the snapshot of the build and the places of the row. */
 type Read = { snapshot: Snapshot; at: Places };
 
-/** One entry of `roots:` naming the repository `alpha`. */
-const entry = (at: Places): unknown[] => [{ key: 'alpha', dir: at.repo }];
+/** The folder `alpha` of the workspace, the repository. */
+const entry = (at: Places): FolderSpec[] => [{ name: 'alpha', dir: at.repo }];
 
 /** The ids of the projects a read holds. */
 const idsOf = (read: Read): string[] => Object.keys(read.snapshot.entities.projects).sort();
@@ -211,7 +205,7 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'a repository whose manifest says personal as a personal project under the root key, with its links',
+        name: 'a repository whose manifest says personal as a personal project under the folder name, with its links',
         entries: entry,
         manifest: PERSONAL,
         check: (read) => {
@@ -247,10 +241,10 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'a root with no manifest, and one whose directory is not on this machine, as no project and no finding',
+        name: 'a folder with no manifest, and one whose directory is not on this machine, as no project and no finding',
         entries: (at) => [
-            { key: 'alpha', dir: at.repo },
-            { key: 'gone', dir: join(at.repo, 'nowhere') }
+            { name: 'alpha', dir: at.repo },
+            { name: 'gone', dir: join(at.repo, 'nowhere') }
         ],
         manifest: null,
         check: (read) => {
@@ -260,20 +254,21 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'a second hub that lists a repository as no project of either hub',
+        name: 'a folder with a manifest as a project of the primary hub alone, never of a second hub',
+        entries: entry,
         manifest: PERSONAL,
-        second: (at) => [{ key: 'gamma', dir: at.repo }],
+        second: true,
         check: (read) => {
             const labs = HUB_IDS.map((id) => `lab:${id}`);
-            expect(idsOf(read)).toEqual([...HUB_IDS, ...labs].sort());
+            expect(idsOf(read)).toEqual([...HUB_IDS, 'alpha', ...labs].sort());
         }
     },
     {
-        name: 'one directory under two keys, or under a key and a link, as one project read under the first key',
+        name: 'one directory under two names, or under a name and a link, as one project read under the first name',
         entries: (at) => [
-            { key: 'alpha', dir: at.repo },
-            { key: 'alpha2', dir: at.repo },
-            { key: 'alpha3', dir: at.repoLink }
+            { name: 'alpha', dir: at.repo },
+            { name: 'alpha2', dir: at.repo },
+            { name: 'alpha3', dir: at.repoLink }
         ],
         manifest: PERSONAL,
         check: (read) => {
@@ -281,7 +276,7 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'a key equal to a project folder of the scan as the folder project, with one finding naming both manifests',
+        name: 'a folder name equal to a project folder of the scan as the folder project, with one finding naming both manifests',
         entries: entry,
         manifest: PERSONAL,
         hub: plain([
@@ -352,21 +347,32 @@ function plant(row: Row): Places {
     return at;
 }
 
-/** A row read the way the watcher reads it: the roots read, the repositories chosen, the build. */
+/** A row read the way the watcher reads it: the workspace opened, the folders chosen, the build. */
 function read(row: Row): Read {
     const at = plant(row);
+    plantHub(at.hub);
     const merged = { ...MERGED, ...(row.scan === undefined ? {} : { scan: row.scan }) };
-    const config = portfolioConfigFrom({ ...merged, roots: row.entries?.(at) ?? [] });
-    const listed = readRoots(config.merged, 'sources.yml', at.hub).roots;
-    const roots = withRepositories(config, listed, at.hub, configDir(engineDir())).repositories;
-    const base = buildPortfolioWithSchemas(at.hub, config, 0, roots);
-    if (row.second === undefined) return { snapshot: base.snapshot, at };
-    const lab = plantScratch('oculus-repository-lab-', {
-        ...HUB_FILES,
-        '.oculus/config/sources.yml': stringify({ roots: row.second(at) })
-    });
-    const others = [readSecondHub(engineDir(), { key: 'lab', dir: lab })];
-    const built = joinHubs(base, { hub: at.hub, config }, others, 0, createChecker());
+    const config = portfolioConfigFrom(merged);
+    const lab =
+        row.second === true ? plantHub(plantScratch('oculus-repository-lab-', HUB_FILES)) : null;
+    const folders: FolderSpec[] = [
+        { name: 'hub', dir: at.hub },
+        ...(lab === null ? [] : [{ name: 'lab', dir: lab }]),
+        ...(row.entries?.(at) ?? [])
+    ];
+    const open = workspaceWith(folders, 'hub').open();
+    const base = buildPortfolioWithSchemas(
+        at.hub,
+        config,
+        0,
+        repositoriesOf(open),
+        undefined,
+        null,
+        'hub'
+    );
+    if (lab === null) return { snapshot: base.snapshot, at };
+    const others = [readOtherHub(engineDir(), { key: 'lab', dir: lab })];
+    const built = joinHubs(base, { hub: at.hub, name: 'hub', config }, others, 0, createChecker());
     return { snapshot: built.snapshot, at };
 }
 

@@ -47,7 +47,7 @@ text:
             held_file: '{0} is already a command in .oculus/commands.yml of this repository, so it cannot be saved under that name'
             held_found: '{0} is already a command found in this repository, so it cannot be saved under that name'
         config_key:
-            local: local.yml is the machine's own file and is not written from here
+            local: a hub's .oculus/local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no option of that name in a tracked config file
             not_single: This option is a list or a family, so it is not set one key at a time
             not_boolean: This option takes true or false
@@ -131,12 +131,12 @@ text:
             request_failed: 'rite_dap refused a request: {0}'
             running: 'A debug session is running: stop it first'
             signal: rite_dap ended with signal {0}
-            start_failed: "rite_dap could not be started: {0}. Set rite_dap_bin in config/local.yml to the adapter's path."
+            start_failed: "rite_dap could not be started: {0}. Set rite_dap_bin in the .oculus/local.yml of the primary hub to the adapter's path."
             stopped: The debug session was stopped
             too_many_lines: lines must hold at most 10,000 numbers
             unserved: '{0} is under no root the file browser serves, so it cannot be debugged'
         config_value:
-            local: local.yml is the machine's own file and is not written from here
+            local: a hub's .oculus/local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no list or family of that name in a tracked config file
             own_write: The rail and the arrangements are set from the rail editor and the pages, and the workbench layout in config/layout.yml, not from here
             single: This option is one value, so it is set one key at a time
@@ -297,9 +297,13 @@ text:
             worktree_name: The name {0} is not one a worktree folder can carry
         latex:
             name: latex {0} {1}/{2}
+        machine_default:
+            hpc_host: the host of the cluster that slurm.resource of behavior.yml names
+            no_accounts: no accounts
+            no_key: none
         manifest_write:
             group: 'the field is a group; set its children, or clear it whole'
-            id_read_only: 'the id is the name of the folder, or for a repository the key of its roots: entry; rename that to change it'
+            id_read_only: 'the id is the name of the folder, or for a repository the name of its workspace folder; rename that to change it'
             idea_exists: '{0}/{1} is already there'
             idea_folder_empty: a new project needs a folder
             idea_folder_in_project: 'the folder {0} lies inside the project in {1}'
@@ -326,24 +330,26 @@ text:
             read_only: the field is read-only
             unknown_type: unknown field type {0}
             unreadable: the manifest could not be read
+        memories:
+            no_wall: No hub of the workspace holds a photo wall, so the picture was not added
         start:
             already_running: oculus is already running; its window is brought to the front
             fix_brew: Run brew install {0}.
-            fix_claude: Install the Claude CLI from https://code.claude.com/docs/en/setup, or set claude_bin in {0} to its path.
+            fix_claude: Install the Claude CLI from https://code.claude.com/docs/en/setup, or set claude_bin in the .oculus/local.yml of the primary hub to its path.
             fix_install: Install {0} with your package manager.
             fix_perl_xcode: Perl comes with the macOS Command Line Tools; run xcode-select --install.
             fix_xcode: Run xcode-select --install.
             handler_failed: 'oculus: the server handler {0} could not be loaded: {1}'
             handler_not_built: 'oculus: the server handler {0} does not exist; run npm run build in {1} to make it'
-            lack_hub: '{0} is not a folder, so there is no research hub to read. Set hub in {1} to the folder of the research hub.'
-            lack_hub_unreadable: '{0} cannot be read ({1}), so there is no research hub to read. Allow oculus to read it, or set hub in {2} to the folder of the research hub.'
             lack_program: '{0} was not found, so {1} do not work. {2}'
             lack_stub: git is the macOS stub at /usr/bin/git and the Command Line Tools are not installed, so {0} do not work. {1}
+            listening: 'oculus on http://{0}:{1} over the workspace {2}'
             needs_claude: the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages
             needs_git: Source Control and History
             needs_perl: the line counts of the Status view
             needs_tmux: the terminals and their sessions
             port_in_use: 'oculus: port {0} is in use'
+            workspace_unsaved: an unsaved workspace
         task:
             name: 'Task: {0}'
             seed_deadline: 'Deadline: {0}'
@@ -352,3 +358,9 @@ text:
             seed_part_of: 'Part of: {0}'
             seed_subtasks: 'Open subtasks: {0}'
             seed_title: 'Task: {0}'
+        workspace:
+            no_hub: The workspace lists no hub, so there is no .oculus folder to write in; add a folder that holds .oculus/config first
+            no_hub_named: The workspace has no hub named {0}
+            no_primary: The workspace has no primary hub, so there is nowhere to keep this; name a hub as primary in the workspace file
+            no_primary_doc: The workspace has no primary hub, so there is no hub document to show
+            restart_key: '{0} is set to another value in the workspace just opened; the running server keeps its own value, and a restart takes the new one'

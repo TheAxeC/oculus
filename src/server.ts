@@ -5,9 +5,9 @@
 // terminal it has none and prints.
 //
 // It begins with the first-run checks (lib/server/root/process/start/first-run.ts): the Node
-// version and the installed packages before any package is loaded, then the hub folder and the
-// programs oculus runs by name. A required lack ends the start with a sentence and exit 1, and a
-// missing program is a line while the start goes on.
+// version and the installed packages before any package is loaded, then the programs oculus runs by
+// name. A required lack ends the start with a sentence and exit 1, and a missing program is a line
+// while the start goes on.
 
 import { existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -54,15 +54,15 @@ if (reportLacks(installLacks(engineDir(), process.versions.node), writeLack)) pr
 
 const { BODY_LIMIT_BYTES } = await import('./lib/server/content/memories.ts');
 const { createServerContext } = await import('./lib/server/root/context.ts');
-const { readLocalWithDefault } = await import('./lib/server/root/process/start/port.ts');
+const { readMachineWithDefault } = await import('./lib/server/root/process/start/port.ts');
 const { serveContext } = await import('./lib/server/root/process/serve.ts');
 const { wordsOf } = await import('./lib/server/root/process/words.ts');
 
 const t = wordsOf(parsed.engine);
 
-// The second part, now that the catalog can be read: the hub folder ends the start, and a missing
-// program is said in a line while the start goes on.
-const facts = await machineFacts(parsed.engine, parsed.defaultPort, process.env);
+// The second part, now that the catalog can be read: a missing program is said in a line while the
+// start goes on.
+const facts = await machineFacts(parsed.defaultPort, process.env);
 if (reportLacks(machineLacks(facts, t), writeLack)) process.exit(1);
 
 // How large a request body the built handler's parser accepts. It is a knob of the adapter this
@@ -98,7 +98,7 @@ const server = createServer();
 const { context, socket } = serveContext(server, handler, (portMove) =>
     createServerContext(
         parsed.engine,
-        { readLocal: readLocalWithDefault(parsed.defaultPort) },
+        { readMachine: readMachineWithDefault(parsed.defaultPort) },
         portMove
     )
 );
@@ -140,7 +140,7 @@ server.once('error', refused);
 
 server.listen(context.local.port, LISTEN_HOST, () => {
     server.off('error', refused);
-    console.log(
-        `oculus on http://${LISTEN_HOST}:${context.local.port} over hub ${context.local.hub}`
-    );
+    const open = context.workspace.open();
+    const workspace = open.file ?? t('server.start.workspace_unsaved');
+    console.log(t('server.start.listening', LISTEN_HOST, context.local.port, workspace));
 });

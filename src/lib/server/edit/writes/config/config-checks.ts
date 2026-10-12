@@ -34,7 +34,6 @@ import {
     iconFindings,
     languageFindings,
     loadConfig,
-    loadLocal,
     latexEditingFindings,
     latexUnimathFindings,
     nestingFindings,
@@ -54,6 +53,7 @@ import type { Finding } from '../../../../data/model/index.ts';
 import { docFindings, layoutFile } from '../../../content/docs.ts';
 import type { ChangeRecord, ReplacedText } from '../../../core/changes.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
+import { isMachineFile } from '../../../files/workspace/machine-file.ts';
 import type { Refusal } from '../../yaml/yaml-edit.ts';
 import { readBack } from '../../list-edit.ts';
 import { setFields } from '../../yaml/yaml-edit.ts';
@@ -68,6 +68,24 @@ export type ConfigKeyOutcome = {
 /** The answer of a write refused for one reason, naming the file and key it was asked of. */
 export function refusing(file: string, key: string): (reason: string) => ConfigKeyOutcome {
     return (reason) => ({ changed: [], refused: [{ field: `${file}:${key}`, reason }] });
+}
+
+/**
+ * What a write of one option starts from: the config loaded with the hub layer of `hub` (none
+ * without a hub), its text catalog, and the refusal that names the file and key.
+ */
+export function opening(
+    engine: string,
+    file: string,
+    key: string,
+    hub: string | undefined
+): {
+    before: ReturnType<typeof loadConfig>;
+    text: ReturnType<typeof textCatalog>;
+    refuse: (reason: string) => ConfigKeyOutcome;
+} {
+    const before = loadConfig(engine, { hub });
+    return { before, text: textCatalog(before.config), refuse: refusing(file, key) };
 }
 
 /** The value a file holds at one option now, and whether the option is still there. */
@@ -112,6 +130,27 @@ export function placeText(place: Place): string | null {
         }
         throw error;
     }
+}
+
+/**
+ * Whether the file at a place is one of the machine's `local.yml` files (a hub's
+ * `.oculus/local.yml` or the one in the engine's config folder), by its device and inode: a link
+ * from a config file to one of them leads to it, and no write lands there.
+ */
+export function isMachinePlace(place: Place, hubs: readonly string[], engine: string): boolean {
+    return isMachineFile(
+        place.path,
+        hubs.map((dir) => ({ dir, hub: true })),
+        configDir(engine)
+    );
+}
+
+/** The folders of every hub of the workspace, whose `.oculus/local.yml` no config write reaches. */
+export function machineHubs(into: {
+    hub: string | null;
+    hubs?: readonly { hub: string }[];
+}): string[] {
+    return [...(into.hub === null ? [] : [into.hub]), ...(into.hubs ?? []).map((one) => one.hub)];
 }
 
 /** Whether a text, read as a map, holds nothing at the dotted key path. */
@@ -181,7 +220,7 @@ const READERS: ((config: Merged) => unknown)[] = [textCatalog];
 const FINDERS: ((
     config: Merged,
     engine: string,
-    hub: string,
+    hub: string | null,
     from: Record<string, string>
 ) => Finding[])[] = [
     (config, engine) => iconFindings(engine, config),
@@ -196,6 +235,14 @@ const FINDERS: ((
     (config, engine, hub, from) => docFindings(config, hub, sourceFile(engine, hub, from, 'docs')),
     (config, engine) => railFindings(config, layoutFile(engine), textCatalog(config))
 ];
+
+/**
+ * Whether a write of the key would land in the hub's layer with no hub to hold it: the key is one
+ * of the hub list and the workspace has no primary hub.
+ */
+export function lacksPrimary(file: string, key: string, hub: string | undefined): boolean {
+    return hub === undefined && (hubKeysOf(file)?.includes(key) ?? false);
+}
 
 /**
  * The catalog's entry for one option of one tracked file, or null. The file is compared as the
@@ -286,7 +333,7 @@ export function refusedBy(
             return sentenceOf(error);
         }
     }
-    const hubDir = hub ?? loadLocal(engine).hub;
+    const hubDir = hub ?? null;
     for (const find of FINDERS) {
         let seen: Set<string> | null = null;
         try {
@@ -335,7 +382,7 @@ export function replacedText(source: string, edited: string): ReplacedText | nul
  * The directories and the file a write at `path` makes, outermost first: the folders above it that
  * are not there and the file when it is not there.
  */
-export function madeAt(path: string): string[] {
+function madeAt(path: string): string[] {
     const made: string[] = [];
     let at = path;
     while (!existsSync(at)) {
@@ -485,12 +532,11 @@ const addedShape = z.object({ offset: z.int().min(0), before: z.string(), after:
  */
 export function takeOutAdded(
     engine: string,
-    hub: string,
+    hub: string | undefined,
     file: string,
     key: string,
     record: { replaced?: unknown; after: unknown },
-    made: string[],
-    recordKey: string = file
+    made: string[]
 ): ConfigKeyOutcome | null {
     const text = addedShape.safeParse(record.replaced);
     if (!text.success) return null;
@@ -517,7 +563,7 @@ export function takeOutAdded(
         records: [
             {
                 file: place.path,
-                key: recordKey,
+                key: file,
                 field: key,
                 before: record.after,
                 after: null,

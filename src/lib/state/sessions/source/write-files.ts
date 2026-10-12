@@ -5,33 +5,40 @@
 // A write that creates its file (a new idea, a LinkedIn idea, a picture on the Memories wall, a
 // deck made in a folder) names none, since no tab can hold unsaved text of a file not yet written,
 // and neither does a write whose file the page cannot name from what the write carries: the session
-// overrides, the default workspace's roots and the git, open and deposit endpoints.
+// overrides, the open workspace's folders and the git, open and deposit endpoints. A file of the
+// primary hub is named under the primary's folder name, and a file of oculus's own config folder
+// under the workspace folder that holds it, so a workspace with no primary names no hub file and a
+// workspace with no folder over oculus's config names no config file.
 
 import { fields } from '../../../data/helpers/guards.ts';
-import {
-    CAREER_FILE,
-    ENGINE_ROOT,
-    HUB_ROOT,
-    MANIFEST,
-    ROOT_FOLDER
-} from '../../../data/helpers/hub-names.ts';
+import { joinPath } from '../../../data/helpers/files/paths.ts';
+import { CAREER_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import type { FeedKind, FeedsPayload, Project } from '../../../data/model/index.ts';
 import { placeOf } from '../../../data/snapshot/place.ts';
 import { viewSourceFile, type ViewSource } from '../view-source.ts';
 
 /** The lookups the page makes of its own stores to name a file a write carries only an id of. */
 export type FileLookups = {
+    /** The folder name of the open workspace's primary hub, or null when it names none. */
+    primary: () => string | null;
+    /** The workspace folder that holds oculus's config folder and the path to it, or null. */
+    engine: () => { root: string; path: string } | null;
     /**
      * The folder of a project by its id, under the root that holds it (its hub, or its repository,
      * whose folder is the empty path); null when none has it.
      */
     projectFolder: (id: string) => ViewSource | null;
-    /** The file of a collection of a hub other than the first, by its id; null for any other. */
+    /** The file of a collection of a hub other than the primary, by its id; null for any other. */
     collectionFile: (id: string) => ViewSource | null;
     /** The file of each feed, per kind, as the page last received them. */
     feeds: () => FeedsPayload | null;
     /** The file a recorded change wrote, under the root that holds it, by its moment. */
     changeFile: (at: string) => ViewSource | null;
+    /**
+     * Whether it cannot be told yet if a source tab holds unsaved text of a file, the roots being
+     * unread; a write over such a file waits.
+     */
+    unsavedUnknown: (file: ViewSource) => boolean;
 };
 
 /**
@@ -39,31 +46,35 @@ export type FileLookups = {
  * at its folder, or its repository's root at the empty path. Null for no project and for a project
  * with no folder.
  */
-export function folderOfProject(project: Project | undefined): ViewSource | null {
+export function folderOfProject(
+    project: Project | undefined,
+    primary: string | null
+): ViewSource | null {
     if (project === undefined || project.folder === '') return null;
-    const { root, path } = placeOf(project);
+    const { root, path } = placeOf(project, primary);
     return { root, path };
 }
 
 /** Lookups that name nothing, for a store built without the page's. */
 export const NO_LOOKUPS: FileLookups = {
+    primary: () => null,
+    engine: () => null,
     projectFolder: () => null,
     collectionFile: () => null,
     feeds: () => null,
-    changeFile: () => null
+    changeFile: () => null,
+    unsavedUnknown: () => false
 };
-
-/** The folder of the engine's configuration, where the root `engine` is served from. */
-const CONFIG_ROOT = ENGINE_ROOT;
 
 /** The text of a field, and '' for anything else. */
 function text(value: unknown): string {
     return typeof value === 'string' ? value : '';
 }
 
-/** A file of the hub, or null for an empty path. */
-function inHub(path: string): ViewSource | null {
-    return path === '' ? null : { root: HUB_ROOT, path };
+/** A file of the primary hub, or null for an empty path and for a workspace with no primary. */
+function inHub(path: string, look: FileLookups): ViewSource | null {
+    const primary = look.primary();
+    return path === '' || primary === null ? null : { root: primary, path };
 }
 
 /**
@@ -77,28 +88,36 @@ function manifestOf(folder: ViewSource | null): ViewSource | null {
     return { root: folder.root, path: `${path}/${MANIFEST}` };
 }
 
-/** A file of the engine's config folder, or null for an empty name. */
-function inConfig(path: string): ViewSource | null {
-    return path === '' ? null : { root: CONFIG_ROOT, path };
+/** A file of oculus's config folder, or null for an empty name and when no folder holds it. */
+function inConfig(path: string, look: FileLookups): ViewSource | null {
+    const place = look.engine();
+    return path === '' || place === null
+        ? null
+        : { root: place.root, path: joinPath(place.path, path) };
 }
 
 /** The file a feed's entries live in, by the feed's name. */
-function feedFile(feed: string, config: Record<string, unknown>): ViewSource | null {
-    if (feed === 'leads' || feed === 'radar') return viewSourceFile(feed, config);
+function feedFile(
+    feed: string,
+    config: Record<string, unknown>,
+    look: FileLookups
+): ViewSource | null {
+    if (feed === 'leads' || feed === 'radar') return viewSourceFile(feed, config, look.primary());
     return null;
 }
 
 /**
- * The file of the feed `kind` in the hub the write's `root` names: the first hub's, whose file the
+ * The file of the feed `kind` in the hub the write's `root` names: the primary's, whose file the
  * configuration gives, when it is absent.
  */
 function feedFileOf(
     kind: FeedKind,
     root: string,
     feeds: FeedsPayload | null,
-    config: Record<string, unknown>
+    config: Record<string, unknown>,
+    look: FileLookups
 ): ViewSource | null {
-    if (root === HUB_ROOT) return kind === 'linkedin' ? null : feedFile(kind, config);
+    if (root === '') return kind === 'linkedin' ? null : feedFile(kind, config, look);
     const hubFiles = feeds?.[kind].hubFiles ?? {};
     return Object.hasOwn(hubFiles, root) ? inRoot(root, hubFiles[root]) : null;
 }
@@ -106,8 +125,8 @@ function feedFileOf(
 /**
  * The file of the collection `name` of the hub an entry's id names, as the server routes the write
  * (server/edit/writes/hubs.ts): a view names the collection by its bare key and the entry by its id
- * in the portfolio, `<root key>:<id>` for an entry of a hub other than the first. Null when the id
- * names no such hub's collection, which leaves the write the first hub's.
+ * in the portfolio, `<hub name>:<id>` for an entry of a hub other than the primary. Null when the
+ * id names no such hub's collection, which leaves the write the primary's.
  */
 function entryHubFile(name: string, id: string, look: FileLookups): ViewSource | null {
     const colon = id.indexOf(':');
@@ -133,7 +152,7 @@ export function writtenFile(
     const collection = (name: unknown, id: unknown = ''): ViewSource | null =>
         look.collectionFile(text(name)) ??
         entryHubFile(text(name), text(id), look) ??
-        viewSourceFile('collection', merged, text(name));
+        viewSourceFile('collection', merged, look.primary(), text(name));
     switch (body.kind) {
         case 'manifest':
             return manifestOf(look.projectFolder(text(body.id)));
@@ -151,23 +170,23 @@ export function writtenFile(
             return manifestOf(look.projectFolder(text(target.id)));
         }
         case 'host':
-            return inHub(text(merged.career_file) || CAREER_FILE);
+            return inHub(text(merged.career_file) || CAREER_FILE, look);
         case 'feed-field':
         case 'feed-delete': {
             const feed = text(body.feed);
             if (feed !== 'leads' && feed !== 'radar') return null;
-            return feedFileOf(feed, text(body.root) || HUB_ROOT, look.feeds(), merged);
+            return feedFileOf(feed, text(body.root), look.feeds(), merged, look);
         }
         case 'lead-add':
-            return viewSourceFile('leads', merged);
+            return viewSourceFile('leads', merged, look.primary());
         case 'radar-add':
-            return viewSourceFile('radar', merged);
+            return viewSourceFile('radar', merged, look.primary());
         case 'linkedin-post': {
-            const root = text(body.root) || HUB_ROOT;
+            const root = text(body.root);
             const hubFiles = look.feeds()?.linkedin.hubFiles ?? {};
             const folder =
-                root === HUB_ROOT
-                    ? viewSourceFile('linkedin', merged)
+                root === ''
+                    ? viewSourceFile('linkedin', merged, look.primary())
                     : inRoot(root, Object.hasOwn(hubFiles, root) ? hubFiles[root] : '');
             const file = text(body.file);
             return folder === null || file === ''
@@ -181,13 +200,13 @@ export function writtenFile(
                 ? { root: text(body.root), path: text(body.path) }
                 : null;
         case 'rail':
-            return inConfig('layout.yml');
+            return inConfig('layout.yml', look);
         case 'config-key':
         case 'config-value':
-            return inConfig(text(body.file));
+            return inConfig(text(body.file), look);
         case 'audit-mute':
         case 'app-setting':
-            return inConfig('behavior.yml');
+            return inConfig('behavior.yml', look);
         case 'undo':
             return look.changeFile(text(body.at));
         default:

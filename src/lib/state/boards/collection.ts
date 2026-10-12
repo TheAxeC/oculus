@@ -27,7 +27,7 @@ import {
 } from '../../data/shapes/shapes.ts';
 import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
 import { fileBytesUrl } from '../sources/fs-transport.ts';
-import { HUB_ROOT, normalisePath } from '../sources/fs.ts';
+import { normalisePath } from '../sources/fs.ts';
 import { dirOf } from '../sources/repositories/change-tree.ts';
 import { realProjects } from '../sources/venues.ts';
 
@@ -270,10 +270,11 @@ const HOSTED_SCHEME = 'https://';
  * Where a `link` or `url` field goes. A value with a scheme (`https:`, `mailto:`) or a leading
  * slash is an address and is kept; one whose first segment is a host is the same address written
  * without its scheme and gets one; anything else is a path inside the hub, which the seven files
- * write as `network/<event>/deck.html` and the like, and is served through api/file's hub root so
- * a click opens the file rather than a 404 under the page's own address.
+ * write as `network/<event>/deck.html` and the like, and is served through api/file under the
+ * folder `root` names (the folder of the hub the record is of), so a click opens the file rather
+ * than a 404 under the page's own address.
  */
-export function hrefOf(value: string, root: string = HUB_ROOT): string {
+export function hrefOf(value: string, root: string): string {
     if (ADDRESSED.test(value)) return value;
     if (HOSTED.test(value)) return `${HOSTED_SCHEME}${value}`;
     return fileBytesUrl(root, value);
@@ -440,8 +441,8 @@ const identityShape = z.union([z.string(), anyNumberShape.transform(String)]);
  */
 export function identityValue(entry: Entry, schema: SchemaField[] | undefined): string {
     const held = readAs(identityShape, entry.fields[identityField(schema)]);
-    if (held !== null) return held === '' ? '' : hubId(rootOf(entry), held);
-    return entry.title === '' ? entry.id : hubId(rootOf(entry), entry.title);
+    if (held !== null) return held === '' ? '' : hubId(rootOf(entry, null), held, null);
+    return entry.title === '' ? entry.id : hubId(rootOf(entry, null), entry.title, null);
 }
 
 /**
@@ -469,7 +470,7 @@ export function identityFaults(
     const field = identityField(schema);
     const values = entries.map((entry) => {
         const own = readAs(identityShape, entry.fields[field]);
-        return own === null || own === '' ? '' : hubId(rootOf(entry), own);
+        return own === null || own === '' ? '' : hubId(rootOf(entry, null), own, null);
     });
     const held = (value: string): boolean =>
         value !== '' && values.indexOf(value) !== values.lastIndexOf(value);
@@ -612,11 +613,11 @@ export function crossLinks(
         named = projects.filter((project) => project.fundingIds.includes(entry.id));
     } else if (collectionKey === JOINT_WORK) {
         const own = readAs(stringShape, entry.fields.person);
-        const person = own === null ? entry.id : inHubOf(entry, own);
+        const person = own === null ? entry.id : inHubOf(entry, own, null);
         named = projects.filter((project) => project.collaborators.includes(person));
     } else {
         named = wordsOf(entry.fields.related)
-            .map((id) => projects.find((project) => project.id === inHubOf(entry, id)))
+            .map((id) => projects.find((project) => project.id === inHubOf(entry, id, null)))
             .filter((project): project is Project => project !== undefined);
     }
     return groupProjects(named, archiveDead);

@@ -17,13 +17,11 @@ import {
     iconFindings,
     iconSet,
     loadConfig,
-    sourceFile,
     textCatalog
 } from '../../../src/lib/data/sources/config.ts';
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { createChecker, checkDocument } from '../../../src/lib/data/snapshot/schema/check.ts';
 import { schemaFor } from '../../../src/lib/data/snapshot/schema/set.ts';
-import { readRoots } from '../../../src/lib/server/files/files.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import {
     arrange,
@@ -34,7 +32,7 @@ import {
 // Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
-import { realHub } from '../../fixtures/real-hub.ts';
+import { realHub } from '../../fixtures/hubs/real-hub.ts';
 import { treeFiles } from '../walk.ts';
 
 let client: ClientState;
@@ -89,12 +87,6 @@ function glyphReaders(engine: string): Set<string> {
     return found;
 }
 
-/** The roots in the hub layer's sources.yml with their findings, as the server reads them. */
-function rootsOfHub(hub: string): ReturnType<typeof readRoots> {
-    const { config, from } = loadConfig(engineDir(), { hub });
-    return readRoots(config, sourceFile(engineDir(), hub, from, 'roots'), hub);
-}
-
 /** Every description key opens with this, which is what makes an orphan one findable. */
 const DESC_PREFIX = 'settings.desc_';
 
@@ -117,7 +109,6 @@ describe("oculus's own config directory", () => {
         'appearance.yml': [
             'themes',
             'wallpaper',
-            'memories',
             'crt',
             'code_theme',
             'file_icons',
@@ -207,7 +198,8 @@ describe("oculus's own config directory", () => {
             'radar_file',
             'career_file',
             'portfolio_deck',
-            'roots',
+            'memories_dir',
+            'wallpaper_dir',
             'repository_scan_depth',
             'languages'
         ],
@@ -558,26 +550,6 @@ describe("oculus's own config directory", () => {
     // the machine.
     const HUB = realHub();
 
-    // The roots of the hub's sources.yml sit under the home directory of whoever runs this, and a
-    // checkout on a machine without those repositories has none of them. The check is skipped there
-    // with the directories named, rather than failing over a fact about the machine.
-    const READ = HUB.present ? rootsOfHub(HUB.hub) : null;
-    const ROOTS = READ?.roots ?? [];
-    const MISSING = ROOTS.filter((root) => !existsSync(root.dir));
-    if (HUB.present && MISSING.length > 0) {
-        console.log(
-            `config-folder.test.ts: skipping the roots check; no directory at ${MISSING.map((root) => root.dir).join(', ')}`
-        );
-    }
-
-    it.skipIf(!HUB.present || MISSING.length > 0)(
-        'reads the roots of sources.yml without a finding',
-        () => {
-            expect(ROOTS.length).toBeGreaterThan(0);
-            expect(READ?.findings).toEqual([]);
-        }
-    );
-
     it.skipIf(!HUB.present)(
         'names a group of its own and a path under the hub for every document',
         () => {
@@ -595,19 +567,31 @@ describe("oculus's own config directory", () => {
     );
 
     // Every YAML file of the folder is matched to a schema generated from the catalogs, and the
-    // files oculus ships pass it, both under the engine's own root and as the hub sees them under
-    // tools/oculus/config. Skipped where the hub's data is not on the machine, since the schemas
-    // list the registries' keys.
+    // files oculus ships pass it, both under a workspace folder that is oculus's config folder and
+    // under one that is the hub holding it as tools/oculus/config. Skipped where the hub's data is
+    // not on the machine, since the schemas list the registries' keys.
     it.skipIf(!HUB.present)('passes every config file through the schema it is matched to', () => {
         const { config } = loadConfig(engineDir(), { hub: HUB.hub });
         const portfolio = portfolioConfigFrom(config);
         const checker = createChecker();
-        const { schemas } = buildPortfolioWithSchemas(HUB.hub, portfolio, 1, [], checker);
         const dir = join(engineDir(), 'config');
+        const held = [
+            { root: 'config', path: '' },
+            { root: 'hub', path: 'tools/oculus/config' }
+        ];
+        const { schemas } = buildPortfolioWithSchemas(
+            HUB.hub,
+            portfolio,
+            1,
+            [],
+            checker,
+            { dir, held },
+            'hub'
+        );
         const unmatched: string[] = [];
         const problems: string[] = [];
         for (const rel of tracked(dir)) {
-            const engine = schemaFor(schemas, 'engine', rel);
+            const engine = schemaFor(schemas, 'config', rel);
             const hub = schemaFor(schemas, 'hub', `tools/oculus/config/${rel}`);
             if (engine === undefined || engine !== hub) {
                 unmatched.push(rel);

@@ -17,7 +17,7 @@ import {
 import { MANUSCRIPT, PROGRAMS, type Program } from '../../../data/prose/latex.ts';
 import { joinPath } from '../../../data/helpers/files/paths.ts';
 import { anyNumberShape, rowsShape } from '../../../data/shapes/shapes.ts';
-import { HUB_ROOT, normalisePath } from '../../sources/fs.ts';
+import { normalisePath } from '../../sources/fs.ts';
 import { targetFields, type LatexTarget } from '../terminal/latex-target.ts';
 
 /** The tone of a notice. */
@@ -269,11 +269,11 @@ const mainShape = z.object({
  */
 export const bodyShape = z.object({
     mains: rowsShape(mainShape).catch([]),
-    root: z.string().catch(HUB_ROOT),
+    root: z.string().catch(''),
     folder: z.string().catch('')
 });
 
-/** What a body that is not a map says: no mains and no folder, in the first hub. */
+/** What a body that is not a map says: no mains and no folder, in the primary hub. */
 export const NO_BODY = bodyShape.parse({});
 
 /** The body of an outline answer; a project's carries the folder its files are against. */

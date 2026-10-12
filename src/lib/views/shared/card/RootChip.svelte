@@ -1,11 +1,11 @@
 <script lang="ts">
-    // Layer 3, shared view partial. The mark on a card, a row or a page of a record that is not of
-    // the first hub: a chip with the key of the root the record's hub is served under. A record of
-    // the first hub, and every record of a portfolio of one hub, draws nothing.
+    // Layer 3, shared view partial. The mark on a card, a row or a page of a record that names a
+    // hub: a chip with the name of the workspace folder the record's hub is served under. A record
+    // of the primary hub carries no `root`, so it draws nothing; an account row of a `local.yml`
+    // names its hub whichever it is.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import { HUB_ROOT, rootOf } from '$lib/state/shared/page/hubs';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
@@ -15,10 +15,10 @@
 
     let { record }: Props = $props();
 
-    const root = $derived(rootOf(record));
+    const root = $derived(record.root ?? '');
 </script>
 
-{#if root !== HUB_ROOT}
+{#if root !== ''}
     <Tooltip text={t('hubs.root_tip', root)}>
         <Chip label={root} />
     </Tooltip>

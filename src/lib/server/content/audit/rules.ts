@@ -159,8 +159,9 @@ export function signatureOf(
 
 /**
  * What the scan is run over: the hub on disk, the snapshot's entities, the rules and the words.
- * `root` is the key of a hub other than the first: its findings carry that key and name their place
- * under it, and the website's publication list, which belongs to the first hub, is not run over it.
+ * `root` is the key of a hub other than the primary: its findings carry that key and name their
+ * place under it, and the website's publication list, which belongs to the primary hub, is not run
+ * over it.
  */
 export type AuditInput = {
     hub: string;
@@ -184,8 +185,8 @@ export type Raised = Omit<AuditFinding, 'signature' | 'message'> & Sentence;
 
 /**
  * A collector, so a rule adds a finding without knowing how one is keyed or worded. Given the key
- * of a hub other than the first it puts the key in front of each finding's scope, which is what the
- * signature reads, and marks the finding with it.
+ * of a hub other than the primary it puts the key in front of each finding's scope, which is what
+ * the signature reads, and marks the finding with it.
  */
 export function collector(
     catalog: Record<string, string>,

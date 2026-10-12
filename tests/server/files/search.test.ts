@@ -13,7 +13,7 @@ import { it } from '../../fixtures/scratch.ts';
 
 const ROOTS: Root[] = [
     { key: 'hub', dir: '/hub' },
-    { key: 'engine', dir: '/engine' }
+    { key: 'notes', dir: '/notes' }
 ];
 
 /** The milliseconds every case gives one root, standing in for `search.timeout_s`. */

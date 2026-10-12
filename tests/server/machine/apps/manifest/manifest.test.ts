@@ -458,15 +458,19 @@ const ROWS: Row[] = [
         [['app:one/notes'], ['apps[two/]']]
     ],
     [
-        'the hub apps folder, which is the machine folder by default',
+        'the primary hub apps folder, which is the machine folder by default',
         () => {
             const base = plantScratch('oculus-apps-hub-', {
                 'hub/.oculus/apps/notes/app.yml': MANIFEST,
                 'hub/.oculus/apps/notes/index.html': PAGE
             });
-            const scanned = again(base, join(base, 'hub', '.oculus', 'apps'), [
-                { key: 'hub', dir: join(base, 'hub') }
-            ]);
+            const scanned = again(
+                base,
+                join(base, 'hub', '.oculus', 'apps'),
+                [{ key: 'hub', dir: join(base, 'hub') }],
+                new Set(),
+                'hub'
+            );
             return [scanned.apps.map((one) => one.id), scanned.findings.map((one) => one.key)];
         },
         [['app:notes'], []]
@@ -619,16 +623,16 @@ const ROWS: Row[] = [
         ['app:my repo/todo']
     ],
     [
-        'the engine folder, which is no root of apps',
+        'a folder named engine, which is a root of apps like any other',
         () => {
             const base = plantScratch('oculus-apps-engine-', {
                 'cfg/.oculus/apps/x/app.yml': 'name: x\ntitle: X\nbridge: 1\n',
                 'cfg/.oculus/apps/x/index.html': PAGE
             });
             const scanned = again(base, null, [{ key: 'engine', dir: join(base, 'cfg') }]);
-            return [scanned.apps, scanned.findings];
+            return [scanned.apps.map((one) => one.id), scanned.findings];
         },
-        [[], []]
+        [['app:engine/x'], []]
     ],
     [
         'an apps_dir that is a file',

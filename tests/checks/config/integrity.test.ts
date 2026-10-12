@@ -21,7 +21,7 @@ import { tex } from '../../../src/lib/views/academic/present/markup.ts';
 import { ENTITY_KINDS } from '../../../src/lib/data/snapshot/normalise.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { isMap } from '../../../src/lib/data/helpers/guards.ts';
-import { realHub } from '../../fixtures/real-hub.ts';
+import { realHub } from '../../fixtures/hubs/real-hub.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 import { createReader } from '../../../src/lib/data/sources/deck/read.ts';
 import type { DeckProject } from '../../../src/lib/data/sources/deck/kinds.ts';

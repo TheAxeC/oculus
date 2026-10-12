@@ -22,7 +22,7 @@ import { statSync } from 'node:fs';
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { z } from 'zod';
 import type { BuildOutcome, Project } from '../../../data/model/index.ts';
-import { HUB_ROOT, rootOf as hubOf } from '../../../data/helpers/hub-names.ts';
+import { rootOf as hubOf } from '../../../data/helpers/hub-names.ts';
 import {
     MANUSCRIPT,
     isLatexFile,
@@ -57,7 +57,8 @@ import { readCount } from './tools.ts';
  * What a LaTeX read needs: the hub, the portfolio an id is checked against, and the served roots.
  */
 export type LatexTarget = {
-    hub: string;
+    /** The primary hub's name, or null when the workspace has none. */
+    primary: string | null;
     project: (id: string) => Pick<Project, 'folder' | 'root' | 'repository'> | null;
     /** The roots the file browser serves, which a root key of a request is looked up in. */
     roots: () => Root[];
@@ -80,11 +81,11 @@ export type LatexTarget = {
 type AnsweredMain = MainState & { build: BuildOutcome };
 
 /**
- * The state of a project: its folder under the root that holds it, named by `root` for a hub other
- * than the first or for a repository and absent for the first hub, and one state per main file. The
- * folder is empty for a project of a repository, which is its root's top.
+ * The state of a project: the served root that holds it (the folder name of its hub, or its
+ * repository's root), its folder under that root, and one state per main file. The folder is empty
+ * for a project of a repository, which is its root's top.
  */
-export type ProjectAnswer = { root?: string; folder: string; mains: AnsweredMain[] };
+export type ProjectAnswer = { root: string; folder: string; mains: AnsweredMain[] };
 
 /** The outline of a main file of a project, its files against the project's folder. */
 export type ProjectOutline = Outline & { folder: string };
@@ -196,9 +197,9 @@ function projectScope(into: LatexTarget, id: string): Scope | Response {
     if (id === '') return refuse(400, 'not-an-action');
     const project = into.project(id);
     if (project === null) return refuse(404, 'no-project');
-    // The hub a project lies in is the first hub, or the served root of its own key.
-    const key = hubOf(project);
-    const hub = key === HUB_ROOT ? into.hub : into.roots().find((one) => one.key === key)?.dir;
+    // The hub a project lies in is the served root of its own name.
+    const key = hubOf(project, into.primary);
+    const hub = into.roots().find((one) => one.key === key)?.dir;
     if (hub === undefined) return refuse(404, 'no-project');
     // One rule for resolving a project's folder beneath the hub, the one the terminal actions run
     // through: a folder that would leave the hub throws there and is a 404 here. A project of a
@@ -219,7 +220,7 @@ function projectScope(into: LatexTarget, id: string): Scope | Response {
         prefixes: { pdf: MANUSCRIPT, files: '' },
         answer: (mains) =>
             ({
-                ...(home.root === HUB_ROOT ? {} : { root: home.root }),
+                root: home.root,
                 folder: under,
                 mains
             }) satisfies ProjectAnswer,

@@ -19,8 +19,8 @@ import {
     handleCalendarCallback
 } from '../../../../src/lib/server/accounts/calendar/routes.ts';
 import { credentialFile } from '../../../../src/lib/server/accounts/connect/store.ts';
-import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { noop } from '../../../fixtures/doubles.ts';
+import { bookIn } from '../book.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 
 const TOKEN = 'the-write-token-of-this-case';
@@ -92,7 +92,7 @@ function target(dir: string, states: ConnectStates, opened: string[]) {
         dir,
         // A provider folder this case never fills, so every half is the account file's own.
         providerDir: join(dir, 'connect'),
-        book: { file: join(dir, 'local.yml'), writes: fsWrites(), reload: noop },
+        book: bookIn(dir),
         redirect: callbackUrl(8791, 'calendar'),
         states,
         refresh: () => Promise.resolve(),

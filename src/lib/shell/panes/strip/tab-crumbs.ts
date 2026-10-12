@@ -7,7 +7,12 @@
 // has come. The Files tree draws no breadcrumb.
 
 import type { Instance } from '$lib/state/workbench/layout';
-import { crumbsOf, fileOfTab } from '$lib/state/workbench/navigation/pages';
+import {
+    crumbsOf,
+    fileOfTab,
+    NO_PLACE,
+    type DocPlace
+} from '$lib/state/workbench/navigation/pages';
 import type { SymbolRow } from '$lib/state/system/machine/lsp/symbols';
 
 /** The symbol a segment stands for: where it starts, and the icon its kind draws. */
@@ -28,16 +33,15 @@ export type Crumb = {
 /**
  * The segments of the path a tab shows, outermost first, then the symbols that contain the caret,
  * or none for a tab that names no file and for a file under a root the server does not serve, which
- * the Files view could not show. `engineAt` is the place of oculus's own folder in the hub, which
- * places a document tab of that folder (`fileOfTab`).
+ * the Files view could not show. `place` is where a document tab's file is (`fileOfTab`).
  */
 export function tabCrumbs(
     tab: Pick<Instance, 'id' | 'view' | 'state'>,
     served: readonly string[],
     symbols: readonly SymbolRow[] = [],
-    engineAt = ''
+    place: DocPlace = NO_PLACE
 ): Crumb[] {
-    const file = fileOfTab(tab, engineAt);
+    const file = fileOfTab(tab, place);
     if (file === null || !served.includes(file.root)) return [];
     const segments = crumbsOf(file);
     return [
@@ -59,8 +63,8 @@ export function tabCrumbs(
 
 /** What a press on a segment calls: the Files view shown at a folder, and at a file. */
 export type CrumbDeps = {
-    showFolderInFiles: (path: string, root?: string) => string;
-    showInFiles: (path: string, root?: string) => string;
+    showFolderInFiles: (path: string, root: string) => string;
+    showInFiles: (path: string, root: string) => string;
     /** Move the caret of the tab the crumbs are of to a symbol's start. */
     goTo: (line: number, column: number) => void;
 };

@@ -28,17 +28,17 @@ import {
     type TreeTop,
     unopened
 } from '$lib/state/sources/fs';
-import { currentWorkspace, fixedRootsOf, openFailures } from '$lib/state/sources/fs-transport';
+import { fixedRootKeys, openFailures } from '$lib/state/sources/fs-transport';
 import { addedLine } from '$lib/state/sources/explorer/acts/folders';
 import { refusal } from '$lib/state/sources/explorer/acts/refusal';
 import { selectPruned, selectionChanged } from '$lib/state/sources/explorer/acts/selection';
 import { bookmarkActions } from './control/bookmark-actions';
 import { tabActions } from './control/tab-actions';
 
-/** The workspaces the page holds as saved, and the one in force. */
+/** The open workspace the page holds, and its name and folders. */
 export function readWorkspace(client: ClientState) {
     const saved = $derived(client.fs.workspaces());
-    const current = $derived(currentWorkspace(saved));
+    const current = $derived({ name: saved.open?.name ?? '', roots: saved.folders });
     return {
         get saved() {
             return saved;
@@ -51,7 +51,7 @@ export function readWorkspace(client: ClientState) {
 
 /** What a tree is drawn from. */
 export type RootedInput = {
-    /** The workspace in force, whose roots a dragged row's absolute path and the root menu use. */
+    /** The open workspace, whose folders a dragged row's absolute path and the root menu use. */
     workspace: ReturnType<typeof readWorkspace>;
     /** The key of the record the tree keeps its state in. */
     owner: () => string;
@@ -141,7 +141,7 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
     );
     /** The roots the reader cannot take off. */
     const fixed = $derived(
-        fixedRootsOf(input.workspace.current, input.following?.() ?? false, configMap())
+        fixedRootKeys(input.workspace.current.roots, input.following?.() ?? false)
     );
     /** What git says of the paths under the repositories the page carries. */
     const fold = $derived(

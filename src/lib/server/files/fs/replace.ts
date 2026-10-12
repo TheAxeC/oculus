@@ -49,7 +49,7 @@ import {
 } from '../../../data/helpers/search/replace.ts';
 import { writeBytesAtomic } from '../../core/json.ts';
 import { resolveRootPath, type Root } from '../files.ts';
-import { isBinaryFile, isReadonly } from '../source.ts';
+import { isBinaryFile, isReadonly } from '../source/source.ts';
 import {
     hitOf,
     ripgrepRecord,

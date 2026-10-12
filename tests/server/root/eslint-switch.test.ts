@@ -26,7 +26,7 @@ import type { ServerContext } from '../../../src/lib/server/root/process/server-
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { HeldEslints } from '../../../src/lib/server/machine/runs/lint/eslint.ts';
 import { alive, eslintRepo, exitWatch, starts } from '../machine/runs/lint/lint-fixture.ts';
-import { inert, inertDependencies, scratchEngine, scratchReadLocal } from './inert-context.ts';
+import { inert, inertDependencies, scratchEngine, scratchReadMachine } from './inert-context.ts';
 
 let live: ServerContext | null = null;
 
@@ -54,7 +54,7 @@ describe('the server context when lint.eslint turns false', () => {
         const exits = exitWatch();
         const context = createServerContext(engine, {
             ...inertDependencies(),
-            readLocal: scratchReadLocal(engine),
+            readMachine: scratchReadMachine(engine),
             createEslints: (options) => new HeldEslints({ ...options, exited: exits.told }),
             watchPortfolio: ((_hub: unknown, _options: unknown, hooks: { built: () => void }) => {
                 built = hooks.built;

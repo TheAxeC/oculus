@@ -28,7 +28,6 @@ import { webAddress } from '../../../../data/places/hub-address.ts';
 import type { AppRequestBody, AppRow, Message } from '../../../../data/model/index.ts';
 import type { AppsSettings } from '../../../../data/sources/config/settings.ts';
 import { t } from '../../../shared/words/text.ts';
-import { ENGINE_ROOT } from '../../../sources/fs.ts';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
 import {
     REFUSED,
@@ -408,7 +407,6 @@ export function createMethods(context: MethodsContext): Methods {
             const folders = settings().closedPaths.folders;
             if (folders === null) return closed();
             if (!pathSegmentsOpen(path) || inClosedPaths(path, folders)) return closed();
-            if (root === ENGINE_ROOT) return closed();
             if (row.root !== '' && root !== row.root) return closed();
             if (!context.shown(root)) return refuse(REFUSED.missing);
             const result = await context.check(root, path);
@@ -435,7 +433,6 @@ export function createMethods(context: MethodsContext): Methods {
                 : undefined;
             if (marker === undefined || !isText(root) || !isText(path)) return fsClosed();
             if (row.disabled || row.key === '') return fsClosed();
-            if (root === ENGINE_ROOT) return fsClosed();
             const keys = context.rootKeys();
             if (row.root === '') {
                 if (!row.readFolders.some((entry) => inFilesEntry(entry, keys, root, path))) {

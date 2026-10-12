@@ -154,7 +154,8 @@ export function disseminated(snapshot: Snapshot, id: Id): Dissemination[] {
         for (const entry of entries) {
             const role = str(entry.fields.role);
             if (collection === 'events' && role === 'attend') continue;
-            if (!strings(entry.fields.related).some((one) => inHubOf(entry, one) === id)) continue;
+            if (!strings(entry.fields.related).some((one) => inHubOf(entry, one, null) === id))
+                continue;
             found.push({ collection, id: entry.id, title: entry.title });
         }
     }

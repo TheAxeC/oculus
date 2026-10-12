@@ -1,20 +1,26 @@
-// Layer 2, server. The watch on the machine's own config/local.yml. It carries every key: a write
-// of the file, by hand or from the page, reaches the context, which reads the file again, holds
-// every key at once and builds again the watchers made from a key that changed. This module is the
-// watch itself and the two pure answers the context needs after a read: which keys differ from the
-// ones in force, and which watchers those keys are the inputs of.
+// Layer 2, server. The watch on the machine's own `.oculus/local.yml` of every hub the open
+// workspace lists. It carries every key: a write of a file, by hand or from the page, reaches the
+// context, which reads the files again, holds every key at once and builds again the watchers made
+// from a key that changed. This module is the watch itself and the two pure answers the context
+// needs after a read: which keys differ from the ones in force, and which watchers those keys are
+// the inputs of. A move of the primary hub is a key of its own (`workspace`), so the watchers built
+// from the primary hub's files (the bookmarks, the schedules and the usage refresh) are built again
+// with the keys that name them; the portfolio, the git watch and the other parts that read the
+// folders follow the workspace through their own subscription.
 //
-// It watches the config folder rather than the file: every write oculus makes replaces the file by
-// a rename, and an editor saves the same way, so a watch on the file itself would be left on the
-// file that was replaced. An event for any other name in the folder is not this watcher's; the
-// portfolio watcher (watch/portfolio.ts) owns the config push. A burst of events is one call after
-// a short quiet, since a save is several events on darwin; the quiet is lodash's `debounce`, which
-// also calls at the maximum wait when events never leave a quiet.
+// It watches each hub's `.oculus` folder rather than the file: every write oculus makes replaces
+// the file by a rename, and an editor saves the same way, so a watch on the file itself would be
+// left on the file that was replaced. An event for any other name in the folder is not this
+// watcher's. A burst of events is one call after a short quiet, since a save is several events on
+// darwin; the quiet is lodash's `debounce`, which also calls at the maximum wait when events never
+// leave a quiet. The context closes the watch and makes another when the workspace moves.
 
 import { existsSync, watch, type FSWatcher } from 'node:fs';
+import { join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { debounce as debounced } from 'lodash-es';
-import { LOCAL_NAME, configDir, type LocalConfig } from '../../../data/sources/config.ts';
+import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { LOCAL_NAME, type LocalConfig } from '../../../data/sources/config.ts';
 
 export type LocalWatchOptions = {
     /**
@@ -36,14 +42,16 @@ export const DEBOUNCE = 200;
  */
 export const MAX_WAIT = 2 * DEBOUNCE;
 
-/** Watch the engine's config folder and call `changed` when local.yml was written or removed. */
+/**
+ * Watch the `.oculus` folder of each hub and call `changed` when a local.yml was written or
+ * removed.
+ */
 export function watchLocal(
-    engine: string,
+    hubs: readonly string[],
     changed: () => void,
     options: LocalWatchOptions = {}
 ): LocalWatcher {
     const debounce = options.debounce ?? DEBOUNCE;
-    const folder = configDir(engine);
     const queued = debounced(
         () => {
             changed();
@@ -52,13 +60,17 @@ export function watchLocal(
         { maxWait: MAX_WAIT }
     );
     let closed = false;
-    let handle: FSWatcher | null = null;
-    if (existsSync(folder)) {
+    const handles: FSWatcher[] = [];
+    for (const hub of hubs) {
+        const folder = join(hub, ROOT_FOLDER);
+        if (!existsSync(folder)) continue;
         try {
-            handle = watch(folder, { recursive: false }, (_event, filename) => {
-                if (closed || filename !== LOCAL_NAME) return;
-                queued();
-            });
+            handles.push(
+                watch(folder, { recursive: false }, (_event, filename) => {
+                    if (closed || filename !== LOCAL_NAME) return;
+                    queued();
+                })
+            );
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
             console.error(`local watch: cannot watch ${folder}: ${reason}`);
@@ -68,20 +80,24 @@ export function watchLocal(
         close(): void {
             closed = true;
             queued.cancel();
-            handle?.close();
-            handle = null;
+            for (const handle of handles) handle.close();
+            handles.length = 0;
         }
     };
 }
 
+/**
+ * A key a change can name: a key of the machine's own values, or `workspace`, a move of the open
+ * workspace's primary hub, which is no key of any file.
+ */
+export type ChangedKey = keyof LocalConfig | 'workspace';
+
 /** Every key of the machine's own values, as the context holds it. */
 const FIELDS: (keyof LocalConfig)[] = [
-    'hub',
     'port',
     'hpcHost',
     'sessionsCache',
     'sessionsOverrides',
-    'workspaces',
     'bookmarks',
     'notes',
     'changes',
@@ -107,6 +123,9 @@ export function changedKeys(held: LocalConfig, next: LocalConfig): (keyof LocalC
     return FIELDS.filter((key) => !isDeepStrictEqual(held[key], next[key]));
 }
 
+/** Every key a change can name. */
+const ALL_KEYS: ChangedKey[] = [...FIELDS, 'workspace'];
+
 /** The watchers the context builds from local.yml, in the order they are built. */
 export const WATCHERS = [
     'portfolio',
@@ -121,12 +140,11 @@ export const WATCHERS = [
 export type WatcherName = (typeof WATCHERS)[number];
 
 /** The watchers built directly from a key; the ones built from those follow in `rebuiltBy`. */
-const BUILT_FROM: Partial<Record<keyof LocalConfig, WatcherName[]>> = {
-    hub: ['portfolio', 'usageRefresh', 'git', 'bookmarks', 'schedules'],
+const BUILT_FROM: Partial<Record<ChangedKey, WatcherName[]>> = {
+    workspace: ['usageRefresh', 'bookmarks', 'schedules'],
     accounts: ['sessions', 'usageRefresh'],
     sessionsCache: ['sessions'],
     sessionsOverrides: ['sessions'],
-    workspaces: ['git'],
     bookmarks: ['bookmarks'],
     schedules: ['schedules'],
     scheduleRecord: ['schedules'],
@@ -138,7 +156,7 @@ const BUILT_FROM: Partial<Record<keyof LocalConfig, WatcherName[]>> = {
  * watcher's change signal and the usage refresh's state, and the auto fetch reads the git watcher's
  * channel when it starts, so each is built again with what it is built from.
  */
-export function rebuiltBy(changed: readonly (keyof LocalConfig)[]): Record<WatcherName, boolean> {
+export function rebuiltBy(changed: readonly ChangedKey[]): Record<WatcherName, boolean> {
     const direct = new Set(changed.flatMap((key) => BUILT_FROM[key] ?? []));
     return {
         portfolio: direct.has('portfolio'),
@@ -153,6 +171,6 @@ export function rebuiltBy(changed: readonly (keyof LocalConfig)[]): Record<Watch
 }
 
 /** The keys whose change builds this watcher again, directly or through its sources. */
-export function keysBuilding(name: WatcherName): (keyof LocalConfig)[] {
-    return FIELDS.filter((key) => rebuiltBy([key])[name]);
+export function keysBuilding(name: WatcherName): ChangedKey[] {
+    return ALL_KEYS.filter((key) => rebuiltBy([key])[name]);
 }

@@ -13,10 +13,10 @@
 // @module-tag slow: every row starts Electron, which builds the server first.
 
 import { execFileSync, spawn, type ChildProcess } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { createRequire } from 'node:module';
-import { basename, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { APP_FOLDERS, APP_MODE } from '../../../src/lib/server/root/process/build-folders.ts';
 import { wordsOf } from '../../../src/lib/server/root/process/words.ts';
@@ -34,8 +34,11 @@ const MINUTES = 10 * 60 * 1000;
 /** How long a process may take to end on SIGTERM before it is ended by its pid. */
 const GRACE_MS = 10_000;
 
-/** One scratch world: an engine without a local.yml, a hub, a HOME and a tmux folder. */
-type Scratch = { root: string; engine: string; hub: string; home: string; tmux: string };
+/**
+ * One scratch world: an engine, a HOME with no workspace state (so the workspace is unsaved and has
+ * no hub), and a tmux folder. The port a server takes is the default port the row passes.
+ */
+type Scratch = { root: string; engine: string; home: string; tmux: string };
 
 /**
  * A running process, with the lines it printed. `ended` settles on its `exit` event with the exit
@@ -67,25 +70,18 @@ beforeAll(() => {
 }, MINUTES);
 
 /** The scratch world of one row, removed when the row ends. */
-function scratch(port: number | null): Scratch {
+function scratch(): Scratch {
     const root = mkdtempSync(join('/tmp', 'o48-'));
     const engine = join(root, 'engine');
-    const hub = join(root, 'hub');
     const home = join(root, 'home');
     const tmux = join(root, 'tmux');
-    for (const dir of [hub, home, tmux]) mkdirSync(dir);
-    cpSync(join(CHECKOUT, 'config'), join(engine, 'config'), {
-        recursive: true,
-        filter: (path) => basename(path) !== 'local.yml'
-    });
-    if (port !== null) {
-        writeFileSync(join(engine, 'config', 'local.yml'), `hub: ${hub}\nport: ${port}\n`);
-    }
+    for (const dir of [home, tmux]) mkdirSync(dir);
+    cpSync(join(CHECKOUT, 'config'), join(engine, 'config'), { recursive: true });
     cleanups.push(() => {
         endTmux(tmux);
         rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
     });
-    return { root, engine, hub, home, tmux };
+    return { root, engine, home, tmux };
 }
 
 function socketOf(tmux: string): string {
@@ -239,7 +235,7 @@ describe('the desktop app starting and stopping', () => {
     it(
         'brings the running app forward on a second start and starts no server',
         async () => {
-            const world = scratch(PORT);
+            const world = scratch();
             const first = app(world, PORT);
             await printed(first, `oculus on http://127.0.0.1:${PORT}`);
             await printed(first, '[screen] window.show');
@@ -261,7 +257,7 @@ describe('the desktop app starting and stopping', () => {
     it(
         'starts no server when another program holds the port, and names the port',
         async () => {
-            const world = scratch(PORT);
+            const world = scratch();
             await holder(PORT, '{"app":"other"}');
             const running = app(world, PORT);
             await printed(running, wordsOf(world.engine)('desktop.dialog.port_other', PORT));
@@ -273,7 +269,7 @@ describe('the desktop app starting and stopping', () => {
     it(
         'stops the server process on Quit and leaves every tmux session running',
         async () => {
-            const world = scratch(PORT);
+            const world = scratch();
             const running = app(world, PORT);
             await printed(running, `oculus on http://127.0.0.1:${PORT}`);
             execFileSync(
@@ -305,7 +301,7 @@ describe('the desktop app starting and stopping', () => {
     it(
         'prints the port in use and exits 1 when the server cannot listen',
         async () => {
-            const world = scratch(PORT);
+            const world = scratch();
             await holder(PORT, '{"app":"other"}');
             const server = run(
                 process.execPath,
@@ -313,6 +309,8 @@ describe('the desktop app starting and stopping', () => {
                     join(CHECKOUT, 'src', 'server.ts'),
                     '--engine',
                     world.engine,
+                    '--default-port',
+                    String(PORT),
                     '--handler',
                     HANDLER
                 ],
@@ -328,9 +326,9 @@ describe('the desktop app starting and stopping', () => {
     );
 
     it(
-        'asks the default port, passed as a held scratch port, whether an oculus answers there when no local.yml names a port, and starts no second server',
+        'asks the default port, passed as a held scratch port, whether an oculus answers there when no hub names a port, and starts no second server',
         async () => {
-            const world = scratch(null);
+            const world = scratch();
             const { asked } = await holder(PORT, '{"app":"oculus"}');
             const running = app(world, PORT);
             await printed(running, wordsOf(world.engine)('desktop.dialog.port_oculus', PORT));

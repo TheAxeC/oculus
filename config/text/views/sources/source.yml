@@ -141,6 +141,7 @@ text:
         lsp_edit_failed: "The language server's edit to {0} could not be made, so nothing was changed."
         lsp_edit_gone: This edit was asked for a file that is no longer open in this window, so nothing was changed.
         lsp_edit_library: "{0} is a library file and is not edited here, so the language server's edit was not made."
+        lsp_edit_loading: "The folders are still loading, so whether {0} is open in a tab cannot be told yet and the language server's edit was not made."
         lsp_edit_not_text: "{0} is not UTF-8 text throughout, so the language server's edit was not made."
         lsp_edit_outside: "{0} is outside the folders oculus serves, under a node_modules or dot folder, or in the secrets folder of a hub or ~/.oculus, so the language server's edit was not made."
         lsp_edit_partial: "The language server's edit stopped at {0} after {1} files were written. History undoes them."

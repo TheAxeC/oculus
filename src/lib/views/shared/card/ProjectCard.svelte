@@ -126,7 +126,7 @@
               )
     );
     /** Where the project's folder is: the Files root that holds it and its path in that root. */
-    const place = $derived(placeOf(item.project));
+    const place = $derived(placeOf(item.project, client.fs.primary()));
     const hub = $derived(place.root);
     /** The project's folder when the `git` channel carries it as a repository, else ''. */
     const repo = $derived.by((): string => {

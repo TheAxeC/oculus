@@ -9,11 +9,18 @@ import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { type TerminalOptions } from '../../../src/lib/server/machine/pty/routes.ts';
-import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
+import {
+    engineDir,
+    loadConfig,
+    loadMachine,
+    localDefaults,
+    textCatalog
+} from '../../../src/lib/data/sources/config.ts';
 import type { SessionRecord } from '../../../src/lib/data/model/index.ts';
 import { Turns } from '../../../src/lib/server/machine/pty/latex/turns.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
 import { pagePost } from '../../fixtures/doubles.ts';
+import { plantHub, workspaceWith } from '../../fixtures/hubs/workspace.ts';
 
 export const HOST = '127.0.0.1:8791';
 
@@ -31,14 +38,15 @@ expect(existsSync(HERE)).toBe(true);
 
 expect(HERE.length).toBeGreaterThan(1);
 
-/** One file's scratch folder, and the engines and the chat hub planted in it. */
+/** One file's scratch folder, and the engines and the hubs planted in it. */
 export type TaskConfig = {
     /** The folder every directory below is made in. */
     root: string;
     /** The engine a case that reads no machine-local value is given: a config folder, empty. */
     engine: string;
     taskEngine: string;
-    defaultEngine: string;
+    /** A hub whose `.oculus/local.yml` names a Claude command with a space in its path. */
+    taskHub: string;
     chatHub: string;
     chatState: string;
     chatProject: string;
@@ -46,15 +54,22 @@ export type TaskConfig = {
 };
 
 /**
- * An engine directory of this suite's own inside `root`: a config folder holding the machine-local
- * file the case under test reads. The route is handed the directory, so nothing here reads the
- * checkout's own.
+ * An engine directory of this suite's own inside `root`: an empty config folder. The route is
+ * handed the directory, so nothing here reads the checkout's own.
  */
-export function engineWith(root: string, name: string, local = ''): string {
+export function engineWith(root: string, name: string): string {
     const dir = join(root, name);
     expect(resolve(dir).startsWith(root + sep)).toBe(true);
     mkdirSync(join(dir, 'config'), { recursive: true });
-    if (local !== '') writeFileSync(join(dir, 'config', 'local.yml'), local);
+    return dir;
+}
+
+/** A hub folder inside `root` whose `.oculus/local.yml` holds `local`. */
+function hubWith(root: string, name: string, local: string): string {
+    const dir = join(root, name);
+    expect(resolve(dir).startsWith(root + sep)).toBe(true);
+    mkdirSync(join(dir, '.oculus', 'config'), { recursive: true });
+    writeFileSync(join(dir, '.oculus', 'local.yml'), local);
     return dir;
 }
 
@@ -66,8 +81,12 @@ export function engineWith(root: string, name: string, local = ''): string {
 export function makeTaskConfig(): TaskConfig {
     const root = scratchDir('oculus-task-route-');
     expect(resolve(root).startsWith(HERE + sep)).toBe(true);
-    const chatHub = join(root, 'hub');
     const chatState = join(root, 'state');
+    const chatHub = hubWith(
+        root,
+        'hub',
+        `claude_bin: /opt/Claude CLI/claude\nsessions_overrides: ${join(chatState, 'sessions.json')}\n`
+    );
     const chatProject = join(chatHub, 'projects', 'active', 'alpha');
     mkdirSync(join(chatState, 'chat'), { recursive: true });
     mkdirSync(chatProject, { recursive: true });
@@ -77,20 +96,12 @@ export function makeTaskConfig(): TaskConfig {
     return {
         root,
         engine: engineWith(root, 'engine'),
-        taskEngine: engineWith(
-            root,
-            'task-engine',
-            `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`
-        ),
-        defaultEngine: engineWith(root, 'default-engine', `hub: ${HERE}\n`),
+        taskEngine: engineWith(root, 'task-engine'),
+        taskHub: hubWith(root, 'task-hub', 'claude_bin: /opt/Claude CLI/claude\n'),
         chatHub,
         chatState,
         chatProject,
-        chatEngine: engineWith(
-            root,
-            'chat-engine',
-            `hub: ${chatHub}\nclaude_bin: /opt/Claude CLI/claude\nsessions_overrides: ${join(chatState, 'sessions.json')}\n`
-        )
+        chatEngine: engineWith(root, 'chat-engine')
     };
 }
 
@@ -178,8 +189,26 @@ export function configOf(engine: string): () => Record<string, unknown> {
     return () => loadConfig(engine).config;
 }
 
+/**
+ * The open workspace and the machine values a request is given: the folder `hub` as the primary hub
+ * of a workspace when one is named (it is made a hub) with the values of its `.oculus/local.yml`,
+ * else a workspace with no folder and the defaults of local.yml.
+ */
+export function worldOf(hub?: string): Pick<TerminalOptions, 'openFor' | 'localFor'> {
+    const workspace = workspaceWith(
+        hub === undefined ? [] : [{ name: 'hub', dir: plantHub(hub) }],
+        hub === undefined ? undefined : 'hub'
+    );
+    return {
+        openFor: () => workspace.open(),
+        localFor: () =>
+            hub === undefined ? localDefaults() : loadMachine([{ name: 'hub', dir: hub }], 'hub')
+    };
+}
+
 export function options(engine: string, over: Partial<TerminalOptions> = {}): TerminalOptions {
     return {
+        ...worldOf(),
         engine,
         run: tmux().run,
         recordFor: () => null,
@@ -230,13 +259,12 @@ export function latexRouteOptions(
         turns,
         approvalsFor: () => approvalsFile(task),
         latexHomesFor: () => ({ home: latexHome(task), xdg: undefined }),
+        ...worldOf(task.chatHub),
         engine: engineDir(),
         run,
-        hubFor: () => task.chatHub,
         configFor: () => BASE_CHAT_CONFIG,
         projectFor: (id) =>
             id === 'alpha' ? { title: 'Alpha Study', folder: LATEX_PROJECT } : null,
-        servedRootsFor: () => [{ key: 'hub', dir: task.chatHub }],
         programFound: () => true,
         ...extra
     };

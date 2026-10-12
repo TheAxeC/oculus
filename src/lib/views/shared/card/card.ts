@@ -5,7 +5,6 @@
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import type { ClientState } from '$lib/state/client/context';
 import { findView, type Layout } from '$lib/state/workbench/layout';
-import { HUB_ROOT } from '$lib/state/sources/fs';
 import { placeOf } from '$lib/state/shared/page/hubs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { t } from '$lib/state/shared/words/text';
@@ -66,7 +65,7 @@ export function below(folder: string, path: string): string {
 }
 
 /** The encoded api/file address for a project-relative file. */
-export function urlOf(folder: string, path: string, root: string = HUB_ROOT): string {
+export function urlOf(folder: string, path: string, root: string): string {
     return fileBytesUrl(root, below(folder, path));
 }
 
@@ -79,12 +78,14 @@ export function goto(client: ClientState, view: string, label: string): void {
     }
 }
 
-/** Open one of a project's fixed documents in a document tab under the root of its hub. */
+/**
+ * Open one of a project's fixed documents in a document tab under the root of the hub `root` names.
+ */
 export function openDocument(
     client: ClientState,
     folder: string,
     path: string,
-    root: string = HUB_ROOT
+    root: string
 ): void {
     openPage(client, { root, path: below(folder, path), label: path });
 }
@@ -95,7 +96,7 @@ export function openDocument(
  */
 export function openWorkbench(client: ClientState, item: BoardItem, tab: string): void {
     const first = { view: 'project', state: { id: item.id, label: tab } };
-    const { root, path } = placeOf(item.project);
+    const { root, path } = placeOf(item.project, client.fs.primary());
     client.folders.open({ root, path }, { label: item.project.title, item: first });
 }
 

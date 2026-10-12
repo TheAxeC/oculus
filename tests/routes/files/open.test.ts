@@ -23,7 +23,7 @@ describe('the open endpoint', () => {
         expect(response.status).toBe(403);
     });
 
-    it('refuses a directory outside every configured root', async () => {
+    it('refuses a directory outside every folder of the workspace', async () => {
         const { roots } = fixture();
         const outside = scratch('oculus-open-outside-');
         expect(roots.some((root) => resolve(outside).startsWith(resolve(root.dir) + sep))).toBe(
@@ -39,8 +39,8 @@ describe('the open endpoint', () => {
         );
         expect(response.status).toBe(403);
         expect(await response.json()).toEqual({
-            error: 'the path is outside the configured roots',
-            refused: [{ field: 'path', reason: 'the path is outside the configured roots' }]
+            error: 'the path is outside the folders of the workspace',
+            refused: [{ field: 'path', reason: 'the path is outside the folders of the workspace' }]
         });
     });
 });

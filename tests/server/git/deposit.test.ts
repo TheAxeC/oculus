@@ -126,6 +126,7 @@ test.beforeAll(() => {
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     into = {
         hub,
+        primary: 'hub',
         config: { ...real, scan: [{ dir: 'projects/manuscripts' }] },
         engine: engineDir(),
         career: careerRules(loadConfig(engineDir()).config),

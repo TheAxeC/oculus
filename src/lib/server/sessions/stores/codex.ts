@@ -1,11 +1,11 @@
 // Layer 2, server. The Codex CLI rollout fold, into the same record the Claude transcripts make.
 //
 // A rollout is `<dir>/sessions/YYYY/MM/DD/rollout-<stamp>-<uuid>.jsonl` under every `tool: codex`
-// account in config/local.yml's `accounts`, a line of JSON per record shaped
-// `{timestamp, type, payload}`. Four record types carry anything: `session_meta` opens the session,
-// `turn_context` says which model and mode the turn ran under, `event_msg` carries the turn
-// boundaries, the token counts and every completed item, and `response_item` carries the raw model
-// calls, of which the tool calls and the inter-agent messages are read.
+// account in the `accounts` of the hubs' `.oculus/local.yml` files, a line of JSON per record
+// shaped `{timestamp, type, payload}`. Four record types carry anything: `session_meta` opens the
+// session, `turn_context` says which model and mode the turn ran under, `event_msg` carries the
+// turn boundaries, the token counts and every completed item, and `response_item` carries the raw
+// model calls, of which the tool calls and the inter-agent messages are read.
 //
 // Codex keeps no registry of running sessions, so liveness is the pair of facts available: a
 // `codex` process is running, and the rollout was written in the last two minutes. That is

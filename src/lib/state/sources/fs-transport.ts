@@ -5,13 +5,14 @@
 
 import { z } from 'zod';
 import type { Entry } from '../../data/model/index.ts';
-import { fileBytesUrl } from '../../data/helpers/files/address.ts';
+import { OCULUS_CONFIG_ROOT, fileBytesUrl } from '../../data/helpers/files/address.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
 import {
     anyNumberShape,
     mapShape,
     readAs,
     readJson,
+    rowsShape,
     survivorsShape,
     unchanged
 } from '../../data/shapes/shapes.ts';
@@ -36,14 +37,29 @@ export type Listing = {
     loading: boolean;
 };
 
-/** The workspaces as the toolbar reads them. */
+/** One workspace file the switcher offers, and where it lies. */
+export type WorkspaceFile = { path: string; name: string; hub: string };
+
+/** One recent workspace: the file, and whether it is gone from the disk. */
+export type RecentWorkspace = WorkspaceFile & { missing: boolean };
+
+/**
+ * The open workspace as the toolbar reads it: the file it is held in (null while it is unsaved),
+ * its folders under their names, the primary's name (null when the file names none), the recent
+ * files and every file the open workspace's hubs hold.
+ */
 export type WorkspacesState = {
     /** The server account's home folder, which a path under it is written `~` from; else empty. */
     home: string;
-    current: string;
-    workspaces: { name: string; roots: FsRoot[] }[];
-    /** The keys the server dropped because the configuration reserves them. */
-    dropped: string[];
+    open: WorkspaceFile | null;
+    folders: FsRoot[];
+    primary: string | null;
+    /** Where oculus's own `config/` folder lies among the folders, or null when none holds it. */
+    engine: { root: string; path: string } | null;
+    recent: RecentWorkspace[];
+    available: WorkspaceFile[];
+    /** The keys the primary's `local.yml` sets, by name, and the default text of each key. */
+    machine: { set: string[]; defaults: Record<string, string> };
     error: string;
     loading: boolean;
 };
@@ -81,34 +97,24 @@ export type FileText = {
 
 export const NO_LISTING: Listing = { entries: [], error: '', loading: true };
 
-/** The workspace the saved state names as current; an empty one when it names none it holds. */
-export function currentWorkspace(saved: WorkspacesState): { name: string; roots: FsRoot[] } {
-    return saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] };
-}
-
-/**
- * The roots of every workspace, the current workspace's first: the roots the file routes serve,
- * which a tab's root key is read against.
- */
+/** The folders of the open workspace, which are the roots the file routes serve. */
 export function allRoots(saved: WorkspacesState): FsRoot[] {
-    const current = saved.workspaces.filter((workspace) => workspace.name === saved.current);
-    const others = saved.workspaces.filter((workspace) => workspace.name !== saved.current);
-    return [...current, ...others].flatMap((workspace) => workspace.roots);
+    return saved.folders;
 }
 
 /**
- * The current workspace's roots when the workspaces were read, and null while they are being read,
- * when none was read yet and when the read failed: an empty list of served roots then says nothing
- * about what is served.
+ * The open workspace's folders when the workspace was read, and null while it is being read, when
+ * none was read yet and when the read failed: an empty list of served roots then says nothing about
+ * what is served.
  */
 export function readRoots(saved: WorkspacesState): FsRoot[] | null {
-    return saved.loading || saved.error !== '' ? null : currentWorkspace(saved).roots;
+    return saved.loading || saved.error !== '' ? null : saved.folders;
 }
 
 /**
- * Whether the current workspace serves a root. A workspace being read, or one that failed to read,
+ * Whether the open workspace serves a root. A workspace being read, or one that failed to read,
  * answers yes: the empty list it holds says nothing about what is served, so a tab of a root is not
- * called gone before the workspaces are known.
+ * called gone before the workspace is known.
  */
 export function servesRoot(saved: WorkspacesState, root: string): boolean {
     const roots = readRoots(saved);
@@ -116,50 +122,11 @@ export function servesRoot(saved: WorkspacesState, root: string): boolean {
 }
 
 /**
- * The roots the reader cannot take off. A tab that follows a session can take none off. In the
- * default workspace (`removable` is the keys of the roots the hub's sources.yml layer lists) the
- * folders of that list can be taken off and the hub, the engine's config folder and the fallback
- * folder cannot; in a named workspace the configured roots, which the server marks `fixed`, cannot.
+ * The roots the reader cannot take off. A tab that follows a session can take none off; no folder
+ * of a workspace is fixed otherwise.
  */
-export function fixedRootKeys(
-    roots: FsRoot[],
-    following = false,
-    removable: readonly string[] | null = null
-): string[] {
-    return roots
-        .filter(
-            (one) => following || (removable === null ? one.fixed : !removable.includes(one.key))
-        )
-        .map((one) => one.key);
-}
-
-/**
- * The keys of the roots a merged configuration lists under `roots:`, an entry with no key left out.
- */
-export function configuredRootKeys(config: Record<string, unknown>): string[] {
-    const held = config.roots;
-    if (!Array.isArray(held)) return [];
-    return held.flatMap((one) => {
-        const key = readAs(z.object({ key: z.string().min(1) }), one)?.key;
-        return key === undefined ? [] : [key];
-    });
-}
-
-/**
- * The keys of the roots the workspace on screen cannot take off. The default workspace (the empty
- * name) takes the folders of the hub layer's `roots:` off; a named workspace takes none of the
- * configured ones off, which the server marks `fixed`.
- */
-export function fixedRootsOf(
-    workspace: { name: string; roots: FsRoot[] },
-    following: boolean,
-    config: Record<string, unknown>
-): string[] {
-    return fixedRootKeys(
-        workspace.roots,
-        following,
-        workspace.name === '' ? configuredRootKeys(config) : null
-    );
+export function fixedRootKeys(roots: FsRoot[], following = false): string[] {
+    return following ? roots.map((one) => one.key) : [];
 }
 
 /** Why a bookmark write was refused, the refused fields' reasons joined, or the empty string. */
@@ -201,9 +168,13 @@ export function matchedNothing(rows: TreeRow[]): boolean {
 
 export const NO_WORKSPACES: WorkspacesState = {
     home: '',
-    current: '',
-    workspaces: [],
-    dropped: [],
+    open: null,
+    folders: [],
+    primary: null,
+    engine: null,
+    recent: [],
+    available: [],
+    machine: { set: [], defaults: {} },
     error: '',
     loading: true
 };
@@ -225,26 +196,48 @@ export const NO_NOTE: NoteState = {
 
 export { fileBytesUrl };
 
-/** One root of a workspace, and one workspace, answered as the endpoint sent them. */
-const fsRootShape = z.object({
-    key: z.string(),
-    dir: z.string(),
-    fixed: z.boolean(),
-    real: z.string().optional().catch(undefined),
-    hub: z.literal(true).optional().catch(undefined),
-    folds: z.literal(true).optional().catch(undefined)
-});
+/** One folder of a workspace, answered as the endpoint sent it, and the key it is held under. */
+const folderShape = z
+    .object({
+        name: z.string(),
+        dir: z.string(),
+        real: z.string().optional().catch(undefined),
+        hub: z.boolean().catch(false),
+        folds: z.literal(true).optional().catch(undefined)
+    })
+    .transform((one): FsRoot => ({
+        key: one.name,
+        dir: one.dir,
+        ...(one.real === undefined ? {} : { real: one.real }),
+        ...(one.hub ? { hub: true as const } : {}),
+        ...(one.folds === undefined ? {} : { folds: true as const })
+    }));
 
-const workspaceShape = unchanged(
-    z.object({ name: z.string(), roots: z.array(fsRootShape) })
-) satisfies z.ZodType<{ name: string; roots: FsRoot[] }>;
+const workspaceFileShape = unchanged(
+    z.object({ path: z.string(), name: z.string(), hub: z.string() })
+) satisfies z.ZodType<WorkspaceFile>;
 
-/** The workspaces answer: the current one's name, every workspace, the keys the server dropped. */
+const recentShape = unchanged(
+    z.object({ path: z.string(), name: z.string(), hub: z.string(), missing: z.boolean() })
+) satisfies z.ZodType<RecentWorkspace>;
+
+/**
+ * The workspaces answer: the open workspace, its folders, its primary and the files to switch to.
+ */
 export const workspacesShape = z.object({
     home: z.string().catch(''),
-    current: z.string().catch(''),
-    workspaces: survivorsShape(workspaceShape).catch([]),
-    dropped: survivorsShape(z.string()).catch([])
+    open: workspaceFileShape.nullable().catch(null),
+    folders: rowsShape(folderShape).catch([]),
+    primary: z.string().nullable().catch(null),
+    engine: z.object({ root: z.string(), path: z.string() }).nullable().catch(null),
+    recent: survivorsShape(recentShape).catch([]),
+    available: survivorsShape(workspaceFileShape).catch([]),
+    machine: z
+        .object({
+            set: z.array(z.string()).catch([]),
+            defaults: z.record(z.string(), z.string()).catch({})
+        })
+        .catch({ set: [], defaults: {} })
 });
 
 /** One bookmark, answered as the endpoint sent it. */
@@ -282,10 +275,14 @@ export const FS_PATH = '/api/fs';
 
 /**
  * The address one directory's entries are read at, with `hidden=1` and `ignored=1` for the two
- * toggles that ask for more than the default.
+ * toggles that ask for more than the default. The folder of oculus's own `config/` is listed by the
+ * read-only route over it.
  */
 export function listingUrl(root: string, path: string, shown = SHOWN_DEFAULT): string {
-    const at = `${FS_PATH}?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}`;
+    const at =
+        root === OCULUS_CONFIG_ROOT
+            ? `${fileBytesUrl(root, path)}?list=1`
+            : `${FS_PATH}?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}`;
     return `${at}${shown.hidden ? '&hidden=1' : ''}${shown.ignored ? '&ignored=1' : ''}`;
 }
 
@@ -425,18 +422,13 @@ export async function readCappedBytes(
     return { bytes: kept, truncated: taken > limit };
 }
 
-/** The names of the saved workspaces, in the order the file keeps them. */
-export function workspaceNames(saved: WorkspacesState): string[] {
-    return saved.workspaces.map((one) => one.name);
-}
-
 /**
- * The keys of the current workspace's roots, and null while the workspaces are being read or could
- * not be read, so an ask to show a path waits for them rather than being answered against none.
+ * The keys of the open workspace's folders, and null while the workspace is being read or could not
+ * be read, so an ask to show a path waits for it rather than being answered against none.
  */
 export function rootKeysOf(saved: WorkspacesState): string[] | null {
     if (saved.loading || saved.error !== '') return null;
-    return currentWorkspace(saved).roots.map((one) => one.key);
+    return saved.folders.map((one) => one.key);
 }
 
 /** The titles the reader's bookmarks carry, which a new bookmark's label is kept apart from. */

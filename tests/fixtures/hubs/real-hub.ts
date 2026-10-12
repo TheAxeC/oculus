@@ -8,9 +8,9 @@
 // names hold anything, so such a checkout skips and a hub that lost its data still fails loudly.
 
 import { existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
-import { loadConfig, loadLocal, engineDir } from '../../src/lib/data/sources/config.ts';
-import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
+import { join, resolve } from 'node:path';
+import { loadConfig, engineDir } from '../../../src/lib/data/sources/config.ts';
+import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 
 /** Whether a folder is there and holds anything at all. */
 function filled(path: string): boolean {
@@ -22,11 +22,12 @@ function filled(path: string): boolean {
 }
 
 /**
- * The real hub's path, and whether it is there with its data. Read once per file: the answer cannot
- * change while a suite runs, and every case over the hub asks the same question.
+ * The real hub's path, the folder two levels above oculus's folder (`<hub>/tools/oculus`), and
+ * whether it is there with its data. Read once per file: the answer cannot change while a suite
+ * runs, and every case over the hub asks the same question.
  */
 export function realHub(engine: string = engineDir()): { hub: string; present: boolean } {
-    const hub = loadLocal(engine).hub;
+    const hub = resolve(engine, '..', '..');
     if (!existsSync(hub)) return { hub, present: false };
     const config = portfolioConfigFrom(loadConfig(engine, { hub }).config);
     // The registries file the config names, and a scan folder with projects in it. A hub may not

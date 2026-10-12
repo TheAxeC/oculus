@@ -18,7 +18,6 @@
     import Empty from '$lib/ui/frame/Empty.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { openSourceFile } from './source-file';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { fileEntries } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -36,10 +35,10 @@
         /** The block's heading, drawn by the caller in the style of its page's headings. */
         heading: Snippet;
         /** The key of the hub that holds the folder. */
-        root?: string;
+        root: string;
     };
 
-    let { folder, heading, root = HUB_ROOT }: Props = $props();
+    let { folder, heading, root }: Props = $props();
 
     const files = $derived(folder === undefined ? null : listing(root, folder));
     const documents = $derived(fileEntries(files?.entries ?? []));

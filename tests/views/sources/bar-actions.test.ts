@@ -1,9 +1,9 @@
 // Layer 4, view tests. That a file tab of each view kind hands its actions to the breadcrumb bar of
 // its pane (ui/tabs/tab-actions.svelte.ts) when one applies, and hands none for a tab that names no
-// file. Each view is rendered on the server inside a host that provides the tab actions as
-// PaneView does, which runs the view's own `handUp` as the component starts. The client serves the
-// one root `hub`, which the star and Open in Program act on, and a source tab's draft is held in
-// the client's ui store as its read left it.
+// file. Each view is rendered on the server inside a host that provides the tab actions as PaneView
+// does, which runs the view's own `handUp` as the component starts. The client serves the one
+// folder `hub`, the workspace's primary, which the star and Open in Program act on, and a source
+// tab's draft is held in the client's ui store as its read left it.
 //
 // It does not cover the buttons the bar draws, which the look does.
 
@@ -34,7 +34,8 @@ setGlyphs(glyphCatalog(config));
 let client: ClientState;
 beforeEach(() => {
     client = emptyClient();
-    client.fs.roots = () => [{ key: 'hub', dir: '/hub', fixed: true }];
+    client.fs.roots = () => [{ key: 'hub', dir: '/hub', hub: true }];
+    client.fs.primary = () => 'hub';
 });
 
 /** Draw one view for a tab and answer the actions store the host provided. */

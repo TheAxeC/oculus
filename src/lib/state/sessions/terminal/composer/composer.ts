@@ -114,13 +114,18 @@ export function offeredPlaces(places: readonly string[], record: ComposerRecord)
     return split === '' || places.includes(split) ? [...places] : [split, ...places];
 }
 
-/** The folder the composer starts in: the tab's choice while it is offered, else the hub. */
+/**
+ * The folder the composer starts in: the tab's choice while it is offered, else the primary hub's
+ * folder. The empty text is the folder of a composer that has none picked, which the server starts
+ * in the home folder.
+ */
 export function composerWorkspace(
     record: ComposerRecord,
     offered: readonly string[],
-    hub: string
+    hub: string | null
 ): string {
-    return record.workspace !== '' && offered.includes(record.workspace) ? record.workspace : hub;
+    if (record.workspace !== '' && offered.includes(record.workspace)) return record.workspace;
+    return hub ?? '';
 }
 
 /** The tab's instance state with the composer record in place of the one it held. */
@@ -213,20 +218,20 @@ export function accountFor(
 }
 
 /**
- * Where a session may start: the hub, every root of every saved workspace (the configured roots
- * are in each of them), and every workspace a session sits in, once each, the hub first.
+ * Where a session may start: the primary hub's folder, every folder of the open workspace, and
+ * every workspace a session sits in, once each, the primary's folder first.
  */
 export function composerPlaces(
-    hub: string,
-    workspaces: { roots: { dir: string }[] }[],
+    hub: string | null,
+    folders: { dir: string }[],
     tree: Workspace[]
 ): string[] {
     const rest = new Set<string>();
-    for (const workspace of workspaces) for (const root of workspace.roots) rest.add(root.dir);
+    for (const folder of folders) rest.add(folder.dir);
     for (const one of tree) rest.add(one.key);
-    rest.delete(hub);
+    if (hub !== null) rest.delete(hub);
     rest.delete('');
-    return [...(hub === '' ? [] : [hub]), ...[...rest].sort()];
+    return [...(hub === null ? [] : [hub]), ...[...rest].sort()];
 }
 
 /** The extensions Codex takes as an image with `-i`. */

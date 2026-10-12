@@ -4,9 +4,9 @@
 // location so dev and the built server agree. Nothing here reads the environment: the built server
 // takes the engine directory as a command-line argument (`--engine`, beside `--default-port` and
 // `--handler`) and threads it down, which is how a test server is pointed at a hub in a temporary
-// directory without writing into the checkout. The machine-local file sits in the config directory
-// with the tracked YAML and is read by loadLocal alone: loadConfig leaves it out, so a machine's
-// own keys never join the merged map.
+// directory without writing into the checkout. The machine-local file of a hub sits in the hub's
+// `.oculus/` folder, outside the tracked YAML, and is read by readMachine alone: loadConfig never
+// merges it, so a machine's own keys never join the merged map.
 
 /**
  * Where the checkout is: `engineDir` lives in data/places/engine-dir.ts, which imports `node:`
@@ -24,13 +24,12 @@ export {
     DEFAULT_PORT,
     LOCAL_NAME,
     checkLocal,
-    loadLocal,
     localDefaults,
     localFile,
     localSentence,
-    readLocal,
     usageAccountLabel
 } from './config/local.ts';
+export { loadMachine, readMachine } from './config/machine.ts';
 export { configDir } from './config/folder.ts';
 export {
     CATALOGS_DIR,

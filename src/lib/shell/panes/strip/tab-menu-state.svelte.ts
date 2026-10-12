@@ -81,8 +81,8 @@ export function createTabMenu(deps: TabMenuDeps) {
         const at = instances.findIndex((one) => one.id === menuTab);
         if (at < 0) return deps.stripItems();
         const found = instances[at];
-        const engineAt = selectors.engineAtFor(found);
-        const file = fileOfTab(found, engineAt);
+        const place = selectors.docPlaceFor(found);
+        const file = fileOfTab(found, place);
         const held = explorer.compareFile();
         const other =
             held !== null && !(held.root === file?.root && held.path === file.path) ? held : null;
@@ -90,7 +90,7 @@ export function createTabMenu(deps: TabMenuDeps) {
         const facts = tabFileFacts(found, served, {
             bookmarks: fs.bookmarks().entries,
             programs: selectors.programApps(),
-            engineAt
+            place
         });
         const apps = deps.client.appShell.choices(
             'editor/title/context',
@@ -164,7 +164,7 @@ export function createTabMenu(deps: TabMenuDeps) {
             deps.stripPick(id);
             return;
         }
-        const file = fileOfTab(found, selectors.engineAtFor(found));
+        const file = fileOfTab(found, selectors.docPlaceFor(found));
         if (id.startsWith(`${APP_PICK}:`)) {
             const args = file === null ? [] : [{ root: file.root, path: file.path }];
             void deps.client.appShell.runEntry(appOffers, id, args, event?.altKey === true);

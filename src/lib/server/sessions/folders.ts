@@ -1,5 +1,5 @@
-// Layer 2, server. The folders the three session stores read, one per account `config/local.yml`
-// names.
+// Layer 2, server. The folders the three session stores read, one per account the
+// `.oculus/local.yml` files of the workspace's hubs name.
 //
 // Every `tool: claude` account keeps its registry in `<dir>/sessions` and its transcripts in
 // `<dir>/projects`, and every `tool: codex` account keeps its rollouts in `<dir>/sessions`. The

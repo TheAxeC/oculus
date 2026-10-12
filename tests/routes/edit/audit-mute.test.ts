@@ -64,6 +64,7 @@ function muteTarget(body = BEHAVIOR): WriteTarget {
     const merged = loadConfig(engineDir()).config;
     return {
         hub: dir,
+        primary: 'hub',
         config: portfolioConfigFrom(merged),
         engine: engineDir(),
         career: careerRules(merged),

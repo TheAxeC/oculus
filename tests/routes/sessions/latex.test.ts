@@ -40,12 +40,15 @@ function newBin(): string {
 }
 
 const TARGET: LatexTarget = {
-    hub: '',
+    primary: 'hub',
     project: (id) => {
         if (id === 'alpha') return { folder: FOLDER };
         return id === 'gamma' ? { folder: OUTLINED } : null;
     },
-    roots: () => [{ key: 'docs', dir: join(HUB, 'docs') }],
+    roots: () => [
+        { key: 'hub', dir: HUB, hub: true },
+        { key: 'docs', dir: join(HUB, 'docs') }
+    ],
     text: () => TEXT,
     formatting: formatting('tex-fmt'),
     building: () => latexBuild(loadConfig(engineDir()).config)
@@ -58,7 +61,6 @@ function withTools(bin: string, timeoutMs = 20000): LatexTarget {
 
 test.beforeAll(() => {
     HUB = realpathSync(scratchDir('oculus-latex-route-'));
-    TARGET.hub = HUB;
 });
 
 async function answer(response: Response): Promise<Record<string, unknown>> {

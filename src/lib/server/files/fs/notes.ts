@@ -28,7 +28,6 @@
 import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { z } from 'zod';
-import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { readJsonChecked, writeJsonAtomic, writeTextAtomic } from '../../core/json.ts';
 import { below, realPath } from '../../core/paths.ts';
 
@@ -40,11 +39,6 @@ export type NoteRow = { id: string; title: string; modified: number };
 
 /** One note as its own view reads it: the row, and the text under the title. */
 export type NoteText = NoteRow & { body: string };
-
-/** The hub's own notes folder, `<hub>/.oculus/notes`, resolved at the call. */
-export function defaultNotesDir(hub: string): string {
-    return join(hub, ROOT_FOLDER, 'notes');
-}
 
 /**
  * The file one id names inside the folder, or null when the id is not one this folder holds. An id

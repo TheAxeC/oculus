@@ -21,6 +21,7 @@
 // is data/prose/latex.ts's, exported from here so the views read it by the same rule, and so is the
 // path below a folder (`pathUnder`, data/helpers/files/paths.ts).
 
+export { OCULUS_CONFIG_ROOT } from '../../data/helpers/files/address.ts';
 export { opensInProgram } from '../../data/helpers/files/opens-in-program.ts';
 export { pathUnder } from '../../data/helpers/files/paths.ts';
 export { isLatexLanguage } from '../../data/prose/latex.ts';
@@ -54,11 +55,3 @@ import { TEXT_LIMIT } from '../../data/file-ops.ts';
  * the view says so.
  */
 export { TEXT_LIMIT };
-
-/**
- * The workspaces a reader picks among, in their order: the configured roots first, which have no
- * name, then every saved workspace by its name.
- */
-export function workspaceChoices(names: string[]): string[] {
-    return ['', ...names.filter((name) => name !== '')];
-}

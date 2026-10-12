@@ -114,7 +114,7 @@ export function watcherOver(
     return watchSchedules(hub, {
         files: w.files,
         rootsFor,
-        local: () => ({ hub: w.hub }),
+        hub: () => w.hub,
         run: (entry, size) =>
             runEntry(entry, size, {
                 run: driver.run,

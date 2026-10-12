@@ -6,7 +6,8 @@
 // one of its tracked files, the key one of its entries, and the entry a list-valued control
 // (`list`, `multi`, `parked`) or a family (`fields`). A single value goes through config-key.ts,
 // the rail and the arrangements keep their own write (rail.ts), the workbench layout is edited in
-// the file, and the machine's own file, local.yml, is refused before anything is read.
+// the file, and the machine's own file, a local.yml or a link to a hub's `.oculus/local.yml`, is
+// refused before the file is read.
 //
 // The write is refused, with nothing written, unless the file still holds `base` at the key (the
 // value the editor read), the value fits the entry (config-fit.ts: its shape, and every field
@@ -34,7 +35,7 @@ import { isAlias, isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yam
 import type { Document, Pair } from 'yaml';
 import { z } from 'zod';
 import { isMap, sameInOrder } from '../../../../data/helpers/guards.ts';
-import { LOCAL_NAME, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
+import { LOCAL_NAME, loadConfig } from '../../../../data/sources/config.ts';
 import { catalogOf } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
 import { setBlock } from '../../block-edit.ts';
@@ -43,6 +44,9 @@ import { sourcesFor, type SourceInputs } from './config-sources.ts';
 import {
     absentIn,
     insertKey,
+    isMachinePlace,
+    lacksPrimary,
+    opening,
     kept,
     mergedAt,
     optionNow,
@@ -50,7 +54,6 @@ import {
     placeOf,
     placeText,
     refusedBy,
-    refusing,
     type ConfigKeyOutcome,
     type OptionNow,
     written
@@ -147,12 +150,12 @@ export function writeConfigValue(
     value: unknown,
     base: unknown,
     inputs?: SourceInputs,
-    hub?: string
+    hub?: string,
+    hubs: readonly string[] = []
 ): ConfigKeyOutcome {
-    const before = loadConfig(engine, { hub });
-    const text = textCatalog(before.config);
-    const refuse = refusing(file, key);
+    const { before, text, refuse } = opening(engine, file, key, hub);
     if (file === LOCAL_NAME) return refuse(words(text, 'server.config_value.local'));
+    if (lacksPrimary(file, key, hub)) return refuse(words(text, 'server.workspace.no_primary'));
     const entry = optionOf(catalogOf(before.config), file, key);
     if (entry === null) return refuse(words(text, 'server.config_value.no_entry'));
     if (OWN_WRITE.includes(key) && file === 'layout.yml')
@@ -160,6 +163,8 @@ export function writeConfigValue(
     if (!isCollection(entry)) return refuse(words(text, 'server.config_value.single'));
 
     const place = placeOf(engine, hub, file, key);
+    if (isMachinePlace(place, hubs, engine))
+        return refuse(words(text, 'server.config_value.local'));
     const onDisk = placeText(place);
     const source = onDisk ?? '';
     const found = locate(source, key);
@@ -211,7 +216,8 @@ export function putBackConfigValue(
     file: string,
     key: string,
     values: { replaced?: unknown; before: unknown; after: unknown },
-    hub?: string
+    hub?: string,
+    hubs: readonly string[] = []
 ): ConfigKeyOutcome | null {
     const text = replacedShape.safeParse(values.replaced);
     if (!text.success) return null;
@@ -219,6 +225,7 @@ export function putBackConfigValue(
     const loaded = loadConfig(engine, { hub });
     if (optionOf(catalogOf(loaded.config), file, key) === null) return null;
     const place = placeOf(engine, hub, file, key);
+    if (isMachinePlace(place, hubs, engine)) return null;
     const source = placeText(place);
     if (source === null) return null;
     if (offset > source.length || !source.startsWith(later, offset)) return null;

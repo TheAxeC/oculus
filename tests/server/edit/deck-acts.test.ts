@@ -11,7 +11,7 @@
 import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, relative } from 'node:path';
 import { describe, expect } from 'vitest';
-import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import { handleWrite, type PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import {
     TOKEN,
@@ -31,7 +31,7 @@ const ENGINE = '# Engine\n\nOne slide.\n';
 const CLOSING = '---\nkind: closing\n---\n# Thanks\n';
 
 /** A deck target that holds the deck `talk` and a Trash folder the writer moves files to. */
-function made(): { into: WriteTarget; trash: (path: string) => Promise<void> } {
+function made(): { into: PrimaryTarget; trash: (path: string) => Promise<void> } {
     const into = deckTarget();
     mkdirSync(join(into.hub, DECK), { recursive: true });
     writeFileSync(join(into.hub, ORDER_FILE), PRESENT);

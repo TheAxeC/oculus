@@ -23,17 +23,24 @@ import { cell, rooted } from '../../ui/frame/rooted.svelte.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 
-const A: FsRoot = { key: 'a', dir: '/w/a', fixed: false, real: '/w/a' };
-const B: FsRoot = { key: 'b', dir: '/w/b', fixed: false, real: '/w/b' };
-const LINKED: FsRoot = { key: 'link', dir: '/home/u/link', fixed: false, real: '/data/real' };
+const A: FsRoot = { key: 'a', dir: '/w/a', real: '/w/a' };
+const B: FsRoot = { key: 'b', dir: '/w/b', real: '/w/b' };
+const LINKED: FsRoot = { key: 'link', dir: '/home/u/link', real: '/data/real' };
 
-/** The workspaces as the fs store reads them once they are read: one workspace of `roots`. */
+/**
+ * The workspaces as the fs store reads them once they are read: the open workspace with `roots` as
+ * its folders.
+ */
 function read(roots: FsRoot[]): WorkspacesState {
     return {
         home: '/home/u',
-        current: 'main',
-        workspaces: [{ name: 'main', roots }],
-        dropped: [],
+        open: null,
+        folders: roots,
+        primary: null,
+        engine: null,
+        recent: [],
+        available: [],
+        machine: { set: [], defaults: {} },
         error: '',
         loading: false
     };
@@ -204,9 +211,9 @@ describe('a root that leaves the served roots', () => {
     });
 
     it('reads a root with no real folder as the folder it is written as', () => {
-        const env = make(read([{ key: 'a', dir: '/w/a', fixed: false }, B]));
+        const env = make(read([{ key: 'a', dir: '/w/a' }, B]));
         env.printed('kept', '/w/a/sub', 'src/x.ts');
-        env.workspaces.set(read([{ key: 'a', dir: '/w/a', fixed: false }]));
+        env.workspaces.set(read([{ key: 'a', dir: '/w/a' }]));
         flushSync();
         expect(rows(env)).toEqual(['command /w/a/sub src/x.ts']);
         env.stop();

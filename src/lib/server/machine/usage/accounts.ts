@@ -21,6 +21,7 @@ import type {
     UsageRefresher,
     UsageWindow
 } from '../../../data/model/index.ts';
+import { hubMark } from '../../../data/accounts/connect.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { mapShape } from '../../../data/shapes/shapes.ts';
 import { codexRollouts } from '../../transcripts/stores.ts';
@@ -363,6 +364,7 @@ function claudeUsage(
     return {
         tool: account.tool,
         label: account.label,
+        ...hubMark(account),
         dir: account.dir,
         email: identity.email,
         organisation: identity.organisation,
@@ -523,6 +525,7 @@ function codexUsage(account: UsageAccountConfig, tiers: UsageTiers): UsageAccoun
     return {
         tool: account.tool,
         label: account.label,
+        ...hubMark(account),
         dir: account.dir,
         email: '',
         organisation: '',

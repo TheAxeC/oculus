@@ -17,7 +17,7 @@
 // those keys from the program.
 
 import { z } from 'zod';
-import { HUB_ROOT, bareId, rootOf } from '../../data/helpers/hub-names.ts';
+import { bareId, rootOf } from '../../data/helpers/hub-names.ts';
 import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
 import {
     LSP_CHOICES,
@@ -77,7 +77,8 @@ export type PaletteItem = {
     state?: Record<string, unknown>;
     /**
      * What is drawn beside a result: an editor action's keys or old chord, or the key of the hub a
-     * record of a hub other than the first is of, so two hubs' records of one title are told apart.
+     * record of a hub other than the primary is of, so two hubs' records of one title are told
+     * apart.
      */
     hint?: string;
     /** A word drawn muted after the hint: the key bound to an app's command. */
@@ -86,9 +87,9 @@ export type PaletteItem = {
     disabled?: boolean;
 };
 
-/** The hint of a record: the key of its hub when that is not the first, else none. */
+/** The hint of a record: the name of its hub when that is not the primary, else none. */
 function hubHint(root: string): { hint?: string } {
-    return root === HUB_ROOT ? {} : { hint: root };
+    return root === '' ? {} : { hint: root };
 }
 
 export type PaletteCommand = {
@@ -165,7 +166,7 @@ export function buildIndex(
                 text: nestedStrings(fields).join(' '),
                 view: 'project',
                 state: { id: project.id, label: project.short ?? project.title },
-                ...hubHint(rootOf(project))
+                ...hubHint(rootOf(project, null))
             });
         }
         for (const collection of Object.values(snapshot.entities.collections)) {
@@ -178,7 +179,7 @@ export function buildIndex(
                     text: nestedStrings(entry.fields).join(' '),
                     view: bareId(collection),
                     state: { reveal: entry.id },
-                    ...hubHint(rootOf(collection))
+                    ...hubHint(rootOf(collection, null))
                 });
             }
         }
@@ -482,31 +483,29 @@ export function commands(
 }
 
 /**
- * The workspaces `:workspace` lists for the words after it: the default workspace, which has no
- * name of its own, under the catalog's words for it, and every saved one, the one in force marked.
+ * The workspace files `:workspace` lists for the words after it: the recent ones, then the ones the
+ * open workspace's hubs hold, the one open marked.
  */
 export function workspaceChoicesOf(argument: string, saved: WorkspacesState): WorkspaceChoice[] {
-    return workspaceMatches(
-        argument,
-        saved.workspaces.map((one) => one.name),
-        saved.current,
-        t('files.workspace_default')
-    );
+    return workspaceMatches(argument, saved);
 }
 
 /** What a workspace or folder command came to: the palette closes, or stays open and says why. */
 export type CommandOutcome = { closed: true } | { closed: false; said: string };
 
 /**
- * `:workspace` and `:workspace-save`: send the name through the file store's write. A write the
- * server refused leaves the palette open, saying the refusal in the words of the workspace form.
+ * `:workspace` and `:workspace-save`: send the file's path or the name through the file store's
+ * write. A write the server refused leaves the palette open, saying the refusal in the words of the
+ * workspace form.
  */
 export async function workspaceCommand(
-    write: (name: string) => Promise<{ ok: boolean; error?: string }>,
+    write: (name: string) => Promise<{ ok: boolean; error?: string; reason?: string }>,
     name: string
 ): Promise<CommandOutcome> {
     const answer = await write(name);
-    return answer.ok ? { closed: true } : { closed: false, said: refusal(answer.error ?? '') };
+    return answer.ok
+        ? { closed: true }
+        : { closed: false, said: refusal(answer.error ?? '', answer.reason) };
 }
 
 /** `:folder`: a folder panel that did not open leaves the palette open, saying why. */

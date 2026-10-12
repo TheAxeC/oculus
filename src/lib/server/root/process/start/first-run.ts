@@ -11,18 +11,17 @@
 // file imports `node:` modules, server/core/program.ts and data/places/engine-dir.ts only (and the
 // type of the catalog's reader, which is erased); the config reader is loaded with `import()` after
 // the first part passes. The second part (`machineLacks`) is asked after the packages load, with
-// the catalog's sentences: the hub folder and the programs oculus runs by name.
+// the catalog's sentences: the programs oculus runs by name.
 //
-// A lack is required (the Node version, the packages, the hub folder: oculus cannot run without it)
-// or optional (git, tmux, perl and the Claude CLI: oculus runs and the parts that need the program
-// do not work). The packages are compared with `package-lock.json` through the hidden lockfile npm
-// writes at `npm ci` and `npm install` (`node_modules/.package-lock.json`): every entry of the
-// lockfile other than the root and those marked optional must be there at the same version. Another
-// package manager writes no hidden lockfile and so reads as not installed, with `npm ci` as the
-// fix.
+// A lack is required (the Node version, the packages: oculus cannot run without it) or optional
+// (git, tmux, perl and the Claude CLI: oculus runs and the parts that need the program do not
+// work). The packages are compared with `package-lock.json` through the hidden lockfile npm writes
+// at `npm ci` and `npm install` (`node_modules/.package-lock.json`): every entry of the lockfile
+// other than the root and those marked optional must be there at the same version. Another package
+// manager writes no hidden lockfile and so reads as not installed, with `npm ci` as the fix.
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { programPath } from '../../../core/program.ts';
@@ -43,8 +42,8 @@ const NODE_NEXT_MAJOR = 26;
 const GIT_STUB = '/usr/bin/git';
 
 export type Lack = {
-    /** What is missing: `node`, `packages`, `hub`, or the program's name for the four programs. */
-    kind: 'node' | 'packages' | 'hub' | 'git' | 'tmux' | 'perl' | 'claude';
+    /** What is missing: `node`, `packages`, or the program's name for the four programs. */
+    kind: 'node' | 'packages' | 'git' | 'tmux' | 'perl' | 'claude';
     /** Whether oculus cannot run without it. */
     required: boolean;
     /** What is missing, what of oculus needs it and its fix, in one text. */
@@ -56,12 +55,8 @@ type Run = (command: string, args: string[]) => number;
 
 /** What the second part is asked about. */
 type MachineFacts = {
-    /** The `hub` of the engine's local values, resolved. */
-    hub: string;
-    /** The `claude_bin` of the engine's local values. */
+    /** The `claude_bin` of the machine's values. */
     claudeBin: string;
-    /** The engine's local.yml, named as the place to set `hub` and `claude_bin`. */
-    localFile: string;
     /** The operating system, as `process.platform` names it. */
     platform: NodeJS.Platform;
     /** The environment the programs are looked up in, which is the one the server runs with. */
@@ -132,43 +127,21 @@ export function installLacks(checkout: string, nodeVersion: string): Lack[] {
     return [...nodeLacks(nodeVersion), ...packageLacks(checkout)];
 }
 
-/**
- * Why `path` is no folder: null when it is one, the empty text when it is missing or is another
- * kind of entry, and otherwise the error code of the stat that failed (EACCES, EPERM). It never
- * throws, so a hub the process may not look at is a lack and not a stack.
- */
-function folderProblem(path: string): string | null {
-    try {
-        return statSync(path, { throwIfNoEntry: false })?.isDirectory() === true ? null : '';
-    } catch (error) {
-        const code = error instanceof Error && 'code' in error ? String(error.code) : 'unknown';
-        return code === 'ENOENT' || code === 'ENOTDIR' ? '' : code;
-    }
-}
-
 const runProgram: Run = (command, args) =>
     spawnSync(command, args, { stdio: 'ignore' }).status ?? 1;
 
 /**
- * The second part: the hub folder and the four programs. The hub is a lack when its path is no
- * folder or cannot be read. A program is looked up with `programPath` in the environment given,
- * which is the one the server runs with, so a packaged app is asked in its login shell's
- * environment. On macOS a git found at the stub's path counts only when `xcode-select -p` succeeds.
+ * The second part: the four programs. A workspace with no folder, or with no hub among them, is no
+ * lack. A program is looked up with `programPath` in the environment given, which is the one the
+ * server runs with, so a packaged app is asked in its login shell's environment. On macOS a git
+ * found at the stub's path counts only when `xcode-select -p` succeeds.
  */
 export function machineLacks(facts: MachineFacts, t: Words): Lack[] {
-    const { hub, claudeBin, localFile, platform, env } = facts;
+    const { claudeBin, platform, env } = facts;
     const mac = platform === 'darwin';
     const lacks: Lack[] = [];
     const missing = (name: string, needs: string, fix: string): string =>
         t('server.start.lack_program', name, needs, fix);
-    const unreadable = folderProblem(hub);
-    if (unreadable !== null) {
-        const sentence =
-            unreadable === ''
-                ? t('server.start.lack_hub', hub, localFile)
-                : t('server.start.lack_hub_unreadable', hub, unreadable, localFile);
-        lacks.push({ kind: 'hub', required: true, sentence });
-    }
     const git = programPath('git', env);
     if (git === null) {
         const fix = mac ? t('server.start.fix_xcode') : t('server.start.fix_install', 'git');
@@ -198,7 +171,7 @@ export function machineLacks(facts: MachineFacts, t: Words): Lack[] {
         const sentence = missing(
             claudeBin,
             t('server.start.needs_claude'),
-            t('server.start.fix_claude', localFile)
+            t('server.start.fix_claude')
         );
         lacks.push({ kind: 'claude', required: false, sentence });
     }
@@ -206,19 +179,21 @@ export function machineLacks(facts: MachineFacts, t: Words): Lack[] {
 }
 
 /**
- * What the second part is asked about, read from an engine's local values as the server reads them
- * (the default port in place of the built-in one while local.yml is missing). The config reader is
- * loaded here, after the first part has passed.
+ * What the second part is asked about, read from the machine's values of the workspace the state
+ * folder names, as the server reads them. The config reader is loaded here, after the first part
+ * has passed.
  */
 export async function machineFacts(
-    engine: string,
     defaultPort: number | undefined,
-    env: NodeJS.ProcessEnv
+    env: NodeJS.ProcessEnv,
+    stateFolder?: string
 ): Promise<MachineFacts> {
-    const { readLocalWithDefault } = await import('./port.ts');
-    const { localFile } = await import('../../../../data/sources/config.ts');
-    const { hub, claudeBin } = readLocalWithDefault(defaultPort)(engine).config;
-    return { hub, claudeBin, localFile: localFile(engine), platform: process.platform, env };
+    const { readMachineWithDefault } = await import('./port.ts');
+    const { openWorkspace } = await import('../../../files/workspace/open.ts');
+    const { defaultStateFolder } = await import('../../../files/workspace/state.ts');
+    const open = openWorkspace(stateFolder ?? defaultStateFolder());
+    const { claudeBin } = readMachineWithDefault(defaultPort)(open.hubs, open.primary).config;
+    return { claudeBin, platform: process.platform, env };
 }
 
 /** Hand every lack to `write` as a line, and answer whether one of them is required. */
@@ -232,8 +207,8 @@ export function reportLacks(lacks: Lack[], write: (line: string) => void): boole
  * ends it before anything is loaded; the second part is asked after the config reader loads. With
  * `--install` only the first part is asked, which never depends on the engine: it is what the
  * `preapp` hook runs, since npm hands a script's arguments (`--engine`) to the script and not to
- * its hook, and the app checks the hub and the programs itself over its own engine. It prints each
- * lack to standard error and answers the exit status: 1 when a lack is required.
+ * its hook, and the app checks the programs itself. It prints each lack to standard error and
+ * answers the exit status: 1 when a lack is required.
  */
 async function main(args: string[]): Promise<number> {
     const checkout = engineDir();
@@ -243,7 +218,7 @@ async function main(args: string[]): Promise<number> {
     if (reportLacks(installLacks(checkout, process.versions.node), write)) return 1;
     if (args.includes('--install')) return 0;
     const { wordsOf } = await import('../words.ts');
-    const facts = await machineFacts(checkout, undefined, process.env);
+    const facts = await machineFacts(undefined, process.env);
     return reportLacks(machineLacks(facts, wordsOf(checkout)), write) ? 1 : 0;
 }
 

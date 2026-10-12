@@ -49,7 +49,6 @@ import { joinPath } from '../../../data/helpers/files/paths.ts';
 import { isLatexFile } from '../../../data/prose/latex.ts';
 import type { LatexApproval } from '../../../data/model/index.ts';
 import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
-import { HUB_ROOT } from '../../sources/fs.ts';
 import { t } from '../../shared/words/text.ts';
 import { emptyTarget, type LatexTarget } from '../terminal/latex-target.ts';
 import { readListed } from '../terminal/pty/pty-io.ts';
@@ -269,7 +268,7 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
     function folderOf(target: LatexTarget): { root: string; path: string } {
         if ('root' in target) return target;
         const held = deps.held(target);
-        return { root: held?.root ?? HUB_ROOT, path: held?.dir ?? '' };
+        return { root: held?.root ?? '', path: held?.dir ?? '' };
     }
 
     /** The place of a main file as the target names it. */

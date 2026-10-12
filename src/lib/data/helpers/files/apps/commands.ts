@@ -1,7 +1,7 @@
 // Layer 1, data. The commands of oculus's own that an app may run, by their ids. They are the
 // palette's colon commands (`:theme` and the others), named `oculus.<name>`. The ones that change
 // only what a page shows run on a page; the ones that write configuration (`file-icons` writes
-// `file_icons`), start agents, write the workspaces file or open a system panel are closed to every
+// `file_icons`), start agents, write the workspace file or open a system panel are closed to every
 // app, since no approval names what they do. The server decides a host's `executeCommand` by this
 // list and a frame's `commands.execute` by the same one.
 

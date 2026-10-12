@@ -309,16 +309,12 @@ export function createTerminals(
     /** What a tab's last refused action said, by tab id. */
     const refused: { words: Record<string, string> } = $state({ words: {} });
 
-    /** The starts waiting for the hub root to be known. */
-    const hubWaiters: ((root: string) => void)[] = [];
-
     /** The Terminal tabs of every page. */
     function terminalTabs(): TerminalTab[] {
         return workbench?.tabs().filter((tab) => tab.view === TERMINAL_VIEW) ?? [];
     }
 
     entities.afterReceive((message) => {
-        if (message.channel === 'portfolio') releaseHubWaiters();
         if (message.channel !== 'sessions') return;
         const list = readTerminals(entities.payloadOf(message, 'sessions')?.terminals);
         // A message with no list says nothing about any terminal, so it is not the first one.
@@ -340,22 +336,14 @@ export function createTerminals(
         }
     });
 
-    /** Let the starts waiting for the hub root go, once the portfolio says where it is. */
-    function releaseHubWaiters(): void {
-        if (hubWaiters.length === 0) return;
-        const root = workbench?.hubRoot() ?? '';
-        if (root === '' && workbench?.portfolioHeard() !== true) return;
-        for (const resolve of hubWaiters.splice(0)) resolve(root);
-    }
-
     /**
-     * The hub root, waited for while the portfolio has not arrived; the empty string once it has
-     * arrived and names no folder.
+     * The folder a New Terminal starts in when its tab names none: the primary hub's folder, else
+     * the home folder, waited for while the workspace is being read.
      */
-    function hubReady(): Promise<string> {
-        const root = workbench?.hubRoot() ?? '';
-        if (root !== '' || workbench?.portfolioHeard() === true) return Promise.resolve(root);
-        return new Promise((resolve) => hubWaiters.push(resolve));
+    function defaultFolder(): Promise<string> {
+        const root = workbench?.hubRoot() ?? null;
+        if (root !== null) return Promise.resolve(root);
+        return workbench?.defaultFolder() ?? Promise.resolve('');
     }
 
     /**
@@ -706,7 +694,7 @@ export function createTerminals(
                 readTab(target.state),
                 (one) => terminalRecord(one)?.cwd ?? null
             );
-            const folder = known ?? (await hubReady());
+            const folder = known ?? (await defaultFolder());
             if (folder === '') {
                 say(tab, t('sessions.terminal_no_folder'));
                 return { ok: false, id: '', error: '' };

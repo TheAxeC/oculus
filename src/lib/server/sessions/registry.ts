@@ -1,10 +1,11 @@
 // Layer 2, server. Which sessions are actually running, from Claude Code's own registry.
 //
 // A transcript cannot answer that: it records what happened, not what is happening. Every Claude
-// account's registry, `<dir>/sessions` of each `tool: claude` account in config/local.yml's
-// `accounts` (sessions/folders.ts), holds one <pid>.json per session with the pid and a status of
-// `busy` or `idle`, so liveness is that file plus the kernel: the process must exist, and its start
-// time must match the one the registry wrote, because a pid is reused by unrelated processes.
+// account's registry, `<dir>/sessions` of each `tool: claude` account in the `accounts` of the
+// hubs' `.oculus/local.yml` files (sessions/folders.ts), holds one <pid>.json per session with the
+// pid and a status of `busy` or `idle`, so liveness is that file plus the kernel: the process must
+// exist, and its start time must match the one the registry wrote, because a pid is reused by
+// unrelated processes.
 //
 // The only thing sent to any pid here is signal 0, which asks the kernel whether the process
 // exists and delivers nothing. No pid found in the registry is ever signalled for real.

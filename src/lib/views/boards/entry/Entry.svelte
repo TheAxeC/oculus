@@ -57,7 +57,7 @@
         statusFacets
     } from '$lib/state/boards/collection';
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
-    import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+    import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
     import { instanceChoice, instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
@@ -69,7 +69,7 @@
     const {
         docs: { hubDocument },
         folders,
-        fs: { listing, roots },
+        fs: { listing, primary, roots },
         layout: { openView },
         selectors: { collectionsOfKey, configMap, projects, sessionsForProject },
         terminals: { composeAt },
@@ -90,20 +90,23 @@
     );
     const entry = $derived(key === '' ? null : entryById(collection, key));
     const schema = $derived(collection?.schema);
-    const hub = $derived(entry === null ? HUB_ROOT : rootOf(entry));
+    /** The hub the entry is of, null while no entry is shown. */
+    const hub = $derived(entry === null ? null : rootOf(entry, primary()));
     const source = $derived(
         collection === null
             ? null
-            : hub === HUB_ROOT
-              ? viewSourceFile('collection', configMap(), collectionKey)
-              : fileUnder(collection.file, roots())
+            : entry?.root === undefined
+              ? viewSourceFile('collection', configMap(), primary(), collectionKey)
+              : fileUnder(collection.file, roots(), primary())
     );
     const faults = $derived(identityFaults(collection?.entries ?? [], schema));
     const lifecycle = $derived(offeredStatuses(schema, statusFacets(collection?.entries ?? [])));
 
     /** The entries of one folder of the hub, from the file store's listing of it. */
+    const listingOf = (folder: string): ReturnType<typeof listing> =>
+        hub === null ? { entries: [], error: '', loading: false } : listing(hub, folder);
     const listed = (folder: string): ReturnType<typeof listing>['entries'] =>
-        listing(hub, folder).entries;
+        listingOf(folder).entries;
 
     /** The folder the entry's link names, undefined while the listing of its parent is read. */
     const folder = $derived(entry === null ? undefined : pageFolder(entry.fields, listed));
@@ -111,10 +114,10 @@
         entry === null ? undefined : hubPathsOf({ link: entry.fields.link }).at(0)
     );
     const reading = $derived(
-        folder === undefined && link !== undefined && listing(hub, dirOf(link)).loading
+        folder === undefined && link !== undefined && listingOf(dirOf(link)).loading
     );
 
-    const files = $derived(folder === undefined ? null : listing(hub, folder));
+    const files = $derived(folder === undefined ? null : listingOf(folder));
     const names = $derived(
         (files?.entries ?? [])
             .filter((one) => one.kind === 'file' && /\.md$/i.test(one.name))
@@ -122,7 +125,9 @@
     );
     const chosen = $derived(instanceChoice(instanceState(instance.id), 'doc', names));
     const shown = $derived(
-        folder === undefined || chosen === '' ? null : hubDocument(`${folder}/${chosen}`, hub)
+        folder === undefined || chosen === ''
+            ? null
+            : hubDocument(`${folder}/${chosen}`, entry?.root ?? '')
     );
     const documents: SegmentItem[] = $derived(names.map((name) => ({ id: name, label: name })));
 
@@ -154,7 +159,7 @@
 
     /** Open the workbench of the entry's folder, with this entry's page in its documents pane. */
     function openWorkbench(): void {
-        if (entry === null || folder === undefined) return;
+        if (entry === null || folder === undefined || hub === null) return;
         folders.open(
             { root: hub, path: folder },
             { label: title(), item: { view: 'entry', state: pageState(collectionKey, entry) } }
@@ -173,7 +178,7 @@
                 onclick={() => openView(collectionKey, { reveal: entry.id })}
             />
         {/if}
-        {#if folder !== undefined && folders.served(hub)}
+        {#if folder !== undefined && hub !== null && folders.served(hub)}
             <ToolButton
                 bare
                 label={t('entry.open_workbench')}
@@ -241,13 +246,15 @@
                     {/if}
                 </section>
 
-                <section class="block files">
-                    <FolderFiles {folder} root={hub}>
-                        {#snippet heading()}
-                            <h3 class="heading">{t('entry.files', folder)}</h3>
-                        {/snippet}
-                    </FolderFiles>
-                </section>
+                {#if hub !== null}
+                    <section class="block files">
+                        <FolderFiles {folder} root={hub}>
+                            {#snippet heading()}
+                                <h3 class="heading">{t('entry.files', folder)}</h3>
+                            {/snippet}
+                        </FolderFiles>
+                    </section>
+                {/if}
 
                 <section class="block">
                     <h3 class="heading">{t('entry.sessions')}</h3>

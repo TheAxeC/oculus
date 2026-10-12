@@ -16,14 +16,13 @@
 // server use it.
 //
 // `followRoots` is the other watch of this folder: it tells the relay that the roots the file
-// browser serves moved, from a config push and from the saved workspaces file, so the relay ends
-// the servers of a root that is not served any more and tells a page a root is served again.
+// browser serves moved, from a config push and from the open workspace, so the relay ends the
+// servers of a root that is not served any more and tells a page a root is served again.
 
 import { existsSync, lstatSync, statSync, watch, type FSWatcher } from 'node:fs';
 import { join, matchesGlob, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { Hub, Sink } from '../../../core/channels.ts';
-import { POLL, pollFile, systemClock, type Clock } from '../../../core/file-poll.ts';
 
 /** The kinds of change a `didChangeWatchedFiles` carries. */
 const CREATED = 1;
@@ -285,12 +284,14 @@ export function globsOf(options: unknown): string[] {
     return globs;
 }
 
-/** Follow the served roots for `relay`. The answer closes both the subscription and the poll. */
+/**
+ * Follow the served roots for `relay`: a config push and a move of the open workspace (`follow`
+ * calls its listener on one) each reconcile it. The answer closes both.
+ */
 export function followRoots(
     relay: { reconcile(): void },
     hub: Hub,
-    workspacesFile: string,
-    clock: Clock = systemClock
+    follow: (listener: () => void) => () => void
 ): { close(): void } {
     const sink: Sink = {
         send: () => {
@@ -299,16 +300,12 @@ export function followRoots(
         },
         close: () => undefined
     };
-    const poll = pollFile(workspacesFile, { clock, every: POLL }, () => {
-        poll.reading();
-        relay.reconcile();
-    });
-    poll.reading();
+    const unfollow = follow(() => relay.reconcile());
     hub.subscribe(sink, ['config']);
     return {
         close: () => {
             hub.remove(sink);
-            poll.close();
+            unfollow();
         }
     };
 }

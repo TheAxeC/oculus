@@ -120,10 +120,8 @@
         const answer = await openWorktree(path, newWindow, {
             addRoot,
             rootOf: async (dir: string) =>
-                (await workspacesNow()).workspaces
-                    .flatMap((one) => one.roots)
-                    .find((root) => root.dir === dir)?.key ?? null,
-            showInFiles: (path: string, key?: string) => showInFiles(path, key),
+                (await workspacesNow()).folders.find((folder) => folder.dir === dir)?.key ?? null,
+            showInFiles: (path: string, key: string) => showInFiles(path, key),
             openWindow: (address: string) => void window.open(address, '_blank'),
             address: () => window.location.href
         });

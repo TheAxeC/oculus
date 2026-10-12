@@ -14,11 +14,11 @@
 // what was wrong, rather than as a wall with fewer tiles or none.
 
 import { z } from 'zod';
-import { itemsShape, readAs, readJson } from '../../data/shapes/shapes.ts';
-import type { Picture } from '../../data/model/index.ts';
-import { failedAnswer } from '../shared/answers/answers.ts';
-import type { Queries } from '../shared/stores/shapes.ts';
-import { inBrowser } from '../shared/stores/in-browser.ts';
+import { itemsShape, readAs, readJson } from '../../../data/shapes/shapes.ts';
+import type { Picture } from '../../../data/model/index.ts';
+import { failedAnswer } from '../../shared/answers/answers.ts';
+import type { Queries } from '../../shared/stores/shapes.ts';
+import { inBrowser } from '../../shared/stores/in-browser.ts';
 
 /** What the wall reads: the pictures, what a failed read failed with, and whether one is out. */
 export type Wall = {
@@ -56,14 +56,15 @@ export function tileRatio(picture: Picture): string | undefined {
 const sideShape = z.number().refine(Number.isInteger).positive().nullable().catch(null);
 
 /**
- * One picture of the answer: its name, and its size when both sides read, else no size. An item
- * that is no map, or whose name is no text, fails.
+ * One picture of the answer: the name of the hub whose folder holds it, its name, and its size when
+ * both sides read, else no size. An item that is no map, or whose hub or name is no text, fails.
  */
 const pictureShape = z
-    .object({ name: z.string(), width: sideShape, height: sideShape })
+    .object({ hub: z.string(), name: z.string(), width: sideShape, height: sideShape })
     .transform((item): Picture => {
         const sized = item.width !== null && item.height !== null;
         return {
+            hub: item.hub,
             name: item.name,
             width: sized ? item.width : null,
             height: sized ? item.height : null
@@ -78,8 +79,8 @@ type Malformed = 'images_not_a_list' | 'image_without_name' | 'image_name_repeat
 
 /**
  * The pictures of an answer, or the word for what makes it not one: `images` that is not a list, an
- * item with no name, or a name already read, since a tile is keyed by its name. A size that is not
- * two whole positive numbers is read as none, which is a picture drawn in the default box.
+ * item with no name, or a hub and name already read, since a tile is keyed by both. A size that is
+ * not two whole positive numbers is read as none, which is a picture drawn in the default box.
  */
 function pictures(value: unknown): { images: Picture[] } | { malformed: Malformed } {
     const list = readAs(itemsShape, value);
@@ -89,8 +90,9 @@ function pictures(value: unknown): { images: Picture[] } | { malformed: Malforme
     for (const item of list) {
         const picture = readAs(pictureShape, item);
         if (picture === null) return { malformed: 'image_without_name' };
-        if (seen.has(picture.name)) return { malformed: 'image_name_repeated' };
-        seen.add(picture.name);
+        const key = `${picture.hub}/${picture.name}`;
+        if (seen.has(key)) return { malformed: 'image_name_repeated' };
+        seen.add(key);
         read.push(picture);
     }
     return { images: read };

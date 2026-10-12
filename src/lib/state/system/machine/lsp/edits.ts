@@ -23,6 +23,7 @@
 // The plan refuses the whole edit, with the notice that names the file, when
 // - a file is a library file, outside the served roots, under a `node_modules` or dot folder, or in
 //   the `secrets` folder of every hub or `~/.oculus`,
+// - the roots are not read yet and a source tab is open, so no tab can be told from a file,
 // - an entry creates, renames or deletes a file, or one file is named twice,
 // - a file it names is open in a tab of another page (asked of the relay), whether or not a tab of
 //   this page holds it too,
@@ -41,7 +42,7 @@
 // server checks again as it writes, so a file that moved since the plan is refused by the server.
 
 import { WRITE_MAX_MEGABYTES, type LspEditFile } from '../../../../data/file-ops.ts';
-import { sameDiskFile, type RootFolder } from '../../../../data/helpers/hub-names.ts';
+import { diskRelation, sameDiskFile, type RootFolder } from '../../../../data/helpers/hub-names.ts';
 import type { LspPlace } from '../../../../data/model/index.ts';
 import { libraryOf, placeOf } from '../../../../data/prose/lsp-addresses.ts';
 import {
@@ -279,6 +280,15 @@ export function createLspEdits(parts: LspEditsParts): LspEdits {
         const stop = (outcome: LspEditOutcome): Planned => ({ ok: false, outcome });
         const named = namedBy(edit, parts.withheld);
         if (!Array.isArray(named)) return stop(named);
+        // With the roots unread no tab can be told from the file: nothing is written until they
+        // are.
+        const roots = parts.roots();
+        const unknown = named.find((one) =>
+            sourceTabs().some(
+                (tab) => diskRelation(placeOfName(tab.file), one.place, roots) === 'unread'
+            )
+        );
+        if (unknown !== undefined) return stop(refuse('lsp_edit_loading', unknown.name));
         // The edits of every tab are computed first, so a text the edit no longer fits refuses all.
         const files: PlannedFile[] = named.map((one) => ({
             place: one.place,

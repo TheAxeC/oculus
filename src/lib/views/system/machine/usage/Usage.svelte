@@ -25,8 +25,9 @@
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
+    import RootChip from '../../../shared/card/RootChip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Meter from '$lib/ui/display/Meter.svelte';
+    import Meter from '$lib/ui/display/meters/Meter.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Table from '$lib/ui/display/table/Table.svelte';
     import type { Column } from '$lib/ui/display/table/table-rows';
@@ -171,6 +172,7 @@
                     >
                         {#snippet meta()}
                             <Tag label={account.tool} />
+                            <RootChip record={{ root: account.hub }} />
                             {#if account.email}
                                 <Tag label={account.email} />
                             {/if}

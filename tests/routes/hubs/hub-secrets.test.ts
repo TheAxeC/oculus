@@ -1,35 +1,38 @@
-// Layer 2, route tests. The `secrets` folder of a root marked `hub: true` is withheld through every
-// caller of `privateFolders` as the first hub's is (G3): the page's `isPrivateFile`, the language
-// server relay's, the library rules, the folder Fix All plan, the write of `lsp-edit` and
-// `writing-fix`, and the names search.
+// Layer 2, route tests. The `secrets` folder of every hub of the open workspace (a folder holding
+// `.oculus/config/`) is withheld through every caller of `privateFolders` (G3): the page's
+// `isPrivateFile`, the language server relay's, the library rules, the folder Fix All plan, the
+// write of `lsp-edit` and `writing-fix`, and the names search.
 //
-// The first hub and the hub `lab` are two scratch folders under the system temporary directory,
-// each holding a file inside `secrets/` and one outside it. The cases of another letter case
-// (`SECRETS`, `Secrets`) run only where the system temporary directory's file system folds letter
-// case, the macOS default, since on another file system `SECRETS` is a folder of its own name. The
-// roots are given to each caller as that caller takes them; the library rules are given what the
-// server's wiring gives them, the hubs among the roots the configuration names.
+// The hubs `hub` and `lab` are two scratch folders under the system temporary directory, each
+// holding a file inside `secrets/` and one outside it, and the roots are those the open workspace
+// of a scratch state folder lists. The cases of another letter case (`SECRETS`, `Secrets`) run only
+// where the system temporary directory's file system folds letter case, the macOS default, since on
+// another file system `SECRETS` is a folder of its own name. The roots are given to each caller as
+// that caller takes them; the library rules are given what the server's wiring gives them, the hubs
+// among the roots of the open workspace.
 
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, symlinkSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { hubDirs } from '../../../src/lib/data/helpers/files/private-folders.ts';
-import { configDir, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { configDir, engineDir } from '../../../src/lib/data/sources/config.ts';
 import { readAs } from '../../../src/lib/data/shapes/shapes.ts';
-import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { ignoredCache, workspacesAnswer } from '../../../src/lib/server/files/fs.ts';
+import { workspacesAnswer } from '../../../src/lib/server/files/fs.ts';
+import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import { workspacesShape } from '../../../src/lib/state/sources/fs-transport.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { foldsCase, under } from '../../../src/lib/server/core/paths.ts';
-import { browserRoots } from '../../../src/lib/server/files/roots.ts';
-import type { Root } from '../../../src/lib/server/files/files.ts';
+import type { Root } from '../../../src/lib/server/files/workspace/folders.ts';
 import { handleSearch } from '../../../src/lib/server/files/search/search-routes.ts';
 import { withheldFolders } from '../../../src/lib/server/machine/lsp/library/rules.ts';
-import { isPrivateFile as isPrivateForServer } from '../../../src/lib/server/machine/lsp/adapters/yaml/machine-file.ts';
+import {
+    isMachineFile as isMachineForServer,
+    isPrivateFile as isPrivateForServer
+} from '../../../src/lib/server/machine/lsp/adapters/yaml/machine-file.ts';
 import { isPrivateFile as isPrivateForPage } from '../../../src/lib/state/system/config/config-files.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
-import { nameRoots } from '../../data/hubs/hubs-fixture.ts';
+import { plantHub, plantState } from '../../fixtures/hubs/workspace.ts';
 import {
     replaceWorld,
     lspEdit,
@@ -40,6 +43,7 @@ import {
 import { plant, route, settingsOf } from '../../server/machine/runs/lint/lint-fixture.ts';
 
 const TOKEN = mintToken();
+const NO_MACHINE = { set: [], defaults: {} };
 const HOST = '127.0.0.1:8791';
 const TEXT = 'foo\n';
 
@@ -50,9 +54,10 @@ const ELLIPSIS = '\u2026';
 const FOLDS = foldsCase(tmpdir());
 
 /**
- * Two hubs, each with a file inside `secrets/` and one outside it, and the roots that serve them.
+ * Two hubs, each with a file inside `secrets/` and one outside it, the state folder of an unsaved
+ * workspace listing them, and the roots that workspace serves.
  */
-function hubs(): { base: string; hub: string; lab: string; roots: Root[] } {
+function hubs(): { base: string; hub: string; lab: string; roots: Root[]; state: string } {
     const base = realpathSync(
         plantScratch('oculus-hub-secrets-', {
             'hub/open.yml': TEXT,
@@ -62,20 +67,16 @@ function hubs(): { base: string; hub: string; lab: string; roots: Root[] } {
             'lab/secrets/deep/d.yml': TEXT
         })
     );
-    const hub = join(base, 'hub');
-    const lab = join(base, 'lab');
-    return {
-        base,
-        hub,
-        lab,
-        roots: [
-            { key: 'hub', dir: hub },
-            { key: 'lab', dir: lab, hub: true }
-        ]
-    };
+    const hub = plantHub(join(base, 'hub'));
+    const lab = plantHub(join(base, 'lab'));
+    const state = plantState([
+        { name: 'hub', dir: hub },
+        { name: 'lab', dir: lab }
+    ]);
+    return { base, hub, lab, roots: openWorkspace(state).roots, state };
 }
 
-describe('the secrets folder of a hub root', () => {
+describe('the secrets folder of a hub', () => {
     it('is private to the page for a file in it and for no other file of the hub', () => {
         const { roots } = hubs();
         const home = '/home/me';
@@ -87,23 +88,13 @@ describe('the secrets folder of a hub root', () => {
         expect(isPrivateForPage({ root: 'lab', path: 'open.yml' }, roots, home)).toBe(false);
     });
 
-    it('is learned by the page from the workspaces answer, which marks the hub roots', () => {
-        const { base, roots } = hubs();
-        const answer = workspacesAnswer(
-            {
-                file: join(base, 'workspaces.json'),
-                bookmarks: join(base, 'bookmarks.yml'),
-                notes: join(base, 'notes'),
-                fixed: roots,
-                writes: fsWrites(),
-                ignored: ignoredCache()
-            },
-            { current: '', workspaces: [], dropped: [] }
-        );
+    it('is learned by the page from the workspaces answer, which marks the hubs', () => {
+        const { state } = hubs();
+        const answer = workspacesAnswer(openWorkspace(state), engineDir(), NO_MACHINE);
         const read = readAs(workspacesShape, JSON.parse(JSON.stringify(answer)));
-        const held = read?.workspaces[0].roots ?? [];
+        const held = read?.folders ?? [];
         expect(held.map((one) => [one.key, one.hub])).toEqual([
-            ['hub', undefined],
+            ['hub', true],
             ['lab', true]
         ]);
         expect(isPrivateForPage({ root: 'lab', path: 'secrets/s.yml' }, held, '/home/me')).toBe(
@@ -131,18 +122,28 @@ describe('the secrets folder of a hub root', () => {
         }
     );
 
-    it('is withheld from the library rules the server builds from the roots the hub names', () => {
-        const { base, hub, lab } = hubs();
-        nameRoots(hub, [{ key: 'lab', dir: lab, hub: true }]);
-        const engine = engineDir();
-        const roots = browserRoots({
-            config: loadConfig(engine, { hub }).config,
-            engine,
-            local: { hub, workspaces: join(base, 'workspaces.json') }
-        });
-        const withheld = withheldFolders(configDir(engine), hubDirs(hub, roots));
+    it("keeps oculus's own config/local.yml from the language server relay, under any spelling", () => {
+        const { hub, roots } = hubs();
+        const config = join(hub, 'oculus', 'config');
+        plant(join(config, 'local.yml'), 'port: 1\n');
+        plant(join(config, 'other.yml'), 'k: 1\n');
+        symlinkSync(join('oculus', 'config'), join(hub, 'lnk'));
+        const served = roots.map((one) => ({ ...one, real: one.dir, hub: one.hub }));
+        const over = [...served, { key: 'oculus', dir: config, real: config }];
+        expect(isMachineForServer(join(config, 'local.yml'), over, config)).toBe(true);
+        expect(isMachineForServer(join(config, 'local.yml'), served, config)).toBe(true);
+        expect(isMachineForServer(join(hub, 'lnk', 'local.yml'), served, config)).toBe(true);
+        expect(isMachineForServer(join(config, 'other.yml'), over, config)).toBe(false);
+    });
+
+    it('is withheld from the library rules the server builds from the roots of the workspace', () => {
+        const { hub, lab, roots } = hubs();
+        const withheld = withheldFolders(configDir(engineDir()), hubDirs(roots));
         expect(withheld).toContain(`${hub}/secrets`);
         expect(withheld).toContain(`${lab}/secrets`);
+        expect(withheld).toContain(`${hub}/.oculus/local.yml`);
+        expect(withheld).toContain(`${lab}/.oculus/local.yml`);
+        expect(withheld).toContain(join(configDir(engineDir()), 'local.yml'));
         expect(under(join(lab, 'secrets', 'deep', 'd.yml'), withheld)).toBe(true);
         expect(under(join(lab, 'open.yml'), withheld)).toBe(false);
         expect(withheld).toContain(`${homedir()}/.oculus`);
@@ -171,7 +172,7 @@ describe('the secrets folder of a hub root', () => {
     it('is refused as outside by an lsp-edit and a writing-fix, which write nothing', async () => {
         const w = replaceWorld({ 'plain.yml': TEXT });
         const { lab, roots } = hubs();
-        const world = { ...w, ops: { ...w.ops, roots: [...w.ops.roots, roots[1]], hub: w.hub } };
+        const world = { ...w, ops: { ...w.ops, roots: [...w.ops.roots, roots[1]] } };
         const edits = [lspEdit([0, 0], [0, 3], 'bar')];
         const files = [
             lspFile('plain.yml', TEXT, edits),
@@ -200,13 +201,14 @@ describe('the secrets folder of a hub root', () => {
                     'lab/Secrets/deep/d.yml': TEXT
                 })
             );
-            const hub = join(base, 'hub');
-            const lab = join(base, 'lab');
+            const hub = plantHub(join(base, 'hub'));
+            const lab = plantHub(join(base, 'lab'));
             expect(existsSync(join(lab, 'secrets', 'x.yml'))).toBe(true);
-            const roots: Root[] = [
-                { key: 'hub', dir: hub },
-                { key: 'lab', dir: lab, hub: true }
-            ];
+            const state = plantState([
+                { name: 'hub', dir: hub },
+                { name: 'lab', dir: lab }
+            ]);
+            const roots = openWorkspace(state).roots;
             const listed = async (root: string): Promise<string[]> => {
                 const response = await handleSearch(
                     new Request(`http://${HOST}/api/search?list=names&root=${root}`, {
@@ -218,7 +220,7 @@ describe('the secrets folder of a hub root', () => {
                         }
                     }),
                     TOKEN,
-                    { roots, cap: 500, maxNames: 100, hub, timeout: 10000, now: () => 0 }
+                    { roots, cap: 500, maxNames: 100, timeout: 10000, now: () => 0 }
                 );
                 expect(response.status).toBe(200);
                 const answer = (await response.json()) as { roots: { paths: string[] }[] };
@@ -227,19 +229,8 @@ describe('the secrets folder of a hub root', () => {
             expect(await listed('lab')).toEqual(['open.yml']);
             expect(await listed('hub')).toEqual(['open.yml']);
 
-            const answer = workspacesAnswer(
-                {
-                    file: join(base, 'workspaces.json'),
-                    bookmarks: join(base, 'bookmarks.yml'),
-                    notes: join(base, 'notes'),
-                    fixed: roots,
-                    writes: fsWrites(),
-                    ignored: ignoredCache()
-                },
-                { current: '', workspaces: [], dropped: [] }
-            );
-            const held = readAs(workspacesShape, JSON.parse(JSON.stringify(answer)))?.workspaces[0]
-                .roots;
+            const answer = workspacesAnswer(openWorkspace(state), engineDir(), NO_MACHINE);
+            const held = readAs(workspacesShape, JSON.parse(JSON.stringify(answer)))?.folders;
             expect(held?.map((one) => one.folds)).toEqual([true, true]);
             expect(
                 isPrivateForPage({ root: 'lab', path: 'Secrets/x.yml' }, held ?? [], '/home/me')
@@ -261,7 +252,7 @@ describe('the secrets folder of a hub root', () => {
     );
 
     it('is left out of the names a search lists for the hub root', async () => {
-        const { hub, roots } = hubs();
+        const { roots } = hubs();
         const ran: string[][] = [];
         const response = await handleSearch(
             new Request(`http://${HOST}/api/search?list=names&root=lab`, {
@@ -277,7 +268,6 @@ describe('the secrets folder of a hub root', () => {
                 roots,
                 cap: 500,
                 maxNames: 100,
-                hub,
                 timeout: 10000,
                 now: () => 0,
                 run: (_dir, args) => {

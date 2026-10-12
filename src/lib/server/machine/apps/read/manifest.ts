@@ -33,7 +33,6 @@ import { findingText, type TextCatalog } from '../../../../data/helpers/finding-
 import type { AppRow, Finding } from '../../../../data/model/index.ts';
 import { parseYamlMap, errorLine } from '../../../../data/sources/yaml-file.ts';
 import { below, realPath } from '../../../core/paths.ts';
-import { ENGINE_ROOT } from '../../../files/files.ts';
 import { DEFAULT_ACTIVATION, parseEvent } from './activation.ts';
 import { declaredIds, readContributes } from './contributes/reader.ts';
 import { contributesShape } from './contributes/shape.ts';
@@ -314,8 +313,9 @@ function onceEach(
 }
 
 /**
- * The `files` entries of a machine app, each once and each checked: not the root `engine`, a path
- * of the segment rule that `closed_paths` does not close. An entry naming no shown root is kept.
+ * The `files` entries of a machine app, each once and each checked: a folder of the open workspace
+ * by its name, and a path of the segment rule that `closed_paths` does not close. An entry naming
+ * no folder of the workspace is a finding.
  */
 function foldersOf(
     value: unknown,
@@ -333,8 +333,8 @@ function foldersOf(
     const rootKeys = input.roots.map((root) => root.key);
     for (const entry of entries) {
         const place = filesPlace(entry, rootKeys);
-        if (place.root === ENGINE_ROOT) {
-            refuse(findingText(catalog, 'findings.apps.files_engine', entry));
+        if (place.root !== '' && !rootKeys.includes(place.root)) {
+            refuse(findingText(catalog, 'findings.apps.files_unknown', entry));
         } else if (place.root === '' || (place.path !== '' && !pathSegmentsOpen(place.path))) {
             refuse(findingText(catalog, 'findings.apps.files_shape', entry));
         } else if (input.closedPaths === null || inClosedPaths(place.path, input.closedPaths)) {

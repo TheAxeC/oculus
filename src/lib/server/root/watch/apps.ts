@@ -1,34 +1,40 @@
-// Layer 2, server. The watcher of the apps: it finds the apps of the machine's folder and of each
-// root the file browser shows while oculus runs, and publishes them on the `apps` channel.
+// Layer 2, server. The watcher of the apps: it finds the apps of the machine's folder (the primary
+// hub's `.oculus/apps`) and of each folder of the open workspace while oculus runs, and publishes
+// them on the `apps` channel.
 //
 // It owns the handles it needs and no more. A recursive `fs.watch` lies over the real path of the
-// machine's apps folder, of each shown root's `.oculus/apps` (the engine's config folder holds no
-// apps) and of each app folder that is itself a link, since a recursive watch does not follow a
-// link; a plain one lies over each folder that holds the store of a listed app; and the approvals
-// file is watched by its own path and opened again after every event, since a write by rename
-// replaces the file. It never watches `~/.oculus` as a whole, whose other files change on every
-// write. The record of the disabled apps, `~/.oculus/apps.json`, is polled by a stat as the saved
-// workspaces file is, and read again with every full read, together with the workspace that is
-// current. A burst of events is one read after a short quiet, lodash's `debounce` with a maximum
-// wait as every watcher here has; a read walks and hashes every app again. An event from a store
-// folder alone changes nothing but the stores' sizes and versions, which are read without a walk.
+// machine's apps folder, of each folder's `.oculus/apps` and of each app folder that is itself a
+// link, since a recursive watch does not follow a link; a plain one lies over each folder that
+// holds the store of a listed app; and the approvals file is watched by its own path and opened
+// again after every event, since a write by rename replaces the file. It never watches `~/.oculus`
+// as a whole, whose other files change on every write. The record of the disabled apps,
+// `~/.oculus/apps.json`, is polled by a stat, and read again with every full read, together with
+// the key of the open workspace. A burst of events is one read after a short quiet, lodash's
+// `debounce` with a maximum wait as every watcher here has; a read walks and hashes every app
+// again. An event from a store folder alone changes nothing but the stores' sizes and versions,
+// which are read without a walk.
 //
 // A folder that does not exist is no finding. One timer looks again at every folder it waits for
-// (the machine's, a root's `.oculus/apps`, a store folder, the approvals file) every two seconds
-// and starts watching each when it appears. The roots are read again on a `config` push and when
-// the saved workspaces file changes, which is polled as the git watcher polls it, so a root added
-// in the page is read at the next tick and a root that leaves the file browser loses its handles.
+// (the machine's, a folder's `.oculus/apps`, a store folder, the approvals file) every two seconds
+// and starts watching each when it appears. The folders are read again on a `config` push and when
+// the open workspace moves (the `follow` option), so a folder added in the page is read at the next
+// tick and a folder that leaves the workspace loses its handles and its apps.
 //
 // The keeping of an app (the app stays approved while its files change, until its manifest changes
 // or the process ends) is held here, in memory, as the hash of the manifest approved.
 
 import { existsSync, lstatSync, watch, type FSWatcher } from 'node:fs';
 import { homedir } from 'node:os';
-import { isAbsolute, join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
 import { ROOT_FOLDER, hubLayerPath } from '../../../data/helpers/hub-names.ts';
 import type { AppRow } from '../../../data/model/index.ts';
-import { appsSettings, localFile, type LocalConfig } from '../../../data/sources/config.ts';
+import {
+    appsSettings,
+    configDir,
+    localFile,
+    type LocalConfig
+} from '../../../data/sources/config.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
 import {
     POLL,
@@ -40,7 +46,8 @@ import {
 } from '../../core/file-poll.ts';
 import { fsWrites, type FsWrites } from '../../core/json.ts';
 import { expandHome, type Root } from '../../files/files.ts';
-import { defaultWorkspacesPath, readSaved } from '../../files/fs.ts';
+import { perOculus } from '../../files/workspace/paths.ts';
+import type { OpenWorkspace } from '../../files/workspace/open.ts';
 import { approvedApps, defaultApprovalsPath } from '../../machine/approvals/approvals.ts';
 import { noApps, payloadOf, type AppsHeld } from '../../machine/apps/read/held.ts';
 import { closedToApps } from '../../machine/apps/reach/private.ts';
@@ -68,8 +75,8 @@ export type AppsWatcher = Watcher & {
     /** Read the stores' sizes and versions now, which a store write moves and nothing else. */
     rereadStores(): void;
     /**
-     * Take the paths the machine's own values name again (the apps folder, the approvals file, the
-     * saved workspaces file) and the roots the file browser shows now, then read every app.
+     * Take the paths the machine's own values name again (the apps folder, the approvals file) and
+     * the folders of the open workspace now, then read every app.
      */
     follow(): void;
     /** Keep an app approved while its files change, as long as its manifest is this one. */
@@ -80,9 +87,11 @@ export type AppsWatcher = Watcher & {
     storeQueue(file: string): FsWrites;
     /** The record file of the disabled apps. */
     stateFile(): string;
-    /** The machine's apps folder, which may not exist yet. */
-    folder(): string;
-    /** The key the current workspace has in that file, `default` for the default workspace. */
+    /**
+     * The machine's apps folder, which may not exist yet; null when the workspace has no primary.
+     */
+    folder(): string | null;
+    /** The key the open workspace has in that file, `default` for an unsaved workspace. */
     workspace(): string;
     /** Call a function after every full read; the function that takes it off is returned. */
     onRead(listener: () => void): () => void;
@@ -102,8 +111,13 @@ export type AppsWatchOptions = {
     local: () => LocalConfig;
     /** The merged configuration as it is now. */
     config: () => Record<string, unknown>;
-    /** The roots the file browser shows as it is now. */
-    roots: () => Root[];
+    /** The open workspace as it is now. */
+    open: () => OpenWorkspace;
+    /**
+     * Call the listener when the open workspace moves; the answer takes it away. Without it the
+     * folders are read again only on a config push and by `follow()`.
+     */
+    follow?: (listener: () => void) => () => void;
     /** The folder the machine apps' stores live in; `~/.oculus/app-data` when absent. */
     appData?: string;
     /** The home folder; the machine's own when absent. */
@@ -117,12 +131,23 @@ export type AppsWatchOptions = {
     poll?: number;
 };
 
-/** The machine's apps folder: `apps_dir` resolved as the other folders of local.yml are. */
-function machineFolder(local: LocalConfig, engine: string): string {
-    const dir = local.appsDir;
-    if (dir === undefined) return join(local.hub, ROOT_FOLDER, 'apps');
-    const home = expandHome(dir);
-    return isAbsolute(home) ? home : resolve(engine, home);
+/**
+ * The machine's apps folder: `apps_dir` of the primary hub's `.oculus/local.yml`, else that hub's
+ * `.oculus/apps`; null when the workspace has no primary.
+ */
+function machineFolder(local: LocalConfig, open: OpenWorkspace): string | null {
+    const dir = perOculus(open.primaryDir, local).appsDir;
+    return dir === null ? null : expandHome(dir);
+}
+
+/** The machine's apps folder with the primary hub's `local.yml`, or null with no primary. */
+function machineIn(
+    local: LocalConfig,
+    open: OpenWorkspace
+): { dir: string; localFile: string } | null {
+    const dir = machineFolder(local, open);
+    if (dir === null || open.primaryDir === null) return null;
+    return { dir, localFile: localFile(open.primaryDir) };
 }
 
 function reason(error: unknown): string {
@@ -156,7 +181,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     let closed = false;
     let fullPending = false;
     let approvalsHandle: { path: string; handle: FSWatcher } | null = null;
-    let workspaces: { path: string; poll: FilePoll } | null = null;
+    let unfollow: (() => void) | null = null;
     let stateKey = workspaceKey('');
     const statePoll: FilePoll = pollFile(stateFile, { clock, every: options.poll ?? POLL }, () => {
         statePoll.reading();
@@ -167,10 +192,6 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     let missing: string[] = [];
 
     const approvalsPath = (): string => options.local().approvals ?? defaultApprovalsPath();
-    const workspacesPath = (): string => {
-        const local = options.local();
-        return local.workspaces ?? defaultWorkspacesPath(local.hub);
-    };
 
     /** Tell the store listeners which apps' stores differ between two states. */
     const tellStores = (before: AppsHeld, after: AppsHeld): void => {
@@ -257,8 +278,8 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     /** The folders waiting to appear: each path a read would start watching if it were there. */
     const waitingFor = (): string[] => {
         const waiting: string[] = [];
-        const machine = machineFolder(options.local(), options.engine);
-        waiting.push(machine);
+        const machine = machineFolder(options.local(), options.open());
+        if (machine !== null) waiting.push(machine);
         for (const root of roots) {
             waiting.push(join(expandHome(root.dir), ROOT_FOLDER, 'apps'));
         }
@@ -295,19 +316,25 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
         if (closed) return;
         fullPending = false;
         statePoll.reading();
-        stateKey = workspaceKey(readSaved(workspacesPath()).current);
+        const open = options.open();
+        stateKey = workspaceKey(open.file ?? '');
         const local = options.local();
         const config = options.config();
         const settings = appsSettings(config);
         const before = state;
+        const primary = open.primaryDir;
         state = scanApps({
-            machine: machineFolder(local, options.engine),
-            localFile: localFile(options.engine),
+            machine: machineIn(local, open),
+            appearanceFile: join(configDir(options.engine), 'appearance.yml'),
             roots: roots.map((root) => ({ ...root, dir: expandHome(root.dir) })),
-            settingsFile: join(local.hub, hubLayerPath('behavior.yml')),
+            primary: open.primary,
+            settingsFile:
+                primary === null
+                    ? join(configDir(options.engine), 'behavior.yml')
+                    : join(primary, hubLayerPath('behavior.yml')),
             privateFolders: closedToApps({
                 home: options.home ?? homedir(),
-                engine: options.engine,
+                config: configDir(options.engine),
                 local,
                 roots
             }),
@@ -370,25 +397,20 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     /** Read the roots the file browser shows now. */
     const readRoots = (): void => {
         try {
-            roots = options.roots();
+            roots = options.open().roots;
         } catch (error) {
             console.error(`apps watch: the roots could not be read: ${reason(error)}`);
         }
     };
 
-    /** Poll the saved workspaces file, taking the file the machine's values name now. */
-    const pollWorkspaces = (): void => {
-        const path = workspacesPath();
-        if (workspaces !== null && workspaces.path === path) return;
-        workspaces?.poll.close();
-        const poll = pollFile(path, { clock, every: options.poll ?? POLL }, () => {
-            poll.reading();
+    /** Listen for a move of the open workspace, once. */
+    const followWorkspace = (): void => {
+        if (unfollow !== null || options.follow === undefined) return;
+        unfollow = options.follow(() => {
             fullPending = true;
             readRoots();
             queued();
         });
-        poll.reading();
-        workspaces = { path, poll };
     };
 
     const sink: Sink = {
@@ -410,7 +432,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
     };
 
     readRoots();
-    pollWorkspaces();
+    followWorkspace();
     read();
     hub.subscribe(sink, ['config']);
 
@@ -427,7 +449,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
         },
         follow(): void {
             readRoots();
-            pollWorkspaces();
+            followWorkspace();
             queued.cancel();
             read();
         },
@@ -443,7 +465,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
             return held;
         },
         stateFile: () => stateFile,
-        folder: () => machineFolder(options.local(), options.engine),
+        folder: () => machineFolder(options.local(), options.open()),
         workspace: () => stateKey,
         onRead(listener: () => void): () => void {
             listeners.add(listener);
@@ -461,8 +483,8 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
             for (const path of [...handles.keys()]) close(path);
             approvalsHandle?.handle.close();
             approvalsHandle = null;
-            workspaces?.poll.close();
-            workspaces = null;
+            unfollow?.();
+            unfollow = null;
             if (looking !== null) clock.clearTimeout(looking);
             looking = null;
         }

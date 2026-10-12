@@ -3,27 +3,24 @@
 // same Hub, watchers, terminals, token and configuration as the socket serving that request.
 // It is the server's composition root: it imports every other server folder and none imports it,
 // which is why server/root is the top of the server's folder order.
+//
+// The open workspace (server/files/workspace) decides what the server serves: its folders are the
+// roots, its primary hub gives the one-per-oculus values, and the context follows a switch of
+// workspace and a hand edit of the open file through the workspace's one poll. The machine's values
+// are the `.oculus/local.yml` of each hub of the workspace, read again when a file changes or the
+// workspace moves.
 
 import type { IncomingMessage } from 'node:http';
-import { hostname } from 'node:os';
+import { homedir, hostname } from 'node:os';
 import { isDeepStrictEqual } from 'node:util';
 import {
-    behaviorFindings,
     calendarSettings,
     closedPaths,
     configDir,
-    iconFindings,
     iconSet,
     type IconMemory,
-    languageFindings,
-    latexEditingFindings,
-    latexUnimathFindings,
-    nestingFindings,
-    optionFindings,
-    schemaFindings,
     loadConfig,
     localFile,
-    localFindings,
     localSentence,
     mailSettings,
     openSettings,
@@ -31,18 +28,17 @@ import {
     latexBuild,
     latexFormatting,
     lintSettings,
-    readLocal,
+    readMachine,
     refreshSettings,
-    settingFindings,
     slurmSettings,
-    sourceFile,
     textCatalog,
-    themeFindings,
     usageTiers,
     type LocalConfig
 } from '../../data/sources/config.ts';
-import type { Finding, HostInfo, Snapshot } from '../../data/model/index.ts';
+import type { HostInfo, Snapshot } from '../../data/model/index.ts';
 import { mintToken } from '../core/auth.ts';
+import { words } from '../core/words.ts';
+import type { Finding, FilesPayload } from '../../data/model/index.ts';
 import { defaultConnectDir } from '../accounts/connect/store.ts';
 import { ConnectStates } from '../accounts/connect/oauth.ts';
 import {
@@ -52,24 +48,19 @@ import {
 } from '../accounts/calendar/poll.ts';
 import { watchMail, type MailOptions, type MailWatcher } from '../accounts/mail/poll.ts';
 import { addressOpener, macOpenAddress, macOpenPath, type Opener } from '../files/open.ts';
-import { docFindings } from '../content/docs.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { Hub } from '../core/channels.ts';
 import { target } from '../edit/writes.ts';
 import { hubDirs } from '../../data/helpers/files/private-folders.ts';
-import { expandHome, hubRoots } from '../files/files.ts';
-import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
-import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { defaultApprovalsPath } from '../machine/approvals/approvals.ts';
-import { defaultWorkspacesPath, ignoredCache } from '../files/fs.ts';
+import { ignoredCache } from '../files/fs.ts';
 import { closePicker, pickerState } from '../files/fs/picker.ts';
 import { submitState } from '../machine/hpc/submit.ts';
 import { fsWrites } from '../core/json.ts';
 import { createRunningGit } from '../core/git/running.ts';
-import { memoriesMemory } from '../content/memories.ts';
-import { browserRoots, repositoryRoots } from '../files/roots.ts';
+import { expandHome } from '../files/workspace/folders.ts';
 import { wallpaperMemory } from '../content/wallpaper.ts';
 import { hostWordsOf, hpcSettingsOf, latestResources } from '../machine/hpc/host.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from '../machine/hpc/poll.ts';
@@ -93,7 +84,6 @@ import {
     type ProcessesWatcher
 } from '../machine/processes/watch.ts';
 import { readTable } from '../machine/processes/ps.ts';
-import { defaultSchedulesPath } from '../machine/runs/schedules/file.ts';
 import { defaultRecordPath } from '../machine/runs/schedules/record.ts';
 import { HeldEslints, type HeldEslintsOptions } from '../machine/runs/lint/eslint.ts';
 import { HeldComments } from '../machine/runs/lint/writing/comments.ts';
@@ -108,26 +98,32 @@ import { projectFolders } from '../sessions/index.ts';
 import { HookStore, sessionRecord } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
-import { watchUsageRefresh, type UsageRefreshWatcher } from '../machine/usage/refresh.ts';
-import { watchUsage, type UsageWatcher } from '../machine/usage/watch.ts';
+import { watchUsageRefresh } from '../machine/usage/refresh.ts';
+import { watchUsage } from '../machine/usage/watch.ts';
+import { createWorkspace } from '../files/workspace/follow.ts';
+import type { OpenWorkspace } from '../files/workspace/open.ts';
+import { hubOption, perOculus } from '../files/workspace/paths.ts';
+import { defaultStateFolder, stateFileOf } from '../files/workspace/state.ts';
 import { liveSettings, type LiveSettings } from './live-settings.ts';
 import { createConfigCache } from './process/config-cache.ts';
+import { createMachine } from './process/context/machine.ts';
+import { newWorkspaceFindings, reportFindings, startFindings } from './process/context/findings.ts';
+import { createPortMover } from './process/context/port.ts';
+import { createRebuild, reasonOf, type Parts } from './process/context/rebuild.ts';
 import type { ServerContext } from './process/server-context.ts';
 import { LISTEN_HOST, type PortMove } from './mover.ts';
 import { startHosts } from './process/apps-hosts.ts';
-import { watchApps, type AppsWatcher, type AppsWatchOptions } from './watch/apps.ts';
+import { watchApps, type AppsWatchOptions, type AppsWatcher } from './watch/apps.ts';
 import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
 import { startAutofetch, startGit } from './watch/git-start.ts';
 import {
-    WATCHERS,
     changedKeys,
-    keysBuilding,
     rebuiltBy,
     watchLocal,
-    type LocalWatcher,
-    type WatcherName
+    type ChangedKey,
+    type LocalWatcher
 } from './watch/local.ts';
 import { startPollers, usageStarters } from './watch/pollers.ts';
 import { watchPortfolio, type Watcher } from './watch/portfolio.ts';
@@ -140,20 +136,19 @@ export function hostInfo(port: number): HostInfo {
 
 export type { ServerContext };
 
-/** One finding on stderr, in the one format every config finding is said in. */
-function reportFindings(findings: Finding[]): void {
-    for (const finding of findings) {
-        console.error(`config: ${finding.file} [${finding.key}] ${finding.message}`);
-    }
-}
-
 /** The Node request type used as the context carrier by both server entry points. */
 export type OculusRequest = IncomingMessage & { oculus?: ServerContext };
 
 export type ContextDependencies = {
-    readLocal: typeof readLocal;
+    readMachine: typeof readMachine;
     loadConfig: typeof loadConfig;
     mintToken: typeof mintToken;
+    /**
+     * The folder `workspace.json` lives in, which the open workspace and the recent list are read
+     * from.
+     */
+    stateFolder: () => string;
+    createWorkspace: typeof createWorkspace;
     createHub: () => Hub;
     createTerminals: (hub: Hub) => Terminals;
     createRelay: (options: RelayOptions) => Relay;
@@ -169,7 +164,7 @@ export type ContextDependencies = {
     watchProcesses: (hub: Hub, options: ProcessesOptions) => ProcessesWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
     watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
-    watchLocal: (engine: string, changed: () => void) => LocalWatcher;
+    watchLocal: (hubs: string[], changed: () => void) => LocalWatcher;
     watchApps: (hub: Hub, options: AppsWatchOptions) => AppsWatcher;
     startHosts: typeof startHosts;
     watchUsageRefresh: typeof watchUsageRefresh;
@@ -177,9 +172,11 @@ export type ContextDependencies = {
 };
 
 const dependencies: ContextDependencies = {
-    readLocal,
+    readMachine,
     loadConfig,
     mintToken,
+    stateFolder: defaultStateFolder,
+    createWorkspace,
     createHub: () => new Hub(),
     createTerminals: (hub) => new Terminals(hub),
     createRelay,
@@ -195,29 +192,11 @@ const dependencies: ContextDependencies = {
     watchProcesses,
     watchCalendar,
     watchMail,
-    watchLocal: (engine, changed) => watchLocal(engine, changed),
+    watchLocal: (hubs, changed) => watchLocal(hubs, changed),
     watchApps: (hub, options) => watchApps(hub, options),
     startHosts,
     watchUsageRefresh,
     watchUsage
-};
-
-/** The port the cockpit holds, which the server is never moved to. */
-const COCKPIT_PORT = 8787;
-
-/** The highest port number. */
-const LAST_PORT = 65535;
-
-/** What the context holds of the watchers that a changed key of local.yml builds again. */
-type Parts = {
-    portfolio: Watcher;
-    sessions: SessionsWatcher;
-    usageRefresh: UsageRefreshWatcher;
-    usage: UsageWatcher;
-    git: GitWatcher;
-    autofetch: AutofetchWatcher;
-    bookmarks: Watcher;
-    schedules: SchedulesWatcher;
 };
 
 /** How an `https` address reaches the operating system for these machine values. */
@@ -227,8 +206,9 @@ function openerOf(local: LocalConfig): Opener {
 
 /**
  * Build every process-owned server object once. `portMove` is how the process that owns the HTTP
- * server moves it when local.yml names another port (none keeps the port); no app host starts
- * before `ready` settles, the server listening. Tests may replace constructors with recorders.
+ * server moves it when the primary hub's local.yml names another port (none keeps the port); no app
+ * host starts before `ready` settles, the server listening. Tests may replace constructors with
+ * recorders.
  */
 export function createServerContext(
     engine: string,
@@ -237,19 +217,62 @@ export function createServerContext(
     ready?: Promise<void>
 ): ServerContext {
     const make = { ...dependencies, ...replacements };
-    const initial = make.readLocal(engine, true);
+    const workspace = make.createWorkspace(make.stateFolder());
+    const open = (): OpenWorkspace => workspace.open();
+    // The machine's values at start: the watchers and the pollers are built from them before any
+    // request arrives, every config push hands the pollers the settings read again through
+    // live-settings.ts, and every write of a local.yml is read again by `reloadLocal` below. A
+    // request parses the folder again through `locals.config` once a file of it was written, so a
+    // route never answers from this copy. A value the options catalog's rule refuses is the entry's
+    // default and a finding, so a typo costs one setting and the server starts; only a catalog with
+    // no rule for a key stops it here, naming the key. The settings are the engine's with the
+    // primary hub's own layer over them, taken at each call from the workspace the server holds, so
+    // a move of the primary hub moves the next read to the new hub's layer.
+    const first = open();
+    const initial = make.readMachine(first.hubs, first.primary, true);
     const local = initial.config;
-    // The read at start: the watchers and the pollers are built from it before any request arrives,
-    // every config push hands the pollers the settings read again through live-settings.ts, and
-    // every write of local.yml is read again by `reloadLocal` below. A request parses the folder
-    // again through `locals.config` once a file of it was written, so a route never answers from
-    // this copy. A value the options catalog's rule refuses is the entry's default and a finding,
-    // so a typo costs one setting and the server starts; only a catalog with no rule for a key
-    // stops it here, naming the key. The settings are the engine's with the hub's own layer over
-    // them, read at each call from the hub in force, so a change of `hub` in local.yml moves the
-    // next read to the new hub's layer.
-    const load = (): ReturnType<typeof loadConfig> => make.loadConfig(engine, { hub: local.hub });
-    const { config, from } = load();
+    const machine = createMachine({
+        read: (hubs, primary, warn) => make.readMachine(hubs, primary, warn),
+        open,
+        local,
+        initial
+    });
+    // The findings the keys held at their running value are said in: a restart takes the new value.
+    // Each is against the primary's `local.yml`, or with no primary against the open workspace file
+    // (the state file while the workspace is unsaved), and names the key, never a value of a file.
+    const heldFindings = (): Finding[] => {
+        const now = open();
+        const text = textCatalog(configCache.read().config);
+        const file =
+            now.primaryDir !== null
+                ? localFile(now.primaryDir)
+                : (now.file ?? stateFileOf(make.stateFolder()));
+        return machine.heldBack().map((one) => ({
+            file,
+            key: one.file,
+            message: words(text, 'server.workspace.restart_key', one.file)
+        }));
+    };
+    const heardHeld = new Set<() => void>();
+    const followWorkspace = (listener: () => void): (() => void) => {
+        const unsubscribe = workspace.subscribe(() => listener());
+        heardHeld.add(listener);
+        return () => {
+            unsubscribe();
+            heardHeld.delete(listener);
+        };
+    };
+    const load = (): ReturnType<typeof loadConfig> =>
+        make.loadConfig(engine, hubOption(open().primaryDir));
+    // The parse the start, a request, a finding or a move of the workspace takes while neither
+    // config folder changed, so the folders are parsed once for all of them until a file changes.
+    const configCache = createConfigCache({
+        engine,
+        hub: () => open().primaryDir,
+        load,
+        report: reportFindings
+    });
+    const { config, from } = configCache.read();
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
     const mailConfig = mailSettings(config);
@@ -263,23 +286,24 @@ export function createServerContext(
     registerFilesChannel(hub);
     const terminals = make.createTerminals(hub);
     const schemas = new SchemaFeed();
+    const held = (): { open: ReturnType<typeof open>; local: LocalConfig } => ({
+        open: open(),
+        local: machine.values()
+    });
     const relay = make.createRelay({
         schemas,
         oculus: ownFolder(),
         node: process.execPath,
-        roots: () => browserRoots({ config: load().config, engine, local }),
+        roots: () => open().roots,
         lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
         approvals: () => local.approvals ?? defaultApprovalsPath(),
         latex: () => latexBuild(load().config),
         markdown: () => markdownExtensions(load().config),
         catalog: () => textCatalog(load().config),
-        changes: () => target(engine, load().config, context).changes,
+        changes: () => target(engine, load().config, held(), context).changes,
         library: () => ({
             closed: closedPaths(load().config).folders,
-            withheld: withheldFolders(
-                configDir(engine),
-                hubDirs(local.hub, browserRoots({ config: load().config, engine, local }))
-            )
+            withheld: withheldFolders(configDir(engine), hubDirs(open().roots))
         })
     });
     const debug = make.createDebug({
@@ -291,22 +315,18 @@ export function createServerContext(
     const lintRuns = new LintRuns();
     const comments = new HeldComments();
     const eslint = make.createEslints({
-        roots: () =>
-            servedRoots(browserRoots({ config: load().config, engine, local })).map(
-                (root) => root.real
-            )
+        roots: () => servedRoots(open().roots).map((root) => root.real)
     });
-    // The relay and the held ESLint children hear a change of the served roots together.
+    // The relay and the held ESLint children hear a change of the served roots together: a config
+    // push and a move of the open workspace.
     const rootsFollowers = {
         reconcile: (): void => {
             relay.reconcile();
             eslint.reconcile();
         }
     };
-    let followed = followRoots(
-        rootsFollowers,
-        hub,
-        local.workspaces ?? defaultWorkspacesPath(local.hub)
+    const followed = followRoots(rootsFollowers, hub, (listener) =>
+        workspace.subscribe(() => listener())
     );
     const token = make.mintToken();
     const appsSecret = make.mintToken();
@@ -323,20 +343,9 @@ export function createServerContext(
     // install, so it is said once at startup rather than once per request.
     const icons: IconMemory = { set: iconSet(config) };
     let host = hostInfo(local.port);
-    reportFindings([
-        ...iconFindings(engine, config),
-        ...behaviorFindings(engine, config),
-        ...settingFindings(engine, config),
-        ...languageFindings(engine, config),
-        ...latexEditingFindings(engine, config),
-        ...latexUnimathFindings(engine, config),
-        ...nestingFindings(engine, config),
-        ...optionFindings(engine, config),
-        ...schemaFindings(engine, config),
-        ...themeFindings(engine, config),
-        ...localFindings(engine, config, initial.problems),
-        ...docFindings(config, local.hub, sourceFile(engine, local.hub, from, 'docs'))
-    ]);
+    reportFindings(
+        startFindings({ engine, config, from, open: first, problems: initial.problems })
+    );
     // The watchers `reloadLocal` builds again. Each start function reads the machine's values and
     // the settings in force when it is called, so the same code builds a watcher at start and again
     // after a key it is built from changed.
@@ -345,18 +354,19 @@ export function createServerContext(
         if (built.parts === undefined) throw new Error('the watchers are not built yet');
         return built.parts;
     };
-    // The roots are read at the call, as the git watcher's are, so a root added to sources.yml or
-    // a workspace saved while the server runs is read when the next rebuild asks.
+    // The workspace is taken from the holder at the call, as the git watcher's roots are, so a
+    // folder added to the open file while the server runs is served when the next rebuild asks.
     const startPortfolio = (): Watcher =>
         make.watchPortfolio(
             hub,
             {
-                hub: local.hub,
                 engine,
                 icons,
                 host,
-                roots: () => browserRoots({ config: load().config, engine, local }),
-                workspacesFile: local.workspaces ?? defaultWorkspacesPath(local.hub)
+                open,
+                held: heldFindings,
+                problems: () => machine.held().problems,
+                follow: followWorkspace
             },
             {
                 built: () => {
@@ -370,9 +380,11 @@ export function createServerContext(
     const folders = (): ProjectFolder[] => {
         const message = hub.latest('portfolio');
         if (message === undefined) return [];
-        const others = hubRoots(browserRoots({ config: load().config, engine, local }));
-        const dirs = Object.fromEntries(others.map((one) => [one.key, one.dir]));
-        return projectFolders({ ...dirs, [HUB_ROOT]: local.hub }, message.payload as Snapshot);
+        const now = open();
+        const dirs: Record<string, string> = Object.fromEntries(
+            now.hubs.map((one) => [one.name, one.dir])
+        );
+        return projectFolders(dirs, message.payload as Snapshot, now.primary);
     };
     // The stores are every account's folders, so a session of a second Claude account is read from
     // that account's registry and transcripts as the first one's are.
@@ -385,13 +397,13 @@ export function createServerContext(
             terminals,
             hooks: store
         });
-    const startGitWatcher = (): GitWatcher => startGit(make, hub, engine, local);
+    const startGitWatcher = (): GitWatcher => startGit(make, hub, engine, workspace);
     const startAutofetchWatcher = (): AutofetchWatcher =>
         startAutofetch(make, hub, () => owned().git);
+    const paths = () => perOculus(open().primaryDir, local);
     // The reader's own bookmarks lie under no root, so the git watcher's handles say nothing about
     // them: this one carries a bookmark written outside oculus to every open page.
-    const startBookmarks = (): Watcher =>
-        make.watchBookmarks(hub, { file: local.bookmarks ?? defaultBookmarksPath(local.hub) });
+    const startBookmarks = (): Watcher => make.watchBookmarks(hub, { file: paths().bookmarks });
 
     // The files are read from the keys at the call that builds the watcher, which a change of
     // either key builds again. The hub, the roots and the claude program are read at each call, as
@@ -399,18 +411,18 @@ export function createServerContext(
     // start of a run.
     const startSchedules = (): SchedulesWatcher => {
         const files = {
-            schedules: local.schedules ?? defaultSchedulesPath(local.hub),
+            schedules: paths().schedules,
             record: local.scheduleRecord ?? defaultRecordPath(),
             commands: savedPath()
         };
-        const rootsFor = (): string[] => repositoryRoots({ config: load().config, engine, local });
+        const rootsFor = (): string[] => open().roots.map((root) => expandHome(root.dir));
         return make.watchSchedules(hub, {
             files,
             rootsFor,
-            local: () => local,
+            hub: () => open().primaryDir,
             run: (entry, size) =>
                 runEntry(entry, size, {
-                    hub: local.hub,
+                    hub: open().primaryDir,
                     claudeBin: local.claudeBin,
                     rootsFor,
                     commands: files.commands,
@@ -421,15 +433,16 @@ export function createServerContext(
             refresh: () => terminals.refresh()
         });
     };
-    // The apps are read from the machine's apps folder and the roots, and the paths that name them
-    // are read from `local` at each read, so a key of local.yml that changed is followed by
-    // `follow()` below and no watcher is built again.
+    // The apps are read from the primary hub's apps folder and the workspace's folders, and the
+    // paths that name them are read from `local` at each read, so a key of local.yml that changed
+    // is followed by `follow()` below and no watcher is built again.
     const apps = make.watchApps(hub, {
         engine,
         secret: appsSecret,
         local: () => local,
         config: () => load().config,
-        roots: () => browserRoots({ config: load().config, engine, local })
+        open,
+        follow: (listener) => workspace.subscribe(() => listener())
     });
 
     const portfolio = startPortfolio();
@@ -439,7 +452,8 @@ export function createServerContext(
         hub,
         local,
         { refresh, tiers },
-        built
+        built,
+        () => open().primaryDir ?? homedir()
     );
     const usageRefresh = startUsageRefresh();
     const usage = startUsage({ sessions, usageRefresh });
@@ -447,10 +461,11 @@ export function createServerContext(
     const hosts = make.startHosts({
         hub,
         apps,
-        engine,
         local: () => local,
         config: () => load().config,
-        target: () => target(engine, load().config, context),
+        open,
+        follow: (listener) => workspace.subscribe(() => listener()),
+        target: () => target(engine, load().config, held(), context),
         ready
     });
     const { openFiles } = hosts;
@@ -516,6 +531,7 @@ export function createServerContext(
     const hpcSubmits = submitState();
     const context: ServerContext = {
         hub,
+        workspace,
         terminals,
         relay,
         debug,
@@ -548,13 +564,10 @@ export function createServerContext(
         appsSecret,
         host,
         local,
+        machine: machine.values,
+        machineSet: () => machine.held().set,
         engine,
-        configCache: createConfigCache({
-            engine,
-            hub: () => local.hub,
-            load,
-            report: reportFindings
-        }),
+        configCache,
         fsWrites: writes,
         opsWrites: fsWrites(),
         gitRunning: createRunningGit(),
@@ -568,37 +581,51 @@ export function createServerContext(
         mailDir: polled.mailDir,
         literature: new LiteratureDesk(),
         providerDir: polled.providerDir,
-        accounts: { file: localFile(engine), writes, reload: () => reloadLocal() },
+        accounts: {
+            file: () => {
+                const primary = open().primaryDir;
+                return primary === null ? null : localFile(primary);
+            },
+            fileOf: (name) => {
+                const dir = open().hubs.find((one) => one.name === name)?.dir;
+                return dir === undefined ? null : localFile(dir);
+            },
+            noPrimary: () =>
+                words(textCatalog(configCache.read().config), 'server.workspace.no_primary'),
+            writes,
+            reload: () => reloadLocal()
+        },
         opener: openerOf(local),
         openPath: macOpenPath,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
-        memories: memoriesMemory(),
         icons,
         close(): void {
             if (closed) return;
             closed = true;
             built.live?.close();
             localWatch.close();
+            unfollowWorkspace();
             openFiles.close();
             hosts.stop();
             apps.close();
-            const held = owned();
-            held.usageRefresh.close();
+            const current = owned();
+            current.usageRefresh.close();
             polled.mail.close();
             polled.calendar.close();
             polled.hpc.close();
             hpcSubmits.close();
             polled.processes.close();
-            held.schedules.close();
-            held.bookmarks.close();
-            held.autofetch.close();
-            held.git.close();
-            held.usage.close();
-            held.sessions.close();
-            held.portfolio.close();
+            current.schedules.close();
+            current.bookmarks.close();
+            current.autofetch.close();
+            current.git.close();
+            current.usage.close();
+            current.sessions.close();
+            current.portfolio.close();
             terminals.close();
             followed.close();
+            workspace.close();
             debug.close();
             lintRuns.close();
             eslint.close();
@@ -609,95 +636,36 @@ export function createServerContext(
     };
 
     /** How each watcher is built and put into the set the context holds. */
-    const starters: Record<WatcherName, (held: Parts) => void> = {
-        portfolio: (held) => {
-            held.portfolio = startPortfolio();
-        },
-        sessions: (held) => {
-            held.sessions = startSessions();
-        },
-        usageRefresh: (held) => {
-            held.usageRefresh = startUsageRefresh();
-        },
-        usage: (held) => {
-            held.usage = startUsage(held);
-        },
-        git: (held) => {
-            held.git = startGitWatcher();
-        },
-        autofetch: (held) => {
-            held.autofetch = startAutofetchWatcher();
-        },
-        bookmarks: (held) => {
-            held.bookmarks = startBookmarks();
-        },
-        schedules: (held) => {
-            held.schedules = startSchedules();
-        }
-    };
-
-    /** The words a thrown value gives a log line. */
-    const reasonOf = (error: unknown): string =>
-        error instanceof Error ? error.message : String(error);
-
-    /** Build one watcher; the reason it could not be built, or null after it was. */
-    function tryStart(name: WatcherName): string | null {
-        try {
-            starters[name](owned());
-            return null;
-        } catch (error) {
-            return reasonOf(error);
-        }
-    }
-
-    /**
-     * Build again the watchers `plan` names, each old one closed before its new one starts.
-     * `previous` is the values the keys held before the change. A watcher that cannot be built from
-     * the new value of a key says so once, naming the key, and the key goes back to the value in
-     * force: every watcher built from it is built again from that value, and the watchers of the
-     * other keys go on.
-     */
-    function rebuild(plan: Record<WatcherName, boolean>, previous?: LocalConfig): void {
-        const held = owned();
-        const closeAll = (names: Record<WatcherName, boolean>): void => {
-            if (names.autofetch) held.autofetch.close();
-            if (names.git) held.git.close();
-            if (names.usage) held.usage.close();
-            if (names.usageRefresh) held.usageRefresh.close();
-            if (names.sessions) held.sessions.close();
-            if (names.portfolio) held.portfolio.close();
-            if (names.bookmarks) held.bookmarks.close();
-            if (names.schedules) held.schedules.close();
-        };
-        closeAll(plan);
-        const kept = new Set<keyof LocalConfig>();
-        for (const name of WATCHERS) {
-            if (!plan[name]) continue;
-            const reason = tryStart(name);
-            if (reason === null) continue;
-            const keys = keysBuilding(name).filter(
-                (key) => previous !== undefined && !isDeepStrictEqual(local[key], previous[key])
-            );
-            console.error(
-                `local.yml: ${keys.join(', ') || name} cannot be applied, the ${name} watcher cannot be built from it (${reason}); the value in force stays`
-            );
-            for (const key of keys) kept.add(key);
-        }
-        if (previous === undefined || kept.size === 0) return;
-        for (const key of kept) {
-            if (previous[key] === undefined) Reflect.deleteProperty(local, key);
-            else Reflect.set(local, key, previous[key]);
-        }
-        const again = rebuiltBy([...kept]);
-        closeAll(again);
-        for (const name of WATCHERS) {
-            if (!again[name]) continue;
-            const reason = tryStart(name);
-            if (reason !== null) {
-                console.error(`local.yml: the ${name} watcher cannot be built (${reason})`);
+    const rebuild = createRebuild({
+        owned,
+        local,
+        starters: {
+            portfolio: (current) => {
+                current.portfolio = startPortfolio();
+            },
+            sessions: (current) => {
+                current.sessions = startSessions();
+            },
+            usageRefresh: (current) => {
+                current.usageRefresh = startUsageRefresh();
+            },
+            usage: (current) => {
+                current.usage = startUsage(current);
+            },
+            git: (current) => {
+                current.git = startGitWatcher();
+            },
+            autofetch: (current) => {
+                current.autofetch = startAutofetchWatcher();
+            },
+            bookmarks: (current) => {
+                current.bookmarks = startBookmarks();
+            },
+            schedules: (current) => {
+                current.schedules = startSchedules();
             }
         }
-    }
+    });
 
     /** Hold a port the server listens on now: the address every page is sent, and the portfolio. */
     function listeningOn(port: number): void {
@@ -707,78 +675,34 @@ export function createServerContext(
         rebuild({ ...rebuiltBy([]), portfolio: true });
     }
 
-    const isClosed = (): boolean => closed;
-
-    /** The port local.yml names now, which `settlePort` moves the server to one move at a time. */
-    let wantedPort = local.port;
-    let moveRunning = false;
-    let lastRefusal: string | undefined;
-
-    /** The reason the server cannot be moved to `port`, or null after it was moved. */
-    async function moveTo(port: number): Promise<string | null> {
-        if (port === COCKPIT_PORT) return 'it belongs to the cockpit';
-        if (!Number.isInteger(port) || port < 1 || port > LAST_PORT) {
-            return `a port is a whole number from 1 to ${LAST_PORT}`;
-        }
-        if (portMove === undefined) return 'this process cannot move its server';
-        const told = { announced: false };
-        const refusal = await portMove(port, () => {
-            if (isClosed()) return;
-            told.announced = true;
-            listeningOn(port);
-        });
-        if (isClosed()) return null;
-        if (refusal === null && !told.announced) listeningOn(port);
-        return refusal;
-    }
-
-    /**
-     * Move the server to the port local.yml names, and to the one it names later when the file is
-     * written again meanwhile. A port that cannot be used is said once, and said again only when
-     * the sentence changes.
-     */
-    async function settlePort(): Promise<void> {
-        if (moveRunning) return;
-        moveRunning = true;
-        try {
-            while (!isClosed() && wantedPort !== local.port) {
-                const port = wantedPort;
-                const refusal = await moveTo(port);
-                if (isClosed()) return;
-                if (refusal === null) {
-                    lastRefusal = undefined;
-                    continue;
-                }
-                const sentence = `local.yml: port ${port} cannot be used (${refusal}); the server stays on ${local.port}`;
-                if (sentence !== lastRefusal) console.error(sentence);
-                lastRefusal = sentence;
-                if (wantedPort === port) return;
-            }
-        } catch (error) {
-            console.error(
-                `local.yml: port ${wantedPort} was not applied (${reasonOf(error)}); the server stays on ${local.port}`
-            );
-        } finally {
-            moveRunning = false;
-        }
-    }
+    const mover = createPortMover({
+        local,
+        portMove,
+        isClosed: () => closed,
+        listeningOn
+    });
 
     /** The sentence the last read that failed said, so the same fault is said once. */
     let unread: string | undefined;
 
     /**
-     * Read the machine's own file again and hold every key at once: the values of the context's
+     * Read the machine's files again and hold every key at once: the values of the context's
      * `local` are replaced in place, so a route that reads them follows with its next request, and
      * each object made from a key that changed is handed the new value or built again. A file that
      * does not read keeps every value in force and says why once; a file that reads hands on the
      * values it read, the default of a key whose value is wrong included, so a wrong key costs that
-     * key alone; a key whose value equals the one in force hands nothing on.
+     * key alone; a key whose value equals the one in force hands nothing on. `switched` is a read
+     * made because the workspace moved: the port and the state paths stay as the server was started
+     * with and a finding names each key that a restart would change.
      */
-    function reloadLocal(): void {
+    function reloadLocal(switched = false): void {
         if (closed) return;
-        const read = make.readLocal(engine, true);
-        if (read.unread) {
-            const reason = localSentence(read.problems[0], localFile(engine));
+        const heldBefore = machine.heldBack().map((one) => one.file);
+        const setBefore = machine.held().set;
+        const problemsBefore = machine.held().problems;
+        const read = machine.refresh(true);
+        if (read.unread !== null) {
+            const reason = localSentence(read.unread.problem, read.unread.file);
             if (reason !== unread) {
                 console.error(`the machine's own configuration is not read again: ${reason}`);
             }
@@ -786,42 +710,51 @@ export function createServerContext(
             return;
         }
         unread = undefined;
+        let next = read.config;
+        if (switched) {
+            const back = machine.holdOnSwitch(next);
+            next = { ...next };
+            for (const one of back) {
+                if (local[one.key] === undefined) Reflect.deleteProperty(next, one.key);
+                else Reflect.set(next, one.key, local[one.key]);
+            }
+        }
         try {
-            apply(read.config);
+            apply(next, switched ? ['workspace'] : []);
         } catch (error) {
             console.error(`local.yml: a change could not be applied (${reasonOf(error)})`);
+        }
+        // A key held at its running value is a finding of the Findings view, and so is a key that
+        // agrees again: the portfolio watcher builds the config payload over it once more. The
+        // Settings view shows which keys the primary's file sets, so a page is told to read the
+        // workspaces again when that list moved.
+        if (!isDeepStrictEqual(setBefore, machine.held().set)) {
+            hub.publish('files', { root: '', workspaces: true } satisfies FilesPayload);
+        }
+        const heldNow = machine.heldBack().map((one) => one.file);
+        if (!isDeepStrictEqual(heldBefore, heldNow)) {
+            reportFindings(heldFindings().filter((one) => !heldBefore.includes(one.key)));
+        }
+        if (
+            !isDeepStrictEqual(heldBefore, heldNow) ||
+            !isDeepStrictEqual(problemsBefore, machine.held().problems)
+        ) {
+            for (const listener of [...heardHeld]) listener();
         }
     }
 
     /** Hold the values of `next` and hand each object built from a key that changed its value. */
-    function apply(next: LocalConfig): void {
-        const changed = changedKeys(local, next).filter((key) => key !== 'port');
+    function apply(next: LocalConfig, moved: ChangedKey[]): void {
+        const changed: ChangedKey[] = [
+            ...changedKeys(local, next).filter((key) => key !== 'port'),
+            ...moved
+        ];
         const previous = { ...local };
         const kept = local.port;
         for (const key of Object.keys(local)) Reflect.deleteProperty(local, key);
         Object.assign(local, next, { port: kept });
-
-        if (changed.includes('hub')) {
-            const loaded = load();
-            reportFindings(
-                docFindings(
-                    loaded.config,
-                    local.hub,
-                    sourceFile(engine, local.hub, loaded.from, 'docs')
-                )
-            );
-        }
         rebuild(rebuiltBy(changed), previous);
         if (changed.includes('lsp')) relay.reload();
-        if (changed.includes('workspaces') || changed.includes('hub')) {
-            followed.close();
-            followed = followRoots(
-                rootsFollowers,
-                hub,
-                local.workspaces ?? defaultWorkspacesPath(local.hub)
-            );
-            rootsFollowers.reconcile();
-        }
         if (changed.includes('openBin')) context.opener = openerOf(local);
         if (changed.includes('hpcHost')) built.live?.hostChanged();
         if (changed.includes('calendars') || changed.includes('calendarDir')) {
@@ -833,24 +766,32 @@ export function createServerContext(
             polled.mail.setAccounts(local.mail, context.mailDir);
         }
         if (
-            changed.some(
-                (key) =>
-                    key === 'appsDir' ||
-                    key === 'approvals' ||
-                    key === 'workspaces' ||
-                    key === 'hub'
-            )
+            changed.some((key) => key === 'appsDir' || key === 'approvals' || key === 'workspace')
         ) {
             apps.follow();
         }
-        wantedPort = next.port;
-        if (wantedPort === local.port) lastRefusal = undefined;
-        else void settlePort();
+        mover.want(next.port);
     }
 
-    // The watch on local.yml, for a key written by hand; a row written from the page is read again
-    // by the route that wrote it, and the watch's call after it is then no change.
-    const localWatch = make.watchLocal(engine, reloadLocal);
+    // The watch on the hubs' local.yml files, for a key written by hand; a row written from the
+    // page is read again by the route that wrote it, and the watch's call after it is then no
+    // change. A move of the workspace builds it again over the new hubs.
+    const hubFolders = (): string[] => open().hubs.map((one) => one.dir);
+    let localWatch = make.watchLocal(hubFolders(), () => reloadLocal());
+
+    // A move of the open workspace: the files of the machine's values are those of the new hubs,
+    // the findings the new file raised are said, and what is built from the primary hub is built
+    // again when the primary moved. The roots, the portfolio, the git watch, the app hosts and the
+    // open-files poll follow the workspace through their own subscriptions.
+    const unfollowWorkspace = workspace.subscribe((now, before) => {
+        if (closed) return;
+        localWatch.close();
+        localWatch = make.watchLocal(hubFolders(), () => reloadLocal());
+        reportFindings(newWorkspaceFindings(now, before, configCache.read().config));
+        const moved = now.primaryDir !== before.primaryDir || now.primary !== before.primary;
+        const hubsMoved = !isDeepStrictEqual(now.hubs, before.hubs);
+        if (moved || hubsMoved) reloadLocal(moved);
+    });
     return context;
 }
 

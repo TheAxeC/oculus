@@ -18,6 +18,8 @@ import { it } from '../../fixtures/scratch.ts';
 import { plant, route, settingsOf } from '../../server/machine/runs/lint/lint-fixture.ts';
 import {
     hashOf,
+    OCULUS_LOCAL_ROUTES,
+    plantOculusLocal,
     records,
     replaceWorld,
     stamps,
@@ -43,7 +45,10 @@ function planning(files: Record<string, string>, writingSkip: string[] = []) {
     const lint = route(
         () => w.ops.roots,
         () => ({ ...settingsOf(), writingSkip }),
-        { isProtected: (real) => guarded(protectedFiles({ roots: w.ops.roots }), real) }
+        {
+            isProtected: (real) =>
+                guarded(protectedFiles({ roots: w.ops.roots, config: w.config }), real)
+        }
     );
     const plan = async (root = 'hub', path = '', token?: string | null) => {
         const answered = await lint.post({ action: 'folder', root, path }, token);
@@ -90,12 +95,23 @@ describe('the plan of a folder (case 50)', () => {
         expect(existsSync(join(w.hub, 'secrets/x.md'))).toBe(true);
     });
 
-    it("never lists the machine's local.yml, which the plan never reads", async () => {
+    it("never lists a hub's .oculus/local.yml, which the plan never reads", async () => {
         const { w, plan } = planning({});
-        plant(join(w.engine, 'local.yml'), `secret: x${ELLIPSIS}\n`);
-        plant(join(w.engine, 'other.yml'), `note: y${ELLIPSIS}\n`);
-        const answer = await plan('engine', '');
+        plant(join(w.dot, 'local.yml'), `secret: x${ELLIPSIS}\n`);
+        plant(join(w.dot, 'other.yml'), `note: y${ELLIPSIS}\n`);
+        const answer = await plan('dot', '');
         expect(answer.body.files?.map((one) => one.path)).toEqual(['other.yml']);
+    });
+
+    it("never lists oculus's own config/local.yml, which the plan never reads", async () => {
+        const { w, plan } = planning({});
+        plantOculusLocal(w);
+        plant(join(w.config, 'local.yml'), `secret: x${ELLIPSIS}\n`);
+        plant(join(w.config, 'other.yml'), `note: y${ELLIPSIS}\n`);
+        const folder = await plan('oculus', '');
+        expect(folder.body.files?.map((one) => one.path)).toEqual(['other.yml']);
+        const hub = await plan('hub', 'oculus');
+        expect(hub.body.files?.map((one) => one.path)).toEqual(['oculus/config/other.yml']);
     });
 
     it("refuses a start folder that is, or lies under, the hub's secrets folder (G3)", async () => {
@@ -268,15 +284,15 @@ describe('what stops a write (case 55)', () => {
         expect(readFileSync(outside, 'utf8')).toBe(wait);
     });
 
-    it("refuses `protected` for the machine's local.yml and writes nothing to it (G3)", async () => {
+    it("refuses `protected` for a hub's .oculus/local.yml and writes nothing to it (G3)", async () => {
         const { w, plan } = planning({ 'a.md': wait, 'b.md': wait });
-        const local = join(w.engine, 'local.yml');
+        const local = join(w.dot, 'local.yml');
         writeFileSync(local, `note: x${ELLIPSIS}\n`);
         const [first] = writeOf((await plan()).body.files ?? []);
         const answer = await writingFixPost(w, [
             first,
             {
-                root: 'engine',
+                root: 'dot',
                 path: 'local.yml',
                 hash: hashOf(readFileSync(local)),
                 edits: [
@@ -290,11 +306,45 @@ describe('what stops a write (case 55)', () => {
         expect(answer.body).toMatchObject({
             error: 'protected',
             done: [],
-            failed: 'engine/local.yml'
+            failed: 'dot/local.yml'
         });
         expect(readFileSync(local, 'utf8')).toBe(`note: x${ELLIPSIS}\n`);
         expect(text(w, 'a.md')).toBe(wait);
     });
+
+    it.each(OCULUS_LOCAL_ROUTES)(
+        "refuses `protected` for oculus's own config/local.yml and writes nothing to it (G3), reached through %s",
+        async (_where, root, path) => {
+            const { w, plan } = planning({ 'a.md': wait, 'b.md': wait });
+            const local = plantOculusLocal(w);
+            writeFileSync(local, `note: x${ELLIPSIS}\n`);
+            const [first] = writeOf((await plan()).body.files ?? []);
+            const answer = await writingFixPost(w, [
+                first,
+                {
+                    root,
+                    path,
+                    hash: hashOf(readFileSync(local)),
+                    edits: [
+                        {
+                            range: {
+                                start: { line: 0, character: 7 },
+                                end: { line: 0, character: 8 }
+                            },
+                            newText: '...'
+                        }
+                    ]
+                }
+            ]);
+            expect(answer.body).toMatchObject({
+                error: 'protected',
+                done: [],
+                failed: `${root}/${path}`
+            });
+            expect(readFileSync(local, 'utf8')).toBe(`note: x${ELLIPSIS}\n`);
+            expect(text(w, 'a.md')).toBe(wait);
+        }
+    );
 
     it("refuses `outside` for a file under the hub's secrets folder and writes nothing (G3)", async () => {
         const { w, plan } = planning({ 'a.md': wait, 'b.md': wait, 'secrets/s.md': wait });

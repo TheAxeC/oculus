@@ -3,9 +3,9 @@
 //
 // A manifest's path is the reader's, never the request's: the id names a manifest hubManifests
 // already found, under the hub's own scan directories or as the `.oculus/project.yml` of a
-// repository whose `roots:` entry holds one, and insideHub (for a scan folder) or isRepositoryFile
-// (for a repository) checks the resolved path again before the write. The fields a write may name
-// are the fields of `manifest_schema`, whatever the project's tier.
+// repository whose workspace folder holds one, and insideHub (for a scan folder) or
+// isRepositoryFile (for a repository) checks the resolved path again before the write. The fields a
+// write may name are the fields of `manifest_schema`, whatever the project's tier.
 //
 // Every reason a write refuses with is a line of config/text/server.yml under
 // `server.manifest_write`, worded with `words` from the configuration's text catalog.
@@ -259,8 +259,8 @@ function isRepositoryFile(manifest: RawManifest): boolean {
 }
 
 /**
- * The manifest an id names, or null when there is none. It is found by hubManifests among the
- * hub's scan directories and the repositories its `roots:` read as projects.
+ * The manifest an id names, or null when there is none. It is found by hubManifests among the hub's
+ * scan directories and the repositories among the workspace's folders that are projects.
  */
 function homeOf(hub: string, config: PortfolioConfig, id: string): Home | null {
     const manifest = hubManifests(hub, config).find((one) => one.id === id);
@@ -393,7 +393,7 @@ function putBack(
  * as the text it was, and otherwise the value is written. Every check of the write is made first,
  * so a record that fails one is refused as any other.
  *
- * `hubKey` is the key of the hub the manifest belongs to when it is not the first hub: the values
+ * `hubKey` is the key of the hub the manifest belongs to when it is not the primary hub: the values
  * of the fields that name records come with that key in front, and are written without it.
  */
 export function writeManifest(

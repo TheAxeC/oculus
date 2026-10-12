@@ -10,14 +10,7 @@
 // of them back writes, and the two config-key suites, which write a scratch copy of the engine's
 // config folder (`scratchEngine`) and never the checkout's.
 
-import {
-    copyFileSync,
-    existsSync,
-    mkdirSync,
-    readdirSync,
-    readFileSync,
-    writeFileSync
-} from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
@@ -25,18 +18,16 @@ import { readChanges } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { LOCAL_NAME, engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { PortfolioConfig, Project, Tier } from '../../../src/lib/data/model/index.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
-import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import type { PrimaryTarget, WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import type { ConfigKeyOutcome } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { present } from '../../fixtures/present.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
-import { firstHubConfig } from '../../../src/lib/server/files/roots.ts';
-import { defaultWorkspacesPath, writeSaved } from '../../../src/lib/server/files/fs.ts';
 
 export const MANIFEST =
     'id: alpha\ntier: projects\ntype: active\ntitle: "A title"\nstatus:\n  line: "the line"\n';
@@ -66,7 +57,7 @@ export const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
 const URL_ = `http://${HOST}/api/write`;
 
-export function target(): WriteTarget {
+export function target(): PrimaryTarget {
     const dir = scratchDir('oculus-route-');
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);
@@ -125,11 +116,12 @@ export function targetOver(
     dir: string,
     files: { overrides: string; bookmarks: string; changes: string },
     keep = 500
-): WriteTarget {
+): PrimaryTarget {
     const merged = loadConfig(engineDir()).config;
     const real = portfolioConfigFrom(merged);
     return {
         hub: dir,
+        primary: 'hub',
         config: {
             ...real,
             scan: [{ dir: 'projects/manuscripts' }, { dir: 'projects/ideas', optional: true }],
@@ -188,16 +180,16 @@ export const GOOD = { kind: 'manifest', id: 'alpha', fields: { 'status.line': 'a
 export const AREA = '/hub/projects/manuscripts/alpha';
 
 /** The tasks collection file of a target, which the undo cases read back. */
-export function tasksOf(into: WriteTarget): string {
+export function tasksOf(into: PrimaryTarget): string {
     return readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8');
 }
 
 /** The manifest of a target, which the manifest cases read back and replace. */
-function manifestFile(into: WriteTarget): string {
+function manifestFile(into: PrimaryTarget): string {
     return join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml');
 }
 
-export function manifestOf(into: WriteTarget): string {
+export function manifestOf(into: PrimaryTarget): string {
     return readFileSync(manifestFile(into), 'utf8');
 }
 
@@ -211,7 +203,7 @@ export function undone(into: WriteTarget, change: Change): Promise<Response> {
  * above the change; answers the undo's record.
  */
 export async function undoneBack(
-    into: WriteTarget,
+    into: PrimaryTarget,
     change: Change,
     file: string,
     before: string
@@ -278,7 +270,7 @@ function deckProject(id: string, tier: Tier): Project {
  * candidate, and `gamma` is archived, so the group `pillars`, whose `tiers:` do not find it, offers
  * it no place; the group `more` finds every project and `ideas` the archived ones.
  */
-export function deckTarget(): WriteTarget {
+export function deckTarget(): PrimaryTarget {
     const dir = scratchDir('oculus-deck-');
     const file = join(dir, DECK_FOLDER, 'present.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
@@ -301,11 +293,12 @@ export function deckTarget(): WriteTarget {
     expect(resolve(changes).startsWith(resolve(dir) + sep)).toBe(true);
     return {
         hub: dir,
+        primary: 'hub',
         config: { ...real, portfolioDeck: DECK_FOLDER },
         engine: engineDir(),
         career: careerRules(loadConfig(engineDir()).config),
         projects: () => projects,
-        files: { roots: () => [{ key: 'hub', dir }] },
+        files: { roots: () => [{ key: 'hub', dir }], config: join(dir, 'oculus', 'config') },
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),
@@ -335,7 +328,10 @@ export const PERSONAL_MANIFEST = [
 /** The scan rule that names the hub's folder of personal projects. */
 export const PERSONAL_SCAN = { dir: 'side-projects' };
 
-/** The key of the root `personalTarget` serves, which is also the id of its project. */
+/**
+ * The name of the folder `personalTarget` adds to the workspace, which is also the id of its
+ * project.
+ */
 export const PERSONAL_ROOT = 'r';
 
 /** What `plantPersonal` plants: the served root and the manifest file of each project by its id. */
@@ -367,29 +363,21 @@ export function plantPersonal(hubDir: string): PlantedPersonal {
 }
 
 /**
- * The configuration of a target with one more root named, after the roots it holds: its merged
- * configuration lists the root, and its repositories are the ones the server reads from that list.
+ * The configuration of a target with one more folder of the workspace read as a project: the folder
+ * joins the repositories the server reads from the workspace's folders.
  */
-function withRoot(base: WriteTarget, entry: { key: string; dir: string }): PortfolioConfig {
-    const held: unknown = base.config.merged.roots;
-    const roots: unknown[] = Array.isArray(held) ? held : [];
-    const merged = { ...base.config.merged, roots: [...roots, entry] };
-    const { repositories } = firstHubConfig({
-        config: merged,
-        engine: base.engine,
-        local: { hub: base.hub }
-    });
-    return { ...base.config, merged, repositories };
+function withRoot(base: PrimaryTarget, entry: { key: string; dir: string }): PortfolioConfig {
+    return { ...base.config, repositories: [...base.config.repositories, entry] };
 }
 
 /** What `personalTarget` plants: the target, and the manifest file of each project by its id. */
-export type PersonalTarget = { into: WriteTarget; files: PlantedPersonal['files'] };
+export type PersonalTarget = { into: PrimaryTarget; files: PlantedPersonal['files'] };
 
 /**
  * The target with the two personal projects of `plantPersonal` planted, its scan naming the hub's
- * `side-projects/` folder and its `roots:` naming the served root `r`.
+ * `side-projects/` folder and the served folder `r` among the workspace's folders.
  */
-export function personalTarget(base: WriteTarget = target()): PersonalTarget {
+export function personalTarget(base: PrimaryTarget = target()): PersonalTarget {
     const { served, files } = plantPersonal(base.hub);
     const scan = [...base.config.scan, PERSONAL_SCAN];
     const rooted = withRoot(base, { key: PERSONAL_ROOT, dir: served });
@@ -403,7 +391,7 @@ export function personalTarget(base: WriteTarget = target()): PersonalTarget {
  * `two:idea`.
  */
 export function secondHubPersonal(
-    base: WriteTarget = target()
+    base: PrimaryTarget = target()
 ): PersonalTarget & { second: string } {
     const first = personalTarget(base);
     const second = scratchDir('oculus-second-');
@@ -419,7 +407,7 @@ export function secondHubPersonal(
     };
 }
 
-/** The id of the project `repositoryTarget` plants, which is the key of its root. */
+/** The id of the project `repositoryTarget` plants, which is the name of its folder. */
 export const REPOSITORY_ID = 'gamma';
 
 /** The manifest of the repository `repositoryTarget` plants. */
@@ -437,15 +425,18 @@ export const REPOSITORY_MANIFEST = [
 ].join('\n');
 
 /** What `repositoryTarget` plants: the target, the repository's folder and its manifest file. */
-export type RepositoryTarget = { into: WriteTarget; dir: string; file: string };
+export type RepositoryTarget = { into: PrimaryTarget; dir: string; file: string };
 
 /**
- * The target with a repository planted as a project: a folder under the system temporary
- * directory holding a README and, unless `manifest` is false, `.oculus/project.yml`, named by an
- * entry of `roots:`. The target's published projects stay empty, so a write finds the repository by
- * reading the roots in force, as the server's writers do.
+ * The target with a repository planted as a project: a folder under the system temporary directory
+ * holding a README and, unless `manifest` is false, `.oculus/project.yml`, a folder of the
+ * workspace. The target's published projects stay empty, so a write finds the repository by reading
+ * the roots in force, as the server's writers do.
  */
-export function repositoryTarget(base: WriteTarget = target(), manifest = true): RepositoryTarget {
+export function repositoryTarget(
+    base: PrimaryTarget = target(),
+    manifest = true
+): RepositoryTarget {
     const dir = scratchDir('oculus-repository-');
     const file = join(dir, '.oculus', 'project.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
@@ -455,67 +446,22 @@ export function repositoryTarget(base: WriteTarget = target(), manifest = true):
     return { into: { ...base, config: withRoot(base, { key: REPOSITORY_ID, dir }) }, dir, file };
 }
 
-/** The id of the project `workspaceTarget` plants, which is the key its root is saved under. */
-export const WORKSPACE_ID = 'added';
-
-/** What `workspaceTarget` plants: the target, the workspace's added folder and its manifest. */
-export type WorkspaceTarget = { into: WriteTarget; dir: string; file: string };
-
-/**
- * The target with a folder added to the workspace as a project: a folder under the system
- * temporary directory holding `.oculus/project.yml`, saved in the hub's workspaces file under the
- * workspace in force and named by no `roots:` entry. The target's repositories are the ones the
- * server reads from the configured and the saved roots.
- */
-export function workspaceTarget(base: WriteTarget = target()): WorkspaceTarget {
-    const dir = scratchDir('oculus-workspace-');
-    const file = join(dir, '.oculus', 'project.yml');
-    expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
-    mkdirSync(join(dir, '.oculus'), { recursive: true });
-    writeFileSync(file, REPOSITORY_MANIFEST);
-    const saved = {
-        current: 'work',
-        workspaces: [{ name: 'work', roots: [{ key: WORKSPACE_ID, dir }] }],
-        dropped: []
-    };
-    writeSaved(defaultWorkspacesPath(base.hub), saved);
-    const { repositories } = firstHubConfig({
-        config: base.config.merged,
-        engine: base.engine,
-        local: { hub: base.hub }
-    });
-    return { into: { ...base, config: { ...base.config, repositories } }, dir, file };
-}
-
 /** The path of the portfolio deck's file under the hub of a deck target. */
 export const DECK_PATH = `${DECK_FOLDER}/present.yml`;
 
 /** What the portfolio deck's file of a target holds now. */
-export function deckOf(into: WriteTarget): string {
+export function deckOf(into: PrimaryTarget): string {
     return readFileSync(join(into.hub, DECK_PATH), 'utf8');
 }
 
 /**
- * A folder copied file by file, the machine's own file left out by name before anything of it is
- * read.
- */
-function copyConfig(from: string, to: string): void {
-    mkdirSync(to, { recursive: true });
-    for (const entry of readdirSync(from, { withFileTypes: true })) {
-        if (entry.name === LOCAL_NAME) continue;
-        if (entry.isDirectory()) copyConfig(join(from, entry.name), join(to, entry.name));
-        else copyFileSync(join(from, entry.name), join(to, entry.name));
-    }
-}
-
-/**
- * A scratch engine holding a copy of this checkout's tracked config/, the machine's own file left
- * out, which is what a case of the config-key write is made over.
+ * A scratch engine holding a copy of this checkout's tracked config/, which is what a case of the
+ * config-key write is made over.
  */
 export function scratchEngine(): string {
     const engine = scratchDir('oculus-engine-');
     expect(resolve(engine).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    copyConfig(join(engineDir(), 'config'), join(engine, 'config'));
+    cpSync(join(engineDir(), 'config'), join(engine, 'config'), { recursive: true });
     return engine;
 }
 
@@ -530,7 +476,7 @@ export function engineFile(engine: string, name: string): string {
  * The write target of a scratch engine: the synthetic hub and change log of `target()`, over an
  * engine that is not the checkout, so the config-key write reads and writes the copy.
  */
-export function configTarget(engine: string = scratchEngine()): WriteTarget {
+export function configTarget(engine: string = scratchEngine()): PrimaryTarget {
     return {
         ...target(),
         engine,

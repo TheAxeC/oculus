@@ -16,7 +16,7 @@
 // note or a list of one note as a map carries the text it replaced, which the manifest writer puts
 // back over the lines the write left while the file still holds them.
 
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { z } from 'zod';
 import { scalar } from '../../../data/helpers/guards.ts';
 import { HUB_LAYER } from '../../../data/helpers/hub-names.ts';
@@ -39,9 +39,10 @@ import { deckSlidesNow, undoDeckSlides } from './config/lists/deck/deck.ts';
 import { appSettingNow, undoAppSetting } from './config/app-setting.ts';
 import { configKeyNow, writeConfigKey } from './config/config-key.ts';
 import { configValueNow, putBackConfigValue, writeConfigValue } from './config/config-value.ts';
-import { takeOutAdded } from './config/config-checks.ts';
+import { machineHubs, takeOutAdded } from './config/config-checks.ts';
 import { railNow, writeRail } from './config/lists/rail.ts';
-import { ROOTS, rootItemsShape, rootsValueNow, writeRoots } from './config/lists/roots.ts';
+import { foldersValueNow, workspaceValueShape, writeFolders } from './config/lists/folders.ts';
+import { hubOfFile } from '../../files/workspace/open.ts';
 import { railRows } from '../../../data/sources/config/rail.ts';
 import {
     createEntry,
@@ -51,7 +52,7 @@ import {
     reorderCollection,
     writeEntry
 } from './entries.ts';
-import { holding } from './hubs.ts';
+import { holding, primaryOf } from './hubs.ts';
 import { manifestValue, writeManifest } from './manifest.ts';
 import {
     hostStatus,
@@ -65,7 +66,7 @@ import { entryId, entryOf, readCollection, type Collection } from '../../files/f
 import type { FeedKind } from '../../../data/model/index.ts';
 import type { Change, ChangeRecord } from '../../core/changes.ts';
 import type { SubtaskTarget } from './subtasks.ts';
-import type { WriteOutcome, WriteTarget } from '../writes.ts';
+import type { PrimaryTarget, WriteOutcome, WriteTarget } from '../writes.ts';
 
 /**
  * Why an undo was not made, or the outcome of the write that made it. `unwritable` is a file the
@@ -79,12 +80,9 @@ export type UndoOutcome =
     | { error: 'refused'; refused: WriteOutcome['refused'] }
     | WriteOutcome;
 
-/**
- * The absolute path a record's `file` names: it is hub-relative inside the hub and absolute
- * outside.
- */
-function fileOf(into: WriteTarget, change: Change): string {
-    return resolve(isAbsolute(change.file) ? change.file : join(into.hub, change.file));
+/** The absolute path a record's `file` names; every record names its file by its absolute path. */
+function fileOf(change: Change): string {
+    return resolve(change.file);
 }
 
 /**
@@ -93,28 +91,27 @@ function fileOf(into: WriteTarget, change: Change): string {
  * write went to the engine's file is taken back there.
  */
 function layerHub(into: WriteTarget, change: Change): string | undefined {
+    if (into.hub === null) return undefined;
     const layer = resolve(into.hub, HUB_LAYER) + sep;
-    return fileOf(into, change).startsWith(layer) ? into.hub : undefined;
+    return fileOf(change).startsWith(layer) ? into.hub : undefined;
 }
 
 /** The paths a record says its write made, as absolute paths. */
-function madeBy(into: WriteTarget, change: Change): string[] {
-    return (change.created ?? []).map((path) =>
-        resolve(isAbsolute(path) ? path : join(into.hub, path))
-    );
+function madeBy(change: Change): string[] {
+    return (change.created ?? []).map((path) => resolve(path));
 }
 
 /** The collection key whose file a record names, or null when the record names another file. */
-function collectionOf(into: WriteTarget, change: Change): string | null {
-    const path = fileOf(into, change);
-    if (path === resolve(into.bookmarks)) return 'bookmarks';
+function collectionOf(into: PrimaryTarget, change: Change): string | null {
+    const path = fileOf(change);
+    if (into.bookmarks !== undefined && path === resolve(into.bookmarks)) return 'bookmarks';
     const found = into.config.collections.find((one) => resolve(join(into.hub, one.file)) === path);
     return found?.key ?? null;
 }
 
 /** The feed whose file a record names, or null when the record names another file. */
-function feedOf(into: WriteTarget, change: Change): FeedKind | null {
-    const path = fileOf(into, change);
+function feedOf(into: PrimaryTarget, change: Change): FeedKind | null {
+    const path = fileOf(change);
     for (const [kind, relative] of Object.entries(into.config.feeds)) {
         if (isFeedKind(kind) && resolve(join(into.hub, relative)) === path) return kind;
     }
@@ -122,14 +119,14 @@ function feedOf(into: WriteTarget, change: Change): FeedKind | null {
 }
 
 /** What a subtask change hangs under: one manifest by its id, or one entry of one collection. */
-function subtaskTarget(into: WriteTarget, change: Change): SubtaskTarget {
+function subtaskTarget(into: PrimaryTarget, change: Change): SubtaskTarget {
     const collection = collectionOf(into, change);
     return collection === null ? { id: change.key } : { id: change.key, collection };
 }
 
 /** One collection read for an undo, by the key whose file the record names. */
 function collectionFor(
-    into: WriteTarget,
+    into: PrimaryTarget,
     change: Change
 ): { key: string; held: Collection } | null {
     const key = collectionOf(into, change);
@@ -138,6 +135,9 @@ function collectionFor(
     return held === null ? null : { key, held };
 }
 
+/** What a value read answers for an address that is not there. */
+const ABSENT = { found: false, value: null } as const;
+
 /**
  * What the file holds now at the address the change names, and whether that address is still there
  * at all. A `found: false` means the project, the entry, the host or the file has gone, or that a
@@ -145,33 +145,42 @@ function collectionFor(
  * a reason to refuse an undo as a value that has moved.
  */
 export function valueNow(into: WriteTarget, change: Change): { found: boolean; value: unknown } {
+    const own = primaryOf(into);
     if (change.kind === 'manifest') {
-        return manifestValue(into.hub, into.config, change.key, change.field);
+        return own === null ? ABSENT : manifestValue(own.hub, own.config, change.key, change.field);
     }
     if (change.kind === 'session') {
         const held = overrides(into.overrides);
         const entry = change.key in held ? held[change.key] : {};
         return { found: true, value: entry[change.field] ?? null };
     }
-    if (change.kind === 'host') return hostStatus(into.hub, change.key, into.career);
+    if (change.kind === 'host') {
+        return own === null ? ABSENT : hostStatus(own.hub, change.key, into.career);
+    }
     if (change.kind === 'deck-slides') return deckSlidesNow(into, change);
     if (change.kind === 'rail') {
         const rail = railNow(into.layoutFile);
         return rail === null ? { found: false, value: null } : { found: true, value: rail };
     }
     if (change.kind === 'roots') {
-        if (into.sources === undefined) return { found: false, value: null };
-        return rootsValueNow(fileOf(into, change), layerHub(into, change) !== undefined);
+        const file = fileOf(change);
+        if (into.workspace === undefined || hubOfFile(file) === null) {
+            return { found: false, value: null };
+        }
+        return foldersValueNow(file);
     }
     if (change.kind === 'config-key') {
         return configKeyNow(into.engine, change.key, change.field, layerHub(into, change));
     }
-    if (change.kind === 'app-setting') return appSettingNow(into.engine, into.hub, change.field);
+    if (change.kind === 'app-setting') {
+        return appSettingNow(into.engine, into.hub ?? undefined, change.field);
+    }
     if (change.kind === 'config-value') {
         return configValueNow(into.engine, change.key, change.field, layerHub(into, change));
     }
+    if (own === null) return ABSENT;
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
-        return subtaskValue(into.hub, into.config, subtaskTarget(into, change), change.field);
+        return subtaskValue(own.hub, own.config, subtaskTarget(own, change), change.field);
     }
     if (
         change.kind === 'feed-field' ||
@@ -179,16 +188,16 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         change.kind === 'lead-add' ||
         change.kind === 'radar-add'
     ) {
-        const feed = feedOf(into, change);
-        if (feed === null) return { found: false, value: null };
-        const read = readFeedEntry(into, feed, change.key);
+        const feed = feedOf(own, change);
+        if (feed === null) return ABSENT;
+        const read = readFeedEntry(own, feed, change.key);
         if (change.kind === 'feed-field') {
             return { found: read !== undefined, value: read?.[change.field] ?? null };
         }
         return { found: true, value: read ?? null };
     }
-    const collection = collectionFor(into, change);
-    if (collection === null) return { found: false, value: null };
+    const collection = collectionFor(own, change);
+    if (collection === null) return ABSENT;
     if (namesOldIdentity(collection.held, change)) return { found: false, value: null };
     if (change.kind === 'reorder') return { found: true, value: identityOrder(collection.held) };
     const entry =
@@ -235,7 +244,7 @@ function namesOldIdentity(held: Collection, change: Change): boolean {
 
 /** One feed entry by its feed-specific identity, or undefined when the feed no longer holds it. */
 function readFeedEntry(
-    into: WriteTarget,
+    into: PrimaryTarget,
     feed: FeedKind,
     id: string
 ): Record<string, unknown> | undefined {
@@ -349,15 +358,16 @@ const UNWRITABLE = { error: 'unwritable' } as const;
  * write.
  */
 function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwritable' } | null {
-    const { hub, config } = into;
+    const own = primaryOf(into);
     if (change.kind === 'manifest') {
+        if (own === null) return null;
         // The record holds the value the file had, so it is written as that value and not read as
         // a form, which would take an empty list, an empty text or `false` out of the file. A field
         // the write removed also holds the lines it removed, which go back where they stood, and a
         // note it rewrote as a map holds the text it replaced, which goes back over its lines.
         return writeManifest(
-            hub,
-            config,
+            own.hub,
+            own.config,
             change.key,
             { [change.field]: change.before },
             'record',
@@ -374,7 +384,8 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         return outcomeOf(setOverride(change.key, { [change.field]: value }, into.overrides));
     }
     if (change.kind === 'host') {
-        return writeHost(hub, change.key, textBeforeShape.parse(change.before), into.career);
+        if (own === null) return null;
+        return writeHost(own.hub, change.key, textBeforeShape.parse(change.before), into.career);
     }
     if (change.kind === 'deck-slides') {
         const outcome = undoDeckSlides(into, change, wordsBeforeShape.parse(change.before));
@@ -392,32 +403,14 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         return { found: true, ...outcome };
     }
     if (change.kind === 'roots') {
-        if (into.sources === undefined) return UNWRITABLE;
-        const hub = layerHub(into, change);
-        const added =
-            change.created === undefined
-                ? null
-                : takeOutAdded(
-                      into.engine,
-                      into.hub,
-                      'sources.yml',
-                      ROOTS,
-                      change,
-                      madeBy(into, change),
-                      ROOTS
-                  );
-        if (change.created !== undefined) return added === null ? null : { found: true, ...added };
-        const outcome = writeRoots(
-            fileOf(into, change),
-            rootItemsShape.parse(change.before),
-            undefined,
-            hub === undefined ? undefined : into.sources.base
-        );
+        const file = fileOf(change);
+        if (into.workspace === undefined || hubOfFile(file) === null) return UNWRITABLE;
+        const outcome = writeFolders(file, workspaceValueShape.parse(change.before));
         if ('error' in outcome) return outcome.error === 'unwritable' ? UNWRITABLE : null;
         return { found: true, ...outcome };
     }
     if (change.kind === 'app-setting') {
-        return { found: true, ...undoAppSetting(into, change, madeBy(into, change)) };
+        return { found: true, ...undoAppSetting(into, change, madeBy(change)) };
     }
     if (change.kind === 'config-key' || change.kind === 'config-value') {
         const layer = layerHub(into, change);
@@ -426,11 +419,11 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         if (change.created !== undefined) {
             const outcome = takeOutAdded(
                 into.engine,
-                into.hub,
+                into.hub ?? undefined,
                 change.key,
                 change.field,
                 change,
-                madeBy(into, change)
+                madeBy(change)
             );
             return outcome === null ? null : { found: true, ...outcome };
         }
@@ -441,14 +434,22 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
                 change.field,
                 change.before,
                 undefined,
-                layer
+                layer,
+                machineHubs(into)
             );
             return { found: true, ...outcome };
         }
         // The text the write replaced goes back as it was when the file still holds what the write
         // left; any other file is put right through the value write.
         const outcome =
-            putBackConfigValue(into.engine, change.key, change.field, change, layer) ??
+            putBackConfigValue(
+                into.engine,
+                change.key,
+                change.field,
+                change,
+                layer,
+                machineHubs(into)
+            ) ??
             writeConfigValue(
                 into.engine,
                 change.key,
@@ -456,19 +457,21 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
                 change.before,
                 change.after,
                 undefined,
-                layer
+                layer,
+                machineHubs(into)
             );
         return { found: true, ...outcome };
     }
+    if (own === null) return null;
     if (change.kind === 'subtask') {
-        const target = subtaskTarget(into, change);
+        const target = subtaskTarget(own, change);
         const before = mapBeforeShape.parse(change.before);
-        if (change.undo === 'delete') return writeSubtaskAdd(hub, config, target, before);
-        return restoreSubtask(hub, config, target, change.field, before);
+        if (change.undo === 'delete') return writeSubtaskAdd(own.hub, own.config, target, before);
+        return restoreSubtask(own.hub, own.config, target, change.field, before);
     }
     if (change.kind === 'subtask-add') {
-        const target = subtaskTarget(into, change);
-        return writeSubtask(hub, config, target, change.field, 'delete');
+        const target = subtaskTarget(own, change);
+        return writeSubtask(own.hub, own.config, target, change.field, 'delete');
     }
     if (
         change.kind === 'feed-field' ||
@@ -476,13 +479,13 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         change.kind === 'lead-add' ||
         change.kind === 'radar-add'
     ) {
-        return feedUndo(into, change);
+        return feedUndo(own, change);
     }
-    return collectionUndo(into, change);
+    return collectionUndo(own, change);
 }
 
 /** The four feed writes, taken back through the writers they came from. */
-function feedUndo(into: WriteTarget, change: Change): WriteOutcome | null {
+function feedUndo(into: PrimaryTarget, change: Change): WriteOutcome | null {
     const feed = feedOf(into, change);
     if (feed === null) return null;
     if (change.kind === 'feed-field') {
@@ -499,7 +502,7 @@ function feedUndo(into: WriteTarget, change: Change): WriteOutcome | null {
 }
 
 /** The four collection writes, taken back through the writers they came from. */
-function collectionUndo(into: WriteTarget, change: Change): WriteOutcome | null {
+function collectionUndo(into: PrimaryTarget, change: Change): WriteOutcome | null {
     const collection = collectionFor(into, change);
     if (collection === null) return null;
     const { key, held } = collection;

@@ -3,7 +3,7 @@
 // folder owns it because what makes an entry unique is a fact about the feed; the palette in
 // state/workbench, above the feeds folder, reads it from here.
 
-import { HUB_ROOT, hubId } from '../../data/helpers/hub-names.ts';
+import { hubId } from '../../data/helpers/hub-names.ts';
 import type { FeedKind } from '../../data/model/index.ts';
 import { filledTextShape, mapShape, readAs } from '../../data/shapes/shapes.ts';
 
@@ -15,18 +15,18 @@ export function nestedStrings(value: unknown): string[] {
     return Object.values(value).flatMap(nestedStrings);
 }
 
-/** The key of the hub a feed entry is of: its `root`, else the first hub's. */
+/** The name of the hub a feed entry is of: its `root`, and the empty string for the primary's. */
 export function feedRoot(entry: object): string {
-    return readAs(filledTextShape, readAs(mapShape, entry)?.root) ?? HUB_ROOT;
+    return readAs(filledTextShape, readAs(mapShape, entry)?.root) ?? '';
 }
 
 /**
  * The id a feed view's cursor holds for an entry: the entry's own name, with the key of its hub and
- * a colon in front of it when the entry is of a hub other than the first, so two hubs' entries of
+ * a colon in front of it when the entry is of a hub other than the primary, so two hubs' entries of
  * one name are two cursors. A write names the entry by its own name and its hub in `root`.
  */
 export function feedCursorId(entry: object, name: string): string {
-    return hubId(feedRoot(entry), name);
+    return hubId(feedRoot(entry), name, null);
 }
 
 /** The identity one entry carries on its own, before the feed is asked whether it is unique. */

@@ -33,7 +33,7 @@ import { placeOf } from '../../data/snapshot/place.ts';
 import { readAs } from '../../data/shapes/shapes.ts';
 import type { Deck } from '../../data/model/index.ts';
 import { readAnswer } from '../sources/fs-transport.ts';
-import { HUB_ROOT, type FsRoot } from '../sources/fs.ts';
+import type { FsRoot } from '../sources/fs.ts';
 import { filesNamed, folderNamed } from '../shared/answers/files-named.ts';
 import type { EntitiesStore, Queries } from '../shared/stores/shapes.ts';
 import {
@@ -179,7 +179,8 @@ export function createPresent(
     entities: EntitiesStore,
     queries: Queries,
     token: () => string,
-    roots: () => FsRoot[]
+    roots: () => FsRoot[],
+    primary: () => string | null
 ): PresentStore {
     const heard: Record<string, number | undefined> = {};
 
@@ -270,7 +271,10 @@ export function createPresent(
     }
 
     const path = $derived(str(entities.config()?.config.portfolio_deck) ?? '');
-    const portfolio = $derived<DeckRef | null>(path === '' ? null : { root: HUB_ROOT, path });
+    const portfolio = $derived.by<DeckRef | null>(() => {
+        const root = primary();
+        return path === '' || root === null ? null : { root, path };
+    });
     const projectDecks = $derived(
         Object.values(entities.portfolio()?.entities.projects ?? {})
             .flatMap((project) =>
@@ -278,7 +282,7 @@ export function createPresent(
                     ? []
                     : [
                           {
-                              ref: { root: placeOf(project).root, path: project.deck },
+                              ref: { root: placeOf(project, primary()).root, path: project.deck },
                               id: project.id,
                               title:
                                   (project.short ?? '') === ''

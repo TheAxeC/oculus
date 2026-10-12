@@ -212,6 +212,7 @@ export function editsBetween(from: string, to: string): TextEdit[] {
 export const LSP_EDIT_NOTICES = [
     'lsp_edit_changed',
     'lsp_edit_elsewhere',
+    'lsp_edit_loading',
     'lsp_edit_empty',
     'lsp_edit_failed',
     'lsp_edit_gone',

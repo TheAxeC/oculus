@@ -129,7 +129,7 @@ const PERSONAL_ROWS = (['idea', 'r'] as const).flatMap((id): FieldRow[] => [
             refused: [
                 {
                     field: 'id',
-                    reason: 'the id is the name of the folder, or for a repository the key of its roots: entry; rename that to change it'
+                    reason: 'the id is the name of the folder, or for a repository the name of its workspace folder; rename that to change it'
                 }
             ],
             records: []

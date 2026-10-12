@@ -5,7 +5,7 @@
 //
 // A 403 without a field refusal can mean the server minted a new token while the page kept the old
 // one. It reloads the page data and retries once. A field refusal, such as an open path outside the
-// configured roots, is reported without retrying.
+// folders of the workspace, is reported without retrying.
 //
 // Every write that does not land, refused by the server or given no answer, is also said to
 // whatever registered through onUnwritten, which is the notification the status bar's bell counts,
@@ -25,7 +25,6 @@
 import { tick } from 'svelte';
 import { z } from 'zod';
 import { fields } from '../../data/helpers/guards.ts';
-import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import {
     optionalTextShape,
     readJson,
@@ -85,6 +84,7 @@ const branchShape = unchanged(
 const answerShape = z.object({
     error: optionalTextShape,
     code: optionalTextShape,
+    reason: optionalTextShape,
     changed: survivorsShape(z.string()).catch([]),
     refused: survivorsShape(refusalShape).catch([]),
     output: optionalTextShape,
@@ -94,7 +94,7 @@ const answerShape = z.object({
 }) satisfies z.ZodType<
     Pick<
         WriteAnswer,
-        'error' | 'code' | 'changed' | 'refused' | 'output' | 'branches' | 'id' | 'hash'
+        'error' | 'code' | 'reason' | 'changed' | 'refused' | 'output' | 'branches' | 'id' | 'hash'
     >
 >;
 
@@ -116,6 +116,9 @@ export function writeTimeout(config: Record<string, unknown> | null): number | n
 
 /** The code of the refusal a write over a file with unsaved text in a tab is answered with. */
 const FILE_UNSAVED = 'file_unsaved';
+
+/** The code of the refusal a write is answered with while it cannot be told if a tab holds it. */
+const FOLDERS_LOADING = 'folders_loading';
 
 /**
  * The page's writes. `settings` is the merged configuration as the page last received it, read at
@@ -286,9 +289,11 @@ export function createWrites(
         return send({ kind: 'manifest', id, fields });
     }
 
-    /** Ask the local server to reveal one project folder, under the first hub or the hub `root`. */
-    async function openFolder(path: string, root: string = HUB_ROOT): Promise<WriteAnswer> {
-        return send(root === HUB_ROOT ? { path } : { root, path }, OPEN_PATH);
+    /**
+     * Ask the local server to reveal one project folder, under the primary hub or the hub `root`.
+     */
+    async function openFolder(path: string, root = ''): Promise<WriteAnswer> {
+        return send(root === '' ? { path } : { root, path }, OPEN_PATH);
     }
 
     /**
@@ -381,30 +386,26 @@ export function createWrites(
 
     /**
      * Set or clear one field allowed by a generated feed, in the feed of the hub `root` names; the
-     * first hub's feed when it is absent.
+     * primary hub's feed when it is absent.
      */
     async function writeFeedField(
         feed: string,
         id: string,
         field: string,
         value: string | number | boolean | null,
-        root: string = HUB_ROOT
+        root = ''
     ): Promise<WriteAnswer> {
         return send(
-            root === HUB_ROOT
+            root === ''
                 ? { kind: 'feed-field', feed, id, field, value }
                 : { kind: 'feed-field', feed, id, root, field, value }
         );
     }
 
     /** Delete one entry from a generated feed that permits deletion, in the hub `root` names. */
-    async function deleteFeedEntry(
-        feed: string,
-        id: string,
-        root: string = HUB_ROOT
-    ): Promise<WriteAnswer> {
+    async function deleteFeedEntry(feed: string, id: string, root = ''): Promise<WriteAnswer> {
         return send(
-            root === HUB_ROOT
+            root === ''
                 ? { kind: 'feed-delete', feed, id }
                 : { kind: 'feed-delete', feed, id, root }
         );
@@ -428,11 +429,9 @@ export function createWrites(
      * Rename one LinkedIn idea and its same-basename sidecars as the next numbered post, in the
      * folder of the hub the idea is of.
      */
-    async function markPosted(file: string, root: string = HUB_ROOT): Promise<WriteAnswer> {
+    async function markPosted(file: string, root = ''): Promise<WriteAnswer> {
         return send(
-            root === HUB_ROOT
-                ? { kind: 'linkedin-post', file }
-                : { kind: 'linkedin-post', file, root }
+            root === '' ? { kind: 'linkedin-post', file } : { kind: 'linkedin-post', file, root }
         );
     }
 
@@ -484,9 +483,9 @@ export function createWrites(
 
     /**
      * Set one setting an app declares: the endpoint writes the value under the setting's whole key
-     * in `app_settings` of the first hub's config/behavior.yml, and refuses, writing nothing, a key
-     * no approved app declares and a value that breaks its declaration. The change is recorded in
-     * History and can be taken back.
+     * in `app_settings` of the primary hub's config/behavior.yml, and refuses, writing nothing, a
+     * key no approved app declares and a value that breaks its declaration. The change is recorded
+     * in History and can be taken back.
      */
     async function writeAppSetting(key: string, value: unknown): Promise<WriteAnswer> {
         return send({ kind: 'app-setting', key, value });
@@ -602,8 +601,16 @@ export function createWrites(
      */
     function unsavedRefusal(request: unknown, path: string): Exchange | null {
         const file = fileOf(request, path);
-        if (file === null || !heldUnsaved(file)) return null;
+        if (file === null) return null;
         const name = file.path.slice(file.path.lastIndexOf('/') + 1);
+        if (look.unsavedUnknown(file)) {
+            const error = t('app.folders_loading', name);
+            return {
+                answered: true,
+                answer: { ok: false, changed: [], refused: [], error, code: FOLDERS_LOADING }
+            };
+        }
+        if (!heldUnsaved(file)) return null;
         const error = t('app.file_unsaved', name);
         return {
             answered: true,
@@ -684,7 +691,8 @@ export function createWrites(
                         refused: held.refused,
                         error,
                         status: response.status,
-                        ...(held.code === undefined ? {} : { code: held.code })
+                        ...(held.code === undefined ? {} : { code: held.code }),
+                        ...(held.reason === undefined ? {} : { reason: held.reason })
                     }
                 };
             }

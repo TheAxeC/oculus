@@ -72,7 +72,7 @@
     import { hitKey, rowFor, totals, type Chosen } from '$lib/state/sources/search/hits';
     import { searchKeymap, searchPlan } from '$lib/state/sources/search/keys';
     import { createWalk } from '$lib/state/sources/search/walk';
-    import { currentWorkspace, servesRoot } from '$lib/state/sources/fs-transport';
+    import { servesRoot } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -105,8 +105,7 @@
     const said = $derived(replaceSaid(instance.id));
     const wanted = $derived(focusWanted(instance.id));
     const saved = $derived(workspaces());
-    const current = $derived(currentWorkspace(saved));
-    const roots = $derived(current.roots.map((one) => one.key));
+    const roots = $derived(saved.folders.map((one) => one.key));
     /** Whether the tab's root is one this workspace serves, or the tab searches every root. */
     const served = $derived(held.root === ALL_ROOTS || servesRoot(saved, held.root));
     const keymap = searchKeymap(onMac());

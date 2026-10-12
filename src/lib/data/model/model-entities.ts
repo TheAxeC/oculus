@@ -4,11 +4,10 @@
 export type Id = string;
 
 /**
- * A record that says which hub it was read from: the key of the `roots:` entry marked `hub: true`
- * for a record of a hub other than the first, `hub` for one of the first hub when the portfolio
- * holds more than one hub, and nothing for a record of a portfolio of one hub. Absent is read as
- * `hub` (`rootOf` of data/helpers/hub-names.ts). An audit finding uses it for the Files root its
- * file is relative to (`AuditFinding`).
+ * A record that says which hub it was read from: the name of the workspace folder that holds the
+ * hub, for a record of a hub other than the primary, and nothing for a record of the primary.
+ * Absent is read as the primary's name (`rootOf` of data/helpers/hub-names.ts). An audit finding
+ * uses it for the Files root its file is relative to (`AuditFinding`).
  */
 export type Rooted = { root?: string };
 
@@ -113,9 +112,9 @@ export type RawManifest = {
     /** The manifest's own `id` value, exactly as read, whatever its type. */
     manifestId?: unknown;
     /**
-     * Set on the project of a repository named by a `roots:` entry: the key of that root and its
-     * folder, which is where `<dir>/.oculus/project.yml` and the project's documents and deck are
-     * read from. A project of a scan folder has none.
+     * Set on the project of a repository that is a workspace folder: the name of that folder and
+     * its folder, which is where `<dir>/.oculus/project.yml` and the project's documents and deck
+     * are read from. A project of a scan folder has none.
      */
     repository?: { root: string; dir: string };
 };
@@ -369,8 +368,8 @@ export type Project = Rooted & {
     file: string;
     /**
      * Where the project's folder is when it is a repository served as a Files root of its own: the
-     * root's key and the repository's absolute path: a project read from a repository named by a
-     * `roots:` entry. A project of a hub folder has none.
+     * root's key and the repository's absolute path: a project read from a repository that is a
+     * workspace folder. A project of a hub folder has none.
      */
     repository?: { root: string; dir: string };
     /** The web addresses or paths the manifest's `links:` lists. */
@@ -488,9 +487,9 @@ export type Person = Rooted & {
     /** True on the one entry that is the hub's owner; absent on every other. */
     self?: boolean;
     /**
-     * Absolute path of the people file of a person of a hub other than the first, which the Person
-     * view opens under that hub's root. A person of the first hub has none: the configuration's
-     * `people_file` names its file.
+     * Absolute path of the people file of a person of a hub other than the primary, which the
+     * Person view opens under that hub's root. A person of the primary hub has none: the
+     * configuration's `people_file` names its file.
      */
     file?: string;
     /**

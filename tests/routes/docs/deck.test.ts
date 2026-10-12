@@ -30,7 +30,7 @@ function source(): { source: DeckSource; dir: string } {
         dir,
         source: {
             roots: [{ key: 'hub', dir: join(dir, 'hub') }],
-            hub: join(dir, 'hub'),
+            primary: { key: 'hub', dir: join(dir, 'hub') },
             config: portfolioConfigFrom(loadConfig(engineDir()).config),
             projects: []
         }
@@ -84,7 +84,7 @@ describe('the deck route', () => {
             { row: 'a link inside the root that leaves it', query: 'root=hub&path=link' },
             {
                 row: 'an absolute path',
-                query: `root=hub&path=${encodeURIComponent(join(held.hub, '..', 'elsewhere', 'secret'))}`
+                query: `root=hub&path=${encodeURIComponent(join(held.primary?.dir ?? '', '..', 'elsewhere', 'secret'))}`
             }
         ];
         for (const { row, query } of refused) {

@@ -21,8 +21,8 @@ import { TerminalRefused } from '../../pty/refusal.ts';
 
 /** What starts an update task, beyond the tmux options of every terminal start. */
 export type TaskStartOptions = StartOptions & {
-    /** The hub root the session starts in. */
-    hub: string;
+    /** The primary hub's folder the session starts in; null while the workspace has no primary. */
+    hub: string | null;
     /** The `claude` program, as `claude_bin` of the machine's configuration names it. */
     claudeBin: string;
     /** The terminal's grid: the page's size for a press, a fixed one for a scheduled run. */
@@ -56,6 +56,7 @@ export async function startUpdateTask(
     skip: boolean,
     options: TaskStartOptions
 ): Promise<TaskStart> {
+    if (options.hub === null) return { refused: 'no-primary', names: [] };
     try {
         const terminal = await startTerminal(
             {

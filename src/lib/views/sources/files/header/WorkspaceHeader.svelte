@@ -19,7 +19,7 @@
 
     type Props = {
         nav: TreeNav;
-        /** The workspace's name, or the words for the configured roots. */
+        /** The workspace's name, or the words for an unsaved workspace. */
         label: string;
         /** Whether the roots show under the header. */
         open: boolean;

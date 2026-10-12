@@ -110,8 +110,8 @@ export type FrontmatterRead =
 
 /**
  * One frontmatter block as the map it holds, or the one problem that stopped it being read. An
- * empty block is no keys, the same as loadLocal reads an empty file. The documents of a project and
- * the slides of a deck read their blocks through this one rule.
+ * empty block is no keys, the same as readLocal (config/local.ts) reads an empty file. The
+ * documents of a project and the slides of a deck read their blocks through this one rule.
  */
 export function parseFrontmatter(block: string): FrontmatterRead {
     let parsed: unknown;

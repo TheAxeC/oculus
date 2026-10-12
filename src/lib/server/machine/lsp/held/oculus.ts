@@ -18,6 +18,8 @@ import { heldKey, type Held, type Page } from './held.ts';
 /** What the messages read of the relay. */
 export type OculusContext = {
     roots(): ServedRoot[];
+    /** Oculus's own config folder. */
+    config(): string;
     env(root: ServedRoot): RootEnv;
     changes(): ChangeLog | undefined;
     send(page: Page, channel: string, payload: LspToPage): void;

@@ -50,6 +50,7 @@ text:
         refused_dependency_self: The command {0} depends on itself.
         refused_dependency_unknown: The command {0} depends on {1}, which is not a command.
         refused_no_file: 'No value for {0}: open a file in a source tab first.'
+        refused_no_primary: The open workspace has no primary hub, so nothing was started; set a primary in the workspace file.
         refused_no_selection: 'No value for {0}: select text in a source tab first.'
         refused_needs_confirm: '{0} asks for a confirmation at each start, so nothing was started.'
         refused_not_a_session: That is not a session id.

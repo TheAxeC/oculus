@@ -8,7 +8,6 @@
 
 import { openSettings, textCatalog } from '$lib/data/sources/config';
 import { handleOpen } from '$lib/server/files/open';
-import { browserRoots } from '$lib/server/files/roots';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) => {
@@ -17,8 +16,10 @@ export const POST: RequestHandler = ({ request, locals }) => {
         request,
         locals.token,
         () => textCatalog(config),
-        browserRoots({ config, engine: locals.server.engine, local: locals.server.local }),
+        locals.server.workspace.open().roots,
         () => openSettings(config).programApps,
-        locals.server.openPath
+        locals.server.openPath,
+        undefined,
+        locals.server.workspace.open().primary
     );
 };

@@ -108,7 +108,7 @@
         layout: { activeInstance, currentPage, instanceLayoutState, layout },
         clangd,
         selection: { selected },
-        selectors: { engineAtFor, sessionById },
+        selectors: { docPlaceFor, sessionById },
         terminals: { terminalById },
         ui: { instanceState, requestPalette }
     } = client;
@@ -126,7 +126,7 @@
         followedTab(
             panes(layout(page)).map((one) => one.pane),
             activeInstance(page)?.id ?? null,
-            (one) => fileOfTab(one, engineAtFor(one)) !== null
+            (one) => fileOfTab(one, docPlaceFor(one)) !== null
         )
     );
 
@@ -256,7 +256,7 @@
 {#snippet header(nav: TreeNav)}
     <WorkspaceHeader
         {nav}
-        label={current.name === '' ? t('files.workspace_default') : current.name}
+        label={saved.open === null ? t('files.workspace_untitled') : saved.open.name}
         open={headerOpen}
         hidden={tree.listed.hidden}
         ignored={tree.listed.ignored}
@@ -311,9 +311,6 @@
             <Empty message={t('files.none')} glyph={t('files.none_glyph')} />
         {/if}
     {:else}
-        {#each saved.dropped as key (key)}
-            <Empty error message={t('files.reserved', key)} />
-        {/each}
         <RootedTree
             {tree}
             {workspace}

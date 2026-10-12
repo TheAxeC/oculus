@@ -23,7 +23,6 @@ import { isDeepStrictEqual } from 'node:util';
 import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
 import { languageOf, type LanguageMap } from '../../../../data/helpers/files/languages.ts';
 import { createLimiter } from '../../../../data/helpers/run/limiter.ts';
-import { ENGINE_ROOT } from '../../../../data/helpers/hub-names.ts';
 import type {
     AppHostRow,
     AppHostsPayload,
@@ -679,7 +678,7 @@ export class AppHosts {
 
     /** Look in the roots for the files that `workspaceContains` events name. */
     #look(held: AppsHeld): void {
-        const roots = this.#options.roots().filter((root) => root.key !== ENGINE_ROOT);
+        const roots = this.#options.roots();
         const where = roots.map((root) => `${root.key}=${root.dir}`).join('\n');
         for (const app of held.apps) {
             if (app.row.host === '' || !judge(held, app, cyclesOf(held)).ok) continue;

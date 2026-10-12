@@ -21,13 +21,13 @@
 // catalog holds for the word (state/shared/answers/terminal-words.ts).
 
 import { json } from '@sveltejs/kit';
+import { homedir } from 'node:os';
 import { z } from 'zod';
 import { isUpdateTask } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
-import { glyphCatalog, loadLocal, textCatalog } from '../../../data/sources/config.ts';
-import type { Root } from '../../files/files.ts';
-import { hubTargets } from '../../files/roots.ts';
+import { glyphCatalog, textCatalog } from '../../../data/sources/config.ts';
+import { repositoryRoots } from '../../files/roots.ts';
 import { approveLatexStep, startLatex } from './latex/latex.ts';
 import type { RcHomes } from './latex/approval.ts';
 import { captureTask, restartTask, rerunTask, startCommand } from '../runs/commands/run.ts';
@@ -104,12 +104,6 @@ export type TerminalOptions = StartOptions &
         recordFor?: (id: string) => SessionRecord | null;
         /** Dataset keys in the server's latest portfolio payload. */
         datasetIdsFor?: () => string[];
-        /** The hub root in which a recovery shell starts. */
-        hubFor?: () => string;
-        /**
-         * The roots the file browser serves, which a latex request for a folder is looked up in.
-         */
-        servedRootsFor?: () => Root[];
         /** Whether a program is found, as a build looks up each program of its recipe. */
         programFound?: (program: string) => boolean;
         /** Re-read the terminal manager after a write. */
@@ -118,10 +112,10 @@ export type TerminalOptions = StartOptions &
         turns?: Turns;
         /** The user's shell, whose base name a busy read compares a pane's command with. */
         shell?: string;
-        /** The directories the file browser serves, one of which holds a command's repository. */
-        rootsFor?: () => string[];
         /** The approvals file the command texts are checked against. */
         approvalsFor?: () => string;
+        /** The directories one of which holds a command's repository; the workspace's folders. */
+        rootsFor?: () => string[];
         /** The home and XDG folders a build reads latexmkrc files from; the process's if absent. */
         latexHomesFor?: () => RcHomes;
     };
@@ -141,6 +135,7 @@ function wrapped(options: TerminalOptions): TerminalOptions {
     const inner = options.run ?? run;
     return {
         ...options,
+        rootsFor: options.rootsFor ?? (() => repositoryRoots(options.openFor())),
         run: async (args, tmux) => {
             try {
                 return await inner(args, tmux);
@@ -205,17 +200,12 @@ async function resumeSession(
     return json({ ok: true, terminal }, { headers: NO_STORE });
 }
 
-/** The local config a request reads, the route's own when it hands one. */
-function localOf(options: TerminalOptions) {
-    return options.localFor?.() ?? loadLocal(options.engine);
-}
-
 /**
  * The account a session's transcript sits under, as the environment its resumed or forked process
  * starts with, so a session of a second account continues under that account's login.
  */
 function sessionAccount(record: SessionRecord, options: TerminalOptions) {
-    const accounts = agentAccounts(localOf(options));
+    const accounts = agentAccounts(options.localFor());
     return accountEnv(record.tool, accountOfPath(record.tool, record.path, accounts));
 }
 
@@ -266,7 +256,7 @@ async function composeSession(
     options: TerminalOptions
 ): Promise<Response> {
     const request = composeRequest(message);
-    const local = localOf(options);
+    const local = options.localFor();
     let prompt = request.prompt;
     let name: string | undefined;
     let seed = '';
@@ -306,18 +296,11 @@ async function composeSession(
     return json({ ok: true, terminal }, { headers: NO_STORE });
 }
 
-/** What the task steps read: the hub, the merged config and the engine of this request. */
+/**
+ * What the task steps read: the open workspace, the merged config and the engine of this request.
+ */
 function seedSource(options: TerminalOptions): SeedSource {
-    const local = localOf(options);
-    const merged = options.configFor();
-    const hubs = hubTargets({ config: merged, engine: options.engine, local });
-    return {
-        hub: options.hubFor?.() ?? local.hub,
-        merged,
-        engine: options.engine,
-        workspaces: local.workspaces,
-        hubs
-    };
+    return { open: options.openFor(), merged: options.configFor(), engine: options.engine };
 }
 
 /** The task reference of a seed or approve-seed request, or the refusal for a missing one. */
@@ -361,7 +344,7 @@ async function recoverDataset(
     }
     const known = options.datasetIdsFor?.() ?? [];
     if (!known.includes(key)) return refusal('bad-terminal');
-    const cwd = options.hubFor?.() ?? loadLocal(options.engine).hub;
+    const cwd = options.openFor().primaryDir ?? homedir();
     const terminal = await startTerminal(
         {
             kind: 'shell',
@@ -384,10 +367,12 @@ async function startTask(
     options: TerminalOptions
 ): Promise<Response> {
     if (!isUpdateTask(kind)) return refusal('bad-terminal');
-    const local = options.localFor?.() ?? loadLocal(options.engine);
+    const local = options.localFor();
+    const hub = options.openFor().primaryDir;
+    if (hub === null) return refusal('no-primary');
     const started = await startUpdateTask(kind, false, {
         ...options,
-        hub: local.hub,
+        hub,
         claudeBin: local.claudeBin,
         size: { cols, rows }
     });

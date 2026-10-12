@@ -10,6 +10,8 @@ import * as config from '../../../src/lib/data/sources/config.ts';
 import type { LocalConfig } from '../../../src/lib/data/sources/config.ts';
 import { carryingHandler, type OculusRequest } from '../../../src/lib/server/root/context.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { plantState, workspaceOf } from '../../fixtures/hubs/workspace.ts';
+import { writeState } from '../../../src/lib/server/files/workspace/state.ts';
 import { contextFixture } from './context-fixture.ts';
 
 afterEach(() => {
@@ -24,13 +26,13 @@ function layoutOf(...paths: string[]): string {
 
 /**
  * A server context over a scratch engine and a scratch hub, and what one request through the hook
- * reads of it. `local` is the context's own machine settings, which the cache reads the hub from.
+ * reads of it. The hub is the one folder of the open workspace and its primary when it holds a
+ * `.oculus/config` folder, which the cache reads the hub's layer from.
  */
 function serving(files: Record<string, string>, hubFiles: Record<string, string> = {}) {
     const engine = plantScratch('oculus-hook-config-', files, ['config/catalogs', 'config/text']);
     const hub = plantScratch('oculus-hook-hub-', hubFiles);
     const local: LocalConfig = {
-        hub,
         port: 8791,
         claudeBin: 'claude',
         riteDapBin: 'rite_dap',
@@ -38,7 +40,13 @@ function serving(files: Record<string, string>, hubFiles: Record<string, string>
         calendars: [],
         mail: []
     };
-    const context = contextFixture({ token: 'hook-token', engine, local });
+    const state = plantState([{ name: 'hub', dir: hub }], 'hub');
+    const context = contextFixture({
+        token: 'hook-token',
+        engine,
+        local,
+        workspace: workspaceOf(state)
+    });
     const request = {} as OculusRequest;
     carryingHandler(() => undefined, context)(request, {});
     const read = vi.spyOn(config, 'loadConfig');
@@ -62,7 +70,7 @@ function serving(files: Record<string, string>, hubFiles: Record<string, string>
         });
         return answer;
     };
-    return { engine, hub, local, read, ask, close: () => context.close() };
+    return { engine, hub, state, local, read, ask, close: () => context.close() };
 }
 
 describe('the config cache of the server context', () => {
@@ -129,7 +137,7 @@ describe('the config cache of the server context', () => {
         served.close();
     });
 
-    it('reads the layer of the hub that local.yml names now', async () => {
+    it('reads the layer of the primary hub the open workspace names now', async () => {
         const served = serving(
             { 'config/behavior.yml': 'one: 1\n' },
             { '.oculus/config/layout.yml': layoutOf('a.md') }
@@ -138,7 +146,11 @@ describe('the config cache of the server context', () => {
             '.oculus/config/layout.yml': layoutOf('other.md')
         });
         expect(await served.ask()).toMatchObject({ docs: [{ path: 'a.md' }] });
-        served.local.hub = other;
+        writeState(served.state, {
+            open: null,
+            recent: [],
+            unsaved: { folders: [{ name: 'other', path: other }], primary: 'other' }
+        });
         expect(await served.ask()).toMatchObject({ docs: [{ path: 'other.md' }] });
         expect(served.read).toHaveBeenCalledTimes(2);
         served.close();
@@ -166,9 +178,16 @@ describe('the config cache of the server context', () => {
         served.close();
     });
 
-    it('keeps its read for a hub folder that does not exist', async () => {
+    it('keeps its read for a primary hub folder that does not exist', async () => {
         const served = serving({ 'config/behavior.yml': 'one: 1\n' });
-        served.local.hub = join(served.hub, 'missing');
+        writeState(served.state, {
+            open: null,
+            recent: [],
+            unsaved: {
+                folders: [{ name: 'hub', path: join(served.hub, 'missing') }],
+                primary: 'hub'
+            }
+        });
         await served.ask();
         await served.ask();
         expect(served.read).toHaveBeenCalledTimes(1);

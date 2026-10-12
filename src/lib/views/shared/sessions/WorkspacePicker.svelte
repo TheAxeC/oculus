@@ -12,8 +12,8 @@
         workspace: string;
         /** The folders offered, absolute, in the order the menu lists them. */
         places: string[];
-        /** The hub's folder, which is offered under its own name. */
-        hub: string;
+        /** The primary hub's folder, which is offered under its own name; null with no primary. */
+        hub: string | null;
         /** Which way the list opens: down from a composer, up from the list's foot. */
         placement: 'up' | 'down';
         onpick: (dir: string) => void;

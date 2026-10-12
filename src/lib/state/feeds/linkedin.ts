@@ -2,7 +2,6 @@
 // The view receives ready-to-draw ideas and posts and owns no folder or calendar rules.
 
 import { scalar } from '../../data/helpers/guards.ts';
-import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import { readAs, searchRevealShape, textOrNumberShape } from '../../data/shapes/shapes.ts';
 
 export { localDate } from '../../data/helpers/dates.ts';
@@ -14,7 +13,7 @@ export type LinkedinEntry = {
     category: string;
     body: string;
     idea: boolean;
-    /** The key of the hub the post is of, present only for a hub other than the first. */
+    /** The key of the hub the post is of, present only for a hub other than the primary. */
     root?: string;
 };
 
@@ -103,7 +102,7 @@ export function splitPosts(entries: (Record<string, unknown> | null)[]): SplitLi
                 category: text(entry, 'category'),
                 body: text(entry, 'body'),
                 idea,
-                ...(root === '' || root === HUB_ROOT ? {} : { root })
+                ...(root === '' ? {} : { root })
             };
         })
         .filter((entry): entry is LinkedinEntry => entry !== null);

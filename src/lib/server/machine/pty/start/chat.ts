@@ -5,13 +5,15 @@
 import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { chatModel } from '../../../../data/accounts/chat.ts';
-import { loadLocal, textCatalog, type LocalConfig } from '../../../../data/sources/config.ts';
+import { textCatalog, type LocalConfig } from '../../../../data/sources/config.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { defaultOverridesPath } from '../../../sessions/overrides.ts';
 import { writeTextAtomic } from '../../../core/json.ts';
 import { words } from '../../../core/words.ts';
 import { projectDirectory } from '../../../files/files.ts';
-import { firstHubConfig, hubTargets } from '../../../files/roots.ts';
+import type { OpenWorkspace } from '../../../files/workspace/open.ts';
+import { primaryConfig, hubTargets } from '../../../files/roots.ts';
+import { TerminalRefused } from '../refusal.ts';
 import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from '../sessions.ts';
 import { shellWord } from '../shell-word.ts';
@@ -35,7 +37,9 @@ export type ChatOptions = StartOptions & {
      */
     configFor: () => Record<string, unknown>;
     /** Machine-local paths carried by ServerContext. */
-    localFor?: () => LocalConfig;
+    localFor: () => LocalConfig;
+    /** The open workspace: the primary hub the portfolio chat runs in, and the other hubs. */
+    openFor: () => OpenWorkspace;
 };
 
 /** The chat index path beside the configured sessions file, under its own retained folder. */
@@ -79,7 +83,8 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
         throw new Error('id must be a project id or null');
     }
     const engine = options.engine;
-    const local = options.localFor?.() ?? loadLocal(engine);
+    const local = options.localFor();
+    const open = options.openFor();
     const config = options.configFor();
     const catalog = textCatalog(config);
     const project = typeof id === 'string' ? (options.projectFor ?? (() => null))(id) : null;
@@ -90,13 +95,14 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const terminalId = newId('claude');
     const index = chatIndexPath(local.sessionsOverrides, terminalId);
     const portfolio = project === null;
-    // A project of a hub other than the first lies under its own hub's folder, and a project of a
+    // A project of a hub other than the primary lies under its own hub's folder, and a project of a
     // repository in the repository's own folder.
     const home = portfolio
-        ? local.hub
-        : (hubTargets({ config, engine, local }).find((one) => one.key === project.root)?.hub ??
-          local.hub);
-    const cwd = portfolio ? local.hub : projectDirectory(home, project);
+        ? open.primaryDir
+        : (hubTargets(engine, open).find((one) => one.key === project.root)?.hub ??
+          open.primaryDir);
+    if (home === null) throw new TerminalRefused('no-primary');
+    const cwd = portfolio ? home : projectDirectory(home, project);
 
     const focus =
         typeof id === 'string' && project !== null
@@ -104,7 +110,7 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
             : '';
     const note = words(catalog, 'server.chat.chat_index_note', index);
     const owner = options.ownerFor?.() ?? words(catalog, 'server.chat.chat_owner_fallback');
-    const instruction = words(catalog, 'server.chat.chat_instruction', local.hub, cwd, owner);
+    const instruction = words(catalog, 'server.chat.chat_instruction', home, cwd, owner);
     const system = [instruction, focus, note].filter((part) => part !== '').join('\n\n');
     const name = portfolio
         ? words(catalog, 'server.chat.chat_name', await chatNumber(catalog, options))
@@ -112,11 +118,7 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const seed = portfolio
         ? words(catalog, 'server.chat.seed_portfolio')
         : words(catalog, 'server.chat.seed_focus', project.title);
-    writeTextAtomic(
-        index,
-        portfolioContext(local.hub, firstHubConfig({ config, engine, local })),
-        0o600
-    );
+    writeTextAtomic(index, portfolioContext(home, primaryConfig(config, open)), 0o600);
     try {
         return await startTerminal(
             {

@@ -3,13 +3,12 @@
 // a hub, a write record and the paths a write lands on. Every path a suite writes is asserted to be
 // inside its own hub before it is written.
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { PortfolioConfig } from '../../../src/lib/data/model/index.ts';
-import { firstHubConfig } from '../../../src/lib/server/files/roots.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { PERSONAL_ROOT, PERSONAL_SCAN, plantPersonal } from '../../routes/edit/write-fixture.ts';
 import type { PlantedPersonal } from '../../routes/edit/write-fixture.ts';
@@ -152,11 +151,32 @@ export function personalWorld(): PersonalWorld {
     const root = hub();
     const planted = plantPersonal(root);
     const base = configFor();
-    const merged = { ...base.merged, roots: [{ key: PERSONAL_ROOT, dir: planted.served }] };
-    const { repositories } = firstHubConfig({
-        config: merged,
-        engine: engineDir(),
-        local: { hub: root }
-    });
-    return { root, config: { ...base, merged, repositories }, ...planted };
+    const repositories = [{ key: PERSONAL_ROOT, dir: planted.served }];
+    return { root, config: { ...base, repositories }, ...planted };
+}
+
+/**
+ * A hub whose own `.oculus/local.yml` holds `port: 8791` and whose layer file `behavior.yml` is a
+ * link to it, with that file's path.
+ */
+export function linkedHub(): { hub: string; local: string } {
+    const hub = scratchDir('oculus-hub-');
+    mkdirSync(join(hub, '.oculus', 'config'), { recursive: true });
+    const local = join(hub, '.oculus', 'local.yml');
+    writeFileSync(local, 'port: 8791\n');
+    symlinkSync('../local.yml', join(hub, '.oculus', 'config', 'behavior.yml'));
+    return { hub, local };
+}
+
+/**
+ * A hub whose layer file `behavior.yml` is a link to the `local.yml` of an engine's own config
+ * folder, which is made holding `port: 8791`, with that file's path.
+ */
+export function hubLinkedToEngine(engine: string): { hub: string; local: string } {
+    const hub = scratchDir('oculus-hub-');
+    mkdirSync(join(hub, '.oculus', 'config'), { recursive: true });
+    const local = join(engine, 'config', 'local.yml');
+    writeFileSync(local, 'port: 8791\n');
+    symlinkSync(local, join(hub, '.oculus', 'config', 'behavior.yml'));
+    return { hub, local };
 }

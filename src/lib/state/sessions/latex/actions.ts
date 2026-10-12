@@ -42,7 +42,7 @@ type LatexLayout = {
     openBeside: (view: string, state?: unknown, page?: string, asker?: string) => string;
     openAway: (view: string, state: unknown, page: string, avoid: string) => string;
     holding: (id: string) => { id: string } | null;
-    showFolderInFiles: (path: string, root?: string) => string;
+    showFolderInFiles: (path: string, root: string) => string;
     showTexView: () => string;
 };
 

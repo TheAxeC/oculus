@@ -19,10 +19,8 @@
 // process read two files.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import type { Entry } from '../../../data/model/index.ts';
 import { writeTextAtomic } from '../../core/json.ts';
 import { resolveRootPath, type Root } from '../files.ts';
@@ -33,11 +31,6 @@ export const BOOKMARKS = 'bookmarks';
 
 /** The field a bookmark is addressed by, which is the first field of the scaffold's schema. */
 export const BOOKMARK_IDENTITY = 'label';
-
-/** The hub's own bookmarks file, `<hub>/.oculus/bookmarks.yml`, resolved at the call. */
-export function defaultBookmarksPath(hub: string): string {
-    return join(hub, ROOT_FOLDER, 'bookmarks.yml');
-}
 
 /**
  * The file a machine with no bookmarks is given. The schema types a bookmark for the writers: a

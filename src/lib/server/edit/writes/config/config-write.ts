@@ -1,7 +1,7 @@
 // Layer 2, server. The writes of configuration files, as one dispatch: a deck group's slides, the
 // audit's mute list, the rail, one option of a tracked config file, one setting an app declares,
-// one list or family of one, and the default workspace's folders. Each is a file of the reader's
-// own, and anything about it can go wrong on this machine, so a writer that throws is told as
+// one list or family of one, and the open workspace's folders. Each is a file of the reader's own,
+// and anything about it can go wrong on this machine, so a writer that throws is told as
 // `unwritable` and the file is left alone.
 //
 // The dispatch answers with the outcome and the kind the change log files it under, or with the
@@ -20,16 +20,17 @@ import {
 import type { WriteOutcome, WriteTarget } from '../../writes.ts';
 import { writeMute } from './lists/audit-mute.ts';
 import { writeAppSetting } from './app-setting.ts';
+import { machineHubs } from './config-checks.ts';
 import { writeConfigKey } from './config-key.ts';
 import type { SourceInputs } from './config-sources.ts';
 import { writeConfigValue } from './config-value.ts';
 import { writeDeckSlides } from './lists/deck/deck.ts';
 import { writeRail } from './lists/rail.ts';
-import { addRootTo, orderRootsIn, removeRootFrom } from './lists/roots.ts';
+import { addFolder, orderFolders, removeFolder } from './lists/folders.ts';
 
 /** A configuration write done, with the kind it is logged as, or the refusal and its status. */
 export type ConfigAnswer =
-    { kind: string; outcome: WriteOutcome } | { error: string; status: number };
+    { kind: string; outcome: WriteOutcome } | { error: string; reason?: string; status: number };
 
 /** What a writer answers with when it wrote: the outcome of a write but for the project found. */
 type Written = Omit<WriteOutcome, 'found'>;
@@ -37,15 +38,22 @@ type Written = Omit<WriteOutcome, 'found'>;
 const UNWRITABLE: ConfigAnswer = { error: 'unwritable', status: 500 };
 
 /** Run one writer: a throw is `unwritable`, a refusal carries its status, a success its kind. */
-function settled(kind: string, run: () => Written | { error: string }): ConfigAnswer {
-    let outcome: Written | { error: string };
+function settled(
+    kind: string,
+    run: () => Written | { error: string; reason?: string }
+): ConfigAnswer {
+    let outcome: Written | { error: string; reason?: string };
     try {
         outcome = run();
     } catch {
         return UNWRITABLE;
     }
     if ('error' in outcome) {
-        return { error: outcome.error, status: outcome.error === 'unwritable' ? 500 : 400 };
+        return {
+            error: outcome.error,
+            ...(outcome.reason === undefined ? {} : { reason: outcome.reason }),
+            status: outcome.error === 'unwritable' ? 500 : 400
+        };
     }
     return { kind, outcome: { found: true, ...outcome } };
 }
@@ -53,6 +61,11 @@ function settled(kind: string, run: () => Written | { error: string }): ConfigAn
 /** What the target holds that the lists of a choice, a multi or a suggestion are built from. */
 function sourcesOf(into: WriteTarget): SourceInputs {
     return { hub: into.hub, projects: into.projects, entities: into.entities };
+}
+
+/** The primary hub's folder for a layer write, none while the workspace has no primary. */
+function hubOf(into: WriteTarget): string | undefined {
+    return into.hub ?? undefined;
 }
 
 /** The answer to a body that is a write of a configuration file, or null for any other body. */
@@ -84,7 +97,8 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
                 setting.key,
                 setting.value,
                 sourcesOf(into),
-                into.hub
+                hubOf(into),
+                machineHubs(into)
             )
         );
     }
@@ -98,22 +112,19 @@ export function configWrite(body: unknown, into: WriteTarget): ConfigAnswer | nu
                 family.value,
                 family.base,
                 sourcesOf(into),
-                into.hub
+                hubOf(into),
+                machineHubs(into)
             )
         );
     }
     const roots = rootsWrite(body);
     if (roots !== null) {
-        const sources = into.sources;
-        if (sources === undefined) return UNWRITABLE;
+        const open = into.workspace;
+        if (open === undefined) return UNWRITABLE;
         return settled('roots', () => {
-            if (roots.action === 'add') {
-                return addRootTo(sources.file, roots.dir, sources.held, sources.base);
-            }
-            if (roots.action === 'remove') {
-                return removeRootFrom(sources.file, roots.key, sources.base);
-            }
-            return orderRootsIn(sources.file, roots.keys, sources.base);
+            if (roots.action === 'add') return addFolder(open, roots.dir);
+            if (roots.action === 'remove') return removeFolder(open, roots.key);
+            return orderFolders(open, roots.keys);
         });
     }
     return null;

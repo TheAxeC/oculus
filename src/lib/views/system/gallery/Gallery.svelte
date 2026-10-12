@@ -23,7 +23,7 @@
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Meter from '$lib/ui/display/Meter.svelte';
+    import Meter from '$lib/ui/display/meters/Meter.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Segment from '$lib/ui/controls/segment/Segment.svelte';

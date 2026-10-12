@@ -104,10 +104,10 @@ export type ValidationRules = {
 export type PortfolioConfig = {
     scan: ScanRule[];
     /**
-     * The repositories this hub reads as projects, one `.oculus/project.yml` each: the roots of the
-     * file browser that can be projects. The server sets them for the first hub
-     * (server/files/roots.ts, `firstHubConfig`); a hub built without them, a second hub among
-     * them, reads none.
+     * The repositories this hub reads as projects, one `.oculus/project.yml` each: the folders of
+     * the workspace that can be projects. The server sets them for the primary hub
+     * (server/files/roots.ts, `primaryConfig`); a hub built without them, a second hub among them,
+     * reads none.
      */
     repositories: RepositoryRoot[];
     /** The folder a new project of each tier is made in, `new_project_dir:` of sources.yml. */
@@ -335,15 +335,15 @@ export type AppsPayload = { rows: AppRow[]; findings: Finding[]; folders: string
 export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
 
 /**
- * One thing a hub is missing. `scope` is the project folder (the key of its root for a project
- * read from a repository), the collection key or the website, `where` the file, field or entry it
- * is about, `file` the path of the file it is about relative to the folder its `root` names (the
- * empty text when there is none, which the signature does not read), and `signature` the twelve
- * hex characters the mute list in config/behavior.yml holds. A finding of a hub other than the
- * first has its root key in front of its `scope`, so its signature differs from a first-hub
- * finding of the same place. `root` is the Files root `file` is relative to: a hub's as for any
- * record, and the repository's key for a finding that names a file of a project read from a
- * repository; such a finding with no file carries no `root`.
+ * One thing a hub is missing. `scope` is the project folder (the key of its root for a project read
+ * from a repository), the collection key or the website, `where` the file, field or entry it is
+ * about, `file` the path of the file it is about relative to the folder its `root` names (the empty
+ * text when there is none, which the signature does not read), and `signature` the twelve hex
+ * characters the mute list in config/behavior.yml holds. A finding of a hub other than the primary
+ * has its root key in front of its `scope`, so its signature differs from a primary-hub finding of
+ * the same place. `root` is the Files root `file` is relative to: a hub's as for any record, and
+ * the repository's key for a finding that names a file of a project read from a repository; such a
+ * finding with no file carries no `root`.
  */
 export type AuditFinding = Rooted & {
     scope: string;
@@ -358,7 +358,7 @@ export type AuditFinding = Rooted & {
 /** The payload of the `audit` channel: what the scan found, and what the reader has parked. */
 export type AuditPayload = {
     findings: AuditFinding[];
-    /** The signatures of config/behavior.yml's `audit_ignore:`, the first hub's mute list. */
+    /** The signatures of config/behavior.yml's `audit_ignore:`, the primary hub's mute list. */
     muted: string[];
 };
 
@@ -366,7 +366,13 @@ export type AuditPayload = {
  * One picture of the Memories wall as GET /api/memories answers it: the file's name, and its width
  * and height in pixels as the browser draws it, both null when its header gave no size.
  */
-export type Picture = { name: string; width: number | null; height: number | null };
+export type Picture = {
+    /** The name of the hub whose photo wall holds the picture. */
+    hub: string;
+    name: string;
+    width: number | null;
+    height: number | null;
+};
 
 /** The lines of a set of files as cloc splits them, with how many of their lines carry a TODO. */
 export type LineTally = {
@@ -400,7 +406,7 @@ export type FeedsPayload = Record<
         kind: FeedKind;
         file: string;
         /**
-         * The file of this feed in each hub other than the first, relative to that hub, by the
+         * The file of this feed in each hub other than the primary, relative to that hub, by the
          * hub's root key. Absent while the portfolio is one hub.
          */
         hubFiles?: Record<string, string>;

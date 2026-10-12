@@ -6,4 +6,7 @@ import { filesTarget, handleProjectFiles } from '$lib/server/files/project-files
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request, locals }) =>
-    handleProjectFiles(request, filesTarget(locals.server.engine, locals.config().config));
+    handleProjectFiles(
+        request,
+        filesTarget(locals.server.engine, locals.config().config, locals.server.workspace.open())
+    );

@@ -18,9 +18,9 @@ import {
     handleMailCallback as handleCallback,
     type MailCallbackTarget
 } from '../../../../src/lib/server/accounts/mail/routes.ts';
-import { fsWrites } from '../../../../src/lib/server/core/json.ts';
 import { GOOGLE, cleanup, scratch, writeAccount } from './fixture.ts';
 import { noop } from '../../../fixtures/doubles.ts';
+import { bookIn } from '../book.ts';
 import { it } from '../../../fixtures/scratch.ts';
 
 afterEach(cleanup);
@@ -66,7 +66,7 @@ function target(
         accounts: [GOOGLE],
         dir,
         providerDir: join(dir, 'connect'),
-        book: { file: join(dir, 'local.yml'), writes: fsWrites(), reload: noop },
+        book: bookIn(dir),
         redirect: callbackUrl(8791, 'mail'),
         states: over.states ?? new ConnectStates(),
         perSignal: 25,

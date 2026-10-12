@@ -291,13 +291,13 @@ export function repoStatus(
     rule: RepoRule,
     roots: readonly FsRoot[],
     git: GitPayload | null,
-    hubKey: string
+    hubKey: string | null
 ): RepoStatus | null {
     if (git === null) return null;
     if (rule.file !== null) return repositoryOf(rule.file, 'file', roots, git);
     if (rule.folder !== null) return repositoryOf(rule.folder, 'workbench', roots, git);
     if (rule.chosen !== null) return repositoryStatus(rule.chosen, 'chosen', git);
-    return repositoryOf({ root: hubKey, path: '' }, 'hub', roots, git);
+    return hubKey === null ? null : repositoryOf({ root: hubKey, path: '' }, 'hub', roots, git);
 }
 
 /**

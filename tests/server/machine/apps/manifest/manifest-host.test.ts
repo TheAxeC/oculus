@@ -46,7 +46,6 @@ const HOSTED: Hosted[] = [
     ],
     ...(
         [
-            ['engine', 'files_engine'],
             ['hub/secrets', 'files_closed'],
             ['hub/.git', 'files_shape'],
             ['hub/a//b', 'files_shape']
@@ -57,12 +56,12 @@ const HOSTED: Hosted[] = [
         [],
         refusedHost(words(key, entry))
     ]),
-    [
-        'files naming a root that is not shown',
-        { machine: hosted('files: [nosuchroot/x]\n'), roots: HUB },
-        ['app:notes'],
-        []
-    ],
+    ...(['engine', 'nosuchroot/x'] as const).map((entry): Hosted => [
+        `files naming ${entry}, which no workspace folder has`,
+        { machine: hosted(`files: [${entry}]\n`), roots: HUB },
+        [],
+        refusedHost(words('files_unknown', entry))
+    ]),
     [
         'files on a root app',
         {

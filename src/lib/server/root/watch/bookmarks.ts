@@ -19,8 +19,9 @@
 // The folder is made when it is not there, since there is nothing else to watch: a handle over a
 // folder that is not there cannot be opened, and the first bookmark would then be written into a
 // folder nothing is watching and reach no other page until the server was started again. It is the
-// hub's own `.oculus` folder unless local.yml moves the file, and an empty directory is the whole
-// of what is made; the bookmarks file itself is written by the first bookmark and not here.
+// primary hub's own `.oculus` folder unless a local.yml moves the file, and an empty directory is
+// the whole of what is made; the bookmarks file itself is written by the first bookmark and not
+// here. A workspace with no primary has no bookmarks file and this watches nothing.
 
 import { existsSync, mkdirSync, unwatchFile, watchFile } from 'node:fs';
 import { dirname } from 'node:path';
@@ -45,8 +46,11 @@ export const DEBOUNCE = 500;
 export const MAX_WAIT = 2 * DEBOUNCE;
 
 export type BookmarksWatchOptions = {
-    /** The reader's own bookmarks file; the machine's own path is resolved by the caller. */
-    file: string;
+    /**
+     * The reader's own bookmarks file, resolved by the caller from the primary hub; null while the
+     * workspace has no primary, and then nothing is watched.
+     */
+    file: string | null;
     /**
      * Milliseconds of quiet after the last event before one message is published. A value longer
      * than MAX_WAIT is the wait, since lodash raises a maximum wait to at least the quiet.
@@ -65,8 +69,10 @@ function reason(error: unknown): string {
  * handle.
  */
 export function watchBookmarks(hub: Hub, options: BookmarksWatchOptions): Watcher {
+    const { file } = options;
+    if (file === null) return { close: () => undefined };
     const debounce = options.debounce ?? DEBOUNCE;
-    const folder = dirname(options.file);
+    const folder = dirname(file);
     let closed = false;
     let watching = false;
 
@@ -91,20 +97,20 @@ export function watchBookmarks(hub: Hub, options: BookmarksWatchOptions): Watche
     try {
         if (!existsSync(folder)) mkdirSync(folder, { recursive: true });
         watchFile(
-            options.file,
+            file,
             { interval: Math.max(20, Math.floor(debounce / 4)), persistent: false },
             queue
         );
         watching = true;
     } catch (error) {
-        console.error(`bookmarks watch: cannot watch ${options.file}: ${reason(error)}`);
+        console.error(`bookmarks watch: cannot watch ${file}: ${reason(error)}`);
     }
 
     return {
         close(): void {
             closed = true;
             queued.cancel();
-            if (watching) unwatchFile(options.file, queue);
+            if (watching) unwatchFile(file, queue);
             watching = false;
         }
     };

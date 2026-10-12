@@ -280,11 +280,11 @@ function repositoryManifests(
 }
 
 /**
- * Every project manifest of the first hub: the scan folders' (`readManifests`) and the
- * repositories' that `roots` name (`repositoryManifests`). It is the one reader of the first hub's
- * projects, so the build and every reader that finds a project to read or write it see the same
- * set. The scan folders are read before the roots, so a root whose key a scan project holds is the
- * one that is not read.
+ * Every project manifest of the primary hub: the scan folders' (`readManifests`) and those of the
+ * project folders of the workspace (`repositoryManifests`). It is the one reader of the primary
+ * hub's projects, so the build and every reader that finds a project to read or write it see the
+ * same set. The scan folders are read before the project folders, so a project folder whose name a
+ * scan project holds is the one that is not read.
  */
 export function readHubManifests(
     hub: string,

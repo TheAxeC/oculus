@@ -38,6 +38,7 @@
 // the interpreter and the compile database are choices.ts's, read when a server is made and written
 // when the page chooses.
 
+import { configDir } from '../../../data/sources/config/folder.ts';
 import type { LspRpc, LspToPage } from '../../../data/model/index.ts';
 import type { Sink } from '../../core/channels.ts';
 import { WORKSPACE_LANGUAGE } from '../../../data/prose/lsp-servers.ts';
@@ -68,7 +69,6 @@ import {
     createServers,
     initializeParams,
     type PageAnswer,
-    type Prepared,
     type RootEnv,
     type ServerEntry,
     type Servers,
@@ -139,8 +139,10 @@ export class Relay {
         this.#host = {
             spawn: this.#spawn,
             roots: () => this.#roots(),
+            config: () => this.#config(),
             initialize: (held, setup) => this.#initializeParams(held, setup),
-            prepare: (held) => this.#prepare(held),
+            prepare: async (held) =>
+                await held.entry.adapter.prepare(held.entry, this.#env(held.root)),
             changed: (held) => this.#publish(held),
             appended: (held, lines) => this.#appended(held, lines),
             message: (held, message) => this.#fromServer(held, message),
@@ -562,6 +564,7 @@ export class Relay {
     ): PageAnswer | undefined {
         const answering = {
             roots: this.#roots(),
+            config: this.#config(),
             feed: this.#options.schemas,
             catalog: this.#options.catalog,
             pages: () => this.#pages.values()
@@ -582,11 +585,11 @@ export class Relay {
     ): Held | undefined {
         if (method === 'workspace/symbol') {
             const key = isRecord(params) && typeof params.root === 'string' ? params.root : null;
-            return key === null ? undefined : this.#heldOf(page, entry, key).held;
+            return key === null ? undefined : heldOf(this.#roots(), page, entry, key).held;
         }
         if (!HIERARCHY.includes(method) || address === null) return undefined;
         const named = parsePageUri(address);
-        return named === null ? undefined : this.#heldOf(page, entry, named.root).held;
+        return named === null ? undefined : heldOf(this.#roots(), page, entry, named.root).held;
     }
 
     /** What a request carries to its server: `workspace/symbol` without the root that routed it. */
@@ -658,14 +661,10 @@ export class Relay {
 
     // ------------------------------------------------------------------ the oculus messages
 
-    /** The server of a root key the page named, and the root. */
-    #heldOf(page: Page, entry: ServerEntry, key: string): { root?: ServedRoot; held?: Held } {
-        return heldOf(this.#roots(), page, entry, key);
-    }
-
     #oculusContext(): OculusContext {
         return {
             roots: () => this.#roots(),
+            config: () => this.#config(),
             env: (root) => this.#env(root),
             changes: () => this.#options.changes?.(),
             send: (page, channel, payload) => this.#send(page, channel, payload)
@@ -682,6 +681,11 @@ export class Relay {
         };
     }
 
+    /** Oculus's own config folder, whose `local.yml` no server is given. */
+    #config(): string {
+        return configDir(this.#options.oculus);
+    }
+
     #env(root: ServedRoot): RootEnv {
         return {
             root: root.real,
@@ -694,11 +698,6 @@ export class Relay {
     }
 
     // ------------------------------------------------------------------ making a server
-
-    /** What a server is started with: its program, and what its root's settings give it. */
-    async #prepare(held: Held): Promise<Prepared> {
-        return await held.entry.adapter.prepare(held.entry, this.#env(held.root));
-    }
 
     /** The `initialize` request a server is given: the page's capabilities with what it needs. */
     #initializeParams(held: Held, setup: Setup): Record<string, unknown> {
@@ -826,6 +825,7 @@ export class Relay {
     #publishing(): Publishing {
         return {
             roots: () => this.#roots(),
+            config: () => this.#config(),
             catalog: () => this.#options.catalog?.() ?? {},
             mapper: (page, held) => this.#mapper(page, held),
             send: (page, channel, payload) => this.#send(page, channel, payload)

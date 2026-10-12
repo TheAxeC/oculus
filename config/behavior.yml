@@ -322,4 +322,4 @@ apps:
   # Folders, each relative to a root and applied to every root, that `open({ file })` and a custom editor's document never reach for an app, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
   closed_paths: [secrets]
 
-# The values of the settings that apps declare under `contributes.configuration`, written by the Settings view into the first hub's layer of this file as a map from the setting's whole key (`notes.width` is one key) to its value. A value outside its setting's type, `enum` or bounds, and a key no approved app declares, is a finding and the app reads its default. The map is not set here; the hub's layer holds it.
+# The values of the settings that apps declare under `contributes.configuration`, written by the Settings view into the primary hub's layer of this file as a map from the setting's whole key (`notes.width` is one key) to its value. A value outside its setting's type, `enum` or bounds, and a key no approved app declares, is a finding and the app reads its default. The map is not set here; the hub's layer holds it.

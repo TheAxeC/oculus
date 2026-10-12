@@ -1,11 +1,12 @@
 // Layer 2, server. What the calendar endpoint and the mail endpoint do alike: start a consent, add
 // an account and start its consent at once, remove an account, and take the provider's redirect.
 //
-// Adding and removing are the one write oculus makes to the machine's own config/local.yml. Both
-// run behind the process's write chain, read the file fresh inside it, edit its one list through
-// connect/rows.ts, which keeps every comment and byte outside the row and refuses a text the
-// machine file would not read back, and write it whole through a temporary file and a rename. The
-// server then reads the account lists again, so the routes and the pollers hold the new list
+// Adding and removing are the one write oculus makes to the machine's own `.oculus/local.yml`: an
+// Add writes the primary hub's file, and a Remove writes the file of the hub the row is marked
+// with. Both run behind the process's write chain, read the file fresh inside it, edit its one list
+// through connect/rows.ts, which keeps every comment and byte outside the row and refuses a text
+// the machine file would not read back, and write it whole through a temporary file and a rename.
+// The server then reads the account lists again, so the routes and the pollers hold the new list
 // without a restart.
 //
 // A refusal the page words itself is answered as a code: `provider`, `label` or `taken` for the
@@ -50,7 +51,7 @@ import {
     writeRefreshToken
 } from './store.ts';
 
-/** The list of config/local.yml each connector's accounts are rows of. */
+/** The list of a hub's `.oculus/local.yml` each connector's accounts are rows of. */
 const LIST: Record<ConnectKind, AccountList> = { calendar: 'calendars', mail: 'mail' };
 
 /** What starting one consent needs: the folders, the redirect, the states and the opener. */
@@ -66,10 +67,14 @@ export type ConsentTarget = {
     open: Opener;
 };
 
-/** Where the machine's own file is, the chain its writes wait on, and the re-read after one. */
+/** Where the machine's own files are, the chain their writes wait on, and the re-read after one. */
 export type AccountBook = {
-    /** config/local.yml of the engine the server was started over. */
-    file: string;
+    /** The primary hub's `.oculus/local.yml`, or null while the workspace has no primary. */
+    file: () => string | null;
+    /** The `.oculus/local.yml` of the hub of that name among the workspace's, or null. */
+    fileOf: (hub: string) => string | null;
+    /** The sentence an Add is refused with while the workspace has no primary. */
+    noPrimary: () => string;
     writes: FsWrites;
     /**
      * Read the machine's file again, every key of it, and hand the account lists to the routes
@@ -210,7 +215,11 @@ function addRow(
     record: Record<string, unknown>
 ): Response | AccountRow {
     const list = LIST[kind];
-    const text = localText(target.book.file);
+    const file = target.book.file();
+    if (file === null) {
+        return json({ error: 'file', reason: target.book.noPrimary() }, { status: 400 });
+    }
+    const text = localText(file);
     const refused = accountRefusal(kind, rowsIn(text, list), record.provider, record.label);
     if (refused !== null) return json({ error: refused }, { status: 400 });
     const added = addedRowShape.safeParse(record);
@@ -227,12 +236,12 @@ function addRow(
             return json({ error: reason(error) }, { status: 400 });
         }
     }
-    const edit = addAccountRow(text, list, row, target.book.file);
+    const edit = addAccountRow(text, list, row, file);
     if ('reason' in edit) return json({ error: 'file', reason: edit.reason }, { status: 400 });
     try {
         if (link === null) writeAccountFile(target.dir, row);
         else writePublishedLink(target.dir, row, link);
-        writeTextAtomic(target.book.file, edit.text);
+        writeTextAtomic(file, edit.text);
     } catch (error) {
         return json({ error: 'file', reason: reason(error) }, { status: 500 });
     }
@@ -260,10 +269,14 @@ export async function addAccount(
  * again. It runs inside the write chain, as an Add does.
  */
 function removeRow(list: AccountList, target: AccountTarget, account: AccountRow): Response {
-    const edit = removeAccountRow(localText(target.book.file), list, account, target.book.file);
+    const file = account.hub === undefined ? target.book.file() : target.book.fileOf(account.hub);
+    if (file === null) {
+        return json({ error: 'file', reason: target.book.noPrimary() }, { status: 400 });
+    }
+    const edit = removeAccountRow(localText(file), list, account, file);
     if ('reason' in edit) return json({ error: 'file', reason: edit.reason }, { status: 400 });
     try {
-        writeTextAtomic(target.book.file, edit.text);
+        writeTextAtomic(file, edit.text);
         removeAccountFile(target.dir, account);
     } catch (error) {
         return json({ error: 'file', reason: reason(error) }, { status: 500 });

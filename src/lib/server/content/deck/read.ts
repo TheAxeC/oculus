@@ -6,31 +6,32 @@
 // same file named under a second root key is read from its draft, and a draft whose root or path
 // the roots do not serve names no file and is dropped.
 //
-// The roots are the list the deck route composed (server/files/roots.ts), so a root that is not one
-// of their keys and a path that climbs out of a root or leaves it through a link is refused by the
-// rule the file route answers by (`resolveRootPath`), ahead of any read. A folder inside a
-// root that holds no deck is answered with the empty state of the deck, not refused: the view
-// draws a sentence naming it. The reader (data/sources/deck/read.ts) does the reading, and the
-// write of a group's `slides:` (server/edit/writes/config/lists/deck/deck.ts) reads the group's
-// members, candidates and missing names through the same function.
+// The roots are the folders of the open workspace, so a root that is not one of their names and a
+// path that climbs out of a root or leaves it through a link is refused by the rule the file route
+// answers by (`resolveRootPath`), ahead of any read. A folder inside a root that holds no deck is
+// answered with the empty state of the deck, not refused: the view draws a sentence naming it. The
+// reader (data/sources/deck/read.ts) does the reading, and the write of a group's `slides:`
+// (server/edit/writes/config/lists/deck/deck.ts) reads the group's members, candidates and missing
+// names through the same function.
 
 import { basename } from 'node:path';
 import { LOCAL_NAME } from '../../../data/sources/config.ts';
 import { createReader } from '../../../data/sources/deck/read.ts';
 import type { DeckProject } from '../../../data/sources/deck/kinds.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
-import { HUB_ROOT, ofHub } from '../../../data/helpers/hub-names.ts';
+import { ofHub } from '../../../data/helpers/hub-names.ts';
 import { resolveRootPath, type Root } from '../../files/files.ts';
 import type { HubTarget } from '../../files/roots.ts';
 
 /**
- * What a deck is read over: the roots it may be in, the first hub, the portfolio's projects and the
- * hubs other than the first. A deck in the root of one of those hubs is read over that hub's
- * folder, settings and projects.
+ * What a deck is read over: the roots it may be in, the primary hub (null with none), its settings,
+ * the portfolio's projects and the hubs other than the primary. A deck in the root of one of those
+ * hubs is read over that hub's folder, settings and projects; a deck in any other root is read over
+ * the primary.
  */
 export type DeckSource = {
     roots: Root[];
-    hub: string;
+    primary: { key: string; dir: string } | null;
     config: PortfolioConfig;
     projects: Project[];
     hubs?: HubTarget[];
@@ -86,9 +87,13 @@ export function readDeck(
     if (held === undefined) return 'outside';
     const owner = (source.hubs ?? []).find((one) => one.key === root);
     const config = owner?.config ?? source.config;
+    const hub =
+        owner === undefined
+            ? (source.primary ?? { key: held.key, dir: held.dir })
+            : { key: owner.key, dir: owner.hub };
     const reader = createReader({
-        hub: { key: owner?.key ?? HUB_ROOT, dir: owner?.hub ?? source.hub },
-        projects: ofHub(source.projects, owner?.key ?? HUB_ROOT).map(deckProject),
+        hub,
+        projects: ofHub(source.projects, hub.key, source.primary?.key ?? null).map(deckProject),
         domains: config.domains,
         tagTones: config.tagTones,
         catalog: config.text,

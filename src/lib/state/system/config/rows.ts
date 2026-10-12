@@ -46,7 +46,8 @@ import type {
     FieldSpec
 } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
-import { ENGINE_ROOT, HUB_ROOT } from '../../sources/explorer/view/place.ts';
+import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
+import { PRIMARY_ROOT } from './config-files.ts';
 import { LOCAL_NAME } from './config-files.ts';
 import { readField } from './editors/fields.ts';
 import { message, type Message } from './messages.ts';
@@ -91,8 +92,29 @@ export type ConfigRow = RowBase & {
     hub: { path: string; present: boolean } | null;
 };
 
-/** One key of the machine's own file, listed from the catalog alone. */
-export type LocalRow = RowBase & { kind: 'local'; file: typeof LOCAL_NAME; key: string };
+/**
+ * What the Settings view knows of the machine's own file: the name of the primary hub, the names of
+ * the keys its `local.yml` sets and the default text of each key that has one. No value of the file
+ * is among it.
+ */
+export type MachineState = {
+    primary: string | null;
+    set: readonly string[];
+    defaults: Readonly<Record<string, string>>;
+};
+
+/**
+ * One key of the machine's own file, listed from the catalog and the names of the keys the file
+ * sets: `setIn` is the primary hub whose file sets it, else null, and `fallback` is the default in
+ * force for a key the file does not set, null when the key has none.
+ */
+export type LocalRow = RowBase & {
+    kind: 'local';
+    file: typeof LOCAL_NAME;
+    key: string;
+    setIn: string | null;
+    fallback: string | null;
+};
 
 /** Why a file draws no rows, or `rows` when it does. */
 export type FileStatus = 'rows' | 'loading' | 'unreadable' | 'cut' | 'unparsed';
@@ -120,13 +142,14 @@ export type FileResult = {
 };
 
 /**
- * The root and the path of the file a row is read from and written to: the hub layer's file for a
- * key of the hub list, the engine's config file for any other.
+ * The root and the path of the file a row is read from and written to: the primary hub's layer file
+ * for a key of the hub list (`PRIMARY_ROOT`), oculus's own config file for any other
+ * (`OCULUS_CONFIG_ROOT`). Where either is opened in an editor is `openTarget`'s.
  */
 export function placeOf(row: ConfigRow): { root: string; file: string } {
     return row.hub === null
-        ? { root: ENGINE_ROOT, file: row.file }
-        : { root: HUB_ROOT, file: row.hub.path };
+        ? { root: OCULUS_CONFIG_ROOT, file: row.file }
+        : { root: PRIMARY_ROOT, file: row.hub.path };
 }
 
 /** One word of a key path as a title: underscores read as spaces, the first letter capital. */
@@ -328,8 +351,14 @@ export function fileRows(
     return read === null ? { status: 'rows', rows } : { status: 'rows', rows, layer: read.result };
 }
 
-/** The rows of the machine's own file, from its catalog entries alone. */
-export function localRows(entries: Record<string, CatalogEntry>): LocalRow[] {
+/**
+ * The rows of the machine's own file, from its catalog entries and what is known of the primary's
+ * file. With no primary no key is set and every key shows its default.
+ */
+export function localRows(
+    entries: Record<string, CatalogEntry>,
+    machine: MachineState
+): LocalRow[] {
     return Object.entries(entries).map(([key, entry]) => ({
         kind: 'local',
         id: `${LOCAL_NAME}:${key}`,
@@ -339,7 +368,9 @@ export function localRows(entries: Record<string, CatalogEntry>): LocalRow[] {
         title: titleOf(key),
         help: entry.help,
         section: sectionOf(key, entry.section),
-        modified: false
+        modified: false,
+        setIn: machine.primary !== null && machine.set.includes(key) ? machine.primary : null,
+        fallback: Object.hasOwn(machine.defaults, key) ? machine.defaults[key] : null
     }));
 }
 

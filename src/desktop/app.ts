@@ -318,8 +318,8 @@ async function run(
         else env = { ...process.env, ...login };
     }
     if (state.quitting) return;
-    // The programs and the hub are looked up in the environment the server will get.
-    const lacks = machineLacks(await machineFacts(args.engine, options.defaultPort, env), t);
+    // The programs are looked up in the environment the server will get.
+    const lacks = machineLacks(await machineFacts(options.defaultPort, env), t);
     const required = lacks.filter((lack) => lack.required);
     if (required.length > 0) {
         const sentences = required.map((lack) => lack.sentence).join('\n');

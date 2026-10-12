@@ -1,12 +1,14 @@
 // Layer 2, server. The file browser's server concerns: the entries of one directory under a named
-// root, the workspaces the reader saved on this machine, and the two things the reader keeps beside
-// them, their own bookmarks and their scratch notes.
+// folder of the open workspace, the workspace itself (its folders, primary, recent list and the
+// files that can be switched to), and the two things the reader keeps beside them, their own
+// bookmarks and their scratch notes.
 //
 // The bookmarks and the notes are read here and written through this route because they are the
-// file browser's: a bookmark is a file, a folder or the top of a root and a note is a file in a
-// folder. What each one is kept in is its own module, fs/bookmarks.ts and fs/notes.ts; a bookmark
-// is written by the collection write path instead, since it is a collection file and the entry
-// writers edit it.
+// file browser's: a bookmark is a file, a folder or the top of a folder of the workspace and a note
+// is a file in a folder. What each one is kept in is its own module, fs/bookmarks.ts and
+// fs/notes.ts; a bookmark is written by the collection write path instead, since it is a collection
+// file and the entry writers edit it. Both live in the primary hub's `.oculus` folder, so a
+// workspace with no primary has none: the lists answer empty and a write is refused `no-primary`.
 //
 // A listing is one level deep and read at the call. The tree asks for a folder when the folder is
 // opened, so nothing walks a root: a home directory with a hundred thousand files under it costs
@@ -20,22 +22,15 @@
 // under the same rule the file route serves one by: inside the root it is an ordinary entry, and
 // pointing out of the root it is left out.
 //
-// A workspace is a name and a list of roots, saved at workspaces.json in the hub's .oculus folder,
-// and its roots and the notes are written in a new order through the same route (`order-roots`,
-// `order-notes`). The hub key and the keys the configuration names are reserved: a saved root
-// carrying one is dropped on the read and named back to the page, so a saved file can only ever add
-// a root and never redirect one the rest of the application reads. The file is written whole and
-// atomically, as the other files of the hub's .oculus folder are, because it holds work the reader
-// did by hand, and the writes of one process are chained so two requests in flight cannot lose one
-// another's change. A file that is there and does not read is never written over: a write is
-// refused with the reason, as the saved commands file refuses one, and the file is left as it was.
+// The workspace is the open workspace file of server/files/workspace and nothing else: a GET with
+// no root answers it, and the two actions on it as a whole are Save Workspace As (`save-workspace`,
+// a name) and Switch Workspace (`select-workspace`, a workspace file's path). The folders of the
+// open file are written through the write route's `roots` kind. The notes are written in a new
+// order through the same route (`order-notes`).
 //
-// The fold from a saved file to the roots on screen is pure: workspaceRoots takes the configured
-// roots and the object the file parsed to, and reads nothing. The reading is readSaved's, for a
-// page, and loadSaved's, for a write.
-//
-// Nothing here holds state between calls: the path of the file, the roots and the write chain all
-// come in from the request's ServerContext, so two servers in one process read two files.
+// Nothing here holds state between calls: the workspace, the paths of the bookmarks and the notes
+// and the write chain all come in from the request's ServerContext, so two servers in one process
+// read two workspaces.
 //
 // Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
 // (`inside`, `realPath`).
@@ -43,23 +38,19 @@
 import { json } from '@sveltejs/kit';
 import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { basename, isAbsolute, join } from 'node:path';
+import { join, relative } from 'node:path';
 import { z } from 'zod';
-import { ROOT_FOLDER } from '../../data/helpers/hub-names.ts';
 import { isMap } from '../../data/helpers/guards.ts';
+import { configDir } from '../../data/sources/config/folder.ts';
 import { tokenedBody } from '../core/auth.ts';
-import { expandHome, HUB_ROOT, resolveRootPath, rootShape, type Root } from './files.ts';
+import { resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git/files.ts';
 import { deleteNote, listNotes, readNote, saveNote, writeNoteOrder } from './fs/notes.ts';
-import {
-    chained,
-    readJson,
-    readJsonChecked,
-    writeJsonAtomic,
-    type FsWrites
-} from '../core/json.ts';
+import { chained, type FsWrites } from '../core/json.ts';
 import { foldsCase, inside, realPath } from '../core/paths.ts';
+import { saveWorkspaceAs, selectWorkspace } from './workspace/actions.ts';
+import type { OpenWorkspace } from './workspace/open.ts';
 
 /**
  * One entry of one directory, as the tree draws it. `link` is true for a symbolic link, whose
@@ -75,38 +66,47 @@ export type Entry = {
     ignored?: true;
 };
 
-/** One saved workspace: the name the reader gave it, and the roots they added to it. */
-export type SavedWorkspace = { name: string; roots: Root[] };
-
 /**
- * The whole of the saved workspaces file as it was read: which workspace is current, every saved
- * one, and the keys the read dropped because the configuration reserves them. Only the first two
- * are written back.
- */
-export type Saved = { current: string; workspaces: SavedWorkspace[]; dropped: string[] };
-
-/** One root as the page reads it: `fixed` is a root a removal refuses. */
-export type ShownRoot = Root & { fixed: boolean };
-
-/**
- * A root as the workspaces answer carries it: `real` is its folder with every symlink resolved,
- * which the page compares with the real path of a repository (`repositoryOf`), and empty for a
- * folder that does not exist. `folds` marks a root whose file system reads a path in another letter
+ * A folder of the workspace as the answer carries it: `path` is the path as the workspace file
+ * writes it, `dir` the same with `~` expanded, `real` the folder with every symlink resolved (empty
+ * for a folder that does not exist), which the page compares with the real path of a repository
+ * (`repositoryOf`), and `folds` marks a folder whose file system reads a path in another letter
  * case as the same path, which the page compares private folders by (`isPrivateFile`).
  */
-type AnsweredRoot = ShownRoot & { real: string; folds?: true };
+type AnsweredFolder = {
+    name: string;
+    path: string;
+    dir: string;
+    real: string;
+    hub: boolean;
+    folds?: true;
+};
 
-/**
- * What a GET with no root answers: the workspace in force, every one there is, and what was
- * dropped.
- */
+/** What a GET with no root answers: the open workspace and the files the switcher offers. */
 export type WorkspacesAnswer = {
     /** The home folder of the account the server runs as, which the page writes as `~`. */
     home: string;
-    current: string;
-    workspaces: { name: string; roots: AnsweredRoot[] }[];
-    dropped: string[];
+    /** The open workspace file, or null while the workspace is unsaved. */
+    open: { path: string; name: string; hub: string } | null;
+    folders: AnsweredFolder[];
+    primary: string | null;
+    /**
+     * Where oculus's own `config/` folder lies among the folders: the name of the folder holding it
+     * and its path under that folder, or null when no folder holds it.
+     */
+    engine: { root: string; path: string } | null;
+    recent: { path: string; name: string; hub: string; missing: boolean }[];
+    available: { path: string; name: string; hub: string }[];
+    /**
+     * What the Settings view's "This machine" section shows of the machine's `local.yml`: the names
+     * of the keys the primary hub's file sets, and the default of each key that has one. Never a
+     * value of a file.
+     */
+    machine: MachineAnswer;
 };
+
+/** The names of the keys the primary's `local.yml` sets, and the default text by key. */
+type MachineAnswer = { set: readonly string[]; defaults: Record<string, string> };
 
 /**
  * The folders a tree offers only when hidden files are asked for. Dotfiles are left out beside
@@ -124,12 +124,6 @@ export type Shown = {
 
 /** A listing request that asks for nothing beyond the default. */
 export const DEFAULT_SHOWN: Shown = { hidden: false, ignored: false };
-
-/** Where a workspace starts when neither the configuration nor the reader names a root. */
-const DEFAULT_ROOT = { key: 'workspace', dir: '~/workspace' };
-
-/** The workspace that is always there and holds no name: the configured roots, plus any added. */
-export const DEFAULT_WORKSPACE = '';
 
 /**
  * How long one folder's ignored names are reused. A write that moves the file browser's round has
@@ -174,165 +168,25 @@ export async function cachedIgnored(
 }
 
 /**
- * What one request needs: the files to read and write, the roots no workspace may touch, and the
- * chain.
+ * What one request needs: the open workspace, the primary hub's bookmarks file and notes folder
+ * (null while the workspace has no primary), the chain and the ignored-names cache.
  */
 export type FsTarget = {
-    /** The workspaces file this request reads and writes. */
-    file: string;
+    /** The folder of oculus itself. */
+    engine: string;
+    /** The open workspace, as the server holds it. */
+    workspace: { open(): OpenWorkspace; stateFolder: string };
+    /** What the machine's `local.yml` files set, by name, and the defaults. */
+    machine: MachineAnswer;
     /** The reader's own bookmarks file, which this request reads and the write path writes. */
-    bookmarks: string;
+    bookmarks: string | null;
     /** The folder the scratch notes live in. */
-    notes: string;
-    /** The hub and the configured roots, resolved once for this request. */
-    fixed: Root[];
+    notes: string | null;
     /** The process's write chain. */
     writes: FsWrites;
     /** The ignored names asked for lately, which listings reuse for a moment. */
     ignored: IgnoredCache;
 };
-
-/** The hub's own saved workspaces, `<hub>/.oculus/workspaces.json`, resolved at the call. */
-export function defaultWorkspacesPath(hub: string): string {
-    return join(hub, ROOT_FOLDER, 'workspaces.json');
-}
-
-/**
- * The parts of the saved file this module reads: the workspace in force by name, which reads as the
- * default when it is no text, and the workspaces list, which reads as empty when it is no list. The
- * items of the list are checked one at a time.
- */
-const savedFileShape = z.object({
-    current: z.string().catch(DEFAULT_WORKSPACE),
-    workspaces: z.array(z.unknown()).catch(() => [])
-});
-
-/** One saved workspace as the file holds it: a name, and the roots of it as the file lists them. */
-const workspaceFileShape = z.object({
-    name: z.string(),
-    roots: z.array(z.unknown()).catch(() => [])
-});
-
-/** What no workspace is saved reads as. A fresh object each call, since a write adds to it. */
-function emptySaved(): Saved {
-    return { current: DEFAULT_WORKSPACE, workspaces: [], dropped: [] };
-}
-
-/**
- * The workspaces a parsed file holds, or null when it is not the shape of the file. A saved root
- * whose key is one of `reserved` is dropped and its key is named in `dropped`, so the page can say
- * what was left out rather than showing a root that silently does nothing.
- */
-function foldSaved(raw: unknown, reserved: string[]): Saved | null {
-    const file_ = savedFileShape.safeParse(raw);
-    const dropped: string[] = [];
-    if (!file_.success) return null;
-    const workspaces: SavedWorkspace[] = [];
-    for (const item of file_.data.workspaces) {
-        const entry = workspaceFileShape.safeParse(item);
-        if (!entry.success) continue;
-        if (workspaces.some((one) => one.name === entry.data.name)) continue;
-        const roots: Root[] = [];
-        for (const raw of entry.data.roots) {
-            const parsed = rootShape.safeParse(raw);
-            if (!parsed.success) continue;
-            const root = parsed.data;
-            if (roots.some((one) => one.key === root.key)) continue;
-            if (reserved.includes(root.key)) {
-                if (!dropped.includes(root.key)) dropped.push(root.key);
-                continue;
-            }
-            roots.push(root);
-        }
-        workspaces.push({ name: entry.data.name, roots });
-    }
-    const current = file_.data.current;
-    const known = current === DEFAULT_WORKSPACE || workspaces.some((one) => one.name === current);
-    return { current: known ? current : DEFAULT_WORKSPACE, workspaces, dropped };
-}
-
-/** Every workspace the file holds. A missing, corrupt or wrong-shaped file reads as none saved. */
-export function readSaved(file: string, reserved: string[] = []): Saved {
-    return foldSaved(readJson(file), reserved) ?? emptySaved();
-}
-
-/**
- * The workspaces for a write: what readSaved answers, with the reason when the file is there and
- * does not read, in the sentence the saved commands file refuses a write in. Such a file is never
- * written over, so what the reader put there is not replaced by one workspace.
- */
-function loadSaved(
-    file: string,
-    reserved: string[]
-): { ok: true; saved: Saved } | { ok: false; error: string } {
-    const read = readJsonChecked(file);
-    if (!read.ok) return { ok: false, error: `${basename(file)} ${read.reason}: ${file}` };
-    if (read.value === undefined) return { ok: true, saved: emptySaved() };
-    const saved = foldSaved(read.value, reserved);
-    if (saved === null) return { ok: false, error: `${basename(file)} is not the shape: ${file}` };
-    return { ok: true, saved };
-}
-
-/**
- * Write the file whole, through the same atomic replace the other files of the hub's .oculus folder
- * are written by.
- */
-export function writeSaved(file: string, saved: Saved): void {
-    writeJsonAtomic(file, { current: saved.current, workspaces: saved.workspaces });
-}
-
-/** The roots one workspace adds of its own, which is nothing for a name nothing is saved under. */
-export function rootsOf(saved: Saved, name: string): Root[] {
-    return saved.workspaces.find((one) => one.name === name)?.roots ?? [];
-}
-
-/**
- * The roots one workspace shows, and whether each one may be removed. Pure: the saved object comes
- * in and no file is read.
- *
- * The configured roots and the hub are in every workspace and are fixed. A machine whose
- * configuration names no root beside the hub and whose reader has saved none is given the reader's
- * own workspace folder; that root is fixed too, since nothing saved it and a removal of it has
- * nothing to remove.
- */
-export function workspaceRoots(fixed: Root[], saved: Saved, name: string): ShownRoot[] {
-    const shown: ShownRoot[] = fixed.map((one) => ({ ...one, fixed: true }));
-    for (const one of rootsOf(saved, name)) {
-        if (shown.some((held) => held.key === one.key)) continue;
-        shown.push({ ...one, fixed: false });
-    }
-    // The hub is in every workspace, so "no root" means no root beside it.
-    if (shown.every((one) => one.key === HUB_ROOT)) {
-        shown.push({ key: DEFAULT_ROOT.key, dir: expandHome(DEFAULT_ROOT.dir), fixed: true });
-    }
-    return shown;
-}
-
-/**
- * The roots the file route adds to the configured ones: the workspace's own, or the default folder.
- */
-export function addedRoots(fixed: Root[], saved: Saved): Root[] {
-    return workspaceRoots(fixed, saved, saved.current)
-        .filter((one) => !fixed.some((held) => held.key === one.key))
-        .map((one) => ({ key: one.key, dir: one.dir }));
-}
-
-/**
- * The key a reader-added root is filed under: its folder name reduced to the characters a key may
- * hold, with a number added while the key is taken. A folder whose name reduces to nothing is filed
- * under the same word the default root is.
- */
-export function rootKey(dir: string, taken: string[]): string {
-    const reduced = basename(dir)
-        .replace(/[^A-Za-z0-9._-]+/g, '-')
-        .replace(/^[-.]+|-+$/g, '');
-    const stem = reduced === '' ? DEFAULT_ROOT.key : reduced;
-    if (!taken.includes(stem)) return stem;
-    for (let at = 2; ; at += 1) {
-        const candidate = `${stem}-${at}`;
-        if (!taken.includes(candidate)) return candidate;
-    }
-}
 
 /**
  * Whether a name is one the tree leaves out unless hidden files are asked for: a dotfile, or one
@@ -439,27 +293,48 @@ const NO_STORE = { 'cache-control': 'no-store' };
 /** A text field of a write body: the text as it came, and the empty text for anything else. */
 const textShape = z.string().catch('');
 
-/** The keys a saved workspace may not carry, which is every key the configuration owns. */
-function reservedKeys(fixed: Root[]): string[] {
-    return fixed.map((one) => one.key);
+/**
+ * The folder of the workspace that holds oculus's own `config/` folder, found by real paths, and
+ * the path of `config/` under it. The innermost folder wins when several hold it.
+ */
+function configPlace(open: OpenWorkspace, engine: string): { root: string; path: string } | null {
+    const config = realPath(configDir(engine));
+    if (config === null) return null;
+    let best: { root: string; path: string } | null = null;
+    let depth = -1;
+    for (const one of open.folders) {
+        const base = realPath(one.dir);
+        if (base === null || !inside(config, base) || base.length <= depth) continue;
+        best = { root: one.name, path: relative(base, config) };
+        depth = base.length;
+    }
+    return best;
 }
 
-/** The answer a GET with no root gives: the workspace in force, and the roots each one holds. */
-export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer {
-    const names = [DEFAULT_WORKSPACE];
-    for (const one of saved.workspaces) if (!names.includes(one.name)) names.push(one.name);
+/**
+ * The answer a GET with no root gives: the open workspace and the files that can be switched to.
+ */
+export function workspacesAnswer(
+    open: OpenWorkspace,
+    engine: string,
+    machine: MachineAnswer
+): WorkspacesAnswer {
     return {
         home: homedir(),
-        current: saved.current,
-        workspaces: names.map((name) => ({
-            name,
-            roots: workspaceRoots(into.fixed, saved, name).map((root) => ({
-                ...root,
-                real: realPath(root.dir) ?? '',
-                ...(foldsCase(root.dir) ? { folds: true as const } : {})
-            }))
+        open: open.file === null ? null : { path: open.file, name: open.name, hub: open.hub },
+        folders: open.folders.map((one) => ({
+            name: one.name,
+            path: one.path,
+            dir: one.dir,
+            real: realPath(one.dir) ?? '',
+            hub: one.hub,
+            ...(foldsCase(one.dir) ? { folds: true as const } : {})
         })),
-        dropped: saved.dropped
+        primary: open.primary,
+        engine: configPlace(open, engine),
+        recent: open.recent,
+        available: open.available,
+        machine
     };
 }
 
@@ -467,46 +342,44 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
  * GET /api/fs: one of five reads, chosen by what the query names. `bookmarks` answers the reader's
  * own bookmarks, `notes` every scratch note, `note` one note's own text, a root and a path the
  * entries of that directory (with `hidden=1` and `ignored=1` asking for what the tree leaves out by
- * default), and nothing at all the workspaces.
+ * default), and nothing at all the workspace.
  *
  * A read, so it carries no token; the origin guard in src/hooks.server.ts still refuses it to
- * another origin, since any page open in the browser can address this server. One file is read,
- * whichever answer is given.
+ * another origin, since any page open in the browser can address this server.
  */
 export async function handleFs(request: Request, into: FsTarget): Promise<Response> {
     const url = new URL(request.url);
-    if (url.searchParams.get('bookmarks') !== null)
+    const open = into.workspace.open();
+    if (url.searchParams.get('bookmarks') !== null) {
         return json(
-            readBookmarks(into.bookmarks, [
-                ...into.fixed,
-                ...addedRoots(into.fixed, readSaved(into.file, reservedKeys(into.fixed)))
-            ]),
+            into.bookmarks === null ? { entries: [] } : readBookmarks(into.bookmarks, open.roots),
             { headers: NO_STORE }
         );
-    if (url.searchParams.get('notes') !== null)
-        return json({ notes: listNotes(into.notes) }, { headers: NO_STORE });
+    }
+    if (url.searchParams.get('notes') !== null) {
+        return json(
+            { notes: into.notes === null ? [] : listNotes(into.notes) },
+            { headers: NO_STORE }
+        );
+    }
     const one = url.searchParams.get('note');
     if (one !== null) {
-        const note = readNote(into.notes, one);
+        const note = into.notes === null ? null : readNote(into.notes, one);
         return note === null
             ? json({ error: 'no-such-note' }, { status: 404, headers: NO_STORE })
             : json(note, { headers: NO_STORE });
     }
     const key = url.searchParams.get('root') ?? '';
     const path = url.searchParams.get('path') ?? '';
-    const saved = readSaved(into.file, reservedKeys(into.fixed));
-    if (key === '') return json(workspacesAnswer(into, saved), { headers: NO_STORE });
-    const roots = [...into.fixed, ...addedRoots(into.fixed, saved)];
-    const found = await listShown(roots, key, path, shownOf(url.searchParams), into.ignored);
+    if (key === '')
+        return json(workspacesAnswer(open, into.engine, into.machine), { headers: NO_STORE });
+    const found = await listShown(open.roots, key, path, shownOf(url.searchParams), into.ignored);
     if ('error' in found) return json({ error: found.error }, { status: 404, headers: NO_STORE });
     return json({ root: key, path, entries: found.entries }, { headers: NO_STORE });
 }
 
 /** Every action POST /api/fs knows. */
 export const ACTIONS = [
-    'add-root',
-    'remove-root',
-    'order-roots',
     'save-workspace',
     'select-workspace',
     'note-save',
@@ -520,153 +393,54 @@ export const ACTIONS = [
  */
 const fsBodyShape = z.object({
     action: z.enum(ACTIONS),
-    dir: textShape,
-    key: textShape,
+    path: textShape,
     name: textShape,
     id: textShape,
     title: textShape,
     body: textShape,
-    keys: z.array(z.string()).catch([]),
     ids: z.array(z.string()).catch([])
 });
 
 type FsFields = z.output<typeof fsBodyShape>;
 
 /**
- * The workspace a write lands in. The default workspace holds no roots of its own until one is
- * added, at which point it is saved under its own empty name; the picker draws it once either way.
+ * The answer of a workspace action: done, or the word refusing it and the reason when there is one.
  */
-function currentOf(saved: Saved): SavedWorkspace {
-    const held = saved.workspaces.find((one) => one.name === saved.current);
-    if (held !== undefined) return held;
-    const made: SavedWorkspace = { name: saved.current, roots: [] };
-    saved.workspaces.push(made);
-    return made;
-}
-
-/** Write the file and say what changed, in the shape every other write endpoint answers in. */
-function written(saved: Saved, into: FsTarget): Response {
-    writeSaved(into.file, saved);
+function actionAnswer(outcome: { ok: true } | { error: string; reason?: string }): Response {
+    if ('error' in outcome) {
+        return json(
+            {
+                error: outcome.error,
+                ...(outcome.reason === undefined ? {} : { reason: outcome.reason })
+            },
+            { status: 400, headers: NO_STORE }
+        );
+    }
     return json({ ok: true, changed: ['workspaces'], refused: [] }, { headers: NO_STORE });
 }
 
-/**
- * Why a folder cannot be added as a root: the words POST /api/fs and the roots write both answer.
- */
-export type FolderRefusal =
-    'no-dir' | 'not-absolute' | 'no-such-dir' | 'not-a-directory' | 'root-held';
-
-/**
- * The folder a typed path names, by its real path, or why it cannot be a root: nothing typed, a
- * relative path, nothing there, a file, or a folder the roots in force already hold. The real
- * paths are compared, so the same folder reached through a trailing slash or a link is the root it
- * already is rather than a second root under a second key.
- */
-export function folderToAdd(
-    typed: string,
-    held: Root[]
-): { dir: string } | { error: FolderRefusal } {
-    const text = typed.trim();
-    if (text === '') return { error: 'no-dir' };
-    const expanded = expandHome(text);
-    if (!isAbsolute(expanded)) return { error: 'not-absolute' };
-    const dir = realPath(expanded);
-    if (dir === null) return { error: 'no-such-dir' };
-    try {
-        if (!statSync(dir).isDirectory()) return { error: 'not-a-directory' };
-    } catch {
-        return { error: 'no-such-dir' };
-    }
-    if (held.some((one) => realPath(one.dir) === dir)) return { error: 'root-held' };
-    return { dir };
-}
-
-/** Add the folder the body names to the workspace in force, under a key taken from its own name. */
-function addRoot(saved: Saved, fields: FsFields, into: FsTarget): Response {
-    const held = [...into.fixed, ...addedRoots(into.fixed, saved)];
-    const found = folderToAdd(fields.dir, held);
-    if ('error' in found) return json({ error: found.error }, { status: 400, headers: NO_STORE });
-    const workspace = currentOf(saved);
-    const taken = [...held.map((one) => one.key), ...workspace.roots.map((one) => one.key)];
-    workspace.roots.push({ key: rootKey(found.dir, taken), dir: found.dir });
-    return written(saved, into);
-}
-
-/** Take one reader-added root out of the workspace in force. A configured root is refused. */
-function removeRoot(saved: Saved, fields: FsFields, into: FsTarget): Response {
-    const key = fields.key;
-    if (into.fixed.some((one) => one.key === key))
-        return json({ error: 'root-fixed' }, { status: 400, headers: NO_STORE });
-    const workspace = currentOf(saved);
-    const at = workspace.roots.findIndex((one) => one.key === key);
-    if (at < 0) return json({ error: 'no-such-root' }, { status: 400, headers: NO_STORE });
-    workspace.roots.splice(at, 1);
-    return written(saved, into);
-}
-
-/**
- * Put the roots the workspace in force holds in the order the body's keys name. A body that does
- * not name each of them exactly once is refused `roots-changed`, and with no named workspace in
- * force there is no workspace of its own to order: `no-such-workspace`.
- */
-function orderRoots(saved: Saved, fields: FsFields, into: FsTarget): Response {
-    const workspace = saved.workspaces.find((one) => one.name === saved.current);
-    if (saved.current === DEFAULT_WORKSPACE || workspace === undefined) {
-        return json({ error: 'no-such-workspace' }, { status: 400, headers: NO_STORE });
-    }
-    const keys = fields.keys;
-    const held = new Set(workspace.roots.map((one) => one.key));
-    if (
-        keys.length !== workspace.roots.length ||
-        new Set(keys).size !== keys.length ||
-        !keys.every((key) => held.has(key))
-    ) {
-        return json({ error: 'roots-changed' }, { status: 400, headers: NO_STORE });
-    }
-    workspace.roots = keys.flatMap((key) => workspace.roots.filter((one) => one.key === key));
-    return written(saved, into);
-}
-
-/** Save the roots in force under a new name, and make that workspace the current one. */
-function saveWorkspace(saved: Saved, fields: FsFields, into: FsTarget): Response {
-    const name = fields.name.trim();
-    if (name === '') return json({ error: 'no-name' }, { status: 400, headers: NO_STORE });
-    if (saved.workspaces.some((one) => one.name === name))
-        return json({ error: 'name-held' }, { status: 400, headers: NO_STORE });
-    saved.workspaces.push({ name, roots: [...rootsOf(saved, saved.current)] });
-    saved.current = name;
-    return written(saved, into);
-}
-
-/** Put another saved workspace, or the default one, in force. */
-function selectWorkspace(saved: Saved, fields: FsFields, into: FsTarget): Response {
-    const name = fields.name;
-    if (name !== DEFAULT_WORKSPACE && !saved.workspaces.some((one) => one.name === name)) {
-        return json({ error: 'no-such-workspace' }, { status: 400, headers: NO_STORE });
-    }
-    saved.current = name;
-    return written(saved, into);
-}
-
-/** Write one note, which is a file of its own rather than a change to the workspaces file. */
-function writeNote(fields: FsFields, into: FsTarget): Response {
+/** Write one note, which is a file of its own rather than a change to the workspace. */
+function writeNote(fields: FsFields, notes: string | null): Response {
+    if (notes === null) return json({ error: 'no-primary' }, { status: 400, headers: NO_STORE });
     const id = fields.id.trim();
-    const row = saveNote(into.notes, id, fields.title, fields.body);
+    const row = saveNote(notes, id, fields.title, fields.body);
     if (row === null) return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
     return json({ ok: true, changed: ['note'], refused: [], note: row }, { headers: NO_STORE });
 }
 
 /** Take one note off the disk. */
-function removeNote(fields: FsFields, into: FsTarget): Response {
+function removeNote(fields: FsFields, notes: string | null): Response {
+    if (notes === null) return json({ error: 'no-primary' }, { status: 400, headers: NO_STORE });
     const id = fields.id.trim();
-    if (!deleteNote(into.notes, id))
+    if (!deleteNote(notes, id))
         return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
     return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
 }
 
 /** Write the order the notes are listed in. */
-function orderNotes(fields: FsFields, into: FsTarget): Response {
-    const refused = writeNoteOrder(into.notes, fields.ids);
+function orderNotes(fields: FsFields, notes: string | null): Response {
+    if (notes === null) return json({ error: 'no-primary' }, { status: 400, headers: NO_STORE });
+    const refused = writeNoteOrder(notes, fields.ids);
     if (refused !== null) return json({ error: refused }, { status: 400, headers: NO_STORE });
     return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
 }
@@ -676,22 +450,18 @@ function orderNotes(fields: FsFields, into: FsTarget): Response {
  */
 function act(fields: FsFields, into: FsTarget): Response {
     const action = fields.action;
-    if (action === 'note-save') return writeNote(fields, into);
-    if (action === 'note-delete') return removeNote(fields, into);
-    if (action === 'order-notes') return orderNotes(fields, into);
-    const loaded = loadSaved(into.file, reservedKeys(into.fixed));
-    if (!loaded.ok) return json({ error: loaded.error }, { status: 400, headers: NO_STORE });
-    const saved = loaded.saved;
-    if (action === 'add-root') return addRoot(saved, fields, into);
-    if (action === 'remove-root') return removeRoot(saved, fields, into);
-    if (action === 'order-roots') return orderRoots(saved, fields, into);
-    if (action === 'save-workspace') return saveWorkspace(saved, fields, into);
-    return selectWorkspace(saved, fields, into);
+    if (action === 'note-save') return writeNote(fields, into.notes);
+    if (action === 'note-delete') return removeNote(fields, into.notes);
+    if (action === 'order-notes') return orderNotes(fields, into.notes);
+    if (action === 'save-workspace') {
+        return actionAnswer(saveWorkspaceAs(into.workspace.stateFolder, fields.name));
+    }
+    return actionAnswer(selectWorkspace(into.workspace.stateFolder, fields.path));
 }
 
 /**
- * POST /api/fs: one action on the workspaces file. The order is the order of the refusals: the
- * token, the body, the action, and only then the file.
+ * POST /api/fs: one action on the workspace or the notes. The order is the order of the refusals:
+ * the token, the body, the action, and only then the files.
  */
 export async function handleFsWrite(
     request: Request,
@@ -709,6 +479,6 @@ export async function handleFsWrite(
     }
     const fields = body.data;
     // Whichever request got here first finishes its read, its change and its write before the next
-    // one starts its read, so two adds in flight are two roots and never one.
+    // one starts its read, so two actions in flight never lose one another's change.
     return chained(into.writes, () => act(fields, into));
 }

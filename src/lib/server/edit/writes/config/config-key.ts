@@ -7,8 +7,9 @@
 // written whole from a parse. The options catalog (config/catalogs/options.yml) decides what may be
 // written: the file must be one of its tracked files, the key one of its entries, the entry a
 // single value with a control, and the value one that control takes (config-fit.ts). The machine's
-// own file, local.yml, is refused before anything is read. The checks that stand between the edited
-// text and the file are config-checks.ts's, which config-value.ts runs as well.
+// own file, a local.yml or a link to a hub's `.oculus/local.yml`, is refused before the file is
+// read. The checks that stand between the edited text and the file are config-checks.ts's, which
+// config-value.ts runs as well.
 //
 // A key of the hub list is written in the hub's config layer (`<hub>/.oculus/config/<file>`), any
 // other key in the engine's file. When the layer's file or the key in it is not there, the write
@@ -21,7 +22,7 @@
 import { isDeepStrictEqual } from 'node:util';
 import { isAlias, isMap as isYamlMap, isScalar, parseDocument } from 'yaml';
 import type { Scalar } from 'yaml';
-import { LOCAL_NAME, loadConfig, textCatalog } from '../../../../data/sources/config.ts';
+import { LOCAL_NAME } from '../../../../data/sources/config.ts';
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
 import { replaceValue } from '../../yaml/yaml-edit.ts';
@@ -30,6 +31,9 @@ import { sourcesFor, type SourceInputs } from './config-sources.ts';
 import {
     absentIn,
     insertKey,
+    isMachinePlace,
+    lacksPrimary,
+    opening,
     kept,
     mergedAt,
     optionNow,
@@ -37,7 +41,6 @@ import {
     placeOf,
     placeText,
     refusedBy,
-    refusing,
     type ConfigKeyOutcome,
     type OptionNow,
     written
@@ -109,18 +112,19 @@ export function writeConfigKey(
     key: string,
     value: unknown,
     inputs?: SourceInputs,
-    hub?: string
+    hub?: string,
+    hubs: readonly string[] = []
 ): ConfigKeyOutcome {
-    const before = loadConfig(engine, { hub });
-    const text = textCatalog(before.config);
-    const refuse = refusing(file, key);
+    const { before, text, refuse } = opening(engine, file, key, hub);
     if (file === LOCAL_NAME) return refuse(words(text, 'server.config_key.local'));
+    if (lacksPrimary(file, key, hub)) return refuse(words(text, 'server.workspace.no_primary'));
     const entry = optionOf(catalogOf(before.config), file, key);
     if (entry === null) return refuse(words(text, 'server.config_key.no_entry'));
     if (!single(entry)) return refuse(words(text, 'server.config_key.not_single'));
     const wanted = Object.is(value, -0) ? 0 : value;
 
     const place = placeOf(engine, hub, file, key);
+    if (isMachinePlace(place, hubs, engine)) return refuse(words(text, 'server.config_key.local'));
     const onDisk = placeText(place);
     const source = onDisk ?? '';
     const found = locate(source, key);

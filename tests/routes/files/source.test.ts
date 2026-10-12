@@ -20,7 +20,7 @@ import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { mintToken, TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import { savesOf } from '../../../src/lib/server/files/fs/history.ts';
-import { handleSource, type StatOf } from '../../../src/lib/server/files/source.ts';
+import { handleSource, type StatOf } from '../../../src/lib/server/files/source/source.ts';
 import type { Root } from '../../../src/lib/server/files/files.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { TEXT } from '../../server/text.ts';
@@ -55,6 +55,7 @@ async function save(
         token,
         () => TEXT,
         [one.root],
+        join(one.root.dir, 'oculus', 'config'),
         join(one.dir, 'history'),
         stat
     );
@@ -80,7 +81,15 @@ describe('POST /api/source', () => {
         const token = mintToken();
         const body = { root: one.root.key, path: 'notes.md', content: 'after\n' };
         expect(
-            (await handleSource(request('stale', body), token, () => TEXT, [one.root])).status
+            (
+                await handleSource(
+                    request('stale', body),
+                    token,
+                    () => TEXT,
+                    [one.root],
+                    join(one.root.dir, 'oculus', 'config')
+                )
+            ).status
         ).toBe(403);
         expect(readFileSync(one.file, 'utf8')).toBe('before\n');
     });
@@ -92,7 +101,8 @@ describe('POST /api/source', () => {
             request(token, { root: one.root.key, path: '../outside.md', content: 'after\n' }),
             token,
             () => TEXT,
-            [one.root]
+            [one.root],
+            join(one.root.dir, 'oculus', 'config')
         );
         expect(response.status).toBe(403);
         expect(await response.json()).toEqual({
@@ -120,7 +130,8 @@ describe('POST /api/source', () => {
             }),
             token,
             () => TEXT,
-            [one.root]
+            [one.root],
+            join(one.root.dir, 'oculus', 'config')
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({

@@ -1,5 +1,5 @@
 // Layer 2, route tests. What the /api/write route does with an `app-setting` write: the value of a
-// setting an app declares, stored under `app_settings:` in the first hub's config layer, the
+// setting an app declares, stored under `app_settings:` in the primary hub's config layer, the
 // refusals that leave the layer as it was, the stored values the apps watcher judges, the values a
 // host reads, and the undo. These are the settings rows of G77.
 //
@@ -20,7 +20,7 @@ import {
 } from '../../../../src/lib/data/helpers/files/apps/settings.ts';
 import { loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { handleWrite } from '../../../../src/lib/server/edit/writes.ts';
-import type { WriteTarget } from '../../../../src/lib/server/edit/writes.ts';
+import type { PrimaryTarget } from '../../../../src/lib/server/edit/writes.ts';
 import { words } from '../../../../src/lib/server/core/words.ts';
 import { approveApp } from '../../../../src/lib/server/machine/approvals/approvals.ts';
 import { judgeStored } from '../../../../src/lib/server/machine/apps/read/across/stored.ts';
@@ -45,7 +45,7 @@ function world(approve = true, extra = '') {
         }
         apps.options.apps.reread();
     }
-    const into: WriteTarget = {
+    const into: PrimaryTarget = {
         ...configTarget(),
         apps: { held: apps.held, data: join(apps.fixture.base, 'data'), maxKb: 256 }
     };
@@ -53,10 +53,11 @@ function world(approve = true, extra = '') {
 }
 
 /** The layer the write lands in. */
-const layerOf = (into: WriteTarget): string => join(into.hub, '.oculus', 'config', 'behavior.yml');
+const layerOf = (into: PrimaryTarget): string =>
+    join(into.hub, '.oculus', 'config', 'behavior.yml');
 
 /** One app-setting write as the page sends it, and the answer. */
-async function send(into: WriteTarget, key: string, value: unknown, headers = {}) {
+async function send(into: PrimaryTarget, key: string, value: unknown, headers = {}) {
     const response = await handleWrite(
         request({ kind: 'app-setting', key, value }, headers),
         TOKEN,

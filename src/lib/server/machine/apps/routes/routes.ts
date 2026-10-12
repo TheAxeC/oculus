@@ -24,8 +24,8 @@ import {
     textCatalog,
     type LocalConfig
 } from '../../../../data/sources/config.ts';
-import { browserRoots } from '../../../files/roots.ts';
-import type { Root } from '../../../files/files.ts';
+import type { Root } from '../../../files/workspace/folders.ts';
+import type { OpenWorkspace } from '../../../files/workspace/open.ts';
 import { defaultHistoryDir } from '../../../files/fs/history.ts';
 import { approveApp, defaultApprovalsPath, revokeApp } from '../../approvals/approvals.ts';
 import type { AppHosts } from '../host/manager.ts';
@@ -50,8 +50,8 @@ type AppsAccess = {
     stateFile(): string;
     /** The key the current workspace has in that file. */
     workspace(): string;
-    /** The machine's apps folder, which may not exist yet. */
-    folder(): string;
+    /** The primary hub's apps folder, which may not exist yet; null with no primary. */
+    folder(): string | null;
 };
 
 /** What the routes read of the process. */
@@ -91,6 +91,8 @@ export type AppsRouteServer = {
     fsWrites: FsWrites;
     engine: string;
     local: LocalConfig;
+    /** The open workspace, whose folders are the roots an app reaches. */
+    workspace: { open(): OpenWorkspace };
     /** The home folder; the machine's own when absent. */
     home?: string;
 };
@@ -108,19 +110,15 @@ export function routeOptions(
         approvalsFile: () => server.local.approvals ?? defaultApprovalsPath(),
         writes: server.fsWrites,
         storeMaxKb: () => appsSettings(config()).storeMaxKb,
-        roots: () => browserRoots({ config: config(), engine: server.engine, local: server.local }),
+        roots: () => server.workspace.open().roots,
         configDir: configDir(server.engine),
         closedPaths: () => closedPaths(config()).folders,
         privateReal: () =>
             closedToApps({
                 home: server.home ?? homedir(),
-                engine: server.engine,
+                config: configDir(server.engine),
                 local: server.local,
-                roots: browserRoots({
-                    config: config(),
-                    engine: server.engine,
-                    local: server.local
-                })
+                roots: server.workspace.open().roots
             }),
         text: () => textCatalog(config()),
         fs: diskFs,

@@ -8,8 +8,8 @@
 // provider in both connectors, each account still asking for its own consent and keeping its own
 // token. An account file that carries a client half of its own keeps it and is read as it always
 // was, so a file written by hand before the provider file existed goes on working unchanged.
-// Neither half is in the tracked tree or in config/local.yml, so nothing the repository holds
-// names an account of the reader's.
+// Neither half is in the tracked tree or in a hub's `.oculus/local.yml`, so nothing the repository
+// holds names an account of the reader's.
 //
 // Each connector has a folder of its own for its account files, which the kind selects, and an
 // account of one connector has a file and a consent of its own even when it is the same mailbox as
@@ -18,7 +18,7 @@
 //
 // A calendar's published link is an account file too, `ics-<label>.json` holding `{ "url": ... }`:
 // the link is the reader's key to the calendar, so it is kept as a token is, in a file of this
-// folder at 0600, and never in config/local.yml.
+// folder at 0600, and never in a hub's `.oculus/local.yml`.
 //
 // Every folder is resolved at the call and never at import, as server/core/changes.ts and
 // server/machine/usage/accounts.ts resolve theirs, so a test points a connector at a directory of

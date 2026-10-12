@@ -1,12 +1,13 @@
 // Layer 2, server. Read appended session files and fold each one into a current session record.
 //
-// Two stores answer to the same shape, each read from every account config/local.yml's `accounts`
-// names (sessions/folders.ts): `<dir>/projects/<slug>/<id>.jsonl` of every Claude account, written
-// by Claude Code, and `<dir>/sessions/YYYY/MM/DD/rollout-<stamp>-<uuid>.jsonl` of every Codex
-// account, written by the Codex CLI. Folders that resolve to one real path are read once. Both are
-// line-delimited JSON, so both are read the same way: from the byte offset the cache remembers, up
-// to the last complete line, because a trailing line without a newline is a record still being
-// written and waits for the next pass.
+// Two stores answer to the same shape, each read from every account the `accounts` of the hubs'
+// `.oculus/local.yml` files name (sessions/folders.ts): `<dir>/projects/<slug>/<id>.jsonl` of every
+// Claude account, written by Claude Code, and
+// `<dir>/sessions/YYYY/MM/DD/rollout-<stamp>-<uuid>.jsonl` of every Codex account, written by the
+// Codex CLI. Folders that resolve to one real path are read once. Both are line-delimited JSON, so
+// both are read the same way: from the byte offset the cache remembers, up to the last complete
+// line, because a trailing line without a newline is a record still being written and waits for the
+// next pass.
 //
 // Nothing here throws. A file that cannot be read is left out and the rest come back.
 

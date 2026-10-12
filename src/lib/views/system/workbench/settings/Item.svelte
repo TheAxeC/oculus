@@ -25,6 +25,7 @@
     import CodeText from '$lib/ui/display/CodeText.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
+    import { WALLPAPER_KEY } from '$lib/state/life/pictures/wallpapers.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { resetBrowserRow } from '$lib/state/system/config/other-rows/browser';
     import type { EditorWriter } from '$lib/state/system/config/editors/writer';
@@ -32,6 +33,7 @@
     import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW, type Row } from '$lib/state/system/config/groups';
     import { message, type Message } from '$lib/state/system/config/messages';
+    import { openTarget } from '$lib/state/system/config/config-files';
     import { mismatchMessage, placeOf } from '$lib/state/system/config/rows';
     import { withTypedText } from '$lib/state/system/config/typed';
     import { gearEntries } from '$lib/state/system/config/view/gear';
@@ -42,11 +44,13 @@
     import RailEditor from '../RailEditor.svelte';
     import AppControl from './other-rows/AppControl.svelte';
     import BrowserControl from './other-rows/BrowserControl.svelte';
+    import WallpaperPicker from './other-rows/WallpaperPicker.svelte';
     import Control from './Control.svelte';
     import Gear from './Gear.svelte';
     import { defaultWords, said } from './said';
 
     const {
+        fs: { workspaces },
         layout: { openView },
         ui,
         writes: { writeAppSetting }
@@ -107,7 +111,9 @@
                 ...(copyRefused ? [t('workbench.settings_copy_refused')] : [])
             ];
         }
-        if (row.state === 'missing') found.push(said(message('missing', placeOf(row).file)));
+        if (row.state === 'missing' && row.key !== WALLPAPER_KEY) {
+            found.push(said(message('missing', placeOf(row).file)));
+        }
         const mismatch = mismatchMessage(row);
         if (mismatch !== null) found.push(said(mismatch));
         const written = writer.said(row);
@@ -143,10 +149,16 @@
         }
     }
 
+    /** Where the row's file opens: through the workspace folder that holds it, if any. */
+    const target = $derived.by(() => {
+        if (row.kind !== 'config') return null;
+        const { root, file } = placeOf(row);
+        return openTarget(root, file, workspaces());
+    });
+
     function open(): void {
-        if (row.kind === 'config') {
-            const { root, file } = placeOf(row);
-            openView('source', sourceTabState(root, file, row.line));
+        if (row.kind === 'config' && target !== null) {
+            openView('source', sourceTabState(target.root, target.path, row.line));
         }
     }
 </script>
@@ -182,6 +194,15 @@
     {/if}
     {#if row.kind === 'local'}
         <p class="path"><CodeText text={`\`${row.path}\``} /></p>
+        <p class="said" role="status">
+            {#if row.setIn !== null}
+                {t('workbench.settings_machine_set', row.setIn)}
+            {:else if row.fallback !== null}
+                {t('workbench.settings_machine_default', row.fallback)}
+            {:else}
+                {t('workbench.settings_machine_unset')}
+            {/if}
+        </p>
     {:else if row.kind === 'browser'}
         <BrowserControl {row} onsaid={(next: Message | null) => (browserSaid = next)} />
     {:else if row.kind === 'app'}
@@ -201,6 +222,8 @@
             <RailEditor {id} />
         {:else if control === 'arrangements'}
             <PagesReset />
+        {:else if row.key === WALLPAPER_KEY}
+            <WallpaperPicker {row} {writer} />
         {:else if control !== 'workbench'}
             <Control {row} {id} {writer} {editors} {lists} />
         {/if}
@@ -223,7 +246,11 @@
             {#if defaultWords(row) !== ''}
                 <span class="default">{defaultWords(row)}</span>
             {/if}
-            {#if row.line !== undefined || row.hub?.present === true}
+            {#if (row.line !== undefined || row.hub?.present === true) && target === null}
+                <span class="default">
+                    {t('workbench.settings_open_unavailable', placeOf(row).file)}
+                </span>
+            {:else if row.line !== undefined || row.hub?.present === true}
                 <ToolButton
                     label={row.line === undefined
                         ? placeOf(row).file

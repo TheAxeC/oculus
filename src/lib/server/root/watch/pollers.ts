@@ -144,7 +144,8 @@ export function usageStarters(
     hub: Hub,
     local: LocalConfig,
     start: { refresh: { refreshMin: number; model: string }; tiers: Record<string, string> },
-    holder: UsageHolder
+    holder: UsageHolder,
+    cwd: () => string
 ): {
     startUsageRefresh: () => UsageRefreshWatcher;
     startUsage: (from: {
@@ -156,7 +157,7 @@ export function usageStarters(
         startUsageRefresh: () =>
             make.watchUsageRefresh({
                 accounts: local.accounts,
-                hub: local.hub,
+                hub: cwd(),
                 claudeBin: local.claudeBin,
                 ...(holder.live?.held().refresh ?? start.refresh),
                 onChange: () => void holder.parts?.usage.refresh()

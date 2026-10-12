@@ -1,5 +1,6 @@
-// Layer 1, data. This machine's own values: local.yml in the config folder, read by readLocal alone
-// and never merged into the shared map, so a machine's paths, port and accounts stay its own. Every
+// Layer 1, data. This machine's own values: the `local.yml` in a hub's `.oculus/` folder, read by
+// readLocal alone and never merged into the shared map, so a machine's paths, port and accounts
+// stay its own (data/sources/config/machine.ts joins the files of the hubs of a workspace). Every
 // key has a default. A key whose value the file gets wrong takes its default and is a problem
 // naming the key, a row of a list that fails is left out and is a problem naming the row, and a
 // file that does not read at all is every default and one problem: no read throws, so the server
@@ -18,7 +19,7 @@ import type {
 } from '../../model/index.ts';
 import { isAccountLabel, isCalendarProvider, isProvider } from '../../accounts/connect.ts';
 import { filledText, itemsShape, mapShape, readAs } from '../../shapes/shapes.ts';
-import { configDir } from './folder.ts';
+import { ROOT_FOLDER } from '../../helpers/hub-names.ts';
 
 /** A port: a whole number. */
 const portShape = z.number().refine(Number.isInteger);
@@ -38,8 +39,6 @@ type LiteratureKeys = {
 };
 
 export type LocalConfig = {
-    /** Absolute path of the research hub whose YAML the portfolio is built from. */
-    hub: string;
     /** Port the oculus server listens on, bound to 127.0.0.1. */
     port: number;
     /** Per-machine ssh alias for the Live HPC view. */
@@ -55,18 +54,13 @@ export type LocalConfig = {
      */
     sessionsOverrides?: string;
     /**
-     * Where the file browser's saved workspaces live, `workspaces` in the file. Absent unless the
-     * machine sets it, and the file browser then uses .oculus/workspaces.json in the hub.
-     */
-    workspaces?: string;
-    /**
      * Where the reader's own bookmarks live, `bookmarks` in the file. Absent unless the machine
-     * sets it, and the file browser then uses .oculus/bookmarks.yml in the hub.
+     * sets it, and the file browser then uses .oculus/bookmarks.yml in the primary's folder.
      */
     bookmarks?: string;
     /**
      * Where the scratch notes live, `notes` in the file. Absent unless the machine sets it, and the
-     * file browser then uses .oculus/notes in the hub.
+     * file browser then uses .oculus/notes in the primary's folder.
      */
     notes?: string;
     /**
@@ -94,7 +88,7 @@ export type LocalConfig = {
     lsp?: string;
     /**
      * Where the schedules live, `schedules` in the file. Absent unless the machine sets it, and the
-     * schedule watcher then uses .oculus/schedules.yml in the hub.
+     * schedule watcher then uses .oculus/schedules.yml in the primary's folder.
      */
     schedules?: string;
     /**
@@ -128,7 +122,7 @@ export type LocalConfig = {
     calendarDir?: string;
     /**
      * Where the machine's apps live, `apps_dir` in the file. Absent unless the machine sets it, and
-     * the apps watcher then reads .oculus/apps in the hub.
+     * the apps watcher then reads .oculus/apps in the primary's folder.
      */
     appsDir?: string;
     /** The mail accounts the Inbox view reads, empty unless the machine names any. */
@@ -148,19 +142,15 @@ export type LocalConfig = {
 /** The default development port; the reserved port 8787 is never used. */
 export const DEFAULT_PORT = 8790;
 
-/**
- * The name of the machine-local file inside the config directory, which loadConfig never merges.
- */
+/** The name of the machine-local file inside a hub's `.oculus/` folder. */
 export const LOCAL_NAME = 'local.yml';
 
 /** The keys local.yml may carry, which readLocal reads and the options catalog describes. */
 export const LOCAL_KEYS = [
-    'hub',
     'port',
     'hpc_host',
     'sessions_cache',
     'sessions_overrides',
-    'workspaces',
     'bookmarks',
     'notes',
     'changes',
@@ -192,13 +182,9 @@ const LITERATURE_KEYS = [
     ['mailto', 'mailto']
 ] as const;
 
-/**
- * The defaults: the hub is two directories above tools/oculus, the port is 8790, and Claude and
- * the rite debug adapter are resolved on PATH.
- */
-export function localDefaults(engine: string): LocalConfig {
+/** The defaults: the port is 8790, and Claude and the rite debug adapter are resolved on PATH. */
+export function localDefaults(): LocalConfig {
     return {
-        hub: resolve(engine, '..', '..'),
         port: DEFAULT_PORT,
         claudeBin: 'claude',
         riteDapBin: 'rite_dap',
@@ -213,7 +199,7 @@ export function localDefaults(engine: string): LocalConfig {
 
 /**
  * A path local.yml names: `~` and a value starting with `~/` are under the home folder, an absolute
- * one stands, and any other is resolved against `base`, the engine directory.
+ * one stands, and any other is resolved against `base`, the folder of the hub whose file names it.
  */
 function localPath(value: string, base: string): string {
     if (value === '~') return homedir();
@@ -235,6 +221,7 @@ function filledAt(record: Record<string, unknown>, key: string): string | undefi
 export type LocalProblem =
     | { key: string; kind: 'value' | 'row'; words: string; sentence: string }
     | { key: string; kind: 'repeat'; sentence: string }
+    | { key: string; kind: 'other-hub'; hub: string; sentence: string }
     | { key: ''; kind: 'unparsed' | 'not-a-map'; sentence: string }
     | { key: ''; kind: 'unreadable'; code: string; sentence: string };
 
@@ -248,6 +235,11 @@ export type LocalRead = {
     config: LocalConfig;
     problems: LocalProblem[];
     unknown: string[];
+    /**
+     * The known keys the file carries, whatever their value, so a reader tells a key the file sets
+     * from a default.
+     */
+    set: string[];
     unread: boolean;
 };
 
@@ -392,19 +384,28 @@ function literatureKeys(
 }
 
 /**
- * Which file readLocal reads: local.yml of the engine's config directory, which is the whole of
- * what the machine's own configuration is. A relative path inside it resolves against the engine
- * rather than the file's own folder, so a relative `hub` is read from the engine directory.
+ * The keys under `literature:` the config sets, as `literature.<key>` names; none of the values.
  */
-export function localFile(engine: string): string {
-    return join(configDir(engine), LOCAL_NAME);
+export function literatureSet(config: LocalConfig): string[] {
+    const keys = config.literature;
+    if (keys === undefined) return [];
+    return LITERATURE_KEYS.filter(([, field]) => keys[field] !== undefined).map(
+        ([name]) => `literature.${name}`
+    );
+}
+
+/**
+ * Which file readLocal reads for the hub in `hub`: its `.oculus/local.yml`, out of git. A relative
+ * path inside it resolves against the hub's folder.
+ */
+export function localFile(hub: string): string {
+    return join(hub, ROOT_FOLDER, LOCAL_NAME);
 }
 
 /** The keys of the file that name a folder or file of this machine, with the field each sets. */
 const STATE_PATHS = [
     ['sessions_cache', 'sessionsCache'],
     ['sessions_overrides', 'sessionsOverrides'],
-    ['workspaces', 'workspaces'],
     ['bookmarks', 'bookmarks'],
     ['notes', 'notes'],
     ['changes', 'changes'],
@@ -419,8 +420,14 @@ const STATE_PATHS = [
 ] as const;
 
 /** Every default, and one problem saying the file did not read. */
-function unreadFile(engine: string, problem: LocalProblem): LocalRead {
-    return { config: localDefaults(engine), problems: [problem], unknown: [], unread: true };
+function unreadFile(problem: LocalProblem): LocalRead {
+    return {
+        config: localDefaults(),
+        problems: [problem],
+        unknown: [],
+        set: [],
+        unread: true
+    };
 }
 
 /**
@@ -430,15 +437,16 @@ function unreadFile(engine: string, problem: LocalProblem): LocalRead {
  * around it are read, so a list whose every row fails is the empty list. A text that does not
  * parse, or is not a map, is every default and one problem with the key `''`. The reader and the
  * check the source endpoint makes before it writes that file run this one function, so a body the
- * check accepts is a body the next read takes whole.
+ * check accepts is a body the next read takes whole. `base` is the folder of the hub whose file it
+ * is, which a relative path resolves against; `hub` is the name that marks each account row.
  */
-export function readLocalText(text: string, engine: string): LocalRead {
+export function readLocalText(text: string, base: string, hub?: string): LocalRead {
     let parsed: unknown;
     try {
         parsed = parse(text);
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        return unreadFile(engine, {
+        return unreadFile({
             key: '',
             kind: 'unparsed',
             sentence: message.split('\n')[0]
@@ -446,22 +454,18 @@ export function readLocalText(text: string, engine: string): LocalRead {
     }
     const record = readAs(mapShape, parsed ?? {});
     if (record === null) {
-        return unreadFile(engine, {
+        return unreadFile({
             key: '',
             kind: 'not-a-map',
             sentence: 'expected a map of keys'
         });
     }
 
-    const config = localDefaults(engine);
+    const config = localDefaults();
     const problems: LocalProblem[] = [];
     const unknown = Object.keys(record).filter((key) => !LOCAL_KEYS.includes(key));
+    const set = Object.keys(record).filter((key) => LOCAL_KEYS.includes(key));
 
-    if (record.hub !== undefined) {
-        const hub = filledAt(record, 'hub');
-        if (hub === undefined) problems.push(wrong('hub', 'a path'));
-        else config.hub = isAbsolute(hub) ? hub : resolve(engine, hub);
-    }
     if (record.port !== undefined) {
         const port = readAs(portShape, record.port);
         if (port === null) problems.push(wrong('port', 'an integer'));
@@ -479,25 +483,26 @@ export function readLocalText(text: string, engine: string): LocalRead {
         else config[field] = value;
     }
     if (record.accounts !== undefined) {
-        config.accounts = usageAccounts(record.accounts, engine, problems) ?? config.accounts;
+        const rows = usageAccounts(record.accounts, base, problems);
+        if (rows !== null) config.accounts = marked(rows, hub);
     }
     if (record.calendars !== undefined) {
-        config.calendars =
-            connectAccounts(
-                record.calendars,
-                'calendars',
-                { accepts: isCalendarProvider, named: 'google, microsoft or ics' },
-                problems
-            ) ?? config.calendars;
+        const rows = connectAccounts(
+            record.calendars,
+            'calendars',
+            { accepts: isCalendarProvider, named: 'google, microsoft or ics' },
+            problems
+        );
+        if (rows !== null) config.calendars = marked(rows, hub);
     }
     if (record.mail !== undefined) {
-        config.mail =
-            connectAccounts(
-                record.mail,
-                'mail',
-                { accepts: isProvider, named: 'google or microsoft' },
-                problems
-            ) ?? config.mail;
+        const rows = connectAccounts(
+            record.mail,
+            'mail',
+            { accepts: isProvider, named: 'google or microsoft' },
+            problems
+        );
+        if (rows !== null) config.mail = marked(rows, hub);
     }
     if (record.literature !== undefined) {
         const literature = literatureKeys(record.literature, problems, unknown);
@@ -509,48 +514,50 @@ export function readLocalText(text: string, engine: string): LocalRead {
         if (record[key] === undefined) continue;
         const value = filledAt(record, key);
         if (value === undefined) problems.push(wrong(key, 'a path'));
-        else config[field] = localPath(value, engine);
+        else config[field] = localPath(value, base);
     }
-    return { config, problems, unknown, unread: false };
+    return { config, problems, unknown, set, unread: false };
+}
+
+/** The rows with the name of the hub whose file holds them, when there is one. */
+function marked<T>(rows: T[], hub: string | undefined): T[] {
+    return hub === undefined ? rows : rows.map((row) => ({ ...row, hub }));
 }
 
 /**
- * Read local.yml of the engine's config directory, and never throw. A missing file is every default
- * and no problem, since every key has one. A file that cannot be read (a folder at its path, no
- * permission) is every default and one problem with the error's code. An unknown key is warned of
- * on stderr when `warn` is true, and ignored.
+ * Read the `.oculus/local.yml` of the hub folder `base`, and never throw. A missing file is every
+ * default and no problem, since every key has one. A file that cannot be read (a folder at its
+ * path, no permission) is every default and one problem with the error's code. An unknown key is
+ * warned of on stderr when `warn` is true, and ignored.
  */
-export function readLocal(engine: string, warn = false): LocalRead {
-    const file = localFile(engine);
+export function readLocal(base: string, warn = false, hub?: string): LocalRead {
+    const file = localFile(base);
     let text: string;
     try {
         text = readFileSync(file, 'utf8');
     } catch (error) {
         const code = (error as NodeJS.ErrnoException).code ?? 'unknown';
         if (code === 'ENOENT' || code === 'ENOTDIR') {
-            return { config: localDefaults(engine), problems: [], unknown: [], unread: false };
+            return {
+                config: localDefaults(),
+                problems: [],
+                unknown: [],
+                set: [],
+                unread: false
+            };
         }
-        return unreadFile(engine, {
+        return unreadFile({
             key: '',
             kind: 'unreadable',
             code,
             sentence: `could not be read (${code})`
         });
     }
-    const read = readLocalText(text, engine);
+    const read = readLocalText(text, base, hub);
     if (warn && read.unknown.length > 0) {
         console.warn(`${file}: ignoring unknown key(s) ${read.unknown.join(', ')}`);
     }
     return read;
-}
-
-/**
- * The machine's own values, with the default of each key the file gets wrong. An unknown key is
- * warned of at each call. It never throws, so a reader that runs on a request is served whatever
- * the file holds.
- */
-export function loadLocal(engine: string): LocalConfig {
-    return readLocal(engine, true).config;
 }
 
 /**
@@ -563,9 +570,9 @@ export function localSentence(problem: LocalProblem, file: string): string {
 
 /**
  * The sentence the first problem of this text gives, or null when every key reads. The source
- * endpoint checks a save of the machine's own file with it, so a body that would cost a key its
- * value is refused with that sentence rather than written. A file name makes the sentence the
- * reader's own ("local.yml: port must be an integer"); a parse error is given by its first line.
+ * endpoint checks a save of a hub's `local.yml` with it, so a body that would cost a key its value
+ * is refused with that sentence rather than written. A file name makes the sentence the reader's
+ * own ("local.yml: port must be an integer"); a parse error is given by its first line.
  */
 export function checkLocal(text: string, file: string = LOCAL_NAME): string | null {
     const first = readLocalText(text, dirname(file)).problems.at(0);

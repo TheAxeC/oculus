@@ -57,7 +57,7 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/shared/links/CrossLinks.svelte:142 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/forms/NewIdeaForm.svelte styles .text of ui/display/Meter.svelte, ui/forms/TextInput.svelte, ui/tree/TreeItem.svelte through .form :global(.text)',
+        line: 'views/shared/forms/NewIdeaForm.svelte styles .text of ui/display/meters/Meter.svelte, ui/forms/TextInput.svelte, ui/tree/TreeItem.svelte through .form :global(.text)',
         why: 'the rule at src/lib/views/shared/forms/NewIdeaForm.svelte:110 reaches into the primitive rather than asking it for the difference'
     },
     {

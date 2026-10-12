@@ -6,17 +6,18 @@
 // `readonly`, and the hash of the bytes the editor last read (`base`) must be the hash of the bytes
 // on disk now, with the file unchanged between two stamps (`changed`). The file as it was is copied
 // into the local history after those checks and before the write; a copy that cannot be made does
-// not stop the save and is answered in `unkept`. The machine's own `config/local.yml` is never
-// written here: it is read by its own rules (source.ts `localRefusal`) and a custom editor holds
-// bytes the rules cannot judge, so it answers `readonly`.
+// not stop the save and is answered in `unkept`. The `local.yml` of every hub's `.oculus` folder
+// and of oculus's config folder is never written here: it is read by its own rules (source.ts
+// `localRefusal`) and a custom editor holds bytes the rules cannot judge, so it answers `readonly`.
 //
 // Whether the app may have the file at all is the app routes' check (apps/reach/open.ts), made
 // before any function here runs.
 
 import { readFileSync, statSync } from 'node:fs';
-import { hashOf } from '../core/file-bytes.ts';
-import { writeBytesAtomic } from '../core/json.ts';
-import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
+import { hashOf } from '../../core/file-bytes.ts';
+import { writeBytesAtomic } from '../../core/json.ts';
+import { isMachineFile } from '../workspace/machine-file.ts';
+import { resolveRootFileResult, type Root } from '../files.ts';
 import {
     goneSince,
     historyRefusal,
@@ -49,10 +50,9 @@ export function readBytes(rootList: Root[], root: string, path: string, limit: n
     }
 }
 
-/** Whether a path of a root is the machine's own `local.yml`. */
-function isLocal(rootList: Root[], real: string): boolean {
-    const own = resolveRootPath(rootList, ENGINE_ROOT, 'local.yml');
-    return 'path' in own && own.path === real;
+/** Whether a path of a root is one of the machine's `local.yml` files. */
+function isLocal(rootList: Root[], config: string, real: string): boolean {
+    return isMachineFile(real, rootList, config);
 }
 
 /**
@@ -62,6 +62,7 @@ function isLocal(rootList: Root[], real: string): boolean {
  */
 export function saveBytes(
     rootList: Root[],
+    config: string,
     ask: { root: string; path: string; bytes: Buffer; base: string },
     history: string | undefined,
     stat: StatOf = statSync
@@ -69,7 +70,7 @@ export function saveBytes(
     const found = resolveRootFileResult(rootList, ask.root, ask.path);
     if ('error' in found) return { ok: false, word: found.error };
     const real = found.path;
-    if (isReadonly(real) || isLocal(rootList, real)) return { ok: false, word: 'readonly' };
+    if (isReadonly(real) || isLocal(rootList, config, real)) return { ok: false, word: 'readonly' };
     const before = stampOf(stat, real);
     if (before === null) return { ok: false, word: 'changed' };
     let held: Buffer;
@@ -81,7 +82,7 @@ export function saveBytes(
     if (hashOf(held) !== ask.base) return { ok: false, word: 'changed' };
     const after = stampOf(stat, real);
     if (after === null || !sameStamp(before, after)) return { ok: false, word: 'changed' };
-    const unkept = historyRefusal(rootList, real, held, history);
+    const unkept = historyRefusal(rootList, config, real, held, history);
     try {
         writeBytesAtomic(real, ask.bytes);
     } catch {

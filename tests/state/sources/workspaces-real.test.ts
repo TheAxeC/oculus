@@ -9,11 +9,13 @@
 import { mkdirSync, realpathSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
-import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { ignoredCache, workspacesAnswer } from '../../../src/lib/server/files/fs.ts';
+import { engineDir } from '../../../src/lib/data/sources/config.ts';
+import { workspacesAnswer } from '../../../src/lib/server/files/fs.ts';
+import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import { readAs } from '../../../src/lib/data/shapes/shapes.ts';
 import { workspacesShape } from '../../../src/lib/state/sources/fs-transport.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
+import { plantState } from '../../fixtures/hubs/workspace.ts';
 
 describe('the real folder of a root in the workspaces answer', () => {
     it('is the folder a symlinked root leads to, and empty for a folder that is not there', () => {
@@ -22,22 +24,16 @@ describe('the real folder of a root in the workspaces answer', () => {
         mkdirSync(folder);
         const link = join(dir, 'link');
         symlinkSync(folder, link);
-        const answer = workspacesAnswer(
-            {
-                file: join(dir, 'workspaces.json'),
-                bookmarks: join(dir, 'bookmarks.yml'),
-                notes: join(dir, 'notes'),
-                fixed: [
-                    { key: 'linked', dir: link },
-                    { key: 'missing', dir: join(dir, 'missing') }
-                ],
-                writes: fsWrites(),
-                ignored: ignoredCache()
-            },
-            { current: '', workspaces: [], dropped: [] }
-        );
+        const state = plantState([
+            { name: 'linked', dir: link },
+            { name: 'missing', dir: join(dir, 'missing') }
+        ]);
+        const answer = workspacesAnswer(openWorkspace(state), engineDir(), {
+            set: [],
+            defaults: {}
+        });
         const read = readAs(workspacesShape, JSON.parse(JSON.stringify(answer)));
-        const roots = read?.workspaces[0].roots ?? [];
+        const roots = read?.folders ?? [];
         expect(roots.find((one) => one.key === 'linked')).toMatchObject({
             dir: link,
             real: realpathSync(folder)
@@ -48,10 +44,13 @@ describe('the real folder of a root in the workspaces answer', () => {
     it('is left out by a body that carries none, and read as nothing', () => {
         const read = readAs(workspacesShape, {
             home: '/home/u',
-            current: 'main',
-            workspaces: [{ name: 'main', roots: [{ key: 'a', dir: '/w/a', fixed: false }] }],
-            dropped: []
+            open: null,
+            folders: [{ name: 'a', dir: '/w/a', hub: false }],
+            primary: null,
+            engine: null,
+            recent: [],
+            available: []
         });
-        expect(read?.workspaces[0].roots[0].real).toBeUndefined();
+        expect(read?.folders[0].real).toBeUndefined();
     });
 });

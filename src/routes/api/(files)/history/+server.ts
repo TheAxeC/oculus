@@ -4,16 +4,11 @@
 // and the folder is local.yml's `history` key, read at the request.
 
 import { handleHistory, defaultHistoryDir } from '$lib/server/files/fs/history';
-import { browserRoots } from '$lib/server/files/roots';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ url, locals }) =>
     handleHistory(
         url,
-        browserRoots({
-            config: locals.config().config,
-            engine: locals.server.engine,
-            local: locals.server.local
-        }),
+        locals.server.workspace.open().roots,
         locals.server.local.history ?? defaultHistoryDir()
     );

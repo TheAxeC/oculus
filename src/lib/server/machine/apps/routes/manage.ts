@@ -13,6 +13,7 @@ import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { tokenedBody } from '../../../core/auth.ts';
 import { chained } from '../../../core/json.ts';
+import { words } from '../../../core/words.ts';
 import { defaultApprovalsPath } from '../../approvals/approvals.ts';
 import { changeEnabled, dependentsClosure } from '../manage/enable.ts';
 import { addApp } from '../manage/add.ts';
@@ -110,8 +111,10 @@ export async function handleAddPost(
     if (read instanceof Response) return read;
     const body = addShape.safeParse(read.body);
     if (!body.success) return refuse('path must be given', 400);
+    const folder = options.apps.folder();
+    if (folder === null) return refuse(words(options.text(), 'server.workspace.no_primary'), 409);
     return chained(options.writes, () => {
-        const done = addApp(body.data.path, options.apps.folder(), options.limits());
+        const done = addApp(body.data.path, folder, options.limits());
         options.apps.reread();
         if (done.ok) return json({ ok: true, name: done.name }, { headers: NO_STORE });
         return json({ error: done.error }, { status: 409, headers: NO_STORE });

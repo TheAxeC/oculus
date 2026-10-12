@@ -10,7 +10,7 @@
     // The window itself is `context_window` in config/behavior.yml, or the transcript's own when it
     // states one, which Codex does and Claude does not.
 
-    import Meter from '$lib/ui/display/Meter.svelte';
+    import Meter from '$lib/ui/display/meters/Meter.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';

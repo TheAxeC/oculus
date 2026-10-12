@@ -9,9 +9,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { mintToken, TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
-import { ENGINE_ROOT, engineRoot, type Root } from '../../../src/lib/server/files/files.ts';
+import type { Root } from '../../../src/lib/server/files/workspace/folders.ts';
 import { handleHistory, readCopy, savesOf } from '../../../src/lib/server/files/fs/history.ts';
-import { handleSource } from '../../../src/lib/server/files/source.ts';
+import { handleSource } from '../../../src/lib/server/files/source/source.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { TEXT } from '../../server/text.ts';
 
@@ -50,6 +50,7 @@ async function save(one: Fixture, content: string, list: Root[] = [one.root], ke
         token,
         () => TEXT,
         list,
+        join(one.dir, 'oculus', 'config'),
         one.history
     );
 }
@@ -73,27 +74,68 @@ describe('the copy a save keeps', () => {
         ]);
     });
 
-    it('never copies the machine own config/local.yml', async () => {
+    it.each([
+        ['the hub folder', 'lab', '.oculus/local.yml'],
+        ['a folder over the hub .oculus, listed beside the hub', 'labdot', 'local.yml']
+    ])("never copies a hub's .oculus/local.yml, reached through %s", async (_where, key, path) => {
         const one = fixture();
-        const engine = join(one.dir, 'engine');
-        mkdirSync(join(engine, 'config'), { recursive: true });
-        const own = join(engine, 'config', 'local.yml');
-        writeFileSync(own, 'hub: /elsewhere\n');
+        const lab = join(one.dir, 'lab');
+        mkdirSync(join(lab, '.oculus', 'config'), { recursive: true });
+        const own = join(lab, '.oculus', 'local.yml');
+        writeFileSync(own, 'port: 8800\n');
+        const list: Root[] = [
+            { key: 'lab', dir: lab, hub: true },
+            { key: 'labdot', dir: join(lab, '.oculus') }
+        ];
         const token = mintToken();
         const answer = await handleSource(
-            request(token, { root: ENGINE_ROOT, path: 'local.yml', content: 'hub: /srv/x\n' }),
+            request(token, { root: key, path, content: 'port: 8801\n' }),
             token,
             () => TEXT,
-            [engineRoot(engine)],
+            list,
+            join(one.dir, 'oculus', 'config'),
             one.history
         );
         expect(await answer.json()).toEqual({
             ok: true,
-            hash: createHash('sha256').update('hub: /srv/x\n').digest('hex')
+            hash: createHash('sha256').update('port: 8801\n').digest('hex')
         });
-        expect(readFileSync(own, 'utf8')).toBe('hub: /srv/x\n');
+        expect(readFileSync(own, 'utf8')).toBe('port: 8801\n');
         expect(existsSync(one.history)).toBe(false);
     });
+
+    it.each([
+        ['a workspace folder over the oculus config folder', 'cfg', 'local.yml'],
+        ['the hub folder that holds the oculus config folder', 'top', 'oculus/config/local.yml']
+    ])(
+        "never copies oculus's own config/local.yml, reached through %s",
+        async (_where, key, path) => {
+            const one = fixture();
+            const config = join(one.dir, 'oculus', 'config');
+            mkdirSync(config, { recursive: true });
+            const own = join(config, 'local.yml');
+            writeFileSync(own, 'port: 8800\n');
+            const list: Root[] = [
+                { key: 'top', dir: one.dir, hub: true },
+                { key: 'cfg', dir: config }
+            ];
+            const token = mintToken();
+            const answer = await handleSource(
+                request(token, { root: key, path, content: 'port: 8801\n' }),
+                token,
+                () => TEXT,
+                list,
+                config,
+                one.history
+            );
+            expect(await answer.json()).toEqual({
+                ok: true,
+                hash: createHash('sha256').update('port: 8801\n').digest('hex')
+            });
+            expect(readFileSync(own, 'utf8')).toBe('port: 8801\n');
+            expect(existsSync(one.history)).toBe(false);
+        }
+    );
 });
 
 describe('GET /api/history', () => {

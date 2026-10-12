@@ -2,12 +2,14 @@
 // added. routes/api/(docs)/memories/+server.ts is the endpoint and holds nothing but its GET and
 // POST, since a route module may export only its verbs.
 //
-// The rules the folder is read under are server/content/images.ts's, the same ones the wallpaper
-// route obeys: the folder is resolved under the hub and refused if it is not inside it, a name
-// carrying a path is refused, only the four picture extensions are served, and every request is
-// judged by where it came from. What is here is the wall's own half: the list the view draws its
-// tiles from, each picture's name with its width and height so a tile has its picture's shape
-// before the picture arrives, and the upload of one picture into that folder.
+// The rules the folders are read under are server/content/images.ts's, the same ones the wallpaper
+// route obeys: each folder is resolved under its hub and replaced by the standard one if it is not
+// inside it, a name carrying a path is refused, only the four picture extensions are served, and
+// every request is judged by where it came from. What is here is the wall's own half: the list the
+// view draws its tiles from, which holds the photo wall of every hub of the workspace, each
+// picture's hub and name with its width and height so a tile has its picture's shape before the
+// picture arrives, a picture served as `<hub name>/<file name>`, and the upload of one picture into
+// the primary hub's folder (the first hub's when the workspace has no primary).
 //
 // An upload is behind the write token as well as the origin guard, and the name is reduced to its
 // last segment before anything is done with it, so a name that tried to reach out of the folder is
@@ -26,7 +28,8 @@ import { MAX_UPLOAD_BYTES } from '../../data/file-ops.ts';
 import type { Picture } from '../../data/model/index.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { writeBytesAtomic } from '../core/json.ts';
-import { folderOf, images, isName, sizeOf, stream } from './images.ts';
+import { words } from '../core/words.ts';
+import { images, isName, sizeOf, stream, type HubPictures } from './images.ts';
 import { existsSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
@@ -60,24 +63,18 @@ export const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / (1024 * 1024);
 export const BODY_LIMIT_BYTES = Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 64 * 1024;
 
 /**
- * What the owning server context remembers: the folders refused once, so a bad one is said once.
+ * The pictures of every hub's photo wall, hubs in the workspace's order and each hub's pictures in
+ * name order, each with the size the head of its file gives. The sizes are read on every listing
+ * rather than kept, since a kept size would be stale the moment a picture of the same name replaced
+ * it; a listing reads at most READ_CAP bytes of each (images.ts).
  */
-export type MemoriesMemory = { refused: Set<string> };
-
-export function memoriesMemory(): MemoriesMemory {
-    return { refused: new Set() };
-}
-
-/**
- * The pictures of a folder in name order, each with the size the head of its file gives. The sizes
- * are read on every listing rather than kept, since a kept size would be stale the moment a picture
- * of the same name replaced it; a listing reads at most READ_CAP bytes of each (images.ts).
- */
-export function pictures(dir: string): Picture[] {
-    return images(dir).map((name) => {
-        const size = sizeOf(join(dir, name));
-        return { name, width: size?.width ?? null, height: size?.height ?? null };
-    });
+export function pictures(hubs: readonly HubPictures[]): Picture[] {
+    return hubs.flatMap((one) =>
+        images(one.memories).map((name) => {
+            const size = sizeOf(join(one.memories, name));
+            return { hub: one.hub, name, width: size?.width ?? null, height: size?.height ?? null };
+        })
+    );
 }
 
 /** What an upload was asked to write: the file's own name, and its bytes as base64. */
@@ -88,15 +85,12 @@ export type UploadOutcome =
     { written: string } | { error: 'name' | 'data' | 'taken' | 'unwritable' };
 
 /**
- * The configured folder, or null when there is none to serve. The config is the request's own
- * read, so an edit shows on reload; a missing `dir`, or one outside the hub, serves nothing.
+ * The folder an upload goes to: the primary hub's photo wall, else the first hub's, and null when
+ * the workspace has no hub.
  */
-export function folder(
-    memory: MemoriesMemory,
-    config: Record<string, unknown>,
-    engine: string
-): string | null {
-    return folderOf(config.memories, engine, memory.refused, 'memories');
+export function addFolder(hubs: readonly HubPictures[], primary: string | null): string | null {
+    const own = hubs.find((one) => one.hub === primary) ?? hubs.at(0);
+    return own?.memories ?? null;
 }
 
 /** The body of an upload: a name and the data, each text. */
@@ -144,15 +138,21 @@ export function write(dir: string, asked: Upload): UploadOutcome {
     return { written: name };
 }
 
-/** The pictures of the folder with their sizes, as JSON. */
-export function listing(dir: string | null): Response {
-    return json({ images: dir === null ? [] : pictures(dir) });
+/** The pictures of every hub's photo wall with their sizes, as JSON. */
+export function listing(hubs: readonly HubPictures[]): Response {
+    return json({ images: pictures(hubs) });
 }
 
-/** One picture of the folder, streamed. 404 for anything not there. */
-export function serve(dir: string | null, name: string | null): Response {
-    if (dir === null) return new Response(null, { status: 404 });
-    return stream(dir, name);
+/**
+ * One picture of a photo wall, named `<hub name>/<file name>`, streamed. 404 for a hub the
+ * workspace does not list and for anything not there.
+ */
+export function serve(hubs: readonly HubPictures[], asked: string | null): Response {
+    const cut = asked === null ? -1 : asked.indexOf('/');
+    if (asked === null || cut < 1) return new Response(null, { status: 404 });
+    const held = hubs.find((one) => one.hub === asked.slice(0, cut));
+    if (held === undefined) return new Response(null, { status: 404 });
+    return stream(held.memories, asked.slice(cut + 1));
 }
 
 /**
@@ -171,7 +171,9 @@ export async function add(
     const body = read.body;
     const asked = upload(body);
     if (asked === null) return json({ error: 'the body is not a picture to add' }, { status: 400 });
-    if (dir === null) return json({ error: 'no memories folder is configured' }, { status: 404 });
+    if (dir === null) {
+        return json({ error: words(text(), 'server.memories.no_wall') }, { status: 404 });
+    }
     const outcome = write(dir, asked);
     if ('error' in outcome) {
         return json(

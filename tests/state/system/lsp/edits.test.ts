@@ -4,9 +4,10 @@
 // file, a file open in a tab of another page), and the refusal of an edit whose tab was typed into
 // while the edit waited (G8), each leaving every tab and every file as it was. The plan and the
 // commit that `apply` runs in one call are run apart: a plan edits and posts nothing, its commit
-// posts the hash the plan read, a commit refuses a tab typed into after the plan, and the plan of
-// a hub-key rename refuses a file that no longer holds the key where an edit stands. A closed file
-// over the write limit or not UTF-8 text is refused with a sentence of its own.
+// posts the hash the plan read, a commit refuses a tab typed into after the plan, and the plan of a
+// hub-key rename refuses a file that no longer holds the key where an edit stands. A closed file
+// over the write limit or not UTF-8 text is refused with a sentence of its own, and so is any edit
+// while the roots are not read and a tab is open, since no tab can then be told from the file.
 //
 // The page is a set of recording parts: the tabs' drafts, the answer of the relay about another
 // page's tabs, the disk's text and hash of a file and the post of `lsp-edit`. A tab is edited only
@@ -48,6 +49,8 @@ function page(options: {
     afterWrite?: () => void;
     /** The files another page holds open in a tab, which the relay answers with. */
     elsewhere?: LspPlace[];
+    /** The served folders; the hub's alone by default, none while they are not read. */
+    roots?: ReturnType<LspEditsParts['roots']>;
     /** Whether a file is in a folder no edit is made in; none by default. */
     withheld?: LspEditsParts['withheld'];
     /** What the disk gives of a closed file; its text and hash by default. */
@@ -74,7 +77,7 @@ function page(options: {
             options.afterWrite?.();
             return Promise.resolve({ ok: true, paths: [] } satisfies Outcome);
         },
-        roots: () => [],
+        roots: () => options.roots ?? [{ key: 'hub', dir: '/work/hub', real: '/work/hub' }],
         withheld: options.withheld ?? (() => false)
     };
     return made;
@@ -129,7 +132,7 @@ describe('the edit a language server asks for', () => {
 
     it("refuses a file under the hub's secrets folder and one under the home folder's .oculus before any post (case 30a)", async () => {
         const roots = [
-            { key: 'hub', dir: '/work/hub' },
+            { key: 'hub', dir: '/work/hub', hub: true },
             { key: 'home', dir: '/home/me' }
         ];
         const open = page({
@@ -165,6 +168,18 @@ describe('the edit a language server asks for', () => {
             });
         }
         expect([open.edited, open.written]).toEqual([[], []]);
+    });
+
+    it('refuses the edit and writes nothing while the roots are not read and a tab is open', async () => {
+        const drafts = { t1: tab('hub/a.py', 'old = 1\n') };
+        const held = new Map([[a, 'old = 1\n']]);
+        const loading = page({ drafts, roots: [] });
+        expect(await createLspEdits(loading.parts).apply(rename(b), held)).toEqual({
+            applied: false,
+            notice: 'lsp_edit_loading',
+            words: ['hub/sub/b.py']
+        });
+        expect([loading.edited, loading.written]).toEqual([[], []]);
     });
 
     it('refuses an edit that names a file open in a tab of another page, whether or not a tab of this page holds it', async () => {

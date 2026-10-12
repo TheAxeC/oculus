@@ -24,7 +24,6 @@
     } from '$lib/state/sessions/terminal/composer/composer';
     import type { CustomizationKind, CustomizationItem } from '$lib/state/sessions/agents.svelte';
     import { rootHolding } from '$lib/state/sources/fs';
-    import { currentWorkspace } from '$lib/state/sources/fs-transport';
     import { sourceTabState } from '$lib/state/sessions/source/draft';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -46,11 +45,9 @@
 
     const held = $derived(customizationScopeOf(instanceState(owner)));
     const hub = $derived(hubRoot());
-    const places = $derived(
-        composerPlaces(hub, workspaces().workspaces, sessionsByWorkspace(true))
-    );
+    const places = $derived(composerPlaces(hub, workspaces().folders, sessionsByWorkspace(true)));
     const workspace = $derived(
-        held.workspace !== '' && places.includes(held.workspace) ? held.workspace : hub
+        held.workspace !== '' && places.includes(held.workspace) ? held.workspace : (hub ?? '')
     );
     const allAccounts = $derived(agentChoices().value?.accounts ?? []);
     const accounts = $derived(accountsOf(allAccounts, held.agent));
@@ -87,7 +84,7 @@
      */
     function open(item: CustomizationItem): void {
         const name = item.path.slice(item.path.lastIndexOf('/') + 1);
-        const served = rootHolding(currentWorkspace(workspaces()).roots, item.path);
+        const served = rootHolding(workspaces().folders, item.path);
         if (served !== null && served.path !== '') {
             openView('source', { ...sourceTabState(served.root.key, served.path), label: name });
             return;

@@ -118,8 +118,13 @@ const FILES: [string, string, string, string, string][] = [
     ['a Word file', 'app:notes', 'hub', 'letter.docx', 'ok'],
     ['an empty segment', 'app:notes', 'hub', 'a//x', 'closed'],
     ['a backslash', 'app:notes', 'hub', 'a\\b', 'closed'],
-    ['the root engine', 'app:notes', 'engine', 'anything.yml', 'closed'],
-    ['a root key that differs in case from the engine', 'app:notes', 'Engine', 'x', 'missing'],
+    [
+        'a root named engine, which no workspace folder is',
+        'app:notes',
+        'engine',
+        'x.yml',
+        'missing'
+    ],
     ['a root whose key holds the word engine', 'app:notes', 'game-engine', 'x.txt', 'ok'],
     [
         'the local file of the config folder',

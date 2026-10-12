@@ -5,12 +5,13 @@
 // What this does NOT cover: the real Trash library.
 // @module-tag slow: every case runs git in a scratch repository.
 
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { handleGit, type GitOptions } from '../../../src/lib/server/git/git-routes.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import { protectedFiles } from '../../../src/lib/server/files/fs/ops.ts';
-import { ENGINE_ROOT } from '../../../src/lib/server/files/files.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { gitPost } from './request.ts';
 import { isolateGit, put, scratchRepo } from '../../server/git/refs/repo.ts';
@@ -25,8 +26,8 @@ function request(body: unknown, headers: Record<string, string> = {}): Request {
 
 type Trash = NonNullable<GitOptions['trash']>;
 
-/** Options over one real repository, the Trash a spy and the guard over `engine` if given. */
-function over(root: string, engine?: string, extra: Partial<GitOptions> = {}) {
+/** Options over one real repository, the Trash a spy and the guard over the hub `hub` if given. */
+function over(root: string, hub?: string, extra: Partial<GitOptions> = {}) {
     const trash = vi.fn<Trash>(() => Promise.resolve());
     const options: GitOptions = {
         config: loadConfig(engineDir()).config,
@@ -35,7 +36,8 @@ function over(root: string, engine?: string, extra: Partial<GitOptions> = {}) {
         trash,
         guard: () =>
             protectedFiles({
-                roots: engine === undefined ? [] : [{ key: ENGINE_ROOT, dir: engine }]
+                roots: hub === undefined ? [] : [{ key: 'lab', dir: hub, hub: true }],
+                config: join(tmpdir(), 'oculus-test-no-config')
             }),
         ...extra
     };

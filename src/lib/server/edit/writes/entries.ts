@@ -212,7 +212,7 @@ function hubOwnValues(
 
 /**
  * Set fields of one collection entry, found by the id the reader gave it. `hubKey` is the key of
- * the hub the file belongs to when it is not the first hub: the values of the fields that name
+ * the hub the file belongs to when it is not the primary hub: the values of the fields that name
  * records come with that key in front, and are written without it.
  */
 export function writeEntry(

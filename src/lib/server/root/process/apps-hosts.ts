@@ -1,6 +1,6 @@
 // Layer 2, server. The hosts of the apps joined to what they read: the apps watcher that tells them
 // when the apps changed, the stores they write through the write target of the process, the
-// keyring, the text catalog and the roots the file browser shows. The composition root builds them
+// keyring, the text catalog and the folders of the open workspace. The composition root builds them
 // through this module so `context.ts` holds one call.
 //
 // Three things the watchers raise reach the hosts here: every full read of the apps is a
@@ -19,10 +19,9 @@ import type { Hub } from '../../core/channels.ts';
 import { words } from '../../core/words.ts';
 import { updateHostStore } from '../../edit/writes/apps/host-store.ts';
 import type { WriteTarget } from '../../edit/writes.ts';
+import type { OpenWorkspace } from '../../files/workspace/open.ts';
 import { expandHome, type Root } from '../../files/files.ts';
 import { createOpenFiles, type OpenFiles } from '../../files/fs/open-files.ts';
-import { defaultWorkspacesPath } from '../../files/fs.ts';
-import { browserRoots } from '../../files/roots.ts';
 import { approvedApps, defaultApprovalsPath } from '../../machine/approvals/approvals.ts';
 import { AppHosts } from '../../machine/apps/host/manager.ts';
 import { ownFolder } from '../../machine/lsp/servers.ts';
@@ -37,9 +36,12 @@ const RUNNER = 'src/lib/server/machine/apps/host/host-runner.mjs';
 export type StartHostsOptions = {
     hub: Hub;
     apps: AppsWatcher;
-    engine: string;
     local: () => LocalConfig;
     config: () => Record<string, unknown>;
+    /** The open workspace as it is now. */
+    open: () => OpenWorkspace;
+    /** Call the listener when the open workspace moves; the answer takes it away. */
+    follow?: (listener: () => void) => () => void;
     /** The write target of the process, which a host's store update is written through. */
     target: () => WriteTarget;
     /**
@@ -65,8 +67,7 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
         keyring: nodeKeyring(),
         unavailable: () => words(text(), 'server.apps.secrets_unavailable')
     });
-    const roots = (): Root[] =>
-        browserRoots({ config: options.config(), engine: options.engine, local: options.local() });
+    const roots = (): Root[] => options.open().roots;
     const hosts = new AppHosts({
         hub: options.hub,
         apps: options.apps,
@@ -96,14 +97,13 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
         runner: join(ownFolder(), RUNNER),
         jsonrpc: createRequire(join(ownFolder(), 'package.json')).resolve('vscode-jsonrpc/node')
     });
-    // The roots are read again after a configuration push or a change of the saved workspaces, as
-    // the git watcher's are, so a root added to sources.yml or saved in a workspace while the
-    // server runs is followed by the next tick of each open file.
+    // The roots are read again after a configuration push or a move of the open workspace, as the
+    // git watcher's are, so a folder added to the workspace while the server runs is followed by
+    // the next tick of each open file.
     const openFiles = createOpenFiles({
         hub: options.hub,
         roots: () => roots(),
-        workspacesFile: () =>
-            options.local().workspaces ?? defaultWorkspacesPath(options.local().hub)
+        follow: options.follow
     });
     const offRead = options.apps.onRead(() => {
         hosts.reconcile();

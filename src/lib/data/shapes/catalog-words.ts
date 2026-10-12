@@ -62,7 +62,6 @@ export const SOURCES = [
     'code_themes',
     'views',
     'theme_classes',
-    'wallpapers',
     'file_icon_themes',
     'usage_tiers',
     'bundle_ids'

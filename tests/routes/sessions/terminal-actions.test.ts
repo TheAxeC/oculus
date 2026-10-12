@@ -36,7 +36,8 @@ import {
     request,
     command,
     answer,
-    configOf
+    configOf,
+    worldOf
 } from './terminal-fixture.ts';
 
 /** This file's scratch folder and what the fixture planted in it, made before its first case. */
@@ -61,8 +62,18 @@ describe('POST /api/terminal, the task action', () => {
             request({ action: 'task', kind, cols: 92, rows: 27 }),
             TOKEN,
             config === undefined
-                ? { engine: task.taskEngine, run: driver.run, configFor: configOf(task.taskEngine) }
-                : { engine: task.taskEngine, run: driver.run, configFor: () => config }
+                ? {
+                      ...worldOf(task.taskHub),
+                      engine: task.taskEngine,
+                      run: driver.run,
+                      configFor: configOf(task.taskEngine)
+                  }
+                : {
+                      ...worldOf(task.taskHub),
+                      engine: task.taskEngine,
+                      run: driver.run,
+                      configFor: () => config
+                  }
         );
         expect(response.status).toBe(200);
         const terminal = (await answer(response)).terminal as { name: string };
@@ -74,13 +85,25 @@ describe('POST /api/terminal, the task action', () => {
         for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
             const { started, name } = await taskArgv(kind);
             expect(name).toBe(`task ${kind}`);
-            expect(started[started.indexOf('-c') + 1]).toBe(HERE);
+            expect(started[started.indexOf('-c') + 1]).toBe(task.taskHub);
             expect(started[started.indexOf('-x') + 1]).toBe('92');
             expect(started[started.indexOf('-y') + 1]).toBe('27');
             expect(lineOf(started)).toEqual([
                 `'/opt/Claude CLI/claude' '/research-cockpit ${kind}'`
             ]);
         }
+    });
+
+    it('refuses a task while the workspace has no primary hub, and starts nothing', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'task', kind: 'litwatch', cols: 92, rows: 27 }),
+            TOKEN,
+            { ...worldOf(), engine: task.taskEngine, run: driver.run, configFor: () => CHAT_CONFIG }
+        );
+        expect(response.status).toBe(400);
+        expect(await answer(response)).toEqual({ error: 'no-primary' });
+        expect(driver.calls).toEqual([]);
     });
 });
 
@@ -447,6 +470,7 @@ describe('POST /api/terminal, a refusal', () => {
 
     it.each(REFUSALS)('answers $title as the word $word', async ({ body, word }) => {
         const response = await handleTerminal(request(body), TOKEN, {
+            ...worldOf(),
             engine: task.engine,
             run: gone,
             configFor: configOf(task.engine)
@@ -459,6 +483,7 @@ describe('POST /api/terminal, a refusal', () => {
 describe('POST /api/terminal, the chat action', () => {
     function chatOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
         return {
+            ...worldOf(task.chatHub),
             engine: task.chatEngine,
             run: driver.run,
             projectFor: (id) =>

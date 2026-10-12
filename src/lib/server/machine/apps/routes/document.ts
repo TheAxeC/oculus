@@ -6,15 +6,15 @@
 // approved, enabled and declare a custom editor, and the file passes the same checks, so a closed
 // path, a folder `closed_paths` names, a private folder and, for a root app, a root other than its
 // own answer `closed`, and a file outside every shown root answers `missing`. The save then has the
-// source save's checks (files/source-bytes.ts). Every answer is 200 with `{ ok: true, ... }` or
-// `{ ok: false, word }`, the word being the refusal the frame is rejected with. The bytes travel as
-// base64 text, and a file above the apps' size limit is `too_large`.
+// source save's checks (files/source/source-bytes.ts). Every answer is 200 with `{ ok: true, ... }`
+// or `{ ok: false, word }`, the word being the refusal the frame is rejected with. The bytes travel
+// as base64 text, and a file above the apps' size limit is `too_large`.
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { appActive } from '../../../../data/helpers/files/apps/apps.ts';
 import { tokenedBody } from '../../../core/auth.ts';
-import { readBytes, saveBytes } from '../../../files/source-bytes.ts';
+import { readBytes, saveBytes } from '../../../files/source/source-bytes.ts';
 import { checkOpen } from '../reach/open.ts';
 import { appById, type HeldApp } from '../read/held.ts';
 import { NO_STORE, refuse, type AppsRouteOptions } from './routes.ts';
@@ -88,6 +88,7 @@ export async function handleDocumentPost(
     if (bytes.length > options.limits().bytes) return refusal('too_large');
     const saved = saveBytes(
         options.roots(),
+        options.configDir,
         { root: body.data.root, path: body.data.path, bytes, base: body.data.base },
         options.history()
     );

@@ -7,6 +7,7 @@
 // drives the same child.
 
 import { EventEmitter } from 'node:events';
+import type { Clock } from '../../src/lib/server/core/file-poll.ts';
 import type { FsEntry } from '../../src/lib/state/sources/fs.ts';
 
 /** A callback whose call the case does not read. */
@@ -70,4 +71,26 @@ export class ChildDouble extends EventEmitter {
     end(code: number | null, signal: string | null = null): void {
         this.emit('close', code, signal);
     }
+}
+
+/** A clock that runs a scheduled call only when the test says so. */
+export function manualClock(): Clock & { due: () => number; tick: () => void } {
+    const scheduled = new Map<number, () => void>();
+    let next = 1;
+    return {
+        setTimeout: (run) => {
+            const id = next++;
+            scheduled.set(id, run);
+            return id;
+        },
+        clearTimeout: (timer) => {
+            scheduled.delete(timer as number);
+        },
+        due: () => scheduled.size,
+        tick: () => {
+            const running = [...scheduled.values()];
+            scheduled.clear();
+            for (const run of running) run();
+        }
+    };
 }

@@ -33,7 +33,7 @@
 import { json } from '@sveltejs/kit';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { dirname, join } from 'node:path';
 import { z } from 'zod';
 import { chained, writeTextAtomic } from './json.ts';
 import type { FsWrites } from './json.ts';
@@ -87,7 +87,7 @@ export type ReplacedText = {
  * What a writer says about one thing it changed. The time and the body kind are added on append.
  */
 export type ChangeRecord = {
-    /** The file written, relative to the hub inside it and absolute outside it. */
+    /** The file written, by its absolute path. */
     file: string;
     /**
      * What the write addressed: a project id, an entry identity, a session id, a collection,
@@ -165,13 +165,6 @@ const MODE = 0o600;
 /** ~/.oculus/changes.jsonl, resolved at the call rather than at import. */
 export function defaultChangesPath(): string {
     return join(homedir(), '.oculus', 'changes.jsonl');
-}
-
-/** The path a record names: relative to the hub inside it, and the absolute path outside it. */
-export function pathOf(hub: string, file: string): string {
-    const full = resolve(file);
-    const root = resolve(hub);
-    return full.startsWith(root + sep) ? relative(root, full) : full;
 }
 
 /** A value as the log can hold it: `undefined` is absent in JSON, and absent is not a value. */

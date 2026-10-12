@@ -19,7 +19,7 @@ import { logChanges, readChanges, writtenWith } from '../../../src/lib/server/co
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
-import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import type { PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import {
     DECK_ORDER,
@@ -55,7 +55,7 @@ const HOST = '127.0.0.1:8791';
 /**
  * A synthetic hub with a log beside it, every path asserted to be under the temporary directory.
  */
-function target(keep = 500): WriteTarget {
+function target(keep = 500): PrimaryTarget {
     const dir = scratchDir('oculus-changes-');
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     mkdirSync(folder, { recursive: true });
@@ -82,7 +82,7 @@ function target(keep = 500): WriteTarget {
 }
 
 /** The log of a target, which every case asserts is where the lines went. */
-function logOf(into: WriteTarget): ChangeLog {
+function logOf(into: PrimaryTarget): ChangeLog {
     const log = into.changes;
     if (log === undefined) throw new Error('the target carries no change log');
     return log;
@@ -104,7 +104,7 @@ function request(body: unknown): Request {
 }
 
 /** One write, and the lines it left in the log, newest first. */
-async function written(into: WriteTarget, body: unknown, row = ''): Promise<Change[]> {
+async function written(into: PrimaryTarget, body: unknown, row = ''): Promise<Change[]> {
     const response = await handleWrite(request(body), TOKEN, into);
     expect(response.status, row).toBe(200);
     return readChanges(logOf(into));
@@ -114,15 +114,15 @@ type Files = ReturnType<typeof personalTarget>['files'];
 
 /**
  * The manifest writes of the first table: the research project, then a personal project of the hub,
- * whose file is recorded by its path inside the hub, and a repository's, whose file is outside the
- * hub and is recorded by its absolute path.
+ * and a project of a served root; every file is recorded by its absolute path.
  */
 const MANIFEST_ROWS = [
     {
         name: 'a research project',
         id: 'alpha',
         fields: { 'status.line': 'a new line' },
-        file: (): string => join('projects', 'manuscripts', 'alpha', 'project.yml'),
+        file: (_: Files, hub: string): string =>
+            join(hub, 'projects', 'manuscripts', 'alpha', 'project.yml'),
         field: 'status.line',
         before: 'the line',
         after: 'a new line'
@@ -131,7 +131,7 @@ const MANIFEST_ROWS = [
         name: 'a personal project of the hub',
         id: 'idea',
         fields: { snooze: '2026-12-01' },
-        file: (): string => join('side-projects', 'idea', 'project.yml'),
+        file: (_: Files, hub: string): string => join(hub, 'side-projects', 'idea', 'project.yml'),
         field: 'snooze',
         before: '2026-11-01',
         after: '2026-12-01'
@@ -153,13 +153,13 @@ const SUBTASK_ROWS = [
         name: 'a collection entry',
         host: { collection: 'tasks', id: 'Review the draft' },
         key: 'Review the draft',
-        file: (): string => join('tasks', 'tasks.yml')
+        file: (_: Files, hub: string): string => join(hub, 'tasks', 'tasks.yml')
     },
     {
         name: 'a personal project of the hub',
         host: { id: 'idea' },
         key: 'idea',
-        file: (): string => join('side-projects', 'idea', 'project.yml')
+        file: (_: Files, hub: string): string => join(hub, 'side-projects', 'idea', 'project.yml')
     },
     {
         name: 'a project of a served root',
@@ -182,7 +182,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             expect(rows, row.name).toHaveLength(1);
             expect(rows[0], row.name).toMatchObject({
                 kind: 'manifest',
-                file: row.file(files),
+                file: row.file(files, into.hub),
                 key: row.id,
                 field: row.field,
                 before: row.before,
@@ -273,7 +273,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             );
             expect(ticked[0], row.name).toMatchObject({
                 kind: 'subtask',
-                file: row.file(files),
+                file: row.file(files, into.hub),
                 key: row.key,
                 field: '0',
                 before: { do: 'read it' },
@@ -291,7 +291,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             );
             expect(added[0], row.name).toMatchObject({
                 kind: 'subtask-add',
-                file: row.file(files),
+                file: row.file(files, into.hub),
                 field: '1',
                 before: null,
                 after: { do: 'write it up' },
@@ -316,7 +316,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         const host = await written(into, { kind: 'host', name: 'Naesens', status: 'candidate' });
         expect(host[0]).toMatchObject({
             kind: 'host',
-            file: 'registries/career.yml',
+            file: join(into.hub, 'registries', 'career.yml'),
             key: 'Naesens',
             field: 'status',
             before: 'warm',
@@ -325,10 +325,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         const session = await written(into, { kind: 'session', id: 'sess-1', hidden: true });
         expect(session[0]).toMatchObject({
             kind: 'session',
-            // The fixture keeps the overrides file inside the hub, so the record names it the way
-            // it names every hub file; on a real machine it sits under ~/.oculus and stays
-            // absolute.
-            file: 'sessions.json',
+            file: into.overrides,
             key: 'sess-1',
             field: 'hidden',
             before: null,
@@ -376,7 +373,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             after: ['slides:pillars', 'intro.md', 'slides:more'],
             undo: 'field'
         });
-        expect(rows[0].file).toBe(DECK_PATH);
+        expect(rows[0].file).toBe(join(into.hub, DECK_PATH));
     });
 
     it('records a scaffolded idea with no way back', async () => {
@@ -384,7 +381,7 @@ describe('what each writer records', { tags: ['slow'] }, () => {
         const rows = await written(into, { kind: 'new-idea', fields: { id: 'fresh-idea' } });
         expect(rows[0]).toMatchObject({
             kind: 'new-idea',
-            file: join('projects', 'ideas', 'fresh-idea', 'project.yml'),
+            file: join(into.hub, 'projects', 'ideas', 'fresh-idea', 'project.yml'),
             key: 'fresh-idea',
             before: null,
             undo: 'none'

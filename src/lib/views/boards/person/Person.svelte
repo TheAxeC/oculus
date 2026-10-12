@@ -39,7 +39,7 @@
     import { instanceText } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+    import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
     import RootChip from '../../shared/card/RootChip.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -47,7 +47,7 @@
     const client = useState();
     const {
         entities: { portfolio },
-        fs: { roots },
+        fs: { primary, roots },
         layout: { openView },
         selectors: { configMap }
     } = client;
@@ -61,15 +61,15 @@
     /** The folder as a path of the hub, or nothing for one outside it. */
     const folderPath = $derived(hubPathsOf({ folder }).at(0));
     /** The key of the hub the person is of. */
-    const hub = $derived(join.person === null ? HUB_ROOT : rootOf(join.person));
+    const hub = $derived(rootOf(join.person ?? {}, primary()));
     /**
-     * The people file the person is read from: the configuration's for the first hub, and for a
+     * The people file the person is read from: the configuration's for the primary hub, and for a
      * person of another hub that hub's own file, under the root the hub is served under.
      */
     const source = $derived(
-        join.person?.file !== undefined && hub !== HUB_ROOT
-            ? fileUnder(join.person.file, roots())
-            : viewSourceFile('people', configMap())
+        join.person?.file !== undefined && join.person.root !== undefined
+            ? fileUnder(join.person.file, roots(), primary())
+            : viewSourceFile('people', configMap(), primary())
     );
 
     /** The rows of the fact strip: what the registry holds about this person beyond their name. */
@@ -142,7 +142,7 @@
         <Empty message={key === '' ? t('person.nobody') : t('person.unknown', key)} glyph="warn" />
     {:else}
         <div class="person" data-person={join.person.id}>
-            {#if hub !== HUB_ROOT}
+            {#if join.person.root !== undefined}
                 <p class="self">
                     <RootChip record={join.person} />
                 </p>

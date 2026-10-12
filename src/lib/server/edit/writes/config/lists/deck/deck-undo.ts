@@ -12,8 +12,9 @@
 // record holds its hash and never its bytes, so the records of that undo offer no undo.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, rmdirSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import trashLibrary from 'trash';
+import { configDir } from '../../../../../../data/sources/config.ts';
 import { writtenWith, type Change, type ChangeRecord } from '../../../../../core/changes.ts';
 import { writeTextAtomic } from '../../../../../core/json.ts';
 import { inside, realPath } from '../../../../../core/paths.ts';
@@ -38,11 +39,12 @@ function held(value: unknown): string {
 }
 
 /**
- * Whether a path is one an undo may write: inside a served root, and not the machine's local.yml.
+ * Whether a path is one an undo may write: inside a served root, and not one of the machine's
+ * `local.yml` files.
  */
 function writable(into: WriteTarget, path: string): boolean {
     const roots = into.files?.roots() ?? [];
-    const guard = protectedFiles({ roots, local: into.files?.local });
+    const guard = protectedFiles({ roots, config: configDir(into.engine) });
     if (guarded(guard, path)) return false;
     const folder = realPath(dirname(path)) ?? dirname(path);
     return roots.some((root) => inside(folder, realPath(root.dir) ?? root.dir));
@@ -58,7 +60,7 @@ export async function undoDeckEdit(
     if (change.undo === 'none') return { error: 'nothing' };
     const parts: Part[] = writtenWith(into.changes, change).map((one) => ({
         change: one,
-        path: resolve(isAbsolute(one.file) ? one.file : join(into.hub, one.file)),
+        path: resolve(one.file),
         before: held(one.before),
         after: held(one.after)
     }));

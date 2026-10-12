@@ -144,7 +144,7 @@ export function typeTone(type: unknown): string {
 
 /**
  * The entry of `map` a domain names: the domain as written, else the word after its first colon,
- * since the portfolio gives a second hub's domain that hub's key and a colon
+ * since the portfolio gives another hub's domain that hub's key and a colon
  * (data/snapshot/hubs/merge.ts) and the vocabulary names the word alone.
  */
 function domainEntry(map: Record<string, string | undefined>, domain: unknown): string | undefined {

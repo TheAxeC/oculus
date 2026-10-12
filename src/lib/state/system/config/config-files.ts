@@ -1,21 +1,46 @@
-// Layer 2, client state. What the Settings view knows of the engine's configuration files by name:
-// the extension they carry, the machine's own file, the folders of the vocabulary catalogs and of
-// the schemas, and the one-line description each file has in the text catalog.
+// Layer 2, client state. What the Settings view knows of oculus's configuration files by name: the
+// extension they carry, the machine's own file, the folders of the vocabulary catalogs and of the
+// schemas, and the one-line description each file has in the text catalog.
 
 import { joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
 import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { hasText, lookup } from '../../shared/words/text.ts';
-import { ENGINE_ROOT, HUB_ROOT } from '../../sources/explorer/view/place.ts';
 
 /** The extension a configuration file carries. */
 const CONFIG_SUFFIX = '.yml';
 
 /**
- * The machine's own file inside the config folder. It is the client's half of the name
- * data/sources/config.ts leaves out of the merge, since nothing client-side may import a server
- * module.
+ * The name of the machine's own file, which each hub keeps in its `.oculus` folder. It is the
+ * client's half of the name data/sources/config/local.ts reads, since nothing client-side may
+ * import a server module.
  */
 export const LOCAL_NAME = 'local.yml';
+
+/**
+ * The root a Settings line names for a file of the primary hub's layer. The primary's folder name
+ * is the workspace's, so the line holds this placeholder and `openTarget` puts the name in.
+ */
+export const PRIMARY_ROOT = '';
+
+/**
+ * Where a file of a Settings line is opened in an editor: a file of oculus's own `config/` folder
+ * through the workspace folder that holds it, a file of the primary hub's layer through the
+ * primary's folder. Null when no folder of the workspace holds the file, which is when Settings
+ * offers no open and says why.
+ */
+export function openTarget(
+    root: string,
+    file: string,
+    saved: { primary: string | null; engine: { root: string; path: string } | null }
+): { root: string; path: string } | null {
+    if (root === PRIMARY_ROOT)
+        return saved.primary === null ? null : { root: saved.primary, path: file };
+    if (saved.engine === null) return null;
+    return { root: saved.engine.root, path: joinPath(saved.engine.path, file) };
+}
+
+/** The path of a hub's machine file inside the hub's folder. */
+const LOCAL_PATH = `.oculus/${LOCAL_NAME}`;
 
 /**
  * Whether a file of a served root is in a folder that is private to the machine: under the
@@ -33,25 +58,30 @@ export function isPrivateFile(
 ): boolean {
     const root = roots.find((one) => one.key === file.root);
     if (root === undefined) return false;
-    const first = roots.find((one) => one.key === HUB_ROOT);
     const same = (path: string): string => (root.folds === true ? path.toLowerCase() : path);
     const absolute = same(joinPath(root.dir, file.path));
-    return privateFolders(hubDirs(first?.dir ?? null, roots), home).some(
+    return privateFolders(hubDirs(roots), home).some(
         (folder) => pathUnder(same(folder), absolute) !== null
     );
 }
 
 /**
- * Whether a file of a served root is one no YAML language server is given: the machine's own
- * `local.yml` or a private file (`isPrivateFile`).
+ * Whether a file of a served root is one no YAML language server is given: the `.oculus/local.yml`
+ * of any hub, reached through the folder of the hub or through a folder over its `.oculus`, or a
+ * private file (`isPrivateFile`).
  */
 export function isWithheldFile(
     file: { root: string; path: string },
-    roots: readonly { key: string; dir: string }[],
+    roots: readonly { key: string; dir: string; real?: string; hub?: boolean; folds?: boolean }[],
     home: string
 ): boolean {
-    if (file.root === ENGINE_ROOT && file.path === LOCAL_NAME) return true;
-    return isPrivateFile(file, roots, home);
+    const root = roots.find((one) => one.key === file.root);
+    if (root === undefined) return false;
+    const at = joinPath(root.real ?? root.dir, file.path);
+    const machine = roots.some(
+        (one) => one.hub === true && at === joinPath(one.real ?? one.dir, LOCAL_PATH)
+    );
+    return machine || isPrivateFile(file, roots, home);
 }
 
 /** The folder under config/ that holds the vocabulary catalogs. */

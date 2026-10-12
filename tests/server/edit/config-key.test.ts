@@ -17,6 +17,7 @@ import { words } from '../../../src/lib/server/core/words.ts';
 import { writeConfigKey } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { engineFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
+import { hubLinkedToEngine, linkedHub } from './writes-fixture.ts';
 
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
@@ -195,5 +196,37 @@ describe('an option the catalog does not hold', { tags: ['slow'] }, () => {
         expect(refusalOf(outcome, 'local.yml:port')).toBe(why('local'));
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
         expect(statSync(local).mtimeMs).toBe(stamp);
+    });
+
+    it("refuses a hub layer file that is a link to a hub's .oculus/local.yml, and writes nothing", () => {
+        const engine = scratchEngine();
+        const { hub, local } = linkedHub();
+        const outcome = writeConfigKey(
+            engine,
+            'behavior.yml',
+            'slurm.resource',
+            'other',
+            undefined,
+            hub,
+            [hub]
+        );
+        expect(refusalOf(outcome, 'behavior.yml:slurm.resource')).toBe(why('local'));
+        expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
+    });
+
+    it("refuses a hub layer file that is a link to oculus's own config/local.yml, and writes nothing", () => {
+        const engine = scratchEngine();
+        const { hub, local } = hubLinkedToEngine(engine);
+        const outcome = writeConfigKey(
+            engine,
+            'behavior.yml',
+            'slurm.resource',
+            'other',
+            undefined,
+            hub,
+            [hub]
+        );
+        expect(refusalOf(outcome, 'behavior.yml:slurm.resource')).toBe(why('local'));
+        expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 });

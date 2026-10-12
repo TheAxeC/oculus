@@ -6,6 +6,7 @@ text:
         datasets: 'Datasets: {0}'
         domains: 'Domains: {0}'
         file_unsaved: '{0} has unsaved text in a tab; save or revert it first'
+        folders_loading: '{0} was not written: the folders are still loading, so a tab with unsaved text of it cannot be ruled out yet; try again in a moment'
         funding: 'Funding schemes: {0}'
         git: 'Workspaces with git state: {0}'
         keys:
@@ -43,9 +44,9 @@ text:
             cmd_theme_hint: '<{0}>'
             cmd_unknown: '# unknown command'
             cmd_update: Open the update tasks
-            cmd_workspace: Switch to a workspace
-            cmd_workspace_hint: '<workspace>'
-            cmd_workspace_save: Save the folders in force as a workspace
+            cmd_workspace: Switch Workspace
+            cmd_workspace_hint: '<hub/name>'
+            cmd_workspace_save: Save Workspace As
             cmd_workspace_save_hint: '<name>'
             cmdk_placeholder: Search projects, entries, tabs...
             config_approve: Approve and run this repository's Svelte and Vite configuration
@@ -116,7 +117,8 @@ text:
             symbols_none: No symbol of the workspace matches.
             symbols_unavailable: No language server answers for the tab on screen.
             unpin_editor: Unpin Editor
-            workspace_save: 'Save the folders in force as the workspace {0}'
+            workspace_missing: gone
+            workspace_save: 'Save the open folders as the workspace {0}'
             workspace_save_name: Type a name for the workspace
         palette_empty: No match
         palette_unavailable: Unavailable
@@ -171,6 +173,7 @@ text:
             problem_name_twice: Two schedules are named {0}; neither runs until one is renamed.
             problem_name_wrong: The name {0} is longer than 80 characters or holds a control character.
             problem_needs_approval: "The command {0} runs lines that need your approval; run it once from its repository's command bar."
+            problem_no_primary: The open workspace has no primary hub, so there is no schedules file to write; set a primary in the workspace file.
             problem_prompt_control: The prompt holds a control character other than a tab or a new line.
             problem_prompt_empty: The prompt is empty.
             problem_prompt_too_long: The prompt is longer than {0} characters.
@@ -178,7 +181,7 @@ text:
             problem_record_unread: The run record does not read, so nothing starts.
             problem_record_unwritten: The run record could not be written; check ~/.oculus/schedule.json and try again.
             problem_runs_wrong: What it runs must be exactly one of a task, a command and a prompt.
-            problem_schedules_unread: schedules.yml in the .oculus folder of the hub (or the path local.yml names) does not read, so oculus writes nothing to it.
+            problem_schedules_unread: schedules.yml in the .oculus folder of the primary hub (or the path its local.yml names) does not read, so oculus writes nothing to it.
             problem_schedules_unwritten: The schedules file could not be written, so nothing was saved.
             problem_server_stopped: The server stopped before the run started.
             problem_unattended_command: Run unattended applies to an update task or a prompt.
@@ -210,8 +213,8 @@ text:
             unattended_unset: not chosen
             unread_commands: The saved commands file ~/.oculus/commands.json does not read, so no command schedule runs.
             unread_record: The run record ~/.oculus/schedule.json does not read, so no schedule runs; the file is left as it is.
-            unread_schedules: 'schedules.yml in the .oculus folder of the hub (or the path local.yml names) does not read, so no schedule runs and oculus writes nothing to it.'
-            unread_schedules_at: 'schedules.yml in the .oculus folder of the hub (or the path local.yml names) does not read at line {0}, so no schedule runs and oculus writes nothing to it.'
+            unread_schedules: 'schedules.yml in the .oculus folder of the primary hub (or the path its local.yml names) does not read, so no schedule runs and oculus writes nothing to it.'
+            unread_schedules_at: 'schedules.yml in the .oculus folder of the primary hub (or the path its local.yml names) does not read at line {0}, so no schedule runs and oculus writes nothing to it.'
             when: When
             when_custom: Custom
             when_day: Every day

@@ -35,7 +35,7 @@ export function linkedWorktrees(git: GitState): GitWorktree[] {
 export type WorktreeOpening = {
     addRoot: (dir: string) => Promise<{ ok: boolean; error?: string }>;
     rootOf: (dir: string) => Promise<string | null>;
-    showInFiles: (path: string, root?: string) => string;
+    showInFiles: (path: string, root: string) => string;
     openWindow: (address: string) => void;
     address: () => string;
 };

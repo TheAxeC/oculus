@@ -10,6 +10,7 @@ import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { add } from '../../../src/lib/server/content/memories.ts';
+import { words } from '../../../src/lib/server/core/words.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { pagePost } from '../../fixtures/doubles.ts';
 import { TEXT } from '../../server/text.ts';
@@ -50,5 +51,16 @@ describe('the endpoint of an upload', () => {
         );
         expect(response.status).toBe(403);
         expect(existsSync(join(dir, 'one.png'))).toBe(false);
+    });
+
+    it('answers the catalog sentence and writes nothing when no hub holds a photo wall', async () => {
+        const response = await add(
+            null,
+            request({ name: 'one.png', data: PIXEL }),
+            TOKEN,
+            () => TEXT
+        );
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({ error: words(TEXT, 'server.memories.no_wall') });
     });
 });

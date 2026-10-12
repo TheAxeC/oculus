@@ -19,7 +19,7 @@
 // the address; the sentences are the catalog's, handed in by the caller.
 
 import { calendarKey } from '../../../data/accounts/calendar.ts';
-import { signsIn } from '../../../data/accounts/connect.ts';
+import { hubMark, signsIn } from '../../../data/accounts/connect.ts';
 import { fillPlaceholders } from '../../../data/helpers/finding-text.ts';
 import type {
     CalendarAccount,
@@ -74,7 +74,9 @@ export type CalendarWatcher = {
     setSettings(settings: CalendarSettings): void;
     /** Take new sentences, used from the next row that carries one. */
     setWords(words: CalendarWords): void;
-    /** Poll a new account list from a new folder, as config/local.yml now names them. */
+    /**
+     * Poll a new account list from a new folder, as the hubs' `.oculus/local.yml` files name them.
+     */
     setAccounts(accounts: CalendarAccountConfig[], dir: string): void;
     close(): void;
 };
@@ -151,6 +153,7 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
         state.get(calendarKey(account)) ?? {
             provider: account.provider,
             label: account.label,
+            ...hubMark(account),
             status: 'not-connected',
             calendars: []
         };
@@ -194,6 +197,7 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
         state.set(calendarKey(account), {
             provider: account.provider,
             label: account.label,
+            ...hubMark(account),
             status: 'connected',
             lastOk,
             calendars: reading.calendars
@@ -258,6 +262,7 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
         const base = {
             provider: account.provider,
             label: account.label,
+            ...hubMark(account),
             ...(hasOwnHalf(dir, account) ? { ownHalf: true } : {}),
             calendars: held?.calendars ?? [],
             ...(held === undefined ? {} : { lastOk: held.lastOk })

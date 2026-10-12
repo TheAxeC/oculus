@@ -3,18 +3,19 @@
 //
 // The files are the ones the build reads. The hub's data files and the manifests come as the texts
 // `runSchemas` read, so no file is read twice; the decks (the portfolio deck's `present.yml` and
-// each project's `present/present.yml`) and oculus's own configuration files that carry a
-// reference (`behavior.yml`, `sources.yml` and the others the options catalog describes, and
-// `catalogs/vocab.yml`) are read here. A file under the hub's
-// `secrets` folder, `config/local.yml` and a repository's `.oculus/project.yml` outside the hub
-// are never read.
+// each project's `present/present.yml`) and oculus's own configuration files that carry a reference
+// (`behavior.yml`, `sources.yml` and the others the options catalog describes, and
+// `catalogs/vocab.yml`) are read here. A file under the hub's `secrets` folder, a hub's
+// `.oculus/local.yml` and a repository's `.oculus/project.yml` outside the hub are never read.
 //
 // What a file defines: a registry file its entries' identity scalars (`REGISTRY_SHAPES`), a
 // manifest its `id:` line, and vocab.yml the items of the lists some reference names.
 //
-// Files are named by the root they are served under: `hub` for the first hub's files, the key of
-// the root for the files of another hub, and `engine` for oculus's own configuration folder, the
-// root the Settings view opens it under.
+// Files are named by the workspace folder they are served under: the hub's name for a hub's files,
+// and for oculus's own configuration folder the name of the first workspace folder that holds it,
+// with the path of the config folder in it. A workspace that lists no folder holding oculus's
+// config has no openable file there, so the index holds none of its files and a reference into it
+// finds no definition.
 
 import { readFileSync, realpathSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -25,12 +26,12 @@ import type {
     RegistryName,
     SchemaField
 } from '../../model/index.ts';
-import { ENGINE_ROOT, HUB_ROOT, REGISTRY_SHAPES } from '../../helpers/hub-names.ts';
+import { REGISTRY_SHAPES } from '../../helpers/hub-names.ts';
 import { fieldsOf } from '../schema/field.ts';
 import { manifestFields } from '../schema/manifest.ts';
 import type { ReadTexts } from '../schema/run.ts';
 import { REGISTRIES } from '../schema/lists.ts';
-import type { FieldNode, FileScan, OptionFile, Reading, ReferenceIndex } from './model.ts';
+import type { FieldNode, FileId, FileScan, OptionFile, Reading, ReferenceIndex } from './model.ts';
 import { scanText } from './scan.ts';
 import {
     VOCAB_SOURCE,
@@ -41,17 +42,24 @@ import {
     vocabRecord
 } from './specs.ts';
 
+/**
+ * Oculus's own config folder as the index reads it: the folder on disk, the name of the workspace
+ * folder that holds it, and its path inside that folder (empty when the folder is the config
+ * folder).
+ */
+export type EngineConfigFolder = { dir: string; root: string; path: string };
+
 /** The file of oculus's own configuration that holds the vocabulary lists. */
 const VOCAB_FILE = 'catalogs/vocab.yml';
 
 /** What an index is made of. */
 export type ReferenceSources = {
     hub: string;
-    /** The root key the hub's files are named under; `hub` for the first hub. */
-    root?: string;
+    /** The name of the workspace folder the hub's files are named under. */
+    root: string;
     config: PortfolioConfig;
-    /** The engine's config folder, or null when there is none to read. */
-    engine: string | null;
+    /** The engine's config folder and the workspace folder that holds it, or null for neither. */
+    engine: EngineConfigFolder | null;
     /** The texts the schema run read. */
     read: ReadTexts;
     manifests: RawManifest[];
@@ -128,7 +136,7 @@ function hubScans(
     const { hub, config } = sources;
     const scans: FileScan[] = [];
     const add = (path: string, text: string, reading: Reading): void => {
-        scans.push(scanText({ root: sources.root ?? HUB_ROOT, path }, text, reading));
+        scans.push(scanText({ root: sources.root, path }, text, reading));
     };
     for (const file of sources.read.hub) {
         const spec =
@@ -180,15 +188,23 @@ function engineScans(
         files.map((one) => one.spec)
     );
     const found: FileScan[] = [];
+    const named = (path: string): FileId => ({
+        root: engine.root,
+        path: engine.path === '' ? path : `${engine.path}/${path}`
+    });
     for (const one of files) {
-        const text = read(join(engine, one.path));
-        if (text !== undefined)
-            found.push(scanText({ root: ENGINE_ROOT, path: one.path }, text, reads(one.spec)));
+        const text = read(join(engine.dir, one.path));
+        if (text !== undefined) {
+            found.push({
+                ...scanText(named(one.path), text, reads(one.spec)),
+                engine: true
+            });
+        }
     }
-    const vocab = read(join(engine, VOCAB_FILE));
+    const vocab = read(join(engine.dir, VOCAB_FILE));
     if (vocab !== undefined) {
         const reading: Reading = { spec: vocabRecord(), defines: { kind: 'vocab', lists } };
-        found.push(scanText({ root: ENGINE_ROOT, path: VOCAB_FILE }, vocab, reading));
+        found.push({ ...scanText(named(VOCAB_FILE), vocab, reading), engine: true });
     }
     return found;
 }

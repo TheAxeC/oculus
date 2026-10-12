@@ -67,12 +67,14 @@ import {
     type GhRun,
     type GitRunner,
     type Outcome,
-    type Where
+    type Where,
+    defaultBranchOf,
+    urlOf
 } from './deposit-git.ts';
 import { REFS_FORMAT, statusRecords } from '../core/git/parse.ts';
-import { target, writeManifest, type WriteTarget } from '../edit/writes.ts';
-import { owned } from '../edit/writes/hubs.ts';
-import { HUB_ROOT, hubId } from '../../data/helpers/hub-names.ts';
+import { target, writeManifest, type Carried, type WriteTarget } from '../edit/writes.ts';
+import { routed } from '../edit/writes/hubs.ts';
+import { hubId } from '../../data/helpers/hub-names.ts';
 import { below } from '../core/paths.ts';
 import { words } from '../core/words.ts';
 
@@ -140,12 +142,17 @@ export type DepositOptions = {
      * The mirrors folder; `~/.oculus/deposits` when absent. Every test passes one under mkdtemp.
      */
     mirrors?: string;
-    /** Which hub the project is read and written in; the engine's local.yml says when absent. */
+    /**
+     * Where the project is read and written; made from `engine`, `config` and `carried` when
+     * absent.
+     */
     into?: WriteTarget;
-    /** The engine directory the hub is read from when the caller names no target of its own. */
+    /** The engine directory the target is made from when the caller names none of its own. */
     engine?: string;
     /** The request's merged configuration, read beside `engine` when the caller names no target. */
     config?: Record<string, unknown>;
+    /** The open workspace and the machine's values, read beside `engine` and `config`. */
+    carried?: Carried;
     /** How `gh` is run; the real one when absent. */
     gh?: GhRun;
     /** How git is run; the real one when absent. A test fails one command through it. */
@@ -186,12 +193,16 @@ function done(output: string): Outcome {
  */
 function hubTarget(options: DepositOptions): WriteTarget {
     if (options.into !== undefined) return options.into;
-    if (options.engine === undefined || options.config === undefined) {
+    if (
+        options.engine === undefined ||
+        options.config === undefined ||
+        options.carried === undefined
+    ) {
         throw new Error(
-            'a deposit needs either a write target or the engine directory and its configuration'
+            'a deposit needs either a write target or the engine directory, its configuration and the open workspace'
         );
     }
-    return target(options.engine, options.config);
+    return target(options.engine, options.config, options.carried);
 }
 
 function settings(
@@ -247,7 +258,9 @@ function depositFor(
     text?: Record<string, string>
 ): Deposit | null {
     const { mirrors, into, where } = settings(options, text);
-    const { into: at, id: inner } = owned(into, id);
+    const home = routed(into, id, null);
+    if (home === null) return null;
+    const { into: at, id: inner } = home;
     const { manifests } = readManifests(at.hub, at.config.scan, at.config.text);
     const manifest = manifests.find((one) => one.id === inner);
     if (manifest === undefined) return null;
@@ -279,12 +292,19 @@ function depositFor(
     };
 }
 
-/** Every project id the hubs hold; a hub other than the first prefixes its own with its key. */
+/** Every project id the hubs hold; a hub other than the primary prefixes its own with its name. */
 export function projectIds(options: DepositOptions = {}): string[] {
     const { into } = settings(options);
-    const held = [{ key: HUB_ROOT, ...into }, ...(into.hubs ?? [])];
+    const held = [
+        ...(into.primary === null || into.hub === null
+            ? []
+            : [{ key: into.primary, hub: into.hub, config: into.config }]),
+        ...(into.hubs ?? [])
+    ];
     return held.flatMap(({ key, hub, config }) =>
-        readManifests(hub, config.scan, config.text).manifests.map((one) => hubId(key, one.id))
+        readManifests(hub, config.scan, config.text).manifests.map((one) =>
+            hubId(key, one.id, into.primary)
+        )
     );
 }
 
@@ -436,7 +456,9 @@ export async function push(
     }
 
     const status = deposit.visibility === 'private' ? 'review-anon' : 'deposited';
-    const { into: at, id: inner } = owned(into, id);
+    const home = routed(into, id, null);
+    if (home === null) return failed(words(text, 'server.deposit.no_project', id));
+    const { into: at, id: inner } = home;
     const outcome = writeManifest(at.hub, at.config, inner, {
         'code_availability.status': status,
         'code_availability.url': url,
@@ -829,35 +851,6 @@ async function pointDefaultAtMain(deposit: Deposit, run: GhRun): Promise<boolean
     const url = urlOf(view.output);
     if (url === '') return false;
     return (await run(defaultBranchArgs(slugOf(url), MAIN), NETWORK_TIMEOUT_MS)).ok;
-}
-
-/** What `gh repo view --json url,defaultBranchRef` says, each part as text. */
-const repoViewShape = z.object({
-    url: textFieldShape,
-    defaultBranchRef: z.object({ name: textFieldShape }).catch(() => ({ name: '' }))
-});
-
-/** The view of `gh repo view --json url,defaultBranchRef`, or one with nothing in it. */
-function repoView(output: string): z.output<typeof repoViewShape> {
-    try {
-        const view = repoViewShape.safeParse(JSON.parse(output));
-        if (view.success) return view.data;
-    } catch {
-        // Output that is not JSON has no view in it.
-    }
-    return { url: '', defaultBranchRef: { name: '' } };
-}
-
-/**
- * The `defaultBranchRef.name` of `gh repo view --json url,defaultBranchRef`, or the empty string.
- */
-function defaultBranchOf(output: string): string {
-    return repoView(output).defaultBranchRef.name;
-}
-
-/** The `url` of `gh repo view --json url,defaultBranchRef`, or the empty string. */
-function urlOf(output: string): string {
-    return repoView(output).url;
 }
 
 /** A commit message goes through a file rather than an argument, as git-write.ts's commit does. */

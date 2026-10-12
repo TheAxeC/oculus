@@ -224,7 +224,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             category: 'position',
             line: item('position', GLYPHS.position, lead.title, days, {
                 ...rootMark(lead),
-                target: { kind: 'lead', id: hubId(rootOf(lead), lead.title) }
+                target: { kind: 'lead', id: hubId(rootOf(lead, null), lead.title, null) }
             })
         });
     }

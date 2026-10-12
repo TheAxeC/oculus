@@ -4,14 +4,13 @@
 // root key is one percent-encoded segment, since it may hold a `/`.
 //
 // The route is the enforcement: the frame's `oculus.fs` methods ask the page first, and a frame
-// that builds the address itself meets the same checks here. They run in this order: the key
-// `engine` is closed to every app; a machine app must have listed a folder of its manifest's
-// `files` that holds the path (`not_declared`), and a root app reads its own root alone (`closed`);
-// then the checks of `open({ file })` in their order (reach/open.ts `locate`): the segment rule and
-// `closed_paths`, a shown root, the real path inside the root and outside oculus's own config
-// folder. A refusal is the word as plain text with its status; an address with a wrong key, an app
-// that is not approved or is disabled, or a dot-led segment before the root key is the empty 404
-// the app files answer.
+// that builds the address itself meets the same checks here. They run in this order: a machine app
+// must have listed a folder of its manifest's `files` that holds the path (`not_declared`), and a
+// root app reads its own root alone (`closed`); then the checks of `open({ file })` in their order
+// (reach/open.ts `locate`): the segment rule and `closed_paths`, a shown root, the real path inside
+// the root and outside oculus's own config folder. A refusal is the word as plain text with its
+// status; an address with a wrong key, an app that is not approved or is disabled, or a dot-led
+// segment before the root key is the empty 404 the app files answer.
 //
 // A file is streamed from a descriptor opened without following a link and without blocking, and
 // the descriptor must be a regular file: a FIFO, socket or device file answers `closed` and is
@@ -34,7 +33,6 @@ import {
 import type { Stats } from 'node:fs';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
-import { ENGINE_ROOT } from '../../../files/files.ts';
 import { inClosedPaths, inFilesEntry } from '../../../../data/helpers/files/apps/apps.ts';
 import { below, realPath } from '../../../core/paths.ts';
 import type { HeldApp } from '../read/held.ts';
@@ -200,7 +198,6 @@ function fileAnswer(request: Request, real: string, policy: string): Response {
 /** Answer one read of a root. */
 export function serveFs(input: FsRequest): Response {
     const { app, op, root, path, policy, context } = input;
-    if (root === ENGINE_ROOT) return refusal('closed', policy);
     const rootKeys = context.roots.map((one) => one.key);
     if (!declared(app, root, path, rootKeys)) return refusal('not_declared', policy);
     const found = locate({ app, root, path }, context, op !== 'read');

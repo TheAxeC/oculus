@@ -7,13 +7,13 @@
 // called every two minutes. A refresh reads every account whatever its due time, since what a press
 // asks for is the state now.
 //
-// The list is the machine's own config/local.yml, which the reader edits from the Calendar and the
-// Inbox and by hand, so `set` takes a new list and a new folder at any time. An account that left
-// is forgotten at once and its row leaves the next publish; an account that joined is due at once;
-// a new folder makes every account due at once, since every file it reads is another file. A round
-// already in flight carries on, and what it reads for an account that has left, or from the folder
-// that was replaced, is dropped rather than published: `live` is how the reader of one account asks
-// whether it still counts.
+// The list is the rows of the hubs' own `.oculus/local.yml` files, which the reader edits from the
+// Calendar and the Inbox and by hand, so `set` takes a new list and a new folder at any time. An
+// account that left is forgotten at once and its row leaves the next publish; an account that
+// joined is due at once; a new folder makes every account due at once, since every file it reads is
+// another file. A round already in flight carries on, and what it reads for an account that has
+// left, or from the folder that was replaced, is dropped rather than published: `live` is how the
+// reader of one account asks whether it still counts.
 //
 // The period can change while the loop runs. A new period moves each account's next read to the
 // sooner of the time it waits for and the new period from now, a retry time counting as the time it

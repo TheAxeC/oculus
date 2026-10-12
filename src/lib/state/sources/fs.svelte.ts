@@ -64,7 +64,6 @@ import {
     NO_NOTES,
     NO_TEXT,
     NO_WORKSPACES,
-    currentWorkspace,
     fileBytesUrl,
     FS_PATH,
     bookmarksShape,
@@ -184,8 +183,10 @@ export type FsStore = {
     workspaces: () => WorkspacesState;
     /** The workspaces as the server holds them now: read again when they are stale. */
     workspacesNow: () => Promise<WorkspacesState>;
-    /** The roots of the workspace the saved state names as current. */
+    /** The folders of the open workspace, which are the roots the file routes serve. */
     roots: () => FsRoot[];
+    /** The name of the open workspace's primary hub, or null when it names none. */
+    primary: () => string | null;
     fileText: (root: string, path: string) => FileText;
     markText: (root: string, path: string) => void;
     /**
@@ -242,19 +243,23 @@ export type FsStore = {
     notes: () => NotesState;
     /** One note's own text. */
     note: (id: string) => NoteState;
+    /** Add a folder to the open workspace: its file's `folders:` list, or the unsaved state. */
     addRoot: (dir: string) => Promise<WriteAnswer>;
+    /** Take the folder of that name out of the open workspace. */
     removeRoot: (key: string) => Promise<WriteAnswer>;
     /**
-     * Put the roots the reader can move in the order the keys name: the `roots:` list of the hub's
-     * `.oculus/config/sources.yml` in the default workspace, the workspace's own roots in a named
-     * one. The workspaces are read again after the answer, whatever it was, so a refused order is
-     * drawn as the server holds it.
+     * Put the folders in the order the names give. The workspace is read again after the answer,
+     * whatever it was, so a refused order is drawn as the server holds it.
      */
     orderRoots: (keys: string[]) => Promise<WriteAnswer>;
     /** Put the notes in the order the ids name, newest first for any a list leaves out. */
     orderNotes: (ids: string[]) => Promise<WriteAnswer>;
+    /**
+     * Save the open workspace as `.oculus/workspaces/<name>.yml` of the primary hub (or the first).
+     */
     saveWorkspace: (name: string) => Promise<WriteAnswer>;
-    selectWorkspace: (name: string) => Promise<WriteAnswer>;
+    /** Open the workspace file at that path. */
+    selectWorkspace: (path: string) => Promise<WriteAnswer>;
     /** Add one bookmark through the collection write path, and ask for them again. */
     addBookmark: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     /** Take one bookmark out, by the label it is found by. */
@@ -351,7 +356,7 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
     /** The roots of the workspace as far as they have been read; asks the server for nothing. */
     function heldRoots(): FsRoot[] {
         const held = queries.peek<WorkspacesState>(WORKSPACES).data;
-        return held === undefined ? [] : currentWorkspace(held).roots;
+        return held === undefined ? [] : held.folders;
     }
 
     /**
@@ -487,9 +492,13 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
         return inBrowser() ? queries.fetch(WORKSPACES, readWorkspaces) : NO_WORKSPACES;
     }
 
-    /** The roots of the current workspace, which are none while the workspaces are being read. */
+    /** The folders of the open workspace, which are none while the workspace is being read. */
     function roots(): FsRoot[] {
-        return currentWorkspace(workspaces()).roots;
+        return workspaces().folders;
+    }
+
+    function primary(): string | null {
+        return workspaces().primary;
     }
 
     async function readWorkspaces(): Promise<WorkspacesState> {
@@ -499,9 +508,13 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
             const body = readAs(workspacesShape, answer.body);
             return {
                 home: body?.home ?? '',
-                current: body?.current ?? '',
-                workspaces: body?.workspaces ?? [],
-                dropped: body?.dropped ?? [],
+                open: body?.open ?? null,
+                folders: body?.folders ?? [],
+                primary: body?.primary ?? null,
+                engine: body?.engine ?? null,
+                recent: body?.recent ?? [],
+                available: body?.available ?? [],
+                machine: body?.machine ?? { set: [], defaults: {} },
                 error: '',
                 loading: false
             };
@@ -736,18 +749,9 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
         return answer;
     }
 
-    /**
-     * Whether the workspace in force is the default one, whose folders are the `roots:` list of the
-     * hub's `.oculus/config/sources.yml` and are edited by the `roots` write rather than in the
-     * workspaces file.
-     */
-    function inDefault(): boolean {
-        return (queries.peek<WorkspacesState>(WORKSPACES).data?.current ?? '') === '';
-    }
-
-    /** One write on the default workspace's folders, which marks everything held as a save does. */
+    /** One write on the open workspace's folders, which marks everything held as a save does. */
     async function rootsWrite(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        const answer = await writes.send(fields);
+        const answer = await writes.send({ kind: 'roots', ...fields });
         if (answer.ok) invalidate();
         return answer;
     }
@@ -772,6 +776,7 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
         workspaces,
         workspacesNow,
         roots,
+        primary,
         fileText,
         markText,
         readFileKind,
@@ -788,24 +793,16 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
         bookmarksNow,
         notes: noteList,
         note,
-        addRoot: (dir: string) =>
-            inDefault()
-                ? rootsWrite({ kind: 'roots', action: 'add', dir })
-                : act({ action: 'add-root', dir }),
-        removeRoot: (key: string) =>
-            inDefault()
-                ? rootsWrite({ kind: 'roots', action: 'remove', key })
-                : act({ action: 'remove-root', key }),
+        addRoot: (dir: string) => rootsWrite({ action: 'add', dir }),
+        removeRoot: (key: string) => rootsWrite({ action: 'remove', key }),
         orderRoots: async (keys: string[]) => {
-            const answer = await (inDefault()
-                ? rootsWrite({ kind: 'roots', action: 'order', keys })
-                : act({ action: 'order-roots', keys }));
+            const answer = await rootsWrite({ action: 'order', keys });
             queries.mark(WORKSPACES, 'replace');
             return answer;
         },
         orderNotes: (ids: string[]) => noteAct({ action: 'order-notes', ids }),
         saveWorkspace: (name: string) => act({ action: 'save-workspace', name }),
-        selectWorkspace: (name: string) => act({ action: 'select-workspace', name }),
+        selectWorkspace: (path: string) => act({ action: 'select-workspace', path }),
         addBookmark: (fields: Record<string, unknown>) =>
             bookmarkWrite({ kind: 'new-entry', collection: BOOKMARK_COLLECTION, fields }),
         removeBookmark: (label: string) =>

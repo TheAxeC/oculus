@@ -30,7 +30,7 @@
     } from '$lib/state/workbench/navigation/status';
     import { repositoriesViewOf } from '$lib/state/sources/repositories/repositories';
     import { configGeneration } from '$lib/state/shared/words/generation.svelte';
-    import { bookmarkRows, HUB_ROOT, problemMarkOf, problemWords } from '$lib/state/sources/fs';
+    import { bookmarkRows, problemMarkOf, problemWords } from '$lib/state/sources/fs';
     import { allRoots, readRoots } from '$lib/state/sources/fs-transport';
     import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
@@ -75,7 +75,7 @@
         appShell,
         debug: { load: loadDebug, stopFollowing: stopFollowingDebug },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
-        fs: { bookmarks: savedBookmarks, workspaces },
+        fs: { bookmarks: savedBookmarks, primary, workspaces },
         layout: { activeInstance, currentPage, loadLayout, openView, stopFollowing },
         problems,
         repositories,
@@ -214,7 +214,7 @@
                 },
                 served,
                 gitPayload(),
-                HUB_ROOT
+                primary()
             ),
             choices: repositoryChoices(gitPayload(), workspaceRoots)
         })

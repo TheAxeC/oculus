@@ -98,7 +98,7 @@ function page(): Page {
             posted.push(files);
             return Promise.resolve({ ok: true, paths: [] } satisfies Outcome);
         },
-        roots: () => [],
+        roots: () => [{ key: 'hub', dir: '/work/hub', real: '/work/hub' }],
         withheld: () => false
     });
     const store = createRefactor({

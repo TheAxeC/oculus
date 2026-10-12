@@ -24,10 +24,10 @@ import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
 import {
+    buildFolderProjects,
     buildPortfolioWithSchemas,
     joinHubs,
-    portfolioConfigFrom,
-    readSecondHub,
+    readOtherHub,
     sourcesFindings
 } from '../../../data/index.ts';
 import { mergedFeeds } from '../../../data/snapshot/hubs/feeds.ts';
@@ -55,7 +55,6 @@ import {
     optionFindings,
     schemaFindings,
     loadConfig,
-    readLocal,
     sourceFile,
     settingFindings,
     textCatalog,
@@ -65,12 +64,19 @@ import {
 import { HUB_LAYER, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
+import { picturesOf } from '../../content/images.ts';
+import { wallpaperFindings } from '../../content/wallpaper.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
-import { HUB_ROOT, hubRoots, readRoots, type Root } from '../../files/files.ts';
-import { withRepositories, workspaceFindings } from '../../files/roots.ts';
+import { allHubs, primaryConfig, repositoriesOf } from '../../files/roots.ts';
+import { engineConfigIn } from '../../files/workspace/folders.ts';
+import type { OpenWorkspace } from '../../files/workspace/open.ts';
+import { hubOption } from '../../files/workspace/paths.ts';
+import type { MachineProblem } from '../../../data/sources/config/machine.ts';
+import { workspaceFindings } from '../../files/workspace/words.ts';
 import { buildFeeds, isLinkedinFile } from '../../edit/feeds.ts';
 import type {
     AuditFinding,
+    Finding,
     AuditPayload,
     ConfigPayload,
     HostInfo,
@@ -78,27 +84,32 @@ import type {
     RepositoryRoot
 } from '../../../data/model/index.ts';
 import type { Hub } from '../../core/channels.ts';
-import { POLL, pollFile, systemClock, type Clock } from '../../core/file-poll.ts';
 
 export type WatchPaths = {
-    /** Absolute path of the research hub whose YAML the snapshot is built from. */
-    hub: string;
-    /** Absolute path of the oculus engine directory, whose `config/` is watched with the hub. */
+    /** Absolute path of the oculus engine directory, whose `config/` is watched with the hubs. */
     engine: string;
     /** The icon drawings the server holds, replaced by every config push published here. */
     icons: IconMemory;
     /** The machine the server runs on, carried by every config push. */
     host: HostInfo;
     /**
-     * The directories the file browser serves, read at every rebuild. `repositoriesOf` decides
-     * which of them are repositories whose `.oculus/project.yml` is read as a project of the hub.
+     * The open workspace, read at every rebuild: its primary hub is the one the snapshot is built
+     * from, its other hubs are joined to it, and `repositoriesOf` decides which of its folders are
+     * read as projects.
      */
-    roots: () => Root[];
+    open: () => OpenWorkspace;
     /**
-     * The saved workspaces file, which the roots depend on: it is polled, and a change of it is a
-     * rebuild that reads the roots again.
+     * The findings the server holds besides those the files raise: a key of the primary's
+     * `local.yml` kept at its running value until a restart. Read at every rebuild.
      */
-    workspacesFile: string;
+    held?: () => Finding[];
+    /** The problems the machine's `local.yml` files had when they were last read. */
+    problems: () => MachineProblem[];
+    /**
+     * Call the listener when the open workspace moves, which is a rebuild that reads it again; the
+     * answer takes the listener away.
+     */
+    follow?: (listener: () => void) => () => void;
 };
 
 export type WatchOptions = {
@@ -107,10 +118,6 @@ export type WatchOptions = {
      * MAX_WAIT is the wait, since lodash raises a maximum wait to at least the quiet.
      */
     debounce?: number;
-    /** The clock the workspaces file is polled on; the globals when absent. */
-    clock?: Clock;
-    /** Milliseconds between two looks at the workspaces file. */
-    poll?: number;
     /**
      * Called once per rebuild, after the portfolio, the audit and the feeds are published, so what
      * it reads from the hub is that rebuild's own result. A throw is logged and costs nothing else,
@@ -224,6 +231,15 @@ export function namedByConfig(
 }
 
 /**
+ * The files a build over project folders alone reads: the `.oculus/project.yml` of each folder. A
+ * workspace with no primary hub reads nothing else.
+ */
+function namedByRoots(roots: RepositoryRoot[]): (path: string) => boolean {
+    const files = new Set(roots.map((root) => join(root.dir, ROOT_FOLDER, MANIFEST)));
+    return (path: string): boolean => files.has(path);
+}
+
+/**
  * The hub directories the build reads: every scan tier, the folder of every registry file and
  * collection file, and the folder of every generated feed the command center counts. The feeds
  * are watched too, since the Focus board reads them and a refreshed feed has to reach the page the
@@ -314,15 +330,8 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
      * close, which the narrowing of `closed` cannot see.
      */
     const isClosed = (): boolean => closed;
-    /**
-     * The saved workspaces file, looked at on a clock: the roots of the file browser depend on it,
-     * and a change of it is a rebuild that reads them again.
-     */
-    const poll = pollFile(
-        paths.workspacesFile,
-        { clock: options.clock ?? systemClock, every: options.poll ?? POLL },
-        () => queue(false, false)
-    );
+    /** The listener the open workspace calls on a move, taken away at close. */
+    let unfollow: (() => void) | null = null;
 
     const open = (
         dir: string,
@@ -387,11 +396,11 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
 
     /**
      * The hub's config layer, `<hub>/.oculus/config`, watched like the engine's config folder: a
-     * change of the first hub's is a config change, and a change of another hub's is a rebuild of
-     * the portfolio alone, since the page's settings are the first hub's. A layer that is not there
-     * is waited for through the nearest folder that is, and a rebuild is queued only once the layer
-     * itself exists, so creating `<hub>/.oculus` for a bookmark or a note queues nothing. A handle
-     * on a layer that has since gone is closed first, as a root's folder is.
+     * change of the primary hub's is a config change, and a change of another hub's is a rebuild of
+     * the portfolio alone, since the page's settings are the primary hub's. A layer that is not
+     * there is waited for through the nearest folder that is, and a rebuild is queued only once the
+     * layer itself exists, so creating `<hub>/.oculus` for a bookmark or a note queues nothing. A
+     * handle on a layer that has since gone is closed first, as a root's folder is.
      */
     const watchLayer = (dir: string, isConfig: boolean): void => {
         const key = `layer:${dir}`;
@@ -530,7 +539,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     /**
      * Watch the folders one hub's build reads: its scan tiers, registries, collections and feeds,
      * the roots' `.oculus` folders, its career file and its config layer. Returns whether a feed
-     * folder was opened by this call, which republishes the feeds. The first hub's layer is a
+     * folder was opened by this call, which republishes the feeds. The primary hub's layer is a
      * config change; another hub's is a portfolio rebuild.
      */
     const watchHubFolders = (
@@ -593,16 +602,17 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
      */
     const rebuild = (withConfig: boolean, withFeeds: boolean): void => {
         try {
-            // Taken before anything is read, so a write to the workspaces file that lands while
-            // this rebuild runs is a change the next tick sees and not one this rebuild covers.
-            poll.reading();
             // Read here and not taken from a request: a rebuild is the watcher's answer to a change
             // on disk, and no request is in flight when it runs.
-            const { config, findings, from } = loadConfig(paths.engine, { hub: paths.hub });
-            // The roots marked as hubs are read again at every rebuild, each with its own settings,
-            // so a root that left `roots:` or lost its mark is out of this build.
-            const listed = paths.roots();
-            const others = hubRoots(listed).map((root) => readSecondHub(paths.engine, root));
+            const workspace = paths.open();
+            const primaryDir = workspace.primaryDir;
+            const { config, findings, from } = loadConfig(paths.engine, hubOption(primaryDir));
+            // The hubs other than the primary are read again at every rebuild, each with its own
+            // settings, so a folder that left the workspace or lost its config is out of this
+            // build.
+            const others = workspace.hubs
+                .filter((one) => one.name !== workspace.primary)
+                .map((one) => readOtherHub(paths.engine, { key: one.name, dir: one.dir }));
             if (withConfig) {
                 // The roots of sources.yml, the documents of layout.yml and the icon map are
                 // checked here rather than in loadConfig, which merges files and never touches the
@@ -631,33 +641,46 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                         ...optionFindings(paths.engine, config),
                         ...schemaFindings(paths.engine, config),
                         ...themeFindings(paths.engine, config),
-                        ...localFindings(paths.engine, config, readLocal(paths.engine).problems),
-                        ...readRoots(
+                        ...localFindings(config, paths.problems()),
+                        ...workspaceFindings(workspace, textCatalog(config)),
+                        ...(paths.held?.() ?? []),
+                        ...wallpaperFindings(
                             config,
-                            sourceFile(paths.engine, paths.hub, from, 'roots'),
-                            paths.hub
-                        ).findings,
-                        ...workspaceFindings(
-                            {
-                                config,
-                                engine: paths.engine,
-                                local: { hub: paths.hub, workspaces: paths.workspacesFile }
-                            },
+                            picturesOf(allHubs(paths.engine, config, workspace)),
+                            sourceFile(paths.engine, primaryDir, from, 'wallpaper'),
                             textCatalog(config)
                         ),
-                        ...sourcesFindings(config, {
-                            scan: sourceFile(paths.engine, paths.hub, from, 'scan'),
-                            newProjectDir: sourceFile(
-                                paths.engine,
-                                paths.hub,
-                                from,
-                                'new_project_dir'
-                            )
-                        }),
+                        ...(primaryDir === null
+                            ? []
+                            : sourcesFindings(
+                                  config,
+                                  {
+                                      scan: sourceFile(paths.engine, primaryDir, from, 'scan'),
+                                      newProjectDir: sourceFile(
+                                          paths.engine,
+                                          primaryDir,
+                                          from,
+                                          'new_project_dir'
+                                      ),
+                                      memoriesDir: sourceFile(
+                                          paths.engine,
+                                          primaryDir,
+                                          from,
+                                          'memories_dir'
+                                      ),
+                                      wallpaperDir: sourceFile(
+                                          paths.engine,
+                                          primaryDir,
+                                          from,
+                                          'wallpaper_dir'
+                                      )
+                                  },
+                                  primaryDir
+                              )),
                         ...docFindings(
                             config,
-                            paths.hub,
-                            sourceFile(paths.engine, paths.hub, from, 'docs')
+                            primaryDir,
+                            sourceFile(paths.engine, primaryDir, from, 'docs')
                         ),
                         ...railFindings(config, layoutFile(paths.engine), textCatalog(config))
                     ]
@@ -665,39 +688,43 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 hub.publish('config', payload);
                 if (closed) return;
             }
-            const portfolio = withRepositories(
-                portfolioConfigFrom(config),
-                listed,
-                paths.hub,
-                engineConfig
-            );
-            const roots = portfolio.repositories;
-            const byHub = [
-                namedByConfig(paths.hub, portfolio, roots),
-                ...others.map((one) => namedByConfig(one.dir, one.portfolio))
-            ];
+            const roots = repositoriesOf(workspace);
+            const portfolio = primaryConfig(config, workspace);
+            const held = engineConfigIn(workspace.folders, engineConfig);
+            const byHub =
+                primaryDir === null
+                    ? [namedByRoots(roots)]
+                    : [namedByConfig(primaryDir, portfolio, roots)];
+            byHub.push(...others.map((one) => namedByConfig(one.dir, one.portfolio)));
             named = (path) => byHub.some((one) => one(path));
             watchRootParents(roots);
             // The directories are opened before the snapshot is read, so a write that lands
             // between the read and the open cannot be missed.
-            if (watchHubFolders(paths.hub, portfolio, roots, true)) withFeeds = true;
+            if (primaryDir === null) {
+                for (const root of roots) openRootFolder(join(root.dir, ROOT_FOLDER));
+            } else if (watchHubFolders(primaryDir, portfolio, roots, true)) {
+                withFeeds = true;
+            }
             for (const one of others) {
                 if (watchHubFolders(one.dir, one.portfolio, [], false)) withFeeds = true;
             }
             open(engineConfig, true);
             const version = hub.nextVersion('portfolio');
-            const base = buildPortfolioWithSchemas(
-                paths.hub,
-                portfolio,
-                version,
-                roots,
-                checker,
-                engineConfig,
-                HUB_ROOT
-            );
+            const base =
+                primaryDir === null
+                    ? buildFolderProjects(portfolio, version, held)
+                    : buildPortfolioWithSchemas(
+                          primaryDir,
+                          portfolio,
+                          version,
+                          roots,
+                          checker,
+                          held,
+                          workspace.primary ?? undefined
+                      );
             const built = joinHubs(
                 base,
-                { hub: paths.hub, config: portfolio },
+                { hub: primaryDir, name: workspace.primary, config: portfolio },
                 others,
                 version,
                 checker
@@ -713,11 +740,12 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 const scan = (
                     part: HubSnapshot,
                     dir: string,
-                    settings: Record<string, unknown>
+                    settings: Record<string, unknown>,
+                    root?: string
                 ): AuditFinding[] =>
                     auditFindings({
                         hub: dir,
-                        ...(part.key === HUB_ROOT ? {} : { root: part.key }),
+                        ...(root === undefined ? {} : { root }),
                         projects: Object.values(part.snapshot.entities.projects),
                         collections: Object.values(part.snapshot.entities.collections),
                         rules: auditRules(settings),
@@ -726,9 +754,10 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 const audit: AuditPayload = {
                     findings: built.parts.flatMap((part) => {
                         const other = others.find((one) => one.key === part.key);
-                        return other === undefined
-                            ? scan(part, paths.hub, config)
-                            : scan(part, other.dir, other.portfolio.merged);
+                        if (other !== undefined) {
+                            return scan(part, other.dir, other.portfolio.merged, part.key);
+                        }
+                        return primaryDir === null ? [] : scan(part, primaryDir, config);
                     }),
                     muted: mutedSignatures(config)
                 };
@@ -741,7 +770,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 hub.publish(
                     'feeds',
                     mergedFeeds(
-                        buildFeeds(paths.hub, portfolio),
+                        buildFeeds(primaryDir, portfolio),
                         others.map((one) => ({
                             key: one.key,
                             feeds: buildFeeds(one.dir, one.portfolio)
@@ -784,11 +813,13 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     }
 
     rebuild(true, true);
+    unfollow = paths.follow?.(() => queue(true, true)) ?? null;
 
     return {
         close(): void {
             closed = true;
-            poll.close();
+            unfollow?.();
+            unfollow = null;
             queued.cancel();
             for (const handle of handles.values()) handle.close();
             handles.clear();

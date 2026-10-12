@@ -131,7 +131,7 @@ const OPENS: [string, unknown, string][] = [
     ['a file of a shown root', { file: { root: 'hub', path: 'README.md' } }, 'resolved'],
     ['a file with a dot-led path', { file: { root: 'hub', path: '.env' } }, 'closed'],
     ['a file of a closed folder', { file: { root: 'hub', path: 'secrets/a.txt' } }, 'closed'],
-    ['a file of the engine root', { file: { root: 'engine', path: 'x' } }, 'closed'],
+    ['a file of a name no folder has', { file: { root: 'engine', path: 'x' } }, 'missing'],
     ['a file of a root that is not shown', { file: { root: 'other', path: 'x' } }, 'missing'],
     ['a file target with an extra key', { file: { root: 'hub', path: 'a', more: 1 } }, 'closed'],
     ['a file target that is not an object', { file: 'hub/a' }, 'closed']
@@ -218,10 +218,10 @@ const FS_ROWS: Row[] = (
             'rejected:closed'
         ],
         [
-            'the engine root',
+            'a name no workspace folder has',
             fixtureApp({ readFolders: ['engine'] }),
             ['read', 'engine', 'x'],
-            'rejected:closed'
+            'rejected:missing'
         ],
         [
             'a root that is not shown',

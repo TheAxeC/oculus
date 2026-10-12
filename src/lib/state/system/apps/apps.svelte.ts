@@ -116,7 +116,7 @@ export type AppsDeps = {
         holding: (id: string) => { id: string } | null;
         /** Show a page; an id naming no page, a float's, changes nothing. */
         switchPage: (id: string) => void;
-        showFolderInFiles: (path: string, root?: string) => string;
+        showFolderInFiles: (path: string, root: string) => string;
     };
     notices: NoticeSink;
     settings: () => AppsSettings;

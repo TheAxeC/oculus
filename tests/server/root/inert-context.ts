@@ -1,11 +1,11 @@
 // Layer 2, server test support. Stand-ins that let a test build a `ServerContext` with
 // `createServerContext` and nothing polling, listening or reading the machine: an inert object for
-// each watcher and poller, an apps watcher that holds no app, a scratch copy of the engine's
-// config folder without its machine-local file, and the read of that folder's local files.
+// each watcher and poller, an apps watcher that holds no app, a scratch copy of the engine's config
+// folder, a scratch state folder, and the read of the machine's values.
 
 import { cpSync } from 'node:fs';
-import { basename, join } from 'node:path';
-import { engineDir, readLocal } from '../../../src/lib/data/sources/config.ts';
+import { join } from 'node:path';
+import { engineDir, readMachine } from '../../../src/lib/data/sources/config.ts';
 import type { ContextDependencies } from '../../../src/lib/server/root/context.ts';
 import { noApps } from '../../../src/lib/server/machine/apps/read/held.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
@@ -19,7 +19,7 @@ export function inert(): never {
 }
 
 /** The apps watcher stand-in: it holds no app and lets the hosts register their listeners. */
-function inertApps(): never {
+export function inertApps(): never {
     const base = inert() as Record<string, unknown>;
     const listener = (): (() => void) => () => undefined;
     return new Proxy(base, {
@@ -35,6 +35,7 @@ function inertApps(): never {
 /** The dependencies of a context with no watcher, no poller and no language server. */
 export function inertDependencies(): Partial<ContextDependencies> {
     return {
+        stateFolder: () => scratchDir('oculus-inert-state-'),
         createTerminals: () => inert(),
         createRelay: () => inert(),
         createDebug: () => inert(),
@@ -54,28 +55,25 @@ export function inertDependencies(): Partial<ContextDependencies> {
     };
 }
 
-/** The `readLocal` dependency that moves every machine-local file of the config under `engine`. */
-export function scratchReadLocal(engine: string): ContextDependencies['readLocal'] {
-    return (folder, warn) => {
-        const read = readLocal(folder, warn);
+/**
+ * The `readMachine` dependency that moves every machine-local file of the config under `engine`, so
+ * a context built over it writes nothing under the home folder.
+ */
+export function scratchReadMachine(engine: string): ContextDependencies['readMachine'] {
+    return (hubs, primary, warn) => {
+        const read = readMachine(hubs, primary, warn);
         const files = {
-            workspaces: join(engine, 'workspaces.json'),
             approvals: join(engine, 'approvals.json'),
-            bookmarks: join(engine, 'bookmarks.yml'),
             history: join(engine, 'history'),
-            changes: join(engine, 'changes.jsonl'),
-            notes: join(engine, 'notes')
+            changes: join(engine, 'changes.jsonl')
         };
         return { ...read, config: { ...read.config, ...files } };
     };
 }
 
-/** A scratch engine holding the real engine's config folder without its machine-local file. */
+/** A scratch engine holding a copy of the real engine's config folder. */
 export function scratchEngine(prefix: string): string {
     const engine = scratchDir(prefix);
-    cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
-        recursive: true,
-        filter: (source) => basename(source) !== 'local.yml'
-    });
+    cpSync(join(engineDir(), 'config'), join(engine, 'config'), { recursive: true });
     return engine;
 }

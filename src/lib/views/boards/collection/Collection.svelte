@@ -94,7 +94,7 @@
     import { lookup, t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
-    import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+    import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
     import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
@@ -103,7 +103,7 @@
     const {
         layout: { openView },
         terminals: { composeAt },
-        fs: { roots },
+        fs: { primary, roots },
         selectors: { archiveDead, collectionOf, collectionsOfKey, configMap, projects },
         source: { unsavedFile },
         ui: { cardMoveRequested, instanceState, setInstanceState },
@@ -121,17 +121,17 @@
     const cursor = $derived(cardCursor(instance.state));
 
     /**
-     * The file of the collection in each hub that holds one, the first hub's first: the cards of a
-     * hub other than the first are written by that hub's own file, schema and identities.
+     * The file of the collection in each hub that holds one, the primary hub's first: the cards of
+     * a hub other than the primary are written by that hub's own file, schema and identities.
      */
     const parts = $derived(
         collectionsOfKey(key).map((one) => ({
             collection: one,
             schema: one.schema,
             file:
-                rootOf(one) === HUB_ROOT
-                    ? viewSourceFile('collection', configMap(), key)
-                    : fileUnder(one.file, roots()),
+                one.root === undefined
+                    ? viewSourceFile('collection', configMap(), primary(), key)
+                    : fileUnder(one.file, roots(), primary()),
             faults: identityFaults(one.entries, one.schema)
         }))
     );
@@ -332,7 +332,7 @@
             <Empty message={t('collection.empty')} />
         {:else}
             <div class="cards" role="list">
-                {#each shown as { entry, part } (`${rootOf(entry)}:${entry.index}`)}
+                {#each shown as { entry, part } (`${rootOf(entry, primary())}:${entry.index}`)}
                     <Reveal
                         id={entry.id}
                         wanted={held.reveal}

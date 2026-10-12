@@ -29,7 +29,7 @@ export type TabFileDeps = {
 /** The facts about the tab's file, each read where the tab draws or hands up an action. */
 export function createTabFile(deps: TabFileDeps) {
     /** The roots the file routes serve, which name a tab's file by a key and a path. */
-    const served = $derived(deps.workspaces().workspaces.flatMap((workspace) => workspace.roots));
+    const served = $derived(deps.workspaces().folders);
     /** The absolute path of the file on disk, empty for a tab that shows no file on disk. */
     const wholeFile = $derived(
         deps.blocked() || deps.head() !== undefined

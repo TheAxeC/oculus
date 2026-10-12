@@ -68,12 +68,15 @@ const CHECK_MS = 30_000;
 
 /** What the watcher needs of the world beyond the hub. */
 export type SchedulesOptions = {
-    /** The schedules file, the run record and the saved commands file. */
-    files: { schedules: string; record: string; commands: string };
+    /**
+     * The schedules file (null while the workspace has no primary hub, and then no entry exists),
+     * the run record and the saved commands file.
+     */
+    files: { schedules: string | null; record: string; commands: string };
     /** The directories the file browser serves, read at the call. */
     rootsFor: () => string[];
-    /** The machine's configuration, read at the call: the hub folder. */
-    local: () => { hub: string };
+    /** The primary hub's folder, read at the call; null while the workspace has none. */
+    hub: () => string | null;
     /** Start what an entry runs, in a terminal of the given grid. */
     run: (entry: ScheduleEntry, size: { cols: number; rows: number }) => Promise<RunAnswer>;
     /** End a terminal oculus started. */
@@ -238,7 +241,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
     let fileSaid = false;
 
     const disk = (): Disk => ({
-        hub: options.local().hub,
+        hub: options.hub(),
         roots: options.rootsFor(),
         commands: files.commands
     });
@@ -271,7 +274,8 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
         if (!current.ok) unread.push({ file: 'schedules', line: current.line });
         if (!record.ok) unread.push({ file: 'record', line: null });
         if (!saved.ok) unread.push({ file: 'commands', line: null });
-        const roots = [options.local().hub, ...options.rootsFor()];
+        const primary = options.hub();
+        const roots = [...(primary === null ? [] : [primary]), ...options.rootsFor()];
         return {
             schedules: rows,
             commands: saved.ok ? saved.commands : [],
@@ -592,9 +596,14 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
 
     // ---- the files ---------------------------------------------------------------------------
 
+    const readFile = (): Reading =>
+        files.schedules === null
+            ? { ok: true, rows: [], commandsUnread: false }
+            : readSchedules(files.schedules, disk());
+
     const reload = (): void => {
         if (stopped()) return;
-        const read = readSchedules(files.schedules, disk());
+        const read = readFile();
         current = read;
         if (!read.ok) {
             if (!fileSaid) {
@@ -639,13 +648,14 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
         if (file === null || file === basename(files.record)) publish();
         if (
             file === null ||
-            file === basename(files.schedules) ||
+            (files.schedules !== null && file === basename(files.schedules)) ||
             file === basename(files.commands)
         ) {
             reload();
         }
     };
-    for (const folder of new Set(Object.values(files).map((file) => dirname(file)))) {
+    const watched = Object.values(files).flatMap((file) => (file === null ? [] : [dirname(file)]));
+    for (const folder of new Set(watched)) {
         try {
             mkdirSync(folder, { recursive: true });
             const handle = watch(folder, { persistent: false }, (_event, file) => onChange(file));
@@ -665,7 +675,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
 
     const runNow = async (name: string): Promise<RunNowAnswer> => {
         if (stopped()) return { refused: 'entry-changed', names: [] };
-        const read = readSchedules(files.schedules, disk());
+        const read = readFile();
         if (!read.ok) return { refused: 'schedules-unread', names: [] };
         const row = read.rows.find((one) => one.entry !== null && one.name === name);
         const entry = row?.entry ?? null;

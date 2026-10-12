@@ -1,10 +1,10 @@
 // Layer 1, data. The `feeds` channel's payload of several hubs as one: Position Leads, Lit Watch
-// and LinkedIn each hold the entries of every hub, the first hub's first and then each other hub's
-// in the order of `roots:`, every entry of a hub other than the first marked with that hub's key in
-// `root`. The feed's file, meta and posting cadence are the first hub's, because a view shows one
-// feed and a write to a feed field names the entry, which names its hub through `root`; the file of
-// the feed in each other hub is `hubFiles`, which names the file a write to one of its entries
-// changes.
+// and LinkedIn each hold the entries of every hub, the primary hub's first and then each other
+// hub's in the workspace's folder order, every entry of a hub other than the primary marked with
+// that hub's key in `root`. The feed's file, meta and posting cadence are the primary hub's,
+// because a view shows one feed and a write to a feed field names the entry, which names its hub
+// through `root`; the file of the feed in each other hub is `hubFiles`, which names the file a
+// write to one of its entries changes.
 
 import type { FeedKind, FeedsPayload } from '../../model/index.ts';
 
@@ -14,7 +14,7 @@ export type HubFeeds = { key: string; feeds: FeedsPayload };
 /** The kinds, in the order the payload lists them. */
 const KINDS: FeedKind[] = ['radar', 'leads', 'linkedin'];
 
-/** The payload of the first hub with the entries of the other hubs added after its own. */
+/** The payload of the primary hub with the entries of the other hubs added after its own. */
 export function mergedFeeds(first: FeedsPayload, others: readonly HubFeeds[]): FeedsPayload {
     if (others.length === 0) return first;
     const out = { ...first };

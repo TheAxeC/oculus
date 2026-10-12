@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, view partial. Disk quota rows use the shared meter primitive and tone thresholds
     // used by other capacity gauges.
-    import Meter from '$lib/ui/display/Meter.svelte';
+    import Meter from '$lib/ui/display/meters/Meter.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { HpcQuotaItem } from '$lib/state/system/machine/hpc/hpc';
     let { rows }: { rows: HpcQuotaItem[] } = $props();

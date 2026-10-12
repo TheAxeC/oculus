@@ -349,9 +349,9 @@ const SCRATCH: ScratchRow[] = [
 
 describe('the scratch rule', () => {
     it.each(SCRATCH)('$name', async (row) => {
-        const { deps } = world({ 'hpc/a.slurm': row.script, ...row.files }, row.manifest);
+        const { deps, hub } = world({ 'hpc/a.slurm': row.script, ...row.files }, row.manifest);
         const plan = await planned(deps);
         expect(plan.scratch).toEqual({ named: row.named, unread: row.unread });
-        expect(plan.source).toBe(`${realpathSync(deps.hub)}/projects/p/code/`);
+        expect(plan.source).toBe(`${realpathSync(hub)}/projects/p/code/`);
     });
 });

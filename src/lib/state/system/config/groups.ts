@@ -20,7 +20,7 @@
 // groups, one row per file of config/catalogs/ and of config/text/ and its subfolders, made from
 // the listings the caller hands in (view/folders.ts).
 
-import { hubKeysOf } from '../../../data/helpers/hub-names.ts';
+import { ROOT_FOLDER, hubKeysOf } from '../../../data/helpers/hub-names.ts';
 import {
     HEADINGS,
     UNHEADED,
@@ -29,7 +29,8 @@ import {
 } from '../../../data/sources/config/catalog/options.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { t } from '../../shared/words/text.ts';
-import { ENGINE_ROOT, HUB_ROOT } from '../../sources/explorer/view/place.ts';
+import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
+import { PRIMARY_ROOT } from './config-files.ts';
 import type { AppSettingRow } from './other-rows/app-rows.ts';
 import type { BrowserRow } from './other-rows/browser.ts';
 import { LOCAL_NAME, describedAs } from './config-files.ts';
@@ -42,7 +43,8 @@ import {
     type FileStatus,
     type HubLayer,
     type LayerResult,
-    type LocalRow
+    type LocalRow,
+    type MachineState
 } from './rows.ts';
 
 export { catalogOf } from '../../../data/sources/config/catalog/options.ts';
@@ -199,7 +201,7 @@ export type FolderListings = { catalogs: Listed; schemas: Listed; texts: Listed 
 function lineOf(file: string, status: FileStatus, said: Message | null): FileLine {
     return {
         file,
-        root: ENGINE_ROOT,
+        root: OCULUS_CONFIG_ROOT,
         description: describedAs(file),
         local: file === LOCAL_NAME,
         status,
@@ -207,11 +209,26 @@ function lineOf(file: string, status: FileStatus, said: Message | null): FileLin
     };
 }
 
+/**
+ * The file line of the machine's own file: the `.oculus/local.yml` of the primary hub, which opens
+ * through the primary's folder. With no primary no folder holds it and the view says so.
+ */
+function machineLine(): FileLine {
+    return {
+        file: `${ROOT_FOLDER}/${LOCAL_NAME}`,
+        root: PRIMARY_ROOT,
+        description: describedAs(LOCAL_NAME),
+        local: true,
+        status: 'rows',
+        said: null
+    };
+}
+
 /** The file line of a hub layer file: its path under the hub, read as the layer result says. */
 function layerLine(file: string, layer: LayerResult): FileLine {
     return {
         file: layer.path,
-        root: HUB_ROOT,
+        root: PRIMARY_ROOT,
         description: describedAs(file),
         local: false,
         status: layer.status,
@@ -225,6 +242,8 @@ function layerLine(file: string, layer: LayerResult): FileLine {
  * is asked for the files that hold keys of the hub list; without it no file has a layer. `folders`
  * are the listings of the catalog, schema and text folders, and none leaves the three groups out.
  * `apps` are the rows of the settings the apps declare, which stand last in the Apps heading.
+ * `machine` is what the server sent of the primary's `local.yml`: which keys it sets, never a
+ * value.
  */
 export function settingsGroups(
     catalog: Catalog,
@@ -232,7 +251,8 @@ export function settingsGroups(
     browser: BrowserRow[],
     folders?: FolderListings,
     layers?: (file: string) => HubLayer,
-    apps: AppSettingRow[] = []
+    apps: AppSettingRow[] = [],
+    machine: MachineState = { primary: null, set: [], defaults: {} }
 ): Group[] {
     const groups: Group[] = [];
     if (browser.length > 0) {
@@ -287,10 +307,10 @@ export function settingsGroups(
         groups.push({
             id: MACHINE_GROUP,
             title: t('workbench.settings_heading_machine'),
-            about: '',
-            lines: [lineOf(LOCAL_NAME, 'rows', null)],
+            about: machine.primary === null ? t('workbench.settings_machine_no_primary') : '',
+            lines: [machineLine()],
             said: null,
-            sections: sectionsOf(MACHINE_GROUP, localRows(catalog[LOCAL_NAME]))
+            sections: sectionsOf(MACHINE_GROUP, localRows(catalog[LOCAL_NAME], machine))
         });
     }
     if (folders !== undefined) {

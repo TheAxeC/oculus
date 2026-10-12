@@ -26,7 +26,7 @@ import {
 import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
-import { HUB_ROOT, collectionsOf, rootOf } from '../../data/helpers/hub-names.ts';
+import { collectionsOf } from '../../data/helpers/hub-names.ts';
 import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
 import type { EditorOptions } from '../../data/helpers/editor/editor.ts';
@@ -44,7 +44,8 @@ import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { newProjectFolder as folderOfNewProjects } from '../boards/board/new-project.ts';
 import { pinnedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
-import { isEngineDoc } from '../workbench/navigation/pages.ts';
+import { isEngineDoc, type DocPlace } from '../workbench/navigation/pages.ts';
+import type { EnginePlace } from '../system/docs.svelte.ts';
 import type { SelectionStore } from '../workbench/selection.svelte.ts';
 import type { BoardItem, BoardPreset, BoardStats, Dissemination } from '../boards/board/index.ts';
 import type { Choice, FormField } from '../forms/schema.ts';
@@ -88,9 +89,9 @@ export function folderOf(project: Project): string {
 
 /**
  * The absolute folder of the hub a project is of: its folder less the part relative to the hub.
- * Empty for a project that has no folder of its own or whose manifest does not lie in it. A
- * project read from a repository (a `roots:` entry holding its own manifest) is in the root of its
- * own, so its folder is the whole of it.
+ * Empty for a project that has no folder of its own or whose manifest does not lie in it. A project
+ * read from a repository (a workspace folder holding its own manifest) is in the root of its own,
+ * so its folder is the whole of it.
  */
 function hubOfProject(project: Project): string {
     if (project.repository !== undefined) return project.repository.dir;
@@ -127,11 +128,12 @@ export type SelectorsStore = {
     disseminatedFor: (id: Id) => Dissemination[];
     domainChoices: () => Choice[];
     newProjectFolder: (tier: string) => string;
-    hubRoot: () => string;
-    engineAtFor: (tab: { view: string; state: unknown }) => string;
+    hubRoot: () => string | null;
+    docPlaceFor: (tab: { view: string; state: unknown }) => DocPlace;
     /**
-     * The place of oculus's own folder in the hub once the server's answer is in, waiting for it
-     * while it is on its way, so a press made right after a reload finds a tab of that folder.
+     * The path of oculus's own folder in the primary hub once the server's answer is in, waiting
+     * for it while it is on its way, so a press made right after a reload finds a tab of that
+     * folder; the empty string when the primary hub does not hold the folder.
      */
     engineAtSettled: () => Promise<string>;
     hubDirOf: (id: Id) => string;
@@ -163,8 +165,9 @@ export function createSelectors(
     entities: EntitiesStore,
     layout: LayoutStore,
     selection: SelectionStore,
-    engineAt: () => string,
-    engineAtSettled: () => Promise<string>
+    enginePlace: () => EnginePlace,
+    enginePlaceSettled: () => Promise<EnginePlace>,
+    workspace: () => { primary: string | null; folders: { key: string; dir: string }[] }
 ): SelectorsStore {
     /**
      * The merged config the `config` channel delivered, or an empty map before the first message.
@@ -252,31 +255,33 @@ export function createSelectors(
     }
 
     /**
-     * The place of oculus's own folder in the hub for a document tab of that folder, which the
-     * file the tab shows is placed by (`fileOfTab`); the empty string for any other tab, which
-     * asks nothing of the server, and while the server's answer is on its way, failed, or names no
-     * place because the folder lies outside the hub.
+     * Where a document tab's file is placed (`fileOfTab`): the primary hub's name for a document of
+     * a hub, and for a document of oculus's own folder the hub that holds the folder and the
+     * folder's path in it. The engine part is empty for any other tab, which asks nothing of the
+     * server, and while the server's answer is on its way, failed, or names no hub because none of
+     * the workspace holds the folder.
      */
-    function engineAtFor(tab: { view: string; state: unknown }): string {
-        return isEngineDoc(tab) ? engineAt() : '';
+    function docPlaceFor(tab: { view: string; state: unknown }): DocPlace {
+        const primary = workspace().primary ?? '';
+        const place = isEngineDoc(tab) ? enginePlace() : { hub: '', at: '' };
+        return { primary, engineHub: place.hub, engineAt: place.at };
+    }
+
+    /** The folder's path in the primary hub, for the `docs:` entries, which are the primary's. */
+    async function engineAtSettled(): Promise<string> {
+        const place = await enginePlaceSettled();
+        const primary = workspace().primary;
+        return primary !== null && place.hub === primary ? place.at : '';
     }
 
     /**
-     * The first hub's own absolute path, or the empty string before the first snapshot. A project
-     * carries its manifest's absolute path and its folder relative to its hub, so the root is the
-     * one less the other and no channel has to carry it. A project read from a repository carries
-     * the repository's absolute path as its folder, so it says nothing of the hub and is passed
-     * over. The terminal view offers the path as a place to start one in.
+     * The absolute folder of the open workspace's primary hub, or null while the workspace is being
+     * read and when it names no primary. The terminal view offers the path as a place to start one
+     * in.
      */
-    function hubRoot(): string {
-        const snapshot = entities.portfolio();
-        if (snapshot === null) return '';
-        for (const project of Object.values(snapshot.entities.projects)) {
-            if (rootOf(project) !== HUB_ROOT || project.repository !== undefined) continue;
-            const hub = hubOfProject(project);
-            if (hub !== '') return hub;
-        }
-        return '';
+    function hubRoot(): string | null {
+        const { primary, folders } = workspace();
+        return primary === null ? null : (folders.find((one) => one.key === primary)?.dir ?? null);
     }
 
     /** The absolute folder of the hub the project `id` is of, or the empty string. */
@@ -310,8 +315,9 @@ export function createSelectors(
     }
 
     /**
-     * The collections of one key across the hubs, the first hub's first: the key the view is
-     * registered under draws each one, a hub other than the first marking its cards with its root.
+     * The collections of one key across the hubs, the primary hub's first: the key the view is
+     * registered under draws each one, a hub other than the primary marking its cards with its
+     * root.
      */
     function collectionsOfKey(key: string): Collection[] {
         const snapshot = entities.portfolio();
@@ -389,11 +395,11 @@ export function createSelectors(
 
     /**
      * What one field of choices may be set to, over the snapshot and the vocabulary as they stand,
-     * offering the records of the project's own hub (the first hub's for a new project).
+     * offering the records of the project's own hub (the primary hub's for a new project).
      */
     function fieldChoices(field: FormField, project: Project | null = null): Choice[] {
-        const root = project === null ? HUB_ROOT : rootOf(project);
-        const all = choicesFor(field, entities.portfolio(), configMap(), root);
+        const root = project?.root ?? workspace().primary ?? '';
+        const all = choicesFor(field, entities.portfolio(), configMap(), root, workspace().primary);
         // The Focus lane of a project offers only what the board may move it to, so `holding` is
         // not offered to a project of a tier the backlog does not draw.
         if (project === null || field.field !== 'focus') return all;
@@ -575,7 +581,7 @@ export function createSelectors(
         domainChoices,
         newProjectFolder: (tier) => folderOfNewProjects(configMap(), tier),
         hubRoot,
-        engineAtFor,
+        docPlaceFor,
         engineAtSettled,
         hubDirOf,
         collectionOf,

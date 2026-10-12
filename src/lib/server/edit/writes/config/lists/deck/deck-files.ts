@@ -33,7 +33,7 @@ import type { Deck } from '../../../../../../data/model/index.ts';
 import { writeTextAtomic } from '../../../../../core/json.ts';
 import { inside, realPath } from '../../../../../core/paths.ts';
 import { words } from '../../../../../core/words.ts';
-import { readDeck } from '../../../../../content/deck/read.ts';
+import { readDeck, type DeckSource } from '../../../../../content/deck/read.ts';
 import { resolveRootPath, type Root } from '../../../../../files/files.ts';
 import { addOrderEntry, removeOrderEntries } from '../../../../deck-edit.ts';
 import type { ChangeRecord } from '../../../../../core/changes.ts';
@@ -80,9 +80,25 @@ export function textOf(path: string): string {
  * A real path under the hub's real folder spelled under the hub's own path, so a record names a
  * hub file by its path in the hub whether or not the hub's folder is reached through a link.
  */
-export function hubSpelling(hub: string, file: string): string {
-    const real = realPath(hub);
-    return real !== null && inside(file, real) ? join(hub, relative(real, file)) : file;
+export function hubSpelling(hub: string | null, file: string): string {
+    const real = hub === null ? null : realPath(hub);
+    return hub !== null && real !== null && inside(file, real)
+        ? join(hub, relative(real, file))
+        : file;
+}
+
+/** What a deck is read over for a write: the roots, the primary hub, its settings and projects. */
+export function deckSourceOf(into: WriteTarget, roots: Root[]): DeckSource {
+    return {
+        roots,
+        primary:
+            into.primary === null || into.hub === null
+                ? null
+                : { key: into.primary, dir: into.hub },
+        config: into.config,
+        projects: into.projects(),
+        hubs: into.hubs
+    };
 }
 
 /** One record of an act: a file's text before and after, or a hash for an image. */
@@ -124,11 +140,7 @@ export function openDeck(into: WriteTarget, root: string, path: string): OpenDec
         return gone(words(text, 'server.deck_edit.not_a_deck'));
     const at = resolveRootPath(roots, root, path);
     if ('error' in at) return gone(words(text, 'server.deck_edit.outside'));
-    const deck = readDeck(
-        { roots, hub: into.hub, config: into.config, projects: into.projects(), hubs: into.hubs },
-        root,
-        dirname(path)
-    );
+    const deck = readDeck(deckSourceOf(into, roots), root, dirname(path));
     if (deck === 'outside' || (deck.state !== 'ok' && deck.state !== 'empty')) {
         return gone(words(text, 'server.deck_edit.no_deck'));
     }

@@ -15,26 +15,26 @@ text:
             entry_no_id: entry has no string {0}
         feeds:
             cannot_read: 'cannot be read: {0}'
-        roots:
-            not_a_list: roots is not a list
-            not_a_map: a root is not a map of key and dir
-            no_key: a root has no key
-            no_dir: the root names no dir
-            repeated_key: two roots carry this key
-            relative: 'the dir {0} is relative; a root is absolute or starts with ~/'
-            missing_dir: 'no directory at {0}; this root serves nothing'
-            hub_not_boolean: hub is not true or false; the root is read as a plain root
-            hub_reserved_key: a hub root cannot be keyed hub or engine, or hold a colon; the root is read as a plain root
-            hub_is_first: the root is, lies inside or holds the first hub; it is read as a plain root
-            hub_same_dir: an earlier hub root names the same directory; this root is read as a plain root
-            hub_nested: the root lies inside or holds the directory of an earlier hub root; it is read as a plain root
-            tier_key: "a roots entry takes no tier; the repository's project.yml names its own tier"
-            project_reserved_key: a root that holds a project needs a key that is not hub or engine and holds no colon, slash or space, since the key is the project's id; the root is no project
-            project_is_first: the root is, lies inside or holds the first hub, so its .oculus/project.yml is not read as a project
-            project_same_dir: an earlier root that holds a project names the same directory; this root is no project
-            project_in_hub: the root is, lies inside or holds the directory of a hub root, so its .oculus/project.yml is not read as a project
+        workspace:
+            not_a_list: folders is not a list
+            not_a_map: a folder is not a map of name and path
+            no_name: a folder has no name
+            no_path: the folder {0} has no path
+            bad_name: 'the name {0} holds a character a folder name cannot, which is any but a letter, a digit, a dot, an underscore or a hyphen; the folder is not served'
+            repeated_name: the name {0} is already given to an earlier folder; this folder is not served
+            relative: 'the path {0} is relative; a folder path is absolute or starts with ~/'
+            missing_dir: 'no directory at {0}; this folder serves nothing'
+            same_dir: the folder lies at the same place as the folder {0}; it is not served
+            project_in_hub: the folder is, lies inside or holds the folder of a hub, so its .oculus/project.yml is not read as a project
+            primary_unknown: primary names {0}, which is no folder of the workspace; the workspace has no primary
+            primary_not_hub: primary names {0}, which holds no .oculus/config; the workspace has no primary
+            file_unreadable: 'the workspace file cannot be read: {0}'
+            file_unparsed: the workspace file does not parse; no folder is served
+            file_not_a_map: the workspace file is not a map of keys; no folder is served
+            unknown_key: '{0} is not a key a workspace file takes; it is ignored'
+            state_unreadable: the open-workspace state file does not read; the workspace is unsaved and holds no folder
         hubs:
-            id_prefix: 'the id {0} begins with {1}:, the key of a hub root, so it cannot be told from a record of that hub'
+            id_prefix: 'the id {0} begins with {1}:, the name of a hub folder, so it cannot be told from a record of that hub'
         docs:
             missing: document does not exist
         rail:
@@ -64,6 +64,13 @@ text:
             new_project_dir_tier: 'new_project_dir names {0}, which is none of {1}; the entry is not used'
             new_project_dir_folder: new_project_dir has no folder for {0}; the entry is not used
             new_project_dir_outside: 'the folder {1} of new_project_dir for {0} is not a scan folder and lies under none; the entry is not used'
+            picture_folder_text: '{0} is no folder name; the folder {1} is used'
+            picture_folder_outside: 'the folder {1} of {0} lies outside the hub; the folder {2} is used'
+        wallpaper:
+            form: 'wallpaper.image is {0}, which is neither random nor a hub name and a file name joined by a slash; no wallpaper is shown'
+            name: 'wallpaper.image is {0}, whose file part is a path and not a file name; no wallpaper is shown'
+            hub: 'wallpaper.image is {0}, which names a hub the open workspace does not list; no wallpaper is shown'
+            gone: 'wallpaper.image is {0}, and the wallpaper folder of that hub holds no such file; no wallpaper is shown'
         deck:
             path_outside: '{0} is outside {1}'
             figure_missing: figure {0} is not in {1}/
@@ -95,7 +102,7 @@ text:
         config:
             directory_missing: config directory does not exist
             hub_file_unknown: 'this file is not one the hub config layer takes (sources.yml, layout.yml, behavior.yml and catalogs/vocab.yml); it is not read'
-            hub_local: local.yml is the machine's own file and is never read from the hub config layer
+            hub_local: local.yml is the machine's own file and is never merged into the hub config layer
             hub_key_unknown: 'key {0} is not one the hub config layer sets; it is not applied'
             hub_key_not_map: '{0} must be a map holding keys the hub config layer sets; it is not applied'
             defined_twice: key {0} is already defined in {1}; {2} wins
@@ -120,6 +127,7 @@ text:
             setting_field: '{0} must be {1}; the field is not read'
             local_row: '{0} must be {1}; the row is not read'
             local_repeat: '{0} repeats the label of an earlier row; the row is not read'
+            local_other_hub: "{0} is read from the primary hub's file only, and the hub {1} is not the primary; the value is not used"
             local_unparsed: does not parse; every key takes its default
             local_not_a_map: is not a map of keys; every key takes its default
             local_unreadable: 'could not be read ({0}); every key takes its default'
@@ -251,8 +259,8 @@ text:
             host_shape: 'the host {0} must be a relative path of names that do not start with a dot, ending in .js or .mjs, so the folder is not an app'
             host_missing: 'the host {0} is not a file of the app, so the folder is not an app'
             files_root_app: 'files lists folders to read, which only a machine app may name: a root app reads its own root, so the folder is not an app'
-            files_engine: "files names {0}, which is oculus's own configuration folder and is closed to every app, so the folder is not an app"
-            files_shape: 'files names {0}, which is not a root key, or a root key and a path of names that do not start with a dot, so the folder is not an app'
+            files_unknown: 'files names {0}, which is no folder of the open workspace, so the folder is not an app'
+            files_shape: 'files names {0}, which is not a folder name, or a folder name and a path of names that do not start with a dot, so the folder is not an app'
             files_closed: 'files names {0}, which a folder of closed_paths closes, so the folder is not an app'
             files_private: "files names {0}, which lies in a folder of this machine's own state or secrets and is closed to every app, so the folder is not an app"
             secrets_value: 'secrets must be true or left out, not {0}, so the folder is not an app'

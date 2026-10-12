@@ -5,9 +5,10 @@
 // Server side only, because the sources read the filesystem. What comes back is JSON-safe and is
 // what the socket carries; the caller owns the version number and increments it on every rebuild.
 
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { z } from 'zod';
 import { isMap, str, strings } from './helpers/guards.ts';
+import { MEMORIES_DIR, WALLPAPER_DIR, hubFolderIn } from './helpers/files/paths.ts';
 import { filledTextShape, keysOfShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
@@ -16,15 +17,7 @@ import { readCareer } from './sources/career.ts';
 import { feedItems, readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
 import { findingText, type TextCatalog } from './helpers/finding-text.ts';
-import {
-    CAREER_FILE,
-    HUB_ROOT,
-    TIERS,
-    folderOf,
-    hubLayerPath,
-    inScan,
-    tierOf
-} from './helpers/hub-names.ts';
+import { CAREER_FILE, TIERS, folderOf, hubLayerPath, inScan, tierOf } from './helpers/hub-names.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
 import { loadConfig, textCatalog } from './sources/config.ts';
@@ -36,16 +29,19 @@ import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
 import { listedFields } from './snapshot/schema/manifest.ts';
 import { runSchemas } from './snapshot/schema/run.ts';
 import {
+    emptySchemaSet,
     joinedSchemas,
+    resolvedSchemas,
     scopedSchemas,
     withSchemas,
+    type EngineConfigAt,
     type SchemaSet
 } from './snapshot/schema/set.ts';
 import { engineSchemas } from './sources/config/catalog/schemas/engine.ts';
 import { catalogOf } from './sources/config/catalog/options.ts';
 import { optionFiles } from './sources/config/catalog/schemas/references.ts';
 import { DECK_FILE } from './sources/deck/read.ts';
-import { buildReferences } from './snapshot/references/build.ts';
+import { buildReferences, type EngineConfigFolder } from './snapshot/references/build.ts';
 import type { ReferenceIndex } from './snapshot/references/model.ts';
 import type {
     CollectionFile,
@@ -121,19 +117,64 @@ function scanFindings(value: unknown, file: string, text: TextCatalog): Finding[
     return found;
 }
 
-/** The sources files the values of `scan:` and `new_project_dir:` were read from. */
-export type SourcesFiles = { scan: string; newProjectDir: string };
+/**
+ * The sources files the values of `scan:`, `new_project_dir:` and the picture folders came from.
+ */
+export type SourcesFiles = {
+    scan: string;
+    newProjectDir: string;
+    memoriesDir: string;
+    wallpaperDir: string;
+};
+
+/** What is wrong with a picture folder key of a hub: no text, or a folder outside the hub. */
+function pictureFolderFindings(
+    merged: Record<string, unknown>,
+    hub: string,
+    key: string,
+    fallback: string,
+    file: string,
+    text: TextCatalog
+): Finding[] {
+    const { problem } = hubFolderIn(hub, merged[key], fallback);
+    if (problem === null) return [];
+    const message =
+        problem === 'text'
+            ? findingText(text, 'findings.manifests.picture_folder_text', key, fallback)
+            : findingText(
+                  text,
+                  'findings.manifests.picture_folder_outside',
+                  key,
+                  String(merged[key]),
+                  fallback
+              );
+    return [{ file, key, message }];
+}
 
 /**
- * What is wrong with the values `scan:` and `new_project_dir:` hold in a merged config, each
- * finding filed on the sources file its value was read from.
+ * What is wrong with the values `scan:`, `new_project_dir:`, `wallpaper_dir:` and `memories_dir:`
+ * hold in a merged config of the hub folder `hub`, each finding filed on the sources file its value
+ * was read from.
  */
-export function sourcesFindings(merged: Record<string, unknown>, files: SourcesFiles): Finding[] {
+export function sourcesFindings(
+    merged: Record<string, unknown>,
+    files: SourcesFiles,
+    hub: string
+): Finding[] {
     const text = textCatalog(merged);
     const scan = scanRules(merged.scan);
     return [
         ...scanFindings(merged.scan, files.scan, text),
-        ...newProjectDirs(merged.new_project_dir, scan, files.newProjectDir, text).findings
+        ...newProjectDirs(merged.new_project_dir, scan, files.newProjectDir, text).findings,
+        ...pictureFolderFindings(
+            merged,
+            hub,
+            'wallpaper_dir',
+            WALLPAPER_DIR,
+            files.wallpaperDir,
+            text
+        ),
+        ...pictureFolderFindings(merged, hub, 'memories_dir', MEMORIES_DIR, files.memoriesDir, text)
     ];
 }
 
@@ -304,10 +345,11 @@ function deckProjects(manifests: RawManifest[]): DeckProject[] {
 /** The portfolio deck and every project deck read, with what was wrong in them. */
 function decks(
     hub: string,
+    name: string,
     manifests: RawManifest[],
     config: PortfolioConfig
 ): { decks: Record<Id, RawDeck>; findings: Finding[] } {
-    const root = { key: HUB_ROOT, dir: hub };
+    const root = { key: name, dir: hub };
     const reader = createReader({
         hub: root,
         projects: deckProjects(manifests),
@@ -328,16 +370,30 @@ function decks(
 export type PortfolioBuild = { snapshot: Snapshot; schemas: SchemaSet; references: ReferenceIndex };
 
 /**
+ * Where oculus's own config folder lies in the workspace: the folder on disk, and the workspace
+ * folders that hold it, each with the path of the config folder inside it. The first of them names
+ * the config files in the reference index and every one of them governs them by schema.
+ */
+export type EngineConfigIn = { dir: string; held: readonly EngineConfigAt[] };
+
+/** The reference index's view of it: the first folder that holds the config folder, or null. */
+function configFolder(engine: EngineConfigIn | null): EngineConfigFolder | null {
+    const first = engine?.held.at(0);
+    return engine === null || first === undefined ? null : { dir: engine.dir, ...first };
+}
+
+/**
  * Read the hub, check what was read, and hand back the snapshot with the schemas the check used.
  * The steps are the modules: the sources say what is on disk, validate and the schemas say what is
  * wrong with it, and normalise turns it into the wire model with the findings carried inside it.
  * `roots` are the directories whose `.oculus/project.yml` is read, as handed, each a project of the
  * hub (`readHubManifests`); `repositoriesOf` of server/files/roots.ts decides which roots of the
- * file browser they are. `checker` keeps the compiled validators from one build to the next,
- * so a rebuild whose schemas did not change compiles nothing. `engine` is the engine's config
- * folder, whose files that carry a reference are indexed beside the hub's; none when it is null.
- * `root` is the key the hub's files are named under in the reference index: `hub` for the first
- * hub, the key of its root for another.
+ * file browser they are. `checker` keeps the compiled validators from one build to the next, so a
+ * rebuild whose schemas did not change compiles nothing. `engine` is oculus's own config folder and
+ * the workspace folders that hold it, whose files that carry a reference are indexed beside the
+ * hub's and governed by schema where the workspace holds them; none when it is null. `root` is the
+ * name of the workspace folder the hub's files are named under; the folder's base name when it is
+ * not given.
  */
 export function buildPortfolioWithSchemas(
     hub: string,
@@ -345,8 +401,8 @@ export function buildPortfolioWithSchemas(
     version = 0,
     roots: RepositoryRoot[] = [],
     checker: Checker = createChecker(),
-    engine: string | null = null,
-    root: string = HUB_ROOT
+    engine: EngineConfigIn | null = null,
+    root: string = basename(hub)
 ): PortfolioBuild {
     const manifests = readHubManifests(hub, config.scan, roots, config.text);
     const registries = readRegistries(hub, config.registries, config.text);
@@ -356,7 +412,7 @@ export function buildPortfolioWithSchemas(
         config.career === null
             ? { career: null, findings: [] }
             : readCareer(hub, config.career, config.text);
-    const deck = decks(hub, manifests.manifests, config);
+    const deck = decks(hub, root, manifests.manifests, config);
 
     const raw: RawPortfolio = {
         manifests: manifests.manifests,
@@ -391,7 +447,7 @@ export function buildPortfolioWithSchemas(
         hub,
         root,
         config,
-        engine,
+        engine: configFolder(engine),
         read: run.read,
         manifests: raw.manifests,
         decks: raw.decks,
@@ -400,63 +456,106 @@ export function buildPortfolioWithSchemas(
     });
     return {
         snapshot: normalise(raw, findings, version),
-        schemas: withSchemas(run.set, engineSchemas(raw, config)),
+        schemas: resolvedSchemas(
+            withSchemas(run.set, engineSchemas(raw, config)),
+            root,
+            engine?.held ?? []
+        ),
         references
     };
 }
 
-/** A hub other than the first as the build needs it: its key and where it is. */
+/**
+ * The build of a workspace with no primary hub: the project folders of the workspace read as
+ * projects, no registry, collection, feed or career, and the schemas of oculus's own config folder
+ * where the workspace holds it. It checks nothing a hub's files are checked for, since there are
+ * none.
+ */
+export function buildFolderProjects(
+    config: PortfolioConfig,
+    version = 0,
+    engine: EngineConfigIn | null = null
+): PortfolioBuild {
+    const manifests = readHubManifests('', [], config.repositories, config.text);
+    const registries = Object.fromEntries(
+        REGISTRIES.map((name) => [name, { entries: [], meta: {} }])
+    ) as unknown as RawPortfolio['registries'];
+    const raw: RawPortfolio = {
+        manifests: manifests.manifests,
+        registries,
+        collections: {},
+        feeds: { leads: null, radar: null, scout: null, linkedin: null },
+        career: null,
+        docs: documents('', manifests.manifests),
+        decks: {},
+        findings: manifests.findings
+    };
+    const findings = sortFindings(manifests.findings);
+    return {
+        snapshot: normalise(raw, findings, version),
+        schemas: resolvedSchemas(
+            withSchemas(emptySchemaSet(), engineSchemas(raw, config)),
+            '',
+            engine?.held ?? []
+        ),
+        references: { files: [] }
+    };
+}
+
+/** A hub other than the primary as the build needs it: its key and where it is. */
 export type HubRoot = { key: string; dir: string };
 
 /**
- * A hub other than the first, read with its own settings: the engine's defaults under the hub's own
- * `.oculus/config/`. Its career and its portfolio deck are the first hub's alone, so they are not
- * read, and the findings of its settings layer ride along for the caller to report.
+ * A hub other than the primary, read with its own settings: the engine's defaults under the hub's
+ * own `.oculus/config/`. Its career and its portfolio deck are the primary hub's alone, so they are
+ * not read, and the findings of its settings layer ride along for the caller to report.
  */
-export type SecondHub = HubRoot & { portfolio: PortfolioConfig; findings: Finding[] };
+export type OtherHub = HubRoot & { portfolio: PortfolioConfig; findings: Finding[] };
 
-/**
- * The portfolio settings of a hub other than the first. Its `roots:` is the first hub's list to
- * read, so the settings are made without it and no reader of them finds a repository there.
- */
-export function portfolioConfigOfOther(merged: Record<string, unknown>): PortfolioConfig {
-    const { roots: _unread, ...rest } = merged;
-    return portfolioConfigFrom(rest);
-}
-
-/** The settings of a hub other than the first. */
-export function readSecondHub(engine: string, root: HubRoot): SecondHub {
+/** The settings of a hub other than the primary. */
+export function readOtherHub(engine: string, root: HubRoot): OtherHub {
     const { config, findings } = loadConfig(engine, { hub: root.dir });
-    const portfolio = { ...portfolioConfigOfOther(config), career: null, portfolioDeck: null };
+    const portfolio = { ...portfolioConfigFrom(config), career: null, portfolioDeck: null };
     const sources = join(root.dir, hubLayerPath('sources.yml'));
     return {
         ...root,
         portfolio,
         findings: [
             ...findings,
-            ...sourcesFindings(config, { scan: sources, newProjectDir: sources })
+            ...sourcesFindings(
+                config,
+                {
+                    scan: sources,
+                    newProjectDir: sources,
+                    memoriesDir: sources,
+                    wallpaperDir: sources
+                },
+                root.dir
+            )
         ]
     };
 }
 
-/** The merged build and each hub's own snapshot, the first hub's under the key `hub`. */
+/** The merged build and each hub's own snapshot, the primary's under its name (empty with none). */
 export type HubsBuild = PortfolioBuild & { parts: HubSnapshot[] };
 
 /**
- * The first hub's build joined with every hub beside it as one build: each other hub is built on
- * its own with its own settings and the snapshots are merged (snapshot/hubs/merge.ts), the YAML
- * server's schemas and reference index joined with each hub's files under its own root. With no
- * other hub it is the first hub's build as it is. `parts` hold the snapshots the hubs were built
- * into before the merge, which the audit scans each hub by.
+ * The first build joined with every hub beside it as one build: each other hub is built on its own
+ * with its own settings and the snapshots are merged (snapshot/hubs/merge.ts), the YAML server's
+ * schemas and reference index joined with each hub's files under its own root. The first build is
+ * the primary hub's, or the build of the project folders of a workspace with no primary
+ * (`first.hub` and `first.name` are then null). With no other hub it is the first build as it is.
+ * `parts` hold the snapshots the hubs were built into before the merge, which the audit scans each
+ * hub by.
  */
 export function joinHubs(
     base: PortfolioBuild,
-    first: { hub: string; config: PortfolioConfig },
-    others: readonly SecondHub[],
+    first: { hub: string | null; name: string | null; config: PortfolioConfig },
+    others: readonly OtherHub[],
     version: number,
     checker: Checker
 ): HubsBuild {
-    const own: HubSnapshot = { key: HUB_ROOT, snapshot: base.snapshot };
+    const own: HubSnapshot = { key: first.name ?? '', snapshot: base.snapshot };
     if (others.length === 0) return { ...base, parts: [own] };
     const built = others.map((one) => ({
         key: one.key,
@@ -472,13 +571,19 @@ export function joinHubs(
         )
     }));
     const registryFiles = Object.fromEntries(
-        REGISTRIES.map((name) => [name, join(first.hub, first.config.registries[name])])
+        REGISTRIES.map((name) => [
+            name,
+            first.hub === null ? '' : join(first.hub, first.config.registries[name])
+        ])
     ) as Record<RegistryName, string>;
     const snapshot = mergeHubs(
         {
             snapshot: base.snapshot,
             registryFiles,
-            feedItems: feedItems(first.hub, first.config.feeds, first.config.text)
+            feedItems:
+                first.hub === null
+                    ? []
+                    : feedItems(first.hub, first.config.feeds, first.config.text)
         },
         built.map((one) => ({
             key: one.key,

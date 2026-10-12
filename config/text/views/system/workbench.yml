@@ -20,7 +20,7 @@ text:
         desc_icons: 'The line icon each glyph name is drawn as, one row per name in the glyph vocabulary.'
         desc_latex: 'What the LaTeX editing aids read: the notice of the project the tables follow, the @ suggestions, the keys of the formatting chords and the math symbol groups the TeX view lists.'
         desc_layout: "How things are arranged: the rail's pages and the arrangements each starts as, the view catalogue's groups, the hub documents, the board chrome, the tab rollups and the live badges."
-        desc_local: "This machine's own values, read on their own and never merged into the configuration: the hub path, the port, the ssh alias of the cluster, the Claude command, the program an address is opened with, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept."
+        desc_local: "This machine's own values, kept in the .oculus/local.yml of each hub of the workspace, read on their own and never merged into the configuration: the port, the ssh alias of the cluster, the Claude command, the program an address is opened with, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept. The account, calendar and mail lists join over every hub's file; every other value is read from the primary hub's file."
         desc_manifest_schema: 'The project.yml edit form as data: its sections, its fields, the widget each field is edited by, where a widget takes its choices from, and the rule the editor checks each field by.'
         desc_meta: 'The tool identity: the title and the subtitle the window carries.'
         desc_options: 'Every option of every config file: what it does, its default, and the control it is set with.'
@@ -144,6 +144,16 @@ text:
         settings_empty_item: 'Item {0} is empty. Fill it in or remove it.'
         settings_empty_key: 'Entry {0} has no name. Give it one or remove it.'
         settings_failed: 'Not written: {0}'
+        settings_wallpaper_empty: No hub of this workspace holds a wallpaper image yet; put a .jpg, .png or .webp file in the wallpaper folder of a hub.
+        settings_wallpaper_failed: 'The wallpaper images could not be listed: {0}'
+        settings_wallpaper_label: Wallpaper images
+        settings_wallpaper_none: None
+        settings_wallpaper_random: Random
+        settings_machine_default: 'Not set in the primary hub. The default is {0}.'
+        settings_machine_no_primary: This workspace has no primary hub, so no file sets any key here; each key shows its default.
+        settings_machine_set: 'Set in {0}.'
+        settings_machine_unset: Not set in the primary hub, and the key has no default.
+        settings_open_unavailable: '{0} can be opened once a folder of this workspace holds it.'
         settings_fields: 'Each entry has:'
         settings_filter: Filter settings
         settings_filter_modified: 'Modified'

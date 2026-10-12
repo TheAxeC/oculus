@@ -22,29 +22,27 @@
 // career host, writes/bodies.ts for the body parsers (one per kind of write), writes/file-undo.ts
 // for taking back a file operation, and the writers of the engine's own configuration files, in
 // writes/config/: deck.ts for a deck group's slides, audit-mute.ts for the audit's mute list,
-// rail.ts for the rail list, roots.ts for the default workspace's folders, config-key.ts for one
+// rail.ts for the rail list, folders.ts for the open workspace's folders, config-key.ts for one
 // option of a tracked config file and config-value.ts for one list or family of one. What an
 // importer of this module needs of them is re-exported here, so an importer may name this module or
 // the one that holds the function.
 
 import { json } from '@sveltejs/kit';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import {
     appsSettings,
     changesKeep,
     configDir,
-    loadLocal,
-    localFile
+    type LocalConfig
 } from '../../data/sources/config.ts';
 import { FILES_KIND } from '../../data/file-ops.ts';
 import { tokenedBody } from '../core/auth.ts';
-import { changeAt, defaultChangesPath, logChanges, pathOf } from '../core/changes.ts';
+import { changeAt, defaultChangesPath, logChanges } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
 import { APP_STORE, queuedStore, writeAppStore } from './writes/apps/store.ts';
 import { gateWrite, storeWrite } from './writes/apps/gate.ts';
 import { defaultAppData } from '../machine/apps/store/store.ts';
 import type { AppsHeld, HeldApp } from '../machine/apps/read/held.ts';
-import { defaultBookmarksPath } from '../files/fs/bookmarks.ts';
 import { entities as entitiesOf, projects as projectsOf } from '../sessions/stores/hooks.ts';
 import type { HubLike } from '../sessions/stores/hooks.ts';
 import { setFlag, setOverride } from '../sessions/overrides.ts';
@@ -53,15 +51,18 @@ import { createIdea, writeManifest } from './writes/manifest.ts';
 import { configWrite } from './writes/config/config-write.ts';
 import { writeDeckEdit } from './writes/config/lists/deck/deck-acts.ts';
 import { undoDeckEdit } from './writes/config/lists/deck/deck-undo.ts';
+import type { OpenWorkspace } from '../files/workspace/open.ts';
+import { perOculus } from '../files/workspace/paths.ts';
+import { words } from '../core/words.ts';
 import {
-    rootItemsOf,
-    rootsHeldIn,
-    type RootItem,
-    type RootsHeld
-} from './writes/config/lists/roots.ts';
-import { hubLayerPath } from '../../data/helpers/hub-names.ts';
-import { routed, routedEntry, routedOrder, routedRoot, routedTarget } from './writes/hubs.ts';
-import { firstHubConfig, hubManifests, hubTargets, type HubTarget } from '../files/roots.ts';
+    homeOf,
+    routed,
+    routedEntry,
+    routedOrder,
+    routedRoot,
+    routedTarget
+} from './writes/hubs.ts';
+import { primaryConfig, hubManifests, hubTargets, type HubTarget } from '../files/roots.ts';
 import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
@@ -104,14 +105,18 @@ import type { PortfolioConfig, Project } from '../../data/model/index.ts';
 /**
  * What a write needs to know: which hub to write in, what its manifests are checked against, where
  * the per-session overrides file is, and where the reader's own bookmarks are. The overrides path
- * is absent on a machine that has not set `sessions_overrides` in local.yml, and
+ * is absent on a machine that has not set `sessions_overrides` in a hub's local.yml, and
  * `defaultOverridesPath()` is used then.
  *
- * `bookmarks` is a collection of the reader's own that lives outside the hub, so the four entry
- * writes are given it and resolve the key `bookmarks` to that file rather than to a hub one.
+ * `bookmarks` is a collection of the reader's own that lives outside the hubs' record files (in the
+ * primary hub's `.oculus` folder), so the four entry writes are given it and resolve the key
+ * `bookmarks` to that file rather than to a hub one. A workspace with no primary has none.
  */
 export type WriteTarget = {
-    hub: string;
+    /** The primary hub's folder, or null while the workspace has no primary. */
+    hub: string | null;
+    /** The name of the hub `hub` is: the primary's, or null while the workspace has no primary. */
+    primary: string | null;
     config: PortfolioConfig;
     /** The engine directory this write's configuration was read from. */
     engine: string;
@@ -131,7 +136,7 @@ export type WriteTarget = {
      * built without it checks those choices for their type alone.
      */
     entities?: (kind: 'domains' | 'resources') => Record<string, unknown> | null;
-    bookmarks: string;
+    bookmarks?: string;
     /**
      * Where this machine's change log is, how much of it is kept, and the chain an append waits
      * behind. A caller with no server in hand holds none, and then a write records nothing.
@@ -154,15 +159,15 @@ export type WriteTarget = {
      */
     glyphs: string[];
     /**
-     * The `roots:` list of the hub's config layer (`<hub>/.oculus/config/sources.yml`), where the
-     * default workspace's folders live, the list in force when the layer holds none (`base`), and
-     * what the roots in force hold, which an added folder is checked against. A target built
-     * without it writes no roots: the write answers `unwritable`.
+     * The open workspace, whose folders the Files view's Add Folder and Remove Folder write into
+     * its file (or into the state while it is unsaved). A target built without it writes no
+     * folders: the write answers `unwritable`.
      */
-    sources?: { file: string; held: RootsHeld; base: RootItem[] };
+    workspace?: OpenWorkspace;
     /**
-     * The hubs other than the first, each with its own settings, which a write that names a record
-     * of one of them is routed to (writes/hubs.ts). A target built without it knows the one hub.
+     * The hubs other than the primary, each with its own settings, which a write that names a
+     * record of one of them is routed to (writes/hubs.ts). A target built without it knows the one
+     * hub.
      */
     hubs?: HubTarget[];
     /**
@@ -185,6 +190,12 @@ export type WriteTarget = {
         queue?: (file: string) => FsWrites;
     };
 };
+
+/**
+ * A target over one hub: the primary of the workspace, or another hub of it that a write was routed
+ * to (writes/hubs.ts). Every writer that reads or writes a hub's files takes this one.
+ */
+export type PrimaryTarget = WriteTarget & { hub: string; primary: string };
 
 export type WriteOutcome = {
     /**
@@ -216,7 +227,6 @@ export { writeMute } from './writes/config/lists/audit-mute.ts';
 export { writeRail } from './writes/config/lists/rail.ts';
 export { writeConfigKey } from './writes/config/config-key.ts';
 export { writeConfigValue } from './writes/config/config-value.ts';
-export { addRootTo, removeRootFrom, writeRoots } from './writes/config/lists/roots.ts';
 export {
     auditMuteWrite,
     configKeyWrite,
@@ -255,9 +265,25 @@ const BEHAVIOR = 'behavior.yml';
 const LAYOUT = 'layout.yml';
 
 /**
- * Where writes land on this machine: the hub of local.yml, read the way every other reader does,
- * the request's merged configuration as its route read it, and the projects of the portfolio this
- * request's server last published.
+ * The open workspace and the machine's values a target is made from, both as the server holds
+ * them at the call.
+ */
+export type Carried = { open: OpenWorkspace; local: LocalConfig };
+
+/**
+ * What a request carries into `target`: the workspace open now and the machine's values read now.
+ */
+export function carriedOf(server: {
+    workspace: { open(): OpenWorkspace };
+    machine: () => LocalConfig;
+}): Carried {
+    return { open: server.workspace.open(), local: server.machine() };
+}
+
+/**
+ * Where writes land on this machine: the primary hub of the open workspace, the machine's values
+ * read from the workspace's hubs, the request's merged configuration as its route read it, and the
+ * projects of the portfolio this request's server last published.
  *
  * The server is passed in rather than reached from a module, so nothing here is process-wide. A
  * caller with no server in hand (a document read, a deposit action) names no projects, and only the
@@ -266,6 +292,7 @@ const LAYOUT = 'layout.yml';
 export function target(
     engine: string,
     merged: Record<string, unknown>,
+    carried: Carried,
     server?: {
         hub: HubLike;
         fsWrites: FsWrites;
@@ -278,31 +305,23 @@ export function target(
     },
     appData: string = defaultAppData()
 ): WriteTarget {
-    const local = loadLocal(engine);
+    const { open, local } = carried;
     return {
-        hub: local.hub,
-        config: firstHubConfig({ config: merged, engine, local }),
+        hub: open.primaryDir,
+        primary: open.primary,
+        config: primaryConfig(merged, open),
         engine,
         career: careerRules(merged),
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         entities: server === undefined ? undefined : (kind) => entitiesOf(server.hub, kind),
-        bookmarks: local.bookmarks ?? defaultBookmarksPath(local.hub),
+        bookmarks: perOculus(open.primaryDir, local).bookmarks ?? undefined,
         behaviorFile: join(configDir(engine), BEHAVIOR),
         layoutFile: join(configDir(engine), LAYOUT),
         glyphs: glyphNames(merged) ?? [],
-        hubs: hubTargets({ config: merged, engine, local }),
-        sources: {
-            file: join(local.hub, hubLayerPath('sources.yml')),
-            held: rootsHeldIn(engine, merged, local.hub, local.workspaces),
-            base: rootItemsOf(merged.roots)
-        },
-        files: filesTargetOf(
-            rootsHeldIn(engine, merged, local.hub, local.workspaces).served,
-            localFile(engine),
-            local.history,
-            server?.opsWrites
-        ),
+        hubs: hubTargets(engine, open),
+        workspace: open,
+        files: filesTargetOf(() => open.roots, configDir(engine), local.history, server?.opsWrites),
         changes:
             server === undefined
                 ? undefined
@@ -334,7 +353,7 @@ const NOT_FOUND: WriteOutcome = { found: false, changed: [], refused: [] };
  * write does not reach a project read from a repository: the repository's `.oculus/project.yml` is
  * outside the hub.
  */
-function reaches(into: WriteTarget, id: string, app: HeldApp | null): boolean {
+function reaches(into: PrimaryTarget, id: string, app: HeldApp | null): boolean {
     if (app === null) return true;
     return !hubManifests(into.hub, into.config).some(
         (one) => one.id === id && one.repository !== undefined
@@ -468,19 +487,23 @@ export async function handleWrite(
 
     const host = hostWrite(body);
     if (host !== null) {
-        const outcome = writeHost(into.hub, host.name, host.status, into.career);
+        const home = homeOf(into);
+        if (home === null) return noHub(into);
+        const outcome = writeHost(home.hub, host.name, host.status, into.career);
         if (!outcome.found) return json({ error: `no host named ${host.name}` }, { status: 404 });
         return answer(outcome, 'host', into, undefined, app ?? undefined);
     }
 
     const fresh = newEntry(body);
     if (fresh !== null) {
+        const home = homeOf(into);
+        if (home === null) return noHub(into);
         const outcome = createEntry(
-            into.hub,
-            into.config,
+            home.hub,
+            home.config,
             fresh.collection,
             fresh.fields,
-            into.bookmarks
+            home.bookmarks
         );
         if (!outcome.found)
             return json({ error: `no collection ${fresh.collection}` }, { status: 404 });
@@ -566,7 +589,9 @@ export async function handleWrite(
 
     const lead = leadAddWrite(body);
     if (lead !== null) {
-        const outcome = addLead(into.hub, into.config, lead.fields);
+        const home = homeOf(into);
+        if (home === null) return noHub(into);
+        const outcome = addLead(home.hub, home.config, lead.fields);
         if (!outcome.found)
             return json({ error: 'the leads feed is not on this hub' }, { status: 404 });
         return answer(outcome, 'lead-add', into, undefined, app ?? undefined);
@@ -574,9 +599,11 @@ export async function handleWrite(
 
     const radar = radarAddWrite(body);
     if (radar !== null) {
+        const home = homeOf(into);
+        if (home === null) return noHub(into);
         const outcome = addRadarEntry(
-            into.hub,
-            into.config,
+            home.hub,
+            home.config,
             radar.fields,
             radarBucketKeys(into.engine)
         );
@@ -588,9 +615,11 @@ export async function handleWrite(
 
     const linkedinIdea = linkedinIdeaWrite(body);
     if (linkedinIdea !== null) {
+        const home = homeOf(into);
+        if (home === null) return noHub(into);
         const outcome = addLinkedinIdea(
-            into.hub,
-            into.config,
+            home.hub,
+            home.config,
             linkedinIdea.title,
             linkedinIdea.category
         );
@@ -619,15 +648,23 @@ export async function handleWrite(
     const configured = configWrite(body, into);
     if (configured !== null) {
         if ('error' in configured) {
-            return json({ error: configured.error }, { status: configured.status });
+            return json(
+                {
+                    error: configured.error,
+                    ...(configured.reason === undefined ? {} : { reason: configured.reason })
+                },
+                { status: configured.status }
+            );
         }
         return answer(configured.outcome, configured.kind, into);
     }
 
     const idea = newIdea(body);
     if (idea !== null) {
+        const home = homeOf(into);
+        if (home === null) return noHub(into);
         return answer(
-            createIdea(into.hub, into.config, idea.fields),
+            createIdea(home.hub, home.config, idea.fields),
             'new-idea',
             into,
             undefined,
@@ -680,10 +717,10 @@ export async function recordWrite(
 ): Promise<void> {
     const records = outcome.records?.map((record) => ({
         ...record,
-        file: pathOf(into.hub, record.file),
+        file: resolve(record.file),
         ...(record.created === undefined
             ? {}
-            : { created: record.created.map((path) => pathOf(into.hub, path)) }),
+            : { created: record.created.map((path) => resolve(path)) }),
         ...(app === undefined ? {} : { app: app.id })
     }));
     await logChanges(into.changes, kind, records, undoes);
@@ -708,6 +745,11 @@ async function answer(
         refused: outcome.refused,
         id: outcome.id
     });
+}
+
+/** The refusal of a write that needs a hub when the workspace lists none. */
+function noHub(into: WriteTarget): Response {
+    return json({ error: words(into.config.text, 'server.workspace.no_hub') }, { status: 409 });
 }
 
 /** The 404 a subtask write gives: the manifest or the entry its target names is not in the hub. */

@@ -75,7 +75,7 @@
         fs: { commitPage, commits, copies, copyText, refreshFile, roots, workspaces },
         layout: { activeInstance, currentPage, layout },
         repositories: { openDiff },
-        selectors: { engineAtFor, gitFor, gitRoots },
+        selectors: { docPlaceFor, gitFor, gitRoots },
         source: { saveSource }
     } = useState();
 
@@ -87,7 +87,7 @@
         followedFile(
             panes(layout(page)).map((held) => held.pane),
             activeInstance(page)?.id ?? null,
-            (tab) => fileOfTab(tab, engineAtFor(tab))
+            (tab) => fileOfTab(tab, docPlaceFor(tab))
         )
     );
     const file = $derived(pinned ?? selected ?? followed);
@@ -103,7 +103,7 @@
     /** The repository holding the file and its path there, or null for a file in none. */
     const inRepo = $derived.by(() => {
         if (file === null) return null;
-        const served = workspaces().workspaces.flatMap((workspace) => workspace.roots);
+        const served = workspaces().folders;
         const repos = gitRoots().filter((one) => {
             const held = gitFor(one);
             return held !== null && held.repository && held.error === null;

@@ -6,6 +6,7 @@
 // temporary directory, so nothing here can write into the checkout or the hub.
 
 import { readdirSync, realpathSync } from 'node:fs';
+import { join } from 'node:path';
 import { vi } from 'vitest';
 import type { OpsAnswer } from '../../../src/lib/data/file-ops.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
@@ -40,7 +41,7 @@ export type World = {
 type Answer = { status: number; body: OpsAnswer & Record<string, unknown> };
 
 export function worldOver(roots: Root[], hub: string): World {
-    const target: OpsTarget = { roots, writes: fsWrites() };
+    const target: OpsTarget = { roots, config: join(hub, 'oculus', 'config'), writes: fsWrites() };
     return {
         hub,
         roots,

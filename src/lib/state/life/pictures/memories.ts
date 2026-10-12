@@ -10,8 +10,8 @@
 // file operations of the Files view enforce for an upload, so the page and the server hold one
 // number.
 
-import { MAX_UPLOAD_BYTES } from '../../data/file-ops.ts';
-import { t } from '../shared/words/text.ts';
+import { MAX_UPLOAD_BYTES } from '../../../data/file-ops.ts';
+import { t } from '../../shared/words/text.ts';
 
 /** What the upload endpoint answered, as much of it as the sentence depends on. */
 export type UploadAnswer = {

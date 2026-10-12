@@ -1,5 +1,5 @@
 // Layer 2, route tests. Which hub a write goes to when two hubs are built (G8, G9): a write that
-// names a record of the hub `lab` (`lab:<id>`) changes that hub's file and no byte of the first
+// names a record of the hub `lab` (`lab:<id>`) changes that hub's file and no byte of the primary
 // hub, the change log names the file of `lab` by its absolute path, and the undo from History puts
 // that file back.
 //
@@ -21,7 +21,7 @@ import { isAbsolute, join, relative } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps/apps.ts';
-import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import { handleWrite, type PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import { MANIFEST, notesFiles, routeSetup } from '../apps/apps-fixture.ts';
 import {
@@ -80,12 +80,12 @@ entries:
     person: rivera-lab
 `;
 
-/** The first hub with `lab` as a second hub, both holding the same ids. */
-function twoHubs(): { into: WriteTarget; first: string; lab: string } {
+/** The primary hub with `lab` as another hub, both holding the same ids. */
+function twoHubs(): { into: PrimaryTarget; first: string; lab: string } {
     const first = target();
     const second = target();
     const feeds = { ...first.config.feeds, linkedin: 'theaxec.github.io/_linkedin' };
-    const into: WriteTarget = {
+    const into: PrimaryTarget = {
         ...first,
         config: { ...first.config, feeds },
         hubs: [{ key: 'lab', hub: second.hub, config: { ...second.config, feeds } }]
@@ -238,7 +238,7 @@ describe('a write to a record of the second hub', () => {
         }
     );
 
-    it('goes to the first hub when it creates an entry, whatever other hubs are built', async () => {
+    it('goes to the primary hub when it creates an entry, whatever other hubs are built', async () => {
         const { into, first, lab } = twoHubs();
         const before = { first: filesOf(first), lab: filesOf(lab) };
         const response = await handleWrite(
@@ -250,7 +250,7 @@ describe('a write to a record of the second hub', () => {
         expect(differing(before.first, filesOf(first))).toEqual(['tasks/tasks.yml']);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
         const [change] = changesOf(into);
-        expect(isAbsolute(change.file)).toBe(false);
+        expect(change.file).toBe(join(first, 'tasks', 'tasks.yml'));
     });
 
     it('refuses a record of a hub that is not named, with the route sentence, and writes nothing', async () => {
@@ -316,7 +316,7 @@ describe('a write to a record of the second hub', () => {
         expect(written['waiting-on']).toEqual(['chen-graph']);
     });
 
-    it('sends the status of a first-hub lead titled like a second-hub id to the first hub (G8)', async () => {
+    it('sends the status of a primary-hub lead titled like a lab id to the primary hub (G8)', async () => {
         const { into, first, lab } = twoHubs();
         const leads = join(first, 'feeds', 'position-leads.yml');
         const title = 'lab: Postdoc in graph learning';
@@ -355,7 +355,7 @@ describe('a write to a record of the second hub', () => {
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
     });
 
-    it('sends a LinkedIn idea that names no root to the first hub, which the second also holds', async () => {
+    it('sends a LinkedIn idea that names no root to the primary hub, which lab also holds', async () => {
         const { into, first, lab } = twoHubs();
         const idea = join('theaxec.github.io', '_linkedin', 'xx-route-idea.md');
         expect(existsSync(join(first, idea))).toBe(true);
@@ -373,7 +373,9 @@ describe('a write to a record of the second hub', () => {
         ]);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
         const [change] = changesOf(into);
-        expect(isAbsolute(change.file)).toBe(false);
+        expect(
+            isAbsolute(change.file) && change.file.startsWith(join(first, 'theaxec.github.io'))
+        ).toBe(true);
     });
 });
 
@@ -386,7 +388,7 @@ describe('a write from an app', () => {
     ])('finds no record of the second hub for %s', async (_name, body, kind) => {
         const { into, first, lab } = twoHubs();
         const apps = routeSetup({ machine: notesFiles(`${MANIFEST}writes: [${kind}]\n`) });
-        const fromApp: WriteTarget = {
+        const fromApp: PrimaryTarget = {
             ...into,
             apps: { held: apps.held, data: join(apps.fixture.base, 'data'), maxKb: 256 }
         };
@@ -411,7 +413,7 @@ describe('a write from an app', () => {
 });
 
 /** Two deck hubs: each holds the portfolio deck and the decks of its three projects. */
-function twoDeckHubs(): { into: WriteTarget; first: string; lab: string } {
+function twoDeckHubs(): { into: PrimaryTarget; first: string; lab: string } {
     const first = deckTarget();
     const second = deckTarget();
     const labProjects = second.projects().map((project) => ({
@@ -419,14 +421,15 @@ function twoDeckHubs(): { into: WriteTarget; first: string; lab: string } {
         id: `lab:${project.id}`,
         root: 'lab'
     }));
-    const into: WriteTarget = {
+    const into: PrimaryTarget = {
         ...first,
         projects: () => [...first.projects(), ...labProjects],
         files: {
             roots: () => [
                 { key: 'hub', dir: first.hub },
                 { key: 'lab', dir: second.hub }
-            ]
+            ],
+            config: join(first.hub, 'oculus', 'config')
         },
         hubs: [{ key: 'lab', hub: second.hub, config: second.config }]
     };

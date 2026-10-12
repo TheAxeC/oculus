@@ -24,21 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D68
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: a3e55090e05050b84 (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D68
-  base: ff113f762
-  launched: 2026-10-12
-  report: agents/reviews/D68-report.md
-  builder_usage: 370,620 tokens, 1,382 tool uses, 245.1 min (first build); 268,236 tokens, 453 tool uses, 151.9 min (round 1, after the resume)
-  brief_check: agents/reviews/D68-brief-check.md (a8997d9ca2c7cbe23, claude-opus-5-5, 237,719 tokens, 72 tool uses, 11.1 min; closed in the brief by the orchestrator under "Brief check, Closed", with Z827 to Z831 and open items 58 and 59)
-  reviewer_report: agents/reviews/D68-refuter.md (af39a3008d27e6302, claude-opus-5-5, 75,179 tokens, 181 tool uses, 33.1 min)
-  shared_paths: DESIGN.md (line 246, which D68 rewrites for the wallpaper folder and D69 extends for Monaco's widgets; one sentence, resolved by hand at the second landing), HELP.md (different sections), and `src/` as D68's write list names it broadly while D69's files (the editor, the status bar, ToolButton, MenuOpener) are ones D68's items do not reach; judged simple
-  landing: not-started
-  round: 1 (paused mid-round by Axel's word and resumed on his go with ruling 16 replaced by open item 60 (a); sent 2026-10-12, agents/briefs/D68-round1.md, over the worktree as the first build left it)
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -163,6 +149,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 62 (2026-10-12, D68's landing; kind 1, outside the repository): the browser half of open item 59 (a) is not done. Axel's saved pages (`oculus.layout.v1` in the browser storage of his oculus address) still hold tabs addressed by the roots `hub` and `engine`, which D68 removed, so those tabs show as unknown views; the records in `~/.oculus` are converted. The runner's permission check refused opening a page of his server (`http://localhost:8790/api/wallpaper?list`, a JSON route, so no second oculus page would load) in a tab of the orchestrator's own, which is the only way to reach that browser storage. Options: (a) Axel allows that one step (a permission rule for the Chrome navigation to his server's address, or his word to run it), and the orchestrator reads the saved pages, writes a copy under `oculus.layout.before-d68`, rewrites `hub` to `research-hub` and `engine` to `oculus` in the tab addresses, and his open page takes the result through the browser's storage event (`layout/saved/storage.ts`, `followKey`); recommended, since it is what he ruled in 59 (a) and keeps every open tab; (b) Axel reopens the affected tabs himself once, the lazy option, which 59 (a) rejected. Blocks: nothing; D68 lands without it.
+
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -262,6 +250,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-12 (D68 landed). D68, workspaces as files, landed (booking in plan.md under D68, `agents/reviews/D68-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D68-refuter.md`, Closed) with a red line of the gate fixed on main (the server context parsed the config folder at each restart finding; one config cache now serves it); the data converted once (the hub's workspace file, `.oculus/local.yml`, `~/.oculus/workspace.json`, `~/.oculus/changes.jsonl`, `CLAUDE.md` and the research-cockpit skill); `npm run test:landing` passed in the gate at main's head with the step, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. Open item 62 raised: the browser's saved pages are not converted, since the permission check refused the step. In flight (0 of 6). Next: /spec D70 and D64, then Q72 and O33.
 - 2026-10-12 (D69 landed). D69, two clipping defects, landed (booking in plan.md under D69, `agents/reviews/D69-landing.md`) after one repair round and the review over it, the run's seven findings closed at landing (`agents/reviews/D69-refuter.md`, Closed): the scroll rule, the theme type class, the visibility check, Tab inside a widget and the false sentences; `npm run test:landing` passed in the gate at main's head with the step, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. In flight (1 of 6): D68 (its builder building). Next: D68's report, /refute, its repair round and /land, which needs Axel's answers on open items 58 and 59 and resolves DESIGN.md's widget paragraph by hand against D69's; then D64, Q72, O33.
 - 2026-10-12 (D68 and D69 launched). D68, workspaces as files, and D69, two clipping defects, prepared at base ff113f762 with every brief-check finding closed in their briefs (Z825 to Z831 taken in automode) and their builders launched in `.agents/worktrees/D68` and `.agents/worktrees/D69` (claude-sonnet-5-5), base copies beside them. Open items 58 and 59 raised for D68's landing. In flight (2 of 6): D68, D69. Next: each builder's report, /refute, /land; D64 waits for D68.
 - 2026-10-12 (D63 landed). D63, apps in the shell, landed (booking in plan.md under D63, `agents/reviews/D63-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D63-refuter.md`, Closed) and seven defects the look found fixed at landing; `npm run test:landing` passed in the gate at main's head with the step, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. Two defects the look found in code D63 does not change booked as D69 (Z819, automode). In flight (0 of 6). Next: /spec D68 (workspaces as files) and /spec D69 (two clipping defects) beside it; then D64, Q72, O33.

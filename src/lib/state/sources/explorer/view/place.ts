@@ -1,19 +1,14 @@
-// Layer 2, client state, pure. The vocabulary the Files view's tree is addressed in: the keys of
-// the two roots no workspace may drop, one entry of a listing, one line of the tree, and the
-// functions that turn a root and a path into the key a row is known by, its parent, its ancestors
-// and its absolute path. Every other module of the file browser reads rows through these.
+// Layer 2, client state, pure. The vocabulary the Files view's tree is addressed in: one entry of a
+// listing, one line of the tree, and the functions that turn a root and a path into the key a row
+// is known by, its parent, its ancestors and its absolute path. Every other module of the file
+// browser reads rows through these.
 //
 // A row is addressed by its root's key and its path under that root; the empty path is the root's
 // own line. A folder is open when its key is in the instance's set of open folders (`expanded`), so
 // the set survives a reload and a tab switch, and the rows drawn are computed from it.
 
 import { z } from 'zod';
-import { ENGINE_ROOT, HUB_ROOT } from '../../../../data/helpers/hub-names.ts';
 import { fieldItemsShape, readAs } from '../../../../data/shapes/shapes.ts';
-
-// The keys the hub and the engine's config folder are served under, which the file browser's
-// callers import from here.
-export { ENGINE_ROOT, HUB_ROOT };
 
 /**
  * A path by its segments: the empty and the `.` ones dropped, and each `..` taking the segment
@@ -46,15 +41,14 @@ export type FsEntry = {
 };
 
 /**
- * One root as /api/fs answers it: `fixed` is a configured root, which a removal refuses, and `real`
- * is the folder with every symlink resolved, which is how a repository's folder is written; it is
- * empty for a folder that does not exist and absent where an answer carries none. `hub` is true on
- * a root built as a hub of its own.
+ * One folder of the open workspace as /api/fs answers it, under the name the workspace gives it:
+ * `real` is the folder with every symlink resolved, which is how a repository's folder is written;
+ * it is empty for a folder that does not exist and absent where an answer carries none. `hub` is
+ * true on a folder that holds `.oculus/config/`.
  */
 export type FsRoot = {
     key: string;
     dir: string;
-    fixed: boolean;
     real?: string;
     hub?: true;
     /** Its file system reads a path in another letter case as the same path. */

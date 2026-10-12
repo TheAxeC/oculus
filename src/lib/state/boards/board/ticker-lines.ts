@@ -3,7 +3,7 @@
 // one checklist. The projects' and entries' lines are built in ticker.ts out of these builders.
 
 import type { Followup, Id, Rooted } from '../../../data/model/index.ts';
-import { HUB_ROOT, rootOf } from '../../../data/helpers/hub-names.ts';
+import { rootOf } from '../../../data/helpers/hub-names.ts';
 import { z } from 'zod';
 import { keyedRowsShape, readAs, wordShape } from '../../../data/shapes/shapes.ts';
 import { snoozed } from '../focus.ts';
@@ -81,15 +81,19 @@ export type TickerItem = {
      * counts in months rather than days. It is set only on such a line, and `days` is then null.
      */
     months?: number;
-    /** The key of the hub the line's record is of, present only for a hub other than the first. */
+    /**
+     * The name of the hub the line's record is of, present only for a hub other than the primary.
+     */
     root?: string;
     snoozed: boolean;
 };
 
-/** The mark of a line of a record of a hub other than the first, and nothing for the first. */
+/**
+ * The mark of a line of a record of a hub other than the primary, and nothing for the primary's.
+ */
 export function rootMark(record: Rooted): Partial<TickerItem> {
-    const root = rootOf(record);
-    return root === HUB_ROOT ? {} : { root };
+    const root = rootOf(record, null);
+    return root === '' ? {} : { root };
 }
 
 /** One ticker line. */

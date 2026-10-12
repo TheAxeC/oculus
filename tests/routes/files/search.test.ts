@@ -20,7 +20,7 @@ const HOST = '127.0.0.1:8791';
 /** The two roots every case may name. They are names: nothing opens them. */
 const ROOTS = [
     { key: 'hub', dir: '/hub' },
-    { key: 'engine', dir: '/engine' }
+    { key: 'notes', dir: '/notes' }
 ];
 
 /** The records of one `rg --json` stream over one file. */
@@ -54,7 +54,6 @@ function options(answer: Partial<RunOutcome> & { stdout?: string } = {}): Search
         roots: ROOTS,
         cap: 500,
         maxNames: 100,
-        hub: '/hub',
         timeout: 10000,
         now: () => 0,
         run: (dir, _args, _timeout, onLine) => {

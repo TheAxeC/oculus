@@ -8,12 +8,21 @@
 // server rather than reaching for one, and this request's configuration read, which is read before
 // the write it makes.
 
-import { handleWrite, target } from '$lib/server/edit/writes';
+import { carriedOf, handleWrite, target } from '$lib/server/edit/writes';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = ({ request, locals }) =>
-    handleWrite(
+export const POST: RequestHandler = async ({ request, locals }) => {
+    const answer = await handleWrite(
         request,
         locals.token,
-        target(locals.server.engine, locals.config().config, locals.server)
+        target(
+            locals.server.engine,
+            locals.config().config,
+            carriedOf(locals.server),
+            locals.server
+        )
     );
+    // A write may have changed the workspace file or the state; the held workspace is read again.
+    locals.server.workspace.changed();
+    return answer;
+};

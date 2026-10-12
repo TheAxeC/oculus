@@ -34,10 +34,13 @@ export type TerminalTabs = {
     setInstanceState: (id: string, state: unknown) => void;
     selected: () => string | null;
     select: (id: string | null) => void;
-    /** The hub's absolute path, or the empty string before the first portfolio snapshot. */
-    hubRoot: () => string;
-    /** Whether the first portfolio snapshot has arrived, so an empty hub root is final. */
-    portfolioHeard: () => boolean;
+    /** The primary hub's absolute path, or null while there is none to name. */
+    hubRoot: () => string | null;
+    /**
+     * The folder a terminal starts in when nothing names one, once the workspace is read: the
+     * primary hub's folder, else the home folder.
+     */
+    defaultFolder: () => Promise<string>;
     /** The Terminal tab of the pane at a path of a page that a New there starts in, or null. */
     paneTab: (page: string, path: number[]) => string | null;
     /** A new Terminal tab in the pane at a path of a page, answering its id. */

@@ -21,8 +21,11 @@ import { startUpdateTask } from './task.ts';
 
 /** What a run needs besides the tmux options of every terminal start. */
 export type RunEntryOptions = StartOptions & {
-    /** The hub folder: the folder of an update task and what `hub` of a folder names. */
-    hub: string;
+    /**
+     * The primary hub's folder, the folder of an update task and what `hub` of a folder names; null
+     * while the workspace has no primary, and then a run that needs it is refused.
+     */
+    hub: string | null;
     /** The `claude` program, as `claude_bin` of the machine's configuration names it. */
     claudeBin: string;
     /** The directories the file browser serves, read at the call. */
@@ -56,14 +59,14 @@ export async function runEntry(
             });
         }
         if ('command' in runs) {
-            const started = await runCommand(
-                resolveFolder(runs.folder, hub),
-                runs.command,
-                'saved',
-                {},
-                size,
-                { ...tmux, rootsFor, approvalsFor, savedFile: commands }
-            );
+            const folder = resolveFolder(runs.folder, hub);
+            if (folder === null) return { refused: 'no-primary', names: [] };
+            const started = await runCommand(folder, runs.command, 'saved', {}, size, {
+                ...tmux,
+                rootsFor,
+                approvalsFor,
+                savedFile: commands
+            });
             if ('approve' in started) return { refused: 'needs-approval', names: [runs.command] };
             return started;
         }

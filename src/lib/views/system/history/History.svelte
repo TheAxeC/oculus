@@ -58,14 +58,13 @@
         undoSaid
     } from './rows';
     import type { Shown } from './rows';
-    import { matching, type Change } from '$lib/state/sessions/changes.svelte';
-    import { currentWorkspace } from '$lib/state/sources/fs-transport';
+    import { fileShown, matching, type Change } from '$lib/state/sessions/changes.svelte';
     import { useState } from '$lib/state/client/use';
 
     const {
         changes: { error, loading, more, older, reload, rows },
         explorer,
-        fs: { workspaces },
+        fs: { primary, roots, workspaces },
         ui: { instanceState, setInstanceState },
         writes: { pending, undoWrite }
     } = useState();
@@ -146,10 +145,15 @@
                 row.field === 'lsp-edit' ||
                 row.field === 'writing-fix'
                 ? operation
-                : t('history.file_named', operation, row.file);
+                : t('history.file_named', operation, fileShown(row.file, roots(), primary()));
         }
         // A deck edit's key is the id its records share, so the row names what the act did.
-        if (row.kind === 'deck-edit') return t('history.deck_named', deckAct(row.field), row.file);
+        if (row.kind === 'deck-edit')
+            return t(
+                'history.deck_named',
+                deckAct(row.field),
+                fileShown(row.file, roots(), primary())
+            );
         // The order's record is named by its key alone; the kind beside it says it is the order.
         if (row.kind === 'deck-slides' && row.field === 'order') return row.key;
         // A group's list is keyed `slides:<group>`; the group is what the row names.
@@ -172,7 +176,7 @@
         // the bookmarks over the paths back.
         const answer =
             row.kind === FILE_RECORD
-                ? await explorer.undoFile(row, currentWorkspace(workspaces()).roots)
+                ? await explorer.undoFile(row, workspaces().folders)
                 : await undoWrite(row.at);
         const outcome = undoSaid(answer, named(row));
         said = outcome.said;
@@ -206,7 +210,7 @@
                         <div class="head">
                             <span class="when">{stamp(row.at)}</span>
                             <span class="kind" data-kind={row.kind}>{kindOf(row)}</span>
-                            <span class="file">{row.file}</span>
+                            <span class="file">{fileShown(row.file, roots(), primary())}</span>
                             <span class="what">{whatOf(row)}</span>
                             {#if row.undo !== 'none'}
                                 <span class="reveal">

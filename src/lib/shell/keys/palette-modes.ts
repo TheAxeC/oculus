@@ -212,7 +212,7 @@ export type ListedFacts = {
     languageEntries: { kind: string }[];
     languages: { choice: { name: string } }[];
     workspaceMode: boolean;
-    choices: { name: string }[];
+    choices: { path: string }[];
     saveMode: boolean;
     choiceMode: ChoiceMode | null;
     commandList: PaletteCommand[];
@@ -248,7 +248,7 @@ export function listedRows(facts: ListedFacts): { count: number; values: string[
     if (workspaceMode) {
         return {
             count: facts.choices.length,
-            values: facts.choices.map((one) => `workspace:${one.name}`)
+            values: facts.choices.map((one) => `workspace:${one.path}`)
         };
     }
     if (saveMode) return { count: 1, values: ['workspace-save'] };

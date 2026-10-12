@@ -22,16 +22,17 @@
     // changed or left, through the same write the History view records and can undo; a list, a
     // multi or a family is edited in its item (editors/) and written whole on Save.
     //
-    // The files are read through the file browser's `engine` root, and handed the version of the
-    // config channel, so a write that the watcher pushes back redraws the value. Only the five
-    // tracked files are asked for, and for a file with keys of the hub list also the hub layer's
-    // file of the same name under `.oculus/config/`, read through the `hub` root with the folders
-    // on its way listed (state/system/config/view/hub-layer.ts); the machine's own file is listed
-    // from the catalog alone and its text is never read. The Catalogs and Texts groups are made
-    // from the listings of the two folders, which the same version re-reads. The lists the controls
-    // offer (the domains, the clusters, the views, the usage tiers, the theme classes, the hub's
-    // folders) are built here from the stores the page holds (editors/sources.ts); one that is not
-    // there yet is drawn as loading.
+    // Oculus's own files are read through the read-only route over its `config/` folder, and handed
+    // the version of the config channel, so a write that the watcher pushes back redraws the value.
+    // Only the five tracked files are asked for, and for a file with keys of the hub list also the
+    // primary hub's layer file of the same name under `.oculus/config/`, read through the primary's
+    // folder with the folders on its way listed (state/system/config/view/hub-layer.ts); a file
+    // opens in an editor only through a folder of the workspace that holds it; the machine's own
+    // file is listed from the catalog alone and its text is never read. The Catalogs and Texts
+    // groups are made from the listings of the two folders, which the same version re-reads. The
+    // lists the controls offer (the domains, the clusters, the views, the usage tiers, the theme
+    // classes, the hub's folders) are built here from the stores the page holds
+    // (editors/sources.ts); one that is not there yet is drawn as loading.
     //
     // The query, the text being typed in a box, the drafts of the list, multi and family editors
     // and the rail list being edited are the tab's instance state, so they are there again after
@@ -53,7 +54,7 @@
 
     import { tick, untrack } from 'svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import { ENGINE_ROOT, HUB_ROOT } from '$lib/state/sources/fs';
+    import { OCULUS_CONFIG_ROOT } from '$lib/state/sources/fs';
     import { themeClasses } from '$lib/ui/theme/theme';
     import { t } from '$lib/state/shared/words/text';
     import { wallpaperOnTheme } from '$lib/state/shared/words/appearance';
@@ -90,7 +91,7 @@
     const {
         appShell,
         entities: { config, message, portfolio, usage },
-        fs: { fileText, listing, refresh },
+        fs: { fileText, listing, primary, refresh, workspaces },
         registry,
         layout: { instanceLayoutState, restateInstance },
         ui,
@@ -99,15 +100,18 @@
 
     let { instance }: ViewProps = $props();
 
-    /** The folder of the text files, under the engine root like the catalogs'. */
+    /** The folder of the text files, under oculus's config folder like the catalogs'. */
     const TEXT = 'text';
 
     /** The version of the config channel, which the watcher moves after a write in the folder. */
     const pushed = $derived(message('config')?.version ?? 0);
 
+    /** The folder name of the primary hub, or null while there is none. */
+    const hubRoot = $derived(primary());
+
     $effect(() => {
-        refresh(ENGINE_ROOT, pushed);
-        refresh(HUB_ROOT, pushed);
+        refresh(OCULUS_CONFIG_ROOT, pushed);
+        if (hubRoot !== null) refresh(hubRoot, pushed);
     });
 
     const writer = reactiveWriter(writeConfigKey, () => lists);
@@ -129,7 +133,8 @@
 
     /** One hub folder as the file browser holds it, with the hidden and ignored entries too. */
     function folder(path: string): Folder {
-        const held = listing(HUB_ROOT, path, { hidden: true, ignored: true });
+        if (hubRoot === null) return { state: 'ready', entries: [] };
+        const held = listing(hubRoot, path, { hidden: true, ignored: true });
         if (held.error !== '') return { state: 'failed', error: held.error };
         if (held.loading) return { state: 'loading' };
         return { state: 'ready', entries: held.entries };
@@ -137,7 +142,14 @@
 
     /** One folder of the hub as the file browser lists it, hidden entries included. */
     function hubListing(path: string): ReturnType<typeof listing> {
-        return listing(HUB_ROOT, path, { hidden: true, ignored: true });
+        if (hubRoot === null) return { entries: [], error: '', loading: false };
+        return listing(hubRoot, path, { hidden: true, ignored: true });
+    }
+
+    /** One file of the hub, which a workspace with no primary does not have. */
+    function hubText(path: string): ReturnType<typeof fileText> {
+        if (hubRoot === null) return { text: '', truncated: false, error: '', loading: false };
+        return fileText(hubRoot, path);
     }
 
     /** The body classes the theme sheets hold a block for, read once from the sheets. */
@@ -169,15 +181,20 @@
     const groups = $derived(
         settingsGroups(
             catalogOf(config()?.config ?? {}),
-            (file) => fileText(ENGINE_ROOT, file),
+            (file) => fileText(OCULUS_CONFIG_ROOT, file),
             thisBrowserRows(ui, wallpaperOnTheme(ui.theme(), appShell.offers())),
             {
-                catalogs: listedFiles(CATALOGS, (path) => listing(ENGINE_ROOT, path)),
-                schemas: listedFiles(SCHEMAS, (path) => listing(ENGINE_ROOT, path)),
-                texts: listedFiles(TEXT, (path) => listing(ENGINE_ROOT, path))
+                catalogs: listedFiles(CATALOGS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
+                schemas: listedFiles(SCHEMAS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
+                texts: listedFiles(TEXT, (path) => listing(OCULUS_CONFIG_ROOT, path))
             },
-            (file) => hubLayerText(file, hubListing, (path) => fileText(HUB_ROOT, path)),
-            appSettingRows(appShell.acting(), config()?.config ?? {})
+            (file) => hubLayerText(file, hubListing, hubText),
+            appSettingRows(appShell.acting(), config()?.config ?? {}),
+            {
+                primary: primary(),
+                set: workspaces().machine.set,
+                defaults: workspaces().machine.defaults
+            }
         )
     );
 

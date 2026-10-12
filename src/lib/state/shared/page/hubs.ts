@@ -4,5 +4,5 @@
 // imports state, so a view that names the hub a record is of, or the file under a root a path is
 // in, or where a project's folder is, imports it from here.
 
-export { HUB_ROOT, fileUnder, rootOf } from '../../../data/helpers/hub-names.ts';
+export { fileUnder, rootOf } from '../../../data/helpers/hub-names.ts';
 export { placeOf } from '../../../data/snapshot/place.ts';

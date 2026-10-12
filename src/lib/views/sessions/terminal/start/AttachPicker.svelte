@@ -9,7 +9,6 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import { childPath, rootHolding } from '$lib/state/sources/fs';
     import { absoluteOf } from '$lib/state/workbench/navigation/pages';
-    import { currentWorkspace } from '$lib/state/sources/fs-transport';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -27,7 +26,7 @@
         fs: { listing, workspaces }
     } = useState();
 
-    const held = $derived(rootHolding(currentWorkspace(workspaces()).roots, workspace));
+    const held = $derived(rootHolding(workspaces().folders, workspace));
 
     /** The folder listed, inside the workspace, and the empty string for the workspace itself. */
     let inside = $state('');

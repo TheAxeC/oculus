@@ -13,15 +13,16 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The photo wall: every picture of the configured folder as a tile, one of them
-    // enlarged over the pane, and the control that adds another.
+    // Layer 3, view. The photo wall: every picture of every hub's memories folder as a tile, one of
+    // them enlarged over the pane, and the control that adds another. A tile is told apart by the
+    // hub it comes from, which its tooltip names.
     //
     // The pictures are referenced by URL and never inlined: the folder is megabytes, the document
     // is not, and a browser caches a URL. The columns are CSS, a column count that falls with the
     // pane's width, and every tile is a box of its picture's own proportions, taken from the width
     // and height the folder's answer carries with each name, so the box has its final shape before
     // the picture arrives and nothing on the wall moves when it does. A picture far wider or taller
-    // than a square stops at `TILE_BOUND` of state/life/memories.svelte.ts and is fitted
+    // than a square stops at `TILE_BOUND` of state/life/pictures/memories.svelte.ts and is fitted
     // whole inside, and a picture whose header the server could not read keeps a 4:3 box it is
     // fitted into whole; no picture is cropped. Until it arrives the tile is a muted surface of
     // that same box, and a picture that fails draws its alternative words in the box instead, until
@@ -43,8 +44,8 @@
     import FileChooser from '$lib/ui/forms/file/FileChooser.svelte';
     import { encoded } from '$lib/ui/forms/file/file-data';
     import { t } from '$lib/state/shared/words/text';
-    import { readMessage, tooLarge, uploadMessage } from '$lib/state/life/memories';
-    import { tileRatio } from '$lib/state/life/memories.svelte';
+    import { readMessage, tooLarge, uploadMessage } from '$lib/state/life/pictures/memories';
+    import { tileRatio } from '$lib/state/life/pictures/memories.svelte';
     import { useState } from '$lib/state/client/use';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { focusQuietly } from '$lib/ui/frame/quiet-focus';
@@ -60,7 +61,7 @@
     const held = $derived(wall());
     const images = $derived(held.images);
 
-    /** What became of each tile's picture by name: absent while it loads. */
+    /** What became of each tile's picture by hub and name: absent while it loads. */
     let arrived: Record<string, 'loaded' | 'failed'> = $state({});
 
     /**
@@ -87,8 +88,12 @@
         };
     });
 
-    /** The picture the overlay shows, and the empty string when it shows none. */
+    /** The picture the overlay shows (`<hub>/<name>`), and the empty string when it shows none. */
     let open = $state('');
+
+    /** The hub and the file name of the picture the overlay shows. */
+    const openHub = $derived(open.slice(0, Math.max(open.indexOf('/'), 0)));
+    const openName = $derived(open.slice(open.indexOf('/') + 1));
 
     /** Every file of the last add that was not written, with the sentence saying why. */
     let failed: { name: string; said: string }[] = $state([]);
@@ -103,9 +108,9 @@
      * The address one picture is served at, with the answer it is asked for again at after it
      * failed.
      */
-    function source(name: string): string {
-        const base = `/api/memories?file=${encodeURIComponent(name)}`;
-        const again = retried[name];
+    function source(id: string): string {
+        const base = `/api/memories?file=${encodeURIComponent(id)}`;
+        const again = retried[id];
         return again === undefined ? base : `${base}&again=${again}`;
     }
 
@@ -126,18 +131,18 @@
     $effect(() => watchShown(box, (shown) => (overlayShown = shown)));
 
     /** Show one picture over the pane, and put the keyboard inside it. */
-    async function enlarge(name: string): Promise<void> {
-        open = name;
+    async function enlarge(id: string): Promise<void> {
+        open = id;
         await tick();
         overlay?.focus();
     }
 
     /** Put the picture away and give the keyboard back to the tile that opened it. */
     async function close(): Promise<void> {
-        const name = open;
+        const id = open;
         open = '';
         await tick();
-        const tile = box?.querySelector(`[data-tile="${CSS.escape(name)}"]`);
+        const tile = box?.querySelector(`[data-tile="${CSS.escape(id)}"]`);
         if (tile instanceof HTMLElement) focusQuietly(tile);
     }
 
@@ -221,31 +226,33 @@
             <Empty message={t('memories.empty')} glyph={t('memories.empty_glyph')} />
         {:else}
             <div class="wall">
-                {#each images as picture (picture.name)}
-                    {@const name = picture.name}
+                {#each images as picture (`${picture.hub}/${picture.name}`)}
+                    {@const id = `${picture.hub}/${picture.name}`}
                     <div
                         class="tile"
-                        class:loaded={arrived[name] === 'loaded'}
+                        class:loaded={arrived[id] === 'loaded'}
                         style:aspect-ratio={tileRatio(picture)}
-                        data-picture={name}
-                        data-arrived={arrived[name] ?? 'loading'}
+                        data-picture={id}
+                        data-arrived={arrived[id] ?? 'loading'}
                     >
                         <ToolButton
                             cell
-                            label={t('memories.open', name)}
-                            title={t('memories.open', name)}
-                            data={{ tile: name }}
-                            onclick={() => void enlarge(name)}
+                            label={t('memories.open', picture.name, picture.hub)}
+                            title={t('memories.open', picture.name, picture.hub)}
+                            data={{ tile: id }}
+                            onclick={() => void enlarge(id)}
                         >
-                            {#if arrived[name] === 'failed'}
-                                <span class="alt">{t('memories.tile', name)}</span>
+                            {#if arrived[id] === 'failed'}
+                                <span class="alt"
+                                    >{t('memories.tile', picture.name, picture.hub)}</span
+                                >
                             {:else}
                                 <img
                                     loading="lazy"
-                                    src={source(name)}
-                                    alt={t('memories.tile', name)}
-                                    onload={() => (arrived[name] = 'loaded')}
-                                    onerror={() => (arrived[name] = 'failed')}
+                                    src={source(id)}
+                                    alt={t('memories.tile', picture.name, picture.hub)}
+                                    onload={() => (arrived[id] = 'loaded')}
+                                    onerror={() => (arrived[id] = 'failed')}
                                 />
                             {/if}
                         </ToolButton>
@@ -270,7 +277,7 @@
                             use:portal
                             class="lightbox"
                             class:away={!overlayShown}
-                            aria-label={t('memories.lightbox', open)}
+                            aria-label={t('memories.lightbox', openName, openHub)}
                             tabindex="-1"
                             onkeydown={keys}
                         >
@@ -282,7 +289,10 @@
                                 />
                             </span>
                             <figure class="shown">
-                                <img src={source(open)} alt={t('memories.tile', open)} />
+                                <img
+                                    src={source(open)}
+                                    alt={t('memories.tile', openName, openHub)}
+                                />
                             </figure>
                             <span class="shut">
                                 <ToolButton

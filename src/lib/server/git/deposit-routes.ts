@@ -42,6 +42,7 @@ import {
     type DepositOptions as ServerDepositOptions
 } from './deposit.ts';
 import type { Branch, Outcome } from './deposit-git.ts';
+import type { Carried } from '../edit/writes.ts';
 
 /** Every action POST /api/deposit knows. */
 export const ACTIONS = [
@@ -172,11 +173,12 @@ function operate(
 export function knownIds(
     published: string[] = [],
     engine?: string,
-    config?: Record<string, unknown>
+    config?: Record<string, unknown>,
+    carried?: Carried
 ): string[] {
     const ids = new Set<string>(published);
     try {
-        for (const id of projectIds({ engine, config })) ids.add(id);
+        for (const id of projectIds({ engine, config, carried })) ids.add(id);
     } catch {
         // A caller that names no engine, or one whose configuration does not read, still answers
         // for the ids it supplied.

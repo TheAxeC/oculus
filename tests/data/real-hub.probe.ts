@@ -1,10 +1,10 @@
-// A read-only probe, not a test: no `.test.` in the name, so `npm test` never runs it.
-// It points the data sources at the hub loadLocal resolves and prints what they found, so the
-// counts and the findings can be compared against the real tree. It opens files for reading only.
+// A read-only probe, not a test: no `.test.` in the name, so `npm test` never runs it. It points
+// the data sources at the hub two folders above oculus and prints what they found, so the counts
+// and the findings can be compared against the real tree. It opens files for reading only.
 //
 // Run it from tools/oculus with `node tests/data/real-hub.probe.ts`.
 
-import { engineDir, loadConfig, loadLocal } from '../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, localDefaults } from '../../src/lib/data/sources/config.ts';
 import { readManifests } from '../../src/lib/data/sources/manifests.ts';
 import { readRegistries } from '../../src/lib/data/sources/registries.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
@@ -15,7 +15,7 @@ import { sessions } from '../../src/lib/server/sessions/index.ts';
 import { sessionFolders } from '../../src/lib/server/sessions/folders.ts';
 import { readState } from '../../src/lib/server/core/git/state.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model/index.ts';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { scratchDir, sweepScratch } from '../fixtures/scratch.ts';
 import { TEXT } from '../server/text.ts';
 
@@ -27,8 +27,8 @@ function report(label: string, findings: Finding[]): void {
 }
 
 const engine = engineDir();
-const local = loadLocal(engine);
-const hub = local.hub;
+const local = localDefaults();
+const hub = resolve(engine, '..', '..');
 console.log(`hub: ${hub}`);
 
 // The hub's layout as the copied config/ describes it. Nothing is typed by hand here any more.

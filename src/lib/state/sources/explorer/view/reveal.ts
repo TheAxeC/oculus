@@ -11,7 +11,6 @@ import { t } from '../../../shared/words/text.ts';
 import { sectionOpened } from '../sections/section-state.ts';
 import { filesViewOf, type FilesView, type RevealAsk, type RevealOutcome } from './files-view.ts';
 import {
-    HUB_ROOT,
     ancestorsOf,
     normalisePath,
     rowKey,
@@ -21,18 +20,18 @@ import {
 } from './place.ts';
 
 /**
- * An instance's state with one more ask to show a path in it, the rest kept. A path given with no
- * root is a path of the hub, and it is asked for by its segments (collection.ts's normalisePath),
- * so `network/../funding` is `funding`; a path still climbing above its root is asked for as it is
- * and is shown at the root's own line, since no listing holds an entry named `..`. The filter is
- * cleared, since a filter would leave the row asked for out of the tree, and the last ask's outcome
- * goes with it. With `open` the folder asked for is shown open as well as selected, and with
- * `timeline` the Timeline section is opened and scrolled to in place of the row.
+ * An instance's state with one more ask to show a path of a root in it, the rest kept. The path is
+ * asked for by its segments (collection.ts's normalisePath), so `network/../funding` is `funding`;
+ * a path still climbing above its root is asked for as it is and is shown at the root's own line,
+ * since no listing holds an entry named `..`. The filter is cleared, since a filter would leave the
+ * row asked for out of the tree, and the last ask's outcome goes with it. With `open` the folder
+ * asked for is shown open as well as selected, and with `timeline` the Timeline section is opened
+ * and scrolled to in place of the row.
  */
 export function revealAsked(
     state: unknown,
     path: string,
-    root: string = HUB_ROOT,
+    root: string,
     open = false,
     timeline = false
 ): object {

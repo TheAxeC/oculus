@@ -21,7 +21,7 @@ import type { Finding, Project, SubmitPlan } from '../../../data/model/index.ts'
 import { errorLine, readYamlMap } from '../../../data/sources/yaml-file.ts';
 import type { TextCatalog } from '../../../data/helpers/finding-text.ts';
 import { deepestHolding } from '../../../data/helpers/files/paths.ts';
-import { HUB_ROOT, bareId, rootOf } from '../../../data/helpers/hub-names.ts';
+import { bareId, rootOf } from '../../../data/helpers/hub-names.ts';
 import { inside, realPath } from '../../core/paths.ts';
 import type { Read } from '../../core/git/run.ts';
 import { projectDirectory, resolveRootPath, type Root } from '../../files/files.ts';
@@ -91,8 +91,8 @@ export type PlanDeps = {
     roots: () => Root[];
     /** The projects of the latest portfolio snapshot. */
     projects: () => Project[];
-    /** The hub folder, which a project's folder is relative to. */
-    hub: string;
+    /** The primary hub's name, which a project of no other hub is of; null with no primary. */
+    primary: string | null;
     /** The text catalog the manifest reader words its findings from. */
     catalog: () => TextCatalog;
     /** The ssh alias to run against, or none and the sentence for why (host.ts). */
@@ -148,8 +148,8 @@ function remoteOf(folder: string, script: string): string {
  * Null when that hub is served nowhere.
  */
 function folderOf(project: Project, deps: PlanDeps): string | null {
-    const key = rootOf(project);
-    const hub = key === HUB_ROOT ? deps.hub : deps.roots().find((one) => one.key === key)?.dir;
+    const key = rootOf(project, deps.primary);
+    const hub = deps.roots().find((one) => one.key === key)?.dir;
     return hub === undefined ? null : projectDirectory(hub, project);
 }
 

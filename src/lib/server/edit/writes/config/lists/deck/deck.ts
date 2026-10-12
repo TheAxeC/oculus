@@ -19,7 +19,7 @@
 // list and taken back through the same path.
 
 import { readFileSync } from 'node:fs';
-import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { DECK_FILE } from '../../../../../../data/sources/deck/read.ts';
 import { orderTokensIn } from '../../../../../../data/sources/deck/order-text.ts';
@@ -29,7 +29,7 @@ import { words } from '../../../../../core/words.ts';
 import { readDeck } from '../../../../../content/deck/read.ts';
 import { resolveRootPath } from '../../../../../files/files.ts';
 import { groupSlides, setGroupSlides, setOrder } from '../../../../deck-edit.ts';
-import { hubSpelling } from './deck-files.ts';
+import { deckSourceOf, hubSpelling } from './deck-files.ts';
 import type { Change, ChangeRecord } from '../../../../../core/changes.ts';
 import type { WriteOutcome, WriteTarget } from '../../../../writes.ts';
 
@@ -168,11 +168,7 @@ export function writeDeckSlides(
         }
     }
 
-    const deck = readDeck(
-        { roots, hub: into.hub, config: into.config, projects: into.projects(), hubs: into.hubs },
-        root,
-        dirname(path)
-    );
+    const deck = readDeck(deckSourceOf(into, roots), root, dirname(path));
     if (deck === 'outside') return refuse(words(text, 'server.deck_slides.outside'));
     for (const list of groups) {
         const found = deck.groups.find((one) => one.name === list.group);
@@ -200,7 +196,7 @@ export function writeDeckSlides(
  * root that is a link is compared by its real path.
  */
 function deckFileOf(into: WriteTarget, change: Change): string | null {
-    const named = resolve(isAbsolute(change.file) ? change.file : join(into.hub, change.file));
+    const named = resolve(change.file);
     const file = realPath(named) ?? named;
     const roots = into.files?.roots() ?? [];
     if (basename(file) !== DECK_FILE) return null;

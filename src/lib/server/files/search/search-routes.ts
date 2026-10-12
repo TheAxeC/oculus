@@ -38,8 +38,6 @@ export type SearchRouteOptions = SearchOptions & {
     cap: number;
     /** How many names one list carries, from config/behavior.yml. */
     maxNames: number;
-    /** The first hub's folder, which with the hubs among the roots names the private folders. */
-    hub: string;
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -67,7 +65,7 @@ export async function handleSearch(
             ...(options.run === undefined ? {} : { run: options.run }),
             timeout: options.timeout,
             max: options.maxNames,
-            withheld: privateFolders(hubDirs(options.hub, options.roots), homedir())
+            withheld: privateFolders(hubDirs(options.roots), homedir())
         });
         if (!listed.ok) {
             return json({ error: listed.refused }, { status: 400, headers: NO_STORE });

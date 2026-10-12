@@ -1,31 +1,30 @@
-// Layer 2, server. The read of every apps folder: the machine's folder and the `.oculus/apps/`
-// folder of each root the file browser shows, to the rows the page is sent and the findings that
-// say what refused a folder.
+// Layer 2, server. The read of every apps folder: the machine's folder (the primary hub's
+// `.oculus/apps`) and the `.oculus/apps/` folder of each folder of the open workspace, to the rows
+// the page is sent and the findings that say what refused a folder.
 //
 // Every path compared here is a real path as the disk spells it (`realpathSync.native`), so one
 // folder reached through two roots or a link is one folder. The folders are taken in one order, the
 // machine's first and then each root's in the browser's order, and a folder whose real path an
-// earlier one already holds is `repeated`. The hub's `.oculus/apps` is the machine's folder by
-// default, so the hub root whose `.oculus/apps` is the machine's folder is that folder read once,
-// and gets no finding; any other root whose `.oculus/apps` is the machine's folder is `repeated`. A
-// root's `.oculus/apps` that resolves outside the root's real path is not read, and the root
-// `engine` is oculus's own config folder, which holds no apps. A folder with no `app.yml` is not an
-// app and gets no finding, since nothing in it claims to be one. This module is a pure function of
-// the disk and its input: it holds nothing between reads, and the keeping of an app is the
-// caller's map, edited here only to end a keeping whose manifest changed. Which apps are disabled
-// is the state the caller read from `~/.oculus/apps.json` (read/state.ts).
+// earlier one already holds is `repeated`. The primary hub's `.oculus/apps` is the machine's folder
+// by default, so the primary's folder whose `.oculus/apps` is the machine's folder is that folder
+// read once, and gets no finding; any other folder whose `.oculus/apps` is the machine's folder is
+// `repeated`. A folder's `.oculus/apps` that resolves outside the folder's real path is not read. A
+// folder with no `app.yml` is not an app and gets no finding, since nothing in it claims to be one.
+// This module is a pure function of the disk and its input: it holds nothing between reads, and the
+// keeping of an app is the caller's map, edited here only to end a keeping whose manifest changed.
+// Which apps are disabled is the state the caller read from `~/.oculus/apps.json` (read/state.ts).
 
 import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
-import { HUB_ROOT, ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
+import { ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
 import { findingText, type TextCatalog } from '../../../../data/helpers/finding-text.ts';
 import type { AppRow, Finding } from '../../../../data/model/index.ts';
 import { closedPaths, textCatalog, type AppsSettings } from '../../../../data/sources/config.ts';
 import { mapShape, readAs } from '../../../../data/shapes/shapes.ts';
 import { below, realPath } from '../../../core/paths.ts';
-import { ENGINE_ROOT, type Root } from '../../../files/files.ts';
+import type { Root } from '../../../files/files.ts';
 import { addressKey } from '../serve/address.ts';
 import { noApps, type AppsHeld, type HeldApp } from './held.ts';
 import { findingKey, readManifest } from './manifest.ts';
@@ -39,13 +38,21 @@ import { readStore, ROOT_DATA, storeFile } from '../store/store.ts';
 
 /** What a read needs of the install around the folders. */
 export type ScanInput = {
-    /** The machine's apps folder, or null when there is none to read. */
-    machine: string | null;
-    /** The file `apps_dir` is written in, which the finding for a machine folder that is no folder
-     * names. */
-    localFile: string;
-    /** The roots the file browser shows, in its order. */
+    /**
+     * The machine's apps folder with the primary hub's `.oculus/local.yml`, the file `apps_dir` is
+     * written in, which the finding for a machine folder that is no folder names; null when there
+     * is no folder to read, as in a workspace with no primary.
+     */
+    machine: { dir: string; localFile: string } | null;
+    /**
+     * Oculus's own `config/appearance.yml`, which the findings about `file_icons` name:
+     * `file_icons` is not a key of the hub list, so the primary hub's layer never holds it.
+     */
+    appearanceFile: string;
+    /** The folders of the open workspace, in its order. */
     roots: Root[];
+    /** The name of the primary hub's folder among them, or null when the workspace has none. */
+    primary: string | null;
     /** The merged config: the glyph vocabulary and the words of a finding. */
     config: Record<string, unknown>;
     settings: AppsSettings;
@@ -66,7 +73,10 @@ export type ScanInput = {
     appData: string;
     /** The real paths of the folders closed to every app (reach/private.ts). */
     privateFolders: readonly string[];
-    /** The file the `app_settings:` values are stored in, which a finding about them names. */
+    /**
+     * The file the `app_settings:` values were read from, which a finding about them names: the
+     * primary hub's `.oculus/config/behavior.yml`, else oculus's own `config/behavior.yml`.
+     */
     settingsFile: string;
 };
 
@@ -246,8 +256,8 @@ export function scanApps(input: ScanInput): AppsHeld {
     };
 
     let machineReal: string | null = null;
-    if (input.machine !== null && existsAny(input.machine)) {
-        const real = realPath(input.machine, true);
+    if (input.machine !== null && existsAny(input.machine.dir)) {
+        const real = realPath(input.machine.dir, true);
         if (real !== null && isFolder(real)) {
             machineReal = real;
             readFolder(real, '', '');
@@ -255,14 +265,13 @@ export function scanApps(input: ScanInput): AppsHeld {
             const message = findingText(
                 catalog,
                 'findings.apps.apps_dir_not_folder',
-                input.machine
+                input.machine.dir
             );
-            note('apps_dir', input.localFile, message);
+            note('apps_dir', input.machine.localFile, message);
         }
     }
 
     for (const root of input.roots) {
-        if (root.key === ENGINE_ROOT) continue;
         const rootReal = realPath(root.dir, true);
         const typed = join(root.dir, ROOT_FOLDER, 'apps');
         if (rootReal === null || !existsAny(typed)) continue;
@@ -273,7 +282,7 @@ export function scanApps(input: ScanInput): AppsHeld {
             note(whole, typed, findingText(catalog, 'findings.apps.folder_outside', real));
             continue;
         }
-        if (root.key === HUB_ROOT && real === machineReal) continue;
+        if (root.key === input.primary && real === machineReal) continue;
         if (seen.has(real)) {
             note(whole, typed, findingText(catalog, 'findings.apps.repeated', real));
             continue;
@@ -287,7 +296,7 @@ export function scanApps(input: ScanInput): AppsHeld {
         config: input.config,
         catalog,
         settingsFile: input.settingsFile,
-        appearanceFile: join(dirname(input.localFile), 'appearance.yml')
+        appearanceFile: input.appearanceFile
     });
     return held;
 }

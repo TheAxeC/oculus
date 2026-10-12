@@ -137,6 +137,8 @@ export type WriteAnswer = {
      * never reads the refusal's words.
      */
     code?: string;
+    /** Set with `error` when the server says why it refused, such as the text a parser gave. */
+    reason?: string;
     /** True when the request never reached the server: the fetch itself threw. */
     network?: boolean;
     /** The status of a refused request, which a write from an app's frame reports by number. */

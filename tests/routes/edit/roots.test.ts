@@ -1,81 +1,29 @@
-// Layer 2, route tests. What the /api/write route does with the default workspace's folders: Add
-// Folder to Workspace appends `{ key, dir }` to the `roots:` list of config/sources.yml over its
-// bytes with every other line kept, and the change log holds each write with an undo that puts the
-// list back.
+// Layer 2, route tests. What the /api/write route does with the folders of the open workspace: Add
+// Folder to Workspace appends `{ name, path }` to the `folders:` list of the open workspace file
+// over its bytes with every other line kept, Remove Folder takes the entry out (and the `primary:`
+// line with it when the entry is the primary), the order write moves entries, and the change log
+// holds each write with an undo that puts the file back. An unsaved workspace is changed in the
+// state file and nowhere else, and a file that does not parse is never written.
 //
-// The sources file and the folders added are under the system temporary directory, asserted to be
-// inside it before anything is written, so no case here writes the engine's own config/sources.yml.
-//
-// A hook loads the configuration once, since the first load costs more than a later one, so no case
-// pays for it.
+// The workspace file, the state and the folders added are under the system temporary directory,
+// asserted to be inside it before anything is written. A hook loads the configuration once, since
+// the first load costs more than a later one, so no case pays for it.
 // @module-tag slow: its writes go through the whole configuration load, which runs past the
 // default timeout under load.
 
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { parse } from 'yaml';
 import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
-import { dirAsWritten } from '../../../src/lib/server/edit/writes/config/lists/roots.ts';
+import { pathAsWritten } from '../../../src/lib/server/files/workspace/folders.ts';
+import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
+import { readState, writeState } from '../../../src/lib/server/files/workspace/state.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
+import { plantHub } from '../../fixtures/hubs/workspace.ts';
 import { TOKEN, changesOf, request, target, warmConfig } from './write-fixture.ts';
 
-/** A sources.yml of the engine's shape, with the comments and the other keys the edit must keep. */
-const SOURCES = `# Where the projects are.
-scan:
-  - { dir: projects/active, type: active }
-
-
-# Roots the server may serve local files from.
-roots:
-  - { key: cathedra,    dir: ~/workspace/cathedra }
-  - { key: game-engine, dir: ~/workspace/game-engine }
-
-
-# The language each file name opens in.
-languages:
-  bash:          [.sh, .bash]
-`;
-
-/** A list with an entry marked `hub: true`, which every write of the list keeps. */
-const MARKED = SOURCES.replace(
-    /roots:\n(?: {2}- .*\n)+/,
-    [
-        'roots:',
-        '  - { key: cathedra,    dir: ~/workspace/cathedra }',
-        '  - { key: lab,         dir: ~/workspace/lab, hub: true }',
-        '  - { key: ordo,        dir: ~/workspace/ordo }',
-        ''
-    ].join('\n')
-);
-
-/** The entries of `MARKED` as the write reads them. */
-const MARKED_ITEMS = [
-    { key: 'cathedra', dir: '~/workspace/cathedra' },
-    { key: 'lab', dir: '~/workspace/lab', hub: true },
-    { key: 'ordo', dir: '~/workspace/ordo' }
-];
-
-/** A target whose sources.yml is a copy under the system temporary directory. */
-function rootsTarget(body = SOURCES): WriteTarget {
-    const into = target();
-    const file = join(into.hub, 'sources.yml');
-    expect(resolve(file).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    writeFileSync(file, body);
-    return {
-        ...into,
-        sources: { file, held: { served: () => [], keys: () => ['hub', 'engine'] }, base: [] }
-    };
-}
-
-function sourcesOf(into: WriteTarget): string {
-    return readFileSync(into.sources?.file ?? '', 'utf8');
-}
-
-function rootsOf(into: WriteTarget): unknown {
-    return (parse(sourcesOf(into)) as { roots: unknown }).roots;
-}
+test.beforeAll(warmConfig);
 
 /** A folder that exists, named `name`, in a fresh temporary directory of its own. */
 function folderNamed(name: string): string {
@@ -85,6 +33,34 @@ function folderNamed(name: string): string {
     return realpathSync(dir);
 }
 
+/**
+ * What a workspace file is made of: the comment above the key and the two entries, then primary.
+ */
+function fileText(hub: string, other: string): string {
+    return [
+        '# a comment above the key',
+        'folders:',
+        `  - { name: research-hub, path: ${hub} }`,
+        `  - { name: claude, path: ${other} }`,
+        'primary: research-hub',
+        ''
+    ].join('\n');
+}
+
+/** An open workspace file in a hub, the state naming it, and a target that writes through it. */
+function opened(text: (hub: string, other: string) => string = fileText) {
+    const hub = plantHub(folderNamed('hub'));
+    const other = folderNamed('claude');
+    const state = scratchDir('oculus-roots-state-');
+    const file = join(hub, '.oculus', 'workspaces', 'work.yml');
+    mkdirSync(join(hub, '.oculus', 'workspaces'), { recursive: true });
+    writeFileSync(file, text(hub, other));
+    writeState(state, { open: file, recent: [], unsaved: { folders: [] } });
+    const base = target();
+    const into = (): WriteTarget => ({ ...base, workspace: openWorkspace(state) });
+    return { hub, other, state, file, into };
+}
+
 const send = (into: WriteTarget, body: unknown) => handleWrite(request(body), TOKEN, into);
 const add = (into: WriteTarget, dir: string) => send(into, { kind: 'roots', action: 'add', dir });
 const remove = (into: WriteTarget, key: string) =>
@@ -92,219 +68,125 @@ const remove = (into: WriteTarget, key: string) =>
 const order = (into: WriteTarget, keys: string[]) =>
     send(into, { kind: 'roots', action: 'order', keys });
 
-/** The same list with a comment line between its two entries, which no rewrite may drop. */
-const COMMENTED = SOURCES.replace(
-    '  - { key: cathedra,    dir: ~/workspace/cathedra }\n',
-    '  - { key: cathedra,    dir: ~/workspace/cathedra }\n  # the engine of the games\n'
-);
-
-/**
- * The hub layer's sources.yml of a target, which the roots of a hub that sets none are added to.
- */
-function layerTarget(): WriteTarget {
-    const into = target();
-    const file = join(into.hub, '.oculus', 'config', 'sources.yml');
-    return {
-        ...into,
-        sources: {
-            file,
-            held: { served: () => [], keys: () => ['hub', 'engine'] },
-            base: [{ key: 'cathedra', dir: '~/workspace/cathedra' }]
-        }
-    };
-}
-
-test.beforeAll(warmConfig);
-
-/**
- * The writes a list that names the keys wrongly is refused for, each with the file left as it was.
- */
-const WRONG_KEYS: [string, string[]][] = [
-    ['a key twice', ['cathedra', 'cathedra']],
-    ['a key missing', ['cathedra']],
-    ['a key the list does not hold', ['cathedra', 'game-engine', 'thesis']],
-    ['a key in place of another', ['cathedra', 'thesis']]
-];
-
-describe('the roots write', () => {
-    it('appends the folder as an entry under a key made from its name, keeping every other line', async () => {
-        const into = rootsTarget();
+describe('the folders write of an open workspace file', () => {
+    it('appends the folder as an entry under a name made from its base name, keeping every other line', async () => {
+        const world = opened();
+        const before = readFileSync(world.file, 'utf8');
         const dir = folderNamed('thesis');
-        const response = await add(into, dir);
+        const response = await add(world.into(), dir);
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({
             ok: true,
-            changed: ['roots'],
+            changed: ['folders'],
             refused: [],
             id: 'thesis'
         });
-        expect(rootsOf(into)).toEqual([
-            { key: 'cathedra', dir: '~/workspace/cathedra' },
-            { key: 'game-engine', dir: '~/workspace/game-engine' },
-            { key: 'thesis', dir: dirAsWritten(dir) }
-        ]);
-        const written = sourcesOf(into);
-        expect(written).toContain('# Where the projects are.\n');
-        expect(written).toContain('# Roots the server may serve local files from.\n');
-        expect(written).toContain('  - { key: cathedra,    dir: ~/workspace/cathedra }\n');
-        expect(written).toContain('# The language each file name opens in.\n');
-        expect(written).toContain('  bash:          [.sh, .bash]\n');
-
-        // The order row: the keys name a permutation, and only the two entry lines change places.
-        const ordered = rootsTarget();
-        const reordered = await order(ordered, ['game-engine', 'cathedra']);
-        expect(reordered.status, 'a permutation').toBe(200);
-        expect(await reordered.json()).toMatchObject({ ok: true, changed: ['roots'] });
-        expect(rootsOf(ordered)).toEqual([
-            { key: 'game-engine', dir: '~/workspace/game-engine' },
-            { key: 'cathedra', dir: '~/workspace/cathedra' }
-        ]);
-        expect(sourcesOf(ordered)).toBe(
-            SOURCES.replace(
-                '  - { key: cathedra,    dir: ~/workspace/cathedra }\n  - { key: game-engine, dir: ~/workspace/game-engine }\n',
-                '  - { key: game-engine, dir: ~/workspace/game-engine }\n  - { key: cathedra,    dir: ~/workspace/cathedra }\n'
+        expect(readFileSync(world.file, 'utf8')).toBe(
+            before.replace(
+                'primary: research-hub',
+                `  - { name: thesis, path: ${pathAsWritten(dir)} }\nprimary: research-hub`
             )
         );
-
-        // The refused-order rows: a list that names the keys wrongly writes nothing.
-        for (const [row, keys] of WRONG_KEYS) {
-            const wrong = rootsTarget();
-            const refused = await order(wrong, keys);
-            expect(refused.status, row).toBe(400);
-            expect(await refused.json(), row).toEqual({ error: 'roots-changed' });
-            expect(sourcesOf(wrong), row).toBe(SOURCES);
-            expect(changesOf(wrong), row).toEqual([]);
-        }
-
-        // The comment-line rows: an add, a remove and an order over a list holding a comment line
-        // between two entries are each refused `invalid`, with the file as it was.
-        const commented = rootsTarget(COMMENTED);
-        const answers: [string, Response][] = [
-            ['an add', await add(commented, folderNamed('thesis'))],
-            ['a remove', await remove(commented, 'cathedra')],
-            ['an order', await order(commented, ['game-engine', 'cathedra'])]
-        ];
-        for (const [row, answer] of answers) {
-            expect(answer.status, row).toBe(400);
-            expect(await answer.json(), row).toEqual({ error: 'invalid' });
-        }
-        expect(sourcesOf(commented)).toBe(COMMENTED);
-        expect(changesOf(commented)).toEqual([]);
-
-        // The hub-layer row: an add for a hub that holds no layer file appends to the engine's list
-        // in a new layer file, and the change records what the write made.
-        const layered = layerTarget();
-        expect(existsSync(join(layered.hub, '.oculus'))).toBe(false);
-        const layerDir = folderNamed('thesis');
-        expect((await add(layered, layerDir)).status).toBe(200);
-        expect(rootsOf(layered)).toEqual([
-            { key: 'cathedra', dir: '~/workspace/cathedra' },
-            { key: 'thesis', dir: dirAsWritten(layerDir) }
-        ]);
-        const [made] = changesOf(layered);
-        expect(made).toMatchObject({
-            kind: 'roots',
-            key: 'roots',
-            file: '.oculus/config/sources.yml'
-        });
-        expect(made.created).toEqual(['.oculus', '.oculus/config', '.oculus/config/sources.yml']);
+        const [made] = changesOf(world.into());
+        expect(made).toMatchObject({ kind: 'roots', undo: 'field' });
+        expect((await send(world.into(), { kind: 'undo', at: made.at })).status).toBe(200);
+        expect(readFileSync(world.file, 'utf8')).toBe(before);
     });
 
-    it('records the add and the remove, and the undo of each puts the list back', async () => {
-        const into = rootsTarget();
-        const dir = folderNamed('thesis');
-        await add(into, dir);
-        const [added] = changesOf(into);
-        expect(added).toMatchObject({
-            kind: 'roots',
-            key: 'roots',
-            field: 'roots',
-            undo: 'field',
-            before: [
-                { key: 'cathedra', dir: '~/workspace/cathedra' },
-                { key: 'game-engine', dir: '~/workspace/game-engine' }
-            ]
-        });
-        const undoAdd = await send(into, { kind: 'undo', at: added.at });
-        expect(undoAdd.status).toBe(200);
-        expect(sourcesOf(into)).toBe(SOURCES);
-
-        await remove(into, 'cathedra');
-        const [removed] = changesOf(into);
-        expect(removed).toMatchObject({ kind: 'roots', key: 'roots' });
-        const undoRemove = await send(into, { kind: 'undo', at: removed.at });
-        expect(undoRemove.status).toBe(200);
-        expect(rootsOf(into)).toEqual([
-            { key: 'cathedra', dir: '~/workspace/cathedra' },
-            { key: 'game-engine', dir: '~/workspace/game-engine' }
-        ]);
-        expect(sourcesOf(into)).toContain('# Roots the server may serve local files from.\n');
-        expect(sourcesOf(into)).toContain('  bash:          [.sh, .bash]\n');
-
-        // The order row: the write is logged as a roots change, and its undo puts the list back.
-        const ordered = rootsTarget();
-        await order(ordered, ['game-engine', 'cathedra']);
-        const [reorder] = changesOf(ordered);
-        expect(reorder).toMatchObject({
-            kind: 'roots',
-            key: 'roots',
-            field: 'roots',
-            undo: 'field'
-        });
-        const undone = await send(ordered, { kind: 'undo', at: reorder.at });
-        expect(undone.status).toBe(200);
-        expect(sourcesOf(ordered)).toBe(SOURCES);
-
-        // The hub-layer rows: the undo of an add that made the layer file removes the file and the
-        // folders it made, and a remove from a layer file that holds the list is undone to the
-        // list.
-        const created = layerTarget();
-        await add(created, folderNamed('thesis'));
-        const [madeFile] = changesOf(created);
-        expect((await send(created, { kind: 'undo', at: madeFile.at })).status).toBe(200);
-        expect(existsSync(join(created.hub, '.oculus'))).toBe(false);
-
-        const held = layerTarget();
-        const heldFile = held.sources?.file ?? '';
-        mkdirSync(join(held.hub, '.oculus', 'config'), { recursive: true });
-        writeFileSync(
-            heldFile,
-            'roots:\n  - { key: cathedra, dir: ~/workspace/cathedra }\n  - { key: thesis, dir: ~/workspace/thesis }\n'
+    it('takes the primary out with its entry, and the undo puts both back', async () => {
+        const world = opened();
+        const before = readFileSync(world.file, 'utf8');
+        const response = await remove(world.into(), 'research-hub');
+        expect(response.status).toBe(200);
+        expect(readFileSync(world.file, 'utf8')).toBe(
+            [
+                '# a comment above the key',
+                'folders:',
+                `  - { name: claude, path: ${world.other} }`,
+                ''
+            ].join('\n')
         );
-        const heldBefore = sourcesOf(held);
-        expect((await remove(held, 'thesis')).status).toBe(200);
-        expect(rootsOf(held)).toEqual([{ key: 'cathedra', dir: '~/workspace/cathedra' }]);
-        const [takenOut] = changesOf(held);
-        expect(takenOut.created).toBeUndefined();
-        expect((await send(held, { kind: 'undo', at: takenOut.at })).status).toBe(200);
-        expect(sourcesOf(held)).toBe(heldBefore);
+        const [removed] = changesOf(world.into());
+        expect((await send(world.into(), { kind: 'undo', at: removed.at })).status).toBe(200);
+        expect(readFileSync(world.file, 'utf8')).toBe(before);
     });
 
-    it("keeps each entry's hub mark through an add, a remove and an order", async () => {
-        const lines = MARKED.split('\n').filter((line) => line.startsWith('  - {'));
-        const keeps = (text: string, kept: string[]): void => {
-            for (const line of lines.filter((one) => kept.some((key) => one.includes(key)))) {
-                expect(text).toContain(`${line}\n`);
-            }
-        };
+    it('moves the entries and nothing else when the names are a permutation, and refuses any other list', async () => {
+        const world = opened();
+        const before = readFileSync(world.file, 'utf8');
+        expect((await order(world.into(), ['claude', 'research-hub'])).status).toBe(200);
+        const [one, two] = before.split('\n').filter((line) => line.startsWith('  - {'));
+        expect(readFileSync(world.file, 'utf8')).toBe(
+            before.replace(`${one}\n${two}`, `${two}\n${one}`)
+        );
 
-        const into = rootsTarget(MARKED);
+        const kept = readFileSync(world.file, 'utf8');
+        for (const names of [['claude'], ['claude', 'claude'], ['claude', 'thesis']]) {
+            const refused = await order(world.into(), names);
+            expect(refused.status, names.join()).toBe(400);
+            expect(await refused.json(), names.join()).toEqual({ error: 'roots-changed' });
+            expect(readFileSync(world.file, 'utf8'), names.join()).toBe(kept);
+        }
+    });
+
+    it('refuses every change to a file that does not parse, with the file as it was', async () => {
+        const world = opened(() => 'folders: [unclosed\n  - {\n');
+        const before = readFileSync(world.file, 'utf8');
+        const attempts = [
+            await add(world.into(), folderNamed('thesis')),
+            await remove(world.into(), 'research-hub'),
+            await order(world.into(), ['a', 'b'])
+        ];
+        for (const answer of attempts) {
+            expect(answer.status).toBe(400);
+            expect(await answer.json()).toEqual({ error: 'unreadable', reason: world.file });
+        }
+        expect(readFileSync(world.file, 'utf8')).toBe(before);
+        expect(changesOf(world.into())).toEqual([]);
+    });
+
+    it('refuses a rewrite that would drop a comment between two entries', async () => {
+        const world = opened((hub, other) =>
+            [
+                'folders:',
+                `  - { name: research-hub, path: ${hub} }`,
+                '  # the second folder',
+                `  - { name: claude, path: ${other} }`,
+                ''
+            ].join('\n')
+        );
+        const before = readFileSync(world.file, 'utf8');
+        const answer = await add(world.into(), folderNamed('thesis'));
+        expect(answer.status).toBe(400);
+        expect(await answer.json()).toEqual({ error: 'invalid' });
+        expect(readFileSync(world.file, 'utf8')).toBe(before);
+    });
+});
+
+describe('the folders write of an unsaved workspace', () => {
+    it('changes the state file alone', async () => {
+        const hub = plantHub(folderNamed('hub'));
+        const state = scratchDir('oculus-roots-state-');
+        writeState(state, {
+            open: null,
+            recent: [],
+            unsaved: { folders: [{ name: 'hub', path: hub }], primary: 'hub' }
+        });
         const dir = folderNamed('thesis');
-        expect((await add(into, dir)).status).toBe(200);
-        keeps(sourcesOf(into), ['cathedra', 'lab', 'ordo']);
-        expect(rootsOf(into)).toEqual([...MARKED_ITEMS, { key: 'thesis', dir: dirAsWritten(dir) }]);
-        const [added] = changesOf(into);
-        expect(added).toMatchObject({ before: MARKED_ITEMS });
-        expect((await send(into, { kind: 'undo', at: added.at })).status).toBe(200);
-        expect(sourcesOf(into)).toBe(MARKED);
-
-        expect((await remove(into, 'lab')).status).toBe(200);
-        keeps(sourcesOf(into), ['cathedra', 'ordo']);
-        expect(rootsOf(into)).toEqual([MARKED_ITEMS[0], MARKED_ITEMS[2]]);
-
-        const ordered = rootsTarget(MARKED);
-        expect((await order(ordered, ['ordo', 'lab', 'cathedra'])).status).toBe(200);
-        keeps(sourcesOf(ordered), ['cathedra', 'lab', 'ordo']);
-        expect(rootsOf(ordered)).toEqual([MARKED_ITEMS[2], MARKED_ITEMS[1], MARKED_ITEMS[0]]);
+        const base = target();
+        const response = await add({ ...base, workspace: openWorkspace(state) }, dir);
+        expect(response.status).toBe(200);
+        expect(readState(state).state.unsaved).toEqual({
+            folders: [
+                { name: 'hub', path: hub },
+                { name: 'thesis', path: pathAsWritten(dir) }
+            ],
+            primary: 'hub'
+        });
+        const removed = await remove({ ...base, workspace: openWorkspace(state) }, 'hub');
+        expect(removed.status).toBe(200);
+        expect(readState(state).state.unsaved).toEqual({
+            folders: [{ name: 'thesis', path: pathAsWritten(dir) }]
+        });
     });
 });

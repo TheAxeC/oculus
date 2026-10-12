@@ -1,14 +1,15 @@
 // Layer 2, server. The rules every route that serves a picture out of a configured folder obeys:
-// which extensions are pictures (PICTURE_EXTENSIONS of data/file-ops.ts, which the Settings view's
-// list of wallpaper files reads as well), what each is sent as, how long a browser may hold one,
-// whether a path is inside its folder, and the response that streams one file. Where the request
-// came from is answered before any of them, by the origin guard in src/hooks.server.ts.
+// which extensions are pictures (PICTURE_EXTENSIONS of data/file-ops.ts), what each is sent as, how
+// long a browser may hold one, whether a path is inside its folder, and the response that streams
+// one file. Where the request came from is answered before any of them, by the origin guard in
+// src/hooks.server.ts.
 //
 // It is one module rather than a copy per route because the rules are the security of those routes:
-// the folder is resolved under the hub and refused if it is not inside it, the chosen file is
-// resolved and refused if it is not inside the folder, and a name that carries a path rather than a
-// file name is refused outright. A second copy of that would be a second place for one of the four
-// to go missing. server/content/wallpaper.ts and server/content/memories.ts are the two readers.
+// the folder is resolved under its hub and replaced by the standard one if it is not inside it, the
+// chosen file is resolved and refused if it is not inside the folder, and a name that carries a
+// path rather than a file name is refused outright. A second copy of that would be a second place
+// for one of the four to go missing. server/content/wallpaper.ts and server/content/memories.ts are
+// the two readers.
 //
 // A picture's width and height are read here too, since the Memories wall draws each tile at its
 // picture's proportions before the picture arrives. The head of the file, its first READ_CAP bytes
@@ -32,14 +33,14 @@
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
 import { closeSync, createReadStream, openSync, readdirSync, readSync, statSync } from 'node:fs';
-import { extname, join, resolve } from 'node:path';
+import { extname, join } from 'node:path';
 import { Readable } from 'node:stream';
 import { imageSize } from 'image-size';
 import mime from 'mime';
-import { z } from 'zod';
 import { PICTURE_EXTENSIONS } from '../../data/file-ops.ts';
-import { loadLocal } from '../../data/sources/config.ts';
+import { MEMORIES_DIR, WALLPAPER_DIR, hubFolderIn } from '../../data/helpers/files/paths.ts';
 import { inside } from '../core/paths.ts';
+import type { HubTarget } from '../files/roots.ts';
 
 /** An hour: long enough that a reload does not re-read the file, short enough to swap a picture. */
 const CACHE = 'private, max-age=3600';
@@ -311,31 +312,21 @@ export function stream(dir: string, name: string | null): Response {
     });
 }
 
-/** A config block that names a directory: a map whose `dir` is text that is not empty. */
-const dirBlockShape = z.looseObject({ dir: z.string().min(1) });
+/**
+ * The folders one hub keeps pictures in: the hub's name, its wallpaper folder and its photo wall.
+ */
+export type HubPictures = { hub: string; wallpaper: string; memories: string };
 
 /**
- * The absolute directory a config block's `dir` names, resolved under the hub, and null when the
- * block names none or names one outside the hub. `refused` is the caller's memory of the
- * directories already reported, so a bad setting is said once rather than once per request.
+ * The picture folders of each hub: its `wallpaper_dir` and `memories_dir` resolved under the hub,
+ * the standard folder where a key is absent, wrong or outside the hub (the Findings view says
+ * which, from data/index.ts `sourcesFindings`). The hubs come with their settings, so a hub is read
+ * through its own layer and no other hub's values reach it.
  */
-export function folderOf(
-    block: unknown,
-    engine: string,
-    refused: Set<string>,
-    label: string
-): string | null {
-    const held = dirBlockShape.safeParse(block);
-    if (!held.success) return null;
-    const hub = loadLocal(engine).hub;
-    const dir = resolve(hub, held.data.dir);
-    if (!inside(dir, hub)) {
-        const key = `directory:${dir}`;
-        if (!refused.has(key)) {
-            refused.add(key);
-            console.error(`${label}: ${dir} is outside the hub ${hub}; serving no image`);
-        }
-        return null;
-    }
-    return dir;
+export function picturesOf(hubs: readonly HubTarget[]): HubPictures[] {
+    return hubs.map((one) => ({
+        hub: one.key,
+        wallpaper: hubFolderIn(one.hub, one.config.merged.wallpaper_dir, WALLPAPER_DIR).dir,
+        memories: hubFolderIn(one.hub, one.config.merged.memories_dir, MEMORIES_DIR).dir
+    }));
 }

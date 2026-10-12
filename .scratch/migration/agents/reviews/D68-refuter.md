@@ -280,3 +280,214 @@ Reading scope: the src diff (19542 lines) and the tests diff (6762 lines, 96 fil
 Reviewer usage: agent id not verified, claude-opus-5-5, tokens not verified, tool uses not verified, minutes not verified.
 
 Reviewer usage: af39a3008d27e6302, claude-opus-5-5, 75,179 tokens, 181 tool uses, 33.1 min (from the completion notice).
+
+## Repair round 1, refuted (D68, worktree .agents/worktrees/D68, base ff113f762)
+
+Summary: one item of "What to build" is still violated in part (item 7: the file route and the source tab read and write the machine's `local.yml` files) and item 9 is violated in part (five false sentences remain). The builder's report claims the file route closes oculus's own `config/local.yml`. That claim is false, and the builder's own open item says the opposite. Every check the brief names passes, with three exceptions:
+- the two `test:checks` failures, which come from the sparse worktree;
+- one intermittent failure in the first `test:quick` run, which did not recur.
+
+Whether the file route and the source tab close the machine files is a choice between ruling 6 and ruling 16 / open item 60 (a), and it is Axel's to make (see "Declined to judge").
+
+```
+$ git status --short | wc -l        (in the worktree)
+     467
+$ git diff ff113f762 --stat | tail -1
+ 460 files changed, 12735 insertions(+), 8314 deletions(-)
+
+(1) npm run diagrams && npm run test:quick
+    I did not run `npm run diagrams`: it writes docs/diagrams and I change no file. Whether the diagrams are stale
+    is checked in memory by tests/checks/diagrams/diagrams.test.ts (staleFiles), which passed inside test:checks below.
+$ npm run test:quick            (first run)
+ FAIL  |unit| tests/state/sessions/source.test.ts > a source tab over a file that changes on disk > 'follows one channel for two tabs over...'
+ Test Files  1 failed | 177 passed | 4 skipped (182)
+      Tests  1 failed | 1754 passed | 44 skipped (1799)
+test:quick: 50.2 s (limit 45.0 s); failed: vitest
+test:quick: over the time limit
+$ npx vitest run tests/state/sessions/source.test.ts     (three times)
+ Test Files  1 passed (1)   Tests  27 passed (27)      (x3)
+$ npm run test:quick            (second run)  rc=0
+test:quick: 460 changed file(s), from git since HEAD
+test:quick: 182 test file(s), 10 essential
+test:quick: 43.9 s (limit 45.0 s); every command passed
+
+(2) ASCII gate over src tests utils config demo (no local.yml exists under them):    0 bytes printed
+    the same perl over docs/apps.md DESIGN.md HELP.md README.md vite.config.ts:   0 bytes printed
+
+(3) $ sh utils/unused-exports.sh     rc=0
+Unused exports (243)          (base: Unused exports (244))
+    lines new against the base:
+    > src/lib/data/sources/config.ts: readLocal, loadMachine, ...
+    > src/lib/data/sources/config/machine.ts: loadMachine
+    (the other differences are files moved to new paths, with the same names, and removed exports)
+
+(4) wc -l: no .ts over 880 and no .svelte over 520. Largest: relay.ts 880, servers.ts 877, transport.ts 874,
+    viewer.svelte.ts 874; Workbench.svelte 520, Diff.svelte 520.
+$ sh utils/folder-check.sh      folder rc=0
+
+(5) $ npx vitest run tests/server tests/state tests/routes tests/data tests/fixtures --exclude tests/server/desktop/start.test.ts
+ Test Files  204 passed (204)
+      Tests  2009 passed (2009)
+    (no tags filter, so the slow-tagged rows ran; channel, relay and vite-restart tests included)
+
+(7) item-9 grep with --exclude=local.yml:  488 lines
+    by term: roots: 440, config/local.yml 31, hub: true 24; workspaces.json 0, HUB_ROOT 0, ENGINE_ROOT 0.
+    The roots: hits are parameter and field names (`roots: Root[]`), the catalog key kind_roots and
+    reveal_no_roots, and comments; no YAML roots: key remains. The config/local.yml hits are the guard,
+    its tests and DESIGN.md:515,618.
+    Ruling 11 grep (SecondHub|readSecondHub|NO_HUB|MACHINE_FILE|localPathsOf|loadLocal|addedRoots|engineAtFor|hub-roots): 0 lines
+
+Builder's quoted evidence, rerun:
+$ npx tsc --noEmit -p tsconfig.json       3 errors, all TS2614 CardAction (card.ts:12, entry-actions.ts:6, task-card.ts:12)
+$ npx svelte-check --output machine       COMPLETED 3821 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+$ npx eslint .                            rc=0
+$ npx prettier --check .                  rc=0
+$ npm run test:checks                     rc=1
+ FAIL  tests/checks/config/config-folder.test.ts > ... names a group of its own and a path under the hub for every document
+       (Error: expected any number of assertion, but got none)
+ FAIL  tests/checks/config/integrity.test.ts > the real hub > validates with no findings (239 findings)
+ Test Files  2 failed | 15 passed (17)    Tests  2 failed | 264 passed (266)
+$ git ls-tree -r --name-only ff113f762 | grep -c "^.oculus/"      34
+$ git sparse-checkout list   (in the worktree)   applications deck docs education feeds funding network projects registries side-projects
+    -> .oculus/ is tracked but left out of the sparse worktree. The builder calls it "untracked"; that is wrong,
+       but the outcome is the same: the two failures come from the environment, and the orchestrator runs them at landing.
+$ find <worktree> -name local.yml -o -name workspaces.json (node_modules pruned)     nothing
+
+(6) Ruling 15 sample on my own copy of D68-base/tools/oculus under $TMPDIR (worktree node_modules linked,
+    svelte-kit sync, the worktree's test file plus its changed helpers copied in; copy deleted afterwards):
+ hub-names.test.ts              Tests 4 failed | 10 passed (14)  TypeError: diskRelation / fileNamed is not a function
+                                 (builder: "2 failed / 10 passed (12)"; the file now has 14 rows)
+ routes/hubs/hub-undo.test.ts   Tests 1 failed (1)   expected 'projects/manuscripts/alpha/project.yml' to be '/var/...'   matches
+ routes/docs/memories.test.ts   Tests 1 failed | 1 passed (2)   text key not in config: server.memories.no_wall   matches
+ routes/edit/config-key.test.ts Tests 3 failed | 3 passed (6)   matches
+ routes/files/file-undo.test.ts Tests 3 failed | 8 passed (11)  matches
+ state/system/settings/row-writer.test.ts  Tests 2 failed | 1 passed (3)  Error: no row wallpaper.image   matches
+ state/sessions/changes-file.test.ts       Tests 5 failed (5)  fileShown is not a function   matches
+ routes/docs/docs.test.ts       Tests 2 failed (2)   matches
+ state/system/lsp/edits.test.ts Tests 1 failed | 9 passed (10)  matches
+ routes/edit/undo/undo.test.ts  Tests 34 passed (34) with the base's helpers (1 failed only when the worktree's
+                                 apps-fixture.ts was copied in too)   matches the builder's method and result
+ server/files/ops.test.ts       Tests 3 passed (3)   matches
+ routes/edit/deck-slides.test.ts Tests 2 passed (2)  matches
+```
+
+### Verdicts (whole diff since ff113f762)
+
+Items:
+- 1: holds. The workspace file (`name`, `path`, optional `primary`) is read by `workspace/open.ts` and `folders.ts`. `hub-folders.test.ts` and `workspace-findings.test.ts` pass in the 204-file run.
+- 2: holds. No `hub` or `engine` root remains: the grep finds 0 hits for HUB_ROOT and ENGINE_ROOT, and `served-roots.test.ts` passes.
+- 3: holds. The machine state lives in `~/.oculus` (`workspace/state.ts`), and Add Folder and Remove Folder edit the open file (`folders.ts`). Tested in the 204-file run.
+- 4: holds. The `follow.ts` holder exists, and the `workspace-follow.test.ts` rows pass. The app hosts and the apps watcher are now asserted.
+- 5: holds. The apps closures name oculus's config folder by its real path (case 12 tests pass).
+- 6: holds. "No primary" is `null` down to each use; `NO_HUB` is gone (ruling-11 grep prints 0 lines). The schedules route answers `no-primary` (`schedules.test.ts`), and `watch-no-primary.test.ts` and the docs `no_primary_doc` row pass.
+- 7: violated in part (Spec 1 below). One function names the machine files (`machineFilesOf`, `workspace/machine-file.ts`), and the ops, git, lint, replace, writing-fix, lsp-edit, undo, deck-undo, language-server and app guards read it. The file route and the source tab do not, so both machine files are still served, read into a page and written. The rest of the item holds: the `local.yml` place, the joins, the warnings, and the `.gitignore` and `.prettierignore` lines.
+- 8: holds. Wallpaper: `wallpaper.test.ts`, `row-writer.test.ts` and `config-key.test.ts` pass.
+- 9: violated in part (Spec 2 below: five false sentences remain).
+- 10: not applicable. It is the orchestrator's work at landing. The worktree holds no `local.yml` and no `workspaces.json` (the find above prints nothing).
+
+Cases:
+- 1 to 6, 8 to 10, 12 to 14: met. Each named test passes in the 204-file run (1: `served-roots.test.ts`; 2: `hub-portfolio.test.ts`, `hub-writes.test.ts`; 3: `workspace-findings.test.ts`; 4: `no-workspace.test.ts`; 5 and 6: the workspaces write tests; 8 and 9: `machine.test.ts`; 10: `local.test.ts`; 12: the app-fs and app-private rows; 13: `wallpaper.test.ts`; 14: `routes/edit/config-key.test.ts`).
+- 7: met, with the weaknesses in Proof 2 and Proof 3. `workspace-follow.test.ts` now asserts that the restart message is a Finding of the portfolio's held list, carrying the file, `key: 'port'` and no value. It also asserts that the app hosts and the apps watcher hear the switch, and that the recent list and the hand edit follow.
+- 11: partial. Every moved G3 row is refused, except the history rows. `history.test.ts:77-138` ('never copies a hub's .oculus/local.yml' and 'never copies oculus's own config/local.yml', each through two spellings) asserts `ok: true` and the file rewritten (`port: 8801`). Ruling 1 says the new rows are "each refused". See Spec 1.
+- 15 to 17: not verifiable. They are looks; a browser on a scratch oculus would settle them.
+
+### Findings
+
+**Spec**
+
+1. Item 7 and ruling 1: the file route and the source tab still serve and write the machine files.
+   - Place:
+     - `src/routes/api/(files)/file/[root]/[...path]/+server.ts:15-18`: "const roots = locals.server.workspace.open().roots; return serveFile(roots, params.root, params.path, ...)"
+     - `serveFile` (`src/lib/server/files/files.ts:139-160`) has no machine-file check.
+     - `readBytes` (`source/source-bytes.ts:41-51`) has none either.
+     - The source save (`source/source.ts`, `localRefusal`) only checks that every key parses, then writes.
+   - What is wrong:
+     - Ruling 1 lists "the file route" among the callers to close. Its test-row sentence ends "each is refused".
+     - Brief item 7 says "the content of every hub's `.oculus/local.yml` is never served, read into a page or written by ... the source tab", and that "a leftover file there is never served".
+     - The builder's report claims the opposite twice. The ruling-1 row says `protectedFiles` is "used by the file route". The visible-change line says "both are closed by the same function in the file route, ... the source tab's save". Its own open item says `/api/file` and the source tab serve and save the file. Both claims are false.
+   - Failure scenario:
+     - With the workspace listing `research-hub`, GET `/api/file/research-hub/.oculus/local.yml` streams the file. A source tab opened on it from the Files view, or from Settings "This machine" Open (ruling 6, `machine-section.test.ts` asserts the Open targets that file), shows every value: the paths, the account directories and the literature API keys.
+     - A leftover `tools/oculus/config/local.yml` is served the same way through a workspace folder `oculus`. Since item 7 also removed its line from `tools/oculus/.gitignore`, it now shows as untracked in git and in content search.
+   - Verdict: item 7 violated in part; case 11 partial.
+   - The base served the same file the same way through the `engine` root (base file route, `browserRoots(...)`, no guard; base `history.test.ts:76-96` asserted the save). So G3's sentence never described the base, and ruling 6 (open the file) clashes with ruling 16 and open item 60 (a) (no value reaches a page). The builder raised this as a new open item: option A, close the file route and the source tab for every machine file (recommended); option B, keep the base behaviour.
+
+2. Item 9 and ruling 11: false sentences remain. Failure scenario for all five: a reader of the comment looks for a root, a guard target or a per-request read that does not exist.
+   - `src/lib/server/content/docs.ts:596-597`: "The hub's own files are already served to this page by api/file under the `hub` root". No `hub` root exists.
+   - `src/lib/server/content/docs.ts:821-822`: "the `engine` root of api/file is the config folder alone". No `engine` root exists.
+   - `src/routes/api/(files)/source/+server.ts:7-8`: "the hub comes off the ServerContext, so one request reads the workspace file once". Since ruling 8 the holder serves the held workspace, a request reads no workspace file (the file route's comment says so), and the route uses no hub.
+   - `src/lib/server/edit/writes/file-undo.ts:24-25`: "none may be a hub's `.oculus/local.yml` or a folder that holds it". Since ruling 1 the guard also covers oculus's own `config/local.yml`.
+   - `tests/routes/sessions/terminal-actions.test.ts:332`: "The outcomes of the latex action other than the primary build". This was "the first build" (the first LaTeX build) and was changed along with the "first hub" renames. "primary build" means nothing.
+
+**Proof**
+
+1. `tests/state/client/held-unsaved.test.ts:221`: "refuses an undo of a recorded change while the roots are not read, and sends it once they are".
+   - The last assertions (`:247-249`) are `held.error` equal to `app.file_unsaved` and `posted` equal to `[]`, so once the roots are read the undo is refused, not sent.
+   - Failure scenario: a reader trusts the title and believes an undo goes out after the folders load, while the tab with unsaved text still blocks it.
+
+2. `tests/server/root/workspace-follow.test.ts:180-181`: "// Once for the workspace and once for the port finding the second primary raises. expect(seen.portfolioHeard).toBe(2);"
+   - The row fixes the count of portfolio notifications at two per switch. The builder's report calls this a double notification (two rebuilds). A change that raises the port finding inside the single workspace notification would fail this row even though the behaviour is correct.
+   - The row asserts how often the listener runs, which is an implementation count, not the case's requirement that "the portfolio follows".
+
+3. `workspace-follow.test.ts:182-183`: `expect(seen.hostsHeard).toBe(1)`.
+   - This proves that the app hosts subscribed to the workspace and heard one change. It does not show that they now serve `lab` and `claude`. Case 7 asks that "the app hosts ... follow".
+   - Failure scenario: hosts that hear the change but keep the old roots would pass.
+
+4. `D68-report.md` ruling-15 table, `hub-names.test.ts` row: "2 failed / 10 passed (12)". My rerun on the base copy gives "4 failed | 10 passed (14)"; the file has 14 rows. The table row is stale. No decision rests on it, since the extra rows also fail on the base.
+
+5. `D68-report.md` (the round-1 checks): the two `test:checks` failures are explained as the hub's "untracked `.oculus/config`". `git ls-tree ff113f762` lists 34 tracked `.oculus/` files; the worktree is sparse (`git sparse-checkout list` leaves out `.oculus`). The outcome is the same; the reason given is wrong.
+
+6. `D68-report.md:238`: "14. Change-record paths are primary-relative ... (open item for Axel ...)" is still in the report. Ruling 3 made every record absolute, so this line no longer describes the tree.
+
+**Standards**
+
+1. `src/lib/server/root/process/context/machine-defaults.ts:29`: "const OPEN_PROGRAM = '/usr/bin/open';"
+   - The same constant is `OPEN` in `src/lib/server/files/open.ts:68`.
+   - The defaults `'.oculus/bookmarks.yml'`, `'.oculus/notes'`, `'.oculus/schedules.yml'` and `'.oculus/apps'` (`:47-56`) restate as strings what `workspace/paths.ts:31-33` (`under('bookmarks.yml')` and so on) and `ROOT_FOLDER, 'apps'` compute.
+   - This breaks spec.md's DRY rule ("a parser, a fold or a rule exists once and is reused").
+   - Failure scenario: a change to a default in `paths.ts` leaves Settings "This machine" showing the old default.
+
+2. `src/lib/data/sources/config.ts:30`, the re-export `readLocal`: unused-exports lists it as new. Its only importers outside its own module are `tests/data/sources/config/local.test.ts` and `machine.test.ts`. spec.md says an export "with no importer outside its own file and its tests is removed or made local". The tests could import from `config/local.ts`. Minor. (`loadMachine` is imported by `vite.config.ts:18`, which `unused-exports.sh` does not scan, so that line is fine.)
+
+3. `src/lib/server/machine/lsp/relay.ts` (880 lines, at the cap): the round inlined `#prepare` and `#heldOf`, with their doc comments, to absorb the new `#config()`. spec.md asks for a split by responsibility before a file reaches the size rule. The next line added to this file forces a split under pressure. Minor.
+
+4. `tests/routes/docs/docs.test.ts:166-182` and `tests/routes/docs/memories.test.ts:56-66`: ruling 13 asked for catalog sentences and no test. The `toEqual({ error: words(TEXT, ...) })` assertions compare the answer to the catalog entry itself. The status-404 part tests behaviour; the sentence part is an assertion over a label. Minor.
+
+**Behaviour**
+
+1. The source-tab save of a hub's `.oculus/local.yml` and of oculus's `config/local.yml` is allowed (`history.test.ts:77-138` asserts it), and the file route serves both. A user sees the file's values in a tab from the Files view or Settings Open. This is stated in the builder's open item but contradicted in its visible-change list. Same root as Spec 1.
+
+2. `/api/write` and `/api/fs` POST now call `workspace.changed()` after every write: one synchronous re-read of the workspace per write. This is a cost the report does not state. Minor.
+
+3. `src/lib/server/root/context.ts:243-249`: with no primary, the restart finding carries `file: ''`. A switch from a workspace whose primary sets `port: 8800` to one with no primary holds the port and shows a Finding with a blank file in the Findings view (`Findings.svelte:48` draws `finding.file`). Minor.
+
+4. The first `test:quick` run failed `tests/state/sessions/source.test.ts` 'follows one channel for two tabs over one file' and took 50.2 s against the 45 s limit. The file passed three times alone, and the second full run passed in 43.9 s. The diff of `source.svelte.ts` touches only `unsavedFile` and `unsavedUnknown`, not the channel follow. I judge it a timing flake under load. Not verified at the base.
+
+### Declined to judge
+
+- The choice between the builder's option A (close the file route and the source tab for every machine file, so Settings Open no longer opens the file) and option B (keep the base behaviour, which needs ruling 16 and G3 rewritten). Ruling 6 and ruling 16 / open item 60 (a) conflict, so the choice is Axel's. Option B is the lazy option: it keeps the values reaching a page against his ruling (a).
+- Content search and the git route reading a leftover `tools/oculus/config/local.yml`, now that `tools/oculus/.gitignore` stops naming it (by the brief's own item 7). I found by reading that neither checks machine files (search withholds `privateFolders` only; the git GET has no guard), but I ran no search over such a file.
+- Cases 15 to 17 (looks), which need a browser on a scratch oculus.
+- `npm run diagrams`, which writes into the worktree. The in-memory `staleFiles` check passed inside test:checks.
+
+Reviewer usage: a07353a302e0d47f1, claude-opus-5-5, 217,760 tokens, 132 tool uses, 28.3 min (from its completion notice).
+
+
+### Closed (repair round 1's findings, at landing)
+
+- Spec 1 (the file route and the source tab serve and save the machine files): ruled by Axel, open item 61 (b): the machine files stay open and editable in the source tab, and G3's "never served, read into a page or written" and 60 (a) are withdrawn. D68 lands as built; D70 makes the machine files ordinary files of the IDE.
+- Spec 2 (five false sentences): fixed on main: `server/content/docs.ts` (the hub's folder name; the manual reaches the page whether or not a folder holds oculus's folder), `routes/api/(files)/source/+server.ts` (the roots are the held open workspace; a request reads no workspace file), `edit/writes/file-undo.ts` (a machine file, both kinds, rewrapped), `tests/routes/sessions/terminal-actions.test.ts` ("the first build").
+- Proof 1: the title of the held-unsaved undo row now says that once the roots are read the undo is refused for the tab holding unsaved text.
+- Proof 2: the count of portfolio notifications is no longer asserted; the row asserts the portfolio heard the switch and reads the new folders.
+- Proof 3: the row asserts the app hosts read the new workspace's roots (`hostsOpen`), beside the count of the open-files follow.
+- Proof 4, 5, 6: the builder's report lines are stale; no decision rests on them. Noted in the booking.
+- Standards 1: `machine-defaults.ts` takes the open program from `files/open.ts` (`OPEN`, now exported) and the per-oculus names from `PER_OCULUS_NAMES` in `files/workspace/paths.ts`, which `perOculus` uses too.
+- Standards 2: the `readLocal` re-export is gone from `data/sources/config.ts`; its two tests import it from `config/local.ts`.
+- Standards 3 (relay.ts at 880 lines with two helpers inlined): folded into D64, which adds app language servers to the relay and splits `relay.ts` by responsibility with `#prepare` and `#heldOf` back as named helpers (booked under D64 in `plan.md`).
+- Standards 4: no change; the assertion fails if a literal error string comes back, which is what ruling 13 removed.
+- Behaviour 1: as Spec 1.
+- Behaviour 2 (`/api/write` and `/api/fs` POST re-read the workspace once per write): kept; it is how a write to the open workspace file is followed at once, and a write is a user action. Stated in the booking.
+- Behaviour 3 (a restart finding with a blank file when the new workspace has no primary): fixed on main: the finding names the open workspace file, or the state file while the workspace is unsaved (`root/context.ts`, `heldFindings`); test `tests/server/root/workspace-follow.test.ts`, 'names the open workspace file in the finding of the port it keeps'.
+- Behaviour 4 (one `test:quick` failure that did not recur): the landing gate's run is the evidence (booking).
+- Declined to judge, content search and git reading a leftover `tools/oculus/config/local.yml`: the file was moved to `.oculus/local.yml` at landing, so none is left; D70 makes the machine files ordinary files.
+- Also fixed on main: `DESIGN.md:246` named `appearance.yml` as the place of the wallpaper folder; it now names `wallpaper_dir` and `wallpaper.image`.
+- A red line of the landing gate, not a finding of the review: `npm test` timed out three rows of `tests/server/root/workspace-follow.test.ts` at 5 s under the full suite; the cause was `heldFindings` in `root/context.ts` parsing the whole config folder at each call (about 300 ms, once per portfolio rebuild after a switch) and the start parsing it apart from the cache. Fixed on main: one `createConfigCache` made beside `load`, taken by the start, `heldFindings`, the no-primary sentence and the findings of a workspace move, and handed to the context as `configCache`. The row that timed out at 8,542 ms under the suite runs in 1,564 ms alone after the fix (2,621 ms alone before).

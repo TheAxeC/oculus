@@ -63,7 +63,7 @@
     /** Extensions the document view can render as text. */
     const READABLE = /\.(html?|md|txt|ya?ml|py|sh|slurm|tex|bib|json|csv|r|m|cpp|h|ts|js|css)$/i;
     /** Where the project's folder is, and the key of the Files root that holds it. */
-    const place = $derived(placeOf(item.project));
+    const place = $derived(placeOf(item.project, client.fs.primary()));
     const hub = $derived(place.root);
     /** The key of the record this card keeps its tree and its finder text under. */
     const owner = $derived(cardTreeKey(instance?.() ?? '', item.id));

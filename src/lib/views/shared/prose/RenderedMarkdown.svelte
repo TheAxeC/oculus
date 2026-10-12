@@ -75,6 +75,8 @@
         path: '',
         manual: '',
         engine: false,
+        hub: '',
+        engineHub: '',
         engineAt: ''
     });
 

@@ -12,6 +12,6 @@ import { hrefOf } from '$lib/state/boards/collection';
 export function posting(value: string): string | undefined {
     const held = value.trim();
     if (held === '') return undefined;
-    const href = hrefOf(held);
+    const href = hrefOf(held, '');
     return href.startsWith('http') ? href : undefined;
 }

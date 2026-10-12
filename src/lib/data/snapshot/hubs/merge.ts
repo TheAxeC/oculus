@@ -1,17 +1,19 @@
 // Layer 1, data. The portfolio of several hubs as one snapshot. Every hub is built on its own by
 // buildPortfolioWithSchemas, with its own settings, and the builds are joined here: a record of a
-// hub other than the first gets the hub's key and a colon in front of its id, and in front of every
-// id its fields and the relation tables hold, so no two ids collide and no reference can name a
-// record of another hub. The ids are prefixed once each hub is built, which is what makes a
+// hub other than the primary gets the hub's name and a colon in front of its id, and in front of
+// every id its fields and the relation tables hold, so no two ids collide and no reference can name
+// a record of another hub. The ids are prefixed once each hub is built, which is what makes a
 // reference resolve inside its hub only: a value the hub cannot resolve is the finding it would be
-// were the hub the only one. Every record then says which hub it came from in `root`.
+// were the hub the only one. A record of another hub then says which hub it came from in `root`; a
+// record of the primary carries none and keeps its bare id. The first build is the primary's, or
+// with no primary the build of the workspace's project folders, whose records carry no `root`
+// either.
 //
 // With no hub beyond the first the snapshot is returned as the build made it, so a portfolio of one
 // hub is exactly that build's snapshot. The career, the website and the portfolio deck are the
-// first hub's alone: a second hub's career is dropped here, and the feeds summary is the two hubs'
-// leads together with the latest run dates.
+// primary's alone: another hub's career is dropped here, and the feeds summary is the hubs' leads
+// together with the latest run dates.
 
-import { HUB_ROOT } from '../../helpers/hub-names.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import type {
     Collection,
@@ -23,27 +25,26 @@ import type {
     Id,
     RegistryName,
     Relations,
-    Rooted,
     Snapshot
 } from '../../model/index.ts';
 import { byId, pairs } from '../normalise.ts';
 import { sortFindings } from '../validate.ts';
 import { throughSchema, type Reach } from './references.ts';
 
-/** One hub's own build, and the key of the `roots:` entry it was built from. */
+/** One hub's own build, and the name of the workspace folder it was built from. */
 export type HubSnapshot = { key: string; snapshot: Snapshot };
 
-/** A hub other than the first: its build, and the absolute path of its people file. */
+/** A hub other than the primary: its build, and the absolute path of its people file. */
 type OtherHub = HubSnapshot & { peopleFile: string };
 
-/** The registry entities of the first hub, each kind with the file its records are read from. */
+/** The registry entities of the primary hub, each kind with the file its records are read from. */
 export type FirstHub = {
     snapshot: Snapshot;
     /**
-     * The absolute path of each registry file, which names a first-hub id that begins like a hub.
+     * The absolute path of each registry file, which names a primary-hub id that begins like a hub.
      */
     registryFiles: Record<RegistryName, string>;
-    /** The entries of the first hub's feeds, each with the id a write names it by. */
+    /** The entries of the primary hub's feeds, each with the id a write names it by. */
     feedItems: FeedItem[];
 };
 
@@ -55,11 +56,6 @@ function prefixer(key: string): (id: Id) => Id {
 /** The records of one kind, each passed through `fix`, under the ids `fix` gave them. */
 function rekeyed<T extends { id: Id }>(table: Record<Id, T>, fix: (one: T) => T): Record<Id, T> {
     return byId(Object.values(table).map(fix));
-}
-
-/** The records of one kind of the first hub, each marked as the first hub's. */
-function marked<T extends { id: Id } & Rooted>(table: Record<Id, T>): Record<Id, T> {
-    return rekeyed(table, (one) => ({ ...one, root: HUB_ROOT }));
 }
 
 /** Whether the hub's entities of a `from:` source hold a record under the id. */
@@ -112,7 +108,7 @@ function tableOf(put: (id: Id) => Id, table: [Id, Id][]): [Id, Id][] {
     return table.map(([from, to]) => [put(from), put(to)]);
 }
 
-/** The entities of a hub other than the first, every id prefixed and every record marked. */
+/** The entities of a hub other than the primary, every id prefixed and every record marked. */
 function entitiesOf(key: string, entities: Entities, peopleFile: string): Entities {
     const put = prefixer(key);
     const own = { root: key };
@@ -182,7 +178,7 @@ function entitiesOf(key: string, entities: Entities, peopleFile: string): Entiti
     };
 }
 
-/** The relation tables of a hub other than the first, every pair prefixed. */
+/** The relation tables of a hub other than the primary, every pair prefixed. */
 function relationsOf(key: string, tables: Relations): Relations {
     const put = prefixer(key);
     return {
@@ -250,7 +246,7 @@ function joined(first: Relations, others: Relations[]): Relations {
 }
 
 /**
- * A finding for every id of the first hub that begins with the key of a hub root and a colon: the
+ * A finding for every id of the primary hub that begins with the key of a hub root and a colon: the
  * merged portfolio could not tell such a record, or a lead, a Lit Watch entry or a LinkedIn post,
  * from one of that hub. A record is named by the file it is read from.
  */
@@ -289,9 +285,9 @@ function ambiguousIds(first: FirstHub, keys: readonly string[], text: TextCatalo
 }
 
 /**
- * The portfolio of the first hub and of every hub built beside it, as one snapshot of the first
- * hub's version. `text` is the first hub's catalog, which words the findings of the merge. With no
- * other hub the first hub's snapshot is returned as it is.
+ * The portfolio of the primary hub and of every hub built beside it, as one snapshot of the first
+ * hub's version. `text` is the primary hub's catalog, which words the findings of the merge. With
+ * no other hub the primary hub's snapshot is returned as it is.
  */
 export function mergeHubs(
     first: FirstHub,
@@ -319,20 +315,8 @@ export function mergeHubs(
         'collections'
     ] as const;
     const entities = { ...base.entities };
-    entities.projects = marked(base.entities.projects);
-    entities.venues = marked(base.entities.venues);
-    entities.datasets = marked(base.entities.datasets);
-    entities.pillars = marked(base.entities.pillars);
-    entities.domains = marked(base.entities.domains);
-    entities.funding = marked(base.entities.funding);
-    entities.people = marked(base.entities.people);
-    entities.organisations = marked(base.entities.organisations);
-    entities.resources = marked(base.entities.resources);
-    entities.collections = rekeyed(base.entities.collections, (one) => ({
-        ...one,
-        root: HUB_ROOT,
-        entries: one.entries.map((entry) => ({ ...entry, root: HUB_ROOT }))
-    }));
+    // The tables are copied so the merge adds to its own and the primary's build stays as built.
+    for (const kind of kinds) entities[kind] = { ...base.entities[kind] } as never;
     for (const one of prefixed) {
         for (const kind of kinds) {
             Object.assign(entities[kind], one.entities[kind]);

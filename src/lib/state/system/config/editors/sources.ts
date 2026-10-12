@@ -11,8 +11,6 @@
 // path under the hub, which is also how a folder or file box finds the entries of the folder it
 // has typed so far.
 
-import { PICTURE_EXTENSIONS } from '../../../../data/file-ops.ts';
-import { isMap } from '../../../../data/helpers/guards.ts';
 import type { Project } from '../../../../data/model/index.ts';
 import { registered } from '../../../../data/prose/languages.ts';
 import { codeThemeIds, CODE_TOKENS } from '../../../../data/helpers/editor/code-themes.ts';
@@ -75,18 +73,6 @@ export type Lists = {
 
 const READY = (items: string[]): SourceItems => ({ state: 'ready', items });
 
-/** The wallpaper folder the configuration names, as a path under the hub. */
-function wallpaperDir(config: Record<string, unknown>): string {
-    const wallpaper = isMap(config.wallpaper) ? config.wallpaper : {};
-    return typeof wallpaper.dir === 'string' ? wallpaper.dir : '';
-}
-
-/** Whether a file name has one of the picture extensions the wallpaper serves. */
-function isPicture(name: string): boolean {
-    const lower = name.toLowerCase();
-    return PICTURE_EXTENSIONS.some((extension) => lower.endsWith(extension));
-}
-
 /** The lists of one render, over the inputs the page holds. */
 export function listsOf(inputs: ListInputs): Lists {
     const { config, portfolio } = inputs;
@@ -118,14 +104,6 @@ export function listsOf(inputs: ListInputs): Lists {
                 return inputs.tiers === null ? { state: 'loading' } : READY(inputs.tiers);
             case 'file_icon_themes':
                 return READY(fileIconThemes(inputs.offers).map((one) => one.name));
-            case 'wallpapers': {
-                const folder = inputs.folder(wallpaperDir(config));
-                if (folder.state !== 'ready') return folder;
-                const names = folder.entries
-                    .filter((entry) => entry.kind === 'file' && isPicture(entry.name))
-                    .map((entry) => entry.name);
-                return READY(names);
-            }
             default:
                 return { state: 'failed', error: source };
         }

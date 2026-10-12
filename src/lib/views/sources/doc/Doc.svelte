@@ -58,18 +58,19 @@
     // is restated only then, and when the manual cannot be read the tab is read as a document of
     // the hub.
     //
-    // A hub document is a file of the hub root, which the pane's breadcrumb reads it as and the
+    // A tab whose state names a `hub` is a document of that hub, which no `docs:` list follows. A
+    // hub document is a file of its hub's folder, which the pane's breadcrumb reads it as and the
     // tab's right-click menu acts on (shell/panes/strip/tab-menu.ts): the bookmark and Open in
     // Program items. The star and, for a file whose extension `open.program_ext` maps, Open in
     // Program also stand at the right end of the pane's breadcrumb bar
     // (shared/links/FileBarActions.svelte). An engine tab is the file at the engine folder's place
     // in the hub for the pane's breadcrumb, the tab's menu, its icon and the Files view's sections
-    // (navigation/pages.ts, `fileOfTab`, with the place the client state's `engineAtFor` reads from
-    // the manual's answer), and has none where the folder lies outside the hub. The tab hands
-    // nothing to the pane's strip. Its scroll box carries `data-tab-focus`, which is where the
-    // keyboard goes when a double click keeps the tab (PaneBody.svelte). The headings the server's
-    // answer carries are said to the Outline, and a press on an Outline row scrolls the tab to that
-    // heading (shared/prose/rendered-headings.svelte.ts).
+    // (navigation/pages.ts, `fileOfTab`, with the place the client state's `docPlaceFor` reads from
+    // the manual's answer), and has none where no hub of the workspace holds the folder. The tab
+    // hands nothing to the pane's strip. Its scroll box carries `data-tab-focus`, which is where
+    // the keyboard goes when a double click keeps the tab (PaneBody.svelte). The headings the
+    // server's answer carries are said to the Outline, and a press on an Outline row scrolls the
+    // tab to that heading (shared/prose/rendered-headings.svelte.ts).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import FileBarActions from '../../shared/links/FileBarActions.svelte';
@@ -100,13 +101,12 @@
         isInstanceOf,
         tabsOf
     } from '$lib/state/workbench/layout';
-    import { HUB_ROOT } from '$lib/state/sources/fs';
     import { useState } from '$lib/state/client/use';
 
     const {
         docs: { engineDocument, hubDocument, manual },
         entities: { config },
-        fs: { roots },
+        fs: { primary, roots },
         headings,
         layout: { activateInstance, closeInstance, hosts, restateInstance }
     } = useState();
@@ -117,9 +117,12 @@
     const label = $derived(instanceText(instance.state, 'label'));
     const fragment = $derived(instanceText(instance.state, 'fragment'));
     const isEngine = $derived(instanceFlag(instance.state, 'engine'));
+    /** The hub the tab's path is relative to: the one its state names, else the primary. */
+    const ownHub = $derived(instanceText(instance.state, 'hub'));
+    const hubName = $derived(ownHub === '' ? primary() : ownHub);
     const pushed = $derived(config());
     const followed = $derived(
-        isEngine || pushed === null || path === ''
+        isEngine || pushed === null || path === '' || ownHub !== ''
             ? null
             : followDoc(readDocs(pushed.config.docs), path, label)
     );
@@ -133,7 +136,9 @@
     const guide = $derived(isEngine || path === '' ? null : manual());
     const waiting = $derived(guide?.loading === true);
     const engineAt = $derived(
-        guide === null || guide.loading || guide.error !== '' ? '' : guide.engineAt
+        guide === null || guide.loading || guide.error !== '' || guide.engineHub !== hubName
+            ? ''
+            : guide.engineAt
     );
     /** The engine path a tab of the hub is the document of, or null for a document of the hub. */
     const engined = $derived(
@@ -150,17 +155,19 @@
               : label
     );
     /** The hub's read of the path, which a tab of the hub starts together with the manual's. */
-    const hub = $derived(isEngine || reading === '' ? null : hubDocument(reading));
+    const hub = $derived(isEngine || reading === '' ? null : hubDocument(reading, ownHub));
     const shown = $derived.by(() => {
         // `hub` is read before the manual's answer is known, so both requests go out together.
         const own = hub;
         if (enginePath !== null) return engineDocument(enginePath);
         return waiting ? guide : own;
     });
-    /** The file the bar's actions apply to, under the hub root, or the empty string for none. */
+    /** The file the bar's actions apply to, under the folder of `barRoot`, or '' for none. */
     const barPath = $derived(
         enginePath === null ? reading : engineHubPath(enginePath, shown?.engineAt ?? '')
     );
+    /** The folder the bar's file is in: the tab's hub, or the hub that holds the engine folder. */
+    const barRoot = $derived(enginePath === null ? (hubName ?? '') : (shown?.engineHub ?? ''));
 
     let box: HTMLDivElement | undefined = $state();
     shareHeadings({
@@ -250,13 +257,13 @@
         useTabActions(),
         () => instance.id,
         barActions,
-        () => servedFile(roots(), HUB_ROOT, barPath, barPath !== '')
+        () => servedFile(roots(), barRoot, barPath, barPath !== '' && barRoot !== '')
     );
 </script>
 
 <!-- The file's actions, handed up to the right end of the pane's breadcrumb bar. -->
 {#snippet barActions()}
-    <FileBarActions root={HUB_ROOT} path={barPath} onDisk={barPath !== ''} />
+    <FileBarActions root={barRoot} path={barPath} onDisk={barPath !== '' && barRoot !== ''} />
 {/snippet}
 
 <Pane {title} tinted>

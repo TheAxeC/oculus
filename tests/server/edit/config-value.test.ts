@@ -18,6 +18,7 @@ import { words } from '../../../src/lib/server/core/words.ts';
 import { writeConfigValue } from '../../../src/lib/server/edit/writes/config/config-value.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { engineFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
+import { hubLinkedToEngine, linkedHub } from './writes-fixture.ts';
 
 /** Every path the writer's module graph read through `readFileSync`, newest last. */
 const reads = vi.hoisted(() => ({ paths: [] as string[] }));
@@ -98,6 +99,40 @@ describe("the machine's own file", () => {
         const outcome = writeConfigValue(engine, 'local.yml', 'hub', ['x'], []);
         expect(refusalOf(outcome, 'local.yml:hub')).toBe(why('local'));
         expect(reads.paths.filter((path) => path.endsWith('local.yml'))).toEqual([]);
+    });
+
+    it("refuses a hub layer file that is a link to a hub's .oculus/local.yml, and writes nothing", () => {
+        const engine = scratchEngine();
+        const { hub, local } = linkedHub();
+        const outcome = writeConfigValue(
+            engine,
+            'behavior.yml',
+            'data_domains',
+            ['x'],
+            [],
+            undefined,
+            hub,
+            [hub]
+        );
+        expect(refusalOf(outcome, 'behavior.yml:data_domains')).toBe(why('local'));
+        expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
+    });
+
+    it("refuses a hub layer file that is a link to oculus's own config/local.yml, and writes nothing", () => {
+        const engine = scratchEngine();
+        const { hub, local } = hubLinkedToEngine(engine);
+        const outcome = writeConfigValue(
+            engine,
+            'behavior.yml',
+            'data_domains',
+            ['x'],
+            [],
+            undefined,
+            hub,
+            [hub]
+        );
+        expect(refusalOf(outcome, 'behavior.yml:data_domains')).toBe(why('local'));
+        expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 });
 

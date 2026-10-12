@@ -5,26 +5,20 @@
 // reads one file with a replace applied (`preview`) as the Replace Preview reads it, behind the
 // token ServerContext minted; the GET reads two files as the diff pane reads a change.
 //
-// The roots are the file browser's own list, folded by lib/server/files/roots.ts, so a folder the
-// reader added in the file browser is a folder these operations reach and no other is. The
-// operations wait on the process's own write chain `opsWrites`, apart from the one the workspaces,
-// bookmarks and notes wait on. The change log, the hub and the history folder come from the same
-// target the write route uses, so a file operation is recorded where every other write is.
+// The roots are the open workspace's folders, so a folder the reader added in the file browser is a
+// folder these operations reach and no other is. The operations wait on the process's own write
+// chain `opsWrites`, apart from the one the workspaces, bookmarks and notes wait on. The change
+// log, the hub and the history folder come from the same target the write route uses, so a file
+// operation is recorded where every other write is.
 
-import { localFile, searchSettings } from '$lib/data/sources/config';
-import { target } from '$lib/server/edit/writes';
+import { configDir, searchSettings } from '$lib/data/sources/config';
+import { carriedOf, target } from '$lib/server/edit/writes';
 import { defaultHistoryDir } from '$lib/server/files/fs/history';
 import { handleCompare, handleOps } from '$lib/server/files/fs/ops';
-import { browserRoots } from '$lib/server/files/roots';
 import type { RequestHandler } from './$types';
 
-/** The roots this request may name, over the configuration it read. */
-const roots = (locals: App.Locals) =>
-    browserRoots({
-        config: locals.config().config,
-        engine: locals.server.engine,
-        local: locals.server.local
-    });
+/** The roots this request may name: the folders of the open workspace. */
+const roots = (locals: App.Locals) => locals.server.workspace.open().roots;
 
 /** Milliseconds one file's search is given by a replace or its preview. */
 const searchTimeout = (locals: App.Locals) =>
@@ -34,13 +28,17 @@ export const GET: RequestHandler = ({ url, locals }) =>
     handleCompare(url, roots(locals), locals.server.local.history ?? defaultHistoryDir());
 
 export const POST: RequestHandler = ({ request, locals }) => {
-    const held = target(locals.server.engine, locals.config().config, locals.server);
+    const held = target(
+        locals.server.engine,
+        locals.config().config,
+        carriedOf(locals.server),
+        locals.server
+    );
     return handleOps(request, locals.token, {
         roots: roots(locals),
+        config: configDir(locals.server.engine),
         writes: locals.server.opsWrites,
-        local: localFile(locals.server.engine),
         changes: held.changes,
-        hub: held.hub,
         history: locals.server.local.history ?? defaultHistoryDir(),
         searchTimeout: searchTimeout(locals)
     });

@@ -30,7 +30,7 @@ import { t } from '$lib/state/shared/words/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/client/writes.svelte';
 import type { ClientState } from '$lib/state/client/context';
 import { viewSourceFile, type ViewSource } from '$lib/state/sessions/view-source';
-import { HUB_ROOT, fileUnder, rootOf } from '$lib/state/shared/page/hubs';
+import { fileUnder } from '$lib/state/shared/page/hubs';
 import { blockedBy } from '$lib/views/shared/forms/entry-file';
 
 /** What the command center and the tasks section are each given by the board that draws them. */
@@ -89,7 +89,7 @@ function collectionOf(target: TickerTarget): string | undefined {
 }
 
 /**
- * The file a line of the collection `key` is written in: the first hub's file the configuration
+ * The file a line of the collection `key` is written in: the primary hub's file the configuration
  * names, or the file of the hub that holds the entry `id` when that is another hub.
  */
 function collectionFile(
@@ -99,10 +99,11 @@ function collectionFile(
 ): ViewSource | null {
     const parts = client.selectors.collectionsOfKey(key);
     const held = parts.find((one) => one.entries.some((entry) => entry.id === id));
-    if (held === undefined || rootOf(held) === HUB_ROOT) {
-        return viewSourceFile('collection', client.selectors.configMap(), key);
+    const primary = client.fs.primary();
+    if (held?.root === undefined) {
+        return viewSourceFile('collection', client.selectors.configMap(), primary, key);
     }
-    return fileUnder(held.file, client.fs.roots());
+    return fileUnder(held.file, client.fs.roots(), primary);
 }
 
 /**

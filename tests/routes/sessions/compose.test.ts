@@ -29,7 +29,8 @@ import {
     request,
     source,
     lineOf,
-    tmux
+    tmux,
+    worldOf
 } from './terminal-fixture.ts';
 
 test.afterAll(() => {
@@ -44,11 +45,10 @@ let ENGINE = '';
 /** The second Claude account's folder. */
 let SECOND = '';
 
-/** The machine-local values of the engine, with the three accounts. */
-function localOf(engine: string, second: string) {
+/** The machine-local values with the Claude command and the three accounts. */
+function localOf(second: string) {
     return {
-        ...localDefaults(engine),
-        hub: HERE,
+        ...localDefaults(),
         claudeBin: BIN,
         accounts: [
             { tool: 'claude' as const, label: 'Home', dir: join(homedir(), '.claude') },
@@ -70,7 +70,7 @@ test.beforeAll(() => {
         join(ENGINE, 'config', 'catalogs', 'agents.yml')
     );
     SECOND = scratchDir('oculus-second-account-');
-    LOCAL = localOf(ENGINE, SECOND);
+    LOCAL = localOf(SECOND);
 });
 
 /** The route with the recording tmux, this suite's engine and its accounts. */
@@ -83,6 +83,7 @@ async function post(
     const response = await handleTerminal(request({ cols: 80, rows: 24, ...body }), TOKEN, {
         engine: ENGINE,
         run: driver.run,
+        openFor: worldOf().openFor,
         localFor: () => LOCAL,
         configFor: () => BASE_CHAT_CONFIG,
         recordFor,
@@ -234,7 +235,10 @@ describe('POST /api/terminal, a start with a task', () => {
 
     /** The route over the task hub and this case's approvals file. */
     function postTask(body: Record<string, unknown>) {
-        return post(body, source(), { hubFor: () => hub, approvalsFor: () => approvals });
+        return post(body, source(), {
+            openFor: worldOf(hub).openFor,
+            approvalsFor: () => approvals
+        });
     }
 
     /** The seed the page is shown for the task, as the `seed` action answers it. */

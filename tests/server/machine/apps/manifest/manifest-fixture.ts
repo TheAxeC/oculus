@@ -61,8 +61,9 @@ export function read(
     }
     const base = plantScratch('oculus-apps-manifest-', files, ['machine']);
     const scanned = scanApps({
-        machine: join(base, 'machine'),
-        localFile: join(base, 'local.yml'),
+        machine: { dir: join(base, 'machine'), localFile: join(base, 'local.yml') },
+        appearanceFile: join(base, 'appearance.yml'),
+        primary: null,
         roots: Object.keys(layout.roots ?? {}).map((key) => ({
             key,
             dir: join(base, 'roots', key)
@@ -81,16 +82,21 @@ export function read(
     return { base, scanned };
 }
 
-/** The same folders read again with the given roots and `apps_dir`, for a case that edits them. */
+/**
+ * The same folders read again with the given roots, `apps_dir` and primary hub, for a case that
+ * edits them.
+ */
 export function again(
     base: string,
     machine: string | null,
     roots: { key: string; dir: string }[],
-    approved: ReadonlySet<string> = new Set()
+    approved: ReadonlySet<string> = new Set(),
+    primary: string | null = null
 ) {
     return scanApps({
-        machine,
-        localFile: join(base, 'local.yml'),
+        machine: machine === null ? null : { dir: machine, localFile: join(base, 'local.yml') },
+        appearanceFile: join(base, 'appearance.yml'),
+        primary,
         roots,
         config,
         settings,

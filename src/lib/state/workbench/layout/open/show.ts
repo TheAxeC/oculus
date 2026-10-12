@@ -10,7 +10,7 @@
 // state is still there for a tab that mounts after it. A deck is named in the layout state of its
 // Present tab (state/life/present.ts), so the opener only names the tab.
 
-import { HUB_ROOT, nameOf, normalisePath, revealAsked, rootedState } from '../../../sources/fs.ts';
+import { nameOf, normalisePath, revealAsked, rootedState } from '../../../sources/fs.ts';
 import { findView, panes } from '../instance.ts';
 import type { LayoutAccess } from '../access.ts';
 import type { Attention } from './attention.ts';
@@ -23,10 +23,10 @@ import { focusedPane } from '../workbench.ts';
 import { deckState, type DeckRef } from '../../../life/present.ts';
 
 export type ShowInFiles = {
-    showInFiles: (path: string, root?: string, open?: boolean) => string;
+    showInFiles: (path: string, root: string, open?: boolean) => string;
     /** The same ask, and the Files tab opens its Timeline section on the path too. */
-    showTimeline: (path: string, root?: string) => string;
-    showFolderInFiles: (path: string, root?: string) => string;
+    showTimeline: (path: string, root: string) => string;
+    showFolderInFiles: (path: string, root: string) => string;
     /** Show the TeX view: its tab if one is open, else a new tab in the pane holding Files. */
     showTexView: () => string;
 };
@@ -43,12 +43,7 @@ export function createShowInFiles(
      * way, select the path and scroll it into view; with `open` a folder is shown open too, and
      * with `timeline` the Timeline section is opened and scrolled to in place of the row.
      */
-    function show(
-        path: string,
-        root: string | undefined,
-        open: boolean,
-        timeline: boolean
-    ): string {
+    function show(path: string, root: string, open: boolean, timeline: boolean): string {
         const page = attention.touched().id;
         const tree = access.layout(page);
         const held = findView(tree, 'files', null);
@@ -75,7 +70,7 @@ export function createShowInFiles(
      * if it was moved up. The tab is named by the folder's root and path, so showing the same
      * folder again finds the same tab.
      */
-    function showFolderInFiles(path: string, root: string = HUB_ROOT): string {
+    function showFolderInFiles(path: string, root: string): string {
         const page = attention.touched().id;
         const top = { root, path: normalisePath(path) };
         const label = top.path === '' ? root : nameOf(top.path);

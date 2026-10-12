@@ -33,7 +33,7 @@ import { basename, isAbsolute, resolve } from 'node:path';
 import { programFor, type ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import { hasForm } from '../../data/sources/config/catalog/value-rule.ts';
 import { tokenedBody } from '../core/auth.ts';
-import { HUB_ROOT, resolveRootPath, type Root } from './files.ts';
+import { resolveRootPath, type Root } from './files.ts';
 
 // The URL opener is declared beside the connect flow that is its other reader, and handed on here
 // with the path opener, so the composition root takes both from this module.
@@ -65,11 +65,11 @@ export type PathOpener = (target: OpenTarget) => Promise<void> | void;
 export type FinderInfoReader = (path: string) => Promise<Buffer | null>;
 
 /** The system binaries this module runs, by absolute path so no PATH entry stands in for them. */
-const OPEN = '/usr/bin/open';
+export const OPEN = '/usr/bin/open';
 const XATTR = '/usr/bin/xattr';
 
 /** The sentence every refusal of a path outside the roots carries. */
-const OUTSIDE = 'the path is outside the configured roots';
+const OUTSIDE = 'the path is outside the folders of the workspace';
 
 /** The sentence a refusal of a path with nothing to open at it carries. */
 const MISSING = 'there is no file or folder at the path';
@@ -197,11 +197,12 @@ async function openTarget(
 }
 
 /**
- * Resolve an absolute or hub-relative path to an existing directory or regular file, without
- * following a symlink beyond an allowed root.
+ * Resolve an absolute or primary-hub-relative path to an existing directory or regular file,
+ * without following a symlink beyond an allowed root. A relative path in a workspace with no
+ * primary is resolved against nothing, so it names no file.
  */
-function allowed(path: string, roots: Root[]): string | null {
-    const hub = roots.find((root) => root.key === HUB_ROOT);
+function allowed(path: string, roots: Root[], primary: string | null): string | null {
+    const hub = roots.find((root) => root.key === primary);
     const candidate = isAbsolute(path) ? path : hub === undefined ? path : resolve(hub.dir, path);
     let real: string;
     try {
@@ -295,9 +296,10 @@ async function target(
     path: string,
     roots: Root[],
     apps: ProgramApps,
-    reader: FinderInfoReader
+    reader: FinderInfoReader,
+    primary: string | null
 ): Promise<OpenTarget | Response> {
-    const real = resolved(body, path, roots);
+    const real = resolved(body, path, roots, primary);
     if (real instanceof Response) return real;
     // Finder only selects what it reveals, so no program is asked for and no file is run.
     if (body.reveal === true) return { kind: 'reveal', path: real };
@@ -306,12 +308,17 @@ async function target(
 
 /**
  * The real file or folder a body names inside a root, or the refusal of where it points. `{ path }`
- * is an absolute or hub-relative path inside any root; `{ root, path }` is a path relative to the
- * root of that key, and a key no root carries is refused on `root` rather than looked for anywhere
- * else.
+ * is an absolute or primary-hub-relative path inside any root; `{ root, path }` is a path relative
+ * to the root of that key, and a key no root carries is refused on `root` rather than looked for
+ * anywhere else.
  */
-function resolved(body: Record<string, unknown>, path: string, roots: Root[]): string | Response {
-    if (!('root' in body)) return allowed(path, roots) ?? refuse(403, 'path', OUTSIDE);
+function resolved(
+    body: Record<string, unknown>,
+    path: string,
+    roots: Root[],
+    primary: string | null
+): string | Response {
+    if (!('root' in body)) return allowed(path, roots, primary) ?? refuse(403, 'path', OUTSIDE);
     const key = body.root;
     if (typeof key !== 'string' || !roots.some((one) => one.key === key)) {
         return refuse(400, 'root', NO_ROOT);
@@ -343,7 +350,8 @@ export async function handleOpen(
     roots: Root[],
     appsFor: () => ProgramApps,
     opener: PathOpener = macOpenPath,
-    reader: FinderInfoReader = readFinderInfo
+    reader: FinderInfoReader = readFinderInfo,
+    primary: string | null = null
 ): Promise<Response> {
     const read = await tokenedBody(request, token, { text });
     if (read instanceof Response) return read;
@@ -361,7 +369,7 @@ export async function handleOpen(
             { status: 500 }
         );
     }
-    const found = await target(body, body.path, roots, apps, reader);
+    const found = await target(body, body.path, roots, apps, reader, primary);
     if (found instanceof Response) return found;
     try {
         await opener(found);

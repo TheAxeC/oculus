@@ -50,11 +50,11 @@ import type { SchedulesWatcher } from './watch.ts';
 /** What the route needs of the process. */
 export type SchedulesRouteOptions = {
     /** The schedules file, the run record and the saved commands file, read at the request. */
-    files: () => { schedules: string; record: string; commands: string };
+    files: () => { schedules: string | null; record: string; commands: string };
     /** The directories the file browser serves, read at the request. */
     rootsFor: () => string[];
-    /** The hub folder, read at the request. */
-    hubFor: () => string;
+    /** The primary hub's folder, read at the request, or null with no primary. */
+    hubFor: () => string | null;
     /** The text catalog the token refusal is worded from, read when a refusal is made. */
     text: () => Record<string, string>;
     /** The write chain the schedules file and the record are written behind. */
@@ -104,6 +104,8 @@ const OK = (): Response => json({ ok: true }, { headers: NO_STORE });
 
 /** What a write did that the change log and the watcher need. */
 type Wrote = {
+    /** The schedules file the write changed. */
+    file: string;
     before: unknown;
     after: unknown;
     name: string;
@@ -121,7 +123,7 @@ type Wrote = {
  */
 function checkSave(
     options: SchedulesRouteOptions,
-    files: ReturnType<SchedulesRouteOptions['files']>,
+    files: { schedules: string; record: string; commands: string },
     at: number | null,
     was: string | null,
     raw: unknown
@@ -190,7 +192,9 @@ async function write(
     options: SchedulesRouteOptions,
     action: Exclude<z.infer<typeof bodyShape>, { action: 'run' }>
 ): Promise<Response | Wrote> {
-    const files = options.files();
+    const listed = options.files();
+    if (listed.schedules === null) return refuse('no-primary');
+    const files = { ...listed, schedules: listed.schedules };
     let edit: Edit;
     if (action.action === 'save') {
         const checked = checkSave(options, files, action.at, action.was, action.entry);
@@ -239,7 +243,7 @@ async function write(
         return refuse('schedules-unwritten', [], 500);
     }
     const name = edit.action === 'save' ? edit.entry.name : edit.name;
-    return { before: planned.before, after: planned.after, name, late };
+    return { file: files.schedules, before: planned.before, after: planned.after, name, late };
 }
 
 /** POST /api/schedules: save, delete, pause, resume or run. */
@@ -274,7 +278,7 @@ export async function handleSchedules(
     options.schedules.reload();
     await logChanges(options.changes, KIND, [
         {
-            file: options.files().schedules,
+            file: wrote.file,
             key: wrote.name,
             field: 'entries',
             before: wrote.before,

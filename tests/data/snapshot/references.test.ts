@@ -363,17 +363,17 @@ const ROWS: Row[] = [
         references: ['hub:projects/active/alpha/project.yml:4:12']
     },
     {
-        name: 'an open text under the hub root of the file the engine root serves from inside the hub',
-        at: ['engine', 'behavior.yml', 0, 15],
+        name: 'an open text under the hub root of a config file that lies inside the hub folder',
+        at: ['hub', 'tools/oculus/config/behavior.yml', 0, 15],
         options: { engineInHub: true },
         open: { 'hub:tools/oculus/config/catalogs/vocab.yml': VOCAB_WITHOUT_HEART },
         kind: 'reference',
         key: 'heart',
         targets: ['hub:registries/domains.yml:3'],
-        references: ['engine:behavior.yml:0:15']
+        references: ['hub:tools/oculus/config/behavior.yml:0:15']
     },
     {
-        name: 'an open text under the hub root of a file the engine root serves from another folder',
+        name: 'an open text under the hub root of a config file that another workspace folder holds',
         at: ['engine', 'behavior.yml', 0, 15],
         open: { 'hub:tools/oculus/config/catalogs/vocab.yml': VOCAB_WITHOUT_HEART },
         kind: 'reference',

@@ -15,7 +15,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, type Plugin } from 'vitest/config';
-import { engineDir, loadLocal } from './src/lib/data/sources/config.ts';
+import { engineDir, loadMachine } from './src/lib/data/sources/config.ts';
 import { componentBeforeStyle } from './src/lib/server/root/style-first.ts';
 import {
     APP_FOLDERS,
@@ -23,6 +23,14 @@ import {
     PLAIN_FOLDERS
 } from './src/lib/server/root/process/build-folders.ts';
 import { oculusViteServer } from './src/lib/server/root/vite-plugin.ts';
+import { openWorkspace } from './src/lib/server/files/workspace/open.ts';
+import { defaultStateFolder } from './src/lib/server/files/workspace/state.ts';
+
+/** The port the primary hub of the open workspace names, the default one without a primary. */
+function devPort(): number {
+    const open = openWorkspace(defaultStateFolder());
+    return loadMachine(open.hubs, open.primary).port;
+}
 
 /**
  * Vite optimizes a server environment's dependencies into `<cacheDir>/deps_<environment>` by
@@ -111,7 +119,7 @@ export default defineConfig(({ mode }) => {
         ],
         server: {
             host: '127.0.0.1',
-            port: loadLocal(engineDir()).port,
+            port: devPort(),
             strictPort: true
         },
         test: {

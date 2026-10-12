@@ -29,6 +29,11 @@ export function connectKey(account: AccountRow): string {
     return `${account.provider}-${account.label}`;
 }
 
+/** The `hub` field of an account row, absent for a row no hub's file holds. */
+export function hubMark(account: { hub?: string }): { hub?: string } {
+    return account.hub === undefined ? {} : { hub: account.hub };
+}
+
 /** The two providers that sign in, in the order the page offers them. */
 export const PROVIDERS: readonly ConnectProvider[] = ['google', 'microsoft'];
 
@@ -76,8 +81,8 @@ export type AccountRefusal = 'provider' | 'label' | 'taken';
 /**
  * Why an account of this provider and label cannot join a connector's list that already holds
  * `rows`, or null when it can. The provider is one the connector offers, and the label is unique
- * per provider inside its own list, which is the rule the reader of config/local.yml applies, so a
- * row this accepts is a row the next read accepts.
+ * per provider inside its own list, which is the rule the reader of the hubs' `.oculus/local.yml`
+ * files applies, so a row this accepts is a row the next read accepts.
  */
 export function accountRefusal(
     kind: ConnectKind,

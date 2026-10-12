@@ -35,7 +35,7 @@ import { json } from '@sveltejs/kit';
 import { existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { z } from 'zod';
-import { loadLocal, textCatalog } from '../../../../data/sources/config.ts';
+import { textCatalog } from '../../../../data/sources/config.ts';
 import { latexBuild } from '../../../../data/sources/config/settings.ts';
 import type {
     BuildOutcome,
@@ -44,7 +44,7 @@ import type {
     TerminalJob
 } from '../../../../data/model/index.ts';
 import { MANUSCRIPT, stemOf } from '../../../../data/prose/latex.ts';
-import { HUB_ROOT, rootOf as hubOf } from '../../../../data/helpers/hub-names.ts';
+import { rootOf as hubOf } from '../../../../data/helpers/hub-names.ts';
 import { inside, realPath } from '../../../core/paths.ts';
 import { onPath } from '../../../core/program.ts';
 import { words } from '../../../core/words.ts';
@@ -176,7 +176,7 @@ function latexFolder(
         return refusal('not-an-action');
     }
     if (named.data.id === undefined) {
-        const roots = options.servedRootsFor?.() ?? [];
+        const roots = options.openFor().roots;
         const found = resolveRootPath(roots, named.data.root, named.data.path);
         if ('error' in found) return refusal(found.error);
         const served = roots.find((one) => one.key === named.data.root)?.dir ?? found.path;
@@ -189,11 +189,10 @@ function latexFolder(
     }
     const project = (options.projectFor ?? (() => null))(named.data.id);
     if (project === null) return refusal('no-project');
-    const first = options.hubFor?.() ?? (options.localFor?.() ?? loadLocal(options.engine)).hub;
-    // A project of a hub other than the first lies under the served root of that hub's key.
-    const key = hubOf(project);
-    const hub =
-        key === HUB_ROOT ? first : options.servedRootsFor?.().find((one) => one.key === key)?.dir;
+    const open = options.openFor();
+    // A project lies under the served root of its hub's name.
+    const key = hubOf(project, open.primary);
+    const hub = open.roots.find((one) => one.key === key)?.dir;
     if (hub === undefined) return refusal('no-project');
     // A project of a repository is built from the repository, which also bounds what it reads.
     const bound = project.repository?.dir ?? hub;
@@ -314,7 +313,7 @@ function approvalAsk(
 function targetOfRepo(repo: string, options: TerminalOptions): LatexJobTarget | null {
     const real = realPath(repo) ?? repo;
     let found: { key: string; dir: string } | null = null;
-    for (const root of options.servedRootsFor?.() ?? []) {
+    for (const root of options.openFor().roots) {
         const dir = realPath(root.dir) ?? root.dir;
         if (!inside(real, dir)) continue;
         if (found === null || dir.length > found.dir.length) found = { key: root.key, dir };

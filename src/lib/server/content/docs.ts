@@ -7,14 +7,14 @@
 // reaches the page.
 //
 // A request names one of four things, and one that names several is answered for the first of
-// `manual`, `engine`, `hub` and `project`, in that order. `project` with `name` is one of that
-// project's own documents, its id `<root key>:<id>` for a project of a hub other than the first;
-// the documents of a project read from a repository (a `roots:` entry holding its own manifest) are
-// read from the repository; `hub` is a path relative to the research hub, which is what the `docs:`
-// list of config/layout.yml lists in the view catalogue, and `root` beside it names the hub it is
-// relative to; `engine` is a Markdown file of oculus's own folder, named by a path relative to that
-// folder, wherever the folder sits; `manual` is the engine's own HELP.md and takes no path.
-// Everything else is a 404 naming what was wrong.
+// `manual`, `engine`, `path` and `project`, in that order. `project` with `name` is one of that
+// project's own documents, its id `<hub name>:<id>` for a project of a hub other than the primary;
+// the documents of a project read from a repository (a project folder holding its own manifest) are
+// read from the repository; `path` is a path relative to a hub, which is what the `docs:` list of
+// config/layout.yml lists in the view catalogue, and `hub` beside it names the hub it is relative
+// to (the primary when it is missing, and nothing with no primary); `engine` is a Markdown file of
+// oculus's own folder, named by a path relative to that folder, wherever the folder sits; `manual`
+// is the engine's own HELP.md and takes no path. Everything else is a 404 naming what was wrong.
 //
 // The path read is the reader's, never the request's: the id names a project the server already
 // holds in its portfolio, the name is one of the Markdown literals below, and the join of the two
@@ -41,10 +41,11 @@
 //
 // A document's answer names its own path and the manual's, which the page resolves a relative link
 // to another document from. For the manual and an `engine` document (`engine: true`) both are
-// relative to the engine folder, so a link between oculus's own documents opens on a hub that does
-// not hold them; for any other document both are relative to the hub. Every answer also names
-// where the engine folder sits in the hub (`engineAt`), so the page can tell a hub path that lies
-// in the engine folder from one that does not.
+// relative to the engine folder, so a link between oculus's own documents opens on a workspace that
+// does not hold them; for any other document both are relative to the hub it is of (`hub`). Every
+// answer also names where the engine folder sits in a hub (`engineHub` and `engineAt`: the hub of
+// the document, else the first hub of the workspace that holds the folder), so the page can tell a
+// hub path that lies in the engine folder from one that does not.
 //
 // The HTML is rendered here and filtered on the page: ui/html.ts's sanitise runs over every body
 // this route answers with, before views/shared/prose/Markdown.svelte draws it. One filter, at the
@@ -68,7 +69,6 @@ import { configDir } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
 import { hubId, splitHubId } from '../../data/helpers/hub-names.ts';
-import { HUB_ROOT } from '../files/files.ts';
 import type { HubTarget } from '../files/roots.ts';
 import type {
     Finding,
@@ -78,36 +78,67 @@ import type {
     RenderedHeading
 } from '../../data/model/index.ts';
 import { inside, realPath } from '../core/paths.ts';
+import { words } from '../core/words.ts';
 
 /**
- * What a document read needs to know: which hub it is in, what its scan rules are, and how to reach
- * one project of the portfolio the server holds. The route passes the reader of its own locals; a
- * target without one falls back to the scan rules alone.
+ * What a document read needs to know: the primary hub and the other hubs of the workspace, what the
+ * scan rules of the primary are, and how to reach one project of the portfolio the server holds.
+ * The route passes the reader of its own locals; a target without one falls back to the scan rules
+ * alone.
  */
 export type DocTarget = {
-    hub: string;
+    /** The primary hub's name and folder, or null when the workspace has none. */
+    primary: { key: string; dir: string } | null;
     /** The engine directory, which is where the manual and oculus's own documents sit. */
     engine: string;
+    /** The primary's settings, else the engine's defaults. */
     config: PortfolioConfig;
     project?: (id: string) => Project | null;
-    /** The hubs other than the first, whose projects are named `<root key>:<id>`. */
+    /** The hubs other than the primary, whose projects are named `<hub name>:<id>`. */
     hubs?: HubTarget[];
 };
 
+/** A document read inside one hub: the hub's name and folder, its settings and project lookup. */
+type Scope = {
+    key: string;
+    hub: string;
+    engine: string;
+    config: PortfolioConfig;
+    project?: (id: string) => Project | null;
+};
+
 /**
- * The target for the hub served under `root`: the target itself for the first hub, and for another
- * hub its folder, its scan rules and a project lookup that takes the id inside that hub.
+ * The scope of the hub named `root`: the primary's, or another hub's folder, scan rules and a
+ * project lookup that takes the id inside that hub. Null for a name that is no hub of the
+ * workspace.
  */
-function within(into: DocTarget, root: string): DocTarget | null {
-    if (root === HUB_ROOT) return into;
+function within(into: DocTarget, root: string): Scope | null {
+    if (into.primary !== null && root === into.primary.key) {
+        return {
+            key: root,
+            hub: into.primary.dir,
+            engine: into.engine,
+            config: into.config,
+            project: into.project
+        };
+    }
     const one = (into.hubs ?? []).find((held) => held.key === root);
     if (one === undefined) return null;
     return {
-        ...into,
+        key: root,
         hub: one.hub,
+        engine: into.engine,
         config: one.config,
-        project: (id) => into.project?.(hubId(root, id)) ?? null
+        project: (id) => into.project?.(hubId(root, id, into.primary?.key ?? null)) ?? null
     };
+}
+
+/** The hubs of the workspace as a name and a folder each, the primary first. */
+function hubsOf(into: DocTarget): { key: string; dir: string }[] {
+    return [
+        ...(into.primary === null ? [] : [into.primary]),
+        ...(into.hubs ?? []).map((one) => ({ key: one.key, dir: one.hub }))
+    ];
 }
 
 /**
@@ -130,9 +161,12 @@ export const MARKDOWN_DOCS = PROJECT_DOCS.map((doc) => doc.name).filter((name) =
  * `manual` is the manual's name in it. For any other document `path` is the file's path relative to
  * the hub and `manual` the manual's, each null when the file lies outside the hub. A relative link
  * in the document is resolved from `path`, and one that resolves to `manual` opens the Help view.
- * `engineAt` is the engine folder's path relative to the hub, or the empty string when the folder
- * does not lie in it. A document of oculus's own that holds a diagram also carries its runs of
- * prose and diagrams as `parts`, cut from the same parse as its HTML; no other answer does.
+ * `hub` is the hub that `path` is relative to (empty for a document read in the engine's space).
+ * `engineAt` is the engine folder's path relative to the hub `engineHub`, which is the document's
+ * own hub when the folder lies in it and, for a document read in the engine's space, the primary
+ * hub of the workspace that holds the folder; both are empty when no hub holds it. A document of
+ * oculus's own that holds a diagram also carries its runs of prose and diagrams as `parts`, cut
+ * from the same parse as its HTML; no other answer does.
  */
 export type DocAnswer = {
     html: string;
@@ -142,6 +176,8 @@ export type DocAnswer = {
     path: string | null;
     manual: string | null;
     engine: boolean;
+    hub: string;
+    engineHub: string;
     engineAt: string;
     parts?: DocPart[];
 };
@@ -214,7 +250,7 @@ function escapes(path: string, hub: string): boolean {
  * yet. The scan reader (data/sources/manifests.ts) is the one that decides what a project is, so a
  * folder it does not reach holds no document.
  */
-function folderOf(into: DocTarget, id: string): string | null {
+function folderOf(into: Scope, id: string): string | null {
     const held = into.project?.(id) ?? null;
     if (held !== null && held.folder !== '') return held.folder;
     const found = readManifests(into.hub, into.config.scan, into.config.text).manifests.find(
@@ -399,26 +435,60 @@ function slashed(path: string): string {
 }
 
 /**
- * The engine folder's path relative to the hub: on the paths as configured when the engine path
- * lies under the hub path, else on the real paths when the engine's real folder lies under the
+ * The engine folder's path relative to a hub folder: on the paths as configured when the engine
+ * path lies under the hub path, else on the real paths when the engine's real folder lies under the
  * hub's real folder (an engine reached through a link in the hub), else the empty string. The empty
- * string is also what an engine folder that is the hub itself gives, since the page reads it as
- * "no place in the hub".
+ * string is also what an engine folder that is the hub itself gives, since the page reads it as "no
+ * place in the hub".
  */
-function engineAtOf(into: DocTarget): string {
-    if (inside(into.engine, into.hub))
-        return slashed(relative(resolve(into.hub), resolve(into.engine)));
-    const hub = realPath(into.hub);
-    const engine = realPath(into.engine);
-    if (hub === null || engine === null || !inside(engine, hub)) return '';
-    return slashed(relative(hub, engine));
+function engineAtIn(engine: string, hub: string): string {
+    if (inside(engine, hub)) return slashed(relative(resolve(hub), resolve(engine)));
+    const real = realPath(hub);
+    const folder = realPath(engine);
+    if (real === null || folder === null || !inside(folder, real)) return '';
+    return slashed(relative(real, folder));
+}
+
+/**
+ * Where the engine folder sits in a hub: in `scope` for a document of that hub, else in the first
+ * hub of the workspace that holds it. Both parts are empty when no hub does.
+ */
+function enginePlace(
+    into: { engine: string },
+    hubs: readonly { key: string; dir: string }[]
+): { hub: string; at: string } {
+    for (const one of hubs) {
+        const at = engineAtIn(into.engine, one.dir);
+        if (at !== '') return { hub: one.key, at };
+    }
+    return { hub: '', at: '' };
 }
 
 /** The manual's path relative to the hub: where the file really is, else where the engine sits. */
-function manualInHub(into: DocTarget, engineAt: string): string | null {
+function manualInHub(into: Scope, engineAt: string): string | null {
     const real = hubPath(into.hub, join(into.engine, MANUAL));
     if (real !== null || engineAt === '') return real;
     return `${engineAt}/${MANUAL}`;
+}
+
+/**
+ * What an answer is made over: the settings its words come from, the hub its path is relative to
+ * (none for a document read in the engine's space) and where the engine folder sits in a hub.
+ */
+type Ctx = { config: PortfolioConfig; scope: Scope | null; place: { hub: string; at: string } };
+
+/** The context of a document of one hub. */
+function inScope(scope: Scope): Ctx {
+    return {
+        config: scope.config,
+        scope,
+        place: enginePlace(scope, [{ key: scope.key, dir: scope.hub }])
+    };
+}
+
+/** The context of a document read in the engine's space, over the hubs of the workspace. */
+function inEngine(into: DocTarget): Ctx {
+    return { config: into.config, scope: null, place: enginePlace(into, hubsOf(into)) };
 }
 
 /**
@@ -430,7 +500,7 @@ function manualInHub(into: DocTarget, engineAt: string): string | null {
  * (the manual, an `engine` document) and null for one it reads in the hub's.
  */
 function answer(
-    into: DocTarget,
+    ctx: Ctx,
     path: string,
     held: string,
     draw: (text: string) => Drawn,
@@ -441,18 +511,20 @@ function answer(
     if (tag !== '' && tag === held) {
         return new Response(null, { status: 304, headers: { etag: tag, 'cache-control': CACHE } });
     }
-    const read = readDoc(file, into.config.text);
+    const read = readDoc(file, ctx.config.text);
     if (isFinding(read))
         return json({ error: read.message, file }, { status: 404, headers: NO_STORE });
-    const engineAt = engineAtOf(into);
+    const { scope, place } = ctx;
     const body: DocAnswer = {
         ...draw(read.text),
         frontmatter: read.frontmatter,
         file,
-        path: own ?? hubPath(into.hub, file),
-        manual: own === null ? manualInHub(into, engineAt) : MANUAL,
+        path: own ?? (scope === null ? null : hubPath(scope.hub, file)),
+        manual: own === null ? (scope === null ? null : manualInHub(scope, place.at)) : MANUAL,
         engine: own !== null,
-        engineAt
+        hub: own === null && scope !== null ? scope.key : '',
+        engineHub: place.hub,
+        engineAt: place.at
     };
     return json(body, { headers: tag === '' ? NO_STORE : { ...NO_STORE, etag: tag } });
 }
@@ -463,7 +535,7 @@ function answer(
  * against the hub. A figure beside it is addressed under the repository's Files root.
  */
 function renderRepositoryDoc(
-    into: DocTarget,
+    into: Scope,
     repository: { root: string; dir: string },
     name: string,
     held: string
@@ -476,7 +548,7 @@ function renderRepositoryDoc(
         );
     }
     const base = { root: repository.root, folder: dirname(name) };
-    return answer(into, path, held, (text) => renderMarkdown(text, base));
+    return answer(inScope(into), path, held, (text) => renderMarkdown(text, base));
 }
 
 /**
@@ -493,7 +565,8 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
     }
     const named = splitHubId(
         id,
-        (into.hubs ?? []).map((one) => one.key)
+        (into.hubs ?? []).map((one) => one.key),
+        into.primary?.key ?? null
     );
     const owner = within(into, named.root);
     const repository = owner?.project?.(named.id)?.repository;
@@ -512,7 +585,7 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
         );
 
     const base = { root: named.root, folder: dirname(join(folder, name)) };
-    return answer(owner, path, held, (text) => renderMarkdown(text, base));
+    return answer(inScope(owner), path, held, (text) => renderMarkdown(text, base));
 }
 
 /**
@@ -521,17 +594,17 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
  * page shows (views/boards/entry/Entry.svelte). Only a Markdown file is served, since nothing
  * else renders, and the joined path is checked against the hub again before the file is opened, so
  * a path climbing out of it is a 404 and nothing is opened. The hub's own files are already served
- * to this page by api/file under the `hub` root; this is the same ground, rendered as prose.
+ * to this page by api/file under the hub's folder name; this is the same ground, rendered as prose.
  */
-export function renderHubDoc(
-    target: DocTarget,
-    path: string,
-    held = '',
-    root = HUB_ROOT
-): Response {
-    const into = within(target, root);
+export function renderHubDoc(target: DocTarget, path: string, held = '', hub = ''): Response {
+    const root = hub === '' ? (target.primary?.key ?? '') : hub;
+    const into = root === '' ? null : within(target, root);
     if (into === null) {
-        return json({ error: `no hub served as ${root}` }, { status: 404, headers: NO_STORE });
+        const sentence =
+            hub === ''
+                ? words(target.config.text, 'server.workspace.no_primary_doc')
+                : words(target.config.text, 'server.workspace.no_hub_named', hub);
+        return json({ error: sentence }, { status: 404, headers: NO_STORE });
     }
     if (path === '' || !path.endsWith('.md')) {
         return json(
@@ -547,7 +620,7 @@ export function renderHubDoc(
         );
     const base = { root, folder: dirname(path) };
     const own = ownScope(into.engine, full);
-    return answer(into, full, held, (text) => renderMarkdown(text, base, own));
+    return answer(inScope(into), full, held, (text) => renderMarkdown(text, base, own));
 }
 
 /** Whether a path is a file: false for a folder and for a path that cannot be read. */
@@ -608,11 +681,13 @@ function renderEngineDoc(into: DocTarget, path: string, held = ''): Response {
     if ('error' in found) {
         return json({ error: found.error }, { status: 404, headers: NO_STORE });
     }
-    const engineAt = engineAtOf(into);
+    const ctx = inEngine(into);
     const base =
-        engineAt === '' ? null : { root: HUB_ROOT, folder: join(engineAt, dirname(found.at)) };
+        ctx.place.hub === ''
+            ? null
+            : { root: ctx.place.hub, folder: join(ctx.place.at, dirname(found.at)) };
     const own = ownScope(into.engine, found.file);
-    return answer(into, found.file, held, (text) => renderMarkdown(text, base, own), found.at);
+    return answer(ctx, found.file, held, (text) => renderMarkdown(text, base, own), found.at);
 }
 
 /**
@@ -655,8 +730,14 @@ const groupsShape = z.custom<object>((held) => typeof held === 'object' && held 
  * never repaired, so a document whose file has moved shows up in the Findings view rather than as a
  * rail button that opens an empty tab.
  */
-export function docFindings(config: Record<string, unknown>, hub: string, file: string): Finding[] {
+export function docFindings(
+    config: Record<string, unknown>,
+    hub: string | null,
+    file: string
+): Finding[] {
     const findings: Finding[] = [];
+    // The list is the primary hub's layer's, so a workspace with no primary hub has none to check.
+    if (hub === null) return findings;
     // The groups are checked only against a config that names some, which every real one does.
     const groups = groupsShape.safeParse(config.nav_groups);
     const known = groups.success ? Object.keys(groups.data) : null;
@@ -738,12 +819,12 @@ export const MANUAL = 'HELP.md';
 
 /**
  * The manual, read from the engine directory. Its name is a constant that the request does not
- * name, and the `engine` root of api/file is the config folder alone, so the manual has no other
- * way to the page than this. It is drawn as prose alone and answered in the engine's space.
+ * name, so the manual reaches the page whether or not a folder of the workspace holds oculus's
+ * folder. It is drawn as prose alone and answered in the engine's space.
  */
 export function renderManual(into: DocTarget, held = ''): Response {
     return answer(
-        into,
+        inEngine(into),
         join(into.engine, MANUAL),
         held,
         (text) => renderMarkdown(text, null),
@@ -752,10 +833,11 @@ export function renderManual(into: DocTarget, held = ''): Response {
 }
 
 /**
- * The whole endpoint: the document the request names. A request carries one of four things, and
- * the first of these that it holds is the one answered: `manual`, which is the engine's own
- * HELP.md and takes no path; `engine`, a Markdown file of the engine folder by its path in it; a
- * hub path; or a project and one of that project's document names.
+ * The whole endpoint: the document the request names. A request carries one of four things, and the
+ * first of these that it holds is the one answered: `manual`, which is the engine's own HELP.md and
+ * takes no path; `engine`, a Markdown file of the engine folder by its path in it; a hub path
+ * (`path`, with the `hub` it is relative to); or a project and one of that project's document
+ * names.
  */
 export function handleDocs(request: Request, into: DocTarget): Response {
     const url = new URL(request.url);
@@ -763,9 +845,8 @@ export function handleDocs(request: Request, into: DocTarget): Response {
     if (url.searchParams.has(MANUAL_PARAM)) return renderManual(into, held);
     const engine = url.searchParams.get(ENGINE_PARAM);
     if (engine !== null) return renderEngineDoc(into, engine, held);
-    const hub = url.searchParams.get(HUB_ROOT);
-    if (hub !== null)
-        return renderHubDoc(into, hub, held, url.searchParams.get('root') ?? HUB_ROOT);
+    const path = url.searchParams.get('path');
+    if (path !== null) return renderHubDoc(into, path, held, url.searchParams.get('hub') ?? '');
     return renderDoc(
         into,
         url.searchParams.get('project') ?? '',

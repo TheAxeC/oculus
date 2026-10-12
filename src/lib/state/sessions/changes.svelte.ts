@@ -14,6 +14,7 @@
 // is dropped, and the older page is merged into the rows held inside the request.
 
 import { z } from 'zod';
+import { fileUnder, type RootFolder } from '../../data/helpers/hub-names.ts';
 import {
     anyNumberShape,
     readAs,
@@ -63,6 +64,21 @@ export type ChangesStore = {
      */
     hold: (rows: Change[], more?: boolean) => void;
 };
+
+/**
+ * The file of a row as the History view names it. A record holds the absolute path; a file under
+ * the primary's folder is shown by its path inside it, a file under another served folder by that
+ * folder's name and the path inside it, and any other file by its absolute path.
+ */
+export function fileShown(
+    file: string,
+    roots: readonly RootFolder[],
+    primary: string | null
+): string {
+    const under = fileUnder(file, roots, primary);
+    if (under === null) return file;
+    return under.root === primary ? under.path : `${under.root}/${under.path}`;
+}
 
 /** The words one row is matched against: the file it wrote, what it addressed, and the field. */
 export function haystack(row: Change): string {

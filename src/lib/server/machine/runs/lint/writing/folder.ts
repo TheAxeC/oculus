@@ -25,7 +25,6 @@ import { readdirSync, readFileSync, statSync, type Dirent } from 'node:fs';
 import { extname, join, relative, sep } from 'node:path';
 import { homedir } from 'node:os';
 import { hubDirs, privateFolders } from '../../../../../data/helpers/files/private-folders.ts';
-import { HUB_ROOT } from '../../../../../data/helpers/hub-names.ts';
 import { TEXT_LIMIT } from '../../../../../data/file-ops.ts';
 import { isWholeText } from '../../../../../data/helpers/files/text-kind.ts';
 import {
@@ -197,13 +196,9 @@ export async function planFolder(
     folder: { real: string; rootReal: string },
     signal: AbortSignal
 ): Promise<LintFolderAnswer> {
-    const first = scope.roots.find((one) => one.key === HUB_ROOT);
     const placed = (dir: string): string => realPath(dir) ?? dir;
     const withheld = privateFolders(
-        hubDirs(
-            first === undefined ? null : placed(first.dir),
-            scope.roots.map((one) => ({ dir: placed(one.dir), hub: one.hub }))
-        ),
+        hubDirs(scope.roots.map((one) => ({ dir: placed(one.dir), hub: one.hub }))),
         homedir()
     );
     if (under(folder.real, withheld)) {

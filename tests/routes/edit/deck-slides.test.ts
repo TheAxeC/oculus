@@ -10,7 +10,7 @@
 
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { handleWrite, type WriteTarget } from '../../../src/lib/server/edit/writes.ts';
+import { handleWrite, type PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import {
     DECK_ORDER,
@@ -42,7 +42,7 @@ const MOVE: Lists = [
 
 /** What the write answers, and the status it answers with. */
 async function answered(
-    into: WriteTarget,
+    into: PrimaryTarget,
     sent: unknown
 ): Promise<{ status: number; answer: { changed?: string[]; refused?: { reason: string }[] } }> {
     const response = await handleWrite(request(sent), TOKEN, into);
@@ -50,7 +50,7 @@ async function answered(
 }
 
 /** The reasons a write was refused with, with the file as it was and no record in the log. */
-async function refusedWith(into: WriteTarget, sent: unknown): Promise<string[]> {
+async function refusedWith(into: PrimaryTarget, sent: unknown): Promise<string[]> {
     const before = deckOf(into);
     const { status, answer } = await answered(into, sent);
     expect(status).toBe(200);

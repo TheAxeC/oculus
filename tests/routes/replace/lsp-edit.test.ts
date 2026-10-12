@@ -16,6 +16,7 @@ import {
     lspEdit,
     lspEditPost,
     lspFile,
+    refusesOculusLocal,
     records,
     replaceWorld,
     stamps,
@@ -134,7 +135,7 @@ describe('what stops an lsp-edit', () => {
         const roots = [...w.ops.roots, { key: 'home', dir: home }];
         const world: ReplaceWorld = {
             ...w,
-            ops: { ...w.ops, roots, hub: w.hub, home }
+            ops: { ...w.ops, roots, home }
         };
         const edits = [lspEdit([0, 0], [0, 3], 'bar')];
         for (const [root, path, named] of [
@@ -160,15 +161,19 @@ describe('what stops an lsp-edit', () => {
         expect(savesOf(w.ops.history ?? '', join(w.hub, 'secrets/a.yml')).saves).toEqual([]);
     });
 
-    it("refuses `protected` for the machine's local file of the engine root, which it never opens", async () => {
+    it("refuses `protected` for the machine's local file of a hub, which it never opens", async () => {
         const w = replaceWorld({ 'a.txt': 'foo\n' });
-        const before = readFileSync(join(w.engine, 'local.yml'), 'utf8');
+        const before = readFileSync(join(w.dot, 'local.yml'), 'utf8');
         const answer = await lspEditPost(w, [
-            lspFile('local.yml', before, [lspEdit([1, 0], [1, 6], 'X')], 'engine')
+            lspFile('local.yml', before, [lspEdit([1, 0], [1, 6], 'X')], 'dot')
         ]);
-        expect(answer.body).toMatchObject({ error: 'protected', failed: 'engine/local.yml' });
-        expect(readFileSync(join(w.engine, 'local.yml'), 'utf8')).toBe(before);
+        expect(answer.body).toMatchObject({ error: 'protected', failed: 'dot/local.yml' });
+        expect(readFileSync(join(w.dot, 'local.yml'), 'utf8')).toBe(before);
     });
+
+    refusesOculusLocal((w, before, root, path) =>
+        lspEditPost(w, [lspFile(path, before, [lspEdit([1, 0], [1, 6], 'X')], root)])
+    );
 
     it('refuses the whole edit when the second file is not the text the page read, and writes nothing to either (case 8)', async () => {
         const w = replaceWorld({ 'a.txt': 'foo a\n', 'b.txt': 'b foo\n' });

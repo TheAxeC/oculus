@@ -1,8 +1,9 @@
 // Layer 2, server test. Paste (copy and move) and upload under the served roots, and the guard on
-// the machine's own config/local.yml, over the worlds of tests/server/files/ops-fixture.ts.
+// the machine's own `local.yml` files (a hub's `.oculus/local.yml` and oculus's own
+// `config/local.yml`), over the worlds of tests/server/files/ops-fixture.ts.
 //
-// Every root here is a directory under the system temporary directory, the engine's `config/`
-// folder is a scratch one holding a fixture `local.yml` of its own, and the trash call is always a
+// Every root here is a directory under the system temporary directory, the folder that holds the
+// file is a scratch one holding a fixture `local.yml` of its own, and the trash call is always a
 // spy: the library is replaced by a mock for the whole file, so no case can move anything to the
 // real Trash.
 //
@@ -99,27 +100,29 @@ describe('upload', () => {
     });
 });
 
-describe("the machine's own local.yml", () => {
-    /** A hub with the engine's config folder inside it, and links to the folder and the file. */
-    function engineWorld(): World & { config: string; local: string } {
+describe.each([
+    ["a hub's own .oculus/local.yml", '.oculus', 'dot'],
+    ["oculus's own config/local.yml, which the hub folder holds", 'oculus/config', 'oculus']
+])('%s', (_name, within, key) => {
+    /** A hub with the folder that holds the file listed as a root of its own, and a link to it. */
+    function hubWorld(): World & { dot: string; local: string } {
         const hub = folder(
             {
-                'tools/oculus/config/local.yml': 'secret: 1\n',
-                'tools/oculus/config/other.yml': 'x: 1\n'
+                [`${within}/local.yml`]: 'secret: 1\n',
+                [`${within}/other.yml`]: 'x: 1\n'
             },
             ['spare']
         );
-        const config = join(hub, 'tools/oculus/config');
-        symlinkSync('tools/oculus/config', join(hub, 'lnk'));
-        symlinkSync('tools/oculus/config/local.yml', join(hub, 'll'));
+        const dot = join(hub, within);
+        symlinkSync(within, join(hub, 'lnk'));
         const w = worldOver(
             [
-                { key: 'hub', dir: hub },
-                { key: 'engine', dir: config }
+                { key: 'hub', dir: hub, hub: true },
+                { key, dir: dot }
             ],
             hub
         );
-        return { ...w, config, local: join(config, 'local.yml') };
+        return { ...w, dot, local: join(dot, 'local.yml') };
     }
 
     const refused = (error: string, extra: Record<string, unknown> = {}): unknown =>
@@ -127,15 +130,14 @@ describe("the machine's own local.yml", () => {
     const at = (path: string, root = 'hub') => ({ root, path });
 
     it('refuses every change to the file and to the folders holding it (case 24)', async () => {
-        const w = engineWorld();
+        const w = hubWorld();
         const trashed = spy();
         const deps = { trash: trashed };
         const before = readFileSync(w.local, 'utf8');
         const subjects = [
-            at('local.yml', 'engine'),
-            at('tools/oculus'),
-            at('tools/oculus/config'),
-            at('tools/oculus/config/local.yml'),
+            at('local.yml', key),
+            at(within),
+            at(`${within}/local.yml`),
             at('lnk/local.yml')
         ];
         for (const subject of subjects) {
@@ -171,7 +173,7 @@ describe("the machine's own local.yml", () => {
             }
         }
         expect(readFileSync(w.local, 'utf8')).toBe(before);
-        expect(names(w.config)).toEqual(['local.yml', 'other.yml']);
+        expect(names(w.dot)).toEqual(['local.yml', 'other.yml']);
         expect(names(join(w.hub, 'spare'))).toEqual([]);
         expect(trashed).not.toHaveBeenCalled();
     });

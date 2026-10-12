@@ -1,7 +1,7 @@
 # ===========================================================================
 # sources.yml
-# oculus's own configuration of what the portfolio reads: where the projects are, and which registry, collection, document and feed file each surface is built from, plus the local roots files are served from. Which files open for editing is no key: the file's own first bytes say whether it is text, and its mode on this machine says whether it can be written. Merged with the other config/*.yml by loadConfig(); every key here is a top-level key of the merged map.
-# The keys from scan to roots are the hub list: a hub's own .oculus/config/sources.yml replaces any of them whole, and the values here are the layout every research hub follows (the website folders are one hub's and are set in its layer, and roots is empty).
+# oculus's own configuration of what the portfolio reads: where the projects are, which registry, collection, document and feed file each surface is built from, and where a hub keeps its pictures. The folders files are served from are the folders of the open workspace. Which files open for editing is no key: the file's own first bytes say whether it is text, and its mode on this machine says whether it can be written. Merged with the other config/*.yml by loadConfig(); every key here is a top-level key of the merged map.
+# The keys from scan to wallpaper_dir are the hub list: a hub's own .oculus/config/sources.yml replaces any of them whole, and the values here are the layout every research hub follows (the website folders are one hub's and are set in its layer).
 # It also holds the map from a file name to the language the editor colours it in (languages).
 # ===========================================================================
 
@@ -77,9 +77,13 @@ radar_file: feeds/literature-radar.yml
 career_file: registries/career.yml
 
 
-# Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. The engine names none: a hub sets its roots in .oculus/config/sources.yml, each a dir that is absolute or starts with `~/`. The bookmarks that open as tabs are the entries of bookmarks.yml in the hub's .oculus folder, each naming a root by its key. An entry is `key`, `dir` and, for a hub root, `hub: true`. A root that is not a hub root and holds a `.oculus/project.yml` is a project of the first hub, with the key for its id and the manifest's own `tier` and `type`.
-roots: []
-# How many folder levels below each root the Repositories view looks for repositories, 0 to 3.
+# The folder of this hub's photo wall, relative to the hub and inside it. Every .jpg, .jpeg, .png and .webp in it is a tile of the Memories view, and the view's add control puts new pictures in the primary hub's folder, else in the first hub's when the workspace has no primary. A value outside the hub is a finding and the folder below is used.
+memories_dir: .oculus/memories
+
+# The folder of this hub's wallpaper images, relative to the hub and inside it. The `wallpaper.image` key of the primary hub's appearance.yml names one of them as `<hub name>/<file name>`, and the picker in the Settings view lists every hub's folder. A value outside the hub is a finding and the folder below is used.
+wallpaper_dir: .oculus/wallpaper
+
+# How many folder levels below each folder of the open workspace the Repositories view looks for repositories, 0 to 3.
 repository_scan_depth: 1
 
 

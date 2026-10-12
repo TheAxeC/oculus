@@ -100,7 +100,7 @@ export function readFeedFile(
 }
 
 /** Read every feed into the complete state payload published on the socket. */
-export function buildFeeds(hub: string, config: PortfolioConfig): FeedsPayload {
+export function buildFeeds(hub: string | null, config: PortfolioConfig): FeedsPayload {
     const read = (kind: FeedKind): FeedsPayload[FeedKind] => {
         const base = {
             ok: true as const,
@@ -110,7 +110,7 @@ export function buildFeeds(hub: string, config: PortfolioConfig): FeedsPayload {
             entries: []
         };
         try {
-            const found = readFeedFile(hub, config, kind);
+            const found = hub === null ? null : readFeedFile(hub, config, kind);
             if (found !== null) return { ok: true, ...found };
             return {
                 ...base,

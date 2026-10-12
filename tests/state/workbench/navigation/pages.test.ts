@@ -124,35 +124,52 @@ describe('the file a tab names', () => {
         state: { id: 'engine:docs/apps.md', path: 'docs/apps.md', engine: true }
     };
     const hubTab = { view: 'doc', state: { id: 'docs/DATA-MAP.md', path: 'docs/DATA-MAP.md' } };
+    const labTab = {
+        view: 'doc',
+        state: { id: 'lab:docs/DATA-MAP.md', path: 'docs/DATA-MAP.md', hub: 'lab' }
+    };
+    const IN_HUB = { primary: 'hub', engineHub: 'hub', engineAt: 'tools/oculus' };
     const ROWS = [
         {
-            row: 'an engine tab with the engine in the hub',
+            row: 'an engine tab with oculus inside the primary hub',
             tab: engineTab,
-            engineAt: 'tools/oculus',
+            place: IN_HUB,
             file: { root: 'hub', path: 'tools/oculus/docs/apps.md' }
         },
         {
-            row: 'an engine tab with the engine outside the hub',
+            row: 'an engine tab with oculus inside another hub',
             tab: engineTab,
-            engineAt: '',
+            place: { primary: 'hub', engineHub: 'lab', engineAt: 'tools/oculus' },
+            file: { root: 'lab', path: 'tools/oculus/docs/apps.md' }
+        },
+        {
+            row: 'an engine tab with oculus in no folder of the workspace',
+            tab: engineTab,
+            place: { primary: 'hub', engineHub: '', engineAt: '' },
             file: null
         },
         {
-            row: 'a hub document tab',
+            row: 'a hub document tab, which is a document of the primary hub',
             tab: hubTab,
-            engineAt: 'tools/oculus',
+            place: IN_HUB,
             file: { root: 'hub', path: 'docs/DATA-MAP.md' }
         },
         {
-            row: 'a hub document tab with the engine outside the hub',
+            row: 'a document tab that names its hub',
+            tab: labTab,
+            place: IN_HUB,
+            file: { root: 'lab', path: 'docs/DATA-MAP.md' }
+        },
+        {
+            row: 'a hub document tab with no primary hub',
             tab: hubTab,
-            engineAt: '',
-            file: { root: 'hub', path: 'docs/DATA-MAP.md' }
+            place: { primary: '', engineHub: '', engineAt: '' },
+            file: null
         }
     ];
 
-    it.each(ROWS)('$row', ({ tab, engineAt, file }) => {
-        expect(fileOfTab(tab, engineAt)).toEqual(file);
-        expect(shownFileOfTab(tab, engineAt)).toEqual(file);
+    it.each(ROWS)('$row', ({ tab, place, file }) => {
+        expect(fileOfTab(tab, place)).toEqual(file);
+        expect(shownFileOfTab(tab, place)).toEqual(file);
     });
 });

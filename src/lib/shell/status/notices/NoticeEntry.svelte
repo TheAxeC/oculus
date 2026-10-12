@@ -4,7 +4,7 @@
     // The two differ only in what that control does, which the caller says.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import Progress from '$lib/ui/display/Progress.svelte';
+    import Progress from '$lib/ui/display/meters/Progress.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { Notice } from '$lib/state/workbench/navigation/notices.svelte';
     import { t } from '$lib/state/shared/words/text';

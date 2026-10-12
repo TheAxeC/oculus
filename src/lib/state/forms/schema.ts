@@ -16,7 +16,7 @@
 import { z } from 'zod';
 import type { Id, Project, Resource, Snapshot } from '../../data/model/index.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
-import { HUB_ROOT, rootOf } from '../../data/helpers/hub-names.ts';
+import { rootOf } from '../../data/helpers/hub-names.ts';
 import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
 import { t } from '../shared/words/text.ts';
 import {
@@ -210,11 +210,12 @@ export function resourceGlyph(kind: string): string | undefined {
 function entityChoices(
     entities: Record<Id, Record<string, unknown> & { root?: string }> | undefined,
     keys: string[],
-    root: string
+    root: string,
+    primary: string | null
 ): Choice[] {
     if (entities === undefined) return [];
     return Object.keys(entities)
-        .filter((id) => rootOf(entities[id]) === root)
+        .filter((id) => rootOf(entities[id], primary) === root)
         .sort()
         .map((id) => {
             const entity = entities[id];
@@ -224,28 +225,33 @@ function entityChoices(
 }
 
 /** The resources as choices, each with the glyph of its kind when the kind says one. */
-function resourceChoices(resources: Record<Id, Resource> | undefined, root: string): Choice[] {
-    return entityChoices(resources, ['name'], root).map((choice) => {
+function resourceChoices(
+    resources: Record<Id, Resource> | undefined,
+    root: string,
+    primary: string | null
+): Choice[] {
+    return entityChoices(resources, ['name'], root, primary).map((choice) => {
         const glyph = resourceGlyph(byKey(resources ?? {}, choice.id)?.kind ?? '');
         return glyph === undefined ? choice : { ...choice, glyph };
     });
 }
 
 /**
- * What a field of choices may be set to, for a record of the hub `root` (the first hub when none is
- * given). A `from` that names nothing, and a snapshot that has not arrived, both give no choices,
- * which the widget shows as a list with nothing in it rather than as an error: the page is a moment
- * ahead of its data at first load.
+ * What a field of choices may be set to, for a record of the hub named `root`, `primary` being the
+ * name of the open workspace's primary hub. A `from` that names nothing, and a snapshot that has
+ * not arrived, both give no choices, which the widget shows as a list with nothing in it rather
+ * than as an error: the page is a moment ahead of its data at first load.
  */
 export function choicesFor(
     field: FormField,
     snapshot: Snapshot | null,
     config: Record<string, unknown>,
-    root: string = HUB_ROOT
+    root: string,
+    primary: string | null
 ): Choice[] {
     const own = (field.options ?? []).map((one) => ({ id: one, label: one }));
     if (field.from === undefined) return own;
-    return [...own, ...sourceChoices(field.from, snapshot, config, root)];
+    return [...own, ...sourceChoices(field.from, snapshot, config, root, primary)];
 }
 
 /** The choices a `from:` source offers: a registry's entities, the projects or a vocab list. */
@@ -253,18 +259,21 @@ function sourceChoices(
     from: string,
     snapshot: Snapshot | null,
     config: Record<string, unknown>,
-    root: string
+    root: string,
+    primary: string | null
 ): Choice[] {
     const entities = snapshot?.entities;
-    if (from === 'venues') return entityChoices(entities?.venues, ['short', 'name'], root);
-    if (from === 'datasets') return entityChoices(entities?.datasets, ['name'], root);
-    if (from === 'pillars') return entityChoices(entities?.pillars, ['title'], root);
-    if (from === 'domains') return entityChoices(entities?.domains, ['title'], root);
-    if (from === 'funding') return entityChoices(entities?.funding, ['title'], root);
-    if (from === 'projects') return entityChoices(entities?.projects, ['short', 'title'], root);
-    if (from === 'people') return entityChoices(entities?.people, ['name'], root);
-    if (from === 'organisations') return entityChoices(entities?.organisations, ['name'], root);
-    if (from === 'resources') return resourceChoices(entities?.resources, root);
+    if (from === 'venues') return entityChoices(entities?.venues, ['short', 'name'], root, primary);
+    if (from === 'datasets') return entityChoices(entities?.datasets, ['name'], root, primary);
+    if (from === 'pillars') return entityChoices(entities?.pillars, ['title'], root, primary);
+    if (from === 'domains') return entityChoices(entities?.domains, ['title'], root, primary);
+    if (from === 'funding') return entityChoices(entities?.funding, ['title'], root, primary);
+    if (from === 'projects')
+        return entityChoices(entities?.projects, ['short', 'title'], root, primary);
+    if (from === 'people') return entityChoices(entities?.people, ['name'], root, primary);
+    if (from === 'organisations')
+        return entityChoices(entities?.organisations, ['name'], root, primary);
+    if (from === 'resources') return resourceChoices(entities?.resources, root, primary);
     return from.startsWith(VOCAB_PREFIX)
         ? vocabChoices(byKey(config, from.slice(VOCAB_PREFIX.length)))
         : [];

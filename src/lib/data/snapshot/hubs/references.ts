@@ -2,7 +2,7 @@
 // file's own `schema:`. A field whose `from:` names a registry or the projects holds the key of
 // such a record, one key or a list of them, and so does a field of a `records` field at any depth.
 // The merge of several hubs (hubs/merge.ts) puts the hub's key in front of those values, and a
-// write to a hub other than the first (server/edit/writes/entries.ts) takes it off again, so both
+// write to a hub other than the primary (server/edit/writes/entries.ts) takes it off again, so both
 // walk the schema the same way and neither names a field of any collection.
 
 import type { FromPicked, SchemaField } from '../../model/index.ts';

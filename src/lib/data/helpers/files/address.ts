@@ -7,15 +7,34 @@
 // node, so the page and the server both reach it.
 
 /**
- * The address one file's bytes are read at. A version above zero rides on the query, which makes a
- * rewritten file a new browser address.
+ * The name oculus's own `config/` folder is read under by the Settings view. A folder of a
+ * workspace is named by letters, digits, `.`, `_` and `-`, so no workspace folder can carry this
+ * name, and it is answered at `/api/oculus-config` alone, a read-only route over that folder.
  */
-export function fileBytesUrl(root: string, path: string, version = 0): string {
-    const parts = path
+export const OCULUS_CONFIG_ROOT = ':oculus';
+
+/** The address of the read-only route over oculus's own `config/` folder. */
+const OCULUS_CONFIG_PATH = '/api/oculus-config';
+
+/** A path as address segments, each escaped on its own; empty and `.` segments are dropped. */
+function segmentsOf(path: string): string {
+    return path
         .split('/')
         .filter((part) => part !== '' && part !== '.')
-        .map((part) => encodeURIComponent(part));
-    const at = `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
+        .map((part) => encodeURIComponent(part))
+        .join('/');
+}
+
+/**
+ * The address one file's bytes are read at. A version above zero rides on the query, which makes a
+ * rewritten file a new browser address. A file of oculus's own `config/` folder is read at the
+ * read-only route over that folder.
+ */
+export function fileBytesUrl(root: string, path: string, version = 0): string {
+    const at =
+        root === OCULUS_CONFIG_ROOT
+            ? `${OCULUS_CONFIG_PATH}/${segmentsOf(path)}`
+            : `/api/file/${encodeURIComponent(root)}/${segmentsOf(path)}`;
     return version > 0 ? `${at}?v=${version}` : at;
 }
 

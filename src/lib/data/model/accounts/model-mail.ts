@@ -19,7 +19,7 @@ import type {
 /** The two providers a mailbox is read from, in the order they are offered. */
 export type MailProvider = ConnectProvider;
 
-/** One account of `mail:` in the machine's own config/local.yml. */
+/** One account of `mail:` in a hub's `.oculus/local.yml`. */
 export type MailAccountConfig = ConnectAccountConfig;
 
 /** The connector as a whole: `unconfigured` when the machine names no account. */
@@ -31,6 +31,8 @@ export type MailAccountStatus = ConnectAccountStatus;
 export type MailAccount = {
     provider: MailProvider;
     label: string;
+    /** The hub whose `.oculus/local.yml` holds the account. */
+    hub?: string;
     status: MailAccountStatus;
     /** One line saying what is wrong with the account, absent while nothing is. */
     hint?: string;

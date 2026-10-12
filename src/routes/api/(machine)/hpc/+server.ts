@@ -5,7 +5,6 @@
 // confirmed.
 
 import { textCatalog } from '$lib/data/sources/config';
-import { browserRoots } from '$lib/server/files/roots';
 import { keptFiles } from '$lib/server/core/git/files';
 import { projects } from '$lib/server/sessions/stores/hooks';
 import { log } from '$lib/server/machine/hpc/actions';
@@ -26,14 +25,9 @@ export const POST: RequestHandler = ({ request, locals }) =>
         token: locals.server.token,
         refresh: () => locals.server.hpc.refresh(),
         log: (host, id) => log(host, id, locals.server.hpcLogPaths),
-        roots: () =>
-            browserRoots({
-                config: locals.config().config,
-                engine: locals.server.engine,
-                local: locals.server.local
-            }),
+        roots: () => locals.server.workspace.open().roots,
         projects: () => projects(locals.server.hub),
-        hub: locals.server.local.hub,
+        primary: locals.server.workspace.open().primary,
         catalog: () => textCatalog(locals.config().config),
         kept: keptFiles,
         copy,

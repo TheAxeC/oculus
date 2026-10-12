@@ -33,7 +33,7 @@
 // refused when the entry at that position has another name.
 
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import {
     Document,
@@ -46,7 +46,6 @@ import {
     isSeq,
     parseDocument
 } from 'yaml';
-import { ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
 import {
     nameKey,
     nameOf,
@@ -63,15 +62,13 @@ import { readAllSaved } from '../commands/saved.ts';
 /** The mode of the file: it names the folders and the prompts of this machine. */
 const FILE_MODE = 0o600;
 
-/** The hub's own schedules file, `<hub>/.oculus/schedules.yml`, resolved at the call. */
-export function defaultSchedulesPath(hub: string): string {
-    return join(hub, ROOT_FOLDER, 'schedules.yml');
-}
-
 /** What the checks that need the disk read: the hub, the served roots and the saved commands. */
 export type Disk = {
-    /** The hub folder, `hub` of a folder and the first place a prompt may start in. */
-    hub: string;
+    /**
+     * The primary hub's folder, `hub` of a folder and the first place a prompt may start in; null
+     * while the workspace has no primary.
+     */
+    hub: string | null;
     /** The directories the file browser serves. */
     roots: string[];
     /** The saved commands file. */
@@ -95,8 +92,11 @@ type Checked = {
 export type Reading =
     { ok: true; rows: Checked[]; commandsUnread: boolean } | { ok: false; line: number | null };
 
-/** The folder a `folder` value names, `hub` being the configured hub and `~` the home folder. */
-export function resolveFolder(folder: string, hub: string): string {
+/**
+ * The folder a `folder` value names, `hub` being the primary hub and `~` the home folder; null for
+ * `hub` while the workspace has no primary.
+ */
+export function resolveFolder(folder: string, hub: string | null): string | null {
     return folder === 'hub' ? hub : expandHome(folder);
 }
 
@@ -106,14 +106,16 @@ export function resolveFolder(folder: string, hub: string): string {
  */
 export function promptFolder(
     folder: string,
-    disk: { hub: string; roots: string[] }
+    disk: { hub: string | null; roots: string[] }
 ): { cwd: string } | ScheduleProblem {
     const cwd = resolveFolder(folder, disk.hub);
-    const real = realPath(cwd);
-    if (real === null || !statSync(real).isDirectory()) {
+    const real = cwd === null ? null : realPath(cwd);
+    if (cwd === null || real === null || !statSync(real).isDirectory()) {
         return { word: 'folder-missing', names: [folder] };
     }
-    const served = [disk.hub, ...disk.roots].map((root) => realPath(root));
+    const served = [...(disk.hub === null ? [] : [disk.hub]), ...disk.roots].map((root) =>
+        realPath(root)
+    );
     if (!served.some((root) => root !== null && inside(real, root))) {
         return { word: 'folder-not-served', names: [folder] };
     }

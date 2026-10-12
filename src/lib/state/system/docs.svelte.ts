@@ -4,21 +4,21 @@
 // DESIGN.md's wire model keeps documents out of the snapshot, so a document is fetched rather than
 // selected: document(id, name) asks api/docs the first time a pair is wanted and holds the answer,
 // and every later call for that pair reads what is held. hubDocument(path), engineDocument(path)
-// and manual() are the same rule over the other shapes the endpoint answers, and engineAt() is the
-// engine folder's place in the hub as the manual's answer gives it. Each answer is held in the
+// and manual() are the same rule over the other shapes the endpoint answers, and enginePlace() is
+// the engine folder's place in a hub as the manual's answer gives it. Each answer is held in the
 // client state's query client through state/client/queries.svelte.ts, which schedules the fetch on
 // a microtask, so reading this from a $derived never writes state while a derived is running.
 //
 // A write is what makes a document stale. The git watcher publishes a `files` message naming the
-// watched root and the folders written in it each time a window of writes ends, and every answer
-// of api/docs names the absolute file it read, so a document is marked for a re-read only when the
-// message's root holds its file and the message names the file's folder (or names no folders,
-// which says the whole root). A message with the empty root (the bookmarks or workspaces file
-// changed) names no root and marks nothing. A
-// message whose version is not the one after the last one heard means messages were merged or
-// missed on the way, and their roots are unknown, so it marks every held document. A document
-// whose answer named no file (a request the endpoint refused before opening anything) is marked by
-// every message that names a root, since nothing tells which root could change it.
+// watched root and the folders written in it each time a window of writes ends, and every answer of
+// api/docs names the absolute file it read, so a document is marked for a re-read only when the
+// message's root holds its file and the message names the file's folder (or names no folders, which
+// says the whole root). A message with the empty root (the bookmarks or workspace file changed)
+// names no root and marks nothing. A message whose version is not the one after the last one heard
+// means messages were merged or missed on the way, and their roots are unknown, so it marks every
+// held document. A document whose answer named no file (a request the endpoint refused before
+// opening anything) is marked by every message that names a root, since nothing tells which root
+// could change it.
 //
 // A marked document is asked for again on the next call for it, which is the tab still being drawn
 // and shown (a tab the pane hides asks once when it is shown), and what is held keeps being
@@ -30,7 +30,6 @@
 
 import { z } from 'zod';
 import type { DocPart, Message, RenderedHeading } from '../../data/model/index.ts';
-import { HUB_ROOT } from '../../data/helpers/hub-names.ts';
 import { mapShape, readJson, rowsShape } from '../../data/shapes/shapes.ts';
 import { failedAnswer } from '../shared/answers/answers.ts';
 import { filesNamed } from '../shared/answers/files-named.ts';
@@ -62,7 +61,13 @@ export type DocState = {
     manual: string;
     /** True for the manual and a document of oculus's own folder, read in that folder's space. */
     engine: boolean;
-    /** The engine folder's path relative to the hub, or the empty string when it is not in it. */
+    /** The hub the document's `path` is relative to, or the empty string for an engine document. */
+    hub: string;
+    /**
+     * The hub that holds the engine folder, or the empty string when no hub of the workspace does.
+     */
+    engineHub: string;
+    /** The engine folder's path relative to `engineHub`, or the empty string when it is in none. */
     engineAt: string;
 };
 
@@ -77,6 +82,8 @@ const PENDING: DocState = {
     path: '',
     manual: '',
     engine: false,
+    hub: '',
+    engineHub: '',
     engineAt: ''
 };
 
@@ -91,6 +98,8 @@ const NOTHING: DocState = {
     path: '',
     manual: '',
     engine: false,
+    hub: '',
+    engineHub: '',
     engineAt: ''
 };
 
@@ -98,10 +107,10 @@ const NOTHING: DocState = {
 export type DocsStore = {
     document: (id: string, name: string) => DocState;
     /**
-     * One Markdown document of a hub, by its path relative to the hub, the first hub's unless
-     * `root` names the root of another.
+     * One Markdown document of a hub, by its path relative to the hub, the primary's unless `hub`
+     * names another hub of the workspace.
      */
-    hubDocument: (path: string, root?: string) => DocState;
+    hubDocument: (path: string, hub?: string) => DocState;
     /**
      * One Markdown document of oculus's own folder, by its path relative to that folder, which the
      * server reads wherever the folder sits.
@@ -110,16 +119,20 @@ export type DocsStore = {
     /** Oculus's own manual, which the server reads from the engine directory. */
     manual: () => DocState;
     /**
-     * The engine folder's place in the hub as the manual's answer gives it, or the empty string
-     * while that answer is on its way, when it failed, and when the folder lies outside the hub.
+     * The engine folder's place in a hub as the manual's answer gives it: the hub and the folder's
+     * path in it, both empty while that answer is on its way, when it failed, and when no hub of
+     * the workspace holds the folder.
      */
-    engineAt: () => string;
+    enginePlace: () => EnginePlace;
     /**
      * The same place once the manual's answer is in, asking for it when nothing is held, so a
      * press made before the answer arrives still finds a tab of oculus's own folder.
      */
-    engineAtSettled: () => Promise<string>;
+    enginePlaceSettled: () => Promise<EnginePlace>;
 };
+
+/** Where the engine folder sits: the hub holding it and its path relative to that hub. */
+export type EnginePlace = { hub: string; at: string };
 
 /** The endpoint every document is read at. */
 const DOCS = '/api/docs';
@@ -166,6 +179,8 @@ const bodyShape = z.object({
     path: z.string().catch(''),
     manual: z.string().catch(''),
     engine: z.boolean().catch(false),
+    hub: z.string().catch(''),
+    engineHub: z.string().catch(''),
     engineAt: z.string().catch('')
 });
 
@@ -187,6 +202,8 @@ function same(one: DocState, other: DocState): boolean {
         one.path === other.path &&
         one.manual === other.manual &&
         one.engine === other.engine &&
+        one.hub === other.hub &&
+        one.engineHub === other.engineHub &&
         one.engineAt === other.engineAt
     );
 }
@@ -231,15 +248,16 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
     }
 
     /**
-     * One Markdown document of the hub, by the path its `docs:` entry in layout.yml names or, on an
-     * entry's page, by the path of a Markdown file in the folder its `link` names.
+     * One Markdown document of a hub, by the path its `docs:` entry in layout.yml names or, on an
+     * entry's page, by the path of a Markdown file in the folder its `link` names. A missing `hub`
+     * is the primary hub.
      */
-    function hubDocument(path: string, root: string = HUB_ROOT): DocState {
+    function hubDocument(path: string, hub = ''): DocState {
         if (path === '') return NOTHING;
-        const named = root === HUB_ROOT ? '' : `&root=${encodeURIComponent(root)}`;
+        const named = hub === '' ? '' : `&hub=${encodeURIComponent(hub)}`;
         return reading(
-            ownKey(HUB, root === HUB_ROOT ? path : `${root}:${path}`),
-            `${DOCS}?hub=${encodeURIComponent(path)}${named}`
+            ownKey(HUB, `${hub}:${path}`),
+            `${DOCS}?path=${encodeURIComponent(path)}${named}`
         );
     }
 
@@ -327,6 +345,8 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
                         path: body.path,
                         manual: body.manual,
                         engine: body.engine,
+                        hub: body.hub,
+                        engineHub: body.engineHub,
                         engineAt: body.engineAt,
                         error: '',
                         loading: false
@@ -368,22 +388,23 @@ export function createDocs(entities: EntitiesStore, queries: Queries): DocsStore
         return next;
     }
 
-    /** The engine folder's place in the hub, from the manual's answer. */
-    function engineAt(): string {
-        const guide = manual();
-        return placeOf(guide);
+    /** The engine folder's place in a hub, from the manual's answer. */
+    function enginePlace(): EnginePlace {
+        return placeOf(manual());
     }
 
-    /** The engine folder's place in the hub, waiting for the manual's answer while it is out. */
-    async function engineAtSettled(): Promise<string> {
+    /** The engine folder's place in a hub, waiting for the manual's answer while it is out. */
+    async function enginePlaceSettled(): Promise<EnginePlace> {
         const held = await queries.fetch([KIND, ownKey(MANUAL, MANUAL)], fetcherOf(MANUAL_URL));
         return placeOf(held.doc);
     }
 
-    /** The engine folder's place a manual's answer gives, empty while pending or after failing. */
-    function placeOf(guide: DocState): string {
-        return guide.loading || guide.error !== '' ? '' : guide.engineAt;
+    /** The place a manual's answer gives, empty while pending or after failing. */
+    function placeOf(guide: DocState): EnginePlace {
+        return guide.loading || guide.error !== ''
+            ? { hub: '', at: '' }
+            : { hub: guide.engineHub, at: guide.engineAt };
     }
 
-    return { document, hubDocument, engineDocument, manual, engineAt, engineAtSettled };
+    return { document, hubDocument, engineDocument, manual, enginePlace, enginePlaceSettled };
 }

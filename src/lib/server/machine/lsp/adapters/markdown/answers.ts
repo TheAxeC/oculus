@@ -67,7 +67,11 @@ function answerBackticked(request: PageRequest, view: PageView): PageAnswer | un
     }
     if (root === null) return undefined;
     const span = spanAt(
-        resolvedPaths(document.text, document.real, { root, roots: view.roots }),
+        resolvedPaths(document.text, document.real, {
+            root,
+            roots: view.roots,
+            config: view.config
+        }),
         line,
         character
     );

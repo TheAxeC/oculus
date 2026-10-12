@@ -76,7 +76,7 @@ export type DeleteEntryWrite = { kind: 'delete-entry'; collection: string; id: s
 
 /**
  * One allowed scalar field of one generated feed entry. The entry is named by its own identity and
- * by the key of the hub whose feed holds it in `root`, and an absent `root` is the first hub.
+ * by the key of the hub whose feed holds it in `root`, and an absent `root` is the primary hub.
  */
 export type FeedFieldWrite = {
     kind: 'feed-field';
@@ -141,8 +141,8 @@ export type DeckEditWrite =
 
 /**
  * One LinkedIn idea stub and one idea promoted to a numbered post. The post names the hub whose
- * LinkedIn folder holds the idea in `root`, the key of its `roots:` entry, and an absent `root` is
- * the first hub.
+ * LinkedIn folder holds the idea in `root`, the name of its workspace folder, and an absent `root`
+ * is the primary hub.
  */
 export type LinkedinIdeaWrite = { kind: 'linkedin-idea'; title: string; category: string };
 export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string; root?: string };

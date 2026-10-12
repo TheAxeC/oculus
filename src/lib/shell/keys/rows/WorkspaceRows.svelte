@@ -1,9 +1,10 @@
 <script lang="ts">
     // Layer 3, partial of shell/keys/Palette.svelte. The rows of `:workspace` and
-    // `:workspace-save`: the default workspace and the saved ones, the one in force marked, a pick
-    // switching in place; and the one row that saves the folders in force under the name typed
-    // after the command. The file store's write answers, and a refusal is said in the palette,
-    // which stays open while a success closes it.
+    // `:workspace-save`: the recent workspace files and the ones the open workspace's hubs hold,
+    // the one open marked and a recent file that is gone noted, a pick switching in place; and the
+    // one row that saves the open folders under the name typed after the command. The file store
+    // writes and answers, and a refusal is said in the palette, which stays open while a success
+    // closes it.
 
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import {
@@ -38,14 +39,15 @@
 </script>
 
 {#if choices !== null}
-    {#each choices as choice (choice.name)}
+    {#each choices as choice (choice.path)}
         <PaletteRow
             row={{
-                value: `workspace:${choice.name}`,
+                value: `workspace:${choice.path}`,
                 kind: t('app.palette.kind_workspace'),
                 label: choice.label,
                 active: choice.current,
-                pick: () => void settled(workspaceCommand(selectWorkspace, choice.name))
+                ...(choice.missing ? { note: t('app.palette.workspace_missing') } : {}),
+                pick: () => void settled(workspaceCommand(selectWorkspace, choice.path))
             }}
         />
     {/each}

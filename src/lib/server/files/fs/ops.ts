@@ -11,7 +11,7 @@
 //
 // The refusals are made in one order: `outside`, `missing`, `root`, `protected`, `invalid_name`,
 // `exists`, `into_itself`, `not_a_folder`, and then what the system answers. `protected` is the
-// machine's own config/local.yml and every folder that holds it, compared by device and inode, so
+// `.oculus/local.yml` of every hub and every folder that holds it, compared by device and inode, so
 // every spelling the volume accepts is refused. A list of items runs in order and stops at the
 // first that fails, naming the items done before it and the one it stopped at.
 //
@@ -58,16 +58,16 @@ import {
     type OpsRefusal,
     type OpsRequest
 } from '../../../data/file-ops.ts';
-import { LOCAL_NAME } from '../../../data/sources/config.ts';
 import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { FILES_KIND, type FileField, type FileStamp } from '../../../data/file-ops.ts';
 import type { DiffSides } from '../../../data/model/index.ts';
 import { tokenedBody } from '../../core/auth.ts';
-import { logChanges, pathOf, type ChangeLog } from '../../core/changes.ts';
+import { logChanges, type ChangeLog } from '../../core/changes.ts';
 import { chained, writeBytesAtomic, type FsWrites } from '../../core/json.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
-import { ENGINE_ROOT, resolveRootPath, type Root } from '../files.ts';
-import { isBinaryFile } from '../source.ts';
+import { resolveRootPath, type Root } from '../files.ts';
+import { machineFilesOf } from '../workspace/machine-file.ts';
+import { isBinaryFile } from '../source/source.ts';
 import type { SearchRunner } from '../search/search.ts';
 import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
 import { defaultHistoryDir, historyPath, readCopy } from './history.ts';
@@ -77,15 +77,13 @@ import { previewReplace, replaceFiles } from './replace.ts';
 /** What an operation runs over: the roots it may touch and the chain that orders its writes. */
 export type OpsTarget = {
     roots: Root[];
+    /** Oculus's own config folder, whose `local.yml` no edit changes. */
+    config: string;
     writes: FsWrites;
-    /** The machine's local.yml when it is not the engine root's own, for the route to name. */
-    local?: string;
     /**
      * The change log each operation that changed something is recorded in; none records nothing.
      */
     changes?: ChangeLog;
-    /** The hub, which the record names a path inside it relative to. */
-    hub?: string;
     /** The home folder, whose `.oculus` folder no edit is made in; the machine's by default. */
     home?: string;
     /**
@@ -351,10 +349,6 @@ function pathExists(path: string): boolean {
     }
 }
 
-/**
- * What the server never changes, by identity: the device and inode of each protected file and of
- * every folder that holds one, and the folders the files are named in, for a file not made yet.
- */
 /** The device and inode of each protected file and of every folder above one. */
 export type Guard = Set<string>;
 
@@ -369,23 +363,22 @@ function identityOf(path: string): string | null {
 }
 
 /**
- * The files of the machine this server never changes: the engine root's local.yml and the route's,
- * and the folders that hold them, up to the top of the volume.
+ * The files of the machine this server never changes: the machine's files (the `.oculus/local.yml`
+ * of each hub among the roots and the `local.yml` of oculus's own config folder), and the folders
+ * that hold them, up to the top of the volume. The files and folders are compared by device and
+ * inode, so no spelling of a path, a link or a root listed over a hub's `.oculus` folder or over
+ * oculus's config folder reaches one.
  */
-export function protectedFiles(target: Pick<OpsTarget, 'roots' | 'local'>): Guard {
+export function protectedFiles(target: Pick<OpsTarget, 'roots' | 'config'>): Guard {
     const guard: Guard = new Set();
-    const engine = target.roots.find((one) => one.key === ENGINE_ROOT);
-    const folders = [engine?.dir, target.local === undefined ? undefined : dirname(target.local)];
-    const names = [LOCAL_NAME, target.local === undefined ? LOCAL_NAME : basename(target.local)];
-    for (const [index, dir] of folders.entries()) {
-        const real = dir === undefined ? null : realPath(dir);
+    for (const file of machineFilesOf(target.roots, target.config)) {
+        const real = realPath(dirname(file));
         if (real === null) continue;
-        const name = names[index] ?? LOCAL_NAME;
-        const file = identityOf(join(real, name));
-        if (file !== null) guard.add(file);
+        const id = identityOf(join(real, basename(file)));
+        if (id !== null) guard.add(id);
         for (let up = real; ; up = dirname(up)) {
-            const id = identityOf(up);
-            if (id !== null) guard.add(id);
+            const held = identityOf(up);
+            if (held !== null) guard.add(held);
             if (dirname(up) === up) break;
         }
     }
@@ -709,8 +702,7 @@ function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Pro
 async function recordNote(into: OpsTarget, note: Note): Promise<void> {
     if (note.field === null || into.changes === undefined) return;
     const record = recordOf(note.field, note.before, note.after);
-    const file = into.hub === undefined ? record.file : pathOf(into.hub, record.file);
-    await logChanges(into.changes, FILES_KIND, [{ ...record, file }]);
+    await logChanges(into.changes, FILES_KIND, [{ ...record, file: resolve(record.file) }]);
 }
 
 /**
@@ -741,7 +733,7 @@ export async function handleOps(
             roots: into.roots,
             locals: protectedFiles(into),
             trash,
-            withheld: privateFolders(hubDirs(into.hub ?? null, into.roots), into.home ?? homedir()),
+            withheld: privateFolders(hubDirs(into.roots), into.home ?? homedir()),
             history: into.history,
             search: { timeout: into.searchTimeout, run: deps.search },
             note: { field: null, before: [], after: [] }
@@ -830,7 +822,7 @@ export function handleCompare(
  */
 async function previewed(
     request: Extract<OpsRequest, { op: 'preview' }>,
-    into: Pick<OpsTarget, 'roots' | 'local' | 'searchTimeout'>,
+    into: Pick<OpsTarget, 'roots' | 'config' | 'searchTimeout'>,
     deps: Pick<OpsDeps, 'search'>
 ): Promise<Response> {
     const { root, path } = request;

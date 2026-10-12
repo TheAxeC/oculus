@@ -1,10 +1,10 @@
 // Layer 2, route tests. What the /api/project-files route answers. The route itself is a single
-// line handing the request to lib/server/files/project-files.ts with the hub of local.yml, which is
-// what this calls: handleProjectFiles takes a Request and the hub to read, so every case here is
-// one Request object.
+// line handing the request to lib/server/files/project-files.ts with the primary hub of the open
+// workspace, which is what this calls: handleProjectFiles takes a Request and the hub to read, so
+// every case here is one Request object.
 //
 // The hub is synthetic, under the system temporary directory, and every path written is asserted to
-// be inside it first. What this does NOT cover: filesTarget() reading the machine's own local.yml.
+// be inside it first. What this does NOT cover: filesTarget() reading the open workspace.
 //
 // A hook loads the configuration once, since the first load costs more than a later one, so no
 // case pays for it.
@@ -37,7 +37,7 @@ function target(files: string[] = ['README.md', 'code/run.py']): FilesTarget {
     }
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     return {
-        hub: dir,
+        primary: { key: 'hub', dir },
         config: { ...real, scan: [{ dir: 'projects/manuscripts' }] },
         settings: { file_index: { enabled: true, max_per_project: 400, ext: ['.md', '.py'] } }
     };

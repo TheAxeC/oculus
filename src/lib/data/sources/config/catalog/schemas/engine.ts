@@ -1,14 +1,14 @@
 // Layer 1, data. The schemas of oculus's own files: the config files (`behavior.yml` and the
 // others, from their sections of the options catalog), the catalogs and text files (from their
 // whole-file zod shapes), the schema files of config/schemas/ and a repository's
-// `.oculus/settings.yml`. A config file is served from the engine's config folder and also as
-// `tools/oculus/config/` of the hub; `local.yml` is the machine's own and has no schema.
+// `.oculus/settings.yml`. A config file is governed in each workspace folder that holds oculus's
+// own config folder, below the path of that folder in it; `local.yml` is a hub's own and has no
+// schema.
 //
 // These schemas serve the editor. The readers of their files report their own findings.
 
 import type { z } from 'zod';
 import { codeThemeIds, CODE_TOKENS } from '../../../../helpers/editor/code-themes.ts';
-import { ENGINE_IN_HUB } from '../../../../helpers/hub-names.ts';
 import type { PortfolioConfig, RawPortfolio } from '../../../../model/index.ts';
 import { registered } from '../../../../prose/languages.ts';
 import { hubLists } from '../../../../snapshot/schema/lists.ts';
@@ -27,9 +27,9 @@ import { settingsSchema } from './settings.ts';
 import type { NamedSchema } from '../../../../snapshot/schema/set.ts';
 import { SCHEMA_FILES } from '../../../../snapshot/schema/static.ts';
 
-/** The globs of a file of the engine's config folder: in its own root and inside the hub. */
+/** The globs of a file of oculus's own config folder, in whichever workspace folder holds it. */
 function configRule(...globs: string[]): NamedSchema['rule'] {
-    return { engine: globs, hub: globs.map((glob) => `${ENGINE_IN_HUB}/${glob}`) };
+    return { engine: globs };
 }
 
 /** The schema of a file whose top-level key holds a `schema:` block of the hub's vocabulary. */

@@ -38,6 +38,7 @@ import type {
 import type { MailSettings } from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
 import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
+import { hubMark } from '../../../data/accounts/connect.ts';
 import { accountLoop, signIn, takeLoopSettings, type AccountLoop } from '../connect/loop.ts';
 import { hasOwnHalf } from '../connect/store.ts';
 import { ReadTimeout, timedFetcher, type Fetcher } from '../connect/oauth.ts';
@@ -86,7 +87,9 @@ export type MailWatcher = {
     setWords(words: MailWords): void;
     /** Publish again over the notes as they now are, without calling any provider. */
     republish(): void;
-    /** Poll a new account list from a new folder, as config/local.yml now names them. */
+    /**
+     * Poll a new account list from a new folder, as the hubs' `.oculus/local.yml` files name them.
+     */
     setAccounts(accounts: MailAccountConfig[], dir: string): void;
     close(): void;
 };
@@ -140,6 +143,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
         state.get(mailKey(account)) ?? {
             provider: account.provider,
             label: account.label,
+            ...hubMark(account),
             status: 'not-connected'
         };
 
@@ -217,6 +221,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
         const base = {
             provider: account.provider,
             label: account.label,
+            ...hubMark(account),
             ...(hasOwnHalf(dir, account) ? { ownHalf: true } : {}),
             ...(held === undefined ? {} : { lastOk: held.lastOk })
         };
@@ -243,6 +248,7 @@ export function watchMail(hub: Hub, options: MailOptions): MailWatcher {
             state.set(key, {
                 provider: account.provider,
                 label: account.label,
+                ...hubMark(account),
                 status: 'connected',
                 lastOk
             });

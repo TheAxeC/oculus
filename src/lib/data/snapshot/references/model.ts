@@ -80,6 +80,8 @@ export type FileScan = {
     reading: Reading;
     /** True when the text is a tab's own, which replaced the text the build read. */
     open?: true;
+    /** True for a file of oculus's own configuration, which every hub's keys are matched with. */
+    engine?: true;
     unparsed: boolean;
     references: Candidate[];
     definitions: Definition[];
