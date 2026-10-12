@@ -4,6 +4,118 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z848 (2026-10-12, D64's preparation, the orchestrator, automode): source control, decorations and the tools' menus
+
+- Chosen: every `scm/*`, `debug/*` and `terminal/*` menu id VS Code's contribution-points page lists is built (`terminal/title/context` in place of `terminal/title`, `scm/repository` among them) and an id the page does not list dropped with a finding; the input box last write wins; git's quick diff mark drawn and an app's offered beside it; several decoration providers joined (badges after git's letter, two characters in all, tooltips joined, git's colour first), a longer badge dropped with an output line, changes merged per frame and not counted under `messages_per_min`; a root app's contributions acting in its own root only.
+- Not chosen: (b) the menus D63's brief named only, which leaves VS Code's ids unmet; (c) one decoration provider per file, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z847 (2026-10-12, D64's preparation, the orchestrator, automode): how an app's terminals survive and are shared
+
+- Chosen: the tmux option `@oculus-app <view id>` ties a tmux terminal to its app across a server restart; a stream terminal keeps its last 1 MiB for a page that reloads; input from every page that shows it and the smallest size; a tab close calling `close()`; the Disable, Remove and Revoke questions naming the sessions, tasks and terminals they end.
+- Not chosen: (b) the app named in the tmux session's name, which collides with the name rule `oculus-<id>-<kind>`; (c) none of it, the lazy option, which loses the app's terminals at a restart.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z846 (2026-10-12, D64's preparation, the orchestrator, automode): where a user writes a task of an app's type
+
+- Chosen: `.oculus/commands.yml` entries may carry `type: <task type>` with the definition's properties, resolved by the app's `resolveTask`, and `problemMatcher: $<name>`; a label held twice shown with the app's title; matcher lines bounded at 10,000 characters and files outside the repository dropped; a rerun with the host stopped starting the host.
+- Not chosen: (b) a new file `.oculus/tasks.yml`, a second place for what `commands.yml` already holds; (c) no user-written app tasks, the lazy option, which leaves `resolveTask` without a caller.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z845 (2026-10-12, D64's preparation, the orchestrator, automode): how the debug client runs an app's adapter
+
+- Chosen: no launch approval for an app adapter and Stop's confirmation kept; placeholders substituted in every string, then `resolveDebugConfigurationWithSubstitutedVariables`; `configurationSnippets` and `provideDebugConfigurations` offered in Add Configuration; a debugger with `program` and no `host` started by a runner with no host file, `runtime: node` being oculus's Node; an entry of an unknown type left out with a finding; `startDebugging` during a session resolving `false`.
+- Not chosen: (b) every app adapter launch asks for approval, which asks again what approving the app already granted; (c) the extra debug points left unbuilt, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z844 (2026-10-12, D64's preparation, the orchestrator, automode): the workspace API an app calls
+
+- Chosen: VS Code's `Uri` and value classes, `workspaceFolders`, `workspace.fs`, `createFileSystemWatcher`, `findFiles`, `applyEdit` through the language server edit's write, `saveAll` and `registerTextDocumentContentProvider`, scoped to the app's workspace folders, private folders refused.
+- Not chosen: (b) Node's own `fs` in the host only, the lazy option, which leaves ported extensions without the API they call and edits that bypass History.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z843 (2026-10-12, D64's preparation, the orchestrator, automode): several servers for one language
+
+- Chosen: every matching server gets the document; answers joined as VS Code's client joins them, oculus's own first and apps in the Views list's order, a joined request bounded at 2 s with the rest cancelled; diagnostics kept per server; the status item lists each server and Restart and Show Output ask which; a server that exits on its own restarted at most four times in three minutes; capabilities learned from `initialize` and sent to the page.
+- Not chosen: (b) one server per language, the app's replacing oculus's, which takes away oculus's own answers; (c) the first server only, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z842 (2026-10-12, D64's preparation, the orchestrator, automode): an app's languages beside oculus's
+
+- Chosen: the user's `languages:` of `config/sources.yml` first, then the shipped rules, then the apps' in the Views list's order; an app may add extensions to an existing language as VS Code merges them; an extension two apps claim goes to the first with `language_taken`; a grammar for a shipped `scopeName` dropped with a finding; `filenamePatterns` by picomatch and `firstLine` read on the page; and `snippets`, `semanticTokenTypes`, `semanticTokenModifiers`, `semanticTokenScopes`, `jsonValidation` and `configurationDefaults` built, so the inventory row "language features" is met.
+- Not chosen: (b) an app may only add new ids, which departs from VS Code and breaks ported extensions that extend Markdown or JSON; (c) the extra language points left refused, the lazy option, which leaves the inventory row unmet.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z841 (2026-10-12, D64's preparation, the orchestrator, automode): how a stream travels
+
+- Chosen: a stream rides the host's one JSON-RPC connection on the four `oculus/stream/*` rows, bytes as base64 and server or adapter messages as objects, never raw on file descriptor 1, with credit flow control (1 MiB or 256 messages a window), a server's stderr carried as output lines, ids per host, a duplicate open refused and bad data closing only that stream.
+- Not chosen: (b) a second pipe per stream, which needs a file descriptor per stream and a framing of its own; (c) no flow control, the lazy option, which lets a fast host fill the server's memory.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z840 (2026-10-12, D64's preparation, the orchestrator, automode): the relay's split
+
+- Chosen: `relay.ts` and `relay-options.ts` move into a new subfolder `lsp/relay/` and the relay is split there by responsibility, `#prepare` and `#heldOf` back as named helpers, the tests that import it changing only their import paths and the Code lines of G1, G36 and G63 rewritten at landing.
+- Not chosen: (b) the split inside `lsp/`, which takes the folder past 10 items and breaks the folder rule; (c) no split, the lazy option, which leaves Step 0 undone.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z839 (2026-10-12, D64's preparation, the orchestrator, automode): source control providers and file decorations
+
+- Chosen: `vscode.scm` drawn as a section of the Repositories view with its input box, groups, menus, status bar commands and quick diff, and `registerFileDecorationProvider` drawn on Files rows after git's letter, git's colour first.
+- Not chosen: (b) source control drawn in a view of the app's own, the lazy option, which leaves the Repositories view git's alone.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z838 (2026-10-12, D64's preparation, the orchestrator, automode): terminals of apps
+
+- Chosen: `window.createTerminal` with shell options as a tmux terminal of the kind `app`, and with a `Pseudoterminal` as a stream terminal in the same grid; a host stop ends the stream terminals and leaves the tmux ones running, a disable ends both.
+- Not chosen: (b) tmux terminals only, which leaves `CustomExecution` and pseudoterminals out, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z837 (2026-10-12, D64's preparation, the orchestrator, automode): tasks of apps and their approval
+
+- Chosen: `contributes.taskDefinitions`, `problemMatchers` and `problemPatterns` and `vscode.tasks`, an app's tasks listed as project commands of the repository and run in a terminal that names the app, without the per-text approval, since the approved host can already run any process.
+- Not chosen: (b) the per-text approval asked for each app task, a question that protects nothing; (c) tasks only through `commands.yml`, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z836 (2026-10-12, D64's preparation, the orchestrator, automode): debug adapters of apps
+
+- Chosen: `contributes.debuggers` and `breakpoints`, the descriptor factory and configuration provider of `vscode.debug`, the adapter run by the host over a stream; `launch.yml` entries gain `type` and `request` with every other key passed to the adapter; the debug client follows the adapter's capabilities, one session at a time as today.
+- Not chosen: (b) the same with several sessions at once, a second redesign of the debug client no row of the inventory asks for; (c) app adapters with the controls of `rite_dap` alone, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z835 (2026-10-12, D64's preparation, the orchestrator, automode): language features beside language servers
+
+- Chosen: VS Code's `languages.register*Provider` calls and `createDiagnosticCollection`, served inside the host as one language server over a stream, so the relay carries them as any server.
+- Not chosen: (b) language servers only, which makes every app that ports a VS Code extension's providers rewrite them as a server, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z834 (2026-10-12, D64's preparation, the orchestrator, automode): the API of an app's language server
+
+- Chosen: `oculus.languages.registerLanguageServer(id, options)` with the arguments of `vscode-languageclient`'s `LanguageClient` (document selector, an executable or streams, initialization options, the settings sections), served by the relay as an entry of `servers.ts` is, one server per root, over an `oculus/stream`; several servers of one language joined as VS Code's client joins providers, oculus's own first.
+- Not chosen: (b) a manifest key naming a program oculus starts itself, which runs app code outside the approved host and gives no in-host server; (c) one server per language, an app refused a language oculus serves, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z833 (2026-10-12, D64's preparation, the orchestrator, automode): grammars and languages an app declares
+
+- Chosen: VS Code's `contributes.languages` and `contributes.grammars`, the grammars loaded through the shiki highlighter oculus already ships, so an app's language is coloured as a shipped one.
+- Not chosen: (b) languages without grammars, coloured only by a server's semantic tokens, which leaves most languages uncoloured; (c) no new languages, the lazy option.
+
+Where it applies: D64. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
 ## Z832 (2026-10-12, D68's review, the orchestrator, automode): the wire shapes the step added beyond Z831
 
 - Chosen: the shapes kept as built and reported by the builder: the workspaces answer's `home`, per-folder `dir`, `real`, `folds` and `engine`; the docs route's `?path=&hub=` and the doc tab id `<hub>:<path>`; `apps.json` keyed by the workspace file's path or `unsaved`; `/api/wallpaper` `?list` and `?image=`; memories addressed `<hub>/<name>`; the options section "Folders"; a refusal `reason` on `/api/write`; the read-only `/api/oculus-config` route; `select-workspace` taking `path`; seven refusal words. `docs/apps.md` names each one an app reads.

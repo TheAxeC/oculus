@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- D70 (the machine files as ordinary files): building.
-- D64 (apps in the tools): brief check.
+- D70 (the machine files as ordinary files): building; lands after Axel rules on the literature keys.
+- D64 (apps in the tools): prepared, builder next; lands after Axel rules on the guarded entry and the new protocol rows.
 
 Queued, in order (2 steps):
 - Q72 (the architecture re-read): after D70 and D64.
