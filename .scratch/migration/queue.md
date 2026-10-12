@@ -2,19 +2,19 @@ In flight (1 of 6 slots in use):
 - D68 (workspaces as files): review of repair round 1 running, then landing.
 
 Queued, in order (4 steps):
-- D70 (the machine files as ordinary files of the IDE, ruling 61 (b)): after D68.
-- D64 (apps in the tools): after D63 and D68.
-- Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope), and for D68 and D64, which land before it in the queue.
-- O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
+- D70 (the machine files as ordinary files): after D68.
+- D64 (apps in the tools): after D68.
+- Q72 (the architecture re-read): after D68, D70 and D64.
+- O33 (oculus in its own repository; inline): after Q72.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D69 (two clipping defects: Monaco's pop-ups drawn on the document body, the status bar's right group), 2026-10-12, the commit "Land D69, editor pop-ups on the body and the status bar".
-- D63 (apps in the shell), 2026-10-12, the commit "Land D63, apps in the shell".
-- D67 (`~/.oculus` bookmarked: a bookmark of a root's top, and the `~/.oculus` root and bookmark added), 2026-10-11, the commit "Land D67, a bookmark of a root's top".
-- D66 (the Map's colours, the live-session rows, the float's tab strip), 2026-10-11, the commit "Land D66, the Map colours, live rows and float tab strip".
-- D65 (one kind of project), 2026-10-11, the commit "Land D65, one kind of project".
+- D69 (two clipping defects), 2026-10-12, cdc029dbb.
+- D63 (apps in the shell), 2026-10-12, a86225c4c.
+- D67 (a bookmark of a root's top), 2026-10-11, 140628361.
+- D66 (the Map colours, live rows and float tab strip), 2026-10-11, 39a0205e5.
+- D65 (one kind of project), 2026-10-11, 25cd6e191.
 - D62 (apps: the host and the bridge), 2026-10-11, d7d1198de.
 - D60 (repositories read as projects of the hub), 2026-10-10, 856f2ba34.
 - D61 (the Workbenches view and the status bar's repository), 2026-10-10, b39d35652.
@@ -28,7 +28,7 @@ Landed, newest first:
 - D41 (links in Markdown checked), 2026-10-09, 17c8ac9bc.
 - D53 (unique views), 2026-10-09, d29631c18.
 - D46 (the VS Code palette keys), 2026-10-09, 66e5eedc6.
-- D48 (side projects with the research keys that apply, and smaller Focus rows), 2026-10-09, b00a6c468.
+- D48 (side projects with research keys, smaller Focus rows), 2026-10-09, b00a6c468.
 - D52 (a page per collection entry), 2026-10-09, cd31fd9a3.
 - D51 (themes from VS Code's theme files), 2026-10-09, a5c4d21c8.
 - D47 (one Session view), 2026-10-09, acece2a09.
@@ -41,11 +41,11 @@ Landed, newest first:
 - D33 (the Problems view), 2026-10-08, b081d9da4.
 - M8 (the hub's YAML checked and completed in the editor), 2026-10-08, 7c5514850.
 - D28 (saving a source file as VS Code does), 2026-10-08, 3bf3bf4c6.
-- X3e (the Files view's lists reordered by drag, the Files tree following the disk, the server's git reads off the event loop), 2026-10-08, 1ae5e7c8d.
+- X3e (Files view drag, live tree, git off the event loop), 2026-10-08, 1ae5e7c8d.
 - D11 (the debug client for rite), 2026-10-07, c88b76443.
 - D15 (PDF reading), 2026-10-07, a84214da.
 - D45 (LaTeX as VS Code's LaTeX Workshop), 2026-10-07, 0753a5e7.
-- D23b (rename, workspace symbols, hierarchies, the TypeScript and Svelte servers), 2026-10-07, 639820b9.
+- D23b (rename, symbols, hierarchies, TypeScript and Svelte), 2026-10-07, 639820b9.
 - PR4 (Present's presenter screen), 2026-10-07, eede4598.
 - D23c (library definitions read-only, the symbol selected on open), 2026-10-07, c0a4af9c.
 - PR3 (Present decks edited and generated), 2026-10-07, a2901490.
@@ -87,11 +87,11 @@ Landed, newest first:
 - D32 (replace in the Search view), 2026-10-03, 0b63325f.
 - D18 (the Processes view), 2026-10-03, c1bd0cd6.
 - M3 (the resources registry), 2026-10-02, 125203b5.
-- Q88c (the Source Control rows' and the pane strip's new right-click capabilities), 2026-10-02, f444ac50.
+- Q88c (right-click on Source Control rows and the pane strip), 2026-10-02, f444ac50.
 - A1 (a comment on a line of a session's diff, sent to that session), 2026-10-02, e6eb8f22.
 - X3a (the Files view as VS Code's Explorer), 2026-10-02, 63d8ea82.
-- D24 (the Personal board: side projects and the Files roots' manifests as cards), 2026-10-02, 41809010.
-- D35 (every configuration file live, the server's port move and the page following it), 2026-10-02, f8e6555d.
+- D24 (the Personal board), 2026-10-02, 41809010.
+- D35 (every config file live, the port move followed), 2026-10-02, f8e6555d.
 - M4 (the Present view's equations as LaTeX), 2026-10-02, 50be07eb.
 - L4 (floating panes and kept empty panes), 2026-10-02, 5531bc5c.
 - Q66 (a hidden tab defers its work), 2026-10-02, d2d85b3a.
