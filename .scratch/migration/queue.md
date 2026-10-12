@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D68 (workspaces as files): built and reviewed (`agents/reviews/D68-refuter.md`); repair round 1 built (`agents/briefs/D68-round1.md`), its review running. Then its landing, with open items 58 (a) and 59 (a) applied there.
+- D68 (workspaces as files): review of repair round 1 running, then landing.
 
 Queued, in order (4 steps):
 - D70 (the machine files as ordinary files of the IDE, ruling 61 (b)): after D68.
