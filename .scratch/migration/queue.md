@@ -9,7 +9,7 @@ Queued, in order (3 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D70 (the machine files as ordinary files), 2026-10-12.
+- D70 (the machine files as ordinary files), 2026-10-12, 4d3bb3998.
 - D68 (workspaces as files), 2026-10-12, 9c9d84dce.
 - D69 (two clipping defects), 2026-10-12, cdc029dbb.
 - D63 (apps in the shell), 2026-10-12, a86225c4c.
