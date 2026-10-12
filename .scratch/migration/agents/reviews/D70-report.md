@@ -6,7 +6,7 @@ Not run: the page itself. No builder-run page or browser, so the Settings view's
 
 - Open item 62 (2026-10-12, D68's landing; kind 1, outside the repository): the browser half of open item 59 (a) is not done. Axel's saved pages (`oculus.layout.v1` in the browser storage of his oculus address) still hold tabs addressed by the roots `hub` and `engine`, which D68 removed, so those tabs show as unknown views; the records in `~/.oculus` are converted. The runner's permission check refused opening a page of his server (`http://localhost:8790/api/wallpaper?list`, a JSON route, so no second oculus page would load) in a tab of the orchestrator's own, which is the only way to reach that browser storage. Options: (a) Axel allows that one step (a permission rule for the Chrome navigation to his server's address, or his word to run it), and the orchestrator reads the saved pages, writes a copy under `oculus.layout.before-d68`, rewrites `hub` to `research-hub` and `engine` to `oculus` in the tab addresses, and his open page takes the result through the browser's storage event (`layout/saved/storage.ts`, `followKey`); recommended, since it is what he ruled in 59 (a) and keeps every open tab; (b) Axel reopens the affected tabs himself once, the lazy option, which 59 (a) rejected. Blocks: nothing; D68 lands without it.
 
-This is the only entry under "Open items" in the worktree's copy of the file. The main checkout's copy was not read, so an item booked there after the worktree was made (the brief names open item 63, the literature key masking) is not in this quote.
+This is the only entry under "Open items" in the worktree's copy of the file. The main checkout's copy was not read, so an item booked there after the worktree was made is not in this quote.
 
 # 3. First run of the cases, on the unchanged tree
 
@@ -38,7 +38,7 @@ Finding on an existing row: the old `tests/server/git/untracked/trash.test.ts` r
 |---|---|---|
 | 1 | DONE | `protectedFiles`, `holdsProtected`, `guarded`, `Guard`, the `locals` scope member, `TrashInto.guard`, the git route `guard` option, the `isProtected` options of the writing rules and the lint route, `OpsTarget.config`, `Reach.config` and the relay's `#config()` are removed from `src/lib/server/files/fs/ops.ts`, `replace.ts`, `lsp-edit.ts`, `src/lib/server/git/git-index.ts`, `git-routes.ts`, `src/routes/api/(git)/git/+server.ts`, `(files)/ops/+server.ts`, `(machine)/lint/+server.ts`, `lint/routes.ts`, `lint/writing/folder.ts`, `edit/writes/file-undo.ts`, `edit/writes.ts`, `deck-undo.ts`, and through the LSP files (`relay.ts`, `servers.ts`, `held/*`, `adapters/*`). The refusal word `protected` is gone from `OpsRefusal` (`src/lib/data/file-ops.ts`), `answers.ts` and `edits.ts`. Catalog lines `files.yml refused_protected`, `server.yml never_changed` and `no_guard` are removed. `lsp_edit_protected` is now `lsp_edit_readonly`: "{0} is read-only, so the language server's edit was not made." (`edits.ts`, `text-edits.ts`, `config/text/views/sources/source.yml`). `historyRefusal(path, bytes, history)` copies every file (`source.ts`, `source-bytes.ts`). YAML and Markdown servers refuse `isPrivateFile` only (`servers.ts`, new `adapters/yaml/private-file.ts` replaces `machine-file.ts`; `places.ts`). `withheldFolders` is the config folder and the private folders (`library/rules.ts`); `isWithheldFile` is removed and `views/sources/source/language/lsp.ts` calls `isPrivateFile`. The key check on a source-tab save or create stays (`source.ts` `localRefusal`, `namesMachineFile`). Further places: `files/workspace/oculus-config.ts`, `content/deck/read.ts`, `data/sources/deck/files.ts`, `schemas/engine.ts`, `snapshot/references/build.ts` (comment) and `schemas/references.ts` (`LOCAL_FILE` skip removed), `adapters/markdown/backticks.ts` (comment). Schema: `engineSchemas` no longer skips `local.yml`; `localRule()` in `schemas/engine.ts` governs `.oculus/local.yml` at the top of any served root and `local.yml` in a folder holding oculus's config, under the name `config/local`. To give the schema real types the `local.yml` section of `config/catalogs/options.yml` now carries `control: number` and `whole: true` on `port` and `fields` on `accounts`, `calendars`, `mail` (see judgment calls). |
 | 2 | DONE | Unchanged: `apps/reach/private.ts`, `source-bytes.ts` (`saveBytes` behind `checkOpen`), `config-value.ts` and `config-key.ts` refusals and their tests. |
-| 3 | DONE | `src/lib/server/root/process/context/machine-values.ts` (`machineValues`) builds `values` and `hubs`; used in `src/routes/api/(files)/fs/+server.ts`. Wire: `MachineAnswer` (`server/files/fs.ts`), `WorkspaceMachine`, `NO_MACHINE` and the zod shape (`state/sources/fs-transport.ts`), `fs.svelte.ts`, `MachineState` and `LocalRow` (`state/system/config/rows.ts`), `groups.ts`, `Settings.svelte`, `Item.svelte`, new strings `settings_machine_in_force`, `settings_machine_edit_in`, `settings_machine_edit_tip` and a reworded `settings_machine_no_primary` in `config/text/views/system/workbench.yml`. `hubFileTarget` and `LOCAL_PATH` in `config-files.ts` give the per-hub Edit control. Literature masking per the coordinator's ruling (section 7). |
+| 3 | DONE | `src/lib/server/root/process/context/machine-values.ts` (`machineValues`) builds `values` and `hubs`; used in `src/routes/api/(files)/fs/+server.ts`. Wire: `MachineAnswer` (`server/files/fs.ts`), `WorkspaceMachine`, `NO_MACHINE` and the zod shape (`state/sources/fs-transport.ts`), `fs.svelte.ts`, `MachineState` and `LocalRow` (`state/system/config/rows.ts`), `groups.ts`, `Settings.svelte`, `Item.svelte`, new strings `settings_machine_in_force`, `settings_machine_edit_in`, `settings_machine_edit_tip` and a reworded `settings_machine_no_primary` in `config/text/views/system/workbench.yml`. `hubFileTarget` and `LOCAL_PATH` in `config-files.ts` give the per-hub Edit control. Every key with a value in force, the literature keys included, has its value in `values` (section 7). |
 | 4 | DONE | HELP.md (Settings bullet, local history, lsp-edit refusals, YAML server, Replace All, `local.yml` bullet near the end), DESIGN.md (the `local.yml` bullet at line 618, the oculus-config route, lsp-edit refusals, the YAML, Markdown and reference-index sentences), `config/catalogs/options.yml` header and the `literature.mailto` help, comments listed in section 7. README.md and `docs/apps.md` describe the app closure only and stay true. |
 | 5 | DONE | Section 6. |
 
@@ -59,7 +59,7 @@ test:quick: 40.5 s (limit 45.0 s); every command passed
 test:quick leaves out the slow-tagged files, three of which I changed. I ran those with the files around them: `npx vitest run --testTimeout 20000 tests/routes/git/untracked.test.ts tests/routes/hubs/hub-writes.test.ts tests/server/git/untracked/trash.test.ts tests/routes/replace tests/routes/files/file-undo.test.ts tests/routes/files/history.test.ts`: 9 files, 60 tests passed. `tests/checks` and `npm run test:landing` were not run.
 
 - ASCII gate over `src tests bin config` (the given perl one-liner; `bin` does not exist in the worktree, `find` said so): printed nothing. `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md`: nothing.
-- `sh utils/unused-exports.sh` against `D70-base/tools/oculus/unused-exports.txt`: no difference (`diff` prints nothing, 362 lines both). One export I had added, `MASKED_KEYS`, was unused outside its file and is not exported.
+- `sh utils/unused-exports.sh` against `D70-base/tools/oculus/unused-exports.txt`: no difference (`diff` prints nothing, 362 lines both).
 - `sh utils/folder-check.sh`: prints nothing.
 - Largest changed files: `fs.svelte.ts` 825, `servers.ts` 872, `ops.ts` 783 lines (limit 880); changed Svelte files `Item.svelte` 408, `Settings.svelte` 378 (limit 520).
 - Item 5: `grep -rn "protectedFiles\|holdsProtected\|isProtected\|isWithheldFile\|refused_protected\|never_changed\|no_guard" src tests config/text` prints nothing. `grep -rn "isMachineFile\|namesMachineFile\|machineFilesOf" src` prints only `files/workspace/machine-file.ts`, `source.ts`, `apps/reach/private.ts`, `source-bytes.ts` and `edit/writes/config/config-checks.ts`.
@@ -71,12 +71,12 @@ test:quick leaves out the slow-tagged files, three of which I changed. I ran tho
 Behaviour checks on the changed tree (scratch tests, deleted since): source save of `.oculus/local.yml` and of `config/local.yml` each keep one History copy and refuse `port: abc` with the sentence; paste move over, upload over, rename and back, copy, trash all succeed, and undo of the trash restores the file; an upload leaving `port: abc` is written (brief case 9); ops `replace` over `dot/local.yml` writes it; `lsp-edit` and `writing-fix` write `dot/local.yml`; the folder Fix All plan over `.oculus` lists `local.yml`; discard of untracked `oculus/config/local.yml` calls the trash; the YAML server no longer refuses a `local.yml` and `schemaFor` gives `config/local` for `lab/.oculus/local.yml` and for `cfg/local.yml`, none for `x/local.yml`, and the generated schema has `port` as `integer`, `accounts` as a list with `tool` limited to `claude` and `codex`; `machineValues` over cases 10 and 12 gives the lines below.
 
 ```
-primary a + hub b, a sets port: abc, history: ../h, 2 calendars, wos_key + mailto; b sets accounts, 1 calendar, hpc_host:
-  values: port "8790"; hpc_host "hpc"; claude_bin "/bin/c"; history "<scratch>/h"; literature.mailto "me@x.org";
+primary a + hub b; a sets claude_bin, 2 calendars, literature wos_key + mailto; b sets accounts, a calendar repeating a's label:
+  lists:  accounts [b]; calendars [a, b]
+  values: claude_bin "/bin/c"; literature.wos_key "SECRETKEY123"; literature.mailto "me@x.org";
           accounts "{ tool: claude, dir: /x, label: other } (b)";
           calendars "{ provider: google, label: one } (a)\n{ provider: google, label: two } (a)"
-  hubs:   accounts [b]; calendars [a]      (no entry for literature.wos_key)
-no primary, hub b: accounts and calendars from b, hubs [b]
+  hubs:   accounts [b]; calendars [a, b]
 ```
 
 # 5. Files (from `diff -rq D70-base/tools/oculus D70/tools/oculus`)
@@ -113,13 +113,13 @@ Edits to existing assertions (from `diff` of each file):
 - `markdown-requests.test.ts`: `readDirectory` expected `['.oculus','README.md','docs','oculus']` became `['README.md','docs']` (the fixture no longer plants `.oculus` and `oculus/config`); fixture roots `dot` and `oculus` and `config` members removed.
 - Compile-only: `write-fixture.ts`, `ops-fixture.ts`, `hub-writes.test.ts`, `file-undo.test.ts` fixture, `replace-fixture.ts`, `hub-keys.test.ts` (`config` member removed); `lint-fixture.ts` (`isProtected` removed); `untracked.test.ts`, `trash.test.ts` (`guard` removed); `fs.test.ts`, `workspaces.test.ts`, `workspaces-real.test.ts`, `served-roots.client.test.ts`, `hub-secrets.test.ts`, `machine-section.test.ts` (`values: {}, hubs: {}` added to the machine state; header comment of `machine-section.test.ts` reworded).
 
-Rows that stay: save and create key check (`tests/checks/source/keys.test.ts`), `app-private.test.ts`, `config-value.test.ts` and `config-key.test.ts` refusals, the literature route "never answers a key", `library.test.ts` `drops a file under the engine config folder`, the private-folder rows of `hub-secrets.test.ts`.
+Rows that stay: `app-private.test.ts`, `config-value.test.ts` and `config-key.test.ts` refusals, the literature route "never answers a key", `library.test.ts` `drops a file under the engine config folder`, the private-folder rows of `hub-secrets.test.ts`.
 
 Failing line on the unchanged tree: this step adds no test and changes assertions only as listed above; none was run on the unchanged tree.
 
 # 7. Judgment calls
 
-1. Literature masking (the coordinator's ruling replaces brief decision 5 and item 3's literature part). Function `masked(key)` and list `MASKED_KEYS` (`literature.wos_key`, `scopus_key`, `scopus_insttoken`, `openalex_key`, `semantic_scholar_key`, `ncbi_key`) are in `src/lib/server/root/process/context/machine-values.ts`, used inside `machineValues` where the values map is built. That is the one place to change to undo it. The six keys have no entry in `values` and are not in the `GET /api/fs` answer (checked on a scratch file holding `wos_key: SECRETKEY123`: the answer's `values` and `hubs` do not contain it); the row shows the existing "Set in <hub>" line, or the default when unset. `literature.mailto` shows its value. HELP.md line 463 ("never in an answer") stays and is true.
+1. The Settings rows show the value of every key that has one, the six literature keys (`literature.wos_key`, `scopus_key`, `scopus_insttoken`, `openalex_key`, `semantic_scholar_key`, `ncbi_key`) and `literature.mailto` included, as open item 63 was ruled. `machineValues` (`src/lib/server/root/process/context/machine-values.ts`) holds no key list and no skip. The Literature search route is unchanged and puts no key in an answer, a message or a log line, which HELP.md line 463 states.
 2. Extra wire member `hubs` (key to hub names, only for `accounts`, `calendars`, `mail`) beside `values`: item 3 needs the hub of each row to offer the Edit control per hub, and the brief names `values` only. Rows of a joined list are one string per key with line breaks between rows. The orchestrator may reverse this.
 3. The `local.yml` catalog section carries `control: number` and `whole: true` on `port` and `fields` on `accounts`, `calendars`, `mail`. The schema is built from the catalog and, with every local entry a plain text, `port: 8800` would have been marked as a wrong kind. The Settings rows still use `help` and `section` only. The header comment of `options.yml` and `CatalogEntry` in `catalog/options.ts` say so. The label rule (lowercase letters, digits, dashes) is not in the schema, since it needs a new form in the catalog vocabulary; the reader and the save check catch it.
 4. `localRule()` in `schemas/engine.ts` uses `every: ['.oculus/local.yml']`, so the schema governs that path at the top of any served root, whether or not the root is a hub, besides `engine: ['local.yml']` for oculus's own config folder.
@@ -136,13 +136,165 @@ Failing line on the unchanged tree: this step adds no test and changes assertion
 
 All in the Settings view, group This machine (`Item.svelte`, `List.svelte` unchanged):
 - Before: each key showed its title, path and one line: "Set in <primary>." or "Not set in the primary hub. The default is X." Now the same line, plus, when the key has a value in force, "The value in force:" and the value (one `code` item per line for `accounts`, `calendars`, `mail`, each "{ provider: google, label: one } (hub)").
-- For a joined list, the status line reads "Set in <hub>, <hub>." (the hubs holding rows), and under it one button "Edit .oculus/local.yml of <hub>" per hub that holds a row; a hub with no folder of this workspace shows "<file> can be opened once a folder of this workspace holds it."
+- For a joined list, the status line reads "Set in <hub>, <hub>." (the hubs whose file sets the list), and under it one button "Edit .oculus/local.yml of <hub>" per such hub; a hub with no folder of this workspace shows "<file> can be opened once a folder of this workspace holds it."
 - With no primary hub, the section note now reads: "This workspace has no primary hub, so no file sets a key that has one value here and each of them shows its default; the lists of accounts, calendars and mail show the rows of every hub's file."
-- The six literature secret keys show "Set in <hub>." and no value; `literature.mailto` shows its value.
+- The six literature keys show their value like every other key.
 - The group's own Open control for the primary's `.oculus/local.yml` is unchanged.
 
 Outside Settings: the Files view, Replace, lsp-edit and the other operations now treat `local.yml` as any file; the source tab for a `local.yml` gets YAML server diagnostics and hover from the new `config/local` schema.
 
 # 9. Anything wrong or impossible in the brief
 
-Nothing found wrong. Two notes: the brief's "decision 5" is replaced by the coordinator's masking ruling (section 7, item 1); and the brief's item 3 asks for `values` only, while the per-hub Edit control needs the hub names, hence `hubs` (section 7, item 2).
+Nothing found wrong. One note: the brief's item 3 asks for `values` only, while the per-hub Edit control needs the hub names, hence `hubs` (section 7, item 2).
+
+
+# Repair round 1
+
+Everything in the round is done, and one check ran over its limit: `npm run test:quick` took 69.5 s against its 45.0 s limit with every command passing, while the machine's load average was above 11 and a process of another session was using a full core (section "Checks" below).
+
+The coordinator's change to the round replaces ruling 2 and ruling 7's wording: the literature keys are not masked. Every key with a value in force shows it in the Settings rows, and `MASKED_KEYS` and `masked()` are gone from `src/lib/server/root/process/context/machine-values.ts`.
+
+## One row per ruling
+
+| Ruling | Change | Evidence |
+|---|---|---|
+| 1. `hubs` of a joined list | `readMachine` (`src/lib/data/sources/config/machine.ts`) gives `MachineRead.lists`: for `accounts`, `calendars` and `mail`, the names of the hubs whose file sets the key, in the workspace's folder order, whether or not a row of the file is in force (taken from the `set` of each file's read). `ServerContext.machineLists()` (`server-context.ts`, `context.ts`, `tests/server/root/context-fixture.ts`) hands it to `GET /api/fs` (`src/routes/api/(files)/fs/+server.ts`), and `machineValues(config, set, defaults, lists)` puts it in `hubs`. `Item.svelte` is unchanged: its "Set in" line and Edit controls already read `hubs`. | Scratch probe of case 10 (hub `a` sets two calendars, hub `b` sets an accounts row and a calendar repeating `a`'s label), run by Node on the worktree's modules: `lists` = `{"accounts":["b"],"calendars":["a","b"]}`, `hubs` = `{"accounts":["b"],"calendars":["a","b"]}`, and `values.calendars` holds `a`'s two lines only. Before the change `hubs.calendars` was `["a"]` (the reviewer's probe). The Settings page was not drawn. |
+| 2. Literature test | Withdrawn by the coordinator. No masking test exists. `tests/routes/hubs/machine-answer.test.ts` is back to `values: {}, hubs: {}` in its target and no longer imports `machineValues`. | `grep -rn "MASKED_KEYS\|masked(" src tests config/text` prints nothing (exit 1). |
+| 3. Key check test | `tests/routes/files/source.test.ts` has a `describe` "POST /api/source, a hub's .oculus/local.yml" with `it.each` of two rows: "refuses a save while a key in the text does not read" (a save of `.oculus/local.yml` holding `port: 8800` with `port: abc`: 400, `{ ok: false, error: 'local.yml: port must be an integer' }`, file unchanged) and "refuses the creation of the file while a key in the text does not read" (create in a hub with the folder but no file: 400, same body, no file). The scratch hub dir is `realpathSync`'d because `namesMachineFile` compares a spelled path for a file that does not exist yet. The header comment of the file names the rows. The "Rows that stay" line of section 6 no longer names `tests/checks/source/keys.test.ts`. | On a copy of the base tree (`baserun` in the scratchpad: base `src`, `tests`, `config`, `utils`, this worktree's `node_modules`): `npx vitest run tests/routes/files/source.test.ts --testTimeout 20000 -t "local.yml"` gives `Tests  2 passed | 18 skipped (20)`. After the change: the whole file, `Tests  20 passed (20)`; and in the slow run of 22 files, `Test Files  22 passed (22) Tests  134 passed (134)`. The behaviour is preserved, so the rows pass on both trees. |
+| 4. Judgment 11 | Section 7, judgment 11 now says `lsp-edit` and `writing-fix` answer `outside` through the hub root (the existing dot-folder rule, `lsp-edit.ts:59-65`) and `replace` writes the file through the hub root (`readChecked`, `replace.ts:135-160`, has no dot-folder rule). | The reviewer's probe and the builder's case 4 run: `replace` through `lab/.oculus/local.yml` wrote the file (200). Not re-run this round. |
+| 5. Changed assertions on the base | The two changed assertions were run on the base copy. The whole new files cannot run there: their calls pass no `config` argument, which the base language-server entries take, and run on the base, rows of the new markdown file failed with `refused: The "path" argument must be of type stri`. So each assertion was run as a scratch test in the copy of the base: the `readDirectory` row of the base `markdown-requests.test.ts` with the fixtures that plant `.oculus/local.yml`, `.oculus/other.md` and `oculus/config/local.yml` removed and the expectation `['README.md', 'docs']`; and `expect(withheld).toContain(configDir(engineDir()))` over the base `withheldFolders`. | Both pass on the base: `Test Files  2 passed (2)  Tests  2 passed \| 31 skipped (33)`. The assertions check preserved behaviour (the hub listing without the planted folders; the engine config folder is always withheld). |
+| 6. Comment width | Rewrapped as whole paragraphs at 100 columns: `catalog/options.ts` (`readSpec` doc), `local.ts` (literature doc), `git-index.ts` (`trashUntracked` doc), `machine-values.ts` (head), `fs-transport.ts` (`WorkspaceMachine` doc), `markdown-requests.test.ts` (head), `machine-section.test.ts` (head), `server-context.ts` (`machineLists` doc). | `npx vitest run tests/checks/source tests/checks/diagrams tests/checks/imports tests/checks/tree --testTimeout 0 --hookTimeout 0`: `Test Files  11 passed (11)  Tests  146 passed (146)`, which includes `comment-width.test.ts`. |
+| 7. `local.ts` comment | The `literature` doc says: "The Settings view shows their values, and the file opens in a source tab like any file of the workspace; no log holds a value." (`src/lib/data/sources/config/local.ts`, the `literature` member). | `grep -rn "masks them\|no page is sent one" src` prints nothing. |
+| 8. Sentences made false | `machine-file.ts` head comment names the modules that ask it: the source tab's key check (`source.ts`), the bytes a save writes (`source-bytes.ts`), an app's reach (`apps/reach/private.ts`) and the config checks (`edit/writes/config/config-checks.ts`); the doc of `machineFilesOf` no longer says "guard". `tests/server/files/ops.test.ts` head says paste and upload are `ops-paste.test.ts`. `tests/tiers/essential.txt` line for `ops-paste.test.ts` no longer says "local.yml guard". | `grep -rlw "workspace/machine-file" src tests` lists exactly `config-checks.ts`, `reach/private.ts`, `source-bytes.ts`, `source.ts`. `grep -rnE "local\.yml\|machine file\|machine's own file" src tests config/text HELP.md DESIGN.md README.md docs` filtered for refus/protect/guard/never/withh/closed/private was read hit by hit: the remaining hits are the key check (`source.ts`), the app closure (`reach/private.ts`, HELP.md 407, DESIGN.md 410 and 515, `docs/apps.md`), the Settings writers (`config-value.ts`, `config-key.ts`) and the reader, all still true. `grep -rnwE "protected\|guard\|guarded" ...` over the folders the step touched found no other sentence about a machine file. |
+| 9. `NO_MACHINE` | Replaced by `noMachine()` in `src/lib/state/sources/fs-transport.ts`, which builds `{ set: [], defaults: {}, values: {}, hubs: {} }` per call. The zod shape uses `.catch(() => noMachine())`, `NO_WORKSPACES.machine` is `noMachine()`, and `fs.svelte.ts` uses `body?.machine ?? noMachine()`; the types stay `WorkspaceMachine`. `NO_WORKSPACES` itself is the base's module object and is unchanged. | `npx tsc --noEmit` filtered for the three known `CardAction` errors prints nothing; svelte-check `0 ERRORS`; `tests/state/sessions/served-roots.client.test.ts` and `tests/state/system/settings/machine-section.test.ts` pass in the vitest run of `test:quick`. |
+| 10. Report | The changed files with line counts, below. Statements for each new id or key follow. | `wc -l` over the list from `diff -rq D70-base/tools/oculus/{src,tests,config}`. |
+| 11. Visible changes | Added below. | Reading `config/text/views/sources/source.yml:149` in both trees and `src/lib/server/files/workspace/oculus-config.ts`. |
+
+## Checks (once, after the last change)
+
+- `npm run diagrams && npm run test:quick`, one full run of the list this round: `ok ASCII gate`, `ok prettier`, `ok svelte-kit sync`, `ok eslint`, `ok svelte-check ... COMPLETED 481 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`, `ok vitest (68.8 s)`, `test:quick: 69.5 s (limit 45.0 s); every command passed`, followed by `test:quick: over the time limit`. The previous full run on the same tree before the round took 40.5 s. During this run `uptime` read load averages of 4.8 and then 11.3, and `ps` showed a node process of another session, not mine, at 100 percent of a core. I did not run the list a second time. The duration limit is therefore not shown to hold on a quiet machine by this run.
+- `npx vitest run tests/checks/source tests/checks/diagrams tests/checks/imports tests/checks/tree --testTimeout 0 --hookTimeout 0`: 11 files, 146 tests passed. `tests/checks/config` was not run this round (the reviewer saw an unrelated failure of `config-folder.test.ts` there).
+- Slow files I touched and the files around them, `npx vitest run --testTimeout 20000 tests/routes/files/source.test.ts tests/routes/git/untracked.test.ts tests/routes/hubs/hub-writes.test.ts tests/server/git/untracked/trash.test.ts tests/routes/replace tests/routes/files/file-undo.test.ts tests/routes/files/history.test.ts tests/routes/hubs tests/server/root`: 22 files, 134 tests passed.
+- `sh utils/unused-exports.sh` against `D70-base/tools/oculus/unused-exports.txt`: `diff` prints nothing, 362 lines. `sh utils/folder-check.sh`: prints nothing, exit 0. The ASCII gate inside `test:quick` passed; `LC_ALL=C grep -n '[^ -~]' HELP.md DESIGN.md` and this report print nothing.
+- Largest changed files: `config/catalogs/options.yml` 1517 (YAML, not a source file), `src/lib/server/machine/lsp/servers.ts` 872, `relay.ts` 870, `fs.svelte.ts` 825, `context.ts` 822 (limit 880); `Item.svelte` 408 (limit 520).
+- Not run: the page, so the "Set in a, b." line and the two Edit controls of case 10 were seen through the server function only.
+
+## New ids and keys
+
+Each is not empty, not duplicated and does not collide with a configured or reserved key.
+
+- `values` and `hubs` (members of the `machine` object of `GET /api/fs`, `MachineAnswer` in `server/files/fs.ts`, `WorkspaceMachine` in `fs-transport.ts`): the object holds `set`, `defaults`, `values`, `hubs`, four distinct names (`grep -n "values\|hubs" src/lib/state/sources/fs-transport.ts`); the zod shape gives each `.catch({})`, so an answer without them reads as empty. They are wire members, not keys of a config file, so no configured or reserved key can collide with them.
+- `lists` (`MachineRead.lists` in `data/sources/config/machine.ts`, `ServerContext.machineLists`): one member next to `config`, `problems`, `unread`, `set`; a list no file sets has no entry, so no entry is empty. The keys of `lists` and of `hubs` are only `accounts`, `calendars`, `mail` (the `JOINED` constant), distinct.
+- `MASKED_KEYS`: removed.
+- `control`, `whole`, `fields` on the `local.yml` entries of `config/catalogs/options.yml` (`port`: `control: number`, `whole: true`; `accounts`, `calendars`, `mail`: `fields`): checked by a Node script that parses the catalog: the `local.yml` section has 28 entries, 28 distinct names; `port.control` is `number`, `port.whole` is `true`; each `fields` map is not empty and its field names are distinct. They are the catalog's existing vocabulary (`control` on 144 entries and `whole` on 27 and `fields` on 21 entries of the other sections), declared in `CatalogEntry` in `catalog/options.ts`, so none is a new reserved word.
+
+## Sentences rewritten for the literature keys
+
+- `config/catalogs/options.yml` header comment: "(the six literature keys that hold a secret show whether they are set, never the value)" removed.
+- `config/catalogs/options.yml`, the help of `literature.wos_key`, `literature.scopus_key`, `literature.scopus_insttoken`, `literature.openalex_key`, `literature.semantic_scholar_key` and `literature.ncbi_key`: "The Settings view never shows the value." removed from each.
+- `HELP.md` Settings bullet: "and the six literature keys that are secrets show only that they are set" removed; the sentence now reads "with an Edit control for the file of each hub that sets the list; with no primary a key that has one value shows its default and the section says there is no primary; and its Open control ...".
+- `HELP.md` `local.yml` bullet: "(the six literature keys that are secrets show only whether they are set)" removed. The sentence about the Literature search sending keys in a header or parameter and never in an answer, a message or a log line is unchanged, since that route is unchanged.
+- `DESIGN.md` `local.yml` bullet: "The six literature keys that are secrets (`MASKED_KEYS` of the same file) have no value in the answer; their row shows that the key is set." replaced by "Every literature key shows its value like any other key.", and "an Edit control for the file of each hub that holds a row" replaced by "... that sets the list, whether or not a row of it is in force".
+- Comments: `src/lib/server/files/fs.ts` (`MachineAnswer` and the `machine` member: "The literature keys that are secrets have no value in it." removed; "hold a row" now "set"), `src/lib/state/system/config/rows.ts` (`MachineState` and `LocalRow`), `src/lib/state/sources/fs-transport.ts` (`WorkspacesState.machine`), `src/lib/server/root/process/context/machine-values.ts` (head: the sentence on `MASKED_KEYS` removed; the const, `masked()` and the skip removed), `src/lib/data/sources/config/local.ts` (the `literature` doc, ruling 7).
+- Section 4 item 3, section 7 judgment 1, section 8 and section 9 of this report: the masking statements are replaced by the statement that the values are shown.
+- `grep -rln "never shows the value\|masks\b\|MASKED\|masked" src tests config HELP.md DESIGN.md docs README.md` prints nothing.
+
+## Added to "Visible changes"
+
+- The notice of a language-server edit over a read-only tab (`config/text/views/sources/source.yml:149`, key `lsp_edit_readonly`, raised by `state/system/machine/lsp/edits.ts` at the plan step and at the apply step when a source tab that holds one of the files is not loaded or is read-only). Before: key `lsp_edit_protected`, "{0} is protected on this machine or read-only, so the language server's edit was not made." After: key `lsp_edit_readonly`, "{0} is read-only, so the language server's edit was not made." It appears in the notice list of the page when a rename or code action of a language server reaches a file open in a read-only tab. A machine file is no longer a reason for it.
+- `GET /api/oculus-config/local.yml` (`src/lib/server/files/workspace/oculus-config.ts`, `handleOculusConfig`): before, it answered 404 and the listing (`?list=1`) left `local.yml` out; after, it answers the bytes of oculus's own `config/local.yml` and the listing includes it, as for any other file of the config folder. The route is same-origin only. Any page of this origin can therefore read that file, keys included, which agrees with the ruling that the literature keys are shown.
+
+## Changed files with line counts
+
+57 files under `src`, 26 under `tests` (one, `tests/tiers/essential.txt`, is a list of paths), 5 under `config`, as `diff -rq` against `D70-base/tools/oculus` lists them; `src/lib/server/machine/lsp/adapters/yaml/machine-file.ts` is deleted. `HELP.md` (473 lines) and `DESIGN.md` (681 lines) are outside the base copy.
+
+```
+    1517 config/catalogs/options.yml
+     364 config/text/server.yml
+     292 config/text/views/sources/files.yml
+     226 config/text/views/sources/source.yml
+     242 config/text/views/system/workbench.yml
+     371 src/lib/data/file-ops.ts
+     344 src/lib/data/prose/text-edits.ts
+     217 src/lib/data/snapshot/references/build.ts
+      93 src/lib/data/sources/config.ts
+     491 src/lib/data/sources/config/catalog/options.ts
+     128 src/lib/data/sources/config/catalog/schemas/engine.ts
+     119 src/lib/data/sources/config/catalog/schemas/references.ts
+     584 src/lib/data/sources/config/local.ts
+     160 src/lib/data/sources/config/machine.ts
+      70 src/lib/data/sources/deck/files.ts
+      99 src/lib/server/content/deck/read.ts
+     780 src/lib/server/edit/writes.ts
+     117 src/lib/server/edit/writes/config/lists/deck/deck-undo.ts
+     287 src/lib/server/edit/writes/file-undo.ts
+     493 src/lib/server/files/fs.ts
+     158 src/lib/server/files/fs/lsp-edit.ts
+     783 src/lib/server/files/fs/ops.ts
+     493 src/lib/server/files/fs/replace.ts
+      92 src/lib/server/files/source/source-bytes.ts
+     346 src/lib/server/files/source/source.ts
+      66 src/lib/server/files/workspace/machine-file.ts
+      27 src/lib/server/files/workspace/oculus-config.ts
+     518 src/lib/server/git/git-index.ts
+     476 src/lib/server/git/git-routes.ts
+      51 src/lib/server/machine/lsp/adapters/asks.ts
+      82 src/lib/server/machine/lsp/adapters/markdown/answers.ts
+     181 src/lib/server/machine/lsp/adapters/markdown/backticks.ts
+      68 src/lib/server/machine/lsp/adapters/markdown/diagnostics.ts
+     138 src/lib/server/machine/lsp/adapters/markdown/places.ts
+      19 src/lib/server/machine/lsp/adapters/yaml/private-file.ts
+      84 src/lib/server/machine/lsp/held/answers.ts
+      60 src/lib/server/machine/lsp/held/diagnostics/published.ts
+     813 src/lib/server/machine/lsp/held/held.ts
+     125 src/lib/server/machine/lsp/held/oculus.ts
+     307 src/lib/server/machine/lsp/held/requests/links.ts
+      84 src/lib/server/machine/lsp/library/rules.ts
+     870 src/lib/server/machine/lsp/relay.ts
+     872 src/lib/server/machine/lsp/servers.ts
+     433 src/lib/server/machine/runs/lint/routes.ts
+     224 src/lib/server/machine/runs/lint/writing/folder.ts
+     822 src/lib/server/root/context.ts
+      84 src/lib/server/root/process/context/machine-values.ts
+     177 src/lib/server/root/process/server-context.ts
+     170 src/lib/state/shared/answers/answers.ts
+     481 src/lib/state/sources/fs-transport.ts
+     825 src/lib/state/sources/fs.svelte.ts
+      95 src/lib/state/system/config/config-files.ts
+     378 src/lib/state/system/config/groups.ts
+     404 src/lib/state/system/config/rows.ts
+     451 src/lib/state/system/machine/lsp/edits.ts
+     588 src/lib/views/sources/source/language/lsp.ts
+     378 src/lib/views/system/workbench/Settings.svelte
+     408 src/lib/views/system/workbench/settings/Item.svelte
+      45 src/routes/api/(files)/fs/+server.ts
+      44 src/routes/api/(files)/ops/+server.ts
+      34 src/routes/api/(git)/git/+server.ts
+      27 src/routes/api/(machine)/lint/+server.ts
+     494 tests/routes/edit/write-fixture.ts
+     230 tests/routes/files/file-undo.test.ts
+     101 tests/routes/files/fs.test.ts
+      84 tests/routes/files/history.test.ts
+     448 tests/routes/files/source.test.ts
+      55 tests/routes/git/untracked.test.ts
+     269 tests/routes/hubs/hub-secrets.test.ts
+     500 tests/routes/hubs/hub-writes.test.ts
+      68 tests/routes/hubs/machine-answer.test.ts
+     248 tests/routes/replace/lsp-edit.test.ts
+     128 tests/routes/replace/ops-replace.test.ts
+     171 tests/routes/replace/replace-fixture.ts
+     283 tests/routes/replace/writing-fix.test.ts
+      80 tests/server/files/ops-fixture.ts
+      99 tests/server/files/ops-paste.test.ts
+      81 tests/server/files/ops.test.ts
+     203 tests/server/files/workspaces.test.ts
+      38 tests/server/git/untracked/trash.test.ts
+     177 tests/server/machine/lsp/adapters/hub-keys.test.ts
+     309 tests/server/machine/lsp/adapters/markdown-requests.test.ts
+     276 tests/server/machine/runs/lint/lint-fixture.ts
+     208 tests/server/root/context-fixture.ts
+     231 tests/state/sessions/served-roots.client.test.ts
+      58 tests/state/sources/workspaces-real.test.ts
+      84 tests/state/system/settings/machine-section.test.ts
+      20 tests/tiers/essential.txt
+```

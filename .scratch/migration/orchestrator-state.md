@@ -33,8 +33,8 @@ dispatch:   # steps in flight, up to six (Z632)
   base: a0508758a
   launched: 2026-10-12
   report: agents/reviews/D70-report.md
-  builder_usage: 94,316 tokens, 256 tool uses, 39.2 min (first report)
-  reviewer_report: agents/reviews/D70-refuter.md (aa189c08f67b30328, claude-opus-5-5, 366,098 tokens, 94 tool uses, 23.2 min)
+  builder_usage: 94,316 tokens, 256 tool uses, 39.2 min (first report); round 1: 267,475 tokens, 115 tool uses, 22.3 min
+  reviewer_report: agents/reviews/D70-refuter.md (aa189c08f67b30328, claude-opus-5-5, 366,098 tokens, 94 tool uses, 23.2 min); over round 1: a728bc9674d477119, claude-opus-5-5, running
   brief_check: agents/reviews/D70-brief-check.md (ab416c65c5e0a57d7, claude-opus-5-5, 261,895 tokens, 102 tool uses, 12.4 min; closed in the brief by the orchestrator, under the report's Closed heading)
   landing: not-started
   round: 1 (agents/briefs/D70-round1.md, sent over the worktree as the builder left it)

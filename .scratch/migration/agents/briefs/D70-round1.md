@@ -25,3 +25,10 @@ The review is `agents/reviews/D70-refuter.md` in the main checkout (/Users/axelf
 11. Behaviour 1 and 2. Add to the report's "Visible changes": the `lsp_edit_readonly` notice with its before and after and where it shows (a language-server edit over a read-only tab), and `GET /api/oculus-config/local.yml` and the config listing, which now answer oculus's own `config/local.yml` (404 and left out before).
 
 Then run the brief's "Verify before you report" once more as spec.md:25 says, plus `npx vitest run tests/checks/source` and the slow files you touched, and append a section "Repair round 1" to your report at the same path, one row per numbered ruling above with the change and the evidence, and the full-list run count.
+
+## Sent after Axel's ruling on open item 63, (a): the literature keys are not masked
+
+- Remove `MASKED_KEYS` and the masking from `machine-values.ts`, so every literature key with a value in force shows it in the Settings rows.
+- Ruling 2 above (the masking test) is withdrawn; `machine-answer.test.ts` gets no masking row.
+- Ruling 7's comment says the Settings view shows the literature values, the file opens in a source tab like any file, and no log holds a value.
+- Rewrite every sentence that says a literature value is never shown: the `options.yml` header and the six literature help lines, the HELP.md Settings and `local.yml` bullets, DESIGN.md's `local.yml` bullet, and the comments in `fs.ts`, `rows.ts`, `fs-transport.ts` and `machine-values.ts`. HELP's sentence on the Literature search sending keys in a header or parameter stays, since that route is unchanged.

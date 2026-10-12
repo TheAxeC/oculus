@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- D70 (the machine files as ordinary files): repair round 1.
+- D70 (the machine files as ordinary files): review over repair round 1.
 - D64 (apps in the tools): building.
 
 Queued, in order (2 steps):
