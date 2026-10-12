@@ -1,7 +1,6 @@
-In flight (1 of 6 slots in use): D68, its reviewer over repair round 1.
+In flight (1 of 6 slots in use): D68 (workspaces as files): built, reviewed (`agents/reviews/D68-refuter.md`), repair round 1 built (`agents/briefs/D68-round1.md`) and its review running; then its landing, with open items 58 (a) and 59 (a) applied there.
 
-Queued, in order (5 steps):
-- D68 (workspaces as files): built; reviewed (`agents/reviews/D68-refuter.md`); repair round 1 built (`agents/briefs/D68-round1.md`), its review running; open items 58, 59 and 60 ruled, applied at its landing.
+Queued, in order (4 steps):
 - D70 (the machine files as ordinary files of the IDE, ruling 61 (b)): after D68.
 - D64 (apps in the tools): after D63 and D68.
 - Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope), and for D68 and D64, which land before it in the queue.
