@@ -33,7 +33,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: ff113f762
   launched: 2026-10-12
   report: agents/reviews/D68-report.md
-  builder_usage: 370,620 tokens, 1,382 tool uses, 245.1 min (first build)
+  builder_usage: 370,620 tokens, 1,382 tool uses, 245.1 min (first build); 268,236 tokens, 453 tool uses, 151.9 min (round 1, after the resume)
   brief_check: agents/reviews/D68-brief-check.md (a8997d9ca2c7cbe23, claude-opus-5-5, 237,719 tokens, 72 tool uses, 11.1 min; closed in the brief by the orchestrator under "Brief check, Closed", with Z827 to Z831 and open items 58 and 59)
   reviewer_report: agents/reviews/D68-refuter.md (af39a3008d27e6302, claude-opus-5-5, 75,179 tokens, 181 tool uses, 33.1 min)
   shared_paths: DESIGN.md (line 246, which D68 rewrites for the wallpaper folder and D69 extends for Monaco's widgets; one sentence, resolved by hand at the second landing), HELP.md (different sections), and `src/` as D68's write list names it broadly while D69's files (the editor, the status bar, ToolButton, MenuOpener) are ones D68's items do not reach; judged simple
