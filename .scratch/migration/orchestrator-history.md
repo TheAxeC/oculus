@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 74 (2026-10-12): Axel ruled (a); part of D72, which now waits for open item 75 (raised, the shape of `:task-add` and of the palette page). Open item 76 raised, the Literature view.
 - Open item 73 (2026-10-12): Axel ruled (a); part of D72, which now waits for open item 74 (raised, the leads and radar feeds).
 - Open item 72 (2026-10-12): Axel ruled (a); part of D72, which now waits for open item 73 (raised, the registries with no view).
 - Open item 71 (2026-10-12): Axel ruled (1) yes, (2) (a), (3) (a); booked as step D72, which waits for open item 72 (raised, the five reference lists).
