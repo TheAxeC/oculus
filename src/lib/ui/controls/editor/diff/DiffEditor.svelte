@@ -32,6 +32,14 @@
     // it grows to its content's height, for a list of files the page scrolls; else it fills its
     // box. A text handed in again replaces its model's, the view state carried over the new diff.
     //
+    // What Monaco pops up over the text is drawn on the document body, so no list, split or float
+    // clips it: the hover, the suggest list, the parameter hints and the rename box of both sides
+    // on a node of this editor's, the right-click menu and the code action list on the page's node
+    // (options.ts `pageWidgets`). A key typed in such a widget is dispatched again in the side that
+    // owns it, and an ancestor of the box that scrolls closes the menu, the hover, the suggest list
+    // and the parameter hints and places what stays open against the text again. The quick input
+    // stays in the box, as Monaco scopes it.
+    //
     // Until Monaco has loaded the modified text is a plain block, which the unit suite's server
     // render draws too.
 
@@ -49,7 +57,7 @@
         listedWithComment
     } from '../gutter/gutter';
     import { applyOptions, monacoOptions } from '../options';
-    import type { EditorOptions } from '../options';
+    import type { EditorOptions, Widgets } from '../options';
     import { lineBars } from '../bars/zones';
     import LineBars from '../bars/LineBars.svelte';
     import type {
@@ -68,6 +76,7 @@
         type DiffLayout
     } from './read';
     import './comment-add.css';
+    import '../kit/theme/wall.css';
 
     type Props = {
         original: string;
@@ -168,6 +177,8 @@
     /** Whether the text is being replaced from the parent, which is not the reader typing. */
     let replacing = false;
     const listeners: Monaco.IDisposable[] = [];
+    /** The widgets of both sides, drawn on a node on the body. */
+    let widgets: Widgets | null = null;
     const placed = lineBars();
     const placedOriginal = lineBars();
     /** Whether comments are offered, which turns the comment gutter and its action on and off. */
@@ -184,6 +195,7 @@
 
     function build(loaded: EditorKit, box: HTMLDivElement): void {
         const { monaco } = loaded;
+        widgets = loaded.widgets.of(box);
         const made = monaco.editor.createDiffEditor(box, {
             automaticLayout: true,
             readOnly: !editable,
@@ -204,9 +216,11 @@
             ariaLabel: path,
             scrollBeyondLastLine: !sized,
             scrollbar: { alwaysConsumeMouseWheel: !sized },
+            ...widgets.options,
             ...(options === undefined ? {} : monacoOptions(options)),
             ...font(host)
         });
+        widgets.tie([made.getOriginalEditor(), made.getModifiedEditor()]);
         const pair = {
             original: fresh(loaded, originalPath ?? path, 'original', original),
             modified: fresh(loaded, path, 'modified', modified)
@@ -413,6 +427,7 @@
         placed.unmount();
         placedOriginal.unmount();
         made?.dispose();
+        widgets?.dispose();
         models?.original.dispose();
         models?.modified.dispose();
         diff = null;
@@ -473,19 +488,5 @@
     .diff-editor:not(.sized) .plain {
         position: absolute;
         inset: 0;
-    }
-
-    :global(body.wall) .diff-editor {
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    :global(body.wall) .plain {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-    }
-
-    :global(body.wall) .diff-editor :global(.monaco-editor),
-    :global(body.wall) .diff-editor :global(.monaco-editor-background),
-    :global(body.wall) .diff-editor :global(.monaco-editor .margin) {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
     }
 </style>

@@ -342,11 +342,24 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         return document.querySelector<HTMLElement>(`[data-frame-slot="${CSS.escape(id)}"]`);
     }
 
+    /**
+     * The box of the editor that an element in one of its widgets belongs to: an editor draws its
+     * widgets on a node on the body (ui/controls/editor/options.ts), which names the box it is for,
+     * so the pane of a widget is the pane of its editor.
+     */
+    function widgetBox(element: HTMLElement): HTMLElement | null {
+        const id = element.closest<HTMLElement>('[data-widgets-of]')?.dataset.widgetsOf;
+        if (id === undefined) return null;
+        return document.querySelector<HTMLElement>(`[data-widgets-id="${CSS.escape(id)}"]`);
+    }
+
     /** Find the pane keyboard navigation should address from focus, cursor or active main tab. */
     function focusedPaneElement(): HTMLElement | null {
         const element = document.activeElement;
         if (element instanceof HTMLElement) {
-            const pane = (frameSlot(element) ?? element).closest<HTMLElement>('[data-pane]');
+            const pane = (frameSlot(element) ?? widgetBox(element) ?? element).closest<HTMLElement>(
+                '[data-pane]'
+            );
             if (pane !== null) return pane;
         }
         if (lastFocusedPane?.isConnected) return lastFocusedPane;
@@ -515,7 +528,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
 
     function rememberPane(target: EventTarget | null): void {
         const pane =
-            target instanceof HTMLElement ? target.closest<HTMLElement>('[data-pane]') : null;
+            target instanceof HTMLElement
+                ? (widgetBox(target) ?? target).closest<HTMLElement>('[data-pane]')
+                : null;
         // The page is kept when the press lands outside every pane, since a chord typed after
         // reading inside a nested page is still a view asked for in that page.
         if (pane !== null) lastPagePane = pane;

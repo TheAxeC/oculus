@@ -314,6 +314,18 @@
         min-width: 0;
     }
 
+    /* A status bar button gives way to the room its item has, which the several buttons of the
+       linter item share (shell/status/StatusBar.svelte): its wrapper is as wide as the room it is
+       given, the button fills the wrapper and ends its words in an ellipsis, and the wrapper draws
+       nothing outside its own box, so no button is drawn over its neighbour. */
+    .tip:has(> :global(.status)) {
+        overflow: clip;
+    }
+
+    .tip:has(> :global(.status)) > :global(.status) {
+        max-width: 100%;
+    }
+
     .bubble {
         position: relative;
         /* Drawn on the body, so it orders against the overlays rather than inside the one whose

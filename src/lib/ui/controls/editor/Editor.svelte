@@ -37,6 +37,14 @@
     // Tab inserts indentation. An Escape Monaco did not take arms the next Tab to move the focus
     // on (tab-out.ts): the key is read before Monaco, where a Tab that leaves is kept from it, and
     // after it, where an Escape it left untaken arms.
+    //
+    // What Monaco pops up over the text is drawn on the document body, so no pane, split or float
+    // clips it: the hover, the suggest list, the parameter hints and the rename box on a node of
+    // this editor's, the right-click menu and the code action list on the page's node (options.ts
+    // `pageWidgets`). A key typed in such a widget is dispatched again in the editor that owns it,
+    // where the handlers above read it, and an ancestor of the box that scrolls closes the menu,
+    // the hover, the suggest list and the parameter hints and places what stays open against the
+    // text again. The quick input (Go to Line, Go to Symbol) stays in the box, as Monaco scopes it.
 
     import { onDestroy, untrack, type Snippet } from 'svelte';
     import type * as Monaco from 'monaco-editor';
@@ -62,11 +70,12 @@
     import { tabOut } from './tab-out';
     import { followFirstLine, reachedBy, runCommand, type FirstLine } from './commands';
     import { applyIndent, applyOptions, monacoOptions } from './options';
-    import type { EditorOptions } from './options';
+    import type { EditorOptions, Widgets } from './options';
     import { lineBars } from './bars/zones';
     import LineBars from './bars/LineBars.svelte';
     import './gutter/marks.css';
     import './kit/theme/rename.css';
+    import './kit/theme/wall.css';
     import type {
         EditorAction,
         EditorBar,
@@ -203,6 +212,8 @@
     /** What the paint depends on besides the tokens: the look and the code theme. */
     const painting = $derived(JSON.stringify([look, codeTheme]));
     const listeners: Monaco.IDisposable[] = [];
+    /** The widgets of the editor, drawn on a node on the body. */
+    let widgets: Widgets | null = null;
     let collections: GutterCollections | null = null;
     const placed = lineBars();
 
@@ -216,6 +227,7 @@
     );
 
     function build(loaded: EditorKit, box: HTMLDivElement): void {
+        widgets = loaded.widgets.of(box);
         const made = loaded.monaco.editor.create(box, {
             automaticLayout: true,
             glyphMargin: true,
@@ -224,9 +236,11 @@
             detectIndentation: false,
             ariaLabel: path,
             model: null,
+            ...widgets.options,
             ...(options === undefined ? {} : monacoOptions(options)),
             ...font(host)
         });
+        widgets.tie([made]);
         collections = gutterCollections(made);
         placed.mount(made, made.getOption(loaded.monaco.editor.EditorOption.lineHeight));
         firstLine = followFirstLine(made, (line) => onfirst?.(line));
@@ -453,6 +467,7 @@
         placed.unmount();
         editor?.dispose();
         editor = null;
+        widgets?.dispose();
     });
 </script>
 
@@ -498,22 +513,5 @@
         font-family: var(--font-mono);
         line-height: 1.45;
         white-space: pre;
-    }
-
-    /* Under the wall the editor is a translucent pane over the picture, as the rest of the page
-       is: its surfaces, which Monaco paints in the panel's colour from the theme, and the plain
-       text drawn before it loads take the pane's share of the panel. */
-    :global(body.wall) .editor {
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    :global(body.wall) .plain {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-    }
-
-    :global(body.wall) .editor :global(.monaco-editor),
-    :global(body.wall) .editor :global(.monaco-editor-background),
-    :global(body.wall) .editor :global(.monaco-editor .margin) {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
     }
 </style>

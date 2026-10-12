@@ -1,15 +1,15 @@
-In flight (2 of 6 slots in use): D68 and D69, builders running.
+In flight (1 of 6 slots in use): D68, its builder running.
 
-Queued, in order (5 steps):
+Queued, in order (4 steps):
 - D68 (workspaces as files): brief written and its brief check closed in it (`agents/briefs/D68.md`, `agents/reviews/D68-brief-check.md`); prepared at ff113f762, its builder running. Its landing waits on open items 58 and 59.
-- D69 (two clipping defects: the editor's right-click menu cut at the pane's edge, the status bar cutting an item mid-word): brief written and its brief check closed in it (`agents/briefs/D69.md`, `agents/reviews/D69-brief-check.md`); prepared at ff113f762, built and reviewed (`agents/reviews/D69-refuter.md`); repair round 1 sent (`agents/briefs/D69-round1.md`).
 - D64 (apps in the tools): after D63 and D68.
-- Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope), and for D68, D64 and D69, which land before it in the queue.
+- Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope), and for D68 and D64, which land before it in the queue.
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D69 (two clipping defects: Monaco's pop-ups drawn on the document body, the status bar's right group), 2026-10-12, the commit "Land D69, editor pop-ups on the body and the status bar".
 - D63 (apps in the shell), 2026-10-12, the commit "Land D63, apps in the shell".
 - D67 (`~/.oculus` bookmarked: a bookmark of a root's top, and the `~/.oculus` root and bookmark added), 2026-10-11, the commit "Land D67, a bookmark of a root's top".
 - D66 (the Map's colours, the live-session rows, the float's tab strip), 2026-10-11, the commit "Land D66, the Map colours, live rows and float tab strip".

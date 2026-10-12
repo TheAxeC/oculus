@@ -16,6 +16,10 @@
     // its file draws no caret and offers no change of its text: its indentation list offers no
     // conversion, its line endings list holds the one the file has, and each item's tooltip says
     // why.
+    //
+    // The items are written from the right end of the bar to its left, the language mode first,
+    // because the bar's right group lays its items out in reverse (StatusBar.svelte); the order on
+    // screen is the one above.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -107,39 +111,31 @@
     }
 </script>
 
-{#if shown('blame') && status.blame !== ''}
-    <span data-status="blame">
+{#if shown('language')}
+    <span data-status="language">
         <ToolButton
-            label={status.blame}
-            glyph="blame"
-            title={t('statusbar.blame_tip')}
+            label={languageName(status.language)}
+            glyph="language"
+            title={t('statusbar.language_tip')}
             status
-            onclick={() => ask(instance, { kind: 'commit' })}
+            onclick={() => onpalette(':language ')}
         />
     </span>
 {/if}
-{#if shown('caret') && status.caret !== null}
-    <span data-status="caret">
-        <ToolButton
-            label={caretWords(status.caret)}
-            glyph="caret"
-            title={t('statusbar.caret_tip')}
-            status
-            onclick={() => onpalette(':')}
-        />
-    </span>
-{/if}
-{#if shown('indent')}
-    <span data-status="indent">
+<LanguageItems {instance} {status} {shown} {onpalette} />
+{#if shown('line_ending')}
+    <span data-status="line_ending">
         <Menu
             status
             placement="above"
-            label={t('statusbar.item_indent')}
-            words={indentWords(status.indent)}
-            glyph="indent"
-            title={status.writable ? t('statusbar.indent_tip') : t('statusbar.indent_readonly')}
-            items={indentChoices}
-            onpick={indentPicked}
+            label={t('statusbar.item_line_ending')}
+            words={endingWords(status.ending)}
+            glyph="line_ending"
+            title={status.writable
+                ? t('statusbar.line_ending_tip')
+                : t('statusbar.line_ending_readonly')}
+            items={endingChoices}
+            onpick={endingPicked}
         />
     </span>
 {/if}
@@ -157,31 +153,39 @@
         />
     </span>
 {/if}
-{#if shown('line_ending')}
-    <span data-status="line_ending">
+{#if shown('indent')}
+    <span data-status="indent">
         <Menu
             status
             placement="above"
-            label={t('statusbar.item_line_ending')}
-            words={endingWords(status.ending)}
-            glyph="line_ending"
-            title={status.writable
-                ? t('statusbar.line_ending_tip')
-                : t('statusbar.line_ending_readonly')}
-            items={endingChoices}
-            onpick={endingPicked}
+            label={t('statusbar.item_indent')}
+            words={indentWords(status.indent)}
+            glyph="indent"
+            title={status.writable ? t('statusbar.indent_tip') : t('statusbar.indent_readonly')}
+            items={indentChoices}
+            onpick={indentPicked}
         />
     </span>
 {/if}
-<LanguageItems {instance} {status} {shown} {onpalette} />
-{#if shown('language')}
-    <span data-status="language">
+{#if shown('caret') && status.caret !== null}
+    <span data-status="caret">
         <ToolButton
-            label={languageName(status.language)}
-            glyph="language"
-            title={t('statusbar.language_tip')}
+            label={caretWords(status.caret)}
+            glyph="caret"
+            title={t('statusbar.caret_tip')}
             status
-            onclick={() => onpalette(':language ')}
+            onclick={() => onpalette(':')}
+        />
+    </span>
+{/if}
+{#if shown('blame') && status.blame !== ''}
+    <span data-status="blame">
+        <ToolButton
+            label={status.blame}
+            glyph="blame"
+            title={t('statusbar.blame_tip')}
+            status
+            onclick={() => ask(instance, { kind: 'commit' })}
         />
     </span>
 {/if}

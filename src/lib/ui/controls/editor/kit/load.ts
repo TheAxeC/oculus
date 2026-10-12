@@ -45,6 +45,12 @@
 // stop the next language's load. `close` is the page's teardown: it disposes the highlighter in
 // force, and a load in flight at that moment bridges and loads nothing more.
 //
+// Monaco takes its service overrides from the first editor made on the page and fixes its defaults
+// at its first call into a service, so the load starts by making and disposing a detached editor
+// with the overrides that draw every context view (the right-click menu, the code action list) in
+// the page's node on the document body (options.ts `pageWidgets`); every call after it finds them
+// in force, and the editors take the widgets of their boxes from the kit (`widgets`).
+//
 // Format Document is answered by one provider per language (`createFormatting`), which hands the
 // model it is asked about to the formatter the model's owner gave.
 //
@@ -65,6 +71,7 @@
 import type * as Monaco from 'monaco-editor';
 import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './grammars';
 import { COMMAND_PALETTE_EVENT, freedKeys } from '../chords';
+import { pageWidgets, type PageWidgets } from '../options';
 import { RITE_GRAMMAR } from './rite/rite';
 import { registerSettings } from './rite/settings';
 import { registerFolding } from './folding';
@@ -157,6 +164,8 @@ export type EditorKit = {
     formatting: Formatting;
     /** The language server clients of the page, one per language a server serves. */
     lsp: LspKit;
+    /** Where the editors of the page draw their widgets (options.ts). */
+    widgets: PageWidgets;
 };
 
 /** The one load of the page, started by the first editor that mounts. */
@@ -222,6 +231,17 @@ async function start(): Promise<EditorKit> {
     self.MonacoEnvironment = {
         getWorker: (_id: string, label: string) => workers.workerFor(label)
     };
+    // Monaco takes its service overrides from the first editor made on the page, and fixes its
+    // defaults at its first call into any service, so a detached editor made before every other
+    // call carries them and is disposed at once.
+    const widgets = pageWidgets(
+        () => monaco.editor.getEditors(),
+        (await import('monaco-editor/platform/contextview/browser/contextViewService'))
+            .ContextViewService
+    );
+    monaco.editor
+        .create(document.createElement('div'), { model: null }, widgets.services)
+        .dispose();
     const mac = onMac();
     monaco.editor.addKeybindingRules(
         freedKeys(mac).map((press) => ({ keybinding: keyCode(monaco, press), command: null }))
@@ -266,6 +286,7 @@ async function start(): Promise<EditorKit> {
         }
     });
     painting.current = made;
+    made.onPainted(widgets.follow);
     self.addEventListener('pagehide', (event) => {
         if (!event.persisted) made.close();
     });
@@ -275,7 +296,8 @@ async function start(): Promise<EditorKit> {
         paint: made.paint,
         ensureLanguage: made.ensureLanguage,
         formatting: createFormatting(monaco),
-        lsp
+        lsp,
+        widgets
     };
 }
 

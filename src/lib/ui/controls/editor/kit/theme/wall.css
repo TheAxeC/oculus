@@ -1,0 +1,25 @@
+/* Layer 3, stylesheet of ui/controls/editor/Editor.svelte and diff/DiffEditor.svelte. Under the
+   wall the editor is a translucent pane over the picture, as the rest of the page is: its surfaces,
+   which Monaco paints in the panel's colour from the theme, and the plain text drawn before it
+   loads take the pane's share of the panel. The picture is blurred by a layer of its own under the
+   text and not by the editor's box, since a box with a backdrop filter is the containing block of
+   every fixed element inside it, and the editor's box then places nothing fixed against itself. The
+   box holds its own stacking context so the layer stays under its text. */
+body.wall :is([data-editor-host], [data-diff-editor]) {
+    isolation: isolate;
+}
+
+body.wall :is([data-editor-host], [data-diff-editor])::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    backdrop-filter: blur(var(--wall-blur));
+}
+
+body.wall :is([data-editor-host], [data-diff-editor]) .plain,
+body.wall :is([data-editor-host], [data-diff-editor]) .monaco-editor,
+body.wall :is([data-editor-host], [data-diff-editor]) .monaco-editor-background,
+body.wall :is([data-editor-host], [data-diff-editor]) .monaco-editor .margin {
+    background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+}

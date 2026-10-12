@@ -247,6 +247,18 @@
         color: inherit;
         font-size: var(--status-text);
         line-height: 1;
+        max-width: var(--status-item-max);
+    }
+
+    /* A label wider than the item's cap ends in an ellipsis. The label's own padding and negative
+       margin give its line box room for the descenders that a line height of 1 would clip. */
+    .tool.status > :global(.label) {
+        min-width: 0;
+        margin: -0.2em 0;
+        padding: 0.2em 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .tool.status:hover:not(:disabled),

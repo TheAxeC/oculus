@@ -1,7 +1,8 @@
-// Layer 2, types. monaco-editor ships declarations for its public entry alone, and the app
-// contributions read two of its internal modules through the package's `./*` export: the
-// when-clause grammar of `ContextKeyExpr` and the key names of `KeyCodeUtils`. Each subpath is
-// declared here as the part of it that the tree uses.
+// Layer 2, types. monaco-editor ships declarations for its public entry alone, and the tree reads
+// three of its internal modules through the package's `./*` export: the when-clause grammar of
+// `ContextKeyExpr` and the key names of `KeyCodeUtils`, which the app contributions read, and the
+// `ContextViewService`, which the editor kit extends to draw every context view in the page's node.
+// Each subpath is declared here as the part of it that the tree uses.
 
 declare module 'monaco-editor/platform/contextkey/common/contextkey' {
     /**
@@ -33,4 +34,22 @@ declare module 'monaco-editor/base/common/keyCodes' {
         /** The name of a key code. */
         toString(code: number): string;
     };
+}
+
+declare module 'monaco-editor/platform/contextview/browser/contextViewService' {
+    /**
+     * Monaco's context view service, the part of it that the editor kit extends: it draws a context
+     * view (a menu, the code action list) in a container and answers what it drew.
+     */
+    export class ContextViewService {
+        /** The layout service answers the containers the views are drawn in. */
+        constructor(layoutService: object);
+        showContextView(
+            delegate: object,
+            container?: HTMLElement,
+            shadowRoot?: boolean,
+            useWindowContainerForShadowRoot?: boolean
+        ): { close(): void };
+        hideContextView(data?: unknown): void;
+    }
 }

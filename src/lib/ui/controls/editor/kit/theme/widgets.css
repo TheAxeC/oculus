@@ -1,0 +1,6 @@
+/* Layer 3, stylesheet of ui/controls/editor/options.ts. A node that holds an editor's widgets
+   (data-editor-widgets) takes no pointer itself, since the page's node is as large as the window,
+   and what is drawn in it does, so nothing under the node stops receiving the pointer. */
+[data-editor-widgets] > * {
+    pointer-events: auto;
+}

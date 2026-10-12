@@ -124,3 +124,229 @@ Cases of the brief's "Cases":
 - An A/B or a size figure: none was claimed.
 
 Reviewer usage: agent id not visible to the reviewer (read it from the runner's record), served model claude-opus-5-5; tokens, tool uses and minutes are left for the session.
+
+## Repair round 1, refuted
+
+Three of the ten rulings are not fully closed. Ruling 7's theme-type class is never put on any node. Ruling 4 leaves the rename box and Monaco's other overflow widgets floating when an ancestor of the editor scrolls, which brief item 1 forbids. Ruling 5's Tab rule takes away Tab movement inside a focused hover. Item 2 holds.
+
+All runs were from `/Users/axelfaes/workspace/research-hub/.agents/worktrees/D69/tools/oculus` with `PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH`. I did not run `npm run diagrams`, since it writes; the diagrams check below covers stale diagrams. The round's delta is the files newer than `touch -t 202610120302.41`: `options.ts`, `Editor.svelte`, `DiffEditor.svelte`, `kit/load.ts`, `kit/theme/wall.css`, `kit/theme/widgets.css` (new), `workbench-keys.svelte.ts`, `Tooltip.svelte`, `ToolButton.svelte`, `MenuOpener.svelte`, `StatusBar.svelte`, `SourceItems.svelte`, `wrapped.ts`, `monaco-modules.d.ts`, `DESIGN.md`, `HELP.md` and the diagrams. I read that delta against `git diff ff113f762`. `git status --short` had the same 23 entries after every rerun.
+
+```
+npm run test:quick -- --base ff113f762
+test:quick: 23 changed file(s), from git since ff113f762
+test:quick: 12 test file(s), 10 essential
+ok      prettier (0.3 s): All matched files use Prettier code style!
+ok      ASCII gate (0.4 s)
+ok      eslint (1.3 s)
+ok      svelte-kit sync (1.8 s)
+ok      svelte-check (5.7 s): 1791768750291 COMPLETED 478 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+ok      vitest (13.4 s): Duration  9.23s (transform 11.86s, setup 0ms, import 20.51s, tests 9.29s, environment 4ms)
+test:quick: 13.8 s (limit 45.0 s); every command passed
+
+LC_ALL=C xargs perl -ne 'print "$ARGV:$.:$_" if /[^\x20-\x7E\n]/; close ARGV if eof' < <the 20 changed text files, .svg left out>
+(no output), rc=0
+
+sh utils/unused-exports.sh -> "Unused exports (244)"; diff against D69-base/tools/oculus/unused-exports.txt -> no output, rc=0
+
+wc -l: DESIGN.md 681, HELP.md 474, workbench-keys.svelte.ts 582, AppItems.svelte 64, LanguageItems.svelte 298, SourceItems.svelte 191, StatusBar.svelte 397, wrapped.ts 24, DiffEditor.svelte 491, Editor.svelte 516, kit/load.ts 520, wall.css 25, widgets.css 6, options.ts 382, ToolButton.svelte 485, MenuOpener.svelte 275, Tooltip.svelte 389, monaco-modules.d.ts 55
+sh utils/folder-check.sh -> no output, rc=0
+
+npx vitest run tests/ui tests/shell tests/views/sources
+ Test Files  8 passed (8)
+      Tests  36 passed (36)
+```
+
+Commands the round's report quotes as evidence:
+
+```
+npx eslint src -> no output, rc=0
+npm run check -> COMPLETED 3787 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npx vitest run tests/checks/tree --testTimeout=120000 -> Test Files 3 passed (3), Tests 39 passed (39)
+npx vitest run tests/checks/diagrams --testTimeout=600000 -> Test Files 1 passed (1), Tests 46 passed (46), Duration 271.46s
+npx vitest run tests/checks/config ->
+     x validates with no findings
+     x reads the roots of sources.yml without a finding
+     x names a group of its own and a path under the hub for every document
+ Test Files  2 failed | 2 passed (4), Tests 3 failed | 79 passed (82)
+python3 /tmp/rewrap_all.py -> not rerun: the permission classifier refused it (see "Declined to judge")
+```
+
+The three config failures are the same ones the first review traced to the worktree's sparse checkout, which holds no `.oculus/`. The rules file says such failures are not the step's.
+
+### Verdicts
+
+The ten rulings of the round:
+
+- **1, every context view in the page node: closed, by reading.**
+  - The import resolves to the same file Monaco uses. The exports map `"./*": "./esm/vs/*.js"` resolves `monaco-editor/platform/contextview/browser/contextViewService` to `esm/vs/platform/contextview/browser/contextViewService.js`. That is the file `standaloneServices.js` imports, and it is the only importer.
+  - It is one module instance by Rollup's and Vite's rules (one id; one esbuild optimize run with splitting). That was not seen at runtime (see "Declined to judge").
+  - A second copy would still work. The instance is built by hand, and `ContextViewHandler`'s constructor needs only `mainContainer`, `onDidLayoutContainer`, `getContainer` and `activeContainer`, which the layout service gives. It lives as long as the page, as Monaco's services do.
+  - The override is honoured. `initialize` replaces the `SyncDescriptor` registered for `contextViewService` (`standaloneServices.js:716-723`), and the priming `create` runs before `addKeybindingRules` (`kit/load.ts:237-246`).
+  - Every caller of `showContextView` now draws in the page node:
+    - the right-click menu as `FIXED_SHADOW`, its shadow host a direct child of the page node;
+    - the code action list and the post-paste selector as `FIXED` (`codeActionController.js:311`, `postEditWidget.js:91-110`);
+    - select boxes and input-box messages as `ABSOLUTE` (`selectBoxCustom.js:380-401`, `inputBox.js:288`);
+    - the hover service's views through `layoutService.getContainer` (`hoverService.js:280-343`).
+  - Placement is right. `doLayout` subtracts the view's own page origin, and the page node sits at (0, 0) (`contextview.js:244-268`).
+  - Closing on a click outside belongs to each delegate and does not depend on the container: the menu's blur and window mousedown (`contextMenuHandler.js:72-90`), the action widget's block and focus tracker (`actionWidget.js:168-205`).
+- **2, the peek: closed, by reading.**
+  - In a peek, `focused` records the embedded editor, which comes last in `getEditors()` order.
+  - `owner()` dispatches on its root. The copy's context resolves from that root to the embedded editor's scoped context, where `renameInputVisible` is bound, so `acceptRenameInput` runs. The embedded editors join `group()`.
+- **3, the page node's size and pointer: closed, by reading.**
+  - The page node is fixed at 100% by 100%, so `actionList.js:2520` reads the window's height.
+  - `[data-editor-widgets] > *` is enough for the pointer:
+    - the direct children are `.context-view`, `.shadow-root-host` and Monaco's `overflowingContentWidgets` and `overflowingOverlayWidgets` divs, which have no size of their own;
+    - deeper nodes inherit `auto`, and inside a shadow root `:host { all: initial }` gives `auto` too.
+- **4, an ancestor's scroll: partly closed.**
+  - Hover, suggest, parameter hints, the right-click menu and the code action list close, and no `render` call is left.
+  - A scroll inside a widget does not close it: `target.contains(box)` is false for a node on the body.
+  - The rename box and Monaco's other overflow widgets are neither closed nor moved (Spec 1).
+  - The "no child, no command" check never fires (Proof 1).
+- **5, focus: closed as ruled.**
+  - `widgetBox` resolves a widget's pane through `focusedPaneElement` (callers `:155`, `:457`, `:518`) and `rememberPane` (window `focusin` and `pointerdown`, `Workbench.svelte:356-361`).
+  - The ruled Tab rule removes Tab movement inside a focused hover (Behaviour 1).
+- **6, the linter item: closed, by reading.** Three rules together keep each button inside its wrapper and end its label in an ellipsis: `Tooltip.svelte:317-327`, the existing `.tip > :first-child { flex: 1 1 auto; min-width: 0 }`, and the label rules in `ToolButton.svelte` and `MenuOpener.svelte`. The focus ring is inset (`outline-offset: -1px`, `ToolButton.svelte:421-424`), so `overflow: clip` does not cut it.
+- **7, the widgets' look: not closed.** The font size holds. The theme-type class is never applied (Spec 2).
+- **8, the sentences: partly closed.** Standards 1 and 2.
+- **9, the report: partly closed.** Spec 2 and Proof 2.
+- **10:** nothing to do.
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- **1: violated.**
+  - These parts hold by reading:
+    - every context view is in the page node (ruling 1);
+    - the hover, suggest, parameter hints and rename box are on the per-box nodes;
+    - the depth is 50, above the floats;
+    - the keys relay reaches the owning editor, a peek's included, with no character typed twice or dropped: the original is stopped at the node, the copy is a synthetic event and inserts no text;
+    - the pane is resolved for a widget;
+    - the page node is window-sized and takes no pointer;
+    - the font size is right;
+    - DESIGN.md:246 is extended;
+    - each component is at or under 520 lines.
+  - These parts are violated:
+    - widgets left floating on an ancestor's scroll (Spec 1);
+    - the theme-type class never applied (Spec 2);
+    - Tab in a focused hover (Behaviour 1).
+- **2: holds.** The flex layout, the reversed markup, the 40vw cap, `overflow: clip`, the inert marking in `wrapped.ts`, and the linter item under ruling 6, by reading.
+
+Cases:
+
+- **1, 2:** met by reading. The menu is drawn in the page node through `PageContextView` with `useWindowContainerForShadowRoot` true, placed by `layout2d` in the viewport.
+- **3:** met by reading. Hover and suggest are fixed content widgets on the per-box node. In a light theme no `.monaco-editor.vs` widget rule was found missing.
+- **4:** met by reading. The nodes are on the body, outside `FloatWindow` and `FloatLayer`, and the menu opens inside the viewport.
+- **5:** met by reading for the menu and the suggest list in the diff editor's sides, the merge editor (`Editor.svelte`) and a peek, whose editor takes the parent's node.
+- **6:** met by reading. The page node's z-index is 50, above the floats at 5+2*rank.
+- **7:** met under ruling 5. Enter and Escape reach `acceptRenameInput` and `cancelRenameInput` through the copy on the owning editor's root. Tab returns the focus to the editor, as ruled.
+- **8 to 11:** met by reading, as in the first review. Case 10's linter variant is now met under ruling 6.
+- **12:** met by reading. `wrapped.ts` marks items on a later row inert, and `overflow: clip` makes no scroll container.
+
+### Findings
+
+**Spec 1.** `src/lib/ui/controls/editor/options.ts:91-95` and `:338-347`.
+
+```ts
+const CLOSING = ['editor.action.hideHover', 'hideSuggestWidget', 'closeParameterHints'] as const;
+...
+function close(): void {
+    ...
+    for (const command of CLOSING) editor.trigger('oculus', command, null);
+```
+
+- **What is wrong.** Brief item 1 still holds under the round: "A widget open when an ancestor of the editor scrolls ... is closed or moved with the text, never left floating where the text was." The round dropped `render(true)` and closes only the hover, the suggest list and the parameter hints. Several widgets on the per-box node are left at their old window position, since Monaco places a fixed widget once:
+  - the rename box, which the report says is "not closed (it holds typed text)";
+  - the message widget (`messageController.js`);
+  - the standalone colour picker;
+  - the paste-as button (`postEditWidget.js`);
+  - the glyph hover;
+  - the inline completion hints.
+
+  Ruling 4's wording ("Nothing is drawn again for an editor with no widget open") allows a redraw or a relayout for an editor that has a widget open. The report's "Visible changes" does not say that the rename box floats.
+- **Failure scenario.** A sized diff editor in the Repositories diff list. F2 on a name, then wheel-scroll the list. The rename box stays where the line was, drawn over another file's header or the pane's toolbar.
+- **Verdict:** item 1 violated.
+
+**Spec 2.** `options.ts:363-370`, called at `Editor.svelte:242` and `DiffEditor.svelte:222`.
+
+```ts
+tie() {
+    const root = group().at(0)?.getDomNode();
+    if (root === null || root === undefined) return;
+```
+
+- **What is wrong.** `tie()` runs right after `create(box, { ..., model: null, ... })` (`Editor.svelte:229-242`), and in the diff editor before `made.setModel(pair)` (`DiffEditor.svelte:222`, `:227`). `getDomNode()` returns null while an editor has no model (`codeEditorWidget.js:1062-1066`), so `group()` is empty and `tie` returns before the observer is set.
+- **Result.** No node, the page node included, ever carries `vs`, `vs-dark`, `hc-black` or `hc-light`, and nothing follows a theme change. `tie` and `followTheme` have no other caller (`grep -rn "\.tie()\|followTheme" src`).
+- **Even a later `tie` would fail.** `setModel` builds a new View with a new root each time (`codeEditorWidget.js:1497`, `view.js:109`), and `Editor.svelte:352`, `:360` and the diff editor's text replacement do that, so an observer on the first root would go stale.
+- **Claims this makes false.** Ruling 7's row; "Names for ruling 7" ("copied from the class list of the box's first editor root ... followed through a MutationObserver"); and the "Visible changes" line "in a theme whose base is high contrast ... the widgets take the high-contrast rules".
+- **Failure scenario.** An app colour theme with an `hc-black` base. The suggest list and its details lack Monaco's `.monaco-editor.hc-black .suggest-widget` and `.suggest-details` rules, a case the first review raised and ruling 7 was written to close.
+- **Verdict:** item 1 violated; ruling 7 not closed.
+
+**Proof 1.** `options.ts:343` (`if (node.childElementCount === 0) return;`) and the report's row 4: "when the box's node has children, runs ... an editor whose node has no child gets no command".
+
+- **What is wrong.** Every editor that has a model appends its `overflowingContentWidgets` and `overflowingOverlayWidgets` divs to its `overflowWidgetsDomNode` (`view.js:194-196`), so the node always has at least two children. The check never returns, and every ancestor scroll frame runs the three commands on every editor of every box under the scrolled element.
+- **What still holds.** "Nothing is drawn again" holds by reading: there is no render call, and the commands return early on closed widgets (`suggestController.js:561-565`, `parameterHints.js:49`, `hoverActions.js:147`).
+- **Side effect.** `hideSuggestWidget` reads `this.widget.value` (`suggestController.js:130`, `:564`), which builds an editor's suggest widget early if its idle build has not run yet.
+- **Decision resting on it.** Ruling 4's acceptance of "no work for an editor with no widget open". The check is also code larger than its job (Standards).
+- **Failure scenario.** Scrolling a diff list of 40 files runs 240 command triggers per frame, while the comment "Close what the editors of the box have open, and draw nothing again" and the report tell a reader none run. The cost was not measured.
+
+**Proof 2.** Report, first section "Judgment calls" 4: "calls `render(true)` on each side editor".
+
+- **What is wrong.** The round's "Corrections to the first report" do not replace this line. Only row 4 of the round table says `render(true)` is gone.
+- **Failure scenario.** The look at landing reads the judgment calls and expects widgets to move with the text on a scroll.
+
+**Standards 1.** Sentences the round touched that are false after it. This breaks the rules file, "What every package obeys": a sentence the change makes false is a defect.
+
+- DESIGN.md:246: "carry the class `monaco-editor` and the theme type class of the editor's root" (Spec 2), and "a scroll of any ancestor of the box closes the editor's open widgets" (false for the rename box and the widgets in Spec 1).
+- `options.ts:17-18`: "the theme type class of the editor's root".
+- `options.ts:25-26`, `Editor.svelte` head ("an ancestor of the box that scrolls closes the open widgets") and `DiffEditor.svelte` head: the same false scroll claim.
+- `options.ts:186`: "Follow the editors once they are made: the theme type class of their root."
+- `options.ts:338`: "and draw nothing again", which describes the dead check of Proof 1.
+
+Failure scenario: a reader debugging a high-contrast suggest list, or a floating rename box, trusts DESIGN.md and looks elsewhere.
+
+**Standards 2.** `options.ts:330`, 102 columns:
+
+```ts
+        /** The innermost editor of the box that takes the focus is the one the next widget is for. */
+```
+
+- **What is wrong.** The rules file, "What every package obeys", wants a comment rewrapped at 100 columns. The report says "no changed line of a comment is over 100 columns". `/tmp/rewrap_all.py` only treats lines starting with `//` or `*` as comments, so a one-line `/** ... */` is outside what it checks.
+- **Failure scenario.** None at run time. The claim misleads the landing.
+
+**Behaviour 1.** `options.ts:176-179`.
+
+```ts
+} else if (press.key === 'Tab') {
+    press.preventDefault();
+    editor.focus();
+}
+```
+
+- **What is wrong.** A focused hover takes Tab to move between its own focusable parts: its container (`hoverWidget.js:19`), its action links "Quick Fix..." and "View Problem" (`hoverWidget.js:41`, `contentHoverStatusBar.js:29`), the verbosity buttons (`markdownHoverParticipant.js:250`) and `contentHoverRendered.js:236`. Monaco keeps the hover open on Tab for exactly that (`contentHoverController.js:237`). No keybinding takes that Tab and `tab-out.ts` does not either, so `forward` now prevents it and puts the focus in the editor's text.
+- **Before the step**, the hover sat inside the editor's box and Tab walked its parts. The same applies to the suggest details when focused.
+- This matches ruling 5's wording, but brief item 1 ("keys typed in a widget behave as today") still holds. Returning the focus only when a Tab would leave the widget would satisfy both. The report states "Tab out of ... a focused hover: the focus is in the editor" with no before and after for this loss.
+- **Failure scenario.** A Ruff finding, Cmd+K Cmd+I twice to focus its hover, then Tab to reach "Quick Fix...". The focus jumps to the editor's text instead, and the next key hides the hover.
+- **Verdict:** item 1 violated, for that part.
+
+### Declined to judge
+
+- **Every on-screen outcome of the cases.** No page was run, as the brief and the rules file require. The look at landing settles them.
+- **Vite at runtime.** Whether Vite's dev optimizer pre-bundles the new subpath in the same run as `monaco-editor`. The main checkout's `node_modules/.vite/deps/_metadata.json` (written 11 October, 20:27) lists `monaco-editor` but neither subpath the tree already imports (`.../contextkey`, `.../keyCodes`), so that cache predates them. The rules (`registerMissingImport` re-runs one optimize with splitting) give one instance, and a second copy would still work, as ruling 1's verdict says. A dev server run would settle it.
+- **`python3 /tmp/rewrap_all.py`.** The permission classifier refused it. I read it instead: without an argument it only prints, and Standards 2 shows a line it does not check.
+- **Typing in a scrolled list.** Whether Chrome scrolls an ancestor list to reveal the caret while the reader types in a sized diff editor, which would close a suggest list as it opens. Only the look can show it.
+- **Ruling 1's exceptions.** The report counts more as staying in the editor's box than the ruling's one exception, the quick input: also the find widget, lightbulb, CodeLens, sticky scroll and inline completions. The brief's item 1 keeps the find box in the editor. Whether the ruling meant the others to move is the orchestrator's call.
+- **Different theme types.** Whether the page node following one editor's theme matters when editors of different theme types exist. Monaco's theme is global (one `setTheme` for every editor), and per Spec 2 nothing follows a theme at all, so the point does not arise on this tree.
+
+Reviewer usage: agent id not visible to the reviewer (read it from the runner's record); served model claude-opus-5-5. Tokens, tool uses and minutes are left for the session.
+
+## Closed
+
+The first review's findings were closed in repair round 1 (`agents/briefs/D69-round1.md`, rulings 1 to 10). The findings of the run over round 1 were closed at landing, in the gate worktree at main's head, as follows.
+
+- **Spec 1, widgets left floating on an ancestor's scroll.** `options.ts` `close()` still closes the context view, the hover, the suggest list and the parameter hints, and when a widget is still shown after that (the rename box, a message, the paste-as button, the colour picker) calls `render(true)` on the box's editors, which places each fixed widget against the text again. Seen at the look: the rename box and the "can't be renamed" message stayed open at their line after a scroll of the box's parent, and the rename input kept the focus.
+- **Spec 2, the theme type class never applied.** `followTheme()` now reads the class from any editor root on the page (Monaco's theme is one for the page) and puts it on every widgets node; it runs from `tie(editors)`, which takes the editors and listens to `onDidChangeModel` on each (Monaco builds the root when an editor takes a model), and from the painter's `onPainted` in `kit/load.ts`, which fires after a theme is defined. The MutationObserver is removed. Seen at the look: both nodes carried `vs` under the light theme and `vs-dark` under the dark theme, with the root.
+- **Proof 1, the dead `childElementCount` check.** Replaced by `shows(node)`, which tests whether a widget under the node's containers is visible (`checkVisibility` with visibility and opacity), so an editor with nothing open gets no command and no draw.
+- **Proof 2, the report's judgment call 4.** After the landing fix `render(true)` runs again, but only when a widget other than the closed ones stays open after a scroll; the booking states this, which replaces judgment call 4.
+- **Standards 1, false sentences.** DESIGN.md's widget paragraph, the head of `options.ts`, the doc comments of `tie` and `close`, and the heads of `Editor.svelte` and `DiffEditor.svelte` rewritten to what the code does after the fixes.
+- **Standards 2, a 102-column comment.** Rewritten to "The innermost editor of the box that takes the focus is the one a widget is for." (93 columns); `awk 'length>100'` over the three editor files prints only the import line of `ContextViewService` in `options.ts`, which Prettier keeps on one line.
+- **Behaviour 1, Tab in a focused hover.** `forward` takes the node and returns the focus to the editor only when the Tab would leave the widget (`leaves()`: the widget is the element one level under the node's containers, a Tab leaves from its last visible focusable part, a Shift+Tab from its first, any Tab from a widget with none). Seen at the look: in a Ruff hover, Tab from "View Problem" went to "Quick Fix...", and the next Tab put the focus in the editor's text.
+- **Declined to judge, ruling 1's exceptions.** Ruling 1 was written for the context views the layout-service override did not reach; what Monaco places in the text on purpose (the find widget, the peek zone, the lightbulb, CodeLens, inline completions, the sticky scroll) stays in the box as brief item 1 keeps the find widget there. No change.

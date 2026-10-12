@@ -24,6 +24,15 @@
     // A right-click anywhere on the bar lists every item with a check, and unchecking one hides it;
     // the hidden set is the ui store's, saved with the appearance. The items apps add stand last in
     // the list, each named as `<name> (<app title>)` and kept hidden under `<view id>/<item id>`.
+    //
+    // An item is drawn whole or not at all. The bar is one row, and an item that does not fit wraps
+    // to a second row the bar clips: the right group's items leave from its left end first, as VS
+    // Code's do (its markup is written in reverse order for that, and the row reverses it back, so
+    // the Tab key walks the right group from its right end to its left), and once the right group
+    // is as narrow as its widest item the left group's last items leave. An item is at most 40 % of
+    // the window wide, a longer text ends in an ellipsis, and the several buttons of the linter
+    // item share its width, each ending in an ellipsis. An item that has left the row is inert
+    // (wrapped.ts) and is listed in the right-click menu as any other is.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -35,6 +44,7 @@
     import LatexItem from './LatexItem.svelte';
     import RepoItems from './RepoItems.svelte';
     import SourceItems from './SourceItems.svelte';
+    import { inertWhenWrapped } from './wrapped';
     import { toggleView } from '$lib/shell/keys/keys';
     import {
         STATUS_ITEMS,
@@ -165,7 +175,7 @@
         aria-label={t('statusbar.label')}
         data-status-bar
     >
-        <div class="group" data-status-group="left">
+        <div class="group" data-status-group="left" {@attach inertWhenWrapped}>
             {#if shown('host')}
                 <span data-status="host">
                     <ToolButton
@@ -272,29 +282,8 @@
             {/if}
             <AppItems side="left" {hidden} />
         </div>
-        <div class="group" data-status-group="right">
-            {#if source !== null}
-                <SourceItems
-                    instance={source.instance}
-                    status={source.status}
-                    {shown}
-                    {onpalette}
-                />
-            {/if}
-            <AppItems side="right" {hidden} />
-            {#if shown('sessions')}
-                <span data-status="sessions">
-                    <ToolButton
-                        label={t('statusbar.sessions_name', status.live)}
-                        glyph="agents"
-                        title={t('statusbar.sessions_tip', status.live)}
-                        status
-                        onclick={() => openView('session-list')}
-                    >
-                        {status.live}
-                    </ToolButton>
-                </span>
-            {/if}
+        <div class="group" data-status-group="right" {@attach inertWhenWrapped}>
+            <Bell drawn={shown('bell')} />
             {#if shown('unsaved')}
                 <span data-status="unsaved">
                     <ToolButton
@@ -311,45 +300,76 @@
                     </ToolButton>
                 </span>
             {/if}
-            <Bell drawn={shown('bell')} />
+            {#if shown('sessions')}
+                <span data-status="sessions">
+                    <ToolButton
+                        label={t('statusbar.sessions_name', status.live)}
+                        glyph="agents"
+                        title={t('statusbar.sessions_tip', status.live)}
+                        status
+                        onclick={() => openView('session-list')}
+                    >
+                        {status.live}
+                    </ToolButton>
+                </span>
+            {/if}
+            <AppItems side="right" {hidden} />
+            {#if source !== null}
+                <SourceItems
+                    instance={source.instance}
+                    status={source.status}
+                    {shown}
+                    {onpalette}
+                />
+            {/if}
         </div>
     </footer>
 </ContextMenu>
 
 <style>
     /* VS Code's status bar (statusbarpart.css): one row the bar's height, a left group and a right
-       group pushed apart, the ground's colour with a line along its top. */
+       group, the ground's colour with a line along its top. The bar and its groups clip, which
+       scrolls nothing, so the focus never brings a clipped row into view. */
     .bar {
+        --status-item-max: 40vw;
         display: flex;
         flex: 0 0 auto;
         align-items: stretch;
-        justify-content: space-between;
         box-sizing: border-box;
         height: var(--status-height);
         min-width: 0;
-        overflow: hidden;
+        overflow: clip;
         border-top: 1px solid var(--line);
         background: var(--bg);
         color: var(--ink-txt, var(--ink));
         font-size: var(--status-text);
     }
 
-    /* A group narrower than its items clips them at its inner edge, so a long item never draws
-       over the other group: the left group loses its last items, the right group its first. */
+    /* A group wraps the items it has no room for onto a second row, which it clips, so an item is
+       drawn whole or not at all; the group is as narrow as its widest item. The left group keeps
+       its width until the right group is as narrow as it goes, and wraps its last items after that.
+       The right group takes the rest of the bar and lays its items out from its right end, in
+       reverse order so that the wrap starts at its left end and its markup is written reversed
+       (flex-direction: row-reverse draws the first item at the right). The groups are the offset
+       parent of their items, which wrapped.ts measures. */
     .group {
+        position: relative;
         display: flex;
+        flex-wrap: wrap;
         align-items: stretch;
-        min-width: 0;
-        overflow: hidden;
+        align-content: flex-start;
+        overflow: clip;
     }
 
     .group[data-status-group='right'] {
-        justify-content: flex-end;
+        flex: 1 1 0;
+        flex-direction: row-reverse;
     }
 
     .group > :global(*) {
         display: flex;
         flex: 0 0 auto;
+        max-width: var(--status-item-max);
     }
 
     /* A session runs or is paused: the whole bar takes the orange and the ink derived for it. A
