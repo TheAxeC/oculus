@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- D70 (the machine files as ordinary files): building.
 
-Queued, in order (4 steps):
-- D70 (the machine files as ordinary files): next.
+Queued, in order (3 steps):
 - D64 (apps in the tools): next, beside D70 if their paths allow.
 - Q72 (the architecture re-read): after D70 and D64.
 - O33 (oculus in its own repository; inline): after Q72.

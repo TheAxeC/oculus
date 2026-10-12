@@ -24,7 +24,18 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []   # steps in flight, up to six (Z632)
+dispatch:   # steps in flight, up to six (Z632)
+- step: D70
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: affd565bda756daf5 (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D70
+  base: a0508758a
+  launched: 2026-10-12
+  report: agents/reviews/D70-report.md
+  brief_check: agents/reviews/D70-brief-check.md (ab416c65c5e0a57d7, claude-opus-5-5, 261,895 tokens, 102 tool uses, 12.4 min; closed in the brief by the orchestrator, under the report's Closed heading)
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
@@ -250,6 +261,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-12 (D70 launched). D70, the machine files as ordinary files, prepared at base a0508758a with every brief-check finding closed in its brief (`agents/reviews/D70-brief-check.md`, Closed) and plan.md's D70 line corrected for G3's literature row; its builder launched in `.agents/worktrees/D70` (claude-sonnet-5-5), the base copy beside it. In flight (1 of 6): D70. Next: /spec D64 beside D70, then Q72 and O33.
 - 2026-10-12 (D68 landed). D68, workspaces as files, landed (booking in plan.md under D68, `agents/reviews/D68-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D68-refuter.md`, Closed) with a red line of the gate fixed on main (the server context parsed the config folder at each restart finding; one config cache now serves it); the data converted once (the hub's workspace file, `.oculus/local.yml`, `~/.oculus/workspace.json`, `~/.oculus/changes.jsonl`, `CLAUDE.md` and the research-cockpit skill); `npm run test:landing` passed in the gate at main's head with the step, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. Open item 62 raised: the browser's saved pages are not converted, since the permission check refused the step. In flight (0 of 6). Next: /spec D70 and D64, then Q72 and O33.
 - 2026-10-12 (D69 landed). D69, two clipping defects, landed (booking in plan.md under D69, `agents/reviews/D69-landing.md`) after one repair round and the review over it, the run's seven findings closed at landing (`agents/reviews/D69-refuter.md`, Closed): the scroll rule, the theme type class, the visibility check, Tab inside a widget and the false sentences; `npm run test:landing` passed in the gate at main's head with the step, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. In flight (1 of 6): D68 (its builder building). Next: D68's report, /refute, its repair round and /land, which needs Axel's answers on open items 58 and 59 and resolves DESIGN.md's widget paragraph by hand against D69's; then D64, Q72, O33.
 - 2026-10-12 (D68 and D69 launched). D68, workspaces as files, and D69, two clipping defects, prepared at base ff113f762 with every brief-check finding closed in their briefs (Z825 to Z831 taken in automode) and their builders launched in `.agents/worktrees/D68` and `.agents/worktrees/D69` (claude-sonnet-5-5), base copies beside them. Open items 58 and 59 raised for D68's landing. In flight (2 of 6): D68, D69. Next: each builder's report, /refute, /land; D64 waits for D68.
