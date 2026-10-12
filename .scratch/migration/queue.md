@@ -9,7 +9,7 @@ Queued, in order (4 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D68 (workspaces as files), 2026-10-12, HASH.
+- D68 (workspaces as files), 2026-10-12, 9c9d84dce.
 - D69 (two clipping defects), 2026-10-12, cdc029dbb.
 - D63 (apps in the shell), 2026-10-12, a86225c4c.
 - D67 (a bookmark of a root's top), 2026-10-11, 140628361.
