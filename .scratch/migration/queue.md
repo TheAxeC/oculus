@@ -1,5 +1,5 @@
 In flight (2 of 6 slots in use):
-- D64 (apps in the tools): built; its review is next.
+- D64 (apps in the tools): repair round 1 (the review's findings and the orchestrator's read).
 - D71 (workspaces and repositories): repair round 1 (Axel's ruling on cloning, open item 77, and the review's findings); Axel's rulings on open items 78 and 79 sent with it.
 
 Queued, in order (4 steps):
