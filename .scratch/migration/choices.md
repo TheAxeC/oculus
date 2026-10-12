@@ -4017,3 +4017,9 @@ Where it applies: D71. Booked in `plan.md` Rulings.
 
 Where it applies: D71. Booked in `plan.md` Rulings; the entries are written into `agents/guarded.md` at D71's landing.
 
+## Z854 (2026-10-12, D72's preparation, the orchestrator, automode): the venue field kept read-only
+
+- Chosen: the venue editor keeps `id` read-only, the field projects refer to a venue by, and lets `name` be edited.
+- Not chosen: both read-only, the lazy option; `name` read-only as first worded, which leaves `id` editable.
+
+Where it applies: D72. Booked in `plan.md` Rulings.

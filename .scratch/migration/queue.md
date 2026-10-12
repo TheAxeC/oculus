@@ -4,8 +4,8 @@ In flight (2 of 6 slots in use):
 
 Queued, in order (4 steps):
 - Q72 (the architecture re-read): after D64 and D71.
-- D72 (collection entries as records of their own): waits for open item 75, then prepared beside the steps in flight.
-- D73 (the Literature view): waits for open item 76, then after D72.
+- D72 (collection entries as records of their own): after D71, whose files it shares.
+- D73 (the Literature view): after D72.
 - O33 (oculus in its own repository; inline): after Q72.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.

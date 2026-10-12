@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z854 (2026-10-12, automode): the venue editor keeps `id` read-only and `name` editable, since projects refer to a venue by `id`.
+- Open items 75 and 76 (2026-10-12): Axel ruled 75 yes and (a), 76 agreed; D72 is ready to prepare, D73 added after it.
 - Open item 74 (2026-10-12): Axel ruled (a); part of D72, which now waits for open item 75 (raised, the shape of `:task-add` and of the palette page). Open item 76 raised, the Literature view.
 - Open item 73 (2026-10-12): Axel ruled (a); part of D72, which now waits for open item 74 (raised, the leads and radar feeds).
 - Open item 72 (2026-10-12): Axel ruled (a); part of D72, which now waits for open item 73 (raised, the registries with no view).
