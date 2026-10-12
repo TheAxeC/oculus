@@ -1,7 +1,7 @@
-In flight (1 of 6 slots in use): D68, its builder running.
+In flight (1 of 6 slots in use): D68, its builder on repair round 1.
 
 Queued, in order (4 steps):
-- D68 (workspaces as files): brief written and its brief check closed in it (`agents/briefs/D68.md`, `agents/reviews/D68-brief-check.md`); prepared at ff113f762, its builder running. Its landing waits on open items 58 and 59.
+- D68 (workspaces as files): built; reviewed (`agents/reviews/D68-refuter.md`); repair round 1 sent (`agents/briefs/D68-round1.md`). Its landing waits on open items 58, 59 and 60.
 - D64 (apps in the tools): after D63 and D68.
 - Q72 (the architecture re-read): waits for D60 to D66, so it reads the code that ships (open item 33 (a), Z766, Q72's scope), and for D68 and D64, which land before it in the queue.
 - O33 (oculus in its own repository, the cockpit retired, Linux, the README quickstart; inline): after Q72, last.

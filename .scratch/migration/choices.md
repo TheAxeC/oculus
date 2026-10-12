@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z832 (2026-10-12, D68's review, the orchestrator, automode): the wire shapes the step added beyond Z831
+
+- Chosen: the shapes kept as built and reported by the builder: the workspaces answer's `home`, per-folder `dir`, `real`, `folds` and `engine`; the docs route's `?path=&hub=` and the doc tab id `<hub>:<path>`; `apps.json` keyed by the workspace file's path or `unsaved`; `/api/wallpaper` `?list` and `?image=`; memories addressed `<hub>/<name>`; the options section "Folders"; a refusal `reason` on `/api/write`; the read-only `/api/oculus-config` route; `select-workspace` taking `path`; seven refusal words. `docs/apps.md` names each one an app reads.
+- Not chosen: (b) each reshaped now, a second design pass over internal server-to-page shapes no person edits; (c) left unnamed, the lazy option.
+
+Where it applies: D68. Booked in `plan.md` Rulings, the round-1 brief and the closed log of `orchestrator-history.md`.
+
 ## Z831 (2026-10-12, D68's brief check, the orchestrator, automode): the wire formats the change adds
 
 - Chosen: `~/.oculus/workspace.json` as `{ open, recent, unsaved: { folders, primary } }`; the workspaces answer `{ open, folders, primary, recent, available }` with `hub` and `missing` flags; a write body with no `root` means the primary and is refused with none; a record's `root` is its hub's name, absent for the primary's; images served as `<hub name>/<file name>`; each memory carries `hub`.
