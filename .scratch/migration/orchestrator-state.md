@@ -33,6 +33,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: a9641a30b
   launched: 2026-10-12
   report: agents/reviews/D64-report.md
+  builder_usage: 390,759 tokens, 2105 tool uses, 448.6 min
   brief_check: agents/reviews/D64-brief-check.md (aa2213f7585bfd534, claude-opus-5-5, 231,182 tokens, 58 tool uses, 9.7 min; closed in the brief by the orchestrator, under the report's Closed heading)
   shared_paths: with D70, `src/lib/server/machine/lsp/relay.ts` (D70 removes `#config()` and its one use; D64 moves the file into `lsp/relay/`), `lsp/servers.ts` (D70 changes two refusals at 684 and 801), `lsp/adapters/markdown/places.ts` (`Reach.config`), `lsp/library/rules.ts` (`withheldFolders`), `views/sources/source/language/lsp.ts` (one import at 134), and the sentence sweeps of DESIGN.md, HELP.md, `docs/` and `config/text/`; simple, since each of D70's edits is a few lines in a region D64 does not change, and the second to land carries the other's lines by hand
   landing: not-started
@@ -45,10 +46,12 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 1568cf1ed
   launched: 2026-10-12
   report: agents/reviews/D71-report.md
+  builder_usage: 253,778 tokens, 969 tool uses, 183.9 min (the report saved from the builder's hand-back, its own write refused)
   brief_check: agents/reviews/D71-brief-check.md (af360c0361730ba65, claude-opus-5-5, 252,367 tokens, 96 tool uses, 14.6 min; closed in the brief by the orchestrator, under the report's Closed heading)
   shared_paths: with D64, `src/lib/views/sources/repositories/Repositories.svelte` (D64 adds source-control markup; D71 adds one menu item), `src/lib/state/client/selectors.svelte.ts` (D64 one region; D71 the renamed internal `repository` field at :85 and the comment at :332), `src/lib/server/root/context.ts` (watcher wiring), the palette files, `config/text/app.yml`, `findings.yml`, `server.yml`, `views/sources/repositories.yml`, `config/catalogs/glyphs.yml` and `icons.yml` (additions in separate groups), `src/lib/data/model/index.ts`, and the sentence sweeps of DESIGN.md, HELP.md and `docs/`; simple, since D71 keeps off the four Repositories files D64 rewrites and each shared file takes additions in separate regions, which the second to land carries by hand
+  reviewer_report: agents/reviews/D71-refuter.md (a54fc03776ec8539e, claude-opus-5-5, 312,248 tokens, 152 tool uses, 22.5 min)
   landing: not-started
-  round: 0
+  round: 1 (agents/briefs/D71-round1.md, sent 2026-10-12; the tree before it is agents/reviews/D71-before-round1.patch)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -172,6 +175,9 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 ## Open items (only what Axel must rule on; every report tells him these in plain words, decisions first, until he has ruled)
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
+
+- Open item 78 (2026-10-12, D71's repair round 1, ruling 77 part 1): what Open and Open in New Window do after a Clone. In VS Code each window has its own workspace, so Open makes the clone this window's only folder and Open in New Window gives it a new window of its own. In oculus every page and window shares one workspace (`~/.oculus/workspace.json`, `src/lib/server/files/workspace/state.ts:1-3`), so a new window cannot hold a workspace of its own. Options: (a) Open closes the open workspace as Close Workspace does and makes the clone the only folder of the unsaved workspace, first asking Save, Don't Save or Cancel when the unsaved workspace holds folders (VS Code's question when it leaves an untitled workspace); Open in New Window does the same and opens a new window, so both windows show the clone. (b) A workspace per window, as VS Code has: each window keeps its own open workspace, and Open in New Window opens the clone in a new window while this one keeps its workspace; a server change across every workspace route, a step of its own after D71, with D71's Open in New Window waiting for it. (c) Both answers add the clone to the workspace as Add to Workspace does and show it in Files, Open in New Window also opening a new window, as oculus's Open Worktree does today (`state/sources/repositories/worktrees.ts:43-60`). Recommendation: (b), since only per-window workspaces give Open in New Window the meaning VS Code gives it, with (a)'s Open built in D71 now. The lazy option is (c), which turns Open into Add to Workspace. D71's round builds the question and Add to Workspace; Open and Open in New Window are sent as an addition to the round once Axel rules.
+- Open item 79 (2026-10-12, D71, ruling 77 part 7): the hub's own skill `.agents/skills/research-cockpit/SKILL.md:50` and `:205` name the website at `theaxec.github.io/`, which the move to `side-projects/theaxec.github.io/` makes false. The standing rule is that the orchestrator never edits a skill. Options: (a) Axel allows the two path edits, made by the orchestrator at D71's landing; (b) Axel edits the two lines himself. Recommendation: (a), since the lines are paths and nothing else in the skill changes. There is no lazy option between the two; leaving the lines false is not offered.
 
 
 

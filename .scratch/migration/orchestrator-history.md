@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 77 (2026-10-12): Axel ruled the cloning design in seven parts (plan.md Rulings, Open item 77): Clone from GitHub as VS Code's, no manifest written, nested repositories hidden by a full-depth exclude block, cloned-by-origin, no findings for unnamed files of a projects-only hub, and the hub data moves; built in D71's repair round.
 - Z854 (2026-10-12, automode): the venue editor keeps `id` read-only and `name` editable, since projects refer to a venue by `id`.
 - Open items 75 and 76 (2026-10-12): Axel ruled 75 yes and (a), 76 agreed; D72 is ready to prepare, D73 added after it.
 - Open item 74 (2026-10-12): Axel ruled (a); part of D72, which now waits for open item 75 (raised, the shape of `:task-add` and of the palette page). Open item 76 raised, the Literature view.

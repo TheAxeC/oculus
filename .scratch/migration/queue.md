@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- D64 (apps in the tools): building.
-- D71 (workspaces and repositories): building.
+- D64 (apps in the tools): built; its review is next.
+- D71 (workspaces and repositories): repair round 1 (Axel's ruling on cloning, open item 77, and the review's findings); open items 78 and 79 wait for Axel.
 
 Queued, in order (4 steps):
 - Q72 (the architecture re-read): after D64 and D71.
