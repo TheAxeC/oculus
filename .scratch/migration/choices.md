@@ -3981,3 +3981,39 @@ Where it applies: D17. Booked in the state file's closed log and `plan.md` Rulin
 - Not chosen: folding them into X3e, eleventh in the queue, which leaves them broken for ten landings; a note in X3c's landing report and no step, the lazy option.
 
 Where it applies: X3f. Booked in `plan.md` Rulings and the queue.
+
+## Z849 (2026-10-12, open item 67's rulings, the orchestrator, automode): a folder holding both manifests
+
+- Chosen: the top `project.yml` is read and `.oculus/project.yml` is a finding naming both files.
+- Not chosen: neither read (hides a project over a second file); `.oculus` wins.
+
+Where it applies: D71. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z850 (2026-10-12, open item 67's rulings, the orchestrator, automode): where the `repos.yml` entries go
+
+- Chosen: research tools to `projects/software/<id>`; theses and school work to `side-projects/school/<id>`; the other personal repositories to `side-projects/<id>`; research-hub stays no project (a hub never is one) and keeps its place in the Repositories view; game-engine, cathedra and youtube-downloader are projects already.
+- Not chosen: all flat under `side-projects/`; research tools under `side-projects/`.
+
+Where it applies: D71. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z851 (2026-10-12, open item 67's rulings, the orchestrator, automode): theaxec.github.io as a project
+
+- Chosen: `side-projects/theaxec.github.io/project.yml` in the hub, its `clone_dir` pointing at the website's present folder, so no path to the website changes.
+- Not chosen: moving the website (every path to it changes, `CLAUDE.md` among them); a manifest inside the website repository (Jekyll would publish it).
+
+Where it applies: D71. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z852 (2026-10-12, D71's preparation, the orchestrator, automode): the clone command
+
+- Chosen: one palette command `:clone` listing the account's GitHub repositories and a typed URL, also in the Repositories view's menu; the project folder asked through the folder panel; a folder under no hub scan folder added to the workspace.
+- Not chosen: a separate `:clone-github`; Clone on cards only.
+
+Where it applies: D71. Booked in `plan.md` Rulings.
+
+## Z853 (2026-10-12, D71's brief check, the orchestrator, automode): the guarded entries of D71's tests
+
+- Chosen: G29, G8, G13 and G32 gain a sentence each; new entries G78 (the usage transcripts left out of every list), G79 (the deposit on the project's own `code/`, Fetch and the comparisons changing nothing), G80 (Clone and `:clone`), G81 (the per-folder repository depth and the cloned projects on the git channel).
+- Not chosen: no new entries and no tests for those behaviours, the lazy option.
+
+Where it applies: D71. Booked in `plan.md` Rulings; the entries are written into `agents/guarded.md` at D71's landing.
+

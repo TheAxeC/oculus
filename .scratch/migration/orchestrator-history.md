@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 70 (2026-10-12): Axel ruled (a); the saved layout value in his Chrome is renamed once at D71's landing.
+- Open item 67 (2026-10-12): Axel agreed to all six parts; open item 69: (a). Axel added the unified manifest placement (`project.yml` or `.oculus/project.yml`, inside a hub and outside). Z849 (a folder holding both), Z850 (where the `repos.yml` entries go) and Z851 (theaxec.github.io's manifest) closed in automode. All built in D71, now unblocked.
 - Open item 68 (2026-10-12): Axel ruled (a), with the Deposit view in a project's workbench; booked into D71. Open item 67's options (a) to (c) withdrawn: Axel rejected them (existing behaviour may not change) and gave his own design, now open item 67 with six parts to rule. Open item 69 raised (the References page).
 
 - Open item 66 (2026-10-12), workbenches per workspace: Axel ruled (a), one saved layout per workspace file; built in the new step D71, which Axel asked for in place of carrying work into Q72. The usage-session defect moved from Q72 to D71 with it. Open item 67 redone at Axel's word (the clone destination was a fixed folder; now the VS Code way, a folder dialog starting at a machine key), and open item 68 raised for the deposit.

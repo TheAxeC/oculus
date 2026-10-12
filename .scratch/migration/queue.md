@@ -3,7 +3,7 @@ In flight (1 of 6 slots in use):
 
 Queued, in order (3 steps):
 - Q72 (the architecture re-read): after D64.
-- D71 (workspaces and repositories): waits for open item 67, then prepared at once beside the steps in flight.
+- D71 (workspaces and repositories): being prepared, beside D64.
 - O33 (oculus in its own repository; inline): after Q72.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
