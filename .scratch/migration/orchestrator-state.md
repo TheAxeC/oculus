@@ -36,6 +36,18 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D70-brief-check.md (ab416c65c5e0a57d7, claude-opus-5-5, 261,895 tokens, 102 tool uses, 12.4 min; closed in the brief by the orchestrator, under the report's Closed heading)
   landing: not-started
   round: 0
+- step: D64
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: af8ef9bc7f21f025e (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  worktree: .agents/worktrees/D64
+  base: a9641a30b
+  launched: 2026-10-12
+  report: agents/reviews/D64-report.md
+  brief_check: agents/reviews/D64-brief-check.md (aa2213f7585bfd534, claude-opus-5-5, 231,182 tokens, 58 tool uses, 9.7 min; closed in the brief by the orchestrator, under the report's Closed heading)
+  shared_paths: with D70, `src/lib/server/machine/lsp/relay.ts` (D70 removes `#config()` and its one use; D64 moves the file into `lsp/relay/`), `lsp/servers.ts` (D70 changes two refusals at 684 and 801), `lsp/adapters/markdown/places.ts` (`Reach.config`), `lsp/library/rules.ts` (`withheldFolders`), `views/sources/source/language/lsp.ts` (one import at 134), and the sentence sweeps of DESIGN.md, HELP.md, `docs/` and `config/text/`; simple, since each of D70's edits is a few lines in a region D64 does not change, and the second to land carries the other's lines by hand
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
