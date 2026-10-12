@@ -2,8 +2,9 @@ In flight (2 of 6 slots in use):
 - D70 (the machine files as ordinary files): review over repair round 1.
 - D64 (apps in the tools): building.
 
-Queued, in order (2 steps):
+Queued, in order (3 steps):
 - Q72 (the architecture re-read): after D70 and D64.
+- D71 (workspaces and repositories): waits for open items 67 and 68, then prepared at once beside the steps in flight.
 - O33 (oculus in its own repository; inline): after Q72.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
