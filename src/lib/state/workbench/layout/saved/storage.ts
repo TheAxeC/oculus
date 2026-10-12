@@ -2,44 +2,71 @@
 // under, what the store needs of a Storage, and the one place a read or a write is attempted and a
 // refusal swallowed.
 //
+// An arrangement belongs to a workspace: the keys carry the identity of the open workspace, which
+// is the real path of its file or `unsaved` (layoutKey). No key is read or written until the
+// workspace answer has named the identity (`select`), so a page never reads the arrangement of a
+// workspace it has not yet learned it is in.
+//
 // The storage is attached at the load rather than at the build, so nothing is written before the
 // saved arrangement has been read and a store nobody has loaded touches no localStorage. A browser
 // whose storage is full or refused still runs; it forgets the arrangement at the next load and
 // nothing else, since what the shell renders is the arrangement in memory.
 //
-// Every browser tab of one server writes the same key, so each one also listens for the browser's
+// Every browser tab of one server writes the same keys, so each one also listens for the browser's
 // `storage` event, which is fired in the other tabs when one of them writes: the store is told when
-// the arrangement was saved elsewhere and reads it (layout/saved/load.ts, `takeSaved`).
+// the arrangement of the workspace it has open was saved elsewhere and reads it (layout/saved/
+// load.ts, `takeSaved`).
 //
-// In the desktop app the windows of one server share one page storage and also share a turn: a
-// save is first put to the host together with the envelope the page last read or wrote, and the
-// host admits it only when that is the envelope it admitted last, otherwise it answers with the
-// one it holds. A refused save writes nothing and leaves that envelope to be taken (`refusal`),
-// after which the operation that asked is run again on it. A save the host did not answer is
-// refused with no envelope: it writes nothing and is not run again.
+// In the desktop app the windows of one server share one page storage and also share a turn: a save
+// is first put to the host together with the key, the envelope to write and the envelope the page
+// last read or wrote under that key, and the host admits it only when that is the envelope it
+// admitted last for the key, otherwise it answers with the one it holds. A refused save writes
+// nothing and leaves that envelope to be taken (`refusal`), after which the operation that asked is
+// run again on it. A save the host did not answer is refused with no envelope: it writes nothing
+// and is not run again.
 
 import type { SaveAnswer } from '../../../shared/stores/desktop.ts';
-import { followKey } from '../../../shared/stores/storage-events.ts';
 import { tabsOf } from '../instance.ts';
 import { hostsOf, type Pages } from '../model.ts';
 import { serialiseLayout } from './saved.ts';
 
-/** The key the arrangement is saved under. The envelope inside it carries the version. */
-export const LAYOUT_KEY = 'oculus.layout.v1';
+/** The identity of the workspace that has no file. */
+export const UNSAVED = 'unsaved';
+
+/** The start of the key an arrangement is saved under; the identity follows. */
+export const LAYOUT_PREFIX = 'oculus.layout.workspace:';
+
+/** The start of the key a copy of an unreadable arrangement is kept under; the identity follows. */
+const UNREAD_PREFIX = 'oculus.layout.unread:';
 
 /**
- * The key a value under LAYOUT_KEY that parseLayout cannot read is copied under when the default
+ * The start of the key the record of layout writes is kept under: a JSON list of the last
+ * `WRITES_KEPT` entries, newest last, each a `LayoutWrite`. One browser tab's writes and another's
+ * are interleaved in it, told apart by `tab`.
+ */
+const WRITES_PREFIX = 'oculus.layout.writes.v1:';
+
+/**
+ * The key the arrangement of one workspace is saved under. The envelope inside it carries the
+ * version.
+ */
+function layoutKey(identity: string): string {
+    return `${LAYOUT_PREFIX}${identity}`;
+}
+
+/**
+ * The key a value under layoutKey that parseLayout cannot read is copied under when the default
  * arrangement is about to be written over it, so what the reader had saved can be recovered by
  * hand. A later unreadable value replaces the copy.
  */
-export const UNREAD_KEY = 'oculus.layout.unread';
+function unreadKey(identity: string): string {
+    return `${UNREAD_PREFIX}${identity}`;
+}
 
-/**
- * The key the record of layout writes is kept under: a JSON list of the last `WRITES_KEPT` entries,
- * newest last, each a `LayoutWrite`. One browser tab's writes and another's are interleaved in it,
- * told apart by `tab`.
- */
-const WRITES_KEY = 'oculus.layout.writes.v1';
+/** The key of the record of layout writes of one workspace. */
+function writesKey(identity: string): string {
+    return `${WRITES_PREFIX}${identity}`;
+}
 
 /** How many entries the record of layout writes keeps. */
 const WRITES_KEPT = 500;
@@ -146,35 +173,48 @@ function sourceOf(entry: LayoutWrite): string {
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 export type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 
-/** The host's turn for a save: the envelope to write and the one it was made from. */
-export type SaveTurn = (next: string, from: string | null) => SaveAnswer;
+/** The host's turn for a save: the key, the envelope to write and the one it was made from. */
+export type SaveTurn = (key: string, next: string, from: string | null) => SaveAnswer;
 
-/** The arrangement's persistence: attached once by a load, then read and written by key. */
+/** The arrangement's persistence: attached once by a load, then read and written by workspace. */
 export type LayoutStorage = {
     /** Name where the arrangement is read from and saved to. Nothing is saved before this. */
     attach: (storage: Storable) => void;
-    /** One key of the attached storage, or null when there is none or it refused to be read. */
-    read: (key: string) => string | null;
-    /** Write one string under a key, or do nothing when there is nowhere to write yet. */
-    remember: (key: string, value: string) => void;
     /**
-     * Write a set of pages under LAYOUT_KEY, which is what every change to them ends in. `call`
-     * names the layout store operation asking, and the write is then added to the record under
-     * WRITES_KEY.
+     * Name the workspace the arrangement belongs to. Until it is called nothing is read and nothing
+     * is written, and a read answers null.
+     */
+    select: (identity: string) => void;
+    /** The identity `select` named, or null before it was called. */
+    identity: () => string | null;
+    /** The arrangement saved for the selected workspace, or null when none or it cannot be read. */
+    readSaved: () => string | null;
+    /** Keep a value `readSaved` answered and parseLayout could not read, for the selected one. */
+    rememberUnread: (raw: string) => void;
+    /**
+     * Write a set of pages under the selected workspace's key, which is what every change to them
+     * ends in. `call` names the layout store operation asking, and the write is then added to the
+     * record of the selected workspace.
      */
     write: (next: Pages, call?: string) => void;
     /**
-     * The envelope the host held when it refused the last save, once: the save wrote nothing and
-     * the caller takes this envelope and asks again. Null when no save was refused since the last
-     * call.
+     * Write a set of pages under another workspace's key: the pages a workspace is left with, or
+     * the pages Save As carries to the new file. The record of writes is added to as for `write`.
+     */
+    writeFor: (identity: string, next: Pages, call?: string) => void;
+    /**
+     * The envelope the host held when it refused the last save of the selected workspace, once: the
+     * save wrote nothing and the caller takes this envelope and asks again. Null when no save was
+     * refused since the last call.
      */
     refusal: () => string | null;
     /**
-     * Call `changed` whenever another browser tab saved the arrangement, as `source` (the window)
-     * reports it; answers how to stop. The browser fires the event in every tab but the writer's,
-     * so a save made here never calls it, and a write to any other key is not heard. The same
-     * source is also heard for the record of layout writes, which an entry of this tab is put back
-     * in when another tab's write left it out.
+     * Call `changed` whenever another browser tab saved the arrangement of the selected workspace,
+     * as `source` (the window) reports it; answers how to stop. The browser fires the event in
+     * every tab but the writer's, so a save made here never calls it, and a write to any other key,
+     * the arrangement of another workspace among them, is not heard. The same source is also heard
+     * for the record of layout writes, which an entry of this tab is put back in when another tab's
+     * write left it out.
      */
     follow: (source: EventTarget, changed: () => void) => () => void;
 };
@@ -183,76 +223,104 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
     /** Where the arrangement is read and saved, once a load has named it. */
     let backing: Storable | null = null;
 
-    /** The envelope this page last read or wrote under LAYOUT_KEY, which a save is made from. */
-    let known: string | null = null;
+    /** The workspace the arrangement belongs to, once the workspace answer has named it. */
+    let selected: string | null = null;
 
-    /** The envelope the host answered the last refused save with. */
+    /** The envelope this page last read or wrote under each key, which a save is made from. */
+    const known = new Map<string, string | null>();
+
+    /** The envelope the host answered the last refused save of the selected workspace with. */
     let refused: string | null = null;
 
-    /** The entries this tab added to the record, the newest `WRITES_KEPT` of them. */
-    const own: LayoutWrite[] = [];
+    /** The entries this tab added to the records, the newest `WRITES_KEPT` of them. */
+    const own: { key: string; entry: LayoutWrite }[] = [];
 
     function attach(storage: Storable): void {
         backing = storage;
     }
 
-    function read(key: string): string | null {
+    function select(identity: string): void {
+        selected = identity;
+        refused = null;
+    }
+
+    /** One key of the attached storage, or null when there is none or it refused to be read. */
+    function get(key: string): string | null {
         if (backing === null) return null;
         try {
-            const raw = backing.getItem(key);
-            if (key === LAYOUT_KEY) known = raw;
-            return raw;
+            return backing.getItem(key);
         } catch {
             // A browser with storage refused still runs; it just forgets the arrangement.
             return null;
         }
     }
 
-    function remember(key: string, value: string): void {
-        if (backing === null) return;
+    function readSaved(): string | null {
+        if (selected === null) return null;
+        const key = layoutKey(selected);
+        const raw = get(key);
+        known.set(key, raw);
+        return raw;
+    }
+
+    function rememberUnread(raw: string): void {
+        if (backing === null || selected === null) return;
         try {
-            backing.setItem(key, value);
+            backing.setItem(unreadKey(selected), raw);
         } catch {
             // A full or refused storage forgets the arrangement at the next load and nothing else.
         }
     }
 
-    function write(next: Pages, call = ''): void {
+    /**
+     * The envelope this page last read or wrote under a key, read from the storage on first use.
+     */
+    function knownFor(key: string): string | null {
+        if (!known.has(key)) known.set(key, get(key));
+        return known.get(key) ?? null;
+    }
+
+    function writeFor(identity: string, next: Pages, call = ''): void {
         if (backing === null) return;
+        const key = layoutKey(identity);
         try {
             const text = serialiseLayout(next);
             if (turn !== undefined) {
-                const answer = turn(text, known);
+                const answer = turn(key, text, knownFor(key));
                 if (!answer.admitted) {
                     // A save the host did not answer writes nothing and has no envelope to take.
                     if (answer.held !== null) {
-                        refused = answer.held;
-                        known = answer.held;
+                        if (identity === selected) refused = answer.held;
+                        known.set(key, answer.held);
                     }
                     return;
                 }
             }
-            known = text;
-            backing.setItem(LAYOUT_KEY, text);
+            known.set(key, text);
+            backing.setItem(key, text);
         } catch {
             // A full or refused storage loses the arrangement at the next load and nothing else:
             // the arrangement in memory is what the shell renders and it is already current.
         }
-        record(next, call);
+        record(identity, next, call);
+    }
+
+    function write(next: Pages, call = ''): void {
+        if (selected !== null) writeFor(selected, next, call);
     }
 
     /**
-     * Add one entry to the record of layout writes, dropping the oldest past WRITES_KEPT, or count
-     * the write on the newest entry when it repeats it. It reads and writes nothing but WRITES_KEY
-     * and TAB_KEY, and a refusal of either is swallowed: the layout write it follows has already
-     * happened and is never held up by the record.
+     * Add one entry to the record of layout writes of a workspace, dropping the oldest past
+     * WRITES_KEPT, or count the write on the newest entry when it repeats it. It reads and writes
+     * nothing but the record's key and TAB_KEY, and a refusal of either is swallowed: the layout
+     * write it follows has already happened and is never held up by the record.
      *
      * Two windows of the app share the key, and each adds its entry by reading the list and writing
      * it back, so a window that reads before the other's write has reached it writes the list
      * without that entry. The window that lost the entry hears the other's write as a `storage`
      * event (`putBack`) and adds the entry back in the place its time gives it.
      */
-    function record(next: Pages, call: string): void {
+    function record(identity: string, next: Pages, call: string): void {
         if (backing === null) return;
         try {
             const entry: LayoutWrite = {
@@ -264,9 +332,10 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
                     tabsOf(host.workbench.root).map((tab) => `${tab.id}:${tab.view}`)
                 )
             };
-            append(entry);
+            const key = writesKey(identity);
+            append(key, entry);
             if (turn !== undefined) {
-                own.push(entry);
+                own.push({ key, entry });
                 if (own.length > WRITES_KEPT) own.shift();
             }
         } catch {
@@ -274,47 +343,48 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
         }
     }
 
-    /** The list under WRITES_KEY, empty when there is none or it is not a list. */
-    function listed(): LayoutWrite[] {
-        const held: unknown = JSON.parse(backing?.getItem(WRITES_KEY) ?? '[]');
+    /** The list under a record's key, empty when there is none or it is not a list. */
+    function listed(key: string): LayoutWrite[] {
+        const held: unknown = JSON.parse(backing?.getItem(key) ?? '[]');
         return Array.isArray(held) ? (held as LayoutWrite[]) : [];
     }
 
     /** Write the list with this entry in it, counted on the newest entry when it repeats it. */
-    function append(entry: LayoutWrite): void {
-        const kept = listed();
+    function append(key: string, entry: LayoutWrite): void {
+        const kept = listed(key);
         const newest = kept.at(-1);
         const list =
             newest !== undefined && repeated(newest, entry)
                 ? [...kept.slice(0, -1), { ...newest, n: (newest.n ?? 1) + 1, last: entry.at }]
                 : [...kept, entry];
         const ordered = list.sort((one, other) => one.at - other.at);
-        backing?.setItem(WRITES_KEY, JSON.stringify(ordered.slice(-WRITES_KEPT)));
+        backing?.setItem(key, JSON.stringify(ordered.slice(-WRITES_KEPT)));
     }
 
     /**
-     * Add this tab's entries again that the list does not hold, alone or counted on another entry,
+     * Add this tab's entries again that a record does not hold, alone or counted on another entry,
      * when another tab's write has left them out. An entry older than the list's oldest is one the
      * cap dropped, and is left out.
      */
-    function putBack(): void {
+    function putBack(key: string): void {
         try {
-            const kept = listed();
+            const kept = listed(key);
             const oldest = kept[0]?.at ?? 0;
             // An entry counted on another stands for every write from its time to its `last`.
             const spans = new Map<string, [number, number][]>();
             for (const one of kept) {
-                const key = sourceOf(one);
-                const held = spans.get(key) ?? [];
+                const source = sourceOf(one);
+                const held = spans.get(source) ?? [];
                 held.push([one.at, one.last ?? one.at]);
-                spans.set(key, held);
+                spans.set(source, held);
             }
-            for (const entry of own) {
+            for (const { key: where, entry } of own) {
+                if (where !== key) continue;
                 const held = spans
                     .get(sourceOf(entry))
                     ?.some(([from, to]) => from <= entry.at && entry.at <= to);
                 if (held !== true && (kept.length < WRITES_KEPT || entry.at >= oldest)) {
-                    append(entry);
+                    append(key, entry);
                 }
             }
         } catch {
@@ -329,13 +399,25 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
     }
 
     function follow(source: EventTarget, changed: () => void): () => void {
-        const stopLayout = followKey(source, LAYOUT_KEY, changed);
-        const stopRecord = followKey(source, WRITES_KEY, putBack);
-        return () => {
-            stopLayout();
-            stopRecord();
+        const heard = (event: Event): void => {
+            const key = (event as StorageEvent).key;
+            if (selected === null || key === null) return;
+            if (key === layoutKey(selected)) changed();
+            else if (key === writesKey(selected)) putBack(key);
         };
+        source.addEventListener('storage', heard);
+        return () => source.removeEventListener('storage', heard);
     }
 
-    return { attach, read, remember, write, refusal, follow };
+    return {
+        attach,
+        select,
+        identity: () => selected,
+        readSaved,
+        rememberUnread,
+        write,
+        writeFor,
+        refusal,
+        follow
+    };
 }

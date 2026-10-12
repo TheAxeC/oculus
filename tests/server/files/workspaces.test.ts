@@ -1,29 +1,26 @@
 // What lib/server/files/fs.ts and server/files/workspace/actions.ts do to the workspace state on a
 // write: Save Workspace As writes `.oculus/workspaces/<name>.yml` of the primary hub (else the
-// first hub) with the open folders and primary and opens it, Switch Workspace opens another file
-// and puts it first in the recent list, a recent file that is gone is refused and taken off the
-// list, and a state file that is there and does not read is refused and left byte for byte as it
-// was.
+// first hub) with the open folders and primary and opens it, New Workspace writes the same file
+// with no folder, Close Workspace leaves the open file for the unsaved workspace with no folder and
+// leaves the file as it is, Switch Workspace opens another file and puts it first in the recent
+// list, a recent file that is gone is refused and taken off the list, and a state file that is
+// there and does not read is refused and left byte for byte as it was.
 //
 // Every file here is under the system temporary directory and every path written is asserted to be
 // inside it first. Nothing reads or writes ~/.oculus.
 
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { engineDir } from '../../../src/lib/data/places/engine-dir.ts';
-import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { handleFsWrite, ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import {
     readState,
     stateFileOf,
     writeState
 } from '../../../src/lib/server/files/workspace/state.ts';
+import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { plantHub, workspaceOf } from '../../fixtures/hubs/workspace.ts';
-
-const TOKEN = 'a-write-token';
+import { plantHub, writeFs } from '../../fixtures/hubs/workspace.ts';
 
 /** A fresh directory under the temporary directory, asserted to be inside it. */
 function fresh(): string {
@@ -32,33 +29,7 @@ function fresh(): string {
     return dir;
 }
 
-/** One write of `action` over the workspace of the state folder `state`. */
-async function write(
-    state: string,
-    action: Record<string, unknown>
-): Promise<{ status: number; body: Record<string, unknown> }> {
-    const host = '127.0.0.1:8791';
-    const request = new Request(`http://${host}/api/fs`, {
-        method: 'POST',
-        headers: {
-            host,
-            origin: `http://${host}`,
-            'content-type': 'application/json',
-            'x-oculus-token': TOKEN
-        },
-        body: JSON.stringify(action)
-    });
-    const response = await handleFsWrite(request, TOKEN, {
-        engine: engineDir(),
-        workspace: workspaceOf(state),
-        machine: { set: [], defaults: {}, values: {}, hubs: {} },
-        bookmarks: null,
-        notes: null,
-        writes: fsWrites(),
-        ignored: ignoredCache()
-    });
-    return { status: response.status, body: (await response.json()) as Record<string, unknown> };
-}
+const write = writeFs;
 
 /** An unsaved workspace in a fresh state folder: a hub as its primary and a plain folder. */
 function unsaved(): { state: string; hub: string; notes: string } {
@@ -111,6 +82,60 @@ describe('Save Workspace As', () => {
         expect(state.open).toBe(file);
         expect(state.recent).toEqual([file]);
         expect(state.unsaved.folders).toEqual([]);
+    });
+
+    it('writes the repository_scan_depth of each entry of an open workspace file into the new file', async () => {
+        const world = unsaved();
+        const file = join(world.hub, '.oculus', 'workspaces', 'first.yml');
+        mkdirSync(join(world.hub, '.oculus', 'workspaces'), { recursive: true });
+        writeFileSync(
+            file,
+            [
+                'folders:',
+                `  - { name: research-hub, path: ${world.hub} }`,
+                `  - { name: notes, path: ${world.notes}, repository_scan_depth: -1 }`,
+                'primary: research-hub',
+                ''
+            ].join('\n')
+        );
+        writeState(world.state, { open: file, recent: [file], unsaved: { folders: [] } });
+        const done = await write(world.state, { action: 'save-workspace', name: 'copy' });
+        expect(done.status).toBe(200);
+        expect(readFileSync(join(world.hub, '.oculus', 'workspaces', 'copy.yml'), 'utf8')).toBe(
+            [
+                'folders:',
+                `  - { name: research-hub, path: ${world.hub} }`,
+                `  - { name: notes, path: ${world.notes}, repository_scan_depth: -1 }`,
+                'primary: research-hub',
+                ''
+            ].join('\n')
+        );
+    });
+
+    it('writes a repository_scan_depth that is not a whole number as it was written, and the new file gives the same finding', async () => {
+        const world = unsaved();
+        const file = join(world.hub, '.oculus', 'workspaces', 'first.yml');
+        mkdirSync(join(world.hub, '.oculus', 'workspaces'), { recursive: true });
+        writeFileSync(
+            file,
+            [
+                'folders:',
+                `  - { name: research-hub, path: ${world.hub} }`,
+                `  - { name: notes, path: ${world.notes}, repository_scan_depth: abc }`,
+                'primary: research-hub',
+                ''
+            ].join('\n')
+        );
+        writeState(world.state, { open: file, recent: [file], unsaved: { folders: [] } });
+        const done = await write(world.state, { action: 'save-workspace', name: 'copy' });
+        expect(done.status).toBe(200);
+        const copy = join(world.hub, '.oculus', 'workspaces', 'copy.yml');
+        expect(readFileSync(copy, 'utf8')).toContain(
+            `  - { name: notes, path: ${world.notes}, repository_scan_depth: abc }`
+        );
+        expect(openWorkspace(world.state).findings.map((one) => [one.key, one.id])).toEqual([
+            ['notes', 'findings.workspace.bad_scan_depth']
+        ]);
     });
 
     it('is refused with nothing written when the workspace lists no hub', async () => {
@@ -179,10 +204,107 @@ describe('Switch Workspace', () => {
     });
 });
 
+describe('Close Workspace', () => {
+    it('leaves the open workspace file for the unsaved workspace with no folder, the file as it was', async () => {
+        const world = unsaved();
+        await write(world.state, { action: 'save-workspace', name: 'one' });
+        const file = join(world.hub, '.oculus', 'workspaces', 'one.yml');
+        const before = readFileSync(file, 'utf8');
+        const closed = await write(world.state, { action: 'close-workspace' });
+        expect(closed.status).toBe(200);
+        const state = readState(world.state).state;
+        expect(state.open).toBeNull();
+        expect(state.unsaved).toEqual({ folders: [] });
+        expect(state.recent).toEqual([file]);
+        expect(readFileSync(file, 'utf8')).toBe(before);
+    });
+});
+
+describe('New Workspace', () => {
+    it('writes folders: [] into the primary hub and opens the file', async () => {
+        const world = unsaved();
+        const made = await write(world.state, { action: 'new-workspace', name: 'lab2' });
+        expect(made.status).toBe(200);
+        const file = join(world.hub, '.oculus', 'workspaces', 'lab2.yml');
+        expect(readFileSync(file, 'utf8')).toBe('folders: []\n');
+        const state = readState(world.state).state;
+        expect(state.open).toBe(file);
+        expect(state.recent).toEqual([file]);
+        expect(state.unsaved.folders).toEqual([
+            { name: 'research-hub', path: world.hub },
+            { name: 'notes', path: world.notes }
+        ]);
+    });
+
+    it('writes into the first hub when the workspace has no primary', async () => {
+        const world = unsaved();
+        writeState(world.state, {
+            open: null,
+            recent: [],
+            unsaved: {
+                folders: [
+                    { name: 'notes', path: world.notes },
+                    { name: 'research-hub', path: world.hub }
+                ]
+            }
+        });
+        const made = await write(world.state, { action: 'new-workspace', name: 'lab2' });
+        expect(made.status).toBe(200);
+        expect(readFileSync(join(world.hub, '.oculus', 'workspaces', 'lab2.yml'), 'utf8')).toBe(
+            'folders: []\n'
+        );
+    });
+
+    it('is refused, writing nothing, for a held name, a bad name, no hub and a folder that cannot be written', async () => {
+        const world = unsaved();
+        const origin = readState(world.state).state;
+        await write(world.state, { action: 'new-workspace', name: 'lab2' });
+        // The new workspace holds no folder, so a second make is asked from the workspace it left.
+        writeState(world.state, origin);
+        const folder = join(world.hub, '.oculus', 'workspaces');
+        const file = join(folder, 'lab2.yml');
+        const state = readFileSync(stateFileOf(world.state), 'utf8');
+        const refusals: [string, string][] = [
+            ['lab2', 'name-held'],
+            ['', 'no-name'],
+            ['..', 'bad-name'],
+            ['a/b', 'bad-name']
+        ];
+        for (const [name, error] of refusals) {
+            const refused = await write(world.state, { action: 'new-workspace', name });
+            expect(refused, JSON.stringify(name)).toEqual({ status: 400, body: { error } });
+        }
+        expect(readdirSync(folder)).toEqual(['lab2.yml']);
+        expect(readFileSync(file, 'utf8')).toBe('folders: []\n');
+        expect(readFileSync(stateFileOf(world.state), 'utf8')).toBe(state);
+
+        const root = fresh();
+        const notes = join(root, 'notes');
+        mkdirSync(notes);
+        const bare = join(root, 'state');
+        mkdirSync(bare);
+        writeState(bare, {
+            open: null,
+            recent: [],
+            unsaved: { folders: [{ name: 'notes', path: notes }] }
+        });
+        const noHub = await write(bare, { action: 'new-workspace', name: 'lab2' });
+        expect(noHub).toEqual({ status: 400, body: { error: 'no-hub' } });
+
+        const blocked = unsaved();
+        writeFileSync(join(blocked.hub, '.oculus', 'workspaces'), 'not a folder');
+        const stuck = await write(blocked.state, { action: 'new-workspace', name: 'lab2' });
+        expect(stuck).toEqual({ status: 400, body: { error: 'unwritable' } });
+        expect(readState(blocked.state).state.open).toBeNull();
+    });
+});
+
 describe('a write over the state file', () => {
     it('refuses every action onto a state that does not read, leaving it as it is', async () => {
         for (const [what, action] of [
             ['saves a workspace', SAVE],
+            ['makes a workspace', { action: 'new-workspace', name: 'second' }],
+            ['closes the workspace', { action: 'close-workspace' }],
             ['switches workspace', SELECT]
         ] as const) {
             for (const [reason, body] of UNREADABLE) {

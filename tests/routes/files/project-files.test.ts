@@ -1,7 +1,7 @@
 // Layer 2, route tests. What the /api/project-files route answers. The route itself is a single
-// line handing the request to lib/server/files/project-files.ts with the primary hub of the open
-// workspace, which is what this calls: handleProjectFiles takes a Request and the hub to read, so
-// every case here is one Request object.
+// line handing the request to lib/server/files/project/project-files.ts with the primary hub of the
+// open workspace, which is what this calls: handleProjectFiles takes a Request and the hub to read,
+// so every case here is one Request object.
 //
 // The hub is synthetic, under the system temporary directory, and every path written is asserted to
 // be inside it first. What this does NOT cover: filesTarget() reading the open workspace.
@@ -13,10 +13,10 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { warmConfig } from '../edit/write-fixture.ts';
-import { handleProjectFiles } from '../../../src/lib/server/files/project-files.ts';
+import { handleProjectFiles } from '../../../src/lib/server/files/project/project-files.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import type { FilesTarget } from '../../../src/lib/server/files/project-files.ts';
+import type { FilesTarget } from '../../../src/lib/server/files/project/project-files.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 
 const MANIFEST = 'id: alpha\ntier: projects\ntype: active\ntitle: "A title"\n';

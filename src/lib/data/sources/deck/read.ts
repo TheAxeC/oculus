@@ -120,10 +120,10 @@ export function createReader(context: DeckContext): DeckReader {
     const projectDirs = new Map<string, { project: DeckProject; root: DeckRoot }>();
     for (const project of context.projects) {
         const root =
-            project.repository === undefined
+            project.workspaceFolder === undefined
                 ? context.hub
-                : { key: project.repository.root, dir: project.repository.dir };
-        const folder = project.repository === undefined ? project.folder : '';
+                : { key: project.workspaceFolder.root, dir: project.workspaceFolder.dir };
+        const folder = project.workspaceFolder === undefined ? project.folder : '';
         const dir = realOf(join(root.dir, folder, PROJECT_DECK));
         if (dir !== null) projectDirs.set(dir, { project, root });
     }

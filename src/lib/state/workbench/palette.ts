@@ -34,6 +34,7 @@ import type { WorkspacesState } from '../sources/fs-transport.ts';
 import type { AppOffers } from '../../data/helpers/files/apps/choices.ts';
 import { appThemeLabels, fileIconThemes } from '../shared/words/appearance.ts';
 import { t } from '../shared/words/text.ts';
+import type { GithubListing, GithubRepo } from '../../data/model/index.ts';
 import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
 import { instanceText, pageLeaves, panes, type Host, type Layout } from './layout/index.ts';
 import { MARKDOWN_PREVIEW_VIEW } from '../sources/explorer/file-type.ts';
@@ -54,6 +55,8 @@ export {
 } from '../sources/search/file-match.ts';
 
 export type PaletteView = { id: string; label: string };
+
+export type { GithubListing, GithubRepo };
 
 /** The two fields a feed entry may be named by, each absent unless it is non-empty text. */
 const feedNameShape = z.object({ title: filledTextShape, subject: filledTextShape });
@@ -102,10 +105,13 @@ export type PaletteCommand = {
         | 'goto'
         | 'language'
         | 'eslint-config'
+        | 'clone'
         | LspChoiceCommand
         | 'help'
         | 'update'
         | 'workspace'
+        | 'workspace-new'
+        | 'workspace-close'
         | 'workspace-save'
         | 'folder';
     /** What the command does, drawn beside it in the list. */
@@ -459,6 +465,12 @@ export function commands(
             hint: '',
             available: source
         },
+        {
+            name: 'clone',
+            description: t('app.palette.cmd_clone'),
+            hint: t('app.palette.cmd_clone_hint'),
+            available: true
+        },
         { name: 'help', description: t('app.palette.cmd_help'), hint: '', available: false },
         { name: 'update', description: t('app.palette.cmd_update'), hint: '', available: true },
         {
@@ -471,6 +483,18 @@ export function commands(
             name: 'workspace-save',
             description: t('app.palette.cmd_workspace_save'),
             hint: t('app.palette.cmd_workspace_save_hint'),
+            available: true
+        },
+        {
+            name: 'workspace-new',
+            description: t('app.palette.cmd_workspace_new'),
+            hint: t('app.palette.cmd_workspace_new_hint'),
+            available: true
+        },
+        {
+            name: 'workspace-close',
+            description: t('app.palette.cmd_workspace_close'),
+            hint: '',
             available: true
         },
         {
@@ -494,9 +518,9 @@ export function workspaceChoicesOf(argument: string, saved: WorkspacesState): Wo
 export type CommandOutcome = { closed: true } | { closed: false; said: string };
 
 /**
- * `:workspace` and `:workspace-save`: send the file's path or the name through the file store's
- * write. A write the server refused leaves the palette open, saying the refusal in the words of the
- * workspace form.
+ * `:workspace`, `:workspace-save`, `:workspace-new` and `:workspace-close`: send the file's path or
+ * the name through the file store's write (the close sends none). A write the server refused leaves
+ * the palette open, saying the refusal in the words of the workspace form.
  */
 export async function workspaceCommand(
     write: (name: string) => Promise<{ ok: boolean; error?: string; reason?: string }>,
@@ -582,4 +606,81 @@ export function modeOf(query: string, files: boolean): PaletteMode {
     if (query.startsWith(':')) return 'commands';
     if (query.startsWith('#')) return 'symbols';
     return files ? 'files' : 'search';
+}
+
+/**
+ * One row of the `:clone` list: the repository a press clones, or none for the first row when no
+ * address is typed, which says an address can be typed and does nothing when pressed.
+ */
+export type CloneRow = {
+    value: string;
+    kind: string;
+    label: string;
+    hint: string;
+    repo: Pick<GithubRepo, 'name' | 'url'> | null;
+};
+
+/** Whether the typed word is the address of a repository rather than words narrowing the list. */
+function addressLike(word: string): boolean {
+    return /^(https?:\/\/|ssh:\/\/|git@)\S+$/.test(word);
+}
+
+/** The repository name an address ends in, without `.git` or a trailing slash; empty with none. */
+function nameOfAddress(address: string): string {
+    const path = address.replace(/^([a-z]+:\/\/[^/]+|[^@/\s]+@[^:/\s]+:)/, '').replace(/\/+$/, '');
+    const last = path.split('/').at(-1) ?? '';
+    return last.replace(/\.git$/, '');
+}
+
+/**
+ * The rows of `:clone` for what the query says after the command. The first row is always there:
+ * with an address typed it clones that address, named as the address ends or as the account names
+ * the repository the address is, and without one it says that an address can be typed. The rows
+ * after it are the account's repositories whose name, address, description or topics hold every
+ * word, less the one the first row clones.
+ */
+export function cloneRows(repos: GithubRepo[], argument: string): CloneRow[] {
+    const typed = argument.trim();
+    const address = addressLike(typed);
+    const known = address ? repos.find((one) => one.url === typed) : undefined;
+    const rows = repos
+        .filter((one) => one !== known)
+        .filter((one) =>
+            wordsHold(`${one.name} ${one.url} ${one.description} ${one.topics.join(' ')}`, typed)
+        )
+        .map((one): CloneRow => ({
+            value: `clone:${one.url}`,
+            kind: t('app.palette.kind_clone'),
+            label: one.name,
+            hint: one.description,
+            repo: one
+        }));
+    const name = known?.name ?? (address ? nameOfAddress(typed) : '');
+    const first: CloneRow =
+        address && name !== ''
+            ? {
+                  value: `clone:${typed}`,
+                  kind: t('app.palette.kind_clone'),
+                  label: t('app.palette.clone_typed', typed),
+                  hint: '',
+                  repo: { name, url: typed }
+              }
+            : {
+                  value: 'clone:type',
+                  kind: t('app.palette.kind_clone'),
+                  label: t('app.palette.clone_type'),
+                  hint: '',
+                  repo: null
+              };
+    return [first, ...rows];
+}
+
+/** Whether a row's words hold every word of the query, in any case. */
+export function wordsHold(words: string, query: string): boolean {
+    const low = words.toLowerCase();
+    return query
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((word) => word !== '')
+        .every((word) => low.includes(word));
 }

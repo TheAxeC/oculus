@@ -14,6 +14,7 @@ import { serialiseLayout } from '../../../../src/lib/state/workbench/layout/inde
 import { createClientState } from '../../../fixtures/client.ts';
 import {
     fakeStorage,
+    openLayout,
     heldPages,
     pageAround
 } from '../../../state/workbench/layout/layout-fixture.ts';
@@ -49,7 +50,8 @@ describe('the closes of the tab menu, through its state', () => {
             ],
             active: 'a'
         };
-        client.layout.loadLayout(
+        openLayout(
+            client.layout,
             fakeStorage(serialiseLayout(heldPages([pageAround('main', pane)], [])))
         );
         const dirty = new Set(['b']);

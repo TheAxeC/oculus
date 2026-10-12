@@ -14,7 +14,10 @@ import type {
     RegistryName
 } from '../../../src/lib/data/model/index.ts';
 
-/** What sources/docs.ts hands the build for one folder: the fixed names, with a path and a flag. */
+/**
+ * What sources/documents/docs.ts hands the build for one folder: the fixed names, with a path and a
+ * flag.
+ */
 function documents(id: string, present: string[], mtime = 0): DocPresence[] {
     return ['README.md', 'code/README.md'].map((name) => ({
         name,

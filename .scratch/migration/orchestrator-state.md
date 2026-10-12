@@ -33,26 +33,12 @@ dispatch:   # steps in flight, up to six (Z632)
   base: a9641a30b
   launched: 2026-10-12
   report: agents/reviews/D64-report.md
-  builder_usage: 390,759 tokens, 2105 tool uses, 448.6 min
+  builder_usage: 390,759 tokens, 2105 tool uses, 448.6 min; round 1: 242,710 tokens, 744 tool uses, 127.3 min
   brief_check: agents/reviews/D64-brief-check.md (aa2213f7585bfd534, claude-opus-5-5, 231,182 tokens, 58 tool uses, 9.7 min; closed in the brief by the orchestrator, under the report's Closed heading)
-  reviewer_report: agents/reviews/D64-refuter.md (a0d75a8f246193ddd, claude-opus-5-5, 80,818 tokens, 99 tool uses, 22.2 min)
+  reviewer_report: agents/reviews/D64-refuter.md (a0d75a8f246193ddd, claude-opus-5-5, 80,818 tokens, 99 tool uses, 22.2 min); over round 1: a1edcdaede4530b7c, claude-opus-5-5, 94,747 tokens, 112 tool uses, 26.9 min
   shared_paths: with D70, `src/lib/server/machine/lsp/relay.ts` (D70 removes `#config()` and its one use; D64 moves the file into `lsp/relay/`), `lsp/servers.ts` (D70 changes two refusals at 684 and 801), `lsp/adapters/markdown/places.ts` (`Reach.config`), `lsp/library/rules.ts` (`withheldFolders`), `views/sources/source/language/lsp.ts` (one import at 134), and the sentence sweeps of DESIGN.md, HELP.md, `docs/` and `config/text/`; simple, since each of D70's edits is a few lines in a region D64 does not change, and the second to land carries the other's lines by hand
   landing: not-started
   round: 1 (agents/briefs/D64-round1.md, sent 2026-10-12; the tree before it is agents/reviews/D64-before-round1.patch)
-- step: D71
-  executor: agent
-  worker: claude:sonnet at ordo-high
-  session_id: ae73bc8b538d2b3d0 (claude-sonnet-5-5, the transcript's message.model, read after launch)
-  worktree: .agents/worktrees/D71
-  base: 1568cf1ed
-  launched: 2026-10-12
-  report: agents/reviews/D71-report.md
-  builder_usage: 253,778 tokens, 969 tool uses, 183.9 min (the report saved from the builder's hand-back, its own write refused)
-  brief_check: agents/reviews/D71-brief-check.md (af360c0361730ba65, claude-opus-5-5, 252,367 tokens, 96 tool uses, 14.6 min; closed in the brief by the orchestrator, under the report's Closed heading)
-  shared_paths: with D64, `src/lib/views/sources/repositories/Repositories.svelte` (D64 adds source-control markup; D71 adds one menu item), `src/lib/state/client/selectors.svelte.ts` (D64 one region; D71 the renamed internal `repository` field at :85 and the comment at :332), `src/lib/server/root/context.ts` (watcher wiring), the palette files, `config/text/app.yml`, `findings.yml`, `server.yml`, `views/sources/repositories.yml`, `config/catalogs/glyphs.yml` and `icons.yml` (additions in separate groups), `src/lib/data/model/index.ts`, and the sentence sweeps of DESIGN.md, HELP.md and `docs/`; simple, since D71 keeps off the four Repositories files D64 rewrites and each shared file takes additions in separate regions, which the second to land carries by hand
-  reviewer_report: agents/reviews/D71-refuter.md (a54fc03776ec8539e, claude-opus-5-5, 312,248 tokens, 152 tool uses, 22.5 min)
-  landing: not-started
-  round: 1 (agents/briefs/D71-round1.md, sent 2026-10-12; the tree before it is agents/reviews/D71-before-round1.patch)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -177,6 +163,8 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- Open item 80 (2026-10-13, D71's landing; kind: needs Axel's permission). Open item 70 (a) asked the orchestrator to rename, once, the saved pages in Axel's Chrome from `oculus.layout.v1` to `oculus.layout.workspace:/Users/axelfaes/workspace/research-hub/.oculus/workspaces/research-hub.yml`, by one command run in a Chrome tab of the orchestrator's own on his server's address. The runner's permission check refused opening `http://localhost:8790/api/wallpaper?list` in that tab, and the orchestrator does not work around a refusal. Nothing is lost: D71 never reads or removes `oculus.layout.v1` (the only `removeItem` in `state/workbench/layout/` is the per-tab key at `saved/storage.ts:130`), so the old value stays until it is renamed. Until then, his oculus page, which serves main's files, starts the research-hub workspace from the default pages. Options: (a) Axel allows that one navigation (his word, or a permission rule for the Chrome navigation to `localhost:8790`), and the orchestrator runs the rename, overwriting the default the page saved meanwhile; (b) the pages start from the default and the old value is left unused. Recommendation: (a); (b) is the lazy option, since it throws away his arrangement.
+
 
 
 
@@ -278,6 +266,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-13 (D71 landed). D71, workspaces and repositories, landed (booking in plan.md under D71, `agents/reviews/D71-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D71-refuter.md`, Closed), the gate's timeouts under load answered by tagging D71's real-git tests slow, and two defects the look found fixed at landing (the Deposit view's loading sentence, the Present page of a hub with no deck); the HPC float on a hub with no cluster booked as D74 (Z855); the website moved to `side-projects/theaxec.github.io/` with its `.oculus/project.yml`; `npm run test:landing` passed in the gate at main's head with the step and the fixes, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. Open item 80 raised (the browser-key rename refused by the permission check). In flight (1 of 6): D64, its review over round 1 back. Next: /land D64 with the run's findings fixed at landing and its look; then /spec D72, D73, D74; Q72; O33.
 - 2026-10-12 (D64 round 1 sent). D64's review (`agents/reviews/D64-refuter.md`, reviewer a0d75a8f246193ddd on claude-opus-5-5) and the orchestrator's read went back to its builder af8ef9bc7f21f025e as repair round 1 (`agents/briefs/D64-round1.md`, 22 rulings; the tree before it in `agents/reviews/D64-before-round1.patch`); Pause drawn from a capability DAP does not have is a premise of the brief found wrong and corrected in ruling 3. D71's builder is on its round 1 with Axel's rulings on open items 77, 78 and 79. No open items. In flight (2 of 6): D64, D71. Next: each round's report, /refute over it, /land; then D72, D73, Q72, O33. Owed at D64's landing look, besides D64's own views under the light and the dark theme (the page-side parts its review left for the look: the terminal grid with an app's terminals, the Repositories sections of an app's source control, the Files view's decorations, the editor's app languages, F5, Add Configuration and Pause): the dark theme of the views D62, D65 and D66 changed, and D65's Focus lanes with a personal project and Edit Manifest form, which their landings did not look at.
 - 2026-10-12 (D70 landed). D70, the machine files as ordinary files, landed (booking in plan.md under D70, `agents/reviews/D70-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D70-refuter.md`, Closed), the look's defect (the machine rows' status line drawn in the refusal red) fixed at landing, and the gate's one timeout in a file the step does not change tagged slow; `npm run test:landing` in the gate at main's head with the step, main's staged change matching the gate's byte for byte; the look on a scratch oculus on port 8796. Open items 66 ruled, 68 ruled and booked into D71; open items 67 (Axel's design for projects with a repository of their own, six parts) and 69 (the References page) wait for Axel. In flight (1 of 6): D64 (building). Next: D64's report, /refute, its round and /land; D71 once 67 is ruled; Q72; O33.
 - 2026-10-12 (D70 launched). D70, the machine files as ordinary files, prepared at base a0508758a with every brief-check finding closed in its brief (`agents/reviews/D70-brief-check.md`, Closed) and plan.md's D70 line corrected for G3's literature row; its builder launched in `.agents/worktrees/D70` (claude-sonnet-5-5), the base copy beside it. In flight (1 of 6): D70. Next: /spec D64 beside D70, then Q72 and O33.

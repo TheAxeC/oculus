@@ -3,7 +3,7 @@
 // directory first.
 
 import { describe, expect } from 'vitest';
-import { isFinding, projectDocs, readDoc } from '../../../src/lib/data/sources/docs.ts';
+import { isFinding, projectDocs, readDoc } from '../../../src/lib/data/sources/documents/docs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { DocPresence } from '../../../src/lib/data/model/index.ts';
 import { it, plantFile, scratchDir } from '../../fixtures/scratch.ts';

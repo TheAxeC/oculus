@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createClientState, type ClientState } from '../../../../src/lib/state/client/context.ts';
 import { tabsOf } from '../../../../src/lib/state/workbench/layout/instance.ts';
 import type { Terminal } from '../../../../src/lib/data/model/index.ts';
-import { fakeStorage } from '../../workbench/layout/layout-fixture.ts';
+import { fakeStorage, openLayout } from '../../workbench/layout/layout-fixture.ts';
 import { openOwning, terminalTabsOf } from './terminal-tabs-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../../../src/lib/state/shared/words/text.ts';
@@ -53,7 +53,7 @@ function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
 
 beforeEach(() => {
     client = createClientState();
-    client.layout.loadLayout(fakeStorage());
+    openLayout(client.layout, fakeStorage());
     version = 0;
     stops = [];
     reads = [];
@@ -138,12 +138,12 @@ describe('a tab that is moved, split or reloaded', () => {
         expect(holds(id)).toBe(true);
     });
 
-    it('ends no terminal when the layout is loaded again', async () => {
+    it('ends no terminal when the layout of another workspace is opened', async () => {
         const storage = fakeStorage();
-        client.layout.loadLayout(storage);
+        openLayout(client.layout, storage);
         owning([A]);
         listed([A]);
-        client.layout.loadLayout(storage);
+        openLayout(client.layout, storage, '/w/other.yml');
         await settle();
         expect(stops).toEqual([]);
     });

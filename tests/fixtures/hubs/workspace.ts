@@ -5,6 +5,9 @@
 
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { engineDir } from '../../../src/lib/data/places/engine-dir.ts';
+import { fsWrites } from '../../../src/lib/server/core/json.ts';
+import { handleFsWrite, ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import { writeState } from '../../../src/lib/server/files/workspace/state.ts';
 import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import type { Workspace } from '../../../src/lib/server/files/workspace/follow.ts';
@@ -51,4 +54,35 @@ export function workspaceOf(stateFolder: string): Workspace {
 /** The workspace of an unsaved state with these folders and this primary. */
 export function workspaceWith(folders: readonly FolderSpec[], primary?: string): Workspace {
     return workspaceOf(plantState(folders, primary));
+}
+
+/** The write token the requests of `writeFs` carry. */
+export const FS_TOKEN = 'a-write-token';
+
+/** One write of `action` to /api/fs over the workspace of the state folder `state`. */
+export async function writeFs(
+    state: string,
+    action: Record<string, unknown>
+): Promise<{ status: number; body: Record<string, unknown> }> {
+    const host = '127.0.0.1:8791';
+    const request = new Request(`http://${host}/api/fs`, {
+        method: 'POST',
+        headers: {
+            host,
+            origin: `http://${host}`,
+            'content-type': 'application/json',
+            'x-oculus-token': FS_TOKEN
+        },
+        body: JSON.stringify(action)
+    });
+    const response = await handleFsWrite(request, FS_TOKEN, {
+        engine: engineDir(),
+        workspace: workspaceOf(state),
+        machine: { set: [], defaults: {}, values: {}, hubs: {} },
+        bookmarks: null,
+        notes: null,
+        writes: fsWrites(),
+        ignored: ignoredCache()
+    });
+    return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 }

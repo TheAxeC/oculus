@@ -29,7 +29,7 @@ export type DeckProject = {
     /** The project's folder relative to the hub, or the repository's absolute path. */
     folder: string;
     /** The root and folder of the repository the project is read from, when it is in one. */
-    repository?: { root: string; dir: string };
+    workspaceFolder?: { root: string; dir: string };
     /** The manifest's `tier`, absent when it names none of the five. */
     tier?: string;
     chips: string[];

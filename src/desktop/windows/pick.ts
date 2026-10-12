@@ -17,7 +17,7 @@ export type PickAnswer = (message: MainMessage) => void;
 
 /** The picks in flight are told apart by the id the server gave them. */
 export function createPicker(windows: Windows, t: Words, answer: PickAnswer) {
-    return function pick(id: number): void {
+    return function pick(id: number, options: { start?: string; single?: true } = {}): void {
         const entry: Entry | null = windows.focused();
         if (entry === null) {
             answer({ kind: 'picked', id, cancelled: true });
@@ -44,9 +44,14 @@ export function createPicker(windows: Windows, t: Words, answer: PickAnswer) {
         entry.win.on('closed', gone);
         dialog
             .showOpenDialog(entry.win, {
-                properties: ['openDirectory', 'multiSelections', 'createDirectory'],
-                buttonLabel: t('desktop.pick.add'),
-                defaultPath: homedir()
+                properties: [
+                    'openDirectory',
+                    'createDirectory',
+                    ...(options.single === true ? [] : (['multiSelections'] as const))
+                ],
+                buttonLabel:
+                    options.single === true ? t('desktop.pick.choose') : t('desktop.pick.add'),
+                defaultPath: options.start ?? homedir()
             })
             .then(
                 (result) =>

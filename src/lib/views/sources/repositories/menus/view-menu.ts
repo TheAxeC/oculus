@@ -1,8 +1,9 @@
 // Layer 3, view partial of Repositories.svelte. The groups of the view's `...` menu, in VS Code's
 // order: the remote group (Pull, Push, Fetch and Sync where the repository has an upstream, and
 // Publish Branch once per remote when the branch has none), the three stashes, the tags, and the
-// group that reopens the repositories the tab closed. A repository the view cannot read offers the
-// reopen group alone, and so does a tab that shows none.
+// group that reopens the repositories the tab closed, and the group that clones a repository of the
+// reader's GitHub account. A repository the view cannot read offers the reopen and clone groups
+// alone, and so does a tab that shows none.
 
 import type { GitState } from '$lib/state/client/selectors.svelte';
 import type { MenuGroup, MenuItem } from '$lib/ui/menu/menu-items';
@@ -14,6 +15,11 @@ import { t } from '$lib/state/shared/words/text';
  * the repository it shows, or null when that state is not one the view reads.
  */
 export function viewMenu(closed: number, held: GitState | null): MenuGroup[] {
+    const clone: MenuGroup = {
+        id: 'clone',
+        heading: t('repositories.menu_clone'),
+        items: [{ id: 'clone', label: t('repositories.clone'), glyph: 'clone' }]
+    };
     const reopen: MenuGroup[] =
         closed === 0
             ? []
@@ -30,7 +36,7 @@ export function viewMenu(closed: number, held: GitState | null): MenuGroup[] {
                       ]
                   }
               ];
-    if (held === null) return reopen;
+    if (held === null) return [...reopen, clone];
     const upstream = upstreamOf(held);
     const remote = [
         { id: 'pull', label: t('repositories.pull'), glyph: 'pull' },
@@ -68,6 +74,7 @@ export function viewMenu(closed: number, held: GitState | null): MenuGroup[] {
                 { id: 'push', label: t('repositories.tags_push'), glyph: 'push' }
             ]
         },
-        ...reopen
+        ...reopen,
+        clone
     ];
 }

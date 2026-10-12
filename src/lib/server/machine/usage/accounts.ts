@@ -25,7 +25,7 @@ import { hubMark } from '../../../data/accounts/connect.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { mapShape } from '../../../data/shapes/shapes.ts';
 import { codexRollouts } from '../../transcripts/stores.ts';
-import { USAGE_PREFIX } from '../pty/sessions.ts';
+import { USAGE_PREFIX } from '../../transcripts/names.ts';
 
 export type UsageTiers = Record<string, string>;
 export type ClaudeUsageCache = { fetchedAt: string; windows: UsageWindow[] };

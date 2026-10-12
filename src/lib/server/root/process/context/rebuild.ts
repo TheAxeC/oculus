@@ -9,7 +9,7 @@ import type { LocalConfig } from '../../../../data/sources/config.ts';
 import type { GitWatcher } from '../../watch/git.ts';
 import type { AutofetchWatcher } from '../../watch/autofetch.ts';
 import { WATCHERS, keysBuilding, rebuiltBy, type WatcherName } from '../../watch/local.ts';
-import type { Watcher } from '../../watch/portfolio.ts';
+import type { PortfolioWatcher, Watcher } from '../../watch/portfolio.ts';
 import type { SessionsWatcher } from '../../watch/sessions.ts';
 import type { SchedulesWatcher } from '../../../machine/runs/schedules/watch.ts';
 import type { UsageRefreshWatcher } from '../../../machine/usage/refresh.ts';
@@ -17,7 +17,7 @@ import type { UsageWatcher } from '../../../machine/usage/watch.ts';
 
 /** What the context holds of the watchers that a changed key builds again. */
 export type Parts = {
-    portfolio: Watcher;
+    portfolio: PortfolioWatcher;
     sessions: SessionsWatcher;
     usageRefresh: UsageRefreshWatcher;
     usage: UsageWatcher;

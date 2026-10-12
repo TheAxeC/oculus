@@ -26,14 +26,12 @@
     //
     // The card is views/shared/card/ProjectCard.svelte, the one the board draws, with `deposit` on
     // and no `ontoggle`: this tab's card is always open, so it carries the deposit control and no
-    // expand control. A project of a hub folder has the deposit control whatever its tier; the card
-    // of a project read from a repository has none, since the repository is its own git repository
-    // and not a hub folder whose `code/` is mirrored.
-    // It is drawn with `documents` off, since the documents section below is this tab's list of the
-    // project's documents, and with no clamp state, so its ELI5 is drawn whole. That list draws a
-    // known document the project has not got as the card's tag for it. Everything else the card
-    // shows, the pin, the stale badge, the file finder and the subtasks among it, is the board's
-    // card unchanged.
+    // expand control. Every project has the deposit control whatever its tier or placement; the
+    // deposit mirrors the `code/` folder of the project's own folder. It is drawn with `documents`
+    // off, since the documents section below is this tab's list of the project's documents, and
+    // with no clamp state, so its ELI5 is drawn whole. That list draws a known document the project
+    // has not got as the card's tag for it. Everything else the card shows, the pin, the stale
+    // badge, the file finder and the subtasks among it, is the board's card unchanged.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
     // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
@@ -120,7 +118,7 @@
                 {now}
                 cursor={cursor === item.id}
                 open
-                deposit={item.project.repository === undefined}
+                deposit
                 documents={false}
                 label={item.project.title}
                 tab={item.project.title}

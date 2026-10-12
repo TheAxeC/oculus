@@ -1,10 +1,11 @@
-// Layer 1, data tests. The scan and the repositories read into projects (readHubManifests through
-// buildPortfolioWithSchemas) against a synthetic hub in a temporary directory. Nothing outside it
-// is read or written. A project is any folder holding a project.yml, whichever folder or repository
-// it lies in, and the manifest's own `tier` and `type` say where it is shown.
+// Layer 1, data tests. The scan and the workspace folders read into projects (readHubManifests
+// through buildPortfolioWithSchemas) against a synthetic hub in a temporary directory. Nothing
+// outside it is read or written. A project is any folder holding a project.yml at its top or a
+// .oculus/project.yml, whichever scan folder or workspace folder it lies in, and the manifest's own
+// `tier` and `type` say where it is shown.
 
 import { symlinkSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
     buildPortfolioWithSchemas,
@@ -16,8 +17,10 @@ import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/source
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
 import type { Snapshot } from '../../../src/lib/data/model/index.ts';
+import { placeClones } from '../../../src/lib/data/sources/clones.ts';
+import { originOf, sameAddress } from '../../../src/lib/data/sources/origin.ts';
 import { repositoriesOf } from '../../../src/lib/server/files/roots.ts';
-import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { it, plantFile, plantScratch, test } from '../../fixtures/scratch.ts';
 import { plantHub, workspaceWith, type FolderSpec } from '../../fixtures/hubs/workspace.ts';
 
 const MERGED = loadConfig(engineDir()).config;
@@ -31,11 +34,12 @@ const HUB_FILES: Record<string, string> = {
     'projects/active/loewner/project.yml': 'title: Loewner layers\ntier: projects\ntype: active\n'
 };
 
-/** A repository's manifest: a personal project with a venue, a collaborator and a link. */
+/** A workspace folder's manifest: a personal project with a venue, a collaborator and a link. */
 const PERSONAL =
     'title: Alpha\ntier: personal\ntype: active\nstatus:\n  chips: [building]\nlinks: [https://example.org]\nvenue_id: jmlr\ncollaborators: [rivera]\n';
 
-const MANIFEST_FILE = '.oculus/project.yml';
+const NESTED_FILE = '.oculus/project.yml';
+const TOP_FILE = 'project.yml';
 
 /** The ids of the hub's own projects, which no row removes unless it sets its own scan. */
 const HUB_IDS = ['beta', 'loewner', 'tensor-spark'];
@@ -55,8 +59,10 @@ type Row = {
     scan?: unknown[];
     /** The folders of the workspace besides the hub, which is its primary. */
     entries?: (at: Places) => FolderSpec[];
-    /** The repository's `.oculus/project.yml`, or null for a repository with none. */
+    /** The workspace folder's manifest, or null for a folder with none. */
     manifest?: string | null;
+    /** Where the folder's manifest lies, `nested` (`.oculus/project.yml`) unless a row says. */
+    placement?: 'top' | 'nested' | 'both';
     /** Files of the hub besides HUB_FILES. */
     hub?: Record<string, string>;
     /** Made after the folders are planted: a link, for a row about links. */
@@ -68,6 +74,11 @@ type Row = {
 
 /** What a row is read into: the snapshot of the build and the places of the row. */
 type Read = { snapshot: Snapshot; at: Places };
+
+/** A `.git/config` in a folder whose `origin` is this address. */
+function origin(dir: string, url: string): void {
+    plantFile(dir, '.git/config', `[remote "origin"]\n\turl = ${url}\n`);
+}
 
 /** The folder `alpha` of the workspace, the repository. */
 const entry = (at: Places): FolderSpec[] => [{ name: 'alpha', dir: at.repo }];
@@ -217,13 +228,13 @@ const ROWS: Row[] = [
                 chips: ['building'],
                 links: ['https://example.org'],
                 folder: read.at.repo,
-                repository: { root: 'alpha', dir: read.at.repo },
+                workspaceFolder: { root: 'alpha', dir: read.at.repo },
                 deck: 'present',
                 venueId: 'jmlr',
                 collaborators: ['rivera']
             });
             expect(alpha.root).toBeUndefined();
-            expect(alpha.file).toBe(join(read.at.repo, MANIFEST_FILE));
+            expect(alpha.file).toBe(join(read.at.repo, NESTED_FILE));
             expect(idsOf(read)).toEqual(withHub('alpha'));
             expect(read.snapshot.entities).not.toHaveProperty('personal');
         }
@@ -236,8 +247,70 @@ const ROWS: Row[] = [
             expect(read.snapshot.entities.projects.alpha).toMatchObject({
                 tier: 'coauthor',
                 type: 'in-prep',
-                repository: { root: 'alpha', dir: read.at.repo }
+                workspaceFolder: { root: 'alpha', dir: read.at.repo }
             });
+        }
+    },
+    {
+        name: 'a scan folder holding a top project.yml in one folder and a .oculus/project.yml in another as two projects with no finding',
+        scan: [{ dir: 'side-projects' }],
+        hub: plain(
+            ['side-projects/a/project.yml', 'title: A\ntier: personal\ntype: idea\n'],
+            ['side-projects/b/.oculus/project.yml', 'title: B\ntier: personal\ntype: idea\n']
+        ),
+        check: (read) => {
+            const { projects } = read.snapshot.entities;
+            expect(Object.keys(projects).sort()).toEqual(['a', 'b']);
+            expect(projects.a.file).toBe(join(read.at.hub, 'side-projects/a', TOP_FILE));
+            expect(projects.b.file).toBe(join(read.at.hub, 'side-projects/b', NESTED_FILE));
+            expect(projects.b.folder).toBe('side-projects/b');
+            expect(
+                read.snapshot.findings.filter((one) => one.file.includes('side-projects'))
+            ).toEqual([]);
+        }
+    },
+    {
+        name: 'a workspace folder holding only a top project.yml as the project of its name',
+        entries: entry,
+        manifest: PERSONAL,
+        placement: 'top',
+        check: (read) => {
+            const alpha = read.snapshot.entities.projects.alpha;
+            expect(alpha).toMatchObject({
+                id: 'alpha',
+                tier: 'personal',
+                workspaceFolder: { root: 'alpha', dir: read.at.repo }
+            });
+            expect(alpha.file).toBe(join(read.at.repo, TOP_FILE));
+            expect(findingsOn(read, '', 'alpha/project.yml')).toEqual([]);
+        }
+    },
+    {
+        name: 'a workspace folder holding both files as the project of its top file, with one finding naming both',
+        entries: entry,
+        manifest: PERSONAL,
+        placement: 'both',
+        check: (read) => {
+            const alpha = read.snapshot.entities.projects.alpha;
+            const top = join(read.at.repo, TOP_FILE);
+            const nested = join(read.at.repo, NESTED_FILE);
+            expect(alpha.title).toBe('Alpha');
+            expect(alpha.file).toBe(top);
+            expect(findingsOn(read, '', nested)).toEqual([said('both_files', top, nested)]);
+            expect(read.snapshot.findings.filter((one) => one.file === top)).toEqual([]);
+        }
+    },
+    {
+        name: 'a hub that scans its own folder as no project of its own, with the projects below it read',
+        scan: [{ dir: '.' }],
+        hub: plain(['.oculus/project.yml', 'title: The hub\ntier: projects\ntype: idea\n']),
+        check: (read) => {
+            const ids = idsOf(read);
+            expect(ids).toEqual(expect.arrayContaining(HUB_IDS));
+            expect(ids).not.toContain(basename(read.at.hub));
+            expect(
+                Object.values(read.snapshot.entities.projects).map((one) => one.title)
+            ).not.toContain('The hub');
         }
     },
     {
@@ -285,14 +358,14 @@ const ROWS: Row[] = [
         ]),
         check: (read) => {
             const alpha = read.snapshot.entities.projects.alpha;
-            expect(alpha.repository).toBeUndefined();
+            expect(alpha.workspaceFolder).toBeUndefined();
             expect(alpha.folder).toBe('projects/ideas/alpha');
-            expect(findingsOn(read, 'id', join(read.at.repo, MANIFEST_FILE))).toEqual([
+            expect(findingsOn(read, 'id', join(read.at.repo, NESTED_FILE))).toEqual([
                 said(
                     'id_twice',
                     'alpha',
                     join(read.at.hub, 'projects/ideas/alpha/project.yml'),
-                    join(read.at.repo, MANIFEST_FILE)
+                    join(read.at.repo, NESTED_FILE)
                 )
             ]);
         }
@@ -303,7 +376,7 @@ const ROWS: Row[] = [
         manifest: 'id: other\ntitle: Alpha\ntier: personal\ntype: active\n',
         check: (read) => {
             expect(read.snapshot.entities.projects.alpha).toBeDefined();
-            expect(findingsOn(read, 'id', join(read.at.repo, MANIFEST_FILE))).toEqual([
+            expect(findingsOn(read, 'id', join(read.at.repo, NESTED_FILE))).toEqual([
                 said('id_not_folder', '"other"', 'alpha')
             ]);
         }
@@ -324,6 +397,106 @@ const ROWS: Row[] = [
                 waitingOn: ['alpha']
             });
         }
+    },
+    {
+        name: 'a project folder that holds a code folder as having a code folder, and one that holds a file named code or nothing as having none',
+        scan: [{ dir: 'side-projects' }],
+        hub: plain(
+            ['side-projects/p/project.yml', 'title: P\ntier: personal\ntype: active\n'],
+            ['side-projects/p/code/main.py', 'print(1)\n'],
+            ['side-projects/q/project.yml', 'title: Q\ntier: personal\ntype: active\n'],
+            ['side-projects/q/code', 'a file, not a folder\n'],
+            ['side-projects/r/project.yml', 'title: R\ntier: personal\ntype: active\n']
+        ),
+        check: (read) => {
+            const { p, q, r } = read.snapshot.entities.projects;
+            expect(p.codeFolder).toBe(true);
+            expect(q.codeFolder).toBeUndefined();
+            expect(r.codeFolder).toBeUndefined();
+        }
+    },
+    {
+        name: "a workspace folder whose repository's origin is a hub project's repository url, as that project's clone: one project, the hub's, and no finding",
+        scan: [{ dir: 'side-projects' }],
+        entries: entry,
+        placement: 'top',
+        hub: plain([
+            'side-projects/p/project.yml',
+            'title: P\ntier: personal\ntype: active\nrepository:\n  url: https://github.com/theaxec/p\n'
+        ]),
+        setup: (at) => origin(at.repo, 'git@github.com:TheAxeC/p.git'),
+        check: (read) => {
+            expect(idsOf(read)).toEqual(['p']);
+            expect(read.snapshot.entities.projects.p.folder).toBe('side-projects/p');
+            expect(read.snapshot.findings.filter((one) => one.file.includes('alpha'))).toEqual([]);
+            expect(read.snapshot.findings.filter((one) => one.key === 'id')).toEqual([]);
+        }
+    },
+    {
+        name: "a workspace folder whose repository's origin is no project's url, as a project of its own",
+        scan: [{ dir: 'side-projects' }],
+        entries: entry,
+        placement: 'top',
+        hub: plain([
+            'side-projects/p/project.yml',
+            'title: P\ntier: personal\ntype: active\nrepository:\n  url: https://github.com/theaxec/p\n'
+        ]),
+        setup: (at) => origin(at.repo, 'https://github.com/theaxec/other'),
+        check: (read) => {
+            expect(idsOf(read)).toEqual(['alpha', 'p']);
+        }
+    },
+    {
+        name: "a scan folder whose repository's origin is another scan project's url, as that project's clone",
+        scan: [{ dir: 'side-projects' }],
+        hub: plain(
+            [
+                'side-projects/p/project.yml',
+                'title: P\ntier: personal\ntype: active\nrepository:\n  url: ssh://git@github.com/theaxec/p\n'
+            ],
+            ['side-projects/c/project.yml', 'title: C\ntier: personal\ntype: active\n'],
+            [
+                'side-projects/c/.git/config',
+                '[remote "origin"]\n\turl = https://github.com/TheAxeC/p.git\n'
+            ]
+        ),
+        check: (read) => {
+            expect(idsOf(read)).toEqual(['p']);
+            expect(read.snapshot.findings.filter((one) => one.file.includes('/c/'))).toEqual([]);
+        }
+    },
+    {
+        name: 'two scan folders that are clones of each other as one project, the first',
+        scan: [{ dir: 'side-projects' }],
+        hub: plain(
+            [
+                'side-projects/a/project.yml',
+                'title: A\ntier: personal\ntype: active\nrepository:\n  url: https://example.org/o/r\n'
+            ],
+            ['side-projects/a/.git/config', '[remote "origin"]\n\turl = https://example.org/o/r\n'],
+            [
+                'side-projects/b/project.yml',
+                'title: B\ntier: personal\ntype: active\nrepository:\n  url: https://example.org/o/r.git\n'
+            ],
+            ['side-projects/b/.git/config', '[remote "origin"]\n\turl = https://example.org/o/r\n']
+        ),
+        check: (read) => {
+            expect(idsOf(read)).toEqual(['a']);
+        }
+    },
+    {
+        name: 'a project folder that is not a clone of anything with a repository block, as cloned nowhere until the watcher lists repositories',
+        scan: [{ dir: 'side-projects' }],
+        hub: plain([
+            'side-projects/q/project.yml',
+            'title: Q\ntier: personal\ntype: active\nrepository:\n  url: https://example.org/q\n'
+        ]),
+        check: (read) => {
+            expect(read.snapshot.entities.projects.q.repository).toEqual({
+                url: 'https://example.org/q',
+                clones: []
+            });
+        }
     }
 ];
 
@@ -331,12 +504,21 @@ const ROWS: Row[] = [
 function plant(row: Row): Places {
     const hub = plantScratch('oculus-repository-hub-', { ...HUB_FILES, ...row.hub });
     const manifest = row.manifest === undefined ? PERSONAL : row.manifest;
+    const placed: Record<string, string> =
+        row.placement === 'top'
+            ? { [`alpha/${TOP_FILE}`]: manifest ?? '' }
+            : row.placement === 'both'
+              ? {
+                    [`alpha/${TOP_FILE}`]: manifest ?? '',
+                    [`alpha/${NESTED_FILE}`]: 'title: Nested alpha\ntier: personal\ntype: idea\n'
+                }
+              : { [`alpha/${NESTED_FILE}`]: manifest ?? '' };
     const parent = plantScratch(
         'oculus-repository-',
         manifest === null
             ? { 'alpha/README.md': '# alpha\n' }
             : {
-                  [`alpha/${MANIFEST_FILE}`]: manifest,
+                  ...placed,
                   'alpha/present/present.yml': 'slides: []\n',
                   'alpha/README.md': '# alpha\n'
               }
@@ -379,5 +561,177 @@ function read(row: Row): Read {
 describe("the scan and the manifest's own tier and type", () => {
     it.each(ROWS)('reads $name', (row) => {
         row.check(read(row));
+    });
+});
+
+/** The snapshot of a build joined with a second hub whose own sources.yml is this text. */
+function joinedWith(
+    sources: string,
+    files: Record<string, string>
+): { snapshot: Snapshot; lab: string } {
+    const hub = plantScratch('oculus-unnamed-primary-', HUB_FILES);
+    plantHub(hub);
+    const lab = plantScratch('oculus-unnamed-lab-', {
+        '.oculus/config/sources.yml': sources,
+        ...files
+    });
+    const config = portfolioConfigFrom(MERGED);
+    const open = workspaceWith(
+        [
+            { name: 'hub', dir: hub },
+            { name: 'lab', dir: lab }
+        ],
+        'hub'
+    ).open();
+    const base = buildPortfolioWithSchemas(
+        hub,
+        config,
+        0,
+        repositoriesOf(open),
+        undefined,
+        null,
+        'hub'
+    );
+    const others = [readOtherHub(engineDir(), { key: 'lab', dir: lab })];
+    const built = joinHubs(base, { hub, name: 'hub', config }, others, 0, createChecker());
+    return { snapshot: built.snapshot, lab };
+}
+
+describe('a hub reports only the files its own configuration names', () => {
+    const PROJECTS = {
+        'one/project.yml': 'title: One\ntier: personal\ntype: active\n',
+        'two/project.yml': 'title: Two\ntier: personal\ntype: active\n'
+    };
+
+    it('raises no finding for a registry, collection or deck it inherits and does not hold', () => {
+        const { snapshot, lab } = joinedWith('scan:\n  - { dir: . }\n', PROJECTS);
+        expect(Object.keys(snapshot.entities.projects).sort()).toEqual(
+            [...HUB_IDS, 'lab:one', 'lab:two'].sort()
+        );
+        expect(snapshot.findings.filter((one) => one.file.startsWith(lab))).toEqual([]);
+    });
+
+    it('raises the finding for a registry its own sources.yml names and does not hold', () => {
+        const { snapshot, lab } = joinedWith(
+            'scan:\n  - { dir: . }\nvenues_file: registries/venues.yml\n',
+            PROJECTS
+        );
+        expect(
+            snapshot.findings
+                .filter((one) => one.file.startsWith(lab))
+                .map((one) => [one.file.slice(lab.length), one.message])
+        ).toEqual([['/registries/venues.yml', 'registry file does not exist']]);
+    });
+});
+
+describe('the address of a repository', () => {
+    const SAME = [
+        ['https://github.com/TheAxeC/x', 'https://github.com/theaxec/x.git'],
+        ['https://github.com/theaxec/x', 'git@github.com:TheAxeC/x.git'],
+        ['git@github.com:theaxec/x.git', 'ssh://git@github.com/theaxec/x'],
+        ['https://GitLab.example.org/o/r.git', 'git@gitlab.example.org:o/r'],
+        ['https://example.org/o/r/', 'https://example.org/o/r'],
+        ['ssh://git@Example.org:22/o/r.git', 'https://example.org/o/r'],
+        ['git@GitHub.com:TheAxeC/X.git', 'https://github.com/theaxec/x']
+    ];
+    test.for(SAME)('%s and %s are one repository', ([a, b]) => {
+        expect(sameAddress(a, b)).toBe(true);
+    });
+
+    const DIFFERENT = [
+        ['https://example.org/o/R', 'https://example.org/o/r'],
+        ['https://example.org/o/r', 'https://other.example.org/o/r'],
+        ['https://github.com/o/r', 'https://github.com/o/s'],
+        ['/some/folder', 'https://github.com/o/r'],
+        ['not an address', 'not an address']
+    ];
+    test.for(DIFFERENT)('%s and %s are two', ([a, b]) => {
+        expect(sameAddress(a, b)).toBe(false);
+    });
+});
+
+describe('the origin of a folder', () => {
+    const CONFIG =
+        '[core]\n\tbare = false\n[remote "upstream"]\n\turl = https://example.org/u\n[remote "origin"]\n\turl = https://example.org/o\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n';
+
+    test("is the url of the origin remote of the folder's .git", () => {
+        const dir = plantScratch('oculus-origin-', { '.git/config': CONFIG });
+        expect(originOf(dir)).toBe('https://example.org/o');
+    });
+
+    test('is read from the common folder of a worktree whose .git is a file', () => {
+        const dir = plantScratch('oculus-origin-tree-', {
+            'main/.git/config': CONFIG,
+            'main/.git/worktrees/w/commondir': '../..\n',
+            'w/.git': 'gitdir: ../main/.git/worktrees/w\n'
+        });
+        expect(originOf(join(dir, 'w'))).toBe('https://example.org/o');
+    });
+
+    const NONE: { name: string; files: Record<string, string> }[] = [
+        { name: 'a folder with no .git', files: { 'a.txt': 'a\n' } },
+        {
+            name: 'a repository with no origin',
+            files: { '.git/config': '[core]\n\tbare = false\n' }
+        },
+        {
+            name: 'a repository whose only remote is not origin',
+            files: { '.git/config': '[remote "upstream"]\n\turl = https://example.org/u\n' }
+        },
+        { name: 'a .git file that names no folder', files: { '.git': 'nothing\n' } }
+    ];
+    test.for(NONE)('is none for $name', ({ files }) => {
+        expect(originOf(plantScratch('oculus-origin-none-', files))).toBeNull();
+    });
+});
+
+describe('the clones of a project', () => {
+    /**
+     * A built snapshot over a hub holding the projects `x` (a url) and `y` (none), and the repos.
+     */
+    function placed(origins: Record<string, string>) {
+        const hub = plantScratch('oculus-clones-hub-', {
+            'projects/ideas/x/project.yml':
+                'title: X\ntier: projects\ntype: idea\nrepository:\n  url: https://github.com/theaxec/x\n',
+            'projects/ideas/y/project.yml': 'title: Y\ntier: projects\ntype: idea\n'
+        });
+        plantHub(hub);
+        const folders = Object.fromEntries(
+            Object.entries(origins).map(([name, url]) => [
+                `${name}/.git/config`,
+                `[remote "origin"]\n\turl = ${url}\n`
+            ])
+        );
+        const repos = plantScratch('oculus-clones-repos-', folders);
+        const dirs = Object.keys(origins).map((name) => join(repos, name));
+        const { snapshot } = buildPortfolioWithSchemas(hub, portfolioConfigFrom(MERGED), 0, []);
+        placeClones(snapshot, dirs, textCatalog(MERGED));
+        return { snapshot, dirs };
+    }
+
+    it('is the repository whose origin is the url however it is written, and none for a project with no url', () => {
+        const { snapshot, dirs } = placed({
+            a: 'git@github.com:TheAxeC/x.git',
+            b: 'https://github.com/theaxec/other'
+        });
+        expect(snapshot.entities.projects.x.repository?.clones).toEqual([dirs[0]]);
+        expect(snapshot.entities.projects.y.repository).toBeUndefined();
+        expect(snapshot.findings.filter((one) => one.key === 'repository.url')).toEqual([]);
+    });
+
+    it('is empty for a project no repository has the url of', () => {
+        const { snapshot } = placed({ a: 'https://github.com/theaxec/other' });
+        expect(snapshot.entities.projects.x.repository?.clones).toEqual([]);
+    });
+
+    it('lists two clones in the order the repositories are listed, with one finding on the project naming both', () => {
+        const { snapshot, dirs } = placed({
+            a: 'git@github.com:TheAxeC/x.git',
+            b: 'https://github.com/theaxec/x'
+        });
+        expect(snapshot.entities.projects.x.repository?.clones).toEqual(dirs);
+        expect(findingsOn({ snapshot, at: {} as Places }, 'repository.url')).toEqual([
+            said('cloned_twice', 'https://github.com/theaxec/x', dirs.join(', '))
+        ]);
     });
 });

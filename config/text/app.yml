@@ -2,6 +2,17 @@
 text:
     app:
         chat: Chat
+        clone:
+            add: Add to Workspace
+            after: 'Cloned {0}. Open it, or add it to the workspace?'
+            dont_save: Don't Save
+            done: 'Cloned {0}'
+            failed: The repository was not cloned
+            leave: 'The unsaved workspace holds folders. Save them as a workspace file before {0} is opened?'
+            name_label: Name of the workspace file
+            name_prompt: 'Name the workspace file that keeps the folders; {0} is opened after it is saved'
+            open: Open
+            save: Save
         collections: 'Collections: {0}'
         datasets: 'Datasets: {0}'
         domains: 'Domains: {0}'
@@ -21,8 +32,15 @@ text:
             approve_ask: Run this Python interpreter for this repository?
             approve_yes: Approve and Select
             choices_loading: Reading the choices of this repository...
+            clone_error: 'GitHub repositories could not be listed: {0}'
+            clone_loading: Reading your GitHub repositories...
+            clone_none: No GitHub repository matches
+            clone_type: Type the address of a repository to clone it
+            clone_typed: 'Clone the repository at {0}'
             cmd_accent: Set the accent colour
             cmd_accent_hint: '<name | #hex | reset>'
+            cmd_clone: Clone a GitHub repository
+            cmd_clone_hint: '<name | url>'
             cmd_compile_database: Choose the compile database of the repository
             cmd_compile_database_hint: '<name>'
             cmd_crt: Turn the CRT overlay on or off
@@ -45,7 +63,10 @@ text:
             cmd_unknown: '# unknown command'
             cmd_update: Open the update tasks
             cmd_workspace: Switch Workspace
+            cmd_workspace_close: Close Workspace
             cmd_workspace_hint: '<hub/name>'
+            cmd_workspace_new: New Workspace
+            cmd_workspace_new_hint: '<name>'
             cmd_workspace_save: Save Workspace As
             cmd_workspace_save_hint: '<name>'
             cmdk_placeholder: Search projects, entries, tabs...
@@ -73,6 +94,7 @@ text:
             interpreter_typed: 'Use the interpreter at {0}'
             kind_collection: Collection
             kind_command: Command
+            kind_clone: Repository
             kind_config: Svelte Configuration
             kind_config_file: Configuration File
             kind_database: Compile Database
@@ -118,6 +140,8 @@ text:
             symbols_unavailable: No language server answers for the tab on screen.
             unpin_editor: Unpin Editor
             workspace_missing: gone
+            workspace_new: 'Make the workspace {0} with no folder'
+            workspace_new_name: Type a name for the new workspace
             workspace_save: 'Save the open folders as the workspace {0}'
             workspace_save_name: Type a name for the workspace
         palette_empty: No match

@@ -75,3 +75,5 @@ text:
         personal_glyph: spark
         projects: Projects
         projects_glyph: focus
+        software: Software
+        software_glyph: code

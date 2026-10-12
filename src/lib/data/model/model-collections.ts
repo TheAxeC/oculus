@@ -130,7 +130,10 @@ export type FeedData = {
     schema?: SchemaField[];
 };
 
-/** What sources/feeds.ts returns. It is already JSON-safe, so the snapshot carries it unchanged. */
+/**
+ * What sources/documents/feeds.ts returns. It is already JSON-safe, so the snapshot carries it
+ * unchanged.
+ */
 export type RawFeeds = Feeds;
 
 /**

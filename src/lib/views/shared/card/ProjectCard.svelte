@@ -16,8 +16,8 @@
     //
     // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
     // next action, and its folder is the one `placeOf` names, a repository's own Files root for a
-    // project read from a repository. The caller leaves `deposit` off for a project read from a
-    // repository.
+    // project read from a repository. The project view passes `deposit` for every project, a
+    // project read from a repository included.
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
@@ -52,6 +52,7 @@
     const client = useState();
 
     const {
+        clone: { cloneProject, cloning },
         entities: { portfolio },
         folders,
         layout: { openBeside, openView, showDeck, showFolderInFiles },
@@ -134,6 +135,15 @@
         const whole = folder.startsWith('/') ? folder : absoluteOf(hubDirOf(item.id), folder);
         return whole !== '' && gitRoots().includes(whole) ? whole : '';
     });
+    /** The repository the project names that is not cloned anywhere yet: its address. */
+    const toClone = $derived.by(() => {
+        const block = item.project.repository;
+        return block?.url !== undefined && block.clones.length === 0 ? block.url : null;
+    });
+    /**
+     * Where the project is cloned: the first folder of the workspace whose origin is its address.
+     */
+    const clonedIn = $derived(item.project.repository?.clones.at(0) ?? null);
     const actions = $derived.by((): CardAction[] => {
         const rows: CardAction[] = [];
         rows.push({
@@ -237,6 +247,30 @@
                 }
             });
         }
+        if (toClone !== null) {
+            rows.push({
+                id: 'clone',
+                label: cloning(item.id) ? t('project.card.clone_running') : t('project.card.clone'),
+                title: t('project.card.clone_tip', toClone),
+                glyph: t('project.card.clone_glyph'),
+                disabled: cloning(item.id),
+                onclick: async () => {
+                    await cloneProject(item.id, label, place.dir);
+                }
+            });
+        }
+        if (clonedIn !== null) {
+            rows.push({
+                id: 'cloned',
+                label: t('project.card.cloned_in', clonedIn.split('/').at(-1) ?? clonedIn),
+                title: t('project.card.cloned_in_tip', clonedIn),
+                glyph: t('project.card.clone_glyph'),
+                onclick: async () => {
+                    const answer = await openFolder(clonedIn);
+                    if (!answer.ok) onsaid(t('project.card.folder_failed', answer.error ?? ''));
+                }
+            });
+        }
         return rows;
     });
     /** The newest document date used in the stale warning tooltip. */
@@ -274,7 +308,7 @@
     /** Ask the host to reveal the project's folder. */
     async function showFolder(): Promise<void> {
         const answer =
-            item.project.repository === undefined
+            item.project.workspaceFolder === undefined
                 ? await openFolder(item.project.folder, hub)
                 : await openFolder(place.dir);
         if (!answer.ok) onsaid(t('project.card.folder_failed', answer.error ?? ''));
@@ -323,7 +357,7 @@
             <CardActions {actions} />
         {/snippet}
 
-        <div class="folder">{item.project.repository?.root ?? item.project.folder}</div>
+        <div class="folder">{item.project.workspaceFolder?.root ?? item.project.folder}</div>
         <div class="row">
             {#if item.project.focus}
                 <Tag label={item.project.focus} />

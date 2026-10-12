@@ -47,8 +47,9 @@
     // those can be taken out; every root the configuration names in a saved workspace is in it and
     // cannot be, and the server refuses that removal as well, since a refusal that lives only in a
     // view disappears with the next caller. Add Folder to Workspace opens the folder panel (POST
-    // /api/folders/pick) and adds what it returns; the workspace menu items and Open Folder open
-    // the palette with their command typed, where state/workbench/palette.ts runs them.
+    // /api/folders/pick) and adds what it returns; the workspace menu items (Close Workspace apart,
+    // which the view runs and says its refusal in the message line) and Open Folder open the
+    // palette with their command typed, where state/workbench/palette.ts runs them.
     //
     // A tab rooted at a folder (its `top`) or following a session draws the folder as the head of
     // its tree, with a `..` row above a rooted one, and no workspace header. A folder outside every
@@ -104,7 +105,7 @@
     const client = useState();
     const {
         explorer: { panelOpen },
-        fs: { addRoot, invalidate, orderRoots },
+        fs: { addRoot, closeWorkspace, invalidate, orderRoots },
         layout: { activeInstance, currentPage, instanceLayoutState, layout },
         clangd,
         selection: { selected },
@@ -209,6 +210,13 @@
         answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
     }
 
+    /** Leave the open workspace file, and say a refusal in the message line. */
+    async function closeWork(): Promise<void> {
+        const owner = instance.id;
+        const answer = await closeWorkspace();
+        answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '', answer.reason) });
+    }
+
     /** Add the folder Open Folder found outside every root, and drop the line that offered it. */
     async function addOutside(dir: string): Promise<void> {
         const owner = instance.id;
@@ -271,6 +279,9 @@
         panelOpen={panelOpen()}
         onswitch={() => requestPalette(':workspace ')}
         onsave={() => requestPalette(':workspace-save ')}
+        onnew={() => requestPalette(':workspace-new ')}
+        onclosework={() => void closeWork()}
+        saved={saved.open !== null}
         onopenfolder={() => requestPalette(':folder')}
         drag={sectionDrag.row('files')}
     />

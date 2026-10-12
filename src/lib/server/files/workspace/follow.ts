@@ -6,13 +6,13 @@
 // The workspace is read when something it is read from changed and held until the next change: a
 // request or a watcher that asks gets the held value and reads no disk. What it is read from is
 // polled once a tick by a stat each: `workspace.json` of the state folder, the open workspace file,
-// each folder of the workspace, the folder's `.oculus/config`, `.oculus/workspaces` and
-// `.oculus/project.yml` (which decide whether it is a hub, which files the switcher offers and
+// each folder of the workspace, the folder's `.oculus/config`, `.oculus/workspaces`, `project.yml`
+// and `.oculus/project.yml` (which decide whether it is a hub, which files the switcher offers and
 // whether it is a project), and each file of the recent list. A write the server made itself calls
 // `changed()` so the listeners hear of it at once, and the next tick finds no difference.
 //
-// A change is a difference in what the workspace serves: its file, folders (name, path and whether
-// a hub), primary and findings.
+// A change is a difference in what the workspace serves: its file, folders (name, path, whether a
+// hub and its own scan depth), primary and findings.
 
 import { isDeepStrictEqual } from 'node:util';
 import { join } from 'node:path';
@@ -44,7 +44,13 @@ export type Workspace = {
 function shape(open: OpenWorkspace): unknown {
     return {
         file: open.file,
-        folders: open.folders.map((one) => [one.name, one.dir, one.hub, one.noProject ?? false]),
+        folders: open.folders.map((one) => [
+            one.name,
+            one.dir,
+            one.hub,
+            one.noProject ?? false,
+            one.scanDepth ?? null
+        ]),
         primary: open.primary,
         findings: open.findings,
         unreadable: open.unreadable
@@ -59,6 +65,7 @@ function placesOf(open: OpenWorkspace): string[] {
             folder.dir,
             join(folder.dir, HUB_LAYER),
             join(folder.dir, ROOT_FOLDER, WORKSPACES_FOLDER),
+            join(folder.dir, MANIFEST),
             join(folder.dir, ROOT_FOLDER, MANIFEST)
         );
     }

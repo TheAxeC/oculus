@@ -112,12 +112,16 @@ export function registerBridge(windows: Windows, turn: SaveTurn, print: Printer)
         return { entry: found.entry, who };
     }
 
-    ipcMain.on(SAVE_LAYOUT, (event, next: unknown, from: unknown) => {
+    ipcMain.on(SAVE_LAYOUT, (event, key: unknown, next: unknown, from: unknown) => {
         const caller = callerOf(event, SAVE_LAYOUT);
-        const valid = typeof next === 'string' && (from === null || typeof from === 'string');
+        const valid =
+            typeof key === 'string' &&
+            key !== '' &&
+            typeof next === 'string' &&
+            (from === null || typeof from === 'string');
         // A call the bridge does not answer, or one with invalid arguments, is refused: the page
         // writes only with the turn.
-        event.returnValue = caller !== null && valid ? turn(next, from) : REFUSED;
+        event.returnValue = caller !== null && valid ? turn(key, next, from) : REFUSED;
     });
 
     ipcMain.on(OPEN_FLOAT_WINDOW, (event, id: unknown, bounds: unknown, owner: unknown) => {

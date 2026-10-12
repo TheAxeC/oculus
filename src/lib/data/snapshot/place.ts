@@ -16,8 +16,8 @@ export function placeOf(
     project: Project,
     primary: string | null
 ): { root: string; path: string; dir: string } {
-    if (project.repository !== undefined) {
-        return { root: project.repository.root, path: '', dir: project.repository.dir };
+    if (project.workspaceFolder !== undefined) {
+        return { root: project.workspaceFolder.root, path: '', dir: project.workspaceFolder.dir };
     }
     const cut = project.file.lastIndexOf('/');
     return {

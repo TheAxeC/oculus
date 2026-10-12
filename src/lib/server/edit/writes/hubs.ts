@@ -203,8 +203,8 @@ export function routedOrder(
 
 /**
  * The target of the hub whose folder holds the file a change names, the request's own for a file of
- * the primary hub, of the reader's bookmarks or of a repository read as a project of the primary
- * (its `.oculus/project.yml`, which lies outside the hub's folder), and null for a file that no hub
+ * the primary hub, of the reader's bookmarks or of a workspace folder read as a project of the
+ * primary (its manifest, which lies outside the hub's folder), and null for a file that no hub
  * holds: the hub it was written in has left the workspace.
  */
 export function holding(into: WriteTarget, file: string): PrimaryTarget | null {
@@ -218,6 +218,6 @@ export function holding(into: WriteTarget, file: string): PrimaryTarget | null {
     const one = (into.hubs ?? []).find((held) => inside(path, held.hub));
     if (one !== undefined) return within(into, one);
     if (own === null) return null;
-    const repositories = hubManifests(own.hub, own.config).filter((one) => one.repository);
+    const repositories = hubManifests(own.hub, own.config).filter((one) => one.workspaceFolder);
     return repositories.some((project) => resolve(project.file) === path) ? own : null;
 }

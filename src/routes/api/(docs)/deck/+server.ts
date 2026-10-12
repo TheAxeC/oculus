@@ -15,7 +15,7 @@ import type { RequestHandler } from './$types';
 
 /** What a deck is read over at this request. */
 function sourceOf(locals: App.Locals): DeckSource {
-    const config = locals.config().config;
+    const { config, from } = locals.config();
     const open = locals.server.workspace.open();
     return {
         roots: open.roots,
@@ -23,7 +23,7 @@ function sourceOf(locals: App.Locals): DeckSource {
             open.primary === null || open.primaryDir === null
                 ? null
                 : { key: open.primary, dir: open.primaryDir },
-        config: portfolioConfigFrom(config),
+        config: portfolioConfigFrom(config, from),
         projects: projects(locals.server.hub),
         hubs: hubTargets(locals.server.engine, open)
     };

@@ -216,3 +216,70 @@ Failure scenario: a page that sends LSP messages to a slow app server faster tha
 - Whether the `StreamHub.#closed` set's growth per stream id for the host's life matters in practice.
 
 Reviewer usage: agent id not known to the reviewer; served model claude-opus-5-5; tokens not known to the reviewer; tool uses about 65; minutes not measured.
+
+## Repair round 1, refuted (on .agents/worktrees/D64, base a9641a30b; the tree before the round is agents/reviews/D64-before-round1.patch)
+
+### Verification lines (rerun by the reviewer, from the worktree's tools/oculus, node v24.21.0)
+
+- `npm run diagrams`: exit 0, real 287.31 s; `shasum docs/diagrams/*` the same before and after.
+- `npm run test:quick -- --base a9641a30b`: exit 0. "test:quick: 364 changed file(s), from git since a9641a30b"; "test:quick: 181 test file(s), 10 essential"; ok ASCII gate (1.1 s); ok prettier (1.7 s); ok svelte-kit sync (3.8 s); ok eslint (2.8 s); ok svelte-check (12.1 s): "486 FILES 0 ERRORS 0 WARNINGS"; ok vitest (72.6 s): Duration 62.21s; "test:quick: 74.0 s (limit 45.0 s); every command passed"; "test:quick: over the time limit".
+- `npx vitest run tests/checks --testTimeout 0 --hookTimeout 0`: exit 1. "Test Files 2 failed | 15 passed (17)"; "Tests 2 failed | 264 passed (266)"; Duration 371.49s. The two failures (config-folder.test.ts "names a group of its own and a path under the hub for every document", integrity.test.ts "the real hub > validates with no findings") are the ones the first review explained: the worktree has no hub `.oculus/`.
+- ASCII gate over `find src tests bin config -type f ! -name local.yml`: nothing printed; `LC_ALL=C grep -n '[^ -~]'` over DESIGN.md, HELP.md, README.md, docs/apps.md and the report: nothing.
+- `sh utils/folder-check.sh`: exit 0.
+- `sh utils/unused-exports.sh` against the base's list: no name added; every difference is one the report lists (stashUrl and worktreeDiffUrl left repositories.ts; kit/folding.ts and kit/grammars.ts moved to kit/languages/; CommandSeverity left index.ts and model-sessions.ts).
+- Verbose run of the test files the round changed (apps/tools, app-manage, the debug route, debug-toolbar, lsp/versions, languages-join, show-focus, page-commands, host-commands, apps/manifest, pty/channel, flows, ops-replace, tests/server/machine/lsp) with `--testTimeout 60000`: "Test Files 41 passed (41)", "Tests 521 passed (521)", Duration 23.20s. The measured lines match the report (1048576 / 52428800 bytes; 1024 / 102400 bytes; "the host was sent 13 of 10000 didChange messages before it took any; the stream held at most 499 (window 16, bound 4096); 10000 arrived"). Every case at or above 300 ms is in a slow-tagged file or a file the round did not change, except terminals.test.ts's 50 MB case at about 300 ms, under 0.7 s.
+- The report's evidence, rerun: `grep -rn supportsPauseRequest src tests DESIGN.md HELP.md docs | wc -l` gives 0; glob.mjs is gone and `find tests -name 'glob*'` prints nothing; `grep -rn "glob.mjs\|workspace-writes\|files/fs/replace.ts\|later step\|not yet built"` prints nothing; `APP_OPTION = '@oculus_app'` at pty/sessions.ts:78; `matchesGlob` only in lsp/held/watch.ts and data/snapshot/schema/set.ts, both at the base and outside findFiles and the watchers; `ls src/lib/server/machine/lsp/relay.ts` gives "No such file"; the largest relay file is relay-route at 563 lines; the largest source file is terminals.svelte.ts at 878 lines and the largest component TerminalGrid.svelte at 520.
+- The builder's probe `node r1probe.mjs` against the base's runner-shell.mjs printed "api keys: commands, window, workspace" and each TypeError the report's Cases table quotes.
+- The builder's first runs on the base, read from scratchpad/r1out: before-workspace 12 failed | 10 passed; before-debug-toolbar 2 failed; before-debug 2 failed | 2 passed; before-languages-join 1 failed | 2 passed; before-versions 5 failed | 4 passed; before-terminals-page 1 failed | 2 passed; before-server-backpressure 1 failed; before-terminals-tmux 1 failed | 2 passed; before-languages 4 failed | 11 passed; before-show-focus.client 1 failed; app-manage on the base 9 failed | 14 passed, the four app-host rows failing with 400 "action must be ...".
+- No DOM: node_modules has no jsdom, happy-dom or @testing-library.
+
+### Verdicts on the rulings of repair round 1
+
+1. Holds. apps/tools/workspace/writes.ts sends every write through `ToolsEnv.ops` to `runOps` (writeFile an `upload` with `replace`; createDirectory a `create`; delete a `delete`, or `trash` with useTrash; rename a `rename`, a move `paste`, or both; copy a copy `paste`, then a rename when the target has another name). `#whole` (writes.ts:88-92) refuses `closed` through `scope.holdsClosed`. The tests read correctly. The Files view's upload changed with this ruling (see Behaviour); the app-id sentence is under Standards.
+2. Holds. findFiles, the watchers, relay-apps `selects` and filenamePatterns match through `globTest` (picomatch, `{dot: true, basename: !glob.includes('/')}`); providers.mjs keeps its own copy because the runner cannot import TypeScript (accepted at finding 3.2); `exclude` follows VS Code.
+3. Holds, with a finding under Spec: supportsPauseRequest removed; Pause drawn for every adapter while the session runs; Pause sends `{threadId: run.thread}` (session/controls.ts:77), whose id is wrong before any stop.
+4. Holds (report lines 134-195, the history-word grep at line 259, the Code-line changes at line 197).
+5. Holds: waits on events through `until` helpers; did-not-happen checks with `vi.useFakeTimers` and manualClock; timings quoted.
+6. Holds: the four app-host rows send each action with and without the token; each fails on the base with 400 "action must be ...".
+7. Holds (no change asked).
+8. Holds: `entry.app` replaces the WeakMap; `createChildren()` replaces the module state of children.mjs; findGlobalState matches `new WeakMap` and `new WeakSet`; the checks pass. host-runner.mjs's module variables were at the base, in a file the check does not scan.
+9. Holds: terminals-page.test.ts through the Hub's backlog with a slow page.
+10. Holds.
+11. Holds.
+12. Holds.
+13. Holds.
+14. Holds: didSave through `source.onSaved`; the relay calls saveDocument for each server that declared save; the case fires `onDidSaveTextDocument` once.
+15. Partly met, see Proof and Behaviour: backpressure registered as `stdin.pause()`/`resume()`, sendBytes bounded on both sides, stream-terminal input ends at 8 MiB; messages beyond the window and bound wait unbounded in the writer's queue and the paused PassThrough; the case measures only `stream.held()` (peak 499 while about 9,500 wait outside it).
+16. Holds in code; DESIGN.md:438 states the before and after as the ruling asked (see Standards).
+17. Holds: launch/write.ts through runOps; both rows tested.
+18. Holds.
+19. Holds.
+20. Holds.
+21. Holds: `stop()` unregisters and waits for `gone`, with a 7000 ms fallback; held/process sends shutdown, then exit.
+22. The code does what the ruling asks, by reading (`showTerminal(id, label, preserveFocus = true)` sets `focus.id = preserveFocus ? null : id`; TerminalGrid focuses when `focusAsked() === id`; the runner passes `preserveFocus === true`). The report's "no DOM" is true; the focused element is a page behaviour for the look at landing.
+
+### Verdicts for the whole diff since a9641a30b
+
+Items: 0 holds; 1 violated in part (ruling 15); 2 holds; 3 holds; 4 holds; 5 holds; 6 holds; 7 violated in part (the Pause thread id); 8 to 11 hold; 12 holds as read (completeness against VS Code declined); 13 holds; 14 violated in part (the app-id sentences and DESIGN.md's history wording); 15 holds apart from the missing visible-changes section.
+
+Cases: met 1, 2, 3, 4, 5, 6, 8 to 16 and 18 to 22, the page-drawn parts left to the look; 7 partial (the Pause thread id; F5 and Add Configuration left to the look); 17 met for the terminal stream and the Hub backlog, ruling 15's server variant partial.
+
+### Findings
+
+- **Spec 1. Pause sends thread 1, which may not be a running thread.** src/lib/server/machine/debug/session/controls.ts:77 `await this.#core.ask(run, 'pause', { threadId: run.thread });` with session/types.ts:113 `thread: THREAD` and wire.ts:27 `export const THREAD = 1;`. `run.thread` is set only from a stopped event (session.ts:528); the client sends no `threads` request. Failure scenario: an adapter whose thread ids do not start at 1, launched without stopOnEntry: Pause sends threadId 1 and nothing pauses. The test uses an adapter that stopped on thread 1 first.
+- **Proof 1. Ruling 15's bound is measured only inside the stream.** lsp/relay/relay-apps.ts's backpressure and server-backpressure.test.ts's measure over `stream.held()`. With the PassThrough paused, the vscode-jsonrpc StreamMessageWriter keeps queueing and the page's websocket is not paused, so about 9,500 messages wait in oculus with no bound (the report's judgment (i), line 822, says so and marks the ruling DONE). Failure scenario: a page that keeps sending to an app server whose handler is stuck grows oculus's memory without limit.
+- **Standards 1. App writes are not recorded with the app's id.** docs/apps.md:517 "is listed in History with the app's id and can be undone there"; DESIGN.md:553 "recorded in the change log with the app's id"; the report's Documents table. `recordNote` (src/lib/server/files/fs/ops.ts:632-635) sets no `app`; `ChangeRecord.app` (core/changes.ts:130) is never passed. Failure scenario: a reader looks in History for an app's writes and finds them unattributed.
+- **Standards 2. History wording in DESIGN.md.** DESIGN.md:438 ("before, the host shared the server's group ..."), :551 ("before, no server was sent it"), :553 ("before, these writes bypassed the chain ..."). Line 438 follows ruling 16, which clashes with the no-history rule; 551 and 553 go beyond their rulings.
+- **Behaviour 1. The report has no visible-changes section** (brief D64.md:199). Unstated with before and after, view and state: Pause drawn for `rite_dap` with the notice "pause is not supported: arm a breakpoint instead"; a Files-view upload that replaces a file keeps the old bytes and Undo writes them back; Add Configuration in History with Undo; didSave to oculus's own servers only when they declare save; findFiles' and the watchers' glob reading through picomatch.
+- **Behaviour 2 (minor). Add Configuration creates `.oculus` before it validates** (debug/launch/write.ts): a refused append leaves an empty `.oculus` folder and a History "create" entry.
+- **Behaviour 3 (minor). holdsClosed reads only the deepest root's closed paths**: a root nested in another root's folder could skip the outer root's closed_paths.
+
+### Declined to judge
+
+- Completeness of the menus against VS Code's page.
+- Page-only behaviours, left to the look: the focused element after `show(true)` and `show(false)`; the grid; the Repositories sections; the Files rows; the editor kit; F5 and Add Configuration on the page.
+- A comparison against a second build.
+- A full read of the about 26,000-line diff (the round's delta read in full, the rest sampled).
+- Whether the debug-toolbar test fits its guarded.md entry.
+
+Reviewer usage: a1edcdaede4530b7c, claude-opus-5-5, 94,747 tokens, 112 tool uses, 26.9 min.

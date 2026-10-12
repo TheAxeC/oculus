@@ -3,13 +3,13 @@
 // They sit apart from the git modules because all of them need them: server/core/git/state.ts reads
 // the log, the refs, the worktrees and the stashes for the `git` channel and
 // server/core/git/reads.ts the graph, the blame and the gutter marks on demand, and
-// server/git/git-write.ts and server/git/deposit.ts read the branches for their branch menus. Every
-// reader of `status --porcelain=v1 -z` (core/git/state.ts, and git-write.ts, git-refs.ts,
-// git-index.ts and deposit.ts under server/git) splits its records through statusRecords, and
-// core/git/state.ts sorts them into the change lists by statusLists with the line counts of
-// parseNumstat. One parser with one format beside it is what keeps them from disagreeing about what
-// a row is: a branch row is read from REFS_FORMAT by parseRefs, whether `for-each-ref` or `branch`
-// printed it.
+// server/git/git-write.ts and server/git/deposit/deposit.ts read the branches for their branch
+// menus. Every reader of `status --porcelain=v1 -z` (core/git/state.ts, and git-write.ts,
+// git-refs.ts, git-index.ts and deposit.ts under server/git) splits its records through
+// statusRecords, and core/git/state.ts sorts them into the change lists by statusLists with the
+// line counts of parseNumstat. One parser with one format beside it is what keeps them from
+// disagreeing about what a row is: a branch row is read from REFS_FORMAT by parseRefs, whether
+// `for-each-ref` or `branch` printed it.
 //
 // Nothing here runs a process or touches a file: text in, rows out, and nothing thrown for output
 // that is not what was asked for.

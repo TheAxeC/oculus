@@ -32,7 +32,7 @@
         datasetUsers,
         parseDataState,
         type DataState
-    } from '$lib/state/sources/datasets';
+    } from '$lib/state/sources/registries/datasets';
     import {
         applyThemeFacets,
         themeFacets,

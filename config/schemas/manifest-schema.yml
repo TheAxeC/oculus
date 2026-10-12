@@ -32,7 +32,7 @@ manifest_schema:
     "Overrides (rare)": "Overrides (rare)"
   fields:
     id:            { label: "id", type: readonly, section: Core, help: "The project's folder name, or for a repository the name of its workspace folder. Never set by a write: rename the folder or the folder's entry in the workspace file to change it." }
-    tier:          { label: "Tier", type: select, options: [projects, coauthor, archive, personal, software], required: true, section: Core, help: "Which board the project is on: projects, coauthor, archive or personal; software is on no board. The project is shown with a finding when the key is missing or is not one of these five." }
+    tier:          { label: "Tier", type: select, options: [projects, coauthor, archive, personal, software], required: true, section: Core, help: "Which board the project is on: projects, coauthor, archive, personal or software. The project is shown with a finding when the key is missing or is not one of these five." }
     type:          { label: "Type / outcome", type: select, from: vocab.type_order, required: true, section: Core, help: "The project's stage (active or idea) on the Projects and Personal boards; how it ended (published, nogo, dropped and so on) on Archive and Coauthor; software on a software project. The folder the project is in decides neither the tier nor the type." }
     short:         { label: "Short handle", type: text, section: Core, help: "A short name for the card and the lists, such as bttd or raw-pls." }
     title:         { label: "Title", type: text, section: Core, help: "The full title of the project or paper." }
@@ -45,6 +45,7 @@ manifest_schema:
     pin:           { label: "Pin to top", type: checkbox, section: Core, help: "Tick to keep the card at the top of its board. Search and filters still hide it when it does not match." }
     venue_id:      { label: "Venue", type: select, from: venues, section: Core, help: "The venue the project is aimed at or published in, picked from the venues list by its id." }
     links:         { label: "Links", type: tags, section: Core, help: "Web addresses or paths that belong to the project, one per entry." }
+    tags:          { label: "Tags", type: tags, section: Core, help: "Words the project is found by, one per entry, such as the language of a software project. The board search reads them." }
     year:          { label: "Year", type: text, section: Core, help: "The year of the paper or of the project, as a whole number." }
     eli5:          { label: "ELI5", type: textarea, section: Content, help: "The project in two plain sentences for a reader outside the field." }
     next:          { label: "Next", type: textarea, section: Content, help: "The next action on the project, the first thing to do when it is picked up again." }
@@ -71,6 +72,12 @@ manifest_schema:
     "code_availability.homepage": { label: "Repo homepage", type: text, section: "Deposit & compute", help: "The web address the repository points to as its homepage." }
     "code_availability.topics": { label: "Repo topics", type: tags, section: "Deposit & compute", help: "The GitHub topics of the repository, one per entry." }
     "code_availability.visibility": { label: "Repo visibility", type: select, options: [public, private], section: "Deposit & compute", help: "Whether the repository is public or private." }
+    "repository.url": { label: "Remote URL", type: text, section: "Deposit & compute", help: "The address of the project's repository on its remote. Clone fetches it into a folder the reader picks." }
+    "repository.visibility": { label: "Remote visibility", type: select, options: [public, private], section: "Deposit & compute", help: "Whether the repository on the remote is public or private." }
+    "repository.description": { label: "Remote description", type: textarea, section: "Deposit & compute", help: "The description of the repository on the remote." }
+    "repository.homepage": { label: "Remote homepage", type: text, section: "Deposit & compute", help: "The web address the repository on the remote points to as its homepage." }
+    "repository.topics": { label: "Remote topics", type: tags, section: "Deposit & compute", help: "The topics of the repository on the remote, one per entry." }
+    "repository.date": { label: "Remote created", type: date, section: "Deposit & compute", help: "The date the repository was created on the remote." }
     compute:       { label: "Compute", type: chips, from: resources, section: "Deposit & compute", help: "The clusters, machines and storage the project runs on, picked from the resources list." }
     "reproduced.date": { label: "Reproduced (date)", type: date, section: "Deposit & compute", help: "The date the whole pipeline was last run again from the raw data to regenerate the reported numbers." }
     "reproduced.note": { label: "Reproduced (note)", type: textarea, section: "Deposit & compute", help: "What was run again, and anything a rerun needs, such as a GPU cluster or credentialed data." }

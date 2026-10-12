@@ -48,6 +48,17 @@ export function git(root: string, ...args: string[]): string {
 /** A file written at a path relative to the root, with the folders on the way made. */
 export const put = plantFile;
 
+/** A repository on `main` with an identity of its own and one commit holding `a.txt`, at `dir`. */
+export function repositoryAt(dir: string): void {
+    git(dir, 'init', '-q', '-b', 'main');
+    git(dir, 'config', 'user.email', 'nobody@example.invalid');
+    git(dir, 'config', 'user.name', 'Nobody');
+    git(dir, 'config', 'commit.gpgsign', 'false');
+    put(dir, 'a.txt', 'a\n');
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', 'First');
+}
+
 /** A repository on `main` with an identity of its own and one commit holding `kept.txt`. */
 export function scratchRepo(prefix = 'oculus-refs-'): string {
     const root = scratchDir(prefix);
@@ -67,4 +78,19 @@ export function commitFile(root: string, rel: string, body: string, message: str
     git(root, 'add', rel);
     git(root, 'commit', '-q', '-m', message);
     return git(root, 'rev-parse', 'HEAD').trim();
+}
+
+/** A bare repository on `branch` holding these files in one commit, made from a work repository. */
+export function remote(files: Record<string, string>, branch = 'main'): string {
+    const work = scratchDir('oculus-clone-work-');
+    git(work, 'init', '-q', '-b', branch);
+    git(work, 'config', 'user.email', 'nobody@example.invalid');
+    git(work, 'config', 'user.name', 'Nobody');
+    git(work, 'config', 'commit.gpgsign', 'false');
+    for (const [path, body] of Object.entries(files)) put(work, path, body);
+    git(work, 'add', '-A');
+    git(work, 'commit', '-q', '-m', 'First');
+    const bare = scratchDir('oculus-clone-bare-');
+    git(bare, 'clone', '-q', '--bare', work, '.');
+    return bare;
 }

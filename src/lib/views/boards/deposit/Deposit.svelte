@@ -24,16 +24,22 @@
     // the yes of views/shared/writes/AskConfirm.svelte. Nothing here acts on a timer or on a
     // payload arriving; a write happens when a button is pressed and never otherwise.
     //
+    // A changed file of the plan and a file that differs from `origin/main` each open their diff in
+    // the diff editor (DepositFile.svelte, DepositCompare.svelte), over the two texts the deposit
+    // route serves; Fetch updates `origin/main` in the mirror.
+    //
     // The commit message is suggested by POST /api/git with the mirror as its root, which is why
     // server/git/git-write.ts's allowedRoots names the mirrors folder beside the workspaces and the
     // hub.
     //
     // A finding of the scan (a possible secret, an oversized file, a missing README.md) disables
     // the commit, the push and the snapshot, with the reason on the control. The refusal is the
-    // server's as well: server/git/deposit.ts refuses those three while the plan has findings, so a
-    // control wired past this would be refused rather than quietly obeyed.
+    // server's as well: server/git/deposit/deposit.ts refuses those three while the plan has
+    // findings, so a control wired past this would be refused rather than quietly obeyed.
 
     import AskConfirm from '$lib/views/shared/writes/AskConfirm.svelte';
+    import DepositCompare from './DepositCompare.svelte';
+    import DepositFile from './DepositFile.svelte';
     import type { Ask } from '$lib/views/shared/writes/ask';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -68,6 +74,10 @@
     // store prefix of `$state`, which svelte-check refuses.
     const now = $derived(held.state);
     const plan = $derived(now?.plan ?? null);
+    /** Changes with the plan, which makes its file rows again with their diffs shut. */
+    const planStamp = $derived(
+        `${now?.branch ?? ''}|${plan?.changes.map((one) => one.letters + one.path).join('\0') ?? ''}`
+    );
 
     /** The message in the box. It survives a suggestion and is what a commit sends. */
     let message = $state('');
@@ -137,6 +147,10 @@
 
     function adopt(): void {
         void act('adopt');
+    }
+
+    function fetchOrigin(): void {
+        void act('fetch');
     }
 
     function makePlan(): void {
@@ -226,9 +240,6 @@
             <span class="lb">{t('deposit.branch')}</span>
             <span class="br">{one.branch}</span>
             <span class="mt">{one.remote === '' ? t('deposit.remote_none') : one.remote}</span>
-            {#if one.ahead > 0}
-                <span class="mt">{t('deposit.ahead', one.ahead)}</span>
-            {/if}
         {/if}
         <ToolButton
             label={t('deposit.adopt')}
@@ -264,12 +275,17 @@
         {#if one.changes.length === 0}
             <Empty message={t('deposit.changes_none')} />
         {:else}
-            {#each one.changes as change (change.path)}
-                <div class="fl">
-                    <span class="st">{change.letters}</span>
-                    <span class="pa">{change.path}</span>
-                </div>
-            {/each}
+            {#key planStamp}
+                {#each one.changes as change (change.path)}
+                    <DepositFile
+                        {id}
+                        against="plan"
+                        path={change.path}
+                        letters={change.letters}
+                        model={`${instance.id}:plan:${change.path}`}
+                    />
+                {/each}
+            {/key}
         {/if}
     </div>
     {#if one.findings.length > 0}
@@ -375,6 +391,8 @@
                     <ToolButton small label={t('deposit.retry')} onclick={() => reload(id)} />
                 {/snippet}
             </Empty>
+        {:else if now === null && held.loading}
+            <Empty message={t('deposit.loading', id)} />
         {:else if now === null}
             <Empty message={t('deposit.unknown', id)} />
         {:else}
@@ -387,6 +405,14 @@
                     <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render made(plan)}
                 {/if}
+                <DepositCompare
+                    {id}
+                    comparison={now.main}
+                    upstream={now.ahead}
+                    {busy}
+                    model={instance.id}
+                    onfetch={fetchOrigin}
+                />
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render branchBox(now)}
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -448,12 +474,6 @@
         align-items: center;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         font-size: var(--fs-md);
-    }
-
-    .st {
-        color: var(--muted-txt);
-        font-family: var(--font-mono);
-        white-space: pre;
     }
 
     .pa {

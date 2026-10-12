@@ -1,18 +1,21 @@
 <script lang="ts">
     // Layer 3, shell. The questions that wait on the reader and stand over the whole page, drawn in
     // one place: a project command's approval (CommandAsk), the debugger's (DebugAsk) and a LaTeX
-    // build's (LatexAsk), and what the apps ask: a modal message (AppAsk) and a quick pick or input
-    // box (AppQuick). Each draws nothing until its store holds a question.
+    // build's (LatexAsk), what to do with a repository that was cloned (CloneAsk), and what the
+    // apps ask: a modal message (AppAsk) and a quick pick or input box (AppQuick). Each draws
+    // nothing until its store holds a question.
 
     import AppAsk from './AppAsk.svelte';
     import AppQuick from './AppQuick.svelte';
+    import CloneAsk from './CloneAsk.svelte';
     import CommandAsk from './CommandAsk.svelte';
-    import DebugAsk from './DebugAsk.svelte';
+    import DebugAsk from './debug/DebugAsk.svelte';
     import LatexAsk from './LatexAsk.svelte';
 </script>
 
 <CommandAsk />
 <DebugAsk />
 <LatexAsk />
+<CloneAsk />
 <AppAsk />
 <AppQuick />

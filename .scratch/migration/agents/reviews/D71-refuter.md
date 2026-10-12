@@ -183,3 +183,189 @@ Cases:
 - The wording of the 16 manifests beyond decision 7's fields: they carry the old entries' text, Axel's data.
 
 Reviewer usage: agent a54fc03776ec8539e, claude-opus-5-5, about 670,000 tokens from the session budget (15,000,000 at start, about 14,330,000 left), about 75 tool uses after a context compaction (the part before it not counted), minutes not measured.
+
+## Repair round 1, refuted (on .agents/worktrees/D71, base 1568cf1ed)
+
+```
+# From the worktree's tools/oculus (Node, macOS). npm run diagrams was not run in the worktree,
+# since it writes the committed diagrams; run in a scratch copy of the worktree, then
+# diff -rq <scratch>/docs/diagrams <worktree>/docs/diagrams  -> prints nothing, exit 0.
+
+npm run test:quick -- --base 1568cf1ed
+  ok ASCII gate (0.6 s) | ok prettier (0.8 s) | ok svelte-kit sync (2.7 s) | ok eslint (2.2 s)
+  ok svelte-check (9.7 s): ... 484 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok vitest (51.5 s)
+  test:quick: 52.3 s (limit 45.0 s); every command passed
+  test:quick: over the time limit
+  (lists integrity.test.ts, keys.test.ts, boundaries.test.ts as test:checks; roots.test.ts,
+   deposit-compare.test.ts, deposit.test.ts as test:slow)
+
+npx vitest run tests/checks --testTimeout 0 --hookTimeout 0
+  Test Files 17 passed (17) | Tests 266 passed (266) | Duration 403.89s
+
+LC_ALL=C perl -ne '...' $(find src tests config -type f ! -name local.yml)   -> prints nothing, exit 0
+sh utils/folder-check.sh                                                     -> exit 0
+sh utils/unused-exports.sh ; diff with D71-base/tools/oculus/unused-exports.txt
+  Unused exports (243) -> (245). Lines added by the step (moves left out):
+  server/git/clone/clone.ts: defaultBranchOf
+  server/git/clone/exclude.ts: BLOCK_START, BLOCK_END, escapedForIgnore, lineOf, withBlock
+  state/workbench/layout/index.ts: ... UNSAVED, layoutKey, unreadKey ...
+  state/workbench/layout/saved/storage.ts: layoutKey, unreadKey
+  state/workbench/palette.ts: ... nameOfAddress
+
+Verbose run of every test file the round changed, plus tests/server/git/clone.test.ts:
+npx vitest run <18 files> --reporter=verbose
+  Test Files 18 passed (18) | Tests 196 passed (196)
+  per file: clone-after 10, clone-exclude 24, clone-rows 17, data/sources/manifests 49,
+  routes/git/clone 23, state/sources/clone 12, workspaces 12, deposit-compare 7, clone-ask 4,
+  git-scan-depth 11, audit 3, usage-sessions 2, server/git/clone 8 (the counts the report gives)
+
+From the worktree root:
+PYTHONDONTWRITEBYTECODE=1 python3 tools/cockpit/build.py --dummy --selftest -> SELFTEST PASS, exit 0
+run.sh's tests other than test_engine.py (test_engine.py runs the real selftest, Z708, and rewrites
+AUDIT_AUTO.md in the worktree, so it was not run):
+  test_pillars_tab 4 OK | test_presentation 5 OK | test_sessions 29 OK | test_sessions_group 24 OK
+  test_sessions_git 19 OK | test_js_modules.js: PASS - 11 modules load in order, 20/20 window.CK exports present
+python3 -c "import yaml,glob; ... + side-projects/finished/*/project.yml + side-projects/research-hub/project.yml ..." -> exit 0
+grep -rn "repos\.yml\|softwareRows\|Coverage.svelte\|views\.code\b\|clone_dir\|cloneSiteOf\|realGit" <check 6 paths> -> nothing, exit 1
+grep -rn "clone_dir\|cloneSiteOf\|realGit\|clone-dir" . (whole worktree, local.yml, node_modules, .scratch excluded) -> nothing
+grep -rn "theaxec\.github\.io/" --include=... . | grep -v "https://\|...\|\.tex"   -> nothing, exit 1
+git diff 1568cf1ed --stat -- src/lib/server/files/fs/ops.ts tests/routes/files/file-undo.test.ts src/lib/server/edit/writes/file-undo.ts -> nothing (the clone_dir follow is gone)
+
+Reruns of the report's evidence:
+npx tsc --noEmit -p .  -> 3 lines, all TS2614 'CardAction' from *.svelte (as the report says)
+diff of side-projects/finished/<key>/project.yml against the pre-round side-projects/<key>/project.yml -> 6 identical
+cat side-projects/research-hub/project.yml -> title, tier personal, type active, chips [building], eli5, next, links,
+  tags [private, research-hub, infrastructure, tex], repository { url https://github.com/TheAxeC/research-hub, visibility private }
+grep of every project.yml under projects/ and side-projects/ for repository: -> 16 files, no url twice; find ... -name .git -> none
+
+The pre-round tree (base copy + agents/reviews/D71-before-round1.patch with its 9 renames, in the scratchpad)
+and the base copy, each with the worktree's test file copied in:
+  usage-sessions.test.ts  base: 2 failed ("expected [ 'my-run', 'plain-run', 'usage-run' ]", "expected [ 'usage-run', 'run-a' ]")
+                          pre-round: 2 passed
+  clone-rows.test.ts      base: 17 failed (TypeError: cloneRows is not a function); pre-round: 7 failed (no 'clone:type' row)
+  workspaces.test.ts      pre-round: 2 failed (cases 38 and 39 as the report quotes), 10 passed
+
+Reviewer probe (a scratch test in a scratch copy of the worktree, git only in temporary repositories):
+syncNested run three times in a row over one hub, block read after each run:
+  hub inside a larger repository (top/sites/hub, nested x/y): [["/sites/hub/x/y/"],[],["/sites/hub/x/y/"]]
+  git -C top/sites/hub check-ignore -v x/y -> ".git/info/exclude:8:/sites/hub/x/y/\tx/y"
+  hub that is a linked worktree: [["/p/q/"],["/p/q/"],["/p/q/"]]
+  hub at the top of its repository: [["/p/"],["/p/"],["/p/"]]
+```
+
+### Verdicts
+
+Items of D71.md's "What to build", over the whole diff since the base:
+
+- 1: holds. layout-workspaces.test.ts and save-turn.test.ts are in the quick run's selection and pass; no code reads `oculus.layout.v1` (grep prints nothing).
+- 2: holds. workspaces.test.ts Close and New rows pass; New leaves the unsaved folders (actions.ts:113, `takesUnsaved` false).
+- 3: holds. usage-sessions.test.ts passes; Proof finding P1 on what its second test shows.
+- 4: holds. deposit-compare.test.ts passes, the upstream count is back (deposit-compare.ts:86-91, DepositCompare.svelte:45-46), `realGit` is gone; ruling 11's comment finding S1 stands against deposit-git.ts.
+- 5: holds. manifests.test.ts placement rows pass; the 16 hub manifests carry no duplicate url and no folder under projects/ or side-projects/ holds a `.git`, so `settle` drops none of them.
+- 6: holds. workspaces.test.ts "writes a repository_scan_depth that is not a whole number as it was written" passes.
+- 7: holds for Clone as rulings 1 to 5 replace it (routes/git/clone.test.ts, state/sources/clone.test.ts); the exclude part is ruling 6's, below.
+- 8: holds as rulings 1, 2, 10 and the addition replace it.
+- 9: holds. Check 6 prints nothing, both repos.yml are gone, the moved manifests are byte-identical; Spec finding S3 on a write outside the path list.
+- 10 (replaced by ruling 6): violated in part, Behaviour B1.
+
+Cases (the brief's, with 18, 19, 21, 24 to 26 and 31 to 35 replaced by D71-round1.md, and 36 to 44 added):
+
+- 1, 2: met, layout-workspaces.test.ts in the passing quick run.
+- 3, 4: met, workspaces.test.ts "Close Workspace ..." and the New Workspace rows (verbose run).
+- 5: not verifiable here; the look at landing settles it.
+- 6: met, usage-sessions.test.ts first test; fails on base as quoted above.
+- 7, 8: met, deposit-compare.test.ts "the diff of a changed file of the sync plan" and "the comparison with origin/main" rows.
+- 9: met, deposit-compare.test.ts "names a project of a scan folder in either placement ..." and "syncs the code folder of the project folder, never the one under .oculus"; `planned.ok` is asserted for every row.
+- 10: met, folder-opener.test.ts in the passing quick run.
+- 11 to 14: met, manifests.test.ts placement rows and hub-folders.test.ts in the passing runs.
+- 15: met by the data: no hub manifest's url is another's and no project folder holds a `.git` (grep and find above); the reader run itself was not rerun (Declined).
+- 16, 17: met, git-scan-depth.test.ts depth rows; workspaces.test.ts and roots.test.ts in the quick run.
+- 18: met, routes/git/clone.test.ts "clones into the project folder of a hub, leaves its project.yml, and the hub git then shows nothing of the clone".
+- 19: met, routes/git/clone.test.ts the two "refuses a repository that tracks ..." rows; state/sources/clone.test.ts "opens the panel again when the server holds files back ..." and "sends nothing when the reader cancels the panel".
+- 20: met, git-scan-depth.test.ts "the repositories cloned for projects ..."; ProjectCard.svelte:139-142 offers Clone only for `clones.length === 0`.
+- 21: met, manifests.test.ts "the address of a repository" and "the clones of a project" rows.
+- 22, 23: met, server/git/clone.test.ts (8 passed) and routes/git/clone.test.ts "refuses an address that does not answer ...".
+- 24: partial. The escaped names, the worktree hub and the no-repository hub are met (clone-exclude.test.ts); the hub inside a larger repository gets the right line once and loses it at the next rewrite, Behaviour B1.
+- 25: met, routes/git/clone.test.ts "clones into <folder>/<name as GitHub gives it>, writes nothing else into it ...", clone-rows.test.ts, state/sources/clone.test.ts "opens the panel at the home folder, clones into the pick and asks what to do".
+- 26: met. Cancel, a non-empty target and Add to Workspace are tested; the Undo half is met by reading only: `add` calls `fs.addRoot` (clone-after.svelte.ts:102), the call Add Folder makes (explorer/ops.svelte.ts:661, fs.svelte.ts:822), and no test asserts the History entry.
+- 27: met, routes/git/clone.test.ts "names gh auth login when ..." rows.
+- 28: met for the data (16 manifests, check 6, both repos.yml gone); real-hub.probe.ts not run (Declined).
+- 29: met by reading, config/layout.yml:67 `[projects, coauthor, archive, personal, software]`, :89 `[venues, data, statements]`.
+- 30: settled by Z708: the dummy selftest passes and run.sh's other tests pass; the real selftest is not this step's.
+- 31: met, clone-exclude.test.ts "has a repository five levels down although the scan depth is 1 ...".
+- 32: met, git-scan-depth.test.ts "is written at the start from the repositories on disk, follows a repository moved with mv ..." (the watcher's own rebuild); see Standards S5 on how it waits.
+- 33: partial, Spec S4: a user line with no final newline gains one at every rewrite.
+- 34: met, clone-exclude.test.ts "keeps a file the hub tracks tracked inside a folder that becomes a repository".
+- 35: met, the same git-scan-depth.test.ts case (start and delete).
+- 36: met, manifests.test.ts "raises no finding for a registry, collection or deck it inherits and does not hold" and "raises the finding for a registry its own sources.yml names ..."; the build passes `from` for the primary hub (portfolio.ts:717).
+- 37: met, manifests.test.ts "a workspace folder whose repository's ..." rows.
+- 38, 39: met, workspaces.test.ts; both fail on the pre-round tree as quoted.
+- 40: met, deposit-compare.test.ts asserts `ahead` 1 and 0.
+- 41 to 43: met, clone-after.test.ts "Open after a clone ..." rows.
+- 44: met, clone-ask.test.ts "offers Open and Add to Workspace and Cancel and no third answer" (Cancel is the close control the ruling allows).
+
+Rulings of D71-round1.md:
+
+- 1: holds. github.ts:122-141 runs `git -C <parent> clone -- <url> <parent>/<name>` and writes nothing; no `project.yml` write anywhere under server/git/clone or the clone route (grep).
+- 2 and the addition (open item 78): holds. CloneAsk.svelte offers Open and Add to Workspace with Cancel; Open closes a workspace file, asks Save, Don't Save or Cancel over unsaved folders, and an empty unsaved workspace is not asked (clone-after.svelte.ts:75-90). Behaviour B2 on the report's visible changes.
+- 3: holds. clone.ts:95-157; the panel starts at `place.dir` (ProjectCard.svelte:258) and reopens on `held` (clone.svelte.ts:104-115).
+- 4: holds. `clone_dir`, `cloneSiteOf` and `realGit` are nowhere; `placeClones` (clones.ts:21-55) with `sameAddress` (origin.ts:70-87).
+- 5: holds within one hub's read (`settle`, manifests.ts:291-325); see Declined on a clone of another hub's project.
+- 6: violated in part, Behaviour B1 (a hub inside a larger repository). The block markers, full-depth walk, start and watcher rewrites, unchanged lines and tracked files hold.
+- 7: holds, `unnamedBy` (data/index.ts:345-355) and its three readers.
+- 8: holds. The six folders are in side-projects/finished/, the website's project.yml is deleted, research-hub's manifest is as ruled, and the website grep prints nothing; Spec S3 on a project.yml edited outside the list.
+- 9: holds (`writtenDepth`, actions.ts:32-51).
+- 10: holds (palette.ts:642-677, clone-rows.test.ts).
+- 11: partial, Standards S1.
+- 12: holds. The four Palette.svelte passages are back (lines 282-283 and the three greps), and the language list is in shell/keys/lists/language-list.svelte.ts; the round removed no comment from Deposit.svelte, deposit.ts or portfolio.ts apart from the head of the removed `syncExclude`.
+- 13: holds. My greps of the removed names and the replaced design's words over HELP.md, DESIGN.md, docs/ and src find no stale sentence; DATA-MAP.md:66, :72, :425, :552, :575, apps.md:324, DESIGN.md:647-648 and HELP.md:236-238 and :472-474 read true.
+- 14: partial, Standards S6.
+- 15, 16, 18, 20, 21: hold (workspaces.test.ts; deposit-compare.ts:86-91; deposit-compare.test.ts; audit/projects.ts diff and audit.test.ts; clone-routes.ts:114 and :129 hold the clone's own folder).
+- 17: holds in code (`takeNewest`, sessions/stores/transcripts.ts:338-353); Proof P1 on its test and its timing.
+- 19: holds. Each hiding claim runs `git status --porcelain -uall -z`, and the moved repository is found through the watcher (git-scan-depth.test.ts:183-212).
+
+### Findings
+
+- **B1 (Behaviour).** src/lib/server/git/clone/exclude.ts:138-143: "resolve(hub, source) === place.file && Number(line) >= own[0] ...". What is wrong: `git check-ignore -v` names the exclude file relative to the repository's top (`.git/info/exclude`, probe above), and the code resolves it against the hub folder. For a hub that is a folder inside a larger repository (`top/sites/hub`) the block's own line is then read as a rule from elsewhere, the repository is left out, and the next rewrite empties the block; the one after writes it again. The probe shows `[["/sites/hub/x/y/"],[],["/sites/hub/x/y/"]]` over three runs, against a stable block for a top-level hub and for a worktree hub. Ruling 6 names this layout. clone-exclude.test.ts "writes lines relative to the top of a larger repository that holds the hub" syncs once only, so it passes. Failure scenario: a hub kept as `sites/hub` of a larger repository with a clone at `sites/hub/x/y`. Every second watcher rebuild leaves the block empty. In that window the larger repository's `git status` lists `?? sites/hub/x/y/`, and an `add -A` records an embedded repository. The exclude file is also rewritten at every rebuild. Fix: resolve `source` against `place.top`, or compare it with the `--git-path` answer. Verdict: ruling 6 and item 10 violated in part, case 24 partial.
+- **P1 (Proof).** Report, "Repair round 1", Cases table, row 17: "usage-sessions.test.ts | passes (behaviour already capped) | passes", under "The unchanged tree is a copy of tools/oculus as at base with each new or changed test file copied in". What is wrong: the claim does not hold on base, where both tests fail (quoted above). The builder's unchanged tree was the pre-round tree for this row and for clone-rows (base: 17 failed on a missing `cloneRows`; pre-round: 7 failed). Two things rest on it. First, the round's change to ruling 17 has no test that fails without it: "do not count towards the cap, and the scan folds no more files than the cap needs" passes on the pre-round tree. Second, the timing quoted (2,000 transcripts, none of them a usage transcript) does not reach the new path. `takeNewest` re-runs `claudeTranscripts` for each pass, and each pass walks and stats every transcript in the window before slicing (transcripts/stores.ts:24-44). So a scan whose newest files include usage transcripts walks the stores two or more times; the cost is not measured. Failure scenario: the refresher's transcripts are among the newest on this machine; every rebuild pays extra full walks, and no quoted number shows how many. Verdict: none (ruling 17 holds by reading).
+- **S1 (Standards).** src/lib/server/git/deposit/deposit-git.ts:26-27: "Nothing here is reachable from a watcher, a timer or the socket: the one caller of its operations is deposit.ts". What is wrong: deposit-compare.ts:18-27 imports and calls `diffCmd`, `fetchCmd`, `logCmd`, `revParse` and `showCmd`. Ruling 11 asks that every comment of the module be made true, :27 by name. Failure scenario: a maintainer who changes one of these operations checks deposit.ts's calls only and breaks Fetch or the `origin/main` comparison. Verdict: ruling 11 partial.
+- **S2 (Standards).** `sh utils/unused-exports.sh` lines above. What is wrong: spec.md "The principles": an export with no importer outside its own file and its tests is removed or made local. The report keeps `defaultBranchOf`, the five exclude.ts names, `layoutKey`, `unreadKey` and `nameOfAddress` "for their tests". Its list also leaves out the three re-exports the step added to state/workbench/layout/index.ts (`UNSAVED`, `layoutKey`, `unreadKey`). Failure scenario: the unused-export list grows with test-only surface, and a reader of the report does not learn of the index.ts lines. Verdict: none.
+- **S3 (Spec).** projects/ideas/tao-of-ecs/project.yml:15 (`next:`) and projects/ideas/tao-of-ecs/README.md:28: "theaxec.github.io/blog/tao-of-ecs/" became "https://theaxec.github.io/blog/tao-of-ecs/". What is wrong: neither line is in "Paths this round writes" (the round names README.md:15 only), and spec.md forbids writing a `project.yml` the brief does not name. The edits make the round's website grep print nothing. The right course was to report that the grep matched a public address. The report discloses the edit. Failure scenario: hub data outside the ruling's list changes under a code step, and a manifest gains a value no ruling asked for. Verdict: none (ruling 8 holds otherwise).
+- **S4 (Spec).** src/lib/server/git/clone/exclude.ts:70 and :82 (`text.replace(/\n$/, '')` ... `.join('\n')}\n`), asserted at clone-exclude.test.ts "keeps the lines of the user above and below the block ..." as `${below}\n`. What is wrong: case 33 and ruling 6 say lines outside the block are kept byte for byte. A file whose last user line has no final newline gains one at the first rewrite. Failure scenario: a user's exclude file ending without a newline is changed outside oculus's block by one byte. Verdict: case 33 partial.
+- **S5 (Standards).** tests/server/git/git-scan-depth.test.ts:5-7: "nothing waits on a timer: a case resumes on the message of the `git` channel that names the repository", against :203, :206 and :210 `await vi.waitFor(..., { timeout: 10000 })`. What is wrong: the head comment is false for the new describe, and spec.md says a test waits on a signal, never a wall-clock margin. Failure scenario: a slow machine fails the case at 10 s with no defect, and a reader trusts the head comment. Verdict: none (case 32 met).
+- **S6 (Standards).** src/lib/server/git/deposit/deposit-routes.ts:8: "// actions that can lose work (commit, push, snapshot, createBranch, switchBranch), a" (85 columns). The next span, "`confirm: true`", fits at exactly 100. What is wrong: ruling 14 names deposit-routes.ts:7, and the paragraph still breaks short. Failure scenario: none in behaviour; the comment reads as unrewrapped. Verdict: ruling 14 partial.
+- **S7 (Spec).** agents/reviews/D71-report.md: the file now begins with "## Repair round 1" and holds nothing else. What is wrong: D71-round1.md says "Append a section 'Repair round 1' to your report at the same path". The round-0 report was replaced. That report held the per-entry test files and titles, the first run of cases 1 to 17, the DONE table per part, the judgment calls and round 0's visible changes. It is in neither the main checkout nor the before-round patch (grep of the patch finds no D71-report.md). The round-1 section also names the entry of cases 41 to 44 only as "the clone and workspace entry" and gives no test titles per entry, which the round asks for. Failure scenario: at landing the orchestrator cannot file the tests under `agents/guarded.md` or read the round-0 visible changes against the look without rebuilding them from the diff. Verdict: none.
+- **S8 (Spec).** Report, "Disclosures": "in this round `git diff --no-index --stat /dev/null /dev/null` once by mistake". What is wrong: D71-round1.md and spec.md "Where you work": the builder runs no git command. Disclosed, and read-only. Failure scenario: none observed. Verdict: none.
+- **B2 (Behaviour).** src/lib/shell/commands/CloneAsk.svelte:38-75 (the Save, Don't Save, Cancel question and the name box, a `Modal` with a `TextInput`). What is wrong: the report's "Visible changes" names only "the Open or Add to Workspace question". The second question and the name box are not described for the look. The name is asked in a box of its own, while the addition says Save "asks the name as `:workspace-save` does". Failure scenario: the look at landing does not open the unsaved-folders path and misses the new box's focus, keys and z-order. Verdict: none.
+
+### Declined to judge
+
+- `npx vitest run --exclude 'tests/checks/**'` (the report's broad run, slow tests included): not rerun. spec.md leaves the slow tests to the landing list, and a slow test may start processes on ports this reviewer may not touch.
+- test:quick over its 45 s limit (52.3 s here): whether the time is the step's needs a timed base run, which was not taken.
+- `tests/data/real-hub.probe.ts` and a reader run over the real hub for cases 15 and 28: the probe reads the accounts the hub's local.yml names, which this reviewer may not open.
+- A workspace folder whose origin is the `repository.url` of a project of a hub other than the primary: `settle` sees only one hub's folders (readHubManifests), so such a folder may be read as a second project. Not probed.
+- A project whose `repository.url` is a local path: `addressKey` returns null for it (origin.ts:70-81), so it never counts as cloned. Ruling 4 defines sameness by host and path, so this is not judged.
+- The look: every DOM press, the question's buttons, the Deposit view, the Software board, the palette rows.
+- `test_engine.py` of run.sh: not run, since it rewrites tools/cockpit/AUDIT_AUTO.md in the worktree and its selftest is settled by Z708.
+- The 9,077-line delta: read in full for the clone, exclude, walk, clones, origin, settle, workspace actions, clone-after, CloneAsk, session scan, deposit-git head, audit and Palette hunks and for the tests named above. The moved files (data/sources/documents/, shell/commands/debug/, shell/keys/lists/file-names and lint-config) were checked as moves: diff against base shows only import lines changed. The svg diagrams were checked by regeneration only.
+
+Reviewer usage: agent id not visible to this reviewer, claude-opus-5-5, about 330,000 tokens (15,000,000 at start, about 14,670,000 left), about 80 tool uses, minutes not measured.
+
+## Closed
+
+- Round 1, B1: fixed at landing in `src/lib/server/git/clone/exclude.ts`: the line git names is resolved against the top of the repository that holds the hub and compared by real path (`realOf(resolve(place.top, source)) === ownFile`), so a hub inside a larger repository keeps its block. The test "writes lines relative to the top of a larger repository that holds the hub" in `tests/server/git/clone-exclude.test.ts` syncs twice; the second sync writes nothing and the block stays.
+- Round 1, P1: fixed at landing in the session scan: each store is listed once and the newest are folded until `maxSessions` are kept, so a store holding more refresher transcripts than the cap still yields the cap's count of real sessions; `gather` lost its cap parameter. `tests/server/sessions` passes (16).
+- Round 1, S1: fixed at landing; the head comment of `deposit-git.ts` names `deposit-compare.ts` and the five operations it calls.
+- Round 1, S2: fixed at landing; the test-only exports are made local (`exclude.ts` five names, `clone.ts` `defaultBranchOf`, `storage.ts` `layoutKey` and `unreadKey`, `palette.ts` `nameOfAddress`) and the tests reach them through `syncNested`, `cloneRows` and the layout fixture's literal keys. `sh utils/unused-exports.sh` adds no name against D71-base.
+- Round 1, S3: fixed at landing; `projects/ideas/tao-of-ecs/project.yml` and `README.md:28` are as at base, and only the path change at `README.md:15` stays.
+- Round 1, S4: fixed at landing; `withBlock` keeps a missing final newline after the block, and the rows of the block table and the test of the user's lines assert the file's own ending.
+- Round 1, S5: fixed at landing; the block test of `git-scan-depth.test.ts` waits on the watcher's write, with no timer.
+- Round 1, S6: fixed at landing; the comment of `deposit-routes.ts` is rewrapped and the comment-width check passes.
+- Round 1, S7: fixed at landing; `agents/reviews/D71-report.md` holds the round-1 section followed by the round-0 report as committed.
+- Round 1, S8: disclosed by the builder; the command was read-only and changed nothing, so nothing is to close.
+- Landing, the gate: the three new test files that run real git (`tests/routes/git/clone.test.ts`, `tests/server/git/clone.test.ts`, `tests/server/git/clone-exclude.test.ts`) carry `// @module-tag slow`, and the describe of `git-scan-depth.test.ts` that runs real git carries `{ tags: ['slow'] }`, as spec.md's test rule says for a test that runs a real process; under load they ran past the 5 s limit of `npm test`.
+- Round 1, B2: closed in the booking, which names the question after a clone (Open or Add to Workspace, then Save, Don't Save or Cancel when the unsaved workspace holds folders, and the name box with the name check `:workspace-save` applies). The look could not reach the question, which follows the macOS folder panel; `tests/state/sources/clone-after.test.ts` and `tests/shell/commands/clone-ask.test.ts` hold it.
+- Landing, the look: the Deposit view said "The snapshot holds no project with the id solo:notes." while its first answer was loading; it now shows `deposit.loading` ("Reading the mirror of {0}...") while `held.loading` is true (`Deposit.svelte`, `config/text/views/boards/deposit.yml`).
+- Landing, the look: the Present page of a hub whose `sources.yml` never names `portfolio_deck` drew "The folder deck is not there." as an error; the deck route now answers `unnamed` for that hub's missing default deck and the page says no deck is set (`server/content/deck/read.ts`, `model-deck.ts`, the deck route, `files/roots.ts`, `present.ts`, HELP.md, G32), with the test 'answers the portfolio deck of a hub that never names it as unnamed when its folder is missing, and a named one as missing' in `tests/routes/docs/deck.test.ts`, red without the fix (`Expected: "unnamed"`, `Received: "missing"`).
+- Landing, the look: the Live HPC view on a hub that names no cluster shows `unreachable` and an error; booked as step D74 (Z855), a change of the HPC float that D71 does not touch.

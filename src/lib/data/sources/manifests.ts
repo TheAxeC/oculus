@@ -3,16 +3,29 @@
 // it. It validates nothing and resolves nothing. Every failure is a Finding; nothing here throws,
 // so one unparseable manifest costs its own record and no more.
 //
-// One reader serves every project: a project of a scan folder and a project of a repository are the
-// same record, and the manifest's own `tier` and `type` say which board and which stage it is on.
-// The folder a project lies in decides neither.
+// One reader serves every project: a project of a scan folder and a project of a workspace folder
+// are the same record, and the manifest's own `tier` and `type` say which board and which stage it
+// is on. The folder a project lies in decides neither.
+//
+// A project is a folder holding `project.yml` at its top or `.oculus/project.yml`, in a scan folder
+// and in a workspace folder alike. A folder holding both is read from its top file and the other is
+// a finding naming both. A folder that is a hub (it holds `.oculus/config/`) is never a project.
+//
+// A folder that is a clone of another project is not a project of its own: when the `origin` of the
+// folder's repository is the `repository.url` of another project read in the same pass, the folder
+// is that project's clone. It is left out with no finding, whichever of the two the walk met first.
 
 import { lstatSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
+import { isMap } from '../helpers/guards.ts';
 import type { Finding, RawManifest, RepositoryRoot, ScanRule } from '../model/index.ts';
-import { MANIFEST, ROOT_FOLDER, entersFolder } from '../helpers/hub-names.ts';
+import { HUB_LAYER, MANIFEST, ROOT_FOLDER, entersFolder } from '../helpers/hub-names.ts';
+import { originOf, sameAddress } from './origin.ts';
 import { errorLine, readYamlMap } from './yaml-file.ts';
+
+/** The folder of a project that holds its code, which is what the deposit mirrors. */
+export const CODE_FOLDER = 'code';
 
 /**
  * The most a project's manifest may hold. Its keys are a few lines each, so a larger file is not
@@ -42,12 +55,36 @@ function mtimeOf(file: string): number | undefined {
     }
 }
 
-function hasManifest(dir: string): boolean {
+/** Whether a path is a file, a link to one included. */
+function isFile(path: string): boolean {
     try {
-        return statSync(join(dir, MANIFEST)).isFile();
+        return statSync(path).isFile();
     } catch {
         return false;
     }
+}
+
+/** Whether a folder is a hub: it holds the hub's `.oculus/config/` folder. */
+export function isHubFolder(dir: string): boolean {
+    return isDir(join(dir, HUB_LAYER));
+}
+
+/** The manifest file of a project folder, and the file it shadows when the folder holds both. */
+export type ProjectFile = { file: string; shadowed: string | null };
+
+/**
+ * The manifest of the project a folder is: its top `project.yml`, else `.oculus/project.yml`, with
+ * the second named as `shadowed` when the folder holds both. Null for a folder that holds neither
+ * and for a hub, which is never a project.
+ */
+export function projectFileIn(dir: string): ProjectFile | null {
+    if (isHubFolder(dir)) return null;
+    const top = join(dir, MANIFEST);
+    const nested = join(dir, ROOT_FOLDER, MANIFEST);
+    const hasTop = isFile(top);
+    const hasNested = isFile(nested);
+    if (hasTop) return { file: top, shadowed: hasNested ? nested : null };
+    return hasNested ? { file: nested, shadowed: null } : null;
 }
 
 /** A folder's place on disk, links followed, or the folder as it is when that cannot be read. */
@@ -77,16 +114,16 @@ function subdirs(dir: string): string[] {
 }
 
 /**
- * Every folder under `base` that holds a project.yml, at any depth, as its path segments from
- * `base`. The walk stops at a project: nothing inside one is a project of its own, which keeps a
- * `code/project.yml` out. A folder with no manifest is a filing folder and is walked through; the
- * first of its segments above a project is the project's category.
+ * Every folder under `base` that is a project, at any depth, as its path segments from `base`. The
+ * walk stops at a project: nothing inside one is a project of its own, which keeps a
+ * `code/project.yml` out. A folder that is no project (a filing folder, or a hub) is walked
+ * through; the first of its segments above a project is the project's category.
  */
 function nestedProjects(base: string, segments: string[] = []): string[][] {
     const found: string[][] = [];
     for (const name of subdirs(join(base, ...segments))) {
         const path = [...segments, name];
-        if (hasManifest(join(base, ...path))) found.push(path);
+        if (projectFileIn(join(base, ...path)) !== null) found.push(path);
         else found.push(...nestedProjects(base, path));
     }
     return found;
@@ -139,13 +176,13 @@ function readManifestFile(file: string, catalog: TextCatalog, findings: Finding[
 }
 
 /**
- * Build one record of the project `id` whose folder is `folder` (hub-relative, or a repository's
- * absolute path) and whose manifest is `file`. Provenance wins over the manifest for `id`; the
- * manifest's own value is kept (`manifestId`) or reported, never silently replaced. Every other
+ * Build one record of the project `id` whose folder is `folder` (hub-relative, or a workspace
+ * folder's absolute path) and whose manifest is `file`. Provenance wins over the manifest for `id`;
+ * the manifest's own value is kept (`manifestId`) or reported, never silently replaced. Every other
  * key, `tier` and `type` among them, is the manifest's as written.
  */
 function record(
-    place: { file: string; folder: string; id: string },
+    place: { file: string; folder: string; id: string; dir: string },
     data: Record<string, unknown>,
     category: string | undefined,
     catalog: TextCatalog,
@@ -171,6 +208,7 @@ function record(
     if (changed !== undefined) built.fileMtime = changed;
     if (category !== undefined) built.category = category;
     if (data.id !== undefined) built.manifestId = data.id;
+    if (isDir(join(place.dir, CODE_FOLDER))) built.codeFolder = true;
     return built;
 }
 
@@ -196,27 +234,103 @@ function claimer(catalog: TextCatalog, findings: Finding[]): (id: string, file: 
 }
 
 /**
- * Read every project.yml the scan rules reach.
- *
- * Each rule's `dir` is walked to any depth. A folder holding a project.yml is a project and is not
- * walked further, the scan folder itself included; a folder with none is a filing folder, so no
- * record is made for it. The first folder under the scan folder is the project's `category` when
- * the project lies deeper than one level. A manifest reached by two rules is read once. A manifest
- * that does not parse, or parses to something other than a map, is a finding and no record. A
- * missing scan directory is a finding unless the rule is `optional`. A project whose id an earlier
- * one holds is a finding and is not read; the scan folders count in the order listed and the
- * folders of one in name order. Records come back sorted by `folder`, so two runs on one tree agree
- * byte for byte.
+ * Note a folder that holds both manifests: the top `project.yml` is read, and the finding on the
+ * `.oculus/project.yml` names both files.
  */
-export function readManifests(
+function noteShadowed(placed: ProjectFile, catalog: TextCatalog, findings: Finding[]): void {
+    if (placed.shadowed === null) return;
+    findings.push({
+        file: placed.shadowed,
+        key: '',
+        message: findingText(catalog, 'findings.manifests.both_files', placed.file, placed.shadowed)
+    });
+}
+
+/**
+ * A project folder found by a walk and read, before its id is claimed. `findings` are what reading
+ * it raised, which are kept only when the folder is a project of its own. `root` is set on the
+ * folder of a workspace.
+ */
+type Found = {
+    file: string;
+    folder: string;
+    id: string;
+    dir: string;
+    category?: string;
+    root?: RepositoryRoot;
+    data: Record<string, unknown> | null;
+    findings: Finding[];
+};
+
+/** The folder at `dir` read as a project: its manifest, and the findings that reading raised. */
+function foundAt(
+    placed: ProjectFile,
+    place: { folder: string; id: string; dir: string; category?: string; root?: RepositoryRoot },
+    catalog: TextCatalog
+): Found {
+    const findings: Finding[] = [];
+    noteShadowed(placed, catalog, findings);
+    const read = readManifestFile(placed.file, catalog, findings);
+    return { ...place, file: placed.file, data: read.kind === 'map' ? read.data : null, findings };
+}
+
+/** The `repository.url` a manifest holds, or null. */
+function urlOf(data: Record<string, unknown> | null): string | null {
+    const block = data?.repository;
+    const url = isMap(block) ? block.url : undefined;
+    return typeof url === 'string' && url.trim() !== '' ? url : null;
+}
+
+/**
+ * The projects among the folders found, in the order found: a folder whose repository's `origin` is
+ * the `repository.url` of another folder found is that project's clone and is left out, with its
+ * findings. Two folders that are clones of each other's address are two clones of one repository,
+ * and the one found first stays. Each project that stays is claimed under its id and made a record;
+ * an id an earlier project holds is a finding and the project is not read.
+ */
+function settle(
+    found: Found[],
+    claim: (id: string, file: string) => boolean,
+    catalog: TextCatalog,
+    findings: Finding[]
+): RawManifest[] {
+    const urls = found.map((one) => urlOf(one.data));
+    const origins = found.map((one) => originOf(one.dir));
+    const cloneOf = (at: number): boolean => {
+        const origin = origins[at];
+        if (origin === null) return false;
+        return urls.some((url, other) => {
+            if (other === at || url === null || !sameAddress(url, origin)) return false;
+            const own = urls[at];
+            const mutual =
+                own !== null && origins[other] !== null && sameAddress(own, origins[other]);
+            return !mutual || other < at;
+        });
+    };
+    const manifests: RawManifest[] = [];
+    found.forEach((one, at) => {
+        if (cloneOf(at)) return;
+        findings.push(...one.findings);
+        if (one.data === null || !claim(one.id, one.file)) return;
+        const place = { file: one.file, folder: one.folder, id: one.id, dir: one.dir };
+        const project = record(place, one.data, one.category, catalog, findings);
+        manifests.push(
+            one.root === undefined
+                ? project
+                : { ...project, workspaceFolder: { root: one.root.key, dir: one.root.dir } }
+        );
+    });
+    return manifests;
+}
+
+/** The project folders the scan rules reach, read in the order the walk meets them. */
+function scanned(
     hub: string,
     scan: ScanRule[],
     catalog: TextCatalog,
-    claim?: (id: string, file: string) => boolean
-): { manifests: RawManifest[]; findings: Finding[] } {
-    const manifests: RawManifest[] = [];
-    const findings: Finding[] = [];
-    const take = claim ?? claimer(catalog, findings);
+    findings: Finding[]
+): Found[] {
+    const found: Found[] = [];
     const reached = new Set<string>();
 
     for (const rule of scan) {
@@ -232,59 +346,76 @@ export function readManifests(
             continue;
         }
 
-        const paths: string[][] = hasManifest(base) ? [[]] : nestedProjects(base);
+        const paths: string[][] = projectFileIn(base) !== null ? [[]] : nestedProjects(base);
         for (const segments of paths) {
             const folderPath = join(base, ...segments);
             const place = placeOf(folderPath);
             if (reached.has(place)) continue;
             reached.add(place);
-            const file = join(folderPath, MANIFEST);
-            const read = readManifestFile(file, catalog, findings);
-            if (read.kind !== 'map') continue;
+            const placed = projectFileIn(folderPath);
+            if (placed === null) continue;
+            const category = segments.length > 1 ? segments[0] : undefined;
             const folder = hubPath(hub, folderPath);
             const id = basename(folderPath);
-            if (!take(id, file)) continue;
-            const category = segments.length > 1 ? segments[0] : undefined;
-            manifests.push(record({ file, folder, id }, read.data, category, catalog, findings));
+            found.push(foundAt(placed, { folder, id, dir: folderPath, category }, catalog));
         }
     }
+    return found;
+}
 
+/**
+ * Read every project manifest the scan rules reach.
+ *
+ * Each rule's `dir` is walked to any depth. A folder that is a project (it holds `project.yml` at
+ * its top or `.oculus/project.yml`, and is no hub) is not walked further, the scan folder itself
+ * included; a folder that is none is a filing folder, so no record is made for it. The first folder
+ * under the scan folder is the project's `category` when the project lies deeper than one level. A
+ * manifest reached by two rules is read once. A manifest that does not parse, or parses to
+ * something other than a map, is a finding and no record. A missing scan directory is a finding
+ * unless the rule is `optional`. A project whose id an earlier one holds is a finding and is not
+ * read; the scan folders count in the order listed and the folders of one in name order. A folder
+ * that is a clone of another project is no project (see `settle`). Records come back sorted by
+ * `folder`, so two runs on one tree agree byte for byte.
+ */
+export function readManifests(
+    hub: string,
+    scan: ScanRule[],
+    catalog: TextCatalog,
+    claim?: (id: string, file: string) => boolean
+): { manifests: RawManifest[]; findings: Finding[] } {
+    const findings: Finding[] = [];
+    const found = scanned(hub, scan, catalog, findings);
+    const manifests = settle(found, claim ?? claimer(catalog, findings), catalog, findings);
     manifests.sort((a, b) => (a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0));
     findings.sort((a, b) => `${a.file}\0${a.key}`.localeCompare(`${b.file}\0${b.key}`));
     return { manifests, findings };
 }
 
 /**
- * The projects of the repositories the roots name, one per root whose `.oculus/project.yml` is
- * there: a root without one, or whose directory is not on this machine, is no project and no
- * finding. The record is a scan project's, read from the same kind of file under the same checks,
- * with the root's key for its id and `repository` naming the root and its folder.
+ * The project folders of the workspace the roots name, one per root that is a project: a root
+ * without a manifest, or whose directory is not on this machine, is no project and no finding. The
+ * record is a scan project's, read from the same kind of file under the same checks, with the
+ * root's key for its id and `workspaceFolder` naming the root and its folder.
  */
-function repositoryManifests(
-    roots: RepositoryRoot[],
-    catalog: TextCatalog,
-    claim: (id: string, file: string) => boolean,
-    findings: Finding[]
-): RawManifest[] {
-    const manifests: RawManifest[] = [];
+function workspaceFound(roots: RepositoryRoot[], catalog: TextCatalog): Found[] {
+    const found: Found[] = [];
     for (const root of roots) {
-        const file = join(root.dir, ROOT_FOLDER, MANIFEST);
-        const read = readManifestFile(file, catalog, findings);
-        if (read.kind !== 'map') continue;
-        if (!claim(root.key, file)) continue;
-        const place = { file, folder: root.dir, id: root.key };
-        const project = record(place, read.data, undefined, catalog, findings);
-        manifests.push({ ...project, repository: { root: root.key, dir: root.dir } });
+        const placed = projectFileIn(root.dir);
+        if (placed === null) continue;
+        found.push(
+            foundAt(placed, { folder: root.dir, id: root.key, dir: root.dir, root }, catalog)
+        );
     }
-    return manifests;
+    return found;
 }
 
 /**
- * Every project manifest of the primary hub: the scan folders' (`readManifests`) and those of the
- * project folders of the workspace (`repositoryManifests`). It is the one reader of the primary
- * hub's projects, so the build and every reader that finds a project to read or write it see the
- * same set. The scan folders are read before the project folders, so a project folder whose name a
- * scan project holds is the one that is not read.
+ * Every project manifest of the primary hub: the scan folders' and those of the project folders of
+ * the workspace. It is the one reader of the primary hub's projects, so the build and every reader
+ * that finds a project to read or write it see the same set. The scan folders are read before the
+ * project folders, so a project folder whose name a scan project holds is the one that is not read;
+ * a project folder that is a clone of a project of the scan folders is not read either, and raises
+ * no finding (see `settle`).
  */
 export function readHubManifests(
     hub: string,
@@ -293,21 +424,22 @@ export function readHubManifests(
     catalog: TextCatalog
 ): { manifests: RawManifest[]; findings: Finding[] } {
     const findings: Finding[] = [];
-    const claim = claimer(catalog, findings);
-    const folders = readManifests(hub, scan, catalog, claim);
-    const repositories = repositoryManifests(roots, catalog, claim, findings);
-    findings.push(...folders.findings);
+    const found = [...scanned(hub, scan, catalog, findings), ...workspaceFound(roots, catalog)];
+    const manifests = settle(found, claimer(catalog, findings), catalog, findings);
+    const inScan = manifests.filter((one) => one.workspaceFolder === undefined);
+    inScan.sort((a, b) => (a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0));
+    const inWorkspace = manifests.filter((one) => one.workspaceFolder !== undefined);
     findings.sort((a, b) => `${a.file}\0${a.key}`.localeCompare(`${b.file}\0${b.key}`));
-    return { manifests: [...folders.manifests, ...repositories], findings };
+    return { manifests: [...inScan, ...inWorkspace], findings };
 }
 
 /**
- * The absolute folder of a manifest's project: the repository the project is read from, or the
- * hub-relative `folder` under the hub.
+ * The absolute folder of a manifest's project: the workspace folder the project is read from, or
+ * the hub-relative `folder` under the hub.
  */
 export function manifestDir(
     hub: string,
-    manifest: Pick<RawManifest, 'folder' | 'repository'>
+    manifest: Pick<RawManifest, 'folder' | 'workspaceFolder'>
 ): string {
-    return manifest.repository?.dir ?? join(hub, manifest.folder);
+    return manifest.workspaceFolder?.dir ?? join(hub, manifest.folder);
 }

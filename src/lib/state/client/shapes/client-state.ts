@@ -52,6 +52,7 @@ import type { WorkspaceSymbolsStore } from '../../system/machine/lsp/workspace-s
 import type { LspStore } from '../../system/machine/lsp/lsp.svelte.ts';
 import type { ReferencesStore } from '../../system/machine/lsp/references.svelte.ts';
 import type { SelectorsStore } from '../selectors.svelte.ts';
+import type { CloneStore } from '../../sources/clone/clone.svelte.ts';
 import type { SocketStore } from '../socket.svelte.ts';
 import type { AutosaveStore } from '../../sessions/source/autosave.svelte.ts';
 import type { SourceStore } from '../../sessions/source/source.svelte.ts';
@@ -140,6 +141,8 @@ export type ClientState = {
     folders: FolderPages;
     usageRefresh: UsageRefreshStore;
     selectors: SelectorsStore;
+    /** Cloning the repository of a project, and a repository of the reader's GitHub account. */
+    clone: CloneStore;
     railBadges: RailBadgesStore;
     paletteSource: PaletteSourceStore;
     /** What each source tab says of its text, for the status bar, and what the bar asks of it. */

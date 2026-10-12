@@ -27,7 +27,10 @@ export type RollupBucket = { id: string; label: string; keys: string[]; color: s
 
 /** What one board is, as the config describes it. */
 export type BoardPreset = {
-    /** The view id this preset belongs to: `projects`, `coauthor`, `archive` or `personal`. */
+    /**
+     * The view id this preset belongs to: `projects`, `coauthor`, `archive`, `personal` or
+     * `software`.
+     */
     id: string;
     /** The tiers whose projects the board shows. */
     tiers: Tier[];
@@ -185,15 +188,15 @@ export type QuickFilters = {
 };
 
 /**
- * The four boards and the tier each one shows. A view id outside this map is the first board, and
- * a tier no board names has no board: a software project is reached from the Code view and its own
- * tab rather than from a card list.
+ * The five boards and the tier each one shows. A view id outside this map is the first board, and a
+ * tier no board names has no board.
  */
 const TIERS: Record<string, Tier[]> = {
     projects: ['projects'],
     coauthor: ['coauthor'],
     archive: ['archive'],
-    personal: ['personal']
+    personal: ['personal'],
+    software: ['software']
 };
 
 /** The board view ids, in the order presetFor knows them. A project of a board tier sits on one. */
@@ -204,13 +207,15 @@ const COLUMN_KEY: Record<string, string> = {
     projects: 'cols_project',
     personal: 'cols_project',
     archive: 'cols_archive',
-    coauthor: 'cols_archive'
+    coauthor: 'cols_archive',
+    software: 'cols_software'
 };
 
 /** The cells each column list holds, in the order the words of `board:` are written in. */
 const COLUMNS: Record<string, string[]> = {
     cols_project: ['title', 'authors', 'venue', 'status', 'focus', 'next'],
-    cols_archive: ['title', 'authors', 'venue', 'domain', 'pillar', 'funding']
+    cols_archive: ['title', 'authors', 'venue', 'domain', 'pillar', 'funding'],
+    cols_software: ['title', 'authors', 'venue', 'domain', 'pillar', 'funding']
 };
 
 /** Which `*_label_mode` of config/layout.yml a board starts in. */
@@ -218,7 +223,8 @@ const LABEL_KEY: Record<string, string> = {
     projects: 'project_label_mode',
     personal: 'project_label_mode',
     archive: 'archive_label_mode',
-    coauthor: 'archive_label_mode'
+    coauthor: 'archive_label_mode',
+    software: 'project_label_mode'
 };
 
 /** The board every unknown view id falls back to. */

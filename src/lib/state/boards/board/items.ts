@@ -79,6 +79,7 @@ function haystack(project: Project, item: Omit<BoardItem, 'haystack'>): string {
         item.venue?.text ?? project.venue ?? '',
         ...project.results,
         ...project.ideas,
+        ...(project.tags ?? []),
         ...tags.map((tag) => tag.id),
         ...tags.map((tag) => tag.label)
     ];

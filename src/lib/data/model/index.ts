@@ -53,14 +53,14 @@ export type RawPortfolio = {
     manifests: RawManifest[];
     registries: Record<RegistryName, RawRegistry>;
     collections: Record<string, RawCollection>;
-    /** What the four feed files hold, from sources/feeds.ts. */
+    /** What the four feed files hold, from sources/documents/feeds.ts. */
     feeds: RawFeeds;
     /** registries/career.yml as it was parsed, and null when the hub holds no such file. */
     career: Record<string, unknown> | null;
     /**
-     * Which documents each project folder holds, by project id, from sources/docs.ts. It is here
-     * rather than on the manifest record because no manifest key says it: it is read from the
-     * folder, and a reader that put it on the record would be adding a key no schema names.
+     * Which documents each project folder holds, by project id, from sources/documents/docs.ts. It
+     * is here rather than on the manifest record because no manifest key says it: it is read from
+     * the folder, and a reader that put it on the record would be adding a key no schema names.
      */
     docs: Record<Id, DocPresence[]>;
     /**
@@ -104,10 +104,10 @@ export type ValidationRules = {
 export type PortfolioConfig = {
     scan: ScanRule[];
     /**
-     * The repositories this hub reads as projects, one `.oculus/project.yml` each: the folders of
-     * the workspace that can be projects. The server sets them for the primary hub
-     * (server/files/roots.ts, `primaryConfig`); a hub built without them, a second hub among them,
-     * reads none.
+     * The workspace folders this hub reads as projects, one `project.yml` or `.oculus/project.yml`
+     * each: the folders of the workspace that can be projects. The server sets them for the primary
+     * hub (server/files/roots.ts, `primaryConfig`); a hub built without them, a second hub among
+     * them, reads none.
      */
     repositories: RepositoryRoot[];
     /** The folder a new project of each tier is made in, `new_project_dir:` of sources.yml. */
@@ -134,6 +134,14 @@ export type PortfolioConfig = {
     tagTones: Record<string, string>;
     /** The keys of the `domains:` of vocab.yml, which a project's `domain:` is checked against. */
     domains: string[];
+    /**
+     * What the hub's own `.oculus/config/` layer does not name, so that its value came from the
+     * engine's defaults: the registries whose `*_file` key is absent from it, whether the
+     * `collections:` list is, and whether `portfolio_deck:` is. A hub reports only what it names,
+     * so a file in this list that is missing is no finding. Absent for a config read without
+     * knowing where each key came from, where every file counts as named.
+     */
+    unnamed?: { registries: RegistryName[]; collections: boolean; deck: boolean };
     /**
      * The flat text catalog of the merged config, which the readers and the validation rules word
      * their findings from.
@@ -442,6 +450,7 @@ export type {
     RegistryFiles,
     RegistryMeta,
     RegistryName,
+    RepositoryBlock,
     RepositoryRoot,
     Reproduced,
     Resource,
@@ -481,6 +490,8 @@ export type {
     SchemaField,
     When
 } from './model-collections.ts';
+
+export type { GithubListing, GithubRepo } from './accounts/model-github.ts';
 
 export type {
     AccountProvider,

@@ -498,6 +498,7 @@ const SHELL_STORES = [
     'schedule',
     'lsp',
     'lint',
+    'clone',
     'lspEdits',
     'debug',
     'workspaceSymbols',

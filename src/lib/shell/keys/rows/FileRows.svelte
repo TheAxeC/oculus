@@ -11,7 +11,7 @@
     // its no-match sentence, until the newest query is answered.
 
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
-    import type { FileNames } from '$lib/shell/keys/file-names.svelte';
+    import type { FileNames } from '$lib/shell/keys/lists/file-names.svelte';
     import { fileValue, type FileEntry, type FileMatch } from '$lib/state/workbench/palette';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

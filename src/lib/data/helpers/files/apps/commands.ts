@@ -26,6 +26,9 @@ const CLOSED_COMMANDS: readonly string[] = [
     'oculus.update',
     'oculus.workspace',
     'oculus.workspace-save',
+    'oculus.workspace-new',
+    'oculus.workspace-close',
+    'oculus.clone',
     'oculus.folder',
     'oculus.accent',
     'oculus.help'

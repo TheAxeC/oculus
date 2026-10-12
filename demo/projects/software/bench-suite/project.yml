@@ -1,0 +1,8 @@
+title: "bench-suite"
+tier: software
+type: software
+eli5: "Reproducible benchmark harness (finished, archived after the paper shipped)"
+tags: [benchmark, reproducibility, python]
+related: [early-benchmark]
+repository:
+  url: "https://example.org/bench-suite"

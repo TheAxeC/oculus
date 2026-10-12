@@ -224,8 +224,12 @@ export type DeckOrderEntry = {
     title: string;
 };
 
-/** Why a deck draws nothing, or `ok` when it draws slides. */
-export type DeckState = 'ok' | 'empty' | 'no_file' | 'unreadable' | 'missing';
+/**
+ * Why a deck draws nothing, or `ok` when it draws slides. `unnamed` is the portfolio deck of a hub
+ * whose own `sources.yml` does not name `portfolio_deck`, when the engine's default folder is not
+ * in that hub: the hub never asked for a deck, so its absence is no failure.
+ */
+export type DeckState = 'ok' | 'empty' | 'no_file' | 'unreadable' | 'missing' | 'unnamed';
 
 /**
  * One deck as the deck route answers it: the slides in order, the groups with their members, and

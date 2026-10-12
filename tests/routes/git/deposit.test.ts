@@ -1,6 +1,6 @@
 // Layer 2, route tests. What the /api/deposit route answers. The route itself is two lines handing
-// the request to lib/server/git/deposit-routes.ts with the token ServerContext minted, which is
-// what this calls.
+// the request to lib/server/git/deposit/deposit-routes.ts with the token ServerContext minted,
+// which is what this calls.
 //
 // Nothing here runs git or `gh`: the handler takes the operations and the known ids as options, and
 // every case hands it a stub the test owns, so no repository is opened and no file is written
@@ -10,8 +10,11 @@
 
 import { describe, expect } from 'vitest';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { handleDeposit } from '../../../src/lib/server/git/deposit-routes.ts';
-import type { DepositOptions } from '../../../src/lib/server/git/deposit-routes.ts';
+import {
+    handleDeposit,
+    handleDepositState
+} from '../../../src/lib/server/git/deposit/deposit-routes.ts';
+import type { DepositOptions } from '../../../src/lib/server/git/deposit/deposit-routes.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { contextFixture } from '../../server/root/context-fixture.ts';
@@ -76,5 +79,61 @@ describe('the deposit endpoint', () => {
             error: 'This action needs the page to confirm it'
         });
         expect(ran).toEqual([]);
+    });
+});
+
+describe('the deposit endpoint, Fetch and the texts of a file', () => {
+    it('runs Fetch without a confirm', async () => {
+        const into = options();
+        const response = await handleDeposit(request({ action: 'fetch', id: ID }), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(ran).toEqual([
+            { action: 'fetch', id: ID, fields: expect.any(Object) as Record<string, unknown> }
+        ]);
+    });
+
+    it('answers the two texts of a file for a known project', async () => {
+        const asked: string[][] = [];
+        const into = options({
+            textsFor: (id, against, path) => {
+                asked.push([id, against, path]);
+                return Promise.resolve({
+                    ok: true,
+                    output: '',
+                    error: '',
+                    texts: { original: 'one\n', modified: 'two\n' }
+                });
+            }
+        });
+        const response = await handleDepositState(
+            new Request(`${URL_}?id=${ID}&against=main&path=a.py`, { headers: { host: HOST } }),
+            into
+        );
+        expect(await response.json()).toEqual({ ok: true, original: 'one\n', modified: 'two\n' });
+        expect(asked).toEqual([[ID, 'main', 'a.py']]);
+    });
+
+    it('refuses the texts of a file for a project that is not known', async () => {
+        const into = options({
+            textsFor: () => Promise.reject(new Error('asked'))
+        });
+        const response = await handleDepositState(
+            new Request(`${URL_}?id=other&against=main&path=a.py`, { headers: { host: HOST } }),
+            into
+        );
+        expect(response.status).toBe(404);
+    });
+
+    it('says why the texts of a file were refused', async () => {
+        const into = options({
+            textsFor: () =>
+                Promise.resolve({ ok: false, output: '', error: 'Not listed', texts: null })
+        });
+        const response = await handleDepositState(
+            new Request(`${URL_}?id=${ID}&against=plan&path=x`, { headers: { host: HOST } }),
+            into
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error: 'Not listed' });
     });
 });

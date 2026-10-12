@@ -3,7 +3,7 @@
 // the DOM.
 
 import { panes } from '../../../../src/lib/state/workbench/layout/index.ts';
-import { LAYOUT_KEY } from '../../../../src/lib/state/workbench/layout.svelte.ts';
+import type { LayoutStore } from '../../../../src/lib/state/workbench/layout.svelte.ts';
 import type {
     Float,
     FloatPlace,
@@ -15,6 +15,19 @@ import type {
     Pane,
     Workbench
 } from '../../../../src/lib/state/workbench/layout/index.ts';
+
+/** The identity of the workspace that has no file, as the stored keys name it. */
+export const UNSAVED = 'unsaved';
+
+/** The key the arrangement of a workspace is stored under in the browser. */
+export function layoutKey(identity: string): string {
+    return `oculus.layout.workspace:${identity}`;
+}
+
+/** The key a copy of an arrangement that could not be read is kept under. */
+export function unreadKey(identity: string): string {
+    return `oculus.layout.unread:${identity}`;
+}
 
 export function instance(id: string, view = 'projects'): Instance {
     return { id, view, state: null };
@@ -74,8 +87,8 @@ export function viewsOf(tree: Layout): string[] {
 }
 
 /** A fake Storage: what the store needs of one, and a window on what it wrote. */
-export function fakeStorage(seed?: string) {
-    const held: Record<string, string> = seed === undefined ? {} : { [LAYOUT_KEY]: seed };
+export function fakeStorage(seed?: string, identity: string = UNSAVED) {
+    const held: Record<string, string> = seed === undefined ? {} : { [layoutKey(identity)]: seed };
     return {
         held,
         getItem: (key: string): string | null => held[key] ?? null,
@@ -83,4 +96,17 @@ export function fakeStorage(seed?: string) {
             held[key] = value;
         }
     };
+}
+
+/**
+ * Load a layout store over a storage and open the workspace with this identity in it, which is what
+ * a page does once the workspace answer has come. Answers whether a saved arrangement was read.
+ */
+export function openLayout(
+    layout: Pick<LayoutStore, 'loadLayout' | 'workspaceOpened'>,
+    storage: ReturnType<typeof fakeStorage>,
+    identity: string = UNSAVED
+): boolean {
+    layout.loadLayout(storage);
+    return layout.workspaceOpened(identity);
 }

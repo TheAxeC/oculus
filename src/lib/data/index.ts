@@ -5,6 +5,7 @@
 // Server side only, because the sources read the filesystem. What comes back is JSON-safe and is
 // what the socket carries; the caller owns the version number and increments it on every rebuild.
 
+import { existsSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { z } from 'zod';
 import { isMap, str, strings } from './helpers/guards.ts';
@@ -13,11 +14,19 @@ import { filledTextShape, keysOfShape, readAs, readOr, rowsShape } from './shape
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
-import { readCareer } from './sources/career.ts';
-import { feedItems, readFeeds } from './sources/feeds.ts';
-import { projectDocs } from './sources/docs.ts';
+import { readCareer } from './sources/documents/career.ts';
+import { feedItems, readFeeds } from './sources/documents/feeds.ts';
+import { projectDocs } from './sources/documents/docs.ts';
 import { findingText, type TextCatalog } from './helpers/finding-text.ts';
-import { CAREER_FILE, TIERS, folderOf, hubLayerPath, inScan, tierOf } from './helpers/hub-names.ts';
+import {
+    CAREER_FILE,
+    TIERS,
+    folderOf,
+    fromHubLayer,
+    hubLayerPath,
+    inScan,
+    tierOf
+} from './helpers/hub-names.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
 import { loadConfig, textCatalog } from './sources/config.ts';
@@ -263,7 +272,10 @@ const pathShape = z.string();
  * moved on in one place still builds. The text catalog travels with it, since every reader words
  * its findings from config/text/findings.yml.
  */
-export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioConfig {
+export function portfolioConfigFrom(
+    merged: Record<string, unknown>,
+    from?: Readonly<Partial<Record<string, string>>>
+): PortfolioConfig {
     const path = (key: string, fallback: string): string =>
         readOr(pathShape, merged[key], fallback);
     const collections = collectionFiles(merged.collections);
@@ -293,6 +305,7 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
     return {
         scan,
         repositories: [],
+        ...(from === undefined ? {} : { unnamed: unnamedBy(from) }),
         newProjectDir: newProjectDirs(merged.new_project_dir, scan, '', text).dirs,
         registries,
         collections,
@@ -307,6 +320,37 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
         domains: readOr(keysOfShape, merged.domains, []),
         text
     };
+}
+
+/** The `*_file` key each registry is named by; funding is named by the `collections:` list. */
+const REGISTRY_KEYS: Partial<Record<RegistryName, string>> = {
+    venues: 'venues_file',
+    datasets: 'datasets_file',
+    pillars: 'pillars_file',
+    domains: 'domains_file',
+    people: 'people_file',
+    organisations: 'organisations_file',
+    resources: 'resources_file'
+};
+
+/** Whether the hub's own config layer holds a key, by the `from` that loadConfig returned. */
+function named(from: Readonly<Partial<Record<string, string>>>, key: string): boolean {
+    const file = from[key];
+    return file !== undefined && fromHubLayer(file);
+}
+
+/**
+ * What the hub's own config layer leaves to the engine's defaults, see `PortfolioConfig.unnamed`.
+ */
+function unnamedBy(
+    from: Readonly<Partial<Record<string, string>>>
+): NonNullable<PortfolioConfig['unnamed']> {
+    const registries = (Object.keys(REGISTRY_KEYS) as RegistryName[]).filter(
+        (name) => !named(from, REGISTRY_KEYS[name] ?? '')
+    );
+    const collections = !named(from, 'collections');
+    if (collections) registries.push('funding');
+    return { registries, collections, deck: !named(from, 'portfolio_deck') };
 }
 
 /**
@@ -331,7 +375,8 @@ function deckProjects(manifests: RawManifest[]): DeckProject[] {
             short: str(manifest.short) ?? '',
             title: str(manifest.title) ?? manifest.id
         };
-        if (manifest.repository !== undefined) project.repository = manifest.repository;
+        if (manifest.workspaceFolder !== undefined)
+            project.workspaceFolder = manifest.workspaceFolder;
         const tier = tierOf(manifest.tier);
         if (tier !== undefined) project.tier = tier;
         const type = str(manifest.type);
@@ -359,7 +404,12 @@ function decks(
     });
     const found: Record<Id, RawDeck> = {};
     for (const one of reader.projectDecks()) found[one.id] = { path: one.path, tags: one.tags };
-    if (config.portfolioDeck !== null) reader.read(root, config.portfolioDeck);
+    if (config.portfolioDeck !== null) {
+        const deck = join(hub, config.portfolioDeck);
+        if (!(config.unnamed?.deck === true && !existsSync(deck))) {
+            reader.read(root, config.portfolioDeck);
+        }
+    }
     return { decks: found, findings: reader.findings() };
 }
 
@@ -386,14 +436,14 @@ function configFolder(engine: EngineConfigIn | null): EngineConfigFolder | null 
  * Read the hub, check what was read, and hand back the snapshot with the schemas the check used.
  * The steps are the modules: the sources say what is on disk, validate and the schemas say what is
  * wrong with it, and normalise turns it into the wire model with the findings carried inside it.
- * `roots` are the directories whose `.oculus/project.yml` is read, as handed, each a project of the
- * hub (`readHubManifests`); `repositoriesOf` of server/files/roots.ts decides which roots of the
- * file browser they are. `checker` keeps the compiled validators from one build to the next, so a
- * rebuild whose schemas did not change compiles nothing. `engine` is oculus's own config folder and
- * the workspace folders that hold it, whose files that carry a reference are indexed beside the
- * hub's and governed by schema where the workspace holds them; none when it is null. `root` is the
- * name of the workspace folder the hub's files are named under; the folder's base name when it is
- * not given.
+ * `roots` are the directories whose `project.yml` or `.oculus/project.yml` is read, as handed, each
+ * a project of the hub (`readHubManifests`); `repositoriesOf` of server/files/roots.ts decides
+ * which roots of the file browser they are. `checker` keeps the compiled validators from one build
+ * to the next, so a rebuild whose schemas did not change compiles nothing. `engine` is oculus's own
+ * config folder and the workspace folders that hold it, whose files that carry a reference are
+ * indexed beside the hub's and governed by schema where the workspace holds them; none when it is
+ * null. `root` is the name of the workspace folder the hub's files are named under; the folder's
+ * base name when it is not given.
  */
 export function buildPortfolioWithSchemas(
     hub: string,
@@ -405,8 +455,18 @@ export function buildPortfolioWithSchemas(
     root: string = basename(hub)
 ): PortfolioBuild {
     const manifests = readHubManifests(hub, config.scan, roots, config.text);
-    const registries = readRegistries(hub, config.registries, config.text);
-    const collections = readCollections(hub, config.collections, config.text);
+    const registries = readRegistries(
+        hub,
+        config.registries,
+        config.text,
+        config.unnamed?.registries
+    );
+    const collections = readCollections(
+        hub,
+        config.collections,
+        config.text,
+        config.unnamed?.collections ?? false
+    );
     const feeds = readFeeds(hub, config.feeds, config.text);
     const career =
         config.career === null
@@ -514,8 +574,8 @@ export type OtherHub = HubRoot & { portfolio: PortfolioConfig; findings: Finding
 
 /** The settings of a hub other than the primary. */
 export function readOtherHub(engine: string, root: HubRoot): OtherHub {
-    const { config, findings } = loadConfig(engine, { hub: root.dir });
-    const portfolio = { ...portfolioConfigFrom(config), career: null, portfolioDeck: null };
+    const { config, findings, from } = loadConfig(engine, { hub: root.dir });
+    const portfolio = { ...portfolioConfigFrom(config, from), career: null, portfolioDeck: null };
     const sources = join(root.dir, hubLayerPath('sources.yml'));
     return {
         ...root,

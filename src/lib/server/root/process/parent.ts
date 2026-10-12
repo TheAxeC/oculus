@@ -5,8 +5,9 @@
 //
 // The server says `listening` on every listen of the http server (the first one and each move of
 // the port), `failed` when the first listen fails, and `pick-folders` when the reader asks for a
-// folder panel. The host answers a `pick-folders` with a `picked` carrying the same id and either
-// the chosen paths, `cancelled`, or `failed`.
+// folder panel, with the folder to open at and whether one folder is wanted. The host answers a
+// `pick-folders` with a `picked` carrying the same id and either the chosen paths, `cancelled`, or
+// `failed`.
 //
 // `HEALTH_BODY` is what `GET /api/health` answers. The host asks that route on a port that refused
 // the server, so a port held by an oculus is told from a port held by another program.
@@ -18,7 +19,7 @@ export const HEALTH_BODY = { app: 'oculus' } as const;
 export type ServerMessage =
     | { kind: 'listening'; port: number }
     | { kind: 'failed'; reason: string; port: number }
-    | { kind: 'pick-folders'; id: number };
+    | { kind: 'pick-folders'; id: number; start?: string; single?: true };
 
 /** What the parent says to the server process. */
 export type MainMessage =
@@ -57,7 +58,14 @@ export function readServerMessage(raw: unknown): ServerMessage | null {
     if (raw.kind === 'failed' && typeof raw.reason === 'string' && isPort(raw.port)) {
         return { kind: 'failed', reason: raw.reason, port: raw.port };
     }
-    if (raw.kind === 'pick-folders' && isId(raw.id)) return { kind: 'pick-folders', id: raw.id };
+    if (raw.kind === 'pick-folders' && isId(raw.id)) {
+        return {
+            kind: 'pick-folders',
+            id: raw.id,
+            ...(typeof raw.start === 'string' && raw.start !== '' ? { start: raw.start } : {}),
+            ...(raw.single === true ? { single: true as const } : {})
+        };
+    }
     return null;
 }
 
@@ -93,7 +101,9 @@ export function parentOf(port: ParentPort | undefined): Parent | null {
  * answers when the `picked` of the same id arrives. A `picked` whose id names no request in flight
  * is ignored. The answer is the chosen paths, null for a cancel, and a failure rejects.
  */
-export function askParentToPick(parent: Parent): () => Promise<string[] | null> {
+export function askParentToPick(
+    parent: Parent
+): (options: { start?: string; single?: boolean }) => Promise<string[] | null> {
     let next = 0;
     const waiting = new Map<number, (message: MainMessage) => void>();
     parent.onMain((message) => {
@@ -102,7 +112,7 @@ export function askParentToPick(parent: Parent): () => Promise<string[] | null> 
         waiting.delete(message.id);
         answer(message);
     });
-    return () =>
+    return (options) =>
         new Promise((resolve, reject) => {
             const id = next;
             next += 1;
@@ -111,6 +121,11 @@ export function askParentToPick(parent: Parent): () => Promise<string[] | null> 
                 else if ('cancelled' in message) resolve(null);
                 else reject(new Error('the folder panel failed'));
             });
-            parent.send({ kind: 'pick-folders', id });
+            parent.send({
+                kind: 'pick-folders',
+                id,
+                ...(options.start === undefined ? {} : { start: options.start }),
+                ...(options.single === true ? { single: true as const } : {})
+            });
         });
 }

@@ -46,6 +46,8 @@ export type Acc = {
     model: string | null;
     effort: string | null;
     aiTitle: string | null;
+    /** The name the session was started under (`claude --name`), from its `agent-name` record. */
+    agentName: string | null;
     firstPrompt: string | null;
     lastPrompt: string;
     started: string | null;
@@ -97,6 +99,7 @@ export function newAcc(id: string, path: string, slug: string, tool: SessionTool
         model: null,
         effort: null,
         aiTitle: null,
+        agentName: null,
         firstPrompt: null,
         lastPrompt: '',
         started: null,
@@ -143,6 +146,7 @@ export const accShape = z.object({
     model: nullableTextShape.optional(),
     effort: nullableTextShape.optional(),
     aiTitle: nullableTextShape.optional(),
+    agentName: nullableTextShape.optional(),
     firstPrompt: nullableTextShape.optional(),
     lastPrompt: z.string().optional(),
     started: nullableTextShape.optional(),

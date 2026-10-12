@@ -18,7 +18,7 @@ const FILES: CollectionFile[] = [
     { key: 'events', file: 'network/events.yml' },
     { key: 'joint-work', file: 'network/joint-work.yml' },
     { key: 'tasks', file: 'tasks/tasks.yml' },
-    { key: 'code', file: 'registries/repos.yml' },
+    { key: 'tools', file: 'registries/tools.yml' },
     { key: 'missing', file: 'nowhere/gone.yml' },
     { key: 'listless', file: 'odd/listless.yml' }
 ];
@@ -88,9 +88,9 @@ function buildHub(): string {
     // One entry is a bare string rather than a map: a finding, and the others still come back.
     write(
         hub,
-        'registries/repos.yml',
+        'registries/tools.yml',
         [
-            'title: Code',
+            'title: Tools',
             'entries:',
             '  - { title: bttrlib, url: https://example.invalid/bttrlib }',
             '  - just-a-string',

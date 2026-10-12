@@ -60,6 +60,7 @@ text:
             zoom_reset: Reset Zoom
         pick:
             add: Add
+            choose: Choose
         print:
             failed: The PDF could not be made.
             timeout: The deck was not ready to print within {0} seconds, so no PDF was made.

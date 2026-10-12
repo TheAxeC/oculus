@@ -21,9 +21,9 @@ import { basename, dirname, join } from 'node:path';
 import { parse } from 'yaml';
 import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
+import { isHubFolder } from '../../../data/sources/manifests.ts';
 import { realPath } from '../../core/paths.ts';
 import {
-    holdsConfig,
     readFolders,
     rootsOf,
     stateEntries,
@@ -80,7 +80,7 @@ export function hubOfFile(file: string): string | null {
     const oculus = dirname(folder);
     if (basename(oculus) !== ROOT_FOLDER) return null;
     const hub = dirname(oculus);
-    return holdsConfig(hub) ? hub : null;
+    return isHubFolder(hub) ? hub : null;
 }
 
 /** Whether the file is a file that lies where a workspace file lies. */

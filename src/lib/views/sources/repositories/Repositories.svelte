@@ -114,7 +114,7 @@
         fs: { roots: fsRoots, workspaces },
         repositories,
         selectors: { gitFor, gitRoots },
-        ui: { instanceState, setInstanceState },
+        ui: { instanceState, requestPalette, setInstanceState },
         writes: { openFolder }
     } = useState();
 
@@ -206,6 +206,10 @@
     const menu = $derived(viewMenu(view.closed.length, readable ? held : null));
 
     function picked(id: string, _event: MouseEvent, group?: string): void {
+        if (group === 'clone') {
+            requestPalette(':clone ');
+            return;
+        }
         if (group === 'closed') {
             reopening = true;
             return;

@@ -67,6 +67,7 @@ import { docFindings, layoutFile } from '../../content/docs.ts';
 import { picturesOf } from '../../content/images.ts';
 import { wallpaperFindings } from '../../content/wallpaper.ts';
 import { railFindings } from '../../../data/sources/config/rail.ts';
+import { placeClones } from '../../../data/sources/clones.ts';
 import { allHubs, primaryConfig, repositoriesOf } from '../../files/roots.ts';
 import { engineConfigIn } from '../../files/workspace/folders.ts';
 import type { OpenWorkspace } from '../../files/workspace/open.ts';
@@ -130,11 +131,26 @@ export type WatchOptions = {
      * changed no schema hands over an equal set.
      */
     schemas?: (set: SchemaSet, references: ReferenceIndex) => void;
+    /**
+     * The repositories of the workspace, in the order the Repositories view lists them, read at
+     * every rebuild: the clone of a project is the one whose `origin` is the project's
+     * `repository.url`.
+     */
+    repositories?: () => readonly string[];
 };
 
 export type Watcher = {
     /** Close every handle and drop a rebuild that has not run yet. */
     close(): void;
+};
+
+/** The portfolio watcher, which can also be asked to read the portfolio again. */
+export type PortfolioWatcher = Watcher & {
+    /**
+     * Read the portfolio again after something changed that no watched file says: a repository
+     * cloned into a project's folder.
+     */
+    rescan(): void;
 };
 
 /** Milliseconds of quiet after the last event before one rebuild runs, lodash's `debounce` wait. */
@@ -200,7 +216,10 @@ export function namedByConfig(
     roots: RepositoryRoot[] = []
 ): (path: string) => boolean {
     const files = new Set<string>();
-    for (const root of roots) files.add(join(root.dir, ROOT_FOLDER, MANIFEST));
+    for (const root of roots) {
+        files.add(join(root.dir, MANIFEST));
+        files.add(join(root.dir, ROOT_FOLDER, MANIFEST));
+    }
     for (const file of Object.values(config.registries)) files.add(join(hub, file));
     for (const file of config.collections) files.add(join(hub, file.file));
     for (const file of [config.feeds.leads, config.feeds.radar]) {
@@ -231,11 +250,13 @@ export function namedByConfig(
 }
 
 /**
- * The files a build over project folders alone reads: the `.oculus/project.yml` of each folder. A
- * workspace with no primary hub reads nothing else.
+ * The files a build over project folders alone reads: the `project.yml` and `.oculus/project.yml`
+ * of each folder. A workspace with no primary hub reads nothing else.
  */
 function namedByRoots(roots: RepositoryRoot[]): (path: string) => boolean {
-    const files = new Set(roots.map((root) => join(root.dir, ROOT_FOLDER, MANIFEST)));
+    const files = new Set(
+        roots.flatMap((root) => [join(root.dir, MANIFEST), join(root.dir, ROOT_FOLDER, MANIFEST)])
+    );
     return (path: string): boolean => files.has(path);
 }
 
@@ -302,7 +323,11 @@ export function watchFile(file: string, changed: () => void): FSWatcher {
  * change republishes all three; a feed change republishes feeds beside portfolio; another hub
  * change republishes portfolio alone. A rebuild that throws leaves the previous payloads standing.
  */
-export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOptions = {}): Watcher {
+export function watchPortfolio(
+    hub: Hub,
+    paths: WatchPaths,
+    options: WatchOptions = {}
+): PortfolioWatcher {
     const debounce = options.debounce ?? DEBOUNCE;
     /** The validators compiled so far, which a rebuild reuses. */
     const checker = createChecker();
@@ -689,7 +714,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 if (closed) return;
             }
             const roots = repositoriesOf(workspace);
-            const portfolio = primaryConfig(config, workspace);
+            const portfolio = primaryConfig(config, workspace, from);
             const held = engineConfigIn(workspace.folders, engineConfig);
             const byHub =
                 primaryDir === null
@@ -698,6 +723,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             byHub.push(...others.map((one) => namedByConfig(one.dir, one.portfolio)));
             named = (path) => byHub.some((one) => one(path));
             watchRootParents(roots);
+            for (const root of roots) openFile(join(root.dir, MANIFEST));
             // The directories are opened before the snapshot is read, so a write that lands
             // between the read and the open cannot be missed.
             if (primaryDir === null) {
@@ -730,6 +756,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 checker
             );
             const snapshot = built.snapshot;
+            placeClones(snapshot, options.repositories?.() ?? [], textCatalog(config));
             hub.publish('portfolio', snapshot);
             options.schemas?.(withOwnSchemas(built.schemas), built.references);
             if (isClosed()) return;
@@ -816,6 +843,9 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     unfollow = paths.follow?.(() => queue(true, true)) ?? null;
 
     return {
+        rescan(): void {
+            queue(false, false);
+        },
         close(): void {
             closed = true;
             unfollow?.();

@@ -1,7 +1,7 @@
 // Layer 2, server. The private portfolio index given to an interactive chat terminal. It follows
 // the configured scan rules, repositories and collection paths so the index describes the same hub
-// the page loaded, while missing optional files contribute nothing. A project of a repository is
-// headed by the repository's absolute path, which is its folder.
+// the page loaded, while missing optional files contribute nothing. A project of a workspace folder
+// is headed by the folder's absolute path.
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';

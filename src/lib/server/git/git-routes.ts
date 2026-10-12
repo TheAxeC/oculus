@@ -122,9 +122,9 @@ export const ACTIONS = [
 
 /**
  * The refusal of an action that can lose work or move a branch and came without the `confirm: true`
- * the page sets only from its confirm dialog, or null when the action needs none or carries it.
- * The answer is never stored, like every answer of this route and server/git/deposit-routes.ts,
- * the two routes that ask for a confirm.
+ * the page sets only from its confirm dialog, or null when the action needs none or carries it. The
+ * answer is never stored, like every answer of this route and of
+ * server/git/deposit/deposit-routes.ts, the two routes that ask for a confirm.
  */
 export function unconfirmed(
     confirmed: readonly string[],

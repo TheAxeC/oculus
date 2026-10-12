@@ -350,13 +350,12 @@ const NOT_FOUND: WriteOutcome = { found: false, changed: [], refused: [] };
 
 /**
  * Whether a write from `app` (null for the page) may name the project `id` of `into`. An app's
- * write does not reach a project read from a repository: the repository's `.oculus/project.yml` is
- * outside the hub.
+ * write does not reach a project read from a workspace folder: its manifest is outside the hub.
  */
 function reaches(into: PrimaryTarget, id: string, app: HeldApp | null): boolean {
     if (app === null) return true;
     return !hubManifests(into.hub, into.config).some(
-        (one) => one.id === id && one.repository !== undefined
+        (one) => one.id === id && one.workspaceFolder !== undefined
     );
 }
 

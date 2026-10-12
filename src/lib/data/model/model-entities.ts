@@ -23,8 +23,8 @@ export type Finding = {
 };
 
 /**
- * The five tiers a manifest's `tier` names. A tier says which board a project is on; a project
- * of the tier `software` is on none.
+ * The five tiers a manifest's `tier` names. A tier says which board a project is on: Projects,
+ * Coauthor, Archive, Personal or Software.
  */
 export type Tier = 'projects' | 'coauthor' | 'archive' | 'personal' | 'software';
 
@@ -116,7 +116,9 @@ export type RawManifest = {
      * its folder, which is where `<dir>/.oculus/project.yml` and the project's documents and deck
      * are read from. A project of a scan folder has none.
      */
-    repository?: { root: string; dir: string };
+    workspaceFolder?: { root: string; dir: string };
+    /** Set when the project's folder holds a `code/` folder, which is what the deposit mirrors. */
+    codeFolder?: true;
 };
 
 /**
@@ -175,7 +177,7 @@ export type RawCollection = {
 
 /** Whether one of the fixed project documents is on disk, by existence only; nothing is read. */
 export type DocPresence = {
-    /** Folder-relative path, one of the fixed list in sources/docs.ts. */
+    /** Folder-relative path, one of the fixed list in sources/documents/docs.ts. */
     name: string;
     /** The label the document control draws, distinct from its file name. */
     label: string;
@@ -203,6 +205,23 @@ export type CodeAvailability = {
     url?: string;
     doi?: string;
     repo?: string;
+};
+
+/**
+ * A project's repository, the `repository:` map of a manifest: where the code lives on the remote
+ * and where it is cloned to. `url` is the remote's address. `clones` are the absolute folders of
+ * the repositories of the workspace whose `origin` is that address, in the order the repositories
+ * are listed; the build fills them, so a snapshot read from a manifest alone holds none. A project
+ * is cloned when it has one.
+ */
+export type RepositoryBlock = {
+    url?: string;
+    visibility?: string;
+    description?: string;
+    homepage?: string;
+    topics?: string[];
+    date?: string;
+    clones: string[];
 };
 
 /** When the pipeline was last re-run to regenerate the committed numbers, and what that covered. */
@@ -327,6 +346,7 @@ export type Project = Rooted & {
      */
     resourceIds: Id[];
     codeAvailability?: CodeAvailability;
+    repository?: RepositoryBlock;
     reproduced?: Reproduced;
     /** Ids of other projects this one is related to. */
     relatedIds: Id[];
@@ -346,7 +366,10 @@ export type Project = Rooted & {
      * every project of the hub; it is here for the model to hold what the field means.
      */
     venue?: string;
-    /** The four fixed project documents, in the order sources/docs.ts lists them, presence only. */
+    /**
+     * The four fixed project documents, in the order sources/documents/docs.ts lists them, presence
+     * only.
+     */
     docs: DocFlag[];
     /**
      * The project's own deck: the path of its `present/` folder relative to the Files root that
@@ -355,6 +378,11 @@ export type Project = Rooted & {
      * key only where there is something to open.
      */
     deck?: string;
+    /**
+     * Set when the project's folder holds a `code/` folder. With a `code_availability` that names a
+     * `repo` or a `url`, it is what gives the project a deposit.
+     */
+    codeFolder?: true;
     /**
      * The `tag.class` of every `kind: project` slide of the project's deck, each once, which the
      * Settings view offers as the classes a tag tone can be given to.
@@ -371,9 +399,11 @@ export type Project = Rooted & {
      * root's key and the repository's absolute path: a project read from a repository that is a
      * workspace folder. A project of a hub folder has none.
      */
-    repository?: { root: string; dir: string };
+    workspaceFolder?: { root: string; dir: string };
     /** The web addresses or paths the manifest's `links:` lists. */
     links?: string[];
+    /** The words the manifest's `tags:` lists, which the board search reads. */
+    tags?: string[];
 };
 
 /** A venue from registries/venues.yml. Its id field in the file is `id`, not `key`. */

@@ -339,6 +339,7 @@ export function nothingToShow(
     if (answer === null || answer.loading) return { message: t('present.loading'), error: false };
     const deck = answer.deck;
     if (deck === null) return { message: t('present.failed', answer.error), error: true };
+    if (deck.state === 'unnamed') return { message: t('present.empty_unnamed'), error: false };
     const folder = deck.path === '' ? deck.name : deck.path;
     if (deck.state === 'missing')
         return { message: t('present.empty_missing', folder), error: true };
@@ -438,7 +439,7 @@ export const deckShape = unchangedAs<Deck>(
         path: z.string(),
         name: z.string(),
         title: z.string(),
-        state: z.enum(['ok', 'empty', 'no_file', 'unreadable', 'missing']),
+        state: z.enum(['ok', 'empty', 'no_file', 'unreadable', 'missing', 'unnamed']),
         slides: z.array(z.object({ key: z.string(), kind: z.string(), title: z.string() })),
         groups: z.array(z.object({ name: z.string() })),
         tagTones: z.record(z.string(), z.string()),

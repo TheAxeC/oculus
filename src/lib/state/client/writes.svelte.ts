@@ -90,11 +90,21 @@ const answerShape = z.object({
     output: optionalTextShape,
     branches: survivorsShape(branchShape).optional().catch(undefined),
     id: optionalTextShape,
-    hash: optionalTextShape
+    hash: optionalTextShape,
+    file: optionalTextShape
 }) satisfies z.ZodType<
     Pick<
         WriteAnswer,
-        'error' | 'code' | 'reason' | 'changed' | 'refused' | 'output' | 'branches' | 'id' | 'hash'
+        | 'error'
+        | 'code'
+        | 'reason'
+        | 'changed'
+        | 'refused'
+        | 'output'
+        | 'branches'
+        | 'id'
+        | 'hash'
+        | 'file'
     >
 >;
 
@@ -707,7 +717,8 @@ export function createWrites(
                     output: held.output,
                     branches: held.branches,
                     id: held.id,
-                    hash: held.hash
+                    hash: held.hash,
+                    file: held.file
                 }
             };
         } catch (error) {

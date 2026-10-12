@@ -59,7 +59,7 @@ import { readCount } from './tools.ts';
 export type LatexTarget = {
     /** The primary hub's name, or null when the workspace has none. */
     primary: string | null;
-    project: (id: string) => Pick<Project, 'folder' | 'root' | 'repository'> | null;
+    project: (id: string) => Pick<Project, 'folder' | 'root' | 'workspaceFolder'> | null;
     /** The roots the file browser serves, which a root key of a request is looked up in. */
     roots: () => Root[];
     /** The formatter Format Document runs, read from config/behavior.yml at each request. */
@@ -210,8 +210,8 @@ function projectScope(into: LatexTarget, id: string): Scope | Response {
     } catch {
         return refuse(404, 'outside');
     }
-    const home = project.repository ?? { root: key, dir: hub };
-    const under = project.repository === undefined ? project.folder : '';
+    const home = project.workspaceFolder ?? { root: key, dir: hub };
+    const under = project.workspaceFolder === undefined ? project.folder : '';
     return {
         dir: join(folder, MANUSCRIPT),
         label: id,

@@ -4,7 +4,7 @@
 // snapshot: it is fetched from GET /api/deposit the first time a panel asks for a project, and read
 // again after every write the panel makes. The wire shapes below are declared here rather than
 // imported, since the boundary table of DESIGN.md lets `state/` import `data/model` and nothing of
-// `server/`; server/git/deposit.ts holds the same three shapes on its own side.
+// `server/`; server/git/deposit/deposit.ts holds the same shapes on its own side.
 //
 // The answer is held in the client state's query client, and the fetch is scheduled on a microtask
 // by state/client/queries.svelte.ts rather than run inside the call, so reading this from a
@@ -34,6 +34,9 @@ export type Plan = {
     findings: Finding[];
 };
 
+/** The current branch against `origin/main`, and the files the mirror's commits differ in. */
+export type MainComparison = { known: boolean; ahead: number; behind: number; differ: string[] };
+
 /** The mirror's state, as GET /api/deposit answers it. */
 export type MirrorState = {
     id: string;
@@ -42,7 +45,9 @@ export type MirrorState = {
     exists: boolean;
     branch: string;
     remote: string;
+    /** Commits the current branch is ahead of its upstream. */
     ahead: number;
+    main: MainComparison;
     plan: Plan | null;
 };
 
@@ -64,6 +69,13 @@ const planShape = z.object({
     findings: z.array(findingShape)
 }) satisfies z.ZodType<Plan>;
 
+const mainShape = z.object({
+    known: z.boolean(),
+    ahead: z.number(),
+    behind: z.number(),
+    differ: z.array(z.string())
+}) satisfies z.ZodType<MainComparison>;
+
 /** A state whose every field is of its type; one that is not whole reads as no state. */
 const mirrorStateShape = z.object({
     id: z.string(),
@@ -73,6 +85,7 @@ const mirrorStateShape = z.object({
     branch: z.string(),
     remote: z.string(),
     ahead: z.number(),
+    main: mainShape,
     plan: planShape.nullable()
 }) satisfies z.ZodType<MirrorState>;
 
@@ -96,8 +109,19 @@ const PENDING: Held = { state: null, error: '', loading: true };
 /** What no project at all reads as: an empty id asks nothing and waits for nothing. */
 const NOTHING: Held = { state: null, error: '', loading: false };
 
+/** The two texts of one file, or the sentence that says why they were not given. */
+export type FileTexts =
+    { ok: true; original: string; modified: string } | { ok: false; error: string };
+
+const textsShape = z.object({ original: z.string(), modified: z.string() });
+
 /** The deposit mirror of each project, held for one client. */
 export type DepositStore = {
+    /**
+     * The two texts of a file of the sync plan (`plan`) or of the files the mirror's commits and
+     * `origin/main` differ in (`main`), for the diff editor.
+     */
+    texts: (id: string, against: 'plan' | 'main', path: string) => Promise<FileTexts>;
     mirror: (id: string) => Held;
     hold: (id: string, state: MirrorState | null, error?: string) => void;
     reload: (id: string) => void;
@@ -119,6 +143,23 @@ export function createDeposit(queries: Queries): DepositStore {
             return { state: body?.state ?? null, error: '', loading: false };
         } catch (error) {
             return failed(error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    async function texts(id: string, against: string, path: string): Promise<FileTexts> {
+        const query = new URLSearchParams({ id, against, path });
+        try {
+            const response = await fetch(`/api/deposit?${query.toString()}`);
+            const raw = await readJson(response);
+            if (raw === undefined || !response.ok) {
+                return { ok: false, error: failedAnswer(response, raw) };
+            }
+            const body = textsShape.safeParse(raw);
+            return body.success
+                ? { ok: true, ...body.data }
+                : { ok: false, error: failedAnswer(response, raw) };
+        } catch (error) {
+            return { ok: false, error: error instanceof Error ? error.message : String(error) };
         }
     }
 
@@ -144,5 +185,5 @@ export function createDeposit(queries: Queries): DepositStore {
         queries.refetch(['deposit', id], () => ask(id), 'drop');
     }
 
-    return { mirror, hold, reload };
+    return { mirror, hold, reload, texts };
 }

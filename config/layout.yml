@@ -64,7 +64,7 @@ arrangements:
                 - { kind: pane, view: [transcript, timeline] }
         - { kind: pane, view: [session-detail, { view: files, state: { follow: true } }] }
   projects:
-    root: { kind: pane, view: [projects, coauthor, archive, personal] }
+    root: { kind: pane, view: [projects, coauthor, archive, personal, software] }
   incoming:
     root:
       kind: split
@@ -86,7 +86,7 @@ arrangements:
   pillars:
     root: { kind: pane, view: [pillars, domains, map] }
   references:
-    root: { kind: pane, view: [venues, data, code, statements] }
+    root: { kind: pane, view: [venues, data, statements] }
   present:
     root: { kind: pane, view: present }
   help:
@@ -108,14 +108,14 @@ arrangements:
     root: { kind: pane, view: [] }
 
 
-# The arrangement every workbench page is made from, and what Reset layout gives it back: a page that belongs to one folder (a project, a funding or education entry or any folder), made when that folder is opened as a workbench. It has the shape of one entry of `arrangements:` above, `root` and its tree, and each tab is given the folder when the page is made: Files rooted at it, Search, Problems, Repositories and the sessions list limited to it, LaTeX pointed at it. The first tab of a pane is the one shown. `view: []` is the empty pane a project, an entry, a session or a file opens in. It is not a key of `arrangements:`, so no `rail:` entry can name it and the Settings view does not offer it as a rail page.
+# The arrangement every workbench page is made from, and what Reset layout gives it back: a page that belongs to one folder (a project, a funding or education entry or any folder), made when that folder is opened as a workbench. It has the shape of one entry of `arrangements:` above, `root` and its tree, and each tab is given the folder when the page is made: Files rooted at it, Search, Problems, Repositories and the sessions list limited to it, LaTeX pointed at it, and Deposit set to the project the page was opened for. A page whose project has no deposit (no `code/` folder and a `code_availability` naming neither a `repo` nor a `url`), and a page opened for no project, is made without the Deposit tab. The first tab of a pane is the one shown. `view: []` is the empty pane a project, an entry, a session or a file opens in. It is not a key of `arrangements:`, so no `rail:` entry can name it and the Settings view does not offer it as a rail page.
 workbench:
   root:
     kind: split
     dir: row
     sizes: [0.4, 0.6]
     children:
-      - { kind: pane, view: [files, search, repositories, latex, problems, session-list] }
+      - { kind: pane, view: [files, search, repositories, deposit, latex, problems, session-list] }
       - { kind: pane, view: [] }
 
 
@@ -124,16 +124,18 @@ floats:
   - { view: [hpc, usage, workbenches], dock: right, size: 0.2 }
 
 
-# Board (Projects / Personal / Archive / Coauthor) chrome: list-view column headers and the per-board search placeholder.
+# Board (Projects / Personal / Archive / Coauthor / Software) chrome: list-view column headers and the per-board search placeholder.
 # The column words map positionally to the fixed span classes.
 board:
   cols_project: [Project, Authors, Venue, Status, Focus, Next]
   cols_archive: [Paper, Authors, Venue, Domain, Pillar, Funding]
+  cols_software: [Software, Authors, Venue, Domain, Pillar, Funding]
   search:
     projects: "Search title | eli5 | results | ideas | doc text ..."
     personal: "Search personal | title | eli5 | next | doc text ..."
     archive:  "Search archive | title | eli5 | outcome | doc text ..."
     coauthor: "Search coauthor | title | eli5 | outcome | doc text ..."
+    software: "Search software | title | eli5 | tags | doc text ..."
 
 
 # Tab-button count rollups: the little N|N|N split on the Personal/Archive/Coauthor tab buttons (like the projects
@@ -178,7 +180,7 @@ nav_live:
 # overrides their default below (persisted per browser). The full title is always on hover.
 focus_label_mode: short      # Focus board cards and the week's ticker lines
 
-project_label_mode: short    # Projects tab cards / list rows (live Aa toggle overrides)
+project_label_mode: short    # Projects, Personal and Software tab cards / list rows (live Aa toggle overrides)
 
 archive_label_mode: short    # Archive tab cards / list rows (live Aa toggle overrides)
 

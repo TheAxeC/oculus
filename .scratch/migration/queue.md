@@ -1,16 +1,17 @@
-In flight (2 of 6 slots in use):
-- D64 (apps in the tools): repair round 1 (the review's findings and the orchestrator's read).
-- D71 (workspaces and repositories): repair round 1 (Axel's ruling on cloning, open item 77, and the review's findings); Axel's rulings on open items 78 and 79 sent with it.
+In flight (1 of 6 slots in use):
+- D64 (apps in the tools): repair round 1 refuted; landing next, the review's findings fixed at landing.
 
-Queued, in order (4 steps):
+Queued, in order (5 steps):
 - D72 (collection entries as records of their own): after D71, whose files it shares.
 - D73 (the Literature view): after D72.
+- D74 (the Live HPC view on a hub that names no cluster): after D73.
 - Q72 (the architecture re-read): after D64, D71, D72 and D73, so it reads their code.
 - O33 (oculus in its own repository; inline): after Q72.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D71 (workspaces and repositories), 2026-10-13.
 - D70 (the machine files as ordinary files), 2026-10-12, 4d3bb3998.
 - D68 (workspaces as files), 2026-10-12, 9c9d84dce.
 - D69 (two clipping defects), 2026-10-12, cdc029dbb.

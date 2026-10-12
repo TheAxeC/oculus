@@ -31,7 +31,12 @@
     } from '$lib/state/boards/collection';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { t } from '$lib/state/shared/words/text';
-    import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/sources/venues';
+    import {
+        freeTone,
+        quartileTone,
+        type Project,
+        type Venue
+    } from '$lib/state/sources/registries/venues';
     import { themeWordLabel, type ThemeWordLabels } from '$lib/state/shared/words/themes';
     import { rootOf } from '$lib/state/shared/page/hubs';
     import { useState } from '$lib/state/client/use';

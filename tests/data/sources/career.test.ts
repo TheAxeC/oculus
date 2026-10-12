@@ -1,11 +1,11 @@
-// Layer 1, data tests. sources/career.ts and the career half of normalise, over a
+// Layer 1, data tests. sources/documents/career.ts and the career half of normalise, over a
 // synthetic hub written under mkdtemp. Nothing here touches the real hub.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { CAREER_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
-import { readCareer } from '../../../src/lib/data/sources/career.ts';
+import { readCareer } from '../../../src/lib/data/sources/documents/career.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { career } from '../../../src/lib/data/snapshot/normalise-parts/career.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';

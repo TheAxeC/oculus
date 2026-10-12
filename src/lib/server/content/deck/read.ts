@@ -46,7 +46,7 @@ function deckProject(project: Project): DeckProject {
         short: project.short ?? '',
         title: project.title
     };
-    if (project.repository !== undefined) one.repository = project.repository;
+    if (project.workspaceFolder !== undefined) one.workspaceFolder = project.workspaceFolder;
     if (project.type !== undefined) one.type = project.type;
     const domain = project.domainIds.at(0);
     if (domain !== undefined) one.domain = domain;
@@ -95,5 +95,8 @@ export function readDeck(
         catalog: config.text,
         drafts: draftsOf(source.roots, drafts)
     });
-    return reader.read({ key: held.key, dir: held.dir }, path);
+    const deck = reader.read({ key: held.key, dir: held.dir }, path);
+    const inherited =
+        config.unnamed?.deck === true && held.dir === hub.dir && path === config.portfolioDeck;
+    return deck.state === 'missing' && inherited ? { ...deck, state: 'unnamed' } : deck;
 }

@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { REGISTRY_SHAPES } from '../helpers/hub-names.ts';
 import { filledText, itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
-import { readYamlMap } from './yaml-file.ts';
+import { isAbsent, readYamlMap } from './yaml-file.ts';
 import type {
     Finding,
     RawRegistry,
@@ -55,12 +55,13 @@ function readRegistry(
     name: RegistryName,
     relPath: string,
     catalog: TextCatalog,
-    findings: Finding[]
+    findings: Finding[],
+    unnamed: boolean
 ): RawRegistry {
     const shape = REGISTRY_SHAPES[name];
     const file = join(hub, relPath);
-    const data = readYamlMap(file, catalog, findings, () =>
-        findingText(catalog, 'findings.registries.file_missing')
+    const data = readYamlMap(file, catalog, findings, (error) =>
+        unnamed && isAbsent(error) ? null : findingText(catalog, 'findings.registries.file_missing')
     );
     if (data === null) return empty();
 
@@ -110,17 +111,19 @@ function readRegistry(
  * Read the eight registries. Each returns its entries and the file's other top-level keys as
  * `meta`, both untouched apart from the `registry`, `key` and `file` provenance added to every
  * entry. A file that is missing, does not parse, is not a map, or has no entry list gives an empty
- * list and one finding; nothing here throws and no entry is repaired.
+ * list and one finding; nothing here throws and no entry is repaired. A registry in `unnamed`, one
+ * the hub's own config does not name, raises no finding when its file is absent.
  */
 export function readRegistries(
     hub: string,
     files: RegistryFiles,
-    catalog: TextCatalog
+    catalog: TextCatalog,
+    unnamed: readonly RegistryName[] = []
 ): Record<RegistryName, RawRegistry> & { findings: Finding[] } {
     const findings: Finding[] = [];
     const out = {} as Record<RegistryName, RawRegistry>;
     for (const name of NAMES) {
-        out[name] = readRegistry(hub, name, files[name], catalog, findings);
+        out[name] = readRegistry(hub, name, files[name], catalog, findings, unnamed.includes(name));
     }
     return { ...out, findings };
 }

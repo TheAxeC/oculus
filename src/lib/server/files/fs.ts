@@ -23,10 +23,11 @@
 // pointing out of the root it is left out.
 //
 // The workspace is the open workspace file of server/files/workspace and nothing else: a GET with
-// no root answers it, and the two actions on it as a whole are Save Workspace As (`save-workspace`,
-// a name) and Switch Workspace (`select-workspace`, a workspace file's path). The folders of the
-// open file are written through the write route's `roots` kind. The notes are written in a new
-// order through the same route (`order-notes`).
+// no root answers it, and the actions on it as a whole are Save Workspace As (`save-workspace`, a
+// name), New Workspace (`new-workspace`, a name), Switch Workspace (`select-workspace`, a workspace
+// file's path) and Close Workspace (`close-workspace`). The folders of the open file are written
+// through the write route's `roots` kind. The notes are written in a new order through the same
+// route (`order-notes`).
 //
 // Nothing here holds state between calls: the workspace, the paths of the bookmarks and the notes
 // and the write chain all come in from the request's ServerContext, so two servers in one process
@@ -49,7 +50,12 @@ import { ignoredIn } from '../core/git/files.ts';
 import { deleteNote, listNotes, readNote, saveNote, writeNoteOrder } from './fs/notes.ts';
 import { chained, type FsWrites } from '../core/json.ts';
 import { foldsCase, inside, realPath } from '../core/paths.ts';
-import { saveWorkspaceAs, selectWorkspace } from './workspace/actions.ts';
+import {
+    closeWorkspace,
+    newWorkspace,
+    saveWorkspaceAs,
+    selectWorkspace
+} from './workspace/actions.ts';
 import type { OpenWorkspace } from './workspace/open.ts';
 
 /**
@@ -87,7 +93,7 @@ export type WorkspacesAnswer = {
     /** The home folder of the account the server runs as, which the page writes as `~`. */
     home: string;
     /** The open workspace file, or null while the workspace is unsaved. */
-    open: { path: string; name: string; hub: string } | null;
+    open: { path: string; name: string; hub: string; real: string } | null;
     folders: AnsweredFolder[];
     primary: string | null;
     /**
@@ -330,7 +336,15 @@ export function workspacesAnswer(
 ): WorkspacesAnswer {
     return {
         home: homedir(),
-        open: open.file === null ? null : { path: open.file, name: open.name, hub: open.hub },
+        open:
+            open.file === null
+                ? null
+                : {
+                      path: open.file,
+                      name: open.name,
+                      hub: open.hub,
+                      real: realPath(open.file) ?? open.file
+                  },
         folders: open.folders.map((one) => ({
             name: one.name,
             path: one.path,
@@ -390,6 +404,8 @@ export async function handleFs(request: Request, into: FsTarget): Promise<Respon
 /** Every action POST /api/fs knows. */
 export const ACTIONS = [
     'save-workspace',
+    'new-workspace',
+    'close-workspace',
     'select-workspace',
     'note-save',
     'note-delete',
@@ -415,7 +431,9 @@ type FsFields = z.output<typeof fsBodyShape>;
 /**
  * The answer of a workspace action: done, or the word refusing it and the reason when there is one.
  */
-function actionAnswer(outcome: { ok: true } | { error: string; reason?: string }): Response {
+function actionAnswer(
+    outcome: { ok: true; file?: string } | { error: string; reason?: string }
+): Response {
     if ('error' in outcome) {
         return json(
             {
@@ -425,7 +443,15 @@ function actionAnswer(outcome: { ok: true } | { error: string; reason?: string }
             { status: 400, headers: NO_STORE }
         );
     }
-    return json({ ok: true, changed: ['workspaces'], refused: [] }, { headers: NO_STORE });
+    return json(
+        {
+            ok: true,
+            changed: ['workspaces'],
+            refused: [],
+            ...(outcome.file === undefined ? {} : { file: realPath(outcome.file) ?? outcome.file })
+        },
+        { headers: NO_STORE }
+    );
 }
 
 /** Write one note, which is a file of its own rather than a change to the workspace. */
@@ -464,6 +490,12 @@ function act(fields: FsFields, into: FsTarget): Response {
     if (action === 'order-notes') return orderNotes(fields, into.notes);
     if (action === 'save-workspace') {
         return actionAnswer(saveWorkspaceAs(into.workspace.stateFolder, fields.name));
+    }
+    if (action === 'new-workspace') {
+        return actionAnswer(newWorkspace(into.workspace.stateFolder, fields.name));
+    }
+    if (action === 'close-workspace') {
+        return actionAnswer(closeWorkspace(into.workspace.stateFolder));
     }
     return actionAnswer(selectWorkspace(into.workspace.stateFolder, fields.path));
 }

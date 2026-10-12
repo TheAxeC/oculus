@@ -67,7 +67,7 @@ import { hasHiddenSegment } from '../../data/helpers/files/paths.ts';
 import { renderDocumentParts } from '../../data/prose/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
-import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/docs.ts';
+import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/documents/docs.ts';
 import { hubId, splitHubId } from '../../data/helpers/hub-names.ts';
 import type { HubTarget } from '../files/roots.ts';
 import type {
@@ -569,7 +569,7 @@ export function renderDoc(into: DocTarget, id: string, name: string, held = ''):
         into.primary?.key ?? null
     );
     const owner = within(into, named.root);
-    const repository = owner?.project?.(named.id)?.repository;
+    const repository = owner?.project?.(named.id)?.workspaceFolder;
     if (owner !== null && repository !== undefined) {
         return renderRepositoryDoc(owner, repository, name, held);
     }

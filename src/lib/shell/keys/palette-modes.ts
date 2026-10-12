@@ -1,16 +1,22 @@
 // Layer 3, shell, partial of Palette.svelte. Which colon commands open a list of their own and what
-// the list of the language-server commands holds. `:language`, `:workspace` and `:workspace-save`
-// are list modes of the palette, as are the commands of the choices a server asks for
-// (data/prose/lsp-servers.ts): `:interpreter`, `:compile-database` and `:svelte-config`. Each lists
-// the choices of the source tab's root with the one in force marked, and a typed path is offered as
-// a new interpreter. The compile database list opens with a row for each finding of the
+// the list of the language-server commands holds. `:language`, `:workspace`, `:workspace-save` and
+// `:workspace-new` are list modes of the palette, as are the commands of the choices a server asks
+// for (data/prose/lsp-servers.ts): `:interpreter`, `:compile-database` and `:svelte-config`. Each
+// lists the choices of the source tab's root with the one in force marked, and a typed path is
+// offered as a new interpreter. The compile database list opens with a row for each finding of the
 // repository's `.oculus/cpp.yml`, which no press acts on. The Svelte configuration list names the
 // configuration files the Svelte server would run, which no press acts on, and one row that
 // approves them or, once approved, takes the approval back. `:eslint-config` lists the same for the
-// ESLint configuration file of the source tab's file, whether or not a server serves it.
+// ESLint configuration file of the source tab's file, whether or not a server serves it. `:clone`
+// is a list mode too; its rows are state/workbench/palette.ts's `cloneRows`.
 
 import type { LintConfig } from '$lib/state/system/machine/lint/lint-model';
-import type { PaletteCommand, PaletteMatch, ParsedCommand } from '$lib/state/workbench/palette';
+import {
+    wordsHold,
+    type PaletteCommand,
+    type PaletteMatch,
+    type ParsedCommand
+} from '$lib/state/workbench/palette';
 import {
     databaseInForce,
     findingLine,
@@ -34,7 +40,9 @@ const MODE_COMMANDS = [
     'language',
     'workspace',
     'workspace-save',
+    'workspace-new',
     'eslint-config',
+    'clone',
     ...Object.values(LSP_CHOICES).map((one) => one.command)
 ];
 
@@ -115,16 +123,6 @@ function pathLike(word: string): boolean {
     return word.startsWith('/') || word.startsWith('~') || word.startsWith('.');
 }
 
-/** Whether a row's words hold every word of the query, in any case. */
-function holds(words: string, query: string): boolean {
-    const low = words.toLowerCase();
-    return query
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((word) => word !== '')
-        .every((word) => low.includes(word));
-}
-
 /** The rows of a choice list for what the query says after the command. */
 export function choiceRows(
     mode: ChoiceMode,
@@ -163,7 +161,7 @@ export function choiceRows(
             pick: null
         }));
         const databases: ChoiceRow[] = view.databases
-            .filter((one) => holds(`${one.name} ${one.folder}`, argument))
+            .filter((one) => wordsHold(`${one.name} ${one.folder}`, argument))
             .map((one) => ({
                 value: `database:${one.key}`,
                 label: one.name,
@@ -176,7 +174,7 @@ export function choiceRows(
     const inForce = interpreterInForce(view);
     const typed = pathLike(argument) && !view.interpreters.some((one) => one.path === argument);
     const rows: ChoiceRow[] = view.interpreters
-        .filter((one) => typed || holds(`${interpreterLabel(one)} ${one.path}`, argument))
+        .filter((one) => typed || wordsHold(`${interpreterLabel(one)} ${one.path}`, argument))
         .map((one) => ({
             value: `interpreter:${one.path}`,
             label: one.approved
@@ -213,12 +211,13 @@ export type ListedFacts = {
     languages: { choice: { name: string } }[];
     workspaceMode: boolean;
     choices: { path: string }[];
+    /** Whether the query is a command that makes a workspace under the name typed after it. */
     saveMode: boolean;
     choiceMode: ChoiceMode | null;
     commandList: PaletteCommand[];
     choiceList: { value: string }[];
-    /** The `:eslint-config` list: its rows while the query is that command, else null. */
-    lintList: { value: string }[] | null;
+    /** The rows of `:eslint-config` or `:clone` while the query is that command, else null. */
+    modeList: { value: string }[] | null;
 };
 
 /**
@@ -251,9 +250,9 @@ export function listedRows(facts: ListedFacts): { count: number; values: string[
             values: facts.choices.map((one) => `workspace:${one.path}`)
         };
     }
-    if (saveMode) return { count: 1, values: ['workspace-save'] };
-    if (facts.lintList !== null) {
-        return { count: facts.lintList.length, values: facts.lintList.map((row) => row.value) };
+    if (saveMode) return { count: 1, values: [parsed.name] };
+    if (facts.modeList !== null) {
+        return { count: facts.modeList.length, values: facts.modeList.map((row) => row.value) };
     }
     if (choiceMode !== null) {
         return { count: facts.choiceList.length, values: facts.choiceList.map((row) => row.value) };

@@ -142,8 +142,11 @@ export function runSchemas(
     const manifest = context('');
     if (config.schema !== undefined) {
         add('manifest', manifestSchema(config.schema, manifest), {
-            hub: scans.map((dir) => `${dir}/**/${MANIFEST}`),
-            every: [`${ROOT_FOLDER}/${MANIFEST}`]
+            hub: scans.flatMap((dir) => [
+                `${dir}/**/${MANIFEST}`,
+                `${dir}/**/${ROOT_FOLDER}/${MANIFEST}`
+            ]),
+            every: [MANIFEST, `${ROOT_FOLDER}/${MANIFEST}`]
         });
         for (const one of raw.manifests) docs.push({ name: 'manifest', file: one.file, text: '' });
     }

@@ -24,8 +24,9 @@ text:
             repeated_name: the name {0} is already given to an earlier folder; this folder is not served
             relative: 'the path {0} is relative; a folder path is absolute or starts with ~/'
             missing_dir: 'no directory at {0}; this folder serves nothing'
+            bad_scan_depth: 'the folder {0} has a repository_scan_depth that is not a whole number of at least -1; the global repository_scan_depth applies to it'
             same_dir: the folder lies at the same place as the folder {0}; it is not served
-            project_in_hub: the folder is, lies inside or holds the folder of a hub, so its .oculus/project.yml is not read as a project
+            project_in_hub: the folder is, lies inside or holds the folder of a hub, so its project.yml or .oculus/project.yml is not read as a project
             primary_unknown: primary names {0}, which is no folder of the workspace; the workspace has no primary
             primary_not_hub: primary names {0}, which holds no .oculus/config; the workspace has no primary
             file_unreadable: 'the workspace file cannot be read: {0}'
@@ -55,6 +56,8 @@ text:
             id_not_folder: id {0} is not the folder name {1}
             scan_missing: scan directory does not exist
             id_twice: 'the id {0} is held by {1}; this project.yml in {2} is not read'
+            cloned_twice: 'the repository {0} is cloned in more than one folder: {1}'
+            both_files: 'the folder holds both {0} and {1}; {0} is read and this file is not'
             not_file: project.yml is not a regular file and is not read
             too_large: project.yml is larger than {0} bytes and is not read
             scan_not_a_list: scan is not a list of folders

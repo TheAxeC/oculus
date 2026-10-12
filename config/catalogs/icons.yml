@@ -92,6 +92,7 @@ icons:
     pillar: layers
     code: code
     repositories: folder-git-2
+    clone: folder-down
     search: file-search
     diff: file-diff
     published: package

@@ -36,10 +36,10 @@ export { expandHome, type Root };
  */
 export function projectDirectory(
     hub: string,
-    project: Pick<Project, 'folder' | 'repository'>
+    project: Pick<Project, 'folder' | 'workspaceFolder'>
 ): string {
     const cwd = folderOnDisk(hub, project);
-    if (project.repository !== undefined) return cwd;
+    if (project.workspaceFolder !== undefined) return cwd;
     const within = relative(hub, cwd);
     if (within.startsWith('..') || isAbsolute(within)) {
         throw new Error('the project folder is outside the configured hub');

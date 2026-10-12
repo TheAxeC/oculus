@@ -76,7 +76,14 @@
         debug: { load: loadDebug, stopFollowing: stopFollowingDebug },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
         fs: { bookmarks: savedBookmarks, primary, workspaces },
-        layout: { activeInstance, currentPage, loadLayout, openView, stopFollowing },
+        layout: {
+            activeInstance,
+            currentPage,
+            loadLayout,
+            openView,
+            stopFollowing,
+            workspaceAnswered
+        },
         problems,
         repositories,
         selectors: { waitingCount },
@@ -302,6 +309,14 @@
             stopFollowingUi();
             stopFollowingDebug();
         };
+    });
+
+    // The arrangement belongs to the open workspace, so it is read once the workspace answer has
+    // named the workspace and read again whenever a later answer names another: Switch, Save As,
+    // New and Close here, or a move made by another window.
+    $effect(() => {
+        const { loading, error, open } = workspaces();
+        untrack(() => workspaceAnswered({ loading, error, open }));
     });
 </script>
 

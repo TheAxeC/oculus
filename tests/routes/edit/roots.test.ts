@@ -129,6 +129,42 @@ describe('the folders write of an open workspace file', () => {
         }
     });
 
+    it('keeps the repository_scan_depth of an entry through an add, the removal of another entry, an order and the undo of its own removal', async () => {
+        const world = opened((hub, other) =>
+            [
+                'folders:',
+                `  - { name: research-hub, path: ${hub}, repository_scan_depth: 2 }`,
+                `  - { name: claude, path: ${other}, repository_scan_depth: -1 }`,
+                ''
+            ].join('\n')
+        );
+        const entry = (name: string): string =>
+            readFileSync(world.file, 'utf8')
+                .split('\n')
+                .find((line) => line.includes(`name: ${name},`)) ?? '';
+        const hubLine = entry('research-hub');
+        const claudeLine = entry('claude');
+        expect(hubLine).toContain('repository_scan_depth: 2');
+
+        expect((await add(world.into(), folderNamed('thesis'))).status).toBe(200);
+        expect(entry('research-hub')).toBe(hubLine);
+        expect(entry('claude')).toBe(claudeLine);
+
+        expect((await order(world.into(), ['thesis', 'claude', 'research-hub'])).status).toBe(200);
+        expect(entry('research-hub')).toBe(hubLine);
+        expect(entry('claude')).toBe(claudeLine);
+
+        expect((await remove(world.into(), 'thesis')).status).toBe(200);
+        expect(entry('claude')).toBe(claudeLine);
+
+        const before = readFileSync(world.file, 'utf8');
+        expect((await remove(world.into(), 'claude')).status).toBe(200);
+        expect(readFileSync(world.file, 'utf8')).not.toContain('claude');
+        const [removed] = changesOf(world.into());
+        expect((await send(world.into(), { kind: 'undo', at: removed.at })).status).toBe(200);
+        expect(readFileSync(world.file, 'utf8')).toBe(before);
+    });
+
     it('refuses every change to a file that does not parse, with the file as it was', async () => {
         const world = opened(() => 'folders: [unclosed\n  - {\n');
         const before = readFileSync(world.file, 'utf8');

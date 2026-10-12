@@ -136,6 +136,16 @@ function countEntries(relative: string, listKey: string): number {
 /** The scan folder whose projects carry the tier `personal`. */
 const PERSONAL_DIR = 'side-projects';
 
+/** The folder name of every project.yml under the personal folder, at any depth, sorted. */
+function countedPersonal(): string[] {
+    return globSync('**/project.yml', {
+        cwd: join(hub, PERSONAL_DIR),
+        exclude: NEVER_DESCEND.map((name) => `**/${name}`)
+    })
+        .map((file) => file.split('/').at(-2) ?? '')
+        .sort();
+}
+
 function derivedCounts(): Record<string, number> {
     const counts: Record<string, number> = { projects: 0 };
     for (const rule of config.scan) counts.projects += countManifests(join(hub, rule.dir));
@@ -170,16 +180,14 @@ describe.skipIf(!present)('the real hub', () => {
     });
 
     it('reads every project of the personal folder with no finding, each with the tier personal', () => {
-        const folders = globSync('*/project.yml', { cwd: join(hub, PERSONAL_DIR) })
-            .map((file) => file.split('/')[0])
-            .sort();
+        const folders = countedPersonal();
         expect(folders.length).toBeGreaterThanOrEqual(3);
         const projects = Object.values(snapshot?.entities.projects ?? {});
         const personal = projects.filter((project) => project.tier === 'personal');
         expect(personal.map((project) => project.id).sort()).toEqual(folders);
         for (const one of personal) {
             expect(one.title).not.toBe('');
-            expect(one.type).toBe('idea');
+            expect(['idea', 'active']).toContain(one.type);
         }
         expect(snapshot?.findings.filter((finding) => finding.file.includes(PERSONAL_DIR))).toEqual(
             []

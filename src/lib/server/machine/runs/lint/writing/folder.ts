@@ -39,7 +39,7 @@ import { realPath, under } from '../../../../core/paths.ts';
 import { words } from '../../../../core/words.ts';
 import { copyLimit } from '../../../../files/fs/history.ts';
 import type { Root } from '../../../../files/files.ts';
-import { splitFrontmatter } from '../../../../../data/sources/docs.ts';
+import { splitFrontmatter } from '../../../../../data/sources/documents/docs.ts';
 import { shapeOfText } from './markdown-blocks.ts';
 import { holdsBanned, isSkipped, runWriting, type WritingOptions } from './writing.ts';
 import { sameValue } from './yaml.ts';

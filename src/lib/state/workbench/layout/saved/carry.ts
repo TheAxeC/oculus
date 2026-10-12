@@ -12,7 +12,7 @@
 
 import { mapShape, readAs } from '../../../../data/shapes/shapes.ts';
 import { UI_KEY } from '../../ui.svelte.ts';
-import { LAYOUT_KEY } from './storage.ts';
+import { LAYOUT_PREFIX } from './storage.ts';
 
 /** The key of the one object `window.name` holds while a page is on its way to the new address. */
 export const CARRY_KEY = 'oculus.carry.v1';
@@ -20,31 +20,38 @@ export const CARRY_KEY = 'oculus.carry.v1';
 /** How long after its writing a carry is taken, in milliseconds: the time a navigation takes. */
 export const CARRY_MS = 60_000;
 
-/** The storage keys that travel: the arrangement and the viewer's settings for this browser. */
-const CARRIED = [LAYOUT_KEY, UI_KEY];
+/**
+ * Whether a storage key travels: the arrangement of any workspace and the viewer's settings for
+ * this browser.
+ */
+function travels(key: string): boolean {
+    return key === UI_KEY || key.startsWith(LAYOUT_PREFIX);
+}
 
 /** The part of a window the carry needs. */
 export type Named = { name: string };
 
 /**
- * Write what the storage holds under the carried keys into the window's name, for the page at
- * origin `to`, stamped with `now`. A key the storage does not hold, or refuses to give, is left
- * out; with nothing to carry the name is not touched.
+ * Write what the storage holds under the carried keys (`travels`) into the window's name, for the
+ * page at origin `to`, stamped with `now`. A storage that refuses to be read carries nothing; with
+ * nothing to carry the name is not touched.
  */
 export function carryWorkbench(
-    storage: Pick<Storage, 'getItem'>,
+    storage: Pick<Storage, 'getItem' | 'key' | 'length'>,
     win: Named,
     to: string,
     now: number = Date.now()
 ): void {
     const held: Record<string, string> = {};
-    for (const key of CARRIED) {
-        try {
+    try {
+        for (let at = 0; at < storage.length; at += 1) {
+            const key = storage.key(at);
+            if (key === null || !travels(key)) continue;
             const value = storage.getItem(key);
             if (value !== null) held[key] = value;
-        } catch {
-            // A storage that refuses to be read carries nothing.
         }
+    } catch {
+        // A storage that refuses to be read carries nothing.
     }
     if (Object.keys(held).length === 0) return;
     win.name = JSON.stringify({ [CARRY_KEY]: { to, at: now, values: held } });
@@ -74,9 +81,8 @@ export function takeCarried(
     if (typeof at !== 'number' || now < at || now - at > CARRY_MS) return;
     const held = readAs(mapShape, carried.values);
     if (held === null) return;
-    for (const key of CARRIED) {
-        const value = held[key];
-        if (typeof value !== 'string') continue;
+    for (const [key, value] of Object.entries(held)) {
+        if (!travels(key) || typeof value !== 'string') continue;
         try {
             storage.setItem(key, value);
         } catch {

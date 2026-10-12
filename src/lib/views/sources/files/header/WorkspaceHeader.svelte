@@ -3,10 +3,11 @@
     // Explorer heads its folders: a 22 px pane header, the workspace's name in capitals with the
     // twistie at its left, and at its right, while the pointer is over it or the focus is in it,
     // the four title actions (New File..., New Folder..., Refresh Explorer, Collapse Folders in
-    // Explorer) and the `...` menu: Add Folder to Workspace..., Switch Workspace..., Save Workspace
-    // As..., Open Folder..., and the checked items Show Hidden Files, Show Ignored Files and File
-    // Nesting, which are the tab's own state. It is the first row of the tree, so the arrow keys
-    // walk from it into the roots, and a press on it opens or closes them.
+    // Explorer) and the `...` menu: Add Folder to Workspace..., Switch Workspace..., New
+    // Workspace..., Save Workspace As..., Close Workspace (while a workspace file is open), Open
+    // Folder..., and the checked items Show Hidden Files, Show Ignored Files and File Nesting,
+    // which are the tab's own state. It is the first row of the tree, so the arrow keys walk from
+    // it into the roots, and a press on it opens or closes them.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -37,6 +38,10 @@
         onaddfolder: () => void;
         onswitch: () => void;
         onsave: () => void;
+        onnew: () => void;
+        onclosework: () => void;
+        /** Whether a workspace file is open, which Close Workspace leaves. */
+        saved: boolean;
         onopenfolder: () => void;
         /** Whether the folder panel is open, which disables the two items that open it. */
         panelOpen: boolean;
@@ -60,6 +65,9 @@
         onaddfolder,
         onswitch,
         onsave,
+        onnew,
+        onclosework,
+        saved,
         onopenfolder,
         panelOpen,
         drag
@@ -69,7 +77,9 @@
     const items = $derived<MenuItem[]>([
         { id: 'add-folder', label: t('files.menu_add_root'), disabled: panelOpen },
         { id: 'switch-workspace', label: t('files.menu_switch_workspace'), rule: true },
+        { id: 'new-workspace', label: t('files.menu_new_workspace') },
         { id: 'save-workspace', label: t('files.menu_save_workspace') },
+        { id: 'close-workspace', label: t('files.menu_close_workspace'), disabled: !saved },
         { id: 'open-folder', label: t('files.menu_open_folder'), disabled: panelOpen },
         { id: 'hidden', label: t('files.menu_show_hidden'), active: hidden, rule: true },
         { id: 'ignored', label: t('files.menu_show_ignored'), active: ignored },
@@ -79,7 +89,9 @@
     function picked(id: string): void {
         if (id === 'add-folder') onaddfolder();
         else if (id === 'switch-workspace') onswitch();
+        else if (id === 'new-workspace') onnew();
         else if (id === 'save-workspace') onsave();
+        else if (id === 'close-workspace') onclosework();
         else if (id === 'open-folder') onopenfolder();
         else if (id === 'hidden' || id === 'ignored' || id === 'nesting') onflip(id);
     }

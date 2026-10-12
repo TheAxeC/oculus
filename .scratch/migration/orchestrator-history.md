@@ -2066,3 +2066,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-11. D63's brief check closed in the brief: Z807 to Z815 taken in automode (two apps of one name, oculus's commands from an app, what goes when a host stops, a custom editor's reach, `getConfiguration` synchronous, app settings' write and read, the words File Icon Theme and key, app theme saved names, state placed outside `~/.oculus`); Z791 amended by Z808. Open item 54 raised: Z803's new guarded entry G77 needs Axel's yes; D63 stopped at /spec until he rules.
 - 2026-10-11. D67's preparation: Z816 taken in automode (a bookmark of a root's top stored with no `path` line).
 - 2026-10-11. Open item 54 ruled (a) by Axel: G77 a new guarded entry; Z803 replaced; D63 goes on to its preparation.
+- 2026-10-13. D71's look: Z855 taken in automode (the Live HPC view on a hub that names no cluster shows a plain state); step D74 booked after D73.

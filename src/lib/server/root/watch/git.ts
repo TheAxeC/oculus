@@ -24,10 +24,19 @@
 // A configured root holds repositories below it as well as, when it is one, itself (a `~/workspace`
 // of clones, a monorepo with repositories inside). Every folder down to `repository_scan_depth`
 // levels under such a root that holds a `.git`, a folder or a file, is on the channel after it. The
-// walk skips links, `.git` and the ignored folders below, and runs when the roots are read (at
-// start, on a config push and when the open workspace moves) and when a `rename` event names a path
-// of at most `depth` segments, or a path ending in `/.git` of at most `depth + 1` segments, which
-// is how a repository cloned or initialised while the server runs is found.
+// depth is the root's own (the `repository_scan_depth` of its workspace entry, -1 for no limit) and
+// the global one for a root with none. The walk skips links, `.git` and the ignored folders below,
+// and runs when the roots are read (at start, on a config push and when the open workspace moves)
+// and when a `rename` event names a path of at most `depth` segments, or a path ending in `/.git`
+// of at most `depth + 1` segments, which is how a repository cloned or initialised while the server
+// runs is found. Under no limit a `rename` event asks for the walk when it names a folder (or a
+// path that is gone) or a `.git`, since a file made or moved cannot be a repository.
+//
+// A hub is also walked at any depth for the repositories inside it (nested.ts), whatever its
+// `repository_scan_depth` is, when the roots are read and when a `rename` event names a folder made
+// or moved, a `.git`, or a repository that is gone. The `found` option is called with the lists of
+// each hub and the repositories of the workspace as the Repositories view lists them, once for
+// every change of them.
 //
 // The root the `always` option names is on the channel whether or not a session names it; it is
 // opened before the first sessions message and never dropped for one.
@@ -83,6 +92,13 @@ import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
 import { readState, type StateRead } from '../../core/git/state.ts';
 import { TIMEOUT_MS } from '../../core/git/run.ts';
 import { APP_FOLDERS, PLAIN_FOLDERS } from '../process/build-folders.ts';
+import type { HubRepositories } from '../../git/clone/exclude.ts';
+import {
+    composeFound,
+    mayChangeNested,
+    nestedRepositories,
+    type NestedFound
+} from './repos/nested.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds one root is re-read at most once in. */
@@ -129,6 +145,30 @@ export type GitWatchOptions = {
      */
     depth?: () => number;
     /**
+     * The depth of the roots that carry their own, by directory: a whole number of levels, or -1
+     * for no limit. A root not in the map is looked into down to the `depth` option. Asked again
+     * with the roots.
+     */
+    rootDepths?: () => ReadonlyMap<string, number>;
+    /**
+     * The folders that hold the repository of a project cloned into it, asked again with the roots
+     * and whenever the portfolio is published. Each is a root of its own, whatever the depth of the
+     * folder it lies in, so a repository cloned at the bottom of a hub is on the channel.
+     */
+    cloned?: () => string[];
+    /**
+     * The folders of the workspace that are hubs. The repositories inside each are looked for at
+     * any depth (nested.ts), whatever the scan depth of the folder says.
+     */
+    hubs?: () => string[];
+    /**
+     * Called with the repositories of the workspace and of each hub when the lists changed: at the
+     * first walk, when the roots are read again, and when a folder is made, moved or removed in a
+     * hub or a repository is made or removed in a folder of the workspace. Not called when the
+     * lists are as they were.
+     */
+    found?: (found: NestedFound) => void;
+    /**
      * Call the listener when the open workspace moves, so a folder added in the page is watched
      * from the next tick; the answer takes the listener away.
      */
@@ -167,9 +207,9 @@ export function rootsOf(payload: SessionsPayload): string[] {
 /**
  * The repositories below a root, by path in name order: every folder down to `depth` levels under
  * it that holds a `.git`, a folder or a file. The walk enters repositories too (a repository inside
- * one is found), skips links, `.git` and the ignored folders, and enters every other folder,
- * dot folders included. A folder that cannot be listed is skipped and the rest of the walk goes
- * on. A depth of 0 finds nothing.
+ * one is found), skips links, `.git` and the ignored folders, and enters every other folder, dot
+ * folders included. A folder that cannot be listed is skipped and the rest of the walk goes on. A
+ * depth of 0 finds nothing, and `Infinity` has no limit.
  */
 export function subrepositories(root: string, depth: number): string[] {
     const found: string[] = [];
@@ -200,9 +240,10 @@ export function subrepositories(root: string, depth: number): string[] {
  * `depth + 1` segments is the repository mark of a folder the walk lists. A path inside a `.git`
  * folder is no such event: a commit renames files there all the time.
  */
-function mayChangeRepositories(path: string, depth: number): boolean {
+function mayChangeRepositories(path: string, depth: number, folderOrGone: () => boolean): boolean {
     const parts = path.split(/[/\\]/).filter((part) => part !== '');
     if (parts.length === 0 || parts.slice(0, -1).includes('.git')) return false;
+    if (depth === Infinity) return parts[parts.length - 1] === '.git' || folderOrGone();
     if (parts.length <= depth) return true;
     return parts[parts.length - 1] === '.git' && parts.length <= depth + 1;
 }
@@ -262,6 +303,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const configured = options.roots ?? ((): string[] => []);
     const catalogOf = options.text ?? ((): Record<string, string> => ({}));
     const depthOf = options.depth ?? ((): number => 1);
+    const depthsOf = options.rootDepths ?? ((): ReadonlyMap<string, number> => new Map());
+    const clonedOf = options.cloned ?? ((): string[] => []);
+    const hubsOf = options.hubs ?? ((): string[] => []);
     /** The roots the newest sessions payload named, kept so a rescan can compose the whole list. */
     let named: string[] = [];
     /**
@@ -270,11 +314,24 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
      * composes its list from this copy.
      */
     let browser: string[] = [];
-    /** The text catalog and the repository depth, read with the roots. */
+    /** The text catalog and the repository depths, read with the roots. */
     let text: Record<string, string> = {};
     let depth = 1;
+    let depths: ReadonlyMap<string, number> = new Map();
+    /** The folders of the repositories cloned for projects, as the portfolio last named them. */
+    let cloned: string[] = [];
     /** The repositories found below each of the file browser's roots. */
     const inside = new Map<string, string[]>();
+    /** The repositories found at any depth below each hub, as the last walk of it listed them. */
+    const deep = new Map<string, string[]>();
+    /** The hubs an event says may have made, moved or removed a repository below them. */
+    const deepWants = new Set<string>();
+    /** The lists last handed on, to know whether a walk changed them. */
+    let handedOn = '';
+    let walking = false;
+    let walkAgain = false;
+    /** The hubs of the workspace, read with the roots. */
+    let hubDirs: string[] = [];
     /** The roots an event says may hold a repository that is not listed yet. */
     const rescan = new Set<string>();
     /** The listener the open workspace calls on a move, taken away at close. */
@@ -350,7 +407,10 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const readOnce = async (root: string, announce: boolean, first: boolean): Promise<void> => {
         const born = opened.get(root);
         if (closed || born === undefined) return;
-        if (rescan.delete(root) && scan(root)) follow();
+        if (rescan.delete(root) && scan(root)) {
+            follow();
+            void renewNested();
+        }
         const began = first ? born.at : Date.now();
         const read = await readState(root, text, timeout);
         if (!stillOpen(root, born)) return;
@@ -442,6 +502,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
                     announceFiles(root, named ? null : [...heard.folders].sort());
                 }
                 if (wants.delete(root)) void ask(root, true);
+                if (deepWants.delete(root)) void renewNested();
             }, wait)
         );
     };
@@ -481,8 +542,17 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         if (span.folders.size > MOST_FOLDERS) span.whole = true;
         if (relevant(path)) {
             wants.add(root);
-            if (type === 'rename' && inside.has(root) && mayChangeRepositories(path, depth)) {
-                rescan.add(root);
+            if (type === 'rename' && inside.has(root)) {
+                const folderOrGone = (): boolean => {
+                    const stat = statOf(join(root, path));
+                    return stat === undefined || stat.isDirectory();
+                };
+                if (mayChangeRepositories(path, depthFor(root), folderOrGone)) rescan.add(root);
+            }
+            if (type === 'rename' && hubDirs.includes(root)) {
+                const stat = statOf(join(root, path));
+                const known = deep.get(root) ?? [];
+                if (mayChangeNested(root, path, stat?.isDirectory(), known)) deepWants.add(root);
             }
         }
         touch(root);
@@ -550,6 +620,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         windows.delete(root);
         wants.delete(root);
         rescan.delete(root);
+        deepWants.delete(root);
         last.delete(root);
         readFrom.delete(root);
         settleWaiting(root);
@@ -571,6 +642,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             browser = configured();
             text = catalogOf();
             depth = depthOf();
+            depths = depthsOf();
+            cloned = clonedOf();
+            hubDirs = hubsOf();
         } catch (error) {
             console.error(`git watch: reading the roots failed: ${reason(error)}`);
         }
@@ -578,21 +652,68 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             if (!browser.includes(root)) inside.delete(root);
         }
         for (const root of browser) scan(root);
+        void renewNested();
     };
     /**
      * Read again which repositories one folder of the file browser holds, answering whether the
      * list changed.
      */
+    const depthFor = (root: string): number => {
+        const own = depths.get(root) ?? depth;
+        return own < 0 ? Infinity : own;
+    };
     const scan = (root: string): boolean => {
         const before = inside.get(root) ?? [];
-        const found = subrepositories(root, depth);
+        const found = subrepositories(root, depthFor(root));
         inside.set(root, found);
         return found.length !== before.length || found.some((one, at) => one !== before[at]);
+    };
+    /** Whether the watcher is open, read again after each await of a walk. */
+    const watching = (): boolean => !closed;
+    /** Whether an ask came in while a walk ran, read again at the end of each pass. */
+    const askedAgain = (): boolean => walkAgain;
+    /**
+     * Walk every hub for the repositories below it and hand on the lists when they are not the ones
+     * handed on last. One walk runs at a time; an ask made meanwhile is answered by one more walk
+     * when it ends. A walk that fails keeps the lists as they were.
+     */
+    const renewNested = async (): Promise<void> => {
+        if (options.found === undefined || closed) return;
+        if (walking) {
+            walkAgain = true;
+            return;
+        }
+        walking = true;
+        try {
+            do {
+                walkAgain = false;
+                const hubs: HubRepositories[] = [];
+                for (const hubDir of hubDirs) {
+                    const repositories = await nestedRepositories(hubDir, IGNORED);
+                    deep.set(hubDir, repositories);
+                    hubs.push({ hub: hubDir, repositories });
+                }
+                for (const hubDir of [...deep.keys()]) {
+                    if (!hubDirs.includes(hubDir)) deep.delete(hubDir);
+                }
+                const folders = [...browser, ...hubDirs.filter((one) => !browser.includes(one))];
+                const found = await composeFound(folders, (root) => inside.get(root) ?? [], hubs);
+                const signature = JSON.stringify(found);
+                if (watching() && signature !== handedOn) {
+                    handedOn = signature;
+                    options.found(found);
+                }
+            } while (askedAgain() && watching());
+        } catch (error) {
+            console.error(`git watch: the nested repositories were not read: ${reason(error)}`);
+        } finally {
+            walking = false;
+        }
     };
     const wanted = (): string[] => {
         const roots: string[] = [];
         const listed = browser.flatMap((root) => [root, ...(inside.get(root) ?? [])]);
-        for (const root of [always, ...listed, ...named]) {
+        for (const root of [always, ...listed, ...cloned, ...named]) {
             if (root !== '' && !roots.includes(root)) roots.push(root);
         }
         return roots;
@@ -661,6 +782,12 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
                     named = rootsOf(held.payload as SessionsPayload);
                     follow();
                 }
+                // A portfolio push is how a repository cloned for a project reaches the channel:
+                // the folders the projects clone into are read again, and only those.
+                if (held.channel === 'portfolio') {
+                    cloned = clonedOf();
+                    follow();
+                }
                 // A config push is how a changed configuration reaches this watcher: the roots
                 // option reads the workspace as it is now, so reading it again and following is the
                 // whole work. A sessions push keeps the copy: it says nothing about config. The
@@ -693,6 +820,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     try {
         text = catalogOf();
         depth = depthOf();
+        depths = depthsOf();
+        cloned = clonedOf();
+        hubDirs = hubsOf();
     } catch (error) {
         console.error(`git watch: reading the settings failed: ${reason(error)}`);
     }
@@ -700,7 +830,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         readRoots();
         follow();
     }
-    hub.subscribe(sink, ['sessions', 'config']);
+    hub.subscribe(sink, ['sessions', 'config', 'portfolio']);
 
     return {
         refresh(root: string): Promise<void> {

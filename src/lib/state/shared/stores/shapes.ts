@@ -153,6 +153,11 @@ export type WriteAnswer = {
     id?: string;
     /** The SHA-256, in lower-case hex, of the bytes a source save wrote. */
     hash?: string;
+    /**
+     * The workspace file a Save As or a New made, with every link resolved. Absent on every other
+     * write.
+     */
+    file?: string;
 };
 
 /**

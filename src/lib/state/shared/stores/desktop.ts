@@ -77,8 +77,8 @@ export type DesktopBridge = {
     dropOutside: (drop: TabDrop) => Promise<boolean>;
     /** Tell the host whether this window took the tab it was handed, under its request number. */
     answerDrop: (request: number, taken: boolean) => void;
-    /** Save the arrangement `next`, made from the arrangement `from`. */
-    saveLayout: (next: string, from: string | null) => SaveAnswer;
+    /** Save the arrangement `next` under `key`, made from the arrangement `from`. */
+    saveLayout: (key: string, next: string, from: string | null) => SaveAnswer;
     /** Show the find bar over the window. */
     showFind: () => void;
     /** Run a find of the window's page, or step it. */

@@ -40,6 +40,12 @@ export type Listing = {
 /** One workspace file the switcher offers, and where it lies. */
 export type WorkspaceFile = { path: string; name: string; hub: string };
 
+/**
+ * The open workspace file, with `real`: its path with every link resolved, which is what names the
+ * workspace to the arrangement saved for it.
+ */
+type OpenWorkspaceFile = WorkspaceFile & { real: string };
+
 /** One recent workspace: the file, and whether it is gone from the disk. */
 export type RecentWorkspace = WorkspaceFile & { missing: boolean };
 
@@ -64,7 +70,7 @@ export function noMachine(): WorkspaceMachine {
 export type WorkspacesState = {
     /** The server account's home folder, which a path under it is written `~` from; else empty. */
     home: string;
-    open: WorkspaceFile | null;
+    open: OpenWorkspaceFile | null;
     folders: FsRoot[];
     primary: string | null;
     /** Where oculus's own `config/` folder lies among the folders, or null when none holds it. */
@@ -246,7 +252,11 @@ const recentShape = unchanged(
  */
 export const workspacesShape = z.object({
     home: z.string().catch(''),
-    open: workspaceFileShape.nullable().catch(null),
+    open: unchanged(
+        z.object({ path: z.string(), name: z.string(), hub: z.string(), real: z.string() })
+    )
+        .nullable()
+        .catch(null),
     folders: rowsShape(folderShape).catch([]),
     primary: z.string().nullable().catch(null),
     engine: z.object({ root: z.string(), path: z.string() }).nullable().catch(null),

@@ -43,6 +43,20 @@ text:
             chat_name_focus: '{0}'
             seed_focus: "Ask about {0}: methods, results, what's next..."
             seed_portfolio: Ask about the portfolio, e.g. "what's blocked?", "summarise a project". Runs on your Claude Code / Max plan; I remember this conversation.
+        clone:
+            busy: 'The folder {0} is being cloned into'
+            already_cloned: 'The folder {0} already holds a repository'
+            empty_remote: 'The remote {0} has no branch to check out'
+            files_held: 'The repository tracks files the folder {0} already holds: {1}'
+            gh_unavailable: 'The GitHub CLI could not list your repositories ({0}); install gh and run gh auth login'
+            gh_unreadable: 'The GitHub CLI answered with a list that could not be read; run gh auth login again'
+            made_by_hand: 'The folder {0} could not be made'
+            no_such_project: The project is not in the portfolio
+            no_url: 'The project has no repository url to clone from'
+            not_a_name: 'The name {0} gives no folder name'
+            parent_gone: 'The folder {0} is not a folder on this machine'
+            no_parent: Choose the folder to clone into
+            no_repository: The repository to clone is not named
         commands:
             held_file: '{0} is already a command in .oculus/commands.yml of this repository, so it cannot be saved under that name'
             held_found: '{0} is already a command found in this repository, so it cannot be saved under that name'
@@ -162,6 +176,10 @@ text:
             cloned: Cloned {0}
             code_switched: The code/ folder now holds the files of {0}
             commit_needs_message: A commit needs a message
+            diff_not_listed: 'The mirror has no change to {0} to show'
+            diff_too_large: '{0} is too large to show'
+            diff_unknown_side: 'The comparison {0} is not one the mirror offers'
+            fetched: Fetched {0}
             manifest_refused: The push was made, but the manifest refused {0}
             mirror_dirty: The mirror is dirty, so switching would carry the changes across
             mirror_made: Made an empty mirror on {0}
@@ -323,7 +341,7 @@ text:
             not_in_hub: the manifest is not inside the hub
             not_in_schema: the manifest schema does not name the field
             not_list: the value is not a list
-            not_repository_file: the manifest is not the .oculus/project.yml of the repository
+            not_folder_file: the manifest is neither the project.yml nor the .oculus/project.yml of the folder
             not_text: the value is not text
             read_only: the field is read-only
             unknown_type: unknown field type {0}

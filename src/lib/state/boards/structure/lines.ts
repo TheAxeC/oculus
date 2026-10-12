@@ -11,7 +11,7 @@ import {
     searchRevealShape,
     wordShape
 } from '../../../data/shapes/shapes.ts';
-import { realProjects } from '../../sources/venues.ts';
+import { realProjects } from '../../sources/registries/venues.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../../../data/model/index.ts';
 

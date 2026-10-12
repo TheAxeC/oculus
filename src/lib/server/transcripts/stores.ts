@@ -39,8 +39,13 @@ export function claudeTranscripts(
         if (!project.isDirectory()) continue;
         collectClaude(join(store, project.name), found, cutoff, options.nested === true);
     }
-    found.sort((a, b) => b.mtimeMs - a.mtimeMs);
+    found.sort(newestFirst);
     return maxSessions ? found.slice(0, maxSessions) : found;
+}
+
+/** Newest first; files of one mtime keep a fixed order, so a longer listing extends a shorter. */
+function newestFirst(a: TranscriptFile, b: TranscriptFile): number {
+    return b.mtimeMs - a.mtimeMs || (a.path < b.path ? -1 : 1);
 }
 
 function collectClaude(
@@ -75,7 +80,7 @@ export function codexRollouts(
     const cutoff = windowDays ? Date.now() - windowDays * 86400 * 1000 : null;
     const found: TranscriptFile[] = [];
     walk(store, found, cutoff);
-    found.sort((a, b) => b.mtimeMs - a.mtimeMs);
+    found.sort(newestFirst);
     return maxSessions ? found.slice(0, maxSessions) : found;
 }
 

@@ -1,9 +1,10 @@
 // Layer 2, server. The Claude Code transcript fold: one JSON record in, the accumulator updated.
 //
-// A transcript is a line of JSON per record. Five kinds carry anything: `ai-title` names the
-// session, `last-prompt` repeats what was last asked, a `system` record of subtype `turn_duration`
-// closes a turn, and the `user` and `assistant` records are the conversation itself, with the tool
-// calls, the touched files, the subagents and the token usage inside their content blocks.
+// A transcript is a line of JSON per record. Six kinds carry anything: `ai-title` names the
+// session, `agent-name` holds the name it was started under, `last-prompt` repeats what was last
+// asked, a `system` record of subtype `turn_duration` closes a turn, and the `user` and `assistant`
+// records are the conversation itself, with the tool calls, the touched files, the subagents and
+// the token usage inside their content blocks.
 //
 // A subagent is a `tool_use` block named `Agent`, paired to its `tool_result` by id; `isSidechain`
 // is false on every record of the store and says nothing, so nothing here reads it. A subagent
@@ -42,6 +43,9 @@ export const FILE_TOOLS = [...EDIT_TOOLS, 'Read'];
 
 /** A record of the `ai-title` kind: the title the session was given, when it has one. */
 const aiTitleShape = z.object({ aiTitle: filledTextShape });
+
+/** A record of the `agent-name` kind: the name the session was started under. */
+const agentNameShape = z.object({ agentName: filledTextShape });
 
 /** A record of the `last-prompt` kind: the prompt, which may be the empty text. */
 const lastPromptShape = z.object({ lastPrompt: textShape });
@@ -181,6 +185,9 @@ export function foldClaude(acc: Acc, record: Record<string, unknown>): void {
     if (kind === 'ai-title') {
         const title = aiTitleShape.parse(record).aiTitle;
         if (title) acc.aiTitle = title;
+    } else if (kind === 'agent-name') {
+        const name = agentNameShape.parse(record).agentName;
+        if (name) acc.agentName = name;
     } else if (kind === 'last-prompt') {
         const prompt = lastPromptShape.parse(record).lastPrompt;
         if (prompt !== undefined) acc.lastPrompt = prompt;

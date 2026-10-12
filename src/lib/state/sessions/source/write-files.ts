@@ -24,10 +24,10 @@ export type FileLookups = {
     /** The workspace folder that holds oculus's config folder and the path to it, or null. */
     engine: () => { root: string; path: string } | null;
     /**
-     * The folder of a project by its id, under the root that holds it (its hub, or its repository,
-     * whose folder is the empty path); null when none has it.
+     * The manifest file of a project by its id, under the root that holds it (its hub, or its
+     * workspace folder); null when none has it.
      */
-    projectFolder: (id: string) => ViewSource | null;
+    projectManifest: (id: string) => ViewSource | null;
     /** The file of a collection of a hub other than the primary, by its id; null for any other. */
     collectionFile: (id: string) => ViewSource | null;
     /** The file of each feed, per kind, as the page last received them. */
@@ -42,24 +42,27 @@ export type FileLookups = {
 };
 
 /**
- * The folder of a project under the root that holds it, from the project's record: its hub's root
- * at its folder, or its repository's root at the empty path. Null for no project and for a project
- * with no folder.
+ * The manifest file of a project under the root that holds it: the file the project was read from,
+ * `project.yml` or `.oculus/project.yml` in its folder, whether the folder lies in a hub or is a
+ * workspace folder. Null for no project and for a project with no folder.
  */
-export function folderOfProject(
+export function manifestOfProject(
     project: Project | undefined,
     primary: string | null
 ): ViewSource | null {
     if (project === undefined || project.folder === '') return null;
     const { root, path } = placeOf(project, primary);
-    return { root, path };
+    const name = project.file.endsWith(`/${ROOT_FOLDER}/${MANIFEST}`)
+        ? `${ROOT_FOLDER}/${MANIFEST}`
+        : MANIFEST;
+    return { root, path: path === '' ? name : `${path}/${name}` };
 }
 
 /** Lookups that name nothing, for a store built without the page's. */
 export const NO_LOOKUPS: FileLookups = {
     primary: () => null,
     engine: () => null,
-    projectFolder: () => null,
+    projectManifest: () => null,
     collectionFile: () => null,
     feeds: () => null,
     changeFile: () => null,
@@ -75,17 +78,6 @@ function text(value: unknown): string {
 function inHub(path: string, look: FileLookups): ViewSource | null {
     const primary = look.primary();
     return path === '' || primary === null ? null : { root: primary, path };
-}
-
-/**
- * A project's manifest, under the root that holds the project: `project.yml` in the project's
- * folder of its hub, and `.oculus/project.yml` for a project read from a repository, whose folder
- * is the top of its root (an empty path).
- */
-function manifestOf(folder: ViewSource | null): ViewSource | null {
-    if (folder === null) return null;
-    const path = folder.path === '' ? ROOT_FOLDER : folder.path;
-    return { root: folder.root, path: `${path}/${MANIFEST}` };
 }
 
 /** A file of oculus's config folder, or null for an empty name and when no folder holds it. */
@@ -155,7 +147,7 @@ export function writtenFile(
         viewSourceFile('collection', merged, look.primary(), text(name));
     switch (body.kind) {
         case 'manifest':
-            return manifestOf(look.projectFolder(text(body.id)));
+            return look.projectManifest(text(body.id));
         case 'entry':
         case 'delete-entry':
             return collection(body.collection, body.id);
@@ -167,7 +159,7 @@ export function writtenFile(
         case 'subtask-add': {
             const target = fields(body.target);
             if (text(target.collection) !== '') return collection(target.collection, target.id);
-            return manifestOf(look.projectFolder(text(target.id)));
+            return look.projectManifest(text(target.id));
         }
         case 'host':
             return inHub(text(merged.career_file) || CAREER_FILE, look);
@@ -221,5 +213,5 @@ export function writtenFile(
  */
 export function depositedFile(action: string, id: string, look: FileLookups): ViewSource | null {
     if (action !== 'push') return null;
-    return manifestOf(look.projectFolder(id));
+    return look.projectManifest(id);
 }

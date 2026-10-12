@@ -18,6 +18,7 @@ import { createClientState } from '../../../fixtures/client.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import {
     fakeStorage,
+    openLayout,
     heldPages,
     pageAround
 } from '../../../state/workbench/layout/layout-fixture.ts';
@@ -62,7 +63,8 @@ function tabs() {
         ],
         active: 'editor'
     };
-    client.layout.loadLayout(
+    openLayout(
+        client.layout,
         fakeStorage(serialiseLayout(heldPages([pageAround('main', pane)], [])))
     );
     const page = client.layout.currentPage().id;

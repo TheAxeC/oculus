@@ -300,6 +300,7 @@ function openSubtasks(project: Project): string {
  */
 export function fieldValues(project: Project): Record<string, unknown> {
     const code = project.codeAvailability ?? {};
+    const remote = project.repository;
     return {
         id: project.id,
         tier: project.tier,
@@ -307,6 +308,7 @@ export function fieldValues(project: Project): Record<string, unknown> {
         short: project.short,
         title: project.title,
         links: project.links,
+        tags: project.tags,
         lead: project.lead,
         authors: project.authors,
         'status.chips': project.chips,
@@ -338,6 +340,12 @@ export function fieldValues(project: Project): Record<string, unknown> {
         'code_availability.url': code.url,
         'code_availability.doi': code.doi,
         'code_availability.repo': code.repo,
+        'repository.url': remote?.url,
+        'repository.visibility': remote?.visibility,
+        'repository.description': remote?.description,
+        'repository.homepage': remote?.homepage,
+        'repository.topics': remote?.topics,
+        'repository.date': remote?.date,
         compute: project.resourceIds,
         'reproduced.date': project.reproduced?.date,
         'reproduced.note': project.reproduced?.note,

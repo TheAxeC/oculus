@@ -29,6 +29,12 @@ text:
         card:
             author_glyph: author
             clipboard_blocked: clipboard blocked
+            clone: Clone
+            clone_glyph: clone
+            clone_running: Cloning...
+            clone_tip: 'Clone the repository at {0} into a folder you pick'
+            cloned_in: 'Cloned in {0}'
+            cloned_in_tip: 'The repository of this project is cloned in {0}'
             code_glyph: published
             collaborators: Collaborators
             collaborator_glyph: collab

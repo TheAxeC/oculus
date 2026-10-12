@@ -259,8 +259,15 @@ export type FsStore = {
      * Save the open workspace as `.oculus/workspaces/<name>.yml` of the primary hub (or the first).
      */
     saveWorkspace: (name: string) => Promise<WriteAnswer>;
+    /**
+     * Make `.oculus/workspaces/<name>.yml` with no folder in the primary hub (or the first) and
+     * open it.
+     */
+    newWorkspace: (name: string) => Promise<WriteAnswer>;
     /** Open the workspace file at that path. */
     selectWorkspace: (path: string) => Promise<WriteAnswer>;
+    /** Leave the open workspace file for the unsaved workspace with no folder. */
+    closeWorkspace: () => Promise<WriteAnswer>;
     /** Add one bookmark through the collection write path, and ask for them again. */
     addBookmark: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     /** Take one bookmark out, by the label it is found by. */
@@ -285,7 +292,12 @@ export type FsStore = {
     invalidate: () => void;
 };
 
-export function createFs(writes: WritesStore, entities: EntitiesStore, queries: Queries): FsStore {
+export function createFs(
+    writes: WritesStore,
+    entities: EntitiesStore,
+    queries: Queries,
+    carry: (identity: string) => void = () => undefined
+): FsStore {
     /**
      * The notes this page deleted. A deleted note is never asked for again and never written again,
      * which is what keeps a wait that was still running from putting one back on the disk.
@@ -709,6 +721,19 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
         return answer;
     }
 
+    /**
+     * Save As. The file it made is handed to `carry` before the workspaces are asked for again, so
+     * the arrangement shown is saved for the file before the workspace answer names it.
+     */
+    async function saveAs(fields: Record<string, unknown>): Promise<WriteAnswer> {
+        const answer = await writes.send(fields, FS_PATH);
+        if (answer.ok) {
+            if (answer.file !== undefined) carry(answer.file);
+            invalidate();
+        }
+        return answer;
+    }
+
     /** One note action. It marks the notes and leaves every other held answer where it is. */
     async function noteAct(fields: Record<string, unknown>): Promise<WriteAnswer> {
         const answer = await writes.send(fields, FS_PATH);
@@ -802,8 +827,10 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
             return answer;
         },
         orderNotes: (ids: string[]) => noteAct({ action: 'order-notes', ids }),
-        saveWorkspace: (name: string) => act({ action: 'save-workspace', name }),
+        saveWorkspace: (name: string) => saveAs({ action: 'save-workspace', name }),
+        newWorkspace: (name: string) => act({ action: 'new-workspace', name }),
         selectWorkspace: (path: string) => act({ action: 'select-workspace', path }),
+        closeWorkspace: () => act({ action: 'close-workspace' }),
         addBookmark: (fields: Record<string, unknown>) =>
             bookmarkWrite({ kind: 'new-entry', collection: BOOKMARK_COLLECTION, fields }),
         removeBookmark: (label: string) =>

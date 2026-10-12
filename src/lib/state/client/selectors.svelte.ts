@@ -82,7 +82,7 @@ export type {
  * repository's manifest sits in its `.oculus` folder, so a repository's record names its folder.
  */
 export function folderOf(project: Project): string {
-    if (project.repository !== undefined) return project.repository.dir;
+    if (project.workspaceFolder !== undefined) return project.workspaceFolder.dir;
     const cut = project.file.lastIndexOf('/');
     return cut < 0 ? '' : project.file.slice(0, cut);
 }
@@ -94,7 +94,7 @@ export function folderOf(project: Project): string {
  * so its folder is the whole of it.
  */
 function hubOfProject(project: Project): string {
-    if (project.repository !== undefined) return project.repository.dir;
+    if (project.workspaceFolder !== undefined) return project.workspaceFolder.dir;
     if (project.folder === '') return '';
     const folder = folderOf(project);
     const suffix = `/${project.folder}`;
@@ -327,9 +327,10 @@ export function createSelectors(
     /**
      * One project as a board card shows it, whichever board holds its tier. The project view draws
      * the same card as the board does and has no board of its own, so the preset is found by the
-     * project's tier rather than by a view id; a tier no board claims falls back to the first
-     * board, exactly as presetFor does with a view id it does not know, and its project is still
-     * joined, so a software project opens as a card in its own tab although no board lists it.
+     * project's tier rather than by a view id; a project of a tier no board claims (a manifest with
+     * a missing or unknown `tier`) falls back to the first board, exactly as presetFor does with a
+     * view id it does not know, and its project is still joined, so it opens as a card in its own
+     * tab although no board lists it.
      */
     function boardItemOf(id: Id): BoardItem | null {
         const snapshot = entities.portfolio();
@@ -506,7 +507,7 @@ export function createSelectors(
             const key = folderOf(project);
             if (key === '' || held.has(key)) continue;
             held.add(key);
-            const short = project.repository?.root ?? project.folder;
+            const short = project.workspaceFolder?.root ?? project.folder;
             extra.push({
                 key,
                 short,

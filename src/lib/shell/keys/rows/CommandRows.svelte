@@ -6,8 +6,8 @@
     // type their name and a space, which opens their list; the others change the theme, the file
     // icon theme, the CRT overlay, the tabs or the folder shown, and close the palette. A tab a
     // command showed takes the keyboard on its head once the page has drawn it, since the tab
-    // chosen is where the reader went. A refusal of Open Folder is said in the palette, which stays
-    // open.
+    // chosen is where the reader went. A refusal of Open Folder or of Close Workspace is said in
+    // the palette, which stays open.
 
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import { landOn } from '$lib/shell/keys/palette-open';
@@ -15,6 +15,7 @@
     import { opensAsMode } from '$lib/shell/keys/palette-modes';
     import {
         folderCommand,
+        workspaceCommand,
         type PaletteCommand,
         type ParsedCommand
     } from '$lib/state/workbench/palette';
@@ -24,6 +25,7 @@
 
     const {
         explorer,
+        fs: { closeWorkspace },
         layout: { openView },
         paletteSource: { paletteSource },
         ui: { setCrt, setFileIcons, setTheme, crt },
@@ -57,6 +59,13 @@
         else onsaid(result.said);
     }
 
+    /** Close Workspace: the open workspace file is left; a refusal is said in the palette. */
+    async function closeWork(): Promise<void> {
+        const result = await workspaceCommand(() => closeWorkspace(), '');
+        if (result.closed) onclose();
+        else onsaid(result.said);
+    }
+
     function run(command: PaletteCommand): void {
         if (!command.available) return;
         const argument = parsed.argument;
@@ -68,6 +77,10 @@
         }
         if (command.name === 'folder') {
             void openFolder();
+            return;
+        }
+        if (command.name === 'workspace-close') {
+            void closeWork();
             return;
         }
         if (command.name === 'theme') {

@@ -36,7 +36,7 @@
         venueUsers,
         venuesByCategory,
         type VenuesState
-    } from '$lib/state/sources/venues';
+    } from '$lib/state/sources/registries/venues';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import {
         applyThemeFacets,

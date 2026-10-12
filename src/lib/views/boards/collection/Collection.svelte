@@ -51,10 +51,8 @@
     // their order come from the file's own `schema:`, through the pure functions of
     // state/boards/collection.ts.
     //
-    // Two collections carry one thing of their own, and both are that collection's own file joined
-    // to the projects rather than a second view: funding adds the card of the projects no scheme
-    // covers, and code adds what the portfolio says about its own code above the cards, then the
-    // software projects of its own scan tier, which the registry file does not hold.
+    // The funding collection carries one thing of its own, its file joined to the projects rather
+    // than a second view: the card of the projects no scheme covers.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -64,8 +62,6 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Coverage from './Coverage.svelte';
-    import Software from './Software.svelte';
     import EntryCard from '../../shared/forms/entry/EntryCard.svelte';
     import { taskCardActions } from '../../shared/forms/entry/task-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
@@ -104,7 +100,7 @@
         layout: { openView },
         terminals: { composeAt },
         fs: { primary, roots },
-        selectors: { archiveDead, collectionOf, collectionsOfKey, configMap, projects },
+        selectors: { collectionOf, collectionsOfKey, configMap, projects },
         source: { unsavedFile },
         ui: { cardMoveRequested, instanceState, setInstanceState },
         writes: { reorderEntries }
@@ -321,11 +317,6 @@
 
         {#if said !== ''}
             <p class="said">{said}</p>
-        {/if}
-
-        {#if key === 'code'}
-            <Coverage projects={all} dead={archiveDead()} />
-            <Software projects={all} />
         {/if}
 
         {#if shown.length === 0 && unfunded.length === 0}

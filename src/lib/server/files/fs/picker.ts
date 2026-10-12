@@ -29,30 +29,69 @@
 // ended the panel (which no page reads), and `{ error: 'busy' }`.
 
 import { execFile } from 'node:child_process';
+import { statSync } from 'node:fs';
 import { json } from '@sveltejs/kit';
 import { tokenedBody } from '../../core/auth.ts';
 
 /**
- * The script the panel runs: folders only, several at once, in front, starting at the home folder.
+ * What a request may ask of the panel: the folder it opens at (the home folder when absent or not
+ * an absolute path) and whether it takes one folder rather than several. A single-folder panel says
+ * Choose on its button, and the other says Add.
  */
-export const PICKER_SCRIPT = [
-    "ObjC.import('AppKit');",
-    'const panel = $.NSOpenPanel.openPanel;',
-    'panel.canChooseDirectories = true;',
-    'panel.canChooseFiles = false;',
-    'panel.allowsMultipleSelection = true;',
-    "panel.prompt = 'Add';",
-    'panel.directoryURL = $.NSURL.fileURLWithPath($.NSHomeDirectory());',
-    '$.NSApplication.sharedApplication.activateIgnoringOtherApps(true);',
-    'const chosen = [];',
-    'if (panel.runModal === 1) {',
-    '    const urls = panel.URLs;',
-    '    for (let at = 0; at < urls.count; at += 1) {',
-    '        chosen.push(ObjC.unwrap(urls.objectAtIndex(at).path));',
-    '    }',
-    '}',
-    "chosen.join('\\n');"
-].join('\n');
+type PickOptions = { start?: string; single?: boolean };
+
+/** Whether a path is a folder on this machine. */
+function isFolder(path: string): boolean {
+    try {
+        return statSync(path).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * The options a request body carries, each kept only when it has its shape: a start that is not an
+ * absolute path to a folder that exists is left out, so the panel opens at the home folder.
+ */
+function pickOptionsOf(body: unknown): PickOptions {
+    const held = typeof body === 'object' && body !== null ? (body as Record<string, unknown>) : {};
+    const start =
+        typeof held.start === 'string' && held.start.startsWith('/') && isFolder(held.start)
+            ? held.start
+            : undefined;
+    return {
+        ...(start === undefined ? {} : { start }),
+        ...(held.single === true ? { single: true } : {})
+    };
+}
+
+/**
+ * The script the panel runs: folders only, in front, starting at the folder asked for or the home
+ * folder, with several folders to choose from unless one is asked for.
+ */
+export function pickerScript(options: PickOptions = {}): string {
+    const start =
+        options.start === undefined ? '$.NSHomeDirectory()' : JSON.stringify(options.start);
+    return [
+        "ObjC.import('AppKit');",
+        'const panel = $.NSOpenPanel.openPanel;',
+        'panel.canChooseDirectories = true;',
+        'panel.canChooseFiles = false;',
+        'panel.canCreateDirectories = true;',
+        `panel.allowsMultipleSelection = ${options.single === true ? 'false' : 'true'};`,
+        `panel.prompt = ${options.single === true ? "'Choose'" : "'Add'"};`,
+        `panel.directoryURL = $.NSURL.fileURLWithPath(${start});`,
+        '$.NSApplication.sharedApplication.activateIgnoringOtherApps(true);',
+        'const chosen = [];',
+        'if (panel.runModal === 1) {',
+        '    const urls = panel.URLs;',
+        '    for (let at = 0; at < urls.count; at += 1) {',
+        '        chosen.push(ObjC.unwrap(urls.objectAtIndex(at).path));',
+        '    }',
+        '}',
+        "chosen.join('\\n');"
+    ].join('\n');
+}
 
 /** What the script came to: its exit status, what it printed and what it wrote to stderr. */
 export type PickRun = { code: number | null; out: string; err: string };
@@ -67,7 +106,7 @@ export type PickRunner = (script: string, signal: AbortSignal) => Promise<PickRu
  * The panel as the parent process shows it: the chosen paths, null when the reader cancelled, and
  * a rejection when it failed.
  */
-type PickAsk = () => Promise<string[] | null>;
+type PickAsk = (options: PickOptions) => Promise<string[] | null>;
 
 /**
  * The panel open now, as the controller that ends it, or null with none; held by one
@@ -155,6 +194,7 @@ export async function handlePick(
         words: { token: 'token', json: 'not-json' }
     });
     if (read instanceof Response) return read;
+    const options = pickOptionsOf(read.body);
     if (state.ask === undefined && (deps.platform ?? process.platform) !== 'darwin') {
         return json({ error: 'unsupported' }, { status: 400, headers: NO_STORE });
     }
@@ -166,10 +206,10 @@ export async function handlePick(
     if (deps.connection?.destroyed === true) end();
     try {
         if (state.ask !== undefined) {
-            const chosen = await Promise.race([state.ask(), endsWith(panel.signal)]);
+            const chosen = await Promise.race([state.ask(options), endsWith(panel.signal)]);
             return json({ ok: true, paths: chosen ?? [] }, { headers: NO_STORE });
         }
-        const done = await (deps.run ?? osascript)(PICKER_SCRIPT, panel.signal);
+        const done = await (deps.run ?? osascript)(pickerScript(options), panel.signal);
         if (cancelled(done)) return json({ ok: true, paths: [] }, { headers: NO_STORE });
         if (done.code !== 0 || panel.signal.aborted) {
             return json({ error: 'failed' }, { status: 500, headers: NO_STORE });

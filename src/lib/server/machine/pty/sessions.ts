@@ -28,15 +28,10 @@ import type {
     TerminalKind,
     TerminalResume
 } from '../../../data/model/index.ts';
+import { PREFIX, USAGE_PREFIX } from '../../transcripts/names.ts';
 import { captureArgs } from './capture.ts';
 import { TerminalRefused } from './refusal.ts';
 import { inputChunks, run, type KeyChunk, type TmuxOptions } from './tmux.ts';
-
-/** Every tmux session oculus owns carries this prefix and nothing else does. */
-export const PREFIX = 'oculus-';
-
-/** Hidden Claude usage sessions begin with this full tmux session-name prefix. */
-export const USAGE_PREFIX = `${PREFIX}usage-`;
 
 /** The three things a terminal runs: DESIGN.md's two agents and a shell. */
 export const KINDS: TerminalKind[] = ['claude', 'codex', 'shell'];

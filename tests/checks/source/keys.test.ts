@@ -177,7 +177,8 @@ const COMPUTED_PREFIXES = [
     {
         file: 'lib/views/boards/projects/Projects.svelte',
         start: 'lookup(`views.${preset.id}`',
-        keys: () => ['projects', 'coauthor', 'archive', 'personal'].map((id) => `views.${id}`)
+        keys: () =>
+            ['projects', 'coauthor', 'archive', 'personal', 'software'].map((id) => `views.${id}`)
     },
     {
         // The words a new project of each tier gets are keyed by the tier itself, so a tier added

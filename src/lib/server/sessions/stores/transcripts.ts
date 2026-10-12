@@ -43,6 +43,7 @@ import { distinctFolders } from '../folders.ts';
 import { defaultOverridesPath, hiddenIds } from '../overrides.ts';
 import { liveFrom, mergeLive, registryCandidates, systemProbe, type Probe } from '../registry.ts';
 import { finish, newAcc, prune, type Acc } from '../record.ts';
+import { USAGE_PREFIX } from '../../transcripts/names.ts';
 
 export const DEFAULT_WINDOW_DAYS = 2;
 export const DEFAULT_MAX_SESSIONS = 40;
@@ -214,6 +215,17 @@ export function readSession(path: string, store: string | null = null): SessionR
     return record;
 }
 
+/** One file folded: its record, its cache entry, and whether a usage refresh started it. */
+type Folded = { record: SessionRecord; entry: CacheEntry | null; usage: boolean };
+
+/**
+ * Whether a session was started by the usage refresher, which names its sessions with
+ * `USAGE_PREFIX`; such a session is spend on the account and no session of the reader's.
+ */
+function startedByUsage(acc: Acc): boolean {
+    return acc.agentName?.startsWith(USAGE_PREFIX) === true;
+}
+
 /** Fold one file, reusing the cache entry when it still describes the same file. */
 function session(
     found: Found,
@@ -221,7 +233,7 @@ function session(
     cached: CacheEntry | undefined,
     limit: number,
     now: number
-): { record: SessionRecord; entry: CacheEntry | null } {
+): Folded {
     const tool = toolOf(found.path);
     const empty = accFor(found.path, store, tool);
     let acc: Acc;
@@ -233,7 +245,7 @@ function session(
         // Too big to fold inside a scan, and there is no partial state to build on.
         const record = finish(empty, stateOf(empty, found.mtimeMs, now));
         record.truncated = true;
-        return { record, entry: null };
+        return { record, entry: null, usage: false };
     } else {
         acc = empty;
     }
@@ -249,22 +261,18 @@ function session(
     };
     const record = finish(acc, stateOf(acc, found.mtimeMs, now));
     settleBackground(acc, record, found.mtimeMs, now);
-    return { record, entry };
+    return { record, entry, usage: startedByUsage(acc) };
 }
 
 /** One transcript found in a store, with the store it was found in (a Codex slug needs it). */
 type Located = { file: Found; store: string };
 
-/** Every file of one kind across its folders, newest first, capped as one store is. */
-function gather(
-    folders: string[],
-    list: (store: string) => Found[],
-    maxSessions: number
-): Located[] {
+/** Every file of one kind across its folders, newest first; files of one mtime by path. */
+function gather(folders: string[], list: (store: string) => Found[]): Located[] {
     const found: Located[] = [];
     for (const store of folders) for (const file of list(store)) found.push({ file, store });
-    found.sort((a, b) => b.file.mtimeMs - a.file.mtimeMs);
-    return maxSessions ? found.slice(0, maxSessions) : found;
+    found.sort((a, b) => b.file.mtimeMs - a.file.mtimeMs || (a.file.path < b.file.path ? -1 : 1));
+    return found;
 }
 
 /**
@@ -293,10 +301,15 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     const found: { record: SessionRecord; mtimeMs: number }[] = [];
     let running: boolean | null = null;
 
-    /** Fold one file, merge its liveness, and keep it. */
-    const take = (file: Found, store: string, tool: SessionTool): void => {
+    /**
+     * Fold one file, merge its liveness, and keep it; false for a file that could not be read and
+     * for a session a usage refresh started, which the cache still remembers.
+     */
+    const take = (file: Found, store: string, tool: SessionTool): boolean => {
         const folded = fold(file, tool === 'codex' ? store : null, previous[file.path], limit, now);
-        if (folded === null) return;
+        if (folded === null) return false;
+        if (folded.entry !== null) fresh[file.path] = folded.entry;
+        if (folded.usage) return false;
         let entry: LiveEntry | undefined;
         if (tool === 'codex') {
             running ??= codexRunning(options.codexProbe ?? systemCodexProbe);
@@ -305,16 +318,30 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
             entry = live.get(folded.record.id);
         }
         mergeLive(folded.record, entry, dismissed);
-        if (folded.entry !== null) fresh[file.path] = folded.entry;
         found.push({ record: folded.record, mtimeMs: file.mtimeMs });
+        return true;
     };
 
-    const claude = (store: string): Found[] => claudeTranscripts(store, windowDays, maxSessions);
-    for (const { file, store } of gather(stores, claude, maxSessions)) take(file, store, 'claude');
-    const codex = (store: string): Found[] => codexRollouts(store, windowDays, maxSessions);
-    for (const { file, store } of gather(codexStores, codex, maxSessions)) {
-        take(file, store, 'codex');
-    }
+    /**
+     * Take the newest files of one kind until `maxSessions` of them are kept. Each store is walked
+     * once, every file in the window listed newest first, and the files are folded in that order,
+     * so a session a usage refresh started or a file that could not be read is passed over without
+     * another walk of the stores.
+     */
+    const takeNewest = (
+        folders: string[],
+        list: (store: string) => Found[],
+        tool: SessionTool
+    ): void => {
+        let kept = 0;
+        for (const { file, store } of gather(folders, list)) {
+            if (take(file, store, tool)) kept += 1;
+            if (maxSessions && kept >= maxSessions) return;
+        }
+    };
+
+    takeNewest(stores, (store) => claudeTranscripts(store, windowDays, 0), 'claude');
+    takeNewest(codexStores, (store) => codexRollouts(store, windowDays, 0), 'codex');
 
     saveCache(cachePath, previous, fresh);
     found.sort((a, b) => b.mtimeMs - a.mtimeMs);
@@ -328,7 +355,7 @@ function fold(
     cached: CacheEntry | undefined,
     limit: number,
     now: number
-): { record: SessionRecord; entry: CacheEntry | null } | null {
+): Folded | null {
     try {
         return session(file, store, cached, limit, now);
     } catch {

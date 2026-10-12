@@ -12,16 +12,20 @@
 // a hub. `primary` names a hub among the folders, and a `primary` naming anything else is a finding
 // and leaves the workspace with no primary.
 //
-// A folder that is no hub and holds `.oculus/project.yml` is a project of the workspace, unless it
-// is, lies inside or holds a hub: its manifest is then not read, with a finding, since the hub's
-// own scan reads the project there.
+// An entry may carry `repository_scan_depth`, a whole number of at least -1: how many levels below
+// the folder the Repositories view looks for repositories, -1 meaning no limit. Any other value is
+// a finding on the entry and the global `repository_scan_depth` applies to the folder.
+//
+// A folder that is no hub and holds `project.yml` or `.oculus/project.yml` is a project of the
+// workspace, unless it is, lies inside or holds a hub: its manifest is then not read, with a
+// finding, since the hub's own scan reads the project there.
 
-import { existsSync, statSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'yaml';
-import { MANIFEST, ROOT_FOLDER, HUB_LAYER } from '../../../data/helpers/hub-names.ts';
 import type { EngineConfigIn } from '../../../data/index.ts';
+import { isHubFolder, projectFileIn } from '../../../data/sources/manifests.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
 import type { StateFolder } from './state.ts';
 
@@ -34,7 +38,14 @@ export type WorkspaceFinding = { file: string; key: string; id: string; args: st
  * project of the workspace unless `noProject` is set, which the reader of the workspace does for a
  * folder that overlaps a hub and which leaves the root served and read by nothing else.
  */
-export type Root = { key: string; dir: string; hub?: true; noProject?: true };
+export type Root = {
+    key: string;
+    dir: string;
+    hub?: true;
+    noProject?: true;
+    /** The entry's own `repository_scan_depth`; the global depth applies when it is absent. */
+    scanDepth?: number;
+};
 
 /** One folder of an open workspace. */
 export type WorkspaceFolder = {
@@ -48,7 +59,20 @@ export type WorkspaceFolder = {
     /** Whether the folder holds `.oculus/config/`. */
     hub: boolean;
     noProject?: true;
+    /** The entry's own `repository_scan_depth`, a whole number of at least -1. */
+    scanDepth?: number;
+    /**
+     * The entry's `repository_scan_depth` exactly as the file wrote it, a value that is no depth
+     * included, which a copy of the workspace carries over so the finding that names it stays.
+     */
+    writtenDepth?: unknown;
 };
+
+/** The key of a workspace entry that sets how deep the folder is searched for repositories. */
+export const SCAN_DEPTH = 'repository_scan_depth';
+
+/** The least a scan depth may be: -1 is no limit. */
+const UNLIMITED = -1;
 
 /** The characters a folder name may hold. */
 const NAME = /^[A-Za-z0-9._-]+$/;
@@ -94,15 +118,6 @@ export function folderName(dir: string, taken: readonly string[]): string {
  */
 function placeOf(dir: string): string {
     return realPath(dir, true) ?? resolve(dir);
-}
-
-/** Whether a folder holds the oculus config of a hub. */
-export function holdsConfig(dir: string): boolean {
-    try {
-        return statSync(join(dir, HUB_LAYER)).isDirectory();
-    } catch {
-        return false;
-    }
 }
 
 /** What reading the folders of a workspace answers. */
@@ -164,10 +179,22 @@ export function readFolders(entries: unknown, primary: unknown, file: string): F
             return;
         }
         if (realPath(dir) === null) raise(name, 'findings.workspace.missing_dir', dir);
-        folders.push({ name, path, dir, real, hub: realPath(dir) !== null && holdsConfig(dir) });
+        const depth = entry[SCAN_DEPTH];
+        const wrongDepth =
+            depth !== undefined && !(Number.isInteger(depth) && (depth as number) >= UNLIMITED);
+        if (wrongDepth) raise(name, 'findings.workspace.bad_scan_depth', name);
+        folders.push({
+            name,
+            path,
+            dir,
+            real,
+            hub: realPath(dir) !== null && isHubFolder(dir),
+            ...(depth !== undefined && !wrongDepth ? { scanDepth: depth as number } : {}),
+            ...(depth === undefined ? {} : { writtenDepth: depth })
+        });
     });
     for (const folder of folders) {
-        if (folder.hub || !existsSync(join(folder.dir, ROOT_FOLDER, MANIFEST))) continue;
+        if (folder.hub || projectFileIn(folder.dir) === null) continue;
         const overlaps = folders.some(
             (one) => one.hub && (inside(folder.real, one.real) || inside(one.real, folder.real))
         );
@@ -198,7 +225,8 @@ export function rootsOf(folders: readonly WorkspaceFolder[]): Root[] {
         key: one.name,
         dir: one.dir,
         ...(one.hub ? { hub: true as const } : {}),
-        ...(one.noProject === true ? { noProject: true as const } : {})
+        ...(one.noProject === true ? { noProject: true as const } : {}),
+        ...(one.scanDepth === undefined ? {} : { scanDepth: one.scanDepth })
     }));
 }
 
@@ -254,6 +282,11 @@ export function engineConfigIn(
         ];
     });
     return held.length === 0 ? null : { dir: configFolder, held };
+}
+
+/** A value of a workspace file written so it reads back as the same value. */
+export function valueText(value: unknown): string {
+    return typeof value === 'string' ? scalarText(value) : JSON.stringify(value);
 }
 
 /** A scalar written plainly where that reads back as the same text, and quoted otherwise. */

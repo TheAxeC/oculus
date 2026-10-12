@@ -66,3 +66,37 @@ describe('the research rules of the audit', () => {
         expect(kindsOfPersonal).not.toContain('publink');
     });
 });
+
+describe('the Deposit rules of the audit', () => {
+    it('ask a project read from a workspace folder the order of its deposit and its reproduction, and the README of its code folder', () => {
+        const hub = scratchDir('oculus-audit-hub-');
+        const folder = scratchDir('oculus-audit-folder-');
+        plantFile(folder, 'code/main.py', 'print(1)\n');
+        const project = fixtureProject({
+            id: 'inside',
+            tier: 'projects',
+            type: 'active',
+            title: 'Inside',
+            folder: '',
+            file: '.oculus/project.yml',
+            workspaceFolder: { root: folder, dir: folder },
+            codeAvailability: { status: 'deposited', date: '2026-01-01' },
+            reproduced: { date: '2026-02-01' }
+        });
+        const rules = { ...auditRules(config), publicationsFile: 'publications.yml' };
+        const found = auditFindings({
+            hub,
+            projects: [project],
+            collections: [],
+            rules,
+            catalog
+        });
+        const messages = found.filter((one) => one.scope === folder).map((one) => one.message);
+        expect(messages).toContain(
+            catalog['audit.msg_deposit_before_reproduction']
+                .replace('{0}', '2026-01-01')
+                .replace('{1}', '2026-02-01')
+        );
+        expect(messages).toContain(catalog['audit.msg_code_no_readme']);
+    });
+});

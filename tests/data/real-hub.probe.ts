@@ -8,7 +8,7 @@ import { engineDir, loadConfig, localDefaults } from '../../src/lib/data/sources
 import { readManifests } from '../../src/lib/data/sources/manifests.ts';
 import { readRegistries } from '../../src/lib/data/sources/registries.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
-import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/docs.ts';
+import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/documents/docs.ts';
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { ENTITY_KINDS } from '../../src/lib/data/snapshot/normalise.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';

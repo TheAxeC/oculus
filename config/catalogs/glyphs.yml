@@ -93,6 +93,7 @@ glyphs:
   pillar: "[ ]"
   code: "[_]"
   repositories: "[R]"
+  clone: "[v]"
   search: "(f)"
   diff: "<->"
   published: "[=]"

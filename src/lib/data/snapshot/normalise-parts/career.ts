@@ -1,6 +1,6 @@
 // Layer 1, data. The career strategy as the Focus board's foot panel reads it, out of the map
-// sources/career.ts parsed. Pure, like normalise: the file's sections are optional, every list
-// tolerates the plain-string form the file may write, and a row without its words is left out.
+// sources/documents/career.ts parsed. Pure, like normalise: the file's sections are optional, every
+// list tolerates the plain-string form the file may write, and a row without its words is left out.
 
 import { z } from 'zod';
 import { str, strings } from '../../helpers/guards.ts';

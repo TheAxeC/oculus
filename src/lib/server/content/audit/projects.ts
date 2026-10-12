@@ -269,9 +269,7 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                 });
             }
         }
-        // A project read from a repository has no Deposit, so the order of its deposit and its
-        // reproduction is not asked of it.
-        const deposit = project.repository === undefined ? project.codeAvailability : undefined;
+        const deposit = project.codeAvailability;
         const reproduced = asDate(project.reproduced?.date);
         const deposited = asDate(deposit?.date);
         if (
@@ -346,13 +344,7 @@ export function conformance(input: AuditInput, add: (f: Raised) => void): void {
                 ...sentence('audit.msg_bad_folder', good)
             });
         }
-        // The README of `code/` is the root of a project's Deposit, which a project read from a
-        // repository does not have.
-        if (
-            project.repository === undefined &&
-            isFolder(join(folder, 'code')) &&
-            !existsSync(join(folder, 'code', 'README.md'))
-        ) {
+        if (isFolder(join(folder, 'code')) && !existsSync(join(folder, 'code', 'README.md'))) {
             add({
                 scope,
                 where: 'code/',

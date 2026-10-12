@@ -77,7 +77,7 @@ import { basename, isAbsolute, join, resolve } from 'node:path';
 import { scalar } from '../../data/helpers/guards.ts';
 import type { GitBranch } from '../../data/model/index.ts';
 import { isWorktreePath, validName, worktreePath } from '../../data/helpers/worktrees.ts';
-import { defaultMirrorsDir } from './deposit-git.ts';
+import { defaultMirrorsDir } from './deposit/deposit-git.ts';
 import {
     NO_CONTEXT,
     NO_TIME_LIMIT,
@@ -197,7 +197,8 @@ function run(root: string, args: string[], timeout: number, extra: Extra = {}): 
  * The roots a write may name: the folders on the `git` channel, a hub folder, and the deposit
  * mirrors folder. The third is there for the suggested commit message of the deposit panel, which
  * asks this module for a message over the mirror's staged diff; every other write on a mirror goes
- * through server/git/deposit.ts, whose own gate is the enumerated subcommands of deposit-git.ts.
+ * through server/git/deposit/deposit.ts, whose own gate is the enumerated subcommands of
+ * deposit-git.ts.
  *
  * The folders and the hub folder are named by the caller, which is the route: it holds the open
  * workspace on the request's server context, so nothing here reads a file to find them.

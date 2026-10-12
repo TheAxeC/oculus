@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { byKey } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
-import { readYamlMap } from './yaml-file.ts';
+import { isAbsent, readYamlMap } from './yaml-file.ts';
 import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model/index.ts';
 
 /** A key and a hub-relative path from the `collections:` list; declared with the other types. */
@@ -34,11 +34,14 @@ function readCollection(
     hub: string,
     asked: CollectionFile,
     catalog: TextCatalog,
-    findings: Finding[]
+    findings: Finding[],
+    unnamed: boolean
 ): RawCollection {
     const file = join(hub, asked.file);
-    const data = readYamlMap(file, catalog, findings, () =>
-        findingText(catalog, 'findings.collections.file_missing')
+    const data = readYamlMap(file, catalog, findings, (error) =>
+        unnamed && isAbsent(error)
+            ? null
+            : findingText(catalog, 'findings.collections.file_missing')
     );
     if (data === null) return empty(asked.key, file);
     const listName = listKey(asked.key);
@@ -79,15 +82,17 @@ function readCollection(
 /**
  * Read the collection files named, keyed by the key each was named under. An entry keeps every
  * field the YAML gave it plus `provenance`, and its identity is left as read: nothing here decides
- * whether a record is known by its `key` or its `title`. A file that is missing, does not parse,
- * is not a map, or has no entry list gives an empty collection and one finding; an entry that is
- * not a map is one finding and no record. Two callers' entries for the same key is a finding and
- * the later file wins, so the returned map has one collection per key.
+ * whether a record is known by its `key` or its `title`. A file that is missing, does not parse, is
+ * not a map, or has no entry list gives an empty collection and one finding; an entry that is not a
+ * map is one finding and no record. Two callers' entries for the same key is a finding and the
+ * later file wins, so the returned map has one collection per key. With `unnamed` set, the hub's
+ * own config does not name the list, so a file of it that is absent raises no finding.
  */
 export function readCollections(
     hub: string,
     files: CollectionFile[],
-    catalog: TextCatalog
+    catalog: TextCatalog,
+    unnamed = false
 ): { collections: Record<string, RawCollection>; findings: Finding[] } {
     const findings: Finding[] = [];
     const collections: Record<string, RawCollection> = {};
@@ -105,7 +110,7 @@ export function readCollections(
                 )
             });
         }
-        collections[asked.key] = readCollection(hub, asked, catalog, findings);
+        collections[asked.key] = readCollection(hub, asked, catalog, findings, unnamed);
     }
     return { collections, findings };
 }

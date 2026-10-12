@@ -5,6 +5,7 @@
 // always the test's own, and each wait is on a turn of the event loop.
 
 import { EventEmitter } from 'node:events';
+import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import { TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import {
@@ -26,6 +27,7 @@ async function pick(
         platform?: NodeJS.Platform;
         token?: boolean;
         connection?: PickConnection;
+        body?: unknown;
     } = {}
 ) {
     const headers: Record<string, string> = { 'content-type': 'application/json' };
@@ -33,7 +35,7 @@ async function pick(
     const request = new Request('http://localhost/api/folders/pick', {
         method: 'POST',
         headers,
-        body: '{}'
+        body: JSON.stringify(over.body ?? {})
     });
     const response = await handlePick(request, TOKEN, over.state ?? pickerState(), {
         platform: over.platform ?? 'darwin',
@@ -130,6 +132,35 @@ describe('the folder panel route', () => {
         closePicker(state);
         expect(await settledNow(answer)).toBe('answered');
         expect(panel.ended).toBe(true);
+    });
+
+    it('opens the panel at the folder asked for, for one folder when one is asked for', async () => {
+        const scripts: string[] = [];
+        const runner: PickRunner = (script) => {
+            scripts.push(script);
+            return Promise.resolve({ code: 0, out: '/chosen\n', err: '' });
+        };
+        const answer = await pick(runner, { body: { start: tmpdir(), single: true } });
+        expect(answer).toMatchObject({ status: 200, body: { ok: true, paths: ['/chosen'] } });
+        await pick(runner);
+        expect(scripts[0]).toContain(`fileURLWithPath(${JSON.stringify(tmpdir())})`);
+        expect(scripts[0]).toContain('allowsMultipleSelection = false');
+        expect(scripts[1]).toContain('fileURLWithPath($.NSHomeDirectory())');
+        expect(scripts[1]).toContain('allowsMultipleSelection = true');
+    });
+
+    it('hands the desktop sheet the options of the request, and drops a start that is no folder of this machine', async () => {
+        const asked: unknown[] = [];
+        const state: PickerState = {
+            ...pickerState(),
+            ask: (options) => {
+                asked.push(options);
+                return Promise.resolve(['/sheet']);
+            }
+        };
+        await pick(printing(''), { state, body: { start: tmpdir(), single: true } });
+        await pick(printing(''), { state, body: { start: '/no/such/folder', single: 'yes' } });
+        expect(asked).toEqual([{ start: tmpdir(), single: true }, {}]);
     });
 
     it('answers a panel the reader cancelled, which osascript reports as error -128, as no folders', async () => {

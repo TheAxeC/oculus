@@ -220,8 +220,8 @@ export const NO_FILE = '';
  * of this machine, and a muted signature, which reads the scope, is written to the `audit_ignore:`
  * list of config/behavior.yml, a tracked file that must hold no machine path.
  */
-export function scopeOf(project: Pick<Project, 'folder' | 'repository'>): string {
-    return project.repository?.root ?? project.folder;
+export function scopeOf(project: Pick<Project, 'folder' | 'workspaceFolder'>): string {
+    return project.workspaceFolder?.root ?? project.folder;
 }
 
 /** Whether a project is on the Personal board, which the research rules do not cover. */
@@ -259,13 +259,13 @@ export function fileOf(hub: string, path: string): string {
  */
 export function fileIn(
     hub: string,
-    project: Pick<Project, 'repository'>,
+    project: Pick<Project, 'workspaceFolder'>,
     path: string
 ): Pick<AuditFinding, 'file' | 'root'> {
-    const { repository } = project;
-    if (repository === undefined) return { file: fileOf(hub, path) };
-    const file = fileBelow(repository.dir, path);
-    return file === NO_FILE ? { file } : { root: repository.root, file };
+    const { workspaceFolder } = project;
+    if (workspaceFolder === undefined) return { file: fileOf(hub, path) };
+    const file = fileBelow(workspaceFolder.dir, path);
+    return file === NO_FILE ? { file } : { root: workspaceFolder.root, file };
 }
 
 /** One file's text, and the empty string for anything that cannot be read. */

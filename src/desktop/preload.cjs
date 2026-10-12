@@ -26,8 +26,8 @@ const bridge = {
     focusMain: () => ipcRenderer.send('oculus:focus-main'),
     dropOutside: (drop) => ipcRenderer.invoke('oculus:drop-outside', drop),
     answerDrop: (request, taken) => ipcRenderer.send('oculus:drop-taken', request, taken),
-    saveLayout: (next, from) => {
-        const answer = ipcRenderer.sendSync('oculus:save-layout', next, from);
+    saveLayout: (key, next, from) => {
+        const answer = ipcRenderer.sendSync('oculus:save-layout', key, next, from);
         return answer ?? { admitted: false, held: null };
     },
     showFind: () => ipcRenderer.send('oculus:show-find'),

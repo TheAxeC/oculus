@@ -19,8 +19,8 @@
     // repository is the one of the source tab on screen, else of the one focused last; its
     // configurations are those of `.oculus/launch.yml`, and a repository with none runs the open
     // `.rite` file. Start stays drawn while a session runs and answers with the refusal then. The
-    // stepping controls are the floating toolbar's (shell/commands/DebugToolbar.svelte), drawn over
-    // the workbench while a session runs.
+    // stepping controls are the floating toolbar's (shell/commands/debug/DebugToolbar.svelte),
+    // drawn over the workbench while a session runs.
     //
     // A section's open state is the tab's own and is saved in its instance state; every section
     // starts open.

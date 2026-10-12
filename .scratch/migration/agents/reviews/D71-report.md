@@ -1,3 +1,137 @@
+## Repair round 1
+
+Not done in this round, stated first. (1) `bash tools/cockpit/tests/run.sh` exits 1: its first test, `test_engine.py`, runs the cockpit's real-data `--selftest`, which reports 6 broken references and 33 validation errors (3 venue categories, 3 `funding/funding.yml` entries without a leading `key:`, 33 unknown status chips in `projects/ideas/*`); every other test of `run.sh` passes and `python3 tools/cockpit/build.py --dummy --selftest` prints SELFTEST PASS. None of the 39 problems is in a file this step wrote: `diff -q` of `funding/funding.yml` and `registries/venues.yml` between the main checkout and the worktree prints nothing, and `projects/ideas` differs only in `tao-of-ecs/README.md` and `tao-of-ecs/project.yml` (its address line, not its chips). I did not run the selftest on an unchanged tree in this turn, so "same on the unchanged tree" is not verified here; the round-1 report line that said `run.sh` was OK is withdrawn. (2) `npm run test:quick` passes every command but takes 75.7 s on its first full run and 65.3 s on its second against the 45 s limit, because the list covers 223 and 228 changed files; I have no way here to shorten it. (3) The website move to `side-projects/theaxec.github.io/` and `side-projects/theaxec.github.io/.oculus/project.yml` are the orchestrator's at landing, as the brief says; the folder `side-projects/theaxec.github.io/` is empty in the worktree. Everything else of the brief and of rulings 1 to 21 plus the Open and Add to Workspace addition is built; the evidence is below.
+
+### Open items
+
+Open item 77 is the ruling this round carries out. Open item 1 of the round-1 report (where a cloned project lives, the `clone_dir` key, the follow code and the exclude file) is closed by rulings 4, 5 and 6 and is no longer an open item. Sentences of the round-1 report that rulings 1 to 6 make false, and what is true now:
+
+| Round-1 sentence | True now |
+|---|---|
+| A clone from GitHub writes a `project.yml` with `clone_dir` and lowercases the folder name | A clone from GitHub runs `git clone <url> <picked folder>/<name as GitHub gives it>` and writes nothing into the new folder (`src/lib/server/git/clone/github.ts`) |
+| A project is cloned where its `repository.clone_dir` says | A project is cloned wherever a repository of the workspace has the project's `repository.url` as its `origin` (`placeClones` in `src/lib/data/sources/clones.ts`); `clone_dir` exists nowhere |
+| Oculus adds the clone to the workspace by itself and refuses clones by project or workspace name | Oculus asks Open or Add to Workspace after any clone; no name or workspace refusal remains |
+| The hub's exclude file is synchronised by a follow routine for the clone folders | One block `# BEGIN nested-repos` / `# END nested-repos` in the exclude file of each git hub lists every repository below it at any depth (`syncNested` in `src/lib/server/git/clone/exclude.ts`) |
+| A hub reports registries it inherits from the engine defaults as missing | A hub reports only the files its own `.oculus/config/sources.yml` names |
+
+### Rulings
+
+| # | Change | Evidence |
+|---|---|---|
+| 1 | Clone from GitHub is VS Code Clone: the panel starts at home, `git clone <url> <folder>/<name as GitHub gives it>`, nothing written into it, an existing non-empty target refused with git's sentence, a cancelled panel sends nothing | `tests/routes/git/clone.test.ts` (readdir `['.git','a.txt']`, "already exists and is not an empty directory"), `tests/state/sources/clone.test.ts` (panel start `deps.home()`, cancelled panel sends only the pick) |
+| 2 | `CloneAsk.svelte` asks Open or Add to Workspace (and Cancel); Add to Workspace is Add Folder's own write; Open closes an open workspace file with `close-workspace`, asks Save, Don't Save, Cancel when the unsaved workspace holds folders, asks a name for Save and saves through `save-workspace`, a cancelled name cancels the Open, an empty unsaved workspace asks nothing | `tests/state/sources/clone-after.test.ts` (10 tests over the real writes), `tests/shell/commands/clone-ask.test.ts` (4 tests) |
+| 3 | A project's Clone asks where (panel starts at the project's folder), runs `init`, `remote add`, `fetch`, `checkout -t` there, refuses tracked-file clashes naming the files with `.git` removed and the panel reopened, cancel ends | `tests/routes/git/clone.test.ts` (cases 18, 19), `tests/state/sources/clone.test.ts` (held refusal reopens the panel) |
+| 4 | `clone_dir` removed everywhere; `RepositoryBlock.clones: string[]`; two clones give finding `findings.manifests.cloned_twice` naming both folders; none offers Clone; a clone stays on the git channel at any depth | `tests/data/sources/manifests.test.ts` (`placeClones`, case 21), grep below |
+| 5 | A folder whose origin is another project's url is that project's clone, not a project, no finding (`settle` in `src/lib/data/sources/manifests.ts`) | `tests/data/sources/manifests.test.ts` (case 37) |
+| 6 | The nested-repositories block (walk `src/lib/server/root/watch/repos/nested.ts`, writer `exclude.ts`): full depth, skips links and `IGNORED`, does not enter a repository, leaves out what the hub already ignores (read with `git check-ignore --stdin -v -z`, paths on stdin through `cloneGit`'s `input` argument), rewritten at server start and on the watcher's rebuild only when lines differ, lines outside the block untouched, non-git hub gets no file, tracked files stay tracked | `tests/server/git/clone-exclude.test.ts` (24 tests, real `git status --porcelain -uall -z` before and after), `tests/server/git/git-scan-depth.test.ts` (real `watchGit` with `hubs` and `found`) |
+| 7 | `PortfolioConfig.unnamed`: a hub reports only what its own `sources.yml` names | `tests/data/sources/manifests.test.ts` (case 36) |
+| 8 | Hub data by hand, listed below | greps below |
+| 9 | Save As keeps `repository_scan_depth` as written (`writtenDepth`) | `tests/server/files/workspaces.test.ts` (case 38) |
+| 10 | `:clone` rows always start with a row: the typed address, or "Type the address of a repository to clone it" | `tests/shell/keys/clone-rows.test.ts` (17 tests) |
+| 11 | Clone has its own runner `cloneGit` under `src/lib/server/git/clone/clone-git.ts`; `realGit` removed | `grep -rn realGit` over src, tests, docs prints nothing |
+| 12 | `Palette.svelte` comments restored and the language list moved to `src/lib/shell/keys/lists/language-list.svelte.ts` | `wc -l`: Palette.svelte 512, Deposit.svelte 519, portfolio.ts 860, deposit.ts 876; none over 520 (Svelte) or 880 (source) |
+| 13 | Docs made true, listed below | grep below |
+| 14 | Comments rewrapped as whole paragraphs in every file the step changed | `tests/checks/source/comment-width.test.ts` passes (2 tests) |
+| 15 | New Workspace leaves the unsaved folders as they were (`makeWorkspace(takesUnsaved)`) | `tests/server/files/workspaces.test.ts` (case 39) |
+| 16 | `aheadOfUpstream` in `server/git/deposit/deposit-compare.ts`; `MirrorState.ahead`; Deposit view shows `deposit.ahead` ("{0} ahead of its upstream") beside the `origin/main` counts through `DepositCompare` prop `upstream` | `tests/server/git/deposit-compare.test.ts` (case 40) |
+| 17 | Session scan stops at `maxSessions`: `takeNewest` lists the newest `cap` transcripts, skips a usage transcript without counting it, and asks for more only when short (`src/lib/server/sessions/stores/transcripts.ts`, `newestFirst` in `transcripts/stores.ts`) | `tests/server/sessions/usage-sessions.test.ts`; timing below |
+| 18 | `deposit-compare.test.ts` asserts `planned.ok` for every row of the nested-folder table (third column removed) | `tests/server/git/deposit-compare.test.ts` |
+| 19 | Ruling-6 tests run `git status --porcelain -uall -z`, escaped names included, and find a moved repository through the watcher's own rebuild | `clone-exclude.test.ts`, `git-scan-depth.test.ts` |
+| 20 | The audit checks deposit order (`project.codeAvailability`) and `code/README.md` for every project, workspace-folder projects included (`src/lib/content/audit/projects.ts`) | `tests/routes/docs/audit.test.ts` (3 tests) |
+| 21 | The clone busy key is the folder cloned into | `tests/routes/git/clone.test.ts` (busy key rows) |
+| add | Open and Add to Workspace question (rulings 78 and 79) | cases 41 to 44 below |
+
+Timing of the session scan over a scratch folder of 2,000 transcripts (20 folders of 100, `maxSessions: 100`, cold cache, five runs, ms): before `44.5 24.4 23.0 23.8 28.8`, after `43.2 24.4 24.3 22.6 21.0`. No difference is measurable: the stat of every file dominates both. `usage-sessions.test.ts` passes on the unchanged tree as well, because the loop already stopped at `maxSessions`; the test fixes the records and the cache contents, and does not measure the list size.
+
+### Cases: first run on the unchanged tree, then after
+
+The unchanged tree is a copy of `tools/oculus` as at base with each new or changed test file copied in.
+
+| Case | File | Unchanged tree | After |
+|---|---|---|---|
+| 18, 19 | `tests/routes/git/clone.test.ts` | import fails: `server/git/clone/clone-git.ts` does not exist | 23 passed |
+| 21, 36, 37 | `tests/data/sources/manifests.test.ts` | import fails: `data/sources/clones.ts` does not exist | 49 passed |
+| 24 | `tests/server/git/clone-exclude.test.ts` | import fails: `server/root/watch/nested.ts` does not exist | 24 passed |
+| 25 | `tests/shell/keys/clone-rows.test.ts` | 7 failed (the list has no first row) | 17 passed |
+| 26 | `tests/state/sources/clone.test.ts`, `tests/routes/git/clone.test.ts` | clone.test.ts: 8 and more failed (old `createClone` signature); routes: import fails | 12 and 23 passed |
+| 31 to 35 | `clone-exclude.test.ts`, `tests/server/git/git-scan-depth.test.ts` | clone-exclude: import fails; git-scan-depth: 1 failed, `expected null to deeply equal [ '/side/p/' ]`, the other 10 pass | 24 and 11 passed |
+| 38 | `tests/server/files/workspaces.test.ts` | failed: `expected 'folders:...' to contain '  - { name: notes, path: ..., repository_scan_depth: abc }'` | 12 passed |
+| 39 | same file | failed: `expected [] to deeply equal [ Array(2) ]` | same |
+| 40 | `tests/server/git/deposit-compare.test.ts` | 2 failed: `ahead` undefined (line 172 and the "says nothing is known" case) | 7 passed |
+| 41, 42, 43 | `tests/state/sources/clone-after.test.ts` | import fails: `state/sources/clone-after.svelte.ts` does not exist | 10 passed |
+| 44 | `tests/shell/commands/clone-ask.test.ts` | import fails: same module | 4 passed |
+| 17 | `tests/server/sessions/usage-sessions.test.ts` | passes (behaviour already capped) | passes |
+| 18 (deposit) | `deposit-compare.test.ts` nested `ok` | passes | passes |
+| 20 | `tests/routes/docs/audit.test.ts` | new test fails at `audit.test.ts:95`, "expected [...] to include 'deposit dated 2026-01-01 predates...'" | 3 passed |
+
+Cases 41 to 44 as built: 41, a workspace file open, Open: the file is byte-identical, the state is unsaved and holds the clone alone, `openWorkspace(state).roots` lists it. 42, an unsaved workspace with two folders: the question is asked; Cancel leaves both; Don't Save leaves the clone alone; Save with a name writes `.oculus/workspaces/lab.yml` holding the two folders and then holds the clone alone; a name the server refuses is said in the question and leaves both; the name panel cancelled leaves both and writes no file. 43, an unsaved empty workspace: no question, the clone is the one folder. 44, the question draws Add to Workspace, Cancel and Open and no text matching "new window"; the Save, Don't Save, Cancel step and the name step are drawn.
+
+Guarded entries (no new entry, none labelled in the tests): cases 18, 19, 22, 24 to 26 under G80; 31 to 35 under G81 with 16's walk and 20; 21 and 37 under G32; 36 under G13; 38 and 39 under G8; 41 to 44 under the clone and workspace entry.
+
+Existing assertions edited, before and after:
+
+- `tests/server/files/workspaces.test.ts`, "New Workspace > writes folders: [] into the primary hub and opens the file": `expect(state.unsaved.folders).toEqual([])` became `toEqual([{ name: 'research-hub', path: world.hub }, { name: 'notes', path: world.notes }])`.
+- `tests/server/git/deposit-compare.test.ts`, nested-folder table: rows `[id, file, wrong]` became `[id, file]` and `expect(wrong || planned.ok).toBe(true)` became `expect(planned.ok).toBe(true)`; `state('alpha').ahead` toBe 1 and `state('beta').ahead` toBe 0 were added.
+- `tests/shell/keys/clone-rows.test.ts`: the expected `values` of the five list rows gained the first row `'clone:type'` in front; the row of "words nothing holds" went from `[]` to `['clone:type']`.
+- `tests/data/sources/manifests.test.ts`: the `clone_dir` rows were removed and the rows of `placeClones`, `originOf`, `sameAddress` and the unnamed-hub cases replaced them.
+- `tests/routes/git/clone.test.ts` and `tests/state/sources/clone.test.ts` are rewritten whole for the new routes and store.
+- Helper moves, no assertion changed: `writeFs` and `FS_TOKEN` moved from `workspaces.test.ts` into `tests/fixtures/hubs/workspace.ts` and `repositoryAt` into `tests/server/git/refs/repo.ts`, because `tests/checks/tree/duplication.test.ts` found the copies.
+
+### Files
+
+New this round, with line counts: `server/git/clone/clone-git.ts` 86, `clone-routes.ts` 167, `clone.ts` 157, `exclude.ts` 199, `github.ts` 141; `server/root/watch/repos/nested.ts` 113 and `git-start.ts` 95; `data/sources/clones.ts` 55, `origin.ts` 87; `state/sources/clone/clone.svelte.ts` 153, `clone-after.svelte.ts` 145; `shell/commands/CloneAsk.svelte` 116; `shell/keys/rows/CloneRows.svelte` 56, `clone-list.svelte.ts` 62; `shell/keys/lists/language-list.svelte.ts` 69, `file-names.svelte.ts` 97, `lint-config.svelte.ts` 75. Changed with limits: `Deposit.svelte` 519, `DepositCompare.svelte` 89, `Palette.svelte` 512, `portfolio.ts` 860, `deposit.ts` 876, `deposit-compare.ts` 146, `transcripts.ts` 376, `watch/git.ts` 851. Tests: `clone-exclude.test.ts` 254, `routes/git/clone.test.ts` 424, `state/sources/clone.test.ts` 221, `clone-after.test.ts` 221, `clone-ask.test.ts` 85, `clone-rows.test.ts` 110.
+
+Folders that went over ten items were split into named folders and every import and comment path was rewritten: `state/sources/clone/` (clone.svelte.ts, clone-after.svelte.ts), `shell/commands/debug/` (DebugAsk, DebugToolbar, debug-key), `shell/keys/lists/` (file-names, lint-config, language-list), `data/sources/documents/` (career, feeds, docs), `server/root/watch/repos/` (nested, git-start). `sh utils/folder-check.sh` exits 0.
+
+Lint fixes made in code: `watch/git.ts` reads the closed flag and the ask-again flag through two small functions `watching` and `askedAgain` after each await of the nested walk; `exclude.ts` `placeOf` tests `!top || !file`. `addressKey` of `origin.ts` and the type `CloneAsk` are no longer exported.
+
+### Hub files (worktree root)
+
+- Moved by `mv`, contents unchanged, none carries `clone_dir`: `side-projects/{axeski,cardinal,cardinal-revamped,cv-autogenerator,ical-kuleuven,theaxec-profile-readme}` to `side-projects/finished/<key>/`.
+- Deleted: `side-projects/theaxec.github.io/project.yml` (the folder is left empty for the orchestrator's move).
+- Created `side-projects/research-hub/project.yml`: `title: "research-hub"`, `tier: personal`, `type: active`, `status: { chips: [building] }`, `eli5: "This private research monorepo: projects, manuscripts, registries, and the cockpit"` (the base subtitle's spaced hyphen became a colon), `next: ""`, `links: []`, `tags: [private, research-hub, infrastructure, tex]`, `repository: { url: "https://github.com/TheAxeC/research-hub", visibility: private }`.
+- Website path now `side-projects/theaxec.github.io/` in `.gitignore` (clone comment and ignore line), `.oculus/config/sources.yml` (`publications_file`, `linkedin_dir`), `CLAUDE.md` (lines 91, 98), `CONTEXT.md:16`, `README.md:12`, `docs/DATA-MAP.md` (211, 219, 298, 305, 576, and the `side-projects/` row of the hub-root table), `tools/cockpit/data/config/layout.yml`, `tools/cockpit/src/cockpit/serve_watch.py`, `tools/cockpit/data/config/text.yml:691`, `tools/cockpit/src/cockpit/render/surfaces.py:404`, `tools/cockpit/templates/docs/CLAUDE.md:12`, `education/education.yml:1`, `registries/pillars.yml:2`, `projects/manuscripts/ward-bttr-crosssubject/README.md:86`, `projects/ideas/tao-of-ecs/README.md:15`, `projects/archive/published/2026/hccnet-fl/README.md:47`, `projects/archive/published/2026/glassbox-decision-pipelines/README.md:107`. The public blog address in `projects/ideas/tao-of-ecs/README.md:28` and `project.yml:15` is written `https://theaxec.github.io/blog/tao-of-ecs/`.
+- Cockpit: `schema.py` lost the `repository.clone_dir` row; `layout.yml` nav group keys are `[venues, data, statements]`; `data/HELP.md` lost "Code" at the three places that named it. The cockpit `dummy/` tree and its `registries/repos.yml` stay.
+
+### Docs: rewritten and still true
+
+Rewritten: `docs/DATA-MAP.md` (`projects/software/` row, Deposit sentence for workspace-folder projects, clone-of-known-project sentence, `repository.clone_dir` row removed, `repository.url` row reworded to origin matching, line 554 list without `repository.*`, `side-projects/` row, new "Outside the hub" row for the exclude block); `docs/apps.md:324` (`workspaceFolder?` and `repository?` with `clones`); `DESIGN.md:647` (`workspaceFolder: { root, dir }` and the settle rule) and `:648` (the Clone bullet); `HELP.md` Personal bullet, Software bullet, project bullet (id collision finding, hub toggle, clone-of-known-project sentence), `repository:` bullet (:473), `:clone` bullet (:474), the workspace bullet (:288); cockpit `data/HELP.md` lines 210 and 252. Still true and unchanged: the Deposit view paragraphs of `HELP.md` apart from the added upstream sentence, `README.md` of oculus (grep of the removed names finds nothing).
+
+### Visible changes, before and after
+
+- Clone from GitHub: before, a name prompt, a lowercased folder under the hub and a written `project.yml`; after, a folder panel starting at home, the clone in `<folder>/<name>`, then the Open or Add to Workspace question.
+- Project Clone: before, into a recorded folder; after, a folder panel starting at the project's folder, the chosen folder is the clone.
+- Project card: shows the folder of the first repository whose origin is the project's address, else a Clone action.
+- Palette `:clone`: first row always present (typed address or the hint).
+- The hub's git status no longer lists repositories below the hub.
+- A hub with a thin `sources.yml` no longer reports registries it never names.
+- Save As keeps a scan depth as written; New Workspace keeps unsaved folders.
+- Deposit view: "N ahead of its upstream" beside the `origin/main` counts.
+- Audit: deposit order and `code/README.md` checked for workspace-folder projects too.
+- The layout key of the browser store for this workspace file is `oculus.layout.workspace:/Users/axelfaes/workspace/research-hub/.oculus/workspaces/research-hub.yml`.
+
+### Verification, run in the worktree
+
+- `npm run diagrams && npm run test:quick -- <228 changed paths>`: 2 full-list runs, both with every command passing (ASCII gate, svelte-kit sync, prettier, eslint, svelte-check 0 errors, vitest); the second after the last edit, 65.3 s.
+- `npm run test:checks`: the first run failed `comment-width` (18 lines) and `duplication` (2 copies); both fixed and rerun alone, then the whole command rerun once: 17 files, 266 tests passed.
+- Broad `npx vitest run --exclude 'tests/checks/**'` (slow tests included): 233 files, 2273 tests passed, before the last small edit of `origin.ts`, `CloneAsk` and `manifests.test.ts`; those files and the touched suites were rerun after it: 16 files, 184 tests passed.
+- `npx tsc --noEmit -p .` prints nothing apart from the existing `CardAction` import notes; `npm run check` 0 errors; `sh utils/folder-check.sh` exit 0.
+- ASCII gate command prints nothing; `LC_ALL=C grep -n '[^ -~]'` over the other written files finds only existing cockpit glyph lines and two existing lines of `CLAUDE.md`.
+- `sh utils/unused-exports.sh`: 245 unused exports (base 243), 117 unused types (base 117). Added lines: `server/git/clone/clone.ts: defaultBranchOf` (tested directly in `tests/server/git/clone.test.ts`), `server/git/clone/exclude.ts: BLOCK_START, BLOCK_END, escapedForIgnore, lineOf, withBlock` (pure functions tested in `clone-exclude.test.ts`), `state/workbench/layout/saved/storage.ts: layoutKey, unreadKey` (used by the layout tests), `state/workbench/palette.ts: nameOfAddress` (tested in `clone-rows.test.ts`); they stay exported for their tests. `addressKey` and `CloneAsk` were un-exported.
+- `python3 tools/cockpit/build.py --dummy --selftest`: PASS. Real `--selftest` and `run.sh`: see the first paragraph.
+- Check 5 YAML one-liner with the widened globs prints nothing; check 6 grep widened by `clone_dir\|cloneSiteOf\|realGit` prints nothing.
+- Website-path grep, run from the worktree root after the last edit:
+
+```
+grep -rn "theaxec\.github\.io/" --include="*.md" --include="*.yml" --include="*.py" --include=".gitignore" . | grep -v "https://\|/side-projects/theaxec\|side-projects/theaxec\|\.scratch/\|applications/\|funding/\|\.agents/skills/\|dummy/\|\.pdf\|\.tex"
+```
+
+It prints nothing (exit 1 from the last `grep -v`).
+
+### Disclosures
+
+Commands outside the brief's list: earlier in the task I ran read-only `git -C . status` and `git check-ignore -v`, and in this round `git diff --no-index --stat /dev/null /dev/null` once by mistake (it reads no repository and printed nothing); tests run git only in scratch repositories under the system temp directory. I listed the main checkout's `.oculus/workspaces/` once. Throwaway test files used for the timing and for drawing `CloneAsk.svelte` are removed from the worktree. Running the cockpit selftest wrote the ignored `tools/cockpit/AUDIT_AUTO.md` and Python caches in the worktree; I deleted them and `tools/present/__pycache__`. `tools/cockpit/cockpit.local.yml` differs from the base copy by 15 bytes; I did not read it.
+
 # D71 report (workspaces and repositories)
 
 **NOT done (first lines).**

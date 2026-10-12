@@ -19,7 +19,7 @@
 // file (deck/slide-text.ts) and the line a view opens a slide at cut the file where the reader
 // cut it, by the one rule.
 
-import { parseFrontmatter, splitFrontmatter } from '../docs.ts';
+import { parseFrontmatter, splitFrontmatter } from '../documents/docs.ts';
 
 /** One slide as the file holds it: its front matter, and the Markdown after it. */
 export type RawSlide = {

@@ -23,7 +23,7 @@
 // is offered and never applied.
 
 import { Lexer, type Token } from 'marked';
-import { splitFrontmatter } from '../../../../../data/sources/docs.ts';
+import { splitFrontmatter } from '../../../../../data/sources/documents/docs.ts';
 import {
     demoted,
     marksOf,

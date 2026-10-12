@@ -4023,3 +4023,10 @@ Where it applies: D71. Booked in `plan.md` Rulings; the entries are written into
 - Not chosen: both read-only, the lazy option; `name` read-only as first worded, which leaves `id` editable.
 
 Where it applies: D72. Booked in `plan.md` Rulings.
+
+## Z855 (2026-10-13, D71's look, the orchestrator, automode): the Live HPC view on a hub that names no cluster
+
+- Chosen: a plain state for a hub whose settings name no cluster (no poll, no retry, no `unreachable`, no error colour); a named cluster that does not answer keeps `unreachable`.
+- Not chosen: leaving it as it is, the lazy option.
+
+Where it applies: D74. Booked in `plan.md` Rulings.

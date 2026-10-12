@@ -117,7 +117,7 @@ import { watchApps, type AppsWatchOptions, type AppsWatcher } from './watch/apps
 import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
 import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
-import { startAutofetch, startGit } from './watch/git-start.ts';
+import { nestedFound, startAutofetch, startGit } from './watch/repos/git-start.ts';
 import {
     changedKeys,
     rebuiltBy,
@@ -126,7 +126,7 @@ import {
     type LocalWatcher
 } from './watch/local.ts';
 import { startPollers, usageStarters } from './watch/pollers.ts';
-import { watchPortfolio, type Watcher } from './watch/portfolio.ts';
+import { watchPortfolio, type PortfolioWatcher, type Watcher } from './watch/portfolio.ts';
 import { watchSessions, type SessionsWatcher } from './watch/sessions.ts';
 
 /** The machine the server runs on, and the address a page on it reaches the server at. */
@@ -355,8 +355,15 @@ export function createServerContext(
         return built.parts;
     };
     // The workspace is taken from the holder at the call, as the git watcher's roots are, so a
-    // folder added to the open file while the server runs is served when the next rebuild asks.
-    const startPortfolio = (): Watcher =>
+    // folder added to the open file while the server runs is served when the next rebuild asks. The
+    // repositories of the workspace as the git watcher last listed them, which the portfolio reads
+    // to tell a project's clones, and the write of the exclude blocks in flight, so two writes
+    // never overlap.
+    const nested: { repositories: readonly string[]; write: Promise<void> } = {
+        repositories: [],
+        write: Promise.resolve()
+    };
+    const startPortfolio = (): PortfolioWatcher =>
         make.watchPortfolio(
             hub,
             {
@@ -374,7 +381,8 @@ export function createServerContext(
                     relay.settingsChanged();
                     if (!lintSettings(load().config).on.eslint) eslint.endAll();
                 },
-                schemas: (set, references) => schemas.publish(set, references)
+                schemas: (set, references) => schemas.publish(set, references),
+                repositories: () => nested.repositories
             }
         );
     const folders = (): ProjectFolder[] => {
@@ -397,7 +405,14 @@ export function createServerContext(
             terminals,
             hooks: store
         });
-    const startGitWatcher = (): GitWatcher => startGit(make, hub, engine, workspace);
+    const startGitWatcher = (): GitWatcher =>
+        startGit(
+            make,
+            hub,
+            engine,
+            workspace,
+            nestedFound(nested, () => owned().portfolio.rescan())
+        );
     const startAutofetchWatcher = (): AutofetchWatcher =>
         startAutofetch(make, hub, () => owned().git);
     const paths = () => perOculus(open().primaryDir, local);
@@ -572,6 +587,7 @@ export function createServerContext(
         fsWrites: writes,
         opsWrites: fsWrites(),
         gitRunning: createRunningGit(),
+        cloning: new Set<string>(),
         ignoredCache: ignoredCache(),
         folderPicker: pickerState(),
         hpcLogPaths: polled.hpcLogPaths,
@@ -599,6 +615,7 @@ export function createServerContext(
         opener: openerOf(local),
         openPath: macOpenPath,
         depositPlans: new Map(),
+        rescan: () => owned().portfolio.rescan(),
         wallpaper: wallpaperMemory(),
         icons,
         close(): void {

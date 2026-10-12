@@ -1,12 +1,12 @@
-// Layer 1, data tests. sources/feeds.ts over a synthetic hub: every feed shape. The files are
-// written under mkdtemp and every path is checked to be inside it before anything is written;
+// Layer 1, data tests. sources/documents/feeds.ts over a synthetic hub: every feed shape. The files
+// are written under mkdtemp and every path is checked to be inside it before anything is written;
 // nothing here touches the real hub.
 //
 // What this does NOT cover: the feed views themselves. This reads the counts and run dates the
 // command center needs, and the Inbox, Lit Watch and Position Leads views read the entries.
 
 import { describe, expect } from 'vitest';
-import { readFeeds } from '../../../src/lib/data/sources/feeds.ts';
+import { readFeeds } from '../../../src/lib/data/sources/documents/feeds.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { FeedFiles } from '../../../src/lib/data/model/index.ts';
 import { it, plantScratch, test } from '../../fixtures/scratch.ts';

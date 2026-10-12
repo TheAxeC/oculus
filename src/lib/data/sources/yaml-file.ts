@@ -18,6 +18,11 @@ export function errorLine(error: unknown): string {
     return error instanceof Error ? error.message.split('\n')[0] : String(error);
 }
 
+/** Whether a read failed because the file is not there. */
+export function isAbsent(error: unknown): boolean {
+    return (error as NodeJS.ErrnoException | undefined)?.code === 'ENOENT';
+}
+
 /**
  * The map a hub file holds at its top, as it parsed, or null with a finding on `findings` when the
  * file cannot be read, does not parse, or holds anything but a map. `unreadable` words the finding

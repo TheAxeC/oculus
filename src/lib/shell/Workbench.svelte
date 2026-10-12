@@ -32,8 +32,8 @@
     import DropLayer from './panes/DropLayer.svelte';
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
     import Asks from './commands/Asks.svelte';
-    import DebugToolbar from './commands/DebugToolbar.svelte';
-    import { pressDebug } from './commands/debug-key';
+    import DebugToolbar from './commands/debug/DebugToolbar.svelte';
+    import { pressDebug } from './commands/debug/debug-key';
     import Palette from './keys/Palette.svelte';
     import type { PaletteStart } from './keys/palette-modes';
     import FoldedPane from './panes/leaf/FoldedPane.svelte';

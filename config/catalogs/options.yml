@@ -1144,6 +1144,13 @@ options:
             default: [Paper, Authors, Venue, Domain, Pillar, Funding]
             control: list
             slots: [title, authors, venue, domain, pillar, funding]
+        board.cols_software:
+            heading: boards
+            section: Board columns and search
+            help: The list-view column headings of the Software board, written in the order of the fixed columns title, authors, venue, domain, pillar and funding. A column with no heading here shows its cell name.
+            default: [Software, Authors, Venue, Domain, Pillar, Funding]
+            control: list
+            slots: [title, authors, venue, domain, pillar, funding]
         board.search.projects:
             heading: boards
             section: Board columns and search
@@ -1168,6 +1175,12 @@ options:
             help: The placeholder of the Coauthor board's search box.
             default: Search coauthor | title | eli5 | outcome | doc text ...
             control: text
+        board.search.software:
+            heading: boards
+            section: Board columns and search
+            help: The placeholder of the Software board's search box.
+            default: Search software | title | eli5 | tags | doc text ...
+            control: text
         tab_split:
             heading: boards
             section: Tab badges
@@ -1187,9 +1200,9 @@ options:
             holds: lists
             fields:
                 key:
-                    help: a board id, projects, personal, archive or coauthor
+                    help: a board id, projects, personal, archive, coauthor or software
                     control: choice
-                    options: [projects, personal, archive, coauthor]
+                    options: [projects, personal, archive, coauthor, software]
                 label: the words of the bucket, which also give its id
                 keys:
                     help: the project types and status chips the bucket counts
@@ -1226,7 +1239,7 @@ options:
         project_label_mode:
             heading: boards
             section: Project labels
-            help: How the Projects and Personal boards name a project when they open. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
+            help: How the Projects, Personal and Software boards name a project when they open. short draws the manifest's short name and the full title where there is none, full always draws the full title. Any other value counts as short. The board's Aa toggle overrides it for the viewer.
             default: short
             control: choice
             options: [short, full]

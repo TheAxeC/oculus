@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, Venues view partial. The next conference deadlines and the twelve-month ribbon.
-    // Timing and density are prepared by state/sources/venues.ts; this file only assigns the
-    // catalog words and draws the density line as one SVG bar per month, in the colour of the text
-    // it sits in, so no character stands for a height.
+    // Timing and density are prepared by state/sources/registries/venues.ts; this file only assigns
+    // the catalog words and draws the density line as one SVG bar per month, in the colour of the
+    // text it sits in, so no character stands for a height.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -14,7 +14,7 @@
         timeline,
         type TimelineChip,
         type Venue
-    } from '$lib/state/sources/venues';
+    } from '$lib/state/sources/registries/venues';
 
     type Props = { venues: Venue[]; todayMonth: number };
 

@@ -20,7 +20,7 @@ import type { IgnoredCache } from '../../files/fs.ts';
 import type { OpenFiles } from '../../files/fs/open-files.ts';
 import type { PickerState } from '../../files/fs/picker.ts';
 import type { Opener, PathOpener } from '../../files/open.ts';
-import type { Plan } from '../../git/deposit.ts';
+import type { Plan } from '../../git/deposit/deposit.ts';
 import type { DebugClient } from '../../machine/debug/session.ts';
 import type { LogPaths } from '../../machine/hpc/actions.ts';
 import type { HpcWatcher } from '../../machine/hpc/poll.ts';
@@ -121,6 +121,8 @@ export type ServerContext = {
     opsWrites: FsWrites;
     /** The git and deposit writes in flight, so Cancel ends the one a root or a deposit runs. */
     gitRunning: RunningGit;
+    /** The clone folders a clone is running in, so a second request for one is answered busy. */
+    cloning: Set<string>;
     /** The ignored names the file browser's listings asked git for lately. */
     ignoredCache: IgnoredCache;
     /**
@@ -166,6 +168,8 @@ export type ServerContext = {
     openPath: PathOpener;
     /** The last deposit plan per project. */
     depositPlans: Map<string, Plan>;
+    /** Read the portfolio again, for a change no watched file says (a repository cloned). */
+    rescan: () => void;
     /** The random wallpaper pick, kept for the life of the process. */
     wallpaper: WallpaperMemory;
     /**

@@ -29,7 +29,6 @@ import type { Entry, Project, SchemaField, Subtask } from '../../data/model/inde
 import { fileBytesUrl } from '../sources/fs-transport.ts';
 import { normalisePath } from '../sources/fs.ts';
 import { dirOf } from '../sources/repositories/change-tree.ts';
-import { realProjects } from '../sources/venues.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
@@ -692,78 +691,6 @@ export function unfundedBy(projects: Project[], entries: readonly Entry[]): Proj
         projects,
         entries.map((entry) => entry.id)
     );
-}
-
-/** One row of the Code view's software list: the project, what it is, and the papers it names. */
-export type SoftwareRow = {
-    id: string;
-    label: string;
-    /** The project's own `type:`, which on this tier is `software`. */
-    type: string;
-    /** The `code_availability:` status, or the empty string when the manifest names none. */
-    code: string;
-    /** The projects the manifest's `related:` names, each drawn as a cross-link. */
-    papers: { id: string; label: string }[];
-};
-
-/**
- * The software projects, by title, each with the papers its `related:` names.
- *
- * The tier is the whole of what makes a project software here, so a manifest filed under
- * `projects/software/` is listed whether or not any paper points back at it, and a related id the
- * portfolio does not hold is left out rather than drawn as a dead link.
- */
-export function softwareRows(projects: Project[]): SoftwareRow[] {
-    const rows: SoftwareRow[] = [];
-    for (const project of projects) {
-        if (project.tier !== 'software') continue;
-        const papers: { id: string; label: string }[] = [];
-        for (const id of project.relatedIds) {
-            const found = projects.find((one) => one.id === id);
-            if (found === undefined) continue;
-            const short = found.short?.trim() ?? '';
-            papers.push({ id, label: short === '' ? found.title : short });
-        }
-        rows.push({
-            id: project.id,
-            label: project.title,
-            type: project.type ?? '',
-            code: project.codeAvailability?.status ?? '',
-            papers
-        });
-    }
-    return rows.sort((left, right) => left.label.localeCompare(right.label));
-}
-
-/** The three code-availability groups of the Code view, in the order the sections are drawn. */
-export const COVERAGE_GROUPS = ['deposited', 'review-anon', 'none'];
-
-/** One coverage section: which group, and the projects in it. */
-export type CoverageGroup = {
-    group: string;
-    count: number;
-    members: { id: string; label: string }[];
-};
-
-/**
- * The projects grouped by what their manifest says about their code: `deposited`, `review-anon`,
- * and `none` for both the ones that say so and the ones that say nothing, which is the gap the
- * section is drawn to show. An idea has no code to deposit and is not counted.
- */
-export function coverage(projects: Project[], dead: string[] = []): CoverageGroup[] {
-    const groups: CoverageGroup[] = COVERAGE_GROUPS.map((group) => ({
-        group,
-        count: 0,
-        members: []
-    }));
-    for (const project of realProjects(projects, dead)) {
-        if (project.type === 'idea') continue;
-        const status = project.codeAvailability?.status ?? '';
-        const held = groups.find((group) => group.group === status) ?? groups[2];
-        held.count += 1;
-        held.members.push({ id: project.id, label: project.short ?? project.title });
-    }
-    return groups;
 }
 
 /** How many of the subtasks are not done yet. */

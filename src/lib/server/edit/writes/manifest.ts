@@ -2,10 +2,10 @@
 // be written at all, one project.yml edited, and one new idea folder scaffolded.
 //
 // A manifest's path is the reader's, never the request's: the id names a manifest hubManifests
-// already found, under the hub's own scan directories or as the `.oculus/project.yml` of a
-// repository whose workspace folder holds one, and insideHub (for a scan folder) or
-// isRepositoryFile (for a repository) checks the resolved path again before the write. The fields a
-// write may name are the fields of `manifest_schema`, whatever the project's tier.
+// already found, under the hub's own scan directories or as the manifest of a workspace folder that
+// is a project, and insideHub (for a scan folder) or isFolderFile (for a workspace folder) checks
+// the resolved path again before the write. The fields a write may name are the fields of
+// `manifest_schema`, whatever the project's tier.
 //
 // Every reason a write refuses with is a line of config/text/server.yml under
 // `server.manifest_write`, worded with `words` from the configuration's text catalog.
@@ -29,6 +29,7 @@ import { parse } from 'yaml';
 import { z } from 'zod';
 import { byKey, isMap } from '../../../data/helpers/guards.ts';
 import { ROOT_FOLDER, inScan, tierOf } from '../../../data/helpers/hub-names.ts';
+import { projectFileIn } from '../../../data/sources/manifests.ts';
 import { hubManifests } from '../../files/roots.ts';
 import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
@@ -249,13 +250,16 @@ type Home = {
 };
 
 /**
- * Whether a repository's manifest is the `.oculus/project.yml` of the repository it was
- * read from.
+ * Whether the manifest of a project of a workspace folder is a manifest file of that folder: its
+ * top `project.yml` or its `.oculus/project.yml`.
  */
-function isRepositoryFile(manifest: RawManifest): boolean {
-    if (manifest.repository === undefined) return false;
+function isFolderFile(manifest: RawManifest): boolean {
+    if (manifest.workspaceFolder === undefined) return false;
     const file = resolve(manifest.file);
-    return file === resolve(join(manifest.repository.dir, ROOT_FOLDER, MANIFEST));
+    const { dir } = manifest.workspaceFolder;
+    return (
+        file === resolve(join(dir, MANIFEST)) || file === resolve(join(dir, ROOT_FOLDER, MANIFEST))
+    );
 }
 
 /**
@@ -266,13 +270,13 @@ function homeOf(hub: string, config: PortfolioConfig, id: string): Home | null {
     const manifest = hubManifests(hub, config).find((one) => one.id === id);
     if (manifest === undefined) return null;
     const own =
-        manifest.repository === undefined
+        manifest.workspaceFolder === undefined
             ? insideHub(hub, config, manifest.file)
-            : isRepositoryFile(manifest);
+            : isFolderFile(manifest);
     const refused =
-        manifest.repository === undefined
+        manifest.workspaceFolder === undefined
             ? words(config.text, 'server.manifest_write.not_in_hub')
-            : words(config.text, 'server.manifest_write.not_repository_file');
+            : words(config.text, 'server.manifest_write.not_folder_file');
     return {
         file: manifest.file,
         data: manifest,
@@ -558,16 +562,16 @@ function relativeFolder(text: string): string {
 }
 
 /**
- * The first folder, from `folder` up to the hub, that holds a project.yml, hub-relative, or null.
- * The walk starts where the folder lands once every link on the way is followed, so a link into a
- * project's subfolder is walked up from its real place.
+ * The first folder, from `folder` up to the hub, that is a project, hub-relative, or null. The walk
+ * starts where the folder lands once every link on the way is followed, so a link into a project's
+ * subfolder is walked up from its real place.
  */
 function projectAbove(hub: string, folder: string): string | null {
     const home = intendedPath(hub);
     const start = intendedPath(join(hub, folder));
     if (home === null || start === null) return null;
     for (let dir = start; below(dir, home); dir = dirname(dir)) {
-        if (existsSync(join(dir, MANIFEST))) return relative(home, dir).split(sep).join('/');
+        if (projectFileIn(dir) !== null) return relative(home, dir).split(sep).join('/');
     }
     return null;
 }

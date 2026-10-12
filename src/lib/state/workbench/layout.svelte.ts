@@ -22,6 +22,7 @@
 import { item } from '../../data/helpers/guards.ts';
 import { createArmedKeeps, type ArmedKeep } from './layout/open/armed-keep.svelte.ts';
 import { createRailPages } from './layout/open/float/rail-pages.ts';
+import type { Load } from './layout/saved/load.ts';
 import type { UiStore } from './ui.svelte.ts';
 import {
     clearPage,
@@ -44,7 +45,6 @@ import {
     focusedPane,
     fold,
     hostsOf,
-    LAYOUT_KEY,
     maximise,
     newPage,
     rebuiltPage,
@@ -79,7 +79,6 @@ import {
     type Page,
     type Pages,
     type SaveTurn,
-    type Storable,
     type Touched,
     type PlaceRule,
     type UniqueRule,
@@ -91,7 +90,6 @@ import { parseArrangement } from './navigation/arrangement.ts';
 import { arrangedPages, resetPlan, type RailSource } from './navigation/pages.ts';
 import { t } from '../shared/words/text.ts';
 
-export { LAYOUT_KEY };
 export type { OpenOptions };
 
 /** How many times an operation is run again on the envelope the host refused its save with. */
@@ -103,7 +101,8 @@ const GONE: Workbench = { root: { kind: 'pane', tabs: [], active: '' } };
 /** The pages one client is rendering, and their persistence. */
 export type LayoutStore = Omit<Instances, 'forgetTabs'> &
     FloatOps &
-    Omit<FolderOps, 'keepClosed'> & {
+    Omit<FolderOps, 'keepClosed'> &
+    Pick<Load, 'loadLayout' | 'workspaceOpened' | 'workspaceAnswered' | 'workspaceCarried'> & {
         currentPage: () => Page;
         /** Every page, never a float. */
         pages: () => Page[];
@@ -127,7 +126,6 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         layout: (page?: string) => Layout;
         /** The instance the next view opened would join, which is the pane it would open into. */
         openingInstance: () => Instance | null;
-        loadLayout: (storage?: Storable, source?: EventTarget) => boolean;
         /**
          * Whether the saved arrangement has been read, which a page of the app draws nothing
          * before.
@@ -443,6 +441,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         replace: (pages) => {
             store.current = pages;
         },
+        fresh: () => fresh,
         setFresh: (value) => {
             fresh = value;
         },
@@ -733,6 +732,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         pinTab: instances.pinTab,
         unpinTab: instances.unpinTab,
         loadLayout: load.loadLayout,
+        workspaceOpened: load.workspaceOpened,
+        workspaceAnswered: load.workspaceAnswered,
+        workspaceCarried: load.workspaceCarried,
         stopFollowing: load.stopFollowing,
         loaded: () => loaded,
         openRailPage: rail.openRailPage,

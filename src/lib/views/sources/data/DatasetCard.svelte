@@ -25,7 +25,7 @@
     import { editAction } from '$lib/views/shared/card/card';
     import { fileNameOf, openEntry } from '$lib/views/shared/forms/entry-file';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
-    import { accessTone, type Dataset } from '$lib/state/sources/datasets';
+    import { accessTone, type Dataset } from '$lib/state/sources/registries/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, IdentityFault, Project, SchemaField } from '$lib/state/boards/collection';
     import type { ViewSource } from '$lib/state/sessions/view-source';

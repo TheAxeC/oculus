@@ -7,6 +7,7 @@
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
+import { repositoryDepths } from '../../../src/lib/server/files/roots.ts';
 import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import { writeState } from '../../../src/lib/server/files/workspace/state.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -23,8 +24,12 @@ type At = {
     notes: string;
     /** A symbolic link to `notes`. */
     link: string;
-    /** A project folder inside the hub. */
+    /** A project folder inside the hub, holding `.oculus/project.yml`. */
     inside: string;
+    /** A project folder inside the hub, holding a top `project.yml`. */
+    insideTop: string;
+    /** A folder holding a top `project.yml` and no `.oculus/config/`. */
+    topAway: string;
 };
 
 /** A folder made here. */
@@ -51,7 +56,20 @@ function world(): At {
     symlinkSync(notes, link);
     const inside = folder(hub, 'projects', 'x', '.oculus');
     writeFileSync(join(inside, 'project.yml'), 'tier: projects\ntype: active\n');
-    return { hub, lab, cathedra, notes, link, inside: join(hub, 'projects', 'x') };
+    const insideTop = folder(hub, 'projects', 'y');
+    writeFileSync(join(insideTop, 'project.yml'), 'tier: projects\ntype: active\n');
+    const topAway = folder(base, 'top-away');
+    writeFileSync(join(topAway, 'project.yml'), 'tier: personal\ntype: active\n');
+    return {
+        hub,
+        lab,
+        cathedra,
+        notes,
+        link,
+        inside: join(hub, 'projects', 'x'),
+        insideTop,
+        topAway
+    };
 }
 
 /** The workspace a file with this text is, as the state names it, and the file. */
@@ -166,6 +184,18 @@ const ROWS: Row[] = [
         text: (at) => `folders:\n${entry('hub', at.hub)}\n${entry('inner', at.inside)}\n`,
         served: ['hub', 'inner'],
         findings: [['inner', 'findings.workspace.project_in_hub']]
+    },
+    {
+        name: 'a folder with a top project.yml beside a hub as a project, with no finding',
+        text: (at) => `folders:\n${entry('hub', at.hub)}\n${entry('top', at.topAway)}\n`,
+        served: ['hub', 'top'],
+        findings: []
+    },
+    {
+        name: 'a folder with a top project.yml that lies inside a hub as no project, with a finding',
+        text: (at) => `folders:\n${entry('hub', at.hub)}\n${entry('inner', at.insideTop)}\n`,
+        served: ['hub', 'inner'],
+        findings: [['inner', 'findings.workspace.project_in_hub']]
     }
 ];
 
@@ -197,6 +227,41 @@ describe('the folders of a workspace file', () => {
         expect(open.hubs.map((one) => one.name)).toEqual(['hub']);
         expect(open.primaryDir).toBe(at.hub);
     });
+
+    it.each([
+        ['-1', -1],
+        ['0', 0],
+        ['2', 2]
+    ])('reads a repository_scan_depth of %s on the entry', (written, depth) => {
+        const at = world();
+        const { open } = opened(
+            at,
+            `folders:\n  - { name: notes, path: ${at.notes}, repository_scan_depth: ${written} }\n`
+        );
+        expect(open.findings).toEqual([]);
+        expect(open.folders.map((one) => one.scanDepth)).toEqual([depth]);
+        expect(open.roots.map((one) => one.scanDepth)).toEqual([depth]);
+        expect(repositoryDepths(open)).toEqual(new Map([[at.notes, depth]]));
+    });
+
+    it.each(['abc', '-2', '2.5', 'true', '[1]'])(
+        'gives a finding naming the entry for a repository_scan_depth of %s and leaves the folder with none',
+        (written) => {
+            const at = world();
+            const { open } = opened(
+                at,
+                `folders:\n  - { name: notes, path: ${at.notes}, repository_scan_depth: ${written} }\n`
+            );
+            expect(open.findings.map((one) => [one.key, one.id])).toEqual([
+                ['notes', 'findings.workspace.bad_scan_depth']
+            ]);
+            expect(open.folders.map((one) => [one.name, one.scanDepth])).toEqual([
+                ['notes', undefined]
+            ]);
+            expect(open.roots.map((one) => one.scanDepth)).toEqual([undefined]);
+            expect(repositoryDepths(open)).toEqual(new Map());
+        }
+    );
 
     it('serves no folder and gives a finding naming the file when the file does not parse', () => {
         const at = world();

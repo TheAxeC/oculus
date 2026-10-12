@@ -35,6 +35,7 @@ text:
         change_prev_title: Go to the previous change (Shift+Alt+F5)
         clear_scope: Show every repository
         clear_scope_title: List every repository again, not only those of the folder
+        clone: Clone Repository...
         commit_diff_label: '{0} ({1})'
         commit_menu: Commit actions
         commit_outside: Commit {0}
@@ -274,6 +275,7 @@ text:
         reopen_title: Reopen Closed Repositories
         workspace_label: '{0} (Workspace)'
         menu_checkout: Checkout
+        menu_clone: Clone
         menu_closed: Closed Repositories
         menu_delete_worktree: Delete Worktree
         menu_discard: Discard Changes

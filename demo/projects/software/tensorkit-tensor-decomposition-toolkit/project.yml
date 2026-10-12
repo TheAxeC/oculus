@@ -1,0 +1,8 @@
+title: "tensorkit - tensor decomposition toolkit"
+tier: software
+type: software
+eli5: "A small library of tensor decompositions (CP, Tucker, block-term) with a scikit-learn-style API. Backs several of the example projects (streaming-anomaly, robust-embeddings)."
+tags: [tensor, decomposition, library, python]
+related: [robust-embeddings]
+repository:
+  url: "https://example.org/tensorkit"

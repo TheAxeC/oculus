@@ -40,6 +40,7 @@ import type {
     RawPortfolio,
     RawRegistryEntry,
     Relations,
+    RepositoryBlock,
     Resource,
     SchemaField,
     Snapshot,
@@ -164,6 +165,23 @@ function codeAvailability(value: unknown): CodeAvailability | undefined {
     });
 }
 
+/**
+ * The repository, from the manifest's `repository` map. A manifest with no map has none. Its
+ * `clones` start empty: the build that knows the repositories of the workspace fills them.
+ */
+function repository(value: unknown): RepositoryBlock | undefined {
+    if (!isMap(value)) return undefined;
+    return compact<RepositoryBlock>({
+        url: str(value.url),
+        visibility: str(value.visibility),
+        description: str(value.description),
+        homepage: str(value.homepage),
+        topics: Array.isArray(value.topics) ? strings(value.topics) : undefined,
+        date: str(value.date),
+        clones: []
+    });
+}
+
 /** The reproduction record, from the manifest's `reproduced` map. */
 function reproduced(value: unknown): Reproduced | undefined {
     if (!isMap(value)) return undefined;
@@ -239,6 +257,7 @@ function project(
         outcome: str(manifest.outcome),
         resourceIds: strings(manifest.compute),
         codeAvailability: codeAvailability(manifest.code_availability),
+        repository: repository(manifest.repository),
         reproduced: reproduced(manifest.reproduced),
         relatedIds: strings(manifest.related),
         venueId: str(manifest.venue_id),
@@ -251,11 +270,13 @@ function project(
         staleDays: lag > 0 ? lag : undefined,
         docs: docFlags(found),
         deck: deck?.path,
+        codeFolder: manifest.codeFolder === true ? true : undefined,
         deckTags: deck !== undefined && deck.tags.length > 0 ? deck.tags : undefined,
         folder: manifest.folder,
         file: manifest.file,
-        repository: manifest.repository,
-        links: Array.isArray(manifest.links) ? strings(manifest.links) : undefined
+        workspaceFolder: manifest.workspaceFolder,
+        links: Array.isArray(manifest.links) ? strings(manifest.links) : undefined,
+        tags: Array.isArray(manifest.tags) ? strings(manifest.tags) : undefined
     });
 }
 
@@ -520,8 +541,9 @@ function jointWorkRows(collections: Collection[]): { id: Id; person: Id }[] {
 }
 
 /**
- * The feeds, already the summary sources/feeds.ts made of them. They are copied rather than passed
- * through so that the snapshot owns its own objects, which is what every other entity here does.
+ * The feeds, already the summary sources/documents/feeds.ts made of them. They are copied rather
+ * than passed through so that the snapshot owns its own objects, which is what every other entity
+ * here does.
  */
 function feeds(raw: Feeds): Feeds {
     return {

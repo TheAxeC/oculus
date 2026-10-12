@@ -168,7 +168,7 @@ function checkFolderNames(raw: RawPortfolio, catalog: TextCatalog, findings: Fin
     const byName = new Map<string, RawManifest[]>();
     for (const manifest of raw.manifests) {
         const name =
-            manifest.repository?.root ??
+            manifest.workspaceFolder?.root ??
             manifest.folder
                 .split('/')
                 .filter((part) => part !== '')

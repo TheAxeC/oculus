@@ -39,9 +39,9 @@ export type { SessionsPayload };
 
 /**
  * Every project's absolute folder with its title, which is what the area scoring is given. A
- * project's folder is relative to its own hub unless it is a repository's, so `hubs` names the
- * folder of each hub by its name, the empty name standing for a record of no hub; a project of a
- * hub not named there has no folder to give. `primary` is the name of the hub whose records carry
+ * project's folder is relative to its own hub unless it is a workspace folder's, so `hubs` names
+ * the folder of each hub by its name, the empty name standing for a record of no hub; a project of
+ * a hub not named there has no folder to give. `primary` is the name of the hub whose records carry
  * no root.
  */
 export function projectFolders(

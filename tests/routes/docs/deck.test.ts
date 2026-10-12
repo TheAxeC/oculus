@@ -151,4 +151,42 @@ describe('the deck route', () => {
             'a draft under a second root key that reaches the same file'
         ).toEqual(['Typed', 'Two']);
     });
+
+    it('answers the portfolio deck of a hub that never names it as unnamed when its folder is missing, and a named one as missing', async () => {
+        const rows: { row: string; layer: string; path: string; state: string }[] = [
+            {
+                row: 'a hub that names no deck',
+                layer: 'scan:\n  - { dir: . }\n',
+                path: 'deck',
+                state: 'unnamed'
+            },
+            {
+                row: 'a hub that names the deck',
+                layer: 'scan:\n  - { dir: . }\nportfolio_deck: deck\n',
+                path: 'deck',
+                state: 'missing'
+            },
+            {
+                row: 'another folder of a hub that names no deck',
+                layer: 'scan:\n  - { dir: . }\n',
+                path: 'talks',
+                state: 'missing'
+            }
+        ];
+        for (const { row, layer, path, state } of rows) {
+            const dir = plantScratch('oculus-deck-unnamed-', {
+                'hub/.oculus/config/sources.yml': layer
+            });
+            const hub = join(dir, 'hub');
+            const loaded = loadConfig(engineDir(), { hub });
+            const held: DeckSource = {
+                roots: [{ key: 'hub', dir: hub }],
+                primary: { key: 'hub', dir: hub },
+                config: portfolioConfigFrom(loaded.config, loaded.from),
+                projects: []
+            };
+            const deck = (await ask(held, `root=hub&path=${path}`).json()) as { state: string };
+            expect(deck.state, row).toBe(state);
+        }
+    });
 });

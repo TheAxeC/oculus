@@ -34,7 +34,7 @@ export type ForkOptions = {
     /** Called with each output line of the process. */
     say: (line: string, error: boolean) => void;
     /** Called when the process asks for the folder panel. */
-    onPick: (id: number) => void;
+    onPick: (id: number, options: { start?: string; single?: true }) => void;
 };
 
 /** A server process. */
@@ -116,7 +116,7 @@ export function forkServer(options: ForkOptions): ServerProcess {
         } else if (message.kind === 'failed') {
             settle({ kind: 'failed', reason: message.reason, port: message.port });
         } else {
-            options.onPick(message.id);
+            options.onPick(message.id, { start: message.start, single: message.single });
         }
     });
     const gone = new Promise<void>((resolve) => {

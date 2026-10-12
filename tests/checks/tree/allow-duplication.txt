@@ -12,7 +12,7 @@
 # The list is a text file rather than a module because its entries with their reasons in TypeScript
 # are a source file several times over the 1000-line rule.
 src/lib/data/sources/config/merge.ts src/lib/server/transcripts/stores.ts 6ba7db2c1596 the same 10 lines at 81 and 51, to fold into one place
-src/lib/server/git/deposit.ts src/lib/state/system/deposit.svelte.ts 1910d33ebbe8 the same 27 lines at 99 and 20, to fold into one place
+src/lib/server/git/deposit/deposit.ts src/lib/state/system/deposit.svelte.ts dac2866e8807 the same 18 lines at 104 and 21, to fold into one place
 src/lib/server/machine/hpc/parse.ts src/lib/state/system/machine/hpc/hpc.ts 8ead1c0cdafe the same 7 lines at 25 and 20, to fold into one place
 src/lib/state/feeds/leads.ts src/lib/state/feeds/radar.ts c0785dd03b7f the same 12 lines at 145 and 82, to fold into one place
 src/lib/state/workbench/layout/instance.ts src/lib/state/workbench/layout/tree.ts cb7b0e6155d3 the same 12 lines at 132 and 58, to fold into one place
@@ -22,5 +22,4 @@ tests/data/sources/collections.test.ts tests/data/sources/registries.test.ts 33a
 tests/routes/edit/write-fixture.ts tests/routes/git/deposit.test.ts 01fefb490553 the same 14 lines at 143 and 52, to fold into one place
 tests/routes/edit/write-fixture.ts tests/server/core/changes.test.ts ea172e16ebfe the same 11 lines at 76 and 64, to fold into one place
 tests/routes/files/fs.test.ts tests/server/files/fs.test.ts 9fcd8308df69 the same 19 lines at 35 and 61, to fold into one place
-tests/server/git/deposit.test.ts tests/server/git/git-write.test.ts b9a8c9c31c31 the same 10 lines at 82 and 88, to fold into one place
 tests/server/git/git-ops.test.ts tests/server/git/git-write.test.ts 1ef8898fbc76 the same 9 lines at 95 and 93, to fold into one place

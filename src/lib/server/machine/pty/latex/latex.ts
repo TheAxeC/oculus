@@ -195,7 +195,7 @@ function latexFolder(
     const hub = open.roots.find((one) => one.key === key)?.dir;
     if (hub === undefined) return refusal('no-project');
     // A project of a repository is built from the repository, which also bounds what it reads.
-    const bound = project.repository?.dir ?? hub;
+    const bound = project.workspaceFolder?.dir ?? hub;
     return {
         dir: join(projectDirectory(hub, project), MANUSCRIPT),
         label: named.data.id,

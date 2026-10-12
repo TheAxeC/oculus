@@ -30,7 +30,7 @@ import {
     folderToAdd,
     pathAsWritten
 } from '../../../../files/workspace/folders.ts';
-import { scalarText, type FolderRefusal } from '../../../../files/workspace/folders.ts';
+import { SCAN_DEPTH, scalarText, type FolderRefusal } from '../../../../files/workspace/folders.ts';
 import type { OpenWorkspace } from '../../../../files/workspace/open.ts';
 import { readState, writeState } from '../../../../files/workspace/state.ts';
 import { othersThan, readBack, setItems } from '../../../list-edit.ts';
@@ -41,8 +41,12 @@ const FOLDERS = 'folders';
 /** The top-level key naming the primary hub. */
 const PRIMARY = 'primary';
 
-/** One entry of the list: a name and the path as the file writes it. */
-type FolderItem = { name: string; path: string };
+/**
+ * One entry of the list: a name, the path as the file writes it and, when the entry has one, its
+ * `repository_scan_depth`, whatever value the file holds, so a depth the reader refuses is kept
+ * too.
+ */
+type FolderItem = { name: string; path: string; repository_scan_depth?: unknown };
 
 /** What a change record holds of a workspace file: its list and its primary. */
 export type WorkspaceValue = { folders: FolderItem[]; primary: string | null };
@@ -61,7 +65,11 @@ export type FoldersOutcome =
           reason?: string;
       };
 
-const itemShape = z.object({ name: z.string().min(1), path: z.string().min(1) });
+const itemShape = z.object({
+    name: z.string().min(1),
+    path: z.string().min(1),
+    [SCAN_DEPTH]: z.unknown().optional()
+});
 
 /** The value a change record holds: the list and the primary, empty for anything else. */
 export const workspaceValueShape = z.catch(
@@ -82,7 +90,7 @@ function itemsOf(held: unknown): FolderItem[] {
     if (!Array.isArray(held)) return [];
     return held.flatMap((item) => {
         const one = itemShape.safeParse(item);
-        return one.success ? [{ name: one.data.name, path: one.data.path }] : [];
+        return one.success ? [one.data] : [];
     });
 }
 
@@ -164,7 +172,12 @@ function onlyEntries(source: string): boolean {
 
 /** One entry as the line the file carries: a flow map. */
 function itemText(item: FolderItem): string {
-    return `{ name: ${scalarText(item.name)}, path: ${scalarText(item.path)} }`;
+    const depth = item[SCAN_DEPTH];
+    const tail =
+        depth === undefined
+            ? ''
+            : `, ${SCAN_DEPTH}: ${typeof depth === 'string' ? scalarText(depth) : JSON.stringify(depth)}`;
+    return `{ name: ${scalarText(item.name)}, path: ${scalarText(item.path)}${tail} }`;
 }
 
 /** The source with the top-level `primary:` line set to `primary`, or removed when it is null. */

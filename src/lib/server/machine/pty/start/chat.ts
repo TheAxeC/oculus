@@ -18,7 +18,7 @@ import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from '../sessions.ts';
 import { shellWord } from '../shell-word.ts';
 
-type ChatProject = Pick<Project, 'title' | 'folder' | 'root' | 'repository'> &
+type ChatProject = Pick<Project, 'title' | 'folder' | 'root' | 'workspaceFolder'> &
     Partial<Pick<Project, 'tier'>>;
 
 export type ChatOptions = StartOptions & {
@@ -96,7 +96,7 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const index = chatIndexPath(local.sessionsOverrides, terminalId);
     const portfolio = project === null;
     // A project of a hub other than the primary lies under its own hub's folder, and a project of a
-    // repository in the repository's own folder.
+    // workspace folder in that folder's own folder.
     const home = portfolio
         ? open.primaryDir
         : (hubTargets(engine, open).find((one) => one.key === project.root)?.hub ??

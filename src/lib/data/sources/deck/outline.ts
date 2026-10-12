@@ -15,7 +15,7 @@
 // as that slide's front matter.
 
 import { Lexer, type Token, type Tokens } from 'marked';
-import { splitFrontmatter } from '../docs.ts';
+import { splitFrontmatter } from '../documents/docs.ts';
 import { separators, trimmed } from './split.ts';
 
 /** What a file makes of itself as a deck: its title, and the text of its slide file. */

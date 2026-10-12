@@ -26,6 +26,23 @@ export function repositoryRoots(open: OpenWorkspace): string[] {
     return open.roots.map((one) => expandHome(one.dir));
 }
 
+/** The folders of the workspace that are hubs, by the directory the git watch opens them at. */
+export function hubFolders(open: OpenWorkspace): string[] {
+    return open.hubs.map((one) => expandHome(one.dir));
+}
+
+/**
+ * The scan depth of each folder of the workspace that has its own `repository_scan_depth`, by the
+ * directory the git watch opens it at; a folder without one is not in the map.
+ */
+export function repositoryDepths(open: OpenWorkspace): Map<string, number> {
+    const depths = new Map<string, number>();
+    for (const one of open.roots) {
+        if (one.scanDepth !== undefined) depths.set(expandHome(one.dir), one.scanDepth);
+    }
+    return depths;
+}
+
 /**
  * The hubs of the workspace other than the primary, each with its settings (the engine's defaults
  * under the hub's own `.oculus/config/`). A hub's project folders are the primary's alone, so a hub
@@ -34,11 +51,14 @@ export function repositoryRoots(open: OpenWorkspace): string[] {
 export function hubTargets(engine: string, open: OpenWorkspace): HubTarget[] {
     return open.hubs
         .filter((one) => one.name !== open.primary)
-        .map((one) => ({
-            key: one.name,
-            hub: one.dir,
-            config: portfolioConfigFrom(loadConfig(engine, { hub: one.dir }).config)
-        }));
+        .map((one) => {
+            const loaded = loadConfig(engine, { hub: one.dir });
+            return {
+                key: one.name,
+                hub: one.dir,
+                config: portfolioConfigFrom(loaded.config, loaded.from)
+            };
+        });
 }
 
 /**
@@ -62,9 +82,9 @@ export function allHubs(
 
 /**
  * The folders the project readers are handed: every folder of the workspace that is no hub, is not
- * marked `noProject` and holds a `.oculus/project.yml`, which `readHubManifests` decides. A folder
- * is listed once whatever it is called, since the workspace reader leaves out a second entry over
- * one real path.
+ * marked `noProject` and holds a `project.yml` or a `.oculus/project.yml`, which `readHubManifests`
+ * decides. A folder is listed once whatever it is called, since the workspace reader leaves out a
+ * second entry over one real path.
  */
 export function repositoriesOf(open: OpenWorkspace): RepositoryRoot[] {
     return open.roots
@@ -75,13 +95,16 @@ export function repositoriesOf(open: OpenWorkspace): RepositoryRoot[] {
 /**
  * The settings of the primary hub as a write, a chat's context, a task's seed or a project's files
  * read them, with the project folders of the workspace as its repositories: the same settings and
- * the same repositories the build reads, so each of them finds the projects the snapshot holds.
+ * the same repositories the build reads, so each of them finds the projects the snapshot holds. The
+ * build passes `from`, which file of the config each key came from, so the hub reports only the
+ * files its own config layer names.
  */
 export function primaryConfig(
     merged: Record<string, unknown>,
-    open: OpenWorkspace
+    open: OpenWorkspace,
+    from?: Readonly<Partial<Record<string, string>>>
 ): PortfolioConfig {
-    return { ...portfolioConfigFrom(merged), repositories: repositoriesOf(open) };
+    return { ...portfolioConfigFrom(merged, from), repositories: repositoriesOf(open) };
 }
 
 /**

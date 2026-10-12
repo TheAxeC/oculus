@@ -170,6 +170,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         fsWrites: overrides.fsWrites ?? fsWrites(),
         opsWrites: overrides.opsWrites ?? fsWrites(),
         gitRunning: overrides.gitRunning ?? createRunningGit(),
+        cloning: overrides.cloning ?? new Set<string>(),
         ignoredCache: overrides.ignoredCache ?? ignoredCache(),
         folderPicker: overrides.folderPicker ?? pickerState(),
         hpcLogPaths: new Map(),
@@ -190,6 +191,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         opener: noop,
         openPath: noop,
         depositPlans: new Map(),
+        rescan: noop,
         wallpaper: wallpaperMemory(),
         icons: { set: {} },
         close: () => {

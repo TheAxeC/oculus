@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. One board component owns the four portfolio board registrations,
+    // Layer 3, view registration. One board component owns the five portfolio board registrations,
     // the Projects page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
@@ -18,16 +18,18 @@
         boardRegistration('projects', 1),
         boardRegistration('coauthor', 2),
         boardRegistration('archive', 3),
-        boardRegistration('personal', 4)
+        boardRegistration('personal', 4),
+        boardRegistration('software', 5)
     ];
 </script>
 
 <script lang="ts">
     // Layer 3, view. The project board: cards or a table, a search, quick filters, type toggles,
     // one filter menu headed by every way the board can be split, a stats strip and a short or full
-    // title. It is registered four times, as `projects`, `coauthor`, `archive` and `personal`, and
-    // reads which board it is from the instance it was mounted as, so the four board tabs over
-    // separate tiers are one component here.
+    // title. It is registered five times, as `projects`, `coauthor`, `archive`, `personal` and
+    // `software`, and reads which board it is from the instance it was mounted as, so the five
+    // board tabs over separate tiers are one component here. The Software board has no New project,
+    // since a software project is a manifest filed under its scan folder.
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
     // joined, and the facets, the filter menu's groups, the filters, the counts and the sentence
@@ -105,6 +107,8 @@
 
     /** True while the new-project form is open under the toolbar. */
     let adding = $state(false);
+    /** The Software board makes no project: the form only offers the tiers a person fills in. */
+    const offersNew = $derived(!preset.tiers.includes('software'));
 
     /**
      * Today, for the deadline badge. It is read when the board is opened and not again, so a page
@@ -236,15 +240,17 @@
 
 {#snippet tools()}
     <Toolbar label={t('board.toolbar')} overflow>
-        <ToolButton
-            bare
-            glyph="add"
-            label={t('board.new_idea')}
-            title={t('board.new_idea_tip')}
-            active={adding}
-            pressed={adding}
-            onclick={() => (adding = !adding)}
-        />
+        {#if offersNew}
+            <ToolButton
+                bare
+                glyph="add"
+                label={t('board.new_idea')}
+                title={t('board.new_idea_tip')}
+                active={adding}
+                pressed={adding}
+                onclick={() => (adding = !adding)}
+            />
+        {/if}
         <ToolButton
             bare
             label={t('board.expand_all')}
@@ -311,7 +317,7 @@
 
 <Pane title={title()} toolbar={tools} {bar}>
     <div class="board" data-instance={instance.id} data-board={preset.id}>
-        {#if adding}
+        {#if adding && offersNew}
             <NewIdea
                 tier={preset.tiers[0]}
                 onclose={() => (adding = false)}

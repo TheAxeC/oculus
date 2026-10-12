@@ -108,11 +108,13 @@ import { createLsp } from '../system/machine/lsp/lsp.svelte.ts';
 import { createReferences } from '../system/machine/lsp/references.svelte.ts';
 import { saveRulesOf } from '../workbench/navigation/editor-text.ts';
 import { createSelectors } from './selectors.svelte.ts';
+import { createClone } from '../sources/clone/clone.svelte.ts';
+import { createCloneAfter } from '../sources/clone/clone-after.svelte.ts';
 import { createSocket } from './socket.svelte.ts';
 import { createAutosave } from '../sessions/source/autosave.svelte.ts';
 import { loadSource, type SourceDraft } from '../sessions/source/draft.ts';
 import { createSource, type SaveRules } from '../sessions/source/source.svelte.ts';
-import { folderOfProject } from '../sessions/source/write-files.ts';
+import { manifestOfProject } from '../sessions/source/write-files.ts';
 import { createTerminals, terminalLabel } from '../sessions/terminals.svelte.ts';
 import { createCommands } from '../sessions/terminal/commands.svelte.ts';
 import { TERMINAL_VIEW } from '../sessions/terminal/terminal-tabs.ts';
@@ -160,8 +162,8 @@ export function createClientState(
         {
             primary: () => fs.primary(),
             engine: () => fs.workspaces().engine,
-            projectFolder: (id) =>
-                folderOfProject(entities.portfolio()?.entities.projects[id], fs.primary()),
+            projectManifest: (id) =>
+                manifestOfProject(entities.portfolio()?.entities.projects[id], fs.primary()),
             collectionFile: (id) => {
                 const held = entities.portfolio()?.entities.collections[id];
                 if (held?.root === undefined) return null;
@@ -257,7 +259,7 @@ export function createClientState(
         'files',
         createFiles(entities, queries, (id) => selectors.hubDirOf(id))
     );
-    const fs = withQueries('fs', createFs(writes, entities, queries));
+    const fs = withQueries('fs', createFs(writes, entities, queries, layout.workspaceCarried));
     /**
      * The roots a root key is resolved against on the page: the current workspace's roots only,
      * which are the ones the server's file route serves (`roots` of the open workspace,
@@ -430,6 +432,7 @@ export function createClientState(
     const folders = createFolderPages({
         config: () => entities.config()?.config,
         roots: () => fs.roots(),
+        project: (id) => entities.portfolio()?.entities.projects[id],
         layout
     });
     const usageRefresh = createUsageRefresh(entities, writes);
@@ -441,6 +444,10 @@ export function createClientState(
         docs.enginePlaceSettled,
         fs.workspaces
     );
+    const clone = createClone(writes, notices, {
+        home: () => fs.workspaces().home,
+        after: createCloneAfter(fs, notices)
+    });
     const manifestDraft = createManifestDraft(ui, selectors.projectOf);
     ui.registerUnsaved(manifestDraft.manifestDirty);
     // A file browser's root or workspace line is text no save has taken, asked by the instance's
@@ -779,6 +786,7 @@ export function createClientState(
         folders,
         usageRefresh,
         selectors,
+        clone,
         railBadges,
         paletteSource,
         editorStatus,

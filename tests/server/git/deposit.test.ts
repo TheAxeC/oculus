@@ -2,23 +2,21 @@
 //
 // Every repository here is made under the system temporary directory with the real git: a hub, a
 // mirrors folder, and a bare repository standing in for GitHub. `gh` is never run:
-// server/git/deposit.ts takes it as an option, and the stub below answers the three shapes and does
-// with the bare repository what the real one would do with GitHub. Nothing reaches the hub's own
-// checkout, ~/.oculus, or the network.
+// server/git/deposit/deposit.ts takes it as an option, and the stub below answers the three shapes
+// and does with the bare repository what the real one would do with GitHub. Nothing reaches the
+// hub's own checkout, ~/.oculus, or the network.
 // @module-tag slow: its cases run real git against a bare remote, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { adopt, commit, push, sync } from '../../../src/lib/server/git/deposit.ts';
-import { type GhRun, type Outcome } from '../../../src/lib/server/git/deposit-git.ts';
-import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
-import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { adopt, commit, push, sync } from '../../../src/lib/server/git/deposit/deposit.ts';
+import { type GhRun, type Outcome } from '../../../src/lib/server/git/deposit/deposit-git.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
-import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
+import { depositTarget, gitIn, writeInside } from '../../fixtures/hubs/deposit-world.ts';
 import { TEXT } from '../text.ts';
 
 /** The repositories the stub knows, by name. A name it does not know does not exist on GitHub. */
@@ -30,16 +28,9 @@ let lab = '';
 let mirrors = '';
 let into: WriteTarget;
 
-function git(root: string, ...args: string[]): string {
-    return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8' });
-}
-
 /** A file under a directory inside the throwaway tree, and nowhere else. */
 function write(root: string, name: string, body: string): void {
-    const full = join(root, name);
-    expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
-    mkdirSync(dirname(full), { recursive: true });
-    writeFileSync(full, body);
+    writeInside(dir, root, name, body);
 }
 
 function codeOf(id: string): string {
@@ -79,8 +70,8 @@ const gh: GhRun = (args) => {
         const source = args[args.indexOf('--source') + 1];
         const bare = join(dir, 'remote', `${name}.git`);
         execFileSync('git', ['init', '--bare', '-b', 'main', bare]);
-        git(source, 'remote', 'add', 'origin', bare);
-        git(source, 'push', '-u', 'origin', 'HEAD:main');
+        gitIn(source, 'remote', 'add', 'origin', bare);
+        gitIn(source, 'push', '-u', 'origin', 'HEAD:main');
         known.set(name, bare);
         return answer(true, '', '');
     }
@@ -123,20 +114,7 @@ test.beforeAll(() => {
     );
     write(join(lab, 'projects', 'manuscripts', 'alpha', 'code'), 'README.md', '# alpha of lab\n');
 
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
-    into = {
-        hub,
-        primary: 'hub',
-        config: { ...real, scan: [{ dir: 'projects/manuscripts' }] },
-        engine: engineDir(),
-        career: careerRules(loadConfig(engineDir()).config),
-        overrides: join(dir, 'sessions.json'),
-        projects: () => [],
-        bookmarks: join(dir, 'bookmarks.yml'),
-        behaviorFile: join(dir, 'behavior.yml'),
-        layoutFile: join(dir, 'layout.yml'),
-        glyphs: []
-    };
+    into = depositTarget(dir, hub, { scan: [{ dir: 'projects/manuscripts' }] });
 });
 
 test.afterAll(() => {
