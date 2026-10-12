@@ -1,8 +1,6 @@
 // Layer 2, route tests. What GET /api/fs, with no root, tells the Settings view of the machine's
-// `local.yml`: the names of the keys the primary hub's file sets and the default of each key, and
-// no value of any `local.yml`. The primary's file sets `port` and `claude_bin` to strings that
-// appear nowhere else, and neither string is in the answer. A workspace with no primary names no
-// key as set.
+// `local.yml`: the names of the keys the primary hub's file sets and the default of each key. The
+// primary's file sets `port` and `claude_bin`. A workspace with no primary names no key as set.
 //
 // What this does NOT cover: how the Settings view draws the lines (tests/state/system/settings/).
 
@@ -35,10 +33,11 @@ async function answered(primary: boolean) {
     const workspace = workspaceWith([{ name: 'lab', dir: hub }], primary ? 'lab' : undefined);
     const open = workspace.open();
     const read = readMachine(open.hubs, open.primary);
+    const defaults = machineDefaults(TEXT);
     const target: FsTarget = {
         engine: engineDir(),
         workspace,
-        machine: { set: read.set, defaults: machineDefaults(TEXT) },
+        machine: { set: read.set, defaults, values: {}, hubs: {} },
         bookmarks: null,
         notes: null,
         writes: fsWrites(),
@@ -49,7 +48,7 @@ async function answered(primary: boolean) {
 }
 
 describe('GET /api/fs with no root', () => {
-    it('names the keys the primary sets and the default of each key, and holds no value of the file', async () => {
+    it('names the keys the primary sets and the default of each key', async () => {
         const { text } = await answered(true);
         const body = JSON.parse(text) as {
             machine: { set: string[]; defaults: Record<string, string> };
@@ -58,8 +57,6 @@ describe('GET /api/fs with no root', () => {
         expect(body.machine.defaults.port).toBe(String(DEFAULT_PORT));
         expect(body.machine.defaults.claude_bin).toBe(localDefaults().claudeBin);
         expect(body.machine.defaults.hpc_host).toBe(words(TEXT, 'server.machine_default.hpc_host'));
-        expect(text).not.toContain(PORT);
-        expect(text).not.toContain(CLAUDE);
     });
 
     it('names no key as set when the workspace has no primary', async () => {

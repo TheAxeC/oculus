@@ -43,6 +43,19 @@ export type WorkspaceFile = { path: string; name: string; hub: string };
 /** One recent workspace: the file, and whether it is gone from the disk. */
 export type RecentWorkspace = WorkspaceFile & { missing: boolean };
 
+/** What the server sent of the machine's `local.yml` files, for the Settings machine rows. */
+export type WorkspaceMachine = {
+    set: string[];
+    defaults: Record<string, string>;
+    values: Record<string, string>;
+    hubs: Record<string, string[]>;
+};
+
+/** The machine's files before the server has answered, or when it sent nothing readable. */
+export function noMachine(): WorkspaceMachine {
+    return { set: [], defaults: {}, values: {}, hubs: {} };
+}
+
 /**
  * The open workspace as the toolbar reads it: the file it is held in (null while it is unsaved),
  * its folders under their names, the primary's name (null when the file names none), the recent
@@ -58,8 +71,12 @@ export type WorkspacesState = {
     engine: { root: string; path: string } | null;
     recent: RecentWorkspace[];
     available: WorkspaceFile[];
-    /** The keys the primary's `local.yml` sets, by name, and the default text of each key. */
-    machine: { set: string[]; defaults: Record<string, string> };
+    /**
+     * The keys the primary's `local.yml` sets, by name, the default text of each key, the text of
+     * the value in force of each key (a line for each row of a joined list), and the hubs whose
+     * files set each joined list.
+     */
+    machine: WorkspaceMachine;
     error: string;
     loading: boolean;
 };
@@ -166,18 +183,21 @@ export function matchedNothing(rows: TreeRow[]): boolean {
     return rows.every((row) => row.depth === 0);
 }
 
-export const NO_WORKSPACES: WorkspacesState = {
-    home: '',
-    open: null,
-    folders: [],
-    primary: null,
-    engine: null,
-    recent: [],
-    available: [],
-    machine: { set: [], defaults: {} },
-    error: '',
-    loading: true
-};
+/** The workspaces before the server has answered, built per call so no caller shares its lists. */
+export function noWorkspaces(): WorkspacesState {
+    return {
+        home: '',
+        open: null,
+        folders: [],
+        primary: null,
+        engine: null,
+        recent: [],
+        available: [],
+        machine: noMachine(),
+        error: '',
+        loading: true
+    };
+}
 
 export const NO_TEXT: FileText = { text: '', truncated: false, error: '', loading: true };
 
@@ -235,9 +255,11 @@ export const workspacesShape = z.object({
     machine: z
         .object({
             set: z.array(z.string()).catch([]),
-            defaults: z.record(z.string(), z.string()).catch({})
+            defaults: z.record(z.string(), z.string()).catch({}),
+            values: z.record(z.string(), z.string()).catch({}),
+            hubs: z.record(z.string(), z.array(z.string())).catch({})
         })
-        .catch({ set: [], defaults: {} })
+        .catch(() => noMachine())
 });
 
 /** One bookmark, answered as the endpoint sent it. */

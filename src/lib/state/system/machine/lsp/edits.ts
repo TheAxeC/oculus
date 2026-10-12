@@ -252,7 +252,6 @@ function refusedWrite(outcome: Extract<Outcome, { ok: false }>, first: string): 
     if (done === 1) return refuse('lsp_edit_partial_one', name);
     if (done > 0) return refuse('lsp_edit_partial', name, String(done));
     if (outcome.error === 'outside') return refuse('lsp_edit_outside', name);
-    if (outcome.error === 'protected') return refuse('lsp_edit_protected', name);
     if (outcome.error === 'changed') return refuse('lsp_edit_changed', name);
     return refuse('lsp_edit_failed', name);
 }
@@ -302,7 +301,7 @@ export function createLspEdits(parts: LspEditsParts): LspEdits {
             for (const tab of file.tabs) {
                 const draft = parts.draft(tab.id);
                 if (!draft.loaded || draft.readonly)
-                    return stop(refuse('lsp_edit_protected', file.name));
+                    return stop(refuse('lsp_edit_readonly', file.name));
                 if (!applyTextEdits(draft.text, file.edits).ok) {
                     return stop(refuse('lsp_edit_changed', file.name));
                 }
@@ -382,7 +381,7 @@ export function createLspEdits(parts: LspEditsParts): LspEdits {
             for (const tab of file.tabs) {
                 if (!open.some((one) => one.id === tab.id)) return refuse('lsp_edit_gone');
                 const draft = parts.draft(tab.id);
-                if (!draft.loaded || draft.readonly) return refuse('lsp_edit_protected', file.name);
+                if (!draft.loaded || draft.readonly) return refuse('lsp_edit_readonly', file.name);
                 if (draft.text !== tab.from) return refuse('lsp_edit_changed', file.name);
                 const made = applyTextEdits(draft.text, file.edits);
                 if (!made.ok) return refuse('lsp_edit_changed', file.name);

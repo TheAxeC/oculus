@@ -30,7 +30,9 @@ describe('the real folder of a root in the workspaces answer', () => {
         ]);
         const answer = workspacesAnswer(openWorkspace(state), engineDir(), {
             set: [],
-            defaults: {}
+            defaults: {},
+            values: {},
+            hubs: {}
         });
         const read = readAs(workspacesShape, JSON.parse(JSON.stringify(answer)));
         const roots = read?.folders ?? [];

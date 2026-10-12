@@ -21,8 +21,6 @@ export type ServerAsk = {
     root: ServedRoot;
     /** Every served root. */
     roots: readonly ServedRoot[];
-    /** Oculus's own config folder. */
-    config: string;
     schemas: SchemaSet;
     /**
      * Ask the server, as `notice` words it, about each change under a file or folder, by a real
@@ -48,8 +46,6 @@ export type DiagnosticView = {
     text: string;
     root: ServedRoot;
     roots: readonly ServedRoot[];
-    /** Oculus's own config folder. */
-    config: string;
     /** The flat text catalog; empty when the relay holds none. */
     catalog: Record<string, string>;
 };

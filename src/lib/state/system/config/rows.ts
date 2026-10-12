@@ -93,20 +93,25 @@ export type ConfigRow = RowBase & {
 };
 
 /**
- * What the Settings view knows of the machine's own file: the name of the primary hub, the names of
- * the keys its `local.yml` sets and the default text of each key that has one. No value of the file
- * is among it.
+ * What the Settings view knows of the machine's own files: the name of the primary hub, the names
+ * of the keys its `local.yml` sets, the default text of each key that has one, the text of the
+ * value in force of each key that has one (a line for each row of a joined list), and the names of
+ * the hubs whose files set each joined list.
  */
 export type MachineState = {
     primary: string | null;
     set: readonly string[];
     defaults: Readonly<Record<string, string>>;
+    values: Readonly<Record<string, string>>;
+    hubs: Readonly<Record<string, readonly string[]>>;
 };
 
 /**
- * One key of the machine's own file, listed from the catalog and the names of the keys the file
- * sets: `setIn` is the primary hub whose file sets it, else null, and `fallback` is the default in
- * force for a key the file does not set, null when the key has none.
+ * One key of the machine's own file, listed from the catalog and what is known of the files:
+ * `setIn` is the primary hub whose file sets it, else null, `fallback` is the default in force for
+ * a key the file does not set, null when the key has none, `lines` is the value in force, one line
+ * for each row of a joined list, none when the key has no value to show, and `hubs` names the hubs
+ * whose files set a joined list.
  */
 export type LocalRow = RowBase & {
     kind: 'local';
@@ -114,6 +119,8 @@ export type LocalRow = RowBase & {
     key: string;
     setIn: string | null;
     fallback: string | null;
+    lines: string[];
+    hubs: string[];
 };
 
 /** Why a file draws no rows, or `rows` when it does. */
@@ -352,8 +359,9 @@ export function fileRows(
 }
 
 /**
- * The rows of the machine's own file, from its catalog entries and what is known of the primary's
- * file. With no primary no key is set and every key shows its default.
+ * The rows of the machine's own file, from its catalog entries and what is known of the files.
+ * With no primary no one-per-oculus key is set and each shows its default; a joined list shows the
+ * rows of every hub's file whatever the primary is.
  */
 export function localRows(
     entries: Record<string, CatalogEntry>,
@@ -370,7 +378,9 @@ export function localRows(
         section: sectionOf(key, entry.section),
         modified: false,
         setIn: machine.primary !== null && machine.set.includes(key) ? machine.primary : null,
-        fallback: Object.hasOwn(machine.defaults, key) ? machine.defaults[key] : null
+        fallback: Object.hasOwn(machine.defaults, key) ? machine.defaults[key] : null,
+        lines: Object.hasOwn(machine.values, key) ? machine.values[key].split('\n') : [],
+        hubs: Object.hasOwn(machine.hubs, key) ? [...machine.hubs[key]] : []
     }));
 }
 

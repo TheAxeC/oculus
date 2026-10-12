@@ -38,7 +38,6 @@
 // the interpreter and the compile database are choices.ts's, read when a server is made and written
 // when the page chooses.
 
-import { configDir } from '../../../data/sources/config/folder.ts';
 import type { LspRpc, LspToPage } from '../../../data/model/index.ts';
 import type { Sink } from '../../core/channels.ts';
 import { WORKSPACE_LANGUAGE } from '../../../data/prose/lsp-servers.ts';
@@ -139,7 +138,6 @@ export class Relay {
         this.#host = {
             spawn: this.#spawn,
             roots: () => this.#roots(),
-            config: () => this.#config(),
             initialize: (held, setup) => this.#initializeParams(held, setup),
             prepare: async (held) =>
                 await held.entry.adapter.prepare(held.entry, this.#env(held.root)),
@@ -564,7 +562,6 @@ export class Relay {
     ): PageAnswer | undefined {
         const answering = {
             roots: this.#roots(),
-            config: this.#config(),
             feed: this.#options.schemas,
             catalog: this.#options.catalog,
             pages: () => this.#pages.values()
@@ -664,7 +661,6 @@ export class Relay {
     #oculusContext(): OculusContext {
         return {
             roots: () => this.#roots(),
-            config: () => this.#config(),
             env: (root) => this.#env(root),
             changes: () => this.#options.changes?.(),
             send: (page, channel, payload) => this.#send(page, channel, payload)
@@ -679,11 +675,6 @@ export class Relay {
             make: (page, entry, root, key) => this.#make(page, entry, root, key),
             mapper: (page, held) => this.#mapper(page, held)
         };
-    }
-
-    /** Oculus's own config folder, whose `local.yml` no server is given. */
-    #config(): string {
-        return configDir(this.#options.oculus);
     }
 
     #env(root: ServedRoot): RootEnv {
@@ -825,7 +816,6 @@ export class Relay {
     #publishing(): Publishing {
         return {
             roots: () => this.#roots(),
-            config: () => this.#config(),
             catalog: () => this.#options.catalog?.() ?? {},
             mapper: (page, held) => this.#mapper(page, held),
             send: (page, channel, payload) => this.#send(page, channel, payload)

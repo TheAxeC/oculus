@@ -321,7 +321,7 @@ export function target(
         glyphs: glyphNames(merged) ?? [],
         hubs: hubTargets(engine, open),
         workspace: open,
-        files: filesTargetOf(() => open.roots, configDir(engine), local.history, server?.opsWrites),
+        files: filesTargetOf(() => open.roots, local.history, server?.opsWrites),
         changes:
             server === undefined
                 ? undefined

@@ -21,7 +21,9 @@
 // A save copies the file as the compare read it into the local history (server/files/fs/
 // history.ts), after every refusal above and before the write. A copy that cannot be made does not
 // stop the save: the answer is `ok` and carries `refused: [{ field: 'history', reason }]`, which
-// the tab says. The `.oculus/local.yml` of every hub is never copied, compared by device and inode.
+// the tab says. A save of a machine file (a hub's `.oculus/local.yml` or oculus's own
+// `config/local.yml`) is refused while a key in its text does not read (`localRefusal`), and is
+// otherwise a save like any other.
 //
 // The GET answers the one fact the tab needs before it draws anything, whether the file is writable
 // on this machine, so the editor can say so rather than letting a reader type into something that
@@ -48,7 +50,7 @@ import {
 import { tokenedBody } from '../../core/auth.ts';
 import { hashOf, splitMark, withMark } from '../../core/file-bytes.ts';
 import { writeBytesAtomic } from '../../core/json.ts';
-import { namesMachineFile, isMachineFile } from '../workspace/machine-file.ts';
+import { namesMachineFile } from '../workspace/machine-file.ts';
 import { resolveRootFileResult, resolveRootPath, type Root } from '../files.ts';
 import { keepBytes } from '../fs/history.ts';
 
@@ -186,19 +188,15 @@ export function sameStamp(one: Stamp, other: Stamp): boolean {
 }
 
 /**
- * The refusal reason of a copy that failed, or null when the copy was made, was not needed (the
- * file is over the limit) or must not be made: the machine's own file is never copied. The copy is
- * of the bytes the compare read.
+ * The refusal reason of a copy that failed, or null when the copy was made or was not needed (the
+ * file is over the limit). The copy is of the bytes the compare read.
  */
 export function historyRefusal(
-    list: Root[],
-    config: string,
     path: string,
     bytes: Buffer,
     history: string | undefined
 ): string | null {
     if (history === undefined) return null;
-    if (isMachineFile(path, list, config)) return null;
     const kept = keepBytes(history, path, bytes, 'save');
     return kept.ok ? null : kept.reason;
 }
@@ -337,7 +335,7 @@ export async function handleSource(
     if (refusal !== null) return json({ ok: false, error: refusal }, { status: 400 });
     const after = stampOf(stat, real);
     if (after === null || !sameStamp(before, after)) return changed('base', 'changed');
-    const unkept = historyRefusal(rootList, config, real, bytes, history);
+    const unkept = historyRefusal(real, bytes, history);
     const written = bytesOf(body.content, splitMark(bytes).marked);
     try {
         writeBytesAtomic(real, written);

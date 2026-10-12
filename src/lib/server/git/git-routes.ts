@@ -31,7 +31,6 @@ import { failureLine } from '../core/git/failure.ts';
 import { createRunningGit, type RunningGit } from '../core/git/running.ts';
 import { words } from '../core/words.ts';
 import { chained, type FsWrites } from '../core/json.ts';
-import type { Guard } from '../files/fs/ops.ts';
 import {
     allowedRoots,
     commit,
@@ -205,11 +204,6 @@ export type GitOptions = {
     refresh?: (root: string) => Promise<void>;
     /** The Trash; the real one, called with `{ glob: false }`, when absent. */
     trash?: (path: string, options: { glob: false }) => Promise<void>;
-    /**
-     * The files the server never changes, by identity, as the Files view's operations build them.
-     * Without it Discard of untracked files is refused, since nothing says what it must not take.
-     */
-    guard?: () => Guard;
     /** The chain the Files view's writes wait on, so a discard and a Files write are ordered. */
     writes?: FsWrites;
     /**
@@ -388,14 +382,8 @@ export const OPERATIONS: Record<string, GitOperation> = {
     ignore: (root, fields, text, roots, options) =>
         ordered(options, () => addToGitignore(root, fields.paths, text, roots)),
     trashUntracked: (root, fields, text, roots, options) => {
-        const guard = options.guard;
-        if (guard === undefined) {
-            return Promise.resolve(failed(words(text, 'server.git.no_guard')));
-        }
         const trash = options.trash ?? ((path, flags) => trashLibrary(path, flags));
-        return ordered(options, () =>
-            trashUntracked(root, fields.paths, { trash, guard }, text, roots)
-        );
+        return ordered(options, () => trashUntracked(root, fields.paths, { trash }, text, roots));
     }
 };
 

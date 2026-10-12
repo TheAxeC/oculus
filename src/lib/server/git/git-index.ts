@@ -22,7 +22,6 @@ import { HASH, pathInside } from '../core/git/run.ts';
 import { REFS_FORMAT, parseBranches, statusRecords, type Unfinished } from '../core/git/parse.ts';
 import { inside, permitted, realPath } from '../core/paths.ts';
 import { words } from '../core/words.ts';
-import { guarded, type Guard } from '../files/fs/ops.ts';
 import {
     addTo,
     allowedRoots,
@@ -384,20 +383,18 @@ function linkAt(path: string): boolean {
     }
 }
 
-/** The dependencies a discard of untracked files is handed: the Trash, and the guard over files. */
+/** The dependency a discard of untracked files is handed: the Trash. */
 export type TrashInto = {
     trash: (path: string, options: { glob: false }) => Promise<void>;
-    guard: () => Guard;
 };
 
 /**
  * Move untracked paths to the Trash, each as one item by its real location. A path is refused
  * before the Trash is called when git does not list it as untracked (a tracked path, a path git
- * lists nowhere), when it is a file the server never changes or a folder holding one, and when its
- * folder or the path itself, a symbolic link followed to its target, resolves outside the
- * repository or cannot be resolved. A link that points inside the repository, or at nothing, is
- * moved as the link. A collapsed untracked folder (`dir/`) is one item. The first path the Trash
- * fails on stops the rest.
+ * lists nowhere), and when its folder or the path itself, a symbolic link followed to its target,
+ * resolves outside the repository or cannot be resolved. A link that points inside the repository,
+ * or at nothing, is moved as the link. A collapsed untracked folder (`dir/`) is one item. The first
+ * path the Trash fails on stops the rest.
  */
 export async function trashUntracked(
     root: string,
@@ -427,9 +424,6 @@ export async function trashUntracked(
         }
         items.push({ path, real, target });
     }
-    const guard = into.guard();
-    const kept = items.find((item) => guarded(guard, item.real) || guarded(guard, item.target));
-    if (kept !== undefined) return failed(words(text, 'server.git.never_changed', kept.path));
     for (const item of items) {
         try {
             await into.trash(item.real, { glob: false });

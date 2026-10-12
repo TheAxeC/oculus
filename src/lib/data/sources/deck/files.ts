@@ -9,8 +9,7 @@
 // written again here because layer 1 imports nothing of the server.
 
 import { realpathSync } from 'node:fs';
-import { basename, dirname, isAbsolute, relative, resolve, sep } from 'node:path';
-import { LOCAL_NAME } from '../config.ts';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 /** One directory the server may serve files from: the key a URL names it by, and where it is. */
 export type DeckRoot = { key: string; dir: string };
@@ -52,8 +51,6 @@ export function resolveIn(
     if (base === null || isAbsolute(path)) return { error: 'outside' };
     const candidate = resolve(from, path);
     const real = realOf(candidate);
-    // A hub's `.oculus/local.yml` is never read into a deck, whichever root holds it.
-    if (real !== null && basename(real) === LOCAL_NAME) return { error: 'outside' };
     if (real !== null) {
         return holds(base, real)
             ? { path: real, under: slashed(relative(base, real)) }

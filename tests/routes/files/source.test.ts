@@ -2,7 +2,8 @@
 // directory: the write's authentication, root refusals, its replacement and the neighbour-rename
 // result, and one table of the saves of text: the base the file must hold, the stats around the
 // write, the file made where none is, the copies of the history, the bytes it refuses to replace or
-// keeps (the whole-file UTF-8 rule and the byte order mark).
+// keeps (the whole-file UTF-8 rule and the byte order mark), and the key check on a save or a
+// create of a hub's `.oculus/local.yml`.
 // @module-tag slow: the save table writes up to fifty history copies of one file.
 
 import { createHash } from 'node:crypto';
@@ -406,5 +407,42 @@ describe('POST /api/source, a save of text', () => {
         for (const [path, text] of Object.entries(row.made ?? {})) {
             expect(readFileSync(join(one.root.dir, path), 'utf8')).toBe(text);
         }
+    });
+});
+
+describe("POST /api/source, a hub's .oculus/local.yml", () => {
+    it.each([
+        { title: 'refuses a save while a key in the text does not read', create: false },
+        {
+            title: 'refuses the creation of the file while a key in the text does not read',
+            create: true
+        }
+    ])('$title', async ({ create }) => {
+        const one = fixture();
+        const hub = join(realpathSync(one.dir), 'hub');
+        mkdirSync(join(hub, '.oculus'), { recursive: true });
+        const file = join(hub, '.oculus', 'local.yml');
+        if (!create) writeFileSync(file, 'port: 8800\n');
+        const token = mintToken();
+        const response = await handleSource(
+            request(token, {
+                root: 'hub',
+                path: '.oculus/local.yml',
+                content: 'port: abc\n',
+                ...(create ? { create: true } : {})
+            }),
+            token,
+            () => TEXT,
+            [{ key: 'hub', dir: hub, hub: true }],
+            join(one.root.dir, 'oculus', 'config'),
+            join(one.dir, 'history')
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+            ok: false,
+            error: 'local.yml: port must be an integer'
+        });
+        if (create) expect(existsSync(file)).toBe(false);
+        else expect(readFileSync(file, 'utf8')).toBe('port: 8800\n');
     });
 });

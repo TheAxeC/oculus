@@ -14,8 +14,6 @@
 // (server/edit/writes/config/lists/deck/deck.ts) reads the group's members, candidates and missing
 // names through the same function.
 
-import { basename } from 'node:path';
-import { LOCAL_NAME } from '../../../data/sources/config.ts';
 import { createReader } from '../../../data/sources/deck/read.ts';
 import type { DeckProject } from '../../../data/sources/deck/kinds.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
@@ -58,14 +56,12 @@ function deckProject(project: Project): DeckProject {
 /** The text an editor holds unsaved for one file, named by a served root and a path under it. */
 export type Draft = { root: string; path: string; text: string };
 
-/**
- * The drafts as text by real path; a draft of a path nothing serves, or of local.yml, is left out.
- */
+/** The drafts as text by real path; a draft of a path nothing serves is left out. */
 function draftsOf(roots: Root[], drafts: Draft[]): Map<string, string> {
     const held = new Map<string, string>();
     for (const draft of drafts) {
         const found = resolveRootPath(roots, draft.root, draft.path);
-        if ('error' in found || basename(found.path) === LOCAL_NAME) continue;
+        if ('error' in found) continue;
         held.set(found.path, draft.text);
     }
     return held;

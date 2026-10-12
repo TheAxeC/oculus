@@ -11,7 +11,7 @@
 // that caller takes them; the library rules are given what the server's wiring gives them, the hubs
 // among the roots of the open workspace.
 
-import { existsSync, readFileSync, realpathSync, symlinkSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -26,10 +26,7 @@ import { foldsCase, under } from '../../../src/lib/server/core/paths.ts';
 import type { Root } from '../../../src/lib/server/files/workspace/folders.ts';
 import { handleSearch } from '../../../src/lib/server/files/search/search-routes.ts';
 import { withheldFolders } from '../../../src/lib/server/machine/lsp/library/rules.ts';
-import {
-    isMachineFile as isMachineForServer,
-    isPrivateFile as isPrivateForServer
-} from '../../../src/lib/server/machine/lsp/adapters/yaml/machine-file.ts';
+import { isPrivateFile as isPrivateForServer } from '../../../src/lib/server/machine/lsp/adapters/yaml/private-file.ts';
 import { isPrivateFile as isPrivateForPage } from '../../../src/lib/state/system/config/config-files.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
 import { plantHub, plantState } from '../../fixtures/hubs/workspace.ts';
@@ -43,7 +40,7 @@ import {
 import { plant, route, settingsOf } from '../../server/machine/runs/lint/lint-fixture.ts';
 
 const TOKEN = mintToken();
-const NO_MACHINE = { set: [], defaults: {} };
+const NO_MACHINE = { set: [], defaults: {}, values: {}, hubs: {} };
 const HOST = '127.0.0.1:8791';
 const TEXT = 'foo\n';
 
@@ -122,28 +119,12 @@ describe('the secrets folder of a hub', () => {
         }
     );
 
-    it("keeps oculus's own config/local.yml from the language server relay, under any spelling", () => {
-        const { hub, roots } = hubs();
-        const config = join(hub, 'oculus', 'config');
-        plant(join(config, 'local.yml'), 'port: 1\n');
-        plant(join(config, 'other.yml'), 'k: 1\n');
-        symlinkSync(join('oculus', 'config'), join(hub, 'lnk'));
-        const served = roots.map((one) => ({ ...one, real: one.dir, hub: one.hub }));
-        const over = [...served, { key: 'oculus', dir: config, real: config }];
-        expect(isMachineForServer(join(config, 'local.yml'), over, config)).toBe(true);
-        expect(isMachineForServer(join(config, 'local.yml'), served, config)).toBe(true);
-        expect(isMachineForServer(join(hub, 'lnk', 'local.yml'), served, config)).toBe(true);
-        expect(isMachineForServer(join(config, 'other.yml'), over, config)).toBe(false);
-    });
-
     it('is withheld from the library rules the server builds from the roots of the workspace', () => {
         const { hub, lab, roots } = hubs();
         const withheld = withheldFolders(configDir(engineDir()), hubDirs(roots));
         expect(withheld).toContain(`${hub}/secrets`);
         expect(withheld).toContain(`${lab}/secrets`);
-        expect(withheld).toContain(`${hub}/.oculus/local.yml`);
-        expect(withheld).toContain(`${lab}/.oculus/local.yml`);
-        expect(withheld).toContain(join(configDir(engineDir()), 'local.yml'));
+        expect(withheld).toContain(configDir(engineDir()));
         expect(under(join(lab, 'secrets', 'deep', 'd.yml'), withheld)).toBe(true);
         expect(under(join(lab, 'open.yml'), withheld)).toBe(false);
         expect(withheld).toContain(`${homedir()}/.oculus`);

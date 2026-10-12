@@ -3,8 +3,7 @@
 // system temporary directory. Both folders are asserted inside it before anything is written, so
 // no case writes ~/.oculus/history.
 
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
@@ -73,69 +72,6 @@ describe('the copy a save keeps', () => {
             'two\n'
         ]);
     });
-
-    it.each([
-        ['the hub folder', 'lab', '.oculus/local.yml'],
-        ['a folder over the hub .oculus, listed beside the hub', 'labdot', 'local.yml']
-    ])("never copies a hub's .oculus/local.yml, reached through %s", async (_where, key, path) => {
-        const one = fixture();
-        const lab = join(one.dir, 'lab');
-        mkdirSync(join(lab, '.oculus', 'config'), { recursive: true });
-        const own = join(lab, '.oculus', 'local.yml');
-        writeFileSync(own, 'port: 8800\n');
-        const list: Root[] = [
-            { key: 'lab', dir: lab, hub: true },
-            { key: 'labdot', dir: join(lab, '.oculus') }
-        ];
-        const token = mintToken();
-        const answer = await handleSource(
-            request(token, { root: key, path, content: 'port: 8801\n' }),
-            token,
-            () => TEXT,
-            list,
-            join(one.dir, 'oculus', 'config'),
-            one.history
-        );
-        expect(await answer.json()).toEqual({
-            ok: true,
-            hash: createHash('sha256').update('port: 8801\n').digest('hex')
-        });
-        expect(readFileSync(own, 'utf8')).toBe('port: 8801\n');
-        expect(existsSync(one.history)).toBe(false);
-    });
-
-    it.each([
-        ['a workspace folder over the oculus config folder', 'cfg', 'local.yml'],
-        ['the hub folder that holds the oculus config folder', 'top', 'oculus/config/local.yml']
-    ])(
-        "never copies oculus's own config/local.yml, reached through %s",
-        async (_where, key, path) => {
-            const one = fixture();
-            const config = join(one.dir, 'oculus', 'config');
-            mkdirSync(config, { recursive: true });
-            const own = join(config, 'local.yml');
-            writeFileSync(own, 'port: 8800\n');
-            const list: Root[] = [
-                { key: 'top', dir: one.dir, hub: true },
-                { key: 'cfg', dir: config }
-            ];
-            const token = mintToken();
-            const answer = await handleSource(
-                request(token, { root: key, path, content: 'port: 8801\n' }),
-                token,
-                () => TEXT,
-                list,
-                config,
-                one.history
-            );
-            expect(await answer.json()).toEqual({
-                ok: true,
-                hash: createHash('sha256').update('port: 8801\n').digest('hex')
-            });
-            expect(readFileSync(own, 'utf8')).toBe('port: 8801\n');
-            expect(existsSync(one.history)).toBe(false);
-        }
-    );
 });
 
 describe('GET /api/history', () => {

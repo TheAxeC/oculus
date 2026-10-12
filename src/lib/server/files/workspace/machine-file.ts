@@ -2,9 +2,10 @@
 // hub among its folders and oculus's own `config/local.yml`. A path is one of them when the device
 // and inode of what it leads to are those of one of the files, so any spelling of the path, a link
 // included, names it, and a hub's `.oculus` folder listed as a workspace folder of its own, or
-// oculus's folder listed as a folder of the workspace, does not make the file another one. Every
-// module that keeps a request away from the file (the file route, the source tab, the file
-// operations, the language servers, the writing rules, an app's reach) asks here.
+// oculus's folder listed as a folder of the workspace, does not make the file another one. The
+// modules that ask here are the source tab's key check on a save or create (`source.ts`), the
+// bytes a save writes (`source-bytes.ts`), an app's reach (`apps/reach/private.ts`) and the config
+// checks (`edit/writes/config/config-checks.ts`).
 
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -29,7 +30,7 @@ function identityOf(path: string): string | null {
 /**
  * The paths of the machine's files: the `.oculus/local.yml` of each hub among the folders, in the
  * folders' order, and `local.yml` of oculus's own config folder `config`. This is the one list
- * every guard reads, so no guard names only part of the set.
+ * the checks of this module and its callers read.
  */
 export function machineFilesOf(roots: MachineRoots, config: string): string[] {
     return [

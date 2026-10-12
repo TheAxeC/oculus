@@ -16,11 +16,11 @@
 //
 // The text of a tracked file comes from the function the caller hands in, asked once for each
 // described file; the machine's own file is never asked for, since its rows are its catalog
-// entries alone and its values are the machine's. After This machine come the Catalogs and Texts
+// entries and the values the server sent of it. After This machine come the Catalogs and Texts
 // groups, one row per file of config/catalogs/ and of config/text/ and its subfolders, made from
 // the listings the caller hands in (view/folders.ts).
 
-import { ROOT_FOLDER, hubKeysOf } from '../../../data/helpers/hub-names.ts';
+import { hubKeysOf } from '../../../data/helpers/hub-names.ts';
 import {
     HEADINGS,
     UNHEADED,
@@ -33,7 +33,7 @@ import { OCULUS_CONFIG_ROOT } from '../../../data/helpers/files/address.ts';
 import { PRIMARY_ROOT } from './config-files.ts';
 import type { AppSettingRow } from './other-rows/app-rows.ts';
 import type { BrowserRow } from './other-rows/browser.ts';
-import { LOCAL_NAME, describedAs } from './config-files.ts';
+import { LOCAL_NAME, LOCAL_PATH, describedAs } from './config-files.ts';
 import type { Message } from './messages.ts';
 import type { FileRow, Listed } from './view/folders.ts';
 import {
@@ -215,7 +215,7 @@ function lineOf(file: string, status: FileStatus, said: Message | null): FileLin
  */
 function machineLine(): FileLine {
     return {
-        file: `${ROOT_FOLDER}/${LOCAL_NAME}`,
+        file: LOCAL_PATH,
         root: PRIMARY_ROOT,
         description: describedAs(LOCAL_NAME),
         local: true,
@@ -242,8 +242,8 @@ function layerLine(file: string, layer: LayerResult): FileLine {
  * is asked for the files that hold keys of the hub list; without it no file has a layer. `folders`
  * are the listings of the catalog, schema and text folders, and none leaves the three groups out.
  * `apps` are the rows of the settings the apps declare, which stand last in the Apps heading.
- * `machine` is what the server sent of the primary's `local.yml`: which keys it sets, never a
- * value.
+ * `machine` is what the server sent of the machine's `local.yml` files: which keys the primary's
+ * sets, the default of each key and the value in force of each key that has one.
  */
 export function settingsGroups(
     catalog: Catalog,
@@ -252,7 +252,7 @@ export function settingsGroups(
     folders?: FolderListings,
     layers?: (file: string) => HubLayer,
     apps: AppSettingRow[] = [],
-    machine: MachineState = { primary: null, set: [], defaults: {} }
+    machine: MachineState = { primary: null, set: [], defaults: {}, values: {}, hubs: {} }
 ): Group[] {
     const groups: Group[] = [];
     if (browser.length > 0) {

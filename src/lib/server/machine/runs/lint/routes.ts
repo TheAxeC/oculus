@@ -76,8 +76,6 @@ export type LintRouteOptions = {
     comments: HeldComments;
     /** The text catalog the writing rules' rows and reasons are worded from. */
     catalog: () => Record<string, string>;
-    /** Whether a real path is a file the server never writes: the machine's local.yml. */
-    isProtected: (real: string) => boolean;
     /** The environment the programs are found and run in. */
     env?: NodeJS.ProcessEnv;
     /** The milliseconds a run is given; `LINT_LIMIT_MS` unless a test says otherwise. */
@@ -329,8 +327,7 @@ async function folder(
                 roots,
                 settings: options.settings(),
                 comments: options.comments,
-                catalog: options.catalog(),
-                isProtected: options.isProtected
+                catalog: options.catalog()
             },
             found,
             held.signal

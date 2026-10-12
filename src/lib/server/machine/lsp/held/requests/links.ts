@@ -156,7 +156,7 @@ async function editOf(
     root: ServedRoot,
     moves: Moved[]
 ): Promise<{ entries: unknown[] } | null> {
-    const reach = { root, roots: context.roots(), config: context.config() };
+    const reach = { root, roots: context.roots() };
     const files = await markdownFiles(reach, context.extensions());
     const abandoned = { now: false };
     const asked = (async (): Promise<LspRpc | null> => {
@@ -302,10 +302,6 @@ async function collect(
 function allowed(entry: unknown, root: ServedRoot, context: LinksContext): boolean {
     const document = isRecord(entry) && isRecord(entry.textDocument) ? entry.textDocument : null;
     const real =
-        document === null
-            ? null
-            : reachable(document.uri, { root, roots: context.roots(), config: context.config() });
-    return (
-        real !== null && served(real, { root, roots: context.roots(), config: context.config() })
-    );
+        document === null ? null : reachable(document.uri, { root, roots: context.roots() });
+    return real !== null && served(real, { root, roots: context.roots() });
 }

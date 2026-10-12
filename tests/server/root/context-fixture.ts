@@ -157,6 +157,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         local,
         machine: () => local,
         machineSet: () => [],
+        machineLists: () => ({}),
         engine,
         configCache:
             overrides.configCache ??

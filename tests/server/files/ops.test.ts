@@ -1,7 +1,7 @@
 // Layer 2, server test. The file operations of the Files view (server/files/fs/ops.ts, POST
 // /api/ops): create, trash under the served roots, each refusal in the order the server makes it,
-// the request itself. Paste, upload and the guard on a hub's .oculus/local.yml are
-// tests/server/files/ops-paste.test.ts, over the same worlds (tests/server/files/ops-fixture.ts).
+// the request itself. Paste and upload are tests/server/files/ops-paste.test.ts, over the same
+// worlds (tests/server/files/ops-fixture.ts).
 //
 // Every root here is a directory under the system temporary directory, and the trash call is
 // always a spy: the library is replaced by a mock for the whole file, so no case can move anything

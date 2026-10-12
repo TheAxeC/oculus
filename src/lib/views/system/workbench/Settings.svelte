@@ -28,11 +28,12 @@
     // primary hub's layer file of the same name under `.oculus/config/`, read through the primary's
     // folder with the folders on its way listed (state/system/config/view/hub-layer.ts); a file
     // opens in an editor only through a folder of the workspace that holds it; the machine's own
-    // file is listed from the catalog alone and its text is never read. The Catalogs and Texts
-    // groups are made from the listings of the two folders, which the same version re-reads. The
-    // lists the controls offer (the domains, the clusters, the views, the usage tiers, the theme
-    // classes, the hub's folders) are built here from the stores the page holds
-    // (editors/sources.ts); one that is not there yet is drawn as loading.
+    // files are listed from the catalog, and the value in force of each key comes with the
+    // workspaces answer, so their text is not read here. The Catalogs and Texts groups are made
+    // from the listings of the two folders, which the same version re-reads. The lists the controls
+    // offer (the domains, the clusters, the views, the usage tiers, the theme classes, the hub's
+    // folders) are built here from the stores the page holds (editors/sources.ts); one that is not
+    // there yet is drawn as loading.
     //
     // The query, the text being typed in a box, the drafts of the list, multi and family editors
     // and the rail list being edited are the tab's instance state, so they are there again after
@@ -193,7 +194,9 @@
             {
                 primary: primary(),
                 set: workspaces().machine.set,
-                defaults: workspaces().machine.defaults
+                defaults: workspaces().machine.defaults,
+                values: workspaces().machine.values,
+                hubs: workspaces().machine.hubs
             }
         )
     );

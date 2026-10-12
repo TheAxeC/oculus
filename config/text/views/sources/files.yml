@@ -210,7 +210,6 @@ text:
         refused_notes_order_unreadable: The file that keeps the order of the notes cannot be read, so it is left as it is.
         refused_other: 'The server refused that: {0}'
         refused_outside: It is not inside a served root.
-        refused_protected: "This machine's settings file cannot be changed here."
         refused_root: A root cannot be changed here.
         refused_root_held: That folder is already in this workspace.
         refused_roots_changed: The folders changed since this list was read; it has been read again.

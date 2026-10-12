@@ -8,9 +8,8 @@
 // to the first `:` or `#` with a trailing `,`, `.` or `;` taken off; and its first segment names an
 // entry at the top of the file's root, so `see the/path` and `foo/bar.md` are prose, not paths. A
 // counted span is resolved from the root and, failing that, from the file's own folder. A path in
-// the `secrets` folder of every hub or `~/.oculus`, or the machine's `local.yml`, is not counted at
-// all, so no mark or answer ever says whether such a file exists. A `:<n>` or `:<n>-<m>` after the
-// path names a line.
+// the `secrets` folder of every hub or `~/.oculus` is not counted at all, so no mark or answer ever
+// says whether such a file exists. A `:<n>` or `:<n>-<m>` after the path names a line.
 
 import { readdirSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

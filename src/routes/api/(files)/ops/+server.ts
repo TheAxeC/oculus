@@ -11,7 +11,7 @@
 // log, the hub and the history folder come from the same target the write route uses, so a file
 // operation is recorded where every other write is.
 
-import { configDir, searchSettings } from '$lib/data/sources/config';
+import { searchSettings } from '$lib/data/sources/config';
 import { carriedOf, target } from '$lib/server/edit/writes';
 import { defaultHistoryDir } from '$lib/server/files/fs/history';
 import { handleCompare, handleOps } from '$lib/server/files/fs/ops';
@@ -36,7 +36,6 @@ export const POST: RequestHandler = ({ request, locals }) => {
     );
     return handleOps(request, locals.token, {
         roots: roots(locals),
-        config: configDir(locals.server.engine),
         writes: locals.server.opsWrites,
         changes: held.changes,
         history: locals.server.local.history ?? defaultHistoryDir(),

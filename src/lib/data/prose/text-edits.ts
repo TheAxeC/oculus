@@ -221,7 +221,7 @@ export const LSP_EDIT_NOTICES = [
     'lsp_edit_outside',
     'lsp_edit_partial',
     'lsp_edit_partial_one',
-    'lsp_edit_protected',
+    'lsp_edit_readonly',
     'lsp_edit_refused',
     'lsp_edit_structure',
     'lsp_edit_too_large',

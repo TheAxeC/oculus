@@ -81,7 +81,6 @@ export type OpsRefusal =
     | 'outside'
     | 'missing'
     | 'root'
-    | 'protected'
     | 'invalid_name'
     | 'exists'
     | 'into_itself'
@@ -103,7 +102,6 @@ export const OPS_REFUSALS: readonly OpsRefusal[] = [
     'outside',
     'missing',
     'root',
-    'protected',
     'invalid_name',
     'exists',
     'into_itself',

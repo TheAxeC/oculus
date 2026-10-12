@@ -98,15 +98,24 @@ export type WorkspacesAnswer = {
     recent: { path: string; name: string; hub: string; missing: boolean }[];
     available: { path: string; name: string; hub: string }[];
     /**
-     * What the Settings view's "This machine" section shows of the machine's `local.yml`: the names
-     * of the keys the primary hub's file sets, and the default of each key that has one. Never a
-     * value of a file.
+     * What the Settings view's "This machine" section shows of the machine's `local.yml` files: the
+     * names of the keys the primary hub's file sets, the default of each key that has one, and the
+     * value each key has in force.
      */
     machine: MachineAnswer;
 };
 
-/** The names of the keys the primary's `local.yml` sets, and the default text by key. */
-type MachineAnswer = { set: readonly string[]; defaults: Record<string, string> };
+/**
+ * The names of the keys the primary's `local.yml` sets, the default text by key, the text of the
+ * value in force by key (one line for each row of a joined list), and the hubs whose files set each
+ * joined list.
+ */
+type MachineAnswer = {
+    set: readonly string[];
+    defaults: Record<string, string>;
+    values: Record<string, string>;
+    hubs: Record<string, string[]>;
+};
 
 /**
  * The folders a tree offers only when hidden files are asked for. Dotfiles are left out beside
@@ -176,7 +185,7 @@ export type FsTarget = {
     engine: string;
     /** The open workspace, as the server holds it. */
     workspace: { open(): OpenWorkspace; stateFolder: string };
-    /** What the machine's `local.yml` files set, by name, and the defaults. */
+    /** What the machine's `local.yml` files set, by name, the defaults and the values in force. */
     machine: MachineAnswer;
     /** The reader's own bookmarks file, which this request reads and the write path writes. */
     bookmarks: string | null;

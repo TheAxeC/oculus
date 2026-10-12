@@ -15,12 +15,9 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import type { FileStamp } from '../../../src/lib/data/file-ops.ts';
-import type { Root } from '../../../src/lib/server/files/workspace/folders.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
-import { logChanges } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
-import { stampOf } from '../../../src/lib/server/files/fs/file-changes.ts';
 import { handleOps, type OpsTarget } from '../../../src/lib/server/files/fs/ops.ts';
 import { DELETE_MAX_BYTES } from '../../../src/lib/server/files/fs/history.ts';
 import { it, test } from '../../fixtures/scratch.ts';
@@ -30,7 +27,7 @@ import { TOKEN, changesOf, request, target, warmConfig } from '../edit/write-fix
 const library = vi.hoisted(() => ({ trash: vi.fn() }));
 vi.mock('trash', () => ({ default: library.trash }));
 
-type World = { into: PrimaryTarget; ops: OpsTarget; hub: string; config: string };
+type World = { into: PrimaryTarget; ops: OpsTarget; hub: string };
 
 /** A write target and an ops target over one served folder inside the target's temp hub. */
 function world(files: Record<string, string> = {}, dirs: string[] = []): World {
@@ -47,13 +44,11 @@ function world(files: Record<string, string> = {}, dirs: string[] = []): World {
     const roots = [{ key: 'hub', dir: real }];
     const history = join(into.hub, 'history');
     const writes = fsWrites();
-    const config = join(real, 'oculus', 'config');
-    into.files = { roots: () => roots, config, history, writes };
+    into.files = { roots: () => roots, history, writes };
     return {
         into,
         hub: real,
-        config,
-        ops: { roots, config, writes, changes: into.changes, history }
+        ops: { roots, writes, changes: into.changes, history }
     };
 }
 
@@ -232,58 +227,4 @@ describe('taking a trash back', () => {
         expect(readFileSync(join(w.hub, 'a.txt'), 'utf8')).toBe(text);
         expect(records(w)[0]).toMatchObject({ field: 'create', undoes: trashed.at });
     });
-});
-
-describe('what an undo is held to', () => {
-    it("never trashes a hub's .oculus/local.yml, even when a record names it", async () => {
-        const w = world({ '.oculus/local.yml': 'port: 8800\n' });
-        const own = join(w.hub, '.oculus', 'local.yml');
-        const roots: Root[] = [
-            { key: 'hub', dir: w.hub, hub: true },
-            { key: 'dot', dir: join(w.hub, '.oculus') }
-        ];
-        w.into.files = { roots: () => roots, config: w.config, writes: fsWrites() };
-        const stamp = stampOf(own);
-        await logChanges(w.into.changes, 'files', [
-            { file: own, key: 'files', field: 'create', before: [], after: [stamp], undo: 'file' }
-        ]);
-        const [forged] = records(w);
-        const trash = spy();
-        expect(await undo(w, forged.at, trash)).toEqual({ status: 404, body: { error: 'gone' } });
-        expect(trash).not.toHaveBeenCalled();
-        expect(existsSync(own)).toBe(true);
-    });
-
-    it.each([
-        ['a workspace folder over the oculus config folder', true],
-        ['the hub folder that holds the oculus config folder', false]
-    ])(
-        "never trashes oculus's own config/local.yml, listed through %s, even when a record names it",
-        async (_where, listed) => {
-            const w = world({ 'oculus/config/local.yml': 'port: 8800\n' });
-            const own = join(w.config, 'local.yml');
-            const roots: Root[] = [{ key: 'hub', dir: w.hub, hub: true }];
-            if (listed) roots.push({ key: 'oculus', dir: w.config });
-            w.into.files = { roots: () => roots, config: w.config, writes: fsWrites() };
-            const stamp = stampOf(own);
-            await logChanges(w.into.changes, 'files', [
-                {
-                    file: own,
-                    key: 'files',
-                    field: 'create',
-                    before: [],
-                    after: [stamp],
-                    undo: 'file'
-                }
-            ]);
-            const [forged] = records(w);
-            const trash = spy();
-            expect(await undo(w, forged.at, trash)).toEqual({
-                status: 404,
-                body: { error: 'gone' }
-            });
-            expect(trash).not.toHaveBeenCalled();
-            expect(existsSync(own)).toBe(true);
-        }
-    );
 });

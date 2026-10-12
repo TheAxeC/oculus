@@ -101,6 +101,8 @@ export type ServerContext = {
     machine: () => LocalConfig;
     /** The names of the keys the primary hub's `local.yml` sets; no value. */
     machineSet: () => readonly string[];
+    /** The hubs whose `local.yml` sets each joined list (`accounts`, `calendars`, `mail`). */
+    machineLists: () => Readonly<Record<string, readonly string[]>>;
     /**
      * The directory the configuration was read from, so a route names a config file without a walk.
      */

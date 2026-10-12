@@ -33,7 +33,6 @@
 // Every command is an argument array: a root's path is one argument whatever characters it
 // holds, and nothing is passed through a shell.
 
-import { configDir } from '../../../data/sources/config/folder.ts';
 import { existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -64,7 +63,7 @@ import { yamlAdapter } from './adapters/yaml/adapter.ts';
 import { yamlRequests } from './adapters/yaml/requests.ts';
 import { YAML_SETTINGS } from './adapters/yaml/settings.ts';
 import { answerHubKeys } from './adapters/yaml/hub-keys.ts';
-import { isMachineFile, isPrivateFile } from './adapters/yaml/machine-file.ts';
+import { isPrivateFile } from './adapters/yaml/private-file.ts';
 import type { ReferenceIndex } from '../../../data/snapshot/references/model.ts';
 import type { FileText } from '../../../data/snapshot/references/rename.ts';
 import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
@@ -270,8 +269,6 @@ export type OpenDocument = {
 /** What an entry's `answers` knows of the page it answers. */
 export type PageView = {
     roots: readonly ServedRoot[];
-    /** Oculus's own config folder. */
-    config: string;
     /** The index of the hub keys the latest snapshot build made. */
     references: ReferenceIndex;
     /** The flat text catalog, which the words of an answer are read from. */
@@ -654,10 +651,11 @@ function svelte(options: ServersOptions): ServerEntry {
  * The YAML entry: `yaml-language-server`, under node's permission model with read access to
  * oculus's own `node_modules` and nothing else, so no file a document names reaches it. No schema
  * comes from the network or the schema store: the server asks its client, which answers from the
- * schemas of the latest snapshot build (adapters/yaml/requests.ts). `local.yml` is never put on it.
- * A hub key in a hub file is a link: the entry answers its definition, references and rename itself
- * from the reference index of the latest build (adapters/yaml/hub-keys.ts), which the server has no
- * notion of, and sends every other request to the server.
+ * schemas of the latest snapshot build (adapters/yaml/requests.ts). A file under a hub's `secrets`
+ * folder or under `~/.oculus` is never put on it. A hub key in a hub file is a link: the entry
+ * answers its definition, references and rename itself from the reference index of the latest build
+ * (adapters/yaml/hub-keys.ts), which the server has no notion of, and sends every other request to
+ * the server.
  */
 function yaml(options: ServersOptions): ServerEntry {
     return {
@@ -680,8 +678,7 @@ function yaml(options: ServersOptions): ServerEntry {
             { method: 'yaml/registerCustomSchemaRequest' },
             { method: 'yaml/registerContentRequest' }
         ],
-        refuses: (real, roots) =>
-            isMachineFile(real, roots, configDir(options.oculus)) || isPrivateFile(real, roots),
+        refuses: (real, roots) => isPrivateFile(real, roots),
         answers: answerHubKeys,
         capabilities: (language) => ({
             textDocumentSync: INCREMENTAL,
@@ -795,10 +792,8 @@ function markdown(options: ServersOptions): ServerEntry {
         pulls: true,
         fileEvents: () => extensions().map((extension) => `**/*.${extension}`),
         introduce: (changes) => introduceMarkdown(changes, extensions()),
-        filesUnder: (folder, root, roots) =>
-            markdownFiles({ root, roots, config: configDir(options.oculus) }, extensions(), folder),
-        refuses: (real, roots) =>
-            isMachineFile(real, roots, configDir(options.oculus)) || isPrivateFile(real, roots),
+        filesUnder: (folder, root, roots) => markdownFiles({ root, roots }, extensions(), folder),
+        refuses: (real, roots) => isPrivateFile(real, roots),
         diagnostics: markdownDiagnostics,
         answers: answerMarkdown,
         results: markdownResults,

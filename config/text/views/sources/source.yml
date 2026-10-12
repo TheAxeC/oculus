@@ -146,7 +146,7 @@ text:
         lsp_edit_outside: "{0} is outside the folders oculus serves, under a node_modules or dot folder, or in the secrets folder of a hub or ~/.oculus, so the language server's edit was not made."
         lsp_edit_partial: "The language server's edit stopped at {0} after {1} files were written. History undoes them."
         lsp_edit_partial_one: "The language server's edit stopped at {0} after 1 file was written. History undoes it."
-        lsp_edit_protected: "{0} is protected on this machine or read-only, so the language server's edit was not made."
+        lsp_edit_readonly: "{0} is read-only, so the language server's edit was not made."
         lsp_edit_refused: '{0}'
         lsp_edit_structure: "The language server's edit creates, renames or deletes {0}, which oculus does not do, so nothing was changed."
         lsp_edit_too_large: "{0} is larger than {1} MB, so the language server's edit was not made."

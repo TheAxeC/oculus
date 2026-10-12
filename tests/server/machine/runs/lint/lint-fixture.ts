@@ -121,7 +121,6 @@ export function route(
         limitMs?: number;
         approvals?: string;
         comments?: HeldComments;
-        isProtected?: (real: string) => boolean;
     } = {}
 ): {
     options: LintRouteOptions;
@@ -145,7 +144,6 @@ export function route(
         eslint,
         comments,
         catalog: () => TEXT,
-        isProtected: extra.isProtected ?? (() => false),
         env: extra.env ?? process.env,
         ...(extra.limitMs === undefined ? {} : { limitMs: extra.limitMs })
     };

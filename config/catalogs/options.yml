@@ -6,7 +6,7 @@
 # Shape. `options:` maps a config file name (appearance.yml, behavior.yml, layout.yml, present.yml, sources.yml, and local.yml for the machine's own keys) to a map of dotted key path to an entry.
 # An option is a leaf of its file: a scalar, a null or a list. A map is walked into, so `slurm.poll_min` is the key path of `poll_min` under `slurm`, and a list is one option, set as a whole.
 # A family is a list of records, or a map whose keys are names the data or the reader chooses (page names, tier names, field names, project types, tag names, file extensions, theme names) rather than names oculus reads. A family is one entry whose `fields` describe the record once; every other leaf is an option.
-# Every entry outside local.yml holds `help`, `heading` (the subject it is listed under: appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources, calendar or apps; HEADINGS in options.ts), `section` (the group inside the heading) and, for a leaf, `default` (the value Reset writes and Modified compares with, and, for a setting src/lib/data/sources/config/settings.ts reads, the value used when the key is missing or wrong) and `control`. A local.yml entry holds `help` and `section` alone, and is listed under This machine with no value.
+# Every entry outside local.yml holds `help`, `heading` (the subject it is listed under: appearance, editor, terminal, sessions, cluster, boards, rail, presentation, sources, calendar or apps; HEADINGS in options.ts), `section` (the group inside the heading) and, for a leaf, `default` (the value Reset writes and Modified compares with, and, for a setting src/lib/data/sources/config/settings.ts reads, the value used when the key is missing or wrong) and `control`. A local.yml entry holds `help` and `section`, is listed under This machine with the value in force, and holds `control` where the key takes a number or a choice, and `fields` for a list of records, so the editor checks the file's keys and values by the entry.
 # The controls are toggle, number, text, long (a text area), choice, multi (several words of a list), list (one text box per item), glyph (a name of catalogs/glyphs.yml), hue (a palette hue name), colour (a palette hex, drawn as its hue), folder and file (a path inside the hub, offered from the files there), path (an absolute or ~/ path), parked (a list whose items can only be removed) and, in a family field, records (a nested list of records described by its own `fields`).
 # A choice or multi names its words in `options`, or the list they come from in `from` (one source, or a list of sources offered together; SOURCES in options.ts), or for a field in `from: { field, sources }` the source another field of the record names. On a text, `from` names the source a text box suggests from and the value is not held to it; `empty: true` adds the empty value to a choice or path, and `empty: <words>` does the same and gives the words the choice draws for its empty item; `min` and `max` bound a number; `slots` names the fixed items of a list; `items: number` makes a list's items numbers; `whole: true` holds a number, or each item of a list of numbers, to a whole number; `form` holds a text, or each item of a list, to one of the forms of FORMS in options.ts: `program` (no slash or white space), `extension` (a dot and one segment) or `bundle_id` (two or more dot-separated segments of letters, digits and dashes); `joined: true` writes a multi as one text separated by spaces; `allow_missing` lets a folder or file be absent, always (true) or while the named toggle field of the record is true.
 # A family's entry holds `help` and `fields`, and `holds: lists` when it is a map whose every key holds a list: a list of records (`tab_rollup`), or for a key/value family (fields `key` and `value`) a list of values (`languages`); a family without it is refused a key that holds a list, whatever the file holds at the time. A field is its help line alone (a text box) or a map of `help`, `control` and the keys above.
@@ -1412,6 +1412,8 @@ options:
     local.yml:
         port:
             section: Server
+            control: number
+            whole: true
             help: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it the port is 8790. Only the primary hub's file sets it, and it is read when the server starts, so a restart takes a change.
         hpc_host:
             section: HPC host
@@ -1458,39 +1460,58 @@ options:
         accounts:
             section: Usage accounts
             help: The Claude and Codex configuration folders that the Usage view reads, a list of tool (claude or codex), dir and label. The rows of every hub's file are read together, each marked with its hub. Without a row in any hub's file the two default folders, ~/.claude and ~/.codex, are read. A Claude label must stay unique once reduced to lowercase letters, digits and dashes across the hubs; a later repeat is left out with a finding. A change is read again at once.
+            fields:
+                tool:
+                    help: claude or codex, the tool whose folder this is
+                    control: choice
+                    options: [claude, codex]
+                dir: the configuration folder the Usage view reads, an absolute path, a path under ~/ or one relative to the folder of the hub that holds this file
+                label: the words the Usage view shows the account under
         calendars:
             section: Calendar accounts
             help: The calendar accounts that the Calendar view reads, a list of provider (google, microsoft or ics) and label. The label is lowercase letters, digits and dashes and is unique per provider. The rows of every hub's file are read together, each marked with its hub. Without it no calendar is read. A change is read again at once.
+            fields:
+                provider:
+                    help: google, microsoft or ics, the service the calendar is read from
+                    control: choice
+                    options: [google, microsoft, ics]
+                label: the account's name, lowercase letters, digits and dashes, unique per provider
         calendar_dir:
             section: Calendar accounts
             help: Where the per-account calendar credential files live. Without it the folder is ~/.oculus/calendar. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
         mail:
             section: Mail accounts
             help: The mail accounts that the Inbox view reads, a list of provider (google or microsoft) and label. The label is lowercase letters, digits and dashes and is unique per provider. The rows of every hub's file are read together, each marked with its hub. Without it no mail is read. A change is read again at once.
+            fields:
+                provider:
+                    help: google or microsoft, the service the mail is read from
+                    control: choice
+                    options: [google, microsoft]
+                label: the account's name, lowercase letters, digits and dashes, unique per provider
         mail_dir:
             section: Mail accounts
             help: Where the per-account mail credential files and the triage notes live. Without it the folder is ~/.oculus/mail. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
         literature.wos_key:
             section: Literature search
-            help: Under `literature:`, the Web of Science Starter API key. Without it the Web of Science toggle of the Literature search is switched off. The Settings view never shows the value. A change is read again at the next search.
+            help: Under `literature:`, the Web of Science Starter API key. Without it the Web of Science toggle of the Literature search is switched off. A change is read again at the next search.
         literature.scopus_key:
             section: Literature search
-            help: Under `literature:`, the Elsevier API key for Scopus. Without it the Scopus toggle of the Literature search is switched off. The Settings view never shows the value. A change is read again at the next search.
+            help: Under `literature:`, the Elsevier API key for Scopus. Without it the Scopus toggle of the Literature search is switched off. A change is read again at the next search.
         literature.scopus_insttoken:
             section: Literature search
-            help: Under `literature:`, the Elsevier institutional token that goes with the Scopus key, sent when the key needs one. The Settings view never shows the value. A change is read again at the next search.
+            help: Under `literature:`, the Elsevier institutional token that goes with the Scopus key, sent when the key needs one. A change is read again at the next search.
         literature.openalex_key:
             section: Literature search
-            help: Under `literature:`, an OpenAlex API key. Without it OpenAlex allows about 100 searches a day. The Settings view never shows the value. A change is read again at the next search.
+            help: Under `literature:`, an OpenAlex API key. Without it OpenAlex allows about 100 searches a day. A change is read again at the next search.
         literature.semantic_scholar_key:
             section: Literature search
-            help: Under `literature:`, a Semantic Scholar API key. Without it Semantic Scholar often answers that too many requests were made. The Settings view never shows the value. A change is read again at the next search.
+            help: Under `literature:`, a Semantic Scholar API key. Without it Semantic Scholar often answers that too many requests were made. A change is read again at the next search.
         literature.ncbi_key:
             section: Literature search
-            help: Under `literature:`, an NCBI API key, which lets PubMed answer more requests a second. The Settings view never shows the value. A change is read again at the next search.
+            help: Under `literature:`, an NCBI API key, which lets PubMed answer more requests a second. A change is read again at the next search.
         literature.mailto:
             section: Literature search
-            help: Under `literature:`, the contact address that OpenAlex, Crossref and NCBI ask callers to send with a request. The Settings view never shows the value. A change is read again at the next search.
+            help: Under `literature:`, the contact address that OpenAlex, Crossref and NCBI ask callers to send with a request. A change is read again at the next search.
         apps_dir:
             section: Apps
             help: Where the machine's apps live, one folder of web files per app. Without it the folder is .oculus/apps in the primary hub, which the hub's owner writes and a git pull into the hub writes too; an app kept approved stays approved through a change to any of its files but app.yml, a pulled change included, while the server runs. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.

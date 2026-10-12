@@ -22,7 +22,10 @@ export { collectionKeys } from '../snapshot/normalise.ts';
 export {
     type LocalConfig,
     DEFAULT_PORT,
+    LITERATURE_KEYS,
     LOCAL_NAME,
+    PROGRAM_KEYS,
+    STATE_PATHS,
     checkLocal,
     localDefaults,
     localFile,

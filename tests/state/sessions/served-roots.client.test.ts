@@ -16,7 +16,7 @@ import { watchServedRoots } from '../../../src/lib/state/shared/stores/served-ro
 import { createCommands } from '../../../src/lib/state/sessions/terminal/commands.svelte.ts';
 import { createLatex } from '../../../src/lib/state/sessions/latex/latex.svelte.ts';
 import type { LatexState } from '../../../src/lib/state/sessions/latex/latex-state.ts';
-import { NO_WORKSPACES, readRoots } from '../../../src/lib/state/sources/fs-transport.ts';
+import { noWorkspaces, readRoots } from '../../../src/lib/state/sources/fs-transport.ts';
 import type { WorkspacesState } from '../../../src/lib/state/sources/fs-transport.ts';
 import type { FsRoot } from '../../../src/lib/state/sources/fs.ts';
 import { cell, rooted } from '../../ui/frame/rooted.svelte.ts';
@@ -40,7 +40,7 @@ function read(roots: FsRoot[]): WorkspacesState {
         engine: null,
         recent: [],
         available: [],
-        machine: { set: [], defaults: {} },
+        machine: { set: [], defaults: {}, values: {}, hubs: {} },
         error: '',
         loading: false
     };
@@ -174,10 +174,10 @@ describe('a root that leaves the served roots', () => {
         const env = make(read([A, B]));
         fill(env);
         const before = rows(env);
-        env.workspaces.set(NO_WORKSPACES);
+        env.workspaces.set(noWorkspaces());
         flushSync();
         expect(rows(env)).toEqual(before);
-        env.workspaces.set({ ...NO_WORKSPACES, error: 'unreachable', loading: false });
+        env.workspaces.set({ ...noWorkspaces(), error: 'unreachable', loading: false });
         flushSync();
         expect(rows(env)).toEqual(before);
         env.workspaces.set(read([A, B]));
@@ -188,7 +188,7 @@ describe('a root that leaves the served roots', () => {
     });
 
     it('forgets nothing at the first read, however few roots it holds', () => {
-        const env = make(NO_WORKSPACES);
+        const env = make(noWorkspaces());
         fill(env);
         const before = rows(env);
         env.workspaces.set(read([]));

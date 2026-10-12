@@ -4,6 +4,7 @@
 // handed those three folders; no root named `hub` or `engine` exists beside them, and a path
 // outside a folder is refused. The workspace file and its folders are planted under the system
 // temporary directory, and every watcher the case does not look at is inert.
+// @module-tag slow: every case builds a whole server context over a planted workspace.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

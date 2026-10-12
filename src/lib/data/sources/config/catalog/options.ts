@@ -101,10 +101,11 @@ export type FieldSpec = {
 /**
  * One option, or one family. A leaf option carries `default`, the value the Settings view's Reset
  * writes and its Modified filter compares with and, for a setting settings.ts reads, the value used
- * when the key is missing or wrong, and a `control`; a family carries `fields` and no control, and
- * so does a `local.yml` key, which has a help line alone. A family that is a map may carry
- * `holds: lists`, meaning each key of the map holds a list: of records, or of values for a
- * key/value family (fields `key` and `value`); a family without it takes no list at a key.
+ * when the key is missing or wrong, and a `control`; a family carries `fields` and no control. A
+ * `local.yml` key has a help line, and a `control` only where it takes a number or a choice. A
+ * family that is a map may carry `holds: lists`, meaning each key of the map holds a list: of
+ * records, or of values for a key/value family (fields `key` and `value`); a family without it
+ * takes no list at a key.
  * `heading` is the subject the option is listed under (`unheaded` when it names none a HEADINGS
  * word is), and `section` the group inside that heading, the first segment of the key path when
  * absent.
@@ -193,9 +194,10 @@ function valuesByOf(value: unknown, flag: (word: string) => void): ValuesBy | un
 
 /**
  * One entry or field read into its typed form. `top` is an entry of the file's map (it may carry a
- * heading, a section, a default and `holds`), `local` an entry of `local.yml` (no control, no
- * heading). Everything wrong is pushed to `problems`; a problem with the control reads the control
- * as `text`, one with the heading puts the entry under `unheaded`.
+ * heading, a section, a default and `holds`), `local` an entry of `local.yml` (a control only where
+ * it takes a number or a choice, no heading). Everything wrong is pushed to `problems`; a problem
+ * with the control reads the control as `text`, one with the heading puts the entry under
+ * `unheaded`.
  */
 function readSpec(
     raw: unknown,

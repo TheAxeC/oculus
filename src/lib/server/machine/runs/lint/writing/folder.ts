@@ -6,9 +6,8 @@
 // not follow a link, enter a `node_modules` folder or a folder whose name starts with a dot, or
 // enter the `secrets` folder of every hub or `~/.oculus`, and a plan that starts in one of those,
 // or under one, is refused with a sentence before any file is listed. The walk leaves out the files
-// the server never writes (the machine's `local.yml`) and the files `lint.writing_skip` skips. A
-// folder that holds more than `MAX_FILES` such files is refused with a sentence that names how many
-// it holds.
+// `lint.writing_skip` skips. A folder that holds more than `MAX_FILES` such files is refused with a
+// sentence that names how many it holds.
 //
 // Each file is read by the same reader a tab's lint runs (writing.ts). Its edits are the first
 // `kind: 'fix'` fix of each row, a fix whose edits cross an edit already taken left out, as Fix All
@@ -48,14 +47,12 @@ import { sameValue } from './yaml.ts';
 /** The most files a folder may hold that the writing rules take. */
 const MAX_FILES = 2000;
 
-/** What a plan runs over: the roots, the settings, the comment thread, the words, the guard. */
+/** What a plan runs over: the roots, the settings, the comment thread and the words. */
 export type FolderScope = {
     roots: Root[];
     settings: LintSettings;
     comments: WritingOptions['comments'];
     catalog: Record<string, string>;
-    /** Whether a real path is a file the server never writes. */
-    isProtected: (real: string) => boolean;
 };
 
 /** Whether a position of the editor is before another. */
@@ -207,7 +204,7 @@ export async function planFolder(
     const taken = filesUnder(folder.real, withheld).flatMap((real) => {
         const path = relative(folder.rootReal, real).split(sep).join('/');
         const takes = lintersOf(path).includes('writing') && !isSkipped(path, scope.settings);
-        return takes && !scope.isProtected(real) ? [{ path, real }] : [];
+        return takes ? [{ path, real }] : [];
     });
     if (taken.length > MAX_FILES) {
         return {

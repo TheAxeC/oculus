@@ -13,6 +13,7 @@
 import { textCatalog } from '$lib/data/sources/config';
 import { handleFs, handleFsWrite, type FsTarget } from '$lib/server/files/fs';
 import { machineDefaults } from '$lib/server/root/process/context/machine-defaults';
+import { machineValues } from '$lib/server/root/process/context/machine-values';
 import { perOculus } from '$lib/server/files/workspace/paths';
 import type { RequestHandler } from './$types';
 
@@ -20,13 +21,13 @@ const target = (locals: App.Locals): FsTarget => {
     const server = locals.server;
     const open = server.workspace.open();
     const own = perOculus(open.primaryDir, server.machine());
+    const set = server.machineSet();
+    const lists = server.machineLists();
+    const defaults = machineDefaults(textCatalog(locals.config().config));
     return {
         engine: server.engine,
         workspace: { open: () => open, stateFolder: open.stateFolder },
-        machine: {
-            set: server.machineSet(),
-            defaults: machineDefaults(textCatalog(locals.config().config))
-        },
+        machine: { set, defaults, ...machineValues(server.machine(), set, defaults, lists) },
         bookmarks: own.bookmarks,
         notes: own.notes,
         writes: server.fsWrites,

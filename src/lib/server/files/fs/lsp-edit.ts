@@ -11,13 +11,13 @@
 // writes nothing. The checks are made per file in the order `outside` (a root not served, a path
 // out of it, a path under a `node_modules` folder or a folder whose name starts with a dot, or a
 // file in the `secrets` folder of every hub or in `~/.oculus`, none of which is ever edited here),
-// `missing`, `protected` (the machine's local.yml), `denied` (the file's mode locks it), `binary`
-// (a NUL byte in the first 8 KB), `too_large` (over the most a copy of the operation's kind is kept
-// for, 5 MB for `lsp-edit` and 256 KB for `writing-fix`, as the file is and as the edit would leave
-// it), `changed` (the bytes are not the ones the edit was computed for, or a range names a line the
-// file lacks), and after `changed` `binary` again for a file with a NUL byte anywhere or bytes that
-// are not UTF-8 throughout (the whole-file rule of data/helpers/files/text-kind.ts). A file named
-// twice, no file at all, or two ranges of a file that overlap is `not-an-action`.
+// `missing`, `denied` (the file's mode locks it), `binary` (a NUL byte in the first 8 KB),
+// `too_large` (over the most a copy of the operation's kind is kept for, 5 MB for `lsp-edit` and
+// 256 KB for `writing-fix`, as the file is and as the edit would leave it), `changed` (the bytes
+// are not the ones the edit was computed for, or a range names a line the file lacks), and after
+// `changed` `binary` again for a file with a NUL byte anywhere or bytes that are not UTF-8
+// throughout (the whole-file rule of data/helpers/files/text-kind.ts). A file named twice, no file
+// at all, or two ranges of a file that overlap is `not-an-action`.
 //
 // Each file is then written once: its copy is kept in the local history first, under the kind of
 // the operation that writes it (`lsp-edit` or `writing-fix`), the new text is written through the
@@ -38,11 +38,9 @@ import { stampOf } from './file-changes.ts';
 import { copyLimit, keepCopy } from './history.ts';
 import { fail, readChecked, refused, type Fail } from './replace.ts';
 
-/** What an `lsp-edit` runs over: the roots, the files never changed, the history and the record. */
+/** What an `lsp-edit` runs over: the roots, the folders withheld, the history and the record. */
 export type LspEditScope = {
     roots: Root[];
-    /** Whether a path is a file the server never changes, or a folder that holds one. */
-    guarded: (path: string) => boolean;
     /** The folders no file of is edited: the `secrets` folder of every hub and `~/.oculus`. */
     withheld: readonly string[];
     /** The local history folder a copy is kept in before a file is written; none keeps none. */

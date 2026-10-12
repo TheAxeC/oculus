@@ -7,9 +7,8 @@
 // behavior.yml applies to the next lint. The runs in flight, the held ESLint children and the
 // thread that reads comments come off the ServerContext, which ends them with the server.
 
-import { configDir, lintSettings, textCatalog } from '$lib/data/sources/config';
+import { lintSettings, textCatalog } from '$lib/data/sources/config';
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
-import { protectedFiles, guarded } from '$lib/server/files/fs/ops';
 import { handleLint } from '$lib/server/machine/runs/lint/routes';
 import type { RequestHandler } from './$types';
 
@@ -23,8 +22,6 @@ export const POST: RequestHandler = ({ request, locals }) => {
         runs: server.lintRuns,
         eslint: server.eslint,
         comments: server.comments,
-        catalog: () => textCatalog(locals.config().config),
-        isProtected: (real) =>
-            guarded(protectedFiles({ roots, config: configDir(server.engine) }), real)
+        catalog: () => textCatalog(locals.config().config)
     });
 };

@@ -1,13 +1,12 @@
 // Layer 2, server test. What the Markdown entry gives its server and shows the page, G2 and G3: the
 // handlers of the requests the Markdown server makes of its client (adapters/markdown/requests.ts)
-// refuse a hub's `.oculus/local.yml`, oculus's own `config/local.yml`, every file under the hub's
-// `secrets` folder or `~/.oculus`, and every path outside the server's root or through a link out
-// of it; the lists they answer hold none of them; the entry's `refuses` is true for a Markdown file
-// under `secrets`; a change on disk of a file under `secrets` or `node_modules` is not told to the
-// server; and the entry's diagnostics hook drops a mark whose path lies outside the root or in
-// `secrets`. No server process runs: each handler is called as the relay calls it, over a scratch
-// hub, its `.oculus` folder served as a root of its own and a scratch home folder that `os.homedir`
-// answers through `HOME`.
+// refuse every file under the hub's `secrets` folder or `~/.oculus`, and every path outside the
+// server's root or through a link out of it; the lists they answer hold none of them; the entry's
+// `refuses` is true for a Markdown file under `secrets`; a change on disk of a file under `secrets`
+// or `node_modules` is not told to the server; and the entry's diagnostics hook drops a mark whose
+// path lies outside the root or in `secrets`. No server process runs: each handler is called as
+// the relay calls it, over a scratch hub and a scratch home folder that `os.homedir` answers
+// through `HOME`.
 //
 // What this does NOT cover: that the letter case `SECRETS` is refused by the disk's own folding
 // (on a case-sensitive disk that path names no file, so the read is refused for being absent), and
@@ -34,13 +33,10 @@ import { shippedLatex } from '../lsp-fixture.ts';
 const realHome = process.env.HOME;
 
 type World = {
-    /** Every served root: `hub`, `dot`, `oculus` and `home`. */
+    /** Every served root: `hub` and `home`. */
     roots: ReturnType<typeof servedRoots>;
-    /** The hub's root, the root over the hub's `.oculus` folder and the home folder's root. */
+    /** The hub's root and the home folder's root. */
     hub: string;
-    dot: string;
-    /** Oculus's own config folder, inside the hub folder and served as the root `oculus`. */
-    config: string;
     home: string;
     /** `outside.md`, beside the hub folder. */
     outside: string;
@@ -56,8 +52,6 @@ afterAll(() => {
 beforeAll(() => {
     const base = realpathSync(scratchDir('oculus-md-requests-'));
     const hub = join(base, 'hub');
-    const dot = join(hub, '.oculus');
-    const config = join(hub, 'oculus', 'config');
     const home = join(base, 'home');
     process.env.HOME = home;
     const put = (path: string, text: string): void => {
@@ -67,9 +61,6 @@ beforeAll(() => {
     put(join(hub, 'README.md'), '# R\n');
     put(join(hub, 'docs', 'DATA.md'), '# D\n');
     put(join(hub, 'secrets', 'key.md'), '# key\n');
-    put(join(dot, 'local.yml'), 'a: 1\n');
-    put(join(dot, 'other.md'), '# o\n');
-    put(join(config, 'local.yml'), 'a: 1\n');
     put(join(home, '.oculus', 'state.md'), '# s\n');
     put(join(home, 'visible.md'), '# v\n');
     put(join(base, 'outside.md'), '# out\n');
@@ -77,26 +68,21 @@ beforeAll(() => {
     planted = {
         roots: servedRoots([
             { key: 'hub', dir: hub, hub: true },
-            { key: 'dot', dir: dot },
-            { key: 'oculus', dir: config },
             { key: 'home', dir: home }
         ]),
         hub: realpathSync(hub),
-        dot: realpathSync(dot),
-        config,
         home: realpathSync(home),
         outside: join(realpathSync(base), 'outside.md')
     };
 });
 
 /** What a handler is given: the root of the server and every served root. */
-function askOf(key: 'hub' | 'dot' | 'oculus' | 'home'): ServerAsk {
+function askOf(key: 'hub' | 'home'): ServerAsk {
     const root = planted.roots.find((one) => one.key === key);
     if (root === undefined) throw new Error('the root is not planted');
     return {
         root,
         roots: planted.roots,
-        config: planted.config,
         schemas: {} as ServerAsk['schemas'],
         follow: () => {
             throw new Error('a path outside the rules was followed');
@@ -111,7 +97,7 @@ const HANDLERS = markdownRequests(() => ['md', 'yml']);
 async function call(
     method: string,
     params: unknown,
-    key: 'hub' | 'dot' | 'oculus' | 'home' = 'hub'
+    key: 'hub' | 'home' = 'hub'
 ): Promise<unknown> {
     try {
         return await HANDLERS[method](params, askOf(key));
@@ -128,21 +114,6 @@ describe('the Markdown server may not be given the machine or the outside', () =
             ['a file under secrets', () => join(planted.hub, 'secrets', 'key.md'), 'hub'],
             ['a file under SECRETS', () => join(planted.hub, 'SECRETS', 'key.md'), 'hub'],
             ['a file under ~/.oculus', () => join(planted.home, '.oculus', 'state.md'), 'home'],
-            [
-                'a hub local.yml, through a root over its .oculus',
-                () => join(planted.dot, 'local.yml'),
-                'dot'
-            ],
-            [
-                "oculus's own config/local.yml, through a root over its folder",
-                () => join(planted.config, 'local.yml'),
-                'oculus'
-            ],
-            [
-                "oculus's own config/local.yml, through the hub folder that holds it",
-                () => join(planted.hub, 'oculus', 'config', 'local.yml'),
-                'hub'
-            ],
             ['a file beside the root', () => planted.outside, 'hub'],
             ['a link out of the root', () => join(planted.hub, 'leak.md'), 'hub']
         ] as const)('is refused for %s', async (_name, real, key) => {
@@ -203,12 +174,7 @@ describe('the Markdown server may not be given the machine or the outside', () =
             const listed = (await call('markdown/fs/readDirectory', {
                 uri: pathToFileURL(planted.hub).href
             })) as [string, unknown][];
-            expect(listed.map(([name]) => name).sort()).toEqual([
-                '.oculus',
-                'README.md',
-                'docs',
-                'oculus'
-            ]);
+            expect(listed.map(([name]) => name).sort()).toEqual(['README.md', 'docs']);
         });
 
         it('lists no ~/.oculus in the home folder', async () => {
@@ -231,19 +197,7 @@ describe('the Markdown server may not be given the machine or the outside', () =
             );
         });
 
-        it('lists no hub local.yml when yml is an extension, and no ~/.oculus file', async () => {
-            const oculus = (await call(
-                'markdown/findMarkdownFilesInWorkspace',
-                {},
-                'oculus'
-            )) as string[];
-            expect(oculus).toEqual([]);
-            const dot = (await call(
-                'markdown/findMarkdownFilesInWorkspace',
-                {},
-                'dot'
-            )) as string[];
-            expect(dot.map((one) => one.slice(one.lastIndexOf('/') + 1))).toEqual(['other.md']);
+        it('lists no ~/.oculus file in the home folder', async () => {
             const home = (await call(
                 'markdown/findMarkdownFilesInWorkspace',
                 {},
@@ -331,7 +285,6 @@ describe('the Markdown server may not be given the machine or the outside', () =
                 text: '# R\n',
                 root,
                 roots: planted.roots,
-                config: planted.config,
                 catalog: TEXT
             };
             const shown = markdownDiagnostics(

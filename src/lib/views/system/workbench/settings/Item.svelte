@@ -9,8 +9,9 @@
     // the rail row and the arrangements row have the editors of the rail list and of the page
     // reset, and the workbench row has none, since its layout tree is edited in the file; a "This
     // browser" row has the control of the value the ui store keeps; a row of the machine's own file
-    // has its description and key path alone, since its values are the machine's and are never read
-    // here. A config row whose key is not in the file says so and has the way to edit the file.
+    // has its description, its key path, where it is set and the value in force the server sent (a
+    // line for each row of a joined list, with a way to open the file of each hub that holds a
+    // row). A config row whose key is not in the file says so and has the way to edit the file.
     //
     // Each item is a stop the search's Down key can move the focus to, and the gear is drawn only
     // while the pointer is over the item or the focus is inside it, and only on a row whose menu
@@ -33,7 +34,7 @@
     import { drawsEditor, withSavedDraft } from '$lib/state/system/config/editors/slots';
     import { PAGES_ROW, RAIL_ROW, WORKBENCH_ROW, type Row } from '$lib/state/system/config/groups';
     import { message, type Message } from '$lib/state/system/config/messages';
-    import { openTarget } from '$lib/state/system/config/config-files';
+    import { LOCAL_PATH, hubFileTarget, openTarget } from '$lib/state/system/config/config-files';
     import { mismatchMessage, placeOf } from '$lib/state/system/config/rows';
     import { withTypedText } from '$lib/state/system/config/typed';
     import { gearEntries } from '$lib/state/system/config/view/gear';
@@ -156,6 +157,12 @@
         return openTarget(root, file, workspaces());
     });
 
+    /** Open the machine file of a hub in a source tab, through the folder named for the hub. */
+    function openHubFile(hub: string): void {
+        const place = hubFileTarget(hub, workspaces());
+        if (place !== null) openView('source', sourceTabState(place.root, place.path));
+    }
+
     function open(): void {
         if (row.kind === 'config' && target !== null) {
             openView('source', sourceTabState(target.root, target.path, row.line));
@@ -194,8 +201,10 @@
     {/if}
     {#if row.kind === 'local'}
         <p class="path"><CodeText text={`\`${row.path}\``} /></p>
-        <p class="said" role="status">
-            {#if row.setIn !== null}
+        <p class="standing" role="status">
+            {#if row.hubs.length > 0}
+                {t('workbench.settings_machine_set', row.hubs.join(', '))}
+            {:else if row.setIn !== null}
                 {t('workbench.settings_machine_set', row.setIn)}
             {:else if row.fallback !== null}
                 {t('workbench.settings_machine_default', row.fallback)}
@@ -203,6 +212,32 @@
                 {t('workbench.settings_machine_unset')}
             {/if}
         </p>
+        {#if row.lines.length > 0}
+            <p class="path">{t('workbench.settings_machine_in_force')}</p>
+            <ul class="field-list">
+                {#each row.lines as line, at (at)}
+                    <li><code>{line}</code></li>
+                {/each}
+            </ul>
+        {/if}
+        {#if row.hubs.length > 0}
+            <div class="foot">
+                {#each row.hubs as hub (hub)}
+                    {#if hubFileTarget(hub, workspaces()) === null}
+                        <span class="default">
+                            {t('workbench.settings_open_unavailable', LOCAL_PATH)}
+                        </span>
+                    {:else}
+                        <ToolButton
+                            label={t('workbench.settings_machine_edit_in', LOCAL_PATH, hub)}
+                            glyph="edit"
+                            title={t('workbench.settings_machine_edit_tip', LOCAL_PATH, hub)}
+                            onclick={() => openHubFile(hub)}
+                        />
+                    {/if}
+                {/each}
+            </div>
+        {/if}
     {:else if row.kind === 'browser'}
         <BrowserControl {row} onsaid={(next: Message | null) => (browserSaid = next)} />
     {:else if row.kind === 'app'}
@@ -358,6 +393,12 @@
     .said {
         margin: 6px 0 0;
         color: var(--c-red-txt);
+        font-size: var(--fs-md);
+    }
+
+    .standing {
+        margin: 6px 0 0;
+        color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
     }
 

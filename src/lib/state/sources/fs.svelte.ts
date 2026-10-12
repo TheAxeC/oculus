@@ -63,7 +63,8 @@ import {
     NO_NOTE,
     NO_NOTES,
     NO_TEXT,
-    NO_WORKSPACES,
+    noMachine,
+    noWorkspaces,
     fileBytesUrl,
     FS_PATH,
     bookmarksShape,
@@ -483,13 +484,13 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
     /** The workspaces, asked for once and held until they are marked. */
     function workspaces(): WorkspacesState {
         const { data } = queries.read(WORKSPACES, readWorkspaces, { enabled: inBrowser() });
-        return data ?? NO_WORKSPACES;
+        return data ?? noWorkspaces();
     }
 
     async function workspacesNow(): Promise<WorkspacesState> {
         const found = queries.peek<WorkspacesState>(WORKSPACES);
         if (found.data !== undefined && !found.stale && !found.data.loading) return found.data;
-        return inBrowser() ? queries.fetch(WORKSPACES, readWorkspaces) : NO_WORKSPACES;
+        return inBrowser() ? queries.fetch(WORKSPACES, readWorkspaces) : noWorkspaces();
     }
 
     /** The folders of the open workspace, which are none while the workspace is being read. */
@@ -504,7 +505,7 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
     async function readWorkspaces(): Promise<WorkspacesState> {
         try {
             const answer = await readAnswer(await fetch(FS_PATH));
-            if (!answer.ok) return { ...NO_WORKSPACES, error: answer.error, loading: false };
+            if (!answer.ok) return { ...noWorkspaces(), error: answer.error, loading: false };
             const body = readAs(workspacesShape, answer.body);
             return {
                 home: body?.home ?? '',
@@ -514,12 +515,12 @@ export function createFs(writes: WritesStore, entities: EntitiesStore, queries: 
                 engine: body?.engine ?? null,
                 recent: body?.recent ?? [],
                 available: body?.available ?? [],
-                machine: body?.machine ?? { set: [], defaults: {} },
+                machine: body?.machine ?? noMachine(),
                 error: '',
                 loading: false
             };
         } catch (error) {
-            return { ...NO_WORKSPACES, error: reasonOf(error), loading: false };
+            return { ...noWorkspaces(), error: reasonOf(error), loading: false };
         }
     }
 

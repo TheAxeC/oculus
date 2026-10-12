@@ -19,8 +19,6 @@ import type { Doc, Page } from './held.ts';
 /** What the relay holds that an entry's answers read. */
 export type Answering = {
     roots: readonly ServedRoot[];
-    /** Oculus's own config folder. */
-    config: string;
     /** The latest schemas and index; absent, no entry answers. */
     feed: SchemaFeed | undefined;
     /** The flat text catalog; absent, no entry answers. */
@@ -72,7 +70,6 @@ export function answerFor(
     }
     const view: PageView = {
         roots: answering.roots,
-        config: answering.config,
         references: feed.references(),
         catalog: catalog(),
         documents: [...docs].map(openDocument),

@@ -4,11 +4,9 @@
 // the token ServerContext minted, as with /api/write and /api/terminal.
 //
 // Discarding untracked files moves them to the Trash, so the request is joined to what the Files
-// view's operations hold: the roots the file browser serves, the machine's local.yml, and the write
-// chain `opsWrites`, so a discard and a Files operation over one file are ordered.
+// view's operations hold: the roots the file browser serves and the write chain `opsWrites`, so a
+// discard and a Files operation over one file are ordered.
 
-import { configDir } from '$lib/data/sources/config';
-import { protectedFiles } from '$lib/server/files/fs/ops';
 import { handleGit, handleGitGet } from '$lib/server/git/git-routes';
 import { allowedRoots } from '$lib/server/git/git-write';
 import { gitRoots } from '$lib/server/sessions/stores/hooks';
@@ -26,12 +24,7 @@ const options = (locals: App.Locals) => {
             ]),
         refresh: (root: string) => server.git.refresh(root),
         writes: server.opsWrites,
-        running: server.gitRunning,
-        guard: () =>
-            protectedFiles({
-                roots: server.workspace.open().roots,
-                config: configDir(server.engine)
-            })
+        running: server.gitRunning
     };
 };
 

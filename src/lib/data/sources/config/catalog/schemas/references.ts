@@ -108,14 +108,10 @@ function optionsRecord(entries: Record<string, CatalogEntry>): FieldNode | null 
     return recordOf(held);
 }
 
-/** The file of the options catalog the machine's own keys are in, which the index never reads. */
-const LOCAL_FILE = 'local.yml';
-
 /** The files of the options catalog that name a hub key, each with the node that reads it. */
 export function optionFiles(catalog: Catalog): OptionFile[] {
     const files: OptionFile[] = [];
     for (const [path, entries] of Object.entries(catalog)) {
-        if (path === LOCAL_FILE) continue;
         const spec = optionsRecord(entries);
         if (spec !== null) files.push({ path, spec });
     }

@@ -82,7 +82,7 @@ export function saveBytes(
     if (hashOf(held) !== ask.base) return { ok: false, word: 'changed' };
     const after = stampOf(stat, real);
     if (after === null || !sameStamp(before, after)) return { ok: false, word: 'changed' };
-    const unkept = historyRefusal(rootList, config, real, held, history);
+    const unkept = historyRefusal(real, held, history);
     try {
         writeBytesAtomic(real, ask.bytes);
     } catch {

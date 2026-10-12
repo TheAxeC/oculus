@@ -298,7 +298,7 @@ export function deckTarget(): PrimaryTarget {
         engine: engineDir(),
         career: careerRules(loadConfig(engineDir()).config),
         projects: () => projects,
-        files: { roots: () => [{ key: 'hub', dir }], config: join(dir, 'oculus', 'config') },
+        files: { roots: () => [{ key: 'hub', dir }] },
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),
         layoutFile: join(dir, 'layout.yml'),

@@ -134,7 +134,8 @@ export type LocalConfig = {
     mailDir?: string;
     /**
      * The literature sources' keys and contact address, `literature` in the file. Absent unless
-     * the machine sets at least one of them. A value is never served to a page or written to a log.
+     * the machine sets at least one of them. The Settings view shows their values, and the file
+     * opens in a source tab like any file of the workspace; no log holds a value.
      */
     literature?: LiteratureKeys;
 };
@@ -172,7 +173,7 @@ export const LOCAL_KEYS = [
 ];
 
 /** The keys under `literature:`, with the field of LiteratureKeys each sets. */
-const LITERATURE_KEYS = [
+export const LITERATURE_KEYS = [
     ['wos_key', 'wosKey'],
     ['scopus_key', 'scopusKey'],
     ['scopus_insttoken', 'scopusInsttoken'],
@@ -402,8 +403,16 @@ export function localFile(hub: string): string {
     return join(hub, ROOT_FOLDER, LOCAL_NAME);
 }
 
+/** The keys of the file that name a program or a host, with the field each sets. */
+export const PROGRAM_KEYS = [
+    ['hpc_host', 'hpcHost'],
+    ['claude_bin', 'claudeBin'],
+    ['open_bin', 'openBin'],
+    ['rite_dap_bin', 'riteDapBin']
+] as const;
+
 /** The keys of the file that name a folder or file of this machine, with the field each sets. */
-const STATE_PATHS = [
+export const STATE_PATHS = [
     ['sessions_cache', 'sessionsCache'],
     ['sessions_overrides', 'sessionsOverrides'],
     ['bookmarks', 'bookmarks'],
@@ -471,12 +480,7 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
         if (port === null) problems.push(wrong('port', 'an integer'));
         else config.port = port;
     }
-    for (const [key, field] of [
-        ['hpc_host', 'hpcHost'],
-        ['claude_bin', 'claudeBin'],
-        ['open_bin', 'openBin'],
-        ['rite_dap_bin', 'riteDapBin']
-    ] as const) {
+    for (const [key, field] of PROGRAM_KEYS) {
         if (record[key] === undefined) continue;
         const value = filledAt(record, key);
         if (value === undefined) problems.push(wrong(key, 'a non-empty string'));

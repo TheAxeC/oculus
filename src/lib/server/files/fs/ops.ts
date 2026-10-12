@@ -9,11 +9,9 @@
 // a trash or a delete of a link never reaches what it points at. The folder an item lands in is
 // resolved by real path as well and must lie inside its root, so no segment of a name walks out.
 //
-// The refusals are made in one order: `outside`, `missing`, `root`, `protected`, `invalid_name`,
-// `exists`, `into_itself`, `not_a_folder`, and then what the system answers. `protected` is the
-// `.oculus/local.yml` of every hub and every folder that holds it, compared by device and inode, so
-// every spelling the volume accepts is refused. A list of items runs in order and stops at the
-// first that fails, naming the items done before it and the one it stopped at.
+// The refusals are made in one order: `outside`, `missing`, `root`, `invalid_name`, `exists`,
+// `into_itself`, `not_a_folder`, and then what the system answers. A list of items runs in order
+// and stops at the first that fails, naming the items done before it and the one it stopped at.
 //
 // An operation that changed something is recorded in the change log as one `files` record (see
 // fs/file-changes.ts): its field is `create`, `rename`, `move`, `copy`, `upload`, `trash` or
@@ -66,7 +64,6 @@ import { logChanges, type ChangeLog } from '../../core/changes.ts';
 import { chained, writeBytesAtomic, type FsWrites } from '../../core/json.ts';
 import { below, inside, realPath } from '../../core/paths.ts';
 import { resolveRootPath, type Root } from '../files.ts';
-import { machineFilesOf } from '../workspace/machine-file.ts';
 import { isBinaryFile } from '../source/source.ts';
 import type { SearchRunner } from '../search/search.ts';
 import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
@@ -77,8 +74,6 @@ import { previewReplace, replaceFiles } from './replace.ts';
 /** What an operation runs over: the roots it may touch and the chain that orders its writes. */
 export type OpsTarget = {
     roots: Root[];
-    /** Oculus's own config folder, whose `local.yml` no edit changes. */
-    config: string;
     writes: FsWrites;
     /**
      * The change log each operation that changed something is recorded in; none records nothing.
@@ -117,10 +112,9 @@ function refused(step: object): step is Fail {
     return 'ok' in step && step.ok === false;
 }
 
-/** What one operation runs with: the roots, the files it never changes, and the Trash. */
+/** What one operation runs with: the roots, the Trash and the rest of an operation's inputs. */
 export type Scope = {
     roots: Root[];
-    locals: Guard;
     trash: NonNullable<OpsDeps['trash']>;
     /** The folders no `lsp-edit` or `writing-fix` writes in (`privateFolders`). */
     withheld: readonly string[];
@@ -349,57 +343,6 @@ function pathExists(path: string): boolean {
     }
 }
 
-/** The device and inode of each protected file and of every folder above one. */
-export type Guard = Set<string>;
-
-/** The device and inode of what is at a path, a link not followed, or null when nothing is. */
-function identityOf(path: string): string | null {
-    try {
-        const info = lstatSync(path, { bigint: true });
-        return `${info.dev}:${info.ino}`;
-    } catch {
-        return null;
-    }
-}
-
-/**
- * The files of the machine this server never changes: the machine's files (the `.oculus/local.yml`
- * of each hub among the roots and the `local.yml` of oculus's own config folder), and the folders
- * that hold them, up to the top of the volume. The files and folders are compared by device and
- * inode, so no spelling of a path, a link or a root listed over a hub's `.oculus` folder or over
- * oculus's config folder reaches one.
- */
-export function protectedFiles(target: Pick<OpsTarget, 'roots' | 'config'>): Guard {
-    const guard: Guard = new Set();
-    for (const file of machineFilesOf(target.roots, target.config)) {
-        const real = realPath(dirname(file));
-        if (real === null) continue;
-        const id = identityOf(join(real, basename(file)));
-        if (id !== null) guard.add(id);
-        for (let up = real; ; up = dirname(up)) {
-            const held = identityOf(up);
-            if (held !== null) guard.add(held);
-            if (dirname(up) === up) break;
-        }
-    }
-    return guard;
-}
-
-/**
- * Whether a path is a file the server never changes, or a folder that holds one, by the device and
- * inode of what is at it: the same file under any spelling the volume accepts. A path with nothing
- * at it is never protected, since it changes no file.
- */
-function holdsProtected(scope: Scope, path: string): boolean {
-    return guarded(scope.locals, path);
-}
-
-/** Whether a path is a file the server never changes, or a folder that holds one. */
-export function guarded(guard: Guard, path: string): boolean {
-    const id = identityOf(path);
-    return id !== null && guard.has(id);
-}
-
 /** Move one item to the Trash, answering `trash_failed` when the call fails. */
 async function sendToTrash(scope: Scope, real: string): Promise<Fail | null> {
     try {
@@ -433,7 +376,6 @@ async function createItem(
     const walked = walkTo(folder.rootFolder, folder.real, made.segments.slice(0, -1));
     if (refused(walked)) return walked;
     const target = join(walked.dir, ...walked.rest, made.segments.at(-1) ?? '');
-    if (holdsProtected(scope, target)) return fail('protected');
     if (walked.rest.length === 0 && pathExists(target)) return fail('exists');
     const outcome = await attempt(async () => {
         if (walked.rest.length > 0) await mkdir(dirname(target), { recursive: true });
@@ -464,7 +406,6 @@ async function renameItem(
     const item = resolveItem(scope.roots, request.root, request.path);
     if (refused(item)) return item;
     if (item.isRoot) return fail('root');
-    if (holdsProtected(scope, item.real)) return fail('protected');
     const made = checkName(request.name);
     if (!made.ok) return fail('invalid_name');
     const name = made.segments.at(-1) ?? '';
@@ -475,7 +416,6 @@ async function renameItem(
     const walked = walkTo(item.rootFolder, dirname(item.real), middle);
     if (refused(walked)) return walked;
     const target = join(walked.dir, ...walked.rest, name);
-    if (holdsProtected(scope, target)) return fail('protected');
     if (isFolder && below(target, item.real)) return fail('into_itself');
     if (target !== item.real && walked.rest.length === 0 && pathExists(target)) {
         if (!(await sameFile(item.real, target))) return fail('exists');
@@ -522,7 +462,6 @@ async function removeItems(
     for (const { path, found } of distinct(listed)) {
         if (refused(found)) return stopped(found.error, done, path);
         if (found.isRoot) return stopped('root', done, path);
-        if (holdsProtected(scope, found.real)) return stopped('protected', done, path);
         const was = stampKept(found.real, scope.history);
         const outcome =
             request.op === 'trash'
@@ -575,10 +514,8 @@ async function pasteItems(
     for (const { path, found } of distinct(listed)) {
         if (refused(found)) return stopped(found.error, done, path);
         if (found.isRoot && request.mode === 'move') return stopped('root', done, path);
-        if (holdsProtected(scope, found.real)) return stopped('protected', done, path);
         const name = basename(found.real);
         const taken = join(dest.real, name);
-        if (holdsProtected(scope, taken)) return stopped('protected', done, path);
         const isFolder = (await lstatOrNull(found.real))?.isDirectory() === true;
         if (isFolder && inside(dest.real, found.real)) return stopped('into_itself', done, path);
         let landed = taken;
@@ -627,7 +564,6 @@ async function uploadItem(
     const single = made.ok && made.segments.length === 1 && !/[\\/]/.test(request.name);
     if (!made.ok || !single) return fail('invalid_name');
     const target = join(dest.real, made.segments[0] ?? '');
-    if (holdsProtected(scope, target)) return fail('protected');
     const bytes = decoded(request.data);
     if (refused(bytes)) return bytes;
     const there = await lstatOrNull(target);
@@ -669,7 +605,6 @@ function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Pro
             return replaceFiles(
                 {
                     roots: scope.roots,
-                    guarded: (path) => guarded(scope.locals, path),
                     history: scope.history,
                     timeout: scope.search.timeout,
                     run: scope.search.run,
@@ -683,7 +618,6 @@ function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Pro
                 lspEditFiles(
                     {
                         roots: scope.roots,
-                        guarded: (path) => guarded(scope.locals, path),
                         withheld: scope.withheld,
                         history: scope.history,
                         note: (before, after) => noted(scope, request.op, before, after)
@@ -728,10 +662,8 @@ export async function handleOps(
     const trash = deps.trash ?? ((path, options) => trashLibrary(path, options));
     const answer = await chained(into.writes, async () => {
         await deps.slow?.();
-        // Read when the operation runs, so a local.yml saved while it waited is the one guarded.
         const scope: Scope = {
             roots: into.roots,
-            locals: protectedFiles(into),
             trash,
             withheld: privateFolders(hubDirs(into.roots), into.home ?? homedir()),
             history: into.history,
@@ -822,14 +754,13 @@ export function handleCompare(
  */
 async function previewed(
     request: Extract<OpsRequest, { op: 'preview' }>,
-    into: Pick<OpsTarget, 'roots' | 'config' | 'searchTimeout'>,
+    into: Pick<OpsTarget, 'roots' | 'searchTimeout'>,
     deps: Pick<OpsDeps, 'search'>
 ): Promise<Response> {
     const { root, path } = request;
     const preview = await previewReplace(
         {
             roots: into.roots,
-            guarded: (one) => guarded(protectedFiles(into), one),
             timeout: into.searchTimeout,
             run: deps.search
         },

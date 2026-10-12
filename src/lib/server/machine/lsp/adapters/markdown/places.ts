@@ -1,21 +1,18 @@
 // Layer 2, server. Which files of this machine the Markdown server may be given, and how its files
 // are listed. The server runs with no read access beyond its own packages, so every file it looks
 // at goes through the requests answered here (requests.ts), and each one asks first whether the
-// file is in the server's root, is not one of the machine's own `local.yml` files, and does not lie
-// in the `secrets` folder of every hub or in `~/.oculus`, whatever letter case names it.
+// file is in the server's root and does not lie in the `secrets` folder of every hub or in
+// `~/.oculus`, whatever letter case names it.
 
 import { readdir, stat } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inside, realPath } from '../../../../core/paths.ts';
 import type { ServedRoot } from '../../uris.ts';
-import { isMachineFile, isPrivateFile } from '../yaml/machine-file.ts';
+import { isPrivateFile } from '../yaml/private-file.ts';
 
-/**
- * The roots a path is judged against: the root of the server, and every served root, with oculus's
- * own config folder whose `local.yml` is withheld beside the hubs'.
- */
-export type Reach = { root: ServedRoot; roots: readonly ServedRoot[]; config: string };
+/** The roots a path is judged against: the root of the server, and every served root. */
+export type Reach = { root: ServedRoot; roots: readonly ServedRoot[] };
 
 /** The folders a walk for files never enters. */
 const SKIPPED = ['node_modules'];
@@ -37,7 +34,7 @@ function resolved(path: string): string {
 
 /** Whether a real path is a file the server is never given. */
 export function withheld(real: string, reach: Reach): boolean {
-    return isMachineFile(real, reach.roots, reach.config) || isPrivateFile(real, reach.roots);
+    return isPrivateFile(real, reach.roots);
 }
 
 /** Whether a real path is in the root and is not withheld. */

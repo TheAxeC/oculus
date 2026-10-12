@@ -10,7 +10,7 @@
 
 tests/routes/edit/write.test.ts            # write route: token, unreadable record file
 tests/server/files/ops.test.ts             # file operations: token, paths outside the roots, trash
-tests/server/files/ops-paste.test.ts       # paste and move: replace trashes first, local.yml guard
+tests/server/files/ops-paste.test.ts       # paste and move: replace trashes first
 tests/server/files/fs.test.ts              # directory listing: paths that leave a root
 tests/routes/git/git.test.ts               # git route: token, confirm for lossy actions
 tests/server/edit/config-value.test.ts     # config writer: local.yml refused, stale base

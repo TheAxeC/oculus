@@ -163,3 +163,70 @@ Cases of the brief's "Cases":
 - `tests/checks/config/integrity.test.ts` and the real-hub probe: not run, since they read the real hub.
 
 Reviewer usage: aa189c08f67b30328, claude-opus-5-5, 366,098 tokens, 94 tool uses, 23.2 min (from its completion notice).
+
+## Repair round 1, refuted
+
+All commands from `tools/oculus` in the worktree `.agents/worktrees/D70` (base a0508758a), Node v24.21.0, load average 4.7 to 10.
+
+```
+npm run test:quick -- --base a0508758a
+  ok      prettier (0.4 s) | ok ASCII gate (0.4 s) | ok svelte-kit sync (2.1 s) | ok eslint (1.6 s)
+  ok      svelte-check (5.8 s): ... COMPLETED 481 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok      vitest (40.6 s): Duration  35.75s
+  test:quick: 41.2 s (limit 45.0 s); every command passed
+npm run diagrams: not run (it rewrites docs/diagrams/*); staleFiles() of utils/diagrams/diagrams.mjs -> stale: []
+LC_ALL=C grep -n '[^ -~]' <the 101 changed files>   -> nothing
+spec.md perl ASCII gate over src tests bin config    -> nothing, exit 0
+sh utils/unused-exports.sh vs D70-base               -> no difference, 362 lines each
+wc -l over 860: servers.ts 872, relay.ts 870; Item.svelte 408, Settings.svelte 378
+sh utils/folder-check.sh                             -> nothing, exit 0
+grep -rn "protectedFiles|holdsProtected|isProtected|isWithheldFile|refused_protected|never_changed|no_guard" src tests config/text -> nothing
+grep -rn "isMachineFile|namesMachineFile|machineFilesOf" src -> config-checks.ts, apps/reach/private.ts, machine-file.ts, source.ts, source-bytes.ts
+npx vitest run tests/checks/source --testTimeout 0 --hookTimeout 0 -> Test Files 4 passed (4), Tests 32 passed (32) (2 time out at 5 s under load without it)
+npx vitest run tests/checks/config --testTimeout 0 --hookTimeout 0 -> 2 failed | 75 passed (77): config-folder.test.ts and integrity.test.ts, both over the worktree's missing hub layer (.oculus absent), none naming local.yml; not the step's
+npx vitest run tests/checks/source tests/checks/diagrams tests/checks/imports tests/checks/tree --testTimeout 0 --hookTimeout 0 -> 11 passed, 146 tests (reproduced)
+baserun: npx vitest run tests/routes/files/source.test.ts --testTimeout 20000 -t "local.yml" -> 1 skipped, 18 skipped (NOT reproduced as quoted, Proof 3)
+baserun: npx vitest run tests/routes/files/source.new.test.ts --testTimeout 20000 -t "local.yml" -> 2 passed | 18 skipped (20)
+worktree: npx vitest run tests/routes/files/source.test.ts --testTimeout 20000 -> 20 passed (20)
+baserun: the two changed assertions as scratch tests -> 2 passed | 31 skipped (33) (reproduced)
+round's slow list without tests/server/root -> 14 passed, 94 tests
+greps of rulings 2, 7, 8 and the literature sentences -> as the report says (reproduced)
+npx tsc --noEmit -> only the three TS2614 'CardAction' errors (reproduced)
+Case 10 and 12 probe: primary a: lists and hubs {"accounts":["b"],"calendars":["a","b"],"mail":["c"]}; values carry hpc_host, claude_bin, literature.wos_key <REDACTED>, literature.mailto, the accounts line (b) and a's two calendar lines (a); no primary: hubs the same, values only the joined lists
+git diff a0508758a | shasum identical before and after the review
+```
+
+### Verdicts
+
+- Items 1 to 4: hold (item 3: `hubs` from `MachineRead.lists`, `machine.ts:142-146`; "Set in a, b." and one Edit control per hub, `Item.svelte:205-206,224-238`; the literature values shown per ruling 63 (a)).
+- Item 5: violated, Proof 2 (the tests are as asked; the report's per-entry test section is stale).
+- Cases 1 to 9, 11, 13, 14: met, carried from the first run (the delta does not reach their code); case 2 also by the new `source.test.ts` rows on the base copy and the worktree. Cases 10 and 12: met by probe and reading.
+
+### 1. Spec
+
+none.
+
+### 2. Proof
+
+1. `agents/reviews/D70-report.md:132`, section 7 judgment 11 still says `replace` through the hub root answers `outside`; the round's row 4 claims it was corrected, and it was not. Failure: a reader expects a refusal that does not happen.
+2. `D70-report.md:94,118,111,116,41`: section 6 says no test was added and names `machine-answer.test.ts`'s old `machineValues` target, "Rows that stay" lacks the two key-check rows of `tests/routes/files/source.test.ts`, and item 3 names `NO_MACHINE`. Failure: G3's Test line rewritten at landing from section 6 would miss the two rows. Item 5 violated.
+3. The round's row 3 quotes `tests/routes/files/source.test.ts -t "local.yml"` on the base copy as 2 passed; that file skips both; the result comes from `source.new.test.ts`. The claim itself holds.
+
+### 3. Standards
+
+1. `src/lib/state/sources/fs-transport.ts:194`, `machine: noMachine(),` inside the module-level `NO_WORKSPACES`: built once at load, returned whole by `fs.svelte.ts:487,493` and spread shallowly at `:508,:523`, so every fallback answer shares one mutable `machine` object (spec.md, "a shared fallback object handed to callers is frozen or built per call"). Failure: a write into a fallback's `machine.values` reaches every later fallback.
+
+### 4. Behaviour
+
+none.
+
+### Declined to judge
+
+- `tests/server/root` (six files start an HTTP server); `npm run diagrams` (writes files); where the key-check rows live (slow-tagged file, the orchestrator's ruling); cases not probed again; the drawn rows (the look at landing); the two `tests/checks/config` failures (hub layer absent in the worktree).
+
+Reviewer usage: a728bc9674d477119, claude-opus-5-5, 266,731 tokens, 89 tool uses, 32.2 min (from its completion notice).
+
+## Closed
+
+- Round 1, Proof 1, Proof 2, Proof 3: the report is corrected at landing (judgment 11, section 6 with the two key-check rows, the base-copy quote) and G3's Test line in `agents/guarded.md` names the two rows.
+- Round 1, Standards 1: fixed at landing in `fs-transport.ts`, `NO_WORKSPACES` built per call (or its `machine` member frozen), small and inside the brief.

@@ -37,9 +37,15 @@ export type MachineRead = {
     unread: MachineProblem | null;
     /**
      * The names of the keys the primary hub's file sets (`literature.<key>` for a key under
-     * `literature:`), none with no primary. Names only: no value of the file is held here.
+     * `literature:`), none with no primary. The values are in `config`.
      */
     set: string[];
+    /**
+     * For each of the three joined lists, the names of the hubs whose file sets the key, in the
+     * workspace's folder order, whether or not a row of the file is in force. A list no file sets
+     * has no entry.
+     */
+    lists: Record<string, string[]>;
 };
 
 /** The keys that are rows of a list joined over every hub's file. */
@@ -136,11 +142,16 @@ export function readMachine(
         (row) => `${row.provider}-${row.label}`,
         problems
     );
+    const lists: Record<string, string[]> = {};
+    for (const key of JOINED) {
+        const names = setting(key).map((one) => one.hub.name);
+        if (names.length > 0) lists[key] = names;
+    }
     const failed = reads.find((one) => one.read.unread);
     const unread =
         failed === undefined ? null : { file: failed.file, problem: failed.read.problems[0] };
     const set = own === undefined ? [] : [...own.read.set, ...literatureSet(own.read.config)];
-    return { config, problems, unread, set };
+    return { config, problems, unread, set, lists };
 }
 
 /** The joined values of the workspace's files, with the default of each key that is wrong. */

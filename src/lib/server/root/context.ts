@@ -566,6 +566,7 @@ export function createServerContext(
         local,
         machine: machine.values,
         machineSet: () => machine.held().set,
+        machineLists: () => machine.held().lists,
         engine,
         configCache,
         fsWrites: writes,

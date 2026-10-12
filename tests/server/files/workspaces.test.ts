@@ -51,7 +51,7 @@ async function write(
     const response = await handleFsWrite(request, TOKEN, {
         engine: engineDir(),
         workspace: workspaceOf(state),
-        machine: { set: [], defaults: {} },
+        machine: { set: [], defaults: {}, values: {}, hubs: {} },
         bookmarks: null,
         notes: null,
         writes: fsWrites(),

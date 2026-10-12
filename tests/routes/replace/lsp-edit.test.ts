@@ -16,7 +16,6 @@ import {
     lspEdit,
     lspEditPost,
     lspFile,
-    refusesOculusLocal,
     records,
     replaceWorld,
     stamps,
@@ -160,20 +159,6 @@ describe('what stops an lsp-edit', () => {
         expect(records(w)).toEqual([]);
         expect(savesOf(w.ops.history ?? '', join(w.hub, 'secrets/a.yml')).saves).toEqual([]);
     });
-
-    it("refuses `protected` for the machine's local file of a hub, which it never opens", async () => {
-        const w = replaceWorld({ 'a.txt': 'foo\n' });
-        const before = readFileSync(join(w.dot, 'local.yml'), 'utf8');
-        const answer = await lspEditPost(w, [
-            lspFile('local.yml', before, [lspEdit([1, 0], [1, 6], 'X')], 'dot')
-        ]);
-        expect(answer.body).toMatchObject({ error: 'protected', failed: 'dot/local.yml' });
-        expect(readFileSync(join(w.dot, 'local.yml'), 'utf8')).toBe(before);
-    });
-
-    refusesOculusLocal((w, before, root, path) =>
-        lspEditPost(w, [lspFile(path, before, [lspEdit([1, 0], [1, 6], 'X')], root)])
-    );
 
     it('refuses the whole edit when the second file is not the text the page read, and writes nothing to either (case 8)', async () => {
         const w = replaceWorld({ 'a.txt': 'foo a\n', 'b.txt': 'b foo\n' });

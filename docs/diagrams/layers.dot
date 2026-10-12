@@ -20,13 +20,13 @@ digraph layers {
     "desktop to server" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "desktop" -> "desktop to server" [arrowhead=none];
     "desktop to server" -> "server" [];
-    "routes to data" [label="29", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "routes to data" [label="28", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to data" [arrowhead=none];
     "routes to data" -> "data" [];
     "routes to files: assets" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to files: assets" [arrowhead=none];
     "routes to files: assets" -> "files: assets" [];
-    "routes to server" [label="106", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "routes to server" [label="105", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to server" [arrowhead=none];
     "routes to server" -> "server" [];
     "routes to shell" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -44,7 +44,7 @@ digraph layers {
     "routes to views" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "routes" -> "routes to views" [arrowhead=none];
     "routes to views" -> "views" [];
-    "server to data" [label="412", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "server to data" [label="408", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "server" -> "server to data" [arrowhead=none];
     "server to data" -> "data" [];
     "shell to data" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -65,7 +65,7 @@ digraph layers {
     "src to server" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "src" -> "src to server" [arrowhead=none];
     "src to server" -> "server" [];
-    "state to data" [label="360", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "state to data" [label="361", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "state" -> "state to data" [arrowhead=none];
     "state to data" -> "data" [];
     "ui to data" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

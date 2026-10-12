@@ -31,8 +31,6 @@ export function refusalSentence(word: OpsRefusal, t: Say = catalogText): string 
             return t('files.refused_missing');
         case 'root':
             return t('files.refused_root');
-        case 'protected':
-            return t('files.refused_protected');
         case 'invalid_name':
             return t('files.refused_invalid_name');
         case 'exists':

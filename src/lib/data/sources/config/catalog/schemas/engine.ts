@@ -2,8 +2,8 @@
 // others, from their sections of the options catalog), the catalogs and text files (from their
 // whole-file zod shapes), the schema files of config/schemas/ and a repository's
 // `.oculus/settings.yml`. A config file is governed in each workspace folder that holds oculus's
-// own config folder, below the path of that folder in it; `local.yml` is a hub's own and has no
-// schema.
+// own config folder, below the path of that folder in it; `local.yml` is governed in the `.oculus`
+// folder of each hub and in the config folder.
 //
 // These schemas serve the editor. The readers of their files report their own findings.
 
@@ -19,6 +19,7 @@ import {
 } from '../../../../shapes/catalog-files.ts';
 import { LOCAL_NAME } from '../../local.ts';
 import { catalogOf, configItems, type Source } from '../options.ts';
+import { ROOT_FOLDER } from '../../../../helpers/hub-names.ts';
 import { shapeSchema, type JsonSchema } from '../../../../snapshot/schema/json.ts';
 import { SCHEMA_BLOCK, SCHEMA_DEFINITIONS } from '../../../../snapshot/schema/record.ts';
 import { APP_SETTINGS_KEY } from '../../../../helpers/files/apps/settings.ts';
@@ -30,6 +31,14 @@ import { SCHEMA_FILES } from '../../../../snapshot/schema/static.ts';
 /** The globs of a file of oculus's own config folder, in whichever workspace folder holds it. */
 function configRule(...globs: string[]): NamedSchema['rule'] {
     return { engine: globs };
+}
+
+/**
+ * The globs of the machine's own file: the `.oculus` folder at the top of any served root, which is
+ * where a hub keeps it, and oculus's own config folder.
+ */
+function localRule(): NamedSchema['rule'] {
+    return { every: [`${ROOT_FOLDER}/${LOCAL_NAME}`], engine: [LOCAL_NAME] };
 }
 
 /** The schema of a file whose top-level key holds a `schema:` block of the hub's vocabulary. */
@@ -81,13 +90,12 @@ export function engineSchemas(raw: RawPortfolio, config: PortfolioConfig): Named
     const catalog = catalogOf(merged);
     const found: NamedSchema[] = [];
     for (const [file, entries] of Object.entries(catalog)) {
-        if (file === LOCAL_NAME) continue;
         const extra: Record<string, JsonSchema> =
             file === 'behavior.yml' ? { [APP_SETTINGS_KEY]: appSettingsSchema() } : {};
         found.push({
             name: `config/${file.replace(/\.yml$/, '')}`,
             schema: optionsSchema(entries, lists, extra),
-            rule: configRule(file)
+            rule: file === LOCAL_NAME ? localRule() : configRule(file)
         });
     }
     for (const one of CATALOG_FILES)

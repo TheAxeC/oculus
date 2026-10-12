@@ -227,10 +227,8 @@ text:
             merge_no_branch: This repository has no branch checked out, so there is nothing to merge into
             merge_not_text: The merge result is not text
             names_no_commit: The name {0} names no commit
-            never_changed: The path {0} is a file this server never changes
             no_action_named: No git action is named {0}
             no_directory: There is no such directory
-            no_guard: Nothing says which files the server must not take
             no_index_text: The path {0} has no text in the index
             no_merge_to_abort: No merge is in progress here, so there is nothing to abort
             no_message_instruction: The message instruction is missing from the catalog

@@ -1,15 +1,15 @@
-In flight (2 of 6 slots in use):
-- D70 (the machine files as ordinary files): review over repair round 1.
+In flight (1 of 6 slots in use):
 - D64 (apps in the tools): building.
 
 Queued, in order (3 steps):
-- Q72 (the architecture re-read): after D70 and D64.
-- D71 (workspaces and repositories): waits for open items 67 and 68, then prepared at once beside the steps in flight.
+- Q72 (the architecture re-read): after D64.
+- D71 (workspaces and repositories): waits for open item 67, then prepared at once beside the steps in flight.
 - O33 (oculus in its own repository; inline): after Q72.
 
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
+- D70 (the machine files as ordinary files), 2026-10-12.
 - D68 (workspaces as files), 2026-10-12, 9c9d84dce.
 - D69 (two clipping defects), 2026-10-12, cdc029dbb.
 - D63 (apps in the shell), 2026-10-12, a86225c4c.

@@ -150,7 +150,10 @@ text:
         settings_wallpaper_none: None
         settings_wallpaper_random: Random
         settings_machine_default: 'Not set in the primary hub. The default is {0}.'
-        settings_machine_no_primary: This workspace has no primary hub, so no file sets any key here; each key shows its default.
+        settings_machine_edit_in: 'Edit {0} of {1}'
+        settings_machine_edit_tip: 'Open {0} of {1} in a source tab'
+        settings_machine_in_force: 'The value in force:'
+        settings_machine_no_primary: This workspace has no primary hub, so no file sets a key that has one value here and each of them shows its default; the lists of accounts, calendars and mail show the rows of every hub's file.
         settings_machine_set: 'Set in {0}.'
         settings_machine_unset: Not set in the primary hub, and the key has no default.
         settings_open_unavailable: '{0} can be opened once a folder of this workspace holds it.'

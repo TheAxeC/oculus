@@ -22,10 +22,9 @@
 //   A copy the history has since pruned refuses the whole undo as `copy-gone`.
 //
 // The paths of a record are absolute, the log being a file a hand may edit, so every path must lie
-// in a served root and none may be a machine file (a hub's `.oculus/local.yml` or oculus's own
-// `config/local.yml`) or a folder that holds one. The undo is itself recorded, as the operation
-// that reverses it, so it can be taken back too. An undo that failed part way records the items it
-// did before the one it stopped at.
+// in a served root. The undo is itself recorded, as the operation that reverses it, so it can be
+// taken back too. An undo that failed part way records the items it did before the one it stopped
+// at.
 //
 // The Trash is a parameter, so a test hands in a spy and moves nothing to the real Trash.
 
@@ -40,7 +39,6 @@ import { chained, type FsWrites } from '../../core/json.ts';
 import { below, realPath } from '../../core/paths.ts';
 import { holds, recordOf, stampKept, stampOf } from '../../files/fs/file-changes.ts';
 import { defaultHistoryDir, keepCopy, readCopy, restoreCopy } from '../../files/fs/history.ts';
-import { guarded, protectedFiles } from '../../files/fs/ops.ts';
 import type { Root } from '../../files/files.ts';
 import type { UndoOutcome } from './undo.ts';
 import type { WriteTarget } from '../writes.ts';
@@ -49,8 +47,6 @@ import type { WriteTarget } from '../writes.ts';
 export type FilesTarget = {
     /** The roots the file browser serves, which every path of a record must lie in. */
     roots: () => Root[];
-    /** Oculus's own config folder, whose `local.yml` no undo writes. */
-    config: string;
     /** The local history folder a trash keeps content in, and a restore reads it from. */
     history?: string;
     /** The chain the file operations wait on, which an undo waits on too. */
@@ -63,11 +59,10 @@ export type FilesTarget = {
  */
 export function filesTargetOf(
     roots: () => Root[],
-    config: string,
     history: string | undefined,
     writes: FsWrites | undefined
 ): FilesTarget {
-    return { roots, config, history: history ?? defaultHistoryDir(), writes };
+    return { roots, history: history ?? defaultHistoryDir(), writes };
 }
 
 /** The one call a test replaces: the Trash. */
@@ -194,11 +189,8 @@ async function undoNow(
     const after = stampsShape.safeParse(change.after);
     if (!field.success || !before.success || !after.success) return { error: 'nothing' };
     const roots = target.roots();
-    const guard = protectedFiles({ roots, config: target.config });
     const named = [...before.data, ...after.data];
-    if (named.some((one) => !served(roots, one.path) || guarded(guard, one.path))) {
-        return { error: 'gone' };
-    }
+    if (named.some((one) => !served(roots, one.path))) return { error: 'gone' };
     const trash = deps.trash ?? ((path, options) => trashLibrary(path, options));
     const via = field.data;
     let done: Done;

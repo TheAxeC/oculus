@@ -2,18 +2,13 @@
 // a scratch directory, the ops target over them with the search timeout of a real server, the real
 // ripgrep binary through the dependency, and the posts a page makes (a replace, an undo).
 //
-// Every directory is under the system temporary directory, asserted before anything is written. The
-// hub folder holds a stand-in `.oculus/local.yml` of the test's own, and its `.oculus` folder is
-// listed as a root `dot`, which the guard on the machine's local files names, so the `protected`
-// refusal is proved without any real configuration file being opened. `plantOculusLocal` plants a
-// stand-in `local.yml` in the world's oculus config folder, which lies inside the hub folder and is
-// also listed as a root `oculus`, so the guard on oculus's own file is proved the same way.
+// Every directory is under the system temporary directory, asserted before anything is written.
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { expect, it } from 'vitest';
+import { expect } from 'vitest';
 import type {
     FileStamp,
     OpsRequest,
@@ -34,100 +29,34 @@ export type ReplaceWorld = {
     into: PrimaryTarget;
     ops: OpsTarget;
     hub: string;
-    dot: string;
-    config: string;
 };
 
-/**
- * A served hub folder `hub` holding these files, and a hub `peer` whose `.oculus` folder is served
- * as the root `dot` and holds a `local.yml`.
- */
+/** A served hub folder `hub` holding these files. */
 export function replaceWorld(files: Record<string, string | Buffer> = {}): ReplaceWorld {
     const into = target();
     const served = join(into.hub, 'served');
-    const peerDir = join(into.hub, 'peer');
-    const dotDir = join(peerDir, '.oculus');
-    for (const dir of [served, dotDir]) {
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-        mkdirSync(dir, { recursive: true });
-    }
+    expect(resolve(served).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    mkdirSync(served, { recursive: true });
     for (const [name, body] of Object.entries(files)) {
         mkdirSync(join(served, name, '..'), { recursive: true });
         writeFileSync(join(served, name), body);
     }
-    writeFileSync(join(dotDir, 'local.yml'), '# a stand-in of the test\nneedle: 1\n');
     const hub = realpathSync(served);
-    const peer = realpathSync(peerDir);
-    const dot = realpathSync(dotDir);
-    const roots = [
-        { key: 'hub', dir: hub, hub: true as const },
-        { key: 'peer', dir: peer, hub: true as const },
-        { key: 'dot', dir: dot }
-    ];
+    const roots = [{ key: 'hub', dir: hub, hub: true as const }];
     const history = join(into.hub, 'history');
     const writes = fsWrites();
-    const config = join(hub, 'oculus', 'config');
-    into.files = { roots: () => roots, config, history, writes };
+    into.files = { roots: () => roots, history, writes };
     return {
         into,
         hub,
-        dot,
-        config,
         ops: {
             roots,
-            config,
             writes,
             changes: into.changes,
             history,
             searchTimeout: TIMEOUT
         }
     };
-}
-
-/** The two ways the stand-in `local.yml` of oculus's config folder is reached in the world. */
-export const OCULUS_LOCAL_ROUTES: [string, string, string][] = [
-    ['a workspace folder over the oculus config folder', 'oculus', 'local.yml'],
-    ['the hub folder that holds the oculus config folder', 'hub', 'oculus/config/local.yml']
-];
-
-/**
- * Plant a stand-in `local.yml` and an `other.yml` in the world's oculus config folder, serve the
- * folder as the root `oculus` and answer the path of the `local.yml`.
- */
-export function plantOculusLocal(w: ReplaceWorld): string {
-    expect(w.config.startsWith(realpathSync(tmpdir()) + sep)).toBe(true);
-    mkdirSync(w.config, { recursive: true });
-    const local = join(w.config, 'local.yml');
-    writeFileSync(local, '# a stand-in of the test\nneedle: 1\n');
-    writeFileSync(join(w.config, 'other.yml'), 'needle: 2\n');
-    w.ops.roots.push({ key: 'oculus', dir: realpathSync(w.config) });
-    return local;
-}
-
-/**
- * The cases of one route that must refuse oculus's own `local.yml`: for each way the file is
- * reached, plant the stand-in, send it through `send` and assert the answer is `protected` for
- * that name and the file is unchanged.
- */
-export function refusesOculusLocal(
-    send: (
-        w: ReplaceWorld,
-        before: string,
-        root: string,
-        path: string
-    ) => Promise<{ body: unknown }>
-): void {
-    it.each(OCULUS_LOCAL_ROUTES)(
-        "refuses `protected` for oculus's own config/local.yml, reached through %s",
-        async (_where, root, path) => {
-            const w = replaceWorld({ 'a.txt': 'foo\n' });
-            const local = plantOculusLocal(w);
-            const before = readFileSync(local, 'utf8');
-            const answer = await send(w, before, root, path);
-            expect(answer.body).toMatchObject({ error: 'protected', failed: `${root}/${path}` });
-            expect(readFileSync(local, 'utf8')).toBe(before);
-        }
-    );
 }
 
 /** The query half of a replace over `q`, a literal case-insensitive one unless changed. */

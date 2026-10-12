@@ -54,7 +54,7 @@ import type { RefFile, RefLine, RefSearch } from '$lib/state/system/machine/lsp/
 import type { AstNode, MemoryTree } from '$lib/state/system/machine/lsp/clangd';
 import { symbolRowsOf, type SymbolRow } from '$lib/state/system/machine/lsp/workspace-symbols';
 import { t } from '$lib/state/shared/words/text';
-import { isWithheldFile } from '$lib/state/system/config/config-files';
+import { isPrivateFile } from '$lib/state/system/config/config-files';
 import { noticeWords } from '$lib/state/system/machine/refactor/notice-words';
 
 /** The milliseconds a save waits for the language server's formatting (VS Code's participant). */
@@ -118,10 +118,9 @@ function servedLanguage(language: string): boolean {
 
 /**
  * Whether a file is one the server of its language is not given, which the relay's entry refuses as
- * well: the machine's `local.yml`, or a YAML file under the `secrets` folder of every hub or under
- * `~/.oculus`, for the YAML server, a Markdown file under those two folders for the Markdown
- * server, and a file whose extension the entry lists in `refusedExtensions` (the Sweave sources
- * texlab is not given).
+ * well: a YAML file under the `secrets` folder of every hub or under `~/.oculus`, for the YAML
+ * server, a Markdown file under those two folders for the Markdown server, and a file whose
+ * extension the entry lists in `refusedExtensions` (the Sweave sources texlab is not given).
  */
 function isRefusedFile(
     client: ClientState,
@@ -131,7 +130,7 @@ function isRefusedFile(
     if (refusesFile(factsForLanguage(language), file.path)) return true;
     return (
         (language === 'yaml' || language === 'markdown') &&
-        isWithheldFile(file, client.fs.roots(), client.fs.workspaces().home)
+        isPrivateFile(file, client.fs.roots(), client.fs.workspaces().home)
     );
 }
 

@@ -1,8 +1,8 @@
 // Layer 2, client state tests. The "This machine" section of the Settings view over the shipped
-// catalog of `local.yml`: each key is listed with whether the primary hub's file sets it (by name,
-// the answer holding no value) and the default in force where it does not; a workspace with no
-// primary shows every default and says so; the line that opens the file targets the primary's
-// `.oculus/local.yml` through the primary's folder and nothing else.
+// catalog of `local.yml`: each key is listed with whether the primary hub's file sets it (by name)
+// and the default in force where it does not; a workspace with no primary shows every default and
+// says so; the line that opens the file targets the primary's `.oculus/local.yml` through the
+// primary's folder and nothing else.
 //
 // What this does NOT cover: how the section draws these lines (seen at the look), and the server's
 // answer (tests/routes/hubs/machine-answer.test.ts).
@@ -30,7 +30,9 @@ describe('the "This machine" section', () => {
         const { byKey, group } = machineGroup({
             primary: 'lab',
             set: ['port', 'claude_bin'],
-            defaults: DEFAULTS
+            defaults: DEFAULTS,
+            values: {},
+            hubs: {}
         });
         expect(byKey('port')).toMatchObject({ setIn: 'lab', fallback: '8790' });
         expect(byKey('claude_bin')).toMatchObject({ setIn: 'lab', fallback: 'claude' });
@@ -39,19 +41,37 @@ describe('the "This machine" section', () => {
     });
 
     it('lists every key of the catalog, whatever the file sets', () => {
-        const { rows } = machineGroup({ primary: 'lab', set: [], defaults: {} });
+        const { rows } = machineGroup({
+            primary: 'lab',
+            set: [],
+            defaults: {},
+            values: {},
+            hubs: {}
+        });
         expect(rows.map((row) => row.key)).toEqual(Object.keys(shipped['local.yml']));
     });
 
     it('shows every default and says there is no primary when the workspace has none', () => {
-        const { rows, group } = machineGroup({ primary: null, set: ['port'], defaults: DEFAULTS });
+        const { rows, group } = machineGroup({
+            primary: null,
+            set: ['port'],
+            defaults: DEFAULTS,
+            values: {},
+            hubs: {}
+        });
         expect(rows.every((row) => row.setIn === null)).toBe(true);
         expect(rows.find((row) => row.key === 'port')?.fallback).toBe('8790');
         expect(group.about).not.toBe('');
     });
 
     it("opens the primary's .oculus/local.yml through the primary's folder, and nothing with no primary", () => {
-        const { group } = machineGroup({ primary: 'lab', set: [], defaults: {} });
+        const { group } = machineGroup({
+            primary: 'lab',
+            set: [],
+            defaults: {},
+            values: {},
+            hubs: {}
+        });
         const [line] = group.lines;
         expect(line.file).toBe('.oculus/local.yml');
         const engine = { root: 'oculus', path: 'config' };

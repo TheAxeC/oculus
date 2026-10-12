@@ -428,8 +428,7 @@ function twoDeckHubs(): { into: PrimaryTarget; first: string; lab: string } {
             roots: () => [
                 { key: 'hub', dir: first.hub },
                 { key: 'lab', dir: second.hub }
-            ],
-            config: join(first.hub, 'oculus', 'config')
+            ]
         },
         hubs: [{ key: 'lab', hub: second.hub, config: second.config }]
     };

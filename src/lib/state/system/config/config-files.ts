@@ -3,6 +3,7 @@
 // schemas, and the one-line description each file has in the text catalog.
 
 import { joinPath, pathUnder } from '../../../data/helpers/files/paths.ts';
+import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
 import { hasText, lookup } from '../../shared/words/text.ts';
 
@@ -40,7 +41,18 @@ export function openTarget(
 }
 
 /** The path of a hub's machine file inside the hub's folder. */
-const LOCAL_PATH = `.oculus/${LOCAL_NAME}`;
+export const LOCAL_PATH = `${ROOT_FOLDER}/${LOCAL_NAME}`;
+
+/**
+ * Where the machine file of the hub named `hub` is opened in an editor: through the workspace
+ * folder of that name. Null when no folder of the workspace has the name.
+ */
+export function hubFileTarget(
+    hub: string,
+    saved: { folders: readonly { key: string }[] }
+): { root: string; path: string } | null {
+    return saved.folders.some((one) => one.key === hub) ? { root: hub, path: LOCAL_PATH } : null;
+}
 
 /**
  * Whether a file of a served root is in a folder that is private to the machine: under the
@@ -63,25 +75,6 @@ export function isPrivateFile(
     return privateFolders(hubDirs(roots), home).some(
         (folder) => pathUnder(same(folder), absolute) !== null
     );
-}
-
-/**
- * Whether a file of a served root is one no YAML language server is given: the `.oculus/local.yml`
- * of any hub, reached through the folder of the hub or through a folder over its `.oculus`, or a
- * private file (`isPrivateFile`).
- */
-export function isWithheldFile(
-    file: { root: string; path: string },
-    roots: readonly { key: string; dir: string; real?: string; hub?: boolean; folds?: boolean }[],
-    home: string
-): boolean {
-    const root = roots.find((one) => one.key === file.root);
-    if (root === undefined) return false;
-    const at = joinPath(root.real ?? root.dir, file.path);
-    const machine = roots.some(
-        (one) => one.hub === true && at === joinPath(one.real ?? one.dir, LOCAL_PATH)
-    );
-    return machine || isPrivateFile(file, roots, home);
 }
 
 /** The folder under config/ that holds the vocabulary catalogs. */

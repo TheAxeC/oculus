@@ -61,7 +61,6 @@ function ask(
     }));
     const view: PageView = {
         roots,
-        config: join(real, 'oculus', 'config'),
         references: hub.index,
         catalog: TEXT,
         documents: [document, ...tabs],

@@ -14,11 +14,9 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, rmdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import trashLibrary from 'trash';
-import { configDir } from '../../../../../../data/sources/config.ts';
 import { writtenWith, type Change, type ChangeRecord } from '../../../../../core/changes.ts';
 import { writeTextAtomic } from '../../../../../core/json.ts';
 import { inside, realPath } from '../../../../../core/paths.ts';
-import { guarded, protectedFiles } from '../../../../../files/fs/ops.ts';
 import type { UndoOutcome } from '../../../undo.ts';
 import type { FilesDeps } from '../../../file-undo.ts';
 import type { WriteTarget } from '../../../../writes.ts';
@@ -38,14 +36,9 @@ function held(value: unknown): string {
     return typeof value === 'string' ? value : '';
 }
 
-/**
- * Whether a path is one an undo may write: inside a served root, and not one of the machine's
- * `local.yml` files.
- */
+/** Whether a path is one an undo may write: inside a served root. */
 function writable(into: WriteTarget, path: string): boolean {
     const roots = into.files?.roots() ?? [];
-    const guard = protectedFiles({ roots, config: configDir(into.engine) });
-    if (guarded(guard, path)) return false;
     const folder = realPath(dirname(path)) ?? dirname(path);
     return roots.some((root) => inside(folder, realPath(root.dir) ?? root.dir));
 }

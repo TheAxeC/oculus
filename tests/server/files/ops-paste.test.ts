@@ -1,11 +1,9 @@
-// Layer 2, server test. Paste (copy and move) and upload under the served roots, and the guard on
-// the machine's own `local.yml` files (a hub's `.oculus/local.yml` and oculus's own
-// `config/local.yml`), over the worlds of tests/server/files/ops-fixture.ts.
+// Layer 2, server test. Paste (copy and move) and upload under the served roots, over the worlds of
+// tests/server/files/ops-fixture.ts.
 //
-// Every root here is a directory under the system temporary directory, the folder that holds the
-// file is a scratch one holding a fixture `local.yml` of its own, and the trash call is always a
-// spy: the library is replaced by a mock for the whole file, so no case can move anything to the
-// real Trash.
+// Every root here is a directory under the system temporary directory, and the trash call is
+// always a spy: the library is replaced by a mock for the whole file, so no case can move anything
+// to the real Trash.
 //
 // What this does NOT cover: the menu that posts these requests and the questions that precede
 // them, which are tests/views/sources/files/ and tests/state/sources/explorer/; a Trash that really
@@ -14,11 +12,11 @@
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
 // tagged slow.
 
-import { existsSync, readFileSync, symlinkSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import { it } from '../../fixtures/scratch.ts';
-import { folder, names, spy, world, worldOver, type World } from './ops-fixture.ts';
+import { spy, world } from './ops-fixture.ts';
 
 // The library is replaced for the whole file, so a case that hands in no spy of its own reaches
 // this one, which moves nothing.
@@ -97,84 +95,5 @@ describe('upload', () => {
         const answer = await w.post(upload('f.png', base64([7]), true), { trash: trashed });
         expect(answer.body).toEqual({ ok: false, error: 'trash_failed' });
         expect(readFileSync(join(w.hub, 'f.png'), 'utf8')).toBe('old');
-    });
-});
-
-describe.each([
-    ["a hub's own .oculus/local.yml", '.oculus', 'dot'],
-    ["oculus's own config/local.yml, which the hub folder holds", 'oculus/config', 'oculus']
-])('%s', (_name, within, key) => {
-    /** A hub with the folder that holds the file listed as a root of its own, and a link to it. */
-    function hubWorld(): World & { dot: string; local: string } {
-        const hub = folder(
-            {
-                [`${within}/local.yml`]: 'secret: 1\n',
-                [`${within}/other.yml`]: 'x: 1\n'
-            },
-            ['spare']
-        );
-        const dot = join(hub, within);
-        symlinkSync(within, join(hub, 'lnk'));
-        const w = worldOver(
-            [
-                { key: 'hub', dir: hub, hub: true },
-                { key, dir: dot }
-            ],
-            hub
-        );
-        return { ...w, dot, local: join(dot, 'local.yml') };
-    }
-
-    const refused = (error: string, extra: Record<string, unknown> = {}): unknown =>
-        expect.objectContaining({ ok: false, error, ...extra });
-    const at = (path: string, root = 'hub') => ({ root, path });
-
-    it('refuses every change to the file and to the folders holding it (case 24)', async () => {
-        const w = hubWorld();
-        const trashed = spy();
-        const deps = { trash: trashed };
-        const before = readFileSync(w.local, 'utf8');
-        const subjects = [
-            at('local.yml', key),
-            at(within),
-            at(`${within}/local.yml`),
-            at('lnk/local.yml')
-        ];
-        for (const subject of subjects) {
-            const name = `${subject.root}:${subject.path}`;
-            const one = [
-                { op: 'rename', ...subject, name: 'moved' },
-                { op: 'trash', root: subject.root, paths: [subject.path] },
-                { op: 'delete', root: subject.root, paths: [subject.path] },
-                {
-                    op: 'paste',
-                    mode: 'move',
-                    items: [subject],
-                    root: 'hub',
-                    path: 'spare',
-                    replace: false
-                },
-                {
-                    op: 'paste',
-                    mode: 'copy',
-                    items: [subject],
-                    root: 'hub',
-                    path: 'spare',
-                    replace: false
-                }
-            ];
-            for (const body of one) {
-                const answer = await w.post(body, deps);
-                expect({ name, op: body.op, body: answer.body }).toEqual({
-                    name,
-                    op: body.op,
-                    body: refused('protected')
-                });
-            }
-        }
-        expect(readFileSync(w.local, 'utf8')).toBe(before);
-        expect(names(w.dot)).toEqual(['local.yml', 'other.yml']);
-        expect(names(join(w.hub, 'spare'))).toEqual([]);
-        expect(trashed).not.toHaveBeenCalled();
     });
 });

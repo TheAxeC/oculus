@@ -11,8 +11,8 @@
 // before anything is written. The text written for a match is computed here from the current groups
 // by `replacementOf` of data/helpers/search/replace.ts, never taken from the page.
 //
-// Files are checked in the order `outside`, `missing`, `protected`, `denied` (the file's mode locks
-// it), `binary`, `too_large` (over what the history keeps a copy of, as the file is and as the
+// Files are checked in the order `outside`, `missing`, `denied` (the file's mode locks it),
+// `binary`, `too_large` (over what the history keeps a copy of, as the file is and as the
 // replace would leave it, so the undo and the redo can keep a copy of each), `marker` (the file
 // holds one of the private-use characters the group template is read with), `search-failed` and
 // `changed`. A list of files stops at the first refusal and names the files done before it and the
@@ -66,11 +66,9 @@ export type Fail = { ok: false; error: OpsRefusal };
 
 export const fail = (error: OpsRefusal): Fail => ({ ok: false, error });
 
-/** What a preview runs over: the roots, the files never changed and how ripgrep is run. */
+/** What a preview runs over: the roots and how ripgrep is run. */
 type ReadScope = {
     roots: Root[];
-    /** Whether a path is a file the server never changes, or a folder that holds one. */
-    guarded: (path: string) => boolean;
     /** Milliseconds one file's search is given, from `search.timeout_s`; absent refuses a run. */
     timeout?: number;
     /** How ripgrep is run; the real binary when absent. */
@@ -131,11 +129,11 @@ function endsWithCrlf(bytes: Buffer): boolean {
 /**
  * The file a root's key and a path name, read: its refusal, or where it is and what it holds. A
  * file that is to be written is refused `denied` when its mode locks it, before its bytes are
- * looked at. The checks are `outside`, `missing`, `protected`, `denied`, `binary` and `too_large`,
- * in that order; a file the server may read and write is returned with its bytes.
+ * looked at. The checks are `outside`, `missing`, `denied`, `binary` and `too_large`, in that
+ * order; a file the server may read and write is returned with its bytes.
  */
 export function readChecked(
-    scope: Pick<ReadScope, 'roots' | 'guarded'>,
+    scope: Pick<ReadScope, 'roots'>,
     root: string,
     path: string,
     limit: number,
@@ -151,7 +149,6 @@ export function readChecked(
     } catch {
         return fail('missing');
     }
-    if (scope.guarded(found.path)) return fail('protected');
     if (writing && isReadonly(found.path)) return fail('denied');
     if (isBinaryFile(found.path)) return fail('binary');
     if (size > limit) return fail('too_large');
