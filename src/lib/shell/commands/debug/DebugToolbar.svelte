@@ -1,17 +1,22 @@
 <script lang="ts">
-    // Layer 3, shell. The debug toolbar: Continue, Step Over, Step Into, Step Out, Finish Frame,
-    // Restart and Stop in a strip that floats over the top of the workbench while a session is
-    // starting, running or paused and goes when it ends. A step and a continue are drawn off
-    // unless the program is paused. The strip is dragged along the top edge by its grip, on
+    // Layer 3, shell. The debug toolbar: Continue, Pause, Step Over, Step Into, Step Out, Finish
+    // Frame, Restart and Stop in a strip that floats over the top of the workbench while a session
+    // is starting, running or paused and goes when it ends. Pause is drawn for every adapter, since
+    // the protocol has no capability for it, and is drawn off unless the program runs; Finish Frame
+    // is oculus's adapter's own request and is drawn only for it. A step and a continue are drawn
+    // off unless the program is paused. The strip is dragged along the top edge by its grip, on
     // interactjs as a float is (shell/panes/floats/float-gesture.ts), and the place it is let go
     // at is kept in the debug store's record, so the next session draws it there; before it was
     // ever moved it is centred. A view cannot draw over the workbench, which is why this is a
-    // shell part and not part of the Debug view.
+    // shell part and not part of the Debug view. The entries apps contribute to `debug/toolBar`
+    // are drawn after Stop: those of the group `navigation` as buttons, the others in a More
+    // Actions list; each runs its command with no argument.
 
     import interactjs from 'interactjs';
     import type { Attachment } from 'svelte/attachments';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ActionStrip from '$lib/ui/tabs/ActionStrip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -31,11 +36,14 @@
 
     const interact = interactjs as unknown as (target: HTMLElement) => Interactable;
 
-    const { debug } = useState();
+    const { appShell, debug } = useState();
 
     const drawn = $derived(debug.active());
     const paused = $derived(debug.paused());
+    const running = $derived(debug.status() === 'running');
+    const hasFinish = $derived(debug.ownAdapter());
     const saved = $derived(debug.toolbar());
+    const apps = $derived(appShell.strip('debug/toolBar', { keys: debug.contextKeys() }));
 
     /** Where the strip is while it is being dragged, null otherwise. */
     let live: number | null = $state(null);
@@ -90,6 +98,13 @@
             onclick={() => void debug.resume('continue')}
         />
         <ToolButton
+            label={t('debug.pause')}
+            glyph="debug_pause"
+            compact
+            disabled={!running}
+            onclick={() => void debug.pause()}
+        />
+        <ToolButton
             label={t('debug.step_over')}
             glyph="debug_over"
             compact
@@ -110,13 +125,15 @@
             disabled={!paused}
             onclick={() => void debug.resume('stepOut')}
         />
-        <ToolButton
-            label={t('debug.finish_frame')}
-            glyph="debug_finish"
-            compact
-            disabled={!paused}
-            onclick={() => void debug.resume('finishFrame')}
-        />
+        {#if hasFinish}
+            <ToolButton
+                label={t('debug.finish_frame')}
+                glyph="debug_finish"
+                compact
+                disabled={!paused}
+                onclick={() => void debug.resume('finishFrame')}
+            />
+        {/if}
         <ToolButton
             label={t('debug.restart')}
             glyph="debug_restart"
@@ -128,6 +145,12 @@
             glyph="debug_stop"
             compact
             onclick={() => void debug.stop()}
+        />
+        <ActionStrip
+            label={t('debug.toolbar_apps')}
+            actions={apps.actions}
+            onpick={(pick: string, event: MouseEvent) =>
+                void appShell.runEntry(apps.offers, pick, [], event.altKey)}
         />
     </div>
 {/if}

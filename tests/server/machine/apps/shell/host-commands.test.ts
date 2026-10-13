@@ -14,7 +14,7 @@
 import { describe, expect } from 'vitest';
 import { runDeclared } from '../../../../../src/lib/server/machine/apps/shell/commands.ts';
 import { it } from '../../../../fixtures/scratch.ts';
-import { world, type World } from '../hosts-world.ts';
+import { world, type World } from '../world/hosts-world.ts';
 
 const NOTES = 'app:notes';
 
@@ -59,9 +59,15 @@ describe('choosing a command of an app whose host is not running', () => {
 const SETTINGS_HOST = `
 export function activate(oculus) {
   const heard = [];
-  oculus.workspace.onDidChangeConfiguration((event) => heard.push(event.keys));
+  let told = () => undefined;
+  oculus.workspace.onDidChangeConfiguration((event) => {
+    heard.push(event.keys);
+    told();
+  });
   oculus.commands.registerCommand('notes.width', () => oculus.workspace.getConfiguration('notes').get('width'));
-  oculus.commands.registerCommand('notes.heard', () => heard);
+  oculus.commands.registerCommand('notes.heard', () => heard.length > 0 ? heard : new Promise((resolve) => {
+    told = () => resolve(heard);
+  }));
   oculus.commands.registerCommand('notes.other', () => {
     try {
       return oculus.workspace.getConfiguration('other').get('x');
@@ -98,9 +104,8 @@ describe('the settings an app declares, read by its host', () => {
         const before = await ask('notes.width');
         values = { 'notes.width': 100 };
         w.hosts.settingsChanged();
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        const after = await ask('notes.width');
         const heard = await ask('notes.heard');
+        const after = await ask('notes.width');
         const other = await ask('notes.other');
         await w.hosts.close();
         expect([before, after, heard, other]).toEqual([80, 100, [['notes.width']], 'not_declared']);

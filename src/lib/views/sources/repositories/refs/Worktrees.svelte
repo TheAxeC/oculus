@@ -41,7 +41,7 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { DiffSubject } from '$lib/state/sources/repositories/repositories';
+    import type { DiffSubject } from '$lib/state/sources/repositories/diff/subject';
     import {
         linkedWorktrees,
         openWorktree,

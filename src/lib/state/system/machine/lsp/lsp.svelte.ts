@@ -10,6 +10,11 @@
 // choice that was not written) and `output` (a server's log lines). The port hands the client every
 // message, the relay's own included, and the client ignores those.
 //
+// A language may be served by several servers: oculus's own and the ones the acting apps register.
+// A message about an app's server carries its id (`server`) and name, and the state and the log of
+// each is kept apart from oculus's, whose id is the empty string. `server` answers oculus's own,
+// else the first app's; `servers` lists them all, oculus's first.
+//
 // The channel `lsp:workspace` is the page's own and has no language: the page tells the relay which
 // files its tabs hold open, whatever their language (`publishTabs`), and asks which of some files
 // another page holds open (`askHeld`), since an edit a server asks for is made in a tab where one
@@ -82,6 +87,8 @@ type LspLink = {
 
 /** What the page knows of one root's server for one language. */
 type ServerView = {
+    /** The name an app gave its server; empty for oculus's own. */
+    name: string;
     state: LspState;
     /** Why the server is `not_found` or `failed`. */
     code: LspCode | null;
@@ -130,11 +137,19 @@ const ANSWER_MS = 10_000;
 /** The milliseconds the answer to a question about moved files is waited for. */
 const LINKS_MS = 60_000;
 
+/** One server of a root and language: its id (empty for oculus's own), its name and its state. */
+export type ServerEntry = { id: string; name: string; view: ServerView };
+
 export type LspStore = {
     /** The channel of a language, made the first time it is asked for. */
     link: (language: string) => LspLink;
-    /** What the page knows of a root's server for a language, or null before it said anything. */
+    /**
+     * What the page knows of a root's server for a language, oculus's own or else the first an app
+     * registered, or null before any said anything.
+     */
     server: (root: string, language: string) => ServerView | null;
+    /** Every server that said anything for a root and language, oculus's own first. */
+    servers: (root: string, language: string) => ServerEntry[];
     /** The choices a root last offered for a language, or null before it did. */
     choices: (root: string, language: string) => ChoicesView | null;
     /** Why the last choice was not written, or null. */
@@ -164,8 +179,8 @@ export type LspStore = {
      * them: the moves are `from` and `to` paths under one served root, made already.
      */
     askLinks: (root: string, moves: { from: string; to: string }[]) => Promise<LinksReply>;
-    /** End a root's server and start it again on its next request. */
-    restart: (root: string, language: string) => boolean;
+    /** End a root's server and start it again on its next request. `server` names an app's. */
+    restart: (root: string, language: string, server?: string) => boolean;
     /** Record a library file a server named, under the root and language of the request. */
     named: (address: string, root: string, language: string) => void;
     /**
@@ -176,17 +191,19 @@ export type LspStore = {
     /** Read a library file the page was given; the read of an unknown address is `unsent`. */
     readLibrary: (address: string) => Promise<LibraryRead>;
     /** The lines of a server's log the page last heard, empty before any. */
-    output: (root: string, language: string) => readonly string[];
+    output: (root: string, language: string, server?: string) => readonly string[];
     /**
      * Ask the relay for a server's log lines and keep asking after a reconnect; the call it
      * returns tells the relay to stop and forgets the lines.
      */
-    watchOutput: (root: string, language: string) => () => void;
+    watchOutput: (root: string, language: string, server?: string) => () => void;
 };
 
 /** What the store keeps by a root and language. */
 type Held = {
-    servers: Record<string, ServerView>;
+    servers: Partial<Record<string, ServerView>>;
+    /** The ids of the app servers that spoke for a root and language, in the order they did. */
+    apps: Partial<Record<string, string[]>>;
     choices: Record<string, ChoicesView>;
     refusals: Record<string, LspRefusal>;
     lines: Record<string, readonly string[]>;
@@ -195,6 +212,11 @@ type Held = {
 /** The key of a root and a language. */
 function keyOf(root: string, language: string): string {
     return JSON.stringify([language, root]);
+}
+
+/** The key of one server of a root and language; oculus's own, with no id, is the root's key. */
+function serverKey(root: string, language: string, server: string): string {
+    return server === '' ? keyOf(root, language) : JSON.stringify([language, root, server]);
 }
 
 /** The language of the channel that holds the page's own messages. */
@@ -209,7 +231,7 @@ function channelOf(language: string): string {
 }
 
 export function createLsp(socket: SocketStore): LspStore {
-    const held: Held = $state({ servers: {}, choices: {}, refusals: {}, lines: {} });
+    const held: Held = $state({ servers: {}, apps: {}, choices: {}, refusals: {}, lines: {} });
     const links = new Map<string, LspLink>();
     /** The choices and approvals waiting for the relay's answer, by key. */
     const waiting = new Map<string, ((answer: LspAnswer) => void)[]>();
@@ -218,7 +240,10 @@ export function createLsp(socket: SocketStore): LspStore {
     /** The library files named to this connection, by address. */
     const libraries = new SvelteMap<string, LibraryFile>();
     /** The root and language of every log being watched, by key, with the number watching. */
-    const watched = new Map<string, { root: string; language: string; count: number }>();
+    const watched = new Map<
+        string,
+        { root: string; language: string; server: string; count: number }
+    >();
 
     function linkState(): LspLinkState {
         const status = socket.status();
@@ -234,7 +259,12 @@ export function createLsp(socket: SocketStore): LspStore {
     function read(language: string, message: RootMessage): void {
         const key = keyOf(message.root, language);
         if (message.oculus === 'state') {
-            held.servers[key] = {
+            const own = message.server ?? '';
+            if (own !== '' && !(held.apps[key] ?? []).includes(own)) {
+                held.apps[key] = [...(held.apps[key] ?? []), own];
+            }
+            held.servers[serverKey(message.root, language, own)] = {
+                name: message.name ?? '',
                 state: message.state,
                 code: message.code ?? null,
                 program: message.program ?? '',
@@ -244,7 +274,11 @@ export function createLsp(socket: SocketStore): LspStore {
             // A server that starts has read its root's settings again, so the choices kept from
             // before may be out of date; the status item asks for them again.
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- keyed by root and language
-            if (message.state === 'starting') delete held.choices[key];
+            if (message.state === 'starting' && own === '') delete held.choices[key];
+        } else if (message.oculus === 'gone') {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- keyed by root, language and server
+            delete held.servers[serverKey(message.root, language, message.server)];
+            held.apps[key] = (held.apps[key] ?? []).filter((one) => one !== message.server);
         } else if (message.oculus === 'choices') {
             held.choices[key] = {
                 root: message.root,
@@ -268,8 +302,9 @@ export function createLsp(socket: SocketStore): LspStore {
                 'text' in message ? { text: message.text } : { code: message.code };
             for (const resolve of waits) resolve(read);
         } else if (message.oculus === 'output') {
-            held.lines[key] = message.append
-                ? [...(held.lines[key] ?? []), ...message.lines]
+            const lines = serverKey(message.root, language, message.server ?? '');
+            held.lines[lines] = message.append
+                ? [...(held.lines[lines] ?? []), ...message.lines]
                 : message.lines;
         }
     }
@@ -448,12 +483,30 @@ export function createLsp(socket: SocketStore): LspStore {
         if (linkState() !== 'open') return;
         if (tabs.length > 0) send(WORKSPACE, { oculus: 'held', files: tabs });
         for (const one of watched.values()) {
-            write(one.language, one.root, { oculus: 'output', root: one.root });
+            write(one.language, one.root, {
+                oculus: 'output',
+                root: one.root,
+                ...(one.server === '' ? {} : { server: one.server })
+            });
         }
     });
 
     function server(root: string, language: string): ServerView | null {
-        return held.servers[keyOf(root, language)] ?? null;
+        const own = held.servers[keyOf(root, language)];
+        if (own !== undefined) return own;
+        const first = (held.apps[keyOf(root, language)] ?? []).at(0);
+        return first === undefined
+            ? null
+            : (held.servers[serverKey(root, language, first)] ?? null);
+    }
+
+    function servers(root: string, language: string): ServerEntry[] {
+        const own = held.servers[keyOf(root, language)];
+        const apps = (held.apps[keyOf(root, language)] ?? []).flatMap((id) => {
+            const view = held.servers[serverKey(root, language, id)];
+            return view === undefined ? [] : [{ id, name: view.name, view }];
+        });
+        return own === undefined ? apps : [{ id: '', name: own.name, view: own }, ...apps];
     }
 
     function choices(root: string, language: string): ChoicesView | null {
@@ -464,8 +517,8 @@ export function createLsp(socket: SocketStore): LspStore {
         return held.refusals[keyOf(root, language)] ?? null;
     }
 
-    function output(root: string, language: string): readonly string[] {
-        return held.lines[keyOf(root, language)] ?? [];
+    function output(root: string, language: string, server = ''): readonly string[] {
+        return held.lines[serverKey(root, language, server)] ?? [];
     }
 
     function readLibrary(address: string): Promise<LibraryRead> {
@@ -494,12 +547,13 @@ export function createLsp(socket: SocketStore): LspStore {
         });
     }
 
-    function watchOutput(root: string, language: string): () => void {
-        const key = keyOf(root, language);
-        const one = watched.get(key) ?? { root, language, count: 0 };
+    function watchOutput(root: string, language: string, server = ''): () => void {
+        const key = serverKey(root, language, server);
+        const named = server === '' ? {} : { server };
+        const one = watched.get(key) ?? { root, language, server, count: 0 };
         one.count += 1;
         watched.set(key, one);
-        if (one.count === 1) write(language, root, { oculus: 'output', root });
+        if (one.count === 1) write(language, root, { oculus: 'output', root, ...named });
         let stopped = false;
         return () => {
             if (stopped) return;
@@ -507,7 +561,7 @@ export function createLsp(socket: SocketStore): LspStore {
             one.count -= 1;
             if (one.count > 0) return;
             watched.delete(key);
-            write(language, root, { oculus: 'output_off', root });
+            write(language, root, { oculus: 'output_off', root, ...named });
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- keyed by root and language
             delete held.lines[key];
         };
@@ -516,6 +570,7 @@ export function createLsp(socket: SocketStore): LspStore {
     return {
         link,
         server,
+        servers,
         choices,
         refused,
         askChoices: (root, language) => write(language, root, { oculus: 'choices', root }),
@@ -528,7 +583,12 @@ export function createLsp(socket: SocketStore): LspStore {
         publishTabs,
         askHeld,
         askLinks,
-        restart: (root, language) => write(language, root, { oculus: 'restart', root }),
+        restart: (root, language, server = '') =>
+            write(language, root, {
+                oculus: 'restart',
+                root,
+                ...(server === '' ? {} : { server })
+            }),
         named: (address, root, language) => {
             const known = libraries.get(address);
             if (known?.root === root && known.language === language) return;

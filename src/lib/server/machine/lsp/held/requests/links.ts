@@ -29,7 +29,7 @@ import type { ServerEntry } from '../../servers.ts';
 import type { OculusContext } from '../oculus.ts';
 import { normal, pageUri, toPage, type Mapper, type ServedRoot } from '../../uris.ts';
 import { isRecord } from '../../wire.ts';
-import { Held, LINGER_MS, docKey, heldKey, type Doc, type Page } from '../held.ts';
+import { Held, LINGER_MS, docKey, heldKey, type Doc, type Open, type Page } from '../held.ts';
 import { adoptHeld } from '../documents.ts';
 
 /** What the request reads of the relay. */
@@ -117,7 +117,21 @@ function followDocuments(page: Page, held: Held, moves: readonly Moved[]): void 
             shift: 0
         };
         held.open(moved);
-        page.docs.set(key, { held, doc: moved });
+        const next: Open = { held, doc: moved, also: [] };
+        // The document stays open on the other servers of its language, moved the same way.
+        for (const other of open.at(0)?.[1].also ?? []) {
+            other.held.notify({
+                jsonrpc: '2.0',
+                method: 'textDocument/didClose',
+                params: { textDocument: { uri: other.doc.fileUri } }
+            });
+            other.held.docs.delete(docKey(other.doc.fileUri));
+            other.held.dropped(other.doc);
+            const there: Doc = { ...moved, version: 1, shift: 0 };
+            other.held.open(there);
+            next.also.push({ held: other.held, doc: there, also: [] });
+        }
+        page.docs.set(key, next);
         page.opened.set(normal(real), key);
     }
 }

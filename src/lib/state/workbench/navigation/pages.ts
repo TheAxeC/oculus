@@ -36,7 +36,7 @@ import { t } from '../../shared/words/text.ts';
 import { parseArrangement } from './arrangement.ts';
 import type { BusyTerminal } from '../ui.svelte.ts';
 import type { TabFile } from './status.ts';
-import { diffState } from '../../sources/repositories/repositories.ts';
+import { diffState } from '../../sources/repositories/diff/subject.ts';
 import { DIFF_VIEW } from '../../sources/repositories/repositories.svelte.ts';
 import { typeOfFile } from '../../sources/explorer/file-type.ts';
 import type { RowRef } from '../../sources/explorer/view/place.ts';

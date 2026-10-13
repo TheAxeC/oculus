@@ -25,7 +25,9 @@
     // paused, and is read-only with the reason as its placeholder otherwise. Enter sends the text
     // as typed. The earlier inputs that start with the typed text are listed under the input
     // (ui/forms/choice/SuggestInput.svelte); Tab or a press takes one into the input without
-    // sending it, and Up and Down step through the earlier inputs.
+    // sending it, and Up and Down step through the earlier inputs. When the adapter of the session
+    // declared completions, the completions it gives for the typed text are listed first, each as
+    // the text that results from taking it.
 
     import { tick } from 'svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -60,7 +62,35 @@
     /** The place in `history` the arrow keys stand at, null while the reader types. */
     let stepping: number | null = $state(null);
 
-    const suggestions = $derived(historyMatches(history, text));
+    /** The texts the adapter's completions of what is typed would give, newest answer only. */
+    let completed: string[] = $state([]);
+    let asked = 0;
+
+    $effect(() => {
+        const typed = text;
+        const wanted = debug.paused() && debug.capabilities().completions && typed !== '';
+        asked += 1;
+        const mine = asked;
+        if (!wanted) {
+            completed = [];
+            return undefined;
+        }
+        const timer = setTimeout(() => {
+            void debug.complete(typed, typed.length + 1).then((items) => {
+                if (mine !== asked) return;
+                completed = items.map(
+                    (one) =>
+                        `${typed.slice(0, one.start - 1)}${one.text}${typed.slice(one.start - 1 + one.length)}`
+                );
+            });
+        }, 150);
+        return () => clearTimeout(timer);
+    });
+
+    const suggestions = $derived([
+        ...completed.filter((one) => one !== text),
+        ...historyMatches(history, text).filter((one) => !completed.includes(one))
+    ]);
 
     let host: HTMLDivElement | undefined = $state();
     /** The scroll box of the pane, once the view is on the page. */

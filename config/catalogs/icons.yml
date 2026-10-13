@@ -267,6 +267,7 @@ icons:
     debug: bug
     debug_console: square-terminal
     debug_start: play
+    debug_pause: pause
     debug_over: redo-dot
     debug_into: arrow-down-to-dot
     debug_out: arrow-up-from-dot

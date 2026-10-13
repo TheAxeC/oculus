@@ -1,7 +1,9 @@
 // Layer 2, client state. The entries of a title menu (`editor/title`, `view/title`) as the row of
 // actions ui/tabs/ActionStrip.svelte draws: the entries of the group `navigation` are buttons, and
-// the others are choices of the More Actions list, a rule between two groups. An action's id is the
-// position of its entry in the list the menu answered, which `entryOf` reads back.
+// the others are choices of the More Actions list, a rule between two groups. The group drawn as
+// buttons is `navigation` unless the menu names another (the source control menus draw `inline`).
+// An action's id is the position of its entry in the list the menu answered, which `entryOf` reads
+// back.
 
 import type { MenuOffer } from '../contributions.ts';
 import { commandLabel } from '../contributions.ts';
@@ -20,12 +22,13 @@ export type StripItem = {
 /** The actions of a menu's entries; `picture` gives the address of a file of an app. */
 export function stripOf(
     offers: readonly MenuOffer[],
-    picture: (app: string, path: string) => string
+    picture: (app: string, path: string) => string,
+    buttons = 'navigation'
 ): StripItem[] {
     let lastMore = '';
     return offers.map((offer, at) => {
         const icon = appIcon(offer.command.icon, (path) => picture(offer.app, path));
-        const bar = offer.group === 'navigation';
+        const bar = offer.group === buttons;
         const rule = !bar && lastMore !== '' && lastMore !== offer.group;
         if (!bar) lastMore = offer.group;
         return {

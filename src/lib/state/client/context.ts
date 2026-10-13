@@ -20,11 +20,19 @@
 // nothing of `ui/` or `views/`: the view registry is a state module (state/workbench/navigation/
 // registry.ts), and the primitives' tooltip counter is made by the page root beside this object.
 
+import { matchersFor } from '../sessions/terminal/pty/matchers.ts';
+import {
+    actingDebuggers,
+    breakpointLanguages
+} from '../../data/helpers/files/apps/tools/debuggers.ts';
+import { languageOf } from '../../data/helpers/files/languages.ts';
 import type { ClientState, TabScopeStore } from './shapes/client-state.ts';
 import { createRegistry } from '../workbench/navigation/registry.ts';
 import { createAgents } from '../sessions/agents.svelte.ts';
 import { createChanges } from '../sessions/changes.svelte.ts';
 import { createApps } from '../system/apps/apps.svelte.ts';
+import { endingOf } from '../sessions/terminal/terminal-lists.ts';
+import { createAppTools } from '../system/apps/tools/tools.svelte.ts';
 import { themeNamed } from '../shared/words/appearance.ts';
 import { createAppShell } from '../system/apps/shell/shell.svelte.ts';
 import { runPageCommand } from '../system/apps/shell/page-commands.ts';
@@ -81,7 +89,7 @@ import { SETTINGS_VIEW, configRail, railTyped } from '../workbench/navigation/ra
 import { settingsTyped } from '../system/config/typed.ts';
 import { createRailBadges } from '../workbench/rail-badges.svelte.ts';
 import { createRepositories, DIFF_VIEW } from '../sources/repositories/repositories.svelte.ts';
-import { heldDiff } from '../sources/repositories/repositories.ts';
+import { heldDiff } from '../sources/repositories/diff/subject.ts';
 import { createSelection } from '../workbench/selection.svelte.ts';
 import { createExplorer, type MovedItems } from '../sources/explorer/ops.svelte.ts';
 import { createSearch } from '../sources/search/search.svelte.ts';
@@ -524,6 +532,8 @@ export function createClientState(
             terminals,
             onScreen: () => sourceOnScreen(layout.activeInstance(), editorStatus.statusOf),
             focusedSource: () => editorStatus.focused(),
+            matchers: (job) =>
+                matchersFor(job.matchers ?? [], job.app?.app, entities.apps()?.rows ?? []),
             gitRoots: selectors.gitRoots,
             served: servedRoots,
             openFile: (repo, path, line) => repositories.openFile(repo, path, line),
@@ -616,22 +626,25 @@ export function createClientState(
             gitRoots: selectors.gitRoots,
             served: servedRoots,
             openFile: (repo, path, line) => repositories.openFile(repo, path, line),
-            riteTabs: () =>
-                layout
+            debugTabs: () => {
+                const taken = breakpointLanguages(entities.apps()?.rows ?? []);
+                const languages = selectors.languages();
+                return layout
                     .hosts()
                     .flatMap((host) => tabsOf(host.workbench.root))
                     .flatMap((tab) => {
                         const file = tab.view === 'source' ? fileOfTab(tab) : null;
-                        if (!file?.path.endsWith('.rite')) return [];
+                        if (file === null || !taken.includes(languageOf(file.path, languages))) {
+                            return [];
+                        }
                         return [{ id: tab.id, ...file, dirty: ui.unsaved(tab.id) }];
-                    }),
+                    });
+            },
+            breakpointLanguages: () => breakpointLanguages(entities.apps()?.rows ?? []),
+            languageOf: (path) => languageOf(path, selectors.languages()),
+            debuggers: () => actingDebuggers(entities.apps()?.rows ?? []),
             draft: source.sourceDraft,
             saveDraft: source.saveSourceDraft,
-            create: explorer.create,
-            saveText: async (root, path, text) => {
-                const answer = await source.saveSource(root, path, text);
-                return { ok: answer.ok, error: answer.error ?? answer.refused.at(0)?.reason ?? '' };
-            },
             openView: (view) => void layout.openView(view),
             focusEditor: (file, line) => {
                 const tab = layout.activeInstance();
@@ -671,6 +684,21 @@ export function createClientState(
     layout.registerUnique((view) => registry.viewFor(view)?.unique === true);
     // A view whose registration says `dock` opens the first time on an edge or in the Files pane.
     layout.registerPlaced((view) => registry.viewFor(view)?.dock ?? null);
+    const appTools = createAppTools({
+        payload: entities.appTools,
+        rows: () => entities.apps()?.rows ?? [],
+        languageMap: selectors.languages,
+        post: writes.postCommand,
+        say: (message) => void notices.post(message, { tone: 'error' }),
+        frame: (run) => {
+            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => run());
+            else setTimeout(run, 16);
+        },
+        activeTerminal: () => {
+            const shown = terminals.terminalById(selection.selectedTerminal());
+            return shown?.app === undefined ? null : { app: shown.app, id: shown.id };
+        }
+    });
     const apps = createApps({
         entities,
         writes,
@@ -684,7 +712,12 @@ export function createClientState(
         served: servedRoots,
         projectOf: selectors.projectOf,
         pageId,
+        ending: (id) => endingOf(id, terminals.terminals(), entities.debug()),
         unsavedFile: (root, path) => source.unsavedFile(root, path),
+        saveAll: autosave.saveEvery,
+        showTerminal: (terminal, preserveFocus) =>
+            terminals.showTerminal(terminal, '', preserveFocus),
+        hideTerminal: terminals.hideTerminal,
         pageCommand: (id, args) =>
             Promise.resolve(
                 runPageCommand(
@@ -713,6 +746,7 @@ export function createClientState(
         pageId,
         requests: apps.requests,
         frameItems: apps.frameItems,
+        scmItems: appTools.scm.statusItems,
         picture: (app, path) => {
             const row = apps.rowOf(app);
             return row === undefined ? '' : apps.srcOf(row, path);
@@ -804,6 +838,7 @@ export function createClientState(
         registry,
         apps,
         appShell,
+        appTools,
         tabScope
     };
 }

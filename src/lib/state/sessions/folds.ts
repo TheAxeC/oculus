@@ -266,8 +266,9 @@ function folderName(path: string): string {
  * The terminals a Terminal tab can show, in the order the payload lists them, each titled by
  * `terminalTabTitle` and its icon, colour and task result travelling with the row. An agent
  * terminal is described by the session running in it (its resume, else its process), else by its
- * own name; a shell is described by the last segment of its folder. A terminal oculus did not
- * start is left out, since the tab cannot attach to it.
+ * own name; a shell is described by the last segment of its folder; a terminal an app made is
+ * described by the title `appTitle` gives its app, else by the app's view id. A terminal oculus did
+ * not start is left out, since the tab cannot attach to it.
  */
 export function terminalChoices(
     terminals: readonly Pick<
@@ -286,8 +287,10 @@ export function terminalChoices(
         | 'task'
         | 'exit'
         | 'job'
+        | 'app'
     >[],
-    sessions: readonly Pick<GroupedSession, 'id' | 'title' | 'pid'>[]
+    sessions: readonly Pick<GroupedSession, 'id' | 'title' | 'pid'>[],
+    appTitle: (app: string) => string
 ): TerminalChoice[] {
     return terminals
         .filter((one) => one.foreign !== true)
@@ -302,6 +305,10 @@ export function terminalChoices(
             };
             const title = terminalTabTitle(one);
             if (one.kind === 'shell') return { ...row, title, description: folderName(one.cwd) };
+            if (one.kind === 'app') {
+                const owner = appTitle(one.app);
+                return { ...row, title, description: owner === '' ? one.app : owner };
+            }
             const running = sessions.find(
                 (session) =>
                     one.resumes?.id === session.id ||

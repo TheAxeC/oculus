@@ -1,6 +1,6 @@
-// Layer 2, server test. The real runner (lib/server/machine/apps/host/host-runner.mjs) started
-// under node by the manager: what a host may import, what its output holds, how it answers and
-// that no process is left after the manager closes.
+// Layer 2, server test. The real runner (lib/server/machine/apps/host/runner/host-runner.mjs)
+// started under node by the manager: what a host may import, what its output holds, how it answers
+// and that no process is left after the manager closes.
 //
 // Every folder is synthetic, under the system temporary directory, and every host file is planted
 // by the case. What this does NOT cover: Electron's node (the runner is started with the same
@@ -12,7 +12,7 @@ import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { it } from '../../../fixtures/scratch.ts';
-import { world, type World } from './hosts-world.ts';
+import { world, type World } from './world/hosts-world.ts';
 
 const NOTES = 'app:notes';
 

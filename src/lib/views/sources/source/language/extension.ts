@@ -4,12 +4,12 @@
 // quick fixes of those findings (`lint-fixes.ts`), added to every tab of a file on disk beside
 // whatever its language adds, which is LaTeX's build markers, preview, formatter and editing
 // commands (`latex-editor.ts`), the headings of a Markdown file as document symbols (`symbols.ts`),
-// the debug hover of a rite file (kit/rite/rite-hover.ts), or the registration of a model a
-// language server serves (`lsp.ts`). A language server's registration and LaTeX's extension are
-// both added to a LaTeX file, so the markers, the hover, Format Document and the editing commands
-// stay while a server serves it, and a rite file's debug hover is added beside the server's; a
-// version of a file at a commit gets none of LaTeX's or rite's, since the build and the debugger
-// read the file on disk.
+// the debug hover of a file whose language takes breakpoints (kit/rite/rite-hover.ts), or the
+// registration of a model a language server serves (`lsp.ts`). A language server's registration
+// and LaTeX's extension are both added to a LaTeX file, so the markers, the hover, Format Document
+// and the editing commands stay while a server serves it, and the debug hover is added beside the
+// server's; a version of a file at a commit gets none of LaTeX's or the debugger's, since the
+// build and the debugger read the file on disk.
 
 import { isLatexLanguage } from '$lib/state/sources/fs';
 import type { EditorExtension } from '$lib/ui/controls/editor/types';
@@ -23,8 +23,8 @@ export type ExtensionChoice = {
     latex: () => EditorExtension;
     /** The Markdown headings' extension, made when it is asked for. */
     markdown: () => EditorExtension;
-    /** The debug hover of a rite file, made when it is asked for. */
-    rite: () => EditorExtension;
+    /** The debug hover, made when it is asked for; undefined for a language that takes none. */
+    debug: (() => EditorExtension) | undefined;
     /** The registration with a language server, undefined for a language none serves. */
     served: EditorExtension | undefined;
     /**
@@ -59,13 +59,13 @@ export function languageExtension(choice: ExtensionChoice): EditorExtension | un
 /** The extension the tab's language adds, without the problem markers. */
 function languageOnly(choice: ExtensionChoice): EditorExtension | undefined {
     const latex = isLatexLanguage(choice.language) && !choice.version;
-    const rite = choice.language === 'rite' && !choice.version;
+    const debug = choice.debug !== undefined && !choice.version ? choice.debug() : undefined;
     if (choice.served !== undefined) {
         if (latex) return together(choice.latex(), choice.served);
-        return rite ? together(choice.rite(), choice.served) : choice.served;
+        return debug === undefined ? choice.served : together(debug, choice.served);
     }
     if (latex) return choice.latex();
-    if (rite) return choice.rite();
+    if (debug !== undefined) return debug;
     if (choice.language === 'markdown') return choice.markdown();
     return undefined;
 }

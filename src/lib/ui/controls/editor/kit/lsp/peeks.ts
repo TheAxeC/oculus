@@ -13,7 +13,7 @@
 // file a language server's edit wrote is read again (`refresh`), so a peek shows the file as it is.
 
 import type * as Monaco from 'monaco-editor';
-import { shikiId } from '../grammars';
+import { shikiId } from '../languages/grammars';
 import type { LspServices } from './services';
 import type { Target } from './uris';
 

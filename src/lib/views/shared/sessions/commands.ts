@@ -36,6 +36,7 @@ export function commandKey(command: Pick<ProjectCommand, 'source' | 'name'>): st
 
 /** The one word that names a source beside a name two sources hold. */
 function sourceWord(source: CommandSource): string {
+    if (source === 'app') return t('commands.word_app');
     if (source === 'file') return t('commands.word_file');
     if (source === 'saved') return t('commands.word_saved');
     return t('commands.word_found');
@@ -55,6 +56,7 @@ export function commandLabel(
 
 /** The words of the place a command was read from. */
 function sourceWords(command: ProjectCommand): string {
+    if (command.source === 'app') return t('commands.source_app', command.task?.appTitle ?? '');
     if (command.source === 'file') return t('commands.source_file');
     if (command.source === 'saved') return t('commands.source_saved');
     return t('commands.source_found');
@@ -110,7 +112,9 @@ export function overflowMenu(
 /** The source and the name a command's key holds, or null for text that is not such a key. */
 export function keyOf(key: string): { source: CommandSource; name: string } | null {
     const [source, ...name] = key.split(':');
-    if (source !== 'file' && source !== 'saved' && source !== 'found') return null;
+    if (source !== 'file' && source !== 'saved' && source !== 'found' && source !== 'app') {
+        return null;
+    }
     return { source, name: name.join(':') };
 }
 

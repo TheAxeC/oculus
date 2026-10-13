@@ -33,17 +33,17 @@
 // file, so the paints are queued and the last one asked is the one in force; a file that fails to
 // load rejects that paint and leaves the theme before it in force.
 //
-// The eighteen first languages load with the first editor. Every language of grammars.ts is
-// registered with Monaco at the start, so a model can be made under any of them, and the others'
+// The eighteen first languages load with the first editor. Every language of languages/grammars.ts
+// is registered with Monaco at the start, so a model can be made under any of them, and the others'
 // grammars load when the first model of their language is made, set or picked: `ensureLanguage`
 // loads the grammar into the highlighter in force, through the queue the paints run in so that a
 // load and a paint never interleave, and bridges it again, which gives the language its tokens
 // provider. A second ask for a language whose load is in flight waits on the same load. Until the
 // grammar has loaded, a model of c, cpp, lua, ruby, scss, java or dart draws Monaco's own colours
-// and a model of the other languages draws plain, and both take Shiki's colours when the load
-// ends. A grammar that fails to load leaves its files as they were, logs one line and does not
-// stop the next language's load. `close` is the page's teardown: it disposes the highlighter in
-// force, and a load in flight at that moment bridges and loads nothing more.
+// and a model of the other languages draws plain, and both take Shiki's colours when the load ends.
+// A grammar that fails to load leaves its files as they were, logs one line and does not stop the
+// next language's load. `close` is the page's teardown: it disposes the highlighter in force, and a
+// load in flight at that moment bridges and loads nothing more.
 //
 // Monaco takes its service overrides from the first editor made on the page and fixes its defaults
 // at its first call into a service, so the load starts by making and disposing a detached editor
@@ -55,26 +55,37 @@
 // model it is asked about to the formatter the model's owner gave.
 //
 // The languages whose blocks are braces and that Monaco has no language service for are folded by
-// their braces, by the providers `registerFolding` registers (folding.ts), which leave a model to a
-// language server's folding ranges while one serves it.
+// their braces, by the providers `registerFolding` registers (languages/folding.ts), which leave a
+// model to a language server's folding ranges while one serves it.
 //
 // Semantic tokens (a language server's, lsp/semantic.ts) are coloured by rules of the Monaco theme
 // beside the TextMate rules (theme/semantic.ts): after each paint the theme is defined again with
-// one rule per row of VS Code's default table the theme colours, since a token no rule matches
-// would take the root rule's foreground over Shiki's colour. The language server clients live in
-// `lsp` (lsp/hosts.ts).
+// one rule per row of VS Code's default table the theme colours, and a row for each token type the
+// acting apps declare, since a token no rule matches would take the root rule's foreground over
+// Shiki's colour. The language server clients live in `lsp` (lsp/hosts.ts).
+//
+// The acting apps add languages (languages/apps.svelte.ts holds what the page hands the kit):
+// `applyAppLanguages` registers each language an app adds, gives it its configuration, snippets and
+// schemas, and runs again at every change of what the apps give. A language an app gives a grammar
+// is loaded as a shipped one is, from the registrations languages/app-grammars.ts builds, and the
+// grammars that only inject into others are loaded into every highlighter. A change of the apps'
+// grammars makes the next paint (`refresh`) drop the grammars of apps from the highlighter, so each
+// model loads the grammar it now has when its language is set again.
 //
 // Monaco's own TypeScript service is switched off for the page before any model exists
 // (`silenceBuiltin`), so a hover, a completion or a marker of a TypeScript or JavaScript model is
 // the TypeScript language server's alone.
 
 import type * as Monaco from 'monaco-editor';
-import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './grammars';
+import { FIRST_LANGUAGES, PLAINTEXT, SHIKI_LANGUAGES, shikiId } from './languages/grammars';
+import { appKit, appKitVersion, onAppKit, servedLanguages } from './languages/apps.svelte';
+import { grammarsOf, hasGrammar, injectionsOf } from './languages/app-grammars';
+import { applyAppLanguages, type Applied } from './languages/register';
 import { COMMAND_PALETTE_EVENT, freedKeys } from '../chords';
 import { pageWidgets, type PageWidgets } from '../options';
 import { RITE_GRAMMAR } from './rite/rite';
 import { registerSettings } from './rite/settings';
-import { registerFolding } from './folding';
+import { registerFolding } from './languages/folding';
 import { createLspKit, type LspKit } from './lsp/hosts';
 import { Signal } from './lsp/signal';
 import { semanticRules } from './theme/semantic';
@@ -261,23 +272,37 @@ async function start(): Promise<EditorKit> {
     const painting: { current: Painting | null } = { current: null };
     const lsp = createLspKit(monaco, {
         ensureLanguage: (name) => painting.current?.ensureLanguage(name) ?? Promise.resolve(),
+        served: servedLanguages,
+        semanticExtras: () => appKit().semantic,
         ruled: () => painting.current?.ruled() ?? new Set(),
         onPainted: (listener) =>
             painting.current?.onPainted(listener) ?? { dispose: () => undefined }
     });
     registerFolding(monaco, lsp.served);
+    let applied: Applied | null = applyAppLanguages(monaco, appKit(), null);
     silenceBuiltin(monaco);
     const made = painter({
         monaco,
         createHighlighter: shiki.createHighlighter,
         shikiToMonaco: bridge.shikiToMonaco,
         langs: FIRST_LANGUAGES,
-        source: (id) => (id === 'rite' ? RITE_GRAMMAR : (id as BundledLanguage)),
+        source: (id) => {
+            if (id === 'rite') return RITE_GRAMMAR;
+            const apps = grammarsOf(appKit(), id);
+            return apps.length === 0 ? (id as BundledLanguage) : (apps as Grammar[]);
+        },
+        loadable: (id) => id === 'rite' || SHIKI_LANGUAGES.includes(id) || hasGrammar(appKit(), id),
+        owned: (id) => id !== 'rite' && !SHIKI_LANGUAGES.includes(id),
+        extras: () => injectionsOf(appKit()),
+        revision: appKitVersion,
         codeIds: bundledThemesInfo.map((info) => info.id),
         loadTheme: async (id) => (await bundledThemes[id as BundledTheme]()).default,
         semantic: (highlighter) => {
             const resolved = highlighter.getTheme(THEME);
-            const rules = semanticRules(resolved.tokenColors ?? resolved.settings);
+            const rules = semanticRules(
+                resolved.tokenColors ?? resolved.settings,
+                appKit().semantic
+            );
             const data = bridge.textmateThemeToMonacoTheme(resolved) as MonacoThemeData;
             return {
                 data: { ...data, rules: [...data.rules, ...rules] },
@@ -286,6 +311,10 @@ async function start(): Promise<EditorKit> {
         }
     });
     painting.current = made;
+    onAppKit(() => {
+        applied = applyAppLanguages(monaco, appKit(), applied);
+        void made.refresh();
+    });
     made.onPainted(widgets.follow);
     self.addEventListener('pagehide', (event) => {
         if (!event.persisted) made.close();
@@ -341,7 +370,7 @@ export const THEME = 'oculus';
 type Grammar = BundledLanguage | LanguageRegistration;
 
 /** A highlighter as painting holds it: something to bridge, load grammars into and dispose. */
-type Held = { dispose: () => void; loadLanguage: (grammar: Grammar) => Promise<void> };
+type Held = { dispose: () => void; loadLanguage: (...grammars: Grammar[]) => Promise<void> };
 
 /** The data of a Monaco theme, as `defineTheme` takes it. */
 type MonacoThemeData = Parameters<typeof Monaco.editor.defineTheme>[1];
@@ -356,8 +385,21 @@ export type PaintParts<H extends Held> = {
     shikiToMonaco: (highlighter: H, monaco: never) => void;
     /** The ids of the grammars every highlighter starts with. */
     langs: readonly string[];
-    /** What the grammar of an id is loaded from: the id for a grammar Shiki bundles. */
-    source: (id: string) => Grammar;
+    /**
+     * What the grammar of an id is loaded from: the id for a grammar Shiki bundles, or the list of
+     * the registrations an app's grammar comes with, the ones it embeds first.
+     */
+    source: (id: string) => Grammar | Grammar[];
+    /** Whether a grammar can be loaded for an id; a language an app gives none for cannot. */
+    loadable?: (id: string) => boolean;
+    /**
+     * Whether an id is a language an app adds, whose grammar a change of the apps' grammars drops.
+     */
+    owned?: (id: string) => boolean;
+    /** The grammars that inject into others, each loaded on its own into every highlighter. */
+    extras?: () => LanguageRegistration[];
+    /** A value that differs whenever the apps' grammars may have changed. */
+    revision?: () => number;
     /** The ids of the Shiki themes a paint may be asked for; any other paints as `tokens`. */
     codeIds: readonly string[];
     /** One Shiki theme's registration, loaded from its file. */
@@ -376,6 +418,8 @@ export type PaintParts<H extends Held> = {
 export type Painting = {
     paint: Paint;
     ensureLanguage: (name: string) => Promise<void>;
+    /** Paint again with the grammars the apps now give. */
+    refresh: () => Promise<void>;
     /** The lookup strings of the semantic tokens the theme in force colours. */
     ruled: () => ReadonlySet<string>;
     /** Hear every paint that changed the theme; the call it answers stops hearing. */
@@ -406,6 +450,8 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
     const loads = new Map<string, Promise<void>>();
     const loaded: string[] = [];
     let painted = '';
+    /** The last paint asked for, which `refresh` asks again. */
+    let last: { read: (token: string) => string; code: string; classes: string } | null = null;
     let ruled: ReadonlySet<string> = new Set();
     const repainted = new Signal();
     let held: H | null = null;
@@ -455,11 +501,36 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
         const id = known.has(code) ? code : '';
         const own = id === '' ? (ownRules(code) ?? ownRules(classes)) : undefined;
         const tokenColors = own ?? textmate.tokenColors;
-        const signature = JSON.stringify([id, textmate.type, textmate.colors, tokenColors]);
+        const signature = JSON.stringify([
+            id,
+            textmate.type,
+            textmate.colors,
+            tokenColors,
+            parts.revision?.() ?? 0
+        ]);
         if (signature === painted) return THEME;
         const theme = { ...textmate, tokenColors: id === '' ? tokenColors : await rulesOf(id) };
-        const langs = [...parts.langs, ...loaded].map(parts.source);
+        // A language an app added keeps its grammar out of the new highlighter, so a grammar that
+        // changed, or one that no longer loads, never stops the paint: the models of the language
+        // load what the apps give now when their language is set again.
+        for (const dropped of loaded.filter((one) => parts.owned?.(one) === true)) {
+            loads.delete(dropped);
+        }
+        loaded.splice(0, loaded.length, ...loaded.filter((one) => parts.owned?.(one) !== true));
+        const langs = [...parts.langs, ...loaded].flatMap((one) => [parts.source(one)].flat());
         const next = await parts.createHighlighter({ themes: [theme], langs });
+        if (ended()) {
+            next.dispose();
+            return THEME;
+        }
+        bridge(next);
+        for (const grammar of parts.extras?.() ?? []) {
+            try {
+                await next.loadLanguage(grammar);
+            } catch (error) {
+                console.error(`editor: the grammar ${grammar.name} did not load`, error);
+            }
+        }
         if (ended()) {
             next.dispose();
             return THEME;
@@ -483,7 +554,7 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
         const target = held;
         if (ended() || target === null) return;
         try {
-            await target.loadLanguage(parts.source(id));
+            await target.loadLanguage(...[parts.source(id)].flat());
         } catch (error) {
             loads.delete(id);
             if (!ended()) console.error(`editor: the grammar ${id} did not load`, error);
@@ -497,6 +568,7 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
     function ensureLanguage(name: string): Promise<void> {
         const id = shikiId(name);
         if (ended() || id === PLAINTEXT || parts.langs.includes(id)) return Promise.resolve();
+        if (parts.loadable?.(id) === false) return Promise.resolve();
         let load = loads.get(id);
         if (load === undefined) {
             load = ready.then(() => enqueue(() => loadNow(id)));
@@ -512,7 +584,16 @@ export function painter<H extends Held>(parts: PaintParts<H>): Painting {
     }
 
     return {
-        paint: (read, code = '', classes = '') => enqueue(() => paintNow(read, code, classes)),
+        paint: (read, code = '', classes = '') => {
+            last = { read, code, classes };
+            return enqueue(() => paintNow(read, code, classes));
+        },
+        refresh: async () => {
+            const again = last;
+            if (again !== null) {
+                await enqueue(() => paintNow(again.read, again.code, again.classes));
+            }
+        },
         ensureLanguage,
         ruled: () => ruled,
         onPainted: repainted.event,

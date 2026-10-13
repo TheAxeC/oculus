@@ -8,7 +8,7 @@
 
 import type { Indent, SourceDraft } from '../../sessions/source/draft.ts';
 import type { SaveRules } from '../../sessions/source/source.svelte.ts';
-import { languageOf, type LanguageMap } from '../../sources/fs.ts';
+import { languageOfFile, type LanguageMap } from '../../sources/fs.ts';
 import type { FileText } from '../../sources/fs-transport.ts';
 import { PLAIN } from '../../shared/words/languages.ts';
 import { REPO_SETTINGS, resolveEditor } from '../../../data/helpers/editor/editor.ts';
@@ -138,7 +138,8 @@ export function saveRulesOf(
 ): SaveRules {
     const { options } = input;
     if (options === null) return { trim: false, finalNewline: false, formatOnSave: false };
-    const chosen = draft.language === '' ? languageOf(path, input.languages) : draft.language;
+    const chosen =
+        draft.language === '' ? languageOfFile(path, draft.saved, input.languages) : draft.language;
     const resolved = resolveEditor({
         language: shownLanguage(chosen, draft.text, input.paintLimit),
         options,

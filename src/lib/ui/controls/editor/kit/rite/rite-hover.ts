@@ -1,9 +1,10 @@
-// Layer 3, primitive. The hover of a rite source tab while a debug session is paused: the word
-// under the pointer, in rite's own word characters (the language configuration's word pattern,
-// kit/rite/rite.ts), is handed to `evaluate`, and what it answers is shown as code. The extension
+// Layer 3, primitive. The hover of a source tab whose language takes breakpoints while a debug
+// session is paused: the word under the pointer, in the language's own word characters (its
+// language configuration's word pattern, kit/rite/rite.ts for rite), is handed to `evaluate`, and
+// what it answers is shown as code. The extension
 // answers for the model it was added to alone, since a provider is registered per language and a
 // page holds many editors of one language, and it answers nothing for a word `evaluate` answers
-// null for, so a special form, a comment word or a name out of scope shows no hover.
+// null for, so a word out of scope shows no hover.
 
 import type * as Monaco from 'monaco-editor';
 import type { EditorExtension } from '../../types';
@@ -18,8 +19,8 @@ function fenced(text: string): string {
     return `${fence}\n${text}\n${fence}`;
 }
 
-/** The hover over the model's rite words, answered by `evaluate`. */
-export function riteHover(evaluate: HoverEvaluate): EditorExtension {
+/** The hover over the model's words, answered by `evaluate`. */
+export function debugHover(evaluate: HoverEvaluate): EditorExtension {
     return (kit, _editor, model) => {
         let alive = true;
         const registered = kit.monaco.languages.registerHoverProvider(model.getLanguageId(), {

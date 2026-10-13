@@ -21,12 +21,12 @@
 // newest 50 delete copies (server/files/fs/history.ts) still hold it. The record is
 // appended when the operation ends, for the items it did before an item it stopped at.
 //
-// A replace of the Search view is the same endpoint's `replace` operation (fs/replace.ts): the
-// matches a request names are replaced file by file, and the request is recorded as one `files`
-// record whose field is `replace`, with each file's content before it kept in the local history so
-// the undo can write it back. The Replace Preview is the same endpoint's `preview` operation,
-// read-only and outside the write chain, whose body names the file and its hits as the replace
-// names them.
+// A replace of the Search view is the same endpoint's `replace` operation
+// (fs/operations/replace.ts): the matches a request names are replaced file by file, and the
+// request is recorded as one `files` record whose field is `replace`, with each file's content
+// before it kept in the local history so the undo can write it back. The Replace Preview is the
+// same endpoint's `preview` operation, read-only and outside the write chain, whose body names the
+// file and its hits as the replace names them.
 //
 // Each operation runs behind the write chain `opsWrites`, apart from the workspace chain, so a long
 // copy holds up another file operation and nothing else. The Trash is a parameter of the entry
@@ -34,11 +34,13 @@
 //
 // What the system answers is mapped to a word: `EACCES`, `EPERM` and `EROFS` are `denied` and
 // `ENAMETOOLONG` is `invalid_name`. An upload is one file's bytes as base64 under one name that
-// holds no `/`. A copy onto a taken name takes the next free name (`report copy.md`, then
-// `report copy 2.md`), and a move onto a taken name is `exists` until the page sends
-// `replace: true`, which sends the taken item to the Trash first. The GET answers the two sides of
-// a comparison as a `DiffSides`, `with*` being the left side; a folder on a side is `not_a_folder`
-// and a file over `TEXT_LIMIT` is `too_large`.
+// holds no `/`. An upload that replaces a file keeps the replaced bytes in the local history and
+// names them in its record, so its undo writes them back, and sends the file to the Trash first
+// unless the caller writes in place (`trashReplaced: false`). A copy onto a taken name takes the
+// next free name (`report copy.md`, then `report copy 2.md`), and a move onto a taken name is
+// `exists` until the page sends `replace: true`, which sends the taken item to the Trash first. The
+// GET answers the two sides of a comparison as a `DiffSides`, `with*` being the left side; a folder
+// on a side is `not_a_folder` and a file over `TEXT_LIMIT` is `too_large`.
 
 import { json } from '@sveltejs/kit';
 import { constants, lstatSync, readFileSync, statSync } from 'node:fs';
@@ -46,7 +48,6 @@ import { cp, lstat, mkdir, open, rename, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import trashLibrary from 'trash';
-import { z } from 'zod';
 import {
     MAX_UPLOAD_BYTES,
     TEXT_LIMIT,
@@ -57,7 +58,12 @@ import {
     type OpsRequest
 } from '../../../data/file-ops.ts';
 import { hubDirs, privateFolders } from '../../../data/helpers/files/private-folders.ts';
-import { FILES_KIND, type FileField, type FileStamp } from '../../../data/file-ops.ts';
+import {
+    FILES_KIND,
+    type FileField,
+    type FileStamp,
+    type UploadField
+} from '../../../data/file-ops.ts';
 import type { DiffSides } from '../../../data/model/index.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { logChanges, type ChangeLog } from '../../core/changes.ts';
@@ -69,7 +75,8 @@ import type { SearchRunner } from '../search/search.ts';
 import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
 import { defaultHistoryDir, historyPath, readCopy } from './history.ts';
 import { lspEditFiles } from './lsp-edit.ts';
-import { previewReplace, replaceFiles } from './replace.ts';
+import { opsShape } from './operations/ops-shape.ts';
+import { previewReplace, replaceFiles } from './operations/replace.ts';
 
 /** What an operation runs over: the roots it may touch and the chain that orders its writes. */
 export type OpsTarget = {
@@ -95,15 +102,28 @@ export type OpsTarget = {
 /** The calls a test replaces: the Trash, a step held inside the write chain, and ripgrep. */
 export type OpsDeps = {
     trash?: (path: string, options: { glob: false }) => Promise<void>;
+    /**
+     * Whether an upload that replaces a file sends the replaced file to the Trash first; it does by
+     * default. A caller that writes files in place (the hosts of apps) passes false: the local
+     * history keeps the replaced bytes and the record's undo writes them back.
+     */
+    trashReplaced?: boolean;
     slow?: () => Promise<void>;
     search?: SearchRunner;
+    /** The view id of the app whose host made the write, recorded on its change record. */
+    app?: string;
+    /**
+     * What an upload is recorded as when the caller names it: else `write-file` for an upload an
+     * app's host makes (its `workspace.fs.writeFile`), and `upload` for any other.
+     */
+    uploadAs?: UploadField;
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
 
 /** A refusal before any item, or the stop of an operation with no items. */
-type Fail = { ok: false; error: OpsRefusal };
+export type Fail = { ok: false; error: OpsRefusal };
 
 const fail = (error: OpsRefusal): Fail => ({ ok: false, error });
 
@@ -116,6 +136,8 @@ function refused(step: object): step is Fail {
 export type Scope = {
     roots: Root[];
     trash: NonNullable<OpsDeps['trash']>;
+    /** Whether an upload that replaces a file sends the replaced file to the Trash first. */
+    trashReplaced: boolean;
     /** The folders no `lsp-edit` or `writing-fix` writes in (`privateFolders`). */
     withheld: readonly string[];
     history?: string;
@@ -123,6 +145,8 @@ export type Scope = {
     search: { timeout?: number; run?: SearchRunner };
     /** What the operation has changed so far, which becomes its record. */
     note: Note;
+    /** The field an upload is recorded under. */
+    uploadAs: UploadField;
 };
 
 /** The change one operation made: its field, and the stamps before and after. */
@@ -139,98 +163,6 @@ function noted(
     scope.note.before.push(...before.filter((one) => one !== null));
     scope.note.after.push(...after.filter((one) => one !== null));
 }
-
-const place = z.object({ root: z.string(), path: z.string() });
-
-/** The half of a search that a replace and its preview are made under. */
-const queryShape = z.object({
-    q: z.string(),
-    word: z.boolean(),
-    case: z.boolean(),
-    regex: z.boolean(),
-    under: z.string()
-});
-
-/** A position of the protocol, as an `lsp-edit` names the places its edits are made at. */
-const position = z.object({
-    line: z.number().int().min(0),
-    character: z.number().int().min(0)
-});
-
-/** The files of an `lsp-edit` and of a `writing-fix`: each with the hash it was read at. */
-const editFiles = z.array(
-    z.object({
-        root: z.string(),
-        path: z.string(),
-        hash: z.string(),
-        edits: z.array(
-            z.object({
-                range: z.object({ start: position, end: position }),
-                newText: z.string()
-            })
-        )
-    })
-);
-
-/** The body of POST /api/ops, one shape per operation. */
-const opsShape = z.discriminatedUnion('op', [
-    z.object({
-        op: z.literal('create'),
-        root: z.string(),
-        path: z.string(),
-        name: z.string(),
-        folder: z.boolean()
-    }),
-    z.object({ op: z.literal('rename'), root: z.string(), path: z.string(), name: z.string() }),
-    z.object({ op: z.literal('trash'), root: z.string(), paths: z.array(z.string()) }),
-    z.object({ op: z.literal('delete'), root: z.string(), paths: z.array(z.string()) }),
-    z.object({
-        op: z.literal('paste'),
-        mode: z.enum(['copy', 'move']),
-        items: z.array(place),
-        root: z.string(),
-        path: z.string(),
-        replace: z.boolean()
-    }),
-    z.object({
-        op: z.literal('upload'),
-        root: z.string(),
-        path: z.string(),
-        name: z.string(),
-        data: z.string(),
-        replace: z.boolean()
-    }),
-    z.object({
-        op: z.literal('replace'),
-        query: queryShape,
-        replace: z.string(),
-        preserveCase: z.boolean(),
-        items: z.array(
-            z.object({
-                root: z.string(),
-                path: z.string(),
-                hits: z.array(
-                    z.object({
-                        line: z.number().int().min(1),
-                        at: z.number().int().min(0),
-                        match: z.string()
-                    })
-                )
-            })
-        )
-    }),
-    z.object({
-        op: z.literal('preview'),
-        query: queryShape,
-        replace: z.string(),
-        preserveCase: z.boolean(),
-        root: z.string(),
-        path: z.string(),
-        hits: z.array(z.object({ line: z.number().int().min(1), at: z.number().int().min(0) }))
-    }),
-    z.object({ op: z.literal('lsp-edit'), files: editFiles }),
-    z.object({ op: z.literal('writing-fix'), files: editFiles })
-]) satisfies z.ZodType<OpsRequest>;
 
 /** The refusal a system error stands for, or null for one that is not a refusal. */
 function refusalOf(error: unknown): OpsRefusal | null {
@@ -567,12 +499,19 @@ async function uploadItem(
     const bytes = decoded(request.data);
     if (refused(bytes)) return bytes;
     const there = await lstatOrNull(target);
+    let replaced: FileStamp | null = null;
     if (there !== null) {
         if (!request.replace) return fail('exists');
         if (there.isDirectory()) return fail('not_a_folder');
-        const trashed = await sendToTrash(scope, target);
-        if (trashed !== null) return trashed;
-        // The library writes through a link, so a link the Trash left standing is unlinked first.
+        replaced = there.isFile() ? stampKept(target, scope.history) : null;
+        if (scope.trashReplaced) {
+            const trashed = await sendToTrash(scope, target);
+            if (trashed !== null) {
+                unkeep(replaced, scope.history);
+                return trashed;
+            }
+        }
+        // The library writes through a link, so a link left standing is unlinked first.
         if ((await lstatOrNull(target))?.isSymbolicLink() === true) {
             const unlinked = await attempt(() => rm(target));
             if (unlinked !== null) return unlinked;
@@ -582,8 +521,13 @@ async function uploadItem(
         writeBytesAtomic(target, bytes);
         return Promise.resolve();
     });
-    if (outcome !== null) return outcome;
-    noted(scope, 'upload', [], [stampOf(target)]);
+    if (outcome !== null) {
+        if (!scope.trashReplaced) unkeep(replaced, scope.history);
+        return outcome;
+    }
+    // A replaced file whose bytes the history holds is named, so the record's undo writes them
+    // back.
+    noted(scope, scope.uploadAs, replaced?.kept === undefined ? [] : [replaced], [stampOf(target)]);
     return { ok: true, path: under(dest.rootFolder, target) };
 }
 
@@ -630,13 +574,16 @@ function run(scope: Scope, request: Exclude<OpsRequest, { op: 'preview' }>): Pro
 }
 
 /**
- * Append what an operation changed to the change log as one `files` record. An operation that
- * changed nothing, and a target with no log, record nothing.
+ * Append what an operation changed to the change log as one `files` record, with the id of the app
+ * that made it when an app's host did. An operation that changed nothing, and a target with no log,
+ * record nothing.
  */
-async function recordNote(into: OpsTarget, note: Note): Promise<void> {
+async function recordNote(into: OpsTarget, note: Note, app: string | undefined): Promise<void> {
     if (note.field === null || into.changes === undefined) return;
     const record = recordOf(note.field, note.before, note.after);
-    await logChanges(into.changes, FILES_KIND, [{ ...record, file: resolve(record.file) }]);
+    await logChanges(into.changes, FILES_KIND, [
+        { ...record, file: resolve(record.file), ...(app === undefined ? {} : { app }) }
+    ]);
 }
 
 /**
@@ -659,24 +606,53 @@ export async function handleOps(
     if (!body.success) return json({ error: 'not-an-action' }, { status: 400, headers: NO_STORE });
     const operation = body.data;
     if (operation.op === 'preview') return previewed(operation, into, deps);
+    const answer = await runOps(into, operation, deps);
+    return json(answer, { status: answer.ok ? 200 : 400, headers: NO_STORE });
+}
+
+/**
+ * One operation that writes, in its place in the write chain and recorded in the change log. The
+ * route and the hosts of apps (`workspace.applyEdit`) both write through it.
+ */
+export function runOps(
+    into: OpsTarget,
+    operation: Exclude<OpsRequest, { op: 'preview' }>,
+    deps: OpsDeps = {}
+): Promise<OpsAnswer> {
+    return runOpsFrom(into, () => operation, deps);
+}
+
+/**
+ * One operation that writes, made inside the write chain: `make` is called when the operation's
+ * turn comes, so a file it reads is the one the operation then writes over, and it answers the
+ * operation or the refusal that stops it.
+ */
+export function runOpsFrom(
+    into: OpsTarget,
+    make: () => Exclude<OpsRequest, { op: 'preview' }> | Fail,
+    deps: OpsDeps = {}
+): Promise<OpsAnswer> {
     const trash = deps.trash ?? ((path, options) => trashLibrary(path, options));
-    const answer = await chained(into.writes, async () => {
+    return chained(into.writes, async () => {
         await deps.slow?.();
+        const operation = make();
+        if (refused(operation)) return operation;
         const scope: Scope = {
             roots: into.roots,
             trash,
+            trashReplaced: deps.trashReplaced ?? true,
             withheld: privateFolders(hubDirs(into.roots), into.home ?? homedir()),
             history: into.history,
             search: { timeout: into.searchTimeout, run: deps.search },
-            note: { field: null, before: [], after: [] }
+            note: { field: null, before: [], after: [] },
+            uploadAs: deps.uploadAs ?? (deps.app === undefined ? 'upload' : 'write-file')
         };
         try {
             return await run(scope, operation);
         } finally {
-            await recordNote(into, scope.note);
+            await recordNote(into, scope.note, deps.app);
         }
     });
-    return json(answer, { status: answer.ok ? 200 : 400, headers: NO_STORE });
 }
 
 /** One side of a comparison: the file's text and whether it is binary, or why it is refused. */

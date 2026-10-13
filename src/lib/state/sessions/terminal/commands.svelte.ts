@@ -24,20 +24,24 @@
 // to edit or none, and the shell draws it over the page, so it stands on the modal ground like
 // the question does and not inside the view that opened it.
 //
-// A task terminal's output is read for `file:line:column: error|warning` lines by the pane that
-// shows it, which hands each chunk to `note`. A line is read when it ends, with colour codes taken
-// out, so a line that arrives in pieces reads as one. The scrollback a pane is sent on attaching
-// replaces what was kept, which is what keeps an output replayed twice from counting twice. A task
-// that ends while no pane is reading its terminal is read once from the server's capture of its
-// pane, which replaces what was read, so the errors printed after a pane stopped reading are not
-// lost. Output a pane hands over before the sessions channel has listed its terminal is held, and
-// read when the terminal is listed. The chain line prints a marker before each command, the run's
-// token and the command's name, and the output is read by those markers: a path an error names is
-// resolved from the folder of the command that printed it, the token, the chain and its folders
-// being the ones the terminal's mark carries. A line ending in the marker counts, so a command
-// whose last output had no line break does not hide the next marker; a mark with no token is read
-// by the bare name. A LaTeX build is a task terminal too, and its problems are the LaTeX state's
-// own (state/sessions/latex/latex.svelte.ts), so its output is not read here.
+// A task terminal's output is read by the pane that shows it, which hands each chunk to `note`. A
+// command that names problem matchers is read by them (pty/matchers.ts), the matchers
+// being those the apps declare; any other command is read for `file:line:column: error|warning`
+// lines. A matcher's problem in a file outside the repository is dropped, and a background
+// matcher's problems are cleared when a new round of the task's output begins. A line is read when
+// it ends, with colour codes taken out, so a line that arrives in pieces reads as one. The
+// scrollback a pane is sent on attaching replaces what was kept, which is what keeps an output
+// replayed twice from counting twice. A task that ends while no pane is reading its terminal is
+// read once from the server's capture of its pane, which replaces what was read, so the errors
+// printed after a pane stopped reading are not lost. Output a pane hands over before the sessions
+// channel has listed its terminal is held, and read when the terminal is listed. The chain line
+// prints a marker before each command, the run's token and the command's name, and the output is
+// read by those markers: a path an error names is resolved from the folder of the command that
+// printed it, the token, the chain and its folders being the ones the terminal's mark carries. A
+// line ending in the marker counts, so a command whose last output had no line break does not hide
+// the next marker; a mark with no token is read by the bare name. A LaTeX build is a task terminal
+// too, and its problems are the LaTeX state's own (state/sessions/latex/latex.svelte.ts), so its
+// output is not read here.
 
 import { untrack } from 'svelte';
 import { z } from 'zod';
@@ -48,9 +52,11 @@ import type {
     CommandDiagnostic,
     CommandSource,
     CommandsAnswer,
+    AppProblemMatcher,
     LatexApproval,
     ProjectCommand,
-    Terminal
+    Terminal,
+    TerminalJob
 } from '../../../data/model/index.ts';
 import { SCROLLBACK_LINES } from '../../../data/model/index.ts';
 import {
@@ -60,6 +66,7 @@ import {
     underServedRoot
 } from '../../../data/helpers/files/paths.ts';
 import { chainMarker } from '../../../data/helpers/run/marker.ts';
+import { ESCAPES, FRESH, errorMatch, stepMatcher, type MatcherRun } from './pty/matchers.ts';
 import { readAs, readJson, rowsShape } from '../../../data/shapes/shapes.ts';
 import { tabOfFile, type ServedRoot } from '../../sources/repositories/file-git.ts';
 import { unreachableAnswer } from '../../shared/answers/answers.ts';
@@ -67,6 +74,7 @@ import type { EntitiesStore, Fetcher, Queries, WritesStore } from '../../shared/
 import { t } from '../../shared/words/text.ts';
 import { folderNamed } from '../../shared/answers/files-named.ts';
 import { COLS, ROWS, postTerminal } from './pty/pty-io.ts';
+import { appTaskShape } from './terminal-payloads.ts';
 
 export type {
     ChainLine,
@@ -77,6 +85,8 @@ export type {
     CommandsAnswer,
     ProjectCommand
 } from '../../../data/model/index.ts';
+
+export { errorMatch };
 
 /** What every repository's query key opens with. */
 const KIND = 'commands';
@@ -95,46 +105,6 @@ function lastLines(text: string, lines: number): string {
     const parts = text.split(/(\r\n|\r|\n)/);
     const kept = 2 * lines - 1;
     return parts.length <= kept ? text : parts.slice(parts.length - kept).join('');
-}
-
-/** A line of output that names a place and a severity; the severity is read in any letter case. */
-const ERROR_LINE =
-    /^(?<file>[^\s:][^:]*):(?<line>\d+)(?::(?<column>\d+))?:\s*(?<severity>error|warning)\b:?\s*(?<message>.*)$/i;
-
-/** Colour and cursor codes of the terminal, which are no part of a line's text. */
-/* eslint-disable no-control-regex -- the codes are the control characters of the terminal. */
-const ESCAPES =
-    /\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*(?:\u0007|\u001b\\)|\u001b[@-Z\\-_]/g;
-/* eslint-enable no-control-regex */
-
-/** One matched line, and the span of its `file:line[:column]` in the line. */
-export type ErrorMatch = {
-    file: string;
-    line: number;
-    column?: number;
-    severity: 'error' | 'warning';
-    message: string;
-    start: number;
-    length: number;
-};
-
-/** The error a line of output holds, or null for a line that holds none. */
-export function errorMatch(text: string): ErrorMatch | null {
-    const found = ERROR_LINE.exec(text);
-    const groups = found?.groups;
-    if (groups === undefined) return null;
-    // A group that took no part in the match is absent, which the index type does not say.
-    const column = groups.column as string | undefined;
-    const place = `${groups.file}:${groups.line}${column === undefined ? '' : `:${column}`}`;
-    return {
-        file: groups.file,
-        line: Number(groups.line),
-        ...(column === undefined ? {} : { column: Number(column) }),
-        severity: groups.severity.toLowerCase() === 'warning' ? 'warning' : 'error',
-        message: groups.message,
-        start: 0,
-        length: place.length
-    };
 }
 
 /** A path with its `.` and `..` segments folded away, for a path joined from two. */
@@ -268,8 +238,10 @@ const commandShape = z.object({
     cwd: z.string(),
     depends_on: z.array(z.string()).catch([]),
     default: z.enum(['build', 'test']).optional().catch(undefined),
-    source: z.enum(['file', 'saved', 'found']),
-    entry: z.object({ file: z.string(), line: z.number() }).optional().catch(undefined)
+    source: z.enum(['file', 'saved', 'found', 'app']),
+    entry: z.object({ file: z.string(), line: z.number() }).optional().catch(undefined),
+    task: appTaskShape.optional().catch(undefined),
+    matchers: z.array(z.string()).optional().catch(undefined)
 }) satisfies z.ZodType<ProjectCommand>;
 
 const findingShape = z.object({ file: z.string(), field: z.string(), message: z.string() });
@@ -306,6 +278,8 @@ export type CommandsDeps = {
      * button in another view reads, since pressing the button puts that view on screen.
      */
     focusedSource: () => SourceOnScreen | null;
+    /** The problem matchers a task terminal's job names, as the apps declare them. */
+    matchers: (job: TerminalJob) => AppProblemMatcher[];
     /** The repositories the `git` channel carries. */
     gitRoots: () => string[];
     /** The roots the file routes serve. */
@@ -323,10 +297,16 @@ export type CommandsDeps = {
  * What one task terminal's output gave so far: the diagnostics, the unfinished last line, and how
  * many of the chain's commands have printed their name.
  */
-type Output = { found: CommandDiagnostic[]; tail: string; started: number };
+type Output = {
+    found: CommandDiagnostic[];
+    tail: string;
+    started: number;
+    /** Where each problem matcher of the job stands, in the order the job names them. */
+    runs: MatcherRun[];
+};
 
 /** The output of a terminal nothing was read from. */
-const NOTHING: Output = { found: [], tail: '', started: 0 };
+const NOTHING: Output = { found: [], tail: '', started: 0, runs: [] };
 
 export function createCommands(deps: CommandsDeps): CommandsStore {
     const { entities, writes, queries, notices, terminals } = deps;
@@ -727,18 +707,39 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
         const marks = (line: string, name: string): boolean =>
             token === undefined ? line === name : line.endsWith(chainMarker(token, name));
         let started = before.started;
-        const found = [...before.found];
+        let found = [...before.found];
+        const matchers = job === undefined || job === null ? [] : deps.matchers(job);
+        const runs = matchers.map((_, at) => before.runs[at] ?? FRESH);
         for (const line of lines) {
             // The line a chain prints before each command is its marker, in the chain's order.
             if (chain !== null && started < chain.length && marks(line, chain[started].name)) {
                 started += 1;
                 continue;
             }
-            const match = errorMatch(line);
-            if (match === null || job === null || job === undefined || found.length >= FOUND_MAX)
-                continue;
+            if (job === null || job === undefined) continue;
             if (served !== null && !underServedRoot(served, job.repo)) continue;
             const folder = chain?.[started - 1]?.cwd ?? folderOf(id);
+            if (matchers.length > 0) {
+                matchers.forEach((matcher, at) => {
+                    const step = stepMatcher(matcher, runs[at], line);
+                    runs[at] = step.run;
+                    if (step.begin) found = found.filter((one) => one.matcher !== matcher.name);
+                    if (step.hit === null || found.length >= FOUND_MAX) return;
+                    const whole = wholeOf(folder, step.hit.file);
+                    const inside = pathUnder(job.repo, whole);
+                    if (inside === null || inside === '') return;
+                    found.push({
+                        ...step.hit,
+                        root: job.repo,
+                        file: inside,
+                        source: matcher.source === '' ? `command:${job.name}` : matcher.source,
+                        matcher: matcher.name
+                    });
+                });
+                continue;
+            }
+            const match = errorMatch(line);
+            if (match === null || found.length >= FOUND_MAX) continue;
             const whole = wholeOf(folder, match.file);
             const inside = pathUnder(job.repo, whole);
             found.push({
@@ -751,7 +752,7 @@ export function createCommands(deps: CommandsDeps): CommandsStore {
                 source: `command:${job.name}`
             });
         }
-        outputs.byId = { ...outputs.byId, [id]: { found, tail, started } };
+        outputs.byId = { ...outputs.byId, [id]: { found, tail, started, runs } };
     }
 
     /**

@@ -1,10 +1,11 @@
-// Layer 3, view helper. The two grid actions that reach outside the grid, written over what they
-// are handed so a test gives them fakes: Clear, which empties the grid and asks the server to empty
-// the terminal's history, and Copy as HTML, which writes the selection to the clipboard as
-// `text/html` (from the serialize addon) beside its plain text. Each answers the failure in words,
-// or the empty string when it worked, and the tab says a failure on its bar. Copy on selection,
-// which the grid does as the selection changes with nobody asking, answers nothing and says
-// nothing: a clipboard that is missing or refuses is left alone.
+// Layer 3, view helper. The grid actions that reach outside the grid, written over what they are
+// handed so a test gives them fakes: Clear, which empties the grid and asks the server to empty the
+// terminal's history, and Copy as HTML, which writes the selection to the clipboard as `text/html`
+// (from the serialize addon) beside its plain text. Each answers the failure in words, or the empty
+// string when it worked, and the tab says a failure on its bar. A paste reads the clipboard's text
+// here too, and a read the browser refuses is an empty text. Copy on selection, which the grid does
+// as the selection changes with nobody asking, answers nothing and says nothing: a clipboard that
+// is missing or refuses is left alone.
 
 import { t } from '$lib/state/shared/words/text';
 
@@ -83,4 +84,13 @@ export function copySelection(text: string, clipboard: SelectionClipboard | unde
 /** The browser's clipboard, or nothing where the page has none. */
 export function pageClipboard(): Clipboard | undefined {
     return typeof navigator === 'undefined' ? undefined : navigator.clipboard;
+}
+
+/** The clipboard's text for a paste; empty where the page has no clipboard or refuses the read. */
+export async function clipboardText(): Promise<string> {
+    try {
+        return (await pageClipboard()?.readText()) ?? '';
+    } catch {
+        return '';
+    }
 }

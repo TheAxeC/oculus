@@ -2,7 +2,7 @@
 // served root, with the documents the page has open on it, the state the status bar shows, the
 // output of its stderr, and what it takes to keep it alive or end it.
 //
-// The relay (relay.ts) makes one of these for each page, root and registry entry, so
+// The relay (relay/relay.ts) makes one of these for each page, root and registry entry, so
 // a clangd serves the `c` and the `cpp` tabs of a root together and a pyright the Python tabs. It
 // holds the text of every open document, kept up to date from the page's changes, because that
 // text is what a server started again is opened with.
@@ -12,12 +12,17 @@
 // same root and takes it over; the relay ends it at once when its root is no longer served (the
 // page is told `root_gone`) and with the oculus server. A changed `lsp` folder ends it and, when
 // its page has documents open in it, starts it again at once. One that exits on its own is started
-// again on the next request of its page; a second exit within three minutes leaves it failed until
-// the reader presses Restart.
+// again on the next request of its page; one more exit within three minutes than the entry's
+// `restarts` (one, or four for a server of an app) leaves it failed until the reader presses
+// Restart.
 //
 // The server is told of changes on disk by held/requests/notices.ts, a list at a time in the order
 // the root watch saw them, and of the files inside a folder that was created or deleted; a link
 // rewrite waits there until the server has read the files written since.
+//
+// What a server declares is its `initialize` answer's capabilities, with each feature it registers
+// later (`client/registerCapability`) added and each it withdraws taken away, so a feature a server
+// registers is asked of it and given to the page's client like one it declared at once.
 
 import { basename, join } from 'node:path';
 import type { watch } from 'node:fs';
@@ -34,12 +39,15 @@ import { Followed } from './requests/followed.ts';
 import { Pulls } from './diagnostics/pulls.ts';
 import { RootWatch, entryFiles, globsOf, type FileChange } from './watch.ts';
 import { Notices } from './requests/notices.ts';
+import type { Join } from '../relay/relay-join.ts';
+import { withFeature } from '../../../../data/prose/lsp-servers.ts';
+import { Knowing } from './requests/knowing.ts';
 import { normal, type ServedRoot } from '../uris.ts';
 
 /** The milliseconds a server outlives its last document or its page. */
 export const LINGER_MS = 60_000;
 
-/** The span in which a second exit is not started again. */
+/** The span in which the exits of a server are counted. */
 const EXIT_SPAN_MS = 3 * 60_000;
 
 /** The id of the watch the entry asks for itself, apart from the ones a server registers. */
@@ -85,6 +93,11 @@ export type HeldHost = {
     schemas?(): SchemaSet;
     /** A message from the server that is not the answer to something this module sent. */
     message(held: Held, message: LspRpc): void;
+    /**
+     * The server answered `initialize`, or registered or withdrew a feature after it; what it
+     * declares is in `held.capabilities`.
+     */
+    ready(held: Held): void;
     /** The held server's process ended, for whatever reason, and what waited on it is answered. */
     stopped(held: Held): void;
     /** The held server is gone and will not come back. */
@@ -115,6 +128,12 @@ function legendOf(result: unknown): { types: string[]; modifiers: string[] } | n
     return { types: strings(legend.tokenTypes), modifiers: strings(legend.tokenModifiers) };
 }
 
+/** The capabilities a server's `initialize` result declares. */
+function capabilitiesOf(result: unknown): Record<string, unknown> {
+    const capabilities = isRecord(result) ? result.capabilities : null;
+    return isRecord(capabilities) ? capabilities : {};
+}
+
 export class Held {
     readonly entry: ServerEntry;
     readonly root: ServedRoot;
@@ -125,6 +144,11 @@ export class Held {
     legend: { types: string[]; modifiers: string[] } | null = null;
     /** Whether the page has yet to be told the legend: set when the server is ready or adopted. */
     legendDue = false;
+    /**
+     * The capabilities of the server's `initialize` answer, with the features it registered since
+     * and without those it withdrew; empty until it answered.
+     */
+    capabilities: Record<string, unknown> = {};
     readonly docs = new Map<string, Doc>();
     /** The highest version sent to the server for each file, kept after the file is closed. */
     readonly #sent = new Map<string, number>();
@@ -138,10 +162,14 @@ export class Held {
     #proc: ServerProcess | null = null;
     #setup: Setup | null = null;
     #early: LspRpc[] = [];
+    #knowing = new Knowing();
     #generation = 0;
     #timer: ReturnType<typeof setTimeout> | null = null;
     #exits: number[] = [];
-    /** The server needs the reader's Restart: it exited twice within three minutes. */
+    /**
+     * The server needs the reader's Restart: it exited more often within three minutes than it is
+     * restarted.
+     */
     blocked = false;
     #wantsStart = false;
     #closed = false;
@@ -236,8 +264,8 @@ export class Held {
     /**
      * A changed `lsp` folder: the process and the wait to end are ended. With `again` the server
      * starts under the new folder at once and is given its documents again; without, it stays
-     * ended and starts on the next request or document of its page, with no wait for a second exit
-     * or for the reader's Restart left over.
+     * ended and starts on the next request or document of its page, with no exit counted and no
+     * wait for the reader's Restart left over.
      */
     async reload(again: boolean): Promise<void> {
         this.#clear();
@@ -254,9 +282,19 @@ export class Held {
         await this.close();
     }
 
+    /**
+     * Run `then` once what the server declares is known: at once when it has answered
+     * `initialize`, else when it answers it, with true; with false when its process ends, or the
+     * held server is closed, without that answer.
+     */
+    whenDeclared(then: (known: boolean) => void): void {
+        this.#knowing.when(then);
+    }
+
     /** End the server and everything of the held server, for good. */
     async close(): Promise<void> {
         this.#closed = true;
+        this.#knowing.tell(false);
         this.#clear();
         this.docs.clear();
         await this.#stop();
@@ -272,8 +310,8 @@ export class Held {
 
     /**
      * A request for the server, held until the process has answered `initialize`. A server that
-     * exited is started again by the first request that finds it so, unless it exited twice in
-     * three minutes. The answer is whether the request was accepted.
+     * exited is started again by the first request that finds it so, unless it exited more often in
+     * three minutes than the entry restarts it. The answer is whether the request was accepted.
      */
     request(message: LspRpc): boolean {
         if (this.#proc?.alive === true) {
@@ -424,9 +462,11 @@ export class Held {
             }
             case 'client/registerCapability':
                 this.#registered(params.registrations, true);
+                this.#host.ready(this);
                 return reply(null);
             case 'client/unregisterCapability':
                 this.#registered(params.unregisterations, false);
+                this.#host.ready(this);
                 return reply(null);
             case 'workspace/diagnostic/refresh':
                 if (this.entry.pulls === true) this.#pulls.all();
@@ -507,10 +547,19 @@ export class Held {
         }
     }
 
-    /** The server registered or dropped capabilities: only its file watchers matter here. */
+    /**
+     * The server registered or withdrew capabilities: a feature is added to or taken from what it
+     * declares, under the options it registered, and a file watcher is kept or ended.
+     */
     #registered(list: unknown, add: boolean): void {
         for (const one of Array.isArray(list) ? list : []) {
             if (!isRecord(one) || typeof one.id !== 'string') continue;
+            this.capabilities = withFeature(
+                this.capabilities,
+                one.method,
+                add,
+                one.registerOptions
+            );
             if (one.method !== 'workspace/didChangeWatchedFiles') continue;
             if (!add) {
                 this.#watch?.unregister(one.id);
@@ -634,8 +683,11 @@ export class Held {
                     if (this.#proc !== proc) return;
                     this.legend = legendOf(result);
                     this.legendDue = this.legend !== null;
+                    this.capabilities = capabilitiesOf(result);
                     this.#watchEntryFiles();
                     if (this.state.state === 'starting') this.#set({ state: 'ready' });
+                    this.#host.ready(this);
+                    this.#knowing.tell(true);
                 },
                 failed: (code, program) => {
                     if (this.#proc !== proc) return;
@@ -651,6 +703,7 @@ export class Held {
                     this.#proc = null;
                     this.#calls.end();
                     this.#host.stopped(this);
+                    this.#knowing.tell(false);
                     if (asked || this.#closed) return;
                     if (this.state.state === 'failed' || this.state.state === 'not_found') return;
                     this.#unexpected();
@@ -670,7 +723,7 @@ export class Held {
     #unexpected(): void {
         const now = this.#now();
         this.#exits = [...this.#exits.filter((at) => now - at < EXIT_SPAN_MS), now];
-        this.blocked = this.#exits.length >= 2;
+        this.blocked = this.#exits.length > (this.entry.restarts ?? 1);
         this.note(
             `the server exited${this.blocked ? ' again, so it stays stopped until Restart' : ''}`
         );
@@ -759,7 +812,7 @@ export function applyChanges(text: string, changes: readonly ContentChange[]): s
 }
 
 // ------------------------------------------------------------------ what a page holds
-// The relay (relay.ts) keeps these for each socket beside the servers above.
+// The relay (relay/relay.ts) keeps these for each socket beside the servers above.
 
 /** One client session of a page: the channel's frame count and what the page's client can do. */
 export type Session = {
@@ -767,8 +820,11 @@ export type Session = {
     capabilities: Record<string, unknown>;
 };
 
-/** A document of a page and the server it is open on. */
-type Open = { held: Held; doc: Doc };
+/**
+ * A document of a page and the server it is open on. `also` holds the same document on the other
+ * servers of its language, each with the text and versions that server holds.
+ */
+export type Open = { held: Held; doc: Doc; also: Open[] };
 
 /** One socket's state. */
 export type Page = {
@@ -788,6 +844,13 @@ export type Page = {
     library: Library;
     /** The real paths of the files its tabs show, whatever their language (held/elsewhere.ts). */
     tabs: Set<string>;
+    /** The diagnostics each server of a document on several servers published, by its address. */
+    joined: Map<string, Map<Held | string, unknown[]>>;
+    /**
+     * The features registered with the page's client, by channel: each registration's method, by
+     * its id.
+     */
+    registered: Map<string, Map<string, string>>;
 };
 
 /**
@@ -802,6 +865,8 @@ export type Pending = {
     /** The method of the request, which an entry may filter the answer to by. */
     method: string;
     address: string;
+    /** The joined request this is one server's share of, when several servers answer it. */
+    join?: Join;
 };
 
 /** A server's request waiting for the page's answer, or one nobody waits for. */

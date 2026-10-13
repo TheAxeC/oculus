@@ -129,6 +129,8 @@ export type SourceStore = {
     editSourceDraft: (id: string, text: string, edits?: TextEdit[]) => void;
     /** Hear every replacement of a tab's text, the reader's typing included. */
     onEdit: (listener: (id: string) => void) => () => void;
+    /** Hear each file a save wrote, by its root and path, from any tab or list. */
+    onSaved: (listener: (root: string, path: string) => void) => () => void;
     /** The edits the tab's text was last replaced by and the text they were made in, or null. */
     sourceReach: (id: string) => { from: string; edits: TextEdit[] } | null;
     /**
@@ -194,6 +196,7 @@ export function createSource(
     const queued = new Map<string, Promise<boolean>>();
     const formats = new Map<string, () => Promise<void>>();
     const editListeners = new Set<(id: string) => void>();
+    const saveListeners = new Set<(root: string, path: string) => void>();
     let asked = Date.now();
 
     /** Working and saved copies belong to the instance, not its currently mounted component. */
@@ -547,6 +550,11 @@ export function createSource(
         return () => editListeners.delete(listener);
     }
 
+    function onSaved(listener: (root: string, path: string) => void): () => void {
+        saveListeners.add(listener);
+        return () => saveListeners.delete(listener);
+    }
+
     function sourceReach(id: string): { from: string; edits: TextEdit[] } | null {
         return reached.get(id) ?? null;
     }
@@ -793,7 +801,10 @@ export function createSource(
         create?: boolean;
     }): Promise<WriteAnswer> {
         const answer = await writes.send(body, '/api/source', { asked: ['changed'] });
-        if (answer.ok) saved(body.root, body.path);
+        if (answer.ok) {
+            saved(body.root, body.path);
+            for (const listener of [...saveListeners]) listener(body.root, body.path);
+        }
         return answer;
     }
 
@@ -815,6 +826,7 @@ export function createSource(
         reloadHead,
         editSourceDraft,
         onEdit,
+        onSaved,
         sourceReach,
         revertSourceDraft,
         saveSourceDraft,

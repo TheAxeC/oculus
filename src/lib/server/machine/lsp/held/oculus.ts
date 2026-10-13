@@ -6,7 +6,7 @@
 // The `links` request of a move in the Files view is the relay's own (held/requests/links.ts).
 
 import type { LspToPage, LspToServer } from '../../../../data/model/index.ts';
-import { serverFacts } from '../../../../data/prose/lsp-servers.ts';
+import { isLspServerId, serverFacts } from '../../../../data/prose/lsp-servers.ts';
 import type { ChangeLog } from '../../../core/changes.ts';
 import { applyApprove, applyChoose, applyRevoke, sendChoices } from '../choices.ts';
 import { readLibrary } from '../library/read.ts';
@@ -49,6 +49,7 @@ function followers(
         (one) =>
             one.entry !== entry &&
             one.root.real === root?.real &&
+            isLspServerId(one.entry.id) &&
             serverFacts(one.entry.id).approvedBy === message.approval.kind
     );
 }

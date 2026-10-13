@@ -4,7 +4,9 @@
     // Revert Block, or Unstage Block in a staged diff, each over the lines the selections choose
     // in that hunk while they choose any (`count`). A file with no block actions draws the
     // sentence that says where to act on it instead, or, for a path in conflict, where to resolve
-    // it. What the buttons do is the section's: the bar reports the press.
+    // it. What the buttons do is the section's: the bar reports the press. A diff against the
+    // original an app's source control gives also draws the actions of the app's `scm/change/title`
+    // menu before them.
     //
     // The bar sits inside the editor's own width, left of its scrollbar and overview ruler, which
     // a narrow pane makes less than the buttons' words need. The bar keeps the width its buttons
@@ -17,6 +19,7 @@
     import type { Attachment } from 'svelte/attachments';
     import { untrack } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import ActionStrip, { type StripAction } from '$lib/ui/tabs/ActionStrip.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import type { DiffActions } from '$lib/state/sources/repositories/diff/diff-hunks';
     import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
@@ -41,10 +44,26 @@
         current: boolean;
         /** A button was pressed. */
         onact: (mode: PatchMode) => void;
+        /** The actions an app's source control offers on the change (`scm/change/title`). */
+        offered?: StripAction[];
+        /** One of the offered actions was pressed. */
+        onoffer?: (id: string, event: MouseEvent) => void;
     };
 
-    let { head, at, id, actions, count, conflicted, staged, busy, current, onact }: Props =
-        $props();
+    let {
+        head,
+        at,
+        id,
+        actions,
+        count,
+        conflicted,
+        staged,
+        busy,
+        current,
+        onact,
+        offered = [],
+        onoffer
+    }: Props = $props();
 
     /** The width the bar keeps for the head's first characters, its padding and gaps with them. */
     const ROOM = 96;
@@ -141,6 +160,13 @@
         <Tooltip text={sentence}>
             <span class="whole">{sentence}</span>
         </Tooltip>
+    {/if}
+    {#if offered.length > 0}
+        <ActionStrip
+            label={t('repositories.app_change_actions')}
+            actions={offered}
+            onpick={(pick: string, event: MouseEvent) => onoffer?.(pick, event)}
+        />
     {/if}
     {#if buttons.length > 0}
         <span class="buttons" bind:this={group} {@attach watchGroup}>

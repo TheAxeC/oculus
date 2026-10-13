@@ -13,6 +13,7 @@ import {
     iconThemeOffers,
     themeOffers
 } from '../../../../src/lib/data/helpers/files/apps/choices.ts';
+import { noContributes } from '../../../../src/lib/data/helpers/files/apps/contributes.ts';
 import type { AppContributes, AppRow } from '../../../../src/lib/data/model/index.ts';
 import {
     actingApps,
@@ -27,6 +28,7 @@ import { it } from '../../../fixtures/scratch.ts';
 
 /** Everything `notes` declares, one of each point. */
 const DECLARED: AppContributes = {
+    ...noContributes(),
     commands: [
         { command: 'notes.hello', title: 'Hello', category: 'Notes', icon: '', enablement: '' }
     ],

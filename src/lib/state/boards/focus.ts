@@ -186,7 +186,7 @@ function backlogTier(project: Project): boolean {
  * What sits on each lane, by lane key, sorted deadline first then title. `holding` is not a lane
  * and neither is a `focus:` no lane names, so a project carrying either is on no lane: `backlog`
  * takes a project of the Projects or Personal board in `holding` and an idea on no lane, `unplaced`
- * names an active project of the Projects board with no focus, and a project of another tier is
+ * names an active project of those boards with no focus, and a project of another tier is
  * drawn by neither. A project of any tier is drawn on the lane its `focus:` names: a project
  * whose manifest names a lane is work the reader placed there.
  */
@@ -227,11 +227,14 @@ export function backlog(projects: Project[], all: Lane[]): Project[] {
     return out.sort((a, b) => (a.title < b.title ? -1 : a.title > b.title ? 1 : 0));
 }
 
-/** Active projects of the Projects board that name no lane, so the board is not showing them. */
+/**
+ * Active projects of the Projects or Personal board that name no lane, so the board is not showing
+ * them.
+ */
 export function unplaced(projects: Project[]): Project[] {
     return projects.filter(
         (project) =>
-            project.tier === 'projects' && project.type === 'active' && (project.focus ?? '') === ''
+            backlogTier(project) && project.type === 'active' && (project.focus ?? '') === ''
     );
 }
 

@@ -4,11 +4,12 @@
 // data/sources/config/editor-options.ts.
 //
 // A value is taken from the first layer that sets it: the tab's own choice, the file's own
-// indentation, the repository's record, `editor.languages`, then the global key (`resolveEditor`);
-// `format_on_save` has no global key, so it is the record's or off. The trim of trailing whitespace
-// and the final newline of a save are global keys the records override the same way.
-// A tab's own indentation or word wrap is taken only when the catalog's entry for the key takes it
-// too, which the options carry as `fitsTabSize` and `fitsWrap`.
+// indentation, the repository's record, `editor.languages`, the `[<languageId>]` defaults the
+// acting apps set, then the global key (`resolveEditor`); `format_on_save` has no global key, so it
+// is the record's or off. The trim of trailing whitespace and the final newline of a save are
+// global keys the records override the same way. A tab's own indentation or word wrap is taken only
+// when the catalog's entry for the key takes it too, which the options carry as `fitsTabSize` and
+// `fitsWrap`.
 
 import type { editor } from 'monaco-editor';
 
@@ -35,7 +36,9 @@ export type Autosave = 'off' | 'after_delay' | 'on_focus_change';
 /** The records of a configuration or of a repository, by language, in a map with no prototype. */
 export type LanguageRecords = Record<string, LanguageRecord | undefined>;
 
-/** The editor's options: the global keys and the records of `editor.languages`. */
+/**
+ * The editor's options: the global keys, the records of `editor.languages` and the apps' defaults.
+ */
 export type EditorOptions = {
     tabSize: number;
     insertSpaces: boolean;
@@ -49,6 +52,8 @@ export type EditorOptions = {
     trimTrailingWhitespace: boolean;
     finalNewline: boolean;
     languages: LanguageRecords;
+    /** The records the acting apps' `configurationDefaults` set per language, under `languages`. */
+    defaults: LanguageRecords;
     /** Whether a width of a step is one the catalog's `editor.tab_size` takes. */
     fitsTabSize: (size: number) => boolean;
     /** Whether a word is one the catalog's `editor.word_wrap` takes. */
@@ -91,15 +96,20 @@ export type EditorResolved = {
 };
 
 /**
- * The first layer that sets a field: the repository's record, `editor.languages`, then the global
- * key. A field the language's record does not set falls to the next layer on its own.
+ * The first layer that sets a field: the repository's record, `editor.languages`, the apps'
+ * defaults for the language, then the global key. A field the language's record does not set falls
+ * to the next layer on its own.
  */
 function layered<K extends keyof LanguageRecord, G>(
     ask: EditorAsk,
     field: K,
     global: G
 ): NonNullable<LanguageRecord[K]> | G {
-    const own = ask.root?.[ask.language]?.[field] ?? ask.options.languages[ask.language]?.[field];
+    const { languages, defaults } = ask.options;
+    const own =
+        ask.root?.[ask.language]?.[field] ??
+        languages[ask.language]?.[field] ??
+        defaults[ask.language]?.[field];
     return own ?? global;
 }
 

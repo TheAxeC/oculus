@@ -188,6 +188,9 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // primitives: `ui/theme/app-theme.ts` tells an app theme with no offers before the `apps` channel
 // arrives (`NO_OFFERS`), and `ui/display/icon-theme/held.svelte.ts` looks a file name's language
 // up (`languageOf`). Both are pure functions over the data they are handed.
+// `data/helpers/files/apps/tools/language-kit` is there because the editor's kit registers the
+// languages, grammars and snippets that acting apps add: it takes the kit's types and the schema
+// glob rule from this module, which holds no reader and no I/O.
 //
 // `data/snapshot/place` is the place of any project's folder: the server finds the folder for the
 // chat, the document route and the file listing through it, and the page draws a project's card,
@@ -209,6 +212,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/prose/text-edits',
         'data/helpers/keys/oculus/**',
         'data/helpers/files/apps/choices',
+        'data/helpers/files/apps/tools/language-kit',
         'data/helpers/files/languages'
     ],
     shell: [
@@ -393,7 +397,7 @@ function findGlobalState(sourceRoot: string): string[] {
         if (!holdsModuleState(fileRel)) continue;
         for (const line of moduleLines(fileRel, text)) {
             const held =
-                /^(?:export )?const (\w+)(?::[^=]+)? = (?:new (?:Map|Set)\b|\{\}|\[\]|\$state)/.exec(
+                /^(?:export )?const (\w+)(?::[^=]+)? = (?:new (?:Map|Set|WeakMap|WeakSet)\b|\{\}|\[\]|\$state)/.exec(
                     line
                 ) ?? /^(?:export )?let (\w+)\b/.exec(line);
             if (held !== null && !FROZEN.includes(`${fileRel}:${held[1]}`)) {
@@ -420,14 +424,21 @@ function findGlobalState(sourceRoot: string): string[] {
  * set of key rules and its workers for the whole page, not per client, so the promise that loads it
  * once per page is page state by Monaco's own design, and a second load would register everything
  * twice. The same holds for the rules of the app colour theme in force, ui/theme/app-rules.ts's
- * `held`: the editor reads them for the one theme Monaco holds. The file icon theme of an app is
- * held once for the page the same way, ui/display/icon-theme/held.svelte.ts's `held`, with what the
- * theme is drawn under (whether the colour theme is dark, and the language each file name has):
- * every file icon of the page reads them, from `ui/`, where there is no client object.
+ * `held`: the editor reads them for the one theme Monaco holds, and for the languages, grammars,
+ * snippets and token rules the acting apps give it,
+ * ui/controls/editor/kit/languages/apps.svelte.ts's `held`, `signature` and `version`: Monaco
+ * registers a language once for the page, so the kit it was last given, the text of that kit and
+ * the count that redraws on a change are page state. The file icon theme of an app is held once for
+ * the page the same way, ui/display/icon-theme/held.svelte.ts's `held`, with what the theme is
+ * drawn under (whether the colour theme is dark, and the language each file name has): every file
+ * icon of the page reads them, from `ui/`, where there is no client object.
  */
 const FROZEN = [
     'lib/ui/controls/editor/kit/load.ts:loading',
     'lib/ui/theme/app-rules.ts:held',
+    'lib/ui/controls/editor/kit/languages/apps.svelte.ts:held',
+    'lib/ui/controls/editor/kit/languages/apps.svelte.ts:signature',
+    'lib/ui/controls/editor/kit/languages/apps.svelte.ts:version',
     'lib/ui/display/icon-theme/held.svelte.ts:held',
     'lib/server/content/audit/publications.ts:STOPWORDS',
     'lib/server/machine/pty/channel.ts:CHANGE_EVENTS',
@@ -476,7 +487,9 @@ const FROZEN = [
  * which float a page draws through `float`, and the tab menu opens one through `windows`, and the
  * windows of the desktop app name the page that opens a float's window through `pageId`, and the
  * workbench's save key saves the custom editor of an app in front through `apps`, and the app items
- * of the status bar, the quick input and the modal messages read `appShell`.
+ * of the status bar, the quick input and the modal messages read `appShell`, and the status bar's
+ * source items, the palette's task rows and the registration of the languages apps add read the
+ * tools the acting apps contribute through `appTools`.
  */
 const SHELL_STORES = [
     'commands',
@@ -509,7 +522,8 @@ const SHELL_STORES = [
     'windows',
     'pageId',
     'appShell',
-    'apps'
+    'apps',
+    'appTools'
 ];
 
 /**

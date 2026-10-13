@@ -1,6 +1,7 @@
-// Layer 2, route tests. POST /api/ops with the operation `replace` (server/files/fs/replace.ts):
-// what is written for the matches a request names, the order the checks refuse in, what a refused
-// request leaves untouched, and the record a replace leaves in the change log.
+// Layer 2, route tests. POST /api/ops with the operation `replace`
+// (server/files/fs/operations/replace.ts): what is written for the matches a request names, the
+// order the checks refuse in, what a refused request leaves untouched, and the record a replace
+// leaves in the change log.
 //
 // ripgrep is the real binary of the `@vscode/ripgrep` dependency, run over files in a scratch
 // folder; the page's side (which hits a request names) is stood in for by the hits written in each

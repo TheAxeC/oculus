@@ -47,7 +47,7 @@ import type { EntitiesStore, NoticeSink, WritesStore } from '../../shared/stores
 import { connectFrame, type FrameLink, type FrameOptions } from './frame/bridge.ts';
 import { createDocument } from './frame/documents.ts';
 import { appTab, appTabState } from './instance.ts';
-import { createFlows, type FlowsStore } from './flows.ts';
+import { createFlows, type AppEnding, type FlowsStore } from './flows.ts';
 import { createManage, type ManageStore } from './manage.ts';
 import {
     createMethods,
@@ -103,8 +103,16 @@ export type AppsDeps = {
     };
     /** The id of this page, which the panels it opened are held under. */
     pageId: string;
+    /** What the app of this view id runs now: its debug session, tasks and terminals. */
+    ending: (id: string) => AppEnding;
     /** Whether a source tab holds unsaved text of this file. */
     unsavedFile: (root: string, path: string) => boolean;
+    /** Save every tab with unsaved text; whether every one was written. */
+    saveAll: () => Promise<boolean>;
+    /** Show a terminal in the Terminal tab. */
+    showTerminal: (terminal: string, preserveFocus: boolean) => void;
+    /** Take a terminal out of the Terminal tabs without ending it. */
+    hideTerminal: (terminal: string) => void;
     /** Run one of oculus's own page commands, `oculus.<name>`, on this page. */
     pageCommand: (id: string, args: unknown[]) => Promise<CommandResult>;
     registry: { viewFor: (view: string) => { listed?: boolean } | undefined };
@@ -334,7 +342,7 @@ export function createApps(deps: AppsDeps): AppsStore {
     // open; the subscription is asked again at every link change, since a connect names the
     // channels it starts with and a reconnect asks for them again.
     const hostChannels = (): void =>
-        deps.socket.subscribe(['app-hosts', 'app-messages', 'app-shell']);
+        deps.socket.subscribe(['app-hosts', 'app-messages', 'app-shell', 'app-tools']);
     hostChannels();
     deps.socket.onLink(hostChannels);
     const post = (path: string, body: unknown): ReturnType<typeof deps.writes.postCommand> =>
@@ -345,7 +353,8 @@ export function createApps(deps: AppsDeps): AppsStore {
         rowOf: (id) => rowOf(id),
         post,
         notices: deps.notices,
-        dirtyFiles: (id) => dirtyFilesOf(id)
+        dirtyFiles: (id) => dirtyFilesOf(id),
+        ending: (id) => deps.ending(id)
     });
     const hosts = (): AppHostRow[] => deps.entities.appHosts()?.rows ?? [];
     const frames = createFrameShell();
@@ -409,7 +418,10 @@ export function createApps(deps: AppsDeps): AppsStore {
         pageId: deps.pageId,
         pageCommand: deps.pageCommand,
         runInTab,
-        openPanel: (request) => openPanel(request, true)
+        openPanel: (request) => openPanel(request, true),
+        saveAll: deps.saveAll,
+        showTerminal: deps.showTerminal,
+        hideTerminal: deps.hideTerminal
     });
 
     // The values of each app's settings that a frame was last told, so a change of the stored
@@ -473,7 +485,13 @@ export function createApps(deps: AppsDeps): AppsStore {
             }
             return;
         }
-        if (message.channel === 'app-hosts' || message.channel === 'app-shell') return;
+        if (
+            message.channel === 'app-hosts' ||
+            message.channel === 'app-shell' ||
+            message.channel === 'app-tools'
+        ) {
+            return;
+        }
         const held = $state.snapshot(message);
         for (const one of [...mounted]) one.deliver(held);
     });

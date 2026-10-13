@@ -36,6 +36,7 @@ export function markGlyph(kind: Terminal['kind'], icon: string): string {
     if (icon !== '' && hasGlyph(icon)) return icon;
     if (kind === 'claude') return t('sessions.kind_claude_glyph');
     if (kind === 'codex') return t('sessions.kind_codex_glyph');
+    if (kind === 'app') return t('sessions.kind_app_glyph');
     return t('sessions.kind_shell_glyph');
 }
 

@@ -54,6 +54,12 @@
     // that holds it, so a project folder of the hub lists the hub's repository, with the line "In
     // root/folder" and the control that lists every repository again.
     //
+    // The source controls the apps' hosts created (`oculus.scm.createSourceControl`) are rows of
+    // the same list, after the repositories, with the count their host gives as a badge; the one
+    // pressed is shown in place of the repository (apps/AppSource.svelte), and the count of every
+    // control is added to the view's rail badge. Which control is shown is the instance's state
+    // too.
+    //
     // A repository closed in this tab leaves its list and is never the one shown; it is a filter on
     // what this tab draws, kept in the instance's state, and the channel still carries it. Reopen
     // Closed Repositories, in the title bar and in the `...` menu while any is closed, asks which
@@ -73,6 +79,7 @@
     import FolderLine from '$lib/views/shared/links/FolderLine.svelte';
     import Repo from './Repo.svelte';
     import RepoList from './RepoList.svelte';
+    import AppSource from './apps/AppSource.svelte';
     import QuickPick from '$lib/ui/forms/choice/QuickPick.svelte';
     import { closedChoices } from './menus/repo-menu';
     import { viewMenu } from './menus/view-menu';
@@ -83,6 +90,7 @@
         withLimit
     } from '$lib/state/sources/explorer/view/limit';
     import { servesRoot } from '$lib/state/sources/fs-transport';
+    import { scmKey } from '$lib/state/system/apps/tools/scm.svelte';
     import { prunedCollapsed } from '$lib/state/sources/repositories/change-tree';
     import {
         closeOthers,
@@ -113,6 +121,7 @@
     const {
         fs: { roots: fsRoots, workspaces },
         repositories,
+        appTools,
         selectors: { gitFor, gitRoots },
         ui: { instanceState, requestPalette, setInstanceState },
         writes: { openFolder }
@@ -128,6 +137,9 @@
         limitedRepositories(pickerRoots(gitRoots(), gitFor, served), fsRoots(), folder)
     );
     const view = $derived(repositoriesViewOf(instanceState(instance.id)));
+    /** The source controls the apps' hosts created, and the one this tab shows, if it still is. */
+    const sources = $derived(appTools.scm.sources());
+    const appSource = $derived(sources.find((one) => scmKey(one.app, one.id) === view.source));
     const roots = $derived(visibleRoots(every, view.closed));
     const labels = $derived(repositoryLabels(every));
     const shown = $derived(shownRoot(roots, view.root));
@@ -197,6 +209,7 @@
         patch({
             root,
             commit,
+            source: '',
             reveal: 'branches',
             collapsed: target === null ? opened : prunedCollapsed(opened, root, target, commit)
         });
@@ -384,14 +397,14 @@
     tinted
 >
     <div class="repos" data-instance={instance.id} data-view="repositories">
-        {#if every.length === 0}
+        {#if every.length === 0 && sources.length === 0}
             <Empty
                 message={folder !== null && !servesRoot(workspaces(), folder.root)
                     ? t('repositories.folder_gone', folder.root)
                     : t('repositories.empty')}
                 glyph={t('repositories.empty_glyph')}
             />
-        {:else if roots.length === 0}
+        {:else if roots.length === 0 && sources.length === 0}
             <Empty message={t('repositories.all_closed')} glyph={t('repositories.empty_glyph')} />
         {:else}
             {#if refused !== ''}
@@ -404,7 +417,7 @@
                 stateOf={gitFor}
                 collapsed={view.collapsed}
                 ontoggle={toggled}
-                onpick={(root: string) => patch({ root, commit: '' })}
+                onpick={(root: string) => patch({ root, commit: '', source: '' })}
                 onbranch={showBranches}
                 {ask}
                 onterminal={(root: string) =>
@@ -412,8 +425,20 @@
                 onreveal={(root: string) => void reveal(root)}
                 onclose={closeRoot}
                 oncloseothers={closeAllBut}
+                {sources}
+                source={view.source}
+                onsource={(key: string) => patch({ source: key })}
             />
-            {#if held !== null}
+            {#if appSource !== undefined}
+                {#key view.source}
+                    <AppSource
+                        control={appSource}
+                        collapsed={view.collapsed}
+                        ontoggle={toggled}
+                        mode={view.mode}
+                    />
+                {/key}
+            {:else if held !== null}
                 {#key shown}
                     <Repo
                         root={shown}

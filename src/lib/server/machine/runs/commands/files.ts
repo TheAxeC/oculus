@@ -1,9 +1,12 @@
 // Layer 2, server. One command entry as a source writes it, and the reader of the one source that
 // is a file of the repository: `<repo>/.oculus/commands.yml`. The rules of a name, a folder and a
 // field of the wrong type, and the reading of a YAML file down to its list, are exported so
-// `<repo>/.oculus/launch.yml` (server/machine/debug/launch.ts) reads by the same code.
+// `<repo>/.oculus/launch.yml` (server/machine/debug/launch/read.ts) reads by the same code.
 //
-// An entry is `{ name, run, cwd?, depends_on?, default? }`. checkEntry reads it through a zod
+// An entry is `{ name, run, cwd?, depends_on?, default?, problemMatcher? }`. An entry of
+// `.oculus/commands.yml` may instead carry a `type` that an app defines as a task definition: it
+// has no `run`, no `depends_on`, and every other key it holds is a property of the definition,
+// which the app resolves into a task (apps/tools/run/tasks.ts). checkEntry reads it through a zod
 // schema and then applies the rules a schema cannot: the name's length and characters, a line that
 // says something, and a `cwd` that is a folder inside the repository by its real path. Each field
 // that fails is a finding naming the file and the field, and the entry is left out; the entries
@@ -15,6 +18,7 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { LineCounter, isMap as isYamlMap, isNode, isSeq, parseDocument } from 'yaml';
 import { z } from 'zod';
 import type {
+    AppTaskRef,
     CommandDefault,
     CommandFinding,
     CommandSource,
@@ -35,17 +39,28 @@ export const entryShape = z.object({
     run: z.string(),
     cwd: z.string().nullish(),
     depends_on: z.array(z.string()).nullish(),
-    default: z.enum(['build', 'test']).nullish()
+    default: z.enum(['build', 'test']).nullish(),
+    problemMatcher: z.union([z.string(), z.array(z.string())]).nullish()
 });
 
 export type Entry = z.infer<typeof entryShape>;
+
+/** An entry of `commands.yml`: a command with a `run`, or a typed one that an app resolves. */
+const fileEntryShape = z.looseObject({
+    ...entryShape.shape,
+    run: z.string().nullish(),
+    type: z.string().nullish()
+});
+
+/** The keys of a typed entry that are not properties of its task definition. */
+const ENTRY_KEYS = ['name', 'run', 'cwd', 'depends_on', 'default', 'problemMatcher', 'type'];
 
 /**
  * The whole of `.oculus/commands.yml`: a `commands` list of entries. The file is read entry by
  * entry so that one entry that fails leaves out itself alone; this shape is the file as the
  * editor's JSON Schema describes it.
  */
-export const commandsFileShape = z.strictObject({ commands: z.array(entryShape).nullish() });
+export const commandsFileShape = z.strictObject({ commands: z.array(fileEntryShape).nullish() });
 
 /** What a field must be, for the finding of a field of the wrong type. */
 const WRONG_TYPE: Record<string, string> = {
@@ -53,7 +68,9 @@ const WRONG_TYPE: Record<string, string> = {
     run: 'must be text',
     cwd: 'must be text',
     depends_on: 'must be a list of command names',
-    default: 'must be build or test'
+    default: 'must be build or test',
+    problemMatcher: 'must be a problem matcher name or a list of them',
+    type: 'must be text'
 };
 
 /** A field that does not read, with the sentence for it. */
@@ -113,25 +130,84 @@ export function folderOf(repo: string, cwd: string | null | undefined): string |
     return real;
 }
 
+/** What a typed entry of `commands.yml` is: the task type and the properties of its definition. */
+type Typed = { type: string; definition: Record<string, unknown> };
+
+/** A checked entry: its fields, its folder, and for a typed entry what the app resolves. */
+export type Checked = { entry: Entry; cwd: string; typed?: Typed; matchers?: string[] };
+
 /**
  * One raw entry as a command of the repository, or the problems that keep it out. `repo` is the
- * repository's real path.
+ * repository's real path. With `typed` the entry may carry a `type` in place of a `run`.
  */
 export function checkEntry(
     repo: string,
-    raw: unknown
-): { entry: Entry; cwd: string } | { problems: Problem[] } {
-    const read = entryShape.safeParse(raw);
+    raw: unknown,
+    typed = false
+): Checked | { problems: Problem[] } {
+    const read = (typed ? fileEntryShape : entryShape).safeParse(raw);
     if (!read.success) return { problems: typeProblems(read.error, WRONG_TYPE) };
-    const entry = read.data;
+    const data = read.data as Record<string, unknown> & z.infer<typeof fileEntryShape>;
+    const type = typed && typeof data.type === 'string' ? data.type : undefined;
+    const entry: Entry = {
+        name: data.name,
+        run: data.run ?? '',
+        cwd: data.cwd,
+        depends_on: data.depends_on,
+        default: data.default,
+        problemMatcher: data.problemMatcher
+    };
     const problems: Problem[] = [];
     const named = nameProblem(entry.name);
     if (named !== null) problems.push({ field: 'name', message: named });
-    if (entry.run.trim() === '') problems.push({ field: 'run', message: 'must not be empty' });
+    if (type === undefined) {
+        if (data.run === undefined || data.run === null) {
+            problems.push({ field: 'run', message: WRONG_TYPE.run });
+        } else if (entry.run.trim() === '') {
+            problems.push({ field: 'run', message: 'must not be empty' });
+        }
+    } else {
+        if (type.trim() === '') problems.push({ field: 'type', message: 'must not be empty' });
+        if (data.run !== undefined && data.run !== null) {
+            problems.push({
+                field: 'run',
+                message:
+                    'must not be given with a type, since the app that defines the type runs it'
+            });
+        }
+        if (entry.depends_on !== undefined && entry.depends_on !== null) {
+            problems.push({
+                field: 'depends_on',
+                message:
+                    'must not be given with a type, since a task of an app depends on no command'
+            });
+        }
+    }
     const folder = folderOf(repo, entry.cwd);
     if (typeof folder !== 'string') problems.push(folder);
     if (problems.length > 0 || typeof folder !== 'string') return { problems };
-    return { entry, cwd: folder };
+    const matchers = matchersOf(entry.problemMatcher);
+    return {
+        entry,
+        cwd: folder,
+        ...(matchers === undefined ? {} : { matchers }),
+        ...(type === undefined
+            ? {}
+            : {
+                  typed: {
+                      type,
+                      definition: Object.fromEntries(
+                          Object.entries(data).filter(([key]) => !ENTRY_KEYS.includes(key))
+                      )
+                  }
+              })
+    };
+}
+
+/** The matchers an entry names, as a list, or undefined when it names none. */
+function matchersOf(value: Entry['problemMatcher']): string[] | undefined {
+    if (value === undefined || value === null) return undefined;
+    return typeof value === 'string' ? [value] : value;
 }
 
 /**
@@ -147,6 +223,8 @@ export function collect(
         label: string;
         source: CommandSource;
         lineOf?: (at: number) => number | undefined;
+        /** Whether an entry may carry a `type` in place of a `run`. */
+        typed?: boolean;
     },
     taken: Taken
 ): Reading {
@@ -160,12 +238,12 @@ export function collect(
             message: problem.message
         });
     items.forEach((raw, at) => {
-        const checked = checkEntry(where.repo, raw);
+        const checked = checkEntry(where.repo, raw, where.typed === true);
         if ('problems' in checked) {
             for (const problem of checked.problems) finding(at, problem);
             return;
         }
-        const { entry, cwd } = checked;
+        const { entry, cwd, typed, matchers } = checked;
         if (seen.has(entry.name)) {
             finding(at, {
                 field: 'name',
@@ -191,10 +269,28 @@ export function collect(
             depends_on: entry.depends_on ?? [],
             ...(role === undefined ? {} : { default: role }),
             source: where.source,
+            ...(matchers === undefined ? {} : { matchers }),
+            ...(typed === undefined ? {} : { task: pendingTask(typed) }),
             ...(line === undefined ? {} : { entry: { file: where.file, line } })
         });
     });
     return { commands, findings };
+}
+
+/** The task of a typed entry before the app that defines its type has resolved it. */
+function pendingTask(typed: Typed): AppTaskRef {
+    return {
+        app: '',
+        appTitle: '',
+        type: typed.type,
+        key: '',
+        label: '',
+        definition: typed.definition,
+        background: false,
+        group: null,
+        isDefault: false,
+        folder: ''
+    };
 }
 
 /** The finding for a whole file. */
@@ -264,7 +360,7 @@ export function readCommandsFile(repo: string, taken: Taken): Reading {
     if ('findings' in read) return { commands: [], findings: read.findings };
     return collect(
         read.items,
-        { repo, file, label: 'commands', source: 'file', lineOf: read.lineOf },
+        { repo, file, label: 'commands', source: 'file', lineOf: read.lineOf, typed: true },
         taken
     );
 }

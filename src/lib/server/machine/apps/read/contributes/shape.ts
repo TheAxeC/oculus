@@ -5,6 +5,7 @@
 // checked after it by `reader.ts`.
 
 import { z } from 'zod';
+import { TOOL_POINTS } from './shape-tools.ts';
 
 const text = z.string();
 
@@ -87,7 +88,8 @@ export const POINTS = {
     customEditors: z.array(customEditor),
     configuration,
     themes: z.array(theme),
-    iconThemes: z.array(iconTheme)
+    iconThemes: z.array(iconTheme),
+    ...TOOL_POINTS
 };
 
 /** The names of the contribution points. */

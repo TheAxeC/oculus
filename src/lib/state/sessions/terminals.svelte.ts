@@ -43,6 +43,7 @@ import type {
     SessionRecord,
     TaskRef,
     Terminal,
+    StartKind,
     TerminalKind,
     TerminalResume
 } from '../../data/model/index.ts';
@@ -188,9 +189,16 @@ export type TerminalsStore = {
     /**
      * Show a terminal: in the tab that owns it, on its page, else in the Terminal tab of the page
      * on screen or a new one, which takes it. The label names a tab that takes it until the
-     * terminal's own name arrives.
+     * terminal's own name arrives. The terminal's grid takes the keyboard unless `preserveFocus`,
+     * which is the default: a terminal shown from a list is shown where the reader already is.
      */
-    showTerminal: (id: string, label?: string) => void;
+    showTerminal: (id: string, label?: string, preserveFocus?: boolean) => void;
+    /** The terminal whose grid is asked to take the keyboard, or null. */
+    focusAsked: () => string | null;
+    /** A grid took the keyboard it was asked for. */
+    focusTaken: (id: string) => void;
+    /** Take a terminal out of the Terminal tabs that show it, without ending it. */
+    hideTerminal: (id: string) => void;
     /** Show and select a terminal a project command just started, before the list names it. */
     adopt: (made: Terminal) => void;
     /**
@@ -212,7 +220,7 @@ export type TerminalsStore = {
      */
     composeIn: (page?: string) => void;
     /** New in one Terminal tab, the bar's New: the composer there, as `composeIn` shows it. */
-    composeInTab: (tab: string, agent?: TerminalKind) => void;
+    composeInTab: (tab: string, agent?: StartKind) => void;
     /**
      * Open the composer at a folder (a worktree start) or on a hub task, in the Terminal tab of the
      * page on screen or a new one (in the page's documents pane for a folder start that asks for
@@ -309,6 +317,9 @@ export function createTerminals(
     /** What a tab's last refused action said, by tab id. */
     const refused: { words: Record<string, string> } = $state({ words: {} });
 
+    /** The terminal a show asked the keyboard for, until its grid has taken it. */
+    const focus: { id: string | null } = $state({ id: null });
+
     /** The Terminal tabs of every page. */
     function terminalTabs(): TerminalTab[] {
         return workbench?.tabs().filter((tab) => tab.view === TERMINAL_VIEW) ?? [];
@@ -362,8 +373,9 @@ export function createTerminals(
      * the page on screen, or of a new Terminal tab there, and is shown. An id that is not a
      * terminal's shows nothing.
      */
-    function showTerminal(id: string, label = ''): void {
+    function showTerminal(id: string, label = '', preserveFocus = true): void {
         if (workbench === undefined || !isTerminalId(id)) return;
+        focus.id = preserveFocus ? null : id;
         const tabs = terminalTabs();
         const owner = ownerOf(tabs, id);
         if (owner !== null) {
@@ -385,6 +397,10 @@ export function createTerminals(
         const joined = withTerminal(held, id, held.terminals.length);
         workbench.restate(target.id, page, label === '' ? joined : { ...joined, label });
         workbench.activate(target.id, page);
+    }
+
+    function hideTerminal(id: string): void {
+        if (workbench !== undefined) closeEnded(workbench, terminalTabs(), [id]);
     }
 
     /** Move a terminal into a Terminal tab; the rule is moveInto's. */
@@ -833,6 +849,11 @@ export function createTerminals(
         unsubscribePty,
         subscribed,
         showTerminal,
+        focusAsked: () => focus.id,
+        focusTaken: (id) => {
+            if (focus.id === id) focus.id = null;
+        },
+        hideTerminal,
         adopt,
         moveTerminal,
         attachable,

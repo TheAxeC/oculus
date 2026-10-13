@@ -10,7 +10,7 @@ import {
     type NamedSchema,
     type SchemaSet
 } from '../../../data/snapshot/schema/set.ts';
-import { launchFileShape } from '../../machine/debug/launch.ts';
+import { launchFileShape } from '../../machine/debug/launch/read.ts';
 import { appShape } from '../../machine/apps/read/manifest.ts';
 import { commandsFileShape } from '../../machine/runs/commands/files.ts';
 

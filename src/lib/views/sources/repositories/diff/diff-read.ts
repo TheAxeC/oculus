@@ -6,6 +6,8 @@
 // file, each holding the file's two sides. Reads of the same diff run a few at a time. The
 // comparison of a save conflict is one read of the file as the disk holds it, which is the left
 // side; the right side is the source tab's own text, which the pane puts in as the tab changes.
+// The comparison of an app's quick diff is the file as the disk holds it against the original the
+// app's source control gives, asked of the host with a `scm` request of `/api/app-host`.
 // `readKeyOf` is the key a pane's read is made under, which tells it when to read again.
 
 import { readJson } from '$lib/data/shapes/shapes';
@@ -23,13 +25,8 @@ import {
     type DiffRequest
 } from '$lib/state/sources/repositories/answers';
 import { joinAnswers, refCompareUrl } from '$lib/state/sources/repositories/diff/compare';
-import {
-    diffUrl,
-    fileDiffUrl,
-    groupPaths,
-    readAll,
-    type DiffState
-} from '$lib/state/sources/repositories/repositories';
+import { diffUrl, type DiffState } from '$lib/state/sources/repositories/diff/subject';
+import { fileDiffUrl, groupPaths, readAll } from '$lib/state/sources/repositories/repositories';
 
 /** How many files of a group's or a comparison's diff are read at once. */
 const GROUP_READS = 6;
@@ -71,6 +68,45 @@ async function diskSide(state: DiffState): Promise<DiffAnswer> {
 }
 
 /**
+ * The file as the disk holds it against the original an app's source control gives it (the
+ * control's quick diff). A control that is gone, or gives no original, is an unread side.
+ */
+async function sourceSide(state: DiffState, token: string): Promise<DiffAnswer> {
+    const { original } = state;
+    const gone: DiffAnswer = {
+        ok: false,
+        files: null,
+        attributes: null,
+        conflicted: false,
+        error: 'gone'
+    };
+    if (original === undefined) return gone;
+    const response = await fetch('/api/app-host', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-oculus-token': token },
+        body: JSON.stringify({
+            action: 'scm',
+            app: original.app,
+            id: original.id,
+            op: { kind: 'original', root: state.root, path: state.path }
+        })
+    });
+    const asked = (await readJson(response)) as { ok?: unknown; value?: unknown } | undefined;
+    if (!response.ok || asked?.ok !== true || typeof asked.value !== 'string') return gone;
+    const now = await diskSide(state);
+    const sides = {
+        oldPath: state.path,
+        newPath: state.path,
+        head: [],
+        binary: false,
+        encoded: false,
+        original: asked.value,
+        modified: now.files?.at(0)?.original ?? ''
+    };
+    return { ok: true, files: [sides], attributes: null, conflicted: false, error: undefined };
+}
+
+/**
  * The file of a Refactor Preview as the preview holds it: the file as it is on the left and the
  * file with the checked edits on the right. A preview that is no longer pending has none.
  */
@@ -107,6 +143,7 @@ export async function readPaneDiff(
     const { group, compare } = state;
     if (state.refactor !== undefined) return refactorSide(state, sides);
     if ((state.unsaved ?? '') !== '') return diskSide(state);
+    if (state.original !== undefined) return sourceSide(state, token);
     const url = diffUrl(state);
     if (compare !== undefined) {
         const listing = await fetch(url);

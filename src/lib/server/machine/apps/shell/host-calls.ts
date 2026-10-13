@@ -15,7 +15,7 @@ import { appActive } from '../../../../data/helpers/files/apps/apps.ts';
 import { text } from '../../../../data/helpers/guards.ts';
 import type { Limiter } from '../../../../data/helpers/run/limiter.ts';
 import type { AppRequestBody } from '../../../../data/model/index.ts';
-import { Refused, type HostHandler, type HostNotice } from '../host/connection.ts';
+import { Refused, parsed, type HostHandler, type HostNotice } from '../host/connection.ts';
 import type { HeldApp } from '../read/held.ts';
 import { executeCommand } from './commands.ts';
 import type { AppShell } from './registry.ts';
@@ -92,13 +92,6 @@ const uiShape = z.discriminatedUnion('kind', [
         percent: z.number().nullable().default(null)
     })
 ]);
-
-/** The params parsed by a shape, or the refusal. */
-function parsed<T>(shape: z.ZodType<T>, params: unknown): T {
-    const read = shape.safeParse(params);
-    if (!read.success) throw new Refused('refused:params');
-    return read.data;
-}
 
 /** Whether the app declares a view of type tree with this id. */
 function treeView(app: HeldApp, id: string): boolean {

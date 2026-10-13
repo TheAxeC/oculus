@@ -33,7 +33,7 @@ import { findingText, type TextCatalog } from '../../../../data/helpers/finding-
 import type { AppRow, Finding } from '../../../../data/model/index.ts';
 import { parseYamlMap, errorLine } from '../../../../data/sources/yaml-file.ts';
 import { below, realPath } from '../../../core/paths.ts';
-import { DEFAULT_ACTIVATION, parseEvent } from './activation.ts';
+import { DEBUG_COMMAND, DEFAULT_ACTIVATION, TASKS_COMMAND, parseEvent } from './activation.ts';
 import { declaredIds, readContributes } from './contributes/reader.ts';
 import { contributesShape } from './contributes/shape.ts';
 
@@ -197,6 +197,7 @@ const CARRIES: Record<string, (catalog: TextCatalog) => string> = {
     'app-hosts': (catalog) => findingText(catalog, 'findings.apps.carries.app_hosts'),
     'app-messages': (catalog) => findingText(catalog, 'findings.apps.carries.app_messages'),
     'app-shell': (catalog) => findingText(catalog, 'findings.apps.carries.app_shell'),
+    'app-tools': (catalog) => findingText(catalog, 'findings.apps.carries.app_tools'),
     inbox: (catalog) => findingText(catalog, 'findings.apps.carries.inbox'),
     calendar: (catalog) => findingText(catalog, 'findings.apps.carries.calendar'),
     sessions: (catalog) => findingText(catalog, 'findings.apps.carries.sessions'),
@@ -378,7 +379,12 @@ function eventsOf(
         if (event === 'unknown') refuse(findingText(catalog, 'findings.apps.event_unknown', text));
         else if (event === 'empty') refuse(findingText(catalog, 'findings.apps.event_empty', text));
         else if (event === 'glob') refuse(findingText(catalog, 'findings.apps.event_glob', text));
-        else if (event.kind === 'onCommand' && !declared.commands.includes(event.id)) {
+        else if (
+            event.kind === 'onCommand' &&
+            !declared.commands.includes(event.id) &&
+            event.id !== DEBUG_COMMAND &&
+            event.id !== TASKS_COMMAND
+        ) {
             refuse(findingText(catalog, 'findings.apps.event_command', text));
         } else if (event.kind === 'onView' && !declared.views.includes(event.id)) {
             refuse(findingText(catalog, 'findings.apps.event_view', text));

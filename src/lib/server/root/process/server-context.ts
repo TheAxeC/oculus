@@ -25,7 +25,7 @@ import type { DebugClient } from '../../machine/debug/session.ts';
 import type { LogPaths } from '../../machine/hpc/actions.ts';
 import type { HpcWatcher } from '../../machine/hpc/poll.ts';
 import type { SubmitState } from '../../machine/hpc/submit.ts';
-import type { Relay } from '../../machine/lsp/relay.ts';
+import type { Relay } from '../../machine/lsp/relay/relay.ts';
 import type { Terminals } from '../../machine/pty/channel.ts';
 import type { HeldEslints } from '../../machine/runs/lint/eslint.ts';
 import type { HeldComments } from '../../machine/runs/lint/writing/comments.ts';

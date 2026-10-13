@@ -9,7 +9,18 @@
 
 import { describe, expect } from 'vitest';
 import { it } from '../../../../fixtures/scratch.ts';
-import { MANIFEST, PAGE, notes, read, words, type Layout, type Row } from './manifest-fixture.ts';
+import {
+    MANIFEST,
+    PAGE,
+    notes,
+    offeredWith,
+    outcome,
+    read,
+    refused,
+    words,
+    type Layout,
+    type Row
+} from './manifest-fixture.ts';
 
 /** The manifest of `notes` with a `contributes` map written as YAML text. */
 const contributing = (contributes: string, extra = ''): Record<string, string> => ({
@@ -18,21 +29,6 @@ const contributing = (contributes: string, extra = ''): Record<string, string> =
 });
 
 const HELLO = '  commands:\n    - command: notes.hello\n      title: Hello\n';
-
-/** The ids of the apps a layout offers and the findings, as [key, sentence] pairs. */
-const outcome = (layout: Layout) => {
-    const { scanned } = read(layout);
-    return {
-        ids: scanned.apps.map((one) => one.id),
-        findings: scanned.findings.map((one) => [one.key, one.message])
-    };
-};
-
-const refused = (message: string) => ({ ids: [], findings: [['apps[notes]', message]] });
-const offeredWith = (...messages: string[]) => ({
-    ids: ['app:notes'],
-    findings: messages.map((message) => ['apps[notes]', message])
-});
 
 const COMMAND_ROWS: Row[] = [
     [
@@ -87,7 +83,7 @@ const MENU_ROWS: Row[] = [
         () => {
             const layout: Layout = {
                 machine: contributing(
-                    `${HELLO}  menus:\n    editor/context:\n      - command: notes.hello\n      - submenu: notes.more\n    scm/title:\n      - command: notes.hello\n`
+                    `${HELLO}  menus:\n    editor/context:\n      - command: notes.hello\n      - submenu: notes.more\n    scm/inputBox:\n      - command: notes.hello\n`
                 )
             };
             return {
@@ -98,7 +94,7 @@ const MENU_ROWS: Row[] = [
         {
             ...offeredWith(
                 words('contributes_submenu_dropped', 'contributes.menus.editor/context[1]'),
-                words('contributes_menu_dropped', 'scm/title')
+                words('contributes_menu_dropped', 'scm/inputBox')
             ),
             kept: {
                 'editor/context': [{ command: 'notes.hello', when: '', group: '', alt: '' }]

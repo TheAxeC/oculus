@@ -22,8 +22,11 @@
     // Where a partial patch cannot be built the bar says to act on the file whole from Changes, or,
     // for a path in conflict, to resolve it in the merge editor. The bar draws its buttons as
     // glyphs while the editor leaves it too little width for their words. What the actions do is
-    // the pane's: this reports presses. Bars sit after lines of either side: the hunk bars of the
-    // modified side, and the comment box.
+    // the pane's: this reports presses. A diff against the original an app's source control gives
+    // (`source`) puts the actions of the app's `scm/change/title` menu in each bar, and pressing
+    // one runs its command in the app's host with the file, the diff's changes and the hunk's
+    // first change as the index. Bars sit after lines of either side: the hunk bars of the modified
+    // side, and the comment box.
     //
     // A file's own diff opened for a session that the sessions payload still holds takes a comment
     // on a line of either side (the editor's `+` or Add Comment on Line): the box opens after that
@@ -73,7 +76,7 @@
         commentTitle
     } from '$lib/state/sources/repositories/review-comment';
     import type { EditorOptions } from '$lib/ui/controls/editor/options';
-    import { languageOf } from '$lib/state/sources/fs';
+    import { languageOfFile } from '$lib/state/sources/fs';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
 
@@ -104,6 +107,8 @@
         from?: string;
         /** The root the file is read from; its `.oculus/settings.yml` sets the editor's options. */
         root?: string;
+        /** The app source control whose original the diff compares with, when it does. */
+        source?: { app: string; id: string };
         /** Whether the diff is the comparison of two files, whose header names both. */
         compare?: boolean;
         /** The pane's scrolled box, which the section's nearness is read against. */
@@ -149,6 +154,7 @@
         openable,
         from = '',
         root = '',
+        source,
         compare = false,
         scroller,
         view,
@@ -179,6 +185,8 @@
     let selections: DiffSelections = $state({ original: [], modified: [] });
 
     const {
+        appShell,
+        appTools,
         fs: { fileText },
         selectors: { editorOptions, languages, paintLimit, repoSettings, sessionById },
         terminals: { steerTerminal, terminalOfSession }
@@ -215,7 +223,13 @@
     const resolved = createSourceOptions({
         path: () => path,
         root: () => root,
-        draft: () => ({ text: file.modified, language: '', indent: null, wrap: null }),
+        draft: () => ({
+            text: file.modified,
+            saved: file.modified,
+            language: '',
+            indent: null,
+            wrap: null
+        }),
         languages,
         options: editorOptions,
         repoSettings,
@@ -328,6 +342,37 @@
         );
     }
 
+    /** The app source control the diff compares with, while it exists. */
+    const control = $derived(
+        source === undefined ? undefined : appTools.scm.stateOf(source.app, source.id)
+    );
+    /** The actions the control's app offers on a change. */
+    const offered = $derived(
+        control === undefined
+            ? null
+            : appShell.strip('scm/change/title', { keys: { scmProvider: control.id } })
+    );
+
+    /** Run the `scm/change/title` entry an action stands for on the hunk's changes. */
+    function offer(hunk: Hunk, pick: string, alt: boolean): void {
+        if (control === undefined || offered === null) return;
+        void appTools.scm.execute(
+            control,
+            offered.offers,
+            pick,
+            {
+                scope: 'change',
+                change: {
+                    root,
+                    path,
+                    changes: $state.snapshot(changes),
+                    index: Math.max(0, changes.indexOf(hunk.changes[0]))
+                }
+            },
+            alt
+        );
+    }
+
     function act(hunk: Hunk, doing: PatchMode): void {
         const picked = pickedIn(hunk);
         const rows = picked.count > 0 ? picked.rows : hunkRows(hunk);
@@ -363,6 +408,8 @@
                 {busy}
                 current={at === current}
                 onact={(doing: PatchMode) => act(hunk, doing)}
+                offered={offered?.actions}
+                onoffer={(pick: string, event: MouseEvent) => offer(hunk, pick, event.altKey)}
             />
         {/if}
     {/if}
@@ -406,7 +453,7 @@
                     bind:this={editor}
                     original={file.original}
                     modified={file.modified}
-                    language={languageOf(path, languages())}
+                    language={languageOfFile(path, file.modified, languages())}
                     {model}
                     {path}
                     originalPath={file.oldPath === '' ? path : file.oldPath}

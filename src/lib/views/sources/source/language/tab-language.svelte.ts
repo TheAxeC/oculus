@@ -1,7 +1,8 @@
 // Layer 3, view partial of Source.svelte. What a source tab's language adds to its editor, made
 // once per tab: the language server wiring (`lsp.ts`) and the extension the editor is handed, which
 // is LaTeX's build markers, preview, completions and editing commands (`latex-editor.ts`), a
-// Markdown file's headings as document symbols (`symbols.ts`), a rite file's debug hover, or the
+// Markdown file's headings as document symbols (`symbols.ts`), the debug hover of a file whose
+// language takes breakpoints, or the
 // registration with a server, the markers of a project command's errors and of the linters'
 // findings for the file (`problem-marks.svelte.ts`), which also hold the file in the lint store,
 // and the quick fixes of those findings (`lint-fixes.ts`). The extension follows the language the
@@ -13,7 +14,7 @@
 import type { ClientState } from '$lib/state/client/context';
 import { markdownOutline } from '$lib/state/sources/explorer/sections/outline';
 import type { LatexCommands } from '$lib/ui/controls/editor/kit/latex/latex-editing';
-import { riteHover } from '$lib/ui/controls/editor/kit/rite/rite-hover';
+import { debugHover } from '$lib/ui/controls/editor/kit/rite/rite-hover';
 import type { EditorExtension } from '$lib/ui/controls/editor/types';
 import { languageExtension } from './extension';
 import { lintFixes } from './lint-fixes';
@@ -71,7 +72,9 @@ export function createTabLanguage(input: TabLanguageInput): TabLanguage {
                     input.commands
                 ),
             markdown: () => symbolsExtension(markdownOutline),
-            rite: () => riteHover((word) => input.client.debug.hover(word)),
+            debug: input.client.debug.takesLanguage(shown)
+                ? () => debugHover((word) => input.client.debug.hover(word))
+                : undefined,
             // A version at a commit and a library file are no file a command printed a line of or a
             // linter reads.
             marks:

@@ -27,11 +27,12 @@
     // `text/html` beside its plain text, and Clear empties this grid and the terminal's tmux
     // history (grid-actions.ts); a failure of either is said on the tab's bar through `onsay`. The
     // tab reaches Clear for a row's menu through `oncontrol`, which hands it this grid's Clear
-    // while the grid is mounted. The items are read when the right-click arrives, so Copy follows
-    // the selection xterm holds at that moment. Paste reads the clipboard and takes the same path a
-    // browser paste takes, so a paste of several lines is asked about; a clipboard the browser
-    // refuses to read leaves the grid as it was. The context menu key and Shift+F10 open the menu
-    // at the cursor rather than reaching the shell (terminal-list.ts, `holdMenuKeys`).
+    // while the grid is mounted. The items, and the entries apps contribute to `terminal/context`
+    // after them (app-menus.ts), are read when the right-click arrives, so Copy follows the
+    // selection xterm holds then. Paste takes the path a browser paste takes, so several lines are
+    // asked about; a clipboard the browser refuses to read leaves the grid as it was. The context
+    // menu key and Shift+F10 open the menu at the cursor rather than reaching the shell
+    // (terminal-list.ts, `holdMenuKeys`).
     //
     // Cmd+F (Ctrl+F off macOS) at the grid opens the find bar over its top right (FindBar.svelte),
     // as VS Code's terminal find: the search addon marks every match on the theme's `--accent-bg`
@@ -75,12 +76,14 @@
         taskStateOf
     } from '../terminal-list';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
+    import { terminalAppMenus } from '../app-menus';
     import { t } from '$lib/state/shared/words/text';
     import { scheduleReflow } from './reflow';
     import { applyLook, followTerminalOptions, gridLook, gridOptions } from './grid-look';
     import { GridFind } from './grid-find.svelte';
     import {
         clearGrid,
+        clipboardText,
         copyAsHtml,
         copySelection,
         pageClipboard,
@@ -148,6 +151,8 @@
         debug,
         terminals: {
             clearHistory,
+            focusAsked,
+            focusTaken,
             keepViewport,
             resizeTerminal,
             sendInput,
@@ -159,6 +164,7 @@
         },
         ui: { terminalFont, textScale, theme }
     } = useState();
+    const appMenus = terminalAppMenus(useState());
 
     /** How long the pane must hold still before the tmux window is told its new size. */
     const SETTLE = 100;
@@ -196,12 +202,7 @@
 
     /** Paste the clipboard's text the way a browser paste goes; a refused read changes nothing. */
     async function pasteClipboard(): Promise<void> {
-        let text: string;
-        try {
-            text = await navigator.clipboard.readText();
-        } catch {
-            return;
-        }
+        const text = await clipboardText();
         if (grid === null || text === '') return;
         const route = pasteRoute(text);
         if ('ask' in route) pasting = { text, lines: route.ask };
@@ -224,7 +225,8 @@
         if (failure !== '') onsay(failure);
     }
 
-    function picked(pick: string): void {
+    function picked(pick: string, event: MouseEvent): void {
+        if (appMenus.run(pick, id, event)) return;
         if (pick === MENU_CLEAR) void clear();
         else if (pick === MENU_COPY_HTML) void copyHtml();
         else if (pick === MENU_RENAME) onrename(id);
@@ -258,11 +260,12 @@
         grid?.focus();
     }
 
-    // A pointer press on this terminal's row hands the keyboard to the grid, mounted or mounting.
+    // A press on this row or an app's show asks this grid for the keyboard, mounted or not.
     $effect(() => {
-        if (focusing !== id || grid === null) return;
+        if (grid === null || (focusing !== id && focusAsked() !== id)) return;
         grid.focus();
         untrack(onfocused);
+        focusTaken(id);
     });
 
     // One effect for one mounted grid: it is torn down and built again when the terminal changes,
@@ -452,7 +455,10 @@
 <div class="half">
     <ContextMenu
         label={t('sessions.view_terminal')}
-        read={() => gridMenu(grid?.hasSelection() === true, armed, t, taskStateOf(terminal))}
+        read={() => [
+            ...gridMenu(grid?.hasSelection() === true, armed, t, taskStateOf(terminal)),
+            ...appMenus.items('terminal/context', id)
+        ]}
         onpick={picked}
     >
         <!-- The grid takes a file dropped from the Files view; its keyboard is xterm's. -->

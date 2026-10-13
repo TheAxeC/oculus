@@ -34,7 +34,7 @@ const WIDEST = {
     confirmOpen: false,
     app: true,
     debugging: false,
-    riteFocus: false
+    breakpointFocus: false
 } satisfies KeyContext;
 
 /** The chords of the keys a list of keybinding texts spells. */

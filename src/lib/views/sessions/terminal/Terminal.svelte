@@ -102,6 +102,7 @@
     import { useState } from '$lib/state/client/use';
 
     const {
+        appShell,
         commands: { pressRerun, pressRestart },
         entities: { config },
         layout: { holding, instanceLayoutState, restateInstance, hosts },
@@ -134,9 +135,17 @@
     /** The names of the glyph vocabulary, which Change Icon lists. */
     const glyphs = $derived(glyphNames(config()?.config) ?? []);
 
+    /** The title of an acting app, which a terminal the app made is described by. */
+    function appTitle(app: string): string {
+        return appShell.acting().find((one) => one.id === app)?.row.title ?? '';
+    }
+
     /** The list's rows: the tab's own terminals, in the tab's own order. */
     const rows = $derived(
-        tabRows(terminalChoices(terminals(), sessionRows(sessionsByWorkspace(true))), tab.terminals)
+        tabRows(
+            terminalChoices(terminals(), sessionRows(sessionsByWorkspace(true)), appTitle),
+            tab.terminals
+        )
     );
     const listed = $derived(listDrawn(rows.length, tab.composing));
     const shownRow = $derived(rows.find((row) => row.terminal === tab.shown) ?? null);

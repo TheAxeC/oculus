@@ -11,6 +11,18 @@
 //
 // A `words` value is the key of a catalog line, which the page reads with its own `t`; the module
 // holds no sentence.
+//
+// The features of every language server are here too, each by the key of the capability a server
+// declares it under in its `initialize` answer and the method it is registered under with
+// `client/registerCapability` (`FEATURES`): the relay counts a feature a server registers as
+// declared (server/machine/lsp/held/held.ts) and registers with the page's client each feature a
+// server of an app declares that oculus's own server of the language does not
+// (server/machine/lsp/relay/relay-join.ts), and the page's client counts a registration it is
+// handed as the feature declared (ui/controls/editor/kit/lsp/client.ts). The protocol registers
+// semantic tokens under `textDocument/semanticTokens`, which is here for a server's own
+// registration; the page draws a server's semantic tokens from the legend the relay sends it, so
+// the relay registers no semantic tokens with the page's client, whose Monaco client knows no
+// feature by that method.
 
 /** The ids of the language servers. */
 export type LspServerId =
@@ -216,6 +228,11 @@ const LSP_SERVERS: readonly LspServerFacts[] = [
     }
 ];
 
+/** Whether a text is the id of a shipped server. */
+export function isLspServerId(id: string): id is LspServerId {
+    return LSP_SERVERS.some((one) => one.id === id);
+}
+
 /** The entry of a server. */
 export function serverFacts(id: LspServerId): LspServerFacts {
     const found = LSP_SERVERS.find((one) => one.id === id);
@@ -278,4 +295,55 @@ export function choiceOfCommand(name: string): LspChoiceKind | undefined {
 /** The kinds of choice the server of a language asks for; none for a language no server serves. */
 export function choicesOfLanguage(language: string): readonly LspChoiceKind[] {
     return factsForLanguage(language)?.choices ?? [];
+}
+
+/** The method each feature is registered under, by the key of its capability. */
+export const FEATURES: Readonly<Record<string, string>> = {
+    hoverProvider: 'textDocument/hover',
+    completionProvider: 'textDocument/completion',
+    signatureHelpProvider: 'textDocument/signatureHelp',
+    definitionProvider: 'textDocument/definition',
+    declarationProvider: 'textDocument/declaration',
+    typeDefinitionProvider: 'textDocument/typeDefinition',
+    implementationProvider: 'textDocument/implementation',
+    referencesProvider: 'textDocument/references',
+    documentHighlightProvider: 'textDocument/documentHighlight',
+    documentSymbolProvider: 'textDocument/documentSymbol',
+    workspaceSymbolProvider: 'workspace/symbol',
+    codeActionProvider: 'textDocument/codeAction',
+    codeLensProvider: 'textDocument/codeLens',
+    documentLinkProvider: 'textDocument/documentLink',
+    documentFormattingProvider: 'textDocument/formatting',
+    documentRangeFormattingProvider: 'textDocument/rangeFormatting',
+    documentOnTypeFormattingProvider: 'textDocument/onTypeFormatting',
+    renameProvider: 'textDocument/rename',
+    foldingRangeProvider: 'textDocument/foldingRange',
+    selectionRangeProvider: 'textDocument/selectionRange',
+    inlayHintProvider: 'textDocument/inlayHint',
+    callHierarchyProvider: 'textDocument/prepareCallHierarchy',
+    typeHierarchyProvider: 'textDocument/prepareTypeHierarchy',
+    semanticTokensProvider: 'textDocument/semanticTokens'
+};
+
+/** The capability key of the feature registered under a method; undefined for no feature. */
+export function featureOf(method: unknown): string | undefined {
+    return Object.keys(FEATURES).find((key) => FEATURES[key] === method);
+}
+
+/**
+ * The capabilities a server declares once it registered (`added`) or withdrew the feature of a
+ * method, under the options it registered it with; the same capabilities for a method of no
+ * feature.
+ */
+export function withFeature(
+    capabilities: Readonly<Record<string, unknown>>,
+    method: unknown,
+    added: boolean,
+    options: unknown
+): Record<string, unknown> {
+    const feature = featureOf(method);
+    if (feature === undefined) return { ...capabilities };
+    const others = Object.entries(capabilities).filter(([key]) => key !== feature);
+    const value = typeof options === 'object' && options !== null ? options : {};
+    return Object.fromEntries(added ? [...others, [feature, value]] : others);
 }

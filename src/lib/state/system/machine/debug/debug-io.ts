@@ -4,17 +4,33 @@
 // failure is said as the sentence the reader is shown, never as the text of an exception.
 
 import { z } from 'zod';
-import type { DebugConsole, DebugLaunches } from '../../../../data/model/index.ts';
+import type {
+    DebugConsole,
+    DebugLaunches,
+    DebugLoadedSource
+} from '../../../../data/model/index.ts';
 import { DEBUG_CONSOLE_KINDS } from '../../../../data/model/index.ts';
-import { readAs, readJson, rowsShape } from '../../../../data/shapes/shapes.ts';
+import {
+    debugConfigurationShape,
+    readAs,
+    readJson,
+    rowsShape
+} from '../../../../data/shapes/shapes.ts';
 import { terminalSentence, terminalWord } from '../../../shared/answers/terminal-words.ts';
 import { unreachableAnswer, unreadableAnswer } from '../../../shared/answers/answers.ts';
 import { postWithToken, type TokenSource } from '../../../shared/stores/token-post.ts';
 import { t } from '../../../shared/words/text.ts';
 
+/** One completion the adapter gave for the Debug Console's text; `start` counts from 1. */
+export type DebugCompletion = { label: string; text: string; start: number; length: number };
+
 /** What an action of the debug route answered. */
 export type DebugAnswer =
     | { kind: 'ok' }
+    | { kind: 'line'; line: number }
+    | { kind: 'items'; items: DebugCompletion[] }
+    | { kind: 'sources'; sources: DebugLoadedSource[] }
+    | { kind: 'configurations'; configurations: Record<string, unknown>[] }
     | { kind: 'approve'; name: string; cwd: string; program: string }
     | { kind: 'confirm'; process: string }
     | { kind: 'value'; value: string }
@@ -25,6 +41,12 @@ const answerShape = z.object({
     approve: z.object({ name: z.string(), cwd: z.string(), program: z.string() }).optional(),
     confirm: z.string().optional(),
     value: z.string().optional(),
+    line: z.number().optional(),
+    items: rowsShape(
+        z.object({ label: z.string(), text: z.string(), start: z.number(), length: z.number() })
+    ).optional(),
+    sources: rowsShape(z.object({ name: z.string(), path: z.string() })).optional(),
+    configurations: rowsShape(z.record(z.string(), z.unknown())).optional(),
     failed: z.string().optional(),
     error: z.string().optional(),
     names: z.array(z.string()).optional().catch(undefined)
@@ -49,6 +71,12 @@ export async function postDebug(body: unknown, writes: TokenSource): Promise<Deb
         if (answer.approve !== undefined) return { kind: 'approve', ...answer.approve };
         if (answer.confirm !== undefined) return { kind: 'confirm', process: answer.confirm };
         if (answer.value !== undefined) return { kind: 'value', value: answer.value };
+        if (answer.line !== undefined) return { kind: 'line', line: answer.line };
+        if (answer.items !== undefined) return { kind: 'items', items: answer.items };
+        if (answer.sources !== undefined) return { kind: 'sources', sources: answer.sources };
+        if (answer.configurations !== undefined) {
+            return { kind: 'configurations', configurations: answer.configurations };
+        }
         if (answer.failed !== undefined) return { kind: 'failed', message: answer.failed };
         return { kind: 'ok' };
     } catch {
@@ -61,10 +89,7 @@ const findingShape = z.object({ file: z.string(), field: z.string(), message: z.
 const launchesShape: z.ZodType<DebugLaunches> = z.object({
     exists: z.boolean().catch(false),
     configurations: rowsShape(
-        z.object({
-            name: z.string(),
-            program: z.string(),
-            cwd: z.string(),
+        debugConfigurationShape.extend({
             before: z.string().optional().catch(undefined),
             line: z.number().optional().catch(undefined)
         })

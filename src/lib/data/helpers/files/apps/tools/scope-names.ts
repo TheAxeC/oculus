@@ -1,0 +1,52 @@
+// Layer 1, data. The TextMate scope names of the grammars oculus ships: the thirty-odd languages
+// the editor colours and the grammars each one embeds. An app's grammar that names one of them is
+// dropped with a finding and the shipped one kept, since the highlighter holds one grammar per
+// scope name.
+
+/** The scope names of the shipped grammars and the ones they embed. */
+export const SHIPPED_SCOPES: ReadonlySet<string> = new Set([
+    'source.c',
+    'source.cmake',
+    'source.commonlisp',
+    'source.cpp',
+    'source.cpp.embedded.macro',
+    'source.css',
+    'source.css.postcss',
+    'source.css.scss',
+    'source.dart',
+    'source.diff',
+    'source.fortran.fixed',
+    'source.fortran.free',
+    'source.glsl',
+    'source.graphql',
+    'source.ini',
+    'source.java',
+    'source.jinja',
+    'source.js',
+    'source.js.jsx',
+    'source.json',
+    'source.julia',
+    'source.lua',
+    'source.makefile',
+    'source.matlab',
+    'source.ocaml',
+    'source.python',
+    'source.r',
+    'source.regexp.python',
+    'source.rite',
+    'source.ruby',
+    'source.shell',
+    'source.sql',
+    'source.svelte',
+    'source.ts',
+    'source.tsx',
+    'source.yaml',
+    'text.bibtex',
+    'text.haml',
+    'text.html.basic',
+    'text.html.jinja',
+    'text.html.markdown',
+    'text.tex',
+    'text.tex.latex',
+    'text.xml'
+]);

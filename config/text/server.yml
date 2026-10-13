@@ -16,6 +16,7 @@ text:
             type_number: This setting takes a finite number
             type_string: This setting takes text
         apps:
+            decoration_badge: 'A file decoration badge of more than two characters ({0}) was left out'
             host_activate_failed: 'The host failed to start: {0}'
             host_deactivate_failed: 'The host failed to deactivate: {0}'
             host_ended_code: The host exited with code {0}
@@ -29,8 +30,16 @@ text:
             host_not_started: 'The host could not be started: {0}'
             host_refused_import: 'The host loaded {0} (import of {1}), which is not one of the recorded files of the app, so oculus refused it'
             host_stream_broken: 'The host wrote to the message stream ({0}), so oculus is stopping it'
+            host_stream_bad: 'oculus sent a message to the stream {0} that is not a message, so the stream is closed'
             host_stream_error: 'The message stream of the host failed: {0}'
+            host_stream_full: 'oculus sent the stream {0} more than it could take, so the stream is closed'
+            host_stream_unknown: 'oculus sent a {0} to the stream {1}, which is not open'
             secrets_unavailable: The keyring of this machine is not available
+            stream_bad: 'The host sent data to the stream {0} that is not what the stream carries, so the stream is closed'
+            stream_full: 'The host sent the stream {0} more than oculus could hold while the stream had no credit, so the stream is closed'
+            stream_unknown: 'The host sent a {0} for the stream {1}, which is not open'
+            terminal_ended: 'The terminal ended with code {0}'
+            terminals_full: 'The app already holds {0} terminals, the most it may, so this terminal was not opened'
         auth:
             body_not_json: The body is not JSON
             token_refused: The write token is missing or stale
@@ -60,6 +69,10 @@ text:
         commands:
             held_file: '{0} is already a command in .oculus/commands.yml of this repository, so it cannot be saved under that name'
             held_found: '{0} is already a command found in this repository, so it cannot be saved under that name'
+            task_not_resolved: 'The app that defines the task type {0} did not resolve the entry, so it is left out'
+            task_provider_failed: 'The provider of the task type {0} gave no tasks'
+            task_required: 'The task type {0} requires the property {1}, so the entry is left out'
+            task_type_unknown: 'No app that acts defines the task type {0}, so the entry is left out'
         config_key:
             local: a hub's .oculus/local.yml is the machine's own file and is not written from here
             no_entry: The options catalog has no option of that name in a tracked config file
@@ -122,27 +135,40 @@ text:
             repeated: A deck is listed twice in the group
             unknown_name: 'No deck named {0} belongs to the group'
         debug:
-            bad_action: action must be launch, approve, continue, next, stepIn, stepOut, finishFrame, frame, evaluate, breakpoints, functions, watch or stop, with the fields that action takes
+            aborted: The debug configuration provider gave no configuration, so the launch was abandoned
+            adapter_lost: The debug adapter ended while the program was still running
+            bad_action: action must be launch, approve, continue, next, stepIn, stepOut, finishFrame, frame, evaluate, breakpoints, functions, exceptions, watch, pause, restart, setVariable, completions, loadedSources, configurations, addConfiguration or stop, with the fields that action takes
             bad_header: rite_dap sent a message with no usable Content-Length header
             bad_lines: lines must be whole numbers from 1
             bad_path: path must be an absolute path under a root the file browser serves
+            config_exists: 'launch.yml already holds a configuration named {0}'
+            config_name: A configuration needs a name
+            config_unreadable: 'launch.yml is not a map with a configurations list: {0}'
+            config_unwritable: 'launch.yml could not be written: {0}'
             default_name: Debug the open file
             ended_meanwhile: The debug session ended before the evaluation was answered
             exit_code: rite_dap exited with code {0}
             field_problem: '{0} {1}'
             finished: The debug session ended
+            host_down: 'The host of the debugger {0} could not be started'
             launch_line: 'rite_dap {0} in {1}'
+            launch_line_app: 'debugger {0} in {1}'
             no_configuration: 'launch.yml has no configuration named {0}'
+            no_debugger: 'No app that acts declares a debugger of the type {0}'
             no_expression: Type an expression to evaluate
             no_frame: No frame {0} in this pause
             no_session: No debug session is running
+            not_declared: The debug adapter does not declare this feature
             not_json: rite_dap sent a message that is not JSON
             not_message: rite_dap sent a message that is neither a response nor an event of the debug protocol
             not_paused: No debug session is paused
             not_rite: 'Only a .rite file that exists can be debugged: {0}'
+            not_running: The program is not running
             partial: rite_dap stopped in the middle of a message
             process: rite_dap {0} (pid {1})
+            process_app: 'the session {1} of the debugger {0}'
             request_failed: 'rite_dap refused a request: {0}'
+            resolve_failed: 'The debug configuration provider failed: {0}'
             running: 'A debug session is running: stop it first'
             signal: rite_dap ended with signal {0}
             start_failed: "rite_dap could not be started: {0}. Set rite_dap_bin in the .oculus/local.yml of the primary hub to the adapter's path."

@@ -6,9 +6,11 @@
 // strings), the quick path `quickly` builds over a schema full of `.catch` repairs, and the plain
 // readers `readAs`, `readOr`, `filledText`, `optionalText`, `text` and `textOrNumber`, and the one
 // shape of a debug console append (`debugAppendShape`), which the server's merge and the page's
-// reader share. They sit in a folder of their own so every data folder above data/helpers can
-// import them, and apart from the server's json.ts, which can reach the disk: the write diagram
-// draws a module as a writer when anything it imports can write, and a schema helper never does.
+// reader share, and the fields of a debug configuration (`debugConfigurationShape`), which the
+// server's route and the page's reader of the launch file share. They sit in a folder of their own
+// so every data folder above data/helpers can import them, and apart from the server's json.ts,
+// which can reach the disk: the write diagram draws a module as a writer when anything it imports
+// can write, and a schema helper never does.
 
 import { z } from 'zod';
 import { strings } from '../helpers/guards.ts';
@@ -308,4 +310,15 @@ export const debugAppendShape = z.object({
     session: z.number(),
     start: z.number(),
     lines: z.array(z.object({ kind: z.enum(DEBUG_CONSOLE_KINDS), text: z.string() }))
+});
+
+/** The fields of one debug configuration, as a request carries it and the launch file reads. */
+export const debugConfigurationShape = z.object({
+    name: z.string(),
+    type: z.string(),
+    request: z.enum(['launch', 'attach']),
+    args: z.record(z.string(), z.unknown()),
+    program: z.string(),
+    cwd: z.string(),
+    before: z.string().optional()
 });

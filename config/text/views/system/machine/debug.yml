@@ -7,6 +7,8 @@ text:
         debug_console_glyph: debug_console
     debug:
         abort: Abort
+        add_cancel: Close
+        add_choose: Add a configuration
         add_configuration: Add Configuration
         ask_abort: 'Stop the terminal of the command {0}? The launch is dropped.'
         ask_in: 'in {0}'
@@ -17,6 +19,13 @@ text:
         ask_yes: Approve and Debug
         before_failed: 'The command {0} ended with exit code {1}.'
         before_unknown: 'before names {0}, which is not a command of this repository'
+        breakpoint_condition: Condition
+        breakpoint_condition_field: An expression that must be true
+        breakpoint_edit: Edit Breakpoint
+        breakpoint_hit: Hit count
+        breakpoint_hit_field: Pause when the hit count matches, such as 5 or > 2
+        breakpoint_log: Log message
+        breakpoint_log_field: A message to log instead of pausing
         breakpoints: Breakpoints
         call_stack: Call Stack
         configuration: Debug configuration
@@ -29,13 +38,18 @@ text:
         disable_all: Disable All Breakpoints
         enable_all: Enable All Breakpoints
         enable_box: Enabled
+        exception_condition: 'Condition of {0}'
         finish_frame: Finish Frame
         frame_unserved: '{0} is under no root the file browser serves, so it cannot be debugged'
         function_add: Add Function Breakpoint
         function_field: Name of a function
         go_on: Debug Anyway
-        no_breakpoints: No breakpoint is set. F9 sets one at the caret of a .rite file.
-        no_file: Open a .rite file to debug
+        loaded_none: The adapter reports no loaded source
+        loaded_sources: Loaded Sources
+        no_breakpoints: No breakpoint is set. F9 sets one at the caret of a file a debugger starts.
+        no_configuration: 'The debugger {0} gave no configuration to start'
+        no_debugger: 'No app that acts adds a debugger for {0} files'
+        no_file: Open a file that a debugger starts
         no_reading: 'launch.yml lists no configuration that reads; its findings are in the Debug view'
         not_approved: 'The launch is dropped: the command {0} was not approved'
         not_available: not available
@@ -43,17 +57,25 @@ text:
         not_started: 'The launch is dropped: the command {0} did not start'
         nothing_paused: The program is not paused
         open_launch: Open launch.yml
+        pause: Pause
+        provided_by: 'provided by {0}'
         refused: The debug configuration was not read
         remove: Remove
         remove_all: Remove All Breakpoints
         restart: Restart
         running: 'A debug session is running: stop it first'
+        set_value: Set Value
         show_errors: Show Errors
         slow: 'Waiting for the command {0}...'
         start: Start
         state_ended: 'Ended: {0}'
         state_idle: No session
         state_paused_breakpoint: Paused on breakpoint
+        state_paused_entry: Paused on entry
+        state_paused_exception: Paused on exception
+        state_paused_goto: Paused after a jump
+        state_paused_other: 'Paused: {0}'
+        state_paused_pause: Paused
         state_paused_step: Paused after a step
         state_running: Running
         state_starting: Starting
@@ -63,7 +85,9 @@ text:
         stop: Stop
         terminal_closed: 'The launch is dropped: the terminal of {0} closed before the command ended'
         toolbar: Debug
+        toolbar_apps: Debug actions of apps
         variable: '{0} = {1}'
+        variable_field: 'New value of {0}'
         variables: Variables
         waiting: 'A launch is waiting on {0}'
         watch: Watch

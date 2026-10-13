@@ -12,8 +12,9 @@
 // A refusal is a `Refused`, which carries the word an app is told (`rate`, `not_declared`,
 // `host_down`, `refused:<reason>`). On the wire it is a `ResponseError` with the word as its
 // message; a request that fails any other way, because the connection closed or the host sent a
-// malformed message, is `host_down` to the caller. A message that cannot be read calls `broken`
-// once: the stream is no longer trusted.
+// malformed message, is `host_down` to the caller. A handler for a request of the host that throws
+// anything but a `Refused` answers the word `failed`, and its error goes to the server's log. A
+// message that cannot be read calls `broken` once: the stream is no longer trusted.
 
 import type { Readable, Writable } from 'node:stream';
 import {
@@ -25,6 +26,7 @@ import {
     createMessageConnection,
     type MessageConnection
 } from 'vscode-jsonrpc/node';
+import type { z } from 'zod';
 
 /** The code of a `ResponseError` that carries an app-facing word. */
 const REFUSED = 1;
@@ -37,6 +39,13 @@ export class Refused extends Error {
         super(word);
         this.word = word;
     }
+}
+
+/** The params of a request read by a shape, or the refusal `refused:params`. */
+export function parsed<T>(shape: z.ZodType<T>, params: unknown): T {
+    const read = shape.safeParse(params);
+    if (!read.success) throw new Refused('refused:params');
+    return read.data;
 }
 
 /** A handler for a request of the host: its params and the token the host's cancel ends. */
@@ -95,6 +104,8 @@ export function connectHost(options: LinkOptions): HostLink {
                 return (await handler(params, token)) ?? null;
             } catch (error) {
                 if (error instanceof Refused) throw new ResponseError(REFUSED, error.word);
+                const reason = error instanceof Error ? error.message : String(error);
+                console.error(`apps: the host's request ${method} failed: ${reason}`);
                 throw new ResponseError(REFUSED, 'failed');
             }
         });

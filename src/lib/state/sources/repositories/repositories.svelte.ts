@@ -17,7 +17,8 @@
 // terminals, panes and roots, and no component is mounted.
 
 import { BRANCH_NOT_MERGED } from '../../../data/model/index.ts';
-import { diffState, repositoriesViewOf, type DiffSubject } from './repositories.ts';
+import { diffState, type DiffSubject } from './diff/subject.ts';
+import { repositoriesViewOf } from './repositories.ts';
 import { plannedPath } from './worktrees.ts';
 import { isFolderPath, withoutClosedCommits } from './change-tree.ts';
 import { headTabState, tabOfFile, type ServedRoot, type TabFile } from './file-git.ts';

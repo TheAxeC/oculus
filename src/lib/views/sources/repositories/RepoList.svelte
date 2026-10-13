@@ -24,12 +24,16 @@
     // listed, Close Other Repositories. The view answers them: a closed repository leaves this list
     // for the tab and comes back through Reopen Closed Repositories. A readable row draws the same
     // items under its `...` control.
+    //
+    // The source controls of the apps' hosts follow the repositories, one row each
+    // (apps/AppSourceItem.svelte); pressing one shows it in place of a repository.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
+    import AppSourceItem from './apps/AppSourceItem.svelte';
     import { repoPick, repoRowMenu } from './menus/repo-menu';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
@@ -44,6 +48,8 @@
     } from '$lib/state/sources/repositories/repositories';
     import { repoListRows } from '$lib/state/sources/repositories/change-tree';
     import type { GitState } from '$lib/state/client/selectors.svelte';
+    import { scmKey } from '$lib/state/system/apps/tools/scm.svelte';
+    import type { AppScmState } from '$lib/state/system/apps/tools/scm.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { branchState } from '$lib/views/shared/changes/branch-state';
@@ -69,6 +75,12 @@
         onclose: (root: string) => void;
         /** Every other repository closed in this tab. */
         oncloseothers: (root: string) => void;
+        /** The source controls the apps' hosts created, listed after the repositories. */
+        sources: AppScmState[];
+        /** The key of the source control the view shows, or the empty string. */
+        source: string;
+        /** A source control was pressed: show it in place of a repository. */
+        onsource: (key: string) => void;
     };
 
     let {
@@ -84,7 +96,10 @@
         onterminal,
         onreveal,
         onclose,
-        oncloseothers
+        oncloseothers,
+        sources,
+        source,
+        onsource
     }: Props = $props();
 
     const { repositories } = useState();
@@ -98,7 +113,13 @@
         else if (asked === 'close-others') oncloseothers(root);
     }
 
-    const rows = $derived(repoListRows(roots, collapsed));
+    const rows = $derived(
+        repoListRows(
+            roots,
+            collapsed,
+            sources.map((one) => scmKey(one.app, one.id))
+        )
+    );
 
     /**
      * The branch a row names: the first 8 characters of HEAD's commit for a detached HEAD (the
@@ -134,7 +155,7 @@
                 label={t('repositories.list')}
                 id="repos"
                 {nav}
-                count={roots.length}
+                count={roots.length + sources.length}
                 open={!collapsed.includes('repos')}
                 ontoggle={() => ontoggle('repos')}
             >
@@ -242,6 +263,14 @@
                             </TreeItem>
                         </ContextMenu>
                     </li>
+                {/each}
+                {#each sources as one (scmKey(one.app, one.id))}
+                    <AppSourceItem
+                        control={one}
+                        {nav}
+                        current={source === scmKey(one.app, one.id)}
+                        onpick={() => onsource(scmKey(one.app, one.id))}
+                    />
                 {/each}
             </TreeSection>
         </div>

@@ -20,7 +20,7 @@ import { textCatalog } from '../../../../data/sources/config.ts';
 import { words } from '../../../core/words.ts';
 import { approveTexts, chainText } from '../../approvals/approvals.ts';
 import { checkEntry, entryShape, type Entry } from './files.ts';
-import { listCommands } from './list.ts';
+import { listAll, listCommands, type CommandTasks } from './list.ts';
 import { repositoryOf } from './repo.ts';
 import { removeCommand, saveCommand, savedPath } from './saved.ts';
 
@@ -36,6 +36,8 @@ export type CommandsOptions = {
     writes: FsWrites;
     /** The change log a save or a remove is recorded in. */
     changes?: ChangeLog;
+    /** The apps, whose tasks are listed with the commands. */
+    tasks?: CommandTasks;
 };
 
 const NO_STORE = { 'cache-control': 'no-store' };
@@ -73,12 +75,15 @@ function saveRefusal(repo: string, entry: Entry, catalog: Record<string, string>
 }
 
 /** GET /api/commands?repo=<absolute path>: the commands and the findings. */
-export function handleCommandsGet(request: Request, options: CommandsOptions): Response {
+export async function handleCommandsGet(
+    request: Request,
+    options: CommandsOptions
+): Promise<Response> {
     const asked = new URL(request.url).searchParams.getAll('repo');
     if (asked.length !== 1) return refuse('repo must be given once');
     const found = repositoryOf(asked[0], options.rootsFor());
     if ('error' in found) return refuse(found.error);
-    return json(listCommands(found.repo), { headers: NO_STORE });
+    return json(await listAll(found.repo, undefined, options.tasks), { headers: NO_STORE });
 }
 
 /** POST /api/commands: approve, save or remove. */

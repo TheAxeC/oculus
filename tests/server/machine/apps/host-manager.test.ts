@@ -1,7 +1,7 @@
 // Layer 2, server test. When the host of a machine app runs and what it answers: the manager
 // (lib/server/machine/apps/host/manager.ts) over hosts that are scripted connections in this
-// process (hosts-world.ts), so no program is started. The real runner and its import guard are
-// tests/server/machine/apps/host-runner.test.ts.
+// process (world/hosts-world.ts), so no program is started. The real runner and its import guard
+// are tests/server/machine/apps/host-runner.test.ts.
 //
 // Every folder is synthetic, under the system temporary directory, the keyring is in memory and the
 // stores are maps. What this does NOT cover: the runner's own loading of a host file, the framing
@@ -16,7 +16,7 @@ import type {
     AppHostsPayload
 } from '../../../../src/lib/data/model/index.ts';
 import { it } from '../../../fixtures/scratch.ts';
-import { world, type AppSpec, type Script, type World } from './hosts-world.ts';
+import { world, type AppSpec, type Script, type World } from './world/hosts-world.ts';
 
 /** A promise settled by hand, for a case that waits on what a scripted host was asked. */
 function deferred() {
@@ -46,6 +46,10 @@ async function started(
 }
 
 type Row = [string, () => unknown, unknown];
+
+/** The keys of an app whose debugger is a program of its own folder. */
+const DEBUGGER =
+    'contributes:\n  debuggers:\n    - type: notes.dbg\n      label: Notes\n      program: adapter.js\n';
 
 const STARTS: Row[] = [
     [
@@ -118,6 +122,31 @@ const STARTS: Row[] = [
             return [w.spawned.length, w.hosts.rows()];
         },
         [0, []]
+    ],
+    [
+        'an app that names no host but declares a debugger, which gets the runner and no host file',
+        async () => {
+            const w = world({
+                notes: { host: null, keys: DEBUGGER, files: { 'adapter.js': 'x\n' } }
+            });
+            await w.hosts.tab(NOTES);
+            const [one] = w.spawned;
+            return [w.spawned.length, one.args.length, one.args[1]];
+        },
+        [1, 3, '']
+    ],
+    [
+        'an unapproved app that declares a debugger and names no host, which no tab starts',
+        async () => {
+            const w = world(
+                { notes: { host: null, keys: DEBUGGER, files: { 'adapter.js': 'x\n' } } },
+                {},
+                { approve: [] }
+            );
+            await w.hosts.tab(NOTES);
+            return w.spawned.length;
+        },
+        0
     ]
 ];
 

@@ -227,12 +227,19 @@ export type KeyRow = { id: string; parent: string | null; open?: boolean; fixed?
 
 /**
  * The rows of the Repositories section as its keyboard reads them: its head, and under it while it
- * is open one row per repository.
+ * is open one row per repository, then one per source control of an app (`sources` are their
+ * keys).
  */
-export function repoListRows(roots: readonly string[], collapsed: readonly string[]): KeyRow[] {
+export function repoListRows(
+    roots: readonly string[],
+    collapsed: readonly string[],
+    sources: readonly string[] = []
+): KeyRow[] {
     const open = !collapsed.includes('repos');
     const rows: KeyRow[] = [{ id: 'repos', parent: null, open }];
-    if (open) for (const root of roots) rows.push({ id: `repo:${root}`, parent: 'repos' });
+    if (!open) return rows;
+    for (const root of roots) rows.push({ id: `repo:${root}`, parent: 'repos' });
+    for (const key of sources) rows.push({ id: `source:${key}`, parent: 'repos' });
     return rows;
 }
 

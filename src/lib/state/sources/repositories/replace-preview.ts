@@ -11,7 +11,7 @@
 import { z } from 'zod';
 import type { ReplacePreview, ReplaceQuery } from '../../../data/file-ops.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
-import type { DiffSubject } from './repositories.ts';
+import type { DiffSubject } from './diff/subject.ts';
 
 /** The field of a diff pane's saved state that makes it a Replace Preview. */
 export const replacePreviewShape = z.object({

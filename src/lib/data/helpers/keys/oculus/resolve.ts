@@ -26,8 +26,8 @@ export type KeyContext = {
     app?: boolean;
     /** Whether a debug session is starting, running or paused. */
     debugging?: boolean;
-    /** Whether the focus is in the editor of a `.rite` source tab. */
-    riteFocus?: boolean;
+    /** Whether the focus is in the editor of a source tab whose file takes breakpoints. */
+    breakpointFocus?: boolean;
 };
 
 export type KeyEventLike = {
@@ -183,9 +183,9 @@ function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
 /**
  * A debug key (F5, Shift+F5, Cmd+Shift+F5, F9, F10, F11, Shift+F11) answers with a field or the
  * editor focused and under no overlay, as the default build does. It is swallowed, so the browser
- * never reloads the page or goes fullscreen on it, whenever a debug session runs or a `.rite`
- * editor has the focus, and under an overlay it then does nothing; with neither, an overlay leaves
- * the key to the browser.
+ * never reloads the page or goes fullscreen on it, whenever a debug session runs or the editor
+ * of a file that takes breakpoints has the focus, and under an overlay it then does nothing; with
+ * neither, an overlay leaves the key to the browser.
  */
 function debugAction(event: KeyEventLike, context: KeyContext, state: KeyState): KeyResult | null {
     if (event.defaultPrevented === true) return null;
@@ -200,7 +200,7 @@ function debugAction(event: KeyEventLike, context: KeyContext, state: KeyState):
         context.mac !== false
     );
     if (which === null) return null;
-    const swallow = context.debugging === true || context.riteFocus === true;
+    const swallow = context.debugging === true || context.breakpointFocus === true;
     if (context.paletteOpen || context.trayOpen || context.confirmOpen) {
         return { action: null, state, swallow };
     }

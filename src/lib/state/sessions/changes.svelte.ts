@@ -39,6 +39,8 @@ export type Change = {
     undo: string;
     /** The `at` of the change this one took back, absent on a change that took nothing back. */
     undoes?: string;
+    /** The view id of the app that made the write, absent on a write of the reader's. */
+    app?: string;
 };
 
 /** The change log of this machine, held for one client. */

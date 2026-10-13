@@ -6,9 +6,22 @@
 // holds no state, and the session decides whether an answer is wanted once it arrives.
 
 import type { ZodType } from 'zod';
-import type { DebugFrame, DebugScope, DebugWatch } from '../../../data/model/index.ts';
-import { scopesShape, stackShape, evaluateShape, variablesShape } from './shapes.ts';
-import { Refused, THREAD, type Command, type Requests } from './wire.ts';
+import type {
+    DebugFrame,
+    DebugLoadedSource,
+    DebugScope,
+    DebugWatch
+} from '../../../data/model/index.ts';
+import {
+    completionsShape,
+    evaluateShape,
+    scopesShape,
+    setVariableShape,
+    sourcesShape,
+    stackShape,
+    variablesShape
+} from './shapes.ts';
+import { Refused, type Command, type Requests } from './wire.ts';
 
 /** The result of an evaluation: the adapter's value, or the text it failed with. */
 export type Evaluation = { value: string } | { failed: string };
@@ -18,11 +31,13 @@ export type Link = {
     ask: <C extends Command>(command: C, args: Requests[C]) => Promise<unknown>;
     read: <T>(shape: ZodType<T>, body: unknown) => T;
     reported: (path: string | undefined) => string;
+    /** The thread the commands name. */
+    thread: number;
 };
 
 /** The frames of the pause, the top one first. */
 export async function readFrames(link: Link): Promise<DebugFrame[]> {
-    const body = await link.ask('stackTrace', { threadId: THREAD });
+    const body = await link.ask('stackTrace', { threadId: link.thread });
     return link.read(stackShape, body).stackFrames.map((one) => ({
         id: one.id,
         name: one.name,
@@ -38,7 +53,7 @@ export async function readScopes(link: Link, frame: number): Promise<DebugScope[
     const scopes: DebugScope[] = [];
     for (const scope of link.read(scopesShape, body).scopes) {
         if (scope.variablesReference === 0) {
-            scopes.push({ name: scope.name, variables: [] });
+            scopes.push({ name: scope.name, reference: 0, variables: [] });
             continue;
         }
         const answer = await link.ask('variables', {
@@ -47,6 +62,7 @@ export async function readScopes(link: Link, frame: number): Promise<DebugScope[
         const variables = link.read(variablesShape, answer).variables;
         scopes.push({
             name: scope.name,
+            reference: scope.variablesReference,
             variables: variables.map((one) => ({ name: one.name, value: one.value }))
         });
     }
@@ -85,4 +101,51 @@ export async function evaluateWatch(
         );
     }
     return results;
+}
+
+/** The value the adapter holds for a variable after it was set. */
+export async function setVariableIn(
+    link: Link,
+    reference: number,
+    name: string,
+    value: string
+): Promise<string> {
+    const body = await link.ask('setVariable', { variablesReference: reference, name, value });
+    return link.read(setVariableShape, body).value;
+}
+
+/**
+ * One completion of the Debug Console: `start` is the column, counting from 1, where `text`
+ * replaces `length` characters; an adapter that names no start has the text inserted at the column
+ * the request asked for.
+ */
+export type Completion = { label: string; text: string; start: number; length: number };
+
+/** The completions of a text at a column in the selected frame. */
+export async function completionsIn(
+    link: Link,
+    text: string,
+    column: number,
+    frame: number | null
+): Promise<Completion[]> {
+    const body = await link.ask('completions', {
+        text,
+        column,
+        ...(frame === null ? {} : { frameId: frame })
+    });
+    return link.read(completionsShape, body).targets.map((one) => ({
+        label: one.label,
+        text: one.text ?? one.label,
+        start: one.start ?? column,
+        length: one.length ?? 0
+    }));
+}
+
+/** The sources the adapter reports loaded, by the path the page names them. */
+export async function loadedSourcesIn(link: Link): Promise<DebugLoadedSource[]> {
+    const body = await link.ask('loadedSources', {});
+    return link.read(sourcesShape, body).sources.map((one) => ({
+        name: one.name ?? one.path ?? '',
+        path: link.reported(one.path)
+    }));
 }

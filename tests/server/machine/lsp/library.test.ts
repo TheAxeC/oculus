@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 import { describe, expect, vi } from 'vitest';
 import { TEXT_LIMIT } from '../../../../src/lib/data/file-ops.ts';
 import type { LibraryRules } from '../../../../src/lib/server/machine/lsp/library/rules.ts';
-import type { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
+import type { Relay } from '../../../../src/lib/server/machine/lsp/relay/relay.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import {
     frame,

@@ -9,21 +9,23 @@
 // What is kept is written in the legend this module owns, not the server's: the type is the row's
 // type and the modifiers are `defaultLibrary` and `readonly` alone, the two VS Code's defaults
 // style, so Monaco's lookup string is `<type>`, `<type>.defaultLibrary`, `<type>.readonly` or
-// `<type>.defaultLibrary.readonly`. The relative positions of the kept tokens are written again
-// over the tokens that were dropped.
+// `<type>.defaultLibrary.readonly`. The types and modifiers the acting apps declare join the
+// legend after those (theme/semantic.ts), so a server of an app answers in its own. The relative
+// positions of the kept tokens are written again over the tokens that were dropped. Monaco reads
+// the legend again whenever the theme is defined again, which is how a change of the apps' types
+// reaches it.
 
 import type * as Monaco from 'monaco-editor';
-import { SEMANTIC_MODIFIERS, SEMANTIC_TYPES } from '../theme/semantic';
+import { semanticModifiers, semanticTypes, type SemanticExtras } from '../theme/semantic';
 import { Signal } from './signal';
 
 /** The token types and modifiers a server answers its tokens in. */
 export type Legend = { types: readonly string[]; modifiers: readonly string[] };
 
 /** The legend the provider offers Monaco. */
-const LEGEND: Monaco.languages.SemanticTokensLegend = {
-    tokenTypes: [...SEMANTIC_TYPES],
-    tokenModifiers: [...SEMANTIC_MODIFIERS]
-};
+function legendOf(extras: SemanticExtras): Legend {
+    return { types: semanticTypes(extras), modifiers: semanticModifiers(extras) };
+}
 
 /** Whether a rule of the theme covers a lookup string: the string or a prefix of it by segments. */
 function covered(lookup: string, ruled: ReadonlySet<string>): boolean {
@@ -41,7 +43,8 @@ function covered(lookup: string, ruled: ReadonlySet<string>): boolean {
 function remapTokens(
     data: readonly number[],
     legend: Legend,
-    ruled: ReadonlySet<string>
+    ruled: ReadonlySet<string>,
+    ours: Legend
 ): Uint32Array {
     const kept: number[] = [];
     let line = 0;
@@ -51,16 +54,16 @@ function remapTokens(
     for (let at = 0; at + 4 < data.length; at += 5) {
         line += data[at];
         character = data[at] === 0 ? character + data[at + 1] : data[at + 1];
-        const type = SEMANTIC_TYPES.indexOf(legend.types[data[at + 3]] ?? '');
+        const type = ours.types.indexOf(legend.types[data[at + 3]] ?? '');
         if (type < 0) continue;
         let bits = 0;
-        for (const [bit, name] of SEMANTIC_MODIFIERS.entries()) {
+        for (const [bit, name] of ours.modifiers.entries()) {
             const held = legend.modifiers.indexOf(name);
             if (held >= 0 && (data[at + 4] & (1 << held)) !== 0) bits |= 1 << bit;
         }
         const lookup = [
-            SEMANTIC_TYPES[type],
-            ...SEMANTIC_MODIFIERS.filter((_, bit) => (bits & (1 << bit)) !== 0)
+            ours.types[type],
+            ...ours.modifiers.filter((_, bit) => (bits & (1 << bit)) !== 0)
         ].join('.');
         if (!covered(lookup, ruled)) continue;
         const moved = line - lastLine;
@@ -85,6 +88,8 @@ export type SemanticSource = {
     legend(model: Monaco.editor.ITextModel): Legend | null;
     /** The lookup strings the theme in force has a rule for. */
     ruled(): ReadonlySet<string>;
+    /** What the acting apps add to the legend. */
+    extras(): SemanticExtras;
 };
 
 /** The provider of one language, and the call that makes Monaco ask again for every model. */
@@ -97,13 +102,18 @@ export function semanticProvider(source: SemanticSource): {
         refresh: () => changed.fire(),
         provider: {
             onDidChange: changed.event,
-            getLegend: () => LEGEND,
+            getLegend: () => {
+                const ours = legendOf(source.extras());
+                return { tokenTypes: [...ours.types], tokenModifiers: [...ours.modifiers] };
+            },
             releaseDocumentSemanticTokens: () => undefined,
             provideDocumentSemanticTokens: async (model) => {
                 const legend = source.legend(model);
                 const data = legend === null ? null : await source.tokens(model);
                 if (legend === null || data === null) return null;
-                return { data: remapTokens(data, legend, source.ruled()) };
+                return {
+                    data: remapTokens(data, legend, source.ruled(), legendOf(source.extras()))
+                };
             }
         }
     };

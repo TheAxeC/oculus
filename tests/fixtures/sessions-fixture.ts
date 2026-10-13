@@ -70,6 +70,7 @@ export function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
         icon: '',
         color: '',
         kind: 'shell',
+        app: '',
         cwd: '/ws',
         command: 'zsh',
         pid: 0,

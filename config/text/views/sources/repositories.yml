@@ -7,6 +7,24 @@ text:
         abort_cherry_detail: The worktree and the index go back to where they were before the cherry pick started. Resolutions made so far are lost.
         abort_detail: The worktree and the index go back to where they were before the merge or the rebase started. Resolutions made so far are lost.
         accept_both_current: Accept Both (Current First)
+        app_change_actions: Change actions
+        app_source_accept: Accept
+        app_source_actions: Source control actions
+        app_source_empty: No changes
+        app_source_folder_actions: Folder actions
+        app_source_group_actions: Group actions
+        app_source_input: Source control input
+        app_source_outside: 'Outside the open folders: {0}'
+        app_source_refused: '{0} was not done: {1}'
+        app_source_row_actions: Resource actions
+        app_source_word_closed: its app is not open
+        app_source_word_host_down: the host of its app is not running
+        app_source_word_missing: the source control or the command is gone
+        app_source_word_not_declared: the app did not declare the command
+        app_source_word_other: 'the host answered {0}'
+        app_source_word_outside: the file is outside the folders the app is given
+        app_source_word_timeout: the host did not answer in time
+        app_source_title: '{0} (source control of {1})'
         accept_both_incoming: Accept Both (Incoming First)
         accept_current: Accept Current
         accept_incoming: Accept Incoming

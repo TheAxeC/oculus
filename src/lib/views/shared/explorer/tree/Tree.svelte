@@ -389,6 +389,11 @@
                                               row.kind
                                           )}
                                     problem={problemOf?.(row.root, row.path, row.kind) ?? null}
+                                    apps={client.appTools.decorations.of(
+                                        row.root,
+                                        row.path,
+                                        row.kind
+                                    )}
                                     onpress={pressed}
                                     onkeep={(one: TreeRow, pressedAt?: number) => {
                                         onselect(one);

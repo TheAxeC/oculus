@@ -11,6 +11,9 @@
 // SIGTERM, and SIGKILL `KILL_AFTER_MS` later; it resolves once the process has ended, and the same
 // promise answers a second call. The runner ends itself after `deactivate` answers, and ends when
 // its standard input closes, so a server that is killed leaves no host running.
+//
+// The host is the leader of a process group of its own. When it has ended, whatever is left in the
+// group is killed, so no program the host started outlives it.
 
 import { spawn as nodeSpawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import type { Clock, Timer } from '../../../core/file-poll.ts';
@@ -47,6 +50,8 @@ export type HostProcessOptions = {
     texts: Record<string, string>;
     /** The app's `name`, the prefix of the ids and settings it owns. */
     name: string;
+    /** The folders of the app's scope, which the host's workspace starts with. */
+    folders: { uri: string; name: string }[];
     /** The resolved values of the settings the app declares, which the host reads at once. */
     settings: Record<string, unknown>;
     event: ActivationEvent;
@@ -86,7 +91,8 @@ export class HostProcess {
         const child = spawn(options.command, options.args, {
             cwd: options.cwd,
             env: { ...options.env, ELECTRON_RUN_AS_NODE: '1' },
-            stdio: ['pipe', 'pipe', 'pipe']
+            stdio: ['pipe', 'pipe', 'pipe'],
+            detached: options.spawn === undefined
         });
         this.#child = child;
         this.pid = child.pid ?? 0;
@@ -117,6 +123,7 @@ export class HostProcess {
                 this.#over = true;
                 if (this.#kill !== null) options.clock.clearTimeout(this.#kill);
                 this.#link.dispose();
+                this.#endGroup();
                 const end = { code, signal };
                 options.ended(end);
                 settle(end);
@@ -137,6 +144,19 @@ export class HostProcess {
         this.ready.catch(() => undefined);
     }
 
+    /**
+     * The host runs in a process group of its own, which holds every program it started: whatever
+     * of the group is left once the host has ended is killed. A scripted spawn has no group.
+     */
+    #endGroup(): void {
+        if (this.#options.spawn !== undefined || this.pid <= 0) return;
+        try {
+            process.kill(-this.pid, 'SIGKILL');
+        } catch {
+            // The group is empty.
+        }
+    }
+
     /** Send the first activation; rejects with the host's refusal or when the host ended. */
     async #activate(): Promise<void> {
         const options = this.#options;
@@ -149,6 +169,7 @@ export class HostProcess {
                 files: options.files,
                 texts: options.texts,
                 name: options.name,
+                folders: options.folders,
                 settings: options.settings
             }),
             lost

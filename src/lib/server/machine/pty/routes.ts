@@ -30,6 +30,9 @@ import { glyphCatalog, textCatalog } from '../../../data/sources/config.ts';
 import { repositoryRoots } from '../../files/roots.ts';
 import { approveLatexStep, startLatex } from './latex/latex.ts';
 import type { RcHomes } from './latex/approval.ts';
+import { streamAction, streamBusy } from '../apps/tools/run/stream-actions.ts';
+import type { StreamTerminalSet } from '../apps/tools/run/stream-terminals.ts';
+import type { CommandTasks } from '../runs/commands/list.ts';
 import { captureTask, restartTask, rerunTask, startCommand } from '../runs/commands/run.ts';
 import { startChat, type ChatOptions } from './start/chat.ts';
 import { defaultApprovalsPath } from '../approvals/approvals.ts';
@@ -118,10 +121,14 @@ export type TerminalOptions = StartOptions &
         rootsFor?: () => string[];
         /** The home and XDG folders a build reads latexmkrc files from; the process's if absent. */
         latexHomesFor?: () => RcHomes;
+        /** The terminals the hosts of apps hold as streams, which the actions here also reach. */
+        streams?: StreamTerminalSet;
+        /** The apps, whose tasks are commands too. */
+        tasks?: CommandTasks;
     };
 
 /** The options a list request takes: a tmux runner and the shell a busy read compares against. */
-export type ListOptions = StartOptions & { shell?: string };
+export type ListOptions = StartOptions & { shell?: string; streams?: StreamTerminalSet };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
@@ -162,7 +169,16 @@ export async function handleTerminalList(
             return json({ error: ids }, { status: 400, headers: NO_STORE });
         }
         const shell = options.shell ?? process.env.SHELL ?? '/bin/zsh';
-        return json({ busy: await busyTerminals(ids, shell, options) }, { headers: NO_STORE });
+        const streams = options.streams;
+        const held = ids.filter((id) => streams?.has(id) === true);
+        const asked = await busyTerminals(
+            ids.filter((id) => !held.includes(id)),
+            shell,
+            options
+        );
+        const answers = [...asked, ...(streams === undefined ? [] : streamBusy(held, streams))];
+        const busy = ids.flatMap((id) => answers.filter((one) => one.id === id));
+        return json({ busy }, { headers: NO_STORE });
     }
     return json({ terminals: await listTerminals(options) }, { headers: NO_STORE });
 }
@@ -408,6 +424,16 @@ export async function handleTerminal(
     const message = body;
     const plain = options;
     options = wrapped(options);
+    if (options.streams !== undefined) {
+        const answered = streamAction(message, {
+            streams: options.streams,
+            glyphs: () => Object.keys(glyphCatalog(options.configFor()))
+        });
+        if (answered !== null) {
+            options.refresh?.();
+            return answered;
+        }
+    }
 
     try {
         if (message.action === 'start') {

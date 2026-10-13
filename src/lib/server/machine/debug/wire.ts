@@ -30,6 +30,15 @@ export const THREAD = 1;
 export type Requests = {
     initialize: DebugProtocol.InitializeRequestArguments;
     launch: DebugProtocol.LaunchRequestArguments;
+    attach: DebugProtocol.AttachRequestArguments;
+    pause: DebugProtocol.PauseArguments;
+    threads: Record<string, never>;
+    setVariable: DebugProtocol.SetVariableArguments;
+    restart: DebugProtocol.RestartArguments;
+    terminate: DebugProtocol.TerminateArguments;
+    completions: DebugProtocol.CompletionsArguments;
+    loadedSources: DebugProtocol.LoadedSourcesArguments;
+    custom: Record<string, unknown>;
     configurationDone: DebugProtocol.ConfigurationDoneArguments;
     setBreakpoints: DebugProtocol.SetBreakpointsArguments;
     setFunctionBreakpoints: DebugProtocol.SetFunctionBreakpointsArguments;
@@ -79,14 +88,47 @@ export type WireHandlers = {
 export type Wire = {
     /** Send a request and resolve its body: `Refused` if the adapter says no, `Ended` at an end. */
     request: <C extends Command>(command: C, args: Requests[C]) => Promise<unknown>;
+    /**
+     * Send a request by the adapter's own command name, as a `customRequest` of an app does; the
+     * body of the answer.
+     */
+    named: (command: string, args: unknown) => Promise<unknown>;
     /** End the connection: every pending request is rejected with `reason` and nothing is read. */
     end: (reason: string) => void;
+};
+
+/** The messages of an adapter that arrive and leave as objects, not as bytes of a stream. */
+export type MessageCarrier = {
+    write(message: Message): Promise<void>;
+    listen(listener: (message: Message) => void): void;
+    onError(listener: (error: unknown) => void): void;
+    onPartial(listener: () => void): void;
+    dispose(): void;
 };
 
 /** Open the connection over the child's input and output streams. */
 export function openWire(output: Readable, input: Writable, handlers: WireHandlers): Wire {
     const reader = new StreamMessageReader(output);
     const writer = new StreamMessageWriter(input);
+    input.on('error', () => undefined);
+    writer.onError(() => undefined);
+    return openCarrier(
+        {
+            write: (message) => writer.write(message),
+            listen: (listener) => reader.listen(listener),
+            onError: (listener) => reader.onError(listener),
+            onPartial: (listener) => reader.onPartialMessage(listener),
+            dispose: () => {
+                reader.dispose();
+                writer.dispose();
+            }
+        },
+        handlers
+    );
+}
+
+/** Open the connection over a carrier of messages. */
+export function openCarrier(carrier: MessageCarrier, handlers: WireHandlers): Wire {
     const pending = new Map<number, Settle>();
     let next = 1;
     let over: string | null = null;
@@ -94,8 +136,7 @@ export function openWire(output: Readable, input: Writable, handlers: WireHandle
     function end(reason: string): void {
         if (over !== null) return;
         over = reason;
-        reader.dispose();
-        writer.dispose();
+        carrier.dispose();
         for (const settle of pending.values()) settle.reject(new Ended(reason));
         pending.clear();
     }
@@ -125,24 +166,22 @@ export function openWire(output: Readable, input: Writable, handlers: WireHandle
         else settle.reject(new Refused(heard.message ?? ''));
     }
 
-    reader.onError((error) => fail(error instanceof SyntaxError ? 'not-json' : 'bad-header'));
-    reader.onPartialMessage(() => fail('partial'));
-    writer.onError(() => undefined);
-    input.on('error', () => undefined);
-    reader.listen(read);
+    carrier.onError((error) => fail(error instanceof SyntaxError ? 'not-json' : 'bad-header'));
+    carrier.onPartial(() => fail('partial'));
+    carrier.listen(read);
 
-    function request<C extends Command>(command: C, args: Requests[C]): Promise<unknown> {
+    function named(command: string, args: unknown): Promise<unknown> {
         if (over !== null) return Promise.reject(new Ended(over));
         const seq = next++;
         return new Promise((resolve, reject) => {
             pending.set(seq, { resolve, reject });
             const frame = { seq, type: 'request', command, arguments: args };
-            writer.write(frame as unknown as Message).catch(() => {
+            carrier.write(frame as unknown as Message).catch(() => {
                 pending.delete(seq);
                 reject(new Ended(over ?? 'closed'));
             });
         });
     }
 
-    return { request, end };
+    return { request: (command, args) => named(command, args), named, end };
 }

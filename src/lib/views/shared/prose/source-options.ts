@@ -14,7 +14,7 @@
 // configured options are null, and so are the indentation, the word wrap and the rulers here, which
 // the editor leaves to its own until the configuration arrives.
 
-import { languageOf, type LanguageMap } from '$lib/state/sources/fs';
+import { languageOfFile, type LanguageMap } from '$lib/state/sources/fs';
 import type { FileText } from '$lib/state/sources/fs-transport';
 import {
     detectIndent,
@@ -33,7 +33,14 @@ import {
 export type SourceOptionsInput = {
     path: () => string;
     root: () => string;
-    draft: () => { text: string; language: string; indent: Indent | null; wrap: string | null };
+    draft: () => {
+        text: string;
+        /** The text on disk, whose first line decides the language of a file no name decides. */
+        saved: string;
+        language: string;
+        indent: Indent | null;
+        wrap: string | null;
+    };
     languages: () => LanguageMap;
     options: () => ConfiguredEditor | null;
     /** A settings file's text read by the rule of the configuration the page holds. */
@@ -95,8 +102,8 @@ export function createSourceOptions(input: SourceOptionsInput): SourceOptions {
     }
 
     function language(): string {
-        const { language: chosen } = input.draft();
-        return chosen === '' ? languageOf(input.path(), input.languages()) : chosen;
+        const { language: chosen, saved } = input.draft();
+        return chosen === '' ? languageOfFile(input.path(), saved, input.languages()) : chosen;
     }
 
     function shown(): string {

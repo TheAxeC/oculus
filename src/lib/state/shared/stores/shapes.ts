@@ -13,6 +13,7 @@ import type {
     AppsPayload,
     AppHostsPayload,
     AppShellPayload,
+    AppToolsPayload,
     AuditPayload,
     CalendarPayload,
     ConfigPayload,
@@ -53,6 +54,7 @@ export type Payloads = {
     jump: Jump;
     'app-hosts': AppHostsPayload;
     'app-shell': AppShellPayload;
+    'app-tools': AppToolsPayload;
 };
 
 /** What every channel of the wire reads as, one instance per client. */
@@ -86,6 +88,8 @@ export type EntitiesStore = {
     appHosts: () => AppHostsPayload | null;
     /** What the running hosts registered in the shell and ask the reader, or null before a push. */
     appShell: () => AppShellPayload | null;
+    /** What the running hosts registered with the tools, or null before a push. */
+    appTools: () => AppToolsPayload | null;
     /** The debug session's state, or null before the server's first message. */
     debug: () => DebugPayload | null;
 };

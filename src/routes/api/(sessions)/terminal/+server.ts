@@ -7,7 +7,8 @@ import { handleTerminal, handleTerminalList } from '$lib/server/machine/pty/rout
 import { datasetIds, ownerName, project, sessionRecord } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request }) => handleTerminalList(request);
+export const GET: RequestHandler = ({ request, locals }) =>
+    handleTerminalList(request, { streams: locals.server.hosts.tools.streams });
 
 export const POST: RequestHandler = ({ request, locals }) => {
     const server = locals.server;
@@ -27,6 +28,9 @@ export const POST: RequestHandler = ({ request, locals }) => {
         // approval kept in the file `approvals` of local.yml names.
         approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
         refresh: () => server.terminals.refresh(),
+        // The terminals the hosts of apps hold as streams, and the tasks they give as commands.
+        streams: server.hosts.tools.streams,
+        tasks: server.hosts.tools.tasks,
         turns: server.terminals.turns
     });
 };

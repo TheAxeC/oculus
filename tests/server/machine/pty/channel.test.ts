@@ -14,6 +14,9 @@ import {
     ptyChannel,
     type TerminalDriver
 } from '../../../../src/lib/server/machine/pty/channel.ts';
+import { StreamHub } from '../../../../src/lib/server/machine/apps/tools/streams.ts';
+import { StreamTerminalSet } from '../../../../src/lib/server/machine/apps/tools/run/stream-terminals.ts';
+import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
 import { cursorArgs } from '../../../../src/lib/server/machine/pty/capture.ts';
 import type { Message } from '../../../../src/lib/data/model/index.ts';
 import { noop } from '../../../fixtures/doubles.ts';
@@ -196,6 +199,52 @@ describe('what the page may send back', () => {
         await vi.waitFor(() => expect(writable).toEqual([false]));
         await settle();
         expect(record.calls).toEqual([]);
+    });
+});
+
+describe('what the page may send to a terminal an app opened as a stream', () => {
+    it('refuses input from a socket that carried no token, and sends nothing to the host', async () => {
+        const toHost: string[] = [];
+        const hub = new StreamHub({
+            note: noop,
+            catalog: () => textCatalog(loadConfig(engineDir()).config),
+            notify: (method) => void toHost.push(method)
+        });
+        let stream: Parameters<StreamTerminalSet['add']>[0]['stream'] | undefined;
+        hub.onTerminal((opened) => (stream = opened));
+        void hub.handlers()['oculus/stream/open']({ id: 't1', kind: 'terminal', purpose: {} }, {
+            id: 0
+        } as never);
+        if (stream === undefined) throw new Error('no stream');
+        const streams = new StreamTerminalSet();
+        const row = streams.add({
+            app: 'app:notes',
+            name: 'Echo',
+            cwd: '/',
+            stream,
+            ended: () => ''
+        });
+        const record = driver();
+        const pages = new Hub();
+        const held = new Terminals(pages, { driver: record.driver, streams, poll: 0 });
+        open.push(held);
+        const { port, writable } = await socketOver(held, pages);
+        const client = await pageOn(port, { type: 'subscribe', channels: [ptyChannel(row.id)] });
+        await settle();
+        toHost.length = 0;
+        client.send(
+            JSON.stringify({
+                type: 'input',
+                channel: ptyChannel(row.id),
+                bytes: encode('rm -rf .\r')
+            })
+        );
+        await vi.waitFor(() => expect(writable).toEqual([false]));
+        await settle();
+        expect([
+            toHost.filter((one) => one === 'oculus/stream/data'),
+            record.calls.filter((args) => args[0] === 'send-keys')
+        ]).toEqual([[], []]);
     });
 });
 

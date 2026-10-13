@@ -87,7 +87,7 @@ text:
         funding_glyph: coin
         funding_lane: Funding
         funding_sub: grant applications
-        hint_count: '{0} active/manuscript'
+        hint_count: '{0} active'
         hint_link: open the first one
         hint_tail: not on the board (set their <code>focus:</code>)
         host: 'host: {0}'

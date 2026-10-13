@@ -11,8 +11,8 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { appById, type HeldApp } from '../../../../src/lib/server/machine/apps/read/held.ts';
 import { it } from '../../../fixtures/scratch.ts';
-import { memoryKeyring, secretsOf } from './hosts-fixture.ts';
-import { world } from './hosts-world.ts';
+import { memoryKeyring, secretsOf } from './world/hosts-fixture.ts';
+import { world } from './world/hosts-world.ts';
 
 const VALUE = 'S3CR3T-VALUE-4f7a';
 

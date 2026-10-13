@@ -9,28 +9,44 @@
 // event for the language of that file.
 
 import { createRequire } from 'node:module';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { isMap } from '../../../data/helpers/guards.ts';
 import { parseSourceChannel } from '../../../data/helpers/files/address.ts';
 import { appSettingValues, settingValues } from '../../../data/helpers/files/apps/settings.ts';
+import { joinedFor } from '../../../data/helpers/files/apps/tools/languages.ts';
 import { languageMap } from '../../../data/helpers/files/languages.ts';
-import { appsSettings, textCatalog, type LocalConfig } from '../../../data/sources/config.ts';
+import {
+    appsSettings,
+    closedPaths,
+    configDir,
+    textCatalog,
+    type LocalConfig
+} from '../../../data/sources/config.ts';
 import type { Hub } from '../../core/channels.ts';
+import type { FsWrites } from '../../core/json.ts';
 import { words } from '../../core/words.ts';
 import { updateHostStore } from '../../edit/writes/apps/host-store.ts';
 import type { WriteTarget } from '../../edit/writes.ts';
 import type { OpenWorkspace } from '../../files/workspace/open.ts';
 import { expandHome, type Root } from '../../files/files.ts';
 import { createOpenFiles, type OpenFiles } from '../../files/fs/open-files.ts';
+import { defaultHistoryDir } from '../../files/fs/history.ts';
+import { runOps } from '../../files/fs/ops.ts';
 import { approvedApps, defaultApprovalsPath } from '../../machine/approvals/approvals.ts';
 import { AppHosts } from '../../machine/apps/host/manager.ts';
+import type { StreamTerminalSet } from '../../machine/apps/tools/run/stream-terminals.ts';
+import { terminalsEnv } from '../../machine/apps/tools/run/terminals-env.ts';
+import type { Terminals } from '../../machine/pty/channel.ts';
+import { diskFs } from '../../machine/apps/reach/open.ts';
+import { closedToApps } from '../../machine/apps/reach/private.ts';
 import { ownFolder } from '../../machine/lsp/servers.ts';
 import { readStore } from '../../machine/apps/store/store.ts';
 import { createSecrets, nodeKeyring, type AppSecrets } from '../../machine/apps/secrets/secrets.ts';
 import type { AppsWatcher } from '../watch/apps.ts';
 
 /** The runner every host is started with, in oculus's own folder. */
-const RUNNER = 'src/lib/server/machine/apps/host/host-runner.mjs';
+const RUNNER = 'src/lib/server/machine/apps/host/runner/host-runner.mjs';
 
 /** What the hosts are made over. */
 export type StartHostsOptions = {
@@ -38,12 +54,20 @@ export type StartHostsOptions = {
     apps: AppsWatcher;
     local: () => LocalConfig;
     config: () => Record<string, unknown>;
+    /** The engine's folder, whose configuration is the one in force. */
+    engine: string;
     /** The open workspace as it is now. */
     open: () => OpenWorkspace;
     /** Call the listener when the open workspace moves; the answer takes it away. */
     follow?: (listener: () => void) => () => void;
     /** The write target of the process, which a host's store update is written through. */
     target: () => WriteTarget;
+    /** The chain the file edits of the hosts wait on, apart from the one the stores wait on. */
+    opsWrites: FsWrites;
+    /** The terminals the pages list, which the hosts' terminals and tasks start in. */
+    terminals: Terminals;
+    /** The terminals the hosts hold as streams. */
+    streamTerminals: StreamTerminalSet;
     /**
      * Settles when the server this context serves is listening; no host starts before it. A dev
      * reload makes the next server before it closes the old one, and listens on it only after the
@@ -73,7 +97,48 @@ export function startHosts(options: StartHostsOptions): StartedHosts {
         apps: options.apps,
         settings: () => appsSettings(options.config()),
         roots: () => roots().map((root) => ({ ...root, dir: expandHome(root.dir) })),
-        languages: () => languageMap(options.config()),
+        languages: () =>
+            joinedFor(
+                languageMap(options.config()),
+                options.apps.held().apps.map((one) => one.row)
+            ),
+        tools: {
+            context: () => ({
+                roots: roots().map((root) => ({ ...root, dir: expandHome(root.dir) })),
+                configDir: configDir(options.engine),
+                closedPaths: closedPaths(options.config()).folders,
+                privateReal: closedToApps({
+                    home: homedir(),
+                    config: configDir(options.engine),
+                    local: options.local(),
+                    roots: roots()
+                }),
+                fs: diskFs
+            }),
+            maxBytes: () => appsSettings(options.config()).maxMb * 1024 * 1024,
+            scanEntries: () => appsSettings(options.config()).scanEntries,
+            languages: () =>
+                joinedFor(
+                    languageMap(options.config()),
+                    options.apps.held().apps.map((one) => one.row)
+                ),
+            terminals: terminalsEnv({
+                terminals: options.terminals,
+                streams: options.streamTerminals,
+                shell: () => process.env.SHELL ?? '/bin/sh'
+            }),
+            ops: (operation, app) =>
+                runOps(
+                    {
+                        roots: roots().map((root) => ({ ...root, dir: expandHome(root.dir) })),
+                        writes: options.opsWrites,
+                        changes: options.target().changes,
+                        history: options.local().history ?? defaultHistoryDir()
+                    },
+                    operation,
+                    { trashReplaced: false, app }
+                )
+        },
         approved: () => approvedApps(options.local().approvals ?? defaultApprovalsPath()),
         store: {
             get: (app) => {

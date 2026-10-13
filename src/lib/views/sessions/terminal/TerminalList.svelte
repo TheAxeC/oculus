@@ -37,7 +37,8 @@
     // does, Kill Terminal arming first as the row's Kill does, Unsplit Terminal on a terminal of a
     // row of more than one, which takes it out of the row (it stays in the tab), and Join
     // Terminals, which moves a terminal another Terminal tab owns into this tab and appends it to
-    // the end of the row. A right-click on the list's empty area offers New Terminal, a shell
+    // the end of the row. The entries apps contribute to `terminal/title/context` follow them
+    // (app-menus.ts). A right-click on the list's empty area offers New Terminal, a shell
     // started in the tab's folder as the bar's New starts it, New Terminal With Profile, the same
     // start of the kind picked, and Attach to Session, which joins a running terminal no Terminal
     // tab owns to the end of this tab and shows it. A pick is routed by terminal-list.ts's
@@ -54,6 +55,7 @@
     import { t } from '$lib/state/shared/words/text';
     import { nextStop } from '$lib/ui/tree/roving';
     import RenameField from './RenameField.svelte';
+    import { terminalAppMenus } from './app-menus';
     import {
         MENU_NEW,
         ROW_DRAG,
@@ -92,10 +94,12 @@
         ondisarm
     }: TerminalListProps = $props();
 
+    const client = useState();
     const {
         layout: { restateInstance },
         terminals: { attachTerminal, moveTerminal, startInTab, terminalById }
-    } = useState();
+    } = client;
+    const appMenus = terminalAppMenus(client);
 
     let list: HTMLDivElement | null = $state(null);
 
@@ -138,7 +142,8 @@
     }
 
     /** A pick of a row's menu, routed as the bar's menu of a sole terminal routes its own. */
-    function rowPicked(row: TerminalChoice, pick: string): void {
+    function rowPicked(row: TerminalChoice, pick: string, event: MouseEvent): void {
+        if (appMenus.run(pick, row.terminal, event)) return;
         routePick(pick, row.terminal, handlers);
     }
 
@@ -266,17 +271,19 @@
             {/if}
             <ContextMenu
                 label={row.title}
-                read={() =>
-                    terminalRowMenu(
+                read={() => [
+                    ...terminalRowMenu(
                         tab,
                         row.terminal,
                         others,
                         arming === row.terminal,
                         t,
                         taskStateOf(row)
-                    )}
+                    ),
+                    ...appMenus.items('terminal/title/context', row.terminal)
+                ]}
                 own
-                onpick={(pick: string) => rowPicked(row, pick)}
+                onpick={(pick: string, event: MouseEvent) => rowPicked(row, pick, event)}
             >
                 <div
                     class="row"

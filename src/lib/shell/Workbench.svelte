@@ -25,6 +25,9 @@
     //
     // It is also where the appearance is put on the document (window/appearance.svelte.ts): the
     // theme, the wallpaper and which of the two glyph vocabularies renders.
+    //
+    // It is also where the languages the acting apps add are handed to the editor's kit
+    // (window/app-languages.svelte.ts), in the main window and in a popped-out window alike.
 
     import { activeLabel, windowTitle } from '$lib/shell/panes/workbench-title';
     import ActivityRail from './rail/ActivityRail.svelte';
@@ -49,6 +52,8 @@
     import { provideTabFrames } from '$lib/ui/tabs/tab-frames.svelte';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
     import { useAppearance } from './window/appearance.svelte';
+    import { useAppLanguages } from './window/app-languages.svelte';
+    import { sourceKeys } from './window/source-keys';
     import { paneAt, resize, type FloatSpec, type Layout } from '$lib/state/workbench/layout';
     import type { PaletteKey } from '$lib/data/helpers/keys/oculus/palette-keys';
     import { modeOf } from '$lib/state/workbench/palette';
@@ -61,10 +66,6 @@
         type NavGroup
     } from '$lib/state/workbench/navigation/catalogue';
     import type { RailEntry, RailPage } from '$lib/state/workbench/navigation/rail';
-    import {
-        SAVE_ACTION,
-        sourceOnScreen
-    } from '$lib/state/workbench/navigation/editor-status.svelte';
     import {
         NO_GIT,
         NO_STATUS,
@@ -219,17 +220,9 @@
         focusSearchBox: (id, box) => client.search.wantFocus(id, box),
         runDefault: (which) => void client.commands.runDefault(which),
         debugging: () => client.debug.active(),
-        riteOnScreen: () =>
-            sourceOnScreen(activeInstance(), client.editorStatus.statusOf)?.status.file.endsWith(
-                '.rite'
-            ) === true,
+        ...sourceKeys(client, activeInstance),
         debugKey: (which) => pressDebug(client.debug, which),
         walkProblem: (by) => walkProblem(by),
-        saveSource: () => {
-            const tab = sourceOnScreen(activeInstance(), client.editorStatus.statusOf);
-            if (tab === null) void client.apps.save(activeInstance()?.id ?? '');
-            else client.editorStatus.ask(tab.instance, { kind: 'action', id: SAVE_ACTION });
-        },
         appKey: (event, textual, editor) =>
             client.appShell.press(event, {
                 tab: activeMain,
@@ -329,6 +322,7 @@
     );
 
     const appearance = useAppearance(client);
+    useAppLanguages(client);
     const wall = $derived(appearance.wall());
     const image = $derived(appearance.image());
 

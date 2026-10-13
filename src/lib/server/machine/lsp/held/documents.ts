@@ -1,7 +1,8 @@
-// Layer 2, server. What the page's `didChange` and `didClose` do to the documents it holds, and a
-// server a closed page left taken over by the page that opens the same root. The relay (relay.ts)
-// routes the messages; these keep the page's table of open documents (held.ts `Page`) and the text
-// each server holds for them in step, whichever address a document was opened under.
+// Layer 2, server. What the page's `didChange`, `didClose` and `didSave` do to the documents it
+// holds, and a server a closed page left taken over by the page that opens the same root. The relay
+// (relay/relay.ts) routes the messages; these keep the page's table of open documents (held.ts
+// `Page`) and the text each server holds for them in step, whichever address a document was opened
+// under.
 
 import { pathToFileURL } from 'node:url';
 import { isLibraryAddress } from '../library/address.ts';
@@ -59,17 +60,41 @@ export function changeDocument(page: Page, params: unknown): void {
     if (open === undefined || !Array.isArray(changes)) return;
     // Only the address the document was opened under edits it; another name for it reads.
     if (page.opened.get(normal(open.doc.real)) !== uri) return;
-    const version = open.held.versioned(open.doc, Number(params.textDocument.version));
-    open.doc.text = applyChanges(open.doc.text, changes);
-    open.held.notify({
-        jsonrpc: '2.0',
-        method: 'textDocument/didChange',
-        params: {
-            textDocument: { uri: open.doc.fileUri, version },
-            contentChanges: changes
-        }
-    });
-    open.held.edited(open.doc);
+    for (const one of [open, ...open.also]) {
+        const version = one.held.versioned(one.doc, Number(params.textDocument.version));
+        one.doc.text = applyChanges(one.doc.text, changes);
+        one.held.notify({
+            jsonrpc: '2.0',
+            method: 'textDocument/didChange',
+            params: {
+                textDocument: { uri: one.doc.fileUri, version },
+                contentChanges: changes
+            }
+        });
+        one.held.edited(one.doc);
+    }
+}
+
+/**
+ * The page's `textDocument/didSave`: each server the document is on whose `initialize` declared
+ * `save` in its `textDocumentSync` is told, with the text when it asks for it (`includeText`).
+ */
+export function saveDocument(page: Page, params: unknown): void {
+    if (!isRecord(params) || !isRecord(params.textDocument)) return;
+    const open = page.docs.get(String(params.textDocument.uri));
+    if (open === undefined) return;
+    const text = typeof params.text === 'string' ? params.text : undefined;
+    for (const one of [open, ...open.also]) {
+        const sync = one.held.capabilities.textDocumentSync;
+        const save = isRecord(sync) ? sync.save : undefined;
+        if (save === undefined || save === null || save === false) continue;
+        const wanted = isRecord(save) && save.includeText === true && text !== undefined;
+        one.held.notify({
+            jsonrpc: '2.0',
+            method: 'textDocument/didSave',
+            params: { textDocument: { uri: one.doc.fileUri }, ...(wanted ? { text } : {}) }
+        });
+    }
 }
 
 /** The page's `textDocument/didClose`: the server drops the document with the last name for it. */
@@ -87,14 +112,17 @@ export function closeDocument(page: Page, params: unknown): void {
         return;
     }
     page.opened.delete(normal(open.doc.real));
-    open.held.docs.delete(docKey(open.doc.fileUri));
-    open.held.dropped(open.doc);
-    open.held.notify({
-        jsonrpc: '2.0',
-        method: 'textDocument/didClose',
-        params: { textDocument: { uri: open.doc.fileUri } }
-    });
-    if (open.held.docs.size === 0) open.held.armEnd();
+    page.joined.delete(uri);
+    for (const one of [open, ...open.also]) {
+        one.held.docs.delete(docKey(one.doc.fileUri));
+        one.held.dropped(one.doc);
+        one.held.notify({
+            jsonrpc: '2.0',
+            method: 'textDocument/didClose',
+            params: { textDocument: { uri: one.doc.fileUri } }
+        });
+        if (one.held.docs.size === 0) one.held.armEnd();
+    }
 }
 
 /**

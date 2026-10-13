@@ -416,10 +416,17 @@ export function indentWords(indent: Indent): string {
         : t('statusbar.indent_spaces', indent.size);
 }
 
-/** A language's name as the reader reads it, by the highlighter's name for it. */
-export function languageName(name: string): string {
-    const known = registered().includes(name) ? name : PLAIN;
-    return t(`statusbar.language_${known}`);
+/** A language an app adds: its id, and the name the reader reads it by. */
+export type AppLanguageName = { name: string; label: string };
+
+/**
+ * A language's name as the reader reads it, by the highlighter's name for it, or the name an app
+ * gave a language it added.
+ */
+export function languageName(name: string, apps: readonly AppLanguageName[] = []): string {
+    const known = registered().includes(name) ? name : null;
+    if (known !== null) return t(`statusbar.language_${known}`);
+    return apps.find((one) => one.name === name)?.label ?? t('statusbar.language_plaintext');
 }
 
 /** One language the language list offers: the highlighter's name and the reader's. */
@@ -429,21 +436,21 @@ export type LanguageChoice = { name: string; label: string };
 export type LanguageMatch = { choice: LanguageChoice; label: TextPart[] };
 
 /**
- * Every language the highlighter paints, Plain Text first and the rest by the reader's name, each
- * with its label as one unmarked run; with a query only those it matches fuzzily, over the
- * reader's name and the highlighter's, best score first and ties in that same order, each label
- * split into the runs the query matched.
+ * Every language the highlighter paints and every language an app adds, Plain Text first and the
+ * rest by the reader's name, each with its label as one unmarked run; with a query only those it
+ * matches fuzzily, over the reader's name and the highlighter's, best score first and ties in that
+ * same order, each label split into the runs the query matched.
  */
-export function languageMatches(query: string): LanguageMatch[] {
-    const all = registered()
-        .map((name) => ({ name, label: languageName(name) }))
-        .sort((left, right) =>
-            left.name === PLAIN
-                ? -1
-                : right.name === PLAIN
-                  ? 1
-                  : left.label.localeCompare(right.label)
-        );
+export function languageMatches(
+    query: string,
+    apps: readonly AppLanguageName[] = []
+): LanguageMatch[] {
+    const all = [
+        ...registered().map((name) => ({ name, label: languageName(name) })),
+        ...apps.filter((one) => !registered().includes(one.name))
+    ].sort((left, right) =>
+        left.name === PLAIN ? -1 : right.name === PLAIN ? 1 : left.label.localeCompare(right.label)
+    );
     if (query.trim() === '') {
         return all.map((choice) => ({ choice, label: [{ text: choice.label, hit: false }] }));
     }

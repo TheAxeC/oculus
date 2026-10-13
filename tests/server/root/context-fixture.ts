@@ -10,7 +10,7 @@ import { hostInfo, type ServerContext } from '../../../src/lib/server/root/conte
 import { createConfigCache } from '../../../src/lib/server/root/process/config-cache.ts';
 import { RateLimiter } from '../../../src/lib/server/root/hooks.ts';
 import { DebugClient } from '../../../src/lib/server/machine/debug/session.ts';
-import { createRelay } from '../../../src/lib/server/machine/lsp/relay.ts';
+import { createRelay } from '../../../src/lib/server/machine/lsp/relay/relay.ts';
 import { HeldEslints } from '../../../src/lib/server/machine/runs/lint/eslint.ts';
 import { HeldComments } from '../../../src/lib/server/machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../../../src/lib/server/machine/runs/lint/runs.ts';
@@ -26,7 +26,7 @@ import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
 import { noop } from '../../fixtures/doubles.ts';
 import { hubOption } from '../../../src/lib/server/files/workspace/paths.ts';
 import { workspaceWith } from '../../fixtures/hubs/workspace.ts';
-import { hostsFixture } from '../machine/apps/hosts-fixture.ts';
+import { hostsFixture } from '../machine/apps/world/hosts-fixture.ts';
 
 const ROUTE_TOKEN = 'the-write-token-of-this-context';
 

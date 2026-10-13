@@ -9,7 +9,7 @@
 // opens nothing and is said as its sentence. A later `composeAt` that begins while an earlier one
 // waits on its seed is the one that opens; the earlier one is answered with nothing to say.
 
-import type { AgentId, TaskRef, TerminalKind } from '../../../../data/model/index.ts';
+import type { AgentId, StartKind, TaskRef } from '../../../../data/model/index.ts';
 import { t } from '../../../shared/words/text.ts';
 import type { TerminalAnswer } from '../pty/pty-io.ts';
 import { composingIn, emptyTab, readTab, type TerminalTabState } from '../terminal-tabs.ts';
@@ -68,7 +68,7 @@ export function createComposerOpening(host: OpeningHost) {
      * The composer in the Terminal tab of this id, of the given kind (the shown terminal's for the
      * dropdown's With a Prompt); an id no page holds shows nothing.
      */
-    function composeInTab(id: string, agent?: TerminalKind): void {
+    function composeInTab(id: string, agent?: StartKind): void {
         const target = host.terminalTabs().find((tab) => tab.id === id);
         if (target !== undefined) showComposer(target, agent);
     }
@@ -77,7 +77,7 @@ export function createComposerOpening(host: OpeningHost) {
      * The composer shown in a tab, which keeps the terminals it owns. It starts in the tab's folder
      * and in the kind given, Claude when none is, with the accounts and picks the tab held.
      */
-    function showComposer(target: TerminalTab, agent: TerminalKind = 'claude'): void {
+    function showComposer(target: TerminalTab, agent: StartKind = 'claude'): void {
         if (workbench === undefined) return;
         const tabState = readTab(target.state);
         const folder = host.folderOf(target);
@@ -92,7 +92,7 @@ export function createComposerOpening(host: OpeningHost) {
     }
 
     /** A new composer's state in the kind given, with the accounts and picks the tab held. */
-    function freshComposerOf(state: unknown, agent: TerminalKind): Record<string, unknown> {
+    function freshComposerOf(state: unknown, agent: StartKind): Record<string, unknown> {
         const fresh = freshComposer(state);
         const record = fresh.composer as Record<string, unknown>;
         return { ...fresh, composer: { ...record, agent } };

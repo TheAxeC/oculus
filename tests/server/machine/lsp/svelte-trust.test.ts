@@ -22,7 +22,7 @@ import { afterEach, describe, expect } from 'vitest';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
 import { ownFolder } from '../../../../src/lib/server/machine/lsp/servers.ts';
 import { spawnChild } from '../../../../src/lib/server/machine/lsp/held/process.ts';
-import type { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
+import type { Relay } from '../../../../src/lib/server/machine/lsp/relay/relay.ts';
 import { frame, makeRelay, open, pageFile, recordingSink } from './lsp-fixture.ts';
 
 /** The config file's text: it writes `<name>.marker` beside itself when it is imported. */

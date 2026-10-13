@@ -10,7 +10,7 @@
 // takes the new one, and a label the reader or a bookmark gave stays.
 
 import type { OpsPlace } from '../../../data/file-ops.ts';
-import { diffState, heldDiff, type DiffState } from '../repositories/repositories.ts';
+import { diffState, heldDiff, type DiffState } from '../repositories/diff/subject.ts';
 import { filesViewOf, patchedFilesView, treeKey } from '../fs.ts';
 import { MARKDOWN_PREVIEW_VIEW, nameOf, previewLabel } from './file-type.ts';
 import { t } from '../../shared/words/text.ts';

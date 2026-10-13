@@ -152,7 +152,11 @@
             </span>
             <span>{t('map.head')}</span>
         </div>
-        <Legend />
+        <Legend
+            types={typeFilters
+                .filter((item) => item.shown && item.count > 0)
+                .map((item) => item.type)}
+        />
         {#if !hasRelationships}
             <Empty message={t('map.empty')} glyph={t('map.empty_glyph')} />
         {:else if base.nodes.length > 0 && graph.nodes.length === 0}

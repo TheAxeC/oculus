@@ -24,6 +24,8 @@ import type {
     AppSetting,
     AppSettingType
 } from '../../../../../data/model/index.ts';
+import { placeOf, type PointHelpers } from './place.ts';
+import { readTools } from './reader-tools.ts';
 import { POINTS, type PointName } from './shape.ts';
 
 /** The menus the shell draws. */
@@ -34,7 +36,19 @@ const MENUS = [
     'editor/title/context',
     'explorer/context',
     'view/title',
-    'view/item/context'
+    'view/item/context',
+    'scm/title',
+    'scm/repository',
+    'scm/sourceControl',
+    'scm/resourceGroup/context',
+    'scm/resourceState/context',
+    'scm/resourceFolder/context',
+    'scm/change/title',
+    'debug/callstack/context',
+    'debug/variables/context',
+    'debug/toolBar',
+    'terminal/context',
+    'terminal/title/context'
 ] as const;
 
 /** The kinds of view container an app may add. */
@@ -73,17 +87,23 @@ export function declaredIds(contributes: AppContributes): {
     );
     const editors = contributes.customEditors.map((one) => one.viewType);
     const settings = contributes.configuration?.properties.map((one) => one.key) ?? [];
+    const debuggers = contributes.debuggers.map((one) => `debugger:${one.type}`);
+    const tasks = contributes.taskDefinitions.map((one) => `task:${one.type}`);
+    const matchers = contributes.problemMatchers.map((one) => one.name);
     return {
         commands,
         views,
-        all: [...commands, ...views, ...containers, ...editors, ...settings]
+        all: [
+            ...commands,
+            ...views,
+            ...containers,
+            ...editors,
+            ...settings,
+            ...debuggers,
+            ...tasks,
+            ...matchers
+        ]
     };
-}
-
-/** Where in the key an issue lies: `contributes.commands[1].command`. */
-function placeOf(point: string, path: PropertyKey[]): string {
-    const tail = path.map((one) => (typeof one === 'number' ? `[${one}]` : `.${String(one)}`));
-    return `contributes.${point}${tail.join('')}`;
 }
 
 /** The text of a value in a sentence: a string as it is, anything else as JSON. */
@@ -419,6 +439,19 @@ class Reader {
         }
     }
 
+    /** What the reader of the tools' points is given of this reader. */
+    #helpers(): PointHelpers {
+        return {
+            parse: (point, value) => this.#parse(point, value),
+            refuse: (key, ...args) => this.#refuse(key, ...args),
+            note: (key, ...args) => this.#note(key, ...args),
+            file: (path, place, suffix) => this.#file(path, place, suffix),
+            has: (path) => this.#input.files.has(path) && pathSegmentsOpen(path),
+            declare: (id, place) => this.#declare(id, place),
+            name: this.#input.name
+        };
+    }
+
     /** Read the whole key. */
     read(value: unknown): AppContributes {
         if (value === undefined) return this.#out;
@@ -440,6 +473,7 @@ class Reader {
         if (map.configuration !== undefined) this.#configuration(map.configuration);
         this.#themes(map.themes ?? []);
         this.#iconThemes(map.iconThemes ?? []);
+        readTools(map, this.#helpers(), this.#out);
         this.#references();
         return this.#out;
     }

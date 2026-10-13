@@ -1,7 +1,9 @@
 // Layer 4, server test. The version a server holds a document at: a file the page closes and opens
 // again, or changes to a version the server held before, is sent to the server at a version above
 // every one it was sent before for that file, since a server may keep what it parsed of a file by
-// its version.
+// its version. And the page's `textDocument/didSave`: a server whose `initialize` declared `save`
+// in its `textDocumentSync` is told the file was saved, with the text when it asked for it, and a
+// server that did not declare it is sent nothing.
 
 import { describe, expect } from 'vitest';
 import { it } from '../../../fixtures/scratch.ts';
@@ -131,6 +133,88 @@ describe('the version a document is held at', () => {
         const request = frames.find((one) => one.payload.method === 'workspace/applyEdit');
         expect(versionOf(answer?.payload.result)).toBe(1);
         expect(versionOf((request?.payload.params as { edit: unknown }).edit)).toBe(1);
+        await relay.close();
+    });
+});
+
+const ROWS: { name: string; capabilities: Record<string, unknown>; sent: unknown[] }[] = [
+    {
+        name: 'declares save as true',
+        capabilities: { textDocumentSync: { save: true } },
+        sent: [{}]
+    },
+    {
+        name: 'declares save with includeText',
+        capabilities: { textDocumentSync: { save: { includeText: true } } },
+        sent: [{ text: 'x = 2\n' }]
+    },
+    {
+        name: 'declares save without includeText',
+        capabilities: { textDocumentSync: { save: {} } },
+        sent: [{}]
+    },
+    {
+        name: 'declares a sync of open, close and change only',
+        capabilities: { textDocumentSync: { openClose: true, change: 2 } },
+        sent: []
+    },
+    { name: 'declares the sync as a number', capabilities: { textDocumentSync: 2 }, sent: [] },
+    {
+        name: 'declares save as false',
+        capabilities: { textDocumentSync: { save: false } },
+        sent: []
+    }
+];
+
+describe('a save of a file the page holds', () => {
+    for (const row of ROWS) {
+        it(`is sent to a server that ${row.name} as ${JSON.stringify(row.sent)}`, async () => {
+            const dir = plantRoot(['a.py']);
+            const spawned = stubSpawn(() => ({ capabilities: row.capabilities }));
+            const relay = makeRelay({ roots: () => [{ key: 'repo', dir }], spawn: spawned.spawn });
+            const { sink } = recordingSink();
+            const uri = pageFile('repo', 'a.py');
+            open(relay, sink, PYTHON, uri, 'python');
+            await settle();
+            relay.inbound(
+                sink,
+                frame(PYTHON, {
+                    jsonrpc: '2.0',
+                    method: 'textDocument/didSave',
+                    params: { textDocument: { uri }, text: 'x = 2\n' }
+                })
+            );
+            await settle();
+            const saves = spawned.children[0].messages.filter(
+                (message) => message.method === 'textDocument/didSave'
+            );
+            expect(saves.map((one) => one.params)).toEqual(
+                row.sent.map((extra) => ({
+                    textDocument: { uri: expect.stringMatching(/a\.py$/) as unknown },
+                    ...(extra as object)
+                }))
+            );
+            await relay.close();
+        });
+    }
+
+    it('is sent to no server for a file the page does not hold', async () => {
+        const dir = plantRoot(['a.py']);
+        const spawned = stubSpawn(() => ({ capabilities: { textDocumentSync: { save: true } } }));
+        const relay = makeRelay({ roots: () => [{ key: 'repo', dir }], spawn: spawned.spawn });
+        const { sink } = recordingSink();
+        open(relay, sink, PYTHON, pageFile('repo', 'a.py'), 'python');
+        await settle();
+        relay.inbound(
+            sink,
+            frame(PYTHON, {
+                jsonrpc: '2.0',
+                method: 'textDocument/didSave',
+                params: { textDocument: { uri: pageFile('repo', 'b.py') }, text: '' }
+            })
+        );
+        await settle();
+        expect(spawned.children[0].received).not.toContain('textDocument/didSave');
         await relay.close();
     });
 });

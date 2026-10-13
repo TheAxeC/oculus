@@ -47,7 +47,7 @@
     import type * as Monaco from 'monaco-editor';
     import { modelUri, type EditorKit } from '../kit/load';
     import { buildWhenHosted } from '../kit/built.svelte';
-    import { shikiId } from '../kit/grammars';
+    import { shikiId } from '../kit/languages/grammars';
     import { font, paintCode, repaint } from '../kit/look';
     import { chordActions } from '../chords';
     import {
@@ -81,7 +81,9 @@
     type Props = {
         original: string;
         modified: string;
-        /** Oculus's name for the language, which kit/grammars.ts answers the Shiki id of. */
+        /**
+         * Oculus's name for the language, which kit/languages/grammars.ts answers the Shiki id of.
+         */
         language: string;
         /** A name unique to the tab instance and the file, which names the two models. */
         model: string;

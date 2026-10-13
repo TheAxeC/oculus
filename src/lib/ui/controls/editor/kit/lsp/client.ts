@@ -29,10 +29,11 @@ import {
 } from './transport/messages';
 import { namedBy } from './transport/edits';
 import type { Jump } from './transport/renames';
-import { factsForLanguage } from '$lib/data/prose/lsp-servers';
+import { factsForLanguage, featureOf } from '$lib/data/prose/lsp-servers';
 import { inactiveDecorations, markerOwner, toMarkers } from './markers';
 import type { Peeks } from './peeks';
 import { semanticProvider, type Legend } from './semantic';
+import type { SemanticExtras } from '../theme/semantic';
 import { Signal } from './signal';
 import type {
     LspDiagnostic,
@@ -79,7 +80,12 @@ export type LspHandle = {
     ask(method: string, params?: Record<string, unknown>): Promise<unknown>;
     /** Format the document as one undo stop, or say why not. */
     format(timeoutMs: number): Promise<FormatOutcome>;
-    /** Whether the server's `initialize` answer declared the capability, by its name. */
+    /** The file was saved: the servers that declared `save` are told, with the text. */
+    saved(): void;
+    /**
+     * Whether the server's `initialize` answer declared the capability, by its name, or a feature
+     * of it was registered with the client after that answer.
+     */
     provides(capability: string): boolean;
     /** End the registration: the server drops the model, and its markers are removed. */
     dispose(): void;
@@ -135,6 +141,8 @@ export type HostParts = {
     ruled: () => ReadonlySet<string>;
     /** Hear every paint that changed the theme. */
     onPainted: (listener: () => void) => { dispose(): void };
+    /** The semantic token types, modifiers and scopes the acting apps declare. */
+    semanticExtras: () => SemanticExtras;
     /** The call that runs a command of a server through whichever language's client can. */
     registerCommand: (id: string, host: LanguageHost) => { dispose(): void };
     /** Told whenever what serves a model may have changed. */
@@ -207,9 +215,13 @@ export class LanguageHost {
     #owned: { dispose(): void }[] = [];
     #stops: (() => void)[] = [];
     #diagnostics = new Map<string, readonly LspDiagnostic[]>();
+    /** The state of each server, by root key and server id, the id of oculus's own being empty. */
     #states = new Map<string, ServerState>();
+    /** The legend of each server, by root key and server id, the id of oculus's own being empty. */
     #legends = new Map<string, Legend>();
     #capabilities: Record<string, unknown> = {};
+    /** The capability key of each feature registered after `initialize`, by registration id. */
+    #registered = new Map<string, string>();
     #sweep: ReturnType<typeof setInterval> | null = null;
     #refreshTokens: (() => void) | null = null;
     /** Whether the reader accepted the rename box with the preview key. */
@@ -225,8 +237,21 @@ export class LanguageHost {
     serves(model: Monaco.editor.ITextModel): boolean {
         const entry = this.#entries.get(model);
         if (entry === undefined || this.#transport === null) return false;
-        const state = this.#states.get(entry.reg.place.root);
+        const state = this.#stateOf(entry.reg.place.root);
         return state === 'ready' || state === 'indexing';
+    }
+
+    /**
+     * The state of a root's servers as one: ready when any server answers, else indexing, starting,
+     * failed or not found, so a server that fails does not unmark what another still serves.
+     */
+    #stateOf(root: string): ServerState | undefined {
+        const held = [...this.#states]
+            .filter(([key]) => (JSON.parse(key) as string[])[0] === root)
+            .map(([, state]) => state);
+        return (['ready', 'indexing', 'starting', 'failed', 'not_found'] as const).find((state) =>
+            held.includes(state)
+        );
     }
 
     /** Whether any model is registered. */
@@ -281,8 +306,10 @@ export class LanguageHost {
             format: (timeoutMs) => this.#format(entry, timeoutMs),
             provides: (capability) => {
                 const declared = this.#capabilities[capability];
-                return declared !== undefined && declared !== false && declared !== null;
+                if (declared !== undefined && declared !== false && declared !== null) return true;
+                return [...this.#registered.values()].includes(capability);
             },
+            saved: () => this.#transport?.saved(model),
             dispose: () => this.#unregister(model)
         };
     }
@@ -396,33 +423,52 @@ export class LanguageHost {
                 )
             );
         }
-        if (facts?.semanticTokens === true) {
-            const { provider, refresh } = semanticProvider({
-                tokens: async (model) => {
-                    try {
-                        const answer = await this.#ask(model, 'textDocument/semanticTokens/full');
-                        const data = (answer as { data?: unknown } | null)?.data;
-                        return Array.isArray(data) ? (data as number[]) : null;
-                    } catch {
-                        return null;
-                    }
-                },
-                legend: (model) =>
-                    this.#legends.get(this.#entries.get(model)?.reg.place.root ?? '') ?? null,
-                ruled: this.#parts.ruled
-            });
-            this.#refreshTokens = refresh;
-            this.#owned.push(this.#parts.onPainted(refresh));
-            this.#owned.push(
-                monaco.languages.registerDocumentSemanticTokensProvider(language, provider)
-            );
-        }
+        if (facts?.semanticTokens === true) this.#semantic();
         this.#sweep = setInterval(() => {
             transport.sweep(
                 (model) => (model as Monaco.editor.ITextModel).isAttachedToEditor(),
                 PEEK_GRACE_MS
             );
         }, SWEEP_MS);
+    }
+
+    /** The legend of the server that answers a root's semantic tokens: oculus's, else the first. */
+    #legendOf(root: string): Legend | null {
+        const own = this.#legends.get(JSON.stringify([root, '']));
+        if (own !== undefined) return own;
+        for (const [key, legend] of this.#legends) {
+            if ((JSON.parse(key) as string[])[0] === root) return legend;
+        }
+        return null;
+    }
+
+    /**
+     * Register the semantic tokens provider of this language once: at connection for a language
+     * whose entry says its server gives semantic tokens, else when a server of an app sends a
+     * legend, which only a server that gives them has.
+     */
+    #semantic(): void {
+        if (this.#refreshTokens !== null || this.#transport === null) return;
+        const { monaco, language } = this.#parts;
+        const { provider, refresh } = semanticProvider({
+            tokens: async (model) => {
+                try {
+                    const answer = await this.#ask(model, 'textDocument/semanticTokens/full');
+                    const data = (answer as { data?: unknown } | null)?.data;
+                    return Array.isArray(data) ? (data as number[]) : null;
+                } catch {
+                    return null;
+                }
+            },
+            legend: (model) => this.#legendOf(this.#entries.get(model)?.reg.place.root ?? ''),
+            ruled: this.#parts.ruled,
+            extras: this.#parts.semanticExtras
+        });
+        this.#refreshTokens = refresh;
+        this.#owned.push(this.#parts.onPainted(refresh));
+        this.#owned.push(
+            monaco.languages.registerDocumentSemanticTokensProvider(language, provider)
+        );
     }
 
     /** End the client and the transport, and take every marker of this language away. */
@@ -457,17 +503,26 @@ export class LanguageHost {
         if (typeof frame.root !== 'string') return;
         const root = frame.root;
         if (frame.oculus === 'legend') {
-            this.#legends.set(root, {
+            this.#legends.set(JSON.stringify([root, frame.server ?? '']), {
                 types: Array.isArray(frame.types) ? (frame.types as string[]) : [],
                 modifiers: Array.isArray(frame.modifiers) ? (frame.modifiers as string[]) : []
             });
+            if (typeof frame.server === 'string') this.#semantic();
             this.#refreshTokens?.();
             return;
         }
+        if (frame.oculus === 'gone' && typeof frame.server === 'string') {
+            const key = JSON.stringify([root, frame.server]);
+            this.#states.delete(key);
+            this.#legends.delete(key);
+            this.#refreshTokens?.();
+            this.#parts.changed.fire();
+            return;
+        }
         if (frame.oculus !== 'state' || typeof frame.state !== 'string') return;
-        const before = this.#states.get(root);
-        const state = frame.state as ServerState;
-        this.#states.set(root, state);
+        const before = this.#stateOf(root);
+        this.#states.set(JSON.stringify([root, frame.server ?? '']), frame.state as ServerState);
+        const state = this.#stateOf(root);
         if (state === 'failed' || state === 'not_found') {
             for (const entry of this.#entries.values()) {
                 if (entry.reg.place.root !== root) continue;
@@ -535,6 +590,7 @@ export class LanguageHost {
             refreshTokens: () => this.#refreshTokens?.(),
             declared: (capabilities) => {
                 this.#capabilities = capabilities;
+                this.#registered.clear();
                 const provider = capabilities.executeCommandProvider as
                     { commands?: unknown } | undefined;
                 const commands = Array.isArray(provider?.commands) ? provider.commands : [];
@@ -542,6 +598,13 @@ export class LanguageHost {
                     if (typeof id === 'string') {
                         this.#owned.push(this.#parts.registerCommand(id, this));
                     }
+                }
+            },
+            registered: (added, list) => {
+                for (const { id, method } of list) {
+                    const feature = featureOf(method);
+                    if (added && feature !== undefined) this.#registered.set(id, feature);
+                    else this.#registered.delete(id);
                 }
             },
             notice: (key, ...words) => services.notice(key, ...words),

@@ -13,11 +13,12 @@ import {
     StreamMessageWriter,
     type ResponseMessage
 } from 'vscode-jsonrpc/node';
-import { vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import type { Sink } from '../../../../src/lib/server/core/channels.ts';
 import type { LspRpc } from '../../../../src/lib/data/model/index.ts';
+import type { AppServersFeed } from '../../../../src/lib/server/machine/lsp/relay/relay-apps.ts';
 import type { LibraryRules } from '../../../../src/lib/server/machine/lsp/library/rules.ts';
-import { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
+import { Relay } from '../../../../src/lib/server/machine/lsp/relay/relay.ts';
 import type { Spawn } from '../../../../src/lib/server/machine/lsp/held/process.ts';
 import { createServers } from '../../../../src/lib/server/machine/lsp/servers.ts';
 import {
@@ -56,6 +57,8 @@ export type Behaviour = {
     diesOn?: 'exit' | 'SIGTERM' | 'SIGKILL';
     /** The program is not there: the spawn itself fails with ENOENT. */
     missing?: boolean;
+    /** The capabilities its `initialize` answer declares; none by default. */
+    capabilities?: Record<string, unknown>;
 };
 
 /** One stub child and what it was sent. */
@@ -72,7 +75,8 @@ export class Stub extends EventEmitter {
     ended = false;
     #writer = new StreamMessageWriter(this.stdout);
     #waiting: { method: string; resolve: (message: LspRpc) => void }[] = [];
-    #behaviour: Required<Omit<Behaviour, 'missing'>>;
+    #behaviour: Required<Omit<Behaviour, 'missing' | 'capabilities'>> &
+        Pick<Behaviour, 'capabilities'>;
 
     constructor(pid: number, behaviour: Behaviour) {
         super();
@@ -107,7 +111,11 @@ export class Stub extends EventEmitter {
         if (message.method === 'initialize' && initialize !== 'silent') {
             this.#answer(
                 initialize === 'answer'
-                    ? { jsonrpc: '2.0', id, result: { capabilities: {} } }
+                    ? {
+                          jsonrpc: '2.0',
+                          id,
+                          result: { capabilities: this.#behaviour.capabilities ?? {} }
+                      }
                     : { jsonrpc: '2.0', id, error: { code: -1, message: 'no' } }
             );
         } else if (message.method === 'shutdown' && shutdown === 'answer') {
@@ -241,6 +249,8 @@ export function makeRelay(options: {
     latex?: () => LatexBuilding;
     /** oculus's own environment, whose PATH finds a server's program; empty by default. */
     env?: NodeJS.ProcessEnv;
+    /** The servers the apps' hosts register; none by default. */
+    appServers?: AppServersFeed;
 }): Relay {
     const latex = options.latex ?? (() => shippedLatex());
     const home = realpathSync(scratchDir('oculus-lsp-home-'));
@@ -261,7 +271,8 @@ export function makeRelay(options: {
         }),
         run: options.run ?? (() => Promise.resolve(null)),
         exists: options.exists ?? (() => false),
-        library: options.library
+        library: options.library,
+        appServers: options.appServers
     });
     relay.gate(() => true);
     return relay;
@@ -287,6 +298,35 @@ export async function settle(): Promise<void> {
 export async function advance(ms: number): Promise<void> {
     await vi.advanceTimersByTimeAsync(ms);
     await settle();
+}
+
+/**
+ * Start the fake clock before each test and close, after each, the relays a test pushed on the
+ * returned list. Called once at the top of a suite file.
+ */
+export function relaysMade(): Relay[] {
+    const made: Relay[] = [];
+    beforeEach(() => {
+        useClock();
+    });
+    afterEach(async () => {
+        const closing = Promise.all(made.map((relay) => relay.close()));
+        await advance(10_000);
+        await closing;
+        made.length = 0;
+        vi.useRealTimers();
+    });
+    return made;
+}
+
+/** The state frames of a page, in order, as `state` or `state:code`. */
+export function states(page: ReturnType<typeof recordingSink>): string[] {
+    return page.frames
+        .filter((one) => one.payload.oculus === 'state')
+        .map((one) => {
+            const { state, code } = one.payload as unknown as { state: string; code?: string };
+            return code === undefined ? state : `${state}:${code}`;
+        });
 }
 
 /** The page's address of a file of the root `key`. */

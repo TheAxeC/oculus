@@ -55,13 +55,21 @@ export function names(events: readonly string[], raised: ActivationEvent): boole
     });
 }
 
+/** The commands of VS Code that start the debuggers and the tasks of an app. */
+export const DEBUG_COMMAND = 'workbench.action.debug.start';
+export const TASKS_COMMAND = 'workbench.action.tasks.runTask';
+
 /**
- * Whether an event raised by a trigger is one the app's manifest makes by declaring a command or a
- * view: VS Code starts an extension for a contributed command or view whatever its activation
- * events list.
+ * Whether an event raised by a trigger is one the app's manifest makes by declaring a command, a
+ * view, a debugger or a task type: VS Code starts an extension for a contributed command or view
+ * whatever its activation events list, and oculus starts the host of an app that declares a
+ * debugger when a debug session starts and the host of an app that declares a task type when tasks
+ * are listed or run.
  */
 export function declaredEvent(contributes: AppContributes, raised: ActivationEvent): boolean {
     if (raised.kind === 'onCommand') {
+        if (raised.id === DEBUG_COMMAND) return contributes.debuggers.length > 0;
+        if (raised.id === TASKS_COMMAND) return contributes.taskDefinitions.length > 0;
         return contributes.commands.some((one) => one.command === raised.id);
     }
     if (raised.kind !== 'onView') return false;

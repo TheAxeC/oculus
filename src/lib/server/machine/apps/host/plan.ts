@@ -9,7 +9,7 @@
 // and the verdict names it, saying whether no app of that name exists at all. A verdict is read
 // again at every change of the apps, so it never outlives the state it judged.
 
-import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
+import { appViewId, runsHost } from '../../../../data/helpers/files/apps/apps.ts';
 import { appById, type AppsHeld, type HeldApp } from '../read/held.ts';
 import { findingKey } from '../read/manifest.ts';
 
@@ -53,7 +53,7 @@ export function cyclesOf(held: AppsHeld): Set<string> {
 
 /** The verdict on one app's host. */
 export function judge(held: AppsHeld, app: HeldApp, cycles: ReadonlySet<string>): Verdict {
-    if (app.row.host === '') return { ok: false, cause: 'nohost' };
+    if (!runsHost(app.row)) return { ok: false, cause: 'nohost' };
     if (app.row.disabled) return { ok: false, cause: 'disabled' };
     if (!app.row.hashApproved) return { ok: false, cause: 'approval' };
     if (cycles.has(app.id)) return { ok: false, cause: 'cycle' };
@@ -63,7 +63,7 @@ export function judge(held: AppsHeld, app: HeldApp, cycles: ReadonlySet<string>)
             const approval =
                 dependency !== undefined &&
                 !dependency.row.disabled &&
-                dependency.row.host !== '' &&
+                runsHost(dependency.row) &&
                 !dependency.row.hashApproved;
             const absent =
                 dependency === undefined &&

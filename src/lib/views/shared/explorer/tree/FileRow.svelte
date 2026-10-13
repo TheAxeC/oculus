@@ -8,6 +8,11 @@
     // git's; a folder holding some draws a dot in the worst colour at 40% opacity. A row's star and
     // its new-tab control show on hover.
     //
+    // The apps' file decorations join git's: their badges follow git's letter, the two together at
+    // most two characters, their tooltips are the row's hover words one to a line, and the colour
+    // of the name is git's when git gives one and the apps' otherwise. A folder an app's decoration
+    // propagates to takes the colour alone.
+    //
     // A press on the row is handed up with the event, so the tree reads the modifiers, and with the
     // path of the segment it landed on when the row is a chain of folders: each segment is a target
     // of its own, marked `data-fs-seg`, for a press, the menu and a drop.
@@ -23,6 +28,7 @@
         type ProblemMark,
         type TreeRow
     } from '$lib/state/sources/fs';
+    import type { RowDecoration } from '$lib/state/system/apps/tools/decorations.svelte';
     import { t } from '$lib/state/shared/words/text';
 
     /** The colour token a problem mark of each hue is drawn in. */
@@ -38,6 +44,8 @@
         decoration: Decoration | null;
         /** What the Problems view counts for the row, or null. */
         problem: ProblemMark | null;
+        /** What the apps' decoration providers say of the row, or null. */
+        apps: RowDecoration | null;
         /**
          * A press on the row, with the segment of a folder chain it landed on (or null) and whether
          * it landed on the twistie.
@@ -55,12 +63,24 @@
         onbookmark: (row: TreeRow) => void;
     };
 
-    let { row, nav, selected, marked, decoration, problem, onpress, onkeep, onbookmark }: Props =
-        $props();
+    let {
+        row,
+        nav,
+        selected,
+        marked,
+        decoration,
+        problem,
+        apps,
+        onpress,
+        onkeep,
+        onbookmark
+    }: Props = $props();
 
     const opens = $derived((row.kind === 'dir' && row.up !== true) || row.nests === true);
     const parts = $derived(namePartsOf(row.name, row.hits));
-    const lettered = $derived(decoration !== null && decoration.mark !== '');
+    /** The letters git and the apps give, two at most. */
+    const letters = $derived(`${decoration?.mark ?? ''}${apps?.badge ?? ''}`.slice(0, 2));
+    const lettered = $derived(letters !== '');
 
     /** The inline colour of the status letter: the decoration's token. */
     const letterTone = $derived(
@@ -70,7 +90,11 @@
     const problemTone = $derived(
         problem === null ? undefined : `--tone-txt: var(${PROBLEM_TOKEN[problem.tone]})`
     );
-    const tone = $derived(problemTone ?? letterTone);
+    /** The colour the apps give, used where git gives none. */
+    const appTone = $derived(
+        apps?.property == null ? undefined : `--tone-txt: var(${apps.property})`
+    );
+    const tone = $derived(problemTone ?? letterTone ?? appTone);
     const counted = $derived(problem === null || problem.dot ? null : problemWords(problem));
 
     function titleOf(): string {
@@ -111,11 +135,11 @@
             {counted?.count}
         </span>
     {/if}
-    {#if decoration !== null && lettered}
+    {#if lettered}
         {#if problem !== null && !problem.dot}<span class="letter joint" aria-hidden="true"
                 >{t('files.problem_join')}</span
             >{/if}
-        <span class="letter" style={letterTone}>{decoration.mark}</span>
+        <span class="letter" style={letterTone ?? appTone}>{letters}</span>
     {/if}
 {/snippet}
 
@@ -157,7 +181,7 @@
     depth={row.depth}
     expanded={opens ? row.open : undefined}
     {selected}
-    title={titleOf()}
+    title={apps?.tooltip ? `${titleOf()}\n${apps.tooltip}` : titleOf()}
     tone={row.ignored === true ? 'muted' : undefined}
     nameStyle={tone}
     words={row.chain !== undefined || row.hits !== undefined ? words : undefined}

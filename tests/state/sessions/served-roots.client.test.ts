@@ -13,13 +13,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CommandDiagnostic } from '../../../src/lib/data/model/index.ts';
 import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
 import { watchServedRoots } from '../../../src/lib/state/shared/stores/served-roots.svelte.ts';
-import { createCommands } from '../../../src/lib/state/sessions/terminal/commands.svelte.ts';
 import { createLatex } from '../../../src/lib/state/sessions/latex/latex.svelte.ts';
 import type { LatexState } from '../../../src/lib/state/sessions/latex/latex-state.ts';
 import { noWorkspaces, readRoots } from '../../../src/lib/state/sources/fs-transport.ts';
 import type { WorkspacesState } from '../../../src/lib/state/sources/fs-transport.ts';
 import type { FsRoot } from '../../../src/lib/state/sources/fs.ts';
 import { cell, rooted } from '../../ui/frame/rooted.svelte.ts';
+import { stubbedCommands } from './terminal/commands-fixture.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -68,28 +68,7 @@ function make(start: WorkspacesState) {
     const workspaces = cell<WorkspacesState>(start);
     const queries = createQueries();
     let listed: unknown[] = [];
-    const terminals = {
-        terminals: () => listed,
-        adopt: () => undefined,
-        subscribed: () => true
-    };
-    const entities = {
-        afterReceive: () => undefined,
-        payloadOf: () => null,
-        config: () => null
-    };
-    const commands = createCommands({
-        entities,
-        writes: {},
-        queries: { entries: () => [], mark: () => undefined, hold: () => undefined },
-        notices: { post: () => undefined },
-        terminals,
-        onScreen: () => null,
-        focusedSource: () => null,
-        gitRoots: () => [],
-        served: () => [],
-        openFile: () => true
-    } as never);
+    const { terminals, entities, commands } = stubbedCommands(() => listed);
     const latex = createLatex(
         entities as never,
         terminals as never,

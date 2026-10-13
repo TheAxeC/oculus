@@ -21,8 +21,11 @@
 // Select Compile Database, Review Svelte Configuration), Switch Between Source/Header, Find All
 // References, Find All Implementations, Show Call Hierarchy, Show Type Hierarchy, Show AST and
 // Show Memory Usage, each while it applies. Restart and Show Output apply while any server of the
-// language is asked for; the rest apply while the server of the tab's root answers, the two
-// hierarchies and Find All Implementations only when the server declared them. A search of the
+// language is asked for, one action of each for every server the root holds when an app's server
+// serves the language beside oculus's (named by the server); the rest apply while the server of
+// the tab's root answers, the two hierarchies and Find All Implementations only when the server
+// declared them. The languages a server serves are the shipped ones joined with those the acting
+// apps' servers name, read from the client's app tools. A search of the
 // References view (references, implementations, the callers of a symbol, the types above and
 // below it) and clangd's two extensions hand their answers to the page's stores
 // (state/system/machine/lsp/), which the Explorer's and the Files view's sections draw. The tab
@@ -33,7 +36,6 @@ import type { ClientState } from '$lib/state/client/context';
 import type { EditorExtension, EditorOwnAction, KeyPress } from '$lib/ui/controls/editor/types';
 import type { FormatOutcome, LspHandle } from '$lib/ui/controls/editor/kit/lsp/client';
 import type { LspServices } from '$lib/ui/controls/editor/kit/lsp/services';
-import { SERVED_LANGUAGES } from '$lib/ui/controls/editor/kit/lsp/hosts';
 import {
     LSP_CHOICES,
     factsForLanguage,
@@ -111,11 +113,6 @@ const KEYS: Record<string, KeyPress> = {
     previous: { code: 'F4', shift: true }
 };
 
-/** Whether a language is one a server serves. */
-function servedLanguage(language: string): boolean {
-    return SERVED_LANGUAGES.includes(language);
-}
-
 /**
  * Whether a file is one the server of its language is not given, which the relay's entry refuses as
  * well: a YAML file under the `secrets` folder of every hub or under `~/.oculus`, for the YAML
@@ -175,6 +172,11 @@ function matchAt(files: readonly RefFile[], search: RefSearch): string {
 
 /** Make the language server wiring of one source tab. */
 export function createLspTab(input: LspTabInput): LspTab {
+    /**
+     * Whether a language is one a server serves: a shipped server's, or one an app's host named.
+     */
+    const servedLanguage = (language: string): boolean =>
+        input.client.appTools.languages.kit().served.includes(language);
     const { client } = input;
     const { lsp, refactor, documents, references, clangd, workspaceSymbols } = client;
 
@@ -419,9 +421,13 @@ export function createLspTab(input: LspTabInput): LspTab {
                 entries: askEntries
             });
             const symbols = workspaceSymbols.register(input.instance(), askSymbols);
+            const saves = input.client.source.onSaved((root, path) => {
+                if (root === file.root && path === file.path) handle.saved();
+            });
             return () => {
                 asker();
                 symbols();
+                saves();
                 handle.dispose();
                 held.handle = null;
                 held.model = null;
@@ -448,37 +454,74 @@ export function createLspTab(input: LspTabInput): LspTab {
             : null;
     }
 
+    /**
+     * Restart and Show Output of each server that serves the language: oculus's own with its
+     * entry's words, an app's with its name. A language with several servers lists a pair for
+     * each, so the reader picks the server by the action; ids are `oculus.lsp.restart` and
+     * `oculus.lsp.output` for oculus's own and carry `:<server id>` for an app's.
+     */
+    function serverActions(
+        language: string,
+        root: string,
+        facts: LspServerFacts | undefined
+    ): EditorOwnAction[] {
+        const servers = lsp.servers(root, language);
+        const several = servers.length > 1;
+        const entries =
+            servers.length === 0 && facts !== undefined
+                ? [{ id: '', name: '', view: null }]
+                : servers;
+        return entries.flatMap((one) => {
+            const own = one.id === '';
+            const suffix = own ? '' : `:${one.id}`;
+            const name = own && facts !== undefined ? t(facts.words.name) : one.name;
+            const restart =
+                own && facts !== undefined && !several
+                    ? t(facts.words.restart)
+                    : t('source.cmd_app_restart', name);
+            const output =
+                own && facts !== undefined && !several
+                    ? t(facts.words.output)
+                    : t('source.cmd_app_output', name);
+            return [
+                {
+                    id: `oculus.lsp.restart${suffix}`,
+                    label: restart,
+                    run: () => void lsp.restart(root, language, one.id)
+                },
+                {
+                    id: `oculus.lsp.output${suffix}`,
+                    label: output,
+                    run: () => {
+                        client.layout.openView(OUTPUT_VIEW, {
+                            root,
+                            language,
+                            server: one.id,
+                            label: t('output.tab', name, root)
+                        });
+                    }
+                }
+            ];
+        });
+    }
+
     function actions(language: string, file: { root: string; path: string }): EditorOwnAction[] {
         const facts: LspServerFacts | undefined = factsForLanguage(language);
-        if (facts === undefined || file.root === '' || file.path === '') return [];
+        if (file.root === '' || file.path === '') return [];
         const { root } = file;
+        const listed: EditorOwnAction[] = serverActions(language, root, facts);
+        if (facts === undefined) return listed;
         const state = lsp.server(root, language)?.state;
         const answering = state === 'ready' || state === 'indexing';
         const provides = (capability: string): boolean =>
             held.handle?.provides(capability) === true;
-        const listed: EditorOwnAction[] = [
-            {
-                id: 'oculus.lsp.restart',
-                label: t(facts.words.restart),
-                run: () => void lsp.restart(root, language)
-            },
-            {
-                id: 'oculus.lsp.output',
-                label: t(facts.words.output),
-                run: () => {
-                    client.layout.openView(OUTPUT_VIEW, {
-                        root,
-                        language,
-                        label: t('output.tab', t(facts.words.name), root)
-                    });
-                }
-            },
+        listed.push(
             ...facts.choices.map((kind) => ({
                 id: `oculus.lsp.${kind}`,
                 label: t(facts.words.choice[kind] ?? ''),
                 run: () => client.ui.requestPalette(`:${LSP_CHOICES[kind].command} `)
             }))
-        ];
+        );
         if (facts.extras.includes('header') && answering) {
             listed.push({
                 id: 'oculus.lsp.header',

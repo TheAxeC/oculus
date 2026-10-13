@@ -151,9 +151,11 @@ const debugShape: z.ZodType<Payloads['debug']> = z.object({
         })
     ),
     frame: z.number().nullable(),
+    thread: z.number().nullable(),
     scopes: z.array(
         z.object({
             name: z.string(),
+            reference: z.number(),
             variables: z.array(z.object({ name: z.string(), value: z.string() }))
         })
     ),
@@ -168,12 +170,61 @@ const debugShape: z.ZodType<Payloads['debug']> = z.object({
         z.object({
             path: z.string(),
             breakpoints: z.array(
-                z.object({ line: z.number(), verified: z.boolean(), message: z.string() })
+                z.object({
+                    line: z.number(),
+                    verified: z.boolean(),
+                    message: z.string(),
+                    condition: z.string(),
+                    hitCondition: z.string(),
+                    logMessage: z.string()
+                })
             )
         })
     ),
-    functions: z.array(z.object({ name: z.string(), verified: z.boolean(), message: z.string() })),
-    ended: z.string()
+    functions: z.array(
+        z.object({
+            name: z.string(),
+            verified: z.boolean(),
+            message: z.string(),
+            condition: z.string(),
+            hitCondition: z.string()
+        })
+    ),
+    ended: z.string(),
+    adapter: z.object({ type: z.string(), label: z.string(), app: z.string() }).nullable(),
+    exceptions: z.array(
+        z.object({
+            filter: z.string(),
+            label: z.string(),
+            enabled: z.boolean(),
+            supportsCondition: z.boolean(),
+            condition: z.string()
+        })
+    ),
+    declared: z.record(
+        z.string(),
+        z.object({
+            conditions: z.boolean(),
+            hitConditions: z.boolean(),
+            logpoints: z.boolean(),
+            functions: z.boolean(),
+            functionConditions: z.boolean(),
+            setVariable: z.boolean(),
+            restart: z.boolean(),
+            terminate: z.boolean(),
+            hover: z.boolean(),
+            completions: z.boolean(),
+            loadedSources: z.boolean(),
+            exceptionFilters: z.array(
+                z.object({
+                    filter: z.string(),
+                    label: z.string(),
+                    enabled: z.boolean(),
+                    supportsCondition: z.boolean()
+                })
+            )
+        })
+    )
 });
 
 const debugConsoleShape: z.ZodType<Payloads['debug-console']> = debugAppendShape;
@@ -182,6 +233,10 @@ const appHostsShape = unchangedAs<Payloads['app-hosts']>(z.object({ rows: listSh
 
 const appShellShape = unchangedAs<Payloads['app-shell']>(
     z.object({ hosts: listShape, requests: listShape })
+);
+
+const appToolsShape = unchangedAs<Payloads['app-tools']>(
+    z.object({ hosts: listShape, decorations: z.object({ epoch: z.number() }).loose() })
 );
 
 const jumpShape: z.ZodType<Payloads['jump']> = z.object({
@@ -215,5 +270,6 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     'debug-console': debugConsoleShape,
     jump: jumpShape,
     'app-hosts': appHostsShape,
-    'app-shell': appShellShape
+    'app-shell': appShellShape,
+    'app-tools': appToolsShape
 };

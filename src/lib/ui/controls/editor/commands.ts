@@ -8,7 +8,7 @@
 
 import type * as Monaco from 'monaco-editor';
 import { eolOf, type EditorKit } from './kit/load';
-import { shikiId } from './kit/grammars';
+import { shikiId } from './kit/languages/grammars';
 import type { EditorCommand, EditorReach } from './types';
 
 /** Do one ask of the parent's on a loaded editor and its model. */

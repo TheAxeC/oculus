@@ -207,7 +207,7 @@ export type FsTarget = {
  * Whether a name is one the tree leaves out unless hidden files are asked for: a dotfile, or one
  * of the three build folders.
  */
-function skipped(name: string): boolean {
+export function skipped(name: string): boolean {
     return name.startsWith('.') || SKIPPED.includes(name);
 }
 

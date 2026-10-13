@@ -68,15 +68,18 @@ import { savedPath } from '../machine/runs/commands/saved.ts';
 import { markdownExtensions } from '../machine/lsp/adapters/markdown/settings.ts';
 import { defaultLspPath } from '../machine/lsp/choices.ts';
 import { DebugClient, type DebugOptions } from '../machine/debug/session.ts';
-import { createRelay, type Relay } from '../machine/lsp/relay.ts';
-import type { RelayOptions } from '../machine/lsp/relay-options.ts';
+import { debugControl } from '../machine/debug/session/start.ts';
+import { repositoryRoots } from '../files/roots.ts';
+import { createRelay, type Relay } from '../machine/lsp/relay/relay.ts';
+import type { RelayOptions } from '../machine/lsp/relay/relay-options.ts';
 import { SchemaFeed } from '../machine/lsp/schema-feed.ts';
 import { spawnChild } from '../machine/lsp/held/process.ts';
 import { withheldFolders } from '../machine/lsp/library/rules.ts';
 import { followRoots } from '../machine/lsp/held/watch.ts';
 import { servedRoots } from '../machine/lsp/uris.ts';
 import { ownFolder } from '../machine/lsp/servers.ts';
-import { Terminals } from '../machine/pty/channel.ts';
+import { StreamTerminalSet } from '../machine/apps/tools/run/stream-terminals.ts';
+import { Terminals, type StreamTerminals } from '../machine/pty/channel.ts';
 import { stopTerminal } from '../machine/pty/sessions.ts';
 import {
     watchProcesses,
@@ -112,6 +115,7 @@ import { createPortMover } from './process/context/port.ts';
 import { createRebuild, reasonOf, type Parts } from './process/context/rebuild.ts';
 import type { ServerContext } from './process/server-context.ts';
 import { LISTEN_HOST, type PortMove } from './mover.ts';
+import { appFeed } from './process/context/app-feed.ts';
 import { startHosts } from './process/apps-hosts.ts';
 import { watchApps, type AppsWatchOptions, type AppsWatcher } from './watch/apps.ts';
 import { watchAutofetch, type AutofetchOptions, type AutofetchWatcher } from './watch/autofetch.ts';
@@ -150,7 +154,7 @@ export type ContextDependencies = {
     stateFolder: () => string;
     createWorkspace: typeof createWorkspace;
     createHub: () => Hub;
-    createTerminals: (hub: Hub) => Terminals;
+    createTerminals: (hub: Hub, streams: StreamTerminals) => Terminals;
     createRelay: (options: RelayOptions) => Relay;
     createDebug: (options: DebugOptions) => DebugClient;
     createEslints: (options: HeldEslintsOptions) => HeldEslints;
@@ -178,7 +182,7 @@ const dependencies: ContextDependencies = {
     stateFolder: defaultStateFolder,
     createWorkspace,
     createHub: () => new Hub(),
-    createTerminals: (hub) => new Terminals(hub),
+    createTerminals: (hub, streams) => new Terminals(hub, { streams }),
     createRelay,
     createDebug: (options) => new DebugClient(options),
     createEslints: (options) => new HeldEslints(options),
@@ -284,14 +288,17 @@ export function createServerContext(
     const processesConfig = processesSettings(config);
     const hub = make.createHub();
     registerFilesChannel(hub);
-    const terminals = make.createTerminals(hub);
+    const streamTerminals = new StreamTerminalSet();
+    const terminals = make.createTerminals(hub, streamTerminals);
     const schemas = new SchemaFeed();
     const held = (): { open: ReturnType<typeof open>; local: LocalConfig } => ({
         open: open(),
         local: machine.values()
     });
+    const appServers = appFeed();
     const relay = make.createRelay({
         schemas,
+        appServers: appServers.feed,
         oculus: ownFolder(),
         node: process.execPath,
         roots: () => open().roots,
@@ -473,16 +480,32 @@ export function createServerContext(
     const usageRefresh = startUsageRefresh();
     const usage = startUsage({ sessions, usageRefresh });
     const git = startGitWatcher();
+    const opsWrites = fsWrites();
     const hosts = make.startHosts({
         hub,
         apps,
         local: () => local,
         config: () => load().config,
+        engine,
+        opsWrites,
+        terminals,
+        streamTerminals,
         open,
         follow: (listener) => workspace.subscribe(() => listener()),
         target: () => target(engine, load().config, held(), context),
         ready
     });
+    appServers.attach(hosts.hosts.tools, schemas);
+    debug.attachApps(hosts.hosts.tools.debugPort());
+    hosts.hosts.tools.attachDebug(
+        debugControl({
+            rootsFor: () => repositoryRoots(open()),
+            approvalsFor: () => local.approvals ?? defaultApprovalsPath(),
+            catalog: () => textCatalog(load().config),
+            client: debug,
+            port: () => debug.port()
+        })
+    );
     const { openFiles } = hosts;
     const autofetch = startAutofetchWatcher();
     const bookmarks = startBookmarks();
@@ -585,7 +608,7 @@ export function createServerContext(
         engine,
         configCache,
         fsWrites: writes,
-        opsWrites: fsWrites(),
+        opsWrites,
         gitRunning: createRunningGit(),
         cloning: new Set<string>(),
         ignoredCache: ignoredCache(),

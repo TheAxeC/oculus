@@ -2,7 +2,8 @@
 // comment, the brackets and the auto-closing pairs of rite, CMake, both forms of Fortran, Jinja and
 // Svelte, so that Cmd+/ toggles a comment, a bracket closes and a pair matches in each. The
 // languages Monaco registers itself (C, C++, Lua, Ruby, SCSS, Java, Dart) keep its own settings.
-// The ids are the ones the editor registers (kit/grammars.ts's `shikiId`), which is Shiki's.
+// The ids are the ones the editor registers (kit/languages/grammars.ts's `shikiId`), which is
+// Shiki's.
 
 import type * as Monaco from 'monaco-editor';
 import { RITE_CONFIGURATION } from './rite';

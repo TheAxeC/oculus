@@ -11,8 +11,20 @@
 //
 // The modifiers a token keeps are `defaultLibrary` and `readonly`, the two VS Code's defaults
 // style, so a lookup string is one of the four spellings of a type with them.
+//
+// The acting apps add to the table (`contributes.semanticTokenTypes`, `semanticTokenModifiers` and
+// `semanticTokenScopes`): a type of an app is a row of its own whose scopes are the ones the app
+// maps it to, else the scopes of the type it names as its `superType`; a selector an app maps
+// (`type` or `type.modifier`) replaces the row of that lookup string. A selector with a language
+// (`type:language`) applies to every language, since the theme holds one rule for a lookup string,
+// and a selector with a wildcard is not read.
 
 import type { ThemeRegistration } from 'shiki';
+import type {
+    AppSemanticModifier,
+    AppSemanticScopes,
+    AppSemanticType
+} from '$lib/data/helpers/files/apps/tools/language-kit';
 
 /** One row: the lookup string Monaco matches, and the TextMate scopes it is painted by. */
 type SemanticRow = { lookup: string; scopes: readonly string[] };
@@ -50,12 +62,66 @@ const SEMANTIC_ROWS: readonly SemanticRow[] = [
 ];
 
 /** The token types the rows cover, in the order of the legend the provider offers Monaco. */
-export const SEMANTIC_TYPES: readonly string[] = [
+const SEMANTIC_TYPES: readonly string[] = [
     ...new Set(SEMANTIC_ROWS.map((row) => row.lookup.split('.')[0]))
 ];
 
 /** The modifiers a token keeps, by the bit each one is in the legend the provider offers. */
-export const SEMANTIC_MODIFIERS: readonly string[] = ['defaultLibrary', 'readonly'];
+const SEMANTIC_MODIFIERS: readonly string[] = ['defaultLibrary', 'readonly'];
+
+/** What the acting apps add to the table. */
+export type SemanticExtras = {
+    types: readonly AppSemanticType[];
+    modifiers: readonly AppSemanticModifier[];
+    scopes: readonly AppSemanticScopes[];
+};
+
+/** No app adds anything. */
+const NO_EXTRAS: SemanticExtras = { types: [], modifiers: [], scopes: [] };
+
+/** The types of the legend: the table's, then the apps'. */
+export function semanticTypes(extras: SemanticExtras): string[] {
+    return [...new Set([...SEMANTIC_TYPES, ...extras.types.map((one) => one.id)])];
+}
+
+/** The modifiers of the legend, by bit: the table's, then the apps'. */
+export function semanticModifiers(extras: SemanticExtras): string[] {
+    return [...new Set([...SEMANTIC_MODIFIERS, ...extras.modifiers.map((one) => one.id)])];
+}
+
+/** The scopes the apps map each selector to; the first app to map one keeps it. */
+function mapped(extras: SemanticExtras): Map<string, readonly string[]> {
+    const out = new Map<string, readonly string[]>();
+    for (const entry of extras.scopes) {
+        for (const [selector, scopes] of Object.entries(entry.scopes)) {
+            const lookup = selector.split(':')[0];
+            if (lookup === '' || lookup.includes('*') || out.has(lookup)) continue;
+            out.set(lookup, scopes);
+        }
+    }
+    return out;
+}
+
+/** The rows: the table's and the apps', an app's mapping replacing the row of its lookup string. */
+function rowsOf(extras: SemanticExtras): SemanticRow[] {
+    if (extras === NO_EXTRAS) return [...SEMANTIC_ROWS];
+    const rows = new Map<string, SemanticRow>(SEMANTIC_ROWS.map((row) => [row.lookup, row]));
+    const maps = mapped(extras);
+    const supers = new Map(extras.types.map((one) => [one.id, one.superType]));
+    /** The scopes a type is painted by through the chain of its super types. */
+    const inherited = (type: string, depth: number): readonly string[] => {
+        const own = maps.get(type) ?? rows.get(type)?.scopes;
+        if (own !== undefined) return own;
+        const above = supers.get(type);
+        return above === undefined || above === '' || depth > 8 ? [] : inherited(above, depth + 1);
+    };
+    for (const type of extras.types) {
+        if (!rows.has(type.id))
+            rows.set(type.id, { lookup: type.id, scopes: inherited(type.id, 0) });
+    }
+    for (const [lookup, scopes] of maps) rows.set(lookup, { lookup, scopes });
+    return [...rows.values()];
+}
 
 /** A rule of Monaco's token theme. */
 export type SemanticRule = { token: string; foreground?: string; fontStyle?: string };
@@ -96,9 +162,12 @@ function digits(colour: string): string {
  * The rules the semantic tokens of a theme are painted by: for each row, the paint of its first
  * scope the theme colours, else of its second, and no rule when the theme colours neither.
  */
-export function semanticRules(tokenColors: TokenColors): SemanticRule[] {
+export function semanticRules(
+    tokenColors: TokenColors,
+    extras: SemanticExtras = NO_EXTRAS
+): SemanticRule[] {
     const rules: SemanticRule[] = [];
-    for (const row of SEMANTIC_ROWS) {
+    for (const row of rowsOf(extras)) {
         for (const scope of row.scopes) {
             const paint = paintOf(scope, tokenColors);
             // A rule that only resets the style sets no colour and no style here, and a rule of

@@ -15,8 +15,8 @@
 //
 // `languageOf` is the Shiki id of a path's extension. The map is written here because the server
 // imports nothing from `ui/`, where the editor keeps the names of its own languages
-// (`ui/controls/editor/kit/grammars.ts`); `.tsx` and `.jsx` have grammars of their own so that the
-// text of an element carries no comment scope.
+// (`ui/controls/editor/kit/languages/grammars.ts`); `.tsx` and `.jsx` have grammars of their own so
+// that the text of an element carries no comment scope.
 
 import { Worker } from 'node:worker_threads';
 import { extname, join } from 'node:path';

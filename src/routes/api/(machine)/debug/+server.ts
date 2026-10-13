@@ -7,6 +7,9 @@
 // The repository and the program must lie under a root the file browser serves, so the roots are
 // the browser's own fold, and an approval is written behind the process's write chain.
 
+import { carriedOf, target } from '$lib/server/edit/writes';
+import { defaultHistoryDir } from '$lib/server/files/fs/history';
+import type { OpsTarget } from '$lib/server/files/fs/ops';
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
 import { repositoryRoots } from '$lib/server/files/roots';
 import { handleDebugGet, handleDebugPost } from '$lib/server/machine/debug/routes';
@@ -19,6 +22,13 @@ const options = (locals: App.Locals) => {
         approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
         configFor: () => locals.config().config,
         writes: server.fsWrites,
+        files: (): OpsTarget => ({
+            roots: server.workspace.open().roots,
+            writes: server.opsWrites,
+            changes: target(server.engine, locals.config().config, carriedOf(server), server)
+                .changes,
+            history: server.local.history ?? defaultHistoryDir()
+        }),
         client: server.debug
     };
 };

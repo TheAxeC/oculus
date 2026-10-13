@@ -1,6 +1,6 @@
 // Layer 2, server. The `pty:<id>` channels of DESIGN.md's "The socket", and with the language
-// server relay (server/machine/lsp/relay.ts) the only place the socket accepts anything from the
-// page beyond a subscription.
+// server relay (server/machine/lsp/relay/relay.ts) the only place the socket accepts anything from
+// the page beyond a subscription.
 //
 // A page subscribes to `pty:<id>`, gets what the pane already shows as its first message, and then
 // one message per chunk tmux reports for that pane. It sends back `input` and `resize`, and both
@@ -306,9 +306,29 @@ export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
     };
 }
 
+/**
+ * The terminals the hosts of apps hold as streams, which the list and the channels carry beside
+ * tmux's: their rows, their output (the promise a listener returns holds the host's credit until
+ * every page has taken the bytes), what a page that attaches is sent first, and what the pages
+ * type and their sizes, which the terminal follows as the smallest of.
+ */
+export type StreamTerminals = {
+    list(): Terminal[];
+    has(id: string): boolean;
+    onChange(listener: () => void): void;
+    onOutput(listener: (id: string, bytes: Buffer) => void | Promise<void>): void;
+    /** The last bytes the terminal wrote, which the page's terminal is painted from. */
+    replay(id: string): Buffer;
+    input(id: string, bytes: Buffer): void;
+    size(id: string, page: object, cols: number, rows: number): void;
+    release(id: string, page: object): void;
+};
+
 export type TerminalsOptions = {
     /** The tmux side; the control client of this module when absent. */
     driver?: TerminalDriver;
+    /** The terminals the hosts of apps hold as streams. */
+    streams?: StreamTerminals;
     /** How many lines of scrollback an attaching page is given. */
     scrollbackLines?: number;
     /**
@@ -337,7 +357,10 @@ export class Terminals {
     /** The tail of each terminal's command chain, so its keystrokes reach tmux in order. */
     #queue = new Map<string, Promise<void>>();
     /** The last list tmux gave, or null before it has given one. */
+    #tmux: Terminal[] | null = null;
+    /** The terminals the pages are told of: tmux's and the apps' stream terminals. */
     #terminals: Terminal[] | null = null;
+    #streams: StreamTerminals | undefined;
     #signature = '';
     #listeners = new Set<() => void>();
     #poll: number;
@@ -363,6 +386,9 @@ export class Terminals {
         this.#lines = options.scrollbackLines ?? SCROLLBACK_LINES;
         this.#driver.onOutput((id, bytes) => this.#output(id, bytes));
         this.#driver.onChange(() => this.refresh());
+        this.#streams = options.streams;
+        this.#streams?.onOutput((id, bytes) => this.#streamOutput(id, bytes));
+        this.#streams?.onChange(() => this.#took(this.#tmux));
         this.#poll = options.poll ?? POLL_MS;
         // `poll: 0` is how a caller asks for no list poll at all, so the idle rate follows it
         // unless the caller named one of its own.
@@ -376,7 +402,7 @@ export class Terminals {
      * does not announce, so it keeps the fast rate and the poll that ignores the control client.
      */
     #taskRuns(): boolean {
-        return (this.#terminals ?? []).some((one) => one.task && one.exit === null);
+        return (this.#tmux ?? []).some((one) => one.task && one.exit === null);
     }
 
     /**
@@ -534,7 +560,7 @@ export class Terminals {
         const work =
             message.type === 'input'
                 ? () => this.#input(id, message.bytes)
-                : () => this.#resize(id, message.cols, message.rows);
+                : () => this.#resize(id, message.cols, message.rows, sink);
         const after = (this.#queue.get(id) ?? Promise.resolve()).then(work, work);
         this.#queue.set(id, after);
         return true;
@@ -546,6 +572,7 @@ export class Terminals {
         if (ids === undefined) return;
         this.#held.delete(sink);
         for (const id of ids) {
+            this.#streams?.release(id, sink);
             const sinks = this.#attached.get(id);
             if (sinks === undefined) continue;
             sinks.delete(sink);
@@ -555,7 +582,7 @@ export class Terminals {
                 this.#hub.merge(ptyChannel(id), null);
             }
         }
-        this.#driver.attached([...this.#attached.keys()]);
+        this.#driver.attached(this.#tmuxAttached());
         this.#arm();
     }
 
@@ -572,7 +599,10 @@ export class Terminals {
         this.#driver.close();
     }
 
-    #took(terminals: Terminal[]): void {
+    #took(read: Terminal[] | null): void {
+        if (read === null) return;
+        this.#tmux = read;
+        const terminals = [...read, ...(this.#streams?.list() ?? [])];
         // Everything the reader sets on a terminal is in the signature, so a rename or a new icon
         // or colour is a change the pages are told of, and so is the end of a task terminal's line.
         // The pane's process is in it too: a task terminal run again that ends with the status it
@@ -586,7 +616,8 @@ export class Terminals {
                 one.color,
                 one.task,
                 one.exit,
-                one.pid
+                one.pid,
+                one.app
             ])
         );
         // The first list is taken even when it is empty: it is what turns "not read yet" into a
@@ -617,8 +648,12 @@ export class Terminals {
             held.add(id);
             this.#held.set(sink, held);
             this.#hub.subscribe(sink, [ptyChannel(id)], false);
-            this.#driver.attached([...this.#attached.keys()]);
+            this.#driver.attached(this.#tmuxAttached());
             this.#arm();
+        }
+        if (this.#streams?.has(id) === true) {
+            await this.#sendReplay(sink, id);
+            return;
         }
         let { text, cursor } = await this.#readPane(id);
         let alternate = alternateAt(cursor);
@@ -655,6 +690,27 @@ export class Terminals {
             await sink.send(JSON.stringify(message));
         } catch (error) {
             console.error(`pty: the scrollback of ${id} could not be sent: ${reason(error)}`);
+        }
+    }
+
+    /** The attached terminals tmux holds: the control clients follow these and no others. */
+    #tmuxAttached(): string[] {
+        return [...this.#attached.keys()].filter((id) => this.#streams?.has(id) !== true);
+    }
+
+    /** The last output of a stream terminal, sent to the one sink that attached. */
+    async #sendReplay(sink: Sink, id: string): Promise<void> {
+        const replay = this.#streams?.replay(id) ?? Buffer.alloc(0);
+        if (!this.#attached.get(id)?.has(sink)) return;
+        const message = {
+            channel: ptyChannel(id),
+            version: 0,
+            payload: { bytes: replay.toString('base64') }
+        };
+        try {
+            await sink.send(JSON.stringify(message));
+        } catch (error) {
+            console.error(`pty: the output of ${id} could not be sent: ${reason(error)}`);
         }
     }
 
@@ -715,6 +771,18 @@ export class Terminals {
         this.#hub.publish(ptyChannel(id), { bytes: bytes.toString('base64') });
     }
 
+    /** The output of a stream terminal; settles when no page holds a chunk of it back. */
+    #streamOutput(id: string, bytes: Buffer): Promise<void> {
+        if (!this.#attached.has(id)) return Promise.resolve();
+        this.#hub.publish(ptyChannel(id), { bytes: bytes.toString('base64') });
+        return this.#hub.backlog(ptyChannel(id));
+    }
+
+    /** Type bytes into a terminal as a page does: a stream terminal's host, or tmux's pane. */
+    type(id: string, bytes: Buffer): Promise<void> {
+        return this.#input(id, bytes.toString('base64'));
+    }
+
     /**
      * Type what the page sent into the pane as the bytes it is, one `send-keys -H` per piece of at
      * most INPUT_MOST bytes (inputArgs), in order, stopping at the first that fails. A mouse report
@@ -723,6 +791,10 @@ export class Terminals {
      * several writes, in order, its opening and closing markers each whole.
      */
     async #input(id: string, encoded: string): Promise<void> {
+        if (this.#streams?.has(id) === true) {
+            this.#streams.input(id, Buffer.from(encoded, 'base64'));
+            return;
+        }
         for (const args of inputArgs(id, Buffer.from(encoded, 'base64'))) {
             try {
                 await this.#driver.run(args);
@@ -733,9 +805,13 @@ export class Terminals {
         }
     }
 
-    async #resize(id: string, cols: number, rows: number): Promise<void> {
+    async #resize(id: string, cols: number, rows: number, sink: Sink): Promise<void> {
         if (!Number.isInteger(cols) || !Number.isInteger(rows)) return;
         if (cols < 1 || rows < 1 || cols > 2000 || rows > 2000) return;
+        if (this.#streams?.has(id) === true) {
+            this.#streams.size(id, sink, cols, rows);
+            return;
+        }
         try {
             await this.#driver.run(resizeArgs(id, cols, rows));
         } catch (error) {

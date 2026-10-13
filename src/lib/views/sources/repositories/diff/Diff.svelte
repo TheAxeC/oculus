@@ -20,12 +20,11 @@
     // worktree holds that its repository's branch does not, every path of the staged or the changed
     // group, every file a ref and a commit differ in (Compare with Remote, Compare with Merge Base,
     // Compare with...), a linked worktree's file against the main worktree's (Compare with
-    // Workspace), the Replace Preview of a Search tab: a file as it is against the file as the
-    // tab's replacements would leave it, or one file of the Refactor Preview: the file as it is
-    // against the file as the edits checked in the preview would leave it. The groups and the
-    // comparisons are read a few files at a time (diff/diff-read.ts) and every read is read-only;
-    // the reader drops an answer that is no longer the newest, and every answer once the pane is
-    // closed.
+    // Workspace), a file against the file as a Search tab's replacements (Replace Preview) or a
+    // Refactor Preview's checked edits would leave it, or against the original an app's source
+    // control gives it (Open Changes). The groups and the comparisons are read a few files at a
+    // time (diff/diff-read.ts) and every read is read-only; the reader drops an answer that is no
+    // longer the newest, and every answer once the pane is closed.
     //
     // The bar (diff/DiffBar.svelte) holds icon buttons: Open File (a file's own diff), Previous
     // Change and Next Change, which Shift+Alt+F5 and Alt+F5 press while the pane holds the focus
@@ -80,20 +79,19 @@
     } from '$lib/state/sources/repositories/diff/diff-hunks';
     import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
     import {
-        diffActs,
         diffViewOf,
         fileKeys,
         groupFrom,
         groupWaits,
-        heldDiff,
         sameFiles,
         toggleFolded,
         unfolded,
         viewKeeper,
         type DiffAttributes,
-        type DiffSides,
-        type DiffState
+        type DiffSides
     } from '$lib/state/sources/repositories/repositories';
+    import { diffActs, heldDiff } from '$lib/state/sources/repositories/diff/subject';
+    import type { DiffState } from '$lib/state/sources/repositories/diff/subject';
     import { DEFAULT_INDENT } from '$lib/state/workbench/navigation/editor-text';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -440,6 +438,7 @@
                         unchanged={view.unchanged === 'folded'}
                         openable={onDisk}
                         root={held.root}
+                        source={held.original}
                         compare={held.against !== undefined}
                         from={held.group === undefined
                             ? ''

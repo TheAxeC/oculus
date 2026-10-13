@@ -25,6 +25,7 @@ text:
         connects: 'Reach {0} on the internet.'
         connects_none: Reach no address outside this machine.
         host_line: 'Run a program on this machine, with your rights, which can read and write your files and reach any address. The program is the file {0}.'
+        debugger_line: 'Run a debug adapter on this machine, with your rights, which can read and write your files and reach any address. The command is {0}.'
         files_line: 'Read the files in {0}.'
         secrets_line: Store secrets in the keyring of this machine.
         depends_line: 'Start the programs of these apps first: {0}.'
@@ -152,6 +153,12 @@ text:
         editor_revert: Revert File
         dirty_question: '{0} has custom editors with unsaved changes. Closing them discards the changes.'
         dirty_confirm: Discard Changes
+        ends_confirm: Stop Them
+        ends_debug: 'Debug session: {0}'
+        ends_dirty_confirm: Discard and Stop
+        ends_question: '{0} is running things that stop when it stops acting.'
+        ends_task: 'Task: {0}'
+        ends_terminal: 'Terminal: {0}'
         editor_lost: 'The files of {0} changed, so its approval ended and the unsaved changes to {1} were lost.'
         adds_line: 'Add {0} to oculus.'
         adds:

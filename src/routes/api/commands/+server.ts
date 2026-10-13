@@ -19,6 +19,7 @@ const options = (locals: App.Locals) => {
         approvalsFor: () => server.local.approvals ?? defaultApprovalsPath(),
         configFor: () => locals.config().config,
         writes: server.fsWrites,
+        tasks: server.hosts.tools.tasks,
         changes: target(server.engine, locals.config().config, carriedOf(server), server).changes
     };
 };

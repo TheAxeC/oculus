@@ -61,8 +61,27 @@ export type Rpc = {
 export const SYNC: readonly string[] = [
     'textDocument/didOpen',
     'textDocument/didChange',
-    'textDocument/didClose'
+    'textDocument/didClose',
+    'textDocument/didSave'
 ];
+
+/** The `textDocument/didOpen` that puts a document on the server with the text it starts from. */
+export function openMessage(page: string, language: string, version: number, text: string): Rpc {
+    return {
+        jsonrpc: '2.0',
+        method: 'textDocument/didOpen',
+        params: { textDocument: { uri: page, languageId: language, version, text } }
+    };
+}
+
+/** The `textDocument/didSave` of a document, with the text the file was saved with. */
+export function saveMessage(page: string, text: string): Rpc {
+    return {
+        jsonrpc: '2.0',
+        method: 'textDocument/didSave',
+        params: { textDocument: { uri: page }, text }
+    };
+}
 
 /** The fields of a message that hold the address of a document. */
 export const ADDRESSES: readonly string[] = ['uri', 'targetUri', 'file'];
@@ -139,4 +158,18 @@ export function changesOf(changes: readonly ModelChange[]): unknown[] {
         rangeLength: change.rangeLength,
         text: change.text
     }));
+}
+
+/**
+ * The registrations a `client/registerCapability`, or the withdrawals a
+ * `client/unregisterCapability`, carries, each by its id and method; an entry of another shape is
+ * left out.
+ */
+export function registrationsOf(params: unknown): { id: string; method: string }[] {
+    const list = isRecord(params) ? (params.registrations ?? params.unregisterations) : undefined;
+    return (Array.isArray(list) ? list : []).flatMap((one) =>
+        isRecord(one) && typeof one.id === 'string' && typeof one.method === 'string'
+            ? [{ id: one.id, method: one.method }]
+            : []
+    );
 }

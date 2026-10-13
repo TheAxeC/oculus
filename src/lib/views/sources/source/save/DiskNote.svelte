@@ -15,7 +15,7 @@
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { diffState } from '$lib/state/sources/repositories/repositories';
+    import { diffState } from '$lib/state/sources/repositories/diff/subject';
     import { DIFF_VIEW } from '$lib/state/sources/repositories/repositories.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';

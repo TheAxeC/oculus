@@ -1,7 +1,7 @@
 // Layer 2, client state. The sentences the catalog holds for the words POST /api/terminal refuses
-// with (data/model/model-machine.ts TERMINAL_REFUSALS). The server answers a word and the names its
-// sentence is about, so no text of tmux, of a validator or of the server's English reaches the
-// reader; answers.ts says these after the file and LaTeX words.
+// with (data/model/machine/model-machine.ts TERMINAL_REFUSALS). The server answers a word and the
+// names its sentence is about, so no text of tmux, of a validator or of the server's English
+// reaches the reader; answers.ts says these after the file and LaTeX words.
 
 import { TERMINAL_REFUSALS, type TerminalRefusal } from '../../../data/model/index.ts';
 import { t as catalogText } from '../words/text.ts';
@@ -43,6 +43,10 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
             return catalogText('sessions.refused_dependency_unknown', first, second);
         case 'dependency-self':
             return catalogText('sessions.refused_dependency_self', first);
+        case 'dependency-task':
+            return catalogText('sessions.refused_dependency_task', first, second);
+        case 'task-gone':
+            return catalogText('sessions.refused_task_gone', first);
         case 'dependency-cycle':
             return catalogText('sessions.refused_dependency_cycle', first);
         case 'no-file':

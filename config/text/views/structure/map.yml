@@ -16,8 +16,6 @@ text:
         filters: Map filters
         head: "Pillars and projects, linked by pillar membership and directed related edges: a one-way edge has one arrow from the manifest that lists the other, while a mutual edge has two arrowheads and its own colour when each manifest lists the other. The layout is Graphviz's neato, and re-tune lays it out again from another start. Drag a node; click a project to open it."
         layout_failed: 'The map could not be laid out: {0}'
-        legend_active: active
-        legend_idea: idea
         legend_line: pillar
         line_glyph: square_filled
         lines: 'lines:'

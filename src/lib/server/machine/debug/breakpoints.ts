@@ -5,12 +5,20 @@
 // by `hitBreakpointIds`, verifies it.
 // The ids are the adapter's and stay here; the published state carries lines, names and answers.
 
-import type { DebugFileBreakpoints, DebugFunctionBreakpoint } from '../../../data/model/index.ts';
+import type {
+    DebugBreakpointSpec,
+    DebugFileBreakpoints,
+    DebugFunctionBreakpoint
+} from '../../../data/model/index.ts';
 import type { BreakpointAnswers } from './shapes.ts';
 
 type Held = { id: number | null; verified: boolean; message: string };
-type HeldLine = Held & { line: number };
-type HeldName = Held & { name: string };
+type Extras = { condition: string; hitCondition: string };
+type HeldLine = Held & Extras & { line: number; logMessage: string };
+type HeldName = Held & Extras & { name: string };
+
+/** A function breakpoint as the page holds it. */
+type NameSpec = { name: string; condition?: string; hitCondition?: string };
 
 export class Breakpoints {
     #files = new Map<string, HeldLine[]>();
@@ -27,8 +35,8 @@ export class Breakpoints {
      * the adapter already verified, by an answer or by stopping at it, stays verified when the
      * file's lines are sent again, since the adapter answers a resent line as pending.
      */
-    setFile(path: string, lines: number[], answers: BreakpointAnswers): void {
-        if (lines.length === 0) {
+    setFile(path: string, specs: DebugBreakpointSpec[], answers: BreakpointAnswers): void {
+        if (specs.length === 0) {
             this.#files.delete(path);
             return;
         }
@@ -37,17 +45,36 @@ export class Breakpoints {
         );
         this.#files.set(
             path,
-            lines.map((line, at) => keeping({ line, ...answered(answers, at) }, verified.has(line)))
+            specs.map((spec, at) =>
+                keeping(
+                    {
+                        line: spec.line,
+                        condition: spec.condition ?? '',
+                        hitCondition: spec.hitCondition ?? '',
+                        logMessage: spec.logMessage ?? '',
+                        ...answered(answers, at)
+                    },
+                    verified.has(spec.line)
+                )
+            )
         );
     }
 
     /** Hold the function breakpoints with the adapter's answers, keeping the ones verified. */
-    setFunctions(names: string[], answers: BreakpointAnswers): void {
+    setFunctions(specs: NameSpec[], answers: BreakpointAnswers): void {
         const verified = new Set(
             this.#functions.filter((one) => one.verified).map((one) => one.name)
         );
-        this.#functions = names.map((name, at) =>
-            keeping({ name, ...answered(answers, at) }, verified.has(name))
+        this.#functions = specs.map((spec, at) =>
+            keeping(
+                {
+                    name: spec.name,
+                    condition: spec.condition ?? '',
+                    hitCondition: spec.hitCondition ?? '',
+                    ...answered(answers, at)
+                },
+                verified.has(spec.name)
+            )
         );
     }
 
@@ -77,7 +104,10 @@ export class Breakpoints {
             breakpoints: held.map((one) => ({
                 line: one.line,
                 verified: one.verified,
-                message: one.message
+                message: one.message,
+                condition: one.condition,
+                hitCondition: one.hitCondition,
+                logMessage: one.logMessage
             }))
         }));
     }
@@ -86,7 +116,9 @@ export class Breakpoints {
         return this.#functions.map((one) => ({
             name: one.name,
             verified: one.verified,
-            message: one.message
+            message: one.message,
+            condition: one.condition,
+            hitCondition: one.hitCondition
         }));
     }
 }

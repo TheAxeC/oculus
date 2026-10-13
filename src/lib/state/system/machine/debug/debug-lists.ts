@@ -10,11 +10,14 @@ import type { DebugPayload } from '../../../../data/model/index.ts';
 import type { TokenSource } from '../../../shared/stores/token-post.ts';
 import { postDebug, type DebugAnswer } from './debug-io.ts';
 import {
-    enabledLines,
+    enabledSpecs,
+    filled,
+    functionSpecs,
     messageOf,
     movedTo,
     stateOf,
     toggled,
+    type FunctionOptions,
     type Marker,
     type MarkerState,
     type Point,
@@ -38,7 +41,22 @@ export type BreakpointRow = {
     enabled: boolean;
     state: MarkerState;
     message: string;
+    condition: string;
+    hitCondition: string;
+    logMessage: string;
 };
+
+/** One function breakpoint of the Breakpoints section. */
+export type FunctionRow = {
+    name: string;
+    state: MarkerState;
+    message: string;
+    condition: string;
+    hitCondition: string;
+};
+
+/** The fields of a line breakpoint the reader edits; an empty text clears the field. */
+export type PointFields = { condition?: string; hitCondition?: string; logMessage?: string };
 
 export function createLists(deps: ListsDeps) {
     const { keep, active, paused, payload, writes } = deps;
@@ -52,7 +70,7 @@ export function createLists(deps: ListsDeps) {
 
     function postFile(path: string): Promise<DebugAnswer> {
         return postDebug(
-            { action: 'breakpoints', path, lines: enabledLines(pointsOf(path)) },
+            { action: 'breakpoints', path, lines: enabledSpecs(pointsOf(path)) },
             writes
         );
     }
@@ -86,7 +104,10 @@ export function createLists(deps: ListsDeps) {
                     line: one.line,
                     enabled: one.enabled,
                     state: stateOf(one, answers),
-                    message: answers === null ? '' : messageOf(one, answers)
+                    message: answers === null ? '' : messageOf(one, answers),
+                    condition: one.condition ?? '',
+                    hitCondition: one.hitCondition ?? '',
+                    logMessage: one.logMessage ?? ''
                 }));
             });
     }
@@ -123,23 +144,70 @@ export function createLists(deps: ListsDeps) {
         if (active()) for (const path of paths) void postFile(path);
     }
 
-    function setFunctions(names: string[]): void {
-        keep({ ...held.saved, functions: names });
-        if (active()) void postDebug({ action: 'functions', names }, writes);
+    function setFunctions(names: string[], options: Record<string, FunctionOptions>): void {
+        const kept = Object.fromEntries(
+            Object.entries(options).filter(([name]) => names.includes(name))
+        );
+        keep({ ...held.saved, functions: names, functionOptions: kept });
+        if (active()) {
+            void postDebug({ action: 'functions', names: functionSpecs(names, kept) }, writes);
+        }
     }
 
     function addFunction(name: string): void {
         const wanted = name.trim();
         if (wanted === '' || held.saved.functions.includes(wanted)) return;
-        setFunctions([...held.saved.functions, wanted]);
+        setFunctions([...held.saved.functions, wanted], held.saved.functionOptions);
     }
 
-    function functionRows(): { name: string; state: MarkerState; message: string }[] {
+    function functionRows(): FunctionRow[] {
         const answers = payload().functions;
         return held.saved.functions.map((name) => {
             const found = answers.find((one) => one.name === name);
             const state = !active() || found?.verified === true ? 'verified' : 'unverified';
-            return { name, state, message: found?.message ?? '' };
+            const options = held.saved.functionOptions;
+            const set = Object.hasOwn(options, name) ? options[name] : undefined;
+            return {
+                name,
+                state,
+                message: found?.message ?? '',
+                condition: set?.condition ?? '',
+                hitCondition: set?.hitCondition ?? ''
+            };
+        });
+    }
+
+    /** Set the condition, hit condition and log message of a line breakpoint; empty clears. */
+    function editPoint(path: string, line: number, fields: PointFields): void {
+        setPoints(
+            path,
+            pointsOf(path).map((one) =>
+                one.line === line
+                    ? {
+                          ...one,
+                          ...('condition' in fields ? { condition: filled(fields.condition) } : {}),
+                          ...('hitCondition' in fields
+                              ? { hitCondition: filled(fields.hitCondition) }
+                              : {}),
+                          ...('logMessage' in fields
+                              ? { logMessage: filled(fields.logMessage) }
+                              : {})
+                      }
+                    : one
+            )
+        );
+    }
+
+    /** Set the condition and hit condition of a function breakpoint; empty clears. */
+    function editFunction(name: string, fields: FunctionOptions): void {
+        const now: FunctionOptions = held.saved.functionOptions[name] ?? {};
+        setFunctions(held.saved.functions, {
+            ...held.saved.functionOptions,
+            [name]: {
+                ...now,
+                ...('condition' in fields ? { condition: filled(fields.condition) } : {}),
+                ...('hitCondition' in fields ? { hitCondition: filled(fields.hitCondition) } : {})
+            }
         });
     }
 
@@ -176,8 +244,13 @@ export function createLists(deps: ListsDeps) {
         removeAll,
         functionRows,
         addFunction,
+        editPoint,
+        editFunction,
         removeFunction: (name: string) =>
-            setFunctions(held.saved.functions.filter((one) => one !== name)),
+            setFunctions(
+                held.saved.functions.filter((one) => one !== name),
+                held.saved.functionOptions
+            ),
         watchRows,
         addWatch,
         editWatch,

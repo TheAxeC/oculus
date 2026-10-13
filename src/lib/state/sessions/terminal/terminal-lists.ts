@@ -6,10 +6,13 @@
 // what a case builds. The file holds two functions that write to the workbench they are handed,
 // closeEnded and moveInto; the others are pure.
 //
+// `endingOf` names what an app runs, for the question a disable asks.
+//
 // A Terminal tab is titled by `terminalTabTitle`, which only the tab uses; the Sessions view's rows
 // and the Processes view keep `terminalLabel` (title, else name).
 
-import type { Terminal } from '../../../data/model/index.ts';
+import type { DebugPayload, Terminal } from '../../../data/model/index.ts';
+import type { AppEnding } from '../../system/apps/flows.ts';
 import { t } from '../../shared/words/text.ts';
 import {
     isTerminalId,
@@ -63,16 +66,20 @@ export function terminalLabel(held: Pick<Terminal, 'name' | 'title'>): string {
 /**
  * What a Terminal tab calls a terminal it shows: the title the reader gave it; else the agent's
  * word for an agent terminal, since what tmux reports running in its pane says nothing of it; else
- * the name of the project command a task terminal ran; else the process tmux reports; else the
- * word for a shell.
+ * the name of the project command a task terminal ran, followed by the app's title in parentheses
+ * for a task of an app; else the name an app gave a terminal it made; else the process tmux
+ * reports; else the word for a shell.
  */
 export function terminalTabTitle(
-    held: Pick<Terminal, 'title' | 'kind' | 'command' | 'job'>
+    held: Pick<Terminal, 'title' | 'kind' | 'command' | 'job' | 'name'>
 ): string {
     if (held.title !== '') return held.title;
     if (held.kind === 'claude') return t('sessions.kind_claude');
     if (held.kind === 'codex') return t('sessions.kind_codex');
+    if (held.job?.app !== undefined)
+        return t('sessions.app_task_title', held.job.name, held.job.app.title);
     if (held.job !== null) return held.job.name;
+    if (held.kind === 'app') return held.name === '' ? t('sessions.kind_app') : held.name;
     return held.command === '' ? t('sessions.terminal_title_shell') : held.command;
 }
 
@@ -130,4 +137,28 @@ export function moveInto(
     const at = before >= 0 && before < index ? index - 1 : index;
     workbench.restate(target.id, target.page, withTerminal(held, id, at));
     workbench.activate(target.id, target.page);
+}
+
+/**
+ * What the app of this view id runs now. A debug session is the app's while its adapter is the
+ * app's and the session is not over. A task is a terminal that runs a task of the app and has not
+ * ended; a terminal is one the app made that is no task and has not ended.
+ */
+export function endingOf(
+    id: string,
+    terminals: readonly Terminal[],
+    debug: DebugPayload | null
+): AppEnding {
+    const live = debug?.status === 'running' || debug?.status === 'paused';
+    const session = debug?.adapter;
+    const own = terminals.filter((one) => one.exit === null);
+    return {
+        debug: live && session?.app === id ? session.label : null,
+        tasks: own
+            .filter((one) => one.job?.app?.app === id || (one.app === id && one.task))
+            .map((one) => terminalTabTitle(one)),
+        terminals: own
+            .filter((one) => one.app === id && !one.task)
+            .map((one) => terminalTabTitle(one))
+    };
 }

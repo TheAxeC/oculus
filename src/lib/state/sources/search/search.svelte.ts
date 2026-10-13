@@ -55,7 +55,7 @@ import { t } from '../../shared/words/text.ts';
 import { refusedAnswer, unreadableAnswer } from '../../shared/answers/answers.ts';
 import type { ExplorerStore } from '../explorer/ops.svelte.ts';
 import { nameOf } from '../explorer/file-type.ts';
-import type { DiffSubject } from '../repositories/repositories.ts';
+import type { DiffSubject } from '../repositories/diff/subject.ts';
 import { previewSubject } from '../repositories/replace-preview.ts';
 import {
     applyRereads,

@@ -11,6 +11,7 @@ import { z } from 'zod';
 import {
     DEBUG_CONSOLE_MAX,
     type DebugBreakpoint,
+    type DebugBreakpointSpec,
     type DebugConsole,
     type DebugConsoleAppend,
     type DebugConsoleLine,
@@ -32,8 +33,26 @@ export type MarkerState = 'verified' | 'unverified' | 'disabled';
 /** A breakpoint as the editor draws it: its line, counting from one, and how it is drawn. */
 export type Marker = { line: number; state: MarkerState };
 
-/** A breakpoint the reader set: its line, and whether it is sent to the adapter. */
-export type Point = { line: number; enabled: boolean };
+/**
+ * A breakpoint the reader set: its line, whether it is sent to the adapter, and the condition, hit
+ * condition and log message it is set with. A breakpoint with a log message is a logpoint. An empty
+ * or absent field is not set.
+ */
+export type Point = {
+    line: number;
+    enabled: boolean;
+    condition?: string | undefined;
+    hitCondition?: string | undefined;
+    logMessage?: string | undefined;
+};
+
+/** The text, or undefined for the empty text, which clears a field of a breakpoint. */
+export function filled(text: string | undefined): string | undefined {
+    return text === undefined || text === '' ? undefined : text;
+}
+
+/** The condition and hit condition a function breakpoint is set with. */
+export type FunctionOptions = { condition?: string | undefined; hitCondition?: string | undefined };
 
 /** What the browser keeps of the debugger. */
 export type SavedDebug = {
@@ -41,6 +60,8 @@ export type SavedDebug = {
     breakpoints: Record<string, Point[]>;
     /** The function breakpoints' names. */
     functions: string[];
+    /** The condition and hit condition of function breakpoints, by name. */
+    functionOptions: Record<string, FunctionOptions>;
     /** The watch expressions, in the order the reader gave them. */
     watch: string[];
     /** The configuration chosen for each repository, by repository path. */
@@ -51,13 +72,22 @@ export type SavedDebug = {
 
 const pointShape: z.ZodType<Point> = z.object({
     line: z.number().int().min(1),
-    enabled: z.boolean().catch(true)
+    enabled: z.boolean().catch(true),
+    condition: z.string().optional().catch(undefined),
+    hitCondition: z.string().optional().catch(undefined),
+    logMessage: z.string().optional().catch(undefined)
+});
+
+const optionsShape: z.ZodType<FunctionOptions> = z.object({
+    condition: z.string().optional().catch(undefined),
+    hitCondition: z.string().optional().catch(undefined)
 });
 
 const savedShape = z.object({
     version: z.literal(1),
     breakpoints: mapOfShape(rowsShape(pointShape)).catch(() => ({})),
     functions: rowsShape(z.string().min(1)).catch(() => []),
+    functionOptions: mapOfShape(optionsShape).catch(() => ({})),
     watch: rowsShape(z.string().min(1)).catch(() => []),
     chosen: mapOfShape(z.string()).catch(() => ({})),
     toolbar: z.number().nullable().catch(null)
@@ -65,7 +95,14 @@ const savedShape = z.object({
 
 /** What a browser that kept nothing holds. */
 export function nothingSaved(): SavedDebug {
-    return { breakpoints: {}, functions: [], watch: [], chosen: {}, toolbar: null };
+    return {
+        breakpoints: {},
+        functions: [],
+        functionOptions: {},
+        watch: [],
+        chosen: {},
+        toolbar: null
+    };
 }
 
 /** What the storage holds, or nothing for a value that does not read or a storage that throws. */
@@ -114,12 +151,34 @@ export function toggled(points: readonly Point[], line: number): Point[] {
  */
 export function movedTo(points: readonly Point[], lines: readonly number[]): Point[] {
     if (lines.length !== points.length) return [...points];
-    return ordered(points.map((one, at) => ({ line: lines[at], enabled: one.enabled })));
+    return ordered(points.map((one, at) => ({ ...one, line: lines[at] })));
 }
 
-/** The lines of the breakpoints the adapter is sent. */
-export function enabledLines(points: readonly Point[]): number[] {
-    return points.filter((one) => one.enabled).map((one) => one.line);
+/** The breakpoints the adapter is sent: the enabled ones, each with the fields it is set with. */
+export function enabledSpecs(points: readonly Point[]): DebugBreakpointSpec[] {
+    return points
+        .filter((one) => one.enabled)
+        .map((one) => ({
+            line: one.line,
+            ...(one.condition ? { condition: one.condition } : {}),
+            ...(one.hitCondition ? { hitCondition: one.hitCondition } : {}),
+            ...(one.logMessage ? { logMessage: one.logMessage } : {})
+        }));
+}
+
+/** The function breakpoints the adapter is sent, each with the fields it is set with. */
+export function functionSpecs(
+    names: readonly string[],
+    options: Readonly<Record<string, FunctionOptions>>
+): { name: string; condition?: string; hitCondition?: string }[] {
+    return names.map((name) => {
+        const set = Object.hasOwn(options, name) ? options[name] : undefined;
+        return {
+            name,
+            ...(set?.condition ? { condition: set.condition } : {}),
+            ...(set?.hitCondition ? { hitCondition: set.hitCondition } : {})
+        };
+    });
 }
 
 /**
@@ -227,6 +286,53 @@ export function repoOfFile(
     return deepestHolding(served, (root) => root.dir, file)?.item.dir ?? null;
 }
 
-/** The text a new `.oculus/launch.yml` holds. */
-export const LAUNCH_TEXT =
-    'configurations:\n    - name: Debug the open file\n      program: ${file}\n';
+/**
+ * The words for a paused session: those of its reason, the three kinds of breakpoint sharing the
+ * words of a breakpoint, or for a reason the protocol does not name, the adapter's own description
+ * of it, else the reason itself.
+ */
+function pausedWords(
+    pause: DebugPayload['pause'],
+    t: (key: string, ...args: string[]) => string
+): string {
+    const reason = pause?.reason ?? '';
+    switch (reason) {
+        case 'step':
+            return t('debug.state_paused_step');
+        case 'breakpoint':
+        case 'function breakpoint':
+        case 'data breakpoint':
+        case 'instruction breakpoint':
+            return t('debug.state_paused_breakpoint');
+        case 'exception':
+            return t('debug.state_paused_exception');
+        case 'pause':
+            return t('debug.state_paused_pause');
+        case 'entry':
+            return t('debug.state_paused_entry');
+        case 'goto':
+            return t('debug.state_paused_goto');
+    }
+    const description = pause?.description ?? '';
+    const said = description === '' ? reason : description;
+    return said === '' ? t('debug.state_paused_pause') : t('debug.state_paused_other', said);
+}
+
+/** The words the Debug view's state line shows for a session's state, from the catalog's `t`. */
+export function stateWords(
+    now: DebugPayload,
+    t: (key: string, ...args: string[]) => string
+): string {
+    switch (now.status) {
+        case 'idle':
+            return t('debug.state_idle');
+        case 'starting':
+            return t('debug.state_starting');
+        case 'running':
+            return t('debug.state_running');
+        case 'paused':
+            return pausedWords(now.pause, t);
+        case 'ended':
+            return t('debug.state_ended', now.ended);
+    }
+}

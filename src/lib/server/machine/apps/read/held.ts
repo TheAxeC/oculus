@@ -7,7 +7,7 @@
 // compares. The `apps` channel carries rows, findings and folders; everything else here stays on
 // the server.
 
-import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
+import { appActive, appViewId } from '../../../../data/helpers/files/apps/apps.ts';
 import type { AppRow, AppsPayload, Finding } from '../../../../data/model/index.ts';
 import type { AppFile } from './record.ts';
 
@@ -56,4 +56,15 @@ export function appById(held: AppsHeld, id: string): HeldApp | undefined {
 /** The held app of this root key and name, the root key empty for a machine app. */
 export function appOf(held: AppsHeld, root: string, name: string): HeldApp | undefined {
     return appById(held, appViewId(root, name));
+}
+
+/** The held app with this view id when it is approved, enabled and unchanged. */
+export function activeApp(held: AppsHeld, id: string): HeldApp | undefined {
+    const app = appById(held, id);
+    return app !== undefined && appActive(app.row) ? app : undefined;
+}
+
+/** The approved, enabled, unchanged apps, in the Views list's order. */
+export function activeApps(held: AppsHeld): HeldApp[] {
+    return held.apps.filter((app) => appActive(app.row));
 }

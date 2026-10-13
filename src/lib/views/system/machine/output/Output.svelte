@@ -16,9 +16,10 @@
 <script lang="ts">
     // Layer 3, view. The log of one language server, the last 2000 lines it wrote to its standard
     // error, in a read-only window as plain text, as VS Code's Output channel of that server shows
-    // it. The tab's state names the root and the language; it asks the relay for the log when it
-    // opens and tells the relay to stop when it closes, and the relay sends the lines again after
-    // a reconnect. The window follows the end of the log while the reader has not scrolled up.
+    // it. The tab's state names the root and the language, and the server when an app's host
+    // registered it (an empty `server` is oculus's own). The tab asks the relay for the log when it
+    // opens and tells the relay to stop when it closes, and the relay sends the lines again after a
+    // reconnect. The window follows the end of the log while the reader has not scrolled up.
 
     import { tick } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -35,8 +36,9 @@
 
     const root = $derived(instanceText(instance.state, 'root'));
     const language = $derived(instanceText(instance.state, 'language'));
+    const server = $derived(instanceText(instance.state, 'server'));
     const label = $derived(instanceText(instance.state, 'label'));
-    const lines = $derived(lsp.output(root, language));
+    const lines = $derived(lsp.output(root, language, server));
     const text = $derived(lines.join('\n'));
 
     let box: HTMLDivElement | undefined = $state();
@@ -56,7 +58,7 @@
     // The log is asked for while the tab is open.
     $effect(() => {
         if (root === '' || language === '') return;
-        return lsp.watchOutput(root, language);
+        return lsp.watchOutput(root, language, server);
     });
 
     $effect(() => {

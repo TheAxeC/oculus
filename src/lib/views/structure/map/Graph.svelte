@@ -113,8 +113,11 @@
     let hovered: string | null = $state(null);
     let focused: string | null = $state(null);
 
-    /** Each drawn label element by node id, which is where a label's width is measured. */
-    const texts: Record<string, SVGTextElement | null> = {};
+    /**
+     * Each drawn label element by node id, which is where a label's width is measured. It is state
+     * because `bind:this` writes into it; `measure` reads it after a tick, outside any effect.
+     */
+    const texts: Record<string, SVGTextElement | null> = $state({});
 
     /** Each label's measured size by node id; a label not yet measured has none. */
     let measured: Partial<Record<string, LabelSize>> = $state({});

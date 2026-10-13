@@ -99,6 +99,20 @@ function hiddenUnder(rootReal: string, real: string, closed: readonly string[]):
     return !pathSegmentsOpen(under) || inClosedPaths(under, closed);
 }
 
+/**
+ * Whether `closed_paths` closes a real path under another root of the workspace that holds it, so
+ * a root inside another root's folder keeps the outer root's closed folders closed.
+ */
+function closedByOuter(rootReal: string, real: string, context: OpenContext): boolean {
+    const closed = context.closedPaths ?? [];
+    if (closed.length === 0) return false;
+    return context.roots.some((one) => {
+        const outer = context.fs.realPath(one.dir);
+        if (outer === null || outer === rootReal || !within(real, outer)) return false;
+        return inClosedPaths(relative(outer, real).split(sep).join('/'), closed);
+    });
+}
+
 /** What the checks found: the answer, and for `ok` the real path of what the path names. */
 export type Located = { answer: 'closed' | 'missing' } | { answer: 'ok'; real: string };
 
@@ -148,6 +162,7 @@ export function locate(
     if (configReal !== null && within(real, configReal)) return { answer: 'closed' };
     if (isPrivate(real, context)) return { answer: 'closed' };
     if (!whole && hiddenUnder(rootReal, real, closedPaths)) return { answer: 'closed' };
+    if (closedByOuter(rootReal, real, context)) return { answer: 'closed' };
     return { answer: 'ok', real };
 }
 

@@ -12,8 +12,13 @@
 // The start is `runCommand`, which a schedule's run (schedules/run.ts) calls as the route does, so
 // both refuse the same things in the same order.
 //
+// A command that is a task of an app (source `app`, or a typed entry of the file) is not a shell
+// line: it asks no approval, and the app's host prepares it and it runs in a terminal of the kind
+// `app` (apps/tools/run/tasks.ts). It is not a step another command depends on.
+//
 // `rerun` runs the line of an ended task terminal again in the same pane, and `restart` does the
-// same for a line still running once the reader confirmed the process that would be stopped. The
+// same for a line still running once the reader confirmed the process that would be stopped; for
+// a task of an app the host prepares the task again, so both go through the app. The
 // kept terminal of a LaTeX build or clean is answered with what its step waits on to be approved,
 // and nothing runs, while the latexmkrc files or weave tools of the step are not approved.
 // `capture` answers all the text a listed terminal's pane holds, which the page reads the
@@ -41,6 +46,7 @@ import {
     startTerminal,
     type StartOptions
 } from '../../pty/sessions.ts';
+import type { StreamTerminalSet } from '../../apps/tools/run/stream-terminals.ts';
 import { resolveChain } from './resolve.ts';
 import {
     chainLines,
@@ -49,7 +55,7 @@ import {
     isApproved
 } from '../../approvals/approvals.ts';
 import { chainLine } from './chain.ts';
-import { listCommands } from './list.ts';
+import { listAll, type CommandTasks } from './list.ts';
 import { fillPlaceholders } from './placeholders.ts';
 import { repositoryOf } from './repo.ts';
 
@@ -63,9 +69,15 @@ export type CommandRunOptions = StartOptions & {
     savedFile?: string;
     /** Re-read the terminal manager after a write. */
     refresh?: () => void;
+    /** The apps, whose tasks are commands too. */
+    tasks?: CommandTasks;
 };
 
 const NO_STORE = { 'cache-control': 'no-store' };
+
+/** The escape sequences of a terminal's bytes (control sequences and operating system commands). */
+// eslint-disable-next-line no-control-regex
+const ANSI = /\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g;
 
 /** The bytes of the token a start mints for its chain's markers, printed as hex. */
 const TOKEN_BYTES = 6;
@@ -83,7 +95,7 @@ const contextShape = z
     })
     .catch({}) satisfies z.ZodType<CommandContext>;
 
-const sourceShape = z.enum(['file', 'saved', 'found']);
+const sourceShape = z.enum(['file', 'saved', 'found', 'app']);
 
 /** What a run of a command answers: its terminal, the chain that needs approval, or a refusal. */
 export type CommandStart =
@@ -111,12 +123,16 @@ export async function runCommand(
     if (typeof name !== 'string' || name === '') return { refused: 'bad-terminal', names: [] };
     const source = sourceShape.safeParse(sourceName);
     if (!source.success) return { refused: 'bad-terminal', names: [] };
-    const resolved = resolveChain(
-        listCommands(repo, options.savedFile).commands,
-        name,
-        source.data
-    );
+    const listed = await listAll(repo, options.savedFile, options.tasks);
+    const resolved = resolveChain(listed.commands, name, source.data);
     if ('error' in resolved) return { refused: resolved.error, names: resolved.names };
+    const root = resolved.chain[resolved.chain.length - 1];
+    if (root.task !== undefined) {
+        if (options.tasks === undefined) return { refused: 'task-gone', names: [name] };
+        const started = await options.tasks.run(root, repo, size);
+        options.refresh?.();
+        return started;
+    }
     const context = contextShape.parse(rawContext);
     const runs = resolved.chain.map((command) => command.run);
     const filled = fillPlaceholders(runs, context, repo);
@@ -167,13 +183,35 @@ export async function startCommand(
 /** The listed task terminal an id names, or the word that refuses it. */
 async function taskTerminal(
     id: unknown,
-    options: CommandRunOptions
+    options: CommandRunOptions & { streams?: StreamTerminalSet }
 ): Promise<Terminal | TerminalRefusal> {
     if (!isTerminalId(id)) return NOT_OURS;
-    const found = (await listTerminals(options)).find((terminal) => terminal.id === id);
+    const streamed = options.streams?.record(id);
+    const found = streamed ?? (await listTerminals(options)).find((terminal) => terminal.id === id);
     if (found === undefined) return NOT_LISTED;
     if (!found.task) return 'not-a-task';
     return found;
+}
+
+/**
+ * Run an app's task terminal again: the command of that name is listed again, so the host
+ * prepares the task as it is now, and its run takes over the row of the terminal.
+ */
+async function appAgain(
+    terminal: Terminal,
+    options: TerminalOptions & { tasks?: CommandTasks }
+): Promise<Response> {
+    const job = terminal.job;
+    if (job === null || options.tasks === undefined) return refusal('task-gone', [terminal.name]);
+    const listed = await listAll(job.repo, undefined, options.tasks);
+    const command = listed.commands.find(
+        (one) => one.name === job.name && one.source === job.source
+    );
+    if (command === undefined) return refusal('task-gone', [job.name]);
+    const started = await options.tasks.run(command, job.repo, { cols: 120, rows: 30 }, terminal);
+    if ('refused' in started) return refusal(started.refused, started.names);
+    options.refresh?.();
+    return json({ ok: true, id: started.terminal.id }, { headers: NO_STORE });
 }
 
 /**
@@ -188,6 +226,7 @@ export async function rerunTask(
     const terminal = await taskTerminal(message.id, options);
     if (typeof terminal === 'string') return refusal(terminal);
     if (terminal.exit === null) return refusal('still-running');
+    if (terminal.job?.source === 'app') return appAgain(terminal, options);
     const waiting = latexAgain(terminal, options);
     if (waiting !== null) return waiting;
     await respawnTerminal(terminal.id, options);
@@ -210,6 +249,7 @@ export async function restartTask(
     if (terminal.exit === null && message.confirmed !== true) {
         return json({ confirm: terminal.command || terminal.name }, { headers: NO_STORE });
     }
+    if (terminal.job?.source === 'app') return appAgain(terminal, options);
     const waiting = latexAgain(terminal, options);
     if (waiting !== null) return waiting;
     await respawnTerminal(terminal.id, options);
@@ -220,9 +260,13 @@ export async function restartTask(
 /** All the text of a listed terminal's pane, or the word refusing an unlisted name. */
 export async function captureTask(
     message: Record<string, unknown>,
-    options: CommandRunOptions
+    options: CommandRunOptions & { streams?: StreamTerminalSet }
 ): Promise<Response> {
     const id = message.id;
+    if (isTerminalId(id) && options.streams?.has(id) === true) {
+        const output = options.streams.replay(id).toString('utf8').replace(ANSI, '');
+        return json({ ok: true, id, output }, { headers: NO_STORE });
+    }
     const listed = isTerminalId(id) && (await listTerminals(options)).some((one) => one.id === id);
     if (!listed) return refusal(NOT_LISTED);
     const output = await paneOutput(id, options);

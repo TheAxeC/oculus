@@ -4,8 +4,22 @@
 // server sent.
 
 import { z } from 'zod';
-import type { PtyPayload, Terminal } from '../../../data/model/index.ts';
+import type { AppTaskRef, PtyPayload, Terminal } from '../../../data/model/index.ts';
 import { readAs, survivorsShape } from '../../../data/shapes/shapes.ts';
+
+/** The task of an app a project command stands for, as the commands route lists it. */
+export const appTaskShape = z.object({
+    app: z.string(),
+    appTitle: z.string(),
+    type: z.string(),
+    key: z.string(),
+    label: z.string(),
+    definition: z.record(z.string(), z.unknown()),
+    background: z.boolean(),
+    group: z.enum(['build', 'test']).nullable(),
+    isDefault: z.boolean(),
+    folder: z.string()
+}) satisfies z.ZodType<AppTaskRef>;
 
 /** One terminal with every field the page draws; the server sets all of them but `foreign`. */
 export const terminalShape = z.object({
@@ -14,7 +28,8 @@ export const terminalShape = z.object({
     title: z.string(),
     icon: z.string(),
     color: z.string(),
-    kind: z.enum(['claude', 'codex', 'shell']),
+    kind: z.enum(['claude', 'codex', 'shell', 'app']),
+    app: z.string(),
     cwd: z.string(),
     command: z.string(),
     pid: z.number(),
@@ -27,9 +42,18 @@ export const terminalShape = z.object({
         .object({
             repo: z.string(),
             name: z.string(),
-            source: z.enum(['file', 'saved', 'found', 'latex']).optional(),
+            source: z.enum(['file', 'saved', 'found', 'app', 'latex']).optional(),
             token: z.string().optional(),
             chain: z.array(z.object({ name: z.string(), cwd: z.string() })).optional(),
+            app: z
+                .object({
+                    app: z.string(),
+                    title: z.string(),
+                    type: z.string(),
+                    background: z.boolean()
+                })
+                .optional(),
+            matchers: z.array(z.string()).optional(),
             latex: z
                 .object({
                     step: z.string(),

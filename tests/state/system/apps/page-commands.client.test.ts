@@ -1,8 +1,9 @@
 // Layer 2, client state test, in Svelte's client runtime because the request store takes a request
 // in an effect. The commands of oculus's own that an app runs on a page
 // (lib/state/system/apps/shell/page-commands.ts): `oculus.theme`, `oculus.crt`, `oculus.tab` and
-// `oculus.goto`. These are the page's half of the `executeCommand` rows of G77: the page that has
-// the focus takes the request and changes, and a page that has not is unchanged.
+// `oculus.goto`, and the `preserveFocus` that a terminal show is passed on with. These are the
+// page's half of the `executeCommand` rows of G77: the page that has the focus takes the request
+// and changes, and a page that has not is unchanged.
 //
 // The deps are doubles that record what the page was told, and `document.hasFocus` is a stub the
 // test sets per page. What this does NOT cover: which page is asked first by the server
@@ -70,7 +71,10 @@ describe('the page commands of oculus', () => {
                 pageCommand: (command, args) =>
                     Promise.resolve(runPageCommand(one.deps, command, args)),
                 runInTab: () => Promise.resolve(null),
-                openPanel: () => undefined
+                openPanel: () => undefined,
+                saveAll: () => Promise.resolve(true),
+                showTerminal: () => undefined,
+                hideTerminal: () => undefined
             });
             return { one, requests };
         };
@@ -122,5 +126,41 @@ describe('the page commands of oculus', () => {
             ok: false,
             word: 'missing'
         });
+    });
+});
+
+describe('the show of a terminal an app asks for', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it.each([true, false])('is passed to the page with preserveFocus %s', async (preserveFocus) => {
+        vi.stubGlobal('document', { hasFocus: () => true });
+        const shown: [string, boolean][] = [];
+        const posts: unknown[] = [];
+        createRequests({
+            requests: () => [
+                {
+                    id: 'r1',
+                    app: 'app:notes',
+                    kind: 'showTerminal',
+                    terminal: 'a1b2c3-app',
+                    preserveFocus
+                }
+            ],
+            post: ((_path: string, body: unknown) => {
+                posts.push(body);
+                return Promise.resolve({ ok: true, status: 200, body: {}, failed: '' });
+            }) as never,
+            notices: { post: () => 0, update: () => undefined, remove: () => undefined },
+            pageId: 'p1',
+            pageCommand: () => Promise.resolve({ ok: true, value: null }),
+            runInTab: () => Promise.resolve(null),
+            openPanel: () => undefined,
+            saveAll: () => Promise.resolve(true),
+            showTerminal: (terminal, keep) => void shown.push([terminal, keep]),
+            hideTerminal: () => undefined
+        });
+        flushSync();
+        await vi.waitFor(() => expect(posts).toHaveLength(1));
+        expect(shown).toEqual([['a1b2c3-app', preserveFocus]]);
     });
 });

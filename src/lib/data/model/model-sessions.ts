@@ -5,7 +5,8 @@
 // sends with a run, and the diagnostics a task terminal's output gives.
 
 import type { Id } from './model-entities.ts';
-import type { Terminal } from './model-machine.ts';
+import type { AppTaskRef } from './apps/model-apps-tools.ts';
+import type { Terminal } from './machine/model-machine.ts';
 
 export type SessionTool = 'claude' | 'codex';
 
@@ -660,7 +661,7 @@ export type UsageDay = {
 export type UsagePayload = { accounts: UsageAccount[]; days: UsageDay[]; builtAt: string };
 
 /** Where a command was read from, in the order they are listed. */
-export type CommandSource = 'file' | 'saved' | 'found';
+export type CommandSource = 'file' | 'saved' | 'found' | 'app';
 
 /** The two roles a command may hold for a repository, each on a key. */
 export type CommandDefault = 'build' | 'test';
@@ -678,6 +679,10 @@ export type ProjectCommand = {
     source: CommandSource;
     /** The file and line the command is written at, for a file and a found command. */
     entry?: { file: string; line: number };
+    /** Present when an app's host runs the command: a task of the app, not a shell line. */
+    task?: AppTaskRef;
+    /** The problem matchers (`$name`) the command's output is read with. */
+    matchers?: string[];
 };
 
 /**
@@ -711,10 +716,10 @@ export type CommandContext = {
     selectedText?: string;
 };
 
-/** The two severities a task terminal's output is read for. */
-export type CommandSeverity = 'error' | 'warning';
+/** The severities a task terminal's output is read for. */
+export type CommandSeverity = 'error' | 'warning' | 'info';
 
-/** One `file:line:column: error|warning` line of a task terminal's output. */
+/** One problem a task terminal's output holds: an error line or a problem matcher's. */
 export type CommandDiagnostic = {
     /** The repository the command belongs to. */
     root: string;
@@ -724,8 +729,14 @@ export type CommandDiagnostic = {
     column?: number;
     severity: CommandSeverity;
     message: string;
-    /** `command:<name>`. */
+    /** `command:<name>`, or the `source` a problem matcher declares. */
     source: string;
+    /** The end of the range a problem matcher gave, 0 when it gave none. */
+    endLine?: number;
+    endColumn?: number;
+    code?: string;
+    /** The problem matcher (`$name`) that read the line, absent for the default reading. */
+    matcher?: string;
 };
 
 /**

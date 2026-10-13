@@ -7,7 +7,8 @@
 // every path is as the record left it.
 //
 // - `create`, `copy` and `upload` are taken back by moving what they made to the Trash, only while
-//   each path is as the operation left it (kind, size and modification time).
+//   each path is as the operation left it (kind, size and modification time). An `upload` that
+//   replaced a file names the replaced bytes in `before` and is taken back as a `replace` is.
 // - `rename` and `move` are taken back by moving each item to the name it came from, only while the
 //   item is there as the operation left it and the old name is free.
 // - `trash` and `delete` are taken back by writing back each file whose content was kept in the
@@ -33,7 +34,13 @@ import { mkdir, rename } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import trashLibrary from 'trash';
 import { z } from 'zod';
-import { FILES_KIND, FILE_FIELDS, type FileField, type FileStamp } from '../../../data/file-ops.ts';
+import {
+    FILES_KIND,
+    FILE_FIELDS,
+    isUpload,
+    type FileField,
+    type FileStamp
+} from '../../../data/file-ops.ts';
 import type { Change, ChangeRecord } from '../../core/changes.ts';
 import { chained, type FsWrites } from '../../core/json.ts';
 import { below, realPath } from '../../core/paths.ts';
@@ -193,8 +200,10 @@ async function undoNow(
     if (named.some((one) => !served(roots, one.path))) return { error: 'gone' };
     const trash = deps.trash ?? ((path, options) => trashLibrary(path, options));
     const via = field.data;
+    // An upload that replaced a file names the replaced bytes, which the undo writes back.
+    const replacing = isUpload(via) && before.data.length > 0;
     let done: Done;
-    if (via === 'create' || via === 'copy' || via === 'upload') {
+    if ((via === 'create' || via === 'copy' || isUpload(via)) && !replacing) {
         if (after.data.length === 0) return { error: 'nothing' };
         if (after.data.some((one) => stampOf(one.path) === null)) return { error: 'gone' };
         if (!after.data.every((one) => holds(one))) return { error: 'moved' };
@@ -226,7 +235,7 @@ async function undoNow(
         } catch {
             return finish(done, 'unwritable');
         }
-    } else if (via === 'replace' || via === 'lsp-edit' || via === 'writing-fix') {
+    } else if (via === 'replace' || via === 'lsp-edit' || via === 'writing-fix' || replacing) {
         const paired = before.data.length === after.data.length;
         if (!paired || before.data.length === 0) return { error: 'nothing' };
         if (before.data.some((one, at) => one.path !== after.data[at]?.path)) {
@@ -239,7 +248,7 @@ async function undoNow(
         }
         done = { field: via, before: [], after: [] };
         try {
-            writeReplaced(target, via, before.data, after.data, done);
+            writeReplaced(target, isUpload(via) ? 'replace' : via, before.data, after.data, done);
         } catch {
             return finish(done, 'unwritable');
         }

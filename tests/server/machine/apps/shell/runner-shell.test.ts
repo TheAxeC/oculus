@@ -45,7 +45,7 @@ type Shell = {
  * follow into the plain JavaScript the host runs.
  */
 const MODULE = new URL(
-    '../../../../../src/lib/server/machine/apps/host/runner-shell.mjs',
+    '../../../../../src/lib/server/machine/apps/host/runner/runner-shell.mjs',
     import.meta.url
 ).href;
 const { createShell } = (await import(MODULE)) as {

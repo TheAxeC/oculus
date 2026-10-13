@@ -37,8 +37,8 @@ import {
     workspaceKey
 } from '../../../../src/lib/server/machine/apps/read/state.ts';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
-import { secretsOf } from './hosts-fixture.ts';
-import { world, type World } from './hosts-world.ts';
+import { secretsOf } from './world/hosts-fixture.ts';
+import { world, type World } from './world/hosts-world.ts';
 
 const stateFile = (w: World): string => join(w.fixture.base, 'apps.json');
 

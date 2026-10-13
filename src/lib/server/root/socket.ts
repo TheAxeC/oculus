@@ -6,13 +6,13 @@
 // DESIGN.md's "The socket" names the three exceptions: terminal input, language server messages
 // and the jump. A page that carried the write token in a subscribe message may send `input` and
 // `resize` on a `pty:` channel, which this hands to server/machine/pty/channel.ts, and a frame on
-// an `lsp:<language>` channel, which this hands to server/machine/lsp/relay.ts. A socket without
-// the token reads every channel and writes to none. This module holds the one set of sockets that
-// carried the token: every subscribe message is read for it, one of no channels included (the page
-// sends a token it installed after the socket subscribed in that form), and both consumers are
-// handed `canWrite(sink)` once, which each calls at every message. A `pty:` and an `lsp:` channel
-// are neither of them the Hub's, so neither is subscribed there. The message is read through a zod
-// schema held to the `Subscription` type of data/model.
+// an `lsp:<language>` channel, which this hands to server/machine/lsp/relay/relay.ts. A socket
+// without the token reads every channel and writes to none. This module holds the one set of
+// sockets that carried the token: every subscribe message is read for it, one of no channels
+// included (the page sends a token it installed after the socket subscribed in that form), and
+// both consumers are handed `canWrite(sink)` once, which each calls at every message. A `pty:` and
+// an `lsp:` channel are neither of them the Hub's, so neither is subscribed there. The message is
+// read through a zod schema held to the `Subscription` type of data/model.
 //
 // The third is `jump`: a PDF in a window of its own asks the main page that opened the window to
 // open the source line a click on the PDF came from. A socket that carried the token may send it,
@@ -58,8 +58,8 @@ export type TerminalSink = {
 };
 
 /**
- * What the socket needs of the language server relay; server/machine/lsp/relay.ts's Relay is the
- * one there is.
+ * What the socket needs of the language server relay; server/machine/lsp/relay/relay.ts's Relay is
+ * the one there is.
  */
 export type RelaySink = {
     /** Takes the socket's `canWrite(sink)`, as the terminals do. */
@@ -189,7 +189,9 @@ export function attachSocket(server: Server, hub: Hub, options: SocketOptions): 
                 new Promise((resolve, reject) => {
                     ws.send(text, (error) => (error ? reject(error) : resolve()));
                 }),
-            close: () => ws.close()
+            close: () => ws.close(),
+            pause: () => ws.pause(),
+            resume: () => ws.resume()
         };
         const drop = (): void => {
             options.relay?.remove(sink);

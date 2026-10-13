@@ -338,7 +338,8 @@ export function previewRequest(
 export const FILES_KIND = 'files';
 
 /**
- * The operations a `files` record names in its `field`: a paste is `copy` or `move` by its mode.
+ * The operations a `files` record names in its `field`: a paste is `copy` or `move` by its mode,
+ * and an upload is `upload`, or the write its caller names (`UPLOAD_AS`).
  */
 export const FILE_FIELDS = [
     'create',
@@ -346,6 +347,8 @@ export const FILE_FIELDS = [
     'move',
     'copy',
     'upload',
+    'add-configuration',
+    'write-file',
     'trash',
     'delete',
     'replace',
@@ -355,6 +358,20 @@ export const FILE_FIELDS = [
 
 /** One of the operations a `files` record names. */
 export type FileField = (typeof FILE_FIELDS)[number];
+
+/**
+ * What an upload made by a caller other than the page is recorded as: Add Configuration's write of
+ * `launch.yml`, and a file an app's host writes with `workspace.fs.writeFile`.
+ */
+export const UPLOAD_AS = ['add-configuration', 'write-file'] as const;
+
+/** A field an upload is recorded under. */
+export type UploadField = 'upload' | (typeof UPLOAD_AS)[number];
+
+/** Whether a record's field is an upload, under whichever name its caller gave it. */
+export function isUpload(field: FileField): field is UploadField {
+    return field === 'upload' || (UPLOAD_AS as readonly string[]).includes(field);
+}
 
 /**
  * What was at a path when a record was made. `size` and `mtime` (milliseconds) are the file's own,

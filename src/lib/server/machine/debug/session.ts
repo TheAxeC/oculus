@@ -1,18 +1,26 @@
 // Layer 2, server. The debug client: one debug session at a time, the server being the client of
-// the debug adapter (`rite_dap`) and the page sending commands by POST /api/debug (routes.ts).
+// a debug adapter and the page sending commands by POST /api/debug (routes.ts). The adapter is
+// oculus's own (`rite_dap`, a child process) or the one an app's debugger declares (the stream its
+// host opens, app/adapter.ts); the client follows what the adapter declares in its answer to
+// `initialize` (app/capabilities.ts) and draws or sends nothing the adapter did not declare.
 // The session's state is published on the `debug` channel and its console on `debug-console`
 // (console.ts), so every page draws the same session and a page that opens late reads it whole.
 //
-// A launch spawns `[rite_dap, program]` with no shell, the program one argument, through the
-// `spawn` function it is given. The adapter's path is read at each launch, so a changed
-// `rite_dap_bin` holds from the next one. The handshake is `initialize`, `launch`, then on
-// `initialized` the breakpoints the page holds and `configurationDone`, which starts the program.
-// On each stop the stack, the selected frame's scopes and variables and the watch expressions are
-// read (inspect.ts), and one state is published. A breakpoint the adapter answered as pending is
-// verified by its later `breakpoint` event or by a stop at it. The adapter cannot be stopped by the
-// protocol (`disconnect` lets the program run to its end), so Stop is SIGTERM to the process this
-// client spawned and SIGKILL two seconds later; the route runs it only after the page confirmed
-// the process it names.
+// A launch of oculus's adapter spawns `[rite_dap, program]` with no shell, the program one
+// argument, through the `spawn` function it is given. The adapter's path is read at each launch, so
+// a changed `rite_dap_bin` holds from the next one. A launch of an app's debugger asks the app's
+// host for the adapter (the providers resolve the configuration first) and speaks to the stream
+// it opens. The handshake is `initialize`, `launch` or `attach` with the configuration's
+// arguments, then on `initialized` the breakpoints the page holds, the function breakpoints and
+// exception filters the adapter declared (session/send.ts), and `configurationDone`, which starts
+// the program. On each stop the stack, the selected frame's scopes and variables and the watch
+// expressions are read (inspect.ts), and one state is published. A breakpoint the adapter answered
+// as pending is verified by its later `breakpoint` event or by a stop at it. The oculus adapter
+// cannot be stopped by the protocol (`disconnect` lets the program run to its end), so Stop is
+// SIGTERM to the process this client spawned and SIGKILL two seconds later; the route runs it only
+// after the page confirmed the process it names. An app's adapter is stopped with `terminate` when
+// it declares `supportsTerminateRequest` and with `disconnect` and `terminateDebuggee` otherwise,
+// and its stream is closed two seconds later if it has not ended.
 //
 // An answer is dropped when the session it was asked in has ended or a later pause or resume has
 // replaced the one it was asked in. A message of the adapter that does not read, and the adapter's
@@ -21,6 +29,9 @@
 import { isAbsolute } from 'node:path';
 import type { ZodType } from 'zod';
 import type {
+    DebugAdapterInfo,
+    DebugBreakpointSpec,
+    DebugCapabilities,
     DebugConsoleKind,
     DebugConsoleLine,
     DebugFrame,
@@ -30,11 +41,16 @@ import type {
     DebugStatus,
     DebugWatch
 } from '../../../data/model/index.ts';
-import type { Hub } from '../../core/channels.ts';
 import { realPath } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
 import { expandHome } from '../../files/files.ts';
-import type { Child, Spawn } from '../lsp/held/process.ts';
+import { carrierAdapter, childAdapter, type Adapter } from './app/adapter.ts';
+import { failureText, exitText } from './app/ends.ts';
+import { Filters } from './app/filters.ts';
+import { Controls, breakpointsEvent, sessionId, type Core } from './session/controls.ts';
+import { sendBreakpoints, sendExceptions, sendFunctions, type Sending } from './session/send.ts';
+import { RITE, RITE_CAPABILITIES, declaredBy, shown, type Declared } from './app/capabilities.ts';
+import type { AppDebugPort, AppSessionInfo } from './app/port.ts';
 import { Breakpoints } from './breakpoints.ts';
 import { ConsoleStore } from './console.ts';
 import {
@@ -45,81 +61,45 @@ import {
     type Evaluation,
     type Link
 } from './inspect.ts';
-import { breakpointEventShape, breakpointsShape, outputShape, stoppedShape } from './shapes.ts';
+import { breakpointEventShape, outputShape, stoppedShape } from './shapes.ts';
 import {
-    Ended,
-    THREAD,
-    openWire,
-    type Command,
-    type Requests,
-    type Wire,
-    type WireFailure
-} from './wire.ts';
+    CLOSE_MS,
+    KILL_MS,
+    STANDARD_EVENTS,
+    newRun,
+    type AppLaunch,
+    type DebugOptions,
+    type FunctionSpec,
+    type LaunchRequest,
+    type Refusal,
+    type Resume,
+    type Run
+} from './session/types.ts';
+import { Ended, Refused, type Command, type Requests, type WireFailure } from './wire.ts';
+
+export type {
+    AppLaunch,
+    DebugOptions,
+    FunctionSpec,
+    LaunchRequest,
+    Refusal,
+    Resume
+} from './session/types.ts';
 
 /** The channel the session's state goes out on. */
 const DEBUG_CHANNEL = 'debug';
-
-/** The milliseconds from SIGTERM to SIGKILL when the options name none. */
-const KILL_MS = 2000;
-
-/** What a launch carries: the program and folder the route resolved, and what the page holds. */
-export type LaunchRequest = {
-    repo: string;
-    name: string;
-    /** The absolute path of the `.rite` file. */
-    program: string;
-    /** The absolute real path of the folder the adapter runs in. */
-    cwd: string;
-    breakpoints: { path: string; lines: number[] }[];
-    functions: string[];
-    watch: string[];
-};
-
-/** What the client is made of: the hub, how a child is spawned, and the values read at a launch. */
-export type DebugOptions = {
-    hub: Hub;
-    spawn: Spawn;
-    /** The adapter's program, `rite_dap_bin` of local.yml, read at each launch. */
-    adapter: () => string;
-    /** The text catalog, which words the sentences of `server.debug`. */
-    catalog: () => Record<string, string>;
-    /** The milliseconds from SIGTERM to SIGKILL. */
-    killAfterMs?: number;
-};
-
-/** A refusal, in words. */
-export type Refusal = { error: string };
-
-/** The commands that let a paused program go on. */
-export type Resume = 'continue' | 'next' | 'stepIn' | 'stepOut' | 'finishFrame';
-
-/** What belongs to one spawned adapter. */
-type Run = {
-    number: number;
-    child: Child | null;
-    wire: Wire | null;
-    /** The real path of each file the page named, to the path it named it by. */
-    named: Map<string, string>;
-    /** Bumped at each pause and each resume; an answer asked in an earlier one is dropped. */
-    stop: number;
-    stopping: boolean;
-    over: boolean;
-    /** The sentence a failure of the adapter's messages ended the session with. */
-    failure: string | null;
-    /** The unfinished last line of each output kind. */
-    partial: Map<DebugConsoleKind, string>;
-    /** Resolves when the adapter said `initialized`, or the run is over. */
-    initialized: Promise<void>;
-    isInitialized: () => void;
-    /** Resolves when the handshake and the first breakpoints are done. */
-    armed: Promise<void>;
-    killTimer: ReturnType<typeof setTimeout> | null;
-};
 
 /** The lines of a text, which ends without a line break unless it ends a line. */
 function linesOf(text: string): string[] {
     return text.split(/\r?\n/);
 }
+
+/** What the page last sent. */
+type Held = {
+    breakpoints: LaunchRequest['breakpoints'];
+    functions: FunctionSpec[];
+    watch: string[];
+};
 
 /** The one debug client of a server. */
 export class DebugClient {
@@ -138,10 +118,45 @@ export class DebugClient {
     #expressions: string[] = [];
     #watch: DebugWatch[] = [];
     #breakpoints = new Breakpoints();
+    #port: AppDebugPort | undefined;
+    #adapter: DebugAdapterInfo | null = null;
+    #filters = new Filters();
+    #declared = new Map<string, DebugCapabilities>([[RITE, shown(RITE_CAPABILITIES)]]);
+    /** What the page last sent, which a launch a host asks for runs with. */
+    #held: Held = { breakpoints: [], functions: [], watch: [] };
+    /** The requests that follow what the adapter declared. */
+    readonly controls: Controls;
 
     constructor(options: DebugOptions) {
         this.#options = options;
         this.#console = new ConsoleStore(options.hub);
+        this.controls = new Controls(this.#core());
+    }
+
+    /** Give the client the debuggers of the apps. */
+    attachApps(port: AppDebugPort | undefined): void {
+        this.#port = port;
+    }
+
+    /** The apps' debuggers as the client reaches them, or undefined while no apps are attached. */
+    port(): AppDebugPort | undefined {
+        return this.#port;
+    }
+
+    /** The debuggers of the acting apps, none while the apps are not attached. */
+    debuggers() {
+        return this.#port?.debuggers() ?? [];
+    }
+
+    /** What the page last sent: its breakpoints, function breakpoints and watch expressions. */
+    held() {
+        return this.#held;
+    }
+
+    /** Keep what the page sent and tell the hosts of the debuggers its breakpoints. */
+    #hold(held: Held): void {
+        this.#held = held;
+        this.#port?.broadcast(breakpointsEvent(held));
     }
 
     /** The state as published now. */
@@ -152,11 +167,15 @@ export class DebugClient {
             pause: this.#pause,
             frames: this.#frames,
             frame: this.#frame,
+            thread: this.#run?.thread ?? null,
             scopes: this.#scopes,
             watch: this.#watch,
             breakpoints: this.#breakpoints.files(),
             functions: this.#breakpoints.functions(),
-            ended: this.#ended
+            ended: this.#ended,
+            adapter: this.#adapter,
+            exceptions: this.#filters.list(),
+            declared: Object.fromEntries(this.#declared)
         };
     }
 
@@ -200,13 +219,24 @@ export class DebugClient {
     launch(request: LaunchRequest): Refusal | { ok: true } {
         if (this.#closed || this.active)
             return { error: words(this.#options.catalog(), 'server.debug.running') };
-        const run = this.#newRun();
+        this.#count += 1;
+        const run = newRun(this.#count, request.app ?? null);
         this.#run = run;
         this.#status = 'starting';
         this.#ended = '';
         this.#clearPause();
         this.#breakpoints.clear();
         this.#expressions = request.watch;
+        this.#hold({
+            breakpoints: request.breakpoints,
+            functions: request.functions,
+            watch: request.watch
+        });
+        this.#adapter =
+            request.app === undefined
+                ? { type: RITE, label: RITE, app: '' }
+                : { type: request.app.type, label: request.app.label, app: request.app.app };
+        this.#filters.clear();
         this.#session = {
             repo: request.repo,
             name: request.name,
@@ -219,62 +249,89 @@ export class DebugClient {
         this.#console.add([
             {
                 kind: 'console',
-                text: words(
-                    this.#options.catalog(),
-                    'server.debug.launch_line',
-                    request.program,
-                    request.cwd
-                )
+                text:
+                    request.app === undefined
+                        ? words(
+                              this.#options.catalog(),
+                              'server.debug.launch_line',
+                              request.program,
+                              request.cwd
+                          )
+                        : words(
+                              this.#options.catalog(),
+                              'server.debug.launch_line_app',
+                              request.app.label,
+                              request.cwd
+                          )
             }
         ]);
-        run.named.set(realPath(request.program) ?? request.program, request.program);
-        let child: Child;
-        try {
-            child = this.#options.spawn(expandHome(this.#options.adapter()), [request.program], {
-                cwd: request.cwd
-            });
-        } catch (error) {
-            this.#finish(run, this.#startFailed(error), 'error');
-            return { ok: true };
+        if (request.program !== '') {
+            run.named.set(realPath(request.program) ?? request.program, request.program);
         }
-        run.child = child;
-        this.#session = { ...this.#session, pid: child.pid ?? 0 };
-        child.on('error', (error) => this.#finish(run, this.#startFailed(error), 'error'));
-        child.on('exit', (code, signal) => this.#exited(run, code, signal));
-        child.stdin.on('error', () => undefined);
-        child.stderr.on('data', (chunk: Buffer | string) =>
-            this.#text(run, 'stderr', String(chunk))
-        );
-        run.wire = openWire(child.stdout, child.stdin, {
-            event: (event, body) => this.#event(run, event, body),
-            failed: (failure) => this.#failed(run, failure)
-        });
-        run.armed = this.#begin(run, request);
+        const handlers = {
+            event: (event: string, body: unknown) => this.#event(run, event, body),
+            failed: (failure: WireFailure) => this.#failed(run, failure)
+        };
+        if (request.app === undefined) {
+            let adapter: Adapter;
+            try {
+                adapter = childAdapter(
+                    this.#options.spawn(expandHome(this.#options.adapter()), [request.program], {
+                        cwd: request.cwd
+                    }),
+                    handlers
+                );
+            } catch (error) {
+                this.#finish(run, this.#startFailed(error), 'error');
+                return { ok: true };
+            }
+            this.#adopt(run, adapter, request);
+        } else void this.#startApp(run, request, request.app, handlers);
         this.#publish();
         return { ok: true };
     }
 
-    #newRun(): Run {
-        let isInitialized: () => void = () => undefined;
-        const initialized = new Promise<void>((resolve) => {
-            isInitialized = resolve;
-        });
-        this.#count += 1;
-        return {
-            number: this.#count,
-            child: null,
-            wire: null,
-            named: new Map(),
-            stop: 0,
-            stopping: false,
-            over: false,
-            failure: null,
-            partial: new Map(),
-            initialized,
-            isInitialized,
-            armed: Promise.resolve(),
-            killTimer: null
-        };
+    /** Ask the app's host for the adapter of its debugger and adopt the stream it opens. */
+    async #startApp(
+        run: Run,
+        request: LaunchRequest,
+        app: AppLaunch,
+        handlers: {
+            event: (event: string, body: unknown) => void;
+            failed: (f: WireFailure) => void;
+        }
+    ): Promise<void> {
+        try {
+            const port = this.#port;
+            if (port === undefined) throw new Error('no apps');
+            const info: AppSessionInfo = {
+                id: sessionId(run),
+                type: app.type,
+                name: request.name,
+                folder: app.folder,
+                configuration: app.configuration
+            };
+            const carrier = await port.open(app.type, info, request.cwd);
+            if (!this.#current(run)) {
+                carrier.close();
+                return;
+            }
+            this.#adopt(run, carrierAdapter(carrier, handlers), request);
+            this.#publish();
+        } catch (error) {
+            this.#finish(run, this.#startFailed(error), 'error');
+        }
+    }
+
+    /** The adapter is there: listen to it and begin the handshake. */
+    #adopt(run: Run, adapter: Adapter, request: LaunchRequest): void {
+        run.adapter = adapter;
+        run.wire = adapter.wire;
+        this.#session = this.#session === null ? null : { ...this.#session, pid: adapter.pid };
+        adapter.onError((error) => this.#finish(run, this.#startFailed(error), 'error'));
+        adapter.onExit((code, signal) => this.#exited(run, code, signal));
+        adapter.onStderr((text) => this.#text(run, 'stderr', text));
+        run.armed = this.#begin(run, request);
     }
 
     #startFailed(error: unknown): string {
@@ -285,30 +342,54 @@ export class DebugClient {
         );
     }
 
-    /** The handshake and the arming of what the page holds, then the program starts. */
+    /**
+     * The handshake and the arming of what the page holds, then the program starts. The launch or
+     * attach request is sent first and awaited last: an adapter may answer it only after
+     * `configurationDone`.
+     */
     async #begin(run: Run, request: LaunchRequest): Promise<void> {
+        const app = request.app;
         try {
-            await this.#ask(run, 'initialize', {
+            const init = await this.#ask(run, 'initialize', {
                 clientID: 'oculus',
-                adapterID: 'rite',
+                adapterID: app === undefined ? RITE : app.type,
                 linesStartAt1: true,
                 columnsStartAt1: true,
                 pathFormat: 'path'
             });
-            await this.#ask(run, 'launch', {});
+            if (app !== undefined) this.#declare(run, declaredBy(init));
+            const begun =
+                app === undefined
+                    ? this.#ask(run, 'launch', {})
+                    : this.#ask(run, app.request, app.configuration);
+            begun.catch(() => undefined);
             await run.initialized;
             for (const file of request.breakpoints) {
-                await this.#sendBreakpoints(run, file.path, file.lines);
+                await sendBreakpoints(this.#sending(), run, file.path, file.lines);
             }
-            await this.#sendFunctions(run, request.functions);
-            await this.#ask(run, 'setExceptionBreakpoints', { filters: [] });
+            if (run.capabilities.functions)
+                await sendFunctions(this.#sending(), run, request.functions);
+            await sendExceptions(this.#sending(), run);
             if (!this.#current(run)) return;
             this.#status = 'running';
             this.#publish();
-            await this.#ask(run, 'configurationDone', {});
+            run.started = true;
+            this.controls.tell(run, 'started');
+            if (run.capabilities.configurationDone) await this.#ask(run, 'configurationDone', {});
+            await begun;
         } catch (error) {
             this.#requestFailed(run, error);
         }
+    }
+
+    /**
+     * Hold what the adapter declared, and the filters of the running debug session with the
+     * reader's choice.
+     */
+    #declare(run: Run, declared: Declared): void {
+        run.capabilities = declared;
+        this.#declared.set(run.type, shown(declared));
+        this.#filters.declare(run.type, shown(declared));
     }
 
     /** Read a body through its shape, ending the session when the adapter sent another. */
@@ -319,34 +400,32 @@ export class DebugClient {
         throw new Ended(run.failure ?? '');
     }
 
-    async #sendBreakpoints(run: Run, path: string, lines: number[]): Promise<void> {
-        run.named.set(realPath(path) ?? path, path);
-        const body = await this.#ask(run, 'setBreakpoints', {
-            source: { path },
-            breakpoints: lines.map((line) => ({ line }))
+    /** Set one file's breakpoints; the answer is published when the adapter gives it. */
+    setBreakpoints(path: string, specs: DebugBreakpointSpec[]): void {
+        const others = this.#held.breakpoints.filter((one) => one.path !== path);
+        this.#hold({
+            ...this.#held,
+            breakpoints: specs.length === 0 ? others : [...others, { path, lines: specs }]
         });
-        const answers = this.#read(run, breakpointsShape, body).breakpoints;
-        if (!this.#current(run)) return;
-        this.#breakpoints.setFile(path, lines, answers);
-    }
-
-    async #sendFunctions(run: Run, names: string[]): Promise<void> {
-        const body = await this.#ask(run, 'setFunctionBreakpoints', {
-            breakpoints: names.map((name) => ({ name }))
-        });
-        const answers = this.#read(run, breakpointsShape, body).breakpoints;
-        if (!this.#current(run)) return;
-        this.#breakpoints.setFunctions(names, answers);
-    }
-
-    /** Set one file's lines; the answer is published when the adapter gives it. */
-    setBreakpoints(path: string, lines: number[]): void {
-        this.#whenArmed((run) => this.#sendBreakpoints(run, path, lines));
+        this.#whenArmed((run) => sendBreakpoints(this.#sending(), run, path, specs));
     }
 
     /** Set the function breakpoints the page holds. */
-    setFunctions(names: string[]): void {
-        this.#whenArmed((run) => this.#sendFunctions(run, names));
+    setFunctions(specs: FunctionSpec[]): void {
+        this.#hold({ ...this.#held, functions: specs });
+        this.#whenArmed((run) => {
+            if (!run.capabilities.functions) return Promise.resolve();
+            return sendFunctions(this.#sending(), run, specs);
+        });
+    }
+
+    /** Switch the exception filters on or off, with a condition where the adapter takes one. */
+    setExceptions(filters: { filter: string; condition?: string }[]): void {
+        const run = this.#run;
+        if (run === null) return;
+        this.#filters.choose(run.type, filters);
+        this.#publish();
+        this.#whenArmed((armed) => sendExceptions(this.#sending(), armed));
     }
 
     /** Run a request once the handshake is done, and publish what it changed. */
@@ -364,6 +443,7 @@ export class DebugClient {
     /** Set the watch expressions; while paused they are read again in the selected frame. */
     async setWatch(expressions: string[]): Promise<void> {
         this.#expressions = expressions;
+        this.#held = { ...this.#held, watch: expressions };
         const run = this.#run;
         if (run === null || !this.#paused() || this.#frame === null) return;
         const token = ++run.stop;
@@ -386,14 +466,21 @@ export class DebugClient {
         else if (event === 'output') this.#output(run, body);
         else if (event === 'stopped') void this.#stopped(run, body);
         else if (event === 'breakpoint') this.#breakpointChanged(body);
+        else if (event === 'exited') run.ended = true;
+        else if (event === 'loadedSource' && run.capabilities.loadedSources) {
+            this.controls.tell(run, 'sources');
+        } else if (!STANDARD_EVENTS.includes(event))
+            this.controls.tell(run, 'custom', { event, body });
         else if (event === 'continued' && this.#paused()) {
             run.stop += 1;
             this.#status = 'running';
             this.#clearPause();
             this.#publish();
         } else if (event === 'terminated') {
+            run.ended = true;
             this.#flushPartials(run);
             this.#ask(run, 'disconnect', {}).catch(() => undefined);
+            if (run.adapter?.kind === 'app') this.#closeLater(run);
         }
     }
 
@@ -438,6 +525,7 @@ export class DebugClient {
             ? read.data
             : { reason: '', description: '', hitBreakpointIds: [] };
         const token = ++run.stop;
+        if (stop.threadId !== undefined) run.thread = stop.threadId;
         this.#flushPartials(run);
         for (const id of stop.hitBreakpointIds ?? []) this.#breakpoints.verifyHit(id);
         this.#pause = { reason: stop.reason, description: stop.description ?? '' };
@@ -479,7 +567,8 @@ export class DebugClient {
         return {
             ask: (command, args) => this.#ask(run, command, args),
             read: (shape, body) => this.#read(run, shape, body),
-            reported: (path) => this.#reported(run, path)
+            reported: (path) => this.#reported(run, path),
+            thread: run.thread
         };
     }
 
@@ -492,6 +581,7 @@ export class DebugClient {
         const run = this.#run;
         if (run === null || !this.#paused())
             return { error: words(this.#options.catalog(), 'server.debug.not_paused') };
+        if (context === 'hover' && !run.capabilities.hover) return this.#undeclared();
         const id = frame ?? this.#frame;
         if (id === null || !this.#frames.some((one) => one.id === id)) {
             return { error: words(this.#options.catalog(), 'server.debug.no_frame', id ?? 0) };
@@ -561,7 +651,11 @@ export class DebugClient {
         this.#clearPause();
         this.#publish();
         try {
-            await this.#ask(run, command, command === 'finishFrame' ? {} : { threadId: THREAD });
+            await this.#ask(
+                run,
+                command,
+                command === 'finishFrame' ? {} : { threadId: run.thread }
+            );
         } catch (error) {
             this.#requestFailed(run, error);
         }
@@ -569,8 +663,11 @@ export class DebugClient {
     }
 
     /**
-     * Stop the adapter: the sentence naming the process until `confirmed`, then SIGTERM to it and
-     * SIGKILL later. The protocol has no request that stops a running program.
+     * Stop the adapter. The sentence naming the process or the debugger is the answer until
+     * `confirmed`. The oculus adapter gets SIGTERM and SIGKILL later, since the protocol has no
+     * request that stops a running program. An app's adapter is asked to `terminate`, or to
+     * `disconnect` with `terminateDebuggee` when it did not declare `terminate`, and its stream is
+     * closed later if it has not ended.
      */
     stop(confirmed: boolean): Refusal | { confirm: string } | { ok: true } {
         const run = this.#run;
@@ -578,39 +675,115 @@ export class DebugClient {
         if (run === null || session === null || !this.active) {
             return { error: words(this.#options.catalog(), 'server.debug.no_session') };
         }
-        const child = run.child;
-        if (child === null)
+        const adapter = run.adapter;
+        if (adapter === null)
             return { error: words(this.#options.catalog(), 'server.debug.no_session') };
-        if (!confirmed)
+        if (!confirmed) {
             return {
-                confirm: words(
-                    this.#options.catalog(),
-                    'server.debug.process',
-                    session.program,
-                    session.pid
-                )
+                confirm:
+                    adapter.kind === 'app'
+                        ? words(
+                              this.#options.catalog(),
+                              'server.debug.process_app',
+                              this.#adapter?.label ?? run.type,
+                              session.name
+                          )
+                        : words(
+                              this.#options.catalog(),
+                              'server.debug.process',
+                              session.program,
+                              session.pid
+                          )
             };
+        }
         run.stopping = true;
-        child.kill('SIGTERM');
+        if (adapter.kind === 'app') {
+            const attach = this.#attached(run);
+            const ended = run.capabilities.terminate
+                ? this.#ask(run, 'terminate', {})
+                : this.#ask(run, 'disconnect', { terminateDebuggee: !attach });
+            ended.catch(() => undefined);
+            this.#closeLater(run);
+            return { ok: true };
+        }
+        adapter.kill('SIGTERM');
         run.killTimer = setTimeout(
-            () => child.kill('SIGKILL'),
+            () => adapter.kill('SIGKILL'),
             this.#options.killAfterMs ?? KILL_MS
         );
         if (typeof run.killTimer === 'object') run.killTimer.unref();
         return { ok: true };
     }
 
+    /** Whether the session attached to a program that was already running. */
+    #attached(run: Run): boolean {
+        return run.app?.request === 'attach';
+    }
+
+    /** Close an app's stream a moment after the adapter was told to end. */
+    #closeLater(run: Run): void {
+        const adapter = run.adapter;
+        if (adapter === null || run.killTimer !== null) return;
+        run.killTimer = setTimeout(() => adapter.kill('SIGKILL'), CLOSE_MS);
+        if (typeof run.killTimer === 'object') run.killTimer.unref();
+    }
+
+    /** The refusal of a request the adapter did not declare. */
+    #undeclared(): Refusal {
+        return { error: words(this.#options.catalog(), 'server.debug.not_declared') };
+    }
+
+    /** Run a request of the adapter; its refusal is the answer, and an end of the run is told. */
+    async #attempt<T>(run: Run, work: () => Promise<T>): Promise<Refusal | T> {
+        try {
+            return await work();
+        } catch (error) {
+            if (error instanceof Refused) return { error: error.message };
+            this.#requestFailed(run, error);
+            return { error: words(this.#options.catalog(), 'server.debug.ended_meanwhile') };
+        }
+    }
+
+    /** What the sends of breakpoints need of this client. */
+    #sending(): Sending {
+        return {
+            ask: (run, command, args) => this.#ask(run, command, args),
+            read: (run, shape, body) => this.#read(run, shape, body),
+            current: (run) => this.#current(run),
+            breakpoints: this.#breakpoints,
+            filters: this.#filters
+        };
+    }
+
+    /** What the controls need of the running debug session. */
+    #core(): Core {
+        return {
+            run: () => this.#run,
+            status: () => this.#status,
+            active: () => this.active,
+            frame: () => this.#frame,
+            catalog: () => this.#options.catalog(),
+            port: () => this.#port,
+            sessionName: () => this.#session?.name ?? '',
+            link: (run) => this.#link(run),
+            ask: (run, command, args) => this.#ask(run, command, args),
+            attempt: (run, work) => this.#attempt(run, work),
+            refresh: async (run, token, frame) => {
+                if (this.#current(run)) await this.#refresh(run, token, frame);
+            },
+            clearPause: () => this.#clearPause(),
+            setRunning: () => {
+                this.#status = 'running';
+                this.#publish();
+            }
+        };
+    }
+
     /** The adapter sent bytes that do not read: the session ends and the adapter is killed. */
     #failed(run: Run, failure: WireFailure): void {
         if (run.over) return;
-        const catalog = this.#options.catalog();
-        run.failure = {
-            'bad-header': words(catalog, 'server.debug.bad_header'),
-            'not-json': words(catalog, 'server.debug.not_json'),
-            'not-message': words(catalog, 'server.debug.not_message'),
-            partial: words(catalog, 'server.debug.partial')
-        }[failure];
-        run.child?.kill('SIGKILL');
+        run.failure = failureText(this.#options.catalog(), failure);
+        run.adapter?.kill('SIGKILL');
         this.#finish(run, run.failure, 'error');
     }
 
@@ -618,7 +791,7 @@ export class DebugClient {
     #requestFailed(run: Run, error: unknown): void {
         if (run.over || error instanceof Ended) return;
         const message = error instanceof Error ? error.message : String(error);
-        run.child?.kill('SIGKILL');
+        run.adapter?.kill('SIGKILL');
         this.#finish(
             run,
             words(this.#options.catalog(), 'server.debug.request_failed', message),
@@ -626,26 +799,18 @@ export class DebugClient {
         );
     }
 
-    /** The adapter's process ended: the sentence says how. */
+    /** The adapter ended: the sentence says how. */
     #exited(run: Run, code: number | null, signal: NodeJS.Signals | null): void {
         if (run.over) return;
-        if (run.failure !== null) this.#finish(run, run.failure, 'error');
-        else if (run.stopping)
-            this.#finish(run, words(this.#options.catalog(), 'server.debug.stopped'), 'console');
-        else if (signal !== null)
-            this.#finish(
-                run,
-                words(this.#options.catalog(), 'server.debug.signal', signal),
-                'error'
-            );
-        else if (code !== null && code !== 0) {
-            this.#finish(
-                run,
-                words(this.#options.catalog(), 'server.debug.exit_code', code),
-                'error'
-            );
-        } else
-            this.#finish(run, words(this.#options.catalog(), 'server.debug.finished'), 'console');
+        const end = exitText(this.#options.catalog(), {
+            failure: run.failure,
+            stopping: run.stopping,
+            ended: run.ended,
+            app: run.adapter?.kind === 'app',
+            code,
+            signal
+        });
+        this.#finish(run, end.text, end.kind);
     }
 
     /** End a session: settle what is pending, say why in the console and publish `ended`. */
@@ -657,6 +822,7 @@ export class DebugClient {
         if (run.killTimer !== null) clearTimeout(run.killTimer);
         run.isInitialized();
         run.wire?.end(sentence);
+        if (run.started) this.controls.tell(run, 'terminated');
         if (!current) return;
         this.#status = 'ended';
         this.#ended = sentence;
@@ -676,7 +842,7 @@ export class DebugClient {
             if (run.killTimer !== null) clearTimeout(run.killTimer);
             run.isInitialized();
             run.wire?.end('closed');
-            run.child?.kill('SIGKILL');
+            run.adapter?.kill('SIGKILL');
         }
         this.#console.close();
     }

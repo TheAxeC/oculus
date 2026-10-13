@@ -61,6 +61,7 @@ text:
         kind_files: file operation
         kind_roots: workspace folder
         kind_app_store: app store
+        by_app: 'by {0}'
         bytes: '{0} bytes'
         deck_create: deck made
         deck_delete: slide removed
@@ -76,6 +77,8 @@ text:
         file_move: Move
         file_copy: Copy
         file_upload: Upload
+        file_add_configuration: Add Configuration
+        file_write_file: Write File
         file_trash: Delete
         file_delete: Delete Permanently
         file_replace: Replaced in {0} files

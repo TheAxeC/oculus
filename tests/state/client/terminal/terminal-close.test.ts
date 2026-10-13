@@ -38,6 +38,7 @@ function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
         icon: '',
         color: '',
         kind: id.endsWith('claude') ? 'claude' : 'shell',
+        app: '',
         cwd: '/x',
         command: 'zsh',
         pid: 321,

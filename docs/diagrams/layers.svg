@@ -31,7 +31,7 @@
 <g id="node23" class="node">
 <title>server to data</title>
 <polygon fill="none" stroke="none" points="472.88,-70.08 455.12,-70.08 455.12,-57.6 472.88,-57.6 472.88,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="464" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">412</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="464" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">436</text>
 </g>
 <!-- server&#45;&gt;server to data -->
 <g id="edge21" class="edge">
@@ -48,7 +48,7 @@
 <g id="node30" class="node">
 <title>state to data</title>
 <polygon fill="none" stroke="none" points="603.88,-70.08 586.12,-70.08 586.12,-57.6 603.88,-57.6 603.88,-70.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="595" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">362</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="595" y="-61.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">376</text>
 </g>
 <!-- state&#45;&gt;state to data -->
 <g id="edge35" class="edge">
@@ -65,7 +65,7 @@
 <g id="node31" class="node">
 <title>ui to data</title>
 <polygon fill="none" stroke="none" points="744.88,-176.16 735.12,-176.16 735.12,-163.68 744.88,-163.68 744.88,-176.16"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="740" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">7</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="740" y="-167.52" font-family="Helvetica,Arial,sans-serif" font-size="8.00">9</text>
 </g>
 <!-- ui&#45;&gt;ui to data -->
 <g id="edge37" class="edge">
@@ -126,7 +126,7 @@
 <g id="node26" class="node">
 <title>shell to ui</title>
 <polygon fill="none" stroke="none" points="676.88,-286.8 659.12,-286.8 659.12,-274.32 676.88,-274.32 676.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="668" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">103</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="668" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">105</text>
 </g>
 <!-- shell&#45;&gt;shell to ui -->
 <g id="edge27" class="edge">
@@ -154,7 +154,7 @@
 <g id="node35" class="node">
 <title>views to state</title>
 <polygon fill="none" stroke="none" points="644.88,-286.8 623.12,-286.8 623.12,-274.32 644.88,-274.32 644.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="634" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1119</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="634" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">1143</text>
 </g>
 <!-- views&#45;&gt;views to state -->
 <g id="edge45" class="edge">
@@ -165,7 +165,7 @@
 <g id="node36" class="node">
 <title>views to ui</title>
 <polygon fill="none" stroke="none" points="738.88,-286.8 721.12,-286.8 721.12,-274.32 738.88,-274.32 738.88,-286.8"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="730" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">904</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="730" y="-278.16" font-family="Helvetica,Arial,sans-serif" font-size="8.00">927</text>
 </g>
 <!-- views&#45;&gt;views to ui -->
 <g id="edge47" class="edge">
@@ -210,7 +210,7 @@
 <g id="node17" class="node">
 <title>routes to server</title>
 <polygon fill="none" stroke="none" points="545.88,-397.44 528.12,-397.44 528.12,-384.96 545.88,-384.96 545.88,-397.44"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="537" y="-388.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">107</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="537" y="-388.8" font-family="Helvetica,Arial,sans-serif" font-size="8.00">109</text>
 </g>
 <!-- routes&#45;&gt;routes to server -->
 <g id="edge9" class="edge">

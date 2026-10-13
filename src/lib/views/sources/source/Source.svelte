@@ -92,7 +92,7 @@
     import { createTabAsks } from './status/tab-asks.svelte';
     import { createTabFile } from './status/tab-file.svelte';
     import { createLibraryTab } from './status/library-tab.svelte';
-    import { appEditorActions } from './status/app-actions';
+    import { appEditorActions, quickDiffActions } from './status/app-actions';
     import { tabFacts } from './status/tab-state';
     import { instanceMap } from '$lib/state/workbench/layout';
     import { tabShown } from './status/tab-shown';
@@ -285,8 +285,10 @@
         saved: () => draft.saved,
         blameOn: () => draft.blame,
         gate,
-        riteFile: () =>
-            language === 'rite' && file.onDisk && lib.address === '' ? file.wholeFile : '',
+        debugFile: () =>
+            client.debug.takesLanguage(language) && file.onDisk && lib.address === ''
+                ? file.wholeFile
+                : '',
         debug: client.debug
     });
     /** How far the text is scrolled, which the gutter follows. */
@@ -392,6 +394,7 @@
     });
     const own = $derived([
         ...asks.own,
+        ...quickDiffActions(client.appTools.scm.sources(), { root, path }, repositories.openDiff),
         ...appEditorActions(
             appShell.menu(
                 'editor/context',

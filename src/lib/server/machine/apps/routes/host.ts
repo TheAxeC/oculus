@@ -15,13 +15,15 @@
 // tree's children or item or for the check of an input box's value; `answer` settles an open
 // request; `event` reports a view shown or hidden, a selection, an expanded or collapsed element or
 // a panel closed; `release` ends the panels of a page that left; `settings` reads one setting of
-// the frame's app. `tab` may name the view the tab draws.
+// the frame's app. `tab` may name the view the tab draws. The page's reads and actions on the tools
+// (`decorate`, `scm`, `terminal`) are answered by tools/routes.ts.
 
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { APP_HEADER, appViewIdFromHeader } from '../../../../data/helpers/files/apps/apps.ts';
 import { tokenedBody } from '../../../core/auth.ts';
 import { appById, type HeldApp } from '../read/held.ts';
+import { handleToolsPost, isToolsBody } from '../tools/routes.ts';
 import { executeCommand, runDeclared } from '../shell/commands.ts';
 import { NO_STORE, refuse, type AppsRouteOptions } from './routes.ts';
 
@@ -111,12 +113,13 @@ export async function handleHostPost(
         else await options.hosts.restart(app.id);
         return json({ ok: true }, { headers: NO_STORE });
     }
+    if (isToolsBody(read.body)) return handleToolsPost(read.body, options.hosts.tools);
     const shellBody = shellShape.safeParse(read.body);
     if (shellBody.success) return handleShell(shellBody.data, options);
     const body = frameShape.safeParse(read.body);
     if (!body.success) {
         return refuse(
-            'action must be request, tab, run, settings, provide, answer, event, release, stop, restart or output',
+            'action must be request, tab, run, settings, provide, answer, event, release, decorate, scm, terminal, stop, restart or output',
             400
         );
     }

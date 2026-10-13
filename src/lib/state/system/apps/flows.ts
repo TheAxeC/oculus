@@ -6,7 +6,9 @@
 // yes. A disable that other enabled apps depend on is first sent without `cascade`; the server
 // answers with the titles of those apps, which the question names, and the yes sends it again with
 // `cascade`. A disable, a removal or a revoke of an app whose custom editors hold changes their
-// frames have not saved first asks, naming the files, since the editors close and the changes go.
+// frames have not saved, or whose host runs a debug session, a task or a terminal, first asks,
+// naming the files, the session, the tasks and the terminals, since the editors close, the
+// session ends and the tasks and terminals are stopped when the app stops acting.
 
 import { t } from '../../shared/words/text.ts';
 import type { AppRow } from '../../../data/model/index.ts';
@@ -25,6 +27,9 @@ type AppAsk = {
     confirm?: string;
 };
 
+/** What stops with an app: the debug session it runs, its tasks and its terminals, by name. */
+export type AppEnding = { debug: string | null; tasks: string[]; terminals: string[] };
+
 /** What the flows need of the rest of the page. */
 export type FlowsDeps = {
     manage: ManageStore;
@@ -33,6 +38,8 @@ export type FlowsDeps = {
     notices: { post: (message: string, options?: { tone?: 'error' }) => unknown };
     /** The files of the custom editors of an app that hold changes not yet saved. */
     dirtyFiles: (id: string) => string[];
+    /** What the app of this view id runs, which stops when the app stops acting. */
+    ending: (id: string) => AppEnding;
 };
 
 /** The choices, the question and the additions of the apps. */
@@ -42,8 +49,9 @@ export type FlowsStore = {
     /** Do what a choice of the menu of the app of this view id asks, giving a question to `ask`. */
     pick: (id: string, choice: string, ask: (question: AppAsk) => void) => Promise<void>;
     /**
-     * Run `act` for the app now, or after a yes when its custom editors hold unsaved changes: the
-     * question names the files.
+     * Run `act` for the app now, or after a yes when its custom editors hold unsaved changes or it
+     * runs a debug session, a task or a terminal: the question names the files, the session, the
+     * tasks and the terminals.
      */
     guarded: (id: string, ask: (question: AppAsk) => void, act: () => void) => void;
     /** Choose a folder in the folder panel and add it as an app. */
@@ -144,14 +152,31 @@ export function createFlows(deps: FlowsDeps): FlowsStore {
 
     function guarded(id: string, ask: (question: AppAsk) => void, act: () => void): void {
         const files = deps.dirtyFiles(id);
-        if (files.length === 0) {
+        const ending = deps.ending(id);
+        const lines = [
+            ...(ending.debug === null ? [] : [t('apps.ends_debug', ending.debug)]),
+            ...ending.tasks.map((name) => t('apps.ends_task', name)),
+            ...ending.terminals.map((name) => t('apps.ends_terminal', name))
+        ];
+        if (files.length === 0 && lines.length === 0) {
             act();
             return;
         }
+        const title = deps.rowOf(id)?.title ?? id;
         ask({
-            message: t('apps.dirty_question', deps.rowOf(id)?.title ?? id),
-            detail: files.join('\n'),
-            confirm: t('apps.dirty_confirm'),
+            message: [
+                files.length === 0 ? '' : t('apps.dirty_question', title),
+                lines.length === 0 ? '' : t('apps.ends_question', title)
+            ]
+                .filter((one) => one !== '')
+                .join(' '),
+            detail: [...files, ...lines].join('\n'),
+            confirm:
+                files.length === 0
+                    ? t('apps.ends_confirm')
+                    : lines.length === 0
+                      ? t('apps.dirty_confirm')
+                      : t('apps.ends_dirty_confirm'),
             act
         });
     }

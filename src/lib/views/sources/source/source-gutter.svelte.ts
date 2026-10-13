@@ -9,10 +9,12 @@
 // handed to the editor as its decorations and to the code window as Gutter.svelte's rows. A press
 // on a mark opens the file's diff at its change and a press on a blamed line opens its commit.
 //
-// A tab over a rite file on disk is also given the debugger's breakpoints of its file, the line a
-// paused program is on, a press in the glyph margin that toggles a breakpoint and the lines the
-// breakpoints moved to after an edit, all read from the debug store; any other tab is given none
-// of them, so no other file takes a breakpoint. The editor takes all of it as one object, `editor`.
+// A tab over a file on disk whose language takes breakpoints (`rite`, and the languages the acting
+// apps name under `contributes.breakpoints`) is also given the debugger's breakpoints of its file,
+// the line a paused program is on, a press in the glyph margin that toggles a breakpoint and the
+// lines the breakpoints moved to after an edit, all read from the debug store; any other tab is
+// given none of them, so no other file takes a breakpoint. The editor takes all of it as one
+// object, `editor`.
 
 import { untrack } from 'svelte';
 import { listOf } from '$lib/state/sources/repositories/answers';
@@ -68,8 +70,11 @@ export type SourceGutterInput = {
     /** Whether the tab's Blame toggle is on, which is whether the blame is drawn. */
     blameOn: () => boolean;
     gate: ShownGate;
-    /** The absolute path of the rite file the tab shows on disk, the empty string for any other. */
-    riteFile: () => string;
+    /**
+     * The absolute path of the file the tab shows on disk when its language takes breakpoints, the
+     * empty string for any other.
+     */
+    debugFile: () => string;
     /** The debugger's reads and writes of a file's breakpoints. */
     debug: Pick<DebugStore, 'markers' | 'pausedLine' | 'toggle' | 'moved'>;
 };
@@ -175,7 +180,7 @@ export function createSourceGutter(input: SourceGutterInput) {
         },
         /** Everything the editor draws and hears in its gutter. */
         get editor(): EditorGutter {
-            const rite = input.riteFile();
+            const debugFile = input.debugFile();
             const { debug } = input;
             const byLine = new Map((blame ?? []).map((one) => [one.line, one]));
             return {
@@ -183,13 +188,13 @@ export function createSourceGutter(input: SourceGutterInput) {
                 blame: this.editorBlame,
                 onmark: (mark) => openMark(mark.line),
                 onblame: (row) => openBlamed(byLine.get(row.line)),
-                ...(rite === ''
+                ...(debugFile === ''
                     ? {}
                     : {
-                          breakpoints: debug.markers(rite),
-                          paused: debug.pausedLine(rite),
-                          onglyph: (line: number) => debug.toggle(rite, line),
-                          onbreakpoints: (lines: number[]) => debug.moved(rite, lines)
+                          breakpoints: debug.markers(debugFile),
+                          paused: debug.pausedLine(debugFile),
+                          onglyph: (line: number) => debug.toggle(debugFile, line),
+                          onbreakpoints: (lines: number[]) => debug.moved(debugFile, lines)
                       })
             };
         }

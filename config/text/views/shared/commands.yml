@@ -42,11 +42,13 @@ text:
         run_menu: Run Command
         save: Save
         save_needs: A command needs a name and a line.
+        source_app: task of the app {0}
         source_file: from .oculus/commands.yml
         source_found: found in the repository
         source_saved: saved on this machine
         tip: '{0} ({1})'
         unreadable: The server's answer could not be read.
+        word_app: app
         word_file: file
         word_found: found
         word_saved: saved

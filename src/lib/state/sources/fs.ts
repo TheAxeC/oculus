@@ -25,7 +25,11 @@ export { OCULUS_CONFIG_ROOT } from '../../data/helpers/files/address.ts';
 export { opensInProgram } from '../../data/helpers/files/opens-in-program.ts';
 export { pathUnder } from '../../data/helpers/files/paths.ts';
 export { isLatexLanguage } from '../../data/prose/latex.ts';
-export { languageOf, type LanguageMap } from '../../data/helpers/files/languages.ts';
+export {
+    languageOf,
+    languageOfFile,
+    type LanguageMap
+} from '../../data/helpers/files/languages.ts';
 export {
     extensionOf,
     languages,

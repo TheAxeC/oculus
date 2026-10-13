@@ -28,6 +28,12 @@ export type Sink = {
     /** Resolves when the text has been written out, which is the backpressure signal. */
     send(text: string): Promise<void>;
     close(): void;
+    /**
+     * Stop reading what the client sends, and read it again: a socket's own pause, which a consumer
+     * of the client's messages that cannot take more asks for. A sink with none is never held.
+     */
+    pause?(): void;
+    resume?(): void;
 };
 
 type Subscriber = {
@@ -47,6 +53,11 @@ export class Hub {
     #firstListeners = new Map<string, Set<() => void>>();
     /** The version of the last message `send` made per channel, which keeps no latest message. */
     #sentVersions = new Map<string, number>();
+    /**
+     * The callers waiting for a channel's held-back messages to go out, with the channel each waits
+     * on.
+     */
+    #waiters: { channel: string; resolve: () => void }[] = [];
 
     /** The channel's version: 0 before anything is published on it. */
     version(channel: string): number {
@@ -167,9 +178,38 @@ export class Hub {
         return version;
     }
 
+    /**
+     * Resolves when no sink subscribed to the channel is holding a message back for it, which is
+     * when every page has taken what was published. A source of a byte stream waits on it before it
+     * takes more, so a page that does not read holds the source and not the server's memory.
+     */
+    backlog(channel: string): Promise<void> {
+        if (!this.#held(channel)) return Promise.resolve();
+        return new Promise((resolve) => this.#waiters.push({ channel, resolve }));
+    }
+
+    #held(channel: string): boolean {
+        for (const subscriber of this.#subscribers.values()) {
+            if (subscriber.channels.has(channel) && subscriber.pending.has(channel)) return true;
+        }
+        return false;
+    }
+
+    /** Release the callers whose channel has no held-back message any more. */
+    #released(): void {
+        if (this.#waiters.length === 0) return;
+        const waiting = this.#waiters;
+        this.#waiters = [];
+        for (const wait of waiting) {
+            if (this.#held(wait.channel)) this.#waiters.push(wait);
+            else wait.resolve();
+        }
+    }
+
     /** Forget a sink. Called when its socket closes; a send in flight for it is then dropped. */
     remove(sink: Sink): void {
         this.#subscribers.delete(sink);
+        this.#released();
     }
 
     /**
@@ -183,6 +223,7 @@ export class Hub {
             subscriber.channels.delete(channel);
             subscriber.pending.delete(channel);
         }
+        this.#released();
     }
 
     /**
@@ -234,6 +275,7 @@ export class Hub {
                 message = subscriber.pending.get(next.value);
                 subscriber.pending.delete(next.value);
             }
+            this.#released();
         }
         subscriber.sending = false;
     }

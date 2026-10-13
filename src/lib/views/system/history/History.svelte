@@ -212,6 +212,9 @@
                             <span class="kind" data-kind={row.kind}>{kindOf(row)}</span>
                             <span class="file">{fileShown(row.file, roots(), primary())}</span>
                             <span class="what">{whatOf(row)}</span>
+                            {#if row.app !== undefined}
+                                <span class="app">{t('history.by_app', row.app)}</span>
+                            {/if}
                             {#if row.undo !== 'none'}
                                 <span class="reveal">
                                     <ToolButton
@@ -351,6 +354,12 @@
     .file {
         font-family: var(--font-mono);
         word-break: break-all;
+    }
+
+    .app {
+        font-family: var(--font-mono);
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
     }
 
     .what,

@@ -20,7 +20,7 @@
 import { spawn as nodeSpawn } from 'node:child_process';
 import { env as processEnv } from 'node:process';
 import { isDeepStrictEqual } from 'node:util';
-import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
+import { appViewId, runsHost } from '../../../../data/helpers/files/apps/apps.ts';
 import { languageOf, type LanguageMap } from '../../../../data/helpers/files/languages.ts';
 import { createLimiter } from '../../../../data/helpers/run/limiter.ts';
 import type {
@@ -39,6 +39,8 @@ import { declaredEvent, names, type ActivationEvent } from '../read/activation.t
 import { appById, type AppsHeld, type HeldApp } from '../read/held.ts';
 import type { AppSecrets } from '../secrets/secrets.ts';
 import { AppShell } from '../shell/registry.ts';
+import { AppTools } from '../tools/registry.ts';
+import type { ToolsEnv } from '../tools/scope.ts';
 import { shellHandlers, shellNotices } from '../shell/host-calls.ts';
 import { Refused } from './connection.ts';
 import { changedKeys, hostHandlers, type HostStore } from './handlers.ts';
@@ -68,6 +70,8 @@ export type HostsOptions = {
     secrets: AppSecrets;
     /** The server's text catalog. */
     text: () => Record<string, string>;
+    /** What the files and edits of the tools are judged and written by. */
+    tools: ToolsEnv;
     /** The resolved values of the settings an app declares, by whole key. */
     values: (app: HeldApp) => Record<string, unknown>;
     /** The program the runner is started under, the runner and `vscode-jsonrpc`'s node entry. */
@@ -131,6 +135,8 @@ export class AppHosts {
     #published = '';
     /** What the hosts have registered in the shell, and the questions they ask the reader. */
     readonly shell: AppShell;
+    /** What the running hosts registered with the tools, and the streams they ride on. */
+    readonly tools: AppTools;
 
     constructor(options: HostsOptions) {
         this.#options = options;
@@ -144,6 +150,21 @@ export class AppHosts {
                     this.#entries.get(id)?.process?.notify(method, params),
                 ensure: (id, event) => this.activateWhole(id, event)
             }
+        });
+        this.tools = new AppTools({
+            hub: options.hub,
+            apps: options.apps,
+            hosts: {
+                request: (id, method, params, call) => this.#link(id).request(method, params, call),
+                notify: (id, method, params) =>
+                    this.#entries.get(id)?.process?.notify(method, params),
+                note: (id, line) => this.#entries.get(id)?.output.note(line),
+                ensure: (id, event) => this.activateWhole(id, event)
+            },
+            shell: this.shell,
+            env: options.tools,
+            text: options.text,
+            values: options.values
         });
         if (options.after !== undefined) {
             const release = (): void => {
@@ -167,10 +188,11 @@ export class AppHosts {
     reconcile(): void {
         if (this.#closed || this.#holding !== null) return;
         const held = this.#options.apps.held();
+        this.tools.refresh();
         const cycles = cyclesOf(held);
         const present = new Set<string>();
         for (const app of held.apps) {
-            if (app.row.host === '') continue;
+            if (!runsHost(app.row)) continue;
             present.add(app.id);
             const verdict = judge(held, app, cycles);
             if (verdict.ok) {
@@ -210,7 +232,7 @@ export class AppHosts {
      */
     async activate(id: string, event: ActivationEvent): Promise<void> {
         const app = this.#app(id);
-        if (app === undefined || app.row.host === '') return;
+        if (app === undefined || !runsHost(app.row)) return;
         if (!names(app.row.activation, event) && !declaredEvent(app.row.contributes, event)) return;
         await this.#ensure(id, event);
     }
@@ -346,7 +368,7 @@ export class AppHosts {
         const cycles = cyclesOf(held);
         const rows: AppHostRow[] = [];
         for (const app of held.apps) {
-            if (app.row.host === '') continue;
+            if (!runsHost(app.row)) continue;
             const entry = this.#entries.get(app.id);
             const row = this.#rowOf(app, entry, judge(held, app, cycles));
             if (row !== null) rows.push(row);
@@ -468,13 +490,14 @@ export class AppHosts {
             opens: entry.opens,
             values: this.#options.values
         };
+        const tools = this.tools.attach(entry.id, () => this.#app(entry.id));
         let process: HostProcess;
         try {
             process = new HostProcess({
                 command: this.#options.node,
                 args: [
                     this.#options.runner,
-                    `${app.row.folder}/${app.row.host}`,
+                    app.row.host === '' ? '' : `${app.row.folder}/${app.row.host}`,
                     this.#options.jsonrpc
                 ],
                 cwd: app.row.folder,
@@ -485,8 +508,13 @@ export class AppHosts {
                 output: entry.output,
                 name: app.row.name,
                 settings: entry.values,
-                handlers: { ...hostHandlers(this.#context(entry)), ...shellHandlers(shell) },
-                notices: shellNotices(shell),
+                handlers: {
+                    ...hostHandlers(this.#context(entry)),
+                    ...shellHandlers(shell),
+                    ...tools.handlers
+                },
+                notices: { ...shellNotices(shell), ...tools.notices },
+                folders: tools.folders().map(({ uri, name }) => ({ uri, name })),
                 stopSeconds: () => this.#options.settings().hostStopSeconds,
                 clock: this.#clock,
                 spawn: this.#options.spawn,
@@ -495,6 +523,7 @@ export class AppHosts {
                 ended: (end) => this.#ended(entry, process, end)
             });
         } catch (error) {
+            this.tools.detach(entry.id);
             entry.output.note(words(text(), 'server.apps.host_not_started', reason(error)));
             entry.ended = { code: null, signal: '' };
             return false;
@@ -518,6 +547,7 @@ export class AppHosts {
     #ended(entry: Entry, process: HostProcess, end: HostEnd): void {
         if (entry.process !== process) return;
         entry.process = null;
+        this.tools.detach(entry.id);
         this.shell.stopped(entry.id);
         if (entry.intended) {
             entry.intended = false;
@@ -617,6 +647,9 @@ export class AppHosts {
             noActivate: words(text, 'server.apps.host_no_activate', '{0}'),
             failed: words(text, 'server.apps.host_activate_failed', '{0}'),
             stream: words(text, 'server.apps.host_stream_error', '{0}'),
+            streamUnknown: words(text, 'server.apps.host_stream_unknown', '{0}', '{1}'),
+            streamBad: words(text, 'server.apps.host_stream_bad', '{0}'),
+            streamFull: words(text, 'server.apps.host_stream_full', '{0}'),
             listenerFailed: words(text, 'server.apps.host_listener_failed', '{0}'),
             eventFailed: words(text, 'server.apps.host_event_failed', '{0}'),
             deactivateFailed: words(text, 'server.apps.host_deactivate_failed', '{0}'),
@@ -681,7 +714,7 @@ export class AppHosts {
         const roots = this.#options.roots();
         const where = roots.map((root) => `${root.key}=${root.dir}`).join('\n');
         for (const app of held.apps) {
-            if (app.row.host === '' || !judge(held, app, cyclesOf(held)).ok) continue;
+            if (!runsHost(app.row) || !judge(held, app, cyclesOf(held)).ok) continue;
             for (const text of app.row.activation) {
                 if (!text.startsWith('workspaceContains:')) continue;
                 const glob = text.slice('workspaceContains:'.length);

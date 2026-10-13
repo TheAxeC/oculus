@@ -2067,3 +2067,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-11. D67's preparation: Z816 taken in automode (a bookmark of a root's top stored with no `path` line).
 - 2026-10-11. Open item 54 ruled (a) by Axel: G77 a new guarded entry; Z803 replaced; D63 goes on to its preparation.
 - 2026-10-13. D71's look: Z855 taken in automode (the Live HPC view on a hub that names no cluster shows a plain state); step D74 booked after D73.
+- 2026-10-13. D64's look: Z856 taken in automode (History names Add Configuration's write and an app's writeFile by VS Code's names).
+- 2026-10-13. D64's look: Z857 taken in automode (the focused source tab kept while hidden); step D75 booked after D74.
+- 2026-10-13. D64's landing: Z858 taken in automode (guarded entry G82 for the debug channel test).

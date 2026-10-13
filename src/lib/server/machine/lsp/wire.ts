@@ -30,9 +30,9 @@ const placeShape = z.object({ root: rootShape, path: z.string() });
 
 /** The oculus messages a page may send. */
 const oculusShape = z.discriminatedUnion('oculus', [
-    z.object({ oculus: z.literal('restart'), root: rootShape }),
-    z.object({ oculus: z.literal('output'), root: rootShape }),
-    z.object({ oculus: z.literal('output_off'), root: rootShape }),
+    z.object({ oculus: z.literal('restart'), root: rootShape, server: z.string().optional() }),
+    z.object({ oculus: z.literal('output'), root: rootShape, server: z.string().optional() }),
+    z.object({ oculus: z.literal('output_off'), root: rootShape, server: z.string().optional() }),
     z.object({ oculus: z.literal('choices'), root: rootShape }),
     z.object({
         oculus: z.literal('choose'),

@@ -29,11 +29,12 @@ type Opener = {
     editorStatus: Pick<EditorStatusStore, 'ask'>;
     paletteSource: Pick<PaletteSourceStore, 'runOffered'>;
     appShell: Pick<ClientState['appShell'], 'run'>;
+    commands: Pick<ClientState['commands'], 'press'>;
 };
 
 /** Open one result and return the instance the layout activated or created. */
 export function openPaletteItem(
-    { layout, ui, editorStatus: editor, paletteSource: offers, appShell }: Opener,
+    { layout, ui, editorStatus: editor, paletteSource: offers, appShell, commands }: Opener,
     item: PaletteItem
 ): string {
     if (item.kind === 'project') return layout.openView(item.view, item.state);
@@ -41,6 +42,13 @@ export function openPaletteItem(
         const app = item.state?.app;
         const command = item.state?.command;
         if (typeof app === 'string' && typeof command === 'string') void appShell.run(app, command);
+        return '';
+    }
+    if (item.kind === 'task') {
+        const repo = item.state?.repo;
+        const name = item.state?.name;
+        if (typeof repo === 'string' && typeof name === 'string')
+            void commands.press(repo, name, 'app');
         return '';
     }
     if (item.kind === 'command') {

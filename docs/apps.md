@@ -1,13 +1,13 @@
 # Building an oculus app
 
-An app is a folder of web files that oculus draws in a tab. This guide is the reference for building one: the manifest, the approval, managing apps, what an app adds to the shell, the host, every bridge method, channel and write, the refusal words, the limits, what an app cannot do and a worked example. The rest of the manual is [HELP.md](../HELP.md).
+An app is a folder of web files that oculus draws in a tab. This guide is the reference for building one: the manifest, the approval, managing apps, what an app adds to the shell, the host, the tools (languages, language servers, language features, debug adapters, tasks, terminals, source control and file decorations), every bridge method, channel and write, the refusal words, the limits, what an app cannot do and worked examples. The rest of the manual is [HELP.md](../HELP.md).
 
 ## What an app is
 
 - An app is a folder holding an HTML page, its scripts and styles, and a manifest `app.yml`. oculus finds the folder while it runs and lists the app in the Views catalogue under Apps. A new or edited folder is picked up with no build and no restart.
 - An approved app is drawn in an iframe with `sandbox="allow-scripts allow-downloads"`. It has an opaque origin: no cookies, no storage, no popups and no access to the rest of oculus. The only way out is the bridge, a client at `/apps/-/oculus.js` that the app's script imports.
 - A machine app lives in the primary hub's `.oculus/apps/` folder and may read every channel an app can read. A root app lives in the `.oculus/apps/` folder of any other folder of the open workspace and travels with that repository. A root app is offered fewer channels, reads files only from its own folder, lists no `files`, and has no Remove. With no primary hub there are no machine apps, and a root app of a folder taken out of the workspace stops.
-- An app whose manifest names a `host` also runs a program on this machine, the host, described in The host. An app is enabled or disabled, and a machine app can be removed or added from a folder, described in Managing apps.
+- An app whose manifest names a `host` also runs a program on this machine, the host, described in The host, and reaches the languages, debuggers, tasks, terminals, source control and file decorations of oculus through it, described in The tools. An app is enabled or disabled, and a machine app can be removed or added from a folder, described in Managing apps.
 - An app opens from the Apps button on the rail, from the Views catalogue (a root app's title is followed by its root's key in parentheses), or by the chord `v` and the digit the catalogue shows beside it.
 
 ## Where the files go
@@ -40,7 +40,7 @@ An app is a folder of web files that oculus draws in a tab. This guide is the re
 | `secrets` | no | `true` | `secrets_value` |
 | `activation` | no | list of events, each once: `onTab`, `onStartupFinished`, `onCommand:<id>`, `onView:<id>`, `onLanguage:<id>`, `workspaceContains:<glob>`; absent means `[onTab]`; needs `host`; `onCommand:<id>` names a command and `onView:<id>` a view that `contributes` declares | `activation_no_host`, `event_unknown`, `event_empty`, `event_glob`, `event_command`, `event_view`, `list_shape`, `list_repeated` |
 | `depends` | no | list of machine app names, each once, never the app's own | `depends_name`, `depends_self`, `list_shape`, `list_repeated` |
-| `contributes` | no | a map of the nine contribution points of What an app adds to the shell | `contributes_*`, `id_taken`, `key_unknown` |
+| `contributes` | no | a map of the twenty-two contribution points of What an app adds to the shell | `contributes_*`, `id_taken`, `key_unknown` |
 
 - A `files` entry names a folder of the open workspace: the folder name is the longest name of those folders that the entry equals or that is followed by `/` in it, and the rest is the path under it. The path has no empty or dot-led segment and names no folder of `closed_paths`, no private folder (see What an app cannot do) and no folder inside one. An entry that names no folder of the workspace is a finding (`files_unknown`) and the app is not an app. `hub` beside `hub/projects` keeps both, the wider one deciding. A folder that holds oculus's own `config/` folder is read as a folder of the workspace, and a read of a file in `config/` answers `closed`. A root app reads its own folder and nothing else, so `files` on a root app refuses the app.
 - A `workspaceContains` glob is matched against paths relative to a root, and one that starts with `/` or holds a `..` segment refuses the app. `onLanguage:<id>` takes the language ids of the editor.
@@ -52,7 +52,7 @@ An app is a folder of web files that oculus draws in a tab. This guide is the re
 
 ## Approval and change
 
-An app runs only after you approve it. The panel in the app's tab names what it reads and writes, the outside addresses it reaches, where it keeps its data, its folder and its size, and offers three controls. An app with a `host` is also said to run a program on this machine with your rights, which can read and write your files and reach any address, and the panel names the host file. It says "Add 3 commands, 2 keys to oculus." with the kinds and counts of `contributes`. It names the folders `files` lists, says "Store secrets in the keyring of this machine" for `secrets: true`, and names the apps `depends` lists. An app that can read files (a machine app with `files`, or any root app) and has `connects` is said to be able to send what it reads from your files to those addresses.
+An app runs only after you approve it. The panel in the app's tab names what it reads and writes, the outside addresses it reaches, where it keeps its data, its folder and its size, and offers three controls. An app with a `host` is also said to run a program on this machine with your rights, which can read and write your files and reach any address, and the panel names the host file. Each debugger of the app that names a `program` adds a line that says it runs a debug adapter with your rights and names its command. It says "Add 3 commands, 2 keys to oculus." with the kinds and counts of `contributes`. It names the folders `files` lists, says "Store secrets in the keyring of this machine" for `secrets: true`, and names the apps `depends` lists. An app that can read files (a machine app with `files`, or any root app) and has `connects` is said to be able to send what it reads from your files to those addresses.
 
 | Control | Effect |
 |---------|--------|
@@ -72,6 +72,7 @@ An app runs only after you approve it. The panel in the app's tab names what it 
 - The state is kept in `~/.oculus/apps.json`: `{ "version": 1, "disabled": [<view id>], "workspaces": { "<workspace name, or default>": { "disabled": [<view id>], "enabled": [<view id>] } } }`. A file that does not parse reads every app as disabled, the Findings view names the file (`state_unread`), and Disable and Enable are refused with that reason and leave the file as it was until you put it right. An entry for a view id no app has is kept, so an app removed from a root and put back keeps its state.
 - **Remove** is on a machine app's right-click menu and approval panel. The question names the app's folder and the number of secrets it holds. On yes, the host stops, and the folder and its store file move to the system trash (a link in the folder moves as a link, never its target). Every secret of the app is deleted from the keyring, its approval is revoked and its entry in `apps.json` is dropped. When the keyring is not available the question says the secrets could not be counted and will not be deleted, and Remove goes ahead. A root app offers no Remove: it is deleted from its repository. The tabs of a removed app stay and show the unknown view, as for a removed folder.
 - **Add app from folder** is an action in the Apps group of the Views catalogue, and Add as App is on the right-click menu of a folder in the Files view that holds an `app.yml`. The folder must hold `app.yml`, have a name that matches the name pattern and that no entry of the machine apps folder holds, lie neither inside the apps folder nor hold it, and fit `max_files` and `max_mb`. It is copied without links and dot-led names, as the approval hash leaves them out, into a temporary folder beside the apps folder and renamed into place. A refusal says why in one line and copies nothing. Where the folder panel is not available the catalogue's action says so and names Add as App. The copied app asks for approval like any other.
+- **What stops with an app.** Disable, Remove and Revoke of an app that runs a debug session, tasks or terminals ask first, naming each ("Debug session: ...", "Task: ...", "Terminal: ..."), and on yes end them with the app.
 - **Depends.** Disable or Remove of an app that enabled apps depend on asks first, naming those apps, and on yes disables them too and stops their hosts, the dependency's host last. A revoke of a dependency stops the hosts that depend on it, and each tab and Processes row says which app's revoke stopped it.
 
 ## What an app adds to the shell
@@ -118,7 +119,7 @@ contributes:
 
 ### Ids
 
-- Every id an app adds (a command, a view container, a view, a custom editor's `viewType`, a setting key, a context key) starts with the app's `name` and a dot. An id that does not refuses the app (`contributes_id`), and so does one in the `oculus.` namespace, which is oculus's own (`contributes_reserved`), or one an app declares twice (`contributes_repeated`).
+- Every id an app adds (a command, a view container, a view, a custom editor's `viewType`, a setting key, a context key, a problem matcher's `name`, a source control's id) starts with the app's `name` and a dot. A language id, a debugger `type` and a task type are names in the editor's own vocabularies and take no prefix. An id that does not refuses the app (`contributes_id`), and so does one in the `oculus.` namespace, which is oculus's own (`contributes_reserved`), or one an app declares twice (`contributes_repeated`).
 - Two apps may share a `name` (a machine app and a root app, or root apps of two roots). An id that an app earlier in the Views catalogue's order already declares refuses the later app with the finding `id_taken`, which names both apps.
 - A view is `appview:<the app's view id, percent-encoded>#<the declared id>` in the Views catalogue, in the saved layout and for `onView:<id>`; the declared id is the one you write in `app.yml`.
 
@@ -135,9 +136,22 @@ contributes:
 | `configuration` | map | `title?`, `properties` (map from a setting key to a setting) |
 | `themes` | list | `label`, `uiTheme` (`vs`, `vs-dark`, `hc-black` or `hc-light`), `path` |
 | `iconThemes` | list | `id`, `label`, `path` |
+| `languages` | list | `id`, `aliases?`, `extensions?` (each with its dot), `filenames?`, `filenamePatterns?`, `firstLine?` (a regular expression), `configuration?` (a file), `icon?` (`{ light, dark }` files) |
+| `grammars` | list | `scopeName`, `path`, `language?`, `embeddedLanguages?`, `injectTo?`, `tokenTypes?` |
+| `snippets` | list | `language`, `path` |
+| `semanticTokenTypes` | list | `id`, `superType?`, `description?` |
+| `semanticTokenModifiers` | list | `id`, `description?` |
+| `semanticTokenScopes` | list | `scopes` (a map from a token selector to a list of theme scopes), `language?` |
+| `jsonValidation` | list | `fileMatch` (a glob or a list), `url` (a JSON file of the app) |
+| `configurationDefaults` | map | an option of oculus or a setting the app declares, each with its value |
+| `debuggers` | list | `type`, `label`, `languages?`, `program?`, `args?`, `runtime?`, `runtimeArgs?`, `configurationAttributes?` (`{ launch?, attach? }`), `initialConfigurations?`, `configurationSnippets?` |
+| `breakpoints` | list | `language` |
+| `taskDefinitions` | list | `type`, `required?`, `properties?` |
+| `problemPatterns` | list | `name`, and `regexp` with the group numbers `file`, `location`, `line`, `column`, `endLine`, `endColumn`, `severity`, `code`, `message` and `loop`, or `patterns` (a list of those) |
+| `problemMatchers` | list | `name`, `owner`, `pattern` (a name, a pattern or a list), `source?`, `fileLocation?`, `severity?`, `background?` (`{ activeOnStart?, beginsPattern, endsPattern }`) |
 
-- A fault in a point refuses the app with a finding keyed `apps[<name>]`: a value of another kind than VS Code gives it (`contributes_shape`), an id that breaks the rules above, a command a key, menu entry or activation event names that the app does not declare (`contributes_command_unknown`, `event_command`, `event_view`), a container a view names that is neither declared nor `explorer` (`contributes_container`), a file that is not a file of the app (`contributes_file`), an icon that is neither `$(name)` of a glyph in `config/catalogs/glyphs.yml` nor a file of the app (`contributes_icon`), a `when` clause that does not parse (`contributes_when`), a key that spells no key of VS Code's key syntax (`contributes_key`), an `entry` on a tree view (`contributes_tree_entry`), a bound or a list of values a setting's type does not take (`contributes_setting_kind`) and a setting default that breaks its own declaration (`contributes_default`). Any other key under `contributes`, `submenus` included, is `key_unknown`.
-- Three cases leave the entry out and the app offered, each with a finding: a menu id oculus does not draw (`contributes_menu_dropped`), a menu entry that is a `submenu` (`contributes_submenu_dropped`) and a `viewsContainers` kind other than `activitybar` and `panel` (`contributes_container_dropped`).
+- A fault in a point refuses the app with a finding keyed `apps[<name>]`: a value of another kind than VS Code gives it (`contributes_shape`), an id that breaks the rules above, a command a key, menu entry or activation event names that the app does not declare (`contributes_command_unknown`, `event_command`, `event_view`), a container a view names that is neither declared nor `explorer` (`contributes_container`), a file that is not a file of the app (`contributes_file`), an icon that is neither `$(name)` of a glyph in `config/catalogs/glyphs.yml` nor a file of the app (`contributes_icon`), a `when` clause that does not parse (`contributes_when`), a key that spells no key of VS Code's key syntax (`contributes_key`), an `entry` on a tree view (`contributes_tree_entry`), a bound or a list of values a setting's type does not take (`contributes_setting_kind`) and a setting default that breaks its own declaration (`contributes_default`). A file the tools' points name is a file of the app (`contributes_file`), a regular expression that does not compile is `contributes_regexp`, an extension without its dot or with another dot is `contributes_extension`, a file name with a slash is `contributes_filename`, a matcher that names a pattern the app does not declare is `contributes_pattern_unknown`, a debugger of the type `rite` is `contributes_rite`, a name two patterns or matchers share is `contributes_repeated`, and a debugger type another app declared first is `id_taken`. A grammar file that cannot be read is `grammar_unreadable`. Any other key under `contributes`, `submenus` and `notebooks` included, is `key_unknown`.
+- These cases leave the entry out and the app offered, each with a finding: a menu id oculus does not draw, such as `scm/inputBox` (`contributes_menu_dropped`), a menu entry that is a `submenu` (`contributes_submenu_dropped`), a `viewsContainers` kind other than `activitybar` and `panel` (`contributes_container_dropped`), a `jsonValidation` schema that is no JSON file of the app (`contributes_validation_dropped`), a `configurationDefaults` entry that names no option and no setting (`contributes_default_dropped`), and a snippet file, schema or language configuration that cannot be read.
 - `icon` is `$(name)`, naming a glyph of `config/catalogs/glyphs.yml`, or a path of a file of the app. `$(name)` in a status item's text, a tree item's `iconPath` and a command's `icon` draw the glyph; a name oculus does not know is drawn as its text.
 
 ### When clauses and context keys
@@ -183,9 +197,17 @@ An app sets its own keys with `executeCommand('setContext', key, value)`, where 
 | `explorer/context` | the right-click menu of a Files row |
 | `view/title` | the title actions of an app view |
 | `view/item/context` | the right-click menu of a row of an app tree view: group `inline` as buttons on the row |
+| `scm/title` | the head of an app source control shown in place of a repository: group `navigation` as buttons |
+| `scm/repository`, `scm/sourceControl` | the buttons and More Actions of an app source control's row in the Repositories list, and its right-click menu |
+| `scm/resourceGroup/context`, `scm/resourceFolder/context`, `scm/resourceState/context` | a group's row, a folder of resources and a resource row of an app source control |
+| `scm/change/title` | the action bar of a diff hunk, drawn only for a diff against the original an app source control gave |
+| `debug/callstack/context`, `debug/variables/context` | the right-click menus of a stack frame and of a variable in the Debug view |
+| `debug/toolBar` | the floating debug toolbar |
+| `terminal/context`, `terminal/title/context` | the right-click menus of a terminal in the grid and in the Terminal tab's list |
 
 - Groups are ordered as in VS Code: `navigation` first, then by name, `@<n>` ordering inside a group, a separator between groups. An app's groups come after oculus's own in each menu.
-- A command is called with VS Code's arguments: the resource `{ root, path }` for `explorer/context`, `editor/context` and `editor/title`, and the row's element for `view/item/context`. `alt` names the command run with Alt held.
+- A command is called with VS Code's arguments: the resource `{ root, path }` for `explorer/context`, `editor/context` and `editor/title`, and the row's element for `view/item/context`. The `scm/` menus pass the source control, the group, the resource states or the change as VS Code does, `debug/callstack/context` the stack frame with its thread (offered for frames only), `debug/variables/context` the variable, `terminal/context` and `terminal/title/context` the `Terminal`, and `debug/toolBar` nothing. `alt` names the command run with Alt held.
+- The tools' menus add the context keys `scmProvider` (the source control's id), `scmResourceGroup` (the group's id), `scmResourceState` (the resource's `contextValue`), `debugType`, `inDebugMode` and `debugState` of the session, `callStackItemType` (`stackFrame`) and `terminalProcessSupported` (true for a terminal whose process oculus holds, false for a stream terminal).
 - Any other menu id, and a `submenu` entry, is left out with a finding.
 
 ### Status bar items
@@ -443,14 +465,15 @@ export async function activate(oculus) {
 export function deactivate() {}
 ```
 
+- **No host file.** An app that declares `debuggers` and names no `host` still gets the runner, which imports nothing, so its debug adapters run with no program of the app other than the adapters themselves. Such an app has no `activate`, receives no page request and offers only what its manifest declares.
 - **The file.** `host` names a `.js` or `.mjs` file of the app. oculus loads it as an ES module and calls its exported `activate(oculus)` once with the connection object, then `deactivate()` before it stops the host when the file exports one. A file that exports no `activate`, or whose `activate` throws, ends the host with the error in its output. What `activate` returns is the host's API for the apps that depend on it.
 - **The process.** The program is the one that runs oculus, with `ELECTRON_RUN_AS_NODE=1` added to oculus's own environment, started with an argument array and never through a shell, in the app's real folder. The host needs no package of its own to talk to oculus.
 - **Only approved files run.** The host starts only while the app's current hash is the approved one, and the hash is taken again right before each start. A module hook refuses every file import, dynamic `import()` and `createRequire` load whose real path is not a recorded file of the app, and the error names the file. Built-in `node:` modules load. A package the host needs is shipped inside the app's folder, where it is recorded, counted under `max_files` and `max_mb`, and approved.
 - **Output.** What the host writes to standard output is sent to standard error, so it never breaks the messages. A write to file descriptor 1 that skips this breaks the message stream, and oculus stops the host and names the broken stream in its output. Standard error is the host's output: the last 1000 lines and at most `apps.host_output_kb` kilobytes are kept and shown in the Processes view, which asks oculus for the lines when you open an output and again whenever the output has grown. No app reads them.
-- **Start.** At the first of its `activation` events. `onTab`: a tab of the app is drawn. `onStartupFinished`: oculus has read its apps after it started, or the app becomes approved and enabled. `workspaceContains:<glob>`: a file matching the glob exists in a root the Files view shows (the app's own root for a root app, every shown root for a machine app). The look reads at most `apps.scan_entries` entries per root and enters no dot-led folder and no `node_modules`. `onLanguage:<id>`: a source tab of a file of that language opens. `onCommand:<id>` fires when a command the app declares is run, and `onView:<id>` when a view the app declares is drawn; the host also starts for a declared command whatever `activation` lists. A request from a tab always starts the host. Two events at once start one process.
-- **The connection object.** `oculus.onRequest(handler)` sets the handler of `oculus.host.request`, called with `(method, params, tab)`. `oculus.store` is the app's store file as a map: `get(key)`, `update(key, value)` (`undefined` deletes the key), `keys()` and `onDidChange(handler)`, called with the changed keys when a frame or another writer changes the store. An `update` is a store write: it counts under `apps.store_max_kb` and `apps.writes_per_min`, is recorded in the change log and undone from History, and reaches every tab's `onStore`. `oculus.secrets` has `get`, `store` and `delete` as the frame's do. `oculus.sendToPage(method, params, tab)` calls `onHost` of that tab, or of every open tab of the app when `tab` is left out, and counts under `apps.messages_per_min`. `oculus.apps.get(name)` answers an object whose functions call the API that app's `activate` returned, with JSON arguments and result; it rejects `not_declared` for a name not in `depends` and `host_down` for a dependency that is not running and cannot start. `oculus.commands`, `oculus.window` and `oculus.workspace` follow VS Code's API by name and are described under The shell namespaces.
+- **Start.** At the first of its `activation` events. `onTab`: a tab of the app is drawn. `onStartupFinished`: oculus has read its apps after it started, or the app becomes approved and enabled. `workspaceContains:<glob>`: a file matching the glob exists in a root the Files view shows (the app's own root for a root app, every shown root for a machine app). The look reads at most `apps.scan_entries` entries per root and enters no dot-led folder and no `node_modules`. `onLanguage:<id>`: a source tab of a file of that language opens. `onCommand:<id>` fires when a command the app declares is run, and `onView:<id>` when a view the app declares is drawn; the host also starts for a declared command whatever `activation` lists. An app that declares `debuggers` may list `onCommand:workbench.action.debug.start`, and its host starts whatever `activation` lists when a debug session of one of its types is about to start; an app that declares `taskDefinitions` may list `onCommand:workbench.action.tasks.runTask`, and its host starts when the commands of a repository are listed or a task of one of its types runs. A request from a tab always starts the host. Two events at once start one process.
+- **The connection object.** `oculus.onRequest(handler)` sets the handler of `oculus.host.request`, called with `(method, params, tab)`. `oculus.store` is the app's store file as a map: `get(key)`, `update(key, value)` (`undefined` deletes the key), `keys()` and `onDidChange(handler)`, called with the changed keys when a frame or another writer changes the store. An `update` is a store write: it counts under `apps.store_max_kb` and `apps.writes_per_min`, is recorded in the change log and undone from History, and reaches every tab's `onStore`. `oculus.secrets` has `get`, `store` and `delete` as the frame's do. `oculus.sendToPage(method, params, tab)` calls `onHost` of that tab, or of every open tab of the app when `tab` is left out, and counts under `apps.messages_per_min`. `oculus.apps.get(name)` answers an object whose functions call the API that app's `activate` returned, with JSON arguments and result; it rejects `not_declared` for a name not in `depends` and `host_down` for a dependency that is not running and cannot start. `oculus.commands`, `oculus.window` and `oculus.workspace` follow VS Code's API by name and are described under The shell namespaces; `oculus.languages`, `oculus.debug`, `oculus.tasks` and `oculus.scm`, with the terminals and file decorations of `oculus.window` and the files of `oculus.workspace`, are described under The tools.
 - **Dependencies.** Before a host starts, the host of each app in its `depends` starts. A dependency that is refused, disabled or not approved leaves the depending host waiting, and the tab and the Processes row name it as an app that cannot run; a dependency that no app provides is named as not installed. Apps that depend on each other in a cycle start none of the apps in it, and the Processes view says so.
-- **Stop.** When the app is disabled, revoked, changed or removed, when Stop is pressed in the Processes view, and when oculus closes, oculus calls `deactivate()`, gives the host `apps.host_stop_seconds` to settle, sends SIGTERM and 2 seconds later SIGKILL. A host also ends when its standard input closes, so a server that is killed leaves none running. A request in flight when the host stops rejects `host_down`.
+- **Stop.** When the app is disabled, revoked, changed or removed, when Stop is pressed in the Processes view, and when oculus closes, oculus calls `deactivate()`, gives the host `apps.host_stop_seconds` to settle, sends SIGTERM and 2 seconds later SIGKILL. A host also ends when its standard input closes, so a server that is killed leaves none running. The host is the leader of a process group of its own, and when it has ended whatever is left of the group is killed, so no program the host started with `child_process` outlives it; the terminals of the Terminal tab's tmux are not in the group. A request in flight when the host stops rejects `host_down`.
 - **A host that ends on its own** is not started again. Each open tab of the app shows a line with the exit code or signal and a Restart button, and the Processes view shows the same row with Restart.
 
 ### The shell namespaces
@@ -471,6 +494,339 @@ export function deactivate() {}
 
 The `window.create*` calls and the registrations they make reject with the refusal words of the call that caused them: `refused:registered` for an id registered twice, `refused:id` for a command id that does not start with the app's name and a dot, `refused:view` for a tree view the app does not declare, `missing` for a panel whose `entry` is no recorded `.html` file of the app and `refused:params` for a body of another shape. A message, quick pick, input box or progress counts under `apps.messages_per_min` and a command run under `apps.opens_per_min`, per host.
 
+## The tools
+
+The tools are the parts of oculus an app's host reaches through `oculus.languages`, `oculus.workspace`, `oculus.debug`, `oculus.tasks`, `oculus.scm` and, on `oculus.window`, the terminals and the file decorations. Each follows VS Code's API by name and shape, so code written against `vscode.languages.registerHoverProvider` or `vscode.tasks.registerTaskProvider` runs by changing the name of the object to the `oculus` the host's `activate` receives. They need an approved, enabled, unchanged app with a running host (a debugger can run without a host file, below), act only inside the folders of the app's scope, and go the moment the app stops acting, together with every process, terminal and stream they started. A machine app's scope is every folder of the open workspace and a root app's is its own root alone.
+
+### The files a host reaches
+
+| Member | What it does |
+|--------|--------------|
+| `workspace.workspaceFolders`, `name`, `isTrusted` | the folders of the app's scope as `{ uri, name, index }`; `undefined` when the scope is empty |
+| `workspace.onDidChangeWorkspaceFolders(listener)` | called with `{ added, removed }` when a folder joins or leaves the scope, once for each change |
+| `workspace.getWorkspaceFolder(uri)`, `asRelativePath(pathOrUri, includeFolder?)` | as VS Code's |
+| `workspace.fs.readFile`, `writeFile`, `stat`, `readDirectory`, `createDirectory`, `delete`, `rename`, `copy` | the file system of the scope; `createDirectory` also creates the missing parent folders; the writes are the Files view's, as described below |
+| `workspace.findFiles(include, exclude?, maxResults?, token?)` | the files of the scope a glob matches, cancellable; `exclude` left out skips `node_modules` and the folders the Files view hides, `null` skips nothing, and a glob skips the files it matches; an entry whose name starts with a dot is never listed |
+| `workspace.createFileSystemWatcher(glob, ignoreCreate?, ignoreChange?, ignoreDelete?)` | `onDidCreate`, `onDidChange`, `onDidDelete` for the files of the scope the glob matches |
+| `workspace.applyEdit(edit)` | a `WorkspaceEdit` of text edits and file operations; it applies nothing, and answers `false`, when one of its files is refused |
+| `workspace.saveAll()` | saves the documents open in tabs |
+| `workspace.registerTextDocumentContentProvider(scheme, provider)` | serves the text of `scheme:` addresses, for the quick diff of a source control and `openTextDocument` |
+| `workspace.textDocuments`, `openTextDocument(uri)`, `onDidOpenTextDocument`, `onDidChangeTextDocument`, `onDidCloseTextDocument`, `onDidSaveTextDocument` | the documents the app's language servers and providers were given; `onDidSaveTextDocument` fires once with the document when a tab saves the file |
+
+- A URI is judged before anything is read or written. A URI that is not a `file:` URI of a folder of the scope, or whose real path leaves the folder through a link, fails with `FileSystemError.NoPermissions` and the message `outside`; a closed folder (`closed_paths`), a private folder, a dot-led path or a file of oculus's own `config/` folder fails the same way with the message `closed`; a file that is not there fails with `FileNotFound` and the message `missing`.
+- `writeFile`, `createDirectory`, `delete`, `rename` and `copy` and the file operations of a `WorkspaceEdit` are operations of the Files view's writer, so each runs in the write chain, is listed in History with the app's id and can be undone there, and a tab that holds the file follows. A file that exists is replaced in place and History keeps the bytes it replaced; a file that is new is made under its name. History calls a `writeFile` "Write File". `delete` goes to the Trash only when the app passes `useTrash`; either way History keeps the bytes of a deleted file within its size limit, and Undo of a deleted folder puts back an empty folder. A rename to another folder under another name, and a copy under a name other than the source's, are two operations and two entries of History. A copy, a rename or a delete of a folder that holds a private folder, a private file or oculus's own `config/` folder below it is refused `closed` with nothing written. A file operation of a `WorkspaceEdit` is checked before any text is written.
+- A host that registers a watcher is told only of the files of its scope. A watcher counts as one registration, not as messages of the host.
+
+### Streams
+
+No member of the API is a stream. The bytes of a language server, a debug adapter or a terminal travel as streams on the host's one connection, which the members below open for the host.
+
+- The host opens every stream under an id it chooses. oculus never opens one.
+- Each side starts with credit for 1 MiB of bytes (terminals) or 256 messages (language servers and debug adapters) and grants more only when its consumer has finished with what it was given, so a reader that stops reading holds the writer at its window and oculus's memory does not grow. While the host's credit is out, oculus pauses what it reads for the stream (the page's messages to a language server, a stream terminal's input) and resumes it when credit returns; a stream whose source does not pause is closed after 4096 queued messages or chunks, and a stream terminal whose input waits over 8 MiB is ended.
+- A message for an id that is not open, or is closed, is dropped with a line in the host's output. Data of a server or an adapter that is not one message object closes that stream with a line in the output. Neither ends the host.
+- A host that stops has every stream closed.
+
+### Languages
+
+`contributes.languages`, `grammars`, `snippets`, `semanticTokenTypes`, `semanticTokenModifiers`, `semanticTokenScopes`, `jsonValidation` and `configurationDefaults` give the source editor a language without any code. They take effect while the app is approved, enabled and unchanged, and they need no host.
+
+- A language is registered under the id the app gives it, with its `aliases` (the picker's names), `extensions` (with the dot), `filenames`, `filenamePatterns` (globs over the path from the root) and `firstLine` (a regular expression over the first line of a file no name rule decides). `configuration` names a language configuration file (comments, brackets, auto-closing pairs, folding) of the app, and `icon` a pair of `light` and `dark` image files of the app.
+- A language oculus ships is not replaced. An extension or file name that another app registered first, in the Views list's order, stays with that app, and the later app gets a finding (`language_taken`) and is offered. The reader's `languages:` setting wins over every app. A file takes its language in this order: oculus's own map (the `languages:` setting and the shipped rules) by the file's whole name, then by its extension, then the first `filenamePatterns` glob of an app that matches the path, then an app's `filenames` and `extensions`.
+- A grammar is a TextMate grammar file. A grammar whose `scopeName` a shipped grammar or an earlier app registered has is dropped with a finding (`grammar_shipped`, `grammar_taken`); the grammars its `embeddedLanguages` and `injectTo` name are loaded in the same call. A language configuration is applied only to a language the app declares itself (`language_configuration_shipped`, `language_configuration_taken`).
+- `snippets` name a JSON snippet file for a language. `jsonValidation` applies a JSON schema file of the app to the files its `fileMatch` matches; a pattern with no leading `/` or `**` is matched anywhere. `semanticTokenScopes` map semantic token types to theme scopes, for a `language` or for all languages. `configurationDefaults` set an option of oculus, or a setting the app declares, to a value for the language or workspace; an entry for anything else is left out with a finding.
+- An unreadable grammar refuses the app (`grammar_unreadable`); an unreadable snippet file, schema or language configuration leaves that entry out with a finding. A regular expression that does not compile refuses the app (`contributes_regexp`).
+
+### Language servers
+
+A host registers a server with `oculus.languages.registerLanguageServer(id, options)` and starts it with `client.start()`, which registers it with oculus and starts no process. oculus starts one server process for each folder of the app's scope when the first document of a selected language opens.
+
+| Member | What it does |
+|--------|--------------|
+| `languages.registerLanguageServer(id, options)` | `options` has `documentSelector`, `serverOptions`, `outputChannelName`, `initializationOptions` and `synchronize.configurationSection`; a second registration of one id throws `refused:registered`; answers a client |
+| `client.start()`, `stop()`, `dispose()` | registers the server, ends its processes and unregisters it |
+| `client.state`, `onDidChangeState` | VS Code's `State.Stopped`, `Starting` and `Running` |
+| `client.sendRequest(method, params)`, `sendNotification(method, params)` | to the server that holds the document `params` names; a notification goes to every running process |
+| `client.onRequest(method, handler)`, `onNotification(method, handler)` | the requests and notifications of the server the host answers itself; one request method has one handler, the last registered |
+| `languages.getLanguages()` | the languages the editor knows, oculus's and the apps', with their aliases and extensions |
+
+- `serverOptions` is an executable `{ command, args, options }`, `{ run }` of a `{ run, debug }` pair, or a function that makes the server itself and answers `{ reader, writer }` streams or `{ listen, send }`. The function is called with the folder the server is for. The command runs with your rights as the host does.
+- One server runs for each page, folder and registered server, shared by that page's tabs of the languages it selects. It starts with the first document, answers `initialize` within 30 seconds or is closed, ends 60 seconds after the last tab of its folder closed (a tab opened inside the 60 seconds keeps it), and ends with the host, the app's disabling and the folder leaving the workspace. When a server ends while its host still runs (the client's `stop()`, its registration withdrawn, the last document closed past the 60 seconds), oculus asks it `shutdown` and then `exit`, closes its stream 2 seconds after `exit` when it has not ended, and sends nothing when the host has ended.
+- A server that exits on its own is started again by the next request. The fifth exit within three minutes leaves it stopped until Restart is pressed. The status bar's language menu and the tab's and palette's lists offer Restart and Show Output for each server, named by server when a language has more than one.
+- A server is given only documents of the folders of the app's scope. A document outside them is never sent.
+- Several servers for one language, oculus's own and apps', are joined as VS Code's client joins its providers. List features (completion, references, symbols, code actions, code lenses, links, inlay hints, highlights, ranges) answer the lists joined, oculus's first and then the apps' in the Views list's order. Hovers answer all hovers as one. Every other request (definition, rename, formatting, signature help, semantic tokens) goes to the first server that declared the feature. A joined request waits up to 2 seconds for the slower servers, and the ones that did not answer then get `$/cancelRequest`; the answer of oculus's own server is never held back. A request that has one answer goes to the first server in the order and does not wait for the others. The diagnostics of all servers are shown together, each with its server's name as its source.
+- A capability a server registers after `initialize` with `client/registerCapability` is passed to the editor.
+- A request is sent to your server only for a feature it declared, in its `initialize` answer or by registering it. A request for a feature no server of the language declared is answered with no result.
+
+A worked example. The app `notes-lsp` gives `.note` files a language, a grammar, snippets and a server. Put the files in `<hub>/.oculus/apps/notes-lsp/` and approve the app. `index.html` is any page, since every app has an entry; `server.js` is any program that speaks the language server protocol on its standard input and output, for example one built on the `vscode-languageserver` package shipped inside the app's folder.
+
+`app.yml`:
+
+```yaml
+name: notes-lsp
+title: Notes language
+bridge: 1
+host: host.mjs
+activation: [onStartupFinished]
+contributes:
+  languages:
+    - id: notes
+      aliases: [Notes]
+      extensions: [".note"]
+      configuration: notes.language.json
+  grammars:
+    - language: notes
+      scopeName: source.notes
+      path: notes.tmLanguage.json
+  snippets:
+    - language: notes
+      path: notes.snippets.json
+```
+
+`host.mjs`:
+
+```js
+import { fileURLToPath } from 'node:url';
+
+export function activate(oculus) {
+    const client = oculus.languages.registerLanguageServer('notes-lsp', {
+        outputChannelName: 'Notes language server',
+        documentSelector: [{ language: 'notes' }],
+        serverOptions: {
+            command: process.execPath,
+            args: [fileURLToPath(new URL('./server.js', import.meta.url))]
+        }
+    });
+    client.start();
+}
+```
+
+Opening `a.note` colours it with the grammar, offers the snippets and starts `server.js` for the folder that holds the file. The server's hovers, completions and diagnostics appear as the editor shows any server's, and Restart and Show Output are in the status bar's language menu.
+
+### Language features
+
+`register*Provider` and `createDiagnosticCollection` of one host are served as one language server inside the host, named `providers`. The relay starts it like any server of an app and joins its answers with the others' by the rules above.
+
+| Member | What it does |
+|--------|--------------|
+| `languages.registerHoverProvider`, `registerCompletionItemProvider`, `registerDefinitionProvider`, `registerDeclarationProvider`, `registerTypeDefinitionProvider`, `registerImplementationProvider`, `registerReferenceProvider`, `registerDocumentHighlightProvider` | `(selector, provider)`; a completion provider also takes trigger characters |
+| `registerDocumentSymbolProvider`, `registerWorkspaceSymbolProvider`, `registerCodeActionsProvider`, `registerCodeLensProvider`, `registerDocumentLinkProvider`, `registerRenameProvider`, `registerSignatureHelpProvider` | as VS Code's; a code actions provider takes `providedCodeActionKinds` in its metadata |
+| `registerDocumentFormattingEditProvider`, `registerDocumentRangeFormattingEditProvider`, `registerOnTypeFormattingEditProvider` | formatting |
+| `registerFoldingRangeProvider`, `registerSelectionRangeProvider`, `registerInlayHintsProvider`, `registerDocumentSemanticTokensProvider(selector, provider, legend)`, `registerCallHierarchyProvider`, `registerTypeHierarchyProvider` | the rest |
+| `languages.createDiagnosticCollection(name?)` | `set`, `delete`, `clear`, `forEach`, `get`, `has`, `dispose`; a second collection of one name throws `refused:registered` |
+
+- A provider is called with a `TextDocument` the host holds (`getText`, `lineAt`, `positionAt`, `offsetAt`, `getWordRangeAtPosition`, `version`, `languageId`), a position, and a cancellation token. A provider that throws or answers nothing answers an error to its own request and gives nothing; the others still answer.
+- The selector is a language id, a `{ language, scheme, pattern }` or a list of them. `pattern` is a glob over the path from the folder, read with picomatch as `findFiles` and the file watchers read theirs.
+- A diagnostic collection's entries are told to oculus as they change, are drawn as the diagnostics of any server with the collection's name as their source, and go when the collection is cleared or disposed or the host stops.
+
+A worked example. The app `md-notes` adds a hover and a diagnostic collection to Markdown files beside oculus's own Markdown server, which stays as it is.
+
+`app.yml`:
+
+```yaml
+name: md-notes
+title: Markdown notes
+bridge: 1
+host: host.mjs
+activation: [onStartupFinished]
+```
+
+`host.mjs`:
+
+```js
+export function activate(oculus) {
+    oculus.languages.registerHoverProvider({ language: 'markdown' }, {
+        provideHover(document, position) {
+            const line = document.lineAt(position.line).text;
+            return new oculus.Hover(`${line.length} characters`);
+        }
+    });
+
+    const todo = oculus.languages.createDiagnosticCollection('todo');
+    const scan = (document) => {
+        if (document.languageId !== 'markdown') return;
+        const found = [];
+        for (let line = 0; line < document.lineCount; line += 1) {
+            const at = document.lineAt(line).text.indexOf('TODO');
+            if (at < 0) continue;
+            const range = new oculus.Range(line, at, line, at + 4);
+            found.push(new oculus.Diagnostic(range, 'Unfinished', oculus.DiagnosticSeverity.Warning));
+        }
+        todo.set(document.uri, found);
+    };
+    oculus.workspace.onDidOpenTextDocument(scan);
+    oculus.workspace.onDidChangeTextDocument((event) => scan(event.document));
+}
+```
+
+Hovering a line of a Markdown file shows its length beside the Markdown server's hover, and each `TODO` carries a warning.
+
+### Debug adapters
+
+`contributes.debuggers` declares a debugger type, and `contributes.breakpoints` the languages a breakpoint may be set in. The debugger then appears in the Debug view and runs from a `launch.yml` entry of its `type`.
+
+```yaml
+contributes:
+  debuggers:
+    - type: notes.dbg
+      label: Notes debugger
+      languages: [notes]
+      program: adapter.js
+      runtime: node
+      configurationAttributes:
+        launch:
+          required: [program]
+          properties:
+            program: { type: string }
+            stopOnEntry: { type: boolean }
+      initialConfigurations:
+        - name: Run
+          type: notes.dbg
+          request: launch
+          program: ${file}
+  breakpoints:
+    - language: notes
+```
+
+| Member | What it does |
+|--------|--------------|
+| `debug.registerDebugAdapterDescriptorFactory(type, factory)` | `createDebugAdapterDescriptor(session)` answers a `DebugAdapterExecutable(command, args, options)` the runner starts as a child of the host, a `DebugAdapterServer(port, host?)` it connects to, or a `DebugAdapterInlineImplementation(adapter)` that runs inside the host (an object with `onDidSendMessage` and `handleMessage`) |
+| `debug.registerDebugConfigurationProvider(type, provider)` | `provideDebugConfigurations` fills Add Configuration, `resolveDebugConfiguration` and `resolveDebugConfigurationWithSubstitutedVariables` change a configuration before and after its placeholders are filled; answering `undefined` abandons the launch |
+| `debug.startDebugging(folder, nameOrConfiguration)` | starts a `launch.yml` entry by name or a whole configuration; answers `false` when it cannot start, which includes an entry whose `program` holds `${file}`, since a host has no file on screen |
+| `debug.stopDebugging(session?)`, `activeDebugSession`, `breakpoints` | the session, as VS Code's; `session.customRequest(command, args)` sends a request to the adapter |
+| `debug.onDidStartDebugSession`, `onDidTerminateDebugSession`, `onDidReceiveDebugSessionCustomEvent`, `onDidChangeActiveDebugSession`, `onDidChangeBreakpoints` | the events, as VS Code's |
+
+- A type with no factory runs the program `contributes.debuggers` names (`program`, `args`, with `runtime` as the program that runs it and `runtimeArgs`). `program` is a file of the app, and `runtime` is a command name with no slash. An app that declares `debuggers` and no `host` therefore runs its adapter with no host file: oculus starts the runner without importing anything and the approval panel names the debugger and says it runs with your rights.
+- The type `rite` is oculus's own and refuses the app (`contributes_rite`). A type another app declared first refuses the later app (`id_taken`).
+- A `launch.yml` entry with no `type` or `type: rite` runs oculus's own adapter and asks its approval as before. An entry with the type of a debugger an app that acts declares runs that adapter; its keys beside `name`, `type`, `request`, `program`, `cwd` and `before` are the arguments the adapter is launched or attached with, each checked against the debugger's `configurationAttributes` for the request (`launch` or `attach`). It asks no approval, since the app's approval covers the adapter, and Stop asks, naming the debugger. An entry of a type no acting app declares is left out with a finding.
+- F5 and the status bar's configuration list start the entries of every acting debugger. Add Configuration lists the `initialConfigurations`, the `configurationSnippets` and the provider's `provideDebugConfigurations`, and writes the chosen entry into `launch.yml`, keeping its comments, under a name that is unique in the file.
+- The Debug view draws Pause whenever a thread of the session runs and sends `pause` to the adapter, since the protocol has no capability for it: with the id of the thread that last stopped, else with the first thread the adapter lists in its answer to `threads`. It draws the controls the adapter declares in its `initialize` answer and no others: conditional, hit-count and log breakpoints, function breakpoints, exception filters with conditions, Set Value, Restart, Loaded Sources, hover and Debug Console completions. Restart uses the adapter's `restart` request when it declares one, and otherwise stops and starts the session behind a question. Finish Frame is oculus's own adapter's.
+- One session runs at a time. A session of an app's adapter ends when its host stops, and the Debug Console says so when the program was still running.
+
+### Tasks
+
+`contributes.taskDefinitions` declares a task type, and `problemPatterns` and `problemMatchers` the readers of a task's output. The host's provider gives the tasks.
+
+| Member | What it does |
+|--------|--------------|
+| `tasks.registerTaskProvider(type, provider)` | `provideTasks()` answers the tasks and `resolveTask(task)` completes a task a `commands.yml` entry describes; a second provider of one type throws `refused:registered` |
+| `tasks.fetchTasks(filter?)`, `executeTask(task)`, `taskExecutions` | the tasks the host's providers give; run one and answer a `TaskExecution` with `terminate()` |
+| `tasks.onDidStartTask`, `onDidEndTask`, `onDidStartTaskProcess`, `onDidEndTaskProcess` | the run's events; the process events carry `exitCode` |
+| `new oculus.Task(definition, scope, name, source, execution, problemMatchers?)` | `scope` is `TaskScope.Global`, `TaskScope.Workspace` or a workspace folder; `group` is a `TaskGroup` (`new oculus.TaskGroup('build', 'Build')`, with `isDefault`) |
+| `ShellExecution(commandLine \| command, args?, options?)`, `ProcessExecution(process, args?, options?)`, `CustomExecution(callback)` | what a task runs; a custom execution's callback answers a pseudoterminal |
+
+- The tasks a provider gives are project commands of the source `app`, listed beside the commands of a repository as `<source>: <name>` in the Repositories view, on the project card, in the Run Command submenu and in Cmd-K, with the app's title in parentheses where another command holds the name. A task of the scope `Global` or `Workspace` is listed in every repository of the app's scope, and a task of a folder only in that folder. The default `build` and `test` groups mark the default build and test.
+- A `commands.yml` entry with `type: <task type>` and the definition's properties as its other keys, in place of `run`, is a command of the source `file` that the app which defines the type resolves. The entry is checked against the definition's `required` and `properties`, takes neither `run` nor `depends_on`, and is left out with a finding when no acting app defines the type, when a required property is missing, or when the app does not resolve it. Any entry may name `problemMatcher` as `$name` or a list of them.
+- A task runs in a terminal of the Terminal tab that names the app, with no approval question, since the app's approval covers it. A shell or process execution runs in the repository's folder in a tmux terminal; a custom execution runs its pseudoterminal as a stream terminal. A task cannot be the `depends_on` of another command.
+- A problem matcher reads the output with the patterns the app declares. `pattern` is a name from `problemPatterns` written `$name` or a pattern in place; a pattern with `loop: true` repeats while it matches. A `background` matcher begins a round at `beginsPattern`, which clears its diagnostics, and ends it at `endsPattern`. A match whose file is outside the repository is dropped. A command with no matcher keeps the default reading of `file:line: error` and `file:line: warning` lines.
+- The run ends with the program, with `terminate()` (which sends Ctrl-C to a tmux terminal), when the terminal is closed, and with the host. Rerun and Restart prepare the task again, so a changed definition or a restarted host takes effect.
+
+A worked example. The app `make-tasks` gives every repository a build task of the type `make.target`, and reads the compiler's lines.
+
+`app.yml`:
+
+```yaml
+name: make-tasks
+title: Make tasks
+bridge: 1
+host: host.mjs
+activation: [onStartupFinished]
+contributes:
+  taskDefinitions:
+    - type: make.target
+      required: [target]
+      properties:
+        target:
+          type: string
+  problemMatchers:
+    - name: make-tasks.gcc
+      owner: gcc
+      fileLocation: relative
+      pattern:
+        regexp: '^(.*):(\d+):(\d+): (warning|error): (.*)$'
+        file: 1
+        line: 2
+        column: 3
+        severity: 4
+        message: 5
+```
+
+`host.mjs`:
+
+```js
+export function activate(oculus) {
+    const make = (target, isDefault) => {
+        const task = new oculus.Task(
+            { type: 'make.target', target },
+            oculus.TaskScope.Workspace,
+            `make ${target}`,
+            'make',
+            new oculus.ShellExecution(`make ${target}`),
+            ['$make-tasks.gcc']
+        );
+        task.group = new oculus.TaskGroup('build', 'Build');
+        task.group.isDefault = isDefault;
+        return task;
+    };
+    oculus.tasks.registerTaskProvider('make.target', {
+        provideTasks: () => [make('all', true), make('clean', false)],
+        resolveTask: (task) => make(task.definition.target, false)
+    });
+}
+```
+
+Every repository then lists `make: make all` and `make: make clean`, the first as its default build, and a `commands.yml` entry `{ name: docs, type: make.target, target: docs }` is a third task that `resolveTask` completes.
+
+### Terminals
+
+| Member | What it does |
+|--------|--------------|
+| `window.createTerminal({ name, shellPath, shellArgs, cwd, env, message })` | a program in the Terminal tab's own tmux, as a terminal of the kind `app`; it survives a restart of oculus's server |
+| `window.createTerminal({ name, pty })` | a stream terminal over a pseudoterminal: `onDidWrite` is the output, `handleInput(data)` receives what is typed, `setDimensions` the size, `open`, `close` and `onDidClose(code)` |
+| `window.terminals`, `activeTerminal`, `onDidOpenTerminal`, `onDidCloseTerminal`, `onDidChangeActiveTerminal` | the terminals of the app |
+| `terminal.name`, `processId`, `exitStatus`, `creationOptions`, `sendText(text, shouldExecute?)`, `show(preserveFocus?)`, `hide()`, `dispose()` | as VS Code's; `show(true)` shows the terminal's tab without taking the focus from where it is, and `show(false)` focuses the terminal |
+
+- A host reaches only the terminals its own app made; a terminal of another app answers `missing`. `cwd` must be a folder of the app's scope (`outside`, `not_a_folder`), the names in `env` are plain names (`refused:env`), and an app holds at most 32 terminals (`refused:full`).
+- Both kinds are listed, moved, split, renamed, given an icon and closed as any terminal, with the kind App. The tmux kind is listed again in `window.terminals` after oculus's server restarts. A stream terminal keeps the last megabyte of its output for a page that attaches or reloads, and its size is the smallest of the sizes of the pages that show it.
+- A host that stops ends its stream terminals and leaves its tmux terminals running. An app that stops acting (Disable, Remove, Revoke, or a change of its files) ends both, and the questions of Disable, Remove and Revoke name the terminals, tasks and debug session they will end.
+
+### Source control
+
+`oculus.scm.createSourceControl(id, label, rootUri?)` makes a source control that is a row of the Repositories view's list. The id starts with the app's name and a dot; a second control of one id throws `refused:registered` in the host, and an id with another app's name is refused `not_declared` with a line in the host's output.
+
+| Member | What it does |
+|--------|--------------|
+| `inputBox` | `value`, `placeholder`, `enabled`, `visible`; the text typed reaches the host about 150 ms after the last key |
+| `count`, `commitTemplate`, `acceptInputCommand`, `statusBarCommands`, `quickDiffProvider` | the count on the row, the accept button's command (Ctrl or Cmd with Enter), the status bar commands shown while the control is selected, and the provider whose `provideOriginalResource(uri)` gives the original of a file for the diff |
+| `createResourceGroup(id, label)` | a group with `hideWhenEmpty` and `resourceStates`, each `{ resourceUri, command, contextValue, decorations: { strikeThrough, faded, tooltip } }` |
+| `dispose()` | removes the control |
+
+- A resource is placed in a folder of the app's scope. A resource outside every folder, or in a closed or private place, is drawn by its address and opens nothing.
+- The menus `scm/title`, `scm/repository`, `scm/sourceControl`, `scm/resourceGroup/context`, `scm/resourceFolder/context`, `scm/resourceState/context` and `scm/change/title` run commands with the arguments VS Code gives them. A command must be one the app declares; an undeclared command, a resource outside the scope and a control that is gone are refused with a sentence in a notice.
+- The quick diff of a source tab uses the control whose root equals the file's root. The control is no git repository and is not listed with git's status.
+
+### File decorations
+
+`oculus.window.registerFileDecorationProvider(provider)` registers a provider whose `provideFileDecoration(uri, token)` answers `{ badge, tooltip, color, propagate }` or nothing, and whose `onDidChangeFileDecorations` fires with a `Uri`, a list or nothing.
+
+- The Files view asks only for the rows it draws and keeps each answer until a change names the file. A file outside the app's scope is not asked of that app.
+- The answers of every acting app are joined for a file: the badges one after another in the Views list's order, the tooltips one to a line, the colour of the first provider that gave one, and `propagate` when that provider asked for it. A row shows its git letter and then the app's badge. A badge of more than two characters is left out with a line in the host's output.
+- A provider that throws or answers nothing gives nothing. A provider that has not answered after one second leaves the row as it is, and the row is decorated when the answer comes.
+- The changes of one animation frame are told once. More than 5000 changed files in one turn count as every file, and the page redraws once per frame whatever the number of events.
+
+### Limits of the tools
+
+| What | Limit | Past it |
+|------|-------|---------|
+| Credit of a stream | 1 MiB of bytes for a terminal, 256 messages for a server or an adapter | the sender holds its data and pauses its source |
+| `initialize` of a language server | 30 seconds | the server is closed and the page is told it failed |
+| A server whose tabs closed | 60 seconds | the server ends |
+| Restarts of a server that exits on its own | 4 in 3 minutes | it stays stopped until Restart |
+| A joined language request | 2 seconds for the apps' servers | their requests get `$/cancelRequest` |
+| Terminals of one app | 32 | `refused:full` |
+| A file decoration badge | 2 characters | the badge is left out |
+| A file decoration answer | 1 second | the row is decorated when the answer comes |
+| A set of changed decorations | 5000 files | every file counts as changed |
+
 ## Refusal words
 
 | Word | Raised by | Cause |
@@ -484,7 +840,9 @@ The `window.create*` calls and the registrations they make reject with the refus
 | `declined` | `write`, `open`, `commands.run`, `document.save` | you pressed Cancel on the question |
 | `missing` | `read`, `getStore`, `write`, `open`, `fs.*`, `commands.run`, `commands.execute`, `createPanel`, `document.*` | oculus holds no row for the app, a view id nothing registers, a project not in the portfolio, a root or file that is not there, a command no approved and enabled app owns, or a panel `entry` that is no recorded `.html` file of the app |
 | `refused:<reason>` | `write`, `setStore`, `secrets.*`, `host.request`, `commands.execute`, `register`, `unregister`, `changed`, `createPanel`, `ui.*`, `document.*` | the write route refused with a 4xx status and a sentence, or answered 200 and refused the first field it could not write; `<reason>` is that sentence; for a secret it is `key` or the line that says the keyring is not available, and for a host request it is the message of the error the handler threw |
-| `host_down` | `host.request`, `apps.get`, `commands.execute` of a command a host owns, a call to a dependency | the host is not running and cannot start, or stopped while the request was in flight |
+| `outside` | `workspace.fs.*`, `findFiles`, `applyEdit`, `createTerminal`, source control resources | a URI that is no `file:` URI of a folder of the app's scope, or whose real path leaves it, or a terminal `cwd` outside the scope; a host sees it as `FileSystemError.NoPermissions` |
+| `refused:full`, `refused:env`, `not_a_folder` | `createTerminal` | the app already holds 32 terminals, a name in `env` is not a plain name, or `cwd` is a file |
+| `host_down` | `host.request`, `apps.get`, `commands.execute` of a command a host owns, a call to a dependency, a source control or terminal act on a host that is not running | the host is not running and cannot start, or stopped while the request was in flight |
 | `failed:<status>` | `write`, `setStore`, `getStore`, `open`, `fs.*` | the route answered 500 or more, or a 4xx with no error text; `0` is no answer |
 
 ### Reasons
@@ -502,7 +860,8 @@ The reasons are sentences the route or a writer gives, so the set is open. These
 | `a new entry needs a <identity field>` | `new-entry` has no value for the field that names an entry |
 | `an entry with that <identity field> is already in the file` | `new-entry` repeats an identity |
 | `id`, `kind`, `params` | `register`, `unregister`, `changed`, `ui.*`, `createPanel`: a command id that does not start with the app's name and a dot or is empty, a kind other than the ones named, or a value of another shape than the call takes |
-| `registered`, `view` | the host's `oculus/register`: the id is held already, or names a tree view the app does not declare |
+| `registered`, `view` | the host's `oculus/register`: the id is held already, or names a tree view the app does not declare; the same word for a second language server, diagnostic collection, descriptor factory, configuration provider, task provider or source control of one id |
+| `purpose`, `id`, `params` | `oculus/stream/open`: a server stream nobody asked for, an id that is open or was closed, a kind or an id of another shape |
 | `context_key`, `value` | `setContext`: the key does not start with the app's name and a dot, or the value is not text, a number, a boolean or `null` |
 | `argument` | an `oculus.<name>` command run with an argument it does not take |
 | `answer` | a page's answer to a command or a tree request was no answer |
@@ -541,8 +900,13 @@ Thirteen keys of the `apps:` block of `config/behavior.yml` set the limits, each
 - Run an inline script. The Content-Security-Policy allows scripts from the app's own files and the shared bridge files only, so scripts are files loaded with `<script type="module" src>`. A script can compile a `.wasm` file of its own folder, since `script-src` holds `'wasm-unsafe-eval'`.
 - Load anything from outside the app's folder except `data:` images and the bridge files. The `connects` origins are allowed for `fetch` and other connections only, so an `<img>` or a `<script>` cannot load from them. Styles may be inline.
 - Run a file type oculus does not type. Only `.html`, `.js`, `.mjs`, `.css`, `.json`, `.svg`, `.png`, `.jpg`, `.gif`, `.webp`, `.woff`, `.woff2`, `.ttf`, `.otf`, `.txt` and `.wasm` get a content type; any other file, a `.ts` included, is sent as `application/octet-stream` with `nosniff`.
+- Reach, from its host, a file outside the folders of its scope. A machine app's scope is the folders of the open workspace and a root app's its own root; a link out of a folder is followed to its real path, and `outside`, `closed` and `missing` refuse as they do for `open({ file })`. A language server, a debug adapter, a task or a terminal of the app runs with your rights as the host does, which is why the approval panel says so.
+- Reach a terminal, a source control or a debug session of another app, or hold more than 32 terminals. A source control id and a problem matcher name must start with the app's name and a dot.
+- Take the place of oculus's own debugger (the type `rite`) or of a language, file name or scope name oculus ships, and register a second language server, diagnostic collection, descriptor factory, configuration provider, task provider or source control of one id (`refused:registered`).
+- Add what oculus has no place for: the contribution points `notebooks` and `submenus` refuse the app (`key_unknown`), and a menu id oculus does not draw, such as `scm/inputBox`, is left out with a finding.
+- Start, from its host, a `launch.yml` entry by name when its `program` holds `${file}`, since a host has no file on screen. The call answers `false`.
 - Run an `oculus.<name>` command that writes configuration, starts agents, writes the workspaces file or opens the system's folder panel (`closed`), bind a key oculus takes, or add an id outside its own name and a dot.
-- Read or write a private folder: `~/.oculus`, a hub's `secrets` folder, and each state file or folder that `local.yml` places outside them (the paths of `sessions_cache`, `sessions_overrides`, `bookmarks`, `notes`, `changes`, `history`, `approvals`, `schedules`, `schedule_record`, `accounts`, `calendar_dir`, `apps_dir` and `mail_dir`). A `files` entry in one refuses the app, and `fs.*`, `open({ file })` and a custom editor's document answer `closed` for a real path in one, links resolved.
+- Read or write a private folder: `~/.oculus`, a hub's `secrets` folder, and each state file or folder that `local.yml` places outside them (the paths of `sessions_cache`, `sessions_overrides`, `bookmarks`, `notes`, `changes`, `history`, `approvals`, `schedules`, `schedule_record`, `accounts`, `calendar_dir`, `apps_dir` and `mail_dir`). A `files` entry in one refuses the app, and `fs.*`, `open({ file })` and a custom editor's document answer `closed` for a real path in one, links resolved. A host's copy, rename or delete of a folder that holds a private folder or file below it answers `closed` with nothing written.
 - Read `apps`, `app-shell`, `processes` or `pty:*`, a root app's `inbox`, `calendar`, `sessions` or `usage`, or write a closed kind. Open or read a hub's `.oculus/local.yml`, a file under oculus's own `config/` folder (by its real path, whatever name a workspace lists it under), a dot-led path or a path under `closed_paths`. Edit your bookmarks. Use a secret, a host or a file folder its manifest does not declare, or reach the secrets of another app.
 
 Your approval of the app's files and of its `connects` origins is the boundary against an app sending what it read to another machine. The policy does not stop a frame from reaching a STUN server through WebRTC, resolving a host name through a DNS prefetch link or making a preconnect. An address passed to `open({ url })` can also carry what the app read, which is why the question shows the whole address.
@@ -636,4 +1000,11 @@ The write changes the project's manifest file, and the History view undoes it. R
 | The tab says the program waits for an app that cannot run | an app in `depends` is refused, disabled, not approved or itself waiting | enable or approve that app, or take it out of `depends` |
 | The tab says the program waits for an app that is not installed | no app of the name in `depends` exists | install that app, or take the name out of `depends` |
 | The host ends at once with a refused file in its output | it imported a file that is not a recorded file of the app | put the file or package inside the app's folder |
+| A language server shows `failed` in the status bar | it did not answer `initialize` within 30 seconds, or its program exited for the fifth time in three minutes | open Show Output from the language menu, fix the program, press Restart |
+| A language, grammar or snippet does not appear | the app is not approved or acting, a file of the point is unreadable, or the extension, name or scope belongs to oculus or an earlier app | read `apps[<name>]` in the Findings view for `language_taken`, `grammar_taken`, `grammar_shipped` or an unreadable file |
+| A debug launch says no app that acts declares the debugger | the `type` of the `launch.yml` entry is no debugger of an approved, enabled, unchanged app | fix the type, or approve or enable the app |
+| A `commands.yml` entry with a `type` is missing | no acting app defines the task type, a required property is absent, or the app did not resolve the entry | read the finding that names the entry; start the app that defines the type |
+| A terminal of the app was not opened | the app already holds 32 terminals, its `cwd` is outside the scope or a file, or its `env` holds a name that is not plain | close a terminal, or fix the call |
+| A file decoration is missing | the badge has more than two characters, the file is outside the app's scope, or the provider answered nothing | read the host's output in the Processes view |
+| A source control act answers a sentence in a notice | the command is not one the app declares, the file is outside the scope, the app is not open or its host is not running | fix the manifest or restart the host |
 | A root app is missing after a workspace change | its root is not in the workspace's Files view | add the root again; the tab keeps its state |

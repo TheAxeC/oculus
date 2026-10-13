@@ -40,6 +40,12 @@ export type RequestsDeps = {
     runInTab: (app: string, command: string, args: unknown[]) => Promise<CommandResult | null>;
     /** Open the tab of a panel a host asked for. */
     openPanel: (request: AppPanelRequest & { app: string }) => void;
+    /** Save every tab with unsaved text; whether every one was written. */
+    saveAll: () => Promise<boolean>;
+    /** Show a terminal in the Terminal tab, and take the focus unless `preserveFocus`. */
+    showTerminal: (terminal: string, preserveFocus: boolean) => void;
+    /** Take a terminal out of the Terminal tabs without ending it. */
+    hideTerminal: (terminal: string) => void;
 };
 
 /** A request as the page holds it: where it came from decides how it is answered. */
@@ -192,6 +198,17 @@ export function createRequests(deps: RequestsDeps) {
         } else if (request.kind === 'panel') {
             taken.add(request.id);
             deps.openPanel(request);
+            answer(request.id, null);
+        } else if (request.kind === 'saveAll') {
+            taken.add(request.id);
+            void deps.saveAll().then((all) => answer(request.id, all));
+        } else if (request.kind === 'showTerminal') {
+            taken.add(request.id);
+            deps.showTerminal(request.terminal, request.preserveFocus);
+            answer(request.id, null);
+        } else if (request.kind === 'hideTerminal') {
+            taken.add(request.id);
+            deps.hideTerminal(request.terminal);
             answer(request.id, null);
         }
     }

@@ -36,7 +36,7 @@ import { under } from '../../core/paths.ts';
 import { resolveRootPath, type Root } from '../files.ts';
 import { stampOf } from './file-changes.ts';
 import { copyLimit, keepCopy } from './history.ts';
-import { fail, readChecked, refused, type Fail } from './replace.ts';
+import { fail, readChecked, refused, type Fail } from './operations/replace.ts';
 
 /** What an `lsp-edit` runs over: the roots, the folders withheld, the history and the record. */
 export type LspEditScope = {

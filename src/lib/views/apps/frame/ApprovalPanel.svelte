@@ -71,6 +71,16 @@
         {#if row.host !== ''}
             <li>{t('apps.host_line', row.host)}</li>
         {/if}
+        {#each row.contributes.debuggers.filter((one) => one.program !== '') as adapter (adapter.type)}
+            <li>
+                {t(
+                    'apps.debugger_line',
+                    adapter.runtime === ''
+                        ? adapter.program
+                        : `${adapter.runtime} ${adapter.program}`
+                )}
+            </li>
+        {/each}
         {#each row.readFolders as folder (folder)}
             <li>{t('apps.files_line', folder)}</li>
         {/each}

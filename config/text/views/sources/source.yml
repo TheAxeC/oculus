@@ -66,6 +66,7 @@ text:
         writing_suggest_comma: 'Replace the dash with a comma'
         writing_suggest_semicolon: 'Replace the dash with a semicolon'
     source:
+        app_quick_diff: 'Open Changes ({0})'
         bar_blame: Toggle Blame
         bar_blame_title: Toggle Git Blame Editor Decoration
         bar_revert: Revert File
@@ -73,6 +74,8 @@ text:
         bar_save_title: 'Save ({0})'
         binary: This file is not UTF-8 text throughout on disk; the editor saves nothing over it.
         cannot_open: 'Cannot open: {0}'
+        cmd_app_output: 'Show Output of {0}'
+        cmd_app_restart: 'Restart {0}'
         cmd_blame: 'Git: Toggle Git Blame Editor Decoration'
         cmd_call_hierarchy: Show Call Hierarchy
         cmd_clangd_ast: 'clangd: Show AST'

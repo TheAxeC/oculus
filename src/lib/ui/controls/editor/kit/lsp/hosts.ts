@@ -7,21 +7,20 @@
 // serves a model and the braces' while it does not. A go to definition into a library file (a
 // resource under the library scheme, uris.ts) opens its tab through the same opener.
 //
-// The languages a client is made for are the ones the entries of data/prose/lsp-servers.ts list,
-// one entry per server; a model of any other language registers with no client and is never sent
-// anywhere.
+// The languages a client is made for are the ones the page hands in (`served`): the entries of
+// data/prose/lsp-servers.ts joined with the languages the registrations of the acting apps' hosts
+// name. A model of any other language registers with no client and is never sent anywhere.
 
 import type * as Monaco from 'monaco-editor';
 import { LanguageHost, clientClassOf, type LspHandle, type Registration } from './client';
 import { createPeeks } from './peeks';
 import type { LspServices } from './services';
 import { Signal } from './signal';
-import { SERVED_LANGUAGES, factsForLanguage } from '$lib/data/prose/lsp-servers';
+import { factsForLanguage } from '$lib/data/prose/lsp-servers';
+import type { SemanticExtras } from '../theme/semantic';
 import { keyOf, type CompletionHook } from './transport/messages';
 import type { Jump } from './transport/renames';
 import { libraryOfResource, lineOfFragment, placeOfResource, type Target } from './uris';
-
-export { SERVED_LANGUAGES };
 
 /** Which models a server serves now, and the call that hears it change. */
 type Served = {
@@ -52,6 +51,10 @@ export type LspKit = {
 /** What the kit reads of the page. */
 export type LspKitParts = {
     ensureLanguage: (name: string) => Promise<void>;
+    /** The languages a language server serves, read whenever a model registers. */
+    served: () => readonly string[];
+    /** The semantic token types, modifiers and scopes the acting apps declare. */
+    semanticExtras: () => SemanticExtras;
     /** The lookup strings the theme in force paints semantic tokens by. */
     ruled: () => ReadonlySet<string>;
     /** Hear every paint that changed the theme, which colours semantic tokens afresh. */
@@ -202,7 +205,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
     return {
         register(given, model, reg) {
             const language = model.getLanguageId();
-            if (!SERVED_LANGUAGES.includes(language)) return null;
+            if (!parts.served().includes(language)) return null;
             services ??= given;
             let host = hosts.get(language);
             if (host === undefined) {
@@ -213,6 +216,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
                     language,
                     ClientClass,
                     ruled: parts.ruled,
+                    semanticExtras: parts.semanticExtras,
                     onPainted: parts.onPainted,
                     registerCommand,
                     changed,

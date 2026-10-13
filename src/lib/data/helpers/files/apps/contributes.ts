@@ -14,6 +14,19 @@ export function noContributes(): AppContributes {
         customEditors: [],
         configuration: null,
         themes: [],
-        iconThemes: []
+        iconThemes: [],
+        languages: [],
+        grammars: [],
+        snippets: [],
+        semanticTokenTypes: [],
+        semanticTokenModifiers: [],
+        semanticTokenScopes: [],
+        jsonValidation: [],
+        configurationDefaults: {},
+        debuggers: [],
+        breakpoints: [],
+        taskDefinitions: [],
+        problemMatchers: [],
+        problemPatterns: []
     };
 }

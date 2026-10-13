@@ -13,6 +13,9 @@ text:
         copy_html_failed: The clipboard did not take the HTML copy
         icon_field: Icon
         icon_title: Change the icon of this terminal
+        app_task_title: '{0} ({1})'
+        kind_app: App
+        kind_app_glyph: app
         kind_claude: Claude
         kind_claude_glyph: terminal_claude
         kind_codex: Codex
@@ -47,6 +50,8 @@ text:
         refused_bad_terminal: The terminal request was not valid.
         refused_command_unknown: '{0} is not a command of this repository.'
         refused_dependency_cycle: 'The commands depend on each other in a cycle: {0}'
+        refused_dependency_task: The command {0} depends on {1}, which is a task of an app and runs in a terminal of its own.
+        refused_task_gone: The task {0} is not offered by an app that acts, so nothing was started.
         refused_dependency_self: The command {0} depends on itself.
         refused_dependency_unknown: The command {0} depends on {1}, which is not a command.
         refused_no_file: 'No value for {0}: open a file in a source tab first.'

@@ -3,8 +3,10 @@
 // the line from it, and the task terminal's mark carries the chain it resolved.
 //
 // A dependency name resolves to the first command of that name in the order the repository lists
-// them (the file's, the saved, the found). A cycle, a command that depends on itself and a name
-// that is no command are refused as words with the names they are about, before anything starts.
+// them (the file's, the saved, the found, the apps'). A cycle, a command that depends on itself, a
+// name that is no command and a name that is a task of an app are refused as words with the names
+// they are about, before anything starts: an app's task runs in a terminal of its own, so it is
+// not a step of a shell line.
 
 import type {
     CommandSource,
@@ -42,6 +44,9 @@ export function resolveChain(
                     error: 'dependency-cycle',
                     names: [path.map((one) => one.name).join(' -> ')]
                 };
+            }
+            if (next.task !== undefined) {
+                return { error: 'dependency-task', names: [command.name, dependency] };
             }
             const refused = visit(next);
             if (refused !== null) return refused;

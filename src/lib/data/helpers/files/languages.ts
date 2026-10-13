@@ -14,6 +14,12 @@
 // which are the ones the editor has a grammar for and the status bar has words for; a language the
 // editor does not colour is dropped rather than named by a bar that cannot draw it. The answer is a
 // Map so that a file called `constructor` or `__proto__` finds nothing an object would inherit.
+//
+// An app adds rules to the map (data/helpers/files/apps/tools/languages.ts): endings, whole names,
+// globs over the path from the root and first-line expressions. The joined map is a
+// `JoinedLanguages`, which `languageOf` reads in this order: the `languages:` map's whole name and
+// extension, then the apps' globs, then the apps' whole names and extensions. A name rule decides
+// before a first line does.
 
 import { z } from 'zod';
 import { isMap } from '../guards.ts';
@@ -23,6 +29,42 @@ import { nameOf } from './paths.ts';
 
 /** A lowercased ending (an extension with its dot, or a whole file name) to its language. */
 export type LanguageMap = ReadonlyMap<string, string>;
+
+/** A path rule of a language: a glob over the path from the root. */
+export type PatternRule = { glob: string; language: string; test: (path: string) => boolean };
+
+/** A rule that reads a file's first line. */
+export type FirstLineRule = { source: string; language: string; test: RegExp };
+
+/**
+ * The map with the rules apps add: the endings the map holds and the apps' own, the globs over a
+ * path from the root and the regular expressions over a first line. `base` is the `languages:` map
+ * alone, which decides before an app's glob does, and `added` holds the ids of the languages the
+ * apps name, so a caller that checks a name against the highlighter's registered names accepts
+ * them.
+ */
+export class JoinedLanguages extends Map<string, string> {
+    readonly base: LanguageMap;
+    readonly patterns: readonly PatternRule[];
+    readonly firstLines: readonly FirstLineRule[];
+    readonly added: ReadonlySet<string>;
+
+    constructor(
+        entries: Iterable<readonly [string, string]>,
+        rules: {
+            base: LanguageMap;
+            patterns: readonly PatternRule[];
+            firstLines: readonly FirstLineRule[];
+            added: ReadonlySet<string>;
+        }
+    ) {
+        super(entries);
+        this.base = rules.base;
+        this.patterns = rules.patterns;
+        this.firstLines = rules.firstLines;
+        this.added = rules.added;
+    }
+}
 
 /** What the reader left out of a `languages:` value, in the order of the file. */
 export type LanguageDrop =
@@ -103,12 +145,47 @@ export const PLAIN_LANGUAGE = 'plaintext';
 
 /**
  * The name of the language a file opens in: the map's entry for its whole name lowercased, else for
- * its extension, else plain text. A name that starts with a dot has no extension to read, so a
- * dotfile is plain text, and the whole-name lookup leaves it alone for the same reason: `.py` is a
- * file called `.py`, not an extension.
+ * its extension, else (for a map joined with apps) the first glob of an app that matches the path
+ * and the apps' own whole names and extensions, else plain text. A name that starts with a dot has
+ * no extension to read, so a dotfile is plain text, and the whole-name lookup leaves it alone for
+ * the same reason: `.py` is a file called `.py`, not an extension.
  */
 export function languageOf(name: string, map: LanguageMap): string {
     const bare = nameOf(name).toLowerCase();
-    const whole = bare.startsWith('.') ? undefined : map.get(bare);
-    return whole ?? map.get(extensionOf(name)) ?? PLAIN_LANGUAGE;
+    const ending = extensionOf(name);
+    const entry = (from: LanguageMap): string | undefined =>
+        (bare.startsWith('.') ? undefined : from.get(bare)) ?? from.get(ending);
+    if (!(map instanceof JoinedLanguages)) return entry(map) ?? PLAIN_LANGUAGE;
+    return entry(map.base) ?? patternLanguage(name, map) ?? entry(map) ?? PLAIN_LANGUAGE;
+}
+
+/** The language of the first glob of an app that matches the path from the root. */
+function patternLanguage(path: string, map: JoinedLanguages): string | undefined {
+    const from = path.replace(/^\/+/, '');
+    return map.patterns.find((rule) => rule.test(from))?.language;
+}
+
+/** The first line of a text, without its line ending. */
+function firstLineOf(text: string): string {
+    const end = text.search(/\r?\n/);
+    return end === -1 ? text : text.slice(0, end);
+}
+
+/**
+ * The language a file opens in: the map's rules for its name, and for a file the name leaves plain
+ * the first line of its text, which is read once for a text and decides only then.
+ */
+export function languageOfFile(name: string, text: string, map: LanguageMap): string {
+    const byName = languageOf(name, map);
+    if (byName !== PLAIN_LANGUAGE) return byName;
+    return languageByFirstLine(firstLineOf(text), map) ?? byName;
+}
+
+/**
+ * The language a file's first line decides, for a file no name rule decides: the first rule of an
+ * app whose expression matches the line, or undefined.
+ */
+function languageByFirstLine(line: string, map: LanguageMap): string | undefined {
+    if (!(map instanceof JoinedLanguages)) return undefined;
+    return map.firstLines.find((rule) => rule.test.test(line))?.language;
 }

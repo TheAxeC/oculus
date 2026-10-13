@@ -13,6 +13,7 @@
 // a page, panels) is state/system/apps/shell/requests.svelte.ts's.
 
 import { fileIconsOf } from '../../../shared/words/appearance.ts';
+import { joinedFor } from '../../../../data/helpers/files/apps/tools/languages.ts';
 import { languageMap, type LanguageMap } from '../../../../data/helpers/files/languages.ts';
 import {
     iconThemeOffers,
@@ -32,6 +33,7 @@ import type {
 } from '../../../../data/model/index.ts';
 import type { EntitiesStore, NoticeSink, WritesStore } from '../../../shared/stores/shapes.ts';
 import { t } from '../../../shared/words/text.ts';
+import { hostAnswer, type HostAnswer } from '../host-answer.ts';
 import { contextOf, holds, type ContextParts } from './context.ts';
 import {
     actingApps,
@@ -72,6 +74,8 @@ export type AppShellDeps = {
     requests: RequestsStore;
     /** The status items the open tabs of the apps registered. */
     frameItems: () => FrameItem[];
+    /** The status bar commands of the source control the Repositories view has selected. */
+    scmItems: () => { app: string; item: AppStatusItem }[];
     /** The address of a file of an app, for the icon a command or a tree row names. */
     picture: (app: string, path: string) => string;
     /**
@@ -119,7 +123,7 @@ export type KeyPlace = {
 };
 
 /** What a question to a host came to: its value, or the word it was refused with. */
-export type ProvideResult = { ok: true; value: unknown } | { ok: false; word: string };
+export type ProvideResult = HostAnswer;
 
 /** The events a page reports to a host: a view shown or hidden, a selection, a panel closed. */
 export type HostEvent = 'visibility' | 'selection' | 'expand' | 'collapse' | 'dispose';
@@ -143,7 +147,7 @@ export function createAppShell(deps: AppShellDeps) {
     const rows = $derived(deps.entities.apps()?.rows ?? []);
     const config = $derived(deps.entities.config()?.config ?? {});
     const fileIcons = $derived(fileIconsOf(config));
-    const languages = $derived(languageMap(config));
+    const languages = $derived(joinedFor(languageMap(config), rows));
     const acting = $derived(actingApps(rows));
     const shell = $derived(deps.entities.appShell() ?? NOTHING);
     const keyApps = $derived(
@@ -254,14 +258,18 @@ export function createAppShell(deps: AppShellDeps) {
         return run(offer.app, command.command, args);
     }
 
-    /** The entries of a menu with the choices a context menu draws for them. */
+    /**
+     * The entries of a menu with the choices a context menu draws for them. The entries of the
+     * group `without` are left out, since a row draws them as buttons.
+     */
     function choices(
         id: string,
         parts: ContextParts = {},
-        prefix = ''
+        prefix = '',
+        without = ''
     ): { offers: MenuOffer[]; items: ChoiceItem[] } {
         const here = context(parts);
-        const offers = menuOffers(acting, id, here);
+        const offers = menuOffers(acting, id, here).filter((one) => one.group !== without);
         return {
             offers,
             items: choicesOf(
@@ -273,13 +281,17 @@ export function createAppShell(deps: AppShellDeps) {
         };
     }
 
-    /** The entries of a title menu with the actions a strip draws for them. */
+    /**
+     * The entries of a title menu with the actions a strip draws for them; the entries of the group
+     * `buttons` are buttons and the others are choices of the More Actions list.
+     */
     function strip(
         id: string,
-        parts: ContextParts = {}
+        parts: ContextParts = {},
+        buttons = 'navigation'
     ): { offers: MenuOffer[]; actions: StripItem[] } {
         const offers = menuOffers(acting, id, context(parts));
-        return { offers, actions: stripOf(offers, deps.picture) };
+        return { offers, actions: stripOf(offers, deps.picture, buttons) };
     }
 
     /** Run the entry a choice or an action of `choices` or `strip` stands for. */
@@ -311,6 +323,7 @@ export function createAppShell(deps: AppShellDeps) {
         };
         for (const host of shell.hosts) host.statusItems.forEach((item) => add(host.app, item));
         for (const frame of deps.frameItems()) add(frame.app, frame.item);
+        for (const one of deps.scmItems()) add(one.app, one.item);
         return items.sort(
             (left, right) =>
                 right.item.priority - left.item.priority || left.app.localeCompare(right.app)
@@ -349,18 +362,9 @@ export function createAppShell(deps: AppShellDeps) {
         view: string,
         handle: string
     ): Promise<ProvideResult> {
-        const posted = await deps.post('/api/app-host', {
-            action: 'provide',
-            app,
-            kind,
-            view,
-            handle
-        });
-        if (posted.ok && posted.body.ok === true) return { ok: true, value: posted.body.value };
-        return {
-            ok: false,
-            word: typeof posted.body.word === 'string' ? posted.body.word : 'host_down'
-        };
+        return hostAnswer(
+            await deps.post('/api/app-host', { action: 'provide', app, kind, view, handle })
+        );
     }
 
     /** Tell the host of an app that something happened on this page. */

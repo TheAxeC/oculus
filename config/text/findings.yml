@@ -289,6 +289,22 @@ text:
             contributes_menu_dropped: 'menus names {0}, which is no menu oculus draws, so its entries are left out'
             contributes_submenu_dropped: '{0} is a submenu, which oculus does not draw, so the entry is left out'
             contributes_container_dropped: 'viewsContainers names {0}, which is neither activitybar nor panel, so its entries are left out'
+            contributes_regexp: '{0} holds {1}, which is not a regular expression, so the folder is not an app'
+            contributes_extension: '{0} holds {1}, which is not an extension with its dot and no other dot or slash, so the folder is not an app'
+            contributes_filename: '{0} holds {1}, which is not a file name without a slash, so the folder is not an app'
+            contributes_rite: '{0} names the type {1}, which is the debugger oculus ships, so the folder is not an app'
+            contributes_pattern_unknown: '{0} names the problem pattern {1}, which the app does not declare in contributes.problemPatterns, so the folder is not an app'
+            contributes_validation_dropped: 'jsonValidation names the schema {0}, which is not a JSON file of the app, so its entry is left out'
+            contributes_default_dropped: '{0} sets {1}, which is no option of oculus of the kind given and no setting the app declares, so it is left out'
+            grammar_unreadable: 'the grammar file {0} cannot be read ({1}), so the folder is not an app'
+            grammar_shipped: 'the grammar {0} has the scope name {1}, which a grammar oculus ships has, so the shipped grammar is kept'
+            grammar_taken: 'the grammar {0} has the scope name {1}, which an app before it in the Views list registered, so that grammar is kept'
+            language_configuration_shipped: 'the language {0} is one oculus ships, so its configuration file {1} is not applied'
+            language_configuration_taken: 'the language {0} has a configuration file already, so the configuration file {1} is not applied'
+            language_configuration_unreadable: 'the language configuration file {0} cannot be read ({1}), so it is not applied'
+            snippets_unreadable: 'the snippet file {0} cannot be read ({1}), so its snippets are left out'
+            schema_unreadable: 'the JSON schema {0} cannot be read ({1}), so it is not applied'
+            language_taken: 'the app {0} gives {2} to the language {1}, which belongs to {3} already, so {1} does not take it'
             key_oculus: 'the key {0} of the command {1} is a key {2} takes, so the app does not bind it'
             key_app: 'the key {0} of the command {1} is bound by {2}, which comes before it in the Views list under the same condition, so this app does not bind it'
             id_taken: 'the app {0} declares the id {1}, which {2} declares too and comes before it in the Views list, so the folder is not an app'
@@ -314,6 +330,7 @@ text:
                 app_hosts: the output and process ids of the hosts of every app
                 app_messages: what the host of an app sent to its pages
                 app_shell: what the host of an app registered in oculus and the questions it asks the reader
+                app_tools: the language servers, debug adapters, tasks, terminals, source controls and decorations the host of an app registered, with the folders it works in
                 inbox: mail subjects, senders and previews of the message text
                 calendar: event titles, times, places and links
                 sessions: titles, prompts, paths and events taken from session transcripts

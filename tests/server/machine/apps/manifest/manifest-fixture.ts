@@ -122,5 +122,23 @@ export const offered = (layout: Layout) => read(layout).scanned.apps.map((one) =
 export const plain = (message: string): string =>
     message.startsWith('does not parse') ? 'does not parse' : message;
 
+/** The ids of the apps a layout offers and the findings, as [key, sentence] pairs. */
+export const outcome = (layout: Layout) => {
+    const { scanned } = read(layout);
+    return {
+        ids: scanned.apps.map((one) => one.id),
+        findings: scanned.findings.map((one) => [one.key, one.message])
+    };
+};
+
+/** The outcome of an app `notes` that is refused with this finding sentence. */
+export const refused = (message: string) => ({ ids: [], findings: [['apps[notes]', message]] });
+
+/** The outcome of an app `notes` that is offered with these finding sentences. */
+export const offeredWith = (...messages: string[]) => ({
+    ids: ['app:notes'],
+    findings: messages.map((message) => ['apps[notes]', message])
+});
+
 /** One row of the table: what is read, the outcome observed, and the outcome expected. */
 export type Row = [string, () => unknown, unknown];

@@ -9,8 +9,14 @@ export const outputShape = z.object({ category: z.string().optional(), output: z
 
 export const stoppedShape = z.object({
     reason: z.string(),
+    threadId: z.number().optional(),
     description: z.string().optional(),
     hitBreakpointIds: z.array(z.number()).optional()
+});
+
+/** The answer to `threads`: the threads of the program, which Pause names one of. */
+export const threadsShape = z.object({
+    threads: z.array(z.object({ id: z.number(), name: z.string() }))
 });
 
 /** The answer to a set of breakpoints: one entry for each breakpoint sent, in order. */
@@ -57,3 +63,20 @@ export const variablesShape = z.object({
 });
 
 export const evaluateShape = z.object({ result: z.string() });
+
+export const setVariableShape = z.object({ value: z.string() });
+
+export const completionsShape = z.object({
+    targets: z.array(
+        z.object({
+            label: z.string(),
+            text: z.string().optional(),
+            start: z.number().optional(),
+            length: z.number().optional()
+        })
+    )
+});
+
+export const sourcesShape = z.object({
+    sources: z.array(z.object({ name: z.string().optional(), path: z.string().optional() }))
+});

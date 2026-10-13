@@ -18,6 +18,17 @@ export function appActive(row: { disabled: boolean; hashApproved: boolean }): bo
     return !row.disabled && row.hashApproved;
 }
 
+/**
+ * Whether oculus starts a program for an app: its host file, or, with no host file, the runner that
+ * starts the adapters of its debuggers.
+ */
+export function runsHost(row: {
+    host: string;
+    contributes: { debuggers: readonly unknown[] };
+}): boolean {
+    return row.host !== '' || row.contributes.debuggers.length > 0;
+}
+
 /** The pattern an app's name matches. It holds neither `/` nor `@`, so the last `/` ends a root. */
 export const APP_NAME = /^[a-z][a-z0-9-]{0,39}$/;
 
@@ -93,7 +104,8 @@ const CLOSED_CHANNELS = [
     'processes',
     'app-hosts',
     'app-messages',
-    'app-shell'
+    'app-shell',
+    'app-tools'
 ] as const;
 type ClosedChannel = (typeof CLOSED_CHANNELS)[number];
 

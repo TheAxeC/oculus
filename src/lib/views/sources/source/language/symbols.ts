@@ -7,10 +7,10 @@
 // A symbol provider is registered per language, and a page holds many editors of one language, so
 // each provider answers for the model it was made for alone and for no other. While a language
 // server serves the model the provider answers nothing, as the brace folding does
-// (ui/controls/editor/kit/folding.ts): Monaco joins the symbols of every provider of a language, so
-// the headings and the server's tree together would draw one heading twice in sticky scroll and in
-// the path over the tab. The provider is registered again when what is served changes, which makes
-// Monaco ask once more.
+// (ui/controls/editor/kit/languages/folding.ts): Monaco joins the symbols of every provider of a
+// language, so the headings and the server's tree together would draw one heading twice in sticky
+// scroll and in the path over the tab. The provider is registered again when what is served
+// changes, which makes Monaco ask once more.
 
 import type * as Monaco from 'monaco-editor';
 import type { OutlineItem } from '$lib/state/sources/explorer/sections/outline';

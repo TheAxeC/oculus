@@ -32,7 +32,8 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        editorStatus: { ask }
+        editorStatus: { ask },
+        appTools
     } = useState();
 
     let { instance, status, shown, onpalette }: ItemsProps = $props();
@@ -114,7 +115,7 @@
 {#if shown('language')}
     <span data-status="language">
         <ToolButton
-            label={languageName(status.language)}
+            label={languageName(status.language, appTools.languages.names())}
             glyph="language"
             title={t('statusbar.language_tip')}
             status

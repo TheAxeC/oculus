@@ -9,6 +9,7 @@
 // the rows (tests/views) and the host that runs the command (tests/server/machine/apps).
 
 import { describe, expect, vi } from 'vitest';
+import { noContributes } from '../../../../src/lib/data/helpers/files/apps/contributes.ts';
 import type { AppRow, AppShellHost, AppStatusItem } from '../../../../src/lib/data/model/index.ts';
 import type { Posted } from '../../../../src/lib/state/shared/stores/shapes.ts';
 import type { CommandResult } from '../../../../src/lib/state/system/apps/shell/requests.svelte.ts';
@@ -23,6 +24,7 @@ installRealText();
 const row = (change: Partial<AppRow> = {}): AppRow =>
     fixtureApp({
         contributes: {
+            ...noContributes(),
             commands: [
                 {
                     command: 'notes.hello',
@@ -117,6 +119,7 @@ function store(
         pageId: 'page',
         requests: (over.requests ?? {}) as never,
         frameItems: () => [],
+        scmItems: () => [],
         picture: () => '',
         runInTab: over.runInTab ?? (() => Promise.resolve(null)),
         holds: over.holds ?? (() => false),

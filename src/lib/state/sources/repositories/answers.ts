@@ -38,7 +38,7 @@ import {
     unchanged
 } from '../../../data/shapes/shapes.ts';
 import { t } from '../../shared/words/text.ts';
-import { diffUrl, type DiffState, type DiffSubject } from './repositories.ts';
+import { diffUrl, type DiffState, type DiffSubject } from './diff/subject.ts';
 
 /** One branch row, as the server sent it. */
 const branchShape = unchanged(

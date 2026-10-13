@@ -105,6 +105,7 @@ text:
             kind_finding: Finding
             kind_interpreter: Interpreter
             kind_project: Project
+            kind_task: Task
             kind_view: View
             kind_workspace: Workspace
             pin_editor: Pin Editor

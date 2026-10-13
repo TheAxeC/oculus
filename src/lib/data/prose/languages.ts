@@ -10,9 +10,9 @@
 // state reads the extension-to-language map of config/sources.yml
 // (data/helpers/files/languages.ts), whose languages are the names registered here. Its names are
 // also the languages the source tab's editor opens a file under and the status bar lists; the
-// editor colours them through Shiki's grammars (ui/controls/editor/kit/grammars.ts), not this
-// highlighter. A fence in a Markdown render asks for a language by highlight.js's own names and
-// aliases (`languageNamed`), so a fence called `h` is C and one called `django` is plain text.
+// editor colours them through Shiki's grammars (ui/controls/editor/kit/languages/grammars.ts), not
+// this highlighter. A fence in a Markdown render asks for a language by highlight.js's own names
+// and aliases (`languageNamed`), so a fence called `h` is C and one called `django` is plain text.
 //
 // The core build rather than the whole package, which carries close to two hundred languages
 // against the thirty-three names a research tree actually holds. The registration runs once at load

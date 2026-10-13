@@ -26,6 +26,8 @@ export type ContextParts = {
     viewItem?: string;
     /** The id of the app view that holds the focus. */
     focusedView?: string;
+    /** Keys the place sets by name, such as the source control and debug keys of a menu. */
+    keys?: Record<string, ContextValue>;
     /** The `viewType` of the custom editor on screen. */
     activeCustomEditorId?: string;
     /** The `viewType` of the web view panel on screen. */
@@ -43,6 +45,7 @@ function keysOf(parts: ContextParts, platform: KeyPlatform): Record<string, Cont
     const resource = parts.resource ?? null;
     const name = resource === null ? '' : (resource.path.split('/').at(-1) ?? '');
     return {
+        ...parts.keys,
         isMac: platform === 'mac',
         isLinux: platform === 'linux',
         isWindows: platform === 'win',

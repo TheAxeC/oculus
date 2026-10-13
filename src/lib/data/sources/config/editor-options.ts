@@ -165,6 +165,7 @@ export function readEditorOptions(config: Record<string, unknown>): {
         trimTrailingWhitespace: read.flag('editor.trim_trailing_whitespace'),
         finalNewline: read.flag('editor.final_newline'),
         languages: records(),
+        defaults: records(),
         fitsTabSize: (size) => valueProblem(tabSize, size) === null,
         fitsWrap: (word): word is WordWrap => valueProblem(wrap, word) === null
     };

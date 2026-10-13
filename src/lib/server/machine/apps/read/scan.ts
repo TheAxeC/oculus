@@ -18,6 +18,7 @@ import { lstatSync, readdirSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { appViewId } from '../../../../data/helpers/files/apps/apps.ts';
+import { languageMap } from '../../../../data/helpers/files/languages.ts';
 import { ROOT_FOLDER } from '../../../../data/helpers/hub-names.ts';
 import { findingText, type TextCatalog } from '../../../../data/helpers/finding-text.ts';
 import type { AppRow, Finding } from '../../../../data/model/index.ts';
@@ -29,8 +30,10 @@ import { addressKey } from '../serve/address.ts';
 import { noApps, type AppsHeld, type HeldApp } from './held.ts';
 import { findingKey, readManifest } from './manifest.ts';
 import { dropTakenIds } from './across/ids.ts';
+import { dropTakenLanguages } from './across/languages.ts';
 import { noteUnboundKeys } from './across/key-notes.ts';
 import { judgeStored } from './across/stored.ts';
+import { checkToolFiles } from './tool-files/tool-files.ts';
 import { checkThemes } from './theme-files/themes.ts';
 import { hashApp, walkApp } from './record.ts';
 import { standingOf, type AppsState } from './state.ts';
@@ -167,7 +170,7 @@ export function scanApps(input: ScanInput): AppsHeld {
         if (read.manifest === null || read.bytes === null) return;
         const manifest = read.manifest;
         const bytes = read.bytes;
-        const checked = checkThemes({
+        const themed = checkThemes({
             folder,
             files: recorded,
             contributes: manifest.contributes,
@@ -175,7 +178,17 @@ export function scanApps(input: ScanInput): AppsHeld {
             key,
             file: manifestFile
         });
+        held.findings.push(...themed.findings);
+        const checked = checkToolFiles({
+            folder,
+            files: recorded,
+            contributes: themed.contributes,
+            catalog,
+            key,
+            file: manifestFile
+        });
         held.findings.push(...checked.findings);
+        if (checked.refused) return;
         let hash: string;
         let manifestHash: string;
         try {
@@ -291,6 +304,7 @@ export function scanApps(input: ScanInput): AppsHeld {
     }
 
     dropTakenIds(held, catalog);
+    dropTakenLanguages(held, languageMap(input.config), catalog);
     noteUnboundKeys(held, catalog, input.config);
     judgeStored(held, {
         config: input.config,

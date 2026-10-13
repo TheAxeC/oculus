@@ -15,7 +15,9 @@
 //
 // Closing a tab with unsaved text saves it first when the mode would have saved it already (every
 // `on_focus_change` close, and an `after_delay` close when the delay is one second or less); the
-// tabs it could not save are the ones the close still asks about.
+// tabs it could not save are the ones the close still asks about. An app's `workspace.saveAll` asks
+// for every tab with unsaved text to be saved whatever the mode (`saveEvery`), as a press of Save
+// on each does, formatting where the language's record says so and the tab's editor is mounted.
 
 import type { Autosave } from '../../../data/helpers/editor/editor.ts';
 import { diskFileOf, type SourceDraft } from './draft.ts';
@@ -49,6 +51,8 @@ export type AutosaveStore = {
     blurred: (id: string) => void;
     /** The page lost focus. */
     pageBlurred: () => void;
+    /** Save every tab with unsaved text; whether every one was written. */
+    saveEvery: () => Promise<boolean>;
     /** Save the tabs among these that the mode saves on a close; the others are left alone. */
     saveBeforeClose: (ids: string[]) => Promise<void>;
     /** Follow the page's focus: the window's blur and the document turning hidden. */
@@ -72,8 +76,11 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         return deps.options();
     }
 
-    /** Whether an automatic save may write this tab now. */
-    function eligible(id: string): boolean {
+    /**
+     * Whether a save may write this tab now: it holds unsaved text of a file it read whole and may
+     * write, and the disk has not moved. An automatic save also waits while the tab is blocked.
+     */
+    function eligible(id: string, asked = false): boolean {
         const draft = source.sourceDraft(id);
         return (
             draft.loaded &&
@@ -83,27 +90,45 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
             !draft.notText &&
             draft.disk === 'same' &&
             !draft.conflict &&
-            !blocked.has(id) &&
+            (asked || !blocked.has(id)) &&
             diskFileOf(draft.file) !== null
         );
     }
 
-    /** Save one tab as an automatic save. A refusal blocks the tab until its next edit. */
-    async function save(id: string): Promise<void> {
+    /**
+     * Save one tab, as an automatic save unless `asked`. A refusal of an automatic save blocks the
+     * tab until its next edit. Whether the text was written.
+     */
+    async function save(id: string, asked = false): Promise<boolean> {
         const draft = source.sourceDraft(id);
         const place = diskFileOf(draft.file);
-        if (place === null) return;
+        if (place === null) return false;
         const rules = deps.rules(id, draft, place.root, place.path);
-        const format = current()?.autosave === 'on_focus_change' && rules.formatOnSave;
+        const format = (asked || current()?.autosave === 'on_focus_change') && rules.formatOnSave;
         const formatter = format ? source.formatOf(id) : undefined;
         const written = await source.saveSourceDraft(id, place.root, place.path, {
-            automatic: true,
+            automatic: !asked,
             format: formatter,
             ...(format && formatter === undefined
                 ? { unformatted: t('source.format_unmounted') }
                 : {})
         });
-        if (!written) blocked.add(id);
+        if (!written && !asked) blocked.add(id);
+        return written;
+    }
+
+    /**
+     * Save every tab that holds unsaved text, as a press of Save on each does; whether every such
+     * tab was written. A tab that cannot be written (read-only, changed on disk) counts as not.
+     */
+    async function saveEvery(): Promise<boolean> {
+        const dirty = source.openDrafts().filter((id) => {
+            const draft = source.sourceDraft(id);
+            return draft.loaded && draft.text !== draft.saved;
+        });
+        const writable = dirty.filter((id) => eligible(id, true));
+        const written = await Promise.all(writable.map((id) => save(id, true)));
+        return writable.length === dirty.length && written.every(Boolean);
     }
 
     function cancel(id: string): void {
@@ -159,7 +184,7 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
             options?.autosave === 'on_focus_change' ||
             (options?.autosave === 'after_delay' && options.autosaveDelay <= CLOSE_SAVES_WITHIN);
         if (!covers) return;
-        await Promise.all(ids.filter(eligible).map((id) => save(id)));
+        await Promise.all(ids.filter((id) => eligible(id)).map((id) => save(id)));
     }
 
     function followPage(page: Parameters<AutosaveStore['followPage']>[0]): void {
@@ -169,5 +194,5 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         });
     }
 
-    return { blurred, pageBlurred, saveBeforeClose, followPage };
+    return { blurred, pageBlurred, saveBeforeClose, saveEvery, followPage };
 }

@@ -8,9 +8,9 @@
 // vector, never a shell string, a timeout, and a bounded read, so a pattern the reader typed can
 // never be read as syntax and a slow mount cannot hold a request open. The arguments and every
 // refusal come from data/helpers/search/query.ts, which the page runs too, so the two sides cannot
-// disagree about what a query is. The replace of the Search view (server/files/fs/replace.ts) runs
-// ripgrep through `runRipgrep` as well, which is why it is exported: this module stays the one
-// place a process is started.
+// disagree about what a query is. The replace of the Search view
+// (server/files/fs/operations/replace.ts) runs ripgrep through `runRipgrep` as well, which is why
+// it is exported: this module stays the one place a process is started.
 //
 // The cap bounds the work and not only the answer. The child's output is read as it arrives, line
 // by line, and folded as it is read; the moment a match arrives with no room left the child is

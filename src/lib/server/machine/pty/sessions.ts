@@ -33,10 +33,10 @@ import { captureArgs } from './capture.ts';
 import { TerminalRefused } from './refusal.ts';
 import { inputChunks, run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
-/** The three things a terminal runs: DESIGN.md's two agents and a shell. */
-export const KINDS: TerminalKind[] = ['claude', 'codex', 'shell'];
+/** The things a terminal runs: DESIGN.md's two agents and a shell, and a program an app started. */
+export const KINDS: TerminalKind[] = ['claude', 'codex', 'shell', 'app'];
 
-/** Whether a value is one of the three kinds a terminal runs. */
+/** Whether a value is one of the kinds a terminal runs. */
 export function isTerminalKind(value: unknown): value is TerminalKind {
     return KINDS.some((kind) => kind === value);
 }
@@ -67,6 +67,11 @@ const RESUMES_OPTION = '@oculus_resumes';
  */
 const TASK_OPTION = '@oculus_task';
 
+/**
+ * The view id of the app whose host made a terminal, kept as a tmux user option; unset for none.
+ */
+const APP_OPTION = '@oculus_app';
+
 /** The title, icon and colour a reader gave a terminal, each a tmux user option. */
 export const TITLE_OPTION = '@oculus_title';
 export const ICON_OPTION = '@oculus_icon';
@@ -93,8 +98,9 @@ export function isSessionId(id: unknown): id is string {
  * eleventh the title, icon and colour the reader gave, each kept as a tmux user option so tmux
  * stays the only store. The twelfth is the task mark, the thirteenth whether the pane's process
  * has ended (`remain-on-exit` keeps a task's pane) and the fourteenth the status it ended with.
- * The fifteenth and last is the pid of the tmux server that answered, the same on every row, which
- * names that server to whoever cannot reach it by its socket later (see serverPid).
+ * The fifteenth is the view id of the app whose host made the terminal. The sixteenth and last is
+ * the pid of the tmux server that answered, the same on every row, which names that server to
+ * whoever cannot reach it by its socket later (see serverPid).
  */
 export const LIST_FORMAT = [
     '#{session_name}',
@@ -111,6 +117,7 @@ export const LIST_FORMAT = [
     `#{${TASK_OPTION}}`,
     '#{pane_dead}',
     '#{pane_dead_status}',
+    `#{${APP_OPTION}}`,
     '#{pid}'
 ].join('\t');
 
@@ -126,6 +133,8 @@ export type StartRequest = {
     cols: unknown;
     rows: unknown;
     name?: string;
+    /** The view id of the app whose host starts the terminal; recorded with it. */
+    app?: string;
     /**
      * The session this terminal continues. With it the command is the tool's own resume command
      * rather than a bare `claude` or `codex`, and the kind is that tool.
@@ -216,12 +225,22 @@ function jobOption(job: TerminalJob): string {
 const jobShape = z.object({
     repo: z.string(),
     name: z.string(),
-    source: z.enum(['file', 'saved', 'found', 'latex']).optional().catch(undefined),
+    source: z.enum(['file', 'saved', 'found', 'app', 'latex']).optional().catch(undefined),
     token: z.string().optional().catch(undefined),
     chain: z
         .array(z.object({ name: z.string(), cwd: z.string() }))
         .optional()
         .catch(undefined),
+    app: z
+        .object({
+            app: z.string(),
+            title: z.string(),
+            type: z.string(),
+            background: z.boolean()
+        })
+        .optional()
+        .catch(undefined),
+    matchers: z.array(z.string()).optional().catch(undefined),
     latex: z
         .object({
             step: z.string(),
@@ -261,7 +280,7 @@ export function terminalId(session: string): string | null {
 
 /** Whether a string is an id start() could have produced. Everything else is refused unread. */
 export function isTerminalId(id: unknown): id is string {
-    return typeof id === 'string' && /^[0-9a-f]{6}-(claude|codex|shell)$/.test(id);
+    return typeof id === 'string' && /^[0-9a-f]{6}-(claude|codex|shell|app)$/.test(id);
 }
 
 /** The kind an id ends in, or the kind a pane's command names when the suffix says nothing. */
@@ -389,6 +408,7 @@ export function parseTerminal(line: string): Terminal | null {
         icon: fields[9] ?? '',
         color: fields[10] ?? '',
         kind: kindOf(id, command),
+        app: fields[14] ?? '',
         cwd: fields[5] ?? '',
         command,
         pid: Number.isFinite(Number(fields[4])) ? Number(fields[4]) : 0,
@@ -615,6 +635,9 @@ export async function startTerminal(
 ): Promise<Terminal> {
     const kind = request.kind;
     if (!isTerminalKind(kind)) throw new Error(`kind must be one of ${KINDS.join(', ')}`);
+    if (kind === 'app' && (request.app === undefined || request.app === '')) {
+        throw new Error('an app terminal names its app');
+    }
     const cwd = directory(request.cwd);
     const cols = geometry(request.cols, 'cols');
     const rows = geometry(request.rows, 'rows');
@@ -638,7 +661,10 @@ export async function startTerminal(
         ...(name === id ? [] : [[NAME_OPTION, name] as [string, string]]),
         ...(resume === undefined
             ? []
-            : [[RESUMES_OPTION, resumeOption(resume)] as [string, string]])
+            : [[RESUMES_OPTION, resumeOption(resume)] as [string, string]]),
+        ...(request.app === undefined || request.app === ''
+            ? []
+            : [[APP_OPTION, request.app] as [string, string]])
     ];
     await exec(
         startArgs(id, { kind, cwd, cols, rows, env: request.env }, command, {

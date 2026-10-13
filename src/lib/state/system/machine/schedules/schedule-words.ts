@@ -1,6 +1,6 @@
 // Layer 2, client state. The sentences the catalog holds for the words a schedule is held or
-// refused with (data/model/model-machine.ts SCHEDULE_WORDS). The server answers a word and the
-// names its sentence is about, so no English of the server reaches the reader. A word of the
+// refused with (data/model/machine/model-machine.ts SCHEDULE_WORDS). The server answers a word and
+// the names its sentence is about, so no English of the server reaches the reader. A word of the
 // terminal route (`command-unknown`, `no-file`, `bad-repo` and the others a chain or a start is
 // refused with) is said by state/shared/answers/terminal-words.ts, and a word of neither is said as
 // a failure for a reason this version of oculus does not name.

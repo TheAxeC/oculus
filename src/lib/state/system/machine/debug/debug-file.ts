@@ -1,75 +1,144 @@
-// Layer 2, client state. Add Configuration of the Debug view: open `.oculus/launch.yml` of a
-// repository, making it first when it is absent.
+// Layer 2, client state. Add Configuration of the Debug view: the configurations it offers and the
+// write of the one chosen into `.oculus/launch.yml` of a repository.
 //
-// The file is made with the file operations store's create, which makes `.oculus/` and an empty
-// file, and then written with the text of one configuration through the source write. The file is
-// read back through GET /api/debug and its tab opens at the configuration; a read that lists any
-// other than the one configuration or holds a finding opens the file and says the first finding as
-// a notice. A file made between the read and the create is opened and written over by nothing.
+// What is offered is oculus's own configuration (it runs the open `.rite` file) and, for each
+// debugger of an app that acts, the snippets it declares (`configurationSnippets`), its
+// `initialConfigurations` and the configurations its providers give (`provideDebugConfigurations`,
+// asked of the app's host through the debug route). A provider that fails is said as a notice and
+// its debugger's other configurations are still offered. The server appends the chosen one to the
+// file's `configurations` list, making the file when it is absent; the name is made unique among
+// the entries the file holds, and the file's tab opens at the new entry.
 
-import type { DebugLaunches } from '../../../../data/model/index.ts';
-import { deepestHolding, joinPath } from '../../../../data/helpers/files/paths.ts';
-import { refusalSentence, unreachableAnswer } from '../../../shared/answers/answers.ts';
+import type { DebugConfiguration, DebugLaunches } from '../../../../data/model/index.ts';
+import {
+    configurationOf,
+    debuggerFor,
+    initialChoices,
+    snippetChoices,
+    RITE_TYPE,
+    type ConfigurationChoice
+} from '../../../../data/helpers/files/apps/tools/debuggers.ts';
 import type { Queries } from '../../../shared/stores/shapes.ts';
 import { t } from '../../../shared/words/text.ts';
-import { readLaunches } from './debug-io.ts';
-import { LAUNCH_TEXT } from './debug.ts';
+import { postDebug } from './debug-io.ts';
 import type { DebugDeps } from './debug.svelte.ts';
 
 /** The file the launch configurations are kept in, relative to a repository. */
 export const LAUNCH_FILE = '.oculus/launch.yml';
 
-/** The line of a read's first configuration, or the top of the file. */
-function firstLine(read: DebugLaunches | { error: string }): number {
-    return 'error' in read ? 1 : (read.configurations.at(0)?.line ?? 1);
+/** oculus's own configuration: it runs the `.rite` file on screen. */
+function riteChoice(): ConfigurationChoice {
+    const name = t('debug.default_name');
+    return {
+        type: RITE_TYPE,
+        label: name,
+        description: '',
+        body: { name, program: '${file}' }
+    };
 }
 
+/**
+ * The configurations Add Configuration offers for a repository, oculus's own first. A debugger of
+ * an app is asked for the configurations its providers give, one after the other.
+ */
+export async function configurationChoices(
+    deps: DebugDeps,
+    repo: string
+): Promise<ConfigurationChoice[]> {
+    const choices = [riteChoice()];
+    for (const one of deps.debuggers()) {
+        choices.push(...snippetChoices(one), ...initialChoices(one));
+        const answer = await postDebug(
+            { action: 'configurations', repo, type: one.debugger.type },
+            deps.writes
+        );
+        if (answer.kind === 'refused') {
+            deps.notices.post(answer.error, { tone: 'warning' });
+            continue;
+        }
+        if (answer.kind !== 'configurations') continue;
+        for (const body of answer.configurations) {
+            choices.push({
+                type: one.debugger.type,
+                label:
+                    typeof body.name === 'string' && body.name !== ''
+                        ? body.name
+                        : one.debugger.label,
+                description: t('debug.provided_by', one.title),
+                body: { type: one.debugger.type, ...body }
+            });
+        }
+    }
+    return choices;
+}
+
+/** The name, with a number after it when the file already holds an entry of that name. */
+function uniqueName(name: string, taken: readonly string[]): string {
+    if (!taken.includes(name)) return name;
+    let number = 2;
+    while (taken.includes(`${name} ${number}`)) number += 1;
+    return `${name} ${number}`;
+}
+
+/**
+ * Write a chosen configuration into the repository's launch file and open the file at it. The
+ * name of the entry written, or null when the server refused (the refusal is said as a notice).
+ */
 export async function addConfiguration(
     deps: DebugDeps,
     queries: Queries,
-    path: string
-): Promise<void> {
-    const say = (message: string, tone: 'warning' | 'error' = 'warning'): void => {
-        deps.notices.post(message, { tone });
-    };
-    const listed = await readLaunches(path);
-    if ('error' in listed) {
-        say(listed.error, 'error');
-        return;
-    }
-    const place = deepestHolding(deps.served(), (root) => root.dir, path);
-    if (place === null) {
-        say(t('debug.frame_unserved', path));
-        return;
-    }
-    if (listed.exists) {
-        deps.openFile(path, LAUNCH_FILE, firstLine(listed));
-        return;
-    }
-    const into = { root: place.item.key, path: place.path };
-    const made = await deps.create(into, LAUNCH_FILE, false);
-    if (!made.ok && made.error === 'exists') {
-        deps.openFile(path, LAUNCH_FILE, 1);
-        return;
-    }
-    if (!made.ok) {
-        say(made.error === 'network' ? unreachableAnswer() : refusalSentence(made.error), 'error');
-        return;
-    }
-    const wrote = await deps.saveText(
-        place.item.key,
-        joinPath(place.path, LAUNCH_FILE),
-        LAUNCH_TEXT
+    repo: string,
+    choice: ConfigurationChoice,
+    listed: DebugLaunches | null
+): Promise<string | null> {
+    const wanted = typeof choice.body.name === 'string' ? choice.body.name : choice.label;
+    const name = uniqueName(
+        wanted,
+        (listed?.configurations ?? []).map((one) => one.name)
     );
-    if (!wrote.ok) {
-        say(wrote.error, 'error');
-        return;
+    const answer = await postDebug(
+        { action: 'addConfiguration', repo, configuration: { ...choice.body, name } },
+        deps.writes
+    );
+    if (answer.kind === 'refused') {
+        deps.notices.post(answer.error, { tone: 'error' });
+        return null;
     }
-    queries.mark(['debug', path], 'replace');
-    const read = await readLaunches(path);
-    deps.openFile(path, LAUNCH_FILE, firstLine(read));
-    const clean =
-        !('error' in read) && read.configurations.length === 1 && read.findings.length === 0;
-    if (clean) return;
-    say('error' in read ? read.error : (read.findings.at(0)?.message ?? t('debug.refused')));
+    queries.mark(['debug', repo], 'replace');
+    deps.openFile(repo, LAUNCH_FILE, answer.kind === 'line' ? answer.line : 1);
+    return name;
+}
+
+/**
+ * The configuration a debugger gives for the file on screen when `launch.yml` holds none: the
+ * first of its `initialConfigurations`, else the first its providers give. Null when no acting
+ * debugger starts the language or its providers gave nothing; the reason is said.
+ */
+export async function givenConfiguration(
+    deps: DebugDeps,
+    say: (message: string, tone?: 'warning' | 'error') => void,
+    repo: string,
+    language: string
+): Promise<DebugConfiguration | null> {
+    const one = debuggerFor(deps.debuggers(), language);
+    if (one === undefined) {
+        say(t('debug.no_debugger', language));
+        return null;
+    }
+    const first = one.debugger.initialConfigurations.at(0);
+    if (first !== undefined) return configurationOf(first, one);
+    const answer = await postDebug(
+        { action: 'configurations', repo, type: one.debugger.type },
+        deps.writes
+    );
+    if (answer.kind === 'refused') {
+        say(answer.error, 'error');
+        return null;
+    }
+    const provided = answer.kind === 'configurations' ? answer.configurations.at(0) : undefined;
+    if (provided === undefined) {
+        say(t('debug.no_configuration', one.debugger.label));
+        return null;
+    }
+    return configurationOf(provided, one);
 }

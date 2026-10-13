@@ -1,8 +1,9 @@
 // Layer 2, route tests. POST /api/app-manage, /api/app-add, /api/app-host and /api/app-secrets
 // (lib/server/machine/apps/routes/manage.ts and host.ts, which the files of src/routes/api/(apps)/
 // call): the write token that guards each, the disable, enable and remove of an app, the add of a
-// folder, a frame's call to its host and its secrets under its own app header, and the words a
-// refused call is answered with.
+// folder, a frame's call to its host and its secrets under its own app header, the page's reads and
+// actions on the tools of a host (decorate, scm, file, terminal) answered with the token and
+// refused without it, and the words a refused call is answered with.
 //
 // The record of the disabled apps, the approvals file and every app folder are synthetic, under the
 // system temporary directory, the keyring is in memory and the trash moves a path into a scratch
@@ -23,18 +24,30 @@ import {
     handleManagePost
 } from '../../../src/lib/server/machine/apps/routes/manage.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
-import { memoryKeyring, secretsOf } from '../../server/machine/apps/hosts-fixture.ts';
+import { memoryKeyring, secretsOf } from '../../server/machine/apps/world/hosts-fixture.ts';
 import { MANIFEST, PAGE, routeSetup, type RouteSetup } from './apps-fixture.ts';
 
 const TOKEN = 'token';
 
 type Handler = typeof handleManagePost;
 
+/** The language and grammar `notes` contributes, whose grammar file the page reads. */
+const NOTES_LANGUAGE = `contributes:
+  languages:
+    - id: notes
+      extensions: [".note"]
+  grammars:
+    - language: notes
+      scopeName: source.notes
+      path: notes.tmLanguage.json
+`;
+
 /** The apps `notes` (with secrets) and `todo`, and `base` that `todo` depends on, all hosts. */
 const FILES = {
     machine: {
-        'notes/app.yml': `${MANIFEST}host: host.mjs\nsecrets: true\n`,
+        'notes/app.yml': `${MANIFEST}host: host.mjs\nsecrets: true\n${NOTES_LANGUAGE}`,
         'notes/index.html': PAGE,
+        'notes/notes.tmLanguage.json': '{"scopeName":"source.notes","patterns":[]}',
         'notes/host.mjs': 'export function activate() {}\n',
         'todo/app.yml':
             'name: todo\ntitle: Todo\nbridge: 1\nhost: host.mjs\nsecrets: true\ndepends: [base]\n',
@@ -101,6 +114,18 @@ describe('refuses a request without the write token, before it reads or changes 
         ['app-add', handleAddPost, { path: '/nowhere/notes' }],
         ['app-host', handleHostPost, { action: 'tab' }],
         ['app-host output', handleHostPost, { action: 'output', view: 'app:notes' }],
+        ['app-host decorate', handleHostPost, { action: 'decorate', root: 'r', paths: ['a'] }],
+        [
+            'app-host scm',
+            handleHostPost,
+            { action: 'scm', app: 'app:notes', id: 'notes.git', op: { kind: 'accept' } }
+        ],
+        [
+            'app-host file',
+            handleHostPost,
+            { action: 'file', app: 'app:notes', kind: 'grammar', path: 'g.json' }
+        ],
+        ['app-host terminal', handleHostPost, { action: 'terminal', app: 'app:notes', id: 't' }],
         ['app-secrets', handleSecretsPost, { action: 'get', key: 'token' }]
     ] as [string, Handler, unknown][])(
         '%s answers 403 and leaves the record alone',
@@ -108,6 +133,39 @@ describe('refuses a request without the write token, before it reads or changes 
             const made = setup();
             const answer = await post(handler, made, body, { token: null, app: 'app:notes' });
             expect([answer.status, existsSync(made.state)]).toEqual([403, false]);
+        }
+    );
+});
+
+describe('answers the page what it reads and does on the tools of a host through app-host', () => {
+    it.each([
+        [
+            'decorate',
+            { action: 'decorate', root: 'one', paths: ['a'] },
+            [200, { ok: true, value: { decorations: { a: null }, pending: [] } }]
+        ],
+        [
+            'scm',
+            { action: 'scm', app: 'app:notes', id: 'notes.git', op: { kind: 'accept' } },
+            [200, { ok: false, word: 'host_down' }]
+        ],
+        [
+            'file',
+            { action: 'file', app: 'app:notes', kind: 'grammar', path: 'notes.tmLanguage.json' },
+            [200, { ok: true, value: { scopeName: 'source.notes', patterns: [] } }]
+        ],
+        [
+            'terminal',
+            { action: 'terminal', app: 'app:notes', id: 't' },
+            [200, { ok: false, word: 'host_down' }]
+        ]
+    ] as [string, unknown, unknown][])(
+        '%s is answered with its own result with the token and 403 without it',
+        async (_row, body, expected) => {
+            const made = setup();
+            const taken = await json(await post(handleHostPost, made, body, { app: 'app:notes' }));
+            const refused = await post(handleHostPost, made, body, { token: null });
+            expect([taken, refused.status]).toEqual([expected, 403]);
         }
     );
 });

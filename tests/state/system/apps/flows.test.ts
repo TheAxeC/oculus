@@ -10,7 +10,7 @@ import { describe, expect, vi } from 'vitest';
 import type { AppRow } from '../../../../src/lib/data/model/index.ts';
 import type { Posted } from '../../../../src/lib/state/shared/stores/shapes.ts';
 import { t } from '../../../../src/lib/state/shared/words/text.ts';
-import { createFlows } from '../../../../src/lib/state/system/apps/flows.ts';
+import { createFlows, type AppEnding } from '../../../../src/lib/state/system/apps/flows.ts';
 import { createManage } from '../../../../src/lib/state/system/apps/manage.ts';
 import { fixtureApp } from '../../../fixtures/entities-fixture.ts';
 import { it } from '../../../fixtures/scratch.ts';
@@ -32,7 +32,8 @@ const answer = (body: Record<string, unknown>, ok = true): Posted => ({
 function flows(
     rows: AppRow[],
     reply: (path: string, body: Record<string, unknown>) => Posted,
-    dirty: string[] = []
+    dirty: string[] = [],
+    ending: AppEnding = { debug: null, tasks: [], terminals: [] }
 ) {
     const calls: [string, Record<string, unknown>][] = [];
     const waiting: [number, () => void][] = [];
@@ -67,7 +68,8 @@ function flows(
                 for (const [count, release] of noticing) if (notices.length >= count) release();
             }
         },
-        dirtyFiles: () => dirty
+        dirtyFiles: () => dirty,
+        ending: () => ending
     });
     return { store, calls, notices, reached, noticed };
 }
@@ -105,6 +107,36 @@ describe('offers the choices an app allows and asks before a disable or a remova
             0,
             [['/api/app-manage', { action: 'disable', view: 'app:notes' }]]
         ]);
+    });
+
+    it('asks before it ends the debug session, the tasks and the terminals the app runs, naming each, and sends nothing until the reader says yes', async () => {
+        const { store, calls } = flows([NOTES], () => answer({}), [], {
+            debug: 'Notes debugger',
+            tasks: ['Build'],
+            terminals: ['App shell']
+        });
+        const asked: AppAsk[] = [];
+        const done = store.pick('app:notes', 'disable', (question) => asked.push(question));
+        const before = calls.length;
+        asked[0].act();
+        await done;
+        expect({
+            message: asked[0].message,
+            detail: asked[0].detail,
+            confirm: asked[0].confirm,
+            before,
+            after: calls.map((call) => call[0])
+        }).toEqual({
+            message: t('apps.ends_question', 'Notes'),
+            detail: [
+                t('apps.ends_debug', 'Notes debugger'),
+                t('apps.ends_task', 'Build'),
+                t('apps.ends_terminal', 'App shell')
+            ].join('\n'),
+            confirm: t('apps.ends_confirm'),
+            before: 0,
+            after: ['/api/app-manage']
+        });
     });
 
     it('asks naming the apps that depend on it, and sends the request again with cascade on yes only', async () => {

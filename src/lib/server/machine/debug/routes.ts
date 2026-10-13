@@ -17,22 +17,22 @@
 // terminal route refuses a command with and the names it is about. A failed write of the approvals
 // file is no refusal of the request and answers 409, as the approve answer of /api/commands does.
 
-import { statSync } from 'node:fs';
-import { isAbsolute, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
+import { debugConfigurationShape } from '../../../data/shapes/shapes.ts';
 import { textCatalog } from '../../../data/sources/config.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { chained, type FsWrites } from '../../core/json.ts';
-import { inside, realPath } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
-import { approveTexts, debugText, isApproved } from '../approvals/approvals.ts';
+import { approveTexts, debugText } from '../approvals/approvals.ts';
 import { refusal } from '../pty/refusal.ts';
-import { folderOf } from '../runs/commands/files.ts';
-import { fillText } from '../runs/commands/placeholders.ts';
 import { repositoryOf } from '../runs/commands/repo.ts';
-import { DEFAULT_CWD, DEFAULT_PROGRAM, readLaunch } from './launch.ts';
+import type { OpsTarget } from '../../files/fs/ops.ts';
+import { readLaunch } from './launch/read.ts';
+import { appendConfiguration } from './launch/write.ts';
 import type { DebugClient, Resume } from './session.ts';
+import { fileRefusal, startSession } from './session/start.ts';
 
 /** What the routes need of the process: roots, approvals file, write chain and client. */
 export type DebugRouteOptions = {
@@ -44,17 +44,31 @@ export type DebugRouteOptions = {
     configFor: () => Record<string, unknown>;
     /** The write chain the approvals are written behind. */
     writes: FsWrites;
+    /** What the writer of the Files view runs over, which Add Configuration writes through. */
+    files: () => OpsTarget;
     /** The server's one debug client. */
     client: DebugClient;
 };
 
 const NO_STORE = { 'cache-control': 'no-store' };
 
-/** The most line numbers one file's breakpoints may hold. */
-const LINES_MAX = 10_000;
+/** One breakpoint as sent: its line and what it is set with. */
+const specShape = z.object({
+    line: z.number(),
+    condition: z.string().optional(),
+    hitCondition: z.string().optional(),
+    logMessage: z.string().optional()
+});
 
 /** One file's breakpoints as sent, before the fields are checked one by one. */
-const fileShape = z.object({ path: z.string(), lines: z.array(z.number()) });
+const fileShape = z.object({ path: z.string(), lines: z.array(specShape) });
+
+/** One function breakpoint as sent. */
+const functionShape = z.object({
+    name: z.string(),
+    condition: z.string().optional(),
+    hitCondition: z.string().optional()
+});
 
 const NONE = z.object({});
 
@@ -63,9 +77,12 @@ const bodyShape = z.discriminatedUnion('action', [
         action: z.literal('launch'),
         repo: z.unknown(),
         name: z.string().nullable(),
+        // A configuration given whole, as the page's Start gives one that `launch.yml` does not
+        // hold.
+        configuration: debugConfigurationShape.optional(),
         context: z.object({ file: z.string().optional() }),
         breakpoints: z.array(fileShape),
-        functions: z.array(z.string()),
+        functions: z.array(functionShape),
         watch: z.array(z.string())
     }),
     z.object({
@@ -87,41 +104,37 @@ const bodyShape = z.discriminatedUnion('action', [
         frame: z.number().int().nullable().optional()
     }),
     fileShape.extend({ action: z.literal('breakpoints') }),
-    z.object({ action: z.literal('functions'), names: z.array(z.string()) }),
+    z.object({ action: z.literal('functions'), names: z.array(functionShape) }),
+    z.object({
+        action: z.literal('exceptions'),
+        filters: z.array(z.object({ filter: z.string(), condition: z.string().optional() }))
+    }),
+    NONE.extend({ action: z.literal('pause') }),
+    NONE.extend({ action: z.literal('restart') }),
+    NONE.extend({ action: z.literal('loadedSources') }),
+    z.object({
+        action: z.literal('setVariable'),
+        reference: z.number().int(),
+        name: z.string(),
+        value: z.string()
+    }),
+    z.object({
+        action: z.literal('completions'),
+        text: z.string(),
+        column: z.number().int().min(1)
+    }),
+    z.object({ action: z.literal('configurations'), repo: z.unknown(), type: z.string() }),
+    z.object({
+        action: z.literal('addConfiguration'),
+        repo: z.unknown(),
+        configuration: z.record(z.string(), z.unknown())
+    }),
     z.object({ action: z.literal('watch'), expressions: z.array(z.string()) }),
     z.object({ action: z.literal('stop'), confirmed: z.boolean().optional() })
 ]);
 
-type Body = z.infer<typeof bodyShape>;
-
 function refuse(error: string, status = 400): Response {
     return json({ error }, { status, headers: NO_STORE });
-}
-
-/** Whether a path lies under a root the file browser serves, as written and as it resolves. */
-function served(path: string, roots: string[]): boolean {
-    const real = realPath(path);
-    return roots.some((root) => {
-        const rootReal = realPath(root);
-        return (
-            inside(path, root) && (real === null || (rootReal !== null && inside(real, rootReal)))
-        );
-    });
-}
-
-/** The sentence refusing a file's breakpoints, or null when its path and lines are as asked. */
-function fileRefusal(
-    file: { path: string; lines: number[] },
-    roots: string[],
-    catalog: Record<string, string>
-): string | null {
-    if (!isAbsolute(file.path) || !roots.some((root) => inside(file.path, root))) {
-        return words(catalog, 'server.debug.bad_path');
-    }
-    if (!file.lines.every((line) => Number.isInteger(line) && line >= 1))
-        return words(catalog, 'server.debug.bad_lines');
-    if (file.lines.length > LINES_MAX) return words(catalog, 'server.debug.too_many_lines');
-    return null;
 }
 
 /** GET /api/debug?repo=<absolute path> or ?console=1. */
@@ -132,75 +145,8 @@ export function handleDebugGet(request: Request, options: DebugRouteOptions): Re
     if (asked.length !== 1) return refuse('repo must be given once');
     const found = repositoryOf(asked[0], options.rootsFor());
     if ('error' in found) return refuse(found.error);
-    return json(readLaunch(found.repo), { headers: NO_STORE });
-}
-
-/**
- * The absolute path of the program a launch runs and the folder it runs in, or the response that
- * refuses the launch.
- */
-function resolved(
-    repo: string,
-    body: Extract<Body, { action: 'launch' }>,
-    program: string,
-    cwd: string,
-    options: DebugRouteOptions
-): { program: string; cwd: string } | Response {
-    const catalog = textCatalog(options.configFor());
-    const folder = folderOf(repo, cwd === DEFAULT_CWD ? undefined : cwd);
-    if (typeof folder !== 'string')
-        return refuse(words(catalog, 'server.debug.field_problem', 'cwd', folder.message));
-    const filled = fillText(program, { file: body.context.file }, repo);
-    if (typeof filled !== 'string') return refusal(filled.error, filled.names);
-    const path = isAbsolute(filled) ? filled : resolve(repo, filled);
-    if (!served(path, options.rootsFor()))
-        return refuse(words(catalog, 'server.debug.unserved', path));
-    const real = realPath(path);
-    if (real === null || !statSync(real).isFile() || !path.endsWith('.rite')) {
-        return refuse(words(catalog, 'server.debug.not_rite', path));
-    }
-    return { program: path, cwd: folder };
-}
-
-/** The launch action: the configuration, its program, its approval, then the session. */
-function launch(
-    repo: string,
-    body: Extract<Body, { action: 'launch' }>,
-    options: DebugRouteOptions
-): Response {
-    const catalog = textCatalog(options.configFor());
-    const roots = options.rootsFor();
-    for (const file of body.breakpoints) {
-        const refused = fileRefusal(file, roots, catalog);
-        if (refused !== null) return refuse(refused);
-    }
-    const configuration =
-        body.name === null
-            ? {
-                  name: words(catalog, 'server.debug.default_name'),
-                  program: DEFAULT_PROGRAM,
-                  cwd: DEFAULT_CWD
-              }
-            : readLaunch(repo).configurations.find((one) => one.name === body.name);
-    if (configuration === undefined)
-        return refuse(words(catalog, 'server.debug.no_configuration', body.name ?? ''));
-    const run = resolved(repo, body, configuration.program, configuration.cwd, options);
-    if (run instanceof Response) return run;
-    const text = debugText(repo, configuration.cwd, configuration.program);
-    if (!isApproved(options.approvalsFor(), text)) {
-        const { name, cwd, program } = configuration;
-        return json({ approve: { name, cwd, program } }, { headers: NO_STORE });
-    }
-    const started = options.client.launch({
-        repo,
-        name: configuration.name,
-        program: run.program,
-        cwd: run.cwd,
-        breakpoints: body.breakpoints,
-        functions: body.functions,
-        watch: body.watch
-    });
-    return 'error' in started ? refuse(started.error) : json({ ok: true }, { headers: NO_STORE });
+    const debuggers = options.client.debuggers().map((one) => one.debugger);
+    return json(readLaunch(found.repo, debuggers), { headers: NO_STORE });
 }
 
 /** The answer of an action that returns when the session has taken it, or the refusal. */
@@ -224,7 +170,33 @@ export async function handleDebugPost(
     if (body.action === 'launch' || body.action === 'approve') {
         const found = repositoryOf(body.repo, options.rootsFor());
         if ('error' in found) return refuse(found.error);
-        if (body.action === 'launch') return launch(found.repo, body, options);
+        if (body.action === 'launch') {
+            const started = await startSession(
+                {
+                    repo: found.repo,
+                    name: body.name,
+                    ...(body.configuration === undefined
+                        ? {}
+                        : { configuration: body.configuration }),
+                    context: body.context,
+                    breakpoints: body.breakpoints,
+                    functions: body.functions,
+                    watch: body.watch
+                },
+                {
+                    rootsFor: options.rootsFor,
+                    approvalsFor: options.approvalsFor,
+                    catalog: () => catalog,
+                    client,
+                    port: () => client.port()
+                }
+            );
+            if ('ok' in started) return json({ ok: true }, { headers: NO_STORE });
+            if ('approve' in started)
+                return json({ approve: started.approve }, { headers: NO_STORE });
+            if ('refusal' in started) return refusal(started.refusal, started.names);
+            return refuse(started.error);
+        }
         const text = debugText(found.repo, body.cwd, body.program);
         const done = await chained(options.writes, () =>
             approveTexts(options.approvalsFor(), [text])
@@ -240,6 +212,52 @@ export async function handleDebugPost(
     if (body.action === 'functions') {
         client.setFunctions(body.names);
         return json({ ok: true }, { headers: NO_STORE });
+    }
+    if (body.action === 'exceptions') {
+        client.setExceptions(body.filters);
+        return json({ ok: true }, { headers: NO_STORE });
+    }
+    if (body.action === 'pause') return answered(await client.controls.pause());
+    if (body.action === 'restart') return answered(await client.controls.restart());
+    if (body.action === 'loadedSources') return answered(await client.controls.loadedSources());
+    if (body.action === 'setVariable') {
+        return answered(await client.controls.setVariable(body.reference, body.name, body.value));
+    }
+    if (body.action === 'completions') {
+        return answered(await client.controls.completions(body.text, body.column));
+    }
+    if (body.action === 'configurations') {
+        const found = repositoryOf(body.repo, options.rootsFor());
+        if ('error' in found) return refuse(found.error);
+        const port = client.port();
+        const entry = client.debuggers().find((one) => one.debugger.type === body.type);
+        if (port === undefined || entry === undefined) {
+            return refuse(words(catalog, 'server.debug.no_debugger', body.type));
+        }
+        if (!(await port.activate(body.type))) {
+            return refuse(words(catalog, 'server.debug.host_down', body.type));
+        }
+        const folder = pathToFileURL(found.repo).toString();
+        try {
+            const given = await port.configurations(body.type, folder);
+            return json({ configurations: given }, { headers: NO_STORE });
+        } catch (error) {
+            return refuse(words(catalog, 'server.debug.resolve_failed', String(error)));
+        }
+    }
+    if (body.action === 'addConfiguration') {
+        const found = repositoryOf(body.repo, options.rootsFor());
+        if ('error' in found) return refuse(found.error);
+        const appended = await appendConfiguration(options.files(), found.repo, body.configuration);
+        if (appended.ok) return json({ line: appended.line }, { headers: NO_STORE });
+        if (appended.word === 'name') return refuse(words(catalog, 'server.debug.config_name'));
+        if (appended.word === 'exists') {
+            return refuse(words(catalog, 'server.debug.config_exists', appended.detail));
+        }
+        if (appended.word === 'unwritable') {
+            return refuse(words(catalog, 'server.debug.config_unwritable', appended.detail));
+        }
+        return refuse(words(catalog, 'server.debug.config_unreadable', appended.detail));
     }
     if (body.action === 'watch') {
         await client.setWatch(body.expressions);

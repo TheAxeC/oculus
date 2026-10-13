@@ -1,11 +1,13 @@
 // Layer 3, shell, partial of Palette.svelte. The list of `:language`: the languages the words after
-// the command narrow to, the entries above them (with no words typed and the first list drawn), and
-// the association the second list picks a language for. The second list belongs to the association
-// the reader chose in the first, and it is left with the language mode.
+// the command narrow to, those the apps add among them, the entries above them (with no words typed
+// and the first list drawn), and the association the second list picks a language for. The second
+// list belongs to the association the reader chose in the first, and it is left with the language
+// mode.
 
 import {
     languageActions,
     languageMatches,
+    type AppLanguageName,
     type LanguageAssociation,
     type LanguageMatch
 } from '$lib/state/workbench/navigation/status';
@@ -15,13 +17,15 @@ import type { ParsedCommand } from '$lib/state/workbench/palette';
 export type LanguageListInput = {
     parsed: () => ParsedCommand | null;
     source: () => { status: { file: string; language: string } } | null;
+    /** The languages the acting apps add. */
+    apps: () => readonly AppLanguageName[];
 };
 
 /** The list of `:language`. */
 export type LanguageList = {
     /** Whether the query is `:language`. */
     readonly active: boolean;
-    /** The languages the words narrow to; none without a source tab. */
+    /** The languages the words narrow to, the apps' among them; none without a source tab. */
     readonly languages: LanguageMatch[];
     /** The entries above the languages: with no words typed, and not in the second list. */
     readonly entries: ReturnType<typeof languageActions>;
@@ -37,7 +41,9 @@ export function createLanguageList(input: LanguageListInput): LanguageList {
     const active = $derived(input.parsed()?.name === 'language');
     let associating = $state<LanguageAssociation | null>(null);
     const languages = $derived<LanguageMatch[]>(
-        active && input.source() !== null ? languageMatches(input.parsed()?.argument ?? '') : []
+        active && input.source() !== null
+            ? languageMatches(input.parsed()?.argument ?? '', input.apps())
+            : []
     );
     const entries = $derived.by(() => {
         const source = input.source();

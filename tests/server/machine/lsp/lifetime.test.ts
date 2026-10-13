@@ -11,9 +11,9 @@
 import { realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { afterEach, beforeEach, describe, expect, vi } from 'vitest';
+import { describe, expect } from 'vitest';
 import { it, scratchDir } from '../../../fixtures/scratch.ts';
-import type { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
+import type { Relay } from '../../../../src/lib/server/machine/lsp/relay/relay.ts';
 import {
     advance,
     close,
@@ -24,9 +24,10 @@ import {
     plantPrograms,
     plantRoot,
     recordingSink,
+    relaysMade,
     settle,
+    states,
     stubSpawn,
-    useClock,
     type Behaviour
 } from './lsp-fixture.ts';
 
@@ -60,19 +61,7 @@ function world(
     return { relay, spawned, page: recordingSink(), served, folder };
 }
 
-let made: Relay[] = [];
-
-beforeEach(() => {
-    useClock();
-});
-
-afterEach(async () => {
-    const closing = Promise.all(made.map((relay) => relay.close()));
-    await advance(10_000);
-    await closing;
-    made = [];
-    vi.useRealTimers();
-});
+const made = relaysMade();
 
 /** Start a world and open `a.py` on its page, the server up. */
 async function opened(
@@ -115,16 +104,6 @@ function hover(relay: Relay, page: World['page'], id: number): void {
 /** The error code the page was answered `id` with, or undefined when it got no answer. */
 function errorOf(page: World['page'], id: number): number | undefined {
     return page.frames.find((one) => one.payload.id === id)?.payload.error?.code;
-}
-
-/** The state frames of a page, in order, as `state` or `state:code`. */
-function states(page: World['page']): string[] {
-    return page.frames
-        .filter((one) => one.payload.oculus === 'state')
-        .map((one) => {
-            const { state, code } = one.payload as unknown as { state: string; code?: string };
-            return code === undefined ? state : `${state}:${code}`;
-        });
 }
 
 /** Two exits within three minutes, which leave the server failed until the reader's Restart. */

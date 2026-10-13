@@ -4,14 +4,14 @@
 // interface and a port, with no DOM, so its document set and its rewriting of addresses run in the
 // unit suite's client runtime without a Monaco.
 //
-// A model is registered with the file it shows. The transport sends its own `didOpen` with the
-// text and version 1, numbers every later `didChange` of the file, and sends `didClose` when the
-// last model of the file goes. The client's synchroniser opens every model of the page, whatever
-// its language or owner, so every `didOpen`, `didChange` and `didClose` the client sends is
-// dropped here. A feature request from a model that is not registered (a diff side, a merge pane,
-// a model of another language) is answered at once with an empty result and never reaches the
-// port. Two models of one file are one document: the server follows the first registered model,
-// and a request from either is sent for the file.
+// A model is registered with the file it shows. The transport sends its own `didOpen` with the text
+// and version 1, numbers every later `didChange` of the file, and sends `didClose` when the last
+// model of the file goes, and `didSave` (with the text) when the tab saves the file. The client's
+// synchroniser opens every model of the page, whatever its language or owner, so every `didOpen`,
+// `didChange`, `didClose` and `didSave` the client sends is dropped here. A feature request from a
+// model that is not registered (a diff side, a merge pane, a model of another language) is answered
+// at once with an empty result and never reaches the port. Two models of one file are one document:
+// the server follows the first registered model, and a request from either is sent for the file.
 //
 // The client names a document by its model's `inmemory:` address and the relay by the page's
 // address (uris.ts); the transport turns each into the other, in every field that holds one. A
@@ -22,18 +22,20 @@
 //
 // What the client has no handler for is the transport's own: `publishDiagnostics` and
 // `inactiveRegions` go to the host, and `workspace/semanticTokens/refresh` is answered and told to
-// the host. An edit a server asks for (its `workspace/applyEdit`, a rename's answer, a code
-// action's edit) is never given to Monaco, whose client applies an edit to the models it can name:
-// the transport hands the whole edit to the host (`TransportHost.applyEdit`), which edits the
-// tabs and writes the other files or refuses the whole edit with a notice. A code action's edit is
-// kept under a token and the action carries the command that applies it (`APPLY_COMMAND`), so an
-// action that names other files is offered like any other. An edit whose document changed since
-// the request it answers was made is refused. The client declares `workspace.applyEdit` and a
-// `workspace.workspaceEdit` of `documentChanges` with transactional failure handling to the
-// server. A request of the client the relay could not pass on to a server is answered with no
-// result. The host's own questions to the server (the
-// symbols, the semantic tokens, the formatting) go through `ask`, which answers the protocol's
-// result as the relay sent it, addresses in the page's form.
+// the host. A feature the relay registers with the client after `initialize`, or withdraws, is
+// handed to the client, which asks for it from then on, and told to the host
+// (`TransportHost.registered`), which counts it as declared. An edit a server asks for (its
+// `workspace/applyEdit`, a rename's answer, a code action's edit) is never given to Monaco, whose
+// client applies an edit to the models it can name: the transport hands the whole edit to the host
+// (`TransportHost.applyEdit`), which edits the tabs and writes the other files or refuses the whole
+// edit with a notice. A code action's edit is kept under a token and the action carries the command
+// that applies it (`APPLY_COMMAND`), so an action that names other files is offered like any other.
+// An edit whose document changed since the request it answers was made is refused. The client
+// declares `workspace.applyEdit` and a `workspace.workspaceEdit` of `documentChanges` with
+// transactional failure handling to the server. A request of the client the relay could not pass on
+// to a server is answered with no result. The host's own questions to the server (the symbols, the
+// semantic tokens, the formatting) go through `ask`, which answers the protocol's result as the
+// relay sent it, addresses in the page's form.
 //
 // A rename is asked in two steps and the transport answers each as VS Code's language client does
 // (transport/renames.ts). The `prepareRename` the client sends is held back until the server has
@@ -78,25 +80,19 @@ import {
     changesOf,
     isRecord,
     keyOf,
+    openMessage,
+    registrationsOf,
+    saveMessage,
     type LspModel,
     type LspRange,
     type ModelChange,
-    type Rpc,
-    type TextEdit
+    type Rpc
 } from './transport/messages';
 import { Connection } from './transport/connection';
 import { addressesIn, pageOf, toPage } from './transport/addresses';
 import { GoneRoots } from './transport/roots';
 import { EDITING, type Doc, type Own, type Peek, type Waiting } from './transport/records';
-import {
-    JUMPS,
-    PREPARE,
-    RENAME,
-    Settling,
-    placesOf,
-    refusalOf,
-    type Jump
-} from './transport/renames';
+import { JUMPS, PREPARE, RENAME, Settling, placesOf, refusalOf } from './transport/renames';
 import {
     EditTokens,
     declaringEdits,
@@ -109,58 +105,9 @@ import {
     type KeptEdit
 } from './transport/edits';
 import { libraryOf, pageUri, placeOf, type Place, type Target } from './uris';
+import type { TransportHost } from './transport/host';
 
-/** What the host does for the transport. */
-export type TransportHost = {
-    /**
-     * Make a read-only model of a file no tab holds, under the page's address of it, `spelling`
-     * naming the variant of the address to use when the plain one differs from another model's only
-     * by case (0 for the plain one). Null when the file cannot be read.
-     */
-    peek(target: Target, page: string, spelling: number): Promise<LspModel | null>;
-    /** Dispose a peek model the transport has no use for. */
-    drop(model: LspModel): void;
-    /** Apply edits to a registered model as one undo stop; false when it could not be. */
-    apply(model: LspModel, edits: readonly TextEdit[]): boolean;
-    /**
-     * Make the edit a server asked for, all or none; the outcome says why not. `preview` is set for
-     * the answer of a rename the reader asked to see before it is made, which is then shown and
-     * not made until the reader says so.
-     */
-    applyEdit(edit: unknown, preview: boolean): Promise<LspEditOutcome>;
-    /** The reader asks for the next rename to be previewed, or the mark is cleared (false). */
-    markPreview(marked: boolean): void;
-    /** Whether the next rename was marked for the preview; reading it clears the mark. */
-    takePreview(): boolean;
-    /**
-     * The places the answer to a jump named, for the editor with the address `asking` (the
-     * client's address of its model), in the client's addresses.
-     */
-    targeted(asking: string, places: readonly Jump[]): void;
-    /** A catalog line of the page's words, filled with `words`. */
-    words(key: string, ...words: string[]): string;
-    /**
-     * A server's diagnostics for one file, whether or not a model holds it: the file's address,
-     * and its place when it is a file of a served root.
-     */
-    diagnostics(page: string, place: Place | null, items: readonly LspDiagnostic[]): void;
-    /** The regions of a file clangd found inactive, by the file's address. */
-    inactive(page: string, regions: readonly LspRange[]): void;
-    /** A server named a library file in an answer to a request made for a document of the root. */
-    library(address: string, root: string): void;
-    /** The server asks for its semantic tokens again. */
-    refreshTokens(): void;
-    /** The capabilities the server's `initialize` answer declared. */
-    declared(capabilities: Record<string, unknown>): void;
-    /** Shows a notice by its catalog key, with the words it is said with. */
-    notice(key: string, ...words: string[]): void;
-    /**
-     * The answer to a completion request, or the one item a resolve answers, in the client's form,
-     * for the host to add to; `request` is the client's params of the completion request. It
-     * answers `result` itself when it adds nothing.
-     */
-    completed(request: unknown, result: unknown): Promise<unknown>;
-};
+export type { TransportHost } from './transport/host';
 
 /** The transport of one language over one open period of its port. */
 export class LspTransport {
@@ -260,18 +207,16 @@ export class LspTransport {
 
     /** The `didOpen` that puts a document on the server, with the text of its first model. */
     #sendOpen(doc: Doc): void {
-        this.#write({
-            jsonrpc: '2.0',
-            method: 'textDocument/didOpen',
-            params: {
-                textDocument: {
-                    uri: doc.page,
-                    languageId: doc.language,
-                    version: doc.version,
-                    text: doc.models[0].getValue()
-                }
-            }
-        });
+        this.#write(openMessage(doc.page, doc.language, doc.version, doc.models[0].getValue()));
+    }
+
+    /**
+     * The model's file was saved: the relay tells the servers that asked for it (`save` in their
+     * `textDocumentSync`) with the text the first model of the file holds.
+     */
+    saved(model: LspModel): void {
+        const doc = this.#byModel.get(model);
+        if (doc !== undefined) this.#write(saveMessage(doc.page, doc.models[0].getValue()));
     }
 
     /** Take a model away; the file is closed on the server with its last model. */
@@ -741,6 +686,14 @@ export class LspTransport {
                 this.#host.refreshTokens();
                 return;
             case 'workspace/inlayHint/refresh':
+                this.#deliver(message);
+                return;
+            case 'client/registerCapability':
+            case 'client/unregisterCapability':
+                this.#host.registered(
+                    message.method === 'client/registerCapability',
+                    registrationsOf(message.params)
+                );
                 this.#deliver(message);
                 return;
             default:

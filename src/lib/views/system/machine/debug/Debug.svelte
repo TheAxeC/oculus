@@ -13,14 +13,16 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The debugger of rite: the configuration picker with Start, Add Configuration
-    // and Open launch.yml, the findings of the repository's launch file, a line saying what the
-    // session is doing, and the sections Variables, Watch, Call Stack and Breakpoints. The
-    // repository is the one of the source tab on screen, else of the one focused last; its
-    // configurations are those of `.oculus/launch.yml`, and a repository with none runs the open
-    // `.rite` file. Start stays drawn while a session runs and answers with the refusal then. The
-    // stepping controls are the floating toolbar's (shell/commands/debug/DebugToolbar.svelte),
-    // drawn over the workbench while a session runs.
+    // Layer 3, view. The debugger: the configuration picker with Start, Add Configuration and Open
+    // launch.yml, the findings of the repository's launch file, a line saying what the session is
+    // doing, and the sections Variables, Watch, Call Stack, Breakpoints and, while the adapter
+    // reports them, Loaded Sources. The repository is the one of the source tab on screen, else of
+    // the one focused last; its configurations are those of `.oculus/launch.yml`, and a repository
+    // with none runs the open file with its debugger's first configuration. Add Configuration lists
+    // what the acting debuggers offer beside oculus's own when there is any debugger of an app, and
+    // the one picked is written into the file. Start stays drawn while a session runs and answers
+    // with the refusal then. The stepping controls are the floating toolbar's
+    // (shell/commands/debug/DebugToolbar.svelte), drawn over the workbench while a session runs.
     //
     // A section's open state is the tab's own and is saved in its instance state; every section
     // starts open.
@@ -36,6 +38,7 @@
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import Breakpoints from './sections/Breakpoints.svelte';
     import CallStack from './sections/CallStack.svelte';
+    import LoadedSources from './sections/LoadedSources.svelte';
     import Variables from './sections/Variables.svelte';
     import Watch from './sections/Watch.svelte';
 
@@ -69,6 +72,8 @@
     });
 
     const running = $derived(debug.ran());
+    const choosing = $derived(debug.choosing());
+    const reported = $derived(debug.active() && debug.capabilities().loadedSources);
 </script>
 
 <Pane title={t('views.debug')} tinted>
@@ -110,6 +115,33 @@
                     />
                 {/if}
             </div>
+            {#if choosing !== null && choosing.repo === repo}
+                <div class="choose" data-debug-choose>
+                    <div class="head">
+                        <span class="default">{t('debug.add_choose')}</span>
+                        <ToolButton
+                            plain
+                            label={t('debug.add_cancel')}
+                            onclick={() => debug.cancelChoosing()}
+                        />
+                    </div>
+                    <ul class="findings">
+                        {#each choosing.choices as choice, at (at)}
+                            <li>
+                                <TreeItem
+                                    label={choice.label}
+                                    title={choice.description === ''
+                                        ? choice.label
+                                        : `${choice.label} (${choice.description})`}
+                                    onclick={() => void debug.pickConfiguration(at)}
+                                >
+                                    {#snippet detail()}{choice.description}{/snippet}
+                                </TreeItem>
+                            </li>
+                        {/each}
+                    </ul>
+                </div>
+            {/if}
             {#if listed !== null && listed.findings.length > 0}
                 <ul class="findings">
                     {#each listed.findings as finding, at (at)}
@@ -133,6 +165,9 @@
         <Watch open={!isClosed('watch')} ontoggle={() => toggle('watch')} />
         <CallStack open={!isClosed('stack')} ontoggle={() => toggle('stack')} />
         <Breakpoints open={!isClosed('breakpoints')} ontoggle={() => toggle('breakpoints')} />
+        {#if reported}
+            <LoadedSources open={!isClosed('sources')} ontoggle={() => toggle('sources')} />
+        {/if}
     </div>
 </Pane>
 

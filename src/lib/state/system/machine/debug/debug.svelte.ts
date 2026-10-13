@@ -5,15 +5,25 @@
 //
 // What the browser keeps is `oculus.debug.v1` (debug.ts), read through zod and read again when
 // another tab of the page writes it; during a session every change of a list is posted to the
-// server, and a launch carries the lists as they stand. The lists belong to files by absolute path
-// and only a `.rite` file under a served root takes a breakpoint.
+// server, and a launch carries the lists as they stand, each breakpoint with the condition, hit
+// condition and log message it is set with. The lists belong to files by absolute path and only a
+// file under a served root whose language takes breakpoints takes one: `rite`, and the languages
+// the acting apps name under `contributes.breakpoints`.
 //
-// Start saves every unsaved `.rite` tab first, as Cmd+S does, and stops with the tab's own message
-// when one is not saved. A configuration that names a `before` command runs it through the
-// commands store and waits for its task terminal's exit: 0 goes on, anything else is asked. The
-// launch is posted once, so an approval the server asks for is answered and the launch posted
-// again without the command. A pause opens the top frame's file at its line, focuses the editor,
-// the window and the Debug view; the console view opens at a session's start.
+// Start saves every unsaved tab of a language that takes breakpoints first, as Cmd+S does, and
+// stops with the tab's own message when one is not saved. A configuration that names a `before`
+// command runs it through the commands store and waits for its task terminal's exit: 0 goes on,
+// anything else is asked. The launch is posted once, so an approval the server asks for is answered
+// and the launch posted again without the command. A pause opens the top frame's file at its line,
+// focuses the editor, the window and the Debug view; the console view opens at a session's start.
+//
+// What the controls offer follows what the adapter of the session, or of the debugger the file on
+// screen starts, declared in its answer to `initialize` (`capabilities`): a control for a feature
+// the adapter did not declare is not drawn and its action is not sent. Start with no configuration
+// in `launch.yml` runs the debugger whose `languages` holds the file's language, with the first of
+// its `initialConfigurations` or else the first configuration its providers give. Add
+// Configuration lists the snippets, the `initialConfigurations` and the provided configurations of
+// the acting debuggers beside oculus's own and writes the chosen one into `launch.yml`.
 //
 // A question the reader must answer (the launch's approval, the stop's confirmation, the failed
 // command) is held as `asking`, which the shell draws once.
@@ -29,25 +39,36 @@ import type {
     Terminal
 } from '../../../../data/model/index.ts';
 import { deepestHolding, joinPath } from '../../../../data/helpers/files/paths.ts';
+import {
+    RITE_TYPE,
+    type ActingDebugger,
+    type ConfigurationChoice
+} from '../../../../data/helpers/files/apps/tools/debuggers.ts';
 import type { EntitiesStore, Queries, WritesStore } from '../../../shared/stores/shapes.ts';
 import { followKey } from '../../../shared/stores/storage-events.ts';
 import { t } from '../../../shared/words/text.ts';
-import type { Outcome } from '../../../sources/explorer/ops.svelte.ts';
 import type { ServedRoot } from '../../../sources/repositories/file-git.ts';
 import { filesNamed } from '../../../shared/answers/files-named.ts';
 import { postDebug, readConsole, readLaunches, type DebugAnswer } from './debug-io.ts';
-import { addConfiguration, LAUNCH_FILE } from './debug-file.ts';
+import {
+    addConfiguration,
+    configurationChoices,
+    givenConfiguration,
+    LAUNCH_FILE
+} from './debug-file.ts';
+import { createAdapterCalls } from './debug-adapter.svelte.ts';
 import { createLists } from './debug-lists.ts';
 import {
     consoleAfter,
     consoleOfSession,
     DEBUG_KEY,
     EMPTY_CONSOLE,
-    enabledLines,
+    enabledSpecs,
+    functionSpecs,
     loadSaved,
     nothingSaved,
     repoOfFile,
-    scopeValue,
+    stateWords,
     writeSaved,
     type SavedDebug,
     type Storable
@@ -63,15 +84,28 @@ const IDLE: DebugPayload = {
     pause: null,
     frames: [],
     frame: null,
+    thread: null,
     scopes: [],
     watch: [],
     breakpoints: [],
     functions: [],
-    ended: ''
+    ended: '',
+    adapter: null,
+    exceptions: [],
+    declared: {}
 };
 
-/** What a launch is made of: the repository, the configuration (none for the open file), file. */
-export type Target = { repo: string; config: DebugConfiguration | null; file: string };
+/**
+ * What a launch is made of: the repository, the configuration (none for the open file) and the
+ * file on screen. `given` marks a configuration `launch.yml` does not hold, which the launch
+ * carries whole.
+ */
+export type Target = {
+    repo: string;
+    config: DebugConfiguration | null;
+    file: string;
+    given?: boolean;
+};
 
 /** The question the reader is asked. */
 type DebugAsking =
@@ -80,8 +114,8 @@ type DebugAsking =
     | { kind: 'before'; name: string; code: number; terminal: string; target: Target }
     | { kind: 'abort'; name: string; terminal: string };
 
-/** A source tab of a `.rite` file, as the launch reads it. */
-type RiteTab = { id: string; root: string; path: string; dirty: boolean };
+/** A source tab of a file that takes breakpoints, as the launch reads it. */
+type DebugTab = { id: string; root: string; path: string; dirty: boolean };
 
 /** What the store reads of the source tab on screen: the file it shows and its caret. */
 type DebugScreen = { status: { file: string; caret: { line: number } | null } };
@@ -128,16 +162,16 @@ export type DebugDeps = {
     gitRoots: () => string[];
     served: () => ServedRoot[];
     openFile: (root: string, path: string, line: number) => boolean;
-    /** The source tabs over a `.rite` file on every page. */
-    riteTabs: () => RiteTab[];
+    /** The source tabs over a file that takes breakpoints, on every page. */
+    debugTabs: () => DebugTab[];
+    /** The languages that take a breakpoint: `rite` and those the acting apps name. */
+    breakpointLanguages: () => string[];
+    /** The language the editor picks for a file by its name. */
+    languageOf: (path: string) => string;
+    /** The debuggers of the apps that act. */
+    debuggers: () => ActingDebugger[];
     draft: (id: string) => { text: string; saved: string; message: string };
     saveDraft: (id: string, root: string, path: string) => Promise<boolean>;
-    create: (
-        into: { root: string; path: string },
-        name: string,
-        folder: boolean
-    ) => Promise<Outcome>;
-    saveText: (root: string, path: string, text: string) => Promise<{ ok: boolean; error: string }>;
     openView: (view: string) => void;
     /** Put the caret at a line of the file open in the active tab and the focus in its editor. */
     focusEditor: (file: string, line: number) => boolean;
@@ -158,13 +192,16 @@ export function createDebug(deps: DebugDeps) {
         waiting: Waiting | null;
         lastRepo: string | null;
         watching: Record<string, number>;
+        /** The configurations Add Configuration offers, once asked for. */
+        choosing: { repo: string; choices: ConfigurationChoice[] } | null;
     } = $state({
         saved: nothingSaved(),
         console: EMPTY_CONSOLE,
         asking: null,
         waiting: null,
         lastRepo: null,
-        watching: {}
+        watching: {},
+        choosing: null
     });
     let storage: Storable | undefined;
     let stopFollowing: () => void = () => undefined;
@@ -181,6 +218,22 @@ export function createDebug(deps: DebugDeps) {
     const status = (): DebugStatus => payload().status;
     const paused = (): boolean => status() === 'paused';
     const active = (): boolean => ['starting', 'running', 'paused'].includes(status());
+
+    const adapter = createAdapterCalls({
+        payload,
+        active,
+        paused,
+        writes,
+        languageOf: deps.languageOf,
+        debuggers: deps.debuggers,
+        configuredType() {
+            const current = repo();
+            const config = current === null ? null : chosen(current, launches(current));
+            return config?.type ?? RITE_TYPE;
+        },
+        settled
+    });
+    const { capabilities } = adapter;
 
     // ---- what the browser keeps ----------------------------------------------------------
 
@@ -347,11 +400,19 @@ export function createDebug(deps: DebugDeps) {
         notices.post(message, { tone });
     };
 
+    /** Whether a language takes a breakpoint in the gutter. */
+    const takesLanguage = (language: string): boolean =>
+        deps.breakpointLanguages().includes(language);
+
+    /** Whether a file, by its name, takes a breakpoint. */
+    const takes = (path: string): boolean => takesLanguage(deps.languageOf(path));
+
     /** The repository, the file it runs and the configuration the next Start would use. */
     async function targetNow(): Promise<Target | null> {
         const screen = deps.onScreen() ?? deps.focusedSource();
         const file = screen?.status.file ?? '';
-        if (file.endsWith('.rite') && repoOfFile(deps.gitRoots(), deps.served(), file) === null) {
+        const language = file === '' ? '' : deps.languageOf(file);
+        if (takesLanguage(language) && repoOfFile(deps.gitRoots(), deps.served(), file) === null) {
             say(t('debug.frame_unserved', file));
             return null;
         }
@@ -362,17 +423,18 @@ export function createDebug(deps: DebugDeps) {
         }
         const listed = await loadLaunches(found);
         const config = chosen(found, listed);
-        if (config === null) {
-            if (listed.exists) {
-                say(t('debug.no_reading'));
-                return null;
-            }
-            if (!file.endsWith('.rite')) {
-                say(t('debug.no_file'));
-                return null;
-            }
+        if (config !== null) return { repo: found, config, file };
+        if (listed.exists) {
+            say(t('debug.no_reading'));
+            return null;
         }
-        return { repo: found, config, file };
+        if (language === RITE_TYPE) return { repo: found, config: null, file };
+        if (file === '') {
+            say(t('debug.no_file'));
+            return null;
+        }
+        const given = await givenConfiguration(deps, say, found, language);
+        return given === null ? null : { repo: found, config: given, file, given: true };
     }
 
     /** Start the configuration the picker shows, as F5 and the Start button do. */
@@ -396,7 +458,7 @@ export function createDebug(deps: DebugDeps) {
 
     /** Save the unsaved `.rite` tabs, run the `before` command, and launch. */
     async function begin(target: Target): Promise<boolean> {
-        for (const tab of deps.riteTabs().filter((one) => one.dirty)) {
+        for (const tab of deps.debugTabs().filter((one) => one.dirty)) {
             const sent = deps.draft(tab.id).text;
             await deps.saveDraft(tab.id, tab.root, tab.path);
             const after = deps.draft(tab.id);
@@ -419,15 +481,13 @@ export function createDebug(deps: DebugDeps) {
     }
 
     /** The files under a served root that hold breakpoints the adapter takes. */
-    function launchFiles(): { path: string; lines: number[] }[] {
+    function launchFiles(): { path: string; lines: ReturnType<typeof enabledSpecs> }[] {
         const roots = deps.served();
         return Object.keys(held.saved.breakpoints)
             .filter(
-                (path) =>
-                    path.endsWith('.rite') &&
-                    deepestHolding(roots, (root) => root.dir, path) !== null
+                (path) => takes(path) && deepestHolding(roots, (root) => root.dir, path) !== null
             )
-            .map((path) => ({ path, lines: enabledLines(held.saved.breakpoints[path] ?? []) }))
+            .map((path) => ({ path, lines: enabledSpecs(held.saved.breakpoints[path] ?? []) }))
             .filter((file) => file.lines.length > 0);
     }
 
@@ -437,10 +497,13 @@ export function createDebug(deps: DebugDeps) {
             {
                 action: 'launch',
                 repo: target.repo,
-                name: target.config?.name ?? null,
+                name: target.given === true ? null : (target.config?.name ?? null),
+                ...(target.given === true && target.config !== null
+                    ? { configuration: target.config }
+                    : {}),
                 context: target.file === '' ? {} : { file: target.file },
                 breakpoints: launchFiles(),
-                functions: held.saved.functions,
+                functions: functionSpecs(held.saved.functions, held.saved.functionOptions),
                 watch: held.saved.watch
             },
             writes
@@ -605,8 +668,42 @@ export function createDebug(deps: DebugDeps) {
         } else settled(answered);
     }
 
-    /** Restart: stop behind its confirmation, then the same configuration again. */
-    const restart = (): Promise<void> => stop(true);
+    /**
+     * Restart through the adapter's own request when it declared one, else stop and start again.
+     */
+    async function restart(): Promise<void> {
+        if (active() && capabilities().restart) {
+            settled(await postDebug({ action: 'restart' }, writes));
+            return;
+        }
+        await stop(true);
+    }
+
+    // ---- Add Configuration ---------------------------------------------------------------
+
+    /** Offer the configurations to add; a repository with no acting debugger adds oculus's own. */
+    async function startAdding(path: string): Promise<void> {
+        const choices = await configurationChoices(deps, path);
+        if (choices.length === 1) {
+            await writeAndChoose(path, choices[0]);
+            return;
+        }
+        held.choosing = { repo: path, choices };
+    }
+
+    /** Write the configuration to the launch file and choose it. */
+    async function writeAndChoose(path: string, choice: ConfigurationChoice): Promise<void> {
+        const name = await addConfiguration(deps, queries, path, choice, launches(path));
+        if (name !== null) keep({ ...held.saved, chosen: { ...held.saved.chosen, [path]: name } });
+    }
+
+    /** The reader picked the offered configuration at this place. */
+    async function pickConfiguration(at: number): Promise<void> {
+        const offered = held.choosing;
+        held.choosing = null;
+        const one = offered?.choices.at(at);
+        if (offered !== null && one !== undefined) await writeAndChoose(offered.repo, one);
+    }
 
     /** F5: continue when paused, else start. */
     function press(): Promise<boolean> {
@@ -658,24 +755,15 @@ export function createDebug(deps: DebugDeps) {
         );
     }
 
-    /** What a hover over a word shows: the word's value in the selected frame, or null. */
-    async function hover(word: string): Promise<string | null> {
-        if (!paused()) return null;
-        const shown = scopeValue(payload(), word);
-        if (shown === null) return null;
-        const answered = await postDebug(
-            { action: 'evaluate', expression: word, context: 'hover', frame: payload().frame },
-            writes
-        );
-        return answered.kind === 'value' ? answered.value : shown;
-    }
-
-    /** F9: toggle a breakpoint on the caret line of the `.rite` source tab on screen. */
+    /**
+     * F9: toggle a breakpoint on the caret line of the source tab on screen, when its file takes
+     * one.
+     */
     function toggleAtCaret(): boolean {
         const screen = deps.onScreen();
         const file = screen?.status.file ?? '';
         const line = screen?.status.caret?.line;
-        if (!file.endsWith('.rite') || line === undefined) return false;
+        if (file === '' || !takes(file) || line === undefined) return false;
         lists.toggle(file, line);
         return true;
     }
@@ -689,25 +777,6 @@ export function createDebug(deps: DebugDeps) {
 
     // ---- the toolbar and the status ------------------------------------------------------
 
-    /** Say what a session is doing, in the words the Debug view's state line shows. */
-    function stateWords(): string {
-        const now = payload();
-        switch (now.status) {
-            case 'idle':
-                return t('debug.state_idle');
-            case 'starting':
-                return t('debug.state_starting');
-            case 'running':
-                return t('debug.state_running');
-            case 'paused':
-                return now.pause?.reason === 'step'
-                    ? t('debug.state_paused_step')
-                    : t('debug.state_paused_breakpoint');
-            case 'ended':
-                return t('debug.state_ended', now.ended);
-        }
-    }
-
     function moveToolbar(x: number): void {
         keep({ ...held.saved, toolbar: Math.max(0, Math.round(x)) });
     }
@@ -720,7 +789,7 @@ export function createDebug(deps: DebugDeps) {
         active,
         paused,
         console: consoleLines,
-        stateWords,
+        stateWords: () => stateWords(payload(), t),
         repo,
         watch: watchRepo,
         launches,
@@ -733,11 +802,31 @@ export function createDebug(deps: DebugDeps) {
         resume,
         selectFrame,
         evaluate,
-        hover,
+        hover: adapter.hover,
         pausedLine,
         toggleAtCaret,
         ...lists,
-        addConfiguration: (path: string) => addConfiguration(deps, queries, path),
+        addConfiguration: startAdding,
+        choosing: () => held.choosing,
+        pickConfiguration,
+        cancelChoosing: () => {
+            held.choosing = null;
+        },
+        takes,
+        takesLanguage,
+        capabilities,
+        /** Whether the controls follow oculus's own adapter, which has Finish Frame. */
+        ownAdapter: () => adapter.adapterType() === RITE_TYPE,
+        capsOfFile: adapter.capsOfFile,
+        pause: adapter.pause,
+        setVariable: adapter.setVariable,
+        complete: adapter.complete,
+        readSources: adapter.readSources,
+        sources: adapter.sources,
+        contextKeys: adapter.contextKeys,
+        sessionArg: adapter.sessionArg,
+        setException: adapter.setException,
+        setExceptionCondition: adapter.setExceptionCondition,
         openAt: openFrame,
         openLaunch: (path: string, line: number) => deps.openFile(path, LAUNCH_FILE, line),
         asking: () => held.asking,

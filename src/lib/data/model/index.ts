@@ -1,7 +1,7 @@
 // Layer 1, data. Portfolio aggregates and the public facade for every data and wire type.
 // Snapshot ownership stays here while leaf concerns remain small and existing imports stay stable.
 
-import type { AppContributes } from './model-apps.ts';
+import type { AppContributes } from './apps/model-apps.ts';
 import type {
     CollectionFile,
     Dataset,
@@ -638,9 +638,6 @@ export {
 export {
     BUILD_OUTCOMES,
     CHKTEX_FIXABLE,
-    DEBUG_CONSOLE_KINDS,
-    DEBUG_CONSOLE_MAX,
-    DEBUG_STATUSES,
     LINT_IDS,
     lintersOf,
     SCHEDULE_WORDS,
@@ -650,28 +647,14 @@ export {
     TERMINAL_COLORS,
     TERMINAL_REFUSALS,
     UPDATE_TASKS
-} from './model-machine.ts';
+} from './machine/model-machine.ts';
+export { DEBUG_CONSOLE_KINDS, DEBUG_CONSOLE_MAX, DEBUG_STATUSES } from './machine/model-debug.ts';
 export type {
     AppHostRow,
     AppHostsPayload,
     AppMessage,
     AppMessagesPayload,
     BuildOutcome,
-    DebugBreakpoint,
-    DebugConfiguration,
-    DebugConsole,
-    DebugConsoleAppend,
-    DebugConsoleKind,
-    DebugConsoleLine,
-    DebugFileBreakpoints,
-    DebugFrame,
-    DebugFunctionBreakpoint,
-    DebugLaunches,
-    DebugPayload,
-    DebugScope,
-    DebugSession,
-    DebugStatus,
-    DebugWatch,
     LinksFailure,
     LintAnswer,
     LintConfig,
@@ -709,13 +692,36 @@ export type {
     TerminalJob,
     LatexApproval,
     LatexJobTarget,
+    StartKind,
     TerminalKind,
     TerminalRefusal,
     TerminalResize,
     TerminalResume,
     UnchosenKey,
     UpdateTask
-} from './model-machine.ts';
+} from './machine/model-machine.ts';
+export type {
+    DebugAdapterInfo,
+    DebugBreakpoint,
+    DebugBreakpointSpec,
+    DebugCapabilities,
+    DebugExceptionFilter,
+    DebugLoadedSource,
+    DebugConfiguration,
+    DebugConsole,
+    DebugConsoleAppend,
+    DebugConsoleKind,
+    DebugConsoleLine,
+    DebugFileBreakpoints,
+    DebugFrame,
+    DebugFunctionBreakpoint,
+    DebugLaunches,
+    DebugPayload,
+    DebugScope,
+    DebugSession,
+    DebugStatus,
+    DebugWatch
+} from './machine/model-debug.ts';
 export type {
     ChainLine,
     CommandContext,
@@ -750,4 +756,27 @@ export type {
     AppTreeState,
     AppViewEntry,
     ContextValue
-} from './model-apps.ts';
+} from './apps/model-apps.ts';
+export type {
+    AppDebugger,
+    AppDecoration,
+    AppTaskDescription,
+    AppTaskRef,
+    AppDecorationChanges,
+    AppLanguage,
+    AppProblemMatcher,
+    AppProblemPattern,
+    AppEditorGrammar,
+    AppEditorSnippet,
+    AppEditorSnippets,
+    AppLanguageKit,
+    AppScmGroup,
+    AppScmResource,
+    AppScmState,
+    AppSemanticModifier,
+    AppSemanticScopes,
+    AppSemanticType,
+    AppToolsHost,
+    AppToolsPayload,
+    AppToolsServer
+} from './apps/model-apps-tools.ts';

@@ -50,7 +50,7 @@
     import type * as Monaco from 'monaco-editor';
     import { eolOf, keyCode, keysCode, modelUri, type EditorKit } from './kit/load';
     import { buildWhenHosted } from './kit/built.svelte';
-    import { shikiId } from './kit/grammars';
+    import { shikiId } from './kit/languages/grammars';
     import { font, paintCode, repaint } from './kit/look';
     import { chordActions, ownListing } from './chords';
     import {
@@ -100,7 +100,9 @@
          * null for a text typed or set whole.
          */
         reached?: () => EditorReach | null;
-        /** Oculus's name for the language, which kit/grammars.ts answers the Shiki id of. */
+        /**
+         * Oculus's name for the language, which kit/languages/grammars.ts answers the Shiki id of.
+         */
         language: string;
         /** Whether the reader may change the text. */
         writable?: boolean;

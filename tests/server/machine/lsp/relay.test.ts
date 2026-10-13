@@ -9,7 +9,7 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import { Hub } from '../../../../src/lib/server/core/channels.ts';
-import type { Relay } from '../../../../src/lib/server/machine/lsp/relay.ts';
+import type { Relay } from '../../../../src/lib/server/machine/lsp/relay/relay.ts';
 import { attachSocket } from '../../../../src/lib/server/root/socket.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { frame, makeRelay, pageFile, plantRoot, stubSpawn } from './lsp-fixture.ts';

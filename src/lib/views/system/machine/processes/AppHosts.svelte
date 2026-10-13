@@ -29,7 +29,9 @@
     let lines: Record<string, string[]> = $state({});
     const reader = createOutputReader(
         (app) => onoutput(app),
-        (app, read) => (lines[app] = read)
+        (app, read) => {
+            lines[app] = read;
+        }
     );
 
     function toggle(row: AppHostRow): void {

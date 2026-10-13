@@ -15,7 +15,6 @@
 // view of type `tree` the app declares, a panel's entry must be an `.html` file of the app, and a
 // second registration of one id is refused `refused:registered`.
 
-import { appActive } from '../../../../data/helpers/files/apps/apps.ts';
 import { blankItem, changeItem } from '../../../../data/helpers/files/apps/status-items.ts';
 import { text } from '../../../../data/helpers/guards.ts';
 import type {
@@ -31,7 +30,8 @@ import type {
 import type { Hub } from '../../../core/channels.ts';
 import { Refused } from '../host/connection.ts';
 import type { ActivationEvent } from '../read/activation.ts';
-import { appById, type AppsHeld, type HeldApp } from '../read/held.ts';
+import { Published } from '../host/published.ts';
+import { activeApp, activeApps, type AppsHeld, type HeldApp } from '../read/held.ts';
 
 /** What the registry asks of the hosts: a message to a running host, and the start of one. */
 export type ShellHosts = {
@@ -90,10 +90,11 @@ export class AppShell {
     #hosts = new Map<string, HostState>();
     #open = new Map<string, Pending>();
     #next = 0;
-    #published = '';
+    readonly #published: Published;
 
     constructor(options: ShellOptions) {
         this.#options = options;
+        this.#published = new Published(options.hub, 'app-shell');
         this.#publish();
     }
 
@@ -104,13 +105,12 @@ export class AppShell {
 
     /** The held app with this id when it is approved, enabled and unchanged. */
     active(id: string): HeldApp | undefined {
-        const app = appById(this.#options.apps.held(), id);
-        return app !== undefined && appActive(app.row) ? app : undefined;
+        return activeApp(this.#options.apps.held(), id);
     }
 
     /** The approved, enabled apps, in the Views list's order. */
     actives(): HeldApp[] {
-        return this.#options.apps.held().apps.filter((app) => appActive(app.row));
+        return activeApps(this.#options.apps.held());
     }
 
     /** What the host of an app registered, made when the host first registers something. */
@@ -407,10 +407,6 @@ export class AppShell {
     }
 
     #publish(): void {
-        const payload = this.payload();
-        const text = JSON.stringify(payload);
-        if (text === this.#published) return;
-        this.#published = text;
-        this.#options.hub.publish('app-shell', payload);
+        this.#published.send(this.payload());
     }
 }

@@ -8,6 +8,8 @@
 // hint, none for an action without keys, and choosing one asks that tab to run it. A view that
 // offers commands of its own (the Present view's slide actions) has them listed the same way while
 // its tab is on screen, and choosing one runs the command the view handed in.
+// The tasks that apps offer for the repository holding the file on screen are listed too, under the
+// name the repository's command list gives them, and choosing one runs it as a press of it does.
 //
 // The palette also has a file mode, which finds files by name across the served roots. Its names
 // come from the search route and are matched in a worker (sources/search/file-match.ts). With
@@ -17,8 +19,9 @@
 // those keys from the program.
 
 import { z } from 'zod';
+import { deepestHolding } from '../../data/helpers/files/paths.ts';
 import { bareId, rootOf } from '../../data/helpers/hub-names.ts';
-import type { FeedEntry, FeedKind, Snapshot } from '../../data/model/index.ts';
+import type { FeedEntry, FeedKind, ProjectCommand, Snapshot } from '../../data/model/index.ts';
 import {
     LSP_CHOICES,
     choicesOfLanguage,
@@ -72,7 +75,7 @@ export type PaletteFeeds = Partial<Record<FeedKind, PaletteFeed>>;
 
 export type PaletteItem = {
     id: string;
-    kind: 'view' | 'project' | 'collection' | 'feed' | 'editor' | 'command' | 'app';
+    kind: 'view' | 'project' | 'collection' | 'feed' | 'editor' | 'command' | 'app' | 'task';
     label: string;
     title: string;
     text: string;
@@ -280,6 +283,39 @@ export function appItems(rows: readonly AppCommandRow[]): PaletteItem[] {
     }));
 }
 
+/** The repository holding a file: the deepest git root above it, or null for none. */
+export function taskRepoOf(gitRoots: readonly string[], file: string): string | null {
+    return file === '' ? null : (deepestHolding(gitRoots, (root) => root, file)?.item ?? null);
+}
+
+/**
+ * The tasks apps offer for a repository as palette items of kind `task`, named as the commands list
+ * names them (`<source>: <name>`), the app's title as the hint. Choosing one runs it as a press of
+ * the task in the repository's command list does.
+ */
+export function taskItems(
+    repo: string | null,
+    answer: { commands: readonly ProjectCommand[] } | null
+): PaletteItem[] {
+    if (repo === null || answer === null) return [];
+    return answer.commands.flatMap((command) =>
+        command.source !== 'app'
+            ? []
+            : [
+                  {
+                      id: `task:${repo}/${command.name}`,
+                      kind: 'task' as const,
+                      label: command.name,
+                      title: command.name,
+                      text: `${command.name} ${command.task?.appTitle ?? ''}`,
+                      view: '',
+                      hint: command.task?.appTitle ?? '',
+                      state: { repo, name: command.name }
+                  }
+              ]
+    );
+}
+
 /** The chord VS Code binds Pin Editor and Unpin Editor to, which the palette stands in for. */
 const PIN_CHORD = 'Cmd+K Shift+Enter';
 
@@ -352,6 +388,7 @@ export function kindWord(
     if (kind === 'collection') return t('app.palette.kind_collection');
     if (kind === 'editor') return t('app.palette.kind_editor');
     if (kind === 'command' || kind === 'app') return t('app.palette.kind_command');
+    if (kind === 'task') return t('app.palette.kind_task');
     return t('app.palette.kind_feed');
 }
 

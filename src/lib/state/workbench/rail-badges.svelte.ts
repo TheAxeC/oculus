@@ -82,6 +82,8 @@ export type BadgeSelectors = {
     collectionOf: (key: string) => Collection | null;
     gitRoots: () => string[];
     gitFor: (workspace: string) => GitState | null;
+    /** The changes the apps' source controls count, summed. */
+    appSourceCount: () => number;
 };
 
 export function createRailBadges(
@@ -195,10 +197,10 @@ export function createRailBadges(
      * counts them: the held merge, staged, changes and untracked counts summed, so a file in two
      * groups counts twice and a list cut at 200 counts what git reported. A root that is no
      * repository adds nothing, and a repository a Repositories tab closed still counts, since the
-     * closed list is that tab's own.
+     * closed list is that tab's own. The counts the apps' source controls give are added.
      */
     function repositoriesBadge(): string {
-        let total = 0;
+        let total = selectors.appSourceCount();
         for (const root of selectors.gitRoots()) {
             const held = selectors.gitFor(root);
             if (!held?.repository) continue;

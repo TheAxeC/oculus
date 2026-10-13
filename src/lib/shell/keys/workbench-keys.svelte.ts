@@ -69,8 +69,8 @@ type Options = {
     debugKey: (which: DebugKey) => boolean;
     /** Whether a debug session is starting, running or paused. */
     debugging: () => boolean;
-    /** Whether the source tab on screen is a `.rite` file. */
-    riteOnScreen: () => boolean;
+    /** Whether the source tab on screen is a file that takes breakpoints. */
+    breakpointFileOnScreen: () => boolean;
     /**
      * Offer a press to the apps' keybindings once oculus's own keys have passed on it: whether
      * a text field or an editor holds the keyboard, and whether the source editor does. True when
@@ -165,7 +165,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
                 mac: options.mac,
                 app: options.app,
                 debugging: options.debugging(),
-                riteFocus: inEditor(event.target) && options.riteOnScreen()
+                breakpointFocus: inEditor(event.target) && options.breakpointFileOnScreen()
             },
             keyState,
             Date.now()

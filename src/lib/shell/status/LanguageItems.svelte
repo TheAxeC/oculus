@@ -9,7 +9,10 @@
     //
     // The server item reads starting, indexing with its count, ready, not found or failed, and its
     // press opens a menu of Restart Language Server and Show Language Server Output, which the tab
-    // performs as its own actions. The interpreter item reads the interpreter's version and the
+    // performs as its own actions. A language that several servers serve (oculus's own and the
+    // ones the acting apps registered) lists each server with its state at the head of the menu,
+    // and Restart Language Server and Show Language Server Output open a submenu of the servers,
+    // so the reader says which. The interpreter item reads the interpreter's version and the
     // folder name of its environment, as `3.13.4 (.venv)`, and the compile database item the
     // configuration's name or the database's folder, as `build/debug`, or `No compile database`;
     // a press on either opens the palette on that choice's list. While the repository's
@@ -34,6 +37,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
+    import type { ServerEntry } from '$lib/state/system/machine/lsp/lsp.svelte';
     import type { ItemsProps } from './status-items';
     import { factsForLanguage } from '$lib/data/prose/lsp-servers';
     import { lintName } from '$lib/state/system/machine/lint/lint-words';
@@ -55,10 +59,13 @@
 
     const served = $derived(status.served);
     const server = $derived(served === null ? null : lsp.server(served.root, served.language));
+    const entries = $derived(served === null ? [] : lsp.servers(served.root, served.language));
     const choices = $derived(served === null ? null : lsp.choices(served.root, served.language));
     const facts = $derived(served === null ? undefined : factsForLanguage(served.language));
     const asks = $derived(facts?.choices ?? []);
-    const name = $derived(facts === undefined ? '' : t(facts.words.name));
+    const name = $derived(
+        facts === undefined ? (entries.at(0)?.name ?? served?.language ?? '') : t(facts.words.name)
+    );
     const where = $derived(served?.root ?? '');
     /** The command that installs the server's program, empty for a server that has none named. */
     const install = $derived(facts?.words.install === undefined ? '' : t(facts.words.install));
@@ -119,10 +126,57 @@
         }
     });
 
-    const menu: MenuItem[] = $derived([
-        { id: 'oculus.lsp.restart', label: t('statusbar.ls_restart') },
-        { id: 'oculus.lsp.output', label: t('statusbar.ls_output') }
-    ]);
+    /**
+     * A server's name as the menu lists it: oculus's own by its entry's words, an app's by its own.
+     */
+    function nameOf(one: ServerEntry): string {
+        return one.id === '' && facts !== undefined ? t(facts.words.name) : one.name;
+    }
+
+    /** A server's state as one word. */
+    function stateOf(one: ServerEntry): string {
+        const { state, done, total } = one.view;
+        if (state === 'indexing') return t('statusbar.ls_state_indexing', done, total);
+        if (state === 'ready') return t('statusbar.ls_state_ready');
+        if (state === 'starting') return t('statusbar.ls_state_starting');
+        if (state === 'not_found') return t('statusbar.ls_state_not_found');
+        return t('statusbar.ls_state_failed');
+    }
+
+    /** The id of the tab's action that does `what` to a server. */
+    function actionOf(what: 'restart' | 'output', one: ServerEntry | undefined): string {
+        return one === undefined || one.id === ''
+            ? `oculus.lsp.${what}`
+            : `oculus.lsp.${what}:${one.id}`;
+    }
+
+    const menu: MenuItem[] = $derived.by(() => {
+        if (entries.length < 2) {
+            return [
+                { id: actionOf('restart', entries.at(0)), label: t('statusbar.ls_restart') },
+                { id: actionOf('output', entries.at(0)), label: t('statusbar.ls_output') }
+            ];
+        }
+        return [
+            ...entries.map((one) => ({
+                id: `server:${one.id}`,
+                label: nameOf(one),
+                badge: stateOf(one),
+                disabled: true
+            })),
+            {
+                id: 'restart',
+                label: t('statusbar.ls_restart'),
+                rule: true,
+                items: entries.map((one) => ({ id: actionOf('restart', one), label: nameOf(one) }))
+            },
+            {
+                id: 'output',
+                label: t('statusbar.ls_output'),
+                items: entries.map((one) => ({ id: actionOf('output', one), label: nameOf(one) }))
+            }
+        ];
+    });
 
     /** The interpreter in force, as `3.13.4 (.venv)`. */
     const interpreter = $derived(interpreterInForce(choices));

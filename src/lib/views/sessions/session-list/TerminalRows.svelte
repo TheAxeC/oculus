@@ -40,6 +40,7 @@
     function kindGlyph(kind: TerminalKind): string {
         if (kind === 'claude') return t('sessions.kind_claude_glyph');
         if (kind === 'codex') return t('sessions.kind_codex_glyph');
+        if (kind === 'app') return t('sessions.kind_app_glyph');
         return t('sessions.kind_shell_glyph');
     }
 </script>

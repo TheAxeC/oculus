@@ -16,7 +16,7 @@ import { diskFs } from '../../../src/lib/server/machine/apps/reach/open.ts';
 import type { AppsRouteOptions } from '../../../src/lib/server/machine/apps/routes/routes.ts';
 import type { ServeInput } from '../../../src/lib/server/machine/apps/serve/serve.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
-import { hostsFixture } from '../../server/machine/apps/hosts-fixture.ts';
+import { hostsFixture } from '../../server/machine/apps/world/hosts-fixture.ts';
 import { plantScratch } from '../../fixtures/scratch.ts';
 import { TEXT } from '../../server/text.ts';
 

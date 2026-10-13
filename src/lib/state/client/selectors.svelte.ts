@@ -36,6 +36,8 @@ import {
     type RepoSettings
 } from '../../data/sources/config/editor-options.ts';
 import { paintLimit, programApps } from '../../data/sources/config/settings.ts';
+import { appDefaults } from '../../data/helpers/files/apps/tools/editor-defaults.ts';
+import { joinedFor } from '../../data/helpers/files/apps/tools/languages.ts';
 import { languageMap, type LanguageMap } from '../../data/helpers/files/languages.ts';
 import type { ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
@@ -121,6 +123,8 @@ export type SelectorsStore = {
     repoSettings: (text: string) => RepoSettings;
     programApps: () => ProgramApps;
     languages: () => LanguageMap;
+    /** The changes the apps' source controls count, summed. */
+    appSourceCount: () => number;
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
     boardStats: (items: BoardItem[]) => BoardStats;
@@ -188,7 +192,12 @@ export function createSelectors(
      * The editor's options out of the merged config (`editor:` of config/behavior.yml), each
      * missing or bad value the catalog's default, and null until the config channel has spoken.
      */
-    const editorOptionsNow = $derived(editorOptions(configMap()));
+    const editorOptionsNow = $derived.by((): EditorOptions | null => {
+        const options = editorOptions(configMap());
+        return options === null
+            ? null
+            : { ...options, defaults: appDefaults(entities.apps()?.rows ?? []) };
+    });
 
     /**
      * Each extension a file may carry to be offered to its program, with the application it opens
@@ -206,10 +215,13 @@ export function createSelectors(
 
     /**
      * The map from a file name to its language, `languages` of config/sources.yml, and an empty
-     * map until the config channel has spoken. It is parsed once per config message: the
-     * derived re-runs only when the entities store holds another config.
+     * map until the config channel has spoken, joined with the file rules of the languages the
+     * acting apps declare (`joinedFor`), so a tab and the server read one map. It is parsed once
+     * per config message and per apps message.
      */
-    const languageMapNow = $derived(languageMap(configMap()));
+    const languageMapNow = $derived(
+        joinedFor(languageMap(configMap()), entities.apps()?.rows ?? [])
+    );
 
     /** The preset of one view id, over the config as it currently stands. */
     function boardPreset(view: string): BoardPreset {
@@ -574,6 +586,11 @@ export function createSelectors(
         repoSettings: repoSettingsOf,
         programApps: programAppsOf,
         languages: () => languageMapNow,
+        appSourceCount: () =>
+            (entities.appTools()?.hosts ?? []).reduce(
+                (sum, host) => sum + host.sources.reduce((one, scm) => one + (scm.count ?? 0), 0),
+                0
+            ),
         boardPreset,
         board,
         boardStats,

@@ -1,16 +1,23 @@
 <script lang="ts">
-    // Layer 3, Map partial. The relationship legend under the heading: the two project types as
-    // chips in their tones and the pillar line mark. It holds no control; the filters are the
-    // bar's (Controls.svelte).
+    // Layer 3, Map partial. The relationship legend under the heading: each project type the graph
+    // draws, as a chip in the tone its nodes are drawn in, and the pillar line mark. It holds no
+    // control; the filters are the bar's (Controls.svelte).
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { typeTone } from '$lib/state/shared/words/tones';
+
+    type Props = {
+        /** The types of the projects the graph draws, in the order of the bar's type chips. */
+        types: string[];
+    };
+    let { types }: Props = $props();
 </script>
 
 <div class="legend">
-    <Chip label={t('map.legend_active')} tone={typeTone('active')} filled />
-    <Chip label={t('map.legend_idea')} tone={typeTone('idea')} filled />
+    {#each types as type (type)}
+        <Chip label={type} tone={typeTone(type)} filled />
+    {/each}
     <span class="line-dot"></span>
     <span>{t('map.legend_line')}</span>
 </div>

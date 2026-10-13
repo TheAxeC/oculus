@@ -26,7 +26,7 @@ import { afterEach, describe, expect } from 'vitest';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
 import { ownFolder } from '../../../../../src/lib/server/machine/lsp/servers.ts';
 import { spawnChild, type Spawn } from '../../../../../src/lib/server/machine/lsp/held/process.ts';
-import type { Relay } from '../../../../../src/lib/server/machine/lsp/relay.ts';
+import type { Relay } from '../../../../../src/lib/server/machine/lsp/relay/relay.ts';
 import { frame, makeRelay, pageFile, recordingSink } from '../lsp-fixture.ts';
 
 const CHANNEL = 'lsp:markdown';

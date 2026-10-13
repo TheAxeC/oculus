@@ -30,7 +30,8 @@
     // tab to run it. A diff pane on screen lists its diff editor's actions the same way, and takes
     // no line or language query. A view that offers commands of its own (the Present view's slide
     // actions and Export to PDF) has them listed while its tab is on screen, and choosing one runs
-    // it.
+    // it. The tasks that apps offer for the repository holding the file on screen are listed too,
+    // each run as a press of it in the Repositories view runs.
     //
     // It is also where the Files view's workspace commands run: `:workspace` lists the default
     // workspace and the saved ones, the one in force marked, and a pick switches in place;
@@ -93,6 +94,8 @@
         plainFile,
         ranked,
         shownTrees,
+        taskItems,
+        taskRepoOf,
         viewItems,
         workspaceChoicesOf,
         type PaletteItem
@@ -113,6 +116,8 @@
         editorStatus: { statusOf },
         appShell,
         clone,
+        appTools,
+        commands: projectCommands,
         explorer,
         fs: { workspaces },
         layout: { activeInstance, currentPage, floats, hosts },
@@ -120,7 +125,8 @@
         lsp,
         paletteSource: { paletteSource, offered },
         registry: { views },
-        search
+        search,
+        selectors
     } = client;
 
     type Props = {
@@ -170,6 +176,9 @@
     /** The active tab of the pane the reader last worked in, which Pin Editor toggles. */
     const tab = $derived(activeInstance());
     const pinnable = $derived(tab === null ? null : { id: tab.id, pinned: tab.pinned === true });
+    /** The repository holding the file on screen, whose tasks Cmd-K lists. */
+    const taskRepo = $derived(taskRepoOf(selectors.gitRoots(), source?.status.file ?? ''));
+    $effect(() => (open && taskRepo !== null ? projectCommands.watch(taskRepo) : undefined));
     const index = $derived(
         open && mode === 'search'
             ? [
@@ -179,7 +188,8 @@
                   ...viewItems(tab?.id ?? null, offered),
                   ...appItems(
                       appShell.commandRows(appShell.place(tab, source?.status ?? null, false))
-                  )
+                  ),
+                  ...taskItems(taskRepo, projectCommands.commands(taskRepo ?? ''))
               ]
             : []
     );
@@ -189,7 +199,11 @@
 
     /** The line a go-to-line query names, or null for another query. */
     const line = $derived(lineQuery(parsed));
-    const languageList = createLanguageList({ parsed: () => parsed, source: () => source });
+    const languageList = createLanguageList({
+        parsed: () => parsed,
+        source: () => source,
+        apps: () => appTools.languages.names()
+    });
     const languageMode = $derived(languageList.active);
     /** The root and language a server serves the tab on screen by, when one does. */
     const served = $derived(source?.status.served ?? null);

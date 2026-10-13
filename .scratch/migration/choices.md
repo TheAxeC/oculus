@@ -4030,3 +4030,24 @@ Where it applies: D72. Booked in `plan.md` Rulings.
 - Not chosen: leaving it as it is, the lazy option.
 
 Where it applies: D74. Booked in `plan.md` Rulings.
+
+## Z856 (2026-10-13, D64's look, the orchestrator, automode): the History words for Add Configuration and an app's writeFile
+
+- Chosen: the fields `add-configuration` and `write-file`, shown in History as "Add Configuration" and "Write File", VS Code's names for the command and the API.
+- Not chosen: keeping "Upload", the lazy option, which names an action the user never took.
+
+Where it applies: D64, fixed at its landing. Booked in `plan.md` Rulings.
+
+## Z857 (2026-10-13, D64's look, the orchestrator, automode): the focused source tab kept while hidden
+
+- Chosen: the source tab focused last keeps its file and status until the tab is closed, so the Debug view's Start and the project commands find the open file behind another tab of its pane.
+- Not chosen: leaving it, the lazy option.
+
+Where it applies: D75. Booked in `plan.md` Rulings.
+
+## Z858 (2026-10-13, D64's landing, the orchestrator, automode): the guarded entry of the debug channel test
+
+- Chosen: a new entry G82, a debug session the server holds is never hidden from the page, tested by `tests/server/machine/debug/channel.test.ts`.
+- Not chosen: the test under G77, whose sentence it does not test; no test, the lazy option.
+
+Where it applies: D64, at its landing. Booked in `plan.md` Rulings.

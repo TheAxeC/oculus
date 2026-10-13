@@ -49,7 +49,7 @@ export type TerminalTabState = {
 };
 
 /** The shape of a terminal id, six hex digits and the kind. */
-const terminalIdShape = z.string().regex(/^[0-9a-f]{6}-(claude|codex|shell)$/);
+const terminalIdShape = z.string().regex(/^[0-9a-f]{6}-(claude|codex|shell|app)$/);
 
 /**
  * Whether an id names a terminal. It is the same shape the server's `isTerminalId` tests, six hex
