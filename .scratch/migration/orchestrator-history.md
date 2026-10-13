@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 94 (2026-10-13): Axel agreed to (a) in all three parts (domains in their registry entries, theme words in their files' schemas, leads and radar as collections); folded into D73; booked in plan.md Rulings.
 - Z879 (2026-10-13, automode): the names and folders of pasted images, of a missing note a link makes, and of the head's New Note, for D76; booked in plan.md Rulings and choices.md.
 - Z878 (2026-10-13, automode): how a `[[link]]` resolves to a note, for D76; booked in plan.md Rulings and choices.md.
 - Z877 (2026-10-13, automode): where the Notes Graph view is listed, for D76; booked in plan.md Rulings and choices.md.
