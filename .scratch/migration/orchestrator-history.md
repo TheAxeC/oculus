@@ -4,6 +4,16 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z879 (2026-10-13, automode): the names and folders of pasted images, of a missing note a link makes, and of the head's New Note, for D76; booked in plan.md Rulings and choices.md.
+- Z878 (2026-10-13, automode): how a `[[link]]` resolves to a note, for D76; booked in plan.md Rulings and choices.md.
+- Z877 (2026-10-13, automode): where the Notes Graph view is listed, for D76; booked in plan.md Rulings and choices.md.
+- Z876 (2026-10-13, automode): a note saves itself, for D76; booked in plan.md Rulings and choices.md.
+- Z875 (2026-10-13, automode): the notes keep the order the reader gives them, for D76; booked in plan.md Rulings and choices.md.
+- Z874 (2026-10-13, automode): New Note as VS Code's New File, for D76; booked in plan.md Rulings and choices.md.
+- Z873 (2026-10-13, automode): what a note's name may hold, for D76; booked in plan.md Rulings and choices.md.
+- Z872 (2026-10-13, automode): the machine value `notes` removed, for D76; booked in plan.md Rulings and choices.md.
+- Z871 (2026-10-13, automode): `[[note]]` completion, definition, references and rename written in oculus, for D76; booked in plan.md Rulings and choices.md.
+- Z870 (2026-10-13, automode): math in the Markdown preview through `marked-katex-extension`, for D76; booked in plan.md Rulings and choices.md.
 - Open item 93 (2026-10-13): ruled (a) by Axel: D76 starts now from a commit of D74's built work, D73 after the review of D74's repair round finds nothing in parts 8 to 12; an exception to the main's-head rule, granted.
 - Z869 (2026-10-13, D74's report, automode): the Apps view makes the Apps group a listed section with no chord, which the held chord row of `config-folder.test.ts` refuses; the group gets the chord `a`, the row kept whole; the lazy option was widening the row.
 - Z868 (2026-10-13, D73's preparation, automode): open item 76's collection key `literature` is the Literature search view's id, so the collection would get no view; the Literature search view's id becomes `literature-search` and the collection keeps the ruled key; the lazy option was another key for the collection.

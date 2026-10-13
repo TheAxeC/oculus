@@ -1,6 +1,6 @@
 In flight (2 of 6 slots in use):
-- D74 (the HPC view on a hub with no cluster; the focused source tab kept while hidden; History shown live; the Repositories list; the Apps page; pinned page tabs and Reopen Closed Tab; each hub's own vocabulary; one settings file per hub; one list of record files; refusal words from the catalog; entry pages right after a write; the card on a lead's and a paper's page; the Float group): repair round 1 running.
-- D76 (notes like Obsidian): being prepared, from a commit of D74's built work (open item 93 (a)).
+- D74 (the HPC view on a hub with no cluster; the focused source tab kept while hidden; History shown live; the Repositories list; the Apps page; pinned page tabs and Reopen Closed Tab; each hub's own vocabulary; one settings file per hub; one list of record files; refusal words from the catalog; entry pages right after a write; the card on a lead's and a paper's page; the Float group): repair round 1 done, its review running.
+- D76 (notes like Obsidian): brief written and checked; its builder starts from a commit of D74's built work (open item 93 (a)).
 
 Queued, in order (3 steps):
 - D73 (the Literature view): starts from D74's worktree once the review of D74's repair round finds nothing in parts 8 to 12 (open item 93 (a)).

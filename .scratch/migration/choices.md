@@ -4,6 +4,76 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z879 (2026-10-13, D76's preparation, the orchestrator, automode): the names and folders of pasted images, of a missing note a link makes, and of the head's New Note, in D76
+
+- Chosen: a pasted image is named `Pasted image <yyyymmddhhmmss>.<ext>` (Obsidian's name), a dropped file keeps its own name, both into `attachments/` at the top of the hub's notes folder with ` 1`, ` 2` on a taken name; a press on a link to a missing note makes it at the top of the linking note's hub's notes folder, or in the folder its `[[folder/name]]` names; the Notes section head's New Note writes into the primary hub, or the first hub of the workspace when none is primary, as the Memories wall adds to the primary hub.
+- Not chosen: a random or hashed file name, which the reader cannot recognise; an attachments folder beside each note, which scatters images over the tree; refusing `[[folder/name]]` for a missing note, which makes a link the reader typed unusable; asking for a hub at every head New Note, which adds a question to the commonest act. No option was the lazy one.
+
+Where it applies: D76, in its brief (decisions 10 and 11). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z878 (2026-10-13, D76's preparation, the orchestrator, automode): how a `[[link]]` resolves to a note, in D76
+
+- Chosen: a `[[link]]` resolves within its own hub's notes only, by name without letter case, `[[folder/name]]` naming a note whose name two folders share, the shortest path first and then the first in path order (Obsidian's rule); a move keeps bare links while the name stays unique in the hub and rewrites them to `[[folder/name]]` when the move makes it shared.
+- Not chosen: resolving across every hub, which lets a link reach a note of another hub and makes a rename rewrite notes of hubs it does not belong to; a match with letter case, which on this disk (APFS, case-insensitive) cannot tell two files apart anyway; always writing the full path into a link, which makes every link long and breaks Obsidian's own reading of a vault. Resolving across hubs is the lazy option: it needs no hub in the resolver.
+
+Where it applies: D76, in its brief (decision 7). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z877 (2026-10-13, D76's preparation, the orchestrator, automode): where the Notes Graph view is listed, in D76
+
+- Chosen: the Notes Graph view is a listed view of the Explorer group, beside Files and Search, opened from the catalogue, the palette and a Graph control on the Notes section head, and placed on no page's arrangement, so no saved page changes.
+- Not chosen: the Pillars group beside the Map, which draws a graph too but holds no file view; adding it to the Explorer page's arrangement, which changes a page Axel arranged; no option was the lazy one.
+
+Where it applies: D76, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z876 (2026-10-13, D76's preparation, the orchestrator, automode): a note saves itself, in D76
+
+- Chosen: a note's source tab saves `notes.autosave_ms` (800 ms in `config/behavior.yml`) after the last edit whatever `editor.autosave` says, through the same save as the source tab's (its base, history and conflict rules), so a note keeps saving itself as it does today and as Obsidian does.
+- Not chosen: notes under `editor.autosave` alone, whose default `off` would stop notes from saving themselves; no option was the lazy one.
+
+Where it applies: D76, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z875 (2026-10-13, D76's preparation, the orchestrator, automode): the notes keep the order the reader gives them, in D76
+
+- Chosen: each hub's Notes group keeps the order a drag or Alt+Up and Alt+Down gives its notes, in `order.json` at the top of that hub's notes folder, now naming each note by its path inside the folder without `.md`; a subfolder's notes are ordered inside it, a drag onto a folder moves the note into it, and the folders are listed first by name as the Explorer lists them.
+- Not chosen: notes sorted by name alone, as VS Code's Explorer sorts files, which removes the reader's own order that the Notes section has today; this was the lazy option.
+
+Where it applies: D76, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z874 (2026-10-13, D76's preparation, the orchestrator, automode): New Note as VS Code's New File, in D76
+
+- Chosen: New Note, on the section head and on each hub's group, opens an input row in the tree as VS Code's New File does in the Explorer; Enter makes `<name>.md` empty in that hub's `.oculus/notes/` (or the subfolder the row is in) and opens it in a source tab, Escape makes nothing, and New Folder beside it makes a subfolder the same way.
+- Not chosen: Obsidian's `Untitled.md` made at once and renamed afterwards, which leaves untitled files behind; no option was the lazy one.
+
+Where it applies: D76, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z873 (2026-10-13, D76's preparation, the orchestrator, automode): what a note's name may hold, in D76
+
+- Chosen: a note's name, which is its file name without `.md`, holds no `/`, `\`, `:`, `[`, `]`, `#`, `^`, `|` and no control character, does not start with `.`, is not empty after trimming and is at most 200 characters; a name that breaks this is refused with a sentence naming the character, as Obsidian refuses the characters its link syntax and the file system reserve.
+- Not chosen: any name the file system takes, which lets a name hold `]]`, `#` or `|` that no `[[...]]` link can reach; no option was the lazy one.
+
+Where it applies: D76, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z872 (2026-10-13, D76's preparation, the orchestrator, automode): the machine value `notes` removed, in D76
+
+- Chosen: the `notes` key of a hub's `local.yml`, which moved the primary hub's notes folder anywhere on the machine, is removed with its default row and its HELP.md lines: every note is in its own hub's `.oculus/notes/`, as ruling 92 places it, so it is inside a workspace folder, where the source tab opens it, Search reaches it and the links resolve. A machine whose `local.yml` still names `notes` shows the key as unknown, as any key the reader no longer reads, with no code carrying the old place.
+- Not chosen: keeping the key for the primary hub, which puts that hub's notes outside every workspace folder whenever it is set, where no source tab, search or link reaches them; no option was the lazy one.
+
+Where it applies: D76, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z871 (2026-10-13, D76's preparation, the orchestrator, automode): `[[note]]` completion, definition, references and rename written in oculus, in D76
+
+- Chosen: the `[[...]]` features of part (2) are answered by oculus's own Markdown entry (`server/machine/lsp/adapters/markdown/`, the hook through which it already answers Go to Definition on a backticked path), merged with VS Code's Markdown language server's answers, which know no wiki links (`vscode-markdown-languageserver` 0.5.0: no `wiki` in `dist/node/workerMain.js`).
+- Not chosen: Marksman (MIT, release 2026-02-08), a language server that knows wiki links, which is a binary outside the lockfile and not on this machine (`which marksman` exits 1) and would answer every completion and link of a Markdown file a second time beside the server oculus runs; no option was the lazy one.
+
+Where it applies: D76, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z870 (2026-10-13, D76's preparation, the orchestrator, automode): math in the Markdown preview through `marked-katex-extension`, in D76
+
+- Chosen: the Markdown preview of part (9) renders `$...$` and `$$...$$` with `marked-katex-extension` 5.1.13 (MIT, maintained by tonybrix of the marked project, released 2026-09-16; its peers `marked >=4 <19` and `katex >=0.16 <0.19` hold for oculus's marked 18.0.12 and katex 0.18.7, `npm view marked-katex-extension`), a new direct dependency, the extension the marked project publishes for the renderer oculus uses, as VS Code's preview uses `@vscode/markdown-it-katex` for its own renderer.
+- Not chosen: a math tokenizer for marked written by hand around the KaTeX oculus already carries, which is code a maintained extension of the same renderer already is; no option was the lazy one.
+
+Where it applies: D76, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z869 (2026-10-13, D74's report, the orchestrator, automode): the Apps group gets the chord `a`, in D74
 
 - Chosen: the Apps group of the Views catalogue gets its own key letter, `a`, as every other group has one: the Apps view opens with `a` then `1`, and the app views with `a` then `2` on. The check that every group has a letter of its own stays as it is.
