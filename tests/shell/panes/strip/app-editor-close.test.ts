@@ -49,6 +49,7 @@ function tabs() {
         version: 1,
         payload: {
             config: merged,
+            hubs: { primary: null, lists: {} },
             text: textCatalog(merged),
             icons: {},
             host: { name: 'host', address: '' },

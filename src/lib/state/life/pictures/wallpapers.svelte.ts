@@ -25,7 +25,7 @@ type WallpaperList = { hubs: HubImages[]; error: string; loading: boolean };
 /** What the picker reads before the first answer arrives. */
 const PENDING: WallpaperList = { hubs: [], error: '', loading: true };
 
-/** The key of the choice, in the primary hub's `.oculus/config/appearance.yml`. */
+/** The key of the choice, in the primary hub's `.oculus/config.yml`. */
 export const WALLPAPER_KEY = 'wallpaper.image';
 
 /** The value that shows one image of any hub, kept until the server restarts. */

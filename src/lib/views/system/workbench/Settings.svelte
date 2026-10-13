@@ -24,10 +24,10 @@
     //
     // Oculus's own files are read through the read-only route over its `config/` folder, and handed
     // the version of the config channel, so a write that the watcher pushes back redraws the value.
-    // Only the five tracked files are asked for, and for a file with keys of the hub list also the
-    // primary hub's layer file of the same name under `.oculus/config/`, read through the primary's
-    // folder with the folders on its way listed (state/system/config/view/hub-layer.ts); a file
-    // opens in an editor only through a folder of the workspace that holds it; the machine's own
+    // Only the five tracked files are asked for, and with them the primary hub's settings file,
+    // `.oculus/config.yml`, read through the primary's folder with the folders on its way listed
+    // (state/system/config/view/hub-file.ts); a file opens in an editor only through a folder of
+    // the workspace that holds it; the machine's own
     // files are listed from the catalog, and the value in force of each key comes with the
     // workspaces answer, so their text is not read here. The Catalogs and Texts groups are made
     // from the listings of the two folders, which the same version re-reads. The lists the controls
@@ -74,7 +74,7 @@
     import { searchGroups } from '$lib/state/system/config/search';
     import { contentsAfter, contentsPlace } from '$lib/state/system/config/view/contents';
     import { listedFiles } from '$lib/state/system/config/view/folders';
-    import { hubLayerText } from '$lib/state/system/config/view/hub-layer';
+    import { hubFileText } from '$lib/state/system/config/view/hub-file';
     import {
         settingsQuery,
         settingsReveal,
@@ -189,7 +189,7 @@
                 schemas: listedFiles(SCHEMAS, (path) => listing(OCULUS_CONFIG_ROOT, path)),
                 texts: listedFiles(TEXT, (path) => listing(OCULUS_CONFIG_ROOT, path))
             },
-            (file) => hubLayerText(file, hubListing, hubText),
+            hubFileText(hubListing, hubText),
             appSettingRows(appShell.acting(), config()?.config ?? {}),
             {
                 primary: primary(),

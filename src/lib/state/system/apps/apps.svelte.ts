@@ -72,6 +72,8 @@ import { createFrameShell, type FrameItem } from './shell/frames.svelte.ts';
 import { createRequests, type CommandResult, type RequestsStore } from './shell/requests.svelte.ts';
 
 export type { AppHostRow, AppRow };
+/** The view id of an app, by its root and its name, which the Apps view keys its rows by. */
+export { appViewId };
 
 /**
  * What the apps store reads of the rest of the client. The workbench's stores sit above this folder
@@ -117,7 +119,12 @@ export type AppsDeps = {
     pageCommand: (id: string, args: unknown[]) => Promise<CommandResult>;
     registry: { viewFor: (view: string) => { listed?: boolean } | undefined };
     layout: {
-        openView: (view: string, state?: unknown) => string;
+        openView: (
+            view: string,
+            state?: unknown,
+            page?: string,
+            options?: { document?: boolean }
+        ) => string;
         /** Select a tab in its pane. */
         activateInstance: (id: string) => void;
         /** The page or float whose tree holds a tab, or null. */
@@ -197,8 +204,11 @@ export type AppsStore = ManageStore &
         folders: () => string[];
         /** The row of this view id, or undefined. */
         rowOf: (id: string) => AppRow | undefined;
-        /** Show the approval panel of an app in its tab, which opens when it is not open. */
-        review: (id: string) => void;
+        /**
+         * Show the approval panel of an app in its tab, which opens when it is not open; with
+         * `document` set the tab lands in the page's documents pane, beside the list that asked.
+         */
+        review: (id: string, document?: boolean) => void;
         /** Whether the approval panel of this app is being shown in place of its frame. */
         reviewing: (id: string) => boolean;
         /** Put the approval panel away. */
@@ -790,9 +800,9 @@ export function createApps(deps: AppsDeps): AppsStore {
         findings: () => deps.entities.apps()?.findings ?? [],
         folders: () => deps.entities.apps()?.folders ?? [],
         rowOf,
-        review: (id) => {
+        review: (id, document = false) => {
             reviews.add(id);
-            deps.layout.openView(id);
+            deps.layout.openView(id, undefined, undefined, { document });
         },
         reviewing: (id) => reviews.has(id),
         endReview: (id) => {

@@ -7,12 +7,13 @@
 
 import type { HeadStage } from '$lib/state/sessions/source/draft';
 import { repoOfFile, wholePath, type RepoFile } from '$lib/state/sources/repositories/file-git';
+import { readableRepositoryRoots } from '$lib/state/sources/repositories/repositories';
 import type { ClientState } from '$lib/state/client/context';
 
 /** What the tab's file facts read of the tab. */
 export type TabFileDeps = {
     workspaces: ClientState['fs']['workspaces'];
-    gitRoots: ClientState['selectors']['gitRoots'];
+    repositories: ClientState['selectors']['repositories'];
     gitFor: ClientState['selectors']['gitFor'];
     root: () => string;
     path: () => string;
@@ -38,16 +39,15 @@ export function createTabFile(deps: TabFileDeps) {
     );
     /**
      * The repository holding the file and its path there, or null for a file in none. A version at
-     * HEAD or in the index names its repository's own folder as its root.
+     * HEAD or in the index names its repository's own folder as its root. A file under a second
+     * root of one repository (a workspace folder inside the hub's repository) is a file of that
+     * repository under the root that shows it, so its path is the one git's state names it by.
      */
     const inRepo = $derived.by<RepoFile | null>(() => {
         if (deps.blocked()) return null;
         const file = { root: deps.root(), path: deps.path() };
         if (deps.head() !== undefined) return file;
-        const repos = deps.gitRoots().filter((one) => {
-            const held = deps.gitFor(one);
-            return held !== null && held.repository && held.error === null;
-        });
+        const repos = readableRepositoryRoots(deps.repositories('all'), deps.gitFor);
         return repoOfFile(served, file, repos);
     });
     /** Whether the tab shows the working file, read, which the star and Open in Program act on. */

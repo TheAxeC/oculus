@@ -17,6 +17,7 @@ import {
     pageView,
     revealState
 } from '../../../src/lib/state/forms/page-entry.ts';
+import { createSettled } from '../../../src/lib/state/forms/settled.svelte.ts';
 
 const SCHEMA: SchemaField[] = [
     { field: 'key', type: 'text' },
@@ -71,7 +72,10 @@ const FEEDS = {
     radar: { meta: {}, entries: [{ title: 'A paper' }] }
 } as unknown as FeedsPayload;
 
-const pages = createPages({ snapshot: () => snapshot(CAREER), feeds: () => FEEDS });
+const pages = createPages(
+    { snapshot: () => snapshot(CAREER), feeds: () => FEEDS },
+    createSettled(() => 0)
+);
 
 describe('pageView', () => {
     it.each([
@@ -155,7 +159,10 @@ describe('pageNamed', () => {
     });
 
     it('finds a hub with no career file as none', () => {
-        const bare = createPages({ snapshot: () => snapshot(null), feeds: () => FEEDS });
+        const bare = createPages(
+            { snapshot: () => snapshot(null), feeds: () => FEEDS },
+            createSettled(() => 0)
+        );
         expect(bare.pageNamed('career')).toBeNull();
     });
 

@@ -147,6 +147,8 @@ export function git(over: Partial<GitState> = {}): GitState {
         branches: [],
         worktrees: [],
         ignoresWorktrees: true,
+        top: '',
+        inWorkspace: true,
         upstream: false,
         present: true,
         repository: true,

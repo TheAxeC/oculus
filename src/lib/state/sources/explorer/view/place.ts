@@ -44,7 +44,7 @@ export type FsEntry = {
  * One folder of the open workspace as /api/fs answers it, under the name the workspace gives it:
  * `real` is the folder with every symlink resolved, which is how a repository's folder is written;
  * it is empty for a folder that does not exist and absent where an answer carries none. `hub` is
- * true on a folder that holds `.oculus/config/`.
+ * true on a folder that holds `.oculus/config.yml`.
  */
 export type FsRoot = {
     key: string;

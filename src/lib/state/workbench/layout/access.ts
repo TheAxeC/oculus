@@ -1,9 +1,10 @@
 // Layer 2, client state. What the parts of the layout store built beside its factory are given: the
 // page list read and written through functions, and the UI store a tab's own state lives in.
 //
-// The pages are the one reactive value the store holds, so the factory declaring them is the only
-// module of this folder that carries a rune. A part that holds no rune is a plain module here and
-// is handed this object, which is why none of them reaches a page list of its own.
+// The pages are the one reactive arrangement the store holds, so the factory declaring them is the
+// only module that holds pages in a rune; a part that keeps a small list of its own (the armed
+// keep, the tabs closed last) holds that list alone. Every part is handed this object, which is
+// why none of them reaches a page list of its own.
 
 import type { UiStore } from '../ui.svelte.ts';
 import type { Host, Layout, Page, Pages, Workbench } from './model.ts';

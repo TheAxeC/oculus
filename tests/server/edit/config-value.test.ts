@@ -101,7 +101,7 @@ describe("the machine's own file", () => {
         expect(reads.paths.filter((path) => path.endsWith('local.yml'))).toEqual([]);
     });
 
-    it("refuses a hub layer file that is a link to a hub's .oculus/local.yml, and writes nothing", () => {
+    it("refuses a hub settings file that is a link to a hub's .oculus/local.yml, and writes nothing", () => {
         const engine = scratchEngine();
         const { hub, local } = linkedHub();
         const outcome = writeConfigValue(
@@ -118,7 +118,7 @@ describe("the machine's own file", () => {
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 
-    it("refuses a hub layer file that is a link to oculus's own config/local.yml, and writes nothing", () => {
+    it("refuses a hub settings file that is a link to oculus's own config/local.yml, and writes nothing", () => {
         const engine = scratchEngine();
         const { hub, local } = hubLinkedToEngine(engine);
         const outcome = writeConfigValue(

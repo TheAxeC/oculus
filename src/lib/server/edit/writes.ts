@@ -337,7 +337,8 @@ export function target(
                       file: local.changes ?? defaultChangesPath(),
                       keep: changesKeep(merged),
                       writes: server.fsWrites,
-                      undoDir: join(appData, '.undo')
+                      undoDir: join(appData, '.undo'),
+                      hub: server.hub
                   },
         apps:
             server?.apps === undefined
@@ -414,7 +415,7 @@ export async function handleWrite(
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
             return json(
-                { error: `the session write could not be saved: ${reason}` },
+                { error: words(into.config.text, 'server.write_route.session_unsaved', reason) },
                 { status: 500 }
             );
         }
@@ -437,8 +438,10 @@ export async function handleWrite(
                       undefined,
                       at.hubKey
                   );
-        if (!outcome.found)
-            return json({ error: `no project with the id ${write.id}` }, { status: 404 });
+        if (!outcome.found) {
+            const error = words(into.config.text, 'server.write_route.no_project', write.id);
+            return json({ error }, { status: 404 });
+        }
         return answer(outcome, 'manifest', into, undefined, app ?? undefined);
     }
 
@@ -458,7 +461,13 @@ export async function handleWrite(
                       at.hubKey
                   );
         if (!outcome.found) {
-            return json({ error: `no entry ${entry.id} in ${entry.collection}` }, { status: 404 });
+            const error = words(
+                into.config.text,
+                'server.write_route.no_entry',
+                entry.id,
+                entry.collection
+            );
+            return json({ error }, { status: 404 });
         }
         return answer(outcome, 'entry', into, undefined, app ?? undefined);
     }
@@ -477,7 +486,9 @@ export async function handleWrite(
                       subtask.action,
                       subtask.value
                   );
-        if (!outcome.found) return json({ error: notFound(subtask.target) }, { status: 404 });
+        if (!outcome.found) {
+            return json({ error: notFound(into.config.text, subtask.target) }, { status: 404 });
+        }
         return answer(outcome, 'subtask', into, undefined, app ?? undefined);
     }
 
@@ -488,7 +499,9 @@ export async function handleWrite(
             at === null || !reaches(at.into, at.target.id, app)
                 ? NOT_FOUND
                 : writeSubtaskAdd(at.into.hub, at.into.config, at.target, added.fields);
-        if (!outcome.found) return json({ error: notFound(added.target) }, { status: 404 });
+        if (!outcome.found) {
+            return json({ error: notFound(into.config.text, added.target) }, { status: 404 });
+        }
         return answer(outcome, 'subtask-add', into, undefined, app ?? undefined);
     }
 
@@ -496,8 +509,11 @@ export async function handleWrite(
     if (host !== null) {
         const home = homeOf(into);
         if (home === null) return noHub(into);
-        const outcome = writeHost(home.hub, host.name, host.status, into.career);
-        if (!outcome.found) return json({ error: `no host named ${host.name}` }, { status: 404 });
+        const outcome = writeHost(home.hub, host.name, host.status, into.career, into.config.text);
+        if (!outcome.found) {
+            const error = words(into.config.text, 'server.write_route.no_host', host.name);
+            return json({ error }, { status: 404 });
+        }
         return answer(outcome, 'host', into, undefined, app ?? undefined);
     }
 
@@ -526,8 +542,14 @@ export async function handleWrite(
             home.bookmarks,
             hubKeysOf(into)
         );
-        if (!outcome.found)
-            return json({ error: `no collection ${fresh.collection}` }, { status: 404 });
+        if (!outcome.found) {
+            const error = words(
+                into.config.text,
+                'server.write_route.no_collection',
+                fresh.collection
+            );
+            return json({ error }, { status: 404 });
+        }
         return answer(outcome, 'new-entry', into, undefined, app ?? undefined);
     }
 
@@ -544,8 +566,14 @@ export async function handleWrite(
                       at.order,
                       at.into.bookmarks
                   );
-        if (!outcome.found)
-            return json({ error: `no collection ${order.collection}` }, { status: 404 });
+        if (!outcome.found) {
+            const error = words(
+                into.config.text,
+                'server.write_route.no_collection',
+                order.collection
+            );
+            return json({ error }, { status: 404 });
+        }
         return answer(outcome, 'reorder', into, undefined, app ?? undefined);
     }
 
@@ -557,18 +585,27 @@ export async function handleWrite(
                 ? NOT_FOUND
                 : removeEntry(at.into.hub, at.into.config, at.collection, at.id, at.into.bookmarks);
         if (!outcome.found) {
-            return json(
-                { error: `no entry ${removal.id} in ${removal.collection}` },
-                { status: 404 }
+            const error = words(
+                into.config.text,
+                'server.write_route.no_entry',
+                removal.id,
+                removal.collection
             );
+            return json({ error }, { status: 404 });
         }
         return answer(outcome, 'delete-entry', into, undefined, app ?? undefined);
     }
 
     const feedField = feedFieldWrite(body);
     if (feedField !== null) {
-        if (!isFeedKind(feedField.feed))
-            return json({ error: `unknown feed ${feedField.feed}` }, { status: 400 });
+        if (!isFeedKind(feedField.feed)) {
+            const error = words(
+                into.config.text,
+                'server.write_route.unknown_feed',
+                feedField.feed
+            );
+            return json({ error }, { status: 400 });
+        }
         const at = routedRoot(into, feedField.root, app);
         const outcome =
             at === null
@@ -582,28 +619,40 @@ export async function handleWrite(
                       feedField.value
                   );
         if (!outcome.found) {
-            return json(
-                { error: `no entry ${feedField.id} in ${feedField.feed}` },
-                { status: 404 }
+            const error = words(
+                into.config.text,
+                'server.write_route.no_entry',
+                feedField.id,
+                feedField.feed
             );
+            return json({ error }, { status: 404 });
         }
         return answer(outcome, 'feed-field', into, undefined, app ?? undefined);
     }
 
     const feedDelete = feedDeleteWrite(body);
     if (feedDelete !== null) {
-        if (!isFeedKind(feedDelete.feed))
-            return json({ error: `unknown feed ${feedDelete.feed}` }, { status: 400 });
+        if (!isFeedKind(feedDelete.feed)) {
+            const error = words(
+                into.config.text,
+                'server.write_route.unknown_feed',
+                feedDelete.feed
+            );
+            return json({ error }, { status: 400 });
+        }
         const at = routedRoot(into, feedDelete.root, app);
         const outcome =
             at === null
                 ? NOT_FOUND
                 : deleteFeedEntry(at.hub, at.config, feedDelete.feed, feedDelete.id);
         if (!outcome.found) {
-            return json(
-                { error: `no entry ${feedDelete.id} in ${feedDelete.feed}` },
-                { status: 404 }
+            const error = words(
+                into.config.text,
+                'server.write_route.no_entry',
+                feedDelete.id,
+                feedDelete.feed
             );
+            return json({ error }, { status: 404 });
         }
         return answer(outcome, 'feed-delete', into, undefined, app ?? undefined);
     }
@@ -613,8 +662,10 @@ export async function handleWrite(
         const home = homeOf(into);
         if (home === null) return noHub(into);
         const outcome = addLead(home.hub, home.config, lead.fields);
-        if (!outcome.found)
-            return json({ error: 'the leads feed is not on this hub' }, { status: 404 });
+        if (!outcome.found) {
+            const error = words(into.config.text, 'server.write_route.no_leads_feed');
+            return json({ error }, { status: 404 });
+        }
         return answer(outcome, 'lead-add', into, undefined, app ?? undefined);
     }
 
@@ -629,7 +680,10 @@ export async function handleWrite(
             radarBucketKeys(into.engine)
         );
         if (!outcome.found) {
-            return json({ error: 'Lit Watch has no file on this hub' }, { status: 404 });
+            return json(
+                { error: words(into.config.text, 'server.write_route.no_radar_file') },
+                { status: 404 }
+            );
         }
         return answer(outcome, 'radar-add', into, undefined, app ?? undefined);
     }
@@ -645,7 +699,10 @@ export async function handleWrite(
             linkedinIdea.category
         );
         if (!outcome.found)
-            return json({ error: 'the LinkedIn folder is not on this hub' }, { status: 404 });
+            return json(
+                { error: words(into.config.text, 'server.write_route.no_linkedin_folder') },
+                { status: 404 }
+            );
         return answer(outcome, 'linkedin-idea', into, undefined, app ?? undefined);
     }
 
@@ -655,7 +712,10 @@ export async function handleWrite(
         const outcome =
             at === null ? NOT_FOUND : markLinkedinPosted(at.hub, at.config, linkedinPost.file);
         if (!outcome.found)
-            return json({ error: 'the LinkedIn idea file is not on this hub' }, { status: 404 });
+            return json(
+                { error: words(into.config.text, 'server.write_route.no_idea_file') },
+                { status: 404 }
+            );
         return answer(outcome, 'linkedin-post', into, undefined, app ?? undefined);
     }
 
@@ -721,7 +781,10 @@ export async function handleWrite(
         return answer(outcome, change.kind, into, change.at);
     }
 
-    return json({ error: 'the body is not a write this route knows' }, { status: 400 });
+    return json(
+        { error: words(into.config.text, 'server.write_route.not_a_write') },
+        { status: 400 }
+    );
 }
 
 /**
@@ -774,11 +837,14 @@ function noHub(into: WriteTarget): Response {
 }
 
 /** The 404 a subtask write gives: the manifest or the entry its target names is not in the hub. */
-function notFound(target: SubtaskTarget): string {
+function notFound(text: Record<string, string>, target: SubtaskTarget): string {
     return target.collection === undefined
-        ? `no project with the id ${target.id}`
-        : `no entry ${target.id} in ${target.collection}`;
+        ? words(text, 'server.write_route.no_project', target.id)
+        : words(text, 'server.write_route.no_entry', target.id, target.collection);
 }
+
+/** The word an app's store write is refused with when its folder cannot be written. */
+const UNWRITABLE_WORD = 'unwritable';
 
 /** The answer to a store write of an app: written and recorded, or refused with its word. */
 async function storeAnswer(into: WriteTarget, app: HeldApp, value: unknown): Promise<Response> {
@@ -792,7 +858,7 @@ async function storeAnswer(into: WriteTarget, app: HeldApp, value: unknown): Pro
             return json({
                 ok: true,
                 changed: [],
-                refused: [{ field: 'store', reason: 'unwritable' }]
+                refused: [{ field: 'store', reason: UNWRITABLE_WORD }]
             });
         }
         if ('error' in outcome) return json({ error: outcome.error }, { status: 500 });

@@ -22,7 +22,7 @@ usage_tiers:
 usage_refresh_min: 10
 usage_refresh_model: "haiku"
 
-# Domains expected to have a dataset. Oculus reports projects in these domains without a Data section. The engine names none: a hub lists its own in .oculus/config/behavior.yml.
+# Domains expected to have a dataset. Oculus reports projects in these domains without a Data section. The engine names none: a hub lists its own in .oculus/config.yml.
 data_domains: []
 
 
@@ -71,7 +71,7 @@ file_index:
 
 # === Served mode: live SLURM poller and in-page chat =========================
 # Live HPC polling cadences are minutes. `prewarm: false` defers finished-job log resolution.
-# `resource` is the key of a cluster entry of the hub's resources registry, whose `host` is the ssh alias the poller uses; empty means the hub names no cluster and nothing is polled. A hub sets it in .oculus/config/behavior.yml.
+# `resource` is the key of a cluster entry of the hub's resources registry, whose `host` is the ssh alias the poller uses; empty means the hub names no cluster and nothing is polled. A hub sets it in .oculus/config.yml.
 slurm:
   resource: ''
   days: 3
@@ -322,4 +322,4 @@ apps:
   # Folders, each relative to a root and applied to every root, that `open({ file })` and a custom editor's document never reach for an app, compared by segment and without regard to letter case. A key that is missing or is not a list of folder paths closes every file.
   closed_paths: [secrets]
 
-# The values of the settings that apps declare under `contributes.configuration`, written by the Settings view into the primary hub's layer of this file as a map from the setting's whole key (`notes.width` is one key) to its value. A value outside its setting's type, `enum` or bounds, and a key no approved app declares, is a finding and the app reads its default. The map is not set here; the hub's layer holds it.
+# The values of the settings that apps declare under `contributes.configuration`, as a map from the setting's whole key (`notes.width` is one key) to its value. The map is kept in a hub's own .oculus/config.yml, where `app_settings` is a key of the hub list; the apps read the map of the primary hub's .oculus/config.yml, and the Settings view writes into that file. A value outside its setting's type, `enum` or bounds, and a key no approved app declares, is a finding and the app reads its default. This file sets no map.

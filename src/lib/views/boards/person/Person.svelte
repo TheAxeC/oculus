@@ -127,8 +127,11 @@
         join.jointWork.map((entry) => ({ entry, status: optionalText(entry.fields.status) }))
     );
 
-    /** The words on the tab and in the header: the person's name, their key until it is known. */
-    const title = $derived(join.person === null ? key : join.person.name);
+    /**
+     * The words on the tab and in the header: the person's name as the page holds it, a saved name
+     * included before the snapshot shows it, their key until it is known.
+     */
+    const title = $derived(page?.title ?? (join.person === null ? key : join.person.name));
 
     /** Open one project of this person as its own tab, the tab a board card opens. */
     function openProject(id: string, label: string): void {

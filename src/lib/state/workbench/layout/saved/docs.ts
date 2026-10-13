@@ -1,11 +1,12 @@
 // Layer 2, client state. The hub's documents a saved rail page is given when it is restored. A page
 // made from the config has its documents from navigation/arrangement.ts (`withDocs`); a saved page
-// that lacks a listed document gains that document's tab here, once, and the page records the paths
-// it has been given (`Page.docs`), so a tab the reader closes stays closed.
+// that lacks a listed document gains that document's tab here, once, pinned as the arrangement's
+// tabs are, and the page records the paths it has been given (`Page.docs`), so a tab the reader
+// closes stays closed.
 
 import { docState, type DocEntry } from '../../navigation/catalogue.ts';
 import { DOC_VIEW, instanceText, newInstance, panes, tabsOf } from '../instance.ts';
-import type { Instance, Page, Pages } from '../model.ts';
+import { pinned, pinnedRun, type Instance, type Page, type Pages } from '../model.ts';
 import { activate, insertInstance } from '../tree.ts';
 
 /** The documents a rail button's page lists: its arrangement key and the `docs:` entries of it. */
@@ -21,8 +22,9 @@ function shownPaths(page: Page): Set<string> {
 }
 
 /**
- * The page with the documents of `listed` it has not been given added after the first tab of its
- * first leaf pane, in the list's order, and recorded as given. A document the page already shows
+ * The page with the documents of `listed` it has not been given added, pinned, after the first tab
+ * of its first leaf pane when that tab is pinned and before it otherwise, so the pinned tabs stay
+ * first, in the list's order, and recorded as given. A document the page already shows
  * adds no second tab. The active tab stays active. The page itself when it has been given every
  * document.
  */
@@ -35,13 +37,14 @@ function documented(page: Page, listed: readonly DocEntry[]): Page {
     for (const entry of fresh) {
         if (shown.has(entry.path)) continue;
         shown.add(entry.path);
-        tabs.push(newInstance(DOC_VIEW, docState(entry)));
+        tabs.push(pinned(newInstance(DOC_VIEW, docState(entry))));
     }
     let root = page.workbench.root;
     const first = panes(root).at(0);
     if (first !== undefined) {
+        const from = Math.min(1, pinnedRun(first.pane.tabs));
         tabs.forEach((tab, at) => {
-            root = insertInstance(root, first.path, 1 + at, tab);
+            root = insertInstance(root, first.path, from + at, tab);
         });
         root = activate(root, first.pane.active);
     }

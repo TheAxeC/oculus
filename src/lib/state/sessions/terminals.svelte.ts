@@ -10,17 +10,17 @@
 // over every page's Terminal tabs (the rules over one tab's state are state/sessions/terminal/
 // terminal-tabs.ts): `showTerminal` shows a terminal in the tab that owns it, switching to its
 // page, or hands a terminal no tab owns to the Terminal tab of the page on screen, or a new one;
-// `moveTerminal` moves one from its tab to another; `attachable` lists the running terminals no
-// tab owns, and `attachTerminal` joins one of them to the end of a Terminal tab and shows it
-// there (the tab's Attach to Session); `startInTab` starts a terminal of a kind at
-// once in the tab's folder and shows it, `newTerminalIn` does the same in a Terminal tab of one
-// pane, and `splitTerminal` starts one of the split terminal's kind and folder right of it in the
-// tab's row; `composeIn` puts the composer of a start with a prompt in the page's Terminal tab, in
-// the tab's folder; `composeAt` does the same for a folder and an agent a worktree names, or for a
-// hub task, whose seed it asks the server for (state/sessions/terminal/composer/opening.svelte.ts
-// holds the three composers and the held seeds); `approveSeed` posts the approval a task's seed
-// asked for, and `startingIn` says that a tab's start is in flight. A start the server refuses is
-// said on the tab (`refusal`) and changes nothing.
+// `moveTerminal` moves one from its tab to another; `attachable` lists the running terminals no tab
+// owns, and `attachTerminal` joins one of them to the end of a Terminal tab and shows it there (the
+// tab's Attach to Session); `startInTab` starts a terminal of a kind at once in the tab's folder,
+// or in a folder given, and shows it, `newTerminalIn` does the same in a Terminal tab of one pane,
+// and `splitTerminal` starts one of the split terminal's kind and folder right of it in the tab's
+// row; `composeIn` puts the composer of a start with a prompt in the page's Terminal tab, in the
+// tab's folder; `composeAt` does the same for a folder and an agent a worktree names, or for a hub
+// task, whose seed it asks the server for (state/sessions/terminal/composer/opening.svelte.ts holds
+// the three composers and the held seeds); `approveSeed` posts the approval a task's seed asked
+// for, and `startingIn` says that a tab's start is in flight. A start the server refuses is said on
+// the tab (`refusal`) and changes nothing.
 // The store keeps what each start answered until the payload lists it, so a terminal started a
 // moment ago can be split. A terminal that ends leaves the `sessions` payload's list, and the store
 // takes it out of every tab that owned it, closes a tab left owning none, on any page, unless the
@@ -246,10 +246,11 @@ export type TerminalsStore = {
         agent: string
     ) => Promise<TerminalAnswer>;
     /**
-     * Start a terminal of a kind at once in a Terminal tab's folder (the shown terminal's, else the
-     * first one's, else the hub root, waited for while it is not known yet) and show it there.
+     * Start a terminal of a kind at once in `folder`, else in the Terminal tab's folder (the shown
+     * terminal's, else the first one's, else the hub root, waited for while it is not known yet),
+     * and show it there.
      */
-    startInTab: (tab: string, kind: TerminalKind) => Promise<TerminalAnswer>;
+    startInTab: (tab: string, kind: TerminalKind, folder?: string) => Promise<TerminalAnswer>;
     /** The kind a tab's New Terminal is starting now, or null when it is starting none. */
     startingIn: (tab: string) => TerminalKind | null;
     /**
@@ -701,26 +702,26 @@ export function createTerminals(
      * marked as starting that kind from the call until it answers, whichever way it answers, so a
      * tab with no row says that a shell is starting rather than drawing the composer meanwhile.
      */
-    async function startInTab(tab: string, kind: TerminalKind): Promise<TerminalAnswer> {
-        starting.kinds[tab] = kind;
+    async function startInTab(id: string, kind: TerminalKind, at = ''): Promise<TerminalAnswer> {
+        starting.kinds[id] = kind;
         try {
-            const target = tabById(tab);
+            const target = tabById(id);
             if (target === null) return { ok: false, id: '', error: '' };
             const known = tabFolder(
                 readTab(target.state),
                 (one) => terminalRecord(one)?.cwd ?? null
             );
-            const folder = known ?? (await defaultFolder());
+            const folder = at !== '' ? at : (known ?? (await defaultFolder()));
             if (folder === '') {
-                say(tab, t('sessions.terminal_no_folder'));
+                say(id, t('sessions.terminal_no_folder'));
                 return { ok: false, id: '', error: '' };
             }
-            return await startFor(tab, kind, folder, (held, id) =>
-                withTerminal(held, id, held.terminals.length)
+            return await startFor(id, kind, folder, (held, made) =>
+                withTerminal(held, made, held.terminals.length)
             );
         } finally {
             // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- the record is keyed by tab id, and a Map would not be reactive through $state
-            delete starting.kinds[tab];
+            delete starting.kinds[id];
         }
     }
 

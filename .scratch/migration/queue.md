@@ -1,13 +1,13 @@
-In flight (2 of 6 slots in use):
-- D74 (the HPC view on a hub with no cluster; the focused source tab kept while hidden; History shown live; the Repositories list; the Apps page; pinned page tabs and Reopen Closed Tab; each hub's own vocabulary; one settings file per hub; one list of record files; refusal words from the catalog; entry pages right after a write; the card on a lead's and a paper's page; the Float group): repair round 1 done, its review running.
+In flight (1 of 6 slots in use):
 - D76 (notes like Obsidian): building, from a commit of D74's built work (open item 93 (a)).
 
 Queued, in order (3 steps):
-- D73 (the Literature view): starts from D74's worktree once the review of D74's repair round finds nothing in parts 8 to 12 (open item 93 (a)).
+- D73 (the Literature view): next, prepared from main's head now that D74 has landed.
 - Q72 (the architecture re-read): after D73, D74 and D76, so it reads their code.
 - O33 (oculus in its own repository; inline): after Q72.
 
 Landed, newest first:
+- D74 (the shell and source-control fixes), 2026-10-13, 10e1c3db5.
 - D72 (collection entries as records of their own), 2026-10-13, f3c588783.
 - D64 (apps in the tools), 2026-10-13, 8b5782e89.
 - D71 (workspaces and repositories), 2026-10-13, f6fdc112e.

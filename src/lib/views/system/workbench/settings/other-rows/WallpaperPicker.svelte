@@ -3,7 +3,7 @@
     // of every hub's wallpaper folder as small tiles grouped by hub, with a Random tile (one image
     // of any hub, kept until the server restarts) and a None tile. The chosen tile is the value of
     // `wallpaper.image`, written as `<hub name>/<file name>`, `random` or the empty text into the
-    // primary hub's own appearance.yml by the row writer, as every other pick of the view is. The
+    // primary hub's .oculus/config.yml by the row writer, as every other pick of the view is. The
     // thumbnails are the images themselves, drawn small by the browser from the image route.
 
     import ThumbGrid, { type ThumbGroup } from '$lib/ui/display/ThumbGrid.svelte';

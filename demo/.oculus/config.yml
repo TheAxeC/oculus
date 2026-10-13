@@ -1,7 +1,16 @@
 # ===========================================================================
-# .oculus/config/catalogs/vocab.yml
-# The demo hub's layer of oculus's catalogs/vocab.yml: the research domains and the theme words of its venue and dataset registries.
+# .oculus/config.yml
+# The demo hub's settings: the cluster its jobs run on, the domains expected to have a dataset, the research domains and the theme words of its venue and dataset registries.
 # ===========================================================================
+
+
+# Domains expected to have a dataset. Oculus reports projects in these domains without a Data section.
+data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
+
+
+# `resource` is the key of a cluster entry of registries/resources.yml, whose `host` is the ssh alias the poller uses.
+slurm:
+  resource: utwente
 
 
 # Research-domain colours and project-card labels, keyed by the manifest's `domain` value.

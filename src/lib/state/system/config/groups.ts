@@ -7,9 +7,9 @@
 //
 // A heading draws from the files that hold an option of its subject, and shows one line for each
 // (FileLine): the file's name and description, whether it is the machine's own, and why it has no
-// row when it is still being read, unreadable, cut or not parsed. A file with keys of the hub list
-// has a second line when the heading holds one of those keys: the hub layer's file of the same name
-// under `.oculus/config/`, opened in the hub's root, with its own status and, when it is not there,
+// row when it is still being read, unreadable, cut or not parsed. A heading that holds a key of the
+// hub list has one more line, once whatever number of files it draws from: the hub's settings file,
+// `.oculus/config.yml`, opened in the hub's root, with its own status and, when it is not there,
 // the sentence that a change creates it. The rows of such a file are in no heading. A heading
 // exists only while the options catalog holds an option of its subject, so a merged config with no
 // catalog has none.
@@ -41,8 +41,8 @@ import {
     localRows,
     type ConfigRow,
     type FileStatus,
-    type HubLayer,
-    type LayerResult,
+    type HubFile,
+    type HubFileResult,
     type LocalRow,
     type MachineState
 } from './rows.ts';
@@ -86,7 +86,7 @@ export type Section = { id: string; title: string; rows: Row[] };
 /** One file a heading draws from, with the reason it has no row when it has none. */
 type FileLine = {
     file: string;
-    /** The root the file is opened in: the engine's, or the hub's for a hub layer file. */
+    /** The root the file is opened in: the engine's, or the hub's for the hub's settings file. */
     root: string;
     /** What the file holds, in one sentence, or the empty string. */
     description: string;
@@ -224,22 +224,22 @@ function machineLine(): FileLine {
     };
 }
 
-/** The file line of a hub layer file: its path under the hub, read as the layer result says. */
-function layerLine(file: string, layer: LayerResult): FileLine {
+/** The file line of the hub's settings file: its path under the hub, read as the result says. */
+function hubFileLine(hubFile: HubFileResult): FileLine {
     return {
-        file: layer.path,
+        file: hubFile.path,
         root: PRIMARY_ROOT,
-        description: describedAs(file),
+        description: describedAs(hubFile.path),
         local: false,
-        status: layer.status,
-        said: layer.said
+        status: hubFile.status,
+        said: hubFile.said
     };
 }
 
 /**
  * The groups of the view. `texts` answers the text of a tracked file, and is asked for the files
- * the catalog describes and no other. `layers` answers the hub layer's file of a tracked file, and
- * is asked for the files that hold keys of the hub list; without it no file has a layer. `folders`
+ * the catalog describes and no other. `hubFile` is the hub's settings file, given to the files that
+ * hold keys of the hub list; without it no file has one. `folders`
  * are the listings of the catalog, schema and text folders, and none leaves the three groups out.
  * `apps` are the rows of the settings the apps declare, which stand last in the Apps heading.
  * `machine` is what the server sent of the machine's `local.yml` files: which keys the primary's
@@ -250,7 +250,7 @@ export function settingsGroups(
     texts: (file: string) => FileText,
     browser: BrowserRow[],
     folders?: FolderListings,
-    layers?: (file: string) => HubLayer,
+    hubFile?: HubFile,
     apps: AppSettingRow[] = [],
     machine: MachineState = { primary: null, set: [], defaults: {}, values: {}, hubs: {} }
 ): Group[] {
@@ -268,17 +268,15 @@ export function settingsGroups(
     const files = FILES.filter((file) => Object.hasOwn(catalog, file));
     const results = new Map(
         files.map((file) => {
-            const hubbed = layers !== undefined && hubKeysOf(file) !== undefined;
-            return [
-                file,
-                fileRows(file, catalog[file], texts(file), hubbed ? layers(file) : undefined)
-            ];
+            const hubbed = hubFile !== undefined && hubKeysOf(file) !== undefined;
+            return [file, fileRows(file, catalog[file], texts(file), hubbed ? hubFile : undefined)];
         })
     );
     const headings: (Heading | typeof UNHEADED)[] = [...HEADINGS, UNHEADED];
     for (const id of headings) {
         const lines: FileLine[] = [];
         const rows: Row[] = [];
+        let hubLine = false;
         for (const file of files) {
             const entries = Object.entries(catalog[file]).filter(
                 ([, entry]) => entry.heading === id
@@ -288,8 +286,9 @@ export function settingsGroups(
             if (result === undefined) continue;
             lines.push(lineOf(file, result.status, result.said ?? null));
             const listed = hubKeysOf(file) ?? [];
-            if (result.layer !== undefined && entries.some(([key]) => listed.includes(key))) {
-                lines.push(layerLine(file, result.layer));
+            if (result.hubFile !== undefined && entries.some(([key]) => listed.includes(key))) {
+                if (!hubLine) lines.push(hubFileLine(result.hubFile));
+                hubLine = true;
             }
             rows.push(...result.rows.filter((row) => row.entry.heading === id));
         }

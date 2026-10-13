@@ -1,7 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial. The Live HPC bar presents the four connection states at its end and
+    // Layer 3, view partial. The Live HPC bar presents the connection states at its end and
     // keeps refresh as an explicit server action. While the cluster does not answer, the refresh
     // control is the retry of the error box (Hpc.svelte) and the bar holds the status words alone.
+    // With no cluster named (`unconfigured`) the bar holds its words alone too, in the plain tone,
+    // with no "as of" time and no stale mark.
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -32,6 +34,7 @@
         if (data === null || data.status === 'starting') return t('hpc.polling');
         if (data.status === 'unreachable') return t('hpc.unreachable');
         if (data.status === 'error') return t('hpc.error');
+        if (data.status === 'unconfigured') return t('hpc.unconfigured');
         return t('hpc.live');
     }
 
@@ -77,7 +80,7 @@
 
 <!-- The pane carries the view's name, so the bar is the refresh control and the status line. -->
 <Toolbar label={t('hpc.toolbar')}>
-    {#if !failed}
+    {#if !failed && data?.status !== 'unconfigured'}
         <ToolButton label={t('hpc.refresh_now')} onclick={onrefresh} />
     {/if}
     <p class="meta">

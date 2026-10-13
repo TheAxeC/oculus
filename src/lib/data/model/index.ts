@@ -135,9 +135,9 @@ export type PortfolioConfig = {
     /** The keys of the `domains:` of vocab.yml, which a project's `domain:` is checked against. */
     domains: string[];
     /**
-     * What the hub's own `.oculus/config/` layer does not name, so that its value came from the
-     * engine's defaults: the registries whose `*_file` key is absent from it, whether the
-     * `collections:` list is, and whether `portfolio_deck:` is. A hub reports only what it names,
+     * What the hub's own `.oculus/config.yml` does not name, so that its value came from the
+     * engine's defaults: the registries whose key is absent from its `collections:` list, whether
+     * the list is, and whether `portfolio_deck:` is. A hub reports only what it names,
      * so a file in this list that is missing is no finding. Absent for a config read without
      * knowing where each key came from, where every file counts as named.
      */
@@ -227,6 +227,12 @@ export type Jump = {
     column?: number;
 };
 
+/**
+ * The payload of the `changes` channel: the moment of the newest record the change log holds,
+ * published after each append, so a page holding the log reads it again.
+ */
+export type ChangesPayload = { at: string };
+
 /** The message a page sends to ask for a jump. */
 export type JumpMessage = { type: 'jump' } & Jump;
 
@@ -266,11 +272,30 @@ export type HostInfo = { name: string; address: string };
  */
 export type ConfigPayload = {
     config: Record<string, unknown>;
+    /** The vocabulary of each hub of the workspace, for the records of that hub alone. */
+    hubs: HubVocabs;
     text: Record<string, string>;
     icons: Record<string, string>;
     host: HostInfo;
     findings: Finding[];
 };
+
+/**
+ * The words one hub gives its own records, as its settings file gives them over the engine's
+ * defaults: the research `domains` (a key to its colour and label), and the `venue_themes` and
+ * `data_themes` lists (rows of a key and a label).
+ */
+export type HubVocab = {
+    domains: Record<string, unknown>;
+    venue_themes: unknown[];
+    data_themes: unknown[];
+};
+
+/**
+ * The vocabulary of every hub the workspace holds, by the hub's name, and the name of the primary
+ * hub (null in a workspace with none), whose records carry no hub name in their ids.
+ */
+export type HubVocabs = { primary: string | null; lists: Record<string, HubVocab> };
 
 /**
  * One app the apps watcher found: a folder of web files with an `app.yml`, in the machine's apps
@@ -589,6 +614,7 @@ export { BRANCH_NOT_MERGED } from './model-sessions.ts';
 
 export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
+export { entryIdOf, entryTitleOf } from './model-collections.ts';
 export type {
     AgentAccount,
     AgentChoice,

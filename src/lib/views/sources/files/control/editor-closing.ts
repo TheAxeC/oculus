@@ -1,6 +1,7 @@
 // Layer 3, view partial of sections/OpenEditors.svelte. What closing tabs from the Open Editors
 // section does: the tabs the autosave mode saves on a close are saved first, the tabs close at once
 // when none holds unsaved text after that, and otherwise the close waits for the question it asks.
+// The tabs a close takes are put on the list Reopen Closed Tab reads, as one batch.
 
 import { closeAsk, closeWords } from '$lib/state/workbench/navigation/pages';
 import { t } from '$lib/state/shared/words/text';
@@ -12,6 +13,8 @@ export type ClosingDeps = {
     nameOf: (id: string) => string;
     /** Close one tab of the page. */
     close: (id: string) => void;
+    /** Put the tabs one close takes on the list of the tabs closed last, before they close. */
+    remember: (ids: readonly string[]) => void;
 };
 
 /** The close that waits on the dialog: the words it asks and what a yes does. */
@@ -25,7 +28,10 @@ export type Confirming = { message: string; act: () => void };
  */
 export async function closingEditors(ids: string[], deps: ClosingDeps): Promise<Confirming | null> {
     await deps.saveBeforeClose(ids);
-    const act = (): void => ids.forEach((id) => deps.close(id));
+    const act = (): void => {
+        deps.remember(ids);
+        ids.forEach((id) => deps.close(id));
+    };
     const asked = closeAsk({
         ids,
         unsaved: deps.unsaved,

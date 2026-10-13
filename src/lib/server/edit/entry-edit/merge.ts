@@ -24,7 +24,8 @@ import {
     valueEnd
 } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import { isMap } from '../../../data/helpers/guards.ts';
-import { NOT_A_FIELD_VALUE, asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
+import { asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../yaml/why.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import { isBlockMap, isBlockValue, renderBlockMap, renderListItem } from '../yaml/yaml-values.ts';
 import type { BlockMap, BlockValue, FieldValue } from '../yaml/yaml-values.ts';
@@ -91,11 +92,11 @@ function putLines(text: string, at: number, block: string): string {
 /** A scalar written over the bytes of the old one, plain scalars made safe inside a flow map. */
 function replaceScalar(text: string, node: Node, value: BlockValue, inFlow: boolean): Written {
     const given = asFieldValue(value);
-    if (given === undefined || given === null) return fail('the value cannot be written here');
+    if (given === undefined || given === null) return fail(REFUSALS.valueCannotHere);
     const range = rangeOf(node);
     const plain = isScalar(node) && (node.type === 'PLAIN' || node.type === undefined);
     if (inFlow && plain && !Array.isArray(given) && !isMap(given)) {
-        if (range === null) return fail('the value has no place in the file');
+        if (range === null) return fail(REFUSALS.valueNoPlace);
         const rendered = flowScalar(given);
         return { text: splice(text, range[0], valueEnd(node), rendered) };
     }
@@ -133,12 +134,12 @@ function pairsOf(map: YAMLMap): [string, Pair<Scalar, Node>][] {
 function mergeBlockMap(text: string, path: Path, wanted: BlockMap): Written {
     let out = text;
     const first = nodeAt(out, path);
-    if (first === null || !isYamlMap(first)) return fail('the value has no place in the file');
+    if (first === null || !isYamlMap(first)) return fail(REFUSALS.valueNoPlace);
     const names = pairsOf(first).map(([name]) => name);
     for (const name of names) {
         const value = Object.hasOwn(wanted, name) ? wanted[name] : undefined;
         const map = nodeAt(out, path);
-        if (map === null || !isYamlMap(map)) return fail('the value has no place in the file');
+        if (map === null || !isYamlMap(map)) return fail(REFUSALS.valueNoPlace);
         const pair = pairOf(map, name);
         if (pair === undefined) continue;
         const held = pair.value === null ? null : (pair.value.toJSON() as BlockValue);
@@ -146,12 +147,12 @@ function mergeBlockMap(text: string, path: Path, wanted: BlockMap): Written {
             // A key the new value leaves out, or empties, goes; one that was empty stays as it is.
             if (value !== undefined && isEmptyValue(held)) continue;
             const gone = removeField(out, pair);
-            if ('reason' in gone) return gone;
+            if ('why' in gone) return gone;
             out = gone.text;
             continue;
         }
         const done = mergeValue(out, [...path, name], value);
-        if ('reason' in done) return done;
+        if ('why' in done) return done;
         out = done.text;
     }
     const added = Object.entries(wanted).filter(
@@ -159,10 +160,10 @@ function mergeBlockMap(text: string, path: Path, wanted: BlockMap): Written {
     );
     if (added.length === 0) return { text: out };
     const map = nodeAt(out, path);
-    if (map === null || !isYamlMap(map)) return fail('the value has no place in the file');
+    if (map === null || !isYamlMap(map)) return fail(REFUSALS.valueNoPlace);
     const at = lastKeyLine(out, map);
     const own = rangeOf(map);
-    if (at === null || own === null) return fail('the value has no place in the file');
+    if (at === null || own === null) return fail(REFUSALS.valueNoPlace);
     const pad = ' '.repeat(columnOf(out, own[0]));
     const quoted = writesQuoted(map);
     const block = added
@@ -179,30 +180,30 @@ function mergeBlockMap(text: string, path: Path, wanted: BlockMap): Written {
 function mergeFlowMap(text: string, path: Path, wanted: BlockMap): Written {
     let out = text;
     const first = nodeAt(out, path);
-    if (first === null || !isYamlMap(first)) return fail('the value has no place in the file');
+    if (first === null || !isYamlMap(first)) return fail(REFUSALS.valueNoPlace);
     const names = pairsOf(first).map(([name]) => name);
     for (const name of names) {
         const map = nodeAt(out, path);
-        if (map === null || !isYamlMap(map)) return fail('the value has no place in the file');
+        if (map === null || !isYamlMap(map)) return fail(REFUSALS.valueNoPlace);
         const pairs = pairsOf(map);
         const at = pairs.findIndex(([key]) => key === name);
         const pair = pairs[at][1];
         const held = pair.value;
-        if (held === null) return fail('the value has no place in the file');
+        if (held === null) return fail(REFUSALS.valueNoPlace);
         const value = Object.hasOwn(wanted, name) ? wanted[name] : undefined;
         if (value === undefined || isEmptyValue(value)) {
             if (value !== undefined && isEmptyValue(held.toJSON() as BlockValue)) continue;
-            if (pairs.length === 1) return fail('the row would be left without a key');
+            if (pairs.length === 1) return fail(REFUSALS.rowNoKey);
             const key = rangeOf(pair.key);
             const end = pairEnd(pair);
-            if (key === null || end === null) return fail('the value has no place in the file');
+            if (key === null || end === null) return fail(REFUSALS.valueNoPlace);
             if (at < pairs.length - 1) {
                 const next = rangeOf(pairs[at + 1][1].key);
-                if (next === null) return fail('the value has no place in the file');
+                if (next === null) return fail(REFUSALS.valueNoPlace);
                 out = splice(out, key[0], next[0], '');
             } else {
                 const before = pairEnd(pairs[at - 1][1]);
-                if (before === null) return fail('the value has no place in the file');
+                if (before === null) return fail(REFUSALS.valueNoPlace);
                 out = splice(out, before, end, '');
             }
             continue;
@@ -210,12 +211,12 @@ function mergeFlowMap(text: string, path: Path, wanted: BlockMap): Written {
         if (sameValue(value, held.toJSON())) continue;
         if (Array.isArray(value) || isMap(value)) {
             const range = rangeOf(held);
-            if (range === null) return fail('the value has no place in the file');
+            if (range === null) return fail(REFUSALS.valueNoPlace);
             out = splice(out, range[0], valueEnd(held), flowScalar(value as FieldValue));
             continue;
         }
         const done = replaceScalar(out, held, value, true);
-        if ('reason' in done) return done;
+        if ('why' in done) return done;
         out = done.text;
     }
     const added = Object.entries(wanted).filter(
@@ -224,10 +225,10 @@ function mergeFlowMap(text: string, path: Path, wanted: BlockMap): Written {
     if (added.length === 0) return { text: out };
     const map = nodeAt(out, path);
     if (map === null || !isYamlMap(map) || map.items.length === 0) {
-        return fail('the value has no place in the file');
+        return fail(REFUSALS.valueNoPlace);
     }
     const end = pairEnd(map.items[map.items.length - 1] as Pair<Scalar, Node>);
-    if (end === null) return fail('the value has no place in the file');
+    if (end === null) return fail(REFUSALS.valueNoPlace);
     const quoted = writesQuoted(map);
     const extra = added
         .map(([name, value]) => `, ${flowScalar(name)}: ${styled(value, quoted)}`)
@@ -261,7 +262,7 @@ function renderItem(seq: YAMLSeq, value: BlockValue, indent: number): string {
 function mergeBlockList(text: string, path: Path, wanted: BlockValue[]): Written {
     let out = text;
     const seq = nodeAt(out, path);
-    if (seq === null || !isSeq(seq)) return fail('the value has no place in the file');
+    if (seq === null || !isSeq(seq)) return fail(REFUSALS.valueNoPlace);
     const have = seq.toJSON() as BlockValue[];
     const most = Math.min(have.length, wanted.length);
     let front = 0;
@@ -273,22 +274,22 @@ function mergeBlockList(text: string, path: Path, wanted: BlockValue[]): Written
     const shared = Math.min(oldMiddle, newMiddle);
     for (let at = front; at < front + shared; at += 1) {
         const done = mergeValue(out, [...path, at], wanted[at]);
-        if ('reason' in done) return done;
+        if ('why' in done) return done;
         out = done.text;
     }
     const held = nodeAt(out, path);
-    if (held === null || !isSeq(held)) return fail('the value has no place in the file');
+    if (held === null || !isSeq(held)) return fail(REFUSALS.valueNoPlace);
     if (oldMiddle > newMiddle) {
         for (let at = front + oldMiddle - 1; at >= front + shared; at -= 1) {
             const range = linesOfNode(out, held.items[at] as Node);
-            if (range === null) return fail('the value has no place in the file');
+            if (range === null) return fail(REFUSALS.valueNoPlace);
             out = takeLines(out, range.start, range.end);
         }
         return { text: out };
     }
     if (newMiddle > oldMiddle) {
         const first = rangeOf(held.items[0]);
-        if (first === null) return fail('the value has no place in the file');
+        if (first === null) return fail(REFUSALS.valueNoPlace);
         const dash = out.slice(lineStart(out, first[0]), first[0]).search(/\S/);
         const indent = dash < 0 ? 0 : dash;
         const after = front + shared;
@@ -308,12 +309,12 @@ function mergeBlockList(text: string, path: Path, wanted: BlockValue[]): Written
  * empty value (`key:` or `key: []`) is written as a block under the key.
  */
 function replaceNode(text: string, node: Node, wanted: BlockValue): Written {
-    if (wanted === null) return fail('the value cannot be written here');
+    if (wanted === null) return fail(REFUSALS.valueCannotHere);
     const empty =
         (isSeq(node) && node.items.length === 0) || (isScalar(node) && node.value === null);
     if (Array.isArray(wanted) && empty) {
         const range = rangeOf(node);
-        if (range === null) return fail('the value has no place in the file');
+        if (range === null) return fail(REFUSALS.valueNoPlace);
         const line = text.slice(lineStart(text, range[0]), range[0]);
         const pad = line.length - line.trimStart().length + DEFAULT_INDENT;
         const items = wanted.map((one) => renderListItem(one, pad)).join('\n');
@@ -321,7 +322,7 @@ function replaceNode(text: string, node: Node, wanted: BlockValue): Written {
     }
     const given = asFieldValue(wanted);
     if (given === undefined || given === null) {
-        return fail('the value has a shape no field is written in');
+        return fail(REFUSALS.valueShape);
     }
     return replaceIn(text, node, given);
 }
@@ -332,7 +333,7 @@ function replaceNode(text: string, node: Node, wanted: BlockValue): Written {
  */
 function mergeValue(text: string, path: Path, wanted: BlockValue): Written {
     const node = nodeAt(text, path);
-    if (node === null) return fail('the value has no place in the file');
+    if (node === null) return fail(REFUSALS.valueNoPlace);
     if (sameValue(wanted, node.toJSON())) return { text };
     if (isYamlMap(node) && isBlockMap(wanted) && node.items.length > 0) {
         return node.flow === true
@@ -340,9 +341,7 @@ function mergeValue(text: string, path: Path, wanted: BlockValue): Written {
             : mergeBlockMap(text, path, wanted);
     }
     if (isSeq(node) && node.flow !== true && node.items.length > 0 && Array.isArray(wanted)) {
-        return wanted.length === 0
-            ? fail('the list would be left empty; clear the field instead')
-            : mergeBlockList(text, path, wanted);
+        return wanted.length === 0 ? fail(REFUSALS.listEmpty) : mergeBlockList(text, path, wanted);
     }
     const inFlow = path.length > 0 && isFlowParent(text, path);
     if (!Array.isArray(wanted) && !isMap(wanted)) return replaceScalar(text, node, wanted, inFlow);
@@ -367,14 +366,14 @@ export function applyEntryField(
     wanted: FieldValue
 ): Written {
     const found = locate(text, ident, value);
-    if (found === null) return fail('the entry is not in the file');
+    if (found === null) return fail(REFUSALS.entryNotInFile);
     const pair = pairOf(found.node, field);
     if (wanted === null) {
-        if (pair === undefined) return fail('the field is not there');
+        if (pair === undefined) return fail(REFUSALS.fieldNotThere);
         return removeField(text, pair);
     }
     if (pair === undefined) return appendField(text, found, field, wanted);
-    if (pair.value === null) return fail('the field has no value node');
+    if (pair.value === null) return fail(REFUSALS.fieldNoValue);
     return mergeValue(text, [found.list, found.index, field], wanted);
 }
 
@@ -385,17 +384,21 @@ export function applyEntryField(
  * value for is not written. The result parses again to the document with exactly those sections
  * changed, or nothing is written.
  */
-export function setSections(source: string, fields: Record<string, unknown>): EditResult {
+export function setSections(
+    source: string,
+    fields: Record<string, unknown>,
+    catalog: Record<string, string>
+): EditResult {
     const names = Object.keys(fields);
     const current = asJs(source);
-    if (!isMap(current)) return refuseAll(source, names, 'the file does not parse');
+    if (!isMap(current)) return refuseAll(source, names, why(REFUSALS.fileNoParse), catalog);
     let text = source;
     const changed: string[] = [];
     const refused: Refusal[] = [];
     const applied: Change[] = [];
     for (const [name, raw] of Object.entries(fields)) {
         if (!isBlockValue(raw)) {
-            refused.push({ field: name, reason: NOT_A_FIELD_VALUE });
+            refused.push({ field: name, reason: said(catalog, why(REFUSALS.notAFieldValue)) });
             continue;
         }
         const empty = isEmptyValue(raw);
@@ -406,7 +409,7 @@ export function setSections(source: string, fields: Record<string, unknown>): Ed
             continue;
         const root = document(text)?.contents;
         if (root === undefined || !isYamlMap(root))
-            return refuseAll(source, names, 'the file does not parse');
+            return refuseAll(source, names, why(REFUSALS.fileNoParse), catalog);
         const pair = pairOf(root, name);
         let out: Written;
         if (empty) {
@@ -416,13 +419,13 @@ export function setSections(source: string, fields: Record<string, unknown>): Ed
         } else {
             out = mergeValue(text, [name], raw);
         }
-        if ('reason' in out) {
-            refused.push({ field: name, reason: out.reason });
+        if ('why' in out) {
+            refused.push({ field: name, reason: said(catalog, out.why) });
             continue;
         }
         text = out.text;
         changed.push(name);
         applied.push(empty ? { path: [name], remove: true } : { path: [name], value: raw });
     }
-    return settled(source, text, applied, names, changed, refused);
+    return settled(source, text, applied, names, changed, refused, catalog);
 }

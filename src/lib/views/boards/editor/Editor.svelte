@@ -26,8 +26,11 @@
     // entry pages and the career editor draw their fields with.
     //
     // A save the server took drops the edits it took, keeping an edit typed while it was on its way
-    // and one the server refused. The page sees its own write when the watcher pushes the rebuilt
-    // snapshot; until then a field whose edit the save took shows the snapshot's value.
+    // and one the server refused. The saved values are held over the project's own
+    // (state/forms/settled.svelte.ts) until the watcher's rebuilt snapshot shows them, so the form
+    // and the tab's title show them at once; a snapshot that shows another value for a field than
+    // the one the save was made over replaces the held value, and of two saves in flight the
+    // newest one's values are the ones held.
     //
     // The two follow-up fields address one note. A project with two or more notes shows them
     // read-only with a sentence saying where to edit them, and what the draft kept for them from
@@ -49,6 +52,7 @@
         manifestPayload,
         NOT_IN_MODEL,
         refusedEdits,
+        projectKey,
         writableField,
         type FormField
     } from '$lib/state/forms/schema';
@@ -60,6 +64,7 @@
     const {
         formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
         selectors: { fieldChoices, manifestFields, manifestSections, projectOf },
+        settled,
         writes: { writeManifest }
     } = useState();
 
@@ -71,7 +76,12 @@
     /** The project this instance was opened for, from the state the card handed openView. */
     const id = $derived(instanceText(instance.state, 'id'));
     const project = $derived(id === '' ? null : projectOf(id));
-    const values = $derived(project === null ? {} : fieldValues(project));
+    /** The project's values with the saved ones over them until the snapshot has them. */
+    const stored = $derived(project === null ? {} : fieldValues(project));
+    const values = $derived(settled.overlay(projectKey(id), stored));
+    const tabTitle = $derived(
+        typeof values.title === 'string' ? values.title : (project?.title ?? '')
+    );
     const fields = $derived(manifestFields());
     const sections = $derived(manifestSections());
 
@@ -117,19 +127,27 @@
         return dirty.length === 0 ? t('editor.clean') : t('editor.dirty', dirty.length);
     }
 
-    /** Post a body, with `saving` set for as long as the request is out. */
+    /** How many saves of this editor are out, and the number of the newest one sent. */
+    let sending = 0;
+    let newest = 0;
+
+    /** Post a body, with `saving` set for as long as a request of this editor is out. */
     async function post(body: Record<string, unknown>): ReturnType<typeof writeManifest> {
+        sending += 1;
         saving = true;
         try {
             return await writeManifest(id, body);
         } finally {
-            saving = false;
+            sending -= 1;
+            saving = sending > 0;
         }
     }
 
     /**
      * Post the changed fields. The instance is taken before the request goes, so an answer that
-     * lands after the tab was switched settles the draft it was sent from.
+     * lands after the tab was switched settles the draft it was sent from. The server's answer
+     * puts the saved values over the project's own at once, and the newest save sent is the one
+     * whose words the pane shows.
      */
     async function save(): Promise<void> {
         const { body, taken } =
@@ -145,13 +163,23 @@
             return;
         }
         const from = instance.id;
+        newest += 1;
+        const mine = newest;
+        const seq = settled.begin();
         const answer = await post(body);
         if (!answer.ok) {
-            result = [t('editor.failed', answer.error ?? '')];
+            if (mine === newest) result = [t('editor.failed', answer.error ?? '')];
             return;
         }
         const refused = refusedEdits(answer.refused.map((one) => one.field));
+        settled.record(
+            projectKey(id),
+            Object.fromEntries(Object.entries(taken).filter(([name]) => !refused.includes(name))),
+            stored,
+            seq
+        );
         settleDraft(from, taken, refused);
+        if (mine !== newest) return;
         result = [
             t('editor.saved', answer.changed.join(', ')),
             ...answer.refused.map((one) => t('editor.refused', one.field, one.reason))
@@ -196,7 +224,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={project === null ? t('editor.title') : project.title} toolbar={tools} {bar} tinted>
+<Pane title={project === null ? t('editor.title') : tabTitle} toolbar={tools} {bar} tinted>
     <div class="editor" data-instance={instance.id} data-project={id}>
         {#if id === ''}
             <Empty message={t('editor.none')} glyph={t('editor.none_glyph')} />

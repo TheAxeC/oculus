@@ -18,6 +18,7 @@ import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import { logChanges, readChanges, writtenWith } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
+import type { Hub } from '../../../src/lib/server/core/channels.ts';
 import type { Change, ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import type { PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
@@ -448,5 +449,54 @@ describe("the change log's prune", () => {
         const left = readChanges(log);
         expect(left.map((one) => one.key)).toEqual(['act-z', 'act-y', 'act-y']);
         expect(writtenWith(log, left[1]).map((one) => one.after)).toEqual(['y1.md', 'y2.md']);
+    });
+});
+
+describe("the change log's announcement", () => {
+    /**
+     * A log whose hub records each publish with the number of lines the file held at that moment.
+     */
+    function announcing() {
+        const dir = scratchDir('oculus-changes-announce-');
+        const published: { channel: string; payload: unknown; lines: number }[] = [];
+        const log: ChangeLog = {
+            file: join(dir, 'changes.jsonl'),
+            keep: 500,
+            writes: fsWrites(),
+            hub: {
+                publish: (channel, payload) => {
+                    published.push({ channel, payload, lines: readChanges(log).length });
+                    return published.length;
+                }
+            } satisfies Pick<Hub, 'publish'>
+        };
+        return { dir, log, published };
+    }
+
+    const record = (field: string) => ({
+        file: '/x/a.yml',
+        key: 'a',
+        field,
+        before: 0,
+        after: 1,
+        undo: 'none' as const
+    });
+
+    it('publishes the changes channel once with the moment of the newest record, after the lines are on disk', async () => {
+        const { log, published } = announcing();
+        await logChanges(log, 'manifest', [record('one'), record('two')]);
+        const newest = readChanges(log)[0];
+        expect(published).toEqual([{ channel: 'changes', payload: { at: newest.at }, lines: 2 }]);
+    });
+
+    it('publishes nothing for a write that changed nothing, and the newest moment when an append cuts the log to its window', async () => {
+        const { log, published } = announcing();
+        await logChanges(log, 'manifest', []);
+        expect(published).toEqual([]);
+        const cut: ChangeLog = { ...log, keep: 2 };
+        for (const field of ['a', 'b', 'c', 'd', 'e'])
+            await logChanges(cut, 'manifest', [record(field)]);
+        const newest = readChanges(cut)[0];
+        expect(published.at(-1)?.payload).toEqual({ at: newest.at });
     });
 });

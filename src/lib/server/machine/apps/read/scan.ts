@@ -49,7 +49,7 @@ export type ScanInput = {
     machine: { dir: string; localFile: string } | null;
     /**
      * Oculus's own `config/appearance.yml`, which the findings about `file_icons` name:
-     * `file_icons` is not a key of the hub list, so the primary hub's layer never holds it.
+     * `file_icons` is not a key of the hub list, so the primary hub's settings file never holds it.
      */
     appearanceFile: string;
     /** The folders of the open workspace, in its order. */
@@ -78,7 +78,7 @@ export type ScanInput = {
     privateFolders: readonly string[];
     /**
      * The file the `app_settings:` values were read from, which a finding about them names: the
-     * primary hub's `.oculus/config/behavior.yml`, else oculus's own `config/behavior.yml`.
+     * primary hub's `.oculus/config.yml`, else oculus's own `config/behavior.yml`.
      */
     settingsFile: string;
 };

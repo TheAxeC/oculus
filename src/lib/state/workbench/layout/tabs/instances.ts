@@ -16,10 +16,10 @@ import {
     stateId,
     panes as panesIn,
     tabsOf
-} from './instance.ts';
-import type { LayoutAccess } from './access.ts';
-import type { Attention } from './open/attention.ts';
-import { dropInstance, writeHost } from './open/float/pages.ts';
+} from '../instance.ts';
+import type { LayoutAccess } from '../access.ts';
+import type { Attention } from '../open/attention.ts';
+import { dropInstance, writeHost } from '../open/float/pages.ts';
 import {
     hostsOf,
     isPage,
@@ -30,9 +30,9 @@ import {
     type Layout,
     type ViewId,
     type Workbench
-} from './model.ts';
-import { pinTab as pinInTree, unpinTab as unpinInTree } from './open/pinned.ts';
-import { keepInstance } from './open/preview.ts';
+} from '../model.ts';
+import { pinTab as pinInTree, unpinTab as unpinInTree } from '../open/pinned.ts';
+import { keepInstance } from '../open/preview.ts';
 import {
     activate,
     closeInstance as removeInstance,
@@ -45,8 +45,8 @@ import {
     restate,
     splitPane,
     type KeepRule
-} from './tree.ts';
-import { focusedPane, restore, settleFocus, splitWith } from './workbench.ts';
+} from '../tree.ts';
+import { focusedPane, restore, settleFocus, splitWith } from '../workbench.ts';
 
 export type Instances = {
     activeInstance: (page?: string) => Instance | null;

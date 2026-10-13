@@ -53,6 +53,8 @@ import {
 } from './yaml-values.ts';
 import type { BlockMap, FieldValue, ScalarMap } from './yaml-values.ts';
 import { renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
+import { REFUSALS, said, why } from './why.ts';
+import type { Why } from './why.ts';
 import {
     DEFAULT_INDENT,
     columnOf,
@@ -64,10 +66,6 @@ import {
     rangeOf,
     valueEnd
 } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
-
-/** The reason a value is none of the shapes a write may carry. */
-export const NOT_A_FIELD_VALUE =
-    'not a string, number, boolean, list of strings, list of maps of scalars, map of scalars, lists and maps, or null';
 
 /** One field that was not written, and why. */
 export type Refusal = { field: string; reason: string };
@@ -132,13 +130,13 @@ type Splice = { from: number; to: number; length: number };
  * answers with one of the two. A bare note or a list of one note written as a map also answers the
  * text its lines replace, as `replaced`.
  */
-type Written = { text: string; splice: Splice; replaced?: string } | { reason: string };
+type Written = { text: string; splice: Splice; replaced?: string } | { why: Why };
 
 /** One edit that was made, kept so the verification can apply it to the parsed source. */
 type Applied = { path: string[]; value: FieldValue };
 
-function fail(reason: string): Written {
-    return { reason };
+function fail(key: string, ...args: (string | number)[]): Written {
+    return { why: why(key, ...args) };
 }
 
 /** The document as plain values, or null when it does not parse or is not a map of keys. */
@@ -225,7 +223,7 @@ export function replaceValue(
     style?: string
 ): Written {
     const range = rangeOf(node);
-    if (range === null) return fail('the value has no place in the file');
+    if (range === null) return fail(REFUSALS.valueNoPlace);
     const start = range[0];
     const end = valueEnd(node);
     const block = Array.isArray(value) && isSeq(node) && node.flow !== true && value.length > 0;
@@ -248,7 +246,7 @@ export function replaceValue(
         if (value.length === 0) rendered = '[]';
     } else {
         rendered = renderScalar(value, style ?? (isScalar(node) ? node.type : undefined));
-        if (rendered.includes('\n')) return fail('the value does not fit on one line');
+        if (rendered.includes('\n')) return fail(REFUSALS.valueOneLine);
     }
     if (start === end && text[start - 1] !== ' ' && text[start - 1] !== '\n') {
         rendered = ` ${rendered}`;
@@ -260,7 +258,7 @@ export function replaceValue(
 function removePair(text: string, pair: Pair<Scalar, Node>): Written {
     const key = rangeOf(pair.key);
     const end = pairEnd(pair);
-    if (key === null || end === null) return fail('the key has no place in the file');
+    if (key === null || end === null) return fail(REFUSALS.keyNoPlace);
     const to = Math.min(text.length, lineEndAfter(text, end) + 1);
     return spliced(text, lineStart(text, key[0]), to, '');
 }
@@ -270,14 +268,14 @@ function removeFlowChild(text: string, map: YAMLMap, index: number): Written {
     const items = map.items as Pair<Scalar, Node>[];
     const own = rangeOf(items[index].key);
     const ownEnd = pairEnd(items[index]);
-    if (own === null || ownEnd === null) return fail('the key has no place in the file');
+    if (own === null || ownEnd === null) return fail(REFUSALS.keyNoPlace);
     if (index > 0) {
         const from = pairEnd(items[index - 1]);
-        if (from === null) return fail('the key has no place in the file');
+        if (from === null) return fail(REFUSALS.keyNoPlace);
         return spliced(text, from, ownEnd, '');
     }
     const next = rangeOf(items[index + 1].key);
-    if (next === null) return fail('the key has no place in the file');
+    if (next === null) return fail(REFUSALS.keyNoPlace);
     return spliced(text, own[0], next[0], '');
 }
 
@@ -289,15 +287,15 @@ function insertFlowChild(
     value: Exclude<FieldValue, null>
 ): Written {
     const rendered = renderOneLine(value);
-    if (rendered === null) return fail('the value does not fit on one line');
+    if (rendered === null) return fail(REFUSALS.valueOneLine);
     const items = map.items as Pair<Scalar, Node>[];
     if (items.length === 0) {
         const range = rangeOf(map);
-        if (range === null) return fail('the map has no place in the file');
+        if (range === null) return fail(REFUSALS.mapNoPlace);
         return spliced(text, range[0], range[1], `{ ${name}: ${rendered} }`);
     }
     const at = pairEnd(items[items.length - 1]);
-    if (at === null) return fail('the map has no place in the file');
+    if (at === null) return fail(REFUSALS.mapNoPlace);
     return spliced(text, at, at, `, ${name}: ${rendered}`);
 }
 
@@ -309,9 +307,9 @@ function insertBlockChild(
     value: Exclude<FieldValue, null>
 ): Written {
     const range = rangeOf(map);
-    if (range === null || map.items.length === 0) return fail('the map has no place in the file');
+    if (range === null || map.items.length === 0) return fail(REFUSALS.mapNoPlace);
     const rendered = renderOneLine(value);
-    if (rendered === null) return fail('the value does not fit on one line');
+    if (rendered === null) return fail(REFUSALS.valueOneLine);
     const indent = ' '.repeat(columnOf(text, range[0]));
     const at = lineEndAfter(text, valueEnd(map));
     return spliced(text, at, at, `\n${indent}${name}: ${rendered}`);
@@ -331,7 +329,7 @@ function appendLines(text: string, root: YAMLMap, lines: string): Written {
         return spliced(text, text.length, text.length, `${lead}${lines}\n`);
     }
     const end = pairEnd(root.items[root.items.length - 1] as Pair<Scalar, Node>);
-    if (end === null) return fail('the file has no last key to write after');
+    if (end === null) return fail(REFUSALS.noLastKey);
     const at = lineEndAfter(text, end);
     return spliced(text, at, at, `\n${lines}`);
 }
@@ -360,7 +358,7 @@ function appendTop(
         return appendLines(text, root, `${name}:\n${pad}${items}`);
     }
     const rendered = renderOneLine(value);
-    if (rendered === null) return fail('the value does not fit on one line');
+    if (rendered === null) return fail(REFUSALS.valueOneLine);
     return appendLines(text, root, `${name}: ${rendered}`);
 }
 
@@ -457,7 +455,7 @@ function expandNote(
 ): Written {
     const { parent, top, pad, entries } = one;
     const key = rangeOf(top.key);
-    if (key === null) return fail('the key has no place in the file');
+    if (key === null) return fail(REFUSALS.keyNoPlace);
     const rest = text.indexOf('\n', one.end);
     const limit = rest < 0 ? text.length : rest;
     const comments = commentsIn(text, key[1], limit);
@@ -467,7 +465,7 @@ function expandNote(
                 (entry) => entry.at !== null && offset >= entry.at.from && offset < entry.at.to
             )
         ) {
-            return fail('a comment inside the value cannot be kept; edit the file by hand');
+            return fail(REFUSALS.commentInValue);
         }
     }
     const { keyComment, last } = placeComments(text, lineStart(text, key[0]), comments, entries);
@@ -478,11 +476,11 @@ function expandNote(
 
     const at = entries.findIndex((entry) => entry.name === child);
     if (value === null) {
-        if (at < 0) return fail('the key is not there');
+        if (at < 0) return fail(REFUSALS.keyNotThere);
         entries[at].cleared = true;
     } else {
         const rendered = renderOneLine(value);
-        if (rendered === null) return fail('the value does not fit on one line');
+        if (rendered === null) return fail(REFUSALS.valueOneLine);
         if (at < 0) {
             entries.push({
                 name: child,
@@ -518,7 +516,7 @@ function noteEntries(
     parent: string,
     item: Node | null,
     bare: boolean
-): { entries: NoteEntry[] } | { reason: string } {
+): { entries: NoteEntry[] } | { why: Why } {
     const entry = (
         name: string,
         body: string,
@@ -535,24 +533,22 @@ function noteEntries(
         if (bare && item.value === null) return { entries: [] };
         if (typeof item.value !== 'string') {
             return {
-                reason: bare
-                    ? 'the note is not text; edit the file by hand'
-                    : 'followup is not a map'
+                why: bare ? why(REFUSALS.noteNotText) : why(REFUSALS.parentNotMap, parent)
             };
         }
         const only = entry(SHORTHAND[parent], renderScalar(item.value, item.type), item);
-        return only === null ? { reason: 'the key has no place in the file' } : { entries: [only] };
+        return only === null ? { why: why(REFUSALS.keyNoPlace) } : { entries: [only] };
     }
-    if (!isYamlMap(item)) return { reason: 'followup is not a map' };
+    if (!isYamlMap(item)) return { why: why(REFUSALS.parentNotMap, parent) };
     const entries: NoteEntry[] = [];
     for (const pair of item.items as Pair<Scalar, Node>[]) {
         const name = pair.key.value;
         const range = pair.value === null ? null : rangeOf(pair.value);
         if (typeof name !== 'string' || range === null || !isScalar(pair.value)) {
-            return { reason: 'followup is not a map' };
+            return { why: why(REFUSALS.parentNotMap, parent) };
         }
         const made = entry(name, text.slice(range[0], range[1]), pair.value, pair);
-        if (made === null) return { reason: 'followup is not a map' };
+        if (made === null) return { why: why(REFUSALS.parentNotMap, parent) };
         entries.push(made);
     }
     return { entries };
@@ -565,18 +561,18 @@ function noteEntries(
  */
 function applyOne(text: string, path: string[], value: FieldValue): Written {
     const doc = parseDocument(text);
-    if (doc.errors.length > 0) return fail('the manifest does not parse');
+    if (doc.errors.length > 0) return fail(REFUSALS.manifestNoParse);
     const root = doc.contents;
-    if (root === null || !isYamlMap(root)) return fail('the manifest is not a map of keys');
+    if (root === null || !isYamlMap(root)) return fail(REFUSALS.manifestNotMap);
 
     const top = pairOf(root, path[0]);
 
     if (path.length === 1) {
         if (value === null) {
-            return top === undefined ? fail('the key is not there') : removePair(text, top);
+            return top === undefined ? fail(REFUSALS.keyNotThere) : removePair(text, top);
         }
         if (top === undefined) return appendTop(text, root, path[0], value);
-        if (top.value === null) return fail('the key has no value node');
+        if (top.value === null) return fail(REFUSALS.keyNoValue);
         return replaceValue(text, top.value, value);
     }
 
@@ -585,18 +581,18 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
     const pad = ' '.repeat(indent);
 
     if (top === undefined) {
-        if (value === null) return fail('the key is not there');
+        if (value === null) return fail(REFUSALS.keyNotThere);
         const rendered = renderOneLine(value);
-        if (rendered === null) return fail('the value does not fit on one line');
+        if (rendered === null) return fail(REFUSALS.valueOneLine);
         return appendLines(text, root, `${parent}:\n${pad}${child}: ${rendered}`);
     }
     const holder = top.value;
-    if (holder === null) return fail('the key has no value node');
+    if (holder === null) return fail(REFUSALS.keyNoValue);
 
     if (isYamlMap(holder)) {
         const pair = pairOf(holder, child);
         if (value === null) {
-            if (pair === undefined) return fail('the key is not there');
+            if (pair === undefined) return fail(REFUSALS.keyNotThere);
             // A map with nothing left in it is not a map, so the parent goes with its last key
             // rather than being left behind as an empty one.
             if (holder.items.length === 1) return removePair(text, top);
@@ -610,7 +606,7 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
                 ? insertFlowChild(text, holder, child, value)
                 : insertBlockChild(text, holder, child, value);
         }
-        if (pair.value === null) return fail('the key has no value node');
+        if (pair.value === null) return fail(REFUSALS.keyNoValue);
         return replaceValue(text, pair.value, value);
     }
 
@@ -618,19 +614,19 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
     if (isSeq(holder) && holder.items.length === 1 && shorthand !== undefined) {
         const item = holder.items[0] as Node | null;
         const held = noteEntries(text, parent, item, false);
-        if ('reason' in held) return fail(held.reason);
+        if ('why' in held) return held;
         const last = holder.flow === true ? holder : item;
         const end = last === null ? undefined : valueEnd(last);
-        if (end === undefined) return fail('the key has no place in the file');
+        if (end === undefined) return fail(REFUSALS.keyNoPlace);
         return expandNote(text, { parent, top, pad, entries: held.entries, end }, child, value);
     }
 
     // A scalar where a map is asked for: the dual shape of `followup`, expanded so its note is
     // kept.
-    if (!isScalar(holder) || shorthand === undefined) return fail(`${parent} is not a map`);
-    if (value === null) return fail('the key is not there');
+    if (!isScalar(holder) || shorthand === undefined) return fail(REFUSALS.parentNotMap, parent);
+    if (value === null) return fail(REFUSALS.keyNotThere);
     const held = noteEntries(text, parent, holder, true);
-    if ('reason' in held) return fail(held.reason);
+    if ('why' in held) return held;
     const one = { parent, top, pad, entries: held.entries, end: valueEnd(holder) };
     return expandNote(text, one, child, value);
 }
@@ -687,32 +683,35 @@ export function expect(data: Parsed, path: string[], value: FieldValue): void {
  * The result is verified the way setFields verifies its own: the new text must parse to the old
  * document with the one key moved, and anything else comes back as the source unchanged.
  */
-export function renameKey(source: string, from: string, to: string): EditResult {
-    const refusal = (reason: string): EditResult => ({
+export function renameKey(
+    source: string,
+    from: string,
+    to: string,
+    catalog: Record<string, string>
+): EditResult {
+    const refusal = (found: Why): EditResult => ({
         text: source,
         changed: [],
-        refused: [{ field: from, reason }]
+        refused: [{ field: from, reason: said(catalog, found) }]
     });
     const doc = parseDocument(source);
-    if (doc.errors.length > 0) return refusal('the manifest does not parse');
+    if (doc.errors.length > 0) return refusal(why(REFUSALS.manifestNoParse));
     const root = doc.contents;
-    if (root === null || !isYamlMap(root)) return refusal('the manifest is not a map of keys');
+    if (root === null || !isYamlMap(root)) return refusal(why(REFUSALS.manifestNotMap));
     const pair = pairOf(root, from);
     if (pair === undefined) return { text: source, changed: [], refused: [] };
-    if (pairOf(root, to) !== undefined) return refusal(`${to} is already a key of the manifest`);
+    if (pairOf(root, to) !== undefined) return refusal(why(REFUSALS.keyAlreadyThere, to));
     const range = rangeOf(pair.key);
-    if (range === null) return refusal('the key has no place in the file');
+    if (range === null) return refusal(why(REFUSALS.keyNoPlace));
 
     const text = splice(source, range[0], range[1], renderScalar(to, pair.key.type));
     const after = safeParse(text);
     const wanted = safeParse(source);
-    if (after === null || wanted === null)
-        return refusal('the edit did not verify; nothing was written');
+    if (after === null || wanted === null) return refusal(why(REFUSALS.unverified));
     wanted[to] = wanted[from];
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete wanted[from];
-    if (!isDeepStrictEqual(after, wanted))
-        return refusal('the edit did not verify; nothing was written');
+    if (!isDeepStrictEqual(after, wanted)) return refusal(why(REFUSALS.unverified));
     return { text, changed: [from], refused: [] };
 }
 
@@ -746,9 +745,9 @@ export function lineFrom(text: string, at: number): string {
 }
 
 /** The path of a field a write may set, or the reason it may not. */
-export function settable(field: string): { path: string[] } | { reason: string } {
+export function settable(field: string): { path: string[] } | { why: Why } {
     const path = pathOf(field);
-    if (path === null) return { reason: 'not a field name' };
+    if (path === null) return { why: why(REFUSALS.notAFieldName) };
     return { path };
 }
 
@@ -764,7 +763,11 @@ export function settable(field: string): { path: string[] } | { reason: string }
  * the edits that follow it in the same write, so `removed` names the place in the text that is
  * answered.
  */
-export function setFields(source: string, fields: Record<string, unknown>): SetFieldsResult {
+export function setFields(
+    source: string,
+    fields: Record<string, unknown>,
+    catalog: Record<string, string>
+): SetFieldsResult {
     const changed: string[] = [];
     const refused: Refusal[] = [];
     const applied: Applied[] = [];
@@ -774,7 +777,7 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
     const base = safeParse(source);
     if (base === null) {
         for (const field of Object.keys(fields)) {
-            refused.push({ field, reason: 'the manifest does not parse' });
+            refused.push({ field, reason: said(catalog, why(REFUSALS.manifestNoParse)) });
         }
         return { text: source, changed, refused, removed: {}, replaced: {} };
     }
@@ -782,14 +785,14 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
     let text = source;
     for (const [field, raw] of Object.entries(fields)) {
         const allowed = settable(field);
-        if ('reason' in allowed) {
-            refused.push({ field, reason: allowed.reason });
+        if ('why' in allowed) {
+            refused.push({ field, reason: said(catalog, allowed.why) });
             continue;
         }
         const { path } = allowed;
         const parsed = asFieldValue(raw);
         if (parsed === undefined) {
-            refused.push({ field, reason: NOT_A_FIELD_VALUE });
+            refused.push({ field, reason: said(catalog, why(REFUSALS.notAFieldValue)) });
             continue;
         }
         const current = currentValue(base, path);
@@ -804,8 +807,8 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
                   : parsed;
         if (sameValue(value, current)) continue;
         const out = applyOne(text, path, value);
-        if ('reason' in out) {
-            refused.push({ field, reason: out.reason });
+        if ('why' in out) {
+            refused.push({ field, reason: said(catalog, out.why) });
             continue;
         }
         for (const point of points.values()) point.offset = moved(point.offset, out.splice);
@@ -850,7 +853,7 @@ export function setFields(source: string, fields: Record<string, unknown>): SetF
         changed: [],
         refused: Object.keys(fields).map((field) => ({
             field,
-            reason: 'the edit did not verify; nothing was written'
+            reason: said(catalog, why(REFUSALS.unverified))
         })),
         removed: {},
         replaced: {}

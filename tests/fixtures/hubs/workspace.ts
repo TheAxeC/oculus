@@ -1,10 +1,11 @@
 // Layer 4, test helper. An open workspace for a case, made of a scratch state folder that holds the
 // unsaved workspace the case names, so a server object under test reads folders the same way the
 // server reads them: from `workspace.json` of a state folder, never from the machine of the person
-// running the test. A folder is a hub when it holds `.oculus/config/`, as it is for the server.
+// running the test. A folder is a hub when it holds `.oculus/config.yml`, as it is for the server.
 
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { engineDir } from '../../../src/lib/data/places/engine-dir.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { handleFsWrite, ignoredCache } from '../../../src/lib/server/files/fs.ts';
@@ -31,9 +32,15 @@ export function plantState(folders: readonly FolderSpec[], primary?: string): st
     return state;
 }
 
-/** A hub folder: a folder holding `.oculus/config/`, so the workspace reads it as a hub. */
-export function plantHub(dir: string): string {
-    mkdirSync(join(dir, '.oculus', 'config'), { recursive: true });
+/**
+ * A hub folder: a folder holding `.oculus/config.yml`, so the workspace reads it as a hub. The file
+ * holds `settings` when given, else the empty map, and a file the folder already holds is kept.
+ */
+export function plantHub(dir: string, settings?: string): string {
+    mkdirSync(join(dir, '.oculus'), { recursive: true });
+    if (settings !== undefined || !existsSync(join(dir, HUB_FILE))) {
+        writeFileSync(join(dir, HUB_FILE), settings ?? '{}\n');
+    }
     return dir;
 }
 

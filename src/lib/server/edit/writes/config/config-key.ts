@@ -11,9 +11,9 @@
 // read. The checks that stand between the edited text and the file are config-checks.ts's, which
 // config-value.ts runs as well.
 //
-// A key of the hub list is written in the hub's config layer (`<hub>/.oculus/config/<file>`), any
-// other key in the engine's file. When the layer's file or the key in it is not there, the write
-// adds the key at the end of the file and creates the file and its folders, and the undo takes the
+// A key of the hub list is written in the hub's settings file (`<hub>/.oculus/config.yml`), any
+// other key in the engine's file. When the settings file or the key in it is not there, the write
+// adds the key at the end of the file and creates the file and its folder, and the undo takes the
 // added text out and removes what the write made (config-checks.ts `takeOutAdded`).
 //
 // The function is synchronous from the read of the file to its write, which is what lets two
@@ -26,6 +26,8 @@ import { LOCAL_NAME } from '../../../../data/sources/config.ts';
 import { catalogOf, type CatalogEntry } from '../../../../data/sources/config/catalog/options.ts';
 import { words } from '../../../core/words.ts';
 import { replaceValue } from '../../yaml/yaml-edit.ts';
+import { REFUSALS, why } from '../../yaml/why.ts';
+import type { Why } from '../../yaml/why.ts';
 import { isCollection, leafProblem } from './config-fit.ts';
 import { sourcesFor, type SourceInputs } from './config-sources.ts';
 import {
@@ -99,12 +101,12 @@ export function configKeyNow(engine: string, file: string, key: string, hub?: st
 }
 
 /**
- * Set one option of a tracked config file, in the hub's layer when it is a key of the hub list and
- * a hub is given. A refusal answers the one reason and writes nothing; a value equal to the one in
- * force writes nothing and answers with nothing changed. Given `inputs`, the value is checked
- * against the entry and the lists the server holds (config-fit.ts); without them, as in an undo, no
- * value is checked and the file is put back as it was. A file that cannot be read or written
- * throws, which the route answers as `unwritable`.
+ * Set one option of a tracked config file, in the hub's settings file when it is a key of the hub
+ * list and a hub is given. A refusal answers the one reason and writes nothing; a value equal to
+ * the one in force writes nothing and answers with nothing changed. Given `inputs`, the value is
+ * checked against the entry and the lists the server holds (config-fit.ts); without them, as in an
+ * undo, no value is checked and the file is put back as it was. A file that cannot be read or
+ * written throws, which the route answers as `unwritable`.
  */
 export function writeConfigKey(
     engine: string,
@@ -143,7 +145,7 @@ export function writeConfigKey(
     if (isDeepStrictEqual(held, wanted)) return { changed: [], refused: [] };
 
     const scalar = wanted as string | number | boolean;
-    let edited: { text: string } | { reason: string };
+    let edited: { text: string } | { why: Why };
     if (found.kind === 'found') {
         edited = replaceValue(source, found.node, scalar);
         // A plain string that would not read back (inside a flow map, a comma or a brace ends it)
@@ -156,8 +158,8 @@ export function writeConfigKey(
             edited = replaceValue(source, found.node, scalar, 'QUOTE_DOUBLE');
         }
     } else {
-        const inserted = insertKey(source, key, wanted);
-        edited = inserted === null ? { reason: '' } : { text: inserted };
+        const inserted = insertKey(source, key, wanted, text);
+        edited = inserted === null ? { why: why(REFUSALS.keyNoPlace) } : { text: inserted };
     }
     if (!('text' in edited) || !kept(source, edited.text, key, wanted)) {
         return refuse(words(text, 'server.config_key.not_kept'));

@@ -28,7 +28,8 @@ import { descriptionKey } from '../../../src/lib/state/system/config/config-file
 import { CHKTEX_FIXABLE, LINT_IDS } from '../../../src/lib/data/model/index.ts';
 import { PAGE_FEEDS } from '../../../src/lib/state/forms/page-entry.ts';
 import { KEY_ROWS, PREFIX_ROWS } from '../../../src/lib/data/helpers/keys/oculus/palette-table.ts';
-import { TIERS } from '../../../src/lib/data/helpers/hub-names.ts';
+import { HUB_FILE, TIERS } from '../../../src/lib/data/helpers/hub-names.ts';
+import { REFUSALS } from '../../../src/lib/server/edit/yaml/why.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
 import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
 import { symbolKindName } from '../../../src/lib/data/prose/symbol-kinds.ts';
@@ -219,7 +220,7 @@ const COMPUTED_PREFIXES = [
         // One description per file of the engine's config folder and of its catalogs and schemas
         // folders, keyed by the file's own name. The machine's own file is named whether or not
         // this checkout holds one, since it is described for every machine and a clone that has
-        // not made one still reads the key.
+        // not made one still reads the key. The hub's settings file has one of its own.
         file: 'lib/state/system/config/config-files.ts',
         start: 'lookup(descriptionKey(',
         keys: () => {
@@ -228,8 +229,18 @@ const COMPUTED_PREFIXES = [
                 ...readdirSync(join(engineDir(), 'config', CATALOGS)),
                 ...readdirSync(join(engineDir(), 'config', SCHEMAS))
             ].filter((name) => name.endsWith('.yml'));
-            return [...new Set([...names, LOCAL_NAME])].map((name) => descriptionKey(name));
+            return [...new Set([...names, LOCAL_NAME, HUB_FILE])].map((name) =>
+                descriptionKey(name)
+            );
         }
+    },
+    {
+        // A refusal an editor of edit/yaml or edit/entry-edit finds is a key of REFUSALS and the
+        // values that fill it; the entry point that holds the catalog words it. The keys are the
+        // table's own list, so a refusal added there without its words fails here.
+        file: 'lib/server/edit/yaml/why.ts',
+        start: 'words(text, found.key',
+        keys: () => Object.values(REFUSALS)
     },
     {
         // A sentence of the Settings rows is a message of the rows module: its catalog key and the

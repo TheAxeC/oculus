@@ -56,16 +56,19 @@ function repositoryInLimit(repository: string, folder: string): boolean {
 }
 
 /**
- * The repositories a tab limited to a folder lists: those of `every` that lie inside the folder or
- * hold it, none when no served root has the folder's root key, and all of them for a tab limited to
- * no folder. The `git` channel names a repository by its real path.
+ * The repositories a tab limited to a folder lists, each as the root that shows it: those of
+ * `every` whose top folder lies inside the folder or holds it, none when no served root has the
+ * folder's root key, and all of them for a tab limited to no folder. The top is the real path git
+ * names, as the folder's is, so a repository is judged by its own folder and not by a root inside
+ * it.
  */
 export function limitedRepositories(
-    every: readonly string[],
+    every: readonly { top: string; shown: string }[],
     roots: readonly { key: string; dir: string; real?: string }[],
     folder: LimitFolder | null
 ): string[] {
-    if (folder === null) return [...every];
+    if (folder === null) return every.map((one) => one.shown);
     const dir = limitDir(roots, folder);
-    return dir === null ? [] : every.filter((one) => repositoryInLimit(one, dir));
+    if (dir === null) return [];
+    return every.filter((one) => repositoryInLimit(one.top, dir)).map((one) => one.shown);
 }

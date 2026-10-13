@@ -4,6 +4,7 @@
 // they depend only on the wire and the response stream.
 
 import { z } from 'zod';
+import type { OpsRefusal } from '../../data/file-ops.ts';
 import type { Entry } from '../../data/model/index.ts';
 import { OCULUS_CONFIG_ROOT, fileBytesUrl } from '../../data/helpers/files/address.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
@@ -16,7 +17,7 @@ import {
     survivorsShape,
     unchanged
 } from '../../data/shapes/shapes.ts';
-import { failedAnswer, refusedAnswer } from '../shared/answers/answers.ts';
+import { answerRefusal, failedAnswer, refusedAnswer } from '../shared/answers/answers.ts';
 import type { WriteAnswer } from '../shared/stores/shapes.ts';
 import {
     SHOWN_DEFAULT,
@@ -33,6 +34,8 @@ export type Listing = {
     entries: FsEntry[];
     /** What the request failed with, or the empty string. */
     error: string;
+    /** The refusal word the server answered the request with, when it named one. */
+    refused?: OpsRefusal;
     /** True while the first answer for the folder is still to come. */
     loading: boolean;
 };
@@ -353,7 +356,8 @@ export function heldListings(
 }
 
 /** What a read of an endpoint came to: the body of a successful answer, or why the read failed. */
-export type Answered = { ok: true; body: unknown } | { ok: false; error: string };
+export type Answered =
+    { ok: true; body: unknown } | { ok: false; error: string; refused?: OpsRefusal };
 
 /**
  * A response read as an endpoint's answer. A body that is JSON null or is not JSON is a failed
@@ -363,8 +367,14 @@ export type Answered = { ok: true; body: unknown } | { ok: false; error: string 
  */
 export async function readAnswer(response: Response): Promise<Answered> {
     const body = await readJson(response);
-    if (body === undefined || !response.ok)
-        return { ok: false, error: failedAnswer(response, body) };
+    if (body === undefined || !response.ok) {
+        const refused = body === undefined ? null : answerRefusal(body);
+        return {
+            ok: false,
+            error: failedAnswer(response, body),
+            ...(refused === null ? {} : { refused })
+        };
+    }
     return { ok: true, body };
 }
 
@@ -392,7 +402,10 @@ const listingShape = z.object({
 export async function listingAnswer(url: string): Promise<Listing> {
     try {
         const answer = await readAnswer(await fetch(url));
-        if (!answer.ok) return { entries: [], error: answer.error, loading: false };
+        if (!answer.ok) {
+            const refused = answer.refused === undefined ? {} : { refused: answer.refused };
+            return { entries: [], error: answer.error, ...refused, loading: false };
+        }
         const entries = readAs(listingShape, answer.body)?.entries ?? [];
         return { entries, error: '', loading: false };
     } catch (error) {

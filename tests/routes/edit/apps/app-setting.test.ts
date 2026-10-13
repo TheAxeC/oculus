@@ -1,6 +1,6 @@
 // Layer 2, route tests. What the /api/write route does with an `app-setting` write: the value of a
-// setting an app declares, stored under `app_settings:` in the primary hub's config layer, the
-// refusals that leave the layer as it was, the stored values the apps watcher judges, the values a
+// setting an app declares, stored under `app_settings:` in the primary hub's settings file, the
+// refusals that leave the file as it was, the stored values the apps watcher judges, the values a
 // host reads, and the undo. These are the settings rows of G77.
 //
 // The engine is a scratch copy of the checkout's config/ folder (write-fixture.ts) and the hub and
@@ -9,9 +9,10 @@
 // (tests/server/machine/apps).
 // @module-tag slow: every case writes a setting through the route into a scratch engine.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
+import { HUB_FILE } from '../../../../src/lib/data/helpers/hub-names.ts';
 import { findingText } from '../../../../src/lib/data/helpers/finding-text.ts';
 import { APP_HEADER, KIND_HEADER } from '../../../../src/lib/data/helpers/files/apps/apps.ts';
 import {
@@ -24,6 +25,7 @@ import type { PrimaryTarget } from '../../../../src/lib/server/edit/writes.ts';
 import { words } from '../../../../src/lib/server/core/words.ts';
 import { approveApp } from '../../../../src/lib/server/machine/approvals/approvals.ts';
 import { judgeStored } from '../../../../src/lib/server/machine/apps/read/across/stored.ts';
+import { plantHub } from '../../../fixtures/hubs/workspace.ts';
 import { it } from '../../../fixtures/scratch.ts';
 import { notesFiles, routeSetup } from '../../apps/apps-fixture.ts';
 import { TOKEN, changesOf, configTarget, request, undone } from '../write-fixture.ts';
@@ -49,12 +51,15 @@ function world(approve = true, extra = '') {
         ...configTarget(),
         apps: { held: apps.held, data: join(apps.fixture.base, 'data'), maxKb: 256 }
     };
+    plantHub(into.hub, EMPTY);
     return { apps, into };
 }
 
-/** The layer the write lands in. */
-const layerOf = (into: PrimaryTarget): string =>
-    join(into.hub, '.oculus', 'config', 'behavior.yml');
+/** The hub's settings file, where the write lands. */
+const layerOf = (into: PrimaryTarget): string => join(into.hub, HUB_FILE);
+
+/** The text a hub's settings file holds before any write: the empty map. */
+const EMPTY = '{}\n';
 
 /** One app-setting write as the page sends it, and the answer. */
 async function send(into: PrimaryTarget, key: string, value: unknown, headers = {}) {
@@ -75,7 +80,7 @@ const reasons = (body: Record<string, unknown>): string[] =>
     ((body.refused ?? []) as { reason: string }[]).map((one) => one.reason);
 
 describe('a setting an approved app declares', () => {
-    it('creates the layer holding the one key, which the merged configuration then reads', async () => {
+    it('writes the one key into the settings file, which the merged configuration then reads', async () => {
         const { into } = world();
         const sent = await send(into, 'notes.width', 100);
         expect(sent.status).toBe(200);
@@ -98,16 +103,16 @@ describe('a setting an approved app declares', () => {
         expect(settingValues(settings, {})).toEqual({ 'notes.width': 80 });
     });
 
-    it('takes the write back, removing the layer and folders the write made', async () => {
+    it('takes the write back, leaving the settings file as the empty map it was', async () => {
         const { into } = world();
         await send(into, 'notes.width', 100);
         const [change] = changesOf(into);
         expect((await undone(into, change)).status).toBe(200);
-        expect(existsSync(join(into.hub, '.oculus'))).toBe(false);
+        expect(readFileSync(layerOf(into), 'utf8')).toBe(EMPTY);
     });
 });
 
-describe('a write that is refused leaves the hub without a layer', () => {
+describe('a write that is refused leaves the settings file as it was', () => {
     it.each([
         ['a value below the least the app declares', 'notes.width', 10, why('minimum', 40), true],
         ['a value of another type', 'notes.width', 'wide', why('type_number'), true],
@@ -124,7 +129,10 @@ describe('a write that is refused leaves the hub without a layer', () => {
         async (_row, key, value, reason, approved) => {
             const { into } = world(approved);
             const sent = await send(into, key, value);
-            expect([reasons(sent.body), existsSync(layerOf(into))]).toEqual([[reason], false]);
+            expect([reasons(sent.body), readFileSync(layerOf(into), 'utf8')]).toEqual([
+                [reason],
+                EMPTY
+            ]);
         }
     );
 
@@ -140,9 +148,9 @@ describe('a write that is refused leaves the hub without a layer', () => {
             'notes.width',
             100
         );
-        expect([reasons(sent.body), existsSync(layerOf(into))]).toEqual([
+        expect([reasons(sent.body), readFileSync(layerOf(into), 'utf8')]).toEqual([
             [why('not_declared', 'notes.width')],
-            false
+            EMPTY
         ]);
     });
 
@@ -152,7 +160,7 @@ describe('a write that is refused leaves the hub without a layer', () => {
             [APP_HEADER]: 'app:notes',
             [KIND_HEADER]: 'app-setting'
         });
-        expect([sent.status, existsSync(layerOf(into))]).toEqual([403, false]);
+        expect([sent.status, readFileSync(layerOf(into), 'utf8')]).toEqual([403, EMPTY]);
     });
 });
 

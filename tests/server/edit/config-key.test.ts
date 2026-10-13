@@ -12,9 +12,11 @@
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { words } from '../../../src/lib/server/core/words.ts';
 import { writeConfigKey } from '../../../src/lib/server/edit/writes/config/config-key.ts';
+import { plantHub } from '../../fixtures/hubs/workspace.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import { engineFile, refusalOf, scratchEngine } from '../../routes/edit/write-fixture.ts';
 import { hubLinkedToEngine, linkedHub } from './writes-fixture.ts';
@@ -60,7 +62,9 @@ function held(engine: string, file = 'behavior.yml'): string {
     return readFileSync(engineFile(engine, file), 'utf8');
 }
 
-/** What one write left behind: its answer, the engine file, the hub layer's file, the records. */
+/**
+ * What one write left behind: its answer, the engine file, the hub's settings file, the records.
+ */
 type Left = {
     changed: string[];
     refused: unknown[];
@@ -72,7 +76,8 @@ type Left = {
 /**
  * The writes of one value, one row per place the value goes: the row names its scratch engine, the
  * key and value written, whether a hub is given, and what the write leaves in the engine file, in
- * the hub layer's file and in its record.
+ * the hub's settings file and in its record. A row with `settings` plants that text as the hub's
+ * `.oculus/config.yml` first.
  */
 const ROWS: {
     row: string;
@@ -80,6 +85,7 @@ const ROWS: {
     key: string;
     value: unknown;
     hub: boolean;
+    settings?: string;
     left: (before: string, engine: string, hub: string) => Left;
 }[] = [
     {
@@ -129,7 +135,7 @@ const ROWS: {
         })
     },
     {
-        row: 'a key of the hub list, with a hub that holds no layer file',
+        row: 'a key of the hub list, with a hub that holds no settings file',
         engine: scratchEngine,
         key: 'slurm.resource',
         value: 'other',
@@ -141,18 +147,68 @@ const ROWS: {
             layer: 'slurm: { resource: other }\n',
             records: [
                 {
-                    file: join(hub, '.oculus', 'config', 'behavior.yml'),
+                    file: join(hub, HUB_FILE),
                     key: 'behavior.yml',
                     field: 'slurm.resource',
                     before: '',
                     after: 'other',
                     undo: 'field',
                     replaced: { offset: 0, before: '', after: 'slurm: { resource: other }\n' },
-                    created: [
-                        join(hub, '.oculus'),
-                        join(hub, '.oculus', 'config'),
-                        join(hub, '.oculus', 'config', 'behavior.yml')
-                    ]
+                    created: [join(hub, '.oculus'), join(hub, HUB_FILE)]
+                }
+            ]
+        })
+    },
+    {
+        row: 'a key of the hub list, with a settings file that holds other keys and comments',
+        engine: scratchEngine,
+        key: 'slurm.resource',
+        value: 'other',
+        hub: true,
+        settings:
+            '# the cluster of this hub\nscan:\n  - { dir: work }\nslurm:\n  resource: utwente  # the ssh alias\n',
+        left: (before, engine, hub) => ({
+            changed: ['behavior.yml:slurm.resource'],
+            refused: [],
+            engine: before,
+            layer: '# the cluster of this hub\nscan:\n  - { dir: work }\nslurm:\n  resource: utwente  # the ssh alias\n'.replace(
+                'resource: utwente',
+                'resource: other'
+            ),
+            records: [
+                {
+                    file: join(hub, HUB_FILE),
+                    key: 'behavior.yml',
+                    field: 'slurm.resource',
+                    before: 'utwente',
+                    after: 'other',
+                    undo: 'field'
+                }
+            ]
+        })
+    },
+    {
+        row: 'a key of the hub list, with a hub whose settings file is the empty map',
+        engine: scratchEngine,
+        key: 'slurm.resource',
+        value: 'other',
+        hub: true,
+        settings: '{}\n',
+        left: (before, engine, hub) => ({
+            changed: ['behavior.yml:slurm.resource'],
+            refused: [],
+            engine: before,
+            layer: 'slurm: { resource: other }\n',
+            records: [
+                {
+                    file: join(hub, HUB_FILE),
+                    key: 'behavior.yml',
+                    field: 'slurm.resource',
+                    before: '',
+                    after: 'other',
+                    undo: 'field',
+                    replaced: { offset: 0, before: '{', after: 'slurm: { resource: other ' },
+                    created: []
                 }
             ]
         })
@@ -162,9 +218,10 @@ const ROWS: {
 describe('one value written over its own bytes', { tags: ['slow'] }, () => {
     it.each(ROWS)(
         'replaces the value and keeps every other byte, the comment on its line included: $row',
-        ({ engine: make, key, value, hub: withHub, left }) => {
+        ({ engine: make, key, value, hub: withHub, settings, left }) => {
             const engine = make();
             const hub = scratchDir('oculus-hub-');
+            if (settings !== undefined) plantHub(hub, settings);
             const before = held(engine);
             const outcome = writeConfigKey(
                 engine,
@@ -174,7 +231,7 @@ describe('one value written over its own bytes', { tags: ['slow'] }, () => {
                 undefined,
                 withHub ? hub : undefined
             );
-            const layer = join(hub, '.oculus', 'config', 'behavior.yml');
+            const layer = join(hub, HUB_FILE);
             expect({
                 changed: outcome.changed,
                 refused: outcome.refused,
@@ -198,7 +255,7 @@ describe('an option the catalog does not hold', { tags: ['slow'] }, () => {
         expect(statSync(local).mtimeMs).toBe(stamp);
     });
 
-    it("refuses a hub layer file that is a link to a hub's .oculus/local.yml, and writes nothing", () => {
+    it("refuses a hub settings file that is a link to a hub's .oculus/local.yml, and writes nothing", () => {
         const engine = scratchEngine();
         const { hub, local } = linkedHub();
         const outcome = writeConfigKey(
@@ -214,7 +271,7 @@ describe('an option the catalog does not hold', { tags: ['slow'] }, () => {
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 
-    it("refuses a hub layer file that is a link to oculus's own config/local.yml, and writes nothing", () => {
+    it("refuses a hub settings file that is a link to oculus's own config/local.yml, and writes nothing", () => {
         const engine = scratchEngine();
         const { hub, local } = hubLinkedToEngine(engine);
         const outcome = writeConfigKey(

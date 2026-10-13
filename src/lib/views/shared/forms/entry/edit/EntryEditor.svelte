@@ -9,9 +9,12 @@
     // on disk keep them, and the tab asks before it closes over them. Save posts only the fields
     // whose payload differs from the saved one (state/forms/entry-save.ts), the identity of the
     // entry never among them. A field the server refused keeps its edit and shows the reason under
-    // it; the others are dropped from the draft once the file has them. A feed entry's save refused
-    // as a whole after some fields were written drops those fields, keeps the rest as edits, and
-    // says both what was saved and why the save stopped.
+    // it; the others are dropped from the draft once the file has them, and the form shows the
+    // values the server took at once, since the page holds them over the snapshot's until the
+    // snapshot shows them (state/forms/settled.svelte.ts). A feed entry's save refused as a whole
+    // after some fields were written drops those fields, keeps the rest as edits, and says both
+    // what was saved and why the save stopped. Of two saves in flight the newest one's answer is
+    // the one the form words.
     //
     // While a source tab holds unsaved text of the entry's file, Save is disabled with the words
     // saying so, and a write sent from anywhere else is refused before it is sent.
@@ -102,6 +105,10 @@
         return payloadOf(field, valueOf(field), page.values[field.field]) === null;
     }
 
+    /** How many saves of this editor are out, and the number of the newest one sent. */
+    let sending = 0;
+    let newest = 0;
+
     async function save(): Promise<void> {
         const { body, taken } = pagePayload(page, fields, edits);
         if (Object.keys(body).length === 0) {
@@ -109,6 +116,9 @@
             return;
         }
         const from = instance;
+        newest += 1;
+        const mine = newest;
+        sending += 1;
         saving = true;
         try {
             const answer = await savePage(page, body, writes);
@@ -123,6 +133,7 @@
                 took,
                 answer.refused.map((one) => one.field)
             );
+            if (mine !== newest) return;
             refusals = Object.fromEntries(answer.refused.map((one) => [one.field, one.reason]));
             result = answer.ok
                 ? [t('editor.saved', answer.changed.join(', '))]
@@ -133,7 +144,8 @@
                       t('editor.failed', answer.error ?? '')
                   ];
         } finally {
-            saving = false;
+            sending -= 1;
+            saving = sending > 0;
         }
     }
 </script>

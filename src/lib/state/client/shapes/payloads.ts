@@ -30,6 +30,7 @@ const snapshotShape = unchangedAs<Payloads['portfolio']>(
 const configShape = unchangedAs<Payloads['config']>(
     z.object({
         config: mapShape,
+        hubs: z.object({ primary: z.string().nullable(), lists: mapShape }),
         text: mapShape,
         icons: mapShape,
         host: mapShape,
@@ -269,6 +270,7 @@ export const payloadShapes: { [K in keyof Payloads]: z.ZodType<Payloads[K]> } = 
     debug: debugShape,
     'debug-console': debugConsoleShape,
     jump: jumpShape,
+    changes: z.object({ at: z.string().min(1) }),
     'app-hosts': appHostsShape,
     'app-shell': appShellShape,
     'app-tools': appToolsShape

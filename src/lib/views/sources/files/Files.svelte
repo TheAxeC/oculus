@@ -43,13 +43,13 @@
     // row in the Bookmarks section; the file `bookmarks.yml` in the hub's `.oculus` folder is
     // written by those controls and by the star, and no form edits it.
     //
-    // The folders of the default workspace are the roots the hub's sources.yml layer lists, and
-    // those can be taken out; every root the configuration names in a saved workspace is in it and
-    // cannot be, and the server refuses that removal as well, since a refusal that lives only in a
-    // view disappears with the next caller. Add Folder to Workspace opens the folder panel (POST
-    // /api/folders/pick) and adds what it returns; the workspace menu items (Close Workspace apart,
-    // which the view runs and says its refusal in the message line) and Open Folder open the
-    // palette with their command typed, where state/workbench/palette.ts runs them.
+    // The folders of the workspace are those of its workspace file (`.oculus/workspaces/<name>.yml`
+    // of a hub), or those the state keeps for an unsaved workspace, and any of them can be taken
+    // out; the server refuses to take out a name the list does not hold, since a refusal that lives
+    // only in a view disappears with the next caller. Add Folder to Workspace opens the folder
+    // panel (POST /api/folders/pick) and adds what it returns; the workspace menu items (Close
+    // Workspace apart, which the view runs and says its refusal in the message line) and Open
+    // Folder open the palette with their command typed, where state/workbench/palette.ts runs them.
     //
     // A tab rooted at a folder (its `top`) or following a session draws the folder as the head of
     // its tree, with a `..` row above a rooted one, and no workspace header. A folder outside every

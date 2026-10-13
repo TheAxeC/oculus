@@ -9,7 +9,7 @@
 //
 // A project is a folder holding `project.yml` at its top or `.oculus/project.yml`, in a scan folder
 // and in a workspace folder alike. A folder holding both is read from its top file and the other is
-// a finding naming both. A folder that is a hub (it holds `.oculus/config/`) is never a project.
+// a finding naming both. A folder that is a hub (it holds `.oculus/config.yml`) is never a project.
 //
 // A folder that is a clone of another project is not a project of its own: when the `origin` of the
 // folder's repository is the `repository.url` of another project read in the same pass, the folder
@@ -20,7 +20,7 @@ import { basename, join, relative, sep } from 'node:path';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { isMap } from '../helpers/guards.ts';
 import type { Finding, RawManifest, RepositoryRoot, ScanRule } from '../model/index.ts';
-import { HUB_LAYER, MANIFEST, ROOT_FOLDER, entersFolder } from '../helpers/hub-names.ts';
+import { HUB_FILE, MANIFEST, ROOT_FOLDER, entersFolder } from '../helpers/hub-names.ts';
 import { originOf, sameAddress } from './origin.ts';
 import { errorLine, readYamlMap } from './yaml-file.ts';
 
@@ -64,9 +64,9 @@ function isFile(path: string): boolean {
     }
 }
 
-/** Whether a folder is a hub: it holds the hub's `.oculus/config/` folder. */
+/** Whether a folder is a hub: it holds the hub's settings file, `.oculus/config.yml`. */
 export function isHubFolder(dir: string): boolean {
-    return isDir(join(dir, HUB_LAYER));
+    return isFile(join(dir, HUB_FILE));
 }
 
 /** The manifest file of a project folder, and the file it shadows when the folder holds both. */

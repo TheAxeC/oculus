@@ -10,6 +10,7 @@ import { describe, expect } from 'vitest';
 import { repositoryDepths } from '../../../src/lib/server/files/roots.ts';
 import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import { writeState } from '../../../src/lib/server/files/workspace/state.ts';
+import { plantHub } from '../../fixtures/hubs/workspace.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** The folders a row is made over, all under one scratch directory. */
@@ -18,17 +19,19 @@ type At = {
     hub: string;
     /** A second hub. */
     lab: string;
-    /** A folder holding `.oculus/project.yml` and no `.oculus/config/`. */
+    /** A folder holding `.oculus/project.yml` and no `.oculus/config.yml`. */
     cathedra: string;
     /** A plain folder. */
     notes: string;
     /** A symbolic link to `notes`. */
     link: string;
+    /** A folder holding only a `.oculus/config/` folder with a `sources.yml` in it. */
+    folderOnly: string;
     /** A project folder inside the hub, holding `.oculus/project.yml`. */
     inside: string;
     /** A project folder inside the hub, holding a top `project.yml`. */
     insideTop: string;
-    /** A folder holding a top `project.yml` and no `.oculus/config/`. */
+    /** A folder holding a top `project.yml` and no `.oculus/config.yml`. */
     topAway: string;
 };
 
@@ -43,9 +46,11 @@ function folder(...parts: string[]): string {
 function world(): At {
     const base = scratchDir('oculus-hub-folders-');
     const hub = join(base, 'hub');
-    folder(hub, '.oculus', 'config');
+    plantHub(hub);
     const lab = join(base, 'lab');
-    folder(lab, '.oculus', 'config');
+    plantHub(lab);
+    const folderOnly = join(base, 'folder-only');
+    writeFileSync(join(folder(folderOnly, '.oculus', 'config'), 'sources.yml'), 'scan: []\n');
     const cathedra = join(base, 'cathedra');
     writeFileSync(
         join(folder(cathedra, '.oculus'), 'project.yml'),
@@ -63,6 +68,7 @@ function world(): At {
     return {
         hub,
         lab,
+        folderOnly,
         cathedra,
         notes,
         link,
@@ -146,7 +152,7 @@ const ROWS: Row[] = [
         primary: null
     },
     {
-        name: 'a primary that names a folder with no .oculus/config as a finding and no primary',
+        name: 'a primary that names a folder with no .oculus/config.yml as a finding and no primary',
         text: (at) =>
             `folders:\n${entry('hub', at.hub)}\n${entry('notes', at.notes)}\nprimary: notes\n`,
         served: ['hub', 'notes'],
@@ -208,21 +214,23 @@ describe('the folders of a workspace file', () => {
         expect(open.primary).toBe(row.primary === undefined ? null : row.primary);
     });
 
-    it('marks a folder that holds .oculus/config as a hub and no other', () => {
+    it('marks a folder that holds .oculus/config.yml as a hub and no other, a .oculus/config folder included', () => {
         const at = world();
         const { open } = opened(
             at,
-            `folders:\n${entry('hub', at.hub)}\n${entry('cathedra', at.cathedra)}\n${entry('notes', at.notes)}\nprimary: hub\n`
+            `folders:\n${entry('hub', at.hub)}\n${entry('cathedra', at.cathedra)}\n${entry('notes', at.notes)}\n${entry('folder-only', at.folderOnly)}\nprimary: hub\n`
         );
         expect(open.folders.map((one) => [one.name, one.hub])).toEqual([
             ['hub', true],
             ['cathedra', false],
-            ['notes', false]
+            ['notes', false],
+            ['folder-only', false]
         ]);
         expect(open.roots.map((one) => [one.key, one.hub === true])).toEqual([
             ['hub', true],
             ['cathedra', false],
-            ['notes', false]
+            ['notes', false],
+            ['folder-only', false]
         ]);
         expect(open.hubs.map((one) => one.name)).toEqual(['hub']);
         expect(open.primaryDir).toBe(at.hub);

@@ -519,7 +519,7 @@ export type Person = Rooted & {
     /**
      * Absolute path of the people file of a person of a hub other than the primary, which the
      * Person view opens under that hub's root. A person of the primary hub has none: the
-     * configuration's `people_file` names its file.
+     * configuration's `collections:` entry keyed `people` names its file.
      */
     file?: string;
     /**

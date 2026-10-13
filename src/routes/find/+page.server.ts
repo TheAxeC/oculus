@@ -11,6 +11,7 @@ export const load: PageServerLoad = ({ locals }) => {
         text: textCatalog(config),
         glyphs: glyphCatalog(config),
         icons: locals.server.icons.set,
-        vocab: vocabCatalog(config)
+        vocab: vocabCatalog(config),
+        hubs: locals.server.configCache.vocab()
     };
 };

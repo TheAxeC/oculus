@@ -112,10 +112,10 @@ export function writeSubtask(
     if (host === null) return { found: false, changed: [], refused: [] };
     const edit =
         action === 'delete'
-            ? deleteSubtask(host.source, host.range, key)
+            ? deleteSubtask(host.source, host.range, key, config.text)
             : action === 'snooze'
-              ? setSubtask(host.source, host.range, key, { snooze: value ?? null })
-              : setSubtask(host.source, host.range, key, { done: action === 'done' });
+              ? setSubtask(host.source, host.range, key, { snooze: value ?? null }, config.text)
+              : setSubtask(host.source, host.range, key, { done: action === 'done' }, config.text);
     const out = saved(host.file, host.source, edit);
     return { ...out, records: subtaskRecord(host, edit, key, target) };
 }
@@ -139,7 +139,7 @@ export function restoreSubtask(
     for (const field of new Set([...Object.keys(now), ...Object.keys(before)])) {
         fields[field] = before[field] ?? null;
     }
-    const edit = setSubtask(host.source, host.range, key, fields);
+    const edit = setSubtask(host.source, host.range, key, fields, config.text);
     const out = saved(host.file, host.source, edit);
     return { ...out, records: subtaskRecord(host, edit, key, target) };
 }
@@ -153,7 +153,7 @@ export function writeSubtaskAdd(
 ): WriteOutcome {
     const host = subtaskHost(hub, config, target);
     if (host === null) return { found: false, changed: [], refused: [] };
-    const edit = addSubtask(host.source, host.range, fields);
+    const edit = addSubtask(host.source, host.range, fields, config.text);
     const out = saved(host.file, host.source, edit);
     // The key the new line took is the one the edit added, which is why the record is asked for it
     // by the empty name rather than being told one this writer does not choose.
@@ -239,7 +239,8 @@ export function writeHost(
     hub: string,
     name: string,
     status: string,
-    rules: CareerRules
+    rules: CareerRules,
+    text: Record<string, string>
 ): WriteOutcome {
     const file = resolve(join(hub, rules.file));
     if (!below(file, hub)) return { found: false, changed: [], refused: [] };
@@ -256,7 +257,7 @@ export function writeHost(
         return {
             found: true,
             changed: [],
-            refused: [{ field: '', reason: 'the file does not parse' }]
+            refused: [{ field: '', reason: words(text, 'server.career.no_parse') }]
         };
     }
     const host = careerHost(data, name);
@@ -265,10 +266,12 @@ export function writeHost(
         return {
             found: true,
             changed: [],
-            refused: [{ field: 'status', reason: `${status} is not a career host status` }]
+            refused: [
+                { field: 'status', reason: words(text, 'server.career.not_a_status', status) }
+            ]
         };
     }
-    const out = saved(file, source, setHostStatus(source, name, status));
+    const out = saved(file, source, setHostStatus(source, name, status, text));
     if (out.changed.length === 0) return out;
     return {
         ...out,
@@ -366,10 +369,10 @@ export function writeCareer(
         };
     }
     const keyed = careerKeyRefusals(data.schema, fields, text);
-    const typed = [...keyed, ...typeRefusals(data.schema, fields)];
+    const typed = [...keyed, ...typeRefusals(data.schema, fields, text)];
     const names = new Set(typed.map((one) => one.field));
     const wanted = Object.fromEntries(Object.entries(fields).filter(([name]) => !names.has(name)));
-    const out = saved(file, source, setSections(source, wanted));
+    const out = saved(file, source, setSections(source, wanted, text));
     const records: ChangeRecord[] = out.changed.map((section) => ({
         file,
         key: 'career',

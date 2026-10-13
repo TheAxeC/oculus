@@ -22,6 +22,7 @@ import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
 import { APP_HEADER, KIND_HEADER } from '../../../src/lib/data/helpers/files/apps/apps.ts';
 import { handleWrite, type PrimaryTarget } from '../../../src/lib/server/edit/writes.ts';
+import { words } from '../../../src/lib/server/core/words.ts';
 import { it, test } from '../../fixtures/scratch.ts';
 import { MANIFEST, notesFiles, routeSetup } from '../apps/apps-fixture.ts';
 import {
@@ -280,7 +281,9 @@ describe('a write to a record of the second hub', () => {
             into
         );
         expect(response.status).toBe(404);
-        expect(await response.json()).toEqual({ error: 'no project with the id nolab:alpha' });
+        expect(await response.json()).toEqual({
+            error: words(into.config.text, 'server.write_route.no_project', 'nolab:alpha')
+        });
         expect(differing(before.first, filesOf(first))).toEqual([]);
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
         expect(changesOf(into)).toEqual([]);

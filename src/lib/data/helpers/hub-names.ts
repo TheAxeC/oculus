@@ -6,11 +6,11 @@
 // (data/sources/manifests.ts), the `new_project_dir` check (data/index.ts) and the new project form
 // (state/boards/board/new-project.ts) share those, so they agree on what is scanned.
 //
-// A workspace lists folders, and the ones that hold `.oculus/config/` are hubs. The primary is the
-// hub named by the workspace file's `primary` key: its records carry no `root` and keep their bare
-// ids, and a record of every other hub carries the hub's folder name in `root` and in front of its
-// id. With no primary every hub's records are prefixed. Each function below that tells a record's
-// hub or id apart takes the primary's name, or null when the workspace names none.
+// A workspace lists folders, and the ones that hold `.oculus/config.yml` are hubs. The primary is
+// the hub named by the workspace file's `primary` key: its records carry no `root` and keep their
+// bare ids, and a record of every other hub carries the hub's folder name in `root` and in front of
+// its id. With no primary every hub's records are prefixed. Each function below that tells a
+// record's hub or id apart takes the primary's name, or null when the workspace names none.
 
 import type { Collection, Id, RegistryName, Rooted, Tier } from '../model/index.ts';
 
@@ -208,57 +208,61 @@ export function tierOf(value: unknown): Tier | undefined {
 /** The folder of a repository that holds its project manifest. */
 export const ROOT_FOLDER = '.oculus';
 
-/** The hub's own config folder under `.oculus`, which holds the second layer of the settings. */
-export const HUB_LAYER = `${ROOT_FOLDER}/config`;
+/**
+ * The hub's own settings file, `<hub>/.oculus/config.yml`: one map of the keys of HUB_LIST, read
+ * after the engine's config. A folder that holds it is a hub.
+ */
+export const HUB_FILE = `${ROOT_FOLDER}/config.yml`;
 
 /**
- * The keys the hub's own config layer (`<hub>/.oculus/config/`) may set, by the config file they
- * are set in (named relative to config/). Each is a dotted path into that file; a value the layer
- * holds at one of these paths replaces the engine's value whole, and a key outside the list is a
- * finding and is not applied. They are the keys that describe this hub rather than the engine: its
- * folders and registries, its domains and themes, the cluster its jobs run on, and the values its
- * apps' settings hold.
+ * The keys the hub's settings file may set, each with the config file of the engine it belongs to
+ * (named relative to config/), which is the group the Settings view draws it in. Each key is a
+ * dotted path into the hub file; a value the file holds at one of these paths replaces the engine's
+ * value whole, and a key outside the list is a finding and is not applied. They are the keys that
+ * describe this hub rather than the engine: its folders and the files of its records, its domains
+ * and themes, the cluster its jobs run on, and the values its apps' settings hold.
  */
-export const HUB_LIST: Readonly<Record<string, readonly string[]>> = {
-    'sources.yml': [
-        'scan',
-        'portfolio_deck',
-        'venues_file',
-        'datasets_file',
-        'pillars_file',
-        'domains_file',
-        'people_file',
-        'organisations_file',
-        'resources_file',
-        'collections',
-        'new_project_dir',
-        'leads_file',
-        'radar_file',
-        'publications_file',
-        'linkedin_dir',
-        'career_file',
-        'memories_dir',
-        'wallpaper_dir'
-    ],
-    'appearance.yml': ['wallpaper.image'],
-    'layout.yml': ['docs'],
-    'behavior.yml': ['slurm.resource', 'data_domains', 'app_settings'],
-    'catalogs/vocab.yml': ['domains', 'venue_themes', 'data_themes']
-};
+const HUB_LIST: readonly { key: string; file: string }[] = [
+    { key: 'scan', file: 'sources.yml' },
+    { key: 'portfolio_deck', file: 'sources.yml' },
+    { key: 'collections', file: 'sources.yml' },
+    { key: 'new_project_dir', file: 'sources.yml' },
+    { key: 'leads_file', file: 'sources.yml' },
+    { key: 'radar_file', file: 'sources.yml' },
+    { key: 'publications_file', file: 'sources.yml' },
+    { key: 'linkedin_dir', file: 'sources.yml' },
+    { key: 'career_file', file: 'sources.yml' },
+    { key: 'memories_dir', file: 'sources.yml' },
+    { key: 'wallpaper_dir', file: 'sources.yml' },
+    { key: 'wallpaper.image', file: 'appearance.yml' },
+    { key: 'docs', file: 'layout.yml' },
+    { key: 'slurm.resource', file: 'behavior.yml' },
+    { key: 'data_domains', file: 'behavior.yml' },
+    { key: 'app_settings', file: 'behavior.yml' },
+    { key: 'domains', file: 'catalogs/vocab.yml' },
+    { key: 'venue_themes', file: 'catalogs/vocab.yml' },
+    { key: 'data_themes', file: 'catalogs/vocab.yml' }
+];
 
-/** The dotted keys the hub list names for a config file, or undefined for a file outside it. */
+/** Every dotted key the hub list names, in the list's order. */
+export function hubKeys(): string[] {
+    return HUB_LIST.map((one) => one.key);
+}
+
+/** The dotted keys the hub list binds to one config file, or undefined for a file with none. */
 export function hubKeysOf(name: string): readonly string[] | undefined {
-    return Object.hasOwn(HUB_LIST, name) ? HUB_LIST[name] : undefined;
+    const keys = HUB_LIST.filter((one) => one.file === name).map((one) => one.key);
+    return keys.length === 0 ? undefined : keys;
 }
 
-/** The path, inside the hub, of a file of the hub's config layer (`.oculus/config/sources.yml`). */
-export function hubLayerPath(name: string): string {
-    return `${HUB_LAYER}/${name}`;
+/** The config file of the engine a key of the hub list belongs to, or undefined for another key. */
+export function hubFileOf(key: string): string | undefined {
+    return HUB_LIST.find((one) => one.key === key)?.file;
 }
 
-/** Whether a `from` value (see loadConfig) names a file of the hub's layer. */
-export function fromHubLayer(file: string): boolean {
-    return file.startsWith(`${HUB_LAYER}/`);
+/** Whether a `from` value (see loadConfig) names the hub's settings file. */
+export function fromHubFile(file: string): boolean {
+    return file === HUB_FILE;
 }
 
 /**

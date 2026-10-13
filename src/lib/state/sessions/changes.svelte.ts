@@ -7,6 +7,12 @@
 // the boundary table of DESIGN.md lets `state/` import `data/model` and nothing of `server/`;
 // server/core/changes.ts holds the same shape on its own side.
 //
+// The server announces each append on the `changes` channel with the moment of the newest record.
+// A store that holds the log and has no row that new reads the first page again, and puts it in
+// front of the rows it holds when the page reaches the newest of them, so a write made by any page,
+// an app's host or the server shows in an open History at once and the older pages the reader
+// loaded stay. While a request is out, the read again follows it.
+//
 // The answer is held in the client state's query client, and the fetch is scheduled on a microtask
 // by state/client/queries.svelte.ts rather than run inside the call, so reading this from a
 // $derived never writes state while a derived is running. It is only ever made in the browser: a
@@ -23,7 +29,7 @@ import {
     unchangedAs
 } from '../../data/shapes/shapes.ts';
 import { failedAnswer } from '../shared/answers/answers.ts';
-import type { Fetcher, Queries } from '../shared/stores/shapes.ts';
+import type { EntitiesStore, Fetcher, Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
 /** One recorded write, as the endpoint answers it. */
@@ -153,8 +159,38 @@ async function page(held: Held | undefined, before?: string): Promise<Held> {
     }
 }
 
-export function createChanges(queries: Queries): ChangesStore {
+/**
+ * The first page read again in front of the rows held: the rows the page does not reach follow it
+ * when the page holds the newest row held, and the page alone stands when it does not, since rows
+ * would then be missing between the two.
+ */
+function ahead(fresh: Held, held: Held | undefined): Held {
+    const rows = held?.rows ?? [];
+    const oldest = fresh.rows.at(-1)?.at;
+    if (fresh.error !== '' || oldest === undefined || rows.length === 0) return fresh;
+    if (!fresh.rows.some((row) => row.at === rows[0].at)) return fresh;
+    const behind = rows.filter((row) => row.at < oldest);
+    return behind.length === 0
+        ? fresh
+        : { ...fresh, rows: [...fresh.rows, ...behind], more: held?.more ?? false };
+}
+
+export function createChanges(queries: Queries, entities: EntitiesStore): ChangesStore {
     const first: Fetcher<Held> = (held) => page(held);
+
+    /** The first page read again in front of the rows held, for an announced append. */
+    const newer: Fetcher<Held> = async (held) => ahead(await page(held), held);
+
+    // An append the store already holds the row of, and a log the store has not read, ask nothing:
+    // the first read of the log reads the newest page.
+    entities.afterReceive((message) => {
+        const said = entities.payloadOf(message, 'changes');
+        const held = queries.peek<Held>(KEY).data;
+        if (said === null || held === undefined || !inBrowser()) return;
+        const newest = held.rows.at(0)?.at;
+        if (newest !== undefined && newest >= said.at) return;
+        queries.refetch(KEY, newer, 'again');
+    });
 
     /**
      * What is held, asking for the first page when nothing is. Every read a view can make first
@@ -194,7 +230,7 @@ export function createChanges(queries: Queries): ChangesStore {
     }
 
     function reload(): void {
-        if (inBrowser()) queries.refetch(KEY, first, 'drop');
+        if (inBrowser()) queries.refetch(KEY, first, 'again');
     }
 
     /** The page before the oldest row held, addressed by that row's own moment. */

@@ -14,14 +14,16 @@
 //
 // What the factory keeps is the reactive page list and the write path over it. Everything a caller
 // does to the instances in that list is built beside the factory, one module per concern under
-// state/workbench/layout, and is handed the access object below: the tabs on a page, what the
-// reader last acted in, where a view asked for lands, a view opened clear of one instance, the file
-// browser's ask, and the storage. None of them holds a rune, so none of them is a second place an
-// arrangement can change.
+// state/workbench/layout, and is handed the access object below: the tabs on a page, the tabs
+// closed last, what the reader last acted in, where a view asked for lands, a view opened clear of
+// one instance, the file browser's ask, and the storage. None of them holds an arrangement in a
+// rune (the closed-tab list and the armed keep hold only their own lists), so none of them is a
+// second place an arrangement can change.
 
 import { item } from '../../data/helpers/guards.ts';
 import { createArmedKeeps, type ArmedKeep } from './layout/open/armed-keep.svelte.ts';
 import { createRailPages } from './layout/open/float/rail-pages.ts';
+import { createReopen, type Reopen } from './layout/tabs/reopen.svelte.ts';
 import type { Load } from './layout/saved/load.ts';
 import type { UiStore } from './ui.svelte.ts';
 import {
@@ -100,6 +102,7 @@ const GONE: Workbench = { root: { kind: 'pane', tabs: [], active: '' } };
 
 /** The pages one client is rendering, and their persistence. */
 export type LayoutStore = Omit<Instances, 'forgetTabs'> &
+    Reopen &
     FloatOps &
     Omit<FolderOps, 'keepClosed'> &
     Pick<Load, 'loadLayout' | 'workspaceOpened' | 'workspaceAnswered' | 'workspaceCarried'> & {
@@ -409,6 +412,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
 
     const attention = createAttention(access, where);
     const instances = createInstances(access, attention, keepRule);
+    const reopen = createReopen(access, attention, instances.activateInstance);
     const opening = createOpening(
         access,
         attention,
@@ -731,6 +735,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         keepPreview: instances.keepPreview,
         pinTab: instances.pinTab,
         unpinTab: instances.unpinTab,
+        ...reopen,
         loadLayout: load.loadLayout,
         workspaceOpened: load.workspaceOpened,
         workspaceAnswered: load.workspaceAnswered,

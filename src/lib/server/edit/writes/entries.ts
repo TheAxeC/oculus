@@ -47,7 +47,7 @@ import {
     readCollection,
     type Collection
 } from '../../files/fs/collections.ts';
-import { NOT_A_FIELD_VALUE, asFieldValue } from '../yaml/yaml-edit.ts';
+import { asFieldValue } from '../yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
@@ -66,30 +66,34 @@ export function saved(file: string, source: string, edit: EditResult): WriteOutc
  * rather than a value and is left to yaml-edit's own vocabulary. An empty value clears a field,
  * whatever its type, so it is never refused here.
  */
-function typeRefusal(field: SchemaField, value: unknown): string {
+function typeRefusal(field: SchemaField, value: unknown, catalog: Record<string, string>): string {
     if (value === null || value === undefined || value === '') return '';
     const name = field.field;
     if (field.type === 'text' || field.type === 'textarea') {
         const fits = typeof value === 'string' || typeof value === 'number';
-        return fits ? '' : `${name} takes text`;
+        return fits ? '' : words(catalog, 'server.entries.type_text', name);
     }
     if (field.type === 'date') {
         if (typeof value !== 'string' || !ISO_DATE.test(value.trim())) {
-            return `${name} takes a date written YYYY-MM-DD`;
+            return words(catalog, 'server.entries.type_date', name);
         }
         return '';
     }
     if (field.type === 'checkbox') {
-        return typeof value === 'boolean' ? '' : `${name} takes true or false`;
+        return typeof value === 'boolean'
+            ? ''
+            : words(catalog, 'server.entries.type_checkbox', name);
     }
-    if (field.type === 'records') return recordRefusal(field, value);
+    if (field.type === 'records') return recordRefusal(field, value, catalog);
     if (field.type !== 'select') return '';
     const options = field.options ?? [];
-    if (typeof value !== 'string') return `${name} takes one of its own options`;
+    if (typeof value !== 'string') return words(catalog, 'server.entries.type_option', name);
     // A select whose options come from a source (`from`) has none of its own here, and the value
     // is then checked as text: the sources are the page's data, not the file's.
     if (options.length === 0) return '';
-    return options.includes(value.trim()) ? '' : `${name} takes one of ${options.join(', ')}`;
+    return options.includes(value.trim())
+        ? ''
+        : words(catalog, 'server.entries.type_options', name, options.join(', '));
 }
 
 /**
@@ -97,7 +101,11 @@ function typeRefusal(field: SchemaField, value: unknown): string {
  * reason found, or the empty string. The value is a list of records, one record, or with `map` a
  * map from a name to one record; a key no sub-field names is not checked.
  */
-function recordRefusal(field: SchemaField, value: unknown): string {
+function recordRefusal(
+    field: SchemaField,
+    value: unknown,
+    catalog: Record<string, string>
+): string {
     const declared = field.fields ?? [];
     const records: unknown[] = Array.isArray(value)
         ? value
@@ -105,10 +113,10 @@ function recordRefusal(field: SchemaField, value: unknown): string {
           ? Object.values(value)
           : [value];
     for (const record of records) {
-        if (!isMap(record)) return `${field.field} takes records of named values`;
+        if (!isMap(record)) return words(catalog, 'server.entries.type_records', field.field);
         for (const sub of declared) {
             if (!(sub.field in record)) continue;
-            const reason = typeRefusal(sub, record[sub.field]);
+            const reason = typeRefusal(sub, record[sub.field], catalog);
             if (reason !== '') return reason;
         }
     }
@@ -116,12 +124,16 @@ function recordRefusal(field: SchemaField, value: unknown): string {
 }
 
 /** Every field of the given ones whose value does not fit the file's own schema. */
-export function typeRefusals(schema: unknown, fields: Record<string, unknown>): Refusal[] {
+export function typeRefusals(
+    schema: unknown,
+    fields: Record<string, unknown>,
+    catalog: Record<string, string>
+): Refusal[] {
     const declared = collectionSchema(schema) ?? [];
     const refused: Refusal[] = [];
     for (const field of declared) {
         if (!(field.field in fields)) continue;
-        const reason = typeRefusal(field, fields[field.field]);
+        const reason = typeRefusal(field, fields[field.field], catalog);
         if (reason !== '') refused.push({ field: field.field, reason });
     }
     return refused;
@@ -208,7 +220,8 @@ function sharedIdentity(items: Record<string, unknown>[], ident: string): string
  */
 export function sharedRefusal(
     items: Record<string, unknown>[],
-    ident: string
+    ident: string,
+    catalog: Record<string, string>
 ): WriteOutcome | null {
     const value = sharedIdentity(items, ident);
     if (value === '') return null;
@@ -218,7 +231,7 @@ export function sharedRefusal(
         refused: [
             {
                 field: ident,
-                reason: `two entries share the ${ident} ${value}, so a write cannot address one of them`
+                reason: words(catalog, 'server.entries.shared_identity', ident, value)
             }
         ]
     };
@@ -257,12 +270,12 @@ export function writeEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(held.items, held.ident);
+    const shared = sharedRefusal(held.items, held.ident, config.text);
     if (shared !== null) return shared;
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
     const fields = hubKey === undefined ? given : hubOwnValues(held.schema, given, hubKey);
-    const typed = typeRefusals(held.schema, fields);
+    const typed = typeRefusals(held.schema, fields, config.text);
     const wanted = fitting(fields, typed);
     if (held.ident in wanted) {
         // The identity value is what addresses an entry in this file, so an edit may not move the
@@ -278,7 +291,7 @@ export function writeEntry(
                     ...typed,
                     {
                         field: held.ident,
-                        reason: `another entry is already called ${next}`
+                        reason: words(config.text, 'server.entries.name_taken', next)
                     }
                 ]
             };
@@ -298,7 +311,10 @@ export function writeEntry(
                 changed: [],
                 refused: [
                     ...typed,
-                    { field: registryField, reason: `an entry needs a non-empty ${registryField}` }
+                    {
+                        field: registryField,
+                        reason: words(config.text, 'server.entries.key_empty', registryField)
+                    }
                 ]
             };
         }
@@ -313,7 +329,7 @@ export function writeEntry(
                     ...typed,
                     {
                         field: registryField,
-                        reason: `an entry with that ${registryField} is already in the file`
+                        reason: words(config.text, 'server.entries.key_taken', registryField)
                     }
                 ]
             };
@@ -324,7 +340,7 @@ export function writeEntry(
     const out = saved(
         held.file,
         held.source,
-        setEntryFields(held.source, held.ident, value, writing)
+        setEntryFields(held.source, held.ident, value, writing, config.text)
     );
     // The entry the edit was computed against is the value before it, and `writing` is the value
     // the edit put there, so the record is made where both halves are in hand rather than by
@@ -363,10 +379,14 @@ export function reorderCollection(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(held.items, held.ident);
+    const shared = sharedRefusal(held.items, held.ident, config.text);
     if (shared !== null) return shared;
     const before = identityOrder(held);
-    const out = saved(held.file, held.source, reorderEntries(held.source, held.ident, order));
+    const out = saved(
+        held.file,
+        held.source,
+        reorderEntries(held.source, held.ident, order, config.text)
+    );
     if (out.changed.length === 0) return out;
     return {
         ...out,
@@ -393,12 +413,16 @@ export function removeEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(held.items, held.ident);
+    const shared = sharedRefusal(held.items, held.ident, config.text);
     if (shared !== null) return shared;
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
     const entry = entryOf(held, value);
-    const out = saved(held.file, held.source, deleteEntry(held.source, held.ident, value));
+    const out = saved(
+        held.file,
+        held.source,
+        deleteEntry(held.source, held.ident, value, config.text)
+    );
     if (out.changed.length === 0) return out;
     return {
         ...out,
@@ -438,9 +462,9 @@ export function createEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(held.items, held.ident);
+    const shared = sharedRefusal(held.items, held.ident, config.text);
     if (shared !== null) return shared;
-    const typed = typeRefusals(held.schema, fields);
+    const typed = typeRefusals(held.schema, fields, config.text);
     const wanted = fitting(fields, typed);
     const registryField = byKey(KEYED_FIELDS, collection);
     const registryRaw = registryField === undefined ? undefined : wanted[registryField];
@@ -453,7 +477,7 @@ export function createEntry(
                 ...typed,
                 {
                     field: registryField,
-                    reason: `a new entry needs a non-empty ${registryField}`
+                    reason: words(config.text, 'server.entries.new_key_empty', registryField)
                 }
             ]
         };
@@ -469,7 +493,7 @@ export function createEntry(
                 ...typed,
                 {
                     field: registryField,
-                    reason: `an entry with that ${registryField} is already in the file`
+                    reason: words(config.text, 'server.entries.key_taken', registryField)
                 }
             ]
         };
@@ -481,7 +505,13 @@ export function createEntry(
         return {
             found: true,
             changed: [],
-            refused: [...typed, { field: ident, reason: `a new entry needs a ${ident}` }]
+            refused: [
+                ...typed,
+                {
+                    field: ident,
+                    reason: words(config.text, 'server.entries.new_ident_missing', ident)
+                }
+            ]
         };
     }
     if (held.items.some((one) => scalar(one[ident]) === value)) {
@@ -490,7 +520,7 @@ export function createEntry(
             changed: [],
             refused: [
                 ...typed,
-                { field: ident, reason: `an entry with that ${ident} is already in the file` }
+                { field: ident, reason: words(config.text, 'server.entries.key_taken', ident) }
             ]
         };
     }
@@ -512,7 +542,7 @@ export function createEntry(
     for (const [field, given] of Object.entries(normaliseMetalists(held.schema, wanted))) {
         const one = asFieldValue(given);
         if (one === undefined) {
-            refused.push({ field, reason: NOT_A_FIELD_VALUE });
+            refused.push({ field, reason: words(config.text, 'server.edit.not_a_field_value') });
             continue;
         }
         values[field] = one;
@@ -525,14 +555,17 @@ export function createEntry(
         return {
             found: true,
             changed: [],
-            refused: [...refused, { field: ident, reason: 'nothing to write' }]
+            refused: [
+                ...refused,
+                { field: ident, reason: words(config.text, 'server.entries.nothing_to_write') }
+            ]
         };
     }
     // A file with no list yet is given one with this entry under it; every later add appends.
     const edit =
         held.list === ''
-            ? startEntries(held.source, LIST, block)
-            : appendEntry(held.source, held.list, block);
+            ? startEntries(held.source, LIST, block, config.text)
+            : appendEntry(held.source, held.list, block, config.text);
     const out = saved(held.file, held.source, edit);
     // The record holds the entry as the file holds it after the write, read back from the block the
     // renderer made: a field it leaves out for its empty value is not in the record, so the undo

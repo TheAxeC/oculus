@@ -1,12 +1,12 @@
 // Layer 2, server. One value of a setting an app declares, written into the `app_settings:` map of
-// the primary hub's config layer (`<hub>/.oculus/config/behavior.yml`), and taken back again.
+// the primary hub's settings file (`<hub>/.oculus/config.yml`), and taken back again.
 //
 // The map's keys are the settings' whole keys: `notes.width` is one key of the map and is never
 // split at its dot, which is why this is not `writeConfigKey`, whose keys are the options catalog's
 // dotted paths. What may be written is what the apps the server holds declare: the key must be a
 // setting of an approved, enabled app and the value must pass its declaration (type, `enum` and
-// bounds, data/helpers/files/apps/settings.ts). The file is created, with its folders, when the hub
-// has none.
+// bounds, data/helpers/files/apps/settings.ts). A write that removes the last setting leaves the
+// settings file as an empty map, since a hub's file is what makes the folder a hub.
 //
 // The edit parses the file, sets the one key and writes the document back with its comments. The
 // result is checked before anything is written: it must parse back to the original with exactly
@@ -16,7 +16,7 @@
 // which is how an undo gives back a setting that was not stored.
 
 import { isDeepStrictEqual } from 'node:util';
-import { parseDocument } from 'yaml';
+import { isMap as isYamlMap, parseDocument } from 'yaml';
 import { appActive } from '../../../../data/helpers/files/apps/apps.ts';
 import { APP_SETTINGS_KEY, settingFlaw } from '../../../../data/helpers/files/apps/settings.ts';
 import { fields, isMap } from '../../../../data/helpers/guards.ts';
@@ -94,8 +94,8 @@ function storedMap(parsed: unknown): unknown {
 }
 
 /**
- * The value the primary hub's layer holds for a key now, and whether the key's file can be read: an
- * undo compares it with the value the write left. A key the layer does not hold is a found option
+ * The value the primary hub's settings file holds for a key now, and whether the file can be read:
+ * an undo compares it with the value the write left. A key the file does not hold is a found option
  * with no value, since there is nothing there for the write to have changed.
  */
 export function appSettingNow(engine: string, hub: string | undefined, key: string): OptionNow {
@@ -145,10 +145,12 @@ export function writeAppSetting(
         if (Object.keys(map).length === 0) doc.delete(APP_SETTINGS_KEY);
         if (Object.keys(fields(doc.toJS())).length === 0) doc.contents = null;
     } else {
+        // A file that is the empty map `{}` takes the key as a block map.
+        if (isYamlMap(doc.contents) && doc.contents.items.length === 0) doc.contents.flow = false;
         doc.setIn([APP_SETTINGS_KEY, key], value);
     }
-    // A document with no content prints as the text `null`, and a file holding nothing is empty.
-    const edited = doc.contents === null ? '' : doc.toString({ lineWidth: 0 });
+    // A document with no content prints as the text `null`; it is written as an empty map.
+    const edited = doc.contents === null ? '{}\n' : doc.toString({ lineWidth: 0 });
     const read = readBack(source, edited);
     const expected = { ...(read?.before ?? {}) };
     if (value === undefined) {
@@ -189,7 +191,7 @@ export function undoAppSetting(
     const place = placeOf(into.engine, into.hub ?? undefined, FILE, APP_SETTINGS_KEY);
     if (outcome.refused.length > 0 || !made.includes(place.path)) return outcome;
     const left = placeText(place);
-    if (left === null || parseDocument(left).contents !== null) return outcome;
+    if (left === null || Object.keys(fields(parseDocument(left).toJS())).length > 0) return outcome;
     removeMade(place.path, made);
     return outcome;
 }

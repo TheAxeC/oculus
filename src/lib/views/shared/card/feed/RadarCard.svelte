@@ -1,11 +1,12 @@
 <script lang="ts">
-    // Layer 3, view partial of views/feeds/radar/Radar.svelte. One paper with its metadata, links,
-    // and writes: Dismiss and Restore set the entry's `dismissed`, Delete asks first and removes
-    // the entry, and the title opens the paper's page, where its fields are edited. It receives the
-    // feed entry and project map and keeps only the optional idea form locally. The source line
-    // (authors, venue, year) is one line, cut with an ellipsis where the card ends, and its whole
-    // text is the line's tooltip. A project link ends in an ellipsis where the card ends, with the
-    // whole title as its tooltip.
+    // Layer 3, shared view. One paper with its metadata, links, and writes: Dismiss and Restore
+    // set the entry's `dismissed`, Delete asks first and removes the entry. Lit Watch draws it
+    // (views/feeds/radar/Radar.svelte and Bucket.svelte), where the title opens the paper's page,
+    // and so does that page (views/boards/entry/Entry.svelte), handing it `page`, where the title
+    // is words. It receives the feed entry and project map and keeps only the optional idea form
+    // locally. The source line (authors, venue, year) is one line, cut with an ellipsis where the
+    // card ends, and its whole text is the line's tooltip; on the paper's page it is drawn whole.
+    // A project link ends in an ellipsis where the card ends, with the whole title as its tooltip.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -47,23 +48,34 @@
         lastRun: unknown;
         projects: Record<string, Project>;
         dismissed?: boolean;
+        /** Drawn on the paper's own page: the title as words and the source line whole. */
+        page?: boolean;
         onsaid: (words: string) => void;
     };
 
-    let { entry, id, cursor, lastRun, projects, dismissed = false, onsaid }: Props = $props();
+    let {
+        entry,
+        id,
+        cursor,
+        lastRun,
+        projects,
+        dismissed = false,
+        page: onPage = false,
+        onsaid
+    }: Props = $props();
     let spinning = $state(false);
 
     /** True while the question before a delete is open. */
     let deleting = $state(false);
 
-    const page = $derived(pageOf('radar', id));
-    const file = $derived(page === null ? null : pageFile(client, page));
+    const held = $derived(pageOf('radar', id));
+    const file = $derived(held === null ? null : pageFile(client, held));
     /** Why Delete is disabled: unsaved text of the radar file, or a title no write addresses. */
     const blocked = $derived(
         blockedBy(
             file,
             file !== null && unsavedFile(file.root, file.path),
-            page === null ? undefined : pageFault(client, page)
+            held === null ? undefined : pageFault(client, held)
         )
     );
 
@@ -101,7 +113,7 @@
     {cursor}
     {title}
     titleHtml={inlineMarkdown(title)}
-    ontitle={identity === ''
+    ontitle={identity === '' || onPage
         ? undefined
         : () => openView('entry', entryPageState('radar', id, title))}
     tone={relevanceTone(relevance)}
@@ -159,7 +171,7 @@
     {/snippet}
 
     {#if sub !== ''}
-        <p class="sub" title={sub}>
+        <p class="sub" class:whole={onPage} title={sub}>
             {sub}
         </p>
     {/if}
@@ -237,6 +249,11 @@
         font-size: var(--fs-sm);
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .sub.whole {
+        overflow: visible;
+        white-space: normal;
     }
 
     /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at

@@ -49,8 +49,11 @@ type Options = {
     openPalette: (prefill: string) => void;
     /** Open the palette in the mode a palette key names, whatever mode it is in. */
     showPalette: (key: PaletteKey) => void;
-    /** Open one configured hub document by its path, in the page named, as the catalogue does. */
-    openDoc: (path: string, page: string | undefined) => void;
+    /**
+     * Open one listed document by the id of its tab (a hub document's path, or the engine id of a
+     * document of oculus's own folder), in the page named, as the catalogue does.
+     */
+    openDoc: (id: string, page: string | undefined) => void;
     /** New: the composer in the Terminal tab of the page named, the terminals store's rule. */
     composeIn: (page: string) => void;
     /** Ask the Search tab with this id to put the cursor in its query box or its replace box. */
@@ -262,6 +265,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             if (pane === null) return false;
             clearCursor();
             pane.dispatchEvent(new CustomEvent(PANE_COMMAND, { detail: action.kind }));
+        } else if (action.kind === 'reopen-closed-tab') {
+            clearCursor();
+            void options.layout.reopenClosed();
         } else if (action.kind === 'find') {
             clearCursor();
             options.find?.();

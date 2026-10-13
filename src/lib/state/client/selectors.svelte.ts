@@ -26,6 +26,7 @@ import {
 import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
+import type { HubVocabs } from '../../data/model/index.ts';
 import { collectionsOf } from '../../data/helpers/hub-names.ts';
 import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
@@ -40,6 +41,12 @@ import { appDefaults } from '../../data/helpers/files/apps/tools/editor-defaults
 import { joinedFor } from '../../data/helpers/files/apps/tools/languages.ts';
 import { languageMap, type LanguageMap } from '../../data/helpers/files/languages.ts';
 import type { ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
+import {
+    realRoot,
+    repositoryGroups,
+    shownFor,
+    type RepositoryGroup
+} from '../sources/repositories/repositories.ts';
 import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { movable } from '../boards/focus.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
@@ -118,6 +125,7 @@ const contextWindowShape = z.number().gt(0);
 /** The joins over what the socket delivered, for one client. */
 export type SelectorsStore = {
     configMap: () => Record<string, unknown>;
+    hubVocabs: () => HubVocabs | null;
     paintLimit: () => number | null;
     editorOptions: () => EditorOptions | null;
     repoSettings: (text: string) => RepoSettings;
@@ -161,6 +169,13 @@ export type SelectorsStore = {
     pinnableAreas: (workspace: string) => Area[];
     gitFor: (workspace: string) => GitState | null;
     gitRoots: () => string[];
+    /**
+     * The repositories the Repositories list holds, one entry each, see `repositoryGroups`; with
+     * `all` the ones only a session names too.
+     */
+    repositories: (which?: 'listed' | 'all') => RepositoryGroup[];
+    /** The root that shows the repository a root belongs to, null for a root none of them holds. */
+    repositoryRootOf: (root: string) => string | null;
     touchers: (path: string, exclude?: string | null) => GroupedSession[];
     sessionsForProject: (folder: string) => GroupedSession[];
 };
@@ -171,13 +186,19 @@ export function createSelectors(
     selection: SelectionStore,
     enginePlace: () => EnginePlace,
     enginePlaceSettled: () => Promise<EnginePlace>,
-    workspace: () => { primary: string | null; folders: { key: string; dir: string }[] }
+    workspace: () => { primary: string | null; folders: { key: string; dir: string }[] },
+    served: () => readonly { dir: string; real?: string }[]
 ): SelectorsStore {
     /**
      * The merged config the `config` channel delivered, or an empty map before the first message.
      */
     function configMap(): Record<string, unknown> {
         return entities.config()?.config ?? {};
+    }
+
+    /** Each hub's vocabulary as the `config` channel gave it, null before its first message. */
+    function hubVocabs(): HubVocabs | null {
+        return entities.config()?.hubs ?? null;
     }
 
     /**
@@ -555,6 +576,26 @@ export function createSelectors(
     }
 
     /**
+     * The repositories the Repositories list holds: one for each top folder among the roots of the
+     * workspace, however many roots of the channel lie in it. Everything that lists, counts or
+     * names a repository reads this rather than the channel's roots.
+     */
+    const repositoriesNow = $derived.by((): RepositoryGroup[] =>
+        repositoryGroups(gitRoots(), gitFor, (root) => realRoot(root, served()))
+    );
+    const repositoriesEvery = $derived.by((): RepositoryGroup[] =>
+        repositoryGroups(gitRoots(), gitFor, (root) => realRoot(root, served()), 'all')
+    );
+
+    function repositories(which: 'listed' | 'all' = 'listed'): RepositoryGroup[] {
+        return which === 'all' ? repositoriesEvery : repositoriesNow;
+    }
+
+    function repositoryRootOf(root: string): string | null {
+        return shownFor(repositoriesNow, root);
+    }
+
+    /**
      * The live sessions holding one path open, other than the one asking. It is what the "also
      * open" mark on a touched file names: two agents editing one file is the thing worth seeing at
      * once.
@@ -585,6 +626,7 @@ export function createSelectors(
 
     return {
         configMap,
+        hubVocabs,
         paintLimit: editorPaintLimit,
         editorOptions: () => editorOptionsNow,
         repoSettings: repoSettingsOf,
@@ -626,6 +668,8 @@ export function createSelectors(
         pinnableAreas,
         gitFor,
         gitRoots,
+        repositories,
+        repositoryRootOf,
         touchers,
         sessionsForProject
     };

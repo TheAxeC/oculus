@@ -1,10 +1,11 @@
 // Layer 2, client state. The words the approval panel and the write question say a channel or a
-// write kind in. The catalog holds one key per channel (`apps.read.<channel>`), one per kind for
-// the panel (`apps.write.<kind>`) and one per kind that asks first for the question
-// (`apps.ask.<kind>`). Each is read by a closure with its key written whole, so a key that no
-// closure reads, or a closure naming a key the catalog lacks, is found by the key check.
+// write kind in, and the state an app's row on the Apps view says it is in. The catalog holds one
+// key per channel (`apps.read.<channel>`), one per kind for the panel (`apps.write.<kind>`) and one
+// per kind that asks first for the question (`apps.ask.<kind>`). Each is read by a closure with its
+// key written whole, so a key that no closure reads, or a closure naming a key the catalog lacks,
+// is found by the key check.
 
-import type { AppContributes } from '../../../data/model/index.ts';
+import type { AppContributes, AppRow } from '../../../data/model/index.ts';
 import { t } from '../../shared/words/text.ts';
 
 /** The sentence for a channel an app reads, by channel; a channel with no sentence has no entry. */
@@ -128,4 +129,21 @@ export function addsWords(contributes: AppContributes): string {
         count === 0 ? [] : [count === 1 ? one() : other()]
     );
     return named.length === 0 ? '' : t('apps.adds_line', named.join(', '));
+}
+
+/**
+ * The state an app is in, in words, from what its row carries: disabled for this workspace by the
+ * workspace's list, disabled, waiting for approval, changed since approval (a kept app whose files
+ * left the hash that was approved), editing (a kept app), or approved. A changed app that is not
+ * kept reads waiting for approval, since no record says it was approved before.
+ */
+export function appStateWords(
+    row: Pick<AppRow, 'workspaceState' | 'disabled' | 'approved' | 'hashApproved' | 'kept'>
+): string {
+    if (row.workspaceState === 'disabled') return t('apps.state_disabled_workspace');
+    if (row.disabled) return t('apps.state_disabled');
+    if (!row.approved) return t('apps.state_waiting');
+    if (row.kept && !row.hashApproved) return t('apps.state_changed');
+    if (row.kept) return t('apps.state_editing');
+    return t('apps.state_approved');
 }

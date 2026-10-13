@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, view partial. "Edit in <file>": the control that opens a config file in a source
     // tab, at the line of the key when there is one. Settings that are lists, families and keys
-    // missing from the file are set there. The file is oculus's own, or the primary hub's layer
+    // missing from the file are set there. The file is oculus's own, or the primary hub's settings
     // file for a key of the hub list (`root` and `file` name it), and it is opened through the
     // workspace folder that holds it; with no such folder the control says so instead.
 

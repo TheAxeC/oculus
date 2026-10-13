@@ -41,7 +41,9 @@
     /** Where a file opens in a source tab: through the workspace folder that holds it, if any. */
     const targetOf = (root: string, file: string) => openTarget(root, file, workspaces());
 
-    /** Open one file of oculus's config tree, or of the primary hub's layer, in a source tab. */
+    /**
+     * Open one file of oculus's config tree, or the primary hub's settings file, in a source tab.
+     */
     function openFile(root: string, file: string): void {
         const target = targetOf(root, file);
         if (target !== null) openView('source', sourceTabState(target.root, target.path));

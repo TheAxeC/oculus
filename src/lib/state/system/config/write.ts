@@ -78,7 +78,8 @@ export function createRowWriter(
     const stopped = (): boolean => closed;
 
     async function send(row: ConfigRow, value: unknown): Promise<void> {
-        // A key the file lacks is written only where a hub layer can take it, which adds the key.
+        // A key the file lacks is written only where the hub's settings file can take it, which
+        // adds the key.
         if (closed || (row.state === 'missing' && row.hub === null)) return;
         const key = row.id;
         const sent = !last.has(key) || isEqual(last.get(key), value);

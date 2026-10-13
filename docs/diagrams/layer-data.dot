@@ -25,6 +25,7 @@ digraph layer_data {
         "folder data/sources to folder data/shapes" [label="22", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/snapshot" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/snapshot to folder data/helpers" [label="25", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/snapshot to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/snapshot to folder data/prose" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/snapshot to folder data/shapes" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/accounts to folder data/helpers" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -66,6 +67,8 @@ digraph layer_data {
     "folder data/sources to folder data/snapshot" -> "folder data/snapshot" [];
     "folder data/snapshot" -> "folder data/snapshot to folder data/helpers" [arrowhead=none, minlen=3, weight=10];
     "folder data/snapshot to folder data/helpers" -> "folder data/helpers" [];
+    "folder data/snapshot" -> "folder data/snapshot to folder data/model" [arrowhead=none, minlen=5, weight=10];
+    "folder data/snapshot to folder data/model" -> "folder data/model" [];
     "folder data/snapshot" -> "folder data/snapshot to folder data/prose" [arrowhead=none, minlen=3, weight=10];
     "folder data/snapshot to folder data/prose" -> "folder data/prose" [];
     "folder data/snapshot" -> "folder data/snapshot to folder data/shapes" [arrowhead=none, minlen=1, weight=10];

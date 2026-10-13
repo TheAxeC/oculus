@@ -27,7 +27,7 @@ text:
         posted_hdr: Posted ({0})
         search: Search posts & ideas ...
         toolbar: LinkedIn actions
-        unnamed: The hub names no LinkedIn folder. Set linkedin_dir in the hub's .oculus/config/sources.yml to name one.
+        unnamed: The hub names no LinkedIn folder. Set linkedin_dir in the hub's .oculus/config.yml to name one.
     views:
         linkedin: LinkedIn
         linkedin_badge_mark: post overdue

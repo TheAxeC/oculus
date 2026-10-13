@@ -66,6 +66,7 @@
         type NavGroup
     } from '$lib/state/workbench/navigation/catalogue';
     import type { RailEntry, RailPage } from '$lib/state/workbench/navigation/rail';
+    import { arrangedDocs } from '$lib/state/workbench/navigation/arrangement';
     import {
         NO_GIT,
         NO_STATUS,
@@ -182,12 +183,17 @@
     /** The page on screen: its trees are the ones drawn, and its id is what remounts them. */
     const page = $derived(currentPage());
     const activeMain = $derived(activeInstance());
+    /** The engine documents the rail pages' arrangements show, then the `docs:` entries. */
+    const listedDocs = $derived([
+        ...pages.flatMap((one) => arrangedDocs(one.page, one.node)),
+        ...docs
+    ]);
     const navigation = $derived(
         railOrder(
             views().filter((view) => view.listed !== false),
             groups,
             directChord,
-            docs
+            listedDocs
         )
     );
     const keyboard = createWorkbenchKeys({
@@ -204,14 +210,14 @@
         setPaletteOpen: (open) => (paletteOpen = open),
         setUpdateOpen: (open) => (updateOpen = open),
         setSheetOpen: (open) => (sheetOpen = open),
-        openDoc: (path, at) => {
-            const entry = docs.find((one) => one.path === path);
+        openDoc: (id, at) => {
+            const entry = listedDocs.find((one) => docState(one).id === id);
             if (entry === undefined) return;
             void client.selectors.engineAtSettled().then((engineAt) => {
                 const held = heldDocState(
                     entry,
                     engineAt,
-                    (id) => client.layout.heldInstance('doc', id) !== null
+                    (tab) => client.layout.heldInstance('doc', tab) !== null
                 );
                 client.layout.openView('doc', held ?? docState(entry), at, { held: true });
             });

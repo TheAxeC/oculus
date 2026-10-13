@@ -35,6 +35,7 @@ import {
     usageTiers,
     type LocalConfig
 } from '../../data/sources/config.ts';
+import { hubVocabs, readHubVocab } from '../../data/index.ts';
 import type { HostInfo, Snapshot } from '../../data/model/index.ts';
 import { mintToken } from '../core/auth.ts';
 import { words } from '../core/words.ts';
@@ -230,8 +231,8 @@ export function createServerContext(
     // route never answers from this copy. A value the options catalog's rule refuses is the entry's
     // default and a finding, so a typo costs one setting and the server starts; only a catalog with
     // no rule for a key stops it here, naming the key. The settings are the engine's with the
-    // primary hub's own layer over them, taken at each call from the workspace the server holds, so
-    // a move of the primary hub moves the next read to the new hub's layer.
+    // primary hub's own settings file over them, taken at each call from the workspace the server
+    // holds, so a move of the primary hub moves the next read to the new hub's file.
     const first = open();
     const initial = make.readMachine(first.hubs, first.primary, true);
     const local = initial.config;
@@ -274,7 +275,18 @@ export function createServerContext(
         engine,
         hub: () => open().primaryDir,
         load,
-        report: reportFindings
+        report: reportFindings,
+        primary: () => open().primary,
+        others: () =>
+            open()
+                .hubs.filter((one) => one.name !== open().primary)
+                .map((one) => ({ key: one.name, dir: one.dir })),
+        vocabs: (read, others) =>
+            hubVocabs(
+                open().primary,
+                read.config,
+                others.map((one) => ({ key: one.key, vocab: readHubVocab(engine, one) }))
+            )
     });
     const { config, from } = configCache.read();
     const slurm = slurmSettings(config);

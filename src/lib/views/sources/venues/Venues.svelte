@@ -41,7 +41,7 @@
     import {
         applyThemeFacets,
         themeFacets,
-        themeWordLabels,
+        themeLabeller,
         toggledThemes
     } from '$lib/state/shared/words/themes';
     import { t } from '$lib/state/shared/words/text';
@@ -50,7 +50,7 @@
 
     const client = useState();
     const {
-        selectors: { archiveDead, configMap, projects, venues },
+        selectors: { archiveDead, hubVocabs, projects, venues },
         ui: { instanceState, setInstanceState }
     } = client;
 
@@ -61,8 +61,8 @@
     const allProjects = $derived(realProjects(projects(), archiveDead()));
     const held = $derived(parseVenuesState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const labels = $derived(themeWordLabels(configMap().venue_themes));
-    const facets = $derived(themeFacets(allVenues, labels));
+    const labelOf = $derived(themeLabeller(hubVocabs(), 'venue_themes'));
+    const facets = $derived(themeFacets(allVenues, labelOf));
     const shown = $derived(applyThemeFacets(venueSearch(allVenues, held.search), held.off));
     const byCategory = $derived(venuesByCategory(shown));
     const journals = $derived(byCategory.journals);
@@ -136,7 +136,7 @@
                                         cursor={cursor === venue.id}
                                         projects={use.projects}
                                         concentrated={use.concentrated}
-                                        {labels}
+                                        labels={labelOf(venue.root)}
                                         entry={file.entryOf(venue.id)}
                                         schema={file.schemaOf(venue.id)}
                                         file={file.sourceOf(venue.id)}
@@ -175,7 +175,7 @@
                                         cursor={cursor === venue.id}
                                         projects={use.projects}
                                         concentrated={use.concentrated}
-                                        {labels}
+                                        labels={labelOf(venue.root)}
                                         entry={file.entryOf(venue.id)}
                                         schema={file.schemaOf(venue.id)}
                                         file={file.sourceOf(venue.id)}

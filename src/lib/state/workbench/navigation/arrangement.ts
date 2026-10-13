@@ -5,6 +5,8 @@
 // The shape of a node is read by the zod schemas below; what the workbench checks of a tree, the
 // sizes adding up among them, is checkWorkbench's. The `floats:` list beside the arrangements is
 // read here too: the panes drawn over every page that a browser with no saved layout starts with.
+// So are the documents of oculus's own folder an arrangement shows as tabs, which the catalogue
+// lists in the page's group (`arrangedDocs`).
 
 import { z } from 'zod';
 import {
@@ -12,12 +14,14 @@ import {
     emptyPane,
     newInstance,
     placeFits,
+    tabsOf,
     type FloatPlace,
     type FloatSpec,
     type Instance,
     type Layout,
     type Workbench
 } from '../layout/index.ts';
+import { pinned, pinnedTabsFirst } from '../layout/model.ts';
 import { mapShape, readAs } from '../../../data/shapes/shapes.ts';
 import { fields, isMap } from '../../../data/helpers/guards.ts';
 import { docState, type DocEntry } from './catalogue.ts';
@@ -28,18 +32,30 @@ const viewIdShape = z
     .min(1)
     .transform((view) => newInstance(view));
 
-/** A tab written out: its view id and, when it has one, the map its instance opens with. */
+/**
+ * A tab written out: its view id, the map its instance opens with when it has one, and `pinned:
+ * true` for a tab kept at the start of its pane, which a stray press does not close. A `pinned:`
+ * of any other value does not read, so the arrangement does not add up.
+ */
 const stateTabShape = z
-    .object({ view: z.string().min(1), state: mapShape.optional() })
-    .transform(({ view, state }) =>
-        state === undefined ? newInstance(view) : newInstance(view, { ...state })
-    );
+    .object({
+        view: z.string().min(1),
+        state: mapShape.optional(),
+        pinned: z.literal(true).optional()
+    })
+    .transform(({ view, state, pinned: pin }) => {
+        const tab = state === undefined ? newInstance(view) : newInstance(view, { ...state });
+        return pin === true ? pinned(tab) : tab;
+    });
 
-/** One tab of a pane: a view id, or a view id with the state its instance opens in. */
+/** One tab of a pane: a view id, or a view id with its state, its pin or both. */
 const arrangementTabShape = z.union([viewIdShape, stateTabShape]) satisfies z.ZodType<Instance>;
 
-/** The tabs a pane or a float holds: one view id or a list of tabs. */
-const tabsShape = z.union([viewIdShape.transform((tab) => [tab]), z.array(arrangementTabShape)]);
+/** The tabs a pane or a float holds: one view id or a list of tabs, the pinned ones first. */
+const tabsShape = z.union([
+    viewIdShape.transform((tab) => [tab]),
+    z.array(arrangementTabShape).transform(pinnedTabsFirst)
+]);
 
 /** A pane's `view`: one view id or a list of tabs. An empty list is an empty pane. */
 const arrangementPaneShape = z
@@ -75,8 +91,10 @@ const arrangementShape = z.object({ root: arrangementNodeShape });
  * for every tab. It is the same tree as a saved envelope with the instances left out: the
  * arrangement carries `root`, and a node is `{ kind: split, dir, sizes, children }` or
  * `{ kind: pane, view }`, where `view` is one view id or a list of them, and a tab of the list may
- * be `{ view, state }`. Anything the shape or checkWorkbench refuses is null, so a hand edit that
- * does not add up leaves the workbench the user had rather than replacing it with a broken one.
+ * be `{ view, state }`, `{ view, pinned: true }` or `{ view, state, pinned: true }`, a pinned tab
+ * coming first in its pane. Anything the shape or checkWorkbench refuses is null, so a hand edit
+ * that does not add up leaves the workbench the user had rather than replacing it with a broken
+ * one.
  */
 export function parseArrangement(value: unknown): Workbench | null {
     const read = readAs(arrangementShape, value);
@@ -159,11 +177,11 @@ function rawWithTabs(node: unknown, tabs: unknown[]): unknown {
 }
 
 /**
- * An arrangement as it is read from `layout.yml` with the hub's documents added: one `doc` tab per
- * entry of `docs`, in the list's order, after the first tab of the arrangement's first leaf pane (a
- * pane with no tab takes them as its tabs). An entry whose path is already a `doc` tab of the
- * arrangement, or comes earlier in the list, adds no second tab. A node that is no arrangement, or
- * has no pane, is returned as it is, and parseArrangement refuses it.
+ * An arrangement as it is read from `layout.yml` with the hub's documents added: one pinned `doc`
+ * tab per entry of `docs`, in the list's order, after the first tab of the arrangement's first leaf
+ * pane (a pane with no tab takes them as its tabs). An entry whose path is already a `doc` tab of
+ * the arrangement, or comes earlier in the list, adds no second tab. A node that is no arrangement,
+ * or has no pane, is returned as it is, and parseArrangement refuses it.
  */
 export function withDocs(node: unknown, docs: readonly DocEntry[]): unknown {
     if (docs.length === 0) return node;
@@ -172,9 +190,34 @@ export function withDocs(node: unknown, docs: readonly DocEntry[]): unknown {
     for (const entry of docs) {
         if (held.has(entry.path)) continue;
         held.add(entry.path);
-        tabs.push({ view: 'doc', state: docState(entry) });
+        tabs.push({ view: 'doc', state: docState(entry), pinned: true });
     }
     if (tabs.length === 0 || !isMap(node)) return node;
     const root = rawWithTabs(node.root, tabs);
     return root === null ? node : { ...node, root };
+}
+
+/** The fields of an engine document tab's state the catalogue lists it by. */
+const engineTabShape = z.object({
+    engine: z.literal(true),
+    path: z.string().min(1),
+    label: z.string().catch('')
+});
+
+/**
+ * The documents of oculus's own folder that the arrangement of the rail page `page` shows as tabs,
+ * as entries of that page's group, in the order of its tabs: the path relative to the engine
+ * folder, and the label the tab carries, else the path's last name. The view catalogue lists them
+ * after the group's views and before its `docs:` entries, and a chord reaches them as it reaches
+ * those.
+ */
+export function arrangedDocs(page: string, node: unknown): DocEntry[] {
+    const built = parseArrangement(node);
+    if (built === null) return [];
+    return tabsOf(built.root).flatMap((tab) => {
+        const state = tab.view === 'doc' ? readAs(engineTabShape, tab.state) : null;
+        if (state === null) return [];
+        const label = state.label === '' ? (state.path.split('/').at(-1) ?? '') : state.label;
+        return [{ label, path: state.path, group: page, engine: true as const }];
+    });
 }

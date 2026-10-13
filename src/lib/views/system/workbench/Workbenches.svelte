@@ -1,13 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. Workbenches is the last entry of the Views catalogue's System
-    // group, at order 10, so it takes no chord of its own and moves none.
+    // Layer 3, view registration. Workbenches is the last tab of the float docked at the right edge
+    // that config/layout.yml ships, and the third entry of the catalogue's Float group, which `w`
+    // then `3` opens.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'workbenches',
         label: 'views.workbenches',
         glyph: 'views.workbenches_glyph',
-        group: 'views',
-        order: 10,
+        group: 'float',
+        order: 2,
         unique: true
     };
 </script>

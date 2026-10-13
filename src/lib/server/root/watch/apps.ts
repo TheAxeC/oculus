@@ -27,7 +27,7 @@ import { existsSync, lstatSync, watch, type FSWatcher } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { debounce as debounced } from 'lodash-es';
-import { ROOT_FOLDER, hubLayerPath } from '../../../data/helpers/hub-names.ts';
+import { HUB_FILE, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import type { AppRow } from '../../../data/model/index.ts';
 import {
     appsSettings,
@@ -331,7 +331,7 @@ export function watchApps(hub: Hub, options: AppsWatchOptions): AppsWatcher {
             settingsFile:
                 primary === null
                     ? join(configDir(options.engine), 'behavior.yml')
-                    : join(primary, hubLayerPath('behavior.yml')),
+                    : join(primary, HUB_FILE),
             privateFolders: closedToApps({
                 home: options.home ?? homedir(),
                 config: configDir(options.engine),

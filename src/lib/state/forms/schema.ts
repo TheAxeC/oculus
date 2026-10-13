@@ -449,15 +449,23 @@ export function editDiffers(edit: unknown, value: unknown): boolean {
     return asText(edit).trim() !== asText(value).trim();
 }
 
+/** The key the settled writes hold a project's values under. */
+export function projectKey(id: string): string {
+    return `project:${id}`;
+}
+
 /**
  * What the project editor's draft is judged by: the project's values in the snapshot now, the
  * trimmed comparison above, and the fields the manifest form writes (`writableField`).
  */
-export function projectDraftTarget(projectOf: (id: string) => Project | null): DraftTarget {
+export function projectDraftTarget(
+    projectOf: (id: string) => Project | null,
+    settled: (key: string, values: Record<string, unknown>) => Record<string, unknown>
+): DraftTarget {
     return {
         values: (name) => {
             const project = projectOf(name);
-            return project === null ? null : fieldValues(project);
+            return project === null ? null : settled(projectKey(name), fieldValues(project));
         },
         differs: (_name, _field, edit, value) => editDiffers(edit, value),
         writable: (name, field, edits) => {

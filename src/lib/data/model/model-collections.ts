@@ -19,6 +19,33 @@ export type Entry = Rooted & {
     index: number;
 };
 
+/** A field's value when it is text. */
+function textOf(value: unknown): string | undefined {
+    return typeof value === 'string' ? value : undefined;
+}
+
+/**
+ * The words an entry is known by: its `title`, else its `name`, else the value of the identity
+ * field of its file, else nothing. data/snapshot/normalise.ts fills an Entry's `title` by it and
+ * the entry page words a saved entry by it, so the two agree.
+ */
+export function entryTitleOf(fields: Record<string, unknown>, ident = 'title'): string {
+    return textOf(fields.title) ?? textOf(fields.name) ?? textOf(fields[ident]) ?? '';
+}
+
+/**
+ * The id an entry has: its `id`, else its `key`, else the value of the identity field of its file,
+ * else its title. data/snapshot/normalise.ts fills an Entry's `id` by it and the entry page follows
+ * a saved entry by it, so the two agree.
+ */
+export function entryIdOf(fields: Record<string, unknown>, ident = 'title'): string {
+    const id = textOf(fields.id);
+    if (id !== undefined && id.length > 0) return id;
+    const key = textOf(fields.key);
+    if (key !== undefined && key.length > 0) return key;
+    return textOf(fields[ident]) ?? entryTitleOf(fields, ident);
+}
+
 /**
  * One field of a collection file's own `schema:` list, as the file writes it. It is the order and
  * the vocabulary a collection is drawn by: the view walks the list and renders each field of an

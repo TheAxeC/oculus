@@ -107,6 +107,7 @@ export type PaletteCommand = {
         | 'file-icons'
         | 'accent'
         | 'tab'
+        | 'reopen-closed-tab'
         | 'goto'
         | 'language'
         | 'eslint-config'
@@ -441,15 +442,18 @@ function choiceCommands(served: string): PaletteCommand[] {
  * The command vocabulary and its argument hints, over the current theme and view configuration and
  * the themes the acting apps offer, whether a source tab is on screen, which is what `language`
  * changes, and the language a server serves the tab in (empty for none), which is what
- * `interpreter` and `compile-database` change, and whether the folder panel is open, which leaves
- * `folder` unavailable.
+ * `interpreter` and `compile-database` change, whether the folder panel is open, which leaves
+ * `folder` unavailable, and whether the list of the tabs closed last holds a tab, without which
+ * `reopen-closed-tab` is not listed. The palette's page (docs/palette.md) names no list, so it
+ * lists the command.
  */
 export function commands(
     config: Record<string, unknown>,
     offers: AppOffers,
     source = false,
     served = '',
-    panelOpen = false
+    panelOpen = false,
+    reopenable = true
 ): PaletteCommand[] {
     const themes = [...(readAs(themeNamesShape, config.themes) ?? []), ...appThemeLabels(offers)];
     return [
@@ -483,6 +487,16 @@ export function commands(
             hint: t('app.palette.cmd_tab_hint'),
             available: true
         },
+        ...(reopenable
+            ? [
+                  {
+                      name: 'reopen-closed-tab' as const,
+                      description: t('app.palette.cmd_reopen_closed_tab'),
+                      hint: '',
+                      available: true
+                  }
+              ]
+            : []),
         {
             name: 'goto',
             description: t('app.palette.cmd_goto'),

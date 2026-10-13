@@ -18,14 +18,14 @@ const CONFIG_SUFFIX = '.yml';
 export const LOCAL_NAME = 'local.yml';
 
 /**
- * The root a Settings line names for a file of the primary hub's layer. The primary's folder name
+ * The root a Settings line names for the primary hub's settings file. The primary's folder name
  * is the workspace's, so the line holds this placeholder and `openTarget` puts the name in.
  */
 export const PRIMARY_ROOT = '';
 
 /**
  * Where a file of a Settings line is opened in an editor: a file of oculus's own `config/` folder
- * through the workspace folder that holds it, a file of the primary hub's layer through the
+ * through the workspace folder that holds it, the primary hub's settings file through the
  * primary's folder. Null when no folder of the workspace holds the file, which is when Settings
  * offers no open and says why.
  */

@@ -164,7 +164,7 @@ describe('the hub status after the block is written', () => {
     test('writes lines relative to the top of a larger repository that holds the hub', async () => {
         const top = hub();
         const inner = join(top, 'sites', 'hub');
-        put(top, 'sites/hub/.oculus/config/sources.yml', 'scan: []\n');
+        put(top, 'sites/hub/.oculus/config.yml', 'scan: []\n');
         nested(inner, 'x/y');
         expect(status(top).some((line) => line.includes('x/y'))).toBe(true);
         await sync(inner);

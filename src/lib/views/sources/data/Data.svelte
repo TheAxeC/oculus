@@ -36,7 +36,7 @@
     import {
         applyThemeFacets,
         themeFacets,
-        themeWordLabels,
+        themeLabeller,
         toggledThemes
     } from '$lib/state/shared/words/themes';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -47,7 +47,7 @@
 
     const client = useState();
     const {
-        selectors: { configMap, datasets, projects },
+        selectors: { hubVocabs, datasets, projects },
         ui: { instanceState, setInstanceState }
     } = client;
 
@@ -58,8 +58,8 @@
     const allProjects = $derived(projects());
     const held = $derived(parseDataState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const labels = $derived(themeWordLabels(configMap().data_themes));
-    const facets = $derived(themeFacets(allDatasets, labels));
+    const labelOf = $derived(themeLabeller(hubVocabs(), 'data_themes'));
+    const facets = $derived(themeFacets(allDatasets, labelOf));
     const shown = $derived(applyThemeFacets(datasetSearch(allDatasets, held.search), held.off));
 
     function write(next: Partial<DataState>): void {

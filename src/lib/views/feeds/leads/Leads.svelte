@@ -19,10 +19,10 @@
     // Add asks the new lead's title, writes the lead to the leads file of the primary hub (else the
     // first), dated today, and opens the lead's page, where the rest is filled in. A lead's title
     // opens its page too. A lead's `applied` control opens the Applications file beside the leads
-    // with an entry filled from the lead (state/feeds/lead-application.ts) in its unsaved text, and
-    // then sets the lead `applied`. A refused placement writes nothing to the lead, and a refused
-    // write of the lead leaves the entry in the text. The controls that write the leads file are
-    // disabled while a source tab holds unsaved text of it.
+    // with an entry filled from the lead in its unsaved text, and then sets the lead `applied`
+    // (views/shared/card/feed/lead-apply.ts, which the lead's page reaches through the same card).
+    // The controls that write the leads file are disabled while a source tab holds unsaved text of
+    // it.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -30,17 +30,15 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import LeadCard from './LeadCard.svelte';
+    import LeadCard from '../../shared/card/feed/LeadCard.svelte';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
     import { leadAsk, type Ask } from '../../shared/forms/entry/entry-add';
-    import { blockedBy, placeInFile } from '../../shared/forms/entry-file';
-    import { answerWords } from '../../shared/forms/answer-words';
+    import { blockedBy } from '../../shared/forms/entry-file';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceToolbar from '../../shared/links/SourceToolbar.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
-        APPLIED,
         declinedCount,
         leadIdents,
         leadsSearch,
@@ -54,15 +52,10 @@
     } from '$lib/state/feeds/leads';
     import { asText } from '$lib/state/forms/schema';
     import { entryPageState } from '$lib/state/forms/page-entry';
-    import { sourceFileState } from '$lib/state/sessions/source/place';
-    import {
-        APPLICATIONS,
-        LEADS_FEED,
-        applicationFromLead
-    } from '$lib/state/feeds/lead-application';
+    import { LEADS_FEED } from '$lib/state/feeds/lead-application';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { feedIdents, feedRoot } from '$lib/state/shared/page/idents';
+    import { feedIdents } from '$lib/state/shared/page/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -71,11 +64,10 @@
     const {
         entities: { config },
         feeds: { feed },
-        layout: { openBeside, openView },
-        selectors: { collectionOf, configMap },
+        layout: { openView },
+        selectors: { configMap },
         source: { unsavedFile },
-        ui: { instanceState, setInstanceState },
-        writes: { writeFeedField }
+        ui: { instanceState, setInstanceState }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -124,33 +116,6 @@
     function openPage(entry: LeadEntry): void {
         const title = asText(entry.title);
         openView('entry', entryPageState(LEADS_FEED, identOf(entry), title));
-    }
-
-    /**
-     * Open Applications beside the leads with an entry filled from one lead in its unsaved text,
-     * then set the lead `applied`. A lead is named as the feed write names it, the title as the
-     * file holds it. A refused Add writes nothing to the lead.
-     */
-    async function toApplication(entry: LeadEntry): Promise<void> {
-        const file = viewSourceFile('collection', configMap(), client.fs.primary(), APPLICATIONS);
-        const schema = collectionOf(APPLICATIONS)?.schema;
-        if (file === null) return;
-        const placed = await placeInFile(
-            client,
-            file,
-            schema,
-            APPLICATIONS,
-            applicationFromLead(entry),
-            (one) => openBeside('source', sourceFileState(client, one), undefined, instance.id)
-        );
-        if (!placed.placed) {
-            said = placed.sentence;
-            return;
-        }
-        const lead = asText(entry.title);
-        if (lead === '') return;
-        const answer = await writeFeedField(LEADS_FEED, lead, 'status', APPLIED, feedRoot(entry));
-        said = answer.ok ? '' : answerWords(answer);
     }
 
     /**
@@ -231,7 +196,7 @@
                                 {vocab}
                                 cursor={cursor === leadOf(entry)}
                                 onsaid={(words: string) => (said = words)}
-                                onapply={() => toApplication(entry)}
+                                beside={instance.id}
                                 onpage={() => openPage(entry)}
                                 {blocked}
                             />
@@ -265,7 +230,7 @@
                                         cursor={cursor === leadOf(entry)}
                                         expired
                                         onsaid={(words: string) => (said = words)}
-                                        onapply={() => toApplication(entry)}
+                                        beside={instance.id}
                                         onpage={() => openPage(entry)}
                                         {blocked}
                                     />

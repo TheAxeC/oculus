@@ -11,10 +11,11 @@
 // moved or deleted, and the block is written from that list (server/git/clone/exclude.ts). It runs
 // real git in the hub, so it is tagged slow and npm test leaves it out.
 
-import { mkdirSync, readFileSync, renameSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterEach, describe, expect } from 'vitest';
 import { Hub, type Sink } from '../../../src/lib/server/core/channels.ts';
+import type { GitPayload } from '../../../src/lib/data/model/index.ts';
 import {
     subrepositories,
     watchGit,
@@ -141,6 +142,38 @@ describe('the git watch of a root', () => {
         const fresh = made(world.root, 'p/q/r/s/t');
         await until(hub, [fresh]);
         expect(keysOf(hub)).toContain(fresh);
+    });
+});
+
+describe('the top folder and the workspace mark of each root', () => {
+    it('names the top folder of a repository, of a folder inside one and of one found below a root, and marks a root only a session names as outside the workspace', async () => {
+        const hub = new Hub();
+        const root = scratchDir('oculus-git-top-');
+        repositoryAt(root);
+        const inner = join(root, 'inner');
+        mkdirSync(inner);
+        const nested = join(root, 'nested');
+        mkdirSync(nested);
+        repositoryAt(nested);
+        const away = scratchDir('oculus-git-top-away-');
+        repositoryAt(away);
+        hub.publish('sessions', { workspaces: [{ key: away }] });
+        watcher = watchGit(hub, {
+            throttle: 0,
+            roots: () => [root, inner],
+            depth: () => 1
+        });
+        await until(hub, [root, inner, nested, away]);
+        const payload = hub.latest('git')?.payload as GitPayload;
+        const seen = Object.fromEntries(
+            Object.entries(payload).map(([key, state]) => [key, [state.top, state.inWorkspace]])
+        );
+        expect(seen).toEqual({
+            [root]: [realpathSync(root), true],
+            [inner]: [realpathSync(root), true],
+            [nested]: [realpathSync(nested), true],
+            [away]: [realpathSync(away), false]
+        });
     });
 });
 

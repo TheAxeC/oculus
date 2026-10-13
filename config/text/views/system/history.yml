@@ -62,6 +62,14 @@ text:
         kind_files: file operation
         kind_roots: workspace folder
         kind_app_store: app store
+        undid_delete_entry: entry put back
+        undid_feed_delete: feed entry put back
+        undid_new_entry: entry removed
+        undid_lead_add: lead removed
+        undid_radar_add: Lit Watch entry removed
+        undid_subtask_add: subtask removed
+        undid_reorder: order put back
+        undid_field: '{0} set back'
         by_app: 'by {0}'
         bytes: '{0} bytes'
         deck_create: deck made

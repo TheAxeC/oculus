@@ -21,6 +21,7 @@ import {
     themeFindings,
     vocabCatalog
 } from '../../../src/lib/data/sources/config.ts';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { readEditorOptions } from '../../../src/lib/data/sources/config/editor-options.ts';
 import { layoutFile } from '../../../src/lib/server/content/docs.ts';
 import { parse } from 'yaml';
@@ -257,7 +258,7 @@ describe('loadConfig', () => {
     });
 });
 
-describe('loadConfig with the hub layer', () => {
+describe("loadConfig with the hub's settings file", () => {
     /**
      * A copy of the checkout's config folder as an engine, with the machine's own file left out.
      */
@@ -270,9 +271,9 @@ describe('loadConfig with the hub layer', () => {
         return engine;
     }
 
-    /** Write one file of a hub's `.oculus/config/` layer, creating the folders. */
-    function layer(hub: string, name: string, body: string): string {
-        const file = join(hub, '.oculus', 'config', name);
+    /** Write a hub's `.oculus/config.yml`, creating the folder, and answer its path. */
+    function settings(hub: string, body: string): string {
+        const file = join(hub, HUB_FILE);
         expect(resolve(file).startsWith(resolve(hub) + sep)).toBe(true);
         mkdirSync(dirname(file), { recursive: true });
         writeFileSync(file, body);
@@ -287,11 +288,24 @@ describe('loadConfig with the hub layer', () => {
         );
     }
 
-    it('replaces the engine value of a listed key whole and names the layer file in `from`', () => {
+    it('applies every listed key of one file whole and names the file in `from`', () => {
         const engine = engineCopy();
         const hub = scratch();
-        layer(hub, 'behavior.yml', 'slurm:\n  resource: other\n');
-        layer(hub, 'sources.yml', 'memories_dir: .oculus/photos\n');
+        settings(
+            hub,
+            [
+                'slurm:',
+                '  resource: other',
+                'memories_dir: .oculus/photos',
+                'scan:',
+                '  - { dir: work }',
+                'domains:',
+                '  kidney: { color: "#334155", label: Kidney }',
+                'app_settings:',
+                '  notes.width: 100',
+                ''
+            ].join('\n')
+        );
         const { config, findings, from } = loadConfig(engine, { hub });
         expect(findings).toEqual([]);
         const slurm = config.slurm as Record<string, unknown>;
@@ -300,59 +314,69 @@ describe('loadConfig with the hub layer', () => {
             (loadConfig(engine).config.slurm as Record<string, unknown>).poll_min
         );
         expect(config.memories_dir).toBe('.oculus/photos');
-        expect(from['slurm.resource']).toBe('.oculus/config/behavior.yml');
-        expect(from.memories_dir).toBe('.oculus/config/sources.yml');
+        expect(config.scan).toEqual([{ dir: 'work' }]);
+        expect(config.domains).toEqual({ kidney: { color: '#334155', label: 'Kidney' } });
+        expect(config.app_settings).toEqual({ 'notes.width': 100 });
+        expect(from['slurm.resource']).toBe(HUB_FILE);
+        expect(from.memories_dir).toBe(HUB_FILE);
         expect(from.slurm).toBe('behavior.yml');
     });
 
-    it('names a key, a file and a local.yml the layer may not set, and applies none of them', () => {
+    it('names a key the list does not hold, with the file, and applies none of them', () => {
         const engine = engineCopy();
         const hub = scratch();
-        const behavior = layer(
+        const file = settings(
             hub,
-            'behavior.yml',
-            'usage_tiers: { x: X }\nslurm: { resource: x, days: 5 }\n'
+            'theme: dark\nslurm: { resource: x, poll_min: 3 }\nvenues_file: other/venues.yml\nleads_file: other/leads.yml\n'
         );
-        const stray = layer(hub, 'stray.yml', 'a: 1\n');
-        const local = layer(hub, LOCAL_NAME, 'port: 9999\n');
         const engineOnly = loadConfig(engine).config;
         const { config, findings } = loadConfig(engine, { hub });
-        const named = findings.map((one) => [one.file, one.key]);
-        expect(named).toEqual([
-            [behavior, 'usage_tiers'],
-            [behavior, 'slurm.days'],
-            [local, ''],
-            [stray, '']
+        expect(findings.map((one) => [one.file, one.key])).toEqual([
+            [file, 'theme'],
+            [file, 'slurm.poll_min'],
+            [file, 'venues_file']
         ]);
         const messages = findings.map((one) => one.message);
-        expect(messages).toContain(sentence(config, 'hub_key_unknown', 'usage_tiers'));
-        expect(messages).toContain(sentence(config, 'hub_key_unknown', 'slurm.days'));
-        expect(messages).toContain(sentence(config, 'hub_local'));
-        expect(messages).toContain(sentence(config, 'hub_file_unknown'));
-        expect(config.usage_tiers).toEqual(engineOnly.usage_tiers);
-        expect((config.slurm as Record<string, unknown>).days).toBe(
-            (engineOnly.slurm as Record<string, unknown>).days
-        );
-        expect((config.slurm as Record<string, unknown>).resource).toBe('x');
+        expect(messages).toContain(sentence(config, 'hub_key_unknown', 'theme'));
+        expect(messages).toContain(sentence(config, 'hub_key_unknown', 'slurm.poll_min'));
+        expect(messages).toContain(sentence(config, 'hub_key_unknown', 'venues_file'));
+        expect(config.theme).toEqual(engineOnly.theme);
+        expect(config.venues_file).toBeUndefined();
+        expect(config.leads_file).toBe('other/leads.yml');
+        const slurm = config.slurm as Record<string, unknown>;
+        expect(slurm.poll_min).toBe((engineOnly.slurm as Record<string, unknown>).poll_min);
+        expect(slurm.resource).toBe('x');
     });
 
-    it('keeps the engine values and names the file when a layer file does not parse', () => {
+    it.each([
+        ['is empty', ''],
+        ['is a list', '- a\n- b\n'],
+        ['does not parse', 'slurm: [unclosed\n'],
+        ['holds a key twice', 'domains: {}\ndomains: {}\n']
+    ])('keeps the engine values and names the file when the file %s', (_row, body) => {
         const engine = engineCopy();
         const hub = scratch();
-        const broken = layer(hub, 'behavior.yml', 'slurm: [unclosed\n');
+        const file = settings(hub, body);
         const { config, findings } = loadConfig(engine, { hub });
-        expect(findings.map((one) => one.file)).toEqual([broken]);
-        expect(findings[0].message).toMatch(/^does not parse/);
+        expect(findings.map((one) => [one.file, one.key])).toEqual([[file, '']]);
         expect((config.slurm as Record<string, unknown>).resource).toBe('');
+        expect(config.domains).toEqual(loadConfig(engine).config.domains);
     });
 
-    it('reads the engine alone for a hub without the folder and for a call that passes no hub', () => {
+    it('reads the engine alone for a hub without the file, for a call that passes no hub and for a .oculus/config/ folder', () => {
         const engine = engineCopy();
         const hub = scratch();
         expect(loadConfig(engine, { hub }).findings).toEqual([]);
         expect(loadConfig(engine, { hub }).config.memories_dir).toBe('.oculus/memories');
-        layer(hub, 'sources.yml', 'memories_dir: .oculus/photos\n');
+        mkdirSync(join(hub, '.oculus', 'config'), { recursive: true });
+        writeFileSync(
+            join(hub, '.oculus', 'config', 'sources.yml'),
+            'memories_dir: .oculus/photos\n'
+        );
+        expect(loadConfig(engine, { hub }).config.memories_dir).toBe('.oculus/memories');
+        settings(hub, 'memories_dir: .oculus/photos\n');
         expect(loadConfig(engine).config.memories_dir).toBe('.oculus/memories');
+        expect(loadConfig(engine, { hub }).config.memories_dir).toBe('.oculus/photos');
     });
 });
 

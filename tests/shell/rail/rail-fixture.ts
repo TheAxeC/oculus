@@ -1,6 +1,7 @@
 // Layer 4, test fixture. The registrations, catalog and helpers the rail suites share: the views
 // this suite registers of its own.
 
+import { hubVocabs } from '../../../src/lib/data/index.ts';
 import { type DocEntry } from '../../../src/lib/state/workbench/navigation/catalogue.ts';
 import {
     engineDir,
@@ -27,7 +28,7 @@ setCatalog(catalog);
 
 setGlyphs(glyphCatalog(config));
 
-setVocab(vocabCatalog(config));
+setVocab(vocabCatalog(config), hubVocabs(null, config, []));
 
 setAppearance(config);
 

@@ -35,6 +35,7 @@ export {
 export { loadMachine, readMachine } from './config/machine.ts';
 export { configDir } from './config/folder.ts';
 export {
+    type ReplacedFile,
     CATALOGS_DIR,
     TEXT_KEY,
     droppedFile,
@@ -53,7 +54,8 @@ export {
     iconSet,
     localFindings,
     settingFindings,
-    vocabCatalog
+    vocabCatalog,
+    hubVocabOf
 } from './config/catalogs.ts';
 export {
     type AppsSettings,

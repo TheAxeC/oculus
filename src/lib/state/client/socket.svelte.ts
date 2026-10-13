@@ -377,7 +377,7 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
         if (payload === null) return;
         followServer(payload.host);
         setCatalog(payload.text);
-        setVocab(payload.config);
+        setVocab(payload.config, payload.hubs);
         setAppearance(payload.config);
         const glyphs = readAs(stringMapShape, payload.config.glyphs);
         if (glyphs !== null) setGlyphs(glyphs);

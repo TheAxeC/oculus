@@ -1,12 +1,17 @@
-// Layer 2, server. The parse of the engine's config folder and of the hub's layer, kept by the
-// server context between requests. Reading and parsing every config file costs about 75 ms and
+// Layer 2, server. The parse of the engine's config folder and of the hub's settings file, kept by
+// the server context between requests. Reading and parsing every config file costs about 75 ms and
 // holds the one event loop the socket's upgrade waits on, and a page that boots makes several
-// requests at once, so a request takes the parse the previous request made while both folders are
-// as they were: the stamp of each folder, the path, size, inode and times of every entry, is the
-// same, and so is the hub the parse was made for. Adding, removing or writing a file of either
-// folder moves the stamp, at any depth, so the next request parses again. The hub's layer is
-// `<hub>/.oculus/config/` and the hub is the open workspace's primary at each request; a hub
-// without the folder is stamped as absent, so making the folder moves the stamp.
+// requests at once, so a request takes the parse the previous request made while the folder and
+// the file are as they were: the stamp of the folder (the path, size, inode and times of every
+// entry) and of the file (its size, inode and times) is the same, and so is the hub the parse was
+// made for. Adding, removing or writing a file of the folder, or writing the settings file, moves
+// the stamp, so the next request parses again. The settings file is `<hub>/.oculus/config.yml` and
+// the hub is the open workspace's primary at each request; a hub without the file is stamped as
+// absent, so making the file moves the stamp.
+//
+// The vocabulary of the other hubs of the workspace (their own `domains` and themes) is kept the
+// same way: its stamp adds the settings file of every other hub, so a request parses a hub's
+// settings again only when its file or the engine's folder changed.
 //
 // A stamp that cannot be made (an entry that cannot be read, such as a dangling link) says
 // nothing about whether the folder changed, so a parse made under it is returned and not kept,
@@ -14,22 +19,27 @@
 
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { HUB_LAYER } from '../../../data/helpers/hub-names.ts';
-import type { Finding } from '../../../data/model/index.ts';
+import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
+import type { HubRoot } from '../../../data/index.ts';
+import type { Finding, HubVocabs } from '../../../data/model/index.ts';
 import { configDir, type loadConfig } from '../../../data/sources/config.ts';
 
 /** What one parse of the config folder gives. */
 type LoadedConfig = ReturnType<typeof loadConfig>;
 
-/** The parse of the config, made again when a file of either folder or the hub changed. */
+/**
+ * The parse of the config, made again when a file of the folder or the hub's settings file changed.
+ */
 export type ConfigCache = {
     read: () => LoadedConfig;
+    /** The vocabulary of every hub of the workspace, for the records of that hub alone. */
+    vocab: () => HubVocabs;
 };
 
 /** The stamp of a folder that could not be listed or stat'ed, which is never kept. */
 const UNREADABLE = 'unreadable';
 
-/** The stamp of a folder that is not there, which a later write of the folder moves. */
+/** The stamp of a folder or file that is not there, which a later write of it moves. */
 const ABSENT = 'absent';
 
 /** What a folder holds: every entry's path, size and times, which any write moves. */
@@ -51,12 +61,22 @@ function folderStamp(dir: string): string {
     }
 }
 
-/** What the engine's folder and the hub's layer hold, and which hub the layer is of. */
+/** The size, inode and times of one file, ABSENT for a file that is not there. */
+function fileStamp(file: string): string {
+    try {
+        const info = statSync(file);
+        return `${info.ino}:${info.size}:${info.mtimeMs}:${info.ctimeMs}`;
+    } catch (error) {
+        return (error as NodeJS.ErrnoException).code === 'ENOENT' ? ABSENT : UNREADABLE;
+    }
+}
+
+/** What the engine's folder and the hub's settings file hold, and which hub the file is of. */
 function configStamp(engine: string, hub: string | null): string {
     const engineStamp = folderStamp(configDir(engine));
-    const layerStamp = hub === null ? ABSENT : folderStamp(join(hub, HUB_LAYER));
-    if (engineStamp === UNREADABLE || layerStamp === UNREADABLE) return UNREADABLE;
-    return `${engineStamp}\n--hub ${hub ?? ''}\n${layerStamp}`;
+    const fileOfHub = hub === null ? ABSENT : fileStamp(join(hub, HUB_FILE));
+    if (engineStamp === UNREADABLE || fileOfHub === UNREADABLE) return UNREADABLE;
+    return `${engineStamp}\n--hub ${hub ?? ''}\n${fileOfHub}`;
 }
 
 /** What the cache needs of the server: where the folders are, how to parse, where findings go. */
@@ -66,19 +86,42 @@ export type ConfigCacheDeps = {
     hub: () => string | null;
     load: () => LoadedConfig;
     report: (findings: Finding[]) => void;
+    /** The name of the primary hub, and the hubs of the workspace other than it. */
+    primary: () => string | null;
+    others: () => HubRoot[];
+    /** The vocabulary of the hubs, from the primary's config and each other hub's settings. */
+    vocabs: (primary: LoadedConfig, others: HubRoot[]) => HubVocabs;
 };
 
-/** A cache over one engine's config folder and the hub's layer, empty until the first read. */
+/**
+ * A cache over one engine's config folder and the hub's settings file, empty until the first read.
+ */
 export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
     let held: { stamp: string; read: LoadedConfig } | undefined;
+    let heldVocab: { stamp: string; vocab: HubVocabs } | undefined;
+    const read = (): LoadedConfig => {
+        const stamp = configStamp(deps.engine, deps.hub());
+        if (stamp !== UNREADABLE && held?.stamp === stamp) return held.read;
+        const parsed = deps.load();
+        deps.report(parsed.findings);
+        held = stamp === UNREADABLE ? undefined : { stamp, read: parsed };
+        return parsed;
+    };
     return {
-        read() {
-            const stamp = configStamp(deps.engine, deps.hub());
-            if (stamp !== UNREADABLE && held?.stamp === stamp) return held.read;
-            const read = deps.load();
-            deps.report(read.findings);
-            held = stamp === UNREADABLE ? undefined : { stamp, read };
-            return read;
+        read,
+        vocab() {
+            const others = deps.others();
+            const stamps = [
+                configStamp(deps.engine, deps.hub()),
+                ...others.map((one) => fileStamp(join(one.dir, HUB_FILE)))
+            ];
+            const readable = !stamps.includes(UNREADABLE);
+            const names = others.map((one) => one.key).join('\n');
+            const stamp = `${deps.primary() ?? ''}\n${names}\n${stamps.join('\n')}`;
+            if (readable && heldVocab?.stamp === stamp) return heldVocab.vocab;
+            const vocab = deps.vocabs(read(), others);
+            heldVocab = readable ? { stamp, vocab } : undefined;
+            return vocab;
         }
     };
 }

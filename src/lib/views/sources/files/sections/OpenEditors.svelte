@@ -54,7 +54,14 @@
     let { open, ontoggle, move }: Props = $props();
 
     const {
-        layout: { activateInstance, closeInstance, currentPage, layout, transferInstance },
+        layout: {
+            activateInstance,
+            closeInstance,
+            currentPage,
+            layout,
+            rememberClosed,
+            transferInstance
+        },
         fs: { gone },
         problems,
         selectors: { docPlaceFor },
@@ -111,7 +118,8 @@
             unsaved,
             saveBeforeClose,
             nameOf,
-            close: (id) => closeInstance(id, page)
+            close: (id) => closeInstance(id, page),
+            remember: rememberClosed
         });
     }
 

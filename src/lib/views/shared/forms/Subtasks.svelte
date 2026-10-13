@@ -8,10 +8,10 @@
     // open is the card's, handed in, since the card's action and this block's own add control both
     // open it.
     //
-    // Two views draw it: views/shared/card/ProjectCard.svelte, which hands it the `{ id }` of one
-    // manifest, and views/shared/forms/entry/EntryCard.svelte, which hands it the `{ id, collection
-    // }` of one entry of one collection. The host is the only difference between the two, so it is
-    // the prop, and `SubtaskTarget` is the write path's own type for it.
+    // Two views draw it: views/shared/card/project/ProjectCard.svelte, which hands it the `{ id }`
+    // of one manifest, and views/shared/forms/entry/EntryCard.svelte, which hands it the `{ id,
+    // collection }` of one entry of one collection. The host is the only difference between the
+    // two, so it is the prop, and `SubtaskTarget` is the write path's own type for it.
     //
     // Every button is one call of the write path (state/client/writes.svelte.ts) and nothing else:
     // the line the reader sees change is the watcher's next push of the portfolio, about a fifth of

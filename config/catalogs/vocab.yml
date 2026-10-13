@@ -47,7 +47,7 @@ palette:
   "#6b7280": c-grey-d
   "#475569": c-slate
 
-# Research-domain colours and project-card labels, keyed by the manifest's `domain` value. The engine names none: a hub lists its own in .oculus/config/catalogs/vocab.yml.
+# Research-domain colours and project-card labels, keyed by the manifest's `domain` value. The engine names none: a hub lists its own in .oculus/config.yml.
 domains: {}
 
 
@@ -235,10 +235,10 @@ venue_tiers:
   - { key: specialist, color: "#0891b2", label: "specialist" }
   - { key: unrated,    color: "#94a3b8", label: "unrated", assignable: false }
 
-# The theme words a venue's `themes:` may use (registries/venues.yml) and the label each is drawn with; a word used in the registry and missing here is a finding. The engine names none: a hub lists its own in .oculus/config/catalogs/vocab.yml.
+# The theme words a venue's `themes:` may use (registries/venues.yml) and the label each is drawn with; a word used in the registry and missing here is a finding. The engine names none: a hub lists its own in .oculus/config.yml.
 venue_themes: []
 
-# The theme words a dataset's `themes:` may use (registries/data.yml) and the label each is drawn with; a word used in the registry and missing here is a finding. The engine names none: a hub lists its own in .oculus/config/catalogs/vocab.yml.
+# The theme words a dataset's `themes:` may use (registries/data.yml) and the label each is drawn with; a word used in the registry and missing here is a finding. The engine names none: a hub lists its own in .oculus/config.yml.
 data_themes: []
 
 

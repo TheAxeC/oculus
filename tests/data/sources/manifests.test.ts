@@ -13,6 +13,7 @@ import {
     portfolioConfigFrom,
     readOtherHub
 } from '../../../src/lib/data/index.ts';
+import { readCollections } from '../../../src/lib/data/sources/collections.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { createChecker } from '../../../src/lib/data/snapshot/schema/check.ts';
@@ -564,7 +565,7 @@ describe("the scan and the manifest's own tier and type", () => {
     });
 });
 
-/** The snapshot of a build joined with a second hub whose own sources.yml is this text. */
+/** The snapshot of a build joined with a second hub whose own `.oculus/config.yml` is this text. */
 function joinedWith(
     sources: string,
     files: Record<string, string>
@@ -572,7 +573,7 @@ function joinedWith(
     const hub = plantScratch('oculus-unnamed-primary-', HUB_FILES);
     plantHub(hub);
     const lab = plantScratch('oculus-unnamed-lab-', {
-        '.oculus/config/sources.yml': sources,
+        '.oculus/config.yml': sources,
         ...files
     });
     const config = portfolioConfigFrom(MERGED);
@@ -611,16 +612,47 @@ describe('a hub reports only the files its own configuration names', () => {
         expect(snapshot.findings.filter((one) => one.file.startsWith(lab))).toEqual([]);
     });
 
-    it('raises the finding for a registry its own sources.yml names and does not hold', () => {
+    it('raises the finding for a registry its own collections list names and does not hold', () => {
         const { snapshot, lab } = joinedWith(
-            'scan:\n  - { dir: . }\nvenues_file: registries/venues.yml\n',
+            'scan:\n  - { dir: . }\ncollections:\n  - { key: venues, file: registries/venues.yml }\n',
             PROJECTS
         );
         expect(
             snapshot.findings
                 .filter((one) => one.file.startsWith(lab))
                 .map((one) => [one.file.slice(lab.length), one.message])
-        ).toEqual([['/registries/venues.yml', 'registry file does not exist']]);
+        ).toEqual([
+            ['/registries/venues.yml', 'registry file does not exist'],
+            ['/registries/venues.yml', 'collection file does not exist']
+        ]);
+    });
+
+    it('reads a registry from the collections entry that names it and leaves the others unnamed', () => {
+        const hub = plantScratch('oculus-collections-named-', {
+            '.oculus/config.yml': 'collections:\n  - { key: venues, file: elsewhere/venues.yml }\n'
+        });
+        const { config, from } = loadConfig(engineDir(), { hub });
+        const named = portfolioConfigFrom(config, from);
+        const own = portfolioConfigFrom(MERGED);
+        expect(named.registries.venues).toBe('elsewhere/venues.yml');
+        expect(named.registries.people).toBe(own.registries.people);
+        expect(named.registries.funding).toBe(own.registries.funding);
+        expect(named.unnamed?.registries).toContain('people');
+        expect(named.unnamed?.registries).not.toContain('venues');
+    });
+
+    it('reads the first of two collections entries for one key and names the key in a finding', () => {
+        const hub = plantScratch('oculus-collections-twice-', {
+            '.oculus/config.yml':
+                'collections:\n  - { key: venues, file: one.yml }\n  - { key: venues, file: two.yml }\n'
+        });
+        const { config, from } = loadConfig(engineDir(), { hub });
+        const portfolio = portfolioConfigFrom(config, from);
+        expect(portfolio.registries.venues).toBe('one.yml');
+        const read = readCollections(hub, portfolio.collections, textCatalog(config));
+        expect(read.findings.filter((one) => one.key === 'venues').map((one) => one.file)).toEqual([
+            join(hub, 'two.yml')
+        ]);
     });
 });
 

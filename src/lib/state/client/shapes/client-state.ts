@@ -34,6 +34,7 @@ import type { LayoutStore } from '../../workbench/layout.svelte.ts';
 import type { LinesStore } from '../../system/lines.svelte.ts';
 import type { FormDraftStore } from '../../forms/form-draft.ts';
 import type { Pages } from '../../forms/page-entry.ts';
+import type { SettledStore } from '../../forms/settled.svelte.ts';
 import type { MemoriesStore } from '../../life/pictures/memories.svelte.ts';
 import type { WallpapersStore } from '../../life/pictures/wallpapers.svelte.ts';
 import type { NoticesStore } from '../../workbench/navigation/notices.svelte.ts';
@@ -124,6 +125,8 @@ export type ClientState = {
     formDraft: FormDraftStore;
     /** The pages of collection entries, feed entries and the career file, found by name. */
     pages: Pages;
+    /** What the writes the server took say, until the snapshot shows it. */
+    settled: SettledStore;
     feeds: FeedsStore;
     hpc: HpcStore;
     processes: ProcessesStore;

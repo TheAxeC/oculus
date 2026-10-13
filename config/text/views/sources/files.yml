@@ -199,7 +199,7 @@ text:
         refused_name_held: A workspace file of that name is already there.
         refused_network: The server could not be reached.
         refused_no_dir: Type the path of a folder.
-        refused_no_hub: This workspace has no hub folder (a folder that holds .oculus/config) to keep the file in.
+        refused_no_hub: This workspace has no hub folder (a folder that holds .oculus/config.yml) to keep the file in.
         refused_no_name: Type a name for the workspace.
         refused_no_such_dir: There is no folder at that path.
         refused_no_such_note: That note is not on this machine.

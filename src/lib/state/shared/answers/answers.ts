@@ -159,6 +159,11 @@ export function refusedAnswer(
 /** The `error` of a refused answer's body, when the body carries one that is text. */
 const refusalShape = z.object({ error: z.string() });
 
+/** The refusal word a refused answer's body names, or null for a body that names none. */
+export function answerRefusal(body: unknown): OpsRefusal | null {
+    return refusalWord(readAs(refusalShape, body)?.error);
+}
+
 /**
  * The sentence a failed read is told in. `body` is what `readJson` made of the response: undefined
  * for a body that is JSON null or is not JSON, which is an answer the page could not read at any

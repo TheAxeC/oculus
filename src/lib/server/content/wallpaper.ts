@@ -7,7 +7,7 @@
 // response are server/content/images.ts's, shared with the Memories wall; what is here is the one
 // thing this route has of its own, which is choosing the file.
 //
-// The choice is `wallpaper.image` in the primary hub's `.oculus/config/appearance.yml`: empty for
+// The choice is `wallpaper.image` in the primary hub's `.oculus/config.yml`: empty for
 // none, `random` for one image of any hub chosen once per server process, or
 // `<hub name>/<file name>` for one file of the wallpaper folder of that hub. A value that names a
 // hub the workspace does not list, a file the folder does not hold, a name that is a path rather

@@ -1,4 +1,4 @@
-# Oculus text owned by the apps: the catalogue entry, the approval panel, the bridge's refusals and the words each channel and write an app may declare is shown in.
+# Oculus text owned by the apps: the Apps view, the catalogue entry, the approval panel, the bridge's refusals and the words each channel and write an app may declare is shown in.
 text:
     apps:
         label: Apps
@@ -97,6 +97,19 @@ text:
         menu_enable_workspace: Enable (Workspace)
         menu_remove: Remove
         menu_add: Add app from folder
+        state_approved: approved
+        state_waiting: waiting for approval
+        state_changed: changed since approval
+        state_editing: editing
+        state_disabled: disabled
+        state_disabled_workspace: disabled for this workspace
+        list_search: Search apps
+        list_none: No app is installed.
+        list_no_match: No app matches
+        list_open_tip: 'Open {0}'
+        list_review_tip: 'Read what {0} asks for and approve it'
+        list_actions: App actions
+        list_add_tip: Add the app in a folder you choose
         manage_failed: 'The app was not changed: {0}'
         disable_dependents: 'These enabled apps need {0}: {1}. Disable them too?'
         remove_question: 'Remove {0}?'
@@ -179,3 +192,6 @@ text:
             icons_one: 1 file icon theme
             icons_other: '{0} file icon themes'
         icons_seti: Seti
+    views:
+        apps: Apps
+        apps_glyph: app

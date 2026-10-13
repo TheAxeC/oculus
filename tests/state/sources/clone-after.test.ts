@@ -137,7 +137,7 @@ describe('Open after a clone while the unsaved workspace holds folders', () => {
         await w.after.dontSave();
         expect(w.after.asking()).toBeNull();
         expect(dirs(w.now())).toEqual([w.clone]);
-        expect(readdirSync(join(w.hub, '.oculus'))).toEqual(['config']);
+        expect(readdirSync(join(w.hub, '.oculus'))).toEqual(['config.yml']);
     });
 
     test('Save with a name writes the two folders as that workspace file and opens the clone', async () => {
@@ -167,7 +167,7 @@ describe('Open after a clone while the unsaved workspace holds folders', () => {
         expect(held?.step).toBe('name');
         expect(held !== null && 'said' in held ? held.said : '').not.toBe('');
         expect(dirs(w.now())).toEqual([w.hub, w.notes]);
-        expect(readdirSync(join(w.hub, '.oculus'))).toEqual(['config']);
+        expect(readdirSync(join(w.hub, '.oculus'))).toEqual(['config.yml']);
     });
 
     test('a name the reader cancels cancels the whole Open and leaves both folders', async () => {
@@ -178,7 +178,7 @@ describe('Open after a clone while the unsaved workspace holds folders', () => {
         w.after.cancel();
         expect(w.after.asking()).toBeNull();
         expect(dirs(w.now())).toEqual([w.hub, w.notes]);
-        expect(readdirSync(join(w.hub, '.oculus'))).toEqual(['config']);
+        expect(readdirSync(join(w.hub, '.oculus'))).toEqual(['config.yml']);
     });
 });
 

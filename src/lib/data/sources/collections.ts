@@ -86,9 +86,9 @@ function readCollection(
  * field the YAML gave it plus `provenance`, and its identity is left as read: nothing here decides
  * whether a record is known by its `key` or its `title`. A file that is missing, does not parse, is
  * not a map, or has no entry list gives an empty collection and one finding; an entry that is not a
- * map is one finding and no record. Two callers' entries for the same key is a finding and the
- * later file wins, so the returned map has one collection per key. With `unnamed` set, the hub's
- * own config does not name the list, so a file of it that is absent raises no finding.
+ * map is one finding and no record. Two entries for the same key is a finding on the second and the
+ * first file is the one read, so the returned map has one collection per key. With `unnamed` set,
+ * the hub's own config does not name the list, so a file of it that is absent raises no finding.
  */
 export function readCollections(
     hub: string,
@@ -111,8 +111,9 @@ export function readCollections(
                     seen.file
                 )
             });
+        } else {
+            collections[asked.key] = readCollection(hub, asked, catalog, findings, unnamed);
         }
-        collections[asked.key] = readCollection(hub, asked, catalog, findings, unnamed);
     }
     return { collections, findings };
 }

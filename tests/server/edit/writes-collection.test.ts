@@ -17,6 +17,7 @@ import {
     reorderCollection,
     writeEntry
 } from '../../../src/lib/server/edit/writes.ts';
+import { words } from '../../../src/lib/server/core/words.ts';
 import { it } from '../../fixtures/scratch.ts';
 import { configFor, plant, record, tasksPath, TASKS, wider, tasksOf } from './writes-fixture.ts';
 
@@ -206,7 +207,15 @@ describe('writing the fields an entry editor posts', () => {
         });
         expect(out.changed).toEqual([]);
         expect(out.refused).toEqual([
-            { field: 'retrieval', reason: 'method takes one of direct, physionet' }
+            {
+                field: 'retrieval',
+                reason: words(
+                    configFor().text,
+                    'server.entries.type_options',
+                    'method',
+                    'direct, physionet'
+                )
+            }
         ]);
         expect(readFileSync(join(root, 'registries/data.yml'), 'utf8')).toBe(before);
     });
@@ -215,7 +224,7 @@ describe('writing the fields an entry editor posts', () => {
 describe('a file with two entries of one identity', () => {
     const TWICE =
         'title: Tasks\nschema:\n  - { field: key, type: text }\nentries:\n  - key: a\n  - key: a\n';
-    const sentence = 'two entries share the key a, so a write cannot address one of them';
+    const sentence = words(configFor().text, 'server.entries.shared_identity', 'key', 'a');
 
     it('refuses a write, an add and a delete with the shared-identity sentence and leaves the file', () => {
         const root = wider();

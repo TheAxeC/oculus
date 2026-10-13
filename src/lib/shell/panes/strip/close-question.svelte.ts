@@ -4,12 +4,15 @@
 // closing takes the same guard over the same ids, and no view is scanned for what it holds. A
 // second press of the same close while the saves and the read of the terminals are in flight does
 // nothing. The tabs `editor.autosave` saves on a close are saved before the question is put, so
-// the question names only the tabs left holding unsaved text.
+// the question names only the tabs left holding unsaved text. A close that goes ahead puts its tabs
+// on the list Reopen Closed Tab reads, as one batch, before they close; Cmd+W on a pinned tab
+// closes nothing and shows the first tab of the pane that is not pinned, as Delete does.
 
 import type { ClientState } from '$lib/state/client/context';
 import { t } from '$lib/state/shared/words/text';
 import type { Instance } from '$lib/state/workbench/layout';
 import { closeAsk, closeOnce, closeWords } from '$lib/state/workbench/navigation/pages';
+import { afterDelete } from '$lib/ui/tabs/tab-strip';
 
 /** What the question reads of the pane it is asked for. */
 export type CloseQuestionDeps = {
@@ -24,7 +27,7 @@ export type CloseQuestionDeps = {
 /** The close question of one pane. */
 export function createCloseQuestion(deps: CloseQuestionDeps) {
     const {
-        layout: { closeInstance },
+        layout: { activateInstance, closeInstance, rememberClosed },
         ui: { busyTerminals, saveBeforeClose, unsaved }
     } = deps.client;
 
@@ -41,8 +44,17 @@ export function createCloseQuestion(deps: CloseQuestionDeps) {
      * terminal it owns. `many` is the question for more than one tab; `act` runs when no question
      * is needed or the dialog is answered yes.
      */
-    function askAndClose(key: string, ids: string[], many: string, act: () => void): Promise<void> {
+    function askAndClose(
+        key: string,
+        ids: string[],
+        many: string,
+        close: () => void
+    ): Promise<void> {
         const owned = deps.instances().filter((one) => ids.includes(one.id));
+        const act = (): void => {
+            rememberClosed(ids);
+            close();
+        };
         return once(
             key,
             async () => {
@@ -68,6 +80,18 @@ export function createCloseQuestion(deps: CloseQuestionDeps) {
     }
 
     /**
+     * Cmd+W on a tab: an unpinned tab closes as its close control closes it; a pinned tab stays
+     * open and the first tab of the pane that is not pinned is shown, and a pane of pinned tabs
+     * alone changes nothing.
+     */
+    function closeByKey(id: string): Promise<void> {
+        const after = afterDelete(deps.instances(), id);
+        if (after.kind === 'close') return closeTab(id);
+        if (after.kind === 'activate') activateInstance(after.id, deps.page());
+        return Promise.resolve();
+    }
+
+    /**
      * Perform the close the dialog was asking about. What to do is taken out of the state before
      * the dialog is taken away, since the markup reads the same state and would have nothing to
      * call.
@@ -81,6 +105,7 @@ export function createCloseQuestion(deps: CloseQuestionDeps) {
     return {
         askAndClose,
         closeTab,
+        closeByKey,
         confirmed,
         cancel: () => (confirming = null),
         message: () => confirming?.message ?? null

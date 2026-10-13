@@ -24,6 +24,8 @@ import { run, type Runner } from './ssh.ts';
 export type HpcSettings = {
     host: string;
     missing?: string;
+    /** The hub names no cluster: nothing is polled and `missing` is the answer. */
+    unconfigured?: true;
     days: number;
     pollMin: number;
     quotaMin: number;
@@ -41,7 +43,8 @@ export type HpcWatcher = {
     /**
      * Take new settings. A period moves the next run to the sooner of the one waiting and the new
      * period from now; a changed host, a changed sentence for having none, or a changed window
-     * drops what the old one answered and polls now.
+     * drops what the old one answered and polls now. Settings that name no cluster publish
+     * `unconfigured` and stop the polling; settings that name a cluster again poll at once.
      */
     set(settings: HpcSettings): void;
     close(): void;
@@ -78,6 +81,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     let current: HpcSettings = {
         host: options.host,
         ...(options.missing === undefined ? {} : { missing: options.missing }),
+        ...(options.unconfigured === undefined ? {} : { unconfigured: true as const }),
         days: options.days,
         pollMin: options.pollMin,
         quotaMin: options.quotaMin,
@@ -126,7 +130,17 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         retryMin: RETRY_MIN,
         host: current.host
     });
-    hub.publish('hpc', degraded('starting'));
+    /** The answer of a hub that names no cluster: the sentence, no rows and no retry. */
+    const unconfigured = (): HpcPayload => ({
+        status: 'unconfigured',
+        ...(current.missing ? { hint: current.missing } : {}),
+        ...NO_ROWS,
+        quota: [],
+        updated: new Date().toISOString(),
+        pollMin: current.pollMin,
+        host: ''
+    });
+    hub.publish('hpc', current.unconfigured === true ? unconfigured() : degraded('starting'));
 
     const publishQuota = async (): Promise<void> => {
         if (stopped() || current.host === '') return;
@@ -164,7 +178,7 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         );
     };
     const schedule = (minutes: number): void => {
-        if (stopped()) return;
+        if (stopped() || current.unconfigured === true) return;
         arm(Date.now() + minutes * 60000);
     };
     const poll = async (): Promise<void> => {
@@ -295,6 +309,10 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
     let queued: Promise<void> | null = null;
     const refresh = (): Promise<void> => {
         if (stopped()) return Promise.resolve();
+        if (current.unconfigured === true) {
+            hub.publish('hpc', unconfigured());
+            return Promise.resolve();
+        }
         if (running === null) {
             running = poll().finally(() => (running = null));
             return running;
@@ -333,7 +351,11 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
             if (next.quotaMin !== before.quotaMin) {
                 armQuota(Math.min(quotaAt, Date.now() + next.quotaMin * 60000));
             }
-            if (next.host !== before.host || next.missing !== before.missing) {
+            if (
+                next.host !== before.host ||
+                next.missing !== before.missing ||
+                next.unconfigured !== before.unconfigured
+            ) {
                 asking += 1;
                 hosts += 1;
                 rows = NO_ROWS;
@@ -342,6 +364,13 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
                 prewarmDue = false;
                 asked.clear();
                 options.logPaths?.clear();
+                if (next.unconfigured === true) {
+                    if (queueTimer !== null) clearTimeout(queueTimer);
+                    queueTimer = null;
+                    queueAt = null;
+                    hub.publish('hpc', unconfigured());
+                    return;
+                }
                 hub.publish('hpc', degraded('starting'));
                 void publishQuota();
                 void refresh();

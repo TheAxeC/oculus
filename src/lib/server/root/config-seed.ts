@@ -13,7 +13,7 @@
 // the seed only when the held push is another configuration: in every other case the socket's
 // replay brings the same values a moment later, and the page data stays the size it was.
 
-import type { ConfigPayload, Finding, HostInfo } from '../../data/model/index.ts';
+import type { ConfigPayload, Finding, HostInfo, HubVocabs } from '../../data/model/index.ts';
 import type { Hub } from '../core/channels.ts';
 
 /**
@@ -29,12 +29,19 @@ export type ConfigSeed = { payload?: ConfigPayload; through: number };
 export function configSeed(
     hub: Hub,
     read: { config: Record<string, unknown>; findings: Finding[] },
-    parts: { text: Record<string, string>; icons: Record<string, string>; host: HostInfo }
+    parts: {
+        hubs: HubVocabs;
+        text: Record<string, string>;
+        icons: Record<string, string>;
+        host: HostInfo;
+    }
 ): ConfigSeed {
     const held = hub.latest('config');
     if (held === undefined) return { through: 0 };
+    const pushed = held.payload as ConfigPayload;
     const same =
-        JSON.stringify((held.payload as ConfigPayload).config) === JSON.stringify(read.config);
+        JSON.stringify(pushed.config) === JSON.stringify(read.config) &&
+        JSON.stringify(pushed.hubs) === JSON.stringify(parts.hubs);
     if (same) return { through: held.version - 1 };
     const payload: ConfigPayload = { config: read.config, findings: read.findings, ...parts };
     return { payload, through: held.version };

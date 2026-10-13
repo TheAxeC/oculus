@@ -11,9 +11,10 @@
 //
 // `repoShape` answers which of six shapes a root is (`unplaced`, `reading`, `missing`, `none`,
 // `failed`, `readable`) for the Changes panel and the Repositories view alike. The Repositories
-// list is over every root the `git` channel carries a state for (`pickerRoots`), the file browser's
-// roots, the repositories below them down to `repository_scan_depth` levels and every session's
-// workspace, not only the repositories among them.
+// list holds repositories only, one row each (`repositoryGroups`): the roots of the workspace that
+// are repositories (the file browser's roots, the repositories below them down to
+// `repository_scan_depth` levels, the cloned folders), identified by their top folder, so a folder
+// inside another repository is not a second row. A session's workspace has no row of its own.
 
 import type {
     DiffAttributes,
@@ -393,23 +394,153 @@ export function reopenRepositories(view: RepositoriesView, root: string): Reposi
 }
 
 /**
- * The roots the picker offers: every root the `git` channel carries a state for, in the channel's
- * order. A folder of notes, a data folder and a repository whose read failed are offered, each row
- * saying what its state is, so a root never leaves the picker for being quiet and the reader is
- * told why rather than handed another repository. A root that is gone or is no repository is
- * offered only while it is a served root's folder (`served`, the `dir` of each root the server
- * serves): a session's workspace that was deleted or never was a repository is not listed. A root
- * the channel names with no state at all is dropped: there is nothing for a row to say.
+ * One repository of the list: its top folder (the real path git prints, or the root itself for a
+ * root whose read gave none), the root that shows it, and every root of the `git` channel that is
+ * the same repository, in the channel's order.
  */
-export function pickerRoots(
-    roots: string[],
+export type RepositoryGroup = {
+    top: string;
+    shown: string;
+    /**
+     * The top folder in the spelling of the roots, the folder the repository's state paths join.
+     */
+    base: string;
+    roots: string[];
+    listed: boolean;
+};
+
+/**
+ * The folder with every symbolic link resolved, for a root that lies in a served root: the served
+ * root's real folder in place of its configured one. A root outside every served root is as it is.
+ */
+export function realRoot(root: string, served: readonly { dir: string; real?: string }[]): string {
+    for (const one of served) {
+        const real = one.real ?? one.dir;
+        if (root === one.dir) return real;
+        if (root.startsWith(`${one.dir}/`)) return real + root.slice(one.dir.length);
+    }
+    return root;
+}
+
+/**
+ * The top folder in the spelling of the root that shows the repository: the root itself when it is
+ * the top, else the root with the folders below the top taken off, and the root when its real path
+ * does not lie under the top.
+ */
+function baseOf(shown: string, top: string, real: (root: string) => string): string {
+    const whole = real(shown);
+    if (whole === top || top === shown) return shown;
+    if (!whole.startsWith(`${top}/`)) return shown;
+    return shown.slice(0, shown.length - (whole.length - top.length));
+}
+
+/**
+ * The repositories the list holds, in the channel's order. A repository is identified by its top
+ * folder, so roots with one top are one repository (a folder inside a repository that is a
+ * workspace folder of its own, a root spelled through a link), shown by the root whose real path is
+ * the top when there is one and by the first of them otherwise. A root whose read gave no top is a
+ * repository of its own. A root that is no repository or is gone has no row, and neither has a
+ * repository only a session's workspace names: the server marks the roots of the workspace
+ * (`inWorkspace`), and a repository is listed when one of its roots is marked. A linked worktree of
+ * a listed repository (an agent's worktree under the hub) has no row either, since it is shown in
+ * that repository's Worktrees section, as VS Code's Source Control shows it. A repository whose
+ * read failed keeps its row, and a root the channel names with no state at all is dropped. With
+ * `which` set to `all` the repositories only a session names are returned too (`listed` false),
+ * shown by the same rule, for a reader that follows a file into whatever repository holds it.
+ */
+export function repositoryGroups(
+    roots: readonly string[],
     stateOf: (root: string) => GitState | null,
-    served: readonly string[]
+    real: (root: string) => string,
+    which: 'listed' | 'all' = 'listed'
+): RepositoryGroup[] {
+    const groups: {
+        top: string;
+        shown: string;
+        roots: string[];
+        listed: boolean;
+        topped: boolean;
+    }[] = [];
+    for (const root of roots) {
+        const state = stateOf(root);
+        const shape = repoShape(root, state);
+        if (state === null || (shape !== 'readable' && shape !== 'failed')) continue;
+        const top = state.top === '' ? root : state.top;
+        const held = groups.find((one) => one.topped && one.top === state.top);
+        if (held === undefined) {
+            groups.push({
+                top,
+                shown: root,
+                roots: [root],
+                listed: state.inWorkspace,
+                topped: state.top !== ''
+            });
+            continue;
+        }
+        held.roots.push(root);
+        held.listed ||= state.inWorkspace;
+    }
+    // A linked worktree names its main worktree in its own list; it is that repository's
+    // worktree, so it leaves the list when that repository is listed.
+    const listedTops = new Set(groups.filter((group) => group.listed).map((group) => group.top));
+    for (const group of groups) {
+        const main = stateOf(group.roots[0])?.worktrees.find((one) => one.main);
+        if (main !== undefined && real(main.path) !== group.top && listedTops.has(real(main.path)))
+            group.listed = false;
+    }
+    return groups
+        .filter((group) => group.listed || which === 'all')
+        .map(({ top, roots: members, listed }) => {
+            const own = listed
+                ? members.filter((one) => stateOf(one)?.inWorkspace === true)
+                : members;
+            const shown = own.find((one) => real(one) === top) ?? own[0];
+            return { top, shown, base: baseOf(shown, top, real), roots: members, listed };
+        });
+}
+
+/**
+ * The root that shows the repository a root belongs to, or null when the root is none of the list's
+ * repositories: what a saved root of a Repositories tab, a file's root and a counted root come to.
+ */
+export function shownFor(groups: readonly RepositoryGroup[], root: string): string | null {
+    return groups.find((group) => group.roots.includes(root))?.shown ?? null;
+}
+
+/**
+ * A Repositories tab's instance state over the repositories of the list: every root it names, the
+ * one it shows and the ones it closed, as the root that shows its repository. A root that has no
+ * row of its own (a folder inside a repository, a session's workspace) stands for the repository
+ * it belongs to when one is listed; a closed name that is none is dropped, and a shown root that is
+ * none is left for `shownRoot`, which hands the view to the first repository.
+ */
+export function listedView(
+    saved: RepositoriesView,
+    groups: readonly RepositoryGroup[]
+): RepositoriesView {
+    const closed = saved.closed
+        .map((root) => shownFor(groups, root))
+        .filter((root) => root !== null);
+    return {
+        ...saved,
+        root: shownFor(groups, saved.root) ?? saved.root,
+        closed: [...new Set(closed)]
+    };
+}
+
+/**
+ * The roots a file is looked up in: the root that shows each repository git read without an error,
+ * the ones only a session names included. A file inside a second root of one repository is then a
+ * file of that repository under the root that shows it, with its path from there, which is how the
+ * Repositories list and the file browser's marks name it.
+ */
+export function readableRepositoryRoots(
+    groups: readonly RepositoryGroup[],
+    stateOf: (root: string) => GitState | null
 ): string[] {
-    return roots.filter((root) => {
-        const shape = repoShape(root, stateOf(root));
-        if (shape === 'reading') return false;
-        return (shape !== 'missing' && shape !== 'none') || served.includes(root);
+    return groups.flatMap(({ shown }) => {
+        const held = stateOf(shown);
+        return held !== null && held.repository && held.error === null ? [shown] : [];
     });
 }
 
@@ -424,23 +555,31 @@ export function shownRoot(roots: string[], kept: string): string {
 }
 
 /**
- * The name each root is picked by: its last folder, and the last two where two roots share the last
- * one, and the whole path where they share both.
+ * The name each root is picked by: the last folder of its repository's top, and the last two where
+ * two repositories share the last one, and the whole path where they share both. A root with no
+ * top is named by its own path.
  */
-export function repositoryLabels(roots: string[]): Record<string, string> {
+export function repositoryLabels(
+    roots: string[],
+    stateOf: (root: string) => GitState | null
+): Record<string, string> {
+    const placeOf = (root: string): string => {
+        const top = stateOf(root)?.top ?? '';
+        return top === '' ? root : top;
+    };
     const tail = (root: string, count: number): string =>
-        root
+        placeOf(root)
             .split('/')
             .filter((part) => part !== '')
             .slice(-count)
-            .join('/') || root;
+            .join('/') || placeOf(root);
     const labels: Record<string, string> = {};
     for (const root of roots) {
         const one = tail(root, 1);
         const two = tail(root, 2);
         const sameOne = roots.filter((other) => tail(other, 1) === one).length > 1;
         const sameTwo = roots.filter((other) => tail(other, 2) === two).length > 1;
-        labels[root] = !sameOne ? one : !sameTwo ? two : root;
+        labels[root] = !sameOne ? one : !sameTwo ? two : placeOf(root);
     }
     return labels;
 }

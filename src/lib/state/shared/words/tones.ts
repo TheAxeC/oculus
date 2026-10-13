@@ -5,14 +5,18 @@
 //
 // The maps are installed the way the text catalog and the glyph vocabulary are: the server ships
 // them as the page's data at first load, and every later edit of config/catalogs/vocab.yml arrives
-// on the `config` channel. Every lookup is pure over what was last installed and reads the
-// configuration's generation, state/shared/words/generation.svelte.ts, so a component calling one
-// during its first render gets the page's data and draws again when a push replaces it.
+// on the `config` channel. The research domains are each hub's own: a record of a hub is drawn with
+// the `domains` of that hub, found from the hub name in front of its domain, and a domain its hub
+// does not list is drawn as an unlisted domain, never with another hub's entry. Every lookup is
+// pure over what was last installed and reads the configuration's generation,
+// state/shared/words/generation.svelte.ts, so a component calling one during its first render gets
+// the page's data and draws again when a push replaces it.
 //
 // A name is looked up among the record's own keys, so a name every object has, such as
 // `constructor`, finds nothing.
 
 import { z } from 'zod';
+import type { HubVocabs } from '../../../data/model/index.ts';
 import { byKey, scalar } from '../../../data/helpers/guards.ts';
 import { mapOfShape, readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 import { configGeneration } from './generation.svelte.ts';
@@ -31,8 +35,8 @@ let palette: Record<string, string | undefined> = {};
 let statusPalette: Record<string, string | undefined> = {};
 let typeColor: Record<string, string | undefined> = {};
 let legend: Record<string, Legend | undefined> = {};
-let domainColor: Record<string, string | undefined> = {};
-let domainText: Record<string, string | undefined> = {};
+let domainColor: Record<string, Record<string, string | undefined> | undefined> = {};
+let domainText: Record<string, Record<string, string | undefined> | undefined> = {};
 let dataAccess: Record<string, string | undefined> = {};
 
 /** A value that is a string. */
@@ -71,18 +75,28 @@ const legendRowShape = z
 /** The rows of `status_legend` that are rows, in order. */
 const legendRowsShape = rowsShape(legendRowShape);
 
+/** The hub name a domain of the primary hub is filed under, since its records carry no hub name. */
+const PRIMARY = '';
+
 /**
  * Install the vocabulary from the merged config: `palette` (hex to token name), `status_palette`
- * and `type_color` (a name to a hex), `status_legend` (the chips) and `domains` (the research
- * domains). A key the config does not hold installs as empty, so every lookup answers with its
+ * and `type_color` (a name to a hex) and `status_legend` (the chips), and from `hubs` the research
+ * `domains` of every hub of the workspace, each under its hub's name and the primary's under the
+ * empty name. A key the config does not hold installs as empty, so every lookup answers with its
  * unknown case rather than throwing: a half-read config still renders a page.
  */
-export function setVocab(config: Record<string, unknown>): void {
+export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void {
     palette = stringMap(config.palette, hexShape);
     statusPalette = stringMap(config.status_palette, colorShape);
     typeColor = stringMap(config.type_color, hexShape);
-    domainColor = stringMap(config.domains, colorShape);
-    domainText = stringMap(config.domains, labelShape);
+    domainColor = {};
+    domainText = {};
+    for (const [name, vocab] of Object.entries(hubs.lists)) {
+        if (name === PRIMARY || name === '__proto__') continue;
+        const filed = name === hubs.primary ? PRIMARY : name;
+        domainColor[filed] = stringMap(vocab.domains, colorShape);
+        domainText[filed] = stringMap(vocab.domains, labelShape);
+    }
     dataAccess = stringMap(config.data_access, hexShape);
     legend = Object.fromEntries(
         (readAs(legendRowsShape, config.status_legend) ?? [])
@@ -143,14 +157,21 @@ export function typeTone(type: unknown): string {
 }
 
 /**
- * The entry of `map` a domain names: the domain as written, else the word after its first colon,
- * since the portfolio gives another hub's domain that hub's key and a colon
- * (data/snapshot/hubs/merge.ts) and the vocabulary names the word alone.
+ * The entry of `maps` a domain names: the domain's key in the `domains` of the hub it is written
+ * in. The portfolio gives a domain of a hub other than the primary that hub's name and a colon
+ * (data/snapshot/hubs/merge.ts), and a domain with no hub name is the primary's. A hub the maps do
+ * not hold, and a key its hub does not list, have no entry.
  */
-function domainEntry(map: Record<string, string | undefined>, domain: unknown): string | undefined {
-    const text = scalar(domain).toLowerCase();
-    const colon = text.indexOf(':');
-    return byKey(map, text) ?? (colon < 0 ? undefined : byKey(map, text.slice(colon + 1)));
+function domainEntry(
+    maps: Record<string, Record<string, string | undefined> | undefined>,
+    domain: unknown
+): string | undefined {
+    const written = scalar(domain);
+    const colon = written.indexOf(':');
+    const hub = colon < 1 ? PRIMARY : written.slice(0, colon);
+    const key = (colon < 1 ? written : written.slice(colon + 1)).toLowerCase();
+    const own = byKey(maps, hub);
+    return own === undefined ? undefined : byKey(own, key);
 }
 
 /** The tone of a research domain, through `domains`. */

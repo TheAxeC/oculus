@@ -335,10 +335,10 @@ export function createFs(
     /**
      * What a `files` or a `config` message says about the disk. Each message is heard as it is
      * kept, since the next write replaces it before anything reads. `bookmarks` marks the
-     * bookmarks; `workspaces` and every `config` message (a root added to or taken out of
-     * sources.yml) mark the workspaces and the bookmarks. The folders a message names are listed
-     * again with the texts and kinds of the files in them; a message naming none reads each served
-     * root it concerns again, every root after a gap in the versions (messages merged or missed).
+     * bookmarks; `workspaces` and every `config` message mark the workspaces and the bookmarks. The
+     * folders a message names are listed again with the texts and kinds of the files in them; a
+     * message naming none reads each served root it concerns again, every root after a gap in the
+     * versions (messages merged or missed).
      */
     let heard: number | null = null;
     entities.afterReceive((message) => {
@@ -480,7 +480,7 @@ export function createFs(
         if (heldListings(peekListing, root, folder).some(named)) return false;
         const found = listing(root, folder, EVERYTHING);
         if (found.loading) return false;
-        if (found.error === t('files.refused_missing')) return true;
+        if (found.refused === 'missing') return true;
         return found.error === '' && !found.entries.some((one) => one.name === name);
     }
 

@@ -19,8 +19,11 @@
     // before it against the value it holds after.
     //
     // The log is a machine-local file rather than anything in the snapshot, so the store fetches a
-    // page at a time and "load older" asks for the page behind the oldest row on screen. The filter
-    // is the pane's own and is held in its instance state, so a tab comes back filtered as it was.
+    // page at a time and "load older" asks for the page behind the oldest row on screen. Each
+    // append to the log is announced on the `changes` channel, and the store then puts the newest
+    // rows in front of the ones held (state/sessions/changes.svelte.ts), so a write made anywhere
+    // shows here at once. The filter is the pane's own and is held in its instance state, so a tab
+    // comes back filtered as it was.
     //
     // A file operation of the Files view is a row too: the operation, the path it was made on, the
     // paths it took and the paths it left, and its undo control. Its undo goes through the file
@@ -32,7 +35,9 @@
     // view's and the wire word is never shown. A row whose undo was refused keeps its control
     // unpressable, since pressing it again would be refused for the same reason until the page is
     // read afresh. An answer that wrote no field is a refusal here too: the row says the value is
-    // back only when the endpoint names the field it wrote.
+    // back only when the endpoint names the field it wrote. The row an undo writes is labelled by
+    // what the undo did: an entry put back for a delete, an entry removed for an add, a field set
+    // back for a field write.
     //
     // The filter is in the bar under the header, with the status sentence of the last press at the
     // bar's end. A row's undo control and the pills that open its values are drawn while the
@@ -110,9 +115,36 @@
      * records of a deck's `order:` are told from those of a group's list by their field.
      */
     function kindOf(row: Change): string {
+        if (row.undoes !== undefined) return undidOf(row);
         if (row.kind === 'deck-slides' && row.field === 'order')
             return t('history.kind_deck_order');
         return t(`history.kind_${row.kind.replaceAll('-', '_')}`);
+    }
+
+    /**
+     * What an undo did, which its record names by the kind of the write it took back: an entry or
+     * a feed entry put back, an added entry or subtask removed, an order put back, and for any
+     * other write the field set back.
+     */
+    function undidOf(row: Change): string {
+        switch (row.kind) {
+            case 'delete-entry':
+                return t('history.undid_delete_entry');
+            case 'feed-delete':
+                return t('history.undid_feed_delete');
+            case 'new-entry':
+                return t('history.undid_new_entry');
+            case 'lead-add':
+                return t('history.undid_lead_add');
+            case 'radar-add':
+                return t('history.undid_radar_add');
+            case 'subtask-add':
+                return t('history.undid_subtask_add');
+            case 'reorder':
+                return t('history.undid_reorder');
+            default:
+                return t('history.undid_field', t(`history.kind_${row.kind.replaceAll('-', '_')}`));
+        }
     }
 
     /** What one act of a deck edit did to the file of its record, in the catalog's words. */

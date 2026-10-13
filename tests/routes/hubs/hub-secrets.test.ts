@@ -1,5 +1,5 @@
 // Layer 2, route tests. The `secrets` folder of every hub of the open workspace (a folder holding
-// `.oculus/config/`) is withheld through every caller of `privateFolders` (G3): the page's
+// `.oculus/config.yml`) is withheld through every caller of `privateFolders` (G3): the page's
 // `isPrivateFile`, the language server relay's, the library rules, the folder Fix All plan, the
 // write of `lsp-edit` and `writing-fix`, and the names search.
 //
@@ -83,6 +83,21 @@ describe('the secrets folder of a hub', () => {
         );
         expect(isPrivateForPage({ root: 'hub', path: 'secrets/s.yml' }, roots, home)).toBe(true);
         expect(isPrivateForPage({ root: 'lab', path: 'open.yml' }, roots, home)).toBe(false);
+    });
+
+    it('is no private folder in a folder that holds .oculus/config/ and no .oculus/config.yml', () => {
+        const base = realpathSync(
+            plantScratch('oculus-hub-secrets-plain-', {
+                'plain/.oculus/config/sources.yml': 'scan: []\n',
+                'plain/secrets/s.yml': TEXT
+            })
+        );
+        const state = plantState([{ name: 'plain', dir: join(base, 'plain') }]);
+        const { roots } = openWorkspace(state);
+        expect(roots.map((one) => one.hub === true)).toEqual([false]);
+        expect(isPrivateForPage({ root: 'plain', path: 'secrets/s.yml' }, roots, '/home/me')).toBe(
+            false
+        );
     });
 
     it('is learned by the page from the workspaces answer, which marks the hubs', () => {
@@ -207,8 +222,8 @@ describe('the secrets folder of a hub', () => {
                 const answer = (await response.json()) as { roots: { paths: string[] }[] };
                 return answer.roots.flatMap((one) => one.paths).sort();
             };
-            expect(await listed('lab')).toEqual(['open.yml']);
-            expect(await listed('hub')).toEqual(['open.yml']);
+            expect(await listed('lab')).toEqual(['.oculus/config.yml', 'open.yml']);
+            expect(await listed('hub')).toEqual(['.oculus/config.yml', 'open.yml']);
 
             const answer = workspacesAnswer(openWorkspace(state), engineDir(), NO_MACHINE);
             const held = readAs(workspacesShape, JSON.parse(JSON.stringify(answer)))?.folders;

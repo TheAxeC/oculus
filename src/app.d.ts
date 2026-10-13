@@ -17,7 +17,7 @@ declare global {
             /**
              * The configuration as the disk holds it. The first call of a request takes the server
              * context's `configCache`, which parses the configuration again only when a file of the
-             * engine's config folder or of the hub's `.oculus/config/` folder changed, and the
+             * engine's config folder or the hub's `.oculus/config.yml` changed, and the
              * request keeps that one read for every later call; a request that never calls it reads
              * nothing.
              */

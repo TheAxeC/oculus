@@ -58,8 +58,11 @@ export function manifestOfProject(
     return { root, path: path === '' ? name : `${path}/${name}` };
 }
 
-/** Lookups that name nothing, for a store built without the page's. */
-export const NO_LOOKUPS: FileLookups = {
+/**
+ * Lookups that name nothing, for a store built without the page's. Frozen, since every such store
+ * shares the one object.
+ */
+export const NO_LOOKUPS: Readonly<FileLookups> = Object.freeze({
     primary: () => null,
     engine: () => null,
     projectManifest: () => null,
@@ -67,7 +70,7 @@ export const NO_LOOKUPS: FileLookups = {
     feeds: () => null,
     changeFile: () => null,
     unsavedUnknown: () => false
-};
+});
 
 /** The text of a field, and '' for anything else. */
 function text(value: unknown): string {

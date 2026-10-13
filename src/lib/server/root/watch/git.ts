@@ -3,8 +3,12 @@
 // "Watchers": git watches each workspace's .git and worktree and re-reads on change, no more often
 // than every two seconds.
 //
-// The file browser's roots are the second source because the Repositories view is over every
+// The file browser's roots are the second source because the Repositories view lists every
 // repository the reader has told oculus about, not only the ones an agent happens to be working in.
+// A session's workspace is read too, for the Changes of its session detail, and is told apart from
+// the rest by `inWorkspace` in its state: the roots of the workspace (the file browser's roots, the
+// repositories below them, the cloned folders and the always-watched root) carry it true, a root
+// only a session names carries it false, and the list of repositories holds the first kind alone.
 // They are read through the `roots` option at start, again on a `config` push, which is what says
 // the folders of the workspace moved, and again whenever the open workspace moves (the `follow`
 // option), which is the way a folder is added while the server runs. The text catalog a failed read
@@ -361,6 +365,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
      */
     const readFrom = new Map<string, number>();
     let state: GitPayload = {};
+    /** The roots marked as the workspace's in the payload last published, as one text. */
+    let marks = '';
     /** Whether a read changed the payload since it was last published. */
     let changed = false;
     let closed = false;
@@ -369,7 +375,17 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const publish = (): void => {
         reorder(wanted());
         changed = false;
-        hub.publish('git', { ...state });
+        const marked = workspaceRoots();
+        marks = marksOf(marked);
+        hub.publish(
+            'git',
+            Object.fromEntries(
+                Object.entries(state).map(([root, one]) => [
+                    root,
+                    { ...one, inWorkspace: marked.has(root) }
+                ])
+            )
+        );
     };
 
     /**
@@ -710,10 +726,19 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             walking = false;
         }
     };
+    /**
+     * The roots that belong to the workspace: the always-watched root, the file browser's roots,
+     * the repositories found below them and the folders the projects are cloned into. A root only a
+     * session names is not among them.
+     */
+    const workspaceRoots = (): Set<string> => {
+        const listed = browser.flatMap((root) => [root, ...(inside.get(root) ?? [])]);
+        return new Set([always, ...listed, ...cloned].filter((root) => root !== ''));
+    };
+    const marksOf = (marked: Set<string>): string => JSON.stringify([...marked].sort());
     const wanted = (): string[] => {
         const roots: string[] = [];
-        const listed = browser.flatMap((root) => [root, ...(inside.get(root) ?? [])]);
-        for (const root of [always, ...listed, ...cloned, ...named]) {
+        for (const root of [...workspaceRoots(), ...named]) {
             if (root !== '' && !roots.includes(root)) roots.push(root);
         }
         return roots;
@@ -766,7 +791,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         reorder(roots);
         const after = Object.keys(state);
         const moved =
-            before.length !== after.length || before.some((root, at) => root !== after[at]);
+            before.length !== after.length ||
+            before.some((root, at) => root !== after[at]) ||
+            (after.length > 0 && marks !== marksOf(workspaceRoots()));
         if (moved) publish();
         const reads = [...fresh, ...retried];
         if (reads.length > 0) void firstReads(reads);

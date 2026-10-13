@@ -18,6 +18,7 @@ import {
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
+import { words } from '../../../src/lib/server/core/words.ts';
 import type { FeedKind, PortfolioConfig } from '../../../src/lib/data/model/index.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
@@ -200,14 +201,30 @@ describe('feed writes', () => {
         );
         expect(write('status', 'closed')).toMatchObject({
             changed: [],
-            refused: [{ field: 'status', reason: 'status takes one of open, applied, declined' }]
+            refused: [
+                {
+                    field: 'status',
+                    reason: words(
+                        into.config.text,
+                        'server.entries.type_options',
+                        'status',
+                        'open, applied, declined'
+                    )
+                }
+            ]
         });
         expect(write('date', 'tomorrow').refused).toHaveLength(1);
         expect(write('title', 'Another').refused).toEqual([
-            { field: 'title', reason: 'the leads feed does not allow that field' }
+            {
+                field: 'title',
+                reason: words(into.config.text, 'server.feeds.field_not_allowed', 'leads')
+            }
         ]);
         expect(write('invented', 'x').refused).toEqual([
-            { field: 'invented', reason: 'the leads feed does not allow that field' }
+            {
+                field: 'invented',
+                reason: words(into.config.text, 'server.feeds.field_not_allowed', 'leads')
+            }
         ]);
     });
 
@@ -235,7 +252,7 @@ describe('feed writes', () => {
         const file = join(into.hub, FILES.leads);
         writeFileSync(file, readFileSync(file, 'utf8') + '  - title: "Job"\n');
         const before = readFileSync(file, 'utf8');
-        const shared = 'two entries share the title Job, so a write cannot address one of them';
+        const shared = words(into.config.text, 'server.entries.shared_identity', 'title', 'Job');
         expect(writeFeedField(into.hub, into.config, 'leads', 'Job', 'fit', 'x').refused).toEqual([
             { field: 'title', reason: shared }
         ]);
@@ -305,7 +322,7 @@ describe('Lit Watch writes', () => {
             // whatever its case and trailing slash: refused, the file as it was.
             const again = add(into, { ...ADD, title: ' BLOCK TERM decomposition ', url: '' });
             expect(again.refused).toStrictEqual([
-                { field: 'title', reason: 'this paper is in Lit Watch already' }
+                { field: 'title', reason: words(into.config.text, 'server.feeds.paper_in_file') }
             ]);
             const byAddress = add(into, {
                 ...ADD,
@@ -313,7 +330,7 @@ describe('Lit Watch writes', () => {
                 url: 'HTTPS://arxiv.org/abs/2601.00001/'
             });
             expect(byAddress.refused).toStrictEqual([
-                { field: 'url', reason: 'this paper is in Lit Watch already' }
+                { field: 'url', reason: words(into.config.text, 'server.feeds.paper_in_file') }
             ]);
             expect(readFileSync(into.file, 'utf8')).toBe(source);
 
@@ -366,7 +383,12 @@ describe('Lit Watch writes', () => {
             expect(add(unread, ADD)).toStrictEqual({
                 found: true,
                 changed: [],
-                refused: [{ field: 'entries', reason: "Lit Watch's file does not read" }]
+                refused: [
+                    {
+                        field: 'entries',
+                        reason: words(unread.config.text, 'server.feeds.file_unread')
+                    }
+                ]
             });
             expect(readFileSync(unread.file, 'utf8')).toBe(broken);
 

@@ -46,6 +46,7 @@ import type {
     Snapshot,
     Venue
 } from '../model/index.ts';
+import { entryIdOf, entryTitleOf } from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
 import { tierOf } from '../helpers/hub-names.ts';
 import { mapShape, readOr, rowsShape, stringItemsShape } from '../shapes/shapes.ts';
@@ -484,18 +485,9 @@ function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
     for (const [key, value] of Object.entries(raw)) {
         if (key !== 'provenance' && key !== '__proto__') fields[key] = value;
     }
-    const title = str(raw.title) ?? str(raw.name) ?? str(raw[ident]) ?? '';
-    const key = str(raw.key);
-    const id = str(raw.id);
-    const identity = str(raw[ident]);
     return {
-        id:
-            id !== undefined && id.length > 0
-                ? id
-                : key !== undefined && key.length > 0
-                  ? key
-                  : (identity ?? title),
-        title,
+        id: entryIdOf(fields, ident),
+        title: entryTitleOf(fields, ident),
         fields,
         file: raw.provenance.file,
         index

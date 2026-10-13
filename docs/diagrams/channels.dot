@@ -7,6 +7,10 @@ digraph channels {
         "server/accounts/calendar/poll";
         "server/accounts/mail/poll";
     }
+    subgraph "cluster_publish server/core" {
+        label="server/core"; style=solid;
+        "server/core/changes";
+    }
     subgraph "cluster_publish server/files" {
         label="server/files"; style=solid;
         "server/files/fs/open-files";
@@ -44,6 +48,7 @@ digraph channels {
         "ch audit" [label="audit", shape=ellipse];
         "ch blank" [label="blank", shape=ellipse];
         "ch calendar" [label="calendar", shape=ellipse];
+        "ch changes" [label="changes", shape=ellipse];
         "ch config" [label="config", shape=ellipse];
         "ch debug" [label="debug", shape=ellipse];
         "ch debug-console" [label="debug-console", shape=ellipse];
@@ -86,8 +91,10 @@ digraph channels {
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:294" [label="src/lib/server/machine/runs/schedules/watch.ts:294 publish(CHANNEL)"];
-        "? src/lib/server/root/context.ts:391" [label="src/lib/server/root/context.ts:391 publish(set)"];
+        "? src/lib/server/root/context.ts:403" [label="src/lib/server/root/context.ts:403 publish(set)"];
         "? src/lib/shell/panes/PaneView.svelte:476" [label="src/lib/shell/panes/PaneView.svelte:476 message()"];
+        "? src/lib/state/client/context.ts:171" [label="src/lib/state/client/context.ts:171 message(
+                key.startsWith('page:leads:')"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:82" [label="src/lib/state/client/queries.svelte.ts:82 .subscribe((event)"];
         "? src/lib/state/sessions/source/disk.svelte.ts:123" [label="src/lib/state/sessions/source/disk.svelte.ts:123 channel === undefined"];
@@ -97,7 +104,7 @@ digraph channels {
         "? src/lib/state/sessions/source/disk.svelte.ts:157" [label="src/lib/state/sessions/source/disk.svelte.ts:157 message(name, heard)"];
         "? src/lib/state/sessions/source/disk.svelte.ts:158" [label="src/lib/state/sessions/source/disk.svelte.ts:158 .subscribe([name])"];
         "? src/lib/state/sources/search/file-matcher.svelte.ts:83" [label="src/lib/state/sources/search/file-matcher.svelte.ts:83 .listen("];
-        "? src/lib/state/system/apps/apps.svelte.ts:589" [label="src/lib/state/system/apps/apps.svelte.ts:589 message(channel)"];
+        "? src/lib/state/system/apps/apps.svelte.ts:599" [label="src/lib/state/system/apps/apps.svelte.ts:599 message(channel)"];
         "? src/lib/state/system/config/editors/draft.ts:346" [label="src/lib/state/system/config/editors/draft.ts:346 message('notYaml', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:351" [label="src/lib/state/system/config/editors/draft.ts:351 message('where', place.label, name)"];
         "? src/lib/state/system/config/editors/draft.ts:459" [label="src/lib/state/system/config/editors/draft.ts:459 message('emptyKey', index + 1)"];
@@ -111,15 +118,15 @@ digraph channels {
         "? src/lib/state/system/config/editors/fields.ts:375" [label="src/lib/state/system/config/editors/fields.ts:375 message('noFolder', trouble.path)"];
         "? src/lib/state/system/config/editors/fields.ts:377" [label="src/lib/state/system/config/editors/fields.ts:377 message('noFile', trouble.path)"];
         "? src/lib/state/system/config/editors/writer.ts:125" [label="src/lib/state/system/config/editors/writer.ts:125 message('changedSince', row.file)"];
-        "? src/lib/state/system/config/rows.ts:299" [label="src/lib/state/system/config/rows.ts:299 message('loading', file)"];
-        "? src/lib/state/system/config/rows.ts:301" [label="src/lib/state/system/config/rows.ts:301 message('unreadable', file, held.error)"];
-        "? src/lib/state/system/config/rows.ts:303" [label="src/lib/state/system/config/rows.ts:303 message('cut', file)"];
-        "? src/lib/state/system/config/rows.ts:308" [label="src/lib/state/system/config/rows.ts:308 message('unparsed', file, first)"];
-        "? src/lib/state/system/config/rows.ts:324" [label="src/lib/state/system/config/rows.ts:324 message('layerAbsent', path)"];
-        "? src/lib/state/system/config/rows.ts:397" [label="src/lib/state/system/config/rows.ts:397 message('mismatchToggle', text)"];
-        "? src/lib/state/system/config/rows.ts:398" [label="src/lib/state/system/config/rows.ts:398 message('mismatchNumber', text)"];
-        "? src/lib/state/system/config/rows.ts:401" [label="src/lib/state/system/config/rows.ts:401 message('mismatchList', text)"];
-        "? src/lib/state/system/config/rows.ts:403" [label="src/lib/state/system/config/rows.ts:403 message('mismatchText', text)"];
+        "? src/lib/state/system/config/rows.ts:300" [label="src/lib/state/system/config/rows.ts:300 message('loading', file)"];
+        "? src/lib/state/system/config/rows.ts:302" [label="src/lib/state/system/config/rows.ts:302 message('unreadable', file, held.error)"];
+        "? src/lib/state/system/config/rows.ts:304" [label="src/lib/state/system/config/rows.ts:304 message('cut', file)"];
+        "? src/lib/state/system/config/rows.ts:309" [label="src/lib/state/system/config/rows.ts:309 message('unparsed', file, first)"];
+        "? src/lib/state/system/config/rows.ts:325" [label="src/lib/state/system/config/rows.ts:325 message('hubFileAbsent', path)"];
+        "? src/lib/state/system/config/rows.ts:400" [label="src/lib/state/system/config/rows.ts:400 message('mismatchToggle', text)"];
+        "? src/lib/state/system/config/rows.ts:401" [label="src/lib/state/system/config/rows.ts:401 message('mismatchNumber', text)"];
+        "? src/lib/state/system/config/rows.ts:404" [label="src/lib/state/system/config/rows.ts:404 message('mismatchList', text)"];
+        "? src/lib/state/system/config/rows.ts:406" [label="src/lib/state/system/config/rows.ts:406 message('mismatchText', text)"];
         "? src/lib/state/system/config/view/folders.ts:42" [label="src/lib/state/system/config/view/folders.ts:42 message('listFailed', folder, held.error)"];
         "? src/lib/state/system/config/view/folders.ts:65" [label="src/lib/state/system/config/view/folders.ts:65 message('listLoading', folder)"];
         "? src/lib/state/system/config/write.ts:38" [label="src/lib/state/system/config/write.ts:38 message('refused', answer.refused.map((one)"];
@@ -208,6 +215,7 @@ digraph channels {
         "routes/+page";
     }
     "? src/lib/shell/panes/PaneView.svelte:476" -> "shell/panes/PaneView";
+    "? src/lib/state/client/context.ts:171" -> "state/client/context";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:82" -> "state/client/queries";
     "? src/lib/state/sessions/source/disk.svelte.ts:123" -> "state/sessions/source/disk";
@@ -216,7 +224,7 @@ digraph channels {
     "? src/lib/state/sessions/source/disk.svelte.ts:157" -> "state/sessions/source/disk";
     "? src/lib/state/sessions/source/disk.svelte.ts:158" -> "state/sessions/source/disk";
     "? src/lib/state/sources/search/file-matcher.svelte.ts:83" -> "state/sources/search/file-matcher";
-    "? src/lib/state/system/apps/apps.svelte.ts:589" -> "state/system/apps/apps";
+    "? src/lib/state/system/apps/apps.svelte.ts:599" -> "state/system/apps/apps";
     "? src/lib/state/system/config/editors/draft.ts:346" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:351" -> "state/system/config/editors/draft";
     "? src/lib/state/system/config/editors/draft.ts:459" -> "state/system/config/editors/draft";
@@ -230,15 +238,15 @@ digraph channels {
     "? src/lib/state/system/config/editors/fields.ts:375" -> "state/system/config/editors/fields";
     "? src/lib/state/system/config/editors/fields.ts:377" -> "state/system/config/editors/fields";
     "? src/lib/state/system/config/editors/writer.ts:125" -> "state/system/config/editors/writer";
-    "? src/lib/state/system/config/rows.ts:299" -> "state/system/config/rows";
-    "? src/lib/state/system/config/rows.ts:301" -> "state/system/config/rows";
-    "? src/lib/state/system/config/rows.ts:303" -> "state/system/config/rows";
-    "? src/lib/state/system/config/rows.ts:308" -> "state/system/config/rows";
-    "? src/lib/state/system/config/rows.ts:324" -> "state/system/config/rows";
-    "? src/lib/state/system/config/rows.ts:397" -> "state/system/config/rows";
-    "? src/lib/state/system/config/rows.ts:398" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:300" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:302" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:304" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:309" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:325" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:400" -> "state/system/config/rows";
     "? src/lib/state/system/config/rows.ts:401" -> "state/system/config/rows";
-    "? src/lib/state/system/config/rows.ts:403" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:404" -> "state/system/config/rows";
+    "? src/lib/state/system/config/rows.ts:406" -> "state/system/config/rows";
     "? src/lib/state/system/config/view/folders.ts:42" -> "state/system/config/view/folders";
     "? src/lib/state/system/config/view/folders.ts:65" -> "state/system/config/view/folders";
     "? src/lib/state/system/config/write.ts:38" -> "state/system/config/write";
@@ -267,6 +275,7 @@ digraph channels {
     "ch calendar" -> "routes/+page" [style=dashed];
     "ch calendar" -> "state/life/accounts";
     "ch calendar" -> "state/life/calendar";
+    "ch changes" -> "routes/+page" [style=dashed];
     "ch config" -> "routes/+page" [style=dashed];
     "ch config" -> "routes/+page";
     "ch config" -> "state/client/context";
@@ -277,6 +286,7 @@ digraph channels {
     "ch config" -> "state/sources/fs";
     "ch config" -> "state/sources/search/search";
     "ch config" -> "state/workbench/palette-source";
+    "ch config" -> "views/boards/entry";
     "ch config" -> "views/feeds/leads";
     "ch config" -> "views/feeds/literature";
     "ch config" -> "views/feeds/radar";
@@ -378,6 +388,7 @@ digraph channels {
     "ch usage" -> "views/system/workbench";
     "server/accounts/calendar/poll" -> "ch calendar";
     "server/accounts/mail/poll" -> "ch inbox";
+    "server/core/changes" -> "ch changes";
     "server/files/fs/open-files" -> "? src/lib/server/files/fs/open-files.ts:150";
     "server/machine/apps/host/manager" -> "ch app-hosts";
     "server/machine/apps/host/published" -> "? src/lib/server/machine/apps/host/published.ts:22";
@@ -389,7 +400,7 @@ digraph channels {
     "server/machine/pty/channel" -> "ch pty:*";
     "server/machine/runs/schedules/watch" -> "? src/lib/server/machine/runs/schedules/watch.ts:294";
     "server/machine/usage/watch" -> "ch usage";
-    "server/root/context" -> "? src/lib/server/root/context.ts:391";
+    "server/root/context" -> "? src/lib/server/root/context.ts:403";
     "server/root/context" -> "ch files";
     "server/root/hooks" -> "ch sessions";
     "server/root/watch/apps" -> "ch apps";

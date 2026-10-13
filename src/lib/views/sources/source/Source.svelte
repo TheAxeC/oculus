@@ -121,7 +121,7 @@
         hpc,
         layout: { keepPreview, openBeside, openView, restateInstance },
         repositories,
-        selectors: { editorOptions, gitFor, gitRoots, languages, paintLimit, repoSettings },
+        selectors: { editorOptions, gitFor, languages, paintLimit, repoSettings },
         source: {
             revertSourceDraft,
             editSourceDraft,
@@ -221,7 +221,7 @@
     /** Where the file is on disk and in which repository, and what that allows the tab. */
     const file = createTabFile({
         workspaces,
-        gitRoots,
+        repositories: client.selectors.repositories,
         gitFor,
         root: () => root,
         path: () => path,

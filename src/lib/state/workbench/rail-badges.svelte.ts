@@ -72,15 +72,16 @@ export type RailBadgesStore = {
 
 /**
  * What the badges read of the selectors: the configuration, one board by its preset, one
- * collection, and the `git` channel's roots and their states. The selectors store in state/client,
- * the folder above this one, satisfies it.
+ * collection, and the repositories of the list with their states. The selectors store in
+ * state/client, the folder above this one, satisfies it.
  */
 export type BadgeSelectors = {
     configMap: () => Record<string, unknown>;
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
     collectionOf: (key: string) => Collection | null;
-    gitRoots: () => string[];
+    /** The repositories of the Repositories list, each with the root that shows it. */
+    repositories: () => readonly { shown: string }[];
     gitFor: (workspace: string) => GitState | null;
     /** The changes the apps' source controls count, summed. */
     appSourceCount: () => number;
@@ -193,16 +194,17 @@ export function createRailBadges(
     }
 
     /**
-     * The changes of every repository the `git` channel lists, as VS Code's git.countBadge "all"
-     * counts them: the held merge, staged, changes and untracked counts summed, so a file in two
-     * groups counts twice and a list cut at 200 counts what git reported. A root that is no
-     * repository adds nothing, and a repository a Repositories tab closed still counts, since the
-     * closed list is that tab's own. The counts the apps' source controls give are added.
+     * The changes of every repository the Repositories list holds, as VS Code's git.countBadge
+     * "all" counts them: the held merge, staged, changes and untracked counts summed, so a file in
+     * two groups counts twice and a list cut at 200 counts what git reported. A repository counts
+     * once however many roots of the `git` channel lie in it, a root that is no repository adds
+     * nothing, and a repository a Repositories tab closed still counts, since the closed list is
+     * that tab's own. The counts the apps' source controls give are added.
      */
     function repositoriesBadge(): string {
         let total = selectors.appSourceCount();
-        for (const root of selectors.gitRoots()) {
-            const held = selectors.gitFor(root);
+        for (const { shown } of selectors.repositories()) {
+            const held = selectors.gitFor(shown);
             if (!held?.repository) continue;
             total += held.held.merge + held.held.staged + held.held.changes + held.held.untracked;
         }

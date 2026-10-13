@@ -1,4 +1,5 @@
-# Oculus text owned by the mark a record of a hub other than the primary carries.
+# Oculus text owned by the hubs of the workspace: the mark a record of a hub other than the primary carries, and what joins the labels two hubs give one theme word in a facet.
 text:
     hubs:
+        label_separator: ' / '
         root_tip: 'This record is from the hub served as {0}'

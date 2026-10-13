@@ -25,6 +25,7 @@ import type {
     HpcPayload,
     InboxPayload,
     Jump,
+    ChangesPayload,
     Message,
     ProcessesPayload,
     SchedulePayload,
@@ -52,6 +53,7 @@ export type Payloads = {
     debug: DebugPayload;
     'debug-console': DebugConsoleAppend;
     jump: Jump;
+    changes: ChangesPayload;
     'app-hosts': AppHostsPayload;
     'app-shell': AppShellPayload;
     'app-tools': AppToolsPayload;

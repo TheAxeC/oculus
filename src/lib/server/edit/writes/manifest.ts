@@ -358,12 +358,13 @@ function removedOf(raw: unknown): RemovedText | null {
 function putBackNote(
     source: string,
     wanted: Record<string, unknown>,
-    note: ReplacedText | null
+    note: ReplacedText | null,
+    catalog: Record<string, string>
 ): SetFieldsResult | null {
     const entries = Object.entries(wanted);
     if (note === null || entries.length !== 1) return null;
     const [[field, value]] = entries;
-    const out = insertReplaced(source, field, value, note);
+    const out = insertReplaced(source, field, value, note, catalog);
     return out.changed.length > 0 ? { ...out, removed: {}, replaced: {} } : null;
 }
 
@@ -374,13 +375,14 @@ function putBackNote(
 function putBack(
     source: string,
     wanted: Record<string, unknown>,
-    back: RemovedText | null
+    back: RemovedText | null,
+    catalog: Record<string, string>
 ): SetFieldsResult | null {
     const entries = Object.entries(wanted);
     if (back === null || entries.length !== 1) return null;
     const [[field, value]] = entries;
     if (value === null) return null;
-    const out = insertRemoved(source, field, value, back);
+    const out = insertRemoved(source, field, value, back, catalog);
     return out.changed.length > 0 ? { ...out, removed: {}, replaced: {} } : null;
 }
 
@@ -492,7 +494,9 @@ export function writeManifest(
         };
     }
 
-    const restored = putBackNote(source, wanted, note) ?? putBack(source, wanted, back);
+    const restored =
+        putBackNote(source, wanted, note, config.text) ??
+        putBack(source, wanted, back, config.text);
     if (restored === null) {
         for (const field of offered) {
             refused.push({ field, reason: words(config.text, 'server.manifest_write.group') });
@@ -502,7 +506,10 @@ export function writeManifest(
         restored ??
         setFields(
             source,
-            Object.fromEntries(Object.entries(wanted).filter(([field]) => !offered.includes(field)))
+            Object.fromEntries(
+                Object.entries(wanted).filter(([field]) => !offered.includes(field))
+            ),
+            config.text
         );
     if (edit.changed.length > 0) writeTextAtomic(manifest.file, edit.text);
     // The value each field had is read off the manifest the edit was computed against, so the

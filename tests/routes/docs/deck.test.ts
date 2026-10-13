@@ -175,7 +175,7 @@ describe('the deck route', () => {
         ];
         for (const { row, layer, path, state } of rows) {
             const dir = plantScratch('oculus-deck-unnamed-', {
-                'hub/.oculus/config/sources.yml': layer
+                'hub/.oculus/config.yml': layer
             });
             const hub = join(dir, 'hub');
             const loaded = loadConfig(engineDir(), { hub });

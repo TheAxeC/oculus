@@ -7,6 +7,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap } from 'yaml';
 import type { EditResult } from '../yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../yaml/why.ts';
+import type { Why } from '../yaml/why.ts';
 import { isBlockMap, isMetalist, renderBlockMap, renderMetalist } from '../yaml/yaml-values.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
 import { lineAt, listOf, renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
@@ -45,7 +47,7 @@ export type SubtaskBlock = {
 };
 
 /** Either the new text or the reason there is none, the shape every edit step answers with. */
-export type Written = { text: string } | { reason: string };
+export type Written = { text: string } | { why: Why };
 
 /**
  * One change the verification applies to the parsed source; `remove` deletes instead of setting.
@@ -60,13 +62,22 @@ export type Host = { node: YAMLMap; path: (string | number)[] };
  */
 export type Located = { list: string; index: number; node: YAMLMap; range: LineRange };
 
-export function fail(reason: string): Written {
-    return { reason };
+export function fail(key: string, ...args: (string | number)[]): Written {
+    return { why: why(key, ...args) };
 }
 
-/** Every named field refused for the same reason, with the source unchanged. */
-export function refuseAll(source: string, fields: string[], reason: string): EditResult {
+/**
+ * Every named field refused for the same reason, worded from the catalog, with the source
+ * unchanged.
+ */
+export function refuseAll(
+    source: string,
+    fields: string[],
+    found: Why,
+    catalog: Record<string, string>
+): EditResult {
     const named = fields.length === 0 ? [''] : fields;
+    const reason = said(catalog, found);
     return { text: source, changed: [], refused: named.map((field) => ({ field, reason })) };
 }
 
@@ -194,11 +205,12 @@ export function settled(
     changes: Change[],
     names: string[],
     changed: string[],
-    refused: EditResult['refused']
+    refused: EditResult['refused'],
+    catalog: Record<string, string>
 ): EditResult {
     if (changed.length === 0) return { text: source, changed, refused };
     if (!verified(source, text, changes)) {
-        return refuseAll(source, names, 'the edit did not verify; nothing was written');
+        return refuseAll(source, names, why(REFUSALS.unverified), catalog);
     }
     return { text, changed, refused };
 }
@@ -257,7 +269,7 @@ function renderBlockScalar(text: string, node: Scalar, value: string): string {
 /** Write a value over the bytes of an existing one, the quoting the file had kept. */
 export function replaceIn(text: string, node: Node, value: Exclude<FieldValue, null>): Written {
     const range = rangeOf(node);
-    if (range === null) return fail('the value has no place in the file');
+    if (range === null) return fail(REFUSALS.valueNoPlace);
     const start = range[0];
     const end = valueEnd(node);
     let rendered: string;
@@ -271,16 +283,16 @@ export function replaceIn(text: string, node: Node, value: Exclude<FieldValue, n
         rendered = renderMetalist(value, columnAt(text, start));
     } else if (Array.isArray(value)) {
         if (isSeq(node) && node.flow !== true && node.items.length > 0) {
-            return fail('the field is a block list; this writes one line');
+            return fail(REFUSALS.blockList);
         }
         rendered = renderFlowList(value, itemStyles(node));
     } else {
-        if (isYamlMap(node) || isSeq(node)) return fail('the field is a block of its own');
+        if (isYamlMap(node) || isSeq(node)) return fail(REFUSALS.blockOwn);
         if (isScalar(node) && isBlockScalar(node) && typeof value === 'string') {
             return { text: splice(text, start, end, renderBlockScalar(text, node, value)) };
         }
         rendered = renderScalar(value, isScalar(node) ? node.type : undefined);
-        if (rendered.includes('\n')) return fail('the value does not fit on one line');
+        if (rendered.includes('\n')) return fail(REFUSALS.valueOneLine);
     }
     if (start === end && text[start - 1] !== ' ' && text[start - 1] !== '\n') {
         rendered = ` ${rendered}`;
@@ -296,7 +308,7 @@ export function appendField(
     value: Exclude<FieldValue, null>
 ): Written {
     const own = rangeOf(found.node);
-    if (own === null) return fail('the entry has no place in the file');
+    if (own === null) return fail(REFUSALS.entryNoPlace);
     const pad = ' '.repeat(columnAt(text, own[0]));
     const lines = text.split('\n');
     if (isBlockMap(value)) {
@@ -318,7 +330,7 @@ export function appendField(
         return { text: lines.join('\n') };
     }
     const rendered = Array.isArray(value) ? renderFlowList(value, []) : renderScalar(value);
-    if (rendered.includes('\n')) return fail('the value does not fit on one line');
+    if (rendered.includes('\n')) return fail(REFUSALS.valueOneLine);
     lines.splice(found.range.end, 0, `${pad}${field}: ${rendered}`);
     return { text: lines.join('\n') };
 }
@@ -327,7 +339,7 @@ export function appendField(
 export function removeField(text: string, pair: Pair<Scalar, Node>): Written {
     const key = rangeOf(pair.key);
     const end = pairEnd(pair);
-    if (key === null || end === null) return fail('the field has no place in the file');
+    if (key === null || end === null) return fail(REFUSALS.fieldNoPlace);
     const from = lineAt(text, key[0]);
     const to = lineAt(text, Math.max(end - 1, key[0]));
     const lines = text.split('\n');

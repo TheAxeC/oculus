@@ -17,8 +17,15 @@
 // A diff pane publishes its diff editor's actions the same way, and says nothing else of use to
 // the bar.
 //
-// The store also holds the source tab whose editor the reader focused last, until that tab goes: a
-// project command started from a button in another view reads its placeholders from that tab.
+// The store also holds the source tab whose editor the reader focused last and what it last said,
+// until that tab is closed or the reader focuses another source tab's editor: a project command
+// started from a button in another view, and a debug start, read their placeholders from that tab
+// while it is hidden behind another view, in another pane or with its status taken away, and a
+// tab whose file was deleted keeps answering with its last status. A tab is closed when the layout
+// no longer holds its instance, which `isOpen` says. The focused tab and its last status are kept
+// through a reload of the page as well (`FocusKeeper`), since a reload closes no tab: the tab
+// hidden behind another view mounts no editor after the reload, and its file is still the one a
+// debug start and a command read, as VS Code restores the active editor on a reload.
 
 import { untrack } from 'svelte';
 import type { LintId, LintState } from '../../../data/model/index.ts';
@@ -104,12 +111,54 @@ export type EditorStatusStore = {
     asked: (instance: string) => EditorRequest | null;
     /** Say that the reader put the focus in this tab's editor. */
     focus: (instance: string) => void;
-    /** The tab whose editor the reader focused last and what it said, or null once it is gone. */
+    /**
+     * The source tab whose editor the reader focused last and what it said last (what it says now
+     * while it says anything), or null once the tab is closed and while none was focused.
+     */
     focused: () => SourceOnScreen | null;
 };
 
 /** The source tab on screen and what it last said, as the status bar and the palette read it. */
 export type SourceOnScreen = { instance: string; status: EditorStatus };
+
+/** The focused tab and the last status it said, as the store holds it. */
+export type FocusedSource = { instance: string; status: EditorStatus | null };
+
+/** Where the focused tab is kept across a reload of the page: read once, written on each change. */
+export type FocusKeeper = {
+    read: () => FocusedSource | null;
+    write: (focused: FocusedSource) => void;
+};
+
+/** The key the focused tab is kept under in the browser tab's `sessionStorage`. */
+const FOCUS_KEY = 'oculus.focused-source';
+
+/**
+ * The keeper over the browser tab's `sessionStorage`, which a reload keeps and a new browser tab
+ * does not share. A storage that is refused or holds no readable record keeps nothing.
+ */
+export function sessionFocusKeeper(): FocusKeeper {
+    return {
+        read: () => {
+            try {
+                const held: unknown = JSON.parse(sessionStorage.getItem(FOCUS_KEY) ?? 'null');
+                if (held === null || typeof held !== 'object') return null;
+                const { instance, status } = held as Partial<FocusedSource>;
+                if (typeof instance !== 'string' || instance === '') return null;
+                return { instance, status: status ?? null };
+            } catch {
+                return null;
+            }
+        },
+        write: (focused) => {
+            try {
+                sessionStorage.setItem(FOCUS_KEY, JSON.stringify(focused));
+            } catch {
+                // A refused storage forgets the tab at the next reload and nothing else.
+            }
+        }
+    };
+}
 
 /**
  * The source tab on screen, when the tab on screen is one and has said what it holds, and null
@@ -141,18 +190,33 @@ export function editorOnScreen(
     return said === null ? null : { instance: tab.id, status: said };
 }
 
-export function createEditorStatus(): EditorStatusStore {
+/**
+ * The store over the layout's open instances: `isOpen` says whether a tab of that instance is held
+ * by a page or a float, which is when the focused tab is still the reader's.
+ */
+export function createEditorStatus(
+    isOpen: (instance: string) => boolean,
+    keeper: FocusKeeper | null = null
+): EditorStatusStore {
     const held: {
         entries: Record<string, EditorStatus>;
         last: EditorRequest | null;
-        focused: string | null;
-    } = $state({ entries: {}, last: null, focused: null });
+        /** The tab focused last and the last status it said, null before it said one. */
+        focused: FocusedSource | null;
+    } = $state({ entries: {}, last: null, focused: keeper?.read() ?? null });
+
+    function keep(focused: FocusedSource): void {
+        held.focused = focused;
+        keeper?.write(focused);
+    }
 
     // The tab publishes and forgets from an effect, so the record is read untracked here: an
     // effect that read what it writes would run again on its own write.
     function publish(instance: string, status: EditorStatus): void {
         if (instance === '') return;
         held.entries = { ...untrack(() => held.entries), [instance]: status };
+        const focused = untrack(() => held.focused);
+        if (focused?.instance === instance) keep({ instance, status });
     }
 
     function forget(instance: string): void {
@@ -161,17 +225,17 @@ export function createEditorStatus(): EditorStatusStore {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- the record is keyed by instance id, and a Map would not be reactive through $state
         delete entries[instance];
         held.entries = entries;
-        if (untrack(() => held.focused) === instance) held.focused = null;
     }
 
     function focus(instance: string): void {
-        if (instance !== '') held.focused = instance;
+        if (instance !== '') keep({ instance, status: untrack(() => statusOf(instance)) });
     }
 
     function focused(): SourceOnScreen | null {
-        const instance = held.focused;
-        const said = instance === null ? null : statusOf(instance);
-        return instance === null || said === null ? null : { instance, status: said };
+        const tab = held.focused;
+        if (tab === null || !isOpen(tab.instance)) return null;
+        const status = statusOf(tab.instance) ?? tab.status;
+        return status === null ? null : { instance: tab.instance, status };
     }
 
     function statusOf(instance: string): EditorStatus | null {

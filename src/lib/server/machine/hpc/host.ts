@@ -2,8 +2,10 @@
 // local.yml wins when it names one; otherwise it is the ssh alias of the cluster entry that
 // `slurm.resource` of behavior.yml names in registries/resources.yml; otherwise there is no host
 // and a sentence says why. A hub that sets no `slurm.resource` has no cluster, and the sentence
-// says that the hub's settings name none. The resolver is pure, so the poller, the config push, the
-// portfolio rebuild and the route all give one answer for one input.
+// says that the hub's settings name none; that is the one case marked `unconfigured`, which is not
+// a failure: every other reason for having no host is a cluster that cannot be reached. The
+// resolver is pure, so the poller, the config push, the portfolio rebuild and the route all give
+// one answer for one input.
 
 import type { Id, Resource, Snapshot } from '../../../data/model/index.ts';
 import { slurmSettings, textCatalog, type SlurmSettings } from '../../../data/sources/config.ts';
@@ -40,10 +42,10 @@ function hpcHostOf(input: {
     resource: string;
     resources: Record<Id, Resource> | null;
     words: HostWords;
-}): { host: string; missing?: string } {
+}): { host: string; missing?: string; unconfigured?: true } {
     const { hpcHost, resource, resources, words } = input;
     if (hpcHost !== undefined) return { host: hpcHost };
-    if (resource === '') return { host: '', missing: words.noCluster };
+    if (resource === '') return { host: '', missing: words.noCluster, unconfigured: true };
     if (resources === null) return { host: '', missing: words.notRead };
     const entry = Object.hasOwn(resources, resource) ? resources[resource] : undefined;
     if (entry === undefined) return { host: '', missing: said(words.unknown, resource) };
@@ -93,7 +95,7 @@ export function hpcRouteHost(input: {
     hpcHost: string | undefined;
     hub: Hub;
     config: () => Record<string, unknown>;
-}): { host: string; missing?: string } {
+}): { host: string; missing?: string; unconfigured?: true } {
     if (input.hpcHost !== undefined) return { host: input.hpcHost };
     const config = input.config();
     return hpcHostOf({

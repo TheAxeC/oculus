@@ -154,9 +154,8 @@ export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string; root?: st
 export type AuditMuteWrite = { kind: 'audit-mute'; signature: string; muted: boolean };
 
 /**
- * A folder added to the default workspace, by the path it was chosen as, a root of the hub's
- * `.oculus/config/sources.yml` removed by its key, or the list's roots put in the order the keys
- * name.
+ * A folder added to the open workspace, by the path it was chosen as, a folder of the workspace
+ * taken out by its name, or the workspace's folders put in the order the names give.
  */
 export type RootsWrite =
     | { kind: 'roots'; action: 'add'; dir: string }

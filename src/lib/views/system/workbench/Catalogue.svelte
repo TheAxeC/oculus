@@ -12,13 +12,15 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Every view there is and every hub document of `docs:`, under the `nav_groups`
-    // heading each belongs to, with the key that opens it and its live badge. A press opens the
-    // entry on the page the reader was on before this one, where a view lands there, and shows that
-    // page; a shift-press opens it in a pane beside, on that same page. With no page before this
-    // one, which is a load straight onto it, the entry opens on the first rail page. An entry that
-    // is a unique view a page or float holds is shown where it is held by either press, whatever
-    // page that is, and no page is shown on the way.
+    // Layer 3, view. Every view there is, every hub document of `docs:` and every document of
+    // oculus's own folder a rail page's arrangement shows, under the `nav_groups` heading each
+    // belongs to (a rail page's, or Float for the views of the shipped float), with the key that
+    // opens it and its live badge. A press opens the entry on the page the reader was on before
+    // this one, where a view lands there, and shows that page; a shift-press opens it in a pane
+    // beside, on that same page. With no page before this one, which is a load straight onto it,
+    // the entry opens on the first rail page. An entry that is a unique view a page or float holds
+    // is shown where it is held by either press, whatever page that is, and no page is shown on the
+    // way.
     //
     // An entry is also opened on the page the catalogue is on. Dragged onto a pane there it opens
     // where it was dropped, through the drag every tab takes, and each entry's right-click menu
@@ -37,8 +39,9 @@
     //
     // An app's right-click menu also offers Disable, Disable (Workspace), Enable, Enable
     // (Workspace) and, for a machine app, Remove, each asking first when other apps or files are
-    // involved. The Apps group ends with Add app from folder, which is drawn when the group has no
-    // app too.
+    // involved. The Apps group starts with the Apps view (views/apps/Apps.svelte), which lists and
+    // manages the apps with the same choices, and ends with Add app from folder, which is drawn
+    // when the group has no app too.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -64,6 +67,7 @@
         type DocEntry
     } from '$lib/state/workbench/navigation/catalogue';
     import { railPages } from '$lib/state/workbench/navigation/rail';
+    import { arrangedDocs } from '$lib/state/workbench/navigation/arrangement';
     import { THRESHOLD, type Point } from '$lib/state/workbench/drag.svelte';
     import { t } from '$lib/state/shared/words/text';
     import {
@@ -102,12 +106,20 @@
 
     const merged = $derived(config()?.config);
     const groups = $derived(readGroups(merged?.nav_groups));
-    const docs = $derived(readDocs(merged?.docs));
+    /** The engine documents the rail pages' arrangements show, then the `docs:` entries. */
+    const docs = $derived([
+        ...railPages(merged).flatMap((one) => arrangedDocs(one.page, one.node)),
+        ...readDocs(merged?.docs)
+    ]);
     const listed = $derived(listedViews(views()));
     const sections = $derived(arrange(listed, groups, docs));
     const order = $derived(railOrder(listed, groups, readChord(merged?.direct_chord), docs));
 
-    /** The group the apps are listed under, and whether any app is listed in a section. */
+    /**
+     * The group the apps are listed under, and whether a section lists a view of it: an app's
+     * view, or the Apps view the group starts with. A group no section lists is drawn below with
+     * Add app from folder alone.
+     */
     const APPS_GROUP = 'apps';
     const appsGroup = $derived(groups.find((group) => group.id === APPS_GROUP));
     const appsListed = $derived(
@@ -280,7 +292,7 @@
                             </div>
                         </ContextMenu>
                     {/each}
-                    {#each section.docs as entry (entry.path)}
+                    {#each section.docs as entry (docPick(entry))}
                         {@const key = keyOf(order, docPick(entry))}
                         {@const state = docState(entry)}
                         <ContextMenu

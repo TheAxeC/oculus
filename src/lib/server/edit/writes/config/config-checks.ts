@@ -10,11 +10,11 @@
 // finding is refused only when it is new. The reason a refusal carries is the reader's own sentence
 // or the finding's words, so the Settings view shows what to repair.
 //
-// A key of the hub list (data/helpers/hub-names.ts) is written in the hub's own layer,
-// `<hub>/.oculus/config/<file>`, and any other key in the engine's file. The layer's file, or the
-// key in it, may not exist yet: the write then adds the key at the end of the file, creating the
-// file and its folders, and records what it made (`created`) with the text it added (`replaced`),
-// which the undo takes out again (`takeOutAdded`).
+// A key of the hub list (data/helpers/hub-names.ts) is written in the hub's own settings file,
+// `<hub>/.oculus/config.yml`, and any other key in the engine's file. The settings file, or the key
+// in it, may not exist yet: the write then adds the key at the end of the file, creating the file
+// and its folder, and records what it made (`created`) with the text it added (`replaced`), which
+// the undo takes out again (`takeOutAdded`).
 //
 // The setting readers of behavior.yml are in neither list. A wrong value of a setting is read as
 // the entry's default and is a finding of its own (`settingFindings`), and a write is refused for a
@@ -26,7 +26,7 @@ import { basename, dirname, join } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { Document, isMap as isYamlMap, isScalar, isSeq, parseDocument, visit } from 'yaml';
 import { z } from 'zod';
-import { hubKeysOf, hubLayerPath } from '../../../../data/helpers/hub-names.ts';
+import { HUB_FILE, hubFileOf } from '../../../../data/helpers/hub-names.ts';
 import {
     LOCAL_NAME,
     behaviorFindings,
@@ -40,6 +40,7 @@ import {
     optionFindings,
     schemaFindings,
     sourceFile,
+    type ReplacedFile,
     textCatalog,
     themeFindings
 } from '../../../../data/sources/config.ts';
@@ -71,7 +72,7 @@ export function refusing(file: string, key: string): (reason: string) => ConfigK
 }
 
 /**
- * What a write of one option starts from: the config loaded with the hub layer of `hub` (none
+ * What a write of one option starts from: the config loaded with the settings file of `hub` (none
  * without a hub), its text catalog, and the refusal that names the file and key.
  */
 export function opening(
@@ -91,7 +92,7 @@ export function opening(
 /** The value a file holds at one option now, and whether the option is still there. */
 export type OptionNow = { found: boolean; value: unknown };
 
-/** Where a write of one option lands: the engine's file, or the hub layer's. */
+/** Where a write of one option lands: the engine's file, or the hub's settings file. */
 export type Place = { layer: 'engine' | 'hub'; path: string };
 
 /** Remove a file a write created, and the folders it created above it, innermost first. */
@@ -107,19 +108,19 @@ export function removeMade(path: string, made: readonly string[]): void {
 }
 
 /**
- * The file a write of one key lands in: the hub layer's file when a hub is given and the key is one
- * of the hub list, else the engine's.
+ * The file a write of one key lands in: the hub's settings file when a hub is given and the key is
+ * one of the hub list of `file`, else the engine's.
  */
 export function placeOf(engine: string, hub: string | undefined, file: string, key: string): Place {
-    if (hub !== undefined && (hubKeysOf(file)?.includes(key) ?? false)) {
-        return { layer: 'hub', path: join(hub, hubLayerPath(file)) };
+    if (hub !== undefined && hubFileOf(key) === file) {
+        return { layer: 'hub', path: join(hub, HUB_FILE) };
     }
     return { layer: 'engine', path: join(configDir(engine), file) };
 }
 
 /**
- * The text of the file at a place. A file of the hub layer that is not there answers null, since a
- * hub without the layer is a hub that sets nothing; an engine file that is not there throws.
+ * The text of the file at a place. The settings file of a hub that is not there answers null, since
+ * a hub without it is a hub that sets nothing; an engine file that is not there throws.
  */
 export function placeText(place: Place): string | null {
     try {
@@ -171,9 +172,9 @@ export function absentIn(source: string, key: string): boolean {
 /**
  * What an undo reads of one option: the file's text through `read`, which answers null for an
  * option the text does not hold in the shape wanted. A file the catalog does not track, one that is
- * gone and text that `read` throws on all answer not found. A key the hub layer does not hold, or a
- * hub layer that is not there, is a found option with no value (`null`), since the layer holds
- * nothing there for a write to have changed.
+ * gone and text that `read` throws on all answer not found. A key the hub's settings file does not
+ * hold, or a settings file that is not there, is a found option with no value (`null`), since the
+ * file holds nothing there for a write to have changed.
  */
 export function optionNow(
     engine: string,
@@ -237,11 +238,11 @@ const FINDERS: ((
 ];
 
 /**
- * Whether a write of the key would land in the hub's layer with no hub to hold it: the key is one
- * of the hub list and the workspace has no primary hub.
+ * Whether a write of the key would land in the hub's settings file with no hub to hold it: the key
+ * is one of the hub list and the workspace has no primary hub.
  */
 export function lacksPrimary(file: string, key: string, hub: string | undefined): boolean {
-    return hub === undefined && (hubKeysOf(file)?.includes(key) ?? false);
+    return hub === undefined && hubFileOf(key) === file;
 }
 
 /**
@@ -258,8 +259,8 @@ export function optionOf(catalog: Catalog, file: string, key: string): CatalogEn
 
 /**
  * The text of the file one option lives in at a place, or null when the catalog tracks no such
- * option or the file is gone. A hub layer that is not there is the empty text. A file that is there
- * and cannot be read throws, so an undo answers as a write of the same file does.
+ * option or the file is gone. A hub's settings file that is not there is the empty text. A file
+ * that is there and cannot be read throws, so an undo answers as a write of the same file does.
  */
 export function optionText(engine: string, file: string, key: string, place: Place): string | null {
     try {
@@ -311,8 +312,8 @@ function sentenceOf(error: unknown): string {
 /**
  * The reason the merged configuration holding the edited file is refused, or null when it is not.
  * `before` is the merge over the files as they stand; `layer` says whether the edited file is the
- * engine's or the hub's, and `hub` is the hub the layer is merged for (absent for the engine
- * alone).
+ * engine's or the hub's settings file, and `hub` is the hub the layer is merged for (absent for the
+ * engine alone).
  */
 export function refusedBy(
     engine: string,
@@ -322,7 +323,13 @@ export function refusedBy(
     before: ReturnType<typeof loadConfig>,
     layer: Place['layer'] = 'engine'
 ): string | null {
-    const after = loadConfig(engine, { hub, instead: { name: file, text: edited, layer } });
+    // An edit that leaves the hub's file empty stands for the file removed, which is no finding.
+    const gone = layer === 'hub' && edited.trim() === '';
+    const instead: ReplacedFile =
+        layer === 'hub'
+            ? { name: HUB_FILE, text: gone ? null : edited, layer }
+            : { name: file, text: edited, layer };
+    const after = loadConfig(engine, { hub, instead });
     const known = new Set(before.findings.map((finding) => finding.message));
     const added = after.findings.find((finding) => !known.has(finding.message));
     if (added !== undefined) return added.message;
@@ -479,17 +486,29 @@ function renderKey(key: string, value: unknown): string {
 }
 
 /**
- * The text with a key it does not hold added: at the end of the file, or under the map the key's
- * parent already is. Null when the text does not parse as a map of keys or cannot take the key.
+ * The text with a key it does not hold added: at the end of the file, under the map the key's
+ * parent already is, or in place of a file that is the empty map `{}`. Null when the text does not
+ * parse as a map of keys or cannot take the key.
  */
-export function insertKey(source: string, key: string, value: unknown): string | null {
+export function insertKey(
+    source: string,
+    key: string,
+    value: unknown,
+    catalog: Record<string, string>
+): string | null {
     const doc = parseDocument(source);
     if (doc.errors.length > 0) return null;
     if (doc.contents !== null && !isYamlMap(doc.contents)) return null;
     const steps = key.split('.');
     if (steps.length > 1 && !absentIn(source, steps[0])) {
-        const edit = setFields(source, { [key]: value });
+        const edit = setFields(source, { [key]: value }, catalog);
         return edit.changed.length === 1 ? edit.text : null;
+    }
+    const emptyMap = isYamlMap(doc.contents) && doc.contents.items.length === 0;
+    if (emptyMap && doc.contents?.range) {
+        const [start, end] = doc.contents.range;
+        const after = source.slice(end).replace(/^[ \t]*\n?/, '');
+        return `${source.slice(0, start)}${renderKey(key, value)}${after}`;
     }
     const lead = source === '' || source.endsWith('\n') ? source : `${source}\n`;
     return `${lead}${renderKey(key, value)}`;
@@ -520,13 +539,14 @@ function withoutKey(parsed: unknown, key: string, prune: boolean): unknown {
 const addedShape = z.object({ offset: z.int().min(0), before: z.string(), after: z.string() });
 
 /**
- * Take back a write that added a key to the hub layer: the text it added is taken out again where
- * it stands, and the file and the folders the write made are removed once they hold nothing else.
- * It applies only when the file still holds the added text at the offset the record names; the
- * result must read as the file with that one key out, and pass the checks a write passes. Null for
- * a record without the text, a file that has moved on and a key that is still read from a file the
- * layer does not hold. The outcome records the removal like a write, with the value taken out as
- * `before` and no value as `after`, so the removal is itself taken back by writing the value in.
+ * Take back a write that added a key to the hub's settings file: the text it added is taken out
+ * again where it stands, and the file and the folders the write made are removed once they hold
+ * nothing else. It applies only when the file still holds the added text at the offset the record
+ * names; the result must read as the file with that one key out, and pass the checks a write
+ * passes. Null for a record without the text, a file that has moved on and a key that is still read
+ * from a file the settings file does not hold. The outcome records the removal like a write, with
+ * the value taken out as `before` and no value as `after`, so the removal is itself taken back by
+ * writing the value in.
  *
  * `made` is the paths the record says the write made, as absolute paths.
  */

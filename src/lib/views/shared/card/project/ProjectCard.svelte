@@ -22,18 +22,18 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Card from '$lib/ui/frame/Card.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import CardActions, { type CardAction } from './CardActions.svelte';
-    import CardDetails from './project/CardDetails.svelte';
-    import RootChip from './RootChip.svelte';
-    import CardAddresses from './project/CardAddresses.svelte';
-    import CardLinks from './project/CardLinks.svelte';
-    import CardSessions from './project/CardSessions.svelte';
-    import CardStatus from './project/CardStatus.svelte';
-    import CommandBar from '../sessions/CommandBar.svelte';
+    import CardActions, { type CardAction } from '../CardActions.svelte';
+    import CardDetails from './CardDetails.svelte';
+    import RootChip from '../RootChip.svelte';
+    import CardAddresses from './CardAddresses.svelte';
+    import CardLinks from './CardLinks.svelte';
+    import CardSessions from './CardSessions.svelte';
+    import CardStatus from './CardStatus.svelte';
+    import CommandBar from '../../sessions/CommandBar.svelte';
     import CodeText from '$lib/ui/display/CodeText.svelte';
-    import Clamp from './Clamp.svelte';
-    import Subtasks from '../forms/Subtasks.svelte';
-    import { codeLabel, deadline, deckOf, openWorkbench } from './card';
+    import Clamp from '../Clamp.svelte';
+    import Subtasks from '../../forms/Subtasks.svelte';
+    import { codeLabel, deadline, deckOf, openWorkbench } from '../card';
     import { placeOf } from '$lib/state/shared/page/hubs';
     import {
         firstSentence,

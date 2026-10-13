@@ -102,7 +102,8 @@ const EDIT_GLYPH = 'edit';
 
 /**
  * The registration of one app: its view id, the manifest's title and glyph as data, the group
- * `apps`, and the order the section gives (the machine apps by name, then the apps of each root).
+ * `apps`, and the order the section gives after the Apps view, which is the group's first row (the
+ * machine apps by name, then the apps of each root).
  * The badge is the disabled glyph while the app is disabled, a lock while it is not approved and
  * the editing glyph while it is kept approved, with the words each mark has.
  */
@@ -114,7 +115,7 @@ function registrationOfApp(row: AppRow, index: number): ViewRegistration {
         words: row.root === '' ? row.title : `${row.title} (${row.root})`,
         glyphName: row.glyph,
         group: 'apps',
-        order: index,
+        order: index + 1,
         badgeGlyph: () =>
             row.disabled ? DISABLED_GLYPH : !row.approved ? LOCK_GLYPH : row.kept ? EDIT_GLYPH : '',
         badgeMark: row.disabled

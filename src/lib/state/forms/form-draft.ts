@@ -29,6 +29,8 @@ export type DraftTarget = {
     values: (name: string) => Record<string, unknown> | null;
     differs: (name: string, field: string, edit: unknown, value: unknown) => boolean;
     writable: (name: string, field: string, edits: Record<string, unknown>) => boolean;
+    /** The name the thing goes by now, when a save gave it another; the name itself otherwise. */
+    current?: (name: string) => string;
 };
 
 /** The key of an instance's record that holds the draft. */
@@ -117,7 +119,9 @@ export function createFormDraft(
      * Drop what a successful save took. A field the server refused keeps its edit, since the file
      * does not hold it; a field typed again while the save was on its way keeps the newer edit,
      * since that is not what was sent; and an edit that equals the saved value is dropped as well,
-     * since it holds nothing a save would write. A draft the tab's close took away stays gone.
+     * since it holds nothing a save would write. A draft the tab's close took away stays gone. A
+     * save that gave the thing a new name keeps the edits left under that name, so the form that
+     * follows the thing to it still finds them.
      */
     function settleDraft(instance: string, sent: Record<string, unknown>, refused: string[]): void {
         const held = draft(instance);
@@ -134,7 +138,7 @@ export function createFormDraft(
             if (taken || !target.differs(held.name, field, edit, values[field])) continue;
             kept[field] = edit;
         }
-        keep(instance, held, kept);
+        keep(instance, { ...held, name: target.current?.(held.name) ?? held.name }, kept);
     }
 
     /**

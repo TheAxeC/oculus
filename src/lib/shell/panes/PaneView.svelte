@@ -291,14 +291,14 @@
         labelOf: (id) => tabs.find((tab) => tab.id === id)?.label ?? id,
         page: () => page
     });
-    const { askAndClose, closeTab } = question;
+    const { askAndClose, closeByKey, closeTab } = question;
 
     /** The pane's element, whose place on the screen a new window opens at. */
     let element: HTMLElement | undefined = $state();
 
-    /** Cmd+W and Cmd+N arrive as commands (keys/key-dom.ts); the close question is this pane's. */
+    /** Cmd+W and Cmd+N arrive as commands (keys/key-dom.ts); Cmd+W spares a pinned tab. */
     function paneCommand(command: PaneCommand): void {
-        if (command === 'close-tab' && active !== '') void closeTab(active);
+        if (command === 'close-tab' && active !== '') void closeByKey(active);
         else if (command === 'new-text-file') openText(page, path);
     }
 

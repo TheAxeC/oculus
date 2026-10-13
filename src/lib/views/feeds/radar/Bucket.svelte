@@ -4,7 +4,7 @@
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import RadarCard from './RadarCard.svelte';
+    import RadarCard from '../../shared/card/feed/RadarCard.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import type { FeedIdent } from '$lib/state/shared/page/idents';
     import {

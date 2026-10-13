@@ -12,6 +12,7 @@ Every registered view is listed by its words.
 | Math Preview | math-preview |
 | Present | present |
 | Slides | slides |
+| Apps | apps |
 | Deposit | deposit |
 | Editor | editor |
 | Entry | entry |
@@ -94,6 +95,7 @@ A colon starts a command. The commands that list choices type their name and a s
 | `:file-icons` | `<Seti>` | Switch the file icon theme |
 | `:accent` | `<name / #hex / reset>` | Set the accent colour |
 | `:tab` | `<view id>` | Open a view in a tab |
+| `:reopen-closed-tab` | - | Reopen the tabs closed last |
 | `:goto` | `<project id>` | Open a project in a tab |
 | `:language` | `<language>` | Set the language of the source tab |
 | `:interpreter` | `<path>` | Choose the Python interpreter of the repository |

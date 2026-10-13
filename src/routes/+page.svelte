@@ -290,7 +290,8 @@
             'apps',
             'debug',
             'debug-console',
-            'jump'
+            'jump',
+            'changes'
         ]);
         takeCarried(localStorage, window, location.origin);
         loadUi(localStorage, window);

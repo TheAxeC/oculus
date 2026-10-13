@@ -16,6 +16,7 @@ import { scalar } from '../../data/helpers/guards.ts';
 import { collectionsOf } from '../../data/helpers/hub-names.ts';
 import type {
     Career,
+    Collection,
     Entry,
     FeedData,
     FeedKind,
@@ -23,17 +24,24 @@ import type {
     SchemaField,
     Snapshot
 } from '../../data/model/index.ts';
+import { entryIdOf, entryTitleOf } from '../../data/model/index.ts';
 import { feedIdents, feedRoot } from '../shared/page/idents.ts';
 import type { DraftTarget } from './form-draft.ts';
 import { fixedFields, formFieldsOf, identityField } from './record-fields.ts';
 import { fieldDiffers, hasWords } from './record-values.ts';
 import type { FormField } from './schema.ts';
+import type { SettledStore } from './settled.svelte.ts';
 
 /** The name of the career file's page and of its draft. */
 export const CAREER = 'career';
 
 /** The feeds whose entries have a page of their own. */
 export const PAGE_FEEDS: FeedKind[] = ['leads', 'radar'];
+
+/** Whether a name is a feed whose entries have a page of their own. */
+export function isPageFeed(name: string): name is FeedKind {
+    return PAGE_FEEDS.some((kind) => kind === name);
+}
 
 export type PageEntry = {
     kind: 'collection' | 'feed' | 'career';
@@ -102,23 +110,43 @@ export function pageView(
         : { view: 'entry', state: entryPageState(collection, key, label) };
 }
 
-/** The page of an entry of a collection file. */
+/** The key a page of an entry of a collection is held under in the settled writes. */
+function entryKey(collection: string, id: string): string {
+    return `page:${collection}:${id}`;
+}
+
+/** The part of an entry's id that names its hub: the id without the key its own file gives. */
+function hubPrefix(entry: Entry, ident: string): string {
+    const own = entryIdOf(entry.fields, ident);
+    return own === '' || !entry.id.endsWith(own) ? '' : entry.id.slice(0, -own.length);
+}
+
+/**
+ * The page of an entry of a collection file, over `values`: the entry's fields with the writes the
+ * server took and the snapshot has not shown yet put over them. A write that changed the entry's
+ * key gives the page the key the entry has now.
+ */
 function collectionPage(
     key: string,
     schema: SchemaField[],
     entry: Entry,
-    others: readonly Entry[]
+    others: readonly Entry[],
+    values: Record<string, unknown>
 ): PageEntry {
+    const ident = identityField(schema);
+    const id =
+        values === entry.fields ? entry.id : hubPrefix(entry, ident) + entryIdOf(values, ident);
+    const title = values === entry.fields ? entry.title : entryTitleOf(values, ident);
     return {
         kind: 'collection',
         collection: key,
-        key: entry.id,
-        name: pageName(key, entry.id),
-        writeId: entry.id,
+        key: id,
+        name: pageName(key, id),
+        writeId: id,
         root: entry.root ?? '',
-        title: entry.title === '' ? entry.id : entry.title,
+        title: title === '' ? id : title,
         schema,
-        values: entry.fields,
+        values,
         fixed: fixedFields(key, schema),
         peers: others.filter((one) => one !== entry).map((one) => one.fields)
     };
@@ -128,30 +156,33 @@ function collectionPage(
 function feedPage(
     kind: FeedKind,
     feed: Pick<FeedData, 'entries' | 'schema'>,
-    ident: string
+    ident: string,
+    settled: SettledStore
 ): PageEntry | null {
     const identOf = feedIdents(kind, feed.entries);
-    const entry = feed.entries.find((one) => identOf(one) === ident);
+    const found = feed.entries.find((one) => identOf(one) === ident);
+    const entry = found ?? (settled.pending(entryKey(kind, ident)) ? {} : undefined);
     const schema = feed.schema;
     if (entry === undefined || schema === undefined) return null;
-    const title = scalar(entry.title);
+    const values = settled.overlay(entryKey(kind, ident), entry);
+    const title = scalar(values.title);
     return {
         kind: 'feed',
         collection: kind,
         key: ident,
         name: pageName(kind, ident),
-        writeId: title,
+        writeId: scalar(entry.title),
         root: feedRoot(entry),
         title: title === '' ? ident : title,
         schema,
-        values: entry,
+        values,
         fixed: [identityField(schema)],
-        peers: feed.entries.filter((one) => one !== entry)
+        peers: feed.entries.filter((one) => one !== found)
     };
 }
 
 /** The page of the career file; null while the hub holds none or the file has no schema. */
-function careerPage(career: Career | null): PageEntry | null {
+function careerPage(career: Career | null, settled: SettledStore): PageEntry | null {
     if (career?.schema === undefined) return null;
     return {
         kind: 'career',
@@ -162,7 +193,7 @@ function careerPage(career: Career | null): PageEntry | null {
         root: '',
         title: career.title,
         schema: career.schema,
-        values: career.sections,
+        values: settled.overlay(CAREER, career.sections),
         fixed: [],
         peers: []
     };
@@ -184,37 +215,137 @@ export type PageSources = {
     feeds: () => FeedsPayload | null;
 };
 
+/**
+ * What a write the server took tells the pages, so they show it before the snapshot does: the
+ * sink the page's writes are handed. `begin` stamps a write when it is sent; the others hold what
+ * its answer said was written, by the number `begin` gave.
+ */
+export type Settle = {
+    begin: () => number;
+    /** Fields set on an entry of a collection file; a changed key moves the page to the new one. */
+    entry: (collection: string, id: string, saved: Record<string, unknown>, seq: number) => void;
+    /** An entry added to a collection file. */
+    added: (collection: string, id: string, saved: Record<string, unknown>, seq: number) => void;
+    /** Fields set on an entry of a feed, found by its title in the feed of the hub `root` names. */
+    feed: (
+        kind: FeedKind,
+        title: string,
+        root: string,
+        saved: Record<string, unknown>,
+        seq: number
+    ) => void;
+    /** Sections set on the career file. */
+    career: (saved: Record<string, unknown>, seq: number) => void;
+};
+
 /** The pages, found by name or by collection and key. */
 export type Pages = {
     pageOf: (collection: string, key: string) => PageEntry | null;
     pageNamed: (name: string) => PageEntry | null;
+    settle: Settle;
 };
 
-export function createPages(sources: PageSources): Pages {
-    function pageOf(collection: string, key: string): PageEntry | null {
-        const feed = PAGE_FEEDS.find((kind) => kind === collection);
-        if (feed !== undefined) {
-            const held = sources.feeds()?.[feed];
-            return held === undefined ? null : feedPage(feed, held, key);
-        }
-        const snapshot = sources.snapshot();
-        if (snapshot === null) return null;
+/**
+ * The pages of one client, over the snapshot and the feeds and the writes `settled` holds. A page
+ * of an entry the snapshot does not hold yet but a write added is made from the write's fields.
+ */
+export function createPages(sources: PageSources, settled: SettledStore): Pages {
+    /** The collection file that holds the entry, with the entry; the files of the key in order. */
+    function find(
+        snapshot: Snapshot,
+        collection: string,
+        ids: readonly (string | undefined)[]
+    ): { held: Collection; entry: Entry } | null {
         for (const held of collectionsOf(snapshot.entities.collections, collection)) {
-            const entry = held.entries.find((one) => one.id === key);
-            if (entry !== undefined && held.schema !== undefined) {
-                return collectionPage(collection, held.schema, entry, held.entries);
+            for (const id of ids) {
+                const entry = held.entries.find((one) => one.id === id);
+                if (entry !== undefined) return { held, entry };
             }
         }
         return null;
     }
 
+    function pageOf(collection: string, key: string): PageEntry | null {
+        const feed = PAGE_FEEDS.find((kind) => kind === collection);
+        if (feed !== undefined) {
+            const held = sources.feeds()?.[feed];
+            return held === undefined ? null : feedPage(feed, held, key, settled);
+        }
+        const snapshot = sources.snapshot();
+        if (snapshot === null) return null;
+        const prefix = entryKey(collection, '');
+        const found = find(snapshot, collection, [key, settled.renamedFrom(prefix, key)]);
+        const schema = found?.held.schema;
+        if (found !== null && schema !== undefined) {
+            const { held, entry } = found;
+            const values = settled.overlay(entryKey(collection, entry.id), entry.fields);
+            return collectionPage(collection, schema, entry, held.entries, values);
+        }
+        if (!settled.pending(entryKey(collection, key))) return null;
+        const home =
+            collectionsOf(snapshot.entities.collections, collection).find(
+                (one) => one.schema !== undefined && one.root === undefined
+            ) ??
+            collectionsOf(snapshot.entities.collections, collection).find(
+                (one) => one.schema !== undefined
+            );
+        if (home?.schema === undefined) return null;
+        const values = settled.overlay(entryKey(collection, key), {});
+        const added: Entry = {
+            id: key,
+            title: entryTitleOf(values, identityField(home.schema)),
+            fields: values,
+            file: home.file,
+            index: home.entries.length,
+            ...(home.root === undefined ? {} : { root: home.root })
+        };
+        return collectionPage(collection, home.schema, added, home.entries, values);
+    }
+
     function pageNamed(name: string): PageEntry | null {
-        if (name === CAREER) return careerPage(sources.snapshot()?.entities.career ?? null);
+        if (name === CAREER) {
+            return careerPage(sources.snapshot()?.entities.career ?? null, settled);
+        }
         const at = name.indexOf(':');
         return at < 1 ? null : pageOf(name.slice(0, at), name.slice(at + 1));
     }
 
-    return { pageOf, pageNamed };
+    const settle: Settle = {
+        begin: settled.begin,
+        entry(collection, id, saved, seq) {
+            const snapshot = sources.snapshot();
+            const found = snapshot === null ? null : find(snapshot, collection, [id]);
+            if (found === null) return;
+            const ident = identityField(found.held.schema);
+            const now =
+                hubPrefix(found.entry, ident) +
+                entryIdOf({ ...found.entry.fields, ...saved }, ident);
+            settled.record(
+                entryKey(collection, found.entry.id),
+                saved,
+                found.entry.fields,
+                seq,
+                now === found.entry.id ? {} : { to: now }
+            );
+        },
+        added(collection, id, saved, seq) {
+            settled.record(entryKey(collection, id), saved, null, seq, { created: true });
+        },
+        feed(kind, title, root, saved, seq) {
+            const entries = sources.feeds()?.[kind].entries ?? [];
+            const entry = entries.find(
+                (one) => scalar(one.title) === title && feedRoot(one) === root
+            );
+            if (entry === undefined) return;
+            settled.record(entryKey(kind, feedIdents(kind, entries)(entry)), saved, entry, seq);
+        },
+        career(saved, seq) {
+            const career = sources.snapshot()?.entities.career ?? null;
+            if (career !== null) settled.record(CAREER, saved, career.sections, seq);
+        }
+    };
+
+    return { pageOf, pageNamed, settle };
 }
 
 /**
@@ -232,6 +363,7 @@ export function pageDraftTarget(pages: Pages): DraftTarget {
             if (page === null || form === undefined) return hasWords(edit);
             return fieldDiffers(form, edit, value, sampleOf(page, field));
         },
-        writable: (name, field) => !(pages.pageNamed(name)?.fixed ?? []).includes(field)
+        writable: (name, field) => !(pages.pageNamed(name)?.fixed ?? []).includes(field),
+        current: (name) => pages.pageNamed(name)?.name ?? name
     };
 }

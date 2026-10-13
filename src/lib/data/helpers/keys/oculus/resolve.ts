@@ -21,8 +21,8 @@ export type KeyContext = {
     mac?: boolean;
     /**
      * Whether the page is in the desktop app, which hands the page the keys Chrome keeps for
-     * itself: Cmd+W, Cmd+N, Cmd+F, Cmd+T, Ctrl+Tab and Ctrl+Shift+Tab. In a browser they never
-     * arrive.
+     * itself: Cmd+W, Cmd+N, Cmd+F, Cmd+T, Cmd+Shift+T, Ctrl+Tab and Ctrl+Shift+Tab. In a browser
+     * they never arrive.
      */
     app?: boolean;
     /** Whether a debug session is starting, running or paused. */
@@ -69,6 +69,7 @@ export type KeyAction =
     | { kind: 'next-problem'; by: 1 | -1 }
     | { kind: 'debug'; which: DebugKey }
     | { kind: 'close-tab' }
+    | { kind: 'reopen-closed-tab' }
     | { kind: 'new-text-file' }
     | { kind: 'find' }
     | { kind: 'workspace-symbol' }
@@ -160,12 +161,12 @@ function savesFile(event: KeyEventLike, context: KeyContext): boolean {
 }
 
 /**
- * The key only the desktop app delivers: Cmd+W closes the active tab of the focused pane, Cmd+N
- * opens a new text file in it, Cmd+F opens the find bar, and Cmd+T opens the palette on the symbols
- * of the workspace (`#`). Cmd and the letter alone, the letter read from the physical key; each
- * answers with a field focused, as the editor is one, and under no overlay. A view that takes
- * Cmd+F itself (Monaco, the terminal) calls preventDefault first, and then the key is not the
- * page's.
+ * The key only the desktop app delivers: Cmd+W closes the active tab of the focused pane,
+ * Cmd+Shift+T opens the tabs closed last again, Cmd+N opens a new text file in the pane, Cmd+F
+ * opens the find bar, and Cmd+T opens the palette on the symbols of the workspace (`#`). Cmd and
+ * the letter, with Shift for Cmd+Shift+T alone, the letter read from the physical key; each answers
+ * with a field focused, as the editor is one, and under no overlay. A view that takes Cmd+F itself
+ * (Monaco, the terminal) calls preventDefault first, and then the key is not the page's.
  */
 function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
     if (context.app !== true || event.defaultPrevented === true) return null;
@@ -173,7 +174,9 @@ function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
     const mac = context.mac !== false;
     if ((mac ? event.metaKey : event.ctrlKey) !== true) return null;
     if ((mac ? event.ctrlKey : event.metaKey) === true) return null;
-    if (event.shiftKey === true || event.altKey === true) return null;
+    if (event.altKey === true) return null;
+    if (event.shiftKey === true)
+        return event.code === 'KeyT' ? { kind: 'reopen-closed-tab' } : null;
     if (event.code === 'KeyW') return { kind: 'close-tab' };
     if (event.code === 'KeyN') return { kind: 'new-text-file' };
     if (event.code === 'KeyF') return { kind: 'find' };

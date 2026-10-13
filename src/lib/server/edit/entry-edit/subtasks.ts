@@ -7,6 +7,7 @@
 import { isMap as isYamlMap, isSeq, parseDocument } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 import { asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../yaml/why.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
 import { lineAt, listOf } from '../../../data/helpers/files/yaml/collection-text.ts';
@@ -146,19 +147,20 @@ export function setSubtask(
     source: string,
     range: LineRange | null,
     key: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    catalog: Record<string, string>
 ): EditResult {
     const names = Object.keys(fields);
     const host = hostAt(source, range);
-    if (host === null) return refuseAll(source, names, 'the entry is not in the file');
+    if (host === null) return refuseAll(source, names, why(REFUSALS.entryNotInFile), catalog);
     const block = blockOf(source, host.node);
     const item = block.items.find((one) => one.key === key);
-    if (item === undefined) return refuseAll(source, names, `there is no subtask ${key}`);
+    if (item === undefined) return refuseAll(source, names, why(REFUSALS.noSubtask, key), catalog);
 
     const lines = source.split('\n');
     const split = flowLine(lines[item.line]);
     if (split === null) {
-        return refuseAll(source, names, 'the subtask is not a one-line flow map');
+        return refuseAll(source, names, why(REFUSALS.subtaskNotFlow), catalog);
     }
 
     const next: Record<string, FieldValue> = { ...split.held };
@@ -167,12 +169,12 @@ export function setSubtask(
     for (const [field, raw] of Object.entries(fields)) {
         const wanted = asFieldValue(raw);
         if (wanted === undefined) {
-            refused.push({ field, reason: 'not a string, number, boolean or null' });
+            refused.push({ field, reason: said(catalog, why(REFUSALS.notScalar)) });
             continue;
         }
         const clears = wanted === null || wanted === '' || wanted === false;
         if (clears && field === LABEL) {
-            refused.push({ field, reason: 'a subtask with no do line is not a subtask' });
+            refused.push({ field, reason: said(catalog, why(REFUSALS.subtaskNoDo)) });
             continue;
         }
         if (clears) {
@@ -191,19 +193,24 @@ export function setSubtask(
     const text = lines.join('\n');
     const change: Change = { path: subtaskPath(host, block, key), value: next };
     if (!verified(source, text, [change])) {
-        return refuseAll(source, names, 'the edit did not verify; nothing was written');
+        return refuseAll(source, names, why(REFUSALS.unverified), catalog);
     }
     return { text, changed, refused };
 }
 
 /** Remove one subtask line, and the `subtasks:` key with it when it was the last line. */
-export function deleteSubtask(source: string, range: LineRange | null, key: string): EditResult {
+export function deleteSubtask(
+    source: string,
+    range: LineRange | null,
+    key: string,
+    catalog: Record<string, string>
+): EditResult {
     const host = hostAt(source, range);
-    if (host === null) return refuseAll(source, [SUBTASKS], 'the entry is not in the file');
+    if (host === null) return refuseAll(source, [SUBTASKS], why(REFUSALS.entryNotInFile), catalog);
     const block = blockOf(source, host.node);
     const item = block.items.find((one) => one.key === key);
     if (item === undefined || block.key === null) {
-        return refuseAll(source, [SUBTASKS], `there is no subtask ${key}`);
+        return refuseAll(source, [SUBTASKS], why(REFUSALS.noSubtask, key), catalog);
     }
 
     const lines = source.split('\n');
@@ -215,7 +222,7 @@ export function deleteSubtask(source: string, range: LineRange | null, key: stri
         ? { path: [...host.path, SUBTASKS], remove: true }
         : { path: subtaskPath(host, block, key), remove: true };
     if (!verified(source, text, [change])) {
-        return refuseAll(source, [SUBTASKS], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [SUBTASKS], why(REFUSALS.unverified), catalog);
     }
     return { text, changed: [SUBTASKS], refused: [] };
 }
@@ -228,21 +235,18 @@ export function deleteSubtask(source: string, range: LineRange | null, key: stri
 export function addSubtask(
     source: string,
     range: LineRange | null,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    catalog: Record<string, string>
 ): EditResult {
     const host = hostAt(source, range);
-    if (host === null) return refuseAll(source, [SUBTASKS], 'the entry is not in the file');
+    if (host === null) return refuseAll(source, [SUBTASKS], why(REFUSALS.entryNotInFile), catalog);
     const label = fields[LABEL];
     if (typeof label !== 'string' || label.trim() === '') {
-        return refuseAll(source, [LABEL], 'a subtask needs a do line');
+        return refuseAll(source, [LABEL], why(REFUSALS.subtaskNeedsDo), catalog);
     }
     const block = blockOf(source, host.node);
     if (block.map) {
-        return refuseAll(
-            source,
-            [SUBTASKS],
-            'the block is a map of keys; add the line in the file'
-        );
+        return refuseAll(source, [SUBTASKS], why(REFUSALS.subtaskBlockIsMap), catalog);
     }
 
     const record: Record<string, FieldValue> = { do: label.trim() };
@@ -257,12 +261,11 @@ export function addSubtask(
     let held: unknown[] = [];
     if (block.key === null) {
         const own = rangeOf(host.node);
-        if (own === null)
-            return refuseAll(source, [SUBTASKS], 'the entry has no place in the file');
+        if (own === null) return refuseAll(source, [SUBTASKS], why(REFUSALS.entryNoPlace), catalog);
         const pad = ' '.repeat(columnAt(source, own[0]));
         const at =
             host.path.length === 0 ? lastKeyLine(source, host.node) : lastLineOf(source, host.node);
-        if (at === null) return refuseAll(source, [SUBTASKS], 'the entry has no place in the file');
+        if (at === null) return refuseAll(source, [SUBTASKS], why(REFUSALS.entryNoPlace), catalog);
         lines.splice(at, 0, `${pad}${SUBTASKS}:`, `${pad}  - ${renderFlowMap(record)}`);
     } else {
         const at =
@@ -275,7 +278,7 @@ export function addSubtask(
     const text = lines.join('\n');
     const change: Change = { path: [...host.path, SUBTASKS], value: [...held, record] };
     if (!verified(source, text, [change])) {
-        return refuseAll(source, [SUBTASKS], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [SUBTASKS], why(REFUSALS.unverified), catalog);
     }
     return { text, changed: [SUBTASKS], refused: [] };
 }

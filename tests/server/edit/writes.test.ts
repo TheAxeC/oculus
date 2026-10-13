@@ -232,7 +232,8 @@ describe('writing one career host', () => {
             root,
             'Naesens',
             'candidate',
-            careerRules(loadConfig(engineDir()).config)
+            careerRules(loadConfig(engineDir()).config),
+            configFor().text
         );
         expect(out).toEqual({
             found: true,
@@ -255,11 +256,15 @@ describe('writing one career host', () => {
             root,
             'Naesens',
             'promoted',
-            careerRules(loadConfig(engineDir()).config)
+            careerRules(loadConfig(engineDir()).config),
+            configFor().text
         );
         expect(bad.changed).toEqual([]);
         expect(bad.refused).toEqual([
-            { field: 'status', reason: 'promoted is not a career host status' }
+            {
+                field: 'status',
+                reason: words(configFor().text, 'server.career.not_a_status', 'promoted')
+            }
         ]);
     });
 });
@@ -453,7 +458,7 @@ const ADD_ROWS = [
         fields: { key: 'held' },
         hubKeys: [] as string[],
         changed: [],
-        refused: [{ field: 'key', reason: 'an entry with that key is already in the file' }],
+        refused: [{ field: 'key', reason: ['server.entries.key_taken', 'key'] }],
         after: KEYED
     },
     {
@@ -464,7 +469,7 @@ const ADD_ROWS = [
         fields: { key: '  ' },
         hubKeys: [] as string[],
         changed: [],
-        refused: [{ field: 'key', reason: 'a new entry needs a key' }],
+        refused: [{ field: 'key', reason: ['server.entries.new_ident_missing', 'key'] }],
         after: KEYED
     },
     {
@@ -486,7 +491,7 @@ const ADD_ROWS = [
         fields: { name: 'New V', id: '' },
         hubKeys: [] as string[],
         changed: [],
-        refused: [{ field: 'id', reason: 'a new entry needs a non-empty id' }],
+        refused: [{ field: 'id', reason: ['server.entries.new_key_empty', 'id'] }],
         after: VENUES
     },
     {

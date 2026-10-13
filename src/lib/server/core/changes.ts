@@ -22,6 +22,10 @@
 // A line is read back through a zod schema of the four fields every change carries, which accepts
 // or refuses the parsed line and hands the line itself on.
 //
+// Each append is announced on the hub's `changes` channel with the moment of its newest record,
+// after the lines are on disk, so a page holding the log reads it again and finds them; the channel
+// keeps its newest message, so a page that connects again after a write hears of it.
+//
 // A last line cut off by an interrupted write is closed with a newline before the next record, so
 // that record is read back.
 //
@@ -37,6 +41,8 @@ import { dirname, join } from 'node:path';
 import { z } from 'zod';
 import { chained, writeTextAtomic } from './json.ts';
 import type { FsWrites } from './json.ts';
+import type { Hub } from './channels.ts';
+import type { ChangesPayload } from '../../data/model/index.ts';
 
 /**
  * How a change is taken back: `field` writes `before` back at the same address, `create` is undone
@@ -116,9 +122,10 @@ export type ChangeRecord = {
     replaced?: ReplacedText;
     /**
      * The paths a write made that the config did not have: on the record of a write that added a
-     * key to the hub's config layer (`<hub>/.oculus/config`), the folders and the file it created,
-     * outermost first, and none when the key went into a file that was there. Its undo takes the
-     * added text (`replaced`) out and removes each path made, while it holds nothing else.
+     * key to the hub's settings file (`<hub>/.oculus/config.yml`), the folders and the file it
+     * created, outermost first, and none when the key went into a file that was there. Its undo
+     * takes the added text (`replaced`) out and removes each path made, while it holds nothing
+     * else.
      */
     created?: string[];
     /**
@@ -154,6 +161,8 @@ export type ChangeLog = {
     writes: FsWrites;
     /** The folder the values of a record's `kept` are written to, one `<at>.json` each. */
     undoDir?: string;
+    /** The server's channels, on which each append is announced as the `changes` channel. */
+    hub?: Pick<Hub, 'publish'>;
 };
 
 /** How many changes one read answers with, which is the page "load older" walks back through. */
@@ -337,12 +346,12 @@ function actStart(lines: string[], cut: number): number {
 }
 
 /**
- * Append the records of one write, behind the chain. The stamp rises past the last line's, so two
- * records of one request and two requests in one millisecond each get their own moment; the file is
- * rewritten to `keep` lines once it has grown past twice that, so a rewrite is rare and the read
- * never walks an unbounded file.
+ * Append the records of one write, behind the chain, and answer the moment of the last one. The
+ * stamp rises past the last line's, so two records of one request and two requests in one
+ * millisecond each get their own moment; the file is rewritten to `keep` lines once it has grown
+ * past twice that, so a rewrite is rare and the read never walks an unbounded file.
  */
-function append(log: ChangeLog, kind: string, records: ChangeRecord[], undoes?: string): void {
+function append(log: ChangeLog, kind: string, records: ChangeRecord[], undoes?: string): string {
     const text = textOf(log.file);
     const lines = linesIn(text);
     const closing = text !== '' && !text.endsWith('\n') ? '\n' : '';
@@ -370,14 +379,18 @@ function append(log: ChangeLog, kind: string, records: ChangeRecord[], undoes?: 
             if (file !== null) rmSync(file, { force: true });
         }
         writeTextAtomic(log.file, `${kept.join('\n')}\n`, MODE);
-        return;
+    } else {
+        appendFileSync(log.file, `${closing}${written.join('\n')}\n`, {
+            encoding: 'utf8',
+            mode: MODE
+        });
     }
-    appendFileSync(log.file, `${closing}${written.join('\n')}\n`, { encoding: 'utf8', mode: MODE });
+    return new Date(moment - 1).toISOString();
 }
 
 /**
- * Record what one write changed. A write that changed nothing, and a request whose target names no
- * log, write nothing at all.
+ * Record what one write changed, and announce it on the log's hub. A write that changed nothing,
+ * and a request whose target names no log, write and announce nothing at all.
  */
 export async function logChanges(
     log: ChangeLog | undefined,
@@ -388,7 +401,8 @@ export async function logChanges(
     if (log === undefined || records === undefined || records.length === 0) return;
     // Whichever request got here first finishes its read, its stamp and its append before the next
     // one starts, so two writes in flight are two lines and never one interleaved with another.
-    await chained(log.writes, () => append(log, kind, records, undoes));
+    const at = await chained(log.writes, () => append(log, kind, records, undoes));
+    log.hub?.publish('changes', { at } satisfies ChangesPayload);
 }
 
 /**

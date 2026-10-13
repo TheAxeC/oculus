@@ -49,6 +49,7 @@ text:
             no_map: The career file is no map
             no_parse: The career file does not parse
             no_schema: The career file has no schema, so no section can be written
+            not_a_status: '{0} is not a career host status'
             not_field: "{0} is not a field of the career file's schema"
             schema_key: The key schema is the file's own description of its sections and is not a section
         chat:
@@ -232,8 +233,69 @@ text:
             scan_found_commit: The scan found something; nothing was committed
             scan_found_push: The scan found something; nothing was pushed
             snapshot_needs_message: A snapshot needs a message
+        edit:
+            block_list: the field is a block list; this writes one line
+            block_own: the field is a block of its own
+            comment_in_value: a comment inside the value cannot be kept; edit the file by hand
+            entry_no_place: the entry has no place in the file
+            entry_not_in_file: the entry is not in the file
+            field_no_place: the field has no place in the file
+            field_no_value: the field holds no value to write over
+            field_not_there: the field is not there
+            file_has_key: 'the file already has a {0} key'
+            file_no_key: 'the file has no {0} key'
+            file_no_parse: the file does not parse
+            host_no_field: the host line has no field to write after
+            host_no_status: the host has no status value
+            identity_field: the identity field is what the entry is found by
+            key_already_there: '{0} is already a key of the manifest'
+            key_no_place: the key has no place in the file
+            key_no_value: the key holds no value to write over
+            key_not_there: the key is not there
+            lines_gone: the file no longer holds the lines the write left
+            list_empty: the list would be left empty; clear the field instead
+            manifest_no_parse: the manifest does not parse
+            manifest_not_map: the manifest is not a map of keys
+            map_no_place: the map has no place in the file
+            no_entries_to_reorder: the file has no entries to reorder
+            no_host: 'no host named {0}'
+            no_hosts: the file has no hosts list
+            no_last_key: the file has no last key to write after
+            no_subtask: 'there is no subtask {0}'
+            not_a_block_list: '{0} is not a block list'
+            not_a_field_name: a field is named by a key, or by a key and a child key joined by a dot
+            not_a_field_value: a field takes a string, a number, a boolean, a list of strings, a list of maps of scalars, a map of scalars, lists and maps, or null
+            note_not_text: the note is not text; edit the file by hand
+            not_scalar: a subtask field takes a string, a number, a boolean or null
+            order_not_every: the order does not name every entry exactly once
+            parent_not_map: '{0} is not written as a map, so a key cannot be set under it'
+            removed_no_fit: the removed text does not fit the file
+            replaced_no_fit: the replaced text does not fit the file
+            row_no_key: the row would be left without a key
+            subtask_block_is_map: the block is a map of keys; add the line in the file
+            subtask_needs_do: a subtask needs a do line
+            subtask_no_do: a subtask with no do line is not a subtask
+            subtask_not_flow: the subtask is not a one-line flow map
+            unverified: the edit did not verify; nothing was written
+            value_cannot_here: the value cannot be written here
+            value_no_place: the value has no place in the file
+            value_one_line: the value does not fit on one line
+            value_shape: the value has a shape no field is written in
         entries:
             hub_key: 'an id that begins with "{0}:" would name an entry of the hub {0}, so use another'
+            key_empty: 'an entry needs a non-empty {0}'
+            key_taken: 'an entry with that {0} is already in the file'
+            name_taken: 'another entry is already called {0}'
+            new_ident_missing: 'a new entry needs a {0}'
+            new_key_empty: 'a new entry needs a non-empty {0}'
+            nothing_to_write: nothing to write
+            shared_identity: 'two entries share the {0} {1}, so a write cannot address one of them'
+            type_checkbox: '{0} takes true or false'
+            type_date: '{0} takes a date written YYYY-MM-DD'
+            type_option: '{0} takes one of its own options'
+            type_options: '{0} takes one of {1}'
+            type_records: '{0} takes records of named values'
+            type_text: '{0} takes text'
         export:
             agent: 'Agent: {0}'
             assistant: Agent
@@ -245,6 +307,26 @@ text:
             started: 'Started: {0}'
             tool: '{0}: {1} ({2})'
             user: You
+        feeds:
+            bucket_unknown: the bucket is not one of the radar buckets
+            delete_not_allowed: 'the {0} feed does not allow deletion'
+            entries_not_maps: '{0}: every entry must be a map'
+            entry_needs_key: 'an entry needs a {0}'
+            field_not_allowed: 'the {0} feed does not allow that field'
+            file_unread: Lit Watch's file does not read
+            idea_needs_title: a LinkedIn idea needs a title
+            lead_needs_title: a lead needs a title
+            lead_title_taken: a lead with this title is in the file already
+            leads_no_schema: the leads feed has no valid schema
+            meta_not_a_map: '{0}: meta is not a map'
+            not_a_directory: '{0}: expected a directory'
+            not_a_map: '{0}: expected a map of keys'
+            paper_in_file: this paper is in Lit Watch already
+            paper_needs_title: a paper needs a title
+            path_outside: 'the {0} feed path is outside the hub'
+            post_exists: the numbered LinkedIn post exists already
+            post_needs_idea: a LinkedIn post must name an xx-*.md idea
+            relevance_unknown: the relevance is high, med or low
         fork:
             name: fork of {0}
         git:
@@ -411,8 +493,20 @@ text:
             seed_subtasks: 'Open subtasks: {0}'
             seed_title: 'Task: {0}'
         workspace:
-            no_hub: The workspace lists no hub, so there is no .oculus folder to write in; add a folder that holds .oculus/config first
+            no_hub: The workspace lists no hub, so there is no .oculus folder to write in; add a folder that holds .oculus/config.yml first
             no_hub_named: The workspace has no hub named {0}
             no_primary: The workspace has no primary hub, so there is nowhere to keep this; name a hub as primary in the workspace file
             no_primary_doc: The workspace has no primary hub, so there is no hub document to show
             restart_key: '{0} is set to another value in the workspace just opened; the running server keeps its own value, and a restart takes the new one'
+        write_route:
+            no_collection: 'no collection {0}'
+            no_entry: 'no entry {0} in {1}'
+            no_host: 'no host named {0}'
+            no_idea_file: the LinkedIn idea file is not on this hub
+            no_leads_feed: the leads feed is not on this hub
+            no_linkedin_folder: the LinkedIn folder is not on this hub
+            no_project: 'no project with the id {0}'
+            no_radar_file: Lit Watch has no file on this hub
+            not_a_write: the body is not a write this route knows
+            session_unsaved: 'the session write could not be saved: {0}'
+            unknown_feed: 'unknown feed {0}'

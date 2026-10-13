@@ -6,6 +6,7 @@
 import { mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { PortfolioConfig } from '../../../src/lib/data/model/index.ts';
@@ -157,28 +158,28 @@ export function personalWorld(): PersonalWorld {
 }
 
 /**
- * A hub whose own `.oculus/local.yml` holds `port: 8791` and whose layer file `behavior.yml` is a
- * link to it, with that file's path.
+ * A hub whose own `.oculus/local.yml` holds `port: 8791` and whose settings file
+ * `.oculus/config.yml` is a link to it, with that file's path.
  */
 export function linkedHub(): { hub: string; local: string } {
     const hub = scratchDir('oculus-hub-');
-    mkdirSync(join(hub, '.oculus', 'config'), { recursive: true });
+    mkdirSync(join(hub, '.oculus'), { recursive: true });
     const local = join(hub, '.oculus', 'local.yml');
     writeFileSync(local, 'port: 8791\n');
-    symlinkSync('../local.yml', join(hub, '.oculus', 'config', 'behavior.yml'));
+    symlinkSync('local.yml', join(hub, HUB_FILE));
     return { hub, local };
 }
 
 /**
- * A hub whose layer file `behavior.yml` is a link to the `local.yml` of an engine's own config
- * folder, which is made holding `port: 8791`, with that file's path.
+ * A hub whose settings file `.oculus/config.yml` is a link to the `local.yml` of an engine's own
+ * config folder, which is made holding `port: 8791`, with that file's path.
  */
 export function hubLinkedToEngine(engine: string): { hub: string; local: string } {
     const hub = scratchDir('oculus-hub-');
-    mkdirSync(join(hub, '.oculus', 'config'), { recursive: true });
+    mkdirSync(join(hub, '.oculus'), { recursive: true });
     const local = join(engine, 'config', 'local.yml');
     writeFileSync(local, 'port: 8791\n');
-    symlinkSync(local, join(hub, '.oculus', 'config', 'behavior.yml'));
+    symlinkSync(local, join(hub, HUB_FILE));
     return { hub, local };
 }
 

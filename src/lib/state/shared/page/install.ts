@@ -6,6 +6,7 @@
 import { configInstalled } from '../words/generation.svelte.ts';
 import { setAppearance } from '../words/appearance.ts';
 import { setCatalog, setGlyphs, setIcons } from '../words/text.ts';
+import type { HubVocabs } from '../../../data/model/index.ts';
 import { setVocab } from '../words/tones.ts';
 
 /** What the server hands a page's load of the configuration. */
@@ -14,6 +15,7 @@ export type PageConfig = {
     glyphs: Record<string, string>;
     icons: Record<string, string>;
     vocab: Record<string, unknown>;
+    hubs: HubVocabs;
 };
 
 /** Install the configuration a page was handed. */
@@ -21,7 +23,7 @@ export function installPageConfig(data: PageConfig): void {
     setCatalog(data.text);
     setGlyphs(data.glyphs);
     setIcons(data.icons);
-    setVocab(data.vocab);
+    setVocab(data.vocab, data.hubs);
     setAppearance(data.vocab);
     configInstalled();
 }

@@ -6,11 +6,11 @@
 // An entry is a map with a `name` (letters, digits, `.`, `_` and `-`, not `.` or `..`, once per
 // workspace) and a `path` (`~/...`, `~` or absolute). An entry that fails a check is left out with
 // a finding naming the file and the entry, and the entries around it are read: a name an earlier
-// entry holds leaves the later one out, and so does a folder whose real path an earlier entry
-// holds (a symbolic link to it included). A folder that is not on this machine is kept, with a
-// finding, so it is served as a root with nothing in it. A folder that holds `.oculus/config/` is
-// a hub. `primary` names a hub among the folders, and a `primary` naming anything else is a finding
-// and leaves the workspace with no primary.
+// entry holds leaves the later one out, and so does a folder whose real path an earlier entry holds
+// (a symbolic link to it included). A folder that is not on this machine is kept, with a finding,
+// so it is served as a root with nothing in it. A folder that holds `.oculus/config.yml` is a hub.
+// `primary` names a hub among the folders, and a `primary` naming anything else is a finding and
+// leaves the workspace with no primary.
 //
 // An entry may carry `repository_scan_depth`, a whole number of at least -1: how many levels below
 // the folder the Repositories view looks for repositories, -1 meaning no limit. Any other value is
@@ -34,7 +34,7 @@ export type WorkspaceFinding = { file: string; key: string; id: string; args: st
 
 /**
  * One directory the server may serve files from: the name a URL names it by, and where it is. A
- * root marked `hub` holds `.oculus/config/`. A root whose `.oculus/project.yml` is there is a
+ * root marked `hub` holds `.oculus/config.yml`. A root whose `.oculus/project.yml` is there is a
  * project of the workspace unless `noProject` is set, which the reader of the workspace does for a
  * folder that overlaps a hub and which leaves the root served and read by nothing else.
  */
@@ -56,7 +56,7 @@ export type WorkspaceFolder = {
     dir: string;
     /** The folder with every link resolved, the folder as resolved when it is not there. */
     real: string;
-    /** Whether the folder holds `.oculus/config/`. */
+    /** Whether the folder holds `.oculus/config.yml`. */
     hub: boolean;
     noProject?: true;
     /** The entry's own `repository_scan_depth`, a whole number of at least -1. */

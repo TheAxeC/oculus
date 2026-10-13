@@ -6,17 +6,18 @@
 // The workspace is read when something it is read from changed and held until the next change: a
 // request or a watcher that asks gets the held value and reads no disk. What it is read from is
 // polled once a tick by a stat each: `workspace.json` of the state folder, the open workspace file,
-// each folder of the workspace, the folder's `.oculus/config`, `.oculus/workspaces`, `project.yml`
-// and `.oculus/project.yml` (which decide whether it is a hub, which files the switcher offers and
-// whether it is a project), and each file of the recent list. A write the server made itself calls
-// `changed()` so the listeners hear of it at once, and the next tick finds no difference.
+// each folder of the workspace, the folder's `.oculus/config.yml`, `.oculus/workspaces`,
+// `project.yml` and `.oculus/project.yml` (which decide whether it is a hub, which files the
+// switcher offers and whether it is a project), and each file of the recent list. A write the
+// server made itself calls `changed()` so the listeners hear of it at once, and the next tick finds
+// no difference.
 //
 // A change is a difference in what the workspace serves: its file, folders (name, path, whether a
 // hub and its own scan depth), primary and findings.
 
 import { isDeepStrictEqual } from 'node:util';
 import { join } from 'node:path';
-import { HUB_LAYER, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { HUB_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { POLL, pollFile, systemClock, type Clock, type FilePoll } from '../../core/file-poll.ts';
 import { WORKSPACES_FOLDER, openWorkspace, type OpenWorkspace } from './open.ts';
 import { stateFileOf } from './state.ts';
@@ -63,7 +64,7 @@ function placesOf(open: OpenWorkspace): string[] {
     for (const folder of open.folders) {
         places.push(
             folder.dir,
-            join(folder.dir, HUB_LAYER),
+            join(folder.dir, HUB_FILE),
             join(folder.dir, ROOT_FOLDER, WORKSPACES_FOLDER),
             join(folder.dir, MANIFEST),
             join(folder.dir, ROOT_FOLDER, MANIFEST)

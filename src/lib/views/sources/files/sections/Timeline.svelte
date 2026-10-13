@@ -53,6 +53,7 @@
     import { panes } from '$lib/state/workbench/layout';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
     import { ago, repoOfFile } from '$lib/state/sources/repositories/file-git';
+    import { readableRepositoryRoots } from '$lib/state/sources/repositories/repositories';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
 
@@ -75,7 +76,7 @@
         fs: { commitPage, commits, copies, copyText, refreshFile, roots, workspaces },
         layout: { activeInstance, currentPage, layout },
         repositories: { openDiff },
-        selectors: { docPlaceFor, gitFor, gitRoots },
+        selectors: { docPlaceFor, gitFor, repositories: repositoryList },
         source: { saveSource }
     } = useState();
 
@@ -100,15 +101,14 @@
         if (gone) untrack(() => onpatch({ timelinePinned: null }));
     });
 
-    /** The repository holding the file and its path there, or null for a file in none. */
+    /**
+     * The repository holding the file and its path there, or null for a file in none. A file under
+     * a second root of one repository is that repository's file, under the root that shows it.
+     */
     const inRepo = $derived.by(() => {
         if (file === null) return null;
         const served = workspaces().folders;
-        const repos = gitRoots().filter((one) => {
-            const held = gitFor(one);
-            return held !== null && held.repository && held.error === null;
-        });
-        return repoOfFile(served, file, repos);
+        return repoOfFile(served, file, readableRepositoryRoots(repositoryList('all'), gitFor));
     });
 
     /** What the repository is at: its branch and its newest commit, which a move of reads again. */

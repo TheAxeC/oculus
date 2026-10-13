@@ -1,6 +1,6 @@
-// Layer 1, data tests. A wrong `scan:` or `new_project_dir:` value of the sources file, as the
+// Layer 1, data tests. A wrong `scan:` or `new_project_dir:` value of the hub settings file, as the
 // sources findings (data/index.ts) and the scan reader (data/sources/manifests.ts) word it: each
-// one is a finding that names the key it is about, filed on the sources file, and what is wrong is
+// one is a finding that names the key it is about, filed on the settings file, and what is wrong is
 // not used while the rest of the value still is.
 
 import { join } from 'node:path';
@@ -13,8 +13,8 @@ import { it, plantScratch } from '../../fixtures/scratch.ts';
 const MERGED = loadConfig(engineDir()).config;
 const CATALOG = textCatalog(MERGED);
 
-/** The sources file the findings are filed on. */
-const SOURCES = '/hub/.oculus/config/sources.yml';
+/** The settings file the findings are filed on. */
+const SOURCES = '/hub/.oculus/config.yml';
 
 type Row = {
     name: string;

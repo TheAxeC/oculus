@@ -18,9 +18,9 @@
 // checked against come from the write target (`inputs`); without them, as in an undo, no value is
 // checked against the entry and the file is put back as it was.
 //
-// A key of the hub list is written in the hub's config layer (`<hub>/.oculus/config/<file>`) and
-// any other key in the engine's file. A key the layer does not hold is added at the end of its
-// file, which is created with its folders when it is not there (config-key.ts says the same of a
+// A key of the hub list is written in the hub's settings file (`<hub>/.oculus/config.yml`) and any
+// other key in the engine's file. A key the settings file does not hold is added at the end of it,
+// and the file is created with its folder when it is not there (config-key.ts says the same of a
 // single value), and the undo of that write takes the added text out (config-checks.ts).
 //
 // The function is synchronous from the read of the file to its write, which is what lets two
@@ -138,10 +138,10 @@ export function configValueNow(engine: string, file: string, key: string, hub?: 
 }
 
 /**
- * Set one list option or family of a tracked config file, in the hub's layer when it is a key of
- * the hub list and a hub is given. A refusal answers the one reason and writes nothing; a value
- * equal to the one held writes nothing and answers with nothing changed. A file that cannot be read
- * or written throws, which the route answers as `unwritable`.
+ * Set one list option or family of a tracked config file, in the hub's settings file when it is a
+ * key of the hub list and a hub is given. A refusal answers the one reason and writes nothing; a
+ * value equal to the one held writes nothing and answers with nothing changed. A file that cannot
+ * be read or written throws, which the route answers as `unwritable`.
  */
 export function writeConfigValue(
     engine: string,
@@ -186,7 +186,9 @@ export function writeConfigValue(
     if (unfit !== null)
         return { changed: [], refused: [{ field: `${file}:${key}`, reason: unfit }] };
 
-    const edited = adding ? insertKey(source, key, value) : setBlock(source, key.split('.'), value);
+    const edited = adding
+        ? insertKey(source, key, value, text)
+        : setBlock(source, key.split('.'), value);
     if (edited === null) return refuse(words(text, 'server.config_value.unsupported'));
     const reread = parseDocument(edited);
     const returned = reread.errors.length === 0 ? valueAt(reread.toJS(), key) : undefined;

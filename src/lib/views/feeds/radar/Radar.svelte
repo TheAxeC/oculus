@@ -26,7 +26,7 @@
     import AddButton from '../../shared/forms/AddButton.svelte';
     import { paperAsk, type Ask } from '../../shared/forms/entry/entry-add';
     import Bucket from './Bucket.svelte';
-    import RadarCard from './RadarCard.svelte';
+    import RadarCard from '../../shared/card/feed/RadarCard.svelte';
     import RadarIntro from './RadarIntro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {

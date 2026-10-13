@@ -2,9 +2,9 @@
 // a Session tab keeps of them in its own state: `sections`, the order they are drawn in, and
 // `closed`, the ones the reader closed. Both live beside the tab's `session` and `label`, so a
 // reload, a switch of tab and a move of the tab keep them, and a pick or a pin changes only the two
-// fields it is about (state/workbench/layout/instances.ts). A section starts open, and a list the
-// state holds wrongly (a name no section has, a section twice, a value that is no list) is read as
-// if the bad part were absent.
+// fields it is about (state/workbench/layout/tabs/instances.ts). A section starts open, and a list
+// the state holds wrongly (a name no section has, a section twice, a value that is no list) is read
+// as if the bad part were absent.
 
 import { instanceMap } from '$lib/state/workbench/layout/instance';
 

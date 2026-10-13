@@ -30,6 +30,8 @@ import {
     splice,
     type EditResult
 } from '../yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../yaml/why.ts';
+import type { Why } from '../yaml/why.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
 
 /** Whether an index falls between the two halves of a surrogate pair. */
@@ -79,17 +81,18 @@ export function insertRemoved(
     source: string,
     field: string,
     before: unknown,
-    removed: RemovedText
+    removed: RemovedText,
+    catalog: Record<string, string>
 ): EditResult {
-    const refusal = (reason: string): EditResult => ({
+    const refusal = (found: Why): EditResult => ({
         text: source,
         changed: [],
-        refused: [{ field, reason }]
+        refused: [{ field, reason: said(catalog, found) }]
     });
     const allowed = settable(field);
-    if ('reason' in allowed) return refusal(allowed.reason);
+    if ('why' in allowed) return refusal(allowed.why);
     const wanted = safeParse(source);
-    if (wanted === null) return refusal('the manifest does not parse');
+    if (wanted === null) return refusal(why(REFUSALS.manifestNoParse));
     expect(wanted, allowed.path, before as FieldValue);
     for (const at of placesOf(source, removed)) {
         const text = splice(source, at, at, removed.text);
@@ -97,7 +100,7 @@ export function insertRemoved(
             return { text, changed: [field], refused: [] };
         }
     }
-    return refusal('the removed text does not fit the file');
+    return refusal(why(REFUSALS.removedNoFit));
 }
 
 /**
@@ -123,24 +126,25 @@ export function insertReplaced(
     source: string,
     field: string,
     before: unknown,
-    replaced: ReplacedText
+    replaced: ReplacedText,
+    catalog: Record<string, string>
 ): EditResult {
-    const refusal = (reason: string): EditResult => ({
+    const refusal = (found: Why): EditResult => ({
         text: source,
         changed: [],
-        refused: [{ field, reason }]
+        refused: [{ field, reason: said(catalog, found) }]
     });
     const allowed = settable(field);
-    if ('reason' in allowed) return refusal(allowed.reason);
+    if ('why' in allowed) return refusal(allowed.why);
     const wanted = safeParse(source);
-    if (wanted === null) return refusal('the manifest does not parse');
+    if (wanted === null) return refusal(why(REFUSALS.manifestNoParse));
     const at = nearestOf(source, replaced.after, replaced.offset);
-    if (at < 0) return refusal('the file no longer holds the lines the write left');
+    if (at < 0) return refusal(why(REFUSALS.linesGone));
     expect(wanted, allowed.path, before as FieldValue);
     const text = splice(source, at, at + replaced.after.length, replaced.before);
     const after = safeParse(text);
     if (after === null || !isDeepStrictEqual(normalised(after), normalised(wanted))) {
-        return refusal('the replaced text does not fit the file');
+        return refusal(why(REFUSALS.replacedNoFit));
     }
     return { text, changed: [field], refused: [] };
 }

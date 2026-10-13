@@ -1,7 +1,7 @@
 // Layer 1, data. The merge of the config: the engine's config folder first (the top-level files,
 // the catalogs and schemas folders' and every text fragment under text/, read in name order into
 // one map, a key defined twice named as a finding), then the hub's own layer,
-// `<hub>/.oculus/config/`, whose values at the keys of HUB_LIST replace the engine's. The text
+// `<hub>/.oculus/config.yml`, whose values at the keys of HUB_LIST replace the engine's. The text
 // catalog is flattened out of the map. A catalog or text file is also parsed with its whole-file
 // shape (data/shapes/catalog-files.ts), and each issue of the shape is a finding; the merge keeps
 // every key the file holds, as the readers expect.
@@ -12,13 +12,7 @@ import { z } from 'zod';
 import { parse } from 'yaml';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { isMap } from '../../helpers/guards.ts';
-import {
-    HUB_LAYER,
-    HUB_LIST,
-    fromHubLayer,
-    hubKeysOf,
-    hubLayerPath
-} from '../../helpers/hub-names.ts';
+import { HUB_FILE, fromHubFile, hubFileOf, hubKeys } from '../../helpers/hub-names.ts';
 import type { Finding } from '../../model/index.ts';
 import { issueText, shapeIssues } from '../../shapes/shape-issues.ts';
 import { mapOfShape, readAs, textOrNumberOnlyShape } from '../../shapes/shapes.ts';
@@ -124,14 +118,17 @@ function configNames(dir: string): string[] {
 }
 
 /**
- * One file of a config layer read from this text instead of from the disk, named relative to that
- * layer's folder (`behavior.yml`), with the layer it belongs to: the engine's `config/` or the
- * hub's `.oculus/config/`. A write of one key merges the file as it would be after the edit with
- * it, so precedence and the defined-twice finding are the merge's own.
+ * One file of the config read from this text instead of from the disk, with the layer it belongs
+ * to: a file of the engine's `config/`, named relative to that folder (`behavior.yml`), or the
+ * hub's settings file (`.oculus/config.yml`, named so). A write of one key merges the file as it
+ * would be after the edit with it, so precedence and the defined-twice finding are the merge's own.
+ * A settings file whose text is null stands for the file removed.
  */
-type ReplacedFile = { name: string; text: string; layer: 'engine' | 'hub' };
+export type ReplacedFile =
+    | { name: string; text: string; layer: 'engine' }
+    | { name: string; text: string | null; layer: 'hub' };
 
-/** What loadConfig takes besides the engine: the hub whose config layer is merged, and a file. */
+/** What loadConfig takes besides the engine: the hub whose settings file is merged, and a file. */
 type ConfigOptions = { hub?: string; instead?: ReplacedFile };
 
 /**
@@ -158,13 +155,13 @@ export function droppedFile(
  * later file wins. Invalid files are findings and contribute nothing; a missing config directory is
  * a finding and an empty map.
  *
- * When `hub` is given, the hub's layer `<hub>/.oculus/config/` is merged after the engine's: see
- * mergeHub. `instead` replaces what the disk holds of one file of either layer for this merge
- * alone.
+ * When `hub` is given, the hub's settings file `<hub>/.oculus/config.yml` is merged after the
+ * engine's: see mergeHub. `instead` replaces what the disk holds of one file of either layer for
+ * this merge alone.
  *
  * `from` names the file each value came from, keyed by dotted path: a top-level key and a text key
- * by the engine's file (`sources.yml`), and every key of HUB_LIST by its file, the hub layer's
- * (`.oculus/config/sources.yml`) when the hub sets it.
+ * by the engine's file (`sources.yml`), and every key of HUB_LIST by the hub's settings file
+ * (`.oculus/config.yml`) when the hub sets it.
  *
  * Every finding is worded after the merge, from the catalog the merge produced. A finding key that
  * catalog lacks (config/text/findings.yml itself does not parse, or there is no config directory to
@@ -247,7 +244,7 @@ export function loadConfig(
         }
     }
 
-    for (const key of Object.values(HUB_LIST).flat()) {
+    for (const key of hubKeys()) {
         const top = key.split('.')[0];
         if (key !== top && top in from) from[key] = from[top];
     }
@@ -261,7 +258,7 @@ export function loadConfig(
 
 /**
  * The path of the file a key of the merged map was read from, by the `from` loadConfig returned:
- * the hub layer's file under `hub` when `from` names one (there is none without a hub), else the
+ * the hub's settings file under `hub` when `from` names it (there is none without a hub), else the
  * engine's file in its config folder. A key `from` does not hold is looked up by its first segment,
  * and one neither holds names the config folder.
  */
@@ -273,27 +270,7 @@ export function sourceFile(
 ): string {
     const name = from[key] ?? from[key.split('.')[0]];
     if (name === undefined) return configDir(engine);
-    return fromHubLayer(name) && hub !== null ? join(hub, name) : join(configDir(engine), name);
-}
-
-/** The `.yml` files under the hub's config layer, named relative to it with `/`, sorted. */
-function hubNames(dir: string): string[] {
-    const found: string[] = [];
-    const collect = (folder: string): void => {
-        let entries;
-        try {
-            entries = readdirSync(folder, { withFileTypes: true });
-        } catch {
-            return;
-        }
-        for (const entry of entries) {
-            const path = join(folder, entry.name);
-            if (entry.isDirectory()) collect(path);
-            else if (entry.name.endsWith('.yml')) found.push(relative(dir, path));
-        }
-    };
-    collect(dir);
-    return found.sort();
+    return fromHubFile(name) && hub !== null ? join(hub, name) : join(configDir(engine), name);
 }
 
 /** Set a value at a dotted path of the merged map, making the maps on the way. */
@@ -311,13 +288,14 @@ function setAt(config: Record<string, unknown>, path: string, value: unknown): v
 }
 
 /**
- * The hub's layer of the config: the files of `<hub>/.oculus/config/` named in HUB_LIST, read after
- * the engine's. A value the file holds at a listed path replaces the engine's value at that path
- * whole. A map is walked only while its path is a strict prefix of a listed path, so `slurm: {
- * resource: x, days: 5 }` applies `slurm.resource` and names `slurm.days`. A key outside the list,
- * a file outside it and a local.yml are findings that name the hub's file, and nothing of them is
- * applied; a file that does not parse is a finding and the engine's values stand. No file is
- * required, and a hub without the folder adds nothing.
+ * The hub's settings file, `<hub>/.oculus/config.yml`, read after the engine's config. A value the
+ * file holds at a path of HUB_LIST replaces the engine's value at that path whole. A map is walked
+ * only while its path is a strict prefix of a listed path, so `slurm: { resource: x, poll_min: 3 }`
+ * applies `slurm.resource` and names `slurm.poll_min`. A key outside the list is a finding that
+ * names the hub's file and the key, and nothing of it is applied; a file that is empty, is no map
+ * or does not parse (a key twice included) is a finding and the engine's values stand. The file is
+ * not required, and a hub without it adds nothing. The values applied are checked against the shape
+ * of the engine file their key belongs to.
  */
 function mergeHub(
     hub: string,
@@ -326,90 +304,77 @@ function mergeHub(
     from: Record<string, string>,
     pending: PendingFinding[]
 ): void {
-    const dir = join(hub, HUB_LAYER);
-    const names = new Set(hubNames(dir));
-    if (instead !== undefined) names.add(instead.name);
-    for (const name of [...names].sort()) {
-        const file = join(dir, name);
-        const listed = hubKeysOf(name);
-        if (name === LOCAL_NAME) {
-            pending.push({
-                file,
-                key: '',
-                words: (catalog) => findingText(catalog, 'findings.config.hub_local')
-            });
-            continue;
-        }
-        if (listed === undefined) {
-            pending.push({
-                file,
-                key: '',
-                words: (catalog) => findingText(catalog, 'findings.config.hub_file_unknown')
-            });
-            continue;
-        }
-        let parsed: unknown;
-        try {
-            const text = instead?.name === name ? instead.text : readFileSync(file, 'utf8');
-            parsed = parse(text) ?? {};
-        } catch (error) {
-            if (instead?.name !== name && (error as NodeJS.ErrnoException).code === 'ENOENT')
-                continue;
-            const message = errorLine(error);
-            pending.push({
-                file,
-                key: '',
-                words: (catalog) => findingText(catalog, 'findings.file.does_not_parse', message)
-            });
-            continue;
-        }
-        const top = readAs(keysShape, parsed);
-        if (top === null) {
-            pending.push({
-                file,
-                key: '',
-                words: (catalog) => findingText(catalog, 'findings.file.not_a_map')
-            });
-            continue;
-        }
-        const applied: Record<string, unknown> = {};
-        const walk = (node: Record<string, unknown>, prefix: string): void => {
-            for (const [key, value] of Object.entries(node)) {
-                const path = prefix === '' ? key : `${prefix}.${key}`;
-                if (listed.includes(path)) {
-                    setAt(applied, path, value);
-                } else if (listed.some((one) => one.startsWith(`${path}.`))) {
-                    if (isMap(value)) walk(value, path);
-                    else {
-                        pending.push({
-                            file,
-                            key: path,
-                            words: (catalog) =>
-                                findingText(catalog, 'findings.config.hub_key_not_map', path)
-                        });
-                    }
-                } else {
+    const file = join(hub, HUB_FILE);
+    const listed = hubKeys();
+    let parsed: unknown;
+    const given = instead === undefined ? undefined : instead.text;
+    if (given === null) return;
+    try {
+        parsed = parse(given ?? readFileSync(file, 'utf8'));
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+        const message = errorLine(error);
+        pending.push({
+            file,
+            key: '',
+            words: (catalog) => findingText(catalog, 'findings.file.does_not_parse', message)
+        });
+        return;
+    }
+    const top = readAs(keysShape, parsed);
+    if (top === null) {
+        pending.push({
+            file,
+            key: '',
+            words: (catalog) => findingText(catalog, 'findings.file.not_a_map')
+        });
+        return;
+    }
+    const applied: Record<string, unknown> = {};
+    const walk = (node: Record<string, unknown>, prefix: string): void => {
+        for (const [key, value] of Object.entries(node)) {
+            const path = prefix === '' ? key : `${prefix}.${key}`;
+            if (listed.includes(path)) {
+                setAt(applied, path, value);
+            } else if (listed.some((one) => one.startsWith(`${path}.`))) {
+                if (isMap(value)) walk(value, path);
+                else {
                     pending.push({
                         file,
                         key: path,
                         words: (catalog) =>
-                            findingText(catalog, 'findings.config.hub_key_unknown', path)
+                            findingText(catalog, 'findings.config.hub_key_not_map', path)
                     });
                 }
+            } else {
+                pending.push({
+                    file,
+                    key: path,
+                    words: (catalog) =>
+                        findingText(catalog, 'findings.config.hub_key_unknown', path)
+                });
             }
-        };
-        walk(top, '');
-        for (const issue of shapeIssues(name, applied)) {
+        }
+    };
+    walk(top, '');
+    const files = [...new Set(listed.map((key) => hubFileOf(key) ?? ''))];
+    for (const name of files) {
+        const own: Record<string, unknown> = {};
+        for (const key of listed.filter((one) => hubFileOf(one) === name)) {
+            const head = key.split('.')[0];
+            if (head in applied) own[head] = applied[head];
+        }
+        for (const issue of shapeIssues(name, own)) {
             pending.push({ file, key: issue.key, words: (catalog) => issueText(catalog, issue) });
         }
-        for (const path of listed) {
-            const steps = path.split('.');
-            let value: unknown = applied;
-            for (const step of steps) value = isMap(value) ? value[step] : undefined;
-            if (value === undefined) continue;
-            setAt(config, path, value);
-            from[path] = hubLayerPath(name);
-        }
+    }
+    for (const path of listed) {
+        const steps = path.split('.');
+        let value: unknown = applied;
+        for (const step of steps) value = isMap(value) ? value[step] : undefined;
+        if (value === undefined) continue;
+        setAt(config, path, value);
+        from[path] = HUB_FILE;
     }
 }
 

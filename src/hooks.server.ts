@@ -69,7 +69,7 @@ function refused(event: RequestEvent): boolean {
 // the request keeps that read, so one request sees one configuration, and a request to an API route
 // that never asks reads nothing. The read itself is the server context's `configCache`
 // (lib/server/root/process/config-cache.ts), which parses the configuration again only when a file
-// of the engine's config folder or of the hub's `.oculus/config/` folder was added, removed or
+// of the engine's config folder or the hub's `.oculus/config.yml` was added, removed or
 // written, because a parse holds the one event loop the socket's upgrade waits on and a page that
 // boots makes several requests at once.
 //

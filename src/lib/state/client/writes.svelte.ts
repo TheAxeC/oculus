@@ -40,6 +40,7 @@ import {
     writtenFile,
     type FileLookups
 } from '../sessions/source/write-files.ts';
+import { isPageFeed, type Settle } from '../forms/page-entry.ts';
 import type {
     DeckEditAct,
     SendOptions,
@@ -124,6 +125,22 @@ export function writeTimeout(config: Record<string, unknown> | null): number | n
     return parsed.success ? parsed.data.writes.timeout_seconds * 1000 : null;
 }
 
+/** The sink that holds nothing, for a store built with none. Frozen, since such stores share it. */
+const NO_SETTLE: Readonly<Settle> = Object.freeze({
+    begin: () => 0,
+    entry: () => undefined,
+    added: () => undefined,
+    feed: () => undefined,
+    career: () => undefined
+});
+
+/** The fields of `sent` that an answer names as written. */
+function takenFrom(sent: Record<string, unknown>, answer: WriteAnswer): Record<string, unknown> {
+    return Object.fromEntries(
+        Object.entries(sent).filter(([name]) => answer.changed.includes(name))
+    );
+}
+
 /** The code of the refusal a write over a file with unsaved text in a tab is answered with. */
 const FILE_UNSAVED = 'file_unsaved';
 
@@ -134,12 +151,14 @@ const FOLDERS_LOADING = 'folders_loading';
  * The page's writes. `settings` is the merged configuration as the page last received it, read at
  * each write, so a changed timeout applies to the next write without a reload. `heldUnsaved` says
  * whether a source tab of the page holds unsaved text of a file, `look` names a file a write
- * carries only an id of.
+ * carries only an id of. `settle` is told what an entry write took, so a page shows it before the
+ * rebuilt snapshot does (state/forms/settled.svelte.ts).
  */
 export function createWrites(
     settings: () => Record<string, unknown> | null = () => null,
     heldUnsaved: (file: { root: string; path: string }) => boolean = () => false,
-    look: FileLookups = NO_LOOKUPS
+    look: Readonly<FileLookups> = NO_LOOKUPS,
+    settle: Readonly<Settle> = NO_SETTLE
 ): WritesStore {
     const state: { pending: number; error: string | null } = $state({ pending: 0, error: null });
 
@@ -343,7 +362,10 @@ export function createWrites(
         id: string,
         fields: Record<string, unknown>
     ): Promise<WriteAnswer> {
-        return send({ kind: 'entry', collection, id, fields });
+        const seq = settle.begin();
+        const answer = await send({ kind: 'entry', collection, id, fields });
+        settle.entry(collection, id, takenFrom(fields, answer), seq);
+        return answer;
     }
 
     /**
@@ -391,7 +413,10 @@ export function createWrites(
      * the file's own `schema:` is refused with its reason and the other sections are written.
      */
     async function writeCareer(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        return send({ kind: 'career', fields });
+        const seq = settle.begin();
+        const answer = await send({ kind: 'career', fields });
+        settle.career(takenFrom(fields, answer), seq);
+        return answer;
     }
 
     /**
@@ -402,7 +427,10 @@ export function createWrites(
         collection: string,
         fields: Record<string, unknown>
     ): Promise<WriteAnswer> {
-        return send({ kind: 'new-entry', collection, fields });
+        const seq = settle.begin();
+        const answer = await send({ kind: 'new-entry', collection, fields });
+        if (answer.ok && answer.id !== undefined) settle.added(collection, answer.id, fields, seq);
+        return answer;
     }
 
     /** Remove one entry from a collection, in the hub the id names (the primary's when bare). */
@@ -410,9 +438,17 @@ export function createWrites(
         return send({ kind: 'delete-entry', collection, id });
     }
 
+    /** The title a feed entry is named by, the empty text when it has none. */
+    function titleOf(fields: Record<string, unknown>): string {
+        return typeof fields.title === 'string' ? fields.title : '';
+    }
+
     /** Add one position lead to the leads feed of the primary hub, else the first. */
     async function addLead(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        return send({ kind: 'lead-add', fields });
+        const seq = settle.begin();
+        const answer = await send({ kind: 'lead-add', fields });
+        if (answer.ok) settle.added('leads', titleOf(fields), fields, seq);
+        return answer;
     }
 
     /**
@@ -435,11 +471,15 @@ export function createWrites(
         value: string | number | boolean | null,
         root = ''
     ): Promise<WriteAnswer> {
-        return send(
+        const seq = settle.begin();
+        const answer = await send(
             root === ''
                 ? { kind: 'feed-field', feed, id, field, value }
                 : { kind: 'feed-field', feed, id, root, field, value }
         );
+        if (isPageFeed(feed))
+            settle.feed(feed, id, root, takenFrom({ [field]: value }, answer), seq);
+        return answer;
     }
 
     /** Delete one entry from a generated feed that permits deletion, in the hub `root` names. */
@@ -453,7 +493,10 @@ export function createWrites(
 
     /** Add one paper to the Lit Watch radar. */
     async function addRadarEntry(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        return send({ kind: 'radar-add', fields });
+        const seq = settle.begin();
+        const answer = await send({ kind: 'radar-add', fields });
+        if (answer.ok) settle.added('radar', titleOf(fields), fields, seq);
+        return answer;
     }
 
     /** Add one LinkedIn idea stub through the configured folder. */
@@ -523,7 +566,7 @@ export function createWrites(
 
     /**
      * Set one setting an app declares: the endpoint writes the value under the setting's whole key
-     * in `app_settings` of the primary hub's config/behavior.yml, and refuses, writing nothing, a
+     * in `app_settings` of the primary hub's .oculus/config.yml, and refuses, writing nothing, a
      * key no approved app declares and a value that breaks its declaration. The change is recorded
      * in History and can be taken back.
      */

@@ -1,6 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Usage is a tab beside Live HPC in the float docked at the right
-    // edge that config/layout.yml ships.
+    // edge that config/layout.yml ships, and the second entry of the catalogue's Float group, which
+    // `w` then `2` opens.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
 
@@ -8,8 +9,8 @@
         id: 'usage',
         label: 'views.usage',
         glyph: 'views.usage_glyph',
-        group: 'focus',
-        order: 2,
+        group: 'float',
+        order: 1,
         unique: true
     };
 </script>

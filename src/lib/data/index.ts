@@ -20,16 +20,16 @@ import { projectDocs } from './sources/documents/docs.ts';
 import { findingText, type TextCatalog } from './helpers/finding-text.ts';
 import {
     CAREER_FILE,
+    HUB_FILE,
     TIERS,
     folderOf,
-    fromHubLayer,
-    hubLayerPath,
+    fromHubFile,
     inScan,
     tierOf
 } from './helpers/hub-names.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
-import { loadConfig, textCatalog } from './sources/config.ts';
+import { hubVocabOf, loadConfig, textCatalog } from './sources/config.ts';
 import { mergeHubs, type HubSnapshot } from './snapshot/hubs/merge.ts';
 import { normalise } from './snapshot/normalise.ts';
 import { sortFindings, validate } from './snapshot/validate.ts';
@@ -57,6 +57,8 @@ import type {
     DocPresence,
     FeedFiles,
     Finding,
+    HubVocab,
+    HubVocabs,
     Id,
     PortfolioConfig,
     RawDeck,
@@ -266,11 +268,11 @@ function tagTones(defaults: unknown): Record<string, string> {
 const pathShape = z.string();
 
 /**
- * The portfolio's half of the merged config. The six `*_file` keys give six registry paths and the
- * `collections:` list gives the seventh, since funding/funding.yml is named there and nowhere else.
- * A key the config does not hold falls back to the path the hub uses today, so a config that has
- * moved on in one place still builds. The text catalog travels with it, since every reader words
- * its findings from config/text/findings.yml.
+ * The portfolio's half of the merged config. The `collections:` list gives the eight registry
+ * paths, each registry being the first entry of the list under its fixed key (`REGISTRY_KEYS`). A
+ * registry the list does not name falls back to the engine's path, so a config that has moved on in
+ * one place still builds. The text catalog travels with it, since every reader words its findings
+ * from config/text/findings.yml.
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,
@@ -279,17 +281,18 @@ export function portfolioConfigFrom(
     const path = (key: string, fallback: string): string =>
         readOr(pathShape, merged[key], fallback);
     const collections = collectionFiles(merged.collections);
-    const fundingFile = collections.find((file) => file.key === 'funding')?.file;
+    const registryFile = (name: RegistryName): string =>
+        collections.find((file) => file.key === REGISTRY_KEYS[name])?.file ?? REGISTRY_FILES[name];
 
     const registries: RegistryFiles = {
-        venues: path('venues_file', REGISTRY_FILES.venues),
-        datasets: path('datasets_file', REGISTRY_FILES.datasets),
-        pillars: path('pillars_file', REGISTRY_FILES.pillars),
-        domains: path('domains_file', REGISTRY_FILES.domains),
-        funding: fundingFile ?? REGISTRY_FILES.funding,
-        people: path('people_file', REGISTRY_FILES.people),
-        organisations: path('organisations_file', REGISTRY_FILES.organisations),
-        resources: path('resources_file', REGISTRY_FILES.resources)
+        venues: registryFile('venues'),
+        datasets: registryFile('datasets'),
+        pillars: registryFile('pillars'),
+        domains: registryFile('domains'),
+        funding: registryFile('funding'),
+        people: registryFile('people'),
+        organisations: registryFile('organisations'),
+        resources: registryFile('resources')
     };
 
     const vocab: Vocabulary = { statuses: readOr(keysOfShape, merged.status_palette, []) };
@@ -305,7 +308,7 @@ export function portfolioConfigFrom(
     return {
         scan,
         repositories: [],
-        ...(from === undefined ? {} : { unnamed: unnamedBy(from) }),
+        ...(from === undefined ? {} : { unnamed: unnamedBy(from, collections) }),
         newProjectDir: newProjectDirs(merged.new_project_dir, scan, '', text).dirs,
         registries,
         collections,
@@ -322,35 +325,37 @@ export function portfolioConfigFrom(
     };
 }
 
-/** The `*_file` key each registry is named by; funding is named by the `collections:` list. */
-const REGISTRY_KEYS: Partial<Record<RegistryName, string>> = {
-    venues: 'venues_file',
-    datasets: 'datasets_file',
-    pillars: 'pillars_file',
-    domains: 'domains_file',
-    people: 'people_file',
-    organisations: 'organisations_file',
-    resources: 'resources_file'
+/** The key of the `collections:` list each registry's file is named under. */
+const REGISTRY_KEYS: Record<RegistryName, string> = {
+    venues: 'venues',
+    datasets: 'data',
+    pillars: 'pillars',
+    domains: 'domains',
+    funding: 'funding',
+    people: 'people',
+    organisations: 'organisations',
+    resources: 'resources'
 };
 
-/** Whether the hub's own config layer holds a key, by the `from` that loadConfig returned. */
+/** Whether the hub's own settings file holds a key, by the `from` that loadConfig returned. */
 function named(from: Readonly<Partial<Record<string, string>>>, key: string): boolean {
     const file = from[key];
-    return file !== undefined && fromHubLayer(file);
+    return file !== undefined && fromHubFile(file);
 }
 
 /**
- * What the hub's own config layer leaves to the engine's defaults, see `PortfolioConfig.unnamed`.
+ * What the hub's own settings file leaves to the engine's defaults, see `PortfolioConfig.unnamed`.
+ * A registry is named when the hub's `collections:` list holds its key.
  */
 function unnamedBy(
-    from: Readonly<Partial<Record<string, string>>>
+    from: Readonly<Partial<Record<string, string>>>,
+    collections: readonly CollectionFile[]
 ): NonNullable<PortfolioConfig['unnamed']> {
+    const listed = named(from, 'collections');
     const registries = (Object.keys(REGISTRY_KEYS) as RegistryName[]).filter(
-        (name) => !named(from, REGISTRY_KEYS[name] ?? '')
+        (name) => !listed || !collections.some((file) => file.key === REGISTRY_KEYS[name])
     );
-    const collections = !named(from, 'collections');
-    if (collections) registries.push('funding');
-    return { registries, collections, deck: !named(from, 'portfolio_deck') };
+    return { registries, collections: !listed, deck: !named(from, 'portfolio_deck') };
 }
 
 /**
@@ -567,19 +572,24 @@ export type HubRoot = { key: string; dir: string };
 
 /**
  * A hub other than the primary, read with its own settings: the engine's defaults under the hub's
- * own `.oculus/config/`. Its career and its portfolio deck are the primary hub's alone, so they are
- * not read, and the findings of its settings layer ride along for the caller to report.
+ * own `.oculus/config.yml`. Its career and its portfolio deck are the primary hub's alone, so they
+ * are not read, and the findings of its settings file ride along for the caller to report.
  */
-export type OtherHub = HubRoot & { portfolio: PortfolioConfig; findings: Finding[] };
+export type OtherHub = HubRoot & {
+    portfolio: PortfolioConfig;
+    findings: Finding[];
+    vocab: HubVocab;
+};
 
 /** The settings of a hub other than the primary. */
 export function readOtherHub(engine: string, root: HubRoot): OtherHub {
     const { config, findings, from } = loadConfig(engine, { hub: root.dir });
     const portfolio = { ...portfolioConfigFrom(config, from), career: null, portfolioDeck: null };
-    const sources = join(root.dir, hubLayerPath('sources.yml'));
+    const sources = join(root.dir, HUB_FILE);
     return {
         ...root,
         portfolio,
+        vocab: hubVocabOf(config),
         findings: [
             ...findings,
             ...sourcesFindings(
@@ -594,6 +604,26 @@ export function readOtherHub(engine: string, root: HubRoot): OtherHub {
             )
         ]
     };
+}
+
+/**
+ * The vocabulary of every hub of the workspace: the primary's from the config read for it (null
+ * `primary` in a workspace with none) and each other hub's from its own settings.
+ */
+export function hubVocabs(
+    primary: string | null,
+    primaryConfig: Record<string, unknown>,
+    others: readonly { key: string; vocab: HubVocab }[]
+): HubVocabs {
+    const lists: Record<string, HubVocab> = {};
+    if (primary !== null) lists[primary] = hubVocabOf(primaryConfig);
+    for (const one of others) lists[one.key] = one.vocab;
+    return { primary, lists };
+}
+
+/** The vocabulary of the hub at `root`, read from its own settings. */
+export function readHubVocab(engine: string, root: HubRoot): HubVocab {
+    return hubVocabOf(loadConfig(engine, { hub: root.dir }).config);
 }
 
 /** The merged build and each hub's own snapshot, the primary's under its name (empty with none). */

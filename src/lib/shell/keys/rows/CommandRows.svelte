@@ -4,11 +4,12 @@
     // and not run. Above them, a bare colon says which line the caret of the source tab on screen
     // is on and how many the file has. A press runs the command: the commands that list choices
     // type their name and a space, which opens their list; the others change the theme, the file
-    // icon theme, the CRT overlay, the tabs or the folder shown, and close the palette. A tab a
-    // command showed takes the keyboard on its head once the page has drawn it, since the tab
-    // chosen is where the reader went. A refusal of Open Folder, of Close Workspace or of Add Task
-    // is said in the palette, which stays open. Add Task writes the task and posts a notice with an
-    // Open action; Shift+Enter, or a press with Shift held, opens the task's page as well.
+    // icon theme, the CRT overlay, the tabs or the folder shown, or reopen the tabs closed last,
+    // and close the palette. A tab a command showed takes the keyboard on its head once the page
+    // has drawn it, since the tab chosen is where the reader went. A refusal of Open Folder, of
+    // Close Workspace or of Add Task is said in the palette, which stays open. Add Task writes the
+    // task and posts a notice with an Open action; Shift+Enter, or a press with Shift held, opens
+    // the task's page as well.
 
     import { opensTaskPage } from '$lib/data/helpers/keys/oculus/palette-table';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
@@ -30,7 +31,7 @@
     const {
         explorer,
         fs: { closeWorkspace, primary },
-        layout: { openView },
+        layout: { openView, reopenClosed },
         notices,
         selectors: { collectionsOfKey },
         writes: { newEntry },
@@ -138,6 +139,8 @@
             }
         } else if (command.name === 'update') {
             onupdate();
+        } else if (command.name === 'reopen-closed-tab') {
+            void reopenClosed();
         }
         onclose();
         if (shown !== '') void landOn(shown);

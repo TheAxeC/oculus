@@ -9,6 +9,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
+import { plantHub } from '../../fixtures/hubs/workspace.ts';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
 import type { PrimaryTarget, WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -41,13 +43,15 @@ function send(into: PrimaryTarget, file: string, key: string, value: unknown): P
 
 /**
  * The settings taken back, one row per place the setting was written: the key and the value sent,
- * the file the write lands in, what that file holds once the undo has run (null when the write made
- * it and the undo removes it, with the folders it made) and the record the undo logs.
+ * the text planted as the hub's settings file when it has any, the file the write lands in, what
+ * that file holds once the undo has run (null when the write made it and the undo removes it, with
+ * the folders it made) and the record the undo logs.
  */
 const ROWS: {
     row: string;
     key: string;
     value: unknown;
+    settings?: string;
     file: (into: PrimaryTarget) => string;
     logged: (into: PrimaryTarget) => string;
     after: (before: string) => string | null;
@@ -63,12 +67,34 @@ const ROWS: {
         back: { kind: 'config-key', field: 'changes.keep', before: 300, after: 200 }
     },
     {
-        row: 'a key of the hub list, whose layer file the write made',
+        row: 'a key of the hub list, whose settings file the write made',
         key: 'slurm.resource',
         value: 'other',
-        file: (into) => join(into.hub, '.oculus', 'config', 'behavior.yml'),
-        logged: (into) => join(into.hub, '.oculus', 'config', 'behavior.yml'),
+        file: (into) => join(into.hub, HUB_FILE),
+        logged: (into) => join(into.hub, HUB_FILE),
         after: () => null,
+        back: { kind: 'config-key', field: 'slurm.resource', before: 'other' }
+    },
+    {
+        row: 'a key of the hub list, whose settings file holds other keys and comments',
+        key: 'slurm.resource',
+        value: 'other',
+        settings:
+            '# the cluster of this hub\nscan:\n  - { dir: work }\nslurm:\n  resource: utwente  # the ssh alias\n',
+        file: (into) => join(into.hub, HUB_FILE),
+        logged: (into) => join(into.hub, HUB_FILE),
+        after: () =>
+            '# the cluster of this hub\nscan:\n  - { dir: work }\nslurm:\n  resource: utwente  # the ssh alias\n',
+        back: { kind: 'config-key', field: 'slurm.resource', before: 'other' }
+    },
+    {
+        row: 'a key of the hub list, whose settings file is the empty map',
+        key: 'slurm.resource',
+        value: 'other',
+        settings: '{}\n',
+        file: (into) => join(into.hub, HUB_FILE),
+        logged: (into) => join(into.hub, HUB_FILE),
+        after: () => '{}\n',
         back: { kind: 'config-key', field: 'slurm.resource', before: 'other' }
     }
 ];
@@ -76,8 +102,9 @@ const ROWS: {
 describe('taking a setting back', () => {
     it.each(ROWS)(
         'puts the file back byte for byte and logs the undo above the write: $row',
-        async ({ key, value, file, logged, after, back: record }) => {
+        async ({ key, value, settings, file, logged, after, back: record }) => {
             const into = keepTarget();
+            if (settings !== undefined) plantHub(into.hub, settings);
             const engineBefore = behaviorOf(into);
             await send(into, 'behavior.yml', key, value);
             const [change] = changesOf(into);
@@ -107,18 +134,17 @@ describe('the rows of the wallpaper section of Settings', () => {
         expect(response.status).toBe(200);
         expect(readFileSync(own, 'utf8')).not.toBe(before);
         expect(readFileSync(own, 'utf8')).toContain(`${key.split('.')[1]}: ${value}`);
-        expect(existsSync(join(into.hub, '.oculus', 'config', 'appearance.yml'))).toBe(false);
+        expect(existsSync(join(into.hub, HUB_FILE))).toBe(false);
     });
 
-    it("writes wallpaper.image into the primary hub's .oculus/config/appearance.yml and not oculus's own", async () => {
+    it("writes wallpaper.image into the primary hub's .oculus/config.yml and not oculus's own", async () => {
         const into = configTarget();
         const own = engineFile(into.engine, 'appearance.yml');
         const before = readFileSync(own, 'utf8');
         const response = await send(into, 'appearance.yml', 'wallpaper.image', 'lab/x.jpg');
         expect(response.status).toBe(200);
         expect(readFileSync(own, 'utf8')).toBe(before);
-        const layer = join(into.hub, '.oculus', 'config', 'appearance.yml');
-        expect(readFileSync(layer, 'utf8')).toContain('image: lab/x.jpg');
+        expect(readFileSync(join(into.hub, HUB_FILE), 'utf8')).toContain('image: lab/x.jpg');
     });
 });
 

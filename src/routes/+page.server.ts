@@ -18,6 +18,9 @@ import type { PageServerLoad } from './$types';
 // channel, with the newest push version the read is at least as new as (server/root/config-seed.ts
 // says why), so the push the hub replays from before a config change does not replace it.
 //
+// The vocabulary of every hub of the workspace rides with them, so the first frame draws a record
+// of any hub in its own hub's words.
+//
 // The collection keys ride with them for the same reason: the page registers the collection view
 // once per key before it renders, and the registry is filled in the page's script body rather than
 // from a fetch, so the view catalogue and the pane tabs draw every collection on the first frame.
@@ -35,13 +38,16 @@ export const load: PageServerLoad = ({ locals }) => {
     const { config } = read;
     const text = textCatalog(config);
     const icons = locals.server.icons.set;
+    const hubs = locals.server.configCache.vocab();
     return {
         text,
         glyphs: glyphCatalog(config),
         icons,
         vocab: vocabCatalog(config),
+        hubs,
         collections: collectionKeys(config),
         seed: configSeed(locals.server.hub, read, {
+            hubs,
             text,
             icons,
             host: locals.server.host

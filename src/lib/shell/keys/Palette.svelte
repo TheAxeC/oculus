@@ -121,7 +121,7 @@
         commands: projectCommands,
         explorer,
         fs: { workspaces },
-        layout: { activeInstance, currentPage, floats, hosts },
+        layout: { activeInstance, closedCount, currentPage, floats, hosts },
         lint,
         lsp,
         paletteSource: { paletteSource, offered },
@@ -247,7 +247,8 @@
                   appShell.offers(),
                   source !== null,
                   served?.language ?? '',
-                  explorer.panelOpen()
+                  explorer.panelOpen(),
+                  closedCount() > 0
               ).filter((command) => command.name.startsWith(parsed.name))
     );
     const matches = $derived(

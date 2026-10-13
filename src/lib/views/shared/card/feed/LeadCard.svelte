@@ -1,15 +1,16 @@
 <script lang="ts">
-    // Layer 3, view partial of views/feeds/leads/Leads.svelte. One position lead with its fit,
-    // deadline, posting, status writes and confirmed deletion; its title opens its page. Feed rules
-    // stay in state and server modules.
+    // Layer 3, shared view. One position lead with its fit, deadline, posting, status writes and
+    // confirmed deletion, drawn by the Leads view (views/feeds/leads/Leads.svelte), where its title
+    // opens its page, and on that page (views/boards/entry/Entry.svelte), where it is handed no
+    // page opener and its title is words. Feed rules stay in state and server modules.
     //
-    // The `applied` control asks the Leads view to open Applications beside the leads with an entry
-    // filled from the lead, and the lead is set to `applied` once that entry is placed. The
-    // controls that write the lead are disabled, `blocked` as their title, while the leads file has
-    // unsaved text in a source tab. The `decline` control is a status write like reopen: it sets
-    // the lead's status to `declined` in the hub's file, so the change log records it and reopen
-    // puts `open` back. It is offered on an open lead alone, so a decline never writes over an
-    // outcome.
+    // The `applied` control opens Applications beside the view the card is drawn in, with an entry
+    // filled from the lead, and the lead is set to `applied` once that entry is placed
+    // (views/shared/card/feed/lead-apply.ts). The controls that write the lead are disabled,
+    // `blocked` as their title, while the leads file has unsaved text in a source tab. The
+    // `decline` control is a status write like reopen: it sets the lead's status to `declined` in
+    // the hub's file, so the change log records it and reopen puts `open` back. It is offered on an
+    // open lead alone, so a decline never writes over an outcome.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -36,10 +37,12 @@
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
     import { answerWords } from '$lib/views/shared/forms/answer-words';
     import { useState } from '$lib/state/client/use';
+    import { applyFromLead } from './lead-apply';
 
+    const client = useState();
     const {
         writes: { deleteFeedEntry, writeFeedField }
-    } = useState();
+    } = client;
 
     type Props = {
         entry: LeadEntry;
@@ -47,10 +50,10 @@
         cursor: boolean;
         expired?: boolean;
         onsaid: (words: string) => void;
-        /** Open Applications with an entry filled from this lead, and mark the lead applied. */
-        onapply: () => void;
-        /** Open the lead's page, where its fields are edited. */
-        onpage: () => void;
+        /** The view instance the Applications tab of the `applied` control opens beside. */
+        beside: string;
+        /** Open the lead's page, where its fields are edited; none on that page itself. */
+        onpage?: () => void;
         /** Why the controls that write the lead are disabled, '' when they are not. */
         blocked: string;
     };
@@ -61,7 +64,7 @@
         cursor,
         expired = false,
         onsaid,
-        onapply,
+        beside,
         onpage,
         blocked
     }: Props = $props();
@@ -96,6 +99,11 @@
     async function mark(next: string): Promise<void> {
         if (title === '') return;
         say(await writeFeedField('leads', title, 'status', next, feedRoot(entry)));
+    }
+
+    /** Open Applications with an entry filled from this lead, and mark the lead applied. */
+    async function apply(): Promise<void> {
+        onsaid(await applyFromLead(client, entry, beside));
     }
 
     async function remove(): Promise<void> {
@@ -137,7 +145,7 @@
                             title={why(t('leads.action.applied_tip'))}
                             small
                             disabled={blocked !== ''}
-                            onclick={onapply}
+                            onclick={apply}
                         />
                     {/if}
                     {#if isOpen(status)}

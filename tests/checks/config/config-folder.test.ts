@@ -22,6 +22,7 @@ import {
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { createChecker, checkDocument } from '../../../src/lib/data/snapshot/schema/check.ts';
 import { schemaFor } from '../../../src/lib/data/snapshot/schema/set.ts';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import {
     arrange,
@@ -186,13 +187,6 @@ describe("oculus's own config directory", () => {
         'sources.yml': [
             'scan',
             'new_project_dir',
-            'venues_file',
-            'datasets_file',
-            'pillars_file',
-            'domains_file',
-            'people_file',
-            'organisations_file',
-            'resources_file',
             'collections',
             'leads_file',
             'radar_file',
@@ -364,19 +358,21 @@ describe("oculus's own config directory", () => {
         const missing = files.filter((name) => !(descriptionKey(name) in catalog));
         expect(missing).toEqual([]);
         expect(descriptionKey(LOCAL_NAME) in catalog).toBe(true);
+        expect(descriptionKey(HUB_FILE) in catalog).toBe(true);
         const described = Object.keys(catalog)
             .filter((key) => key.startsWith(DESC_PREFIX))
             .sort();
         expect(described).toEqual(
-            [...files, LOCAL_NAME].map((name) => descriptionKey(name)).sort()
+            [...files, LOCAL_NAME, HUB_FILE].map((name) => descriptionKey(name)).sort()
         );
     });
 
-    it('keys every catalogue group by the rail page it holds, in rail order, System after Help', () => {
+    it("keys every catalogue group but the float's by the rail page it holds, in rail order, System after Help", () => {
         const { config } = loadConfig(engineDir());
         const groups = config.nav_groups as Record<string, { label: string }>;
         const rail = config.rail as { label: string; page: string }[];
-        const pages = Object.keys(groups);
+        expect(groups).toHaveProperty('float');
+        const pages = Object.keys(groups).filter((key) => key !== 'float');
         expect(pages).toEqual(rail.map((entry) => entry.page));
         expect(pages.map((key) => groups[key].label)).toEqual(rail.map((entry) => entry.label));
         expect(pages.indexOf('views')).toBe(pages.indexOf('help') + 1);
@@ -547,9 +543,9 @@ describe("oculus's own config directory", () => {
         expect(invalid.map((view) => view.id)).toEqual([]);
     });
 
-    // The cases over the real hub read the config with the hub's own layer,
-    // `<hub>/.oculus/config/`, over the engine's. They are skipped where the hub's data is not on
-    // the machine.
+    // The cases over the real hub read the config with the hub's own settings file,
+    // `<hub>/.oculus/config.yml`, over the engine's. They are skipped where the hub's data is not
+    // on the machine.
     const HUB = realHub();
 
     it.skipIf(!HUB.present)(

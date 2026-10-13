@@ -24,18 +24,27 @@ export type ViewSourceKind = FeedKind | 'collection' | 'career' | RegistryKind;
 /** The registry views drawn from a file of their own, each by the view's own id. */
 export type RegistryKind = 'people' | 'venues' | 'datasets' | 'pillars' | 'domains';
 
-/** The configuration key each kind's path is written under, the one collection apart. */
-const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection'>, string> = {
+/** The configuration key each feed's and the career's path is written under. */
+const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection' | RegistryKind>, string> = {
     leads: 'leads_file',
     radar: 'radar_file',
     linkedin: 'linkedin_dir',
-    career: 'career_file',
-    people: 'people_file',
-    venues: 'venues_file',
-    datasets: 'datasets_file',
-    pillars: 'pillars_file',
-    domains: 'domains_file'
+    career: 'career_file'
 };
+
+/** The key of the `collections:` list each registry view's file is named under. */
+const REGISTRY_COLLECTIONS: Record<RegistryKind, string> = {
+    people: 'people',
+    venues: 'venues',
+    datasets: 'data',
+    pillars: 'pillars',
+    domains: 'domains'
+};
+
+/** Whether a kind is one of the registry views, whose file the `collections:` list names. */
+function isRegistryKind(kind: ViewSourceKind): kind is RegistryKind {
+    return Object.hasOwn(REGISTRY_COLLECTIONS, kind);
+}
 
 /** A configured path: a string with something in it once trimmed, answered trimmed. */
 const pathShape = z.string().trim().min(1);
@@ -70,6 +79,8 @@ export function viewSourceFile(
     const file =
         kind === 'collection'
             ? collectionPath(config, collection)
-            : readAs(pathShape, config[FILE_KEYS[kind]]);
+            : isRegistryKind(kind)
+              ? collectionPath(config, REGISTRY_COLLECTIONS[kind])
+              : readAs(pathShape, config[FILE_KEYS[kind]]);
     return file === null ? null : { root: primary, path: file };
 }

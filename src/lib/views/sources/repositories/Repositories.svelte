@@ -1,7 +1,7 @@
 <script module lang="ts">
     // Layer 3, view registration. Repositories follows the file browser in the Explorer page's
     // group: the same roots, read as repositories rather than as folders. Its rail badge is the
-    // number of changes over every repository the `git` channel lists.
+    // number of changes over every repository of its list, each counted once.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
@@ -16,17 +16,21 @@
 
 <script lang="ts">
     // Layer 3, view. VS Code's Source Control, one repository at a time: the Repositories section
-    // listing every root of the `git` channel, each named by its last folder or, where two share
-    // it, by its last two, and under it the one chosen, with its commit box, its changes, its
-    // graph, its stashes, its tags, its branches and its worktrees.
+    // listing the repositories of the workspace, each named by the last folder of its top or, where
+    // two share it, by its last two, and under it the one chosen, with its commit box, its changes,
+    // its graph, its stashes, its tags, its branches and its worktrees.
     //
-    // The list offers every root, not the repositories among them, and each row carries the few
-    // words and tone its state comes to (views/shared/changes/repo-shape.ts), so a folder of notes,
-    // a repository whose read failed and a configured root the reader has deleted all stay in the
-    // list and say which they are. A session's workspace that is gone or holds no repository is
-    // left out. A root that went quiet is a fact about that root, so the view neither drops it from
-    // the list nor hands itself to another one, and repositories/Repo.svelte draws the one sentence
-    // that state comes to in place of the sections.
+    // The list holds repositories only, one row each: the folders of the workspace that are
+    // repositories, the repositories found below them and the folders projects are cloned into.
+    // Roots of the `git` channel that lie in one repository (a folder of the workspace inside the
+    // hub's repository) are that repository's row, shown by the root that is its top folder. A
+    // folder that is no repository or is gone has no row, and neither has a session's workspace
+    // (an agent's worktree of a listed repository shows in that repository's Worktrees section). A
+    // repository whose read failed keeps its row, and each row carries the few words and tone its
+    // state comes to (views/shared/changes/repo-shape.ts). A repository that went quiet is a fact
+    // about that repository, so the view neither drops it from the list nor hands itself to another
+    // one, and repositories/Repo.svelte draws the one sentence that state comes to in place of the
+    // sections.
     //
     // Which repository is shown, which sections and folders are closed, which commit of the graph
     // is open, the mode and the request the Branch control of a row makes for the Branches section
@@ -95,7 +99,7 @@
     import {
         closeOthers,
         closeRepository,
-        pickerRoots,
+        listedView,
         publishWords,
         pullWords,
         pushWords,
@@ -122,26 +126,28 @@
         fs: { roots: fsRoots, workspaces },
         repositories,
         appTools,
-        selectors: { gitFor, gitRoots },
+        selectors: { gitFor, repositories: repositoryList },
         ui: { instanceState, requestPalette, setInstanceState },
         writes: { openFolder }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    /** The folder of every root the server serves, which a root that is gone is listed by. */
-    const served = $derived(workspaces().folders.map((root) => root.dir));
     /** The folder a workbench limits this tab to, or null for a tab limited to none. */
     const folder = $derived(limitOf(instanceState(instance.id)));
-    const every = $derived(
-        limitedRepositories(pickerRoots(gitRoots(), gitFor, served), fsRoots(), folder)
-    );
-    const view = $derived(repositoriesViewOf(instanceState(instance.id)));
+    /**
+     * The repositories of the list, one each; a root of one repository inside another is not a
+     * second.
+     */
+    const groups = $derived(repositoryList());
+    const every = $derived(limitedRepositories(groups, fsRoots(), folder));
+    /** What the instance state keeps, each root it names as the root of its repository's row. */
+    const view = $derived(listedView(repositoriesViewOf(instanceState(instance.id)), groups));
     /** The source controls the apps' hosts created, and the one this tab shows, if it still is. */
     const sources = $derived(appTools.scm.sources());
     const appSource = $derived(sources.find((one) => scmKey(one.app, one.id) === view.source));
     const roots = $derived(visibleRoots(every, view.closed));
-    const labels = $derived(repositoryLabels(every));
+    const labels = $derived(repositoryLabels(every, gitFor));
     const shown = $derived(shownRoot(roots, view.root));
     const held = $derived(gitFor(shown));
     const readable = $derived(held !== null && repoShape(shown, held) === 'readable');

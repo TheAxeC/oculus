@@ -36,8 +36,8 @@
     // cut are the pure functions of state/board. The strip is views/boards/projects/Stats.svelte
     // and the new-project form views/boards/projects/NewIdea.svelte, which is the partials rule of
     // DESIGN.md's boundary table: a view too large for one file is split into its own folder. The
-    // card is views/shared/card/ProjectCard.svelte, since views/boards/project/Project.svelte draws
-    // the same one.
+    // card is views/shared/card/project/ProjectCard.svelte, since
+    // views/boards/project/Project.svelte draws the same one.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -51,7 +51,7 @@
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Card from '../../shared/card/ProjectCard.svelte';
+    import Card from '../../shared/card/project/ProjectCard.svelte';
     import ModeSwitch from '../../shared/card/ModeSwitch.svelte';
     import NewIdea from './NewIdea.svelte';
     import Stats from './Stats.svelte';

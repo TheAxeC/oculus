@@ -5,12 +5,20 @@
 // both carry `themes: string[]`. The Venues and Data views pass the list they draw; the facets show
 // the label and match by the word, and the filter holds words alone.
 //
+// A venue and a dataset are labelled by the lists of their own hub: `themeLabeller` gives the
+// labels of the hub a record's `root` names (the primary's for a record with none), and a hub that
+// is not among the workspace's hubs labels nothing. A facet row names the theme word once, by the
+// labels each hub that holds it gives it.
+//
 // The result is a Map rather than an object so that a theme word such as `constructor` or
 // `__proto__` finds no label it was never given. When two rows name one key the first row wins,
 // which is the row a reader of the file meets first.
 
 import { z } from 'zod';
+import { byKey } from '../../../data/helpers/guards.ts';
+import type { HubVocabs } from '../../../data/model/index.ts';
 import { readAs, rowsShape } from '../../../data/shapes/shapes.ts';
+import { t } from './text.ts';
 
 /** One row of a theme list: a key that is not empty, and its label. */
 const themeRowShape = z.object({ key: z.string().min(1), label: z.string() });
@@ -22,7 +30,7 @@ const themeRowsShape = rowsShape(themeRowShape);
 export type ThemeWordLabels = ReadonlyMap<string, string>;
 
 /** The word-to-label map of one theme list; a row without a string key or label is passed over. */
-export function themeWordLabels(rows: unknown): ThemeWordLabels {
+function themeWordLabels(rows: unknown): ThemeWordLabels {
     const labels = new Map<string, string>();
     for (const { key, label } of readAs(themeRowsShape, rows) ?? []) {
         if (!labels.has(key)) labels.set(key, label);
@@ -35,23 +43,54 @@ export function themeWordLabel(labels: ThemeWordLabels, word: string): string {
     return labels.get(word) ?? word;
 }
 
+/** The labels of the hub a record's `root` names; a record with no `root` is the primary's. */
+export type ThemeLabeller = (root: string | undefined) => ThemeWordLabels;
+
+/** The theme labels of every hub for one list, `venue_themes` or `data_themes`. */
+export function themeLabeller(
+    hubs: HubVocabs | null,
+    list: 'venue_themes' | 'data_themes'
+): ThemeLabeller {
+    const held = new Map<string, ThemeWordLabels>();
+    return (root) => {
+        const name = root ?? hubs?.primary ?? '';
+        const labels = held.get(name);
+        if (labels !== undefined) return labels;
+        const made = themeWordLabels(hubs === null ? [] : byKey(hubs.lists, name)?.[list]);
+        held.set(name, made);
+        return made;
+    };
+}
+
 /** One facet of a theme row: the word it toggles, its label and how many items carry it. */
 export type ThemeFacet = { theme: string; label: string; count: number };
 
 /**
  * The theme words of the items with their labels and counts, most frequent first and lexical inside
- * a tie. A word with no label is drawn as itself.
+ * a tie. A word with no label is drawn as itself. A word the hubs of its items label differently is
+ * drawn with each label, once each, joined by the catalog's `hubs.label_separator`.
  */
 export function themeFacets(
-    items: readonly { themes: readonly string[] }[],
-    labels: ThemeWordLabels = new Map()
+    items: readonly { themes: readonly string[]; root?: string }[],
+    labelOf: ThemeLabeller = () => new Map()
 ): ThemeFacet[] {
     const counts = new Map<string, number>();
+    const labels = new Map<string, Set<string>>();
     for (const item of items) {
-        for (const theme of item.themes) counts.set(theme, (counts.get(theme) ?? 0) + 1);
+        const own = labelOf(item.root);
+        for (const theme of item.themes) {
+            counts.set(theme, (counts.get(theme) ?? 0) + 1);
+            const named = labels.get(theme) ?? new Set<string>();
+            named.add(themeWordLabel(own, theme));
+            labels.set(theme, named);
+        }
     }
     return [...counts]
-        .map(([theme, count]) => ({ theme, label: themeWordLabel(labels, theme), count }))
+        .map(([theme, count]) => ({
+            theme,
+            label: [...(labels.get(theme) ?? [theme])].join(t('hubs.label_separator')),
+            count
+        }))
         .sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
 }
 

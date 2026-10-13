@@ -736,7 +736,7 @@ export function docFindings(
     file: string
 ): Finding[] {
     const findings: Finding[] = [];
-    // The list is the primary hub's layer's, so a workspace with no primary hub has none to check.
+    // The list is the primary hub's, so a workspace with no primary hub has none to check.
     if (hub === null) return findings;
     // The groups are checked only against a config that names some, which every real one does.
     const groups = groupsShape.safeParse(config.nav_groups);

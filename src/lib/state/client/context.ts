@@ -46,6 +46,7 @@ import { createDocs } from '../system/docs.svelte.ts';
 import { createDrag } from '../workbench/drag.svelte.ts';
 import {
     createEditorStatus,
+    sessionFocusKeeper,
     sourceOnScreen
 } from '../workbench/navigation/editor-status.svelte.ts';
 import { createHeadings } from '../sources/explorer/sections/headings.svelte.ts';
@@ -80,6 +81,7 @@ import { appsSettings } from '../../data/sources/config/settings.ts';
 import { createLines } from '../system/lines.svelte.ts';
 import { createFormDraft } from '../forms/form-draft.ts';
 import { createPages, pageDraftTarget } from '../forms/page-entry.ts';
+import { createSettled } from '../forms/settled.svelte.ts';
 import { projectDraftTarget } from '../forms/schema.ts';
 import { createMemories } from '../life/pictures/memories.svelte.ts';
 import { createWallpapers } from '../life/pictures/wallpapers.svelte.ts';
@@ -162,6 +164,17 @@ export function createClientState(
         return store;
     }
     const entities = createEntities();
+    // What a write took is shown by the pages before the rebuilt snapshot arrives; the version a
+    // held value is dated by is that of the channel the record is read in.
+    const settled = createSettled(
+        (key) =>
+            entities.message(
+                key.startsWith('page:leads:') || key.startsWith('page:radar:')
+                    ? 'feeds'
+                    : 'portfolio'
+            )?.version ?? 0
+    );
+    const pages = createPages({ snapshot: entities.portfolio, feeds: entities.feeds }, settled);
     // The write path refuses a write over a file a source tab holds unsaved text of (or that the
     // unread roots leave unknown), and names a file a write carries only an id of out of the
     // snapshot and the change log; the source store and the change log are made after it, so both
@@ -185,7 +198,8 @@ export function createClientState(
                 return file === undefined ? null : fileNamed(file, fs.roots(), fs.primary());
             },
             unsavedUnknown: (file) => source.unsavedUnknown(file.root, file.path)
-        }
+        },
+        pages.settle
     );
     const socket = createSocket(entities, writes);
     const ui = createUi(writes.writeConfigKey, desktop !== undefined, () => appShell.offers());
@@ -206,7 +220,7 @@ export function createClientState(
     );
     const drag = createDrag(layout, desktop);
     const clock = createClock();
-    const changes = withQueries('changes', createChanges(queries));
+    const changes = withQueries('changes', createChanges(queries, entities));
     const selection = createSelection();
     // A terminal belongs to exactly one Terminal tab, on whichever page or float it is, and a
     // hidden page mounts no view, so the terminals store is handed the Terminal tabs of every page
@@ -270,6 +284,14 @@ export function createClientState(
         createFiles(entities, queries, (id) => selectors.hubDirOf(id))
     );
     const fs = withQueries('fs', createFs(writes, entities, queries, layout.workspaceCarried));
+    // Reopen Closed Tab starts a new shell in the folder a Terminal tab's shell ran in, and reads a
+    // source tab's folder again to skip a file deleted or moved since the close.
+    layout.hookClosed({
+        cwdOf: (terminal) => terminals.terminalById(terminal)?.cwd ?? null,
+        readFolder: (root, folder) =>
+            fs.readListing(root, folder, { hidden: true, ignored: true }, true),
+        startShell: (tab, folder) => void terminals.startInTab(tab, 'shell', folder)
+    });
     /**
      * The roots a root key is resolved against on the page: the current workspace's roots only,
      * which are the ones the server's file route serves (`roots` of the open workspace,
@@ -452,15 +474,15 @@ export function createClientState(
         selection,
         docs.enginePlace,
         docs.enginePlaceSettled,
-        fs.workspaces
+        fs.workspaces,
+        fs.roots
     );
     const clone = createClone(writes, notices, {
         home: () => fs.workspaces().home,
         after: createCloneAfter(fs, notices)
     });
-    const pages = createPages({ snapshot: entities.portfolio, feeds: entities.feeds });
     const formDraft = createFormDraft(ui, {
-        project: projectDraftTarget(selectors.projectOf),
+        project: projectDraftTarget(selectors.projectOf, settled.overlay),
         page: pageDraftTarget(pages)
     });
     ui.registerUnsaved(formDraft.draftDirty);
@@ -492,7 +514,10 @@ export function createClientState(
             editorFor: (root, path) => appShell.opens.editorFor(root, path)
         }
     });
-    const editorStatus = createEditorStatus();
+    const editorStatus = createEditorStatus(
+        (id) => layout.instanceView(id) !== undefined,
+        typeof sessionStorage === 'undefined' ? null : sessionFocusKeeper()
+    );
     const headings = createHeadings();
     const lsp = createLsp(socket);
     const lspEdits = createLspEdits({
@@ -809,6 +834,7 @@ export function createClientState(
         autosave,
         formDraft,
         pages,
+        settled,
         feeds,
         hpc,
         processes,

@@ -25,20 +25,6 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
-- step: D74
-  executor: agent
-  worker: claude:opus
-  session_id: afff48d2ef6a116fb (claude-opus-5-5)   # the continuation builder, launched 2026-10-13 after Axel's restart with the prompt of agents/briefs/D74-continuation.md
-  builders_before: "aac8ad09939b7cc54 (claude-sonnet-5-5, stopped for another model at Axel's word, 2026-10-13 13:34; 651 tool uses, 101 min; tokens not reported, the agent being stopped; its scratch notes saved in the worktree's ledger copy, agents/reviews/D74-sonnet-notes/)"
-  worktree: .agents/worktrees/D74
-  base: 1e5cc69a8
-  launched: 2026-10-13
-  report: agents/reviews/D74-report.md
-  builder_usage: "afff48d2ef6a116fb: 256,333 tokens, 867 tool uses, 211.5 min (12,692,082 ms); round 1: 117,350 tokens, 162 tool uses, 25.2 min (1,510,182 ms)"
-  landing: not-started
-  round: 1
-  brief_check: "agents/reviews/D74-brief-check.md (a1dd027bb4d25ddfb, claude-opus-5-5, 324,217 tokens, 144 tool uses, 17.4 min)"
-  reviewer_report: "agents/reviews/D74-refuter.md (aae4a86c850771659, claude-opus-5-5, 76,686 tokens, 98 tool uses, 18.5 min)"
 - step: D76
   executor: agent
   worker: claude:opus
@@ -294,6 +280,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-13 (D74 landed again). Axel undid D74's first landing commit after his look at the Repositories view; the look was redone over this hub's real folders and three parts that did not do what was asked were fixed at landing (the agents' worktrees as Repositories rows, an app's tab opening over the Apps list, the focused source tab lost on a reload), with `test:landing` passing every command (`scratchpad/gate-runs/D74-gate-4.log`); booking and `agents/reviews/D74-landing.md` updated. D74, the shell and source-control fixes, landed (booking in plan.md under D74, `agents/reviews/D74-landing.md`): the gate's `npm run test:landing` passed every command, the round review's four findings were fixed at landing, the hub's `.oculus/config.yml` replaced `.oculus/config/`, and the look ran on a scratch oculus on 8796 (Axel's server on 8790 does not load in the automation browser). Open items: none. In flight (1 of 6): D76 building. Next: /spec D73 from main's head (its draft brief is rewritten against D74's code); D76's report, /refute; Q72, O33.
 - 2026-10-13 (D76 launched). D76's base commit f4ed47774 (tree 69b944eca with the hub's `.oculus/config.yml`, on the preparation commit 0bd9d483d), its sparse worktree `.agents/worktrees/D76` with `npm ci`, the base copy `.agents/worktrees/D76-base` with `unused-exports.txt`; the builder a167a0af4861f0040 launched on claude-opus-5-5 with `agents/briefs/D76-launch.md`. The reviewer over D74's round 1, ace5c1e4521c02fb0 on claude-opus-5-5, runs. Open items: none. In flight (2 of 6): D74, D76. Next: D74's review over round 1, then /land D74; D76's report, /refute; D73 from D74's worktree; Q72, O33.
 - 2026-10-13 (D74 round 1 under review; D76 prepared). D74's builder afff48d2ef6a116fb finished repair round 1 (report section "Repair round 1" saved in `agents/reviews/D74-report.md`, usage in `builder_usage`); the reviewer over the round, ace5c1e4521c02fb0 on claude-opus-5-5, runs against `.agents/worktrees/D74-round-1`. D76's brief is written (`agents/briefs/D76.md`), every brief-check finding closed under `agents/reviews/D76-brief-check.md`'s Closed, the self-rules on link resolution and on attachment and new-note names booked (plan.md Rulings, choices.md), D76's plan line corrected for its overlap with D74. Open items: none. In flight (2 of 6): D74, D76. Next: D76's base commit, worktree and builder; D74's review over round 1, then /land D74; D73 from D74's worktree; Q72, O33.
 - 2026-10-13 (D74 repair round 1 sent; D76 in /spec). D74's review is saved (`agents/reviews/D74-refuter.md`, aae4a86c850771659 on claude-opus-5-5) and its findings ruled in `agents/briefs/D74-round1.md` (15 items: the Apps chord of Z869, the stale comments, the frozen fallbacks, the theme separator from the catalog, `gone()` by key, the report); the snapshot of the round is `.agents/worktrees/D74-round-1` with `files.txt`, and the builder afff48d2ef6a116fb is resumed with the round. D76's /spec runs: its dispatch entry reads `landing: preparing`, and its base tree, D74's built work before the round, is git tree 69b944eca (written from a temporary index; the base commit adds `.oculus/config.yml` from D74's Doc text and removes `.oculus/config/`, per open item 93 (a)). In flight (2 of 6): D74 (round 1), D76 (preparing). Next: D76's brief and brief check; the review over D74's round; D73 once that review finds nothing in parts 8 to 12.

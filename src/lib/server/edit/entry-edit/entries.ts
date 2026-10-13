@@ -8,7 +8,8 @@ import { isDeepStrictEqual } from 'node:util';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { isMap as isYamlMap, isScalar, isSeq } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
-import { NOT_A_FIELD_VALUE, asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
+import { asFieldValue, sameValue } from '../yaml/yaml-edit.ts';
+import { REFUSALS, said, why } from '../yaml/why.ts';
 import { isBlockMap } from '../yaml/yaml-values.ts';
 import { pairOf, rangeOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
@@ -43,11 +44,12 @@ export function setEntryFields(
     source: string,
     ident: string,
     value: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    catalog: Record<string, string>
 ): EditResult {
     const names = Object.keys(fields);
     const base = locate(source, ident, value);
-    if (base === null) return refuseAll(source, names, 'the entry is not in the file');
+    if (base === null) return refuseAll(source, names, why(REFUSALS.entryNotInFile), catalog);
     const current = base.node.toJSON() as Record<string, unknown>;
 
     let text = source;
@@ -59,7 +61,7 @@ export function setEntryFields(
     for (const [field, raw] of Object.entries(fields)) {
         const parsed = asFieldValue(raw);
         if (parsed === undefined) {
-            refused.push({ field, reason: NOT_A_FIELD_VALUE });
+            refused.push({ field, reason: said(catalog, why(REFUSALS.notAFieldValue)) });
             continue;
         }
         const wanted =
@@ -72,13 +74,13 @@ export function setEntryFields(
                   ? null
                   : parsed;
         if (field === ident && (wanted === null || Array.isArray(wanted))) {
-            refused.push({ field, reason: 'the identity field is what the entry is found by' });
+            refused.push({ field, reason: said(catalog, why(REFUSALS.identityField)) });
             continue;
         }
         if (sameValue(wanted, current[field])) continue;
         const out = applyEntryField(text, ident, ident_value, field, wanted);
-        if ('reason' in out) {
-            refused.push({ field, reason: out.reason });
+        if ('why' in out) {
+            refused.push({ field, reason: said(catalog, out.why) });
             continue;
         }
         text = out.text;
@@ -91,7 +93,7 @@ export function setEntryFields(
         if (field === ident) ident_value = scalar(wanted);
     }
 
-    return settled(source, text, applied, names, changed, refused);
+    return settled(source, text, applied, names, changed, refused, catalog);
 }
 
 /** True for a list key holding nothing: absent, null (`entries:`), or an empty list. */
@@ -112,9 +114,14 @@ function isEmptyList(held: unknown): boolean {
  * The result is verified the way an append is: the file parses, the key is a list of exactly the
  * one entry, and every other key is what it was.
  */
-export function startEntries(source: string, listKey: string, block: string): EditResult {
+export function startEntries(
+    source: string,
+    listKey: string,
+    block: string,
+    catalog: Record<string, string>
+): EditResult {
     const doc = document(source);
-    if (doc === null) return refuseAll(source, [listKey], 'the file does not parse');
+    if (doc === null) return refuseAll(source, [listKey], why(REFUSALS.fileNoParse), catalog);
     const pair = pairOf(doc.contents as YAMLMap, listKey);
     // A key with nothing written under it parses as a scalar holding null rather than as no value,
     // which is what the file deleting its last entry left behind.
@@ -127,20 +134,20 @@ export function startEntries(source: string, listKey: string, block: string): Ed
         pair.value.flow === true &&
         pair.value.items.length === 0;
     if (pair !== undefined && !dangling && !emptyFlow) {
-        return refuseAll(source, [listKey], `the file already has a ${listKey} key`);
+        return refuseAll(source, [listKey], why(REFUSALS.fileHasKey, listKey), catalog);
     }
     let text: string;
     if (pair === undefined) {
         text = `${source.replace(/\n*$/, '\n')}\n${listKey}:\n${block}\n`;
     } else {
         const key = rangeOf(pair.key);
-        if (key === null) return refuseAll(source, [listKey], 'the key has no place in the file');
+        if (key === null) return refuseAll(source, [listKey], why(REFUSALS.keyNoPlace), catalog);
         const lines = source.split('\n');
         const at = lineAt(source, key[0]);
         if (emptyFlow) {
             const flow = rangeOf(pair.value);
             if (flow === null || lineAt(source, flow[1] - 1) !== at) {
-                return refuseAll(source, [listKey], 'the key has no place in the file');
+                return refuseAll(source, [listKey], why(REFUSALS.keyNoPlace), catalog);
             }
             const from = flow[0];
             const to = flow[1];
@@ -155,7 +162,7 @@ export function startEntries(source: string, listKey: string, block: string): Ed
     const before = asJs(source);
     const after = asJs(text);
     if (!isMap(before) || !isMap(after)) {
-        return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [listKey], why(REFUSALS.unverified), catalog);
     }
     const has = after[listKey];
     const without = (held: Record<string, unknown>): Record<string, unknown> =>
@@ -166,7 +173,7 @@ export function startEntries(source: string, listKey: string, block: string): Ed
         !isEmptyList(before[listKey]) ||
         !isDeepStrictEqual(without(after), without(before))
     ) {
-        return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [listKey], why(REFUSALS.unverified), catalog);
     }
     return { text, changed: [listKey], refused: [] };
 }
@@ -175,11 +182,18 @@ export function startEntries(source: string, listKey: string, block: string): Ed
  * Append one rendered entry to a collection's list, at the end of the list and before whatever the
  * file holds after it. The block is the entry's own lines, the first of them opening with `- `.
  */
-export function appendEntry(source: string, listKey: string, block: string): EditResult {
+export function appendEntry(
+    source: string,
+    listKey: string,
+    block: string,
+    catalog: Record<string, string>
+): EditResult {
     const doc = document(source);
-    if (doc === null) return refuseAll(source, [listKey], 'the file does not parse');
+    if (doc === null) return refuseAll(source, [listKey], why(REFUSALS.fileNoParse), catalog);
     const pair = pairOf(doc.contents as YAMLMap, listKey);
-    if (pair === undefined) return refuseAll(source, [listKey], `the file has no ${listKey} key`);
+    if (pair === undefined) {
+        return refuseAll(source, [listKey], why(REFUSALS.fileNoKey, listKey), catalog);
+    }
     const seq = pair.value;
     // A list holding nothing is the first entry's to start, whether it is written as `entries:` or
     // as `entries: []`.
@@ -187,13 +201,13 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
         seq === null ||
         (isScalar(seq) && seq.value === null) ||
         (isSeq(seq) && seq.flow === true && seq.items.length === 0);
-    if (none) return startEntries(source, listKey, block);
+    if (none) return startEntries(source, listKey, block, catalog);
     if (!isSeq(seq) || seq.flow === true) {
-        return refuseAll(source, [listKey], `${listKey} is not a block list`);
+        return refuseAll(source, [listKey], why(REFUSALS.notABlockList, listKey), catalog);
     }
     const place = entryPlace(source);
     if ('code' in place || place.list !== listKey) {
-        return refuseAll(source, [listKey], 'the key has no place in the file');
+        return refuseAll(source, [listKey], why(REFUSALS.keyNoPlace), catalog);
     }
     const lines = source.split('\n');
     lines.splice(place.at, 0, ...place.lead, ...block.split('\n'));
@@ -202,7 +216,7 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
     const before = asJs(source);
     const after = asJs(text);
     if (!isMap(before) || !isMap(after)) {
-        return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [listKey], why(REFUSALS.unverified), catalog);
     }
     const had = before[listKey];
     const has = after[listKey];
@@ -214,7 +228,7 @@ export function appendEntry(source: string, listKey: string, block: string): Edi
     const rest = { ...before, [listKey]: null };
     const restAfter = { ...after, [listKey]: null };
     if (!grew || !isDeepStrictEqual(rest, restAfter)) {
-        return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [listKey], why(REFUSALS.unverified), catalog);
     }
     return { text, changed: [listKey], refused: [] };
 }
@@ -257,13 +271,20 @@ function placedEntries(source: string, ident: string): { list: string; items: Pl
  * The order must name every entry exactly once. An order that is short, long, or names a value
  * twice is refused whole: the alternative is guessing where the entries it did not name should go.
  */
-export function reorderEntries(source: string, ident: string, order: string[]): EditResult {
+export function reorderEntries(
+    source: string,
+    ident: string,
+    order: string[],
+    catalog: Record<string, string>
+): EditResult {
     const placed = placedEntries(source, ident);
-    if (placed === null) return refuseAll(source, [LIST], 'the file has no entries to reorder');
+    if (placed === null) {
+        return refuseAll(source, [LIST], why(REFUSALS.noEntriesToReorder), catalog);
+    }
     const values = placed.items.map((item) => item.value);
     const names = (value: string): boolean => order.filter((one) => one === value).length === 1;
     if (order.length !== values.length || !values.every(names)) {
-        return refuseAll(source, [placed.list], 'the order does not name every entry exactly once');
+        return refuseAll(source, [placed.list], why(REFUSALS.orderNotEvery), catalog);
     }
 
     const lines = source.split('\n');
@@ -289,13 +310,13 @@ export function reorderEntries(source: string, ident: string, order: string[]): 
     const had = isMap(before) ? before[placed.list] : undefined;
     const has = isMap(after) ? after[placed.list] : undefined;
     if (!isMap(before) || !isMap(after) || !Array.isArray(had) || !Array.isArray(has)) {
-        return refuseAll(source, [placed.list], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [placed.list], why(REFUSALS.unverified), catalog);
     }
     const wanted = order.map((value): unknown => had[values.indexOf(value)]);
     const rest = { ...before, [placed.list]: null };
     const restAfter = { ...after, [placed.list]: null };
     if (!isDeepStrictEqual(has, wanted) || !isDeepStrictEqual(rest, restAfter)) {
-        return refuseAll(source, [placed.list], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [placed.list], why(REFUSALS.unverified), catalog);
     }
     return { text, changed: [placed.list], refused: [] };
 }
@@ -305,34 +326,50 @@ export function reorderEntries(source: string, ident: string, order: string[]): 
  * records keeps under the entry goes with it, and the one over it when the entry is the last, so
  * removing a record leaves one blank between the two it sat between rather than two.
  */
-export function deleteEntry(source: string, ident: string, value: string): EditResult {
+export function deleteEntry(
+    source: string,
+    ident: string,
+    value: string,
+    catalog: Record<string, string>
+): EditResult {
     const found = locate(source, ident, value);
-    if (found === null) return refuseAll(source, [LIST], 'the entry is not in the file');
+    if (found === null) return refuseAll(source, [LIST], why(REFUSALS.entryNotInFile), catalog);
     const lines = source.split('\n');
     let from = found.range.start;
     let to = found.range.end;
     if ((lines[to] ?? 'x').trim() === '') to += 1;
     else if (from > 0 && lines[from - 1].trim() === '') from -= 1;
-    return withoutLines(source, found, from, to);
+    return withoutLines(source, found, from, to, catalog);
 }
 
 /**
  * Take out an entry that appendEntry wrote: its lines and the one blank line appendEntry put over
  * them, and nothing under it, so the text around it is what it was before the append.
  */
-export function takeOutAppended(source: string, ident: string, value: string): EditResult {
+export function takeOutAppended(
+    source: string,
+    ident: string,
+    value: string,
+    catalog: Record<string, string>
+): EditResult {
     const found = locate(source, ident, value);
-    if (found === null) return refuseAll(source, [LIST], 'the entry is not in the file');
+    if (found === null) return refuseAll(source, [LIST], why(REFUSALS.entryNotInFile), catalog);
     const lines = source.split('\n');
     const from =
         found.range.start > 0 && lines[found.range.start - 1].trim() === ''
             ? found.range.start - 1
             : found.range.start;
-    return withoutLines(source, found, from, found.range.end);
+    return withoutLines(source, found, from, found.range.end, catalog);
 }
 
 /** The source without lines `from` to `to`, kept only when it parses as the list without them. */
-function withoutLines(source: string, found: Located, from: number, to: number): EditResult {
+function withoutLines(
+    source: string,
+    found: Located,
+    from: number,
+    to: number,
+    catalog: Record<string, string>
+): EditResult {
     const text = [...source.split('\n').slice(0, from), ...source.split('\n').slice(to)].join('\n');
 
     const before = asJs(source);
@@ -342,13 +379,13 @@ function withoutLines(source: string, found: Located, from: number, to: number):
     // an empty list; that is the one shape the list may take after a delete and not before it.
     const has = isMap(after) ? (after[found.list] ?? []) : undefined;
     if (!isMap(before) || !isMap(after) || !Array.isArray(had) || !Array.isArray(has)) {
-        return refuseAll(source, [found.list], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [found.list], why(REFUSALS.unverified), catalog);
     }
     const wanted = had.filter((_item, at) => at !== found.index);
     const rest = { ...before, [found.list]: null };
     const restAfter = { ...after, [found.list]: null };
     if (!isDeepStrictEqual(has, wanted) || !isDeepStrictEqual(rest, restAfter)) {
-        return refuseAll(source, [found.list], 'the edit did not verify; nothing was written');
+        return refuseAll(source, [found.list], why(REFUSALS.unverified), catalog);
     }
     return { text, changed: [found.list], refused: [] };
 }

@@ -84,6 +84,10 @@ export function empty(error: string | null = null): GitState {
         branches: [],
         worktrees: [],
         ignoresWorktrees: false,
+        top: '',
+        // The watcher marks the roots of the workspace when it publishes; a read alone says nothing
+        // of that.
+        inWorkspace: false,
         // Nothing says a root is not there until a read of the path itself says so, so a read that
         // threw leaves the root where it was; state() sets this from exists() at both answers.
         present: true,
@@ -166,6 +170,10 @@ async function state(root: string, text: Record<string, string>, git: Git): Prom
         found.error = reasonOf(gitDir, text);
         return found;
     }
+    // The folder that holds the repository, in git's own spelling. A bare repository and a git that
+    // would not answer have none, and the root is then a repository of its own.
+    const top = await git(['rev-parse', '--show-toplevel']);
+    found.top = top.ok ? top.text.trim() : '';
     if (!(await checkedOut(found, text, git))) return found;
     await upstream(found, git);
     found.log = await log(git);

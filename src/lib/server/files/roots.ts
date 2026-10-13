@@ -45,8 +45,8 @@ export function repositoryDepths(open: OpenWorkspace): Map<string, number> {
 
 /**
  * The hubs of the workspace other than the primary, each with its settings (the engine's defaults
- * under the hub's own `.oculus/config/`). A hub's project folders are the primary's alone, so a hub
- * other than the primary reads none.
+ * under the hub's own `.oculus/config.yml`). A hub's project folders are the primary's alone, so a
+ * hub other than the primary reads none.
  */
 export function hubTargets(engine: string, open: OpenWorkspace): HubTarget[] {
     return open.hubs
@@ -97,7 +97,7 @@ export function repositoriesOf(open: OpenWorkspace): RepositoryRoot[] {
  * read them, with the project folders of the workspace as its repositories: the same settings and
  * the same repositories the build reads, so each of them finds the projects the snapshot holds. The
  * build passes `from`, which file of the config each key came from, so the hub reports only the
- * files its own config layer names.
+ * files its own settings file names.
  */
 export function primaryConfig(
     merged: Record<string, unknown>,

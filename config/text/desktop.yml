@@ -25,7 +25,7 @@ text:
             placeholder: Find in page
             previous: Previous match
         keys:
-            rows: 'Cmd+W | close the active tab of the focused pane (in the app);;Ctrl+Tab / Ctrl+Shift+Tab | next / previous tab in the focused pane (in the app);;Cmd+N | new text file in the focused pane (in the app);;Cmd+Shift+N | new window (in the app);;Cmd+Shift+W | close the window (in the app);;Cmd+, | settings (in the app);;Cmd+R | reload the window (in the app);;Cmd+F | find in the page (in the app)'
+            rows: 'Cmd+W | close the active tab of the focused pane, or show the first tab that is not pinned when the active one is pinned (in the app);;Cmd+Shift+T | reopen the tabs closed last (in the app);;Ctrl+Tab / Ctrl+Shift+Tab | next / previous tab in the focused pane (in the app);;Cmd+N | new text file in the focused pane (in the app);;Cmd+Shift+N | new window (in the app);;Cmd+Shift+W | close the window (in the app);;Cmd+, | settings (in the app);;Cmd+R | reload the window (in the app);;Cmd+F | find in the page (in the app)'
         menu:
             about: About oculus
             app: oculus

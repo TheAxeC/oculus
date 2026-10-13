@@ -16,10 +16,10 @@
 // note or a list of one note as a map carries the text it replaced, which the manifest writer puts
 // back over the lines the write left while the file still holds them.
 
-import { join, resolve, sep } from 'node:path';
+import { join, resolve } from 'node:path';
 import { z } from 'zod';
 import { scalar } from '../../../data/helpers/guards.ts';
-import { HUB_LAYER } from '../../../data/helpers/hub-names.ts';
+import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
 import { keptValues, same } from '../../core/changes.ts';
 import { appById } from '../../machine/apps/read/held.ts';
 import { APP_STORE, storeNow, writeAppStore } from './apps/store.ts';
@@ -89,13 +89,12 @@ function fileOf(change: Change): string {
 
 /**
  * The hub a record of a config write was written under: the hub when the file it names lies in the
- * hub's config layer, and none when it lies in the engine's, since a key of the hub list whose
+ * hub's settings file, and none when it lies in the engine's, since a key of the hub list whose
  * write went to the engine's file is taken back there.
  */
 function layerHub(into: WriteTarget, change: Change): string | undefined {
     if (into.hub === null) return undefined;
-    const layer = resolve(into.hub, HUB_LAYER) + sep;
-    return fileOf(change).startsWith(layer) ? into.hub : undefined;
+    return fileOf(change) === resolve(into.hub, HUB_FILE) ? into.hub : undefined;
 }
 
 /** The paths a record says its write made, as absolute paths. */
@@ -391,7 +390,13 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     }
     if (change.kind === 'host') {
         if (own === null) return null;
-        return writeHost(own.hub, change.key, textBeforeShape.parse(change.before), into.career);
+        return writeHost(
+            own.hub,
+            change.key,
+            textBeforeShape.parse(change.before),
+            into.career,
+            into.config.text
+        );
     }
     if (change.kind === 'career') {
         if (own === null) return null;
@@ -429,8 +434,8 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     }
     if (change.kind === 'config-key' || change.kind === 'config-value') {
         const layer = layerHub(into, change);
-        // A write that added a key to the hub's config layer is taken back by taking the added text
-        // out and removing the file and folders it made.
+        // A write that added a key to the hub's settings file is taken back by taking the added
+        // text out and removing the file and folders it made.
         if (change.created !== undefined) {
             const outcome = takeOutAdded(
                 into.engine,

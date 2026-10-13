@@ -21,9 +21,10 @@ rail:
   - { label: "System", glyph: sliders, page: views }
 
 
-# The view catalogue's groups, in the order the Views view lists them: every group is one rail page, keyed by the page's arrangement key and labelled with its button's words, so the catalogue lists each page's views under the page they sit on. A view names its group and position in its registration, and a document of `docs:` below names its group. A group with no registered views is not listed. `glyph` is the group heading's glyph name, one no view of the group carries, so the heading does not read as one of its entries, and `chord` its one-letter keyboard prefix: the letter, then a digit for the entry's place in the group, its views first and its documents after them. A group with no `chord` is counted under `direct_chord`.
+# The view catalogue's groups, in the order the Views view lists them: every group is one rail page, keyed by the page's arrangement key and labelled with its button's words, or the float of `floats:` below, so the catalogue lists each page's views under the page they sit on and the float's views under Float. A view names its group and position in its registration, a document of `docs:` below names its group, and a document of oculus's own folder that a page's arrangement shows as a tab is listed in that page's group by the label the tab carries, after the group's views and before its `docs:` documents. A group with no registered views is not listed. `glyph` is the group heading's glyph name, one no view of the group carries, so the heading does not read as one of its entries, and `chord` its one-letter keyboard prefix: the letter, then a digit for the entry's place in the group, its views first and its documents after them. A group with no `chord` is counted under `direct_chord`.
 nav_groups:
   focus: { label: "Focus", glyph: focus, chord: f }
+  float: { label: "Float", glyph: split_right, chord: w }
   projects: { label: "Projects", glyph: paper, chord: p }
   incoming: { label: "Incoming", glyph: email, chord: e }
   sessions: { label: "Sessions", glyph: live, chord: m }
@@ -32,7 +33,7 @@ nav_groups:
   pillars: { label: "Pillars", glyph: book, chord: l }
   references: { label: "References", glyph: venue_dist, chord: r }
   present: { label: "Present", glyph: conference, chord: t }
-  apps: { label: "Apps", glyph: app }
+  apps: { label: "Apps", glyph: app, chord: a }
   help: { label: "Help", glyph: page, chord: h }
   views: { label: "System", glyph: settings, chord: y }
 
@@ -41,10 +42,13 @@ nav_groups:
 direct_chord: v
 
 
-# What each rail page is first made from, by the key its `rail:` entry names, and what Reset gives it back. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane), and a tab of the list may be `{ view, state }` to open it in a state of its own, as the sessions page's Files tab follows the selected session with `state: { follow: true }`. `view: []` is an empty pane, the one a view opened for something (a project, a document, a file) lands in. It is the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page. A document of `docs:` whose `group` is the page's key is added to the page when it is made, as a `doc` tab after the first tab of the page's first pane, and a page already saved is given each such document it lacks, once.
+# What each rail page is first made from, by the key its `rail:` entry names, and what Reset gives it back. After that first press the page is the one the reader arranged, kept in the saved layout. An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane), and a tab of the list may be `{ view, state }` to open it in a state of its own, as the sessions page's Files tab follows the selected session with `state: { follow: true }`. A tab written `{ view, pinned: true }` or `{ view, state, pinned: true }` starts pinned: it comes first in its pane, draws a pin where its close control is, and Close All, Close Others and Cmd+W leave it open; every tab of the shipped arrangements is pinned, so a stray press does not close the tabs a page starts with. A `pinned:` of any other value makes the arrangement not add up. `view: []` is an empty pane, the one a view opened for something (a project, a document, a file) lands in. It is the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh when the page is made. An arrangement that does not add up makes no page. A document of `docs:` whose `group` is the page's key is added to the page when it is made, as a pinned `doc` tab after the first tab of the page's first pane, and a page already saved is given each such document it lacks, once, pinned with the pane's pinned tabs.
 arrangements:
   focus:
-    root: { kind: pane, view: focus }
+    root:
+      kind: pane
+      view:
+        - { view: focus, pinned: true }
   sessions:
     root:
       kind: split
@@ -55,57 +59,139 @@ arrangements:
           dir: row
           sizes: [0.28, 0.72]
           children:
-            - { kind: pane, view: session-list }
+            - kind: pane
+              view:
+                - { view: session-list, pinned: true }
             - kind: split
               dir: col
               sizes: [0.6, 0.4]
               children:
-                - { kind: pane, view: terminal }
-                - { kind: pane, view: [transcript, timeline] }
-        - { kind: pane, view: [session-detail, { view: files, state: { follow: true } }] }
+                - kind: pane
+                  view:
+                    - { view: terminal, pinned: true }
+                - kind: pane
+                  view:
+                    - { view: transcript, pinned: true }
+                    - { view: timeline, pinned: true }
+        - kind: pane
+          view:
+            - { view: session-detail, pinned: true }
+            - { view: files, state: { follow: true }, pinned: true }
   projects:
-    root: { kind: pane, view: [projects, coauthor, archive, personal, software] }
+    root:
+      kind: pane
+      view:
+        - { view: projects, pinned: true }
+        - { view: coauthor, pinned: true }
+        - { view: archive, pinned: true }
+        - { view: personal, pinned: true }
+        - { view: software, pinned: true }
   incoming:
     root:
       kind: split
       dir: row
       sizes: [0.6, 0.4]
       children:
-        - { kind: pane, view: [inbox, radar, leads, linkedin, literature] }
-        - { kind: pane, view: calendar }
+        - kind: pane
+          view:
+            - { view: inbox, pinned: true }
+            - { view: radar, pinned: true }
+            - { view: leads, pinned: true }
+            - { view: linkedin, pinned: true }
+            - { view: literature, pinned: true }
+        - kind: pane
+          view:
+            - { view: calendar, pinned: true }
   explorer:
     root:
       kind: split
       dir: row
       sizes: [0.4, 0.6]
       children:
-        - { kind: pane, view: [files, repositories, search, latex, problems] }
+        - kind: pane
+          view:
+            - { view: files, pinned: true }
+            - { view: repositories, pinned: true }
+            - { view: search, pinned: true }
+            - { view: references, pinned: true }
+            - { view: latex, pinned: true }
+            - { view: problems, pinned: true }
         - { kind: pane, view: [] }
   academic:
-    root: { kind: pane, view: [funding, events, education, applications, joint-work, tasks] }
+    root:
+      kind: pane
+      view:
+        - { view: funding, pinned: true }
+        - { view: events, pinned: true }
+        - { view: education, pinned: true }
+        - { view: applications, pinned: true }
+        - { view: joint-work, pinned: true }
+        - { view: tasks, pinned: true }
   pillars:
-    root: { kind: pane, view: [pillars, domains, map] }
+    root:
+      kind: pane
+      view:
+        - { view: pillars, pinned: true }
+        - { view: domains, pinned: true }
+        - { view: map, pinned: true }
   references:
-    root: { kind: pane, view: [venues, data, statements, people, organisations, resources] }
+    root:
+      kind: pane
+      view:
+        - { view: venues, pinned: true }
+        - { view: data, pinned: true }
+        - { view: statements, pinned: true }
+        - { view: people, pinned: true }
+        - { view: organisations, pinned: true }
+        - { view: resources, pinned: true }
   present:
-    root: { kind: pane, view: present }
+    root:
+      kind: pane
+      view:
+        - { view: present, pinned: true }
   help:
-    root: { kind: pane, view: [help, { view: doc, state: { id: engine:docs/apps.md, path: docs/apps.md, engine: true, label: "Apps guide" } }, memories] }
+    root:
+      kind: pane
+      view:
+        - { view: help, pinned: true }
+        - { view: doc, state: { id: engine:docs/apps.md, path: docs/apps.md, engine: true, label: "Apps guide" }, pinned: true }
+        - { view: memories, pinned: true }
   views:
     root:
       kind: split
       dir: row
       sizes: [0.5, 0.5]
       children:
-        - { kind: pane, view: [settings, account-setup] }
+        - kind: pane
+          view:
+            - { view: settings, pinned: true }
+            - { view: account-setup, pinned: true }
         - kind: split
           dir: col
           sizes: [0.5, 0.5]
           children:
-            - { kind: pane, view: [catalogue, pages, processes] }
-            - { kind: pane, view: [status, findings, audit, history, gallery] }
+            - kind: pane
+              view:
+                - { view: catalogue, pinned: true }
+                - { view: pages, pinned: true }
+                - { view: processes, pinned: true }
+            - kind: pane
+              view:
+                - { view: status, pinned: true }
+                - { view: findings, pinned: true }
+                - { view: audit, pinned: true }
+                - { view: history, pinned: true }
+                - { view: gallery, pinned: true }
   apps:
-    root: { kind: pane, view: [] }
+    root:
+      kind: split
+      dir: row
+      sizes: [0.4, 0.6]
+      children:
+        - kind: pane
+          view:
+            - { view: apps, pinned: true }
+        - { kind: pane, view: [] }
 
 
 # The arrangement every workbench page is made from, and what Reset layout gives it back: a page that belongs to one folder (a project, a funding or education entry or any folder), made when that folder is opened as a workbench. It has the shape of one entry of `arrangements:` above, `root` and its tree, and each tab is given the folder when the page is made: Files rooted at it, Search, Problems, Repositories and the sessions list limited to it, LaTeX pointed at it, and Deposit set to the project the page was opened for. A page whose project has no deposit (no `code/` folder and a `code_availability` naming neither a `repo` nor a `url`), and a page opened for no project, is made without the Deposit tab. The first tab of a pane is the one shown. `view: []` is the empty pane a project, an entry, a session or a file opens in. It is not a key of `arrangements:`, so no `rail:` entry can name it and the Settings view does not offer it as a rail page.
@@ -115,7 +201,15 @@ workbench:
     dir: row
     sizes: [0.4, 0.6]
     children:
-      - { kind: pane, view: [files, search, repositories, deposit, latex, problems, session-list] }
+      - kind: pane
+        view:
+          - { view: files, pinned: true }
+          - { view: search, pinned: true }
+          - { view: repositories, pinned: true }
+          - { view: deposit, pinned: true }
+          - { view: latex, pinned: true }
+          - { view: problems, pinned: true }
+          - { view: session-list, pinned: true }
       - { kind: pane, view: [] }
 
 
@@ -187,5 +281,5 @@ archive_label_mode: short    # Archive tab cards / list rows (live Aa toggle ove
 map_label_mode: short        # Map tab nodes
 
 
-# Documents of the hub: one entry inside its group in the view catalogue, listed after the group's views, opening the `doc` view over api/docs, and a tab of the page its group names (see `arrangements` above). `path` is relative to the hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line. The engine lists none: a hub lists its documents in .oculus/config/layout.yml, and this key is the hub list's `docs`.
+# Documents of the hub: one entry inside its group in the view catalogue, listed after the group's views, opening the `doc` view over api/docs, and a tab of the page its group names (see `arrangements` above). `path` is relative to the hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line. The engine lists none: a hub lists its documents in .oculus/config.yml, and this key is the hub list's `docs`.
 docs: []

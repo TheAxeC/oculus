@@ -24,14 +24,15 @@
     // tier has the panel, over the `manuscript/` of its hub folder or, for a project read from a
     // repository, of the repository.
     //
-    // The card is views/shared/card/ProjectCard.svelte, the one the board draws, with `deposit` on
-    // and no `ontoggle`: this tab's card is always open, so it carries the deposit control and no
-    // expand control. Every project has the deposit control whatever its tier or placement; the
-    // deposit mirrors the `code/` folder of the project's own folder. It is drawn with `documents`
-    // off, since the documents section below is this tab's list of the project's documents, and
-    // with no clamp state, so its ELI5 is drawn whole. That list draws a known document the project
-    // has not got as the card's tag for it. Everything else the card shows, the pin, the stale
-    // badge, the file finder and the subtasks among it, is the board's card unchanged.
+    // The card is views/shared/card/project/ProjectCard.svelte, the one the board draws, with
+    // `deposit` on and no `ontoggle`: this tab's card is always open, so it carries the deposit
+    // control and no expand control. Every project has the deposit control whatever its tier or
+    // placement; the deposit mirrors the `code/` folder of the project's own folder. It is drawn
+    // with `documents` off, since the documents section below is this tab's list of the project's
+    // documents, and with no clamp state, so its ELI5 is drawn whole. That list draws a known
+    // document the project has not got as the card's tag for it. Everything else the card shows,
+    // the pin, the stale badge, the file finder and the subtasks among it, is the board's card
+    // unchanged.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
     // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
@@ -47,7 +48,7 @@
     import Segment from '$lib/ui/controls/segment/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import Latex from './Latex.svelte';
-    import ProjectCard from '../../shared/card/ProjectCard.svelte';
+    import ProjectCard from '../../shared/card/project/ProjectCard.svelte';
     import Markdown from '../../shared/prose/Markdown.svelte';
     import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import { absentDocs, markdownDocNames } from '$lib/state/boards/board';

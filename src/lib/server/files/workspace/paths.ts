@@ -43,7 +43,9 @@ export function perOculus(primaryDir: string | null, local: LocalConfig): PerOcu
     };
 }
 
-/** The option of the config reader that names the primary hub's layer, none with no primary. */
+/**
+ * The option of the config reader that names the primary hub's settings file, none with no primary.
+ */
 export function hubOption(primaryDir: string | null): { hub?: string } {
     return primaryDir === null ? {} : { hub: primaryDir };
 }

@@ -20,6 +20,7 @@ import { collectionSchema } from '../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../data/snapshot/validate.ts';
 import { plain } from '../core/changes.ts';
 import { writeTextAtomic } from '../core/json.ts';
+import { words } from '../core/words.ts';
 import { mapShape, unchanged } from '../../data/shapes/shapes.ts';
 import {
     appendEntry,
@@ -31,7 +32,7 @@ import {
 } from './entry-edit/index.ts';
 import { replacedText } from './writes/config/config-checks.ts';
 import { saved, sharedRefusal, typeRefusals } from './writes/entries.ts';
-import { NOT_A_FIELD_VALUE, asFieldValue } from './yaml/yaml-edit.ts';
+import { asFieldValue } from './yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../core/changes.ts';
 import type { Refusal } from './yaml/yaml-edit.ts';
 import type { FieldValue } from './yaml/yaml-values.ts';
@@ -96,16 +97,18 @@ export function readFeedFile(
 ): FeedRead | null {
     if (config.feeds[kind] === '') return null;
     const file = feedFile(hub, config, kind);
-    if (file === null) throw new Error(`the ${kind} feed path is outside the hub`);
+    if (file === null) throw new Error(words(config.text, 'server.feeds.path_outside', kind));
     if (!existsSync(file)) return null;
     if (kind === 'linkedin' && !statSync(file).isDirectory()) return null;
     if (kind === 'linkedin') return readLinkedinFolder(file, config);
     const parsed: unknown = parse(readFileSync(file, 'utf8'));
-    if (!isMap(parsed)) throw new Error(`${file}: expected a map of keys`);
+    if (!isMap(parsed)) throw new Error(words(config.text, 'server.feeds.not_a_map', file));
     const meta = feedMetaShape.safeParse(parsed.meta);
-    if (!meta.success) throw new Error(`${file}: meta is not a map`);
+    if (!meta.success) throw new Error(words(config.text, 'server.feeds.meta_not_a_map', file));
     const entries = feedEntriesShape.safeParse(parsed.entries);
-    if (!entries.success) throw new Error(`${file}: every entry must be a map`);
+    if (!entries.success) {
+        throw new Error(words(config.text, 'server.feeds.entries_not_maps', file));
+    }
     const schema = collectionSchema(parsed.schema);
     return {
         kind,
@@ -193,7 +196,9 @@ export function isLinkedinFile(file: string | null): boolean {
 
 /** Read every Markdown entry in the configured LinkedIn folder in filename order. */
 function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
-    if (!statSync(folder).isDirectory()) throw new Error(`${folder}: expected a directory`);
+    if (!statSync(folder).isDirectory()) {
+        throw new Error(words(config.text, 'server.feeds.not_a_directory', folder));
+    }
     const entries = readdirSync(folder)
         .filter(isLinkedinFile)
         .sort((left, right) => left.localeCompare(right))
@@ -245,7 +250,10 @@ export function addLinkedinIdea(
 ): WriteOutcome {
     const title = typeof titleValue === 'string' ? titleValue.trim() : '';
     if (title === '') {
-        return outcome([], [{ field: 'title', reason: 'a LinkedIn idea needs a title' }]);
+        return outcome(
+            [],
+            [{ field: 'title', reason: words(config.text, 'server.feeds.idea_needs_title') }]
+        );
     }
     const folder = linkedinFolder(hub, config);
     if (folder === null) return { found: false, changed: [], refused: [] };
@@ -287,7 +295,7 @@ export function markLinkedinPosted(
     if (matched === null || file !== fileValue) {
         return outcome(
             [],
-            [{ field: 'file', reason: 'a LinkedIn post must name an xx-*.md idea' }]
+            [{ field: 'file', reason: words(config.text, 'server.feeds.post_needs_idea') }]
         );
     }
     const folder = linkedinFolder(hub, config);
@@ -308,7 +316,7 @@ export function markLinkedinPosted(
     if (targets.some((name) => existsSync(join(folder, name)))) {
         return outcome(
             [],
-            [{ field: 'file', reason: 'the numbered LinkedIn post exists already' }]
+            [{ field: 'file', reason: words(config.text, 'server.feeds.post_exists') }]
         );
     }
     moving.forEach((name, at) => renameSync(join(folder, name), join(folder, targets[at])));
@@ -345,7 +353,9 @@ export function addLead(
         return {
             found: true,
             changed: [],
-            refused: [{ field: 'schema', reason: 'the leads feed has no valid schema' }]
+            refused: [
+                { field: 'schema', reason: words(config.text, 'server.feeds.leads_no_schema') }
+            ]
         };
     }
     const title = typeof fields.title === 'string' ? fields.title.trim() : '';
@@ -353,14 +363,18 @@ export function addLead(
         return {
             found: true,
             changed: [],
-            refused: [{ field: 'title', reason: 'a lead needs a title' }]
+            refused: [
+                { field: 'title', reason: words(config.text, 'server.feeds.lead_needs_title') }
+            ]
         };
     }
     if (parsed.entries.some((entry) => scalar(entry.title).trim() === title)) {
         return {
             found: true,
             changed: [],
-            refused: [{ field: 'title', reason: 'a lead with this title is in the file already' }]
+            refused: [
+                { field: 'title', reason: words(config.text, 'server.feeds.lead_title_taken') }
+            ]
         };
     }
 
@@ -376,14 +390,17 @@ export function addLead(
         const value = asFieldValue(raw);
         if (value === undefined) {
             if (raw !== undefined) {
-                refused.push({ field, reason: NOT_A_FIELD_VALUE });
+                refused.push({
+                    field,
+                    reason: words(config.text, 'server.edit.not_a_field_value')
+                });
             }
             continue;
         }
         values[field] = value;
     }
     const block = renderEntry(fieldNames(schema), 'title', values);
-    const out = saved(full, source, appendEntry(source, 'entries', block));
+    const out = saved(full, source, appendEntry(source, 'entries', block, config.text));
     const records: ChangeRecord[] =
         out.changed.length === 0
             ? []
@@ -416,9 +433,6 @@ const RADAR_ORDER = [
 
 /** The relevance words the file holds. */
 const RELEVANCE = ['high', 'med', 'low'];
-
-const PAPER_IN_FILE = 'this paper is in Lit Watch already';
-const FILE_UNREAD = "Lit Watch's file does not read";
 
 /** The keys of the radar buckets in the vocabulary the engine's configuration holds. */
 const bucketKeysShape = z.array(z.looseObject({ key: z.string() })).catch([]);
@@ -461,32 +475,49 @@ export function addRadarEntry(
     try {
         parsed = readFeedFile(hub, config, 'radar');
     } catch {
-        return outcome([], [{ field: 'entries', reason: FILE_UNREAD }]);
+        return outcome(
+            [],
+            [{ field: 'entries', reason: words(config.text, 'server.feeds.file_unread') }]
+        );
     }
     if (parsed === null) return { found: false, changed: [], refused: [] };
 
     const text = (field: string): string => radarField(fields[field]);
     const title = text('title');
-    if (title === '') return outcome([], [{ field: 'title', reason: 'a paper needs a title' }]);
+    if (title === '') {
+        return outcome(
+            [],
+            [{ field: 'title', reason: words(config.text, 'server.feeds.paper_needs_title') }]
+        );
+    }
     const bucket = text('bucket');
     if (!buckets.includes(bucket)) {
         return outcome(
             [],
-            [{ field: 'bucket', reason: 'the bucket is not one of the radar buckets' }]
+            [{ field: 'bucket', reason: words(config.text, 'server.feeds.bucket_unknown') }]
         );
     }
     const relevance = text('relevance');
     if (relevance !== '' && !RELEVANCE.includes(relevance)) {
-        return outcome([], [{ field: 'relevance', reason: 'the relevance is high, med or low' }]);
+        return outcome(
+            [],
+            [{ field: 'relevance', reason: words(config.text, 'server.feeds.relevance_unknown') }]
+        );
     }
     const url = text('url');
     const known = (field: string, same: (held: string) => boolean): boolean =>
         parsed.entries.some((one) => same(scalar(one[field])));
     if (known('title', (held) => sameTitle(held, title))) {
-        return outcome([], [{ field: 'title', reason: PAPER_IN_FILE }]);
+        return outcome(
+            [],
+            [{ field: 'title', reason: words(config.text, 'server.feeds.paper_in_file') }]
+        );
     }
     if (url !== '' && known('url', (held) => addressKey(held) === addressKey(url))) {
-        return outcome([], [{ field: 'url', reason: PAPER_IN_FILE }]);
+        return outcome(
+            [],
+            [{ field: 'url', reason: words(config.text, 'server.feeds.paper_in_file') }]
+        );
     }
 
     const year = typeof fields.year === 'number' ? fields.year : Number(text('year'));
@@ -508,7 +539,7 @@ export function addRadarEntry(
         if (held !== undefined && held !== '') values[name] = held;
     }
     const block = renderEntry(RADAR_ORDER, 'title', values);
-    const edit = appendEntry(source, 'entries', block);
+    const edit = appendEntry(source, 'entries', block, config.text);
     if (edit.changed.length === 0) return { found: true, changed: [], refused: edit.refused };
     let reread: { entries: Record<string, unknown>[] } | null;
     try {
@@ -520,7 +551,7 @@ export function addRadarEntry(
     if (reread === null || !isDeepStrictEqual(reread.entries, wanted)) {
         return outcome(
             [],
-            [{ field: 'entries', reason: 'the edit did not verify; nothing was written' }]
+            [{ field: 'entries', reason: words(config.text, 'server.edit.unverified') }]
         );
     }
     const out = saved(full, source, edit);
@@ -571,7 +602,10 @@ export function removeRadarEntry(
     try {
         parsed = readFeedFile(hub, config, 'radar');
     } catch {
-        return outcome([], [{ field: 'entries', reason: FILE_UNREAD }]);
+        return outcome(
+            [],
+            [{ field: 'entries', reason: words(config.text, 'server.feeds.file_unread') }]
+        );
     }
     const at = parsed?.entries.findIndex((one) => scalar(one.title) === title) ?? -1;
     if (parsed === null || at < 0) return { found: false, changed: [], refused: [] };
@@ -591,7 +625,7 @@ export function removeRadarEntry(
             return saved(full, source, { text, changed: ['entries'], refused: [] });
         }
     }
-    return saved(full, source, takeOutAppended(source, 'title', title));
+    return saved(full, source, takeOutAppended(source, 'title', title, config.text));
 }
 
 /**
@@ -617,12 +651,15 @@ export function restoreFeedEntry(
     const ident = FEED_RULES[feed].identity;
     const value = scalar(fields[ident]).trim();
     if (value === '') {
-        return outcome([], [{ field: ident, reason: `an entry needs a ${ident}` }]);
+        return outcome(
+            [],
+            [{ field: ident, reason: words(config.text, 'server.feeds.entry_needs_key', ident) }]
+        );
     }
     if (parsed.entries.some((one) => scalar(one[ident]).trim() === value)) {
         return outcome(
             [],
-            [{ field: ident, reason: `an entry with that ${ident} is in the file` }]
+            [{ field: ident, reason: words(config.text, 'server.entries.key_taken', ident) }]
         );
     }
     const values: Record<string, FieldValue> = {};
@@ -630,23 +667,31 @@ export function restoreFeedEntry(
     for (const [field, given] of Object.entries(fields)) {
         const held = asFieldValue(given);
         if (held === undefined) {
-            refused.push({ field, reason: NOT_A_FIELD_VALUE });
+            refused.push({ field, reason: words(config.text, 'server.edit.not_a_field_value') });
             continue;
         }
         values[field] = held;
     }
     const block = renderEntry(fieldNames(parsed.schema), ident, values);
-    if (block === '')
-        return outcome([], [...refused, { field: ident, reason: 'nothing to write' }]);
+    if (block === '') {
+        const nothing = words(config.text, 'server.entries.nothing_to_write');
+        return outcome([], [...refused, { field: ident, reason: nothing }]);
+    }
     let held: unknown;
     try {
         held = parse(source);
     } catch {
-        return outcome([], [...refused, { field: 'entries', reason: 'the file does not parse' }]);
+        return outcome(
+            [],
+            [
+                ...refused,
+                { field: 'entries', reason: words(config.text, 'server.edit.file_no_parse') }
+            ]
+        );
     }
     const edit = feedListedShape.safeParse(held).success
-        ? appendEntry(source, 'entries', block)
-        : startEntries(source, 'entries', block);
+        ? appendEntry(source, 'entries', block, config.text)
+        : startEntries(source, 'entries', block, config.text);
     const out = saved(full, source, edit);
     return { ...out, refused: [...refused, ...out.refused] };
 }
@@ -674,16 +719,20 @@ export function writeFeedField(
         return {
             found: true,
             changed: [],
-            refused: [{ field, reason: `the ${feed} feed does not allow that field` }]
+            refused: [{ field, reason: words(config.text, 'server.feeds.field_not_allowed', feed) }]
         };
     }
     const entry = parsed.entries.find((one) => scalar(one[rule.identity]) === id);
     if (entry === undefined) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(parsed.entries, rule.identity);
+    const shared = sharedRefusal(parsed.entries, rule.identity, config.text);
     if (shared !== null) return shared;
-    const typed = typeRefusals(parsed.schema, { [field]: value });
+    const typed = typeRefusals(parsed.schema, { [field]: value }, config.text);
     if (typed.length > 0) return { found: true, changed: [], refused: typed };
-    const out = saved(full, source, setEntryFields(source, rule.identity, id, { [field]: value }));
+    const out = saved(
+        full,
+        source,
+        setEntryFields(source, rule.identity, id, { [field]: value }, config.text)
+    );
     if (out.changed.length === 0) return out;
     return {
         ...out,
@@ -712,7 +761,12 @@ export function deleteFeedEntry(
         return {
             found: true,
             changed: [],
-            refused: [{ field: 'feed', reason: `the ${feed} feed does not allow deletion` }]
+            refused: [
+                {
+                    field: 'feed',
+                    reason: words(config.text, 'server.feeds.delete_not_allowed', feed)
+                }
+            ]
         };
     }
     const full = feedFile(hub, config, feed);
@@ -721,9 +775,9 @@ export function deleteFeedEntry(
     const parsed = readFeedFile(hub, config, feed);
     const entry = parsed?.entries.find((one) => scalar(one[rule.identity]) === id);
     if (parsed === null || entry === undefined) return { found: false, changed: [], refused: [] };
-    const shared = sharedRefusal(parsed.entries, rule.identity);
+    const shared = sharedRefusal(parsed.entries, rule.identity, config.text);
     if (shared !== null) return shared;
-    const out = saved(full, source, deleteEntry(source, rule.identity, id));
+    const out = saved(full, source, deleteEntry(source, rule.identity, id, config.text));
     if (out.changed.length === 0) return out;
     return {
         ...out,

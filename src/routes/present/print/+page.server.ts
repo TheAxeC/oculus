@@ -12,6 +12,7 @@ export const load: PageServerLoad = ({ locals }) => {
         glyphs: glyphCatalog(config),
         icons: locals.server.icons.set,
         vocab: vocabCatalog(config),
+        hubs: locals.server.configCache.vocab(),
         token: locals.token
     };
 };

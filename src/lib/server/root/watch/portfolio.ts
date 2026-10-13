@@ -27,6 +27,7 @@ import {
     buildFolderProjects,
     buildPortfolioWithSchemas,
     joinHubs,
+    hubVocabs,
     readOtherHub,
     sourcesFindings
 } from '../../../data/index.ts';
@@ -61,7 +62,7 @@ import {
     themeFindings,
     type IconMemory
 } from '../../../data/sources/config.ts';
-import { HUB_LAYER, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { HUB_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { picturesOf } from '../../content/images.ts';
@@ -420,67 +421,23 @@ export function watchPortfolio(
     };
 
     /**
-     * The hub's config layer, `<hub>/.oculus/config`, watched like the engine's config folder: a
-     * change of the primary hub's is a config change, and a change of another hub's is a rebuild of
-     * the portfolio alone, since the page's settings are the primary hub's. A layer that is not
-     * there is waited for through the nearest folder that is, and a rebuild is queued only once the
-     * layer itself exists, so creating `<hub>/.oculus` for a bookmark or a note queues nothing. A
-     * handle on a layer that has since gone is closed first, as a root's folder is.
+     * One file watched on its own: the career file, which sits wherever `career_file` names it, and
+     * a hub's settings file, `<hub>/.oculus/config.yml`, whose change is a config change
+     * (`isConfig`) for every hub, since each hub's own words ride on the `config` channel; a name
+     * in the hub root would make a recursive watch of its folder cover the whole hub a second time,
+     * and where its folder is already watched recursively (the configured `registries/career.yml`),
+     * the debounce makes the two one rebuild. It is watched through its folder (`watchFile`), so an
+     * atomic write over it keeps reaching the rebuild and a career file made after the server
+     * started is heard as it appears. A folder that is not there is not watched and not refused, so
+     * one made later is picked up at the next rebuild.
      */
-    const watchLayer = (dir: string, isConfig: boolean): void => {
-        const key = `layer:${dir}`;
-        if (handles.has(dir) && !existsSync(dir)) {
-            handles.get(dir)?.close();
-            handles.delete(dir);
-        }
-        if (existsSync(dir)) {
-            if (open(dir, isConfig)) {
-                handles.get(key)?.close();
-                handles.delete(key);
-                parents.delete(key);
-            }
-            return;
-        }
-        let parent = dirname(dir);
-        while (!existsSync(parent) && dirname(parent) !== parent) parent = dirname(parent);
-        if (!existsSync(parent) || (handles.has(key) && parents.get(key) === parent)) return;
-        handles.get(key)?.close();
-        handles.delete(key);
-        const wanted = dir.slice(parent.length + 1).split(sep)[0];
-        try {
-            handles.set(
-                key,
-                watch(parent, { recursive: false }, (_event, filename) => {
-                    if (filename !== wanted) return;
-                    if (existsSync(dir)) queue(isConfig, false);
-                    else watchLayer(dir, isConfig);
-                })
-            );
-            parents.set(key, parent);
-        } catch (error) {
-            if (!refused.has(key)) {
-                console.error(`portfolio watch: cannot watch ${parent}: ${reason(error)}`);
-            }
-            refused.add(key);
-        }
-    };
-
-    /**
-     * One file watched on its own, for the career file, which sits wherever `career_file` names
-     * it; a name in the hub root would make a recursive watch of its folder cover the whole hub a
-     * second time, and where its folder is already watched recursively (the configured
-     * `registries/career.yml`), the debounce makes the two one rebuild. It is watched through its
-     * folder (`watchFile`), so an atomic write over it keeps reaching the rebuild and a career file
-     * made after the server started is heard as it appears. A folder that is not there is not
-     * watched and not refused, so one made later is picked up at the next rebuild.
-     */
-    const openFile = (file: string): void => {
+    const openFile = (file: string, isConfig: () => boolean = () => false): void => {
         if (handles.has(file) || !existsSync(dirname(file))) return;
         try {
             handles.set(
                 file,
                 watchFile(file, () => {
-                    queue(false, false);
+                    queue(isConfig(), false);
                 })
             );
             refused.delete(file);
@@ -563,15 +520,17 @@ export function watchPortfolio(
 
     /**
      * Watch the folders one hub's build reads: its scan tiers, registries, collections and feeds,
-     * the roots' `.oculus` folders, its career file and its config layer. Returns whether a feed
-     * folder was opened by this call, which republishes the feeds. The primary hub's layer is a
-     * config change; another hub's is a portfolio rebuild.
+     * the roots' `.oculus` folders, its career file and its settings file. Returns whether a feed
+     * folder was opened by this call, which republishes the feeds. Every hub's settings file is
+     * watched the same way, as a config change: its change rebuilds the portfolio and publishes the
+     * `config` channel again. For the primary hub that carries the merged configuration read from
+     * the file; for another hub it carries that hub's domains and theme words in `hubs`, and the
+     * portfolio rebuild reads its scan folders and record files from the file again.
      */
     const watchHubFolders = (
         dir: string,
         portfolio: PortfolioConfig,
-        roots: RepositoryRoot[],
-        first: boolean
+        roots: RepositoryRoot[]
     ): boolean => {
         let feedOpened = false;
         // Taken before anything is read, so the filters below see the build's own predicate.
@@ -615,7 +574,7 @@ export function watchPortfolio(
             if (opened && isFeed) feedOpened = true;
         }
         if (portfolio.career !== null) openFile(join(dir, portfolio.career));
-        watchLayer(join(dir, HUB_LAYER), first);
+        openFile(join(dir, HUB_FILE), () => true);
         return feedOpened;
     };
 
@@ -650,6 +609,11 @@ export function watchPortfolio(
                 paths.icons.set = iconSet(config);
                 const payload: ConfigPayload = {
                     config,
+                    hubs: hubVocabs(
+                        workspace.primary,
+                        config,
+                        others.map((one) => ({ key: one.key, vocab: one.vocab }))
+                    ),
                     text: textCatalog(config),
                     icons: paths.icons.set,
                     host: paths.host,
@@ -728,11 +692,11 @@ export function watchPortfolio(
             // between the read and the open cannot be missed.
             if (primaryDir === null) {
                 for (const root of roots) openRootFolder(join(root.dir, ROOT_FOLDER));
-            } else if (watchHubFolders(primaryDir, portfolio, roots, true)) {
+            } else if (watchHubFolders(primaryDir, portfolio, roots)) {
                 withFeeds = true;
             }
             for (const one of others) {
-                if (watchHubFolders(one.dir, one.portfolio, [], false)) withFeeds = true;
+                if (watchHubFolders(one.dir, one.portfolio, [])) withFeeds = true;
             }
             open(engineConfig, true);
             const version = hub.nextVersion('portfolio');

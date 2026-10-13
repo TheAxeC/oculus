@@ -1,13 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. Live HPC is shown in the float docked at the right edge that
-    // config/layout.yml ships, beside Usage.
+    // Layer 3, view registration. Live HPC is the first tab of the float docked at the right edge
+    // that config/layout.yml ships, before Usage, and the first entry of the catalogue's Float
+    // group, which `w` then `1` opens.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'hpc',
         label: 'views.hpc',
         glyph: 'views.hpc_glyph',
-        group: 'focus',
-        order: 1,
+        group: 'float',
+        order: 0,
         unique: true,
         badge: (client) => client.hpc.badgeText(),
         badgeTitle: (client) => client.railBadges.queueBadgeTitle(),
@@ -19,7 +20,9 @@
 <script lang="ts">
     // Layer 3, view. Live HPC composes the socket state, explicit actions, capacity, queue, recent
     // jobs, quota, and one selected log. The refresh control is in the bar while the cluster
-    // answers, and is the retry of the error box while it does not.
+    // answers, and is the retry of the error box while it does not. A hub whose settings name no
+    // cluster (`unconfigured`) shows the sentence that says so alone, in no error tone and with no
+    // retry, since there is nothing to ask.
     import Pane from '$lib/ui/frame/Pane.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Head from './Head.svelte';
@@ -84,6 +87,8 @@
     <div class="hpc" data-instance={instance.id}>
         {#if data?.status === 'starting'}
             <Empty message={t('hpc.fetching')} />
+        {:else if data?.status === 'unconfigured'}
+            <Empty message={data.hint ?? ''} />
         {:else if data && data.status !== 'ok'}
             <Empty error message={unreachable(data.hint, data.host)}>
                 {#snippet action()}

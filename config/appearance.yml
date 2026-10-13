@@ -54,7 +54,7 @@ terminal:
 
 
 # === Look ===================================================================
-# How the wallpaper and the panels over it are drawn. Which image is the wallpaper is the `wallpaper.image` key of the primary hub's own .oculus/config/appearance.yml (a hub name and a file name joined by a slash, `random`, or empty for none), set from the picker under the wallpaper rows of the Settings view; the folder each hub keeps its wallpaper images in is `wallpaper_dir` of its .oculus/config/sources.yml.
+# How the wallpaper and the panels over it are drawn. Which image is the wallpaper is the `wallpaper.image` key of the primary hub's own .oculus/config.yml (a hub name and a file name joined by a slash, `random`, or empty for none), set from the picker under the wallpaper rows of the Settings view; the folder each hub keeps its wallpaper images in is `wallpaper_dir` of its .oculus/config.yml.
 wallpaper:
   dim: 0.72      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85
   blur: 0        # px of blur on the IMAGE itself. 0 = sharp; raise it only if the picture is busy

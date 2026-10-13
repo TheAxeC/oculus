@@ -465,6 +465,20 @@ export type GitState = {
     /** The newest commits of the checked-out branch, newest first. */
     log: GitCommit[];
     branches: GitBranch[];
+    /**
+     * The top folder of the repository the root belongs to, as git prints it (`git rev-parse
+     * --show-toplevel`, a real path with every link resolved), and the empty string for a root that
+     * is no repository and for one whose read did not answer. Two roots with one top are one
+     * repository: a folder inside a repository, and a root spelled through a link.
+     */
+    top: string;
+    /**
+     * Whether the root belongs to the workspace: it is a folder of the open workspace, a repository
+     * found below one, a folder a project is cloned into or the always-watched root. False for a
+     * root only a session names. The Repositories list holds the repositories of the workspace, and
+     * a session's workspace is read for its own Changes and has no row.
+     */
+    inWorkspace: boolean;
     /** Every worktree of the repository, the checkout itself first. */
     worktrees: GitWorktree[];
     /** Whether the repository's .gitignore keeps the worktrees folder out of its history. */
@@ -520,7 +534,11 @@ export type FilesPayload = {
 };
 
 // ------------------------------------------------------------------ hpc
-export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'error';
+/**
+ * `unconfigured` is a hub whose settings name no cluster: there is nothing to ask, so nothing is
+ * polled and the payload carries the sentence that says so as `hint`.
+ */
+export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'error' | 'unconfigured';
 export type HpcJob = {
     id: string;
     name: string;
@@ -571,8 +589,8 @@ export type HpcPayload = {
     lastOk?: string;
     pollMin: number;
     /**
-     * Minutes between attempts while the cluster is not answering; absent from a payload written
-     * before it was carried.
+     * Minutes between attempts while the cluster is not answering; absent while the status is
+     * `unconfigured`, which retries nothing.
      */
     retryMin?: number;
     host: string;

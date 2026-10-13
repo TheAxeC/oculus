@@ -77,7 +77,7 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
         appShell: { opens },
         fs: { bookmarks, entries, heldEntries, listing, readFileKind },
         layout: { armKeep, askFocus, disarmKeep, keepPreview, openView, showInFiles },
-        selectors: { configMap, gitFor, gitRoots },
+        selectors: { configMap, gitFor, repositories },
         ui: { instanceState }
     } = client;
 
@@ -143,12 +143,18 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
     const fixed = $derived(
         fixedRootKeys(input.workspace.current.roots, input.following?.() ?? false)
     );
-    /** What git says of the paths under the repositories the page carries. */
+    /**
+     * What git says of the paths under the repositories the page carries. A repository is read
+     * once, through the root that shows it: its state's paths are relative to its top folder, so a
+     * second root inside the same repository would put them under the wrong folder.
+     */
     const fold = $derived(
         statusFold(
-            gitRoots().flatMap((dir) => {
-                const git = gitFor(dir);
-                return git !== null && git.repository && git.error === null ? [{ dir, git }] : [];
+            repositories('all').flatMap((group) => {
+                const git = gitFor(group.shown);
+                return git !== null && git.repository && git.error === null
+                    ? [{ dir: group.base, git }]
+                    : [];
             })
         )
     );

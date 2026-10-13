@@ -1,6 +1,7 @@
 // Layer 2, client state. The view catalogue: every listed registration and every configured hub
 // document under the `nav_groups` heading it belongs to, which is the rail page it sits on, the
-// Help page's included, and the key order the chords count into.
+// Help page's included, or the float, and the key order the chords count into. A document of
+// oculus's own folder that a rail page's arrangement shows is listed in that page's group too.
 // The Views view on the System page draws the sections and the shell's keyboard counts
 // the chords over the same sections, so a key and the entry it opens are read from one fold.
 //
@@ -26,15 +27,24 @@ export type NavGroup = { id: string; label: string; glyph?: string; chord?: stri
 
 /**
  * One entry of the `docs:` list of config/layout.yml: a Markdown document of the hub, listed inside
- * the group it names and opened by the `doc` view over api/docs.
+ * the group it names and opened by the `doc` view over api/docs. An entry with `engine` is a
+ * document of oculus's own folder that a rail page's arrangement shows as a tab, listed in that
+ * page's group (arrangement.ts `arrangedDocs`), its path relative to the engine folder.
  */
-export type DocEntry = { label: string; path: string; group: string };
+export type DocEntry = { label: string; path: string; group: string; engine?: true };
 
 /**
  * What openView is handed for a document. The `id` is the path, so a second press on one document
- * activates the tab it already has and another document opens a tab of its own beside it.
+ * activates the tab it already has and another document opens a tab of its own beside it; for an
+ * entry with `engine`, it is the engine document tab's state (`engineDocState`).
  */
-export function docState(entry: DocEntry): { id: string; path: string; label: string } {
+export function docState(entry: DocEntry): {
+    id: string;
+    path: string;
+    label: string;
+    engine?: true;
+} {
+    if (entry.engine === true) return { ...engineDocState(entry.path), label: entry.label };
     return { id: entry.path, path: entry.path, label: entry.label };
 }
 
@@ -43,7 +53,8 @@ const ENGINE_ID = 'engine:';
 
 /**
  * What openView is handed for a document of oculus's own folder, which the page reads wherever that
- * folder sits and which no `docs:` entry lists. The `path` is relative to the engine folder, and
+ * folder sits and which no `docs:` entry lists; a rail page's arrangement that shows one has it
+ * listed in the page's group (`DocEntry.engine`). The `path` is relative to the engine folder, and
  * the `id` is that path under a prefix a hub path never carries, so one document is one tab
  * whether the Help page, a link or an arrangement opened it. A tab with no label is named by its
  * path's last name.
@@ -69,6 +80,7 @@ export function heldDocState(
 ): ReturnType<typeof docState> | ReturnType<typeof engineDocState> | null {
     const own = docState(entry);
     if (holds(own.id)) return own;
+    if (entry.engine === true) return null;
     const inside = engineRelative(entry.path, engineAt);
     if (inside === null) return null;
     const engine = engineDocState(inside, entry.label);
@@ -121,9 +133,12 @@ export function followDoc(
 /** What a document is identified by inside a chord's list, told from a view's id. */
 export const DOC_PICK = 'doc:';
 
-/** One document's entry in a chord's list: the prefix and its path. */
+/**
+ * One document's entry in a chord's list: the prefix and the id of the document's tab, which is
+ * the path of a hub document and the engine id of a document of oculus's own folder.
+ */
 export function docPick(entry: DocEntry): string {
-    return `${DOC_PICK}${entry.path}`;
+    return `${DOC_PICK}${docState(entry).id}`;
 }
 
 /**
@@ -318,14 +333,16 @@ const nodeHoldsShape = z.object({
 
 /**
  * Whether an arrangement's tree holds the view anywhere: a pane naming it alone or among its tabs,
- * or a split with such a pane under it. The node is `layout.yml`'s own shape, read as it came: an
- * arrangement carries its tree under `root`.
+ * as a view id or as a tab's `view`, or a split with such a pane under it. The node is
+ * `layout.yml`'s own shape, read as it came: an arrangement carries its tree under `root`.
  */
 export function nodeHolds(node: unknown, view: string): boolean {
     const held = readAs(nodeHoldsShape, node);
     if (held === null) return false;
     if (held.root !== undefined) return nodeHolds(held.root, view);
-    if (held.kind === 'pane') return held.view.includes(view);
+    if (held.kind === 'pane') {
+        return held.view.some((tab) => tab === view || (isMap(tab) && tab.view === view));
+    }
     return held.children.some((child) => nodeHolds(child, view));
 }
 
