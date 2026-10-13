@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z868 (2026-10-13, D73's preparation, automode): open item 76's collection key `literature` is the Literature search view's id, so the collection would get no view; the Literature search view's id becomes `literature-search` and the collection keeps the ruled key; the lazy option was another key for the collection.
 - Z867 (2026-10-13, D72's landing, automode): a lead's and a Lit Watch paper's page show the editor alone, against D72's item 1; the cards move to `views/shared` and are drawn on the page as part 12 of D74; the lazy option was no change.
 - Z866 (2026-10-13, D72's landing, automode): after Save the entry editor shows the old value until the reread, a page opened by Add first says the entry is missing, and an undo's History row is labelled by the kind it reverses; all three fixed as part 11 of D74; the lazy option was no change.
 - Z865 (2026-10-13, D72's landing, automode): the server edit layer's refusal reasons (140 English literals in 11 files, `merge.ts`'s 28 among them, found by D72's review over round 1, Standards 3) go to the catalog as part 10 of D74; the lazy option was no change.

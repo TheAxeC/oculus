@@ -2,12 +2,12 @@ In flight (1 of 6 slots in use):
 - D74 (the HPC view on a hub with no cluster; the focused source tab kept while hidden; History shown live; the Repositories list; the Apps page; pinned page tabs and Reopen Closed Tab; each hub's own vocabulary; one settings file per hub; one list of record files; refusal words from the catalog; entry pages right after a write; the card on a lead's and a paper's page): preparing; its brief check runs on the base after D72.
 
 Queued, in order (3 steps):
-- D73 (the Literature view): its one wait, D72, has landed; prepared once D74 is dispatched.
+- D73 (the Literature view): waits for D74 to land, since the two share the Lit Watch card, the server's write refusals and the hub's settings files.
 - Q72 (the architecture re-read): after D73 and D74, so it reads their code.
 - O33 (oculus in its own repository; inline): after Q72.
 
 Landed, newest first:
-- D72 (collection entries as records of their own), 2026-10-13.
+- D72 (collection entries as records of their own), 2026-10-13, f3c588783.
 - D64 (apps in the tools), 2026-10-13, 8b5782e89.
 - D71 (workspaces and repositories), 2026-10-13, f6fdc112e.
 - D70 (the machine files as ordinary files), 2026-10-12, 4d3bb3998.

@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z868 (2026-10-13, D73's preparation, the orchestrator, automode): the Literature search view's id becomes `literature-search`, in D73
+
+- Chosen: the Literature search view's id becomes `literature-search` (its words `views.literature_search`), so the collection of saved papers keeps the key `literature` that open item 76 named; the key was taken, since a collection's key is its view's id and `literature` is the Literature search's. A Literature search tab saved under the old id opens the Literature view after the update.
+- Not chosen: another key for the collection, such as `papers`, which changes the key you agreed to and is the lazy option; a special case giving one collection's view an id other than its key.
+
+Where it applies: D73. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z867 (2026-10-13, D72's landing, the orchestrator, automode): the card on a lead's and a Lit Watch paper's page, in D74
 
 - Chosen: part 12 of D74: the page of a lead and of a Lit Watch paper shows the entry's card above its editor with every control the card has in its view; `LeadCard.svelte` and `RadarCard.svelte` move into `src/lib/views/shared/` so the page may draw them. D72 landed with this part of its item 1 unmet.
