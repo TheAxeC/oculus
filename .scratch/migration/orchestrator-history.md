@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 96 (2026-10-13): the code of open item 95 folded into D73 as a fourth part (a); booked in plan.md Rulings.
 - Open item 95, part A (2026-10-13): the templates in one file, `docs/templates.md` of oculus, shown on the Help page, with a Copy button on code blocks (a); booked in plan.md Rulings.
 - Open item 95, parts B and C (2026-10-13): the templates held true by a key-set test (a); the documents rewritten now, D73's builder waiting for it (a); part A open; booked in plan.md Rulings.
 - Open item 94 (2026-10-13): Axel agreed to (a) in all three parts (domains in their registry entries, theme words in their files' schemas, leads and radar as collections); folded into D73; booked in plan.md Rulings.
