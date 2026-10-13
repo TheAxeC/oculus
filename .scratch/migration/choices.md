@@ -4029,7 +4029,7 @@ Where it applies: D72. Booked in `plan.md` Rulings.
 - Chosen: a plain state for a hub whose settings name no cluster (no poll, no retry, no `unreachable`, no error colour); a named cluster that does not answer keeps `unreachable`.
 - Not chosen: leaving it as it is, the lazy option.
 
-Where it applies: D74. Booked in `plan.md` Rulings.
+Where it applies: D73 (Z861). Booked in `plan.md` Rulings.
 
 ## Z856 (2026-10-13, D64's look, the orchestrator, automode): the History words for Add Configuration and an app's writeFile
 
@@ -4043,7 +4043,7 @@ Where it applies: D64, fixed at its landing. Booked in `plan.md` Rulings.
 - Chosen: the source tab focused last keeps its file and status until the tab is closed, so the Debug view's Start and the project commands find the open file behind another tab of its pane.
 - Not chosen: leaving it, the lazy option.
 
-Where it applies: D75. Booked in `plan.md` Rulings.
+Where it applies: D73 (Z861). Booked in `plan.md` Rulings.
 
 ## Z858 (2026-10-13, D64's landing, the orchestrator, automode): the guarded entry of the debug channel test
 
@@ -4065,3 +4065,10 @@ Where it applies: D72. Booked in `plan.md` Rulings.
 - Not chosen: a new entry for Delete's question; no tests, the lazy option.
 
 Where it applies: D72. Booked in `plan.md` Rulings; the entries are written into `agents/guarded.md` at D72's landing.
+
+## Z861 (2026-10-13, Axel's question why two steps were added, the orchestrator, automode): D74 and D75 folded into D73
+
+- Chosen: the two steps Z855 and Z857 added are removed and their content folded whole into D73, the first step not yet prepared, as Axel's Z468 requires (no step is added; work goes into existing steps).
+- Not chosen: folding them into D72, whose builder is mid-build; keeping the two steps, the lazy option, which breaks Z468.
+
+Where it applies: D73. Booked in `plan.md` Rulings.

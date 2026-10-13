@@ -2072,3 +2072,4 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-13. D64's look: Z856 taken in automode (History names Add Configuration's write and an app's writeFile by VS Code's names).
 - 2026-10-13. D64's look: Z857 taken in automode (the focused source tab kept while hidden); step D75 booked after D74.
 - 2026-10-13. D64's landing: Z858 taken in automode (guarded entry G82 for the debug channel test).
+- 2026-10-13. Axel ruled open items 80 (a), 81 (a) and 82 (a). Z861 taken in automode: D74 and D75, added as steps against Z468, folded whole into D73.
