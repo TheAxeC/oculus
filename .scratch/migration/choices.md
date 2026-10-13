@@ -4051,3 +4051,17 @@ Where it applies: D75. Booked in `plan.md` Rulings.
 - Not chosen: the test under G77, whose sentence it does not test; no test, the lazy option.
 
 Where it applies: D64, at its landing. Booked in `plan.md` Rulings.
+
+## Z859 (2026-10-13, D72's brief check, the orchestrator, automode): the venue fields kept read-only, replacing Z854
+
+- Chosen: `name` read-only as Axel's ruling on open item 72 says, and `id` read-only too, the field projects name a venue by.
+- Not chosen: `id` editable, the lazy option; Z854's editable `name`, which reverses Axel's ruling and is his to rule (open item 82).
+
+Where it applies: D72. Booked in `plan.md` Rulings.
+
+## Z860 (2026-10-13, D72's brief check, the orchestrator, automode): the guarded entries of D72's tests
+
+- Chosen: rows under G8 and G9; G25 widened to the palette page; G28's sentence names the entry and career editors in place of the source-tab Add; G32 gains the new collections, the records shapes and the referrer joins.
+- Not chosen: a new entry for Delete's question; no tests, the lazy option.
+
+Where it applies: D72. Booked in `plan.md` Rulings; the entries are written into `agents/guarded.md` at D72's landing.

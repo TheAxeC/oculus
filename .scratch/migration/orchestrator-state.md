@@ -25,6 +25,9 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
+- step: D72
+  brief_check: agents/reviews/D72-brief-check.md (a8e7f3738fcbe9974, claude-opus-5-5, 244,227 tokens, 106 tool uses, 11.7 min; closed in the brief by the orchestrator, under the report's Closed heading)
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
@@ -151,6 +154,7 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 
 - Open item 80 (2026-10-13, D71's landing; kind: needs Axel's permission). Open item 70 (a) asked the orchestrator to rename, once, the saved pages in Axel's Chrome from `oculus.layout.v1` to `oculus.layout.workspace:/Users/axelfaes/workspace/research-hub/.oculus/workspaces/research-hub.yml`, by one command run in a Chrome tab of the orchestrator's own on his server's address. The runner's permission check refused opening `http://localhost:8790/api/wallpaper?list` in that tab, and the orchestrator does not work around a refusal. Nothing is lost: D71 never reads or removes `oculus.layout.v1` (the only `removeItem` in `state/workbench/layout/` is the per-tab key at `saved/storage.ts:130`), so the old value stays until it is renamed. Until then, his oculus page, which serves main's files, starts the research-hub workspace from the default pages. Options: (a) Axel allows that one navigation (his word, or a permission rule for the Chrome navigation to `localhost:8790`), and the orchestrator runs the rename, overwriting the default the page saved meanwhile; (b) the pages start from the default and the old value is left unused. Recommendation: (a); (b) is the lazy option, since it throws away his arrangement.
 - Open item 81 (2026-10-13, D64's look; kind: a colour, a choice of Axel's taste). The Map's legend now draws a chip per type shown, and two of the hub's types are near-identical purples: `idea` `#7c5cff` (36 projects) and `software` `#7c3aed` (4 projects), with `phd` `#6366f1` close to both (`tools/oculus/config/catalogs/vocab.yml:55`, `type_color`; the hub's own `.oculus/config/catalogs/vocab.yml` sets no `type_color`). On the Map a software project cannot be told from an idea. Options: (a) `software` becomes teal `#0d9488`, a hue no other type uses, `idea` and `phd` kept; (b) another colour Axel names; (c) leave the colours as they are, the lazy option. Recommendation: (a).
+- Open item 82 (2026-10-13, D72's brief check; kind: a change to Axel's ruling). Axel's ruling on open item 72 makes each record's identity read-only in the editor, `name` for venues. Projects point at a venue by its `id` (`venue_id`, `config/schemas/manifest-schema.yml:46`), and a write already renames a venue's `name` safely, so a read-only `name` only stops a typo in a venue's name being fixed from the editor. D72 is built with both `name` and `id` read-only. Options: (a) `name` becomes editable and `id` stays read-only, so a name can be corrected and no reference breaks; (b) keep both read-only, as built. Recommendation: (a).
 
 
 

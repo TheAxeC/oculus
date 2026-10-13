@@ -1,7 +1,7 @@
-In flight (0 of 6 slots in use): none.
+In flight (1 of 6 slots in use):
+- D72 (collection entries as records of their own): prepared, its builder next.
 
-Queued, in order (6 steps):
-- D72 (collection entries as records of their own): next.
+Queued, in order (5 steps):
 - D73 (the Literature view): after D72.
 - D74 (the Live HPC view on a hub that names no cluster): after D73.
 - D75 (the last-focused source tab kept while hidden, and History shown live): after D74.
@@ -11,7 +11,7 @@ Queued, in order (6 steps):
 Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
-- D64 (apps in the tools), 2026-10-13.
+- D64 (apps in the tools), 2026-10-13, 8b5782e89.
 - D71 (workspaces and repositories), 2026-10-13, f6fdc112e.
 - D70 (the machine files as ordinary files), 2026-10-12, 4d3bb3998.
 - D68 (workspaces as files), 2026-10-12, 9c9d84dce.
