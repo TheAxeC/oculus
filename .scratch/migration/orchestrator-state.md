@@ -34,6 +34,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: 1e5cc69a8
   launched: 2026-10-13
   report: agents/reviews/D74-report.md
+  builder_usage: "afff48d2ef6a116fb: 256,333 tokens, 867 tool uses, 211.5 min (12,692,082 ms)"
   landing: not-started
   round: 0
   brief_check: "agents/reviews/D74-brief-check.md (a1dd027bb4d25ddfb, claude-opus-5-5, 324,217 tokens, 144 tool uses, 17.4 min)"

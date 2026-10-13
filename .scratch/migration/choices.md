@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z869 (2026-10-13, D74's report, the orchestrator, automode): the Apps group gets the chord `a`, in D74
+
+- Chosen: the Apps group of the Views catalogue gets its own key letter, `a`, as every other group has one: the Apps view opens with `a` then `1`, and the app views with `a` then `2` on. The check that every group has a letter of its own stays as it is.
+- Not chosen: changing the check so a group may have no letter, which the builder recommended and is the lazy option, since it loosens a check that guards the keys; keeping the app views under `v`, which that check does not allow.
+
+Where it applies: D74, in its repair round. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z868 (2026-10-13, D73's preparation, the orchestrator, automode): the Literature search view's id becomes `literature-search`, in D73
 
 - Chosen: the Literature search view's id becomes `literature-search` (its words `views.literature_search`), so the collection of saved papers keeps the key `literature` that open item 76 named; the key was taken, since a collection's key is its view's id and `literature` is the Literature search's. A Literature search tab saved under the old id opens the Literature view after the update.
