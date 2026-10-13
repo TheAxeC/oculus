@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D74 (the HPC view on a hub with no cluster; the focused source tab kept while hidden; History shown live; the Repositories list; the Apps page; pinned page tabs and Reopen Closed Tab; each hub's own vocabulary; one settings file per hub; one list of record files; refusal words from the catalog; entry pages right after a write; the card on a lead's and a paper's page): building.
+- D74 (the HPC view on a hub with no cluster; the focused source tab kept while hidden; History shown live; the Repositories list; the Apps page; pinned page tabs and Reopen Closed Tab; each hub's own vocabulary; one settings file per hub; one list of record files; refusal words from the catalog; entry pages right after a write; the card on a lead's and a paper's page): building, its builder on Sonnet (launched before Axel's switch to Opus builders); Axel decides whether it goes on or an Opus builder takes over.
 
 Queued, in order (4 steps):
 - D73 (the Literature view): waits for D74 to land, since the two share the Lit Watch card, the server's write refusals and the hub's settings files.
