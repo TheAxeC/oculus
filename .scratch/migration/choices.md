@@ -46,9 +46,9 @@ Where it applies: D74. Booked in `plan.md` Rulings, the brief and the closed log
 
 Where it applies: D74. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
 
-## Z862 (2026-10-13, D74's preparation, the orchestrator, automode): `none` for the HPC state with no cluster, and `top` in the git state
+## Z862 (2026-10-13, D74's preparation, the orchestrator, automode): `unconfigured` for the HPC state with no cluster, and `top` in the git state
 
-- Chosen: a fifth `HpcStatus` value `none` for a hub that names no cluster, with the sentence as `hint`, no poll and no retry; a `GitState` field `top`, the real path `git rev-parse --show-toplevel` names, by which the page shows each repository once; both listed in `docs/apps.md`, since the `hpc` and `git` channels are open to apps.
+- Chosen: a fifth `HpcStatus` value `unconfigured` (first written `none`, changed at D74's brief check to the word the `inbox` and `connect` channels use for the same state) for a hub that names no cluster, with the sentence as `hint`, no poll and no retry; a `GitState` field `top`, the real path `git rev-parse --show-toplevel` names, by which the page shows each repository once; both listed in `docs/apps.md`, since the `hpc` and `git` channels are open to apps.
 - Not chosen: (b) `unreachable` with a flag (keeps the error word); (c) the top folder derived from the `worktrees` list (not git's own answer); (d) neither, the lazy option.
 
 Where it applies: D74. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
