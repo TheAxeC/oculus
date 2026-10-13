@@ -7,7 +7,7 @@ Queued, in order (3 steps):
 - O33 (oculus in its own repository; inline): after Q72.
 
 Landed, newest first:
-- D74 (the shell and source-control fixes), 2026-10-13, 10e1c3db5.
+- D74 (the shell and source-control fixes), 2026-10-13, f92a0abe6.
 - D72 (collection entries as records of their own), 2026-10-13, f3c588783.
 - D64 (apps in the tools), 2026-10-13, 8b5782e89.
 - D71 (workspaces and repositories), 2026-10-13, f6fdc112e.
