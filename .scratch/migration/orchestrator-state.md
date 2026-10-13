@@ -165,7 +165,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 94 (2026-10-13, Axel's question on `data_domains` and `domains`): one research domain is described in three places: `registries/domains.yml` (key, title, blurb), the hub's `.oculus/config.yml` `domains:` (colour and card label, same key) and `data_domains:` (the keys whose projects the audit expects to have a Data section, read at `server/content/audit/rules.ts:113`). The title and the label are the same words for ten of the twelve domains and differ for two (`method`: "Methods & ML frontier" / "Methods frontier"; `cs`: "Computer science" / "Computer Science"). Options: (a) one record per domain in `registries/domains.yml`, holding its title, blurb, colour and a field saying whether its projects need a dataset; the card label is the title; the config keys `domains` and `data_domains` go, this hub's values moved into the registry once by hand (no migration code); folded into D73, the first step not yet prepared. (b) Keep the three places and only make the two differing names equal. Recommended (a): one place to name and colour a domain, edited in the Domains collection view; the lazy option is (b).
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
