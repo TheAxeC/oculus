@@ -1,0 +1,39 @@
+# Oculus text owned by the entry editor, the Add and Delete questions, and the referrers list.
+text:
+    entry_form:
+        add_verb: Add
+        add_ask: 'Add an entry to {0}'
+        add_lead_ask: Add a lead
+        add_lead_title: Title
+        add_paper_ask: Add a paper to Lit Watch
+        add_paper_bucket: Bucket
+        add_paper_title: Title
+        add_paper_url: Address
+        delete: Delete
+        delete_ask: 'Delete {0}?'
+        delete_glyph: trash
+        delete_used: 'Referred to by {0}. The references stay in their files and show as findings.'
+        discard: Discard
+        discard_ask: Discard the unsaved edits of the career file?
+        edit: Edit
+        edit_done: Close editor
+        edit_glyph: edit
+        feed_scalar: '{0} holds more than one value, and a feed entry is saved one value at a time; use Edit in File'
+        label_empty: a label needs words
+        label_taken: 'the label {0} is already in use'
+        no_referrers: Nothing refers to this record.
+        record_add: 'Add to {0}'
+        record_name: '{0} name'
+        record_remove: Remove
+        referrer_open: 'Open {0}'
+        referrer_setting: 'The setting {0}'
+        referrers: Referred to by
+        required: required
+        row_add: Add row
+        row_add_glyph: add
+        row_label: 'Label of {0}'
+        row_label_placeholder: label
+        row_remove: Remove row
+        row_remove_glyph: dismiss
+        row_value: 'Value of {0}'
+        row_value_placeholder: value

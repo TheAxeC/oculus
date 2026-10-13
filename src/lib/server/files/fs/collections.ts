@@ -12,7 +12,8 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { isMap as isYamlMap, parseDocument } from 'yaml';
 import { z } from 'zod';
-import { listOf } from '../../../data/helpers/files/yaml/collection-text.ts';
+import { LIST, listOf } from '../../../data/helpers/files/yaml/collection-text.ts';
+import { pairOf } from '../../../data/helpers/files/yaml/yaml-ranges.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
@@ -114,8 +115,11 @@ export function readCollection(
     if (!isMap(data)) return null;
     const found = listOf(doc.contents);
     // A file the reader's own writes made carries no list key until the first entry, since YAML
-    // writes no empty block list. A hub file without one is malformed and is still refused.
-    if (found === null && file !== own) return null;
+    // writes no empty block list, and a hub file whose `entries:` key holds nothing but comments
+    // (or whose last entry was deleted) has the key with a null under it. A hub file with neither
+    // is malformed and is refused.
+    const emptied = pairOf(doc.contents, LIST) !== undefined && data[LIST] == null;
+    if (found === null && file !== own && !emptied) return null;
     const held = found === null ? undefined : data[found.key];
     return {
         file,

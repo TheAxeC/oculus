@@ -78,7 +78,9 @@ import { createWindows } from '../workbench/layout/open/float/browser.ts';
 import { createLayout } from '../workbench/layout.svelte.ts';
 import { appsSettings } from '../../data/sources/config/settings.ts';
 import { createLines } from '../system/lines.svelte.ts';
-import { createManifestDraft } from '../forms/manifest-draft.ts';
+import { createFormDraft } from '../forms/form-draft.ts';
+import { createPages, pageDraftTarget } from '../forms/page-entry.ts';
+import { projectDraftTarget } from '../forms/schema.ts';
 import { createMemories } from '../life/pictures/memories.svelte.ts';
 import { createWallpapers } from '../life/pictures/wallpapers.svelte.ts';
 import { createNotices } from '../workbench/navigation/notices.svelte.ts';
@@ -456,8 +458,12 @@ export function createClientState(
         home: () => fs.workspaces().home,
         after: createCloneAfter(fs, notices)
     });
-    const manifestDraft = createManifestDraft(ui, selectors.projectOf);
-    ui.registerUnsaved(manifestDraft.manifestDirty);
+    const pages = createPages({ snapshot: entities.portfolio, feeds: entities.feeds });
+    const formDraft = createFormDraft(ui, {
+        project: projectDraftTarget(selectors.projectOf),
+        page: pageDraftTarget(pages)
+    });
+    ui.registerUnsaved(formDraft.draftDirty);
     // A file browser's root or workspace line is text no save has taken, asked by the instance's
     // view.
     ui.registerUnsaved((id) => filesLineTyped(layout.instanceView(id), ui.instanceState(id)));
@@ -801,7 +807,8 @@ export function createClientState(
         transcripts,
         source,
         autosave,
-        manifestDraft,
+        formDraft,
+        pages,
         feeds,
         hpc,
         processes,

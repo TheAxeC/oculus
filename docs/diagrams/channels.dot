@@ -175,6 +175,7 @@ digraph channels {
     }
     subgraph "cluster_read views" {
         label="views"; style=solid;
+        "views/boards/entry";
         "views/boards/focus";
         "views/boards/person";
         "views/feeds/leads";
@@ -340,6 +341,7 @@ digraph channels {
     "ch portfolio" -> "state/workbench/navigation/notice-sources";
     "ch portfolio" -> "state/workbench/palette-source";
     "ch portfolio" -> "state/workbench/rail-badges";
+    "ch portfolio" -> "views/boards/entry";
     "ch portfolio" -> "views/boards/focus";
     "ch portfolio" -> "views/boards/person";
     "ch portfolio" -> "views/feeds/literature";

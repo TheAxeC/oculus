@@ -52,7 +52,9 @@ function readCollection(
         if (key !== listName && key !== '__proto__') meta[key] = value;
     }
 
-    const list = readAs(itemsShape, data[listName]);
+    // A list key with nothing under it is an empty list: it is what a file holds after its last
+    // entry is deleted, and what one holds that has only comments there.
+    const list = data[listName] === null ? [] : readAs(itemsShape, data[listName]);
     if (list === null) {
         const message =
             listName in data

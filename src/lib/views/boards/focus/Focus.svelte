@@ -30,7 +30,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Band from './Band.svelte';
-    import CareerPanel from './CareerPanel.svelte';
+    import CareerPanel from './career/CareerPanel.svelte';
     import CommandCenter from './CommandCenter.svelte';
     import Lanes from './lanes/Lanes.svelte';
     import QuickAdd from './QuickAdd.svelte';
@@ -208,7 +208,7 @@
 
         <Band {now} />
 
-        <CareerPanel onsaid={(text: string) => (said = text)} />
+        <CareerPanel instance={instance.id} onsaid={(text: string) => (said = text)} />
     </div>
 </Pane>
 

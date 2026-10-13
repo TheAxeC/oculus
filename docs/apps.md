@@ -386,8 +386,8 @@ A folder of the workspace that holds `.oculus/config/` is a hub, merged into the
 | `new-entry` | `{ kind, collection, fields }`; `fields` holds the collection's identity field | no |
 | `reorder` | `{ kind, collection, order }`, the entry ids in the new order | no |
 | `delete-entry` | `{ kind, collection, id }` | yes |
-| `feed-field` | `{ kind, feed, id, field, value, root? }`, `feed` one of `radar`, `leads`, `linkedin` | no |
-| `feed-delete` | `{ kind, feed, id, root? }` | yes |
+| `feed-field` | `{ kind, feed, id, field, value, root? }`, `feed` one of `radar`, `leads`, `linkedin`; `field` a field of the feed file's `schema:` other than the one that names the entry (`dismissed` and `status` are always allowed on `radar` and `leads`), and `value` of the type the schema gives it | no |
+| `feed-delete` | `{ kind, feed, id, root? }`, `feed` `radar` or `leads` | yes |
 | `lead-add` | `{ kind, fields }`, `fields.title` required | no |
 | `radar-add` | `{ kind, fields }`, `fields.title` required | no |
 | `linkedin-idea` | `{ kind, title, category? }` | yes, no undo |
@@ -857,6 +857,10 @@ The reasons are sentences the route or a writer gives, so the set is open. These
 | `no collection <name>` | `new-entry` or `reorder` names a collection the hub does not have |
 | `unknown feed <name>` | `feed-field` or `feed-delete` names a feed other than `radar`, `leads` or `linkedin` |
 | `no host named <name>` | `host` names a career host that is not in the career file |
+| `the <feed> feed does not allow that field` | `feed-field` names a field the feed file's schema does not list, or the identity field |
+| `the <feed> feed does not allow deletion` | `feed-delete` names the `linkedin` feed |
+| `two entries share the <identity field> <value>, so a write cannot address one of them` | `entry`, `feed-field`, `delete-entry` or `feed-delete` names an identity the file holds twice |
+| `an id that begins with "<hub>:" would name an entry of the hub <hub>, so use another` | `new-entry` has an identity beginning with the key of a hub and a colon |
 | `a new entry needs a <identity field>` | `new-entry` has no value for the field that names an entry |
 | `an entry with that <identity field> is already in the file` | `new-entry` repeats an identity |
 | `id`, `kind`, `params` | `register`, `unregister`, `changed`, `ui.*`, `createPanel`: a command id that does not start with the app's name and a dot or is empty, a kind other than the ones named, or a value of another shape than the call takes |

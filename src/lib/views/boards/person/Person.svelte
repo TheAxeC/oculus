@@ -16,8 +16,10 @@
 <script lang="ts">
     // Layer 3, view. One human as their own tab, drawn from the five joins state/boards/person.ts
     // makes: the registry entry, the organisations they are affiliated to, the joint work whose
-    // `person:` is this key, the projects whose `collaborators:` name them, and a student's
-    // supervision folder.
+    // `person:` is this key, the projects whose `collaborators:` name them, the projects whose
+    // `waiting-on:` names them, and a student's supervision folder. Below the joins is the editor
+    // of the person's registry entry, built from the people file's own `schema:`, and Delete, which
+    // asks first and names every project and joint-work entry that refers to the person.
     //
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.
@@ -31,9 +33,14 @@
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
+    import EntryEditor from '../../shared/forms/entry/edit/EntryEditor.svelte';
+    import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';
+    import { blockedBy } from '../../shared/forms/entry-file';
     import FolderFiles from '../../shared/links/FolderFiles.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { hubPathsOf } from '$lib/state/boards/collection';
+    import { PEOPLE } from '$lib/state/forms/page-entry';
     import { personJoin, type PersonJoin } from '$lib/state/boards/person';
     import { optionalText } from '$lib/data/shapes/shapes';
     import { instanceText } from '$lib/state/workbench/layout/instance';
@@ -49,7 +56,9 @@
         entities: { portfolio },
         fs: { primary, roots },
         layout: { openView },
-        selectors: { configMap }
+        pages: { pageOf },
+        selectors: { configMap },
+        source: { unsavedFile }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -57,6 +66,18 @@
     /** The person this instance was opened for, from the state the tag handed openView. */
     const key = $derived(instanceText(instance.state, 'key'));
     const join = $derived(personJoin(portfolio(), key));
+    /** The person's registry entry as the editor sees it. */
+    const page = $derived(key === '' ? null : pageOf(PEOPLE, key));
+    const editFile = $derived(page === null ? null : pageFile(client, page));
+    const fault = $derived(page === null ? undefined : pageFault(client, page));
+    /** Why Delete is disabled: unsaved text of the people file, or an identity no write names. */
+    const blocked = $derived(
+        blockedBy(editFile, editFile !== null && unsavedFile(editFile.root, editFile.path), fault)
+    );
+    /** True while the question before a delete is open. */
+    let deleting = $state(false);
+    /** What the delete answered, when the write was refused. */
+    let said = $state('');
     const folder = $derived(join.folder);
     /** The folder as a path of the hub, or nothing for one outside it. */
     const folderPath = $derived(hubPathsOf({ folder }).at(0));
@@ -132,6 +153,16 @@
                     onclick={openJointWork}
                 />
             {/if}
+            {#if page !== null}
+                <ToolButton
+                    bare
+                    label={t('entry_form.delete')}
+                    glyph={t('entry_form.delete_glyph')}
+                    title={blocked === '' ? t('person.delete_tip', page.title) : blocked}
+                    disabled={blocked !== ''}
+                    onclick={() => (deleting = true)}
+                />
+            {/if}
             {#if source !== null}
                 <SourceButton file={source} />
             {/if}
@@ -205,6 +236,31 @@
                 {/if}
             </section>
 
+            <section class="block" data-block="waiting-on">
+                <h3>{t('person.waiting_on')}</h3>
+                {#if join.waitingOn.length === 0}
+                    <Empty message={t('person.no_waiting_on')} />
+                {:else}
+                    <ul class="rows">
+                        {#each join.waitingOn as project (project.id)}
+                            <li>
+                                <span class="link">
+                                    <ToolButton
+                                        plain
+                                        cut
+                                        label={project.short === undefined || project.short === ''
+                                            ? project.title
+                                            : project.short}
+                                        title={t('person.open_project', project.title)}
+                                        onclick={() => openProject(project.id, project.title)}
+                                    />
+                                </span>
+                            </li>
+                        {/each}
+                    </ul>
+                {/if}
+            </section>
+
             {#if folder !== ''}
                 <section class="block" data-block="folder">
                     <FolderFiles folder={folderPath} root={hub}>
@@ -214,9 +270,28 @@
                     </FolderFiles>
                 </section>
             {/if}
+
+            {#if said !== ''}
+                <p class="self">{said}</p>
+            {/if}
+            {#if page !== null}
+                <section class="block" data-block="editor">
+                    <h3>{t('person.editor')}</h3>
+                    <EntryEditor {page} instance={instance.id} file={editFile} {fault} />
+                </section>
+            {/if}
         </div>
     {/if}
 </Pane>
+
+{#if deleting && page !== null}
+    <DeleteAsk
+        collection={PEOPLE}
+        id={key}
+        onsaid={(answer: string) => (said = answer)}
+        onclose={() => (deleting = false)}
+    />
+{/if}
 
 <style>
     .person {

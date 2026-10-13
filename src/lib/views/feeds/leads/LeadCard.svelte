@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, view partial of views/feeds/leads/Leads.svelte. One position lead with its fit,
-    // deadline, posting, status writes and confirmed deletion. Feed rules stay in state and server
-    // modules.
+    // deadline, posting, status writes and confirmed deletion; its title opens its page. Feed rules
+    // stay in state and server modules.
     //
     // The `applied` control asks the Leads view to open Applications beside the leads with an entry
     // filled from the lead, and the lead is set to `applied` once that entry is placed. The
@@ -30,7 +30,7 @@
     } from '$lib/state/feeds/leads';
     import { posting } from '$lib/views/shared/forms/posting';
     import { textOrNumber } from '$lib/data/shapes/shapes';
-    import { feedRoot } from '$lib/state/feeds/idents';
+    import { feedRoot } from '$lib/state/shared/page/idents';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { WriteAnswer } from '$lib/state/client/writes.svelte';
@@ -49,11 +49,22 @@
         onsaid: (words: string) => void;
         /** Open Applications with an entry filled from this lead, and mark the lead applied. */
         onapply: () => void;
+        /** Open the lead's page, where its fields are edited. */
+        onpage: () => void;
         /** Why the controls that write the lead are disabled, '' when they are not. */
         blocked: string;
     };
 
-    let { entry, vocab, cursor, expired = false, onsaid, onapply, blocked }: Props = $props();
+    let {
+        entry,
+        vocab,
+        cursor,
+        expired = false,
+        onsaid,
+        onapply,
+        onpage,
+        blocked
+    }: Props = $props();
     let sure = $state(false);
 
     const text = (field: string): string => textOrNumber(entry[field]);
@@ -100,6 +111,7 @@
         {cursor}
         {title}
         titleHtml={inlineMarkdown(title)}
+        ontitle={onpage}
         tone={expired ? 'grey' : tone}
     >
         {#snippet meta()}

@@ -1,6 +1,6 @@
 // Layer 2, client state. A collection entry placed in, or found in, the unsaved text of a source
-// tab: Add on a collection, a registry view or the leads feed puts a new entry into the file's text
-// and Edit in File finds the entry the card draws. The text rules (where the entry goes, which
+// tab: a lead's `applied` control puts an application entry into the Applications file's text and
+// Edit in File finds the entry the card draws. The text rules (where the entry goes, which
 // fields it starts with, where an existing entry stands) are data/helpers/files/yaml/
 // collection-text.ts; this module reads the draft, refuses a draft whose text differs from the
 // disk's, makes the edit through the source store and words what it cannot do.

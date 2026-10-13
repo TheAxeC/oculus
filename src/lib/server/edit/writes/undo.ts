@@ -55,9 +55,11 @@ import {
 import { holding, primaryOf } from './hubs.ts';
 import { manifestValue, writeManifest } from './manifest.ts';
 import {
+    careerSection,
     hostStatus,
     restoreSubtask,
     subtaskValue,
+    writeCareer,
     writeHost,
     writeSubtask,
     writeSubtaskAdd
@@ -156,6 +158,9 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
     }
     if (change.kind === 'host') {
         return own === null ? ABSENT : hostStatus(own.hub, change.key, into.career);
+    }
+    if (change.kind === 'career') {
+        return own === null ? ABSENT : careerSection(own.hub, change.field, into.career);
     }
     if (change.kind === 'deck-slides') return deckSlidesNow(into, change);
     if (change.kind === 'rail') {
@@ -284,6 +289,7 @@ const RECORD_KINDS: readonly string[] = [
     'subtask',
     'subtask-add',
     'host',
+    'career',
     'feed-field',
     'feed-delete',
     'lead-add',
@@ -386,6 +392,15 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
     if (change.kind === 'host') {
         if (own === null) return null;
         return writeHost(own.hub, change.key, textBeforeShape.parse(change.before), into.career);
+    }
+    if (change.kind === 'career') {
+        if (own === null) return null;
+        return writeCareer(
+            own.hub,
+            { [change.field]: change.before },
+            into.career,
+            into.config.text
+        );
     }
     if (change.kind === 'deck-slides') {
         const outcome = undoDeckSlides(into, change, wordsBeforeShape.parse(change.before));

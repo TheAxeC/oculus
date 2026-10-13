@@ -1,13 +1,15 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The head a registry-line view draws above its
     // cards: the view's intro and the line the last write or open said. The control that adds an
-    // entry is the view's header icon (AddButton.svelte), which opens the view's file.
+    // entry is the view's header icon (AddButton.svelte), which opens the Add box this draws.
     //
     // The Pillars, Domains, Data and Venues views draw it the same way, so it lives here once. What
-    // was last said belongs to the view, which a card of it also writes, so the view binds the
-    // line.
+    // was last said belongs to the view's registry file (registry-file.svelte.ts), which a card of
+    // the view also writes.
 
     import type { Snippet } from 'svelte';
+    import AddAsk from '../entry/AddAsk.svelte';
+    import type { RegistryFile } from './registry-file.svelte';
 
     type Props = {
         /**
@@ -15,18 +17,21 @@
          * which a trusted Intro may carry.
          */
         intro: Snippet;
-        /** The line the last write or open said, empty for none. */
-        said?: string;
+        /** The view's registry file: the line the last write or open said, and the Add box. */
+        file: RegistryFile;
         /** Whether the said line keeps the gap above it that the Pillars view's notes carry. */
         spaced?: boolean;
     };
 
-    let { intro, said = '', spaced = false }: Props = $props();
+    let { intro, file, spaced = false }: Props = $props();
 </script>
 
 {@render intro()}
-{#if said !== ''}
-    <p class="said" class:spaced>{said}</p>
+{#if file.said !== ''}
+    <p class="said" class:spaced>{file.said}</p>
+{/if}
+{#if file.asking !== null}
+    <AddAsk ask={file.asking} onclose={file.closeAsk} />
 {/if}
 
 <style>

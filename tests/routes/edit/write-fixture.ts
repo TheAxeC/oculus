@@ -42,13 +42,22 @@ const VENUES =
 const DATA =
     'title: Data\nschema:\n  - { field: key, type: text }\n  - { field: retrieval, type: raw }\ndatasets:\n  - key: mimic-iv\n    retrieval:\n      method: curl\n';
 
-const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
+const CAREER = [
+    'title: Career',
+    'schema:',
+    '  - { field: title, type: text }',
+    '  - { field: milestone, type: text }',
+    'hosts:',
+    '  - { name: "Naesens", status: "warm" }',
+    ''
+].join('\n');
 const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
 const LEADS = `meta: {}
 schema:
   - { field: title, type: text }
   - { field: status, type: select, options: [open, applied, declined, dismissed] }
   - { field: date, type: date }
+  - { field: fit, type: textarea }
 entries:
   - title: "Lead"
     status: open

@@ -11,15 +11,20 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Lit Watch reads the radar socket feed, groups live papers by vocabulary,
-    // and keeps search and the dismissed-section disclosure in this view instance's saved state.
+    // Layer 3, view. Lit Watch reads the radar socket feed, groups live papers by vocabulary, and
+    // keeps search and the dismissed-section disclosure in this view instance's saved state. Add
+    // asks the new paper's title, address and bucket, writes it to the radar file of the primary
+    // hub (else the first) and opens the paper's page, where the rest is filled in.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import SourceButton from '../../shared/links/SourceButton.svelte';
+    import SourceToolbar from '../../shared/links/SourceToolbar.svelte';
+    import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
+    import AddButton from '../../shared/forms/AddButton.svelte';
+    import { paperAsk, type Ask } from '../../shared/forms/entry/entry-add';
     import Bucket from './Bucket.svelte';
     import RadarCard from './RadarCard.svelte';
     import RadarIntro from './RadarIntro.svelte';
@@ -36,18 +41,19 @@
     import { asText } from '$lib/state/forms/schema';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { feedIdents } from '$lib/state/feeds/idents';
+    import { feedIdents } from '$lib/state/shared/page/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         entities: { config, portfolio },
         feeds: { feed },
         fs: { primary },
         selectors: { configMap },
         ui: { instanceState, setInstanceState }
-    } = useState();
+    } = client;
 
     let { instance }: ViewProps = $props();
 
@@ -71,17 +77,18 @@
     );
     let said = $state('');
 
+    /** The Add box while it is open: it asks the new paper's title, address and bucket. */
+    let asking = $state<Ask | null>(null);
+
     function write(next: Partial<RadarState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('radar.toolbar')} overflow>
-        {#if source !== null}
-            <SourceButton file={source} />
-        {/if}
-    </Toolbar>
+    <SourceToolbar {source} label={t('radar.toolbar')}>
+        <AddButton onclick={() => (asking = paperAsk(client))} />
+    </SourceToolbar>
 {/snippet}
 
 {#snippet bar()}
@@ -94,6 +101,8 @@
         />
     </Toolbar>
 {/snippet}
+
+<AddAsk ask={asking} onclose={() => (asking = null)} />
 
 <Pane title={t('views.radar')} toolbar={source === null ? undefined : tools} {bar}>
     <div class="radar" data-instance={instance.id}>

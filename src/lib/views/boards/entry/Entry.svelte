@@ -1,7 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. An entry opens from the title of a collection card whose link
-    // names a folder and is not listed in the view catalogue: opened bare it can only report that
-    // it was opened for no entry.
+    // Layer 3, view registration. An entry opens from the title of a card, from a referrer list,
+    // from the palette and from an Add, and is not listed in the view catalogue: opened bare it can
+    // only report that it was opened for no entry.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'entry',
@@ -14,39 +14,40 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One collection entry as its own tab: its card, opened out, then the Markdown
-    // documents of the folder its link names, then the folder's files, then the sessions working in
-    // that folder. One instance per entry, and the entry it is for is the `collection` and `key`
-    // of its instance state (state/boards/collection.ts's pageState), whose `id` joins the two so
-    // that one entry is one tab and one key in two collections is two.
+    // Layer 3, view. One entry as its own tab: an entry of a collection file, or a lead or a Lit
+    // Watch paper of a feed. The entry it is for is the `collection` and `key` of its instance
+    // state (state/forms/page-entry.ts's entryPageState), whose `id` joins the two so that one
+    // entry is one tab and one key in two collections is two.
+    //
+    // An entry of a collection shows its card, opened out, then the editor built from the file's
+    // own `schema:` (views/shared/forms/entry/edit/EntryEditor.svelte), then what refers to the
+    // entry when other records do, and, when its `link` names a folder of the hub, the folder's
+    // documents, files and sessions (EntryFolder.svelte). A feed entry shows the editor alone.
+    // Delete asks first, naming the records that refer to the entry, and an entry that is gone says
+    // so; it is shown again when Undo brings it back.
     //
     // The card is views/shared/forms/entry/EntryCard.svelte, the one the collection view draws,
     // with every control it has there and, since it is handed neither a grip nor a title opener,
-    // with the long fields whole and the title as words. The documents are fetched, not selected:
-    // state/system/docs.svelte.ts asks api/docs for the chosen one and the shared Markdown partial
-    // draws what comes back, as the project view draws its own. The files are
-    // views/shared/links/FolderFiles.svelte, the block the person view draws for a student's
-    // folder, and each session is views/shared/sessions/SessionRow.svelte, the row the project view
-    // draws.
+    // with the long fields whole and the title as words.
     //
     // A toolbar action opens the workbench of the entry's folder with this page in its documents
-    // pane (state/workbench/layout/open/float/folder-opener.ts).
-    //
-    // Whether the entry has a folder is the file store's listing of the folder that holds its
-    // link, as the card's title decides it, so the blocks come and go with the folder.
+    // pane (state/workbench/layout/open/float/folder-opener.ts). Whether the entry has a folder is
+    // the file store's listing of the folder that holds its link, as the card decides it, so the
+    // blocks come and go with the folder.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Segment from '$lib/ui/controls/segment/Segment.svelte';
-    import type { SegmentItem } from '$lib/ui/controls/segment/segment-items';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import EntryFolder from './EntryFolder.svelte';
+    import DeleteAsk from '../../shared/forms/entry/DeleteAsk.svelte';
     import EntryCard from '../../shared/forms/entry/EntryCard.svelte';
+    import EntryEditor from '../../shared/forms/entry/edit/EntryEditor.svelte';
+    import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';
+    import Referrers from '../../shared/forms/entry/Referrers.svelte';
     import { taskCardActions } from '../../shared/forms/entry/task-card';
-    import FolderFiles from '../../shared/links/FolderFiles.svelte';
+    import { blockedBy } from '../../shared/forms/entry-file';
     import SourceButton from '../../shared/links/SourceButton.svelte';
-    import Markdown from '../../shared/prose/Markdown.svelte';
-    import SessionRow from '../../shared/sessions/SessionRow.svelte';
     import {
         entryById,
         hubPathsOf,
@@ -56,51 +57,58 @@
         pageState,
         statusFacets
     } from '$lib/state/boards/collection';
+    import { revealState } from '$lib/state/forms/page-entry';
+    import { REFERRED, referrersOf } from '$lib/state/forms/referrers';
     import { dirOf } from '$lib/state/sources/repositories/change-tree';
-    import { fileUnder, rootOf } from '$lib/state/shared/page/hubs';
-    import { absoluteOf } from '$lib/state/workbench/navigation/pages';
-    import { instanceChoice, instanceText } from '$lib/state/workbench/layout/instance';
-    import { t } from '$lib/state/shared/words/text';
-    import { viewSourceFile } from '$lib/state/sessions/view-source';
+    import { rootOf } from '$lib/state/shared/page/hubs';
+    import { instanceText } from '$lib/state/workbench/layout/instance';
+    import { lookup, t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import type { TaskRef } from '$lib/state/sessions/terminals.svelte';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
-        docs: { hubDocument },
+        entities: { portfolio },
         folders,
-        fs: { listing, primary, roots },
+        fs: { listing, primary },
         layout: { openView },
-        selectors: { collectionsOfKey, configMap, projects, sessionsForProject },
-        terminals: { composeAt },
-        ui: { instanceState, setInstanceState }
-    } = useState();
+        pages: { pageOf },
+        selectors: { collectionsOfKey, configMap, projects },
+        source: { unsavedFile },
+        terminals: { composeAt }
+    } = client;
 
     let { instance }: ViewProps = $props();
 
-    /** The collection and the key of the entry this instance was opened for. */
+    /** The collection (or feed) and the key of the entry this instance was opened for. */
     const collectionKey = $derived(instanceText(instance.state, 'collection'));
     const key = $derived(instanceText(instance.state, 'key'));
+    /** The entry as the editor sees it, or null while no file holds it. */
+    const page = $derived(collectionKey === '' || key === '' ? null : pageOf(collectionKey, key));
     const held = $derived(collectionKey === '' ? [] : collectionsOfKey(collectionKey));
     /** The collection that holds the entry: the file of the hub the entry is of. */
     const collection = $derived(
-        key === ''
-            ? (held.at(0) ?? null)
-            : (held.find((one) => entryById(one, key) !== null) ?? null)
+        key === '' ? null : (held.find((one) => entryById(one, key) !== null) ?? null)
     );
     const entry = $derived(key === '' ? null : entryById(collection, key));
     const schema = $derived(collection?.schema);
-    /** The hub the entry is of, null while no entry is shown. */
+    /** The hub the entry is of, null while no collection entry is shown. */
     const hub = $derived(entry === null ? null : rootOf(entry, primary()));
-    const source = $derived(
-        collection === null
-            ? null
-            : entry?.root === undefined
-              ? viewSourceFile('collection', configMap(), primary(), collectionKey)
-              : fileUnder(collection.file, roots(), primary())
-    );
+    const file = $derived(page === null ? null : pageFile(client, page));
+    const fault = $derived(page === null ? undefined : pageFault(client, page));
     const faults = $derived(identityFaults(collection?.entries ?? [], schema));
     const lifecycle = $derived(offeredStatuses(schema, statusFacets(collection?.entries ?? [])));
+    const blocked = $derived(
+        blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
+    );
+
+    const snapshot = $derived(portfolio());
+    const referrers = $derived(
+        snapshot === null || !REFERRED.includes(collectionKey)
+            ? []
+            : referrersOf(snapshot, configMap(), collectionKey, key)
+    );
 
     /** The entries of one folder of the hub, from the file store's listing of it. */
     const listingOf = (folder: string): ReturnType<typeof listing> =>
@@ -117,34 +125,11 @@
         folder === undefined && link !== undefined && listingOf(dirOf(link)).loading
     );
 
-    const files = $derived(folder === undefined ? null : listingOf(folder));
-    const names = $derived(
-        (files?.entries ?? [])
-            .filter((one) => one.kind === 'file' && /\.md$/i.test(one.name))
-            .map((one) => one.name)
-    );
-    const chosen = $derived(instanceChoice(instanceState(instance.id), 'doc', names));
-    const shown = $derived(
-        folder === undefined || chosen === ''
-            ? null
-            : hubDocument(`${folder}/${chosen}`, entry?.root ?? '')
-    );
-    const documents: SegmentItem[] = $derived(names.map((name) => ({ id: name, label: name })));
-
-    const hubDir = $derived(roots().find((one) => one.key === hub)?.dir ?? '');
-    const rows = $derived(
-        folder === undefined || hubDir === '' ? [] : sessionsForProject(absoluteOf(hubDir, folder))
-    );
-
     /** What the card's last write answered, the one outcome line this tab holds. */
     let said = $state('');
 
-    /** Read once, so the stamps of one rendering all agree on what day it is. */
-    const now = Date.now();
-
-    function choose(name: string): void {
-        setInstanceState(instance.id, { doc: name });
-    }
+    /** True while the question before a delete is open. */
+    let deleting = $state(false);
 
     /** Open the composer on a task; a refusal is said on the line every write answers on. */
     async function startAgent(task: TaskRef): Promise<void> {
@@ -153,8 +138,12 @@
     }
 
     function title(): string {
-        if (entry === null) return t('views.entry');
-        return entry.title === '' ? entry.id : entry.title;
+        return page === null ? t('views.entry') : page.title;
+    }
+
+    /** The words the entry's collection or feed is named by. */
+    function collectionTitle(): string {
+        return collection?.title ?? lookup(`views.${collectionKey}`);
     }
 
     /** Open the workbench of the entry's folder, with this entry's page in its documents pane. */
@@ -169,13 +158,13 @@
 
 {#snippet tools()}
     <Toolbar label={t('entry.toolbar')} overflow>
-        {#if collection !== null && entry !== null}
+        {#if page !== null}
             <ToolButton
                 bare
-                label={t('entry.open_collection', collection.title)}
+                label={t('entry.open_collection', collectionTitle())}
                 glyph="cards"
-                title={t('entry.open_collection_tip', collection.title)}
-                onclick={() => openView(collectionKey, { reveal: entry.id })}
+                title={t('entry.open_collection_tip', collectionTitle())}
+                onclick={() => openView(collectionKey, revealState(collectionKey, key))}
             />
         {/if}
         {#if folder !== undefined && hub !== null && folders.served(hub)}
@@ -187,8 +176,18 @@
                 onclick={openWorkbench}
             />
         {/if}
-        {#if source !== null}
-            <SourceButton file={source} />
+        {#if page !== null}
+            <ToolButton
+                bare
+                label={t('entry_form.delete')}
+                glyph={t('entry_form.delete_glyph')}
+                title={blocked === '' ? t('entry.delete_tip', page.title) : blocked}
+                disabled={blocked !== ''}
+                onclick={() => (deleting = true)}
+            />
+        {/if}
+        {#if file !== null}
+            <SourceButton {file} />
         {/if}
     </Toolbar>
 {/snippet}
@@ -197,79 +196,52 @@
     <div class="entry" data-instance={instance.id} data-entry={key} data-collection={collectionKey}>
         {#if collectionKey === '' || key === ''}
             <Empty message={t('entry.none')} glyph={t('entry.none_glyph')} />
-        {:else if collection === null || entry === null}
+        {:else if page === null}
             <Empty message={t('entry.unknown', collectionKey, key)} glyph={t('entry.none_glyph')} />
         {:else}
             {#if said !== ''}
                 <p class="said">{said}</p>
             {/if}
-            <EntryCard
-                {entry}
-                cursor={false}
-                collection={collectionKey}
-                {schema}
-                projects={projects()}
-                statuses={lifecycle}
-                file={source}
-                fault={faults.get(entry.index)}
-                onsaid={(answer: string) => (said = answer)}
-                more
-                extra={taskCardActions(collectionKey, entry, configMap(), startAgent)}
-            />
+            {#if entry !== null && collection !== null}
+                <EntryCard
+                    {entry}
+                    cursor={false}
+                    collection={collectionKey}
+                    {schema}
+                    projects={projects()}
+                    statuses={lifecycle}
+                    {file}
+                    fault={faults.get(entry.index)}
+                    onsaid={(answer: string) => (said = answer)}
+                    more
+                    extra={taskCardActions(collectionKey, entry, configMap(), startAgent)}
+                />
+            {/if}
 
-            {#if reading}
-                <Empty message={t('entry.reading')} glyph={t('entry.none_glyph')} />
-            {:else if folder === undefined}
-                <Empty message={t('entry.no_folder')} glyph={t('entry.none_glyph')} />
-            {:else}
-                <section class="block">
-                    <h3 class="heading">{t('entry.documents')}</h3>
-                    {#if shown === null}
-                        <Empty
-                            message={files?.loading === true
-                                ? t('entry.reading')
-                                : t('entry.no_documents')}
-                            glyph={t('entry.none_glyph')}
-                        />
-                    {:else}
-                        <Segment
-                            label={t('entry.documents')}
-                            items={documents}
-                            value={chosen}
-                            onchange={(name: string) => choose(name)}
-                        />
-                        <Markdown
-                            doc={shown}
-                            loading={t('entry.doc_loading')}
-                            failed={t('entry.doc_failed', shown.error)}
-                        />
-                    {/if}
-                </section>
+            <section class="block">
+                <h3 class="heading">{t('entry.editor')}</h3>
+                <EntryEditor {page} instance={instance.id} {file} {fault} />
+            </section>
 
-                {#if hub !== null}
-                    <section class="block files">
-                        <FolderFiles {folder} root={hub}>
-                            {#snippet heading()}
-                                <h3 class="heading">{t('entry.files', folder)}</h3>
-                            {/snippet}
-                        </FolderFiles>
-                    </section>
-                {/if}
+            {#if REFERRED.includes(collectionKey)}
+                <Referrers {referrers} />
+            {/if}
 
-                <section class="block">
-                    <h3 class="heading">{t('entry.sessions')}</h3>
-                    {#if rows.length === 0}
-                        <Empty message={t('entry.no_sessions')} glyph={t('entry.none_glyph')} />
-                    {:else}
-                        {#each rows as row (row.id)}
-                            <SessionRow entry={row} {now} />
-                        {/each}
-                    {/if}
-                </section>
+            {#if entry !== null && hub !== null && link !== undefined}
+                <EntryFolder instance={instance.id} {hub} {folder} {reading} />
             {/if}
         {/if}
     </div>
 </Pane>
+
+{#if deleting && page !== null}
+    <DeleteAsk
+        collection={collectionKey}
+        id={key}
+        onsaid={(answer: string) => (said = answer)}
+        onclose={() => (deleting = false)}
+    />
+{/if}
 
 <style>
     .entry {
@@ -289,16 +261,6 @@
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
-    }
-
-    /* The Files heading sits in FolderFiles' centred row with the control, so the row carries the
-       space below it. */
-    .files .heading {
-        margin: 0;
-    }
-
-    .files :global(.head) {
-        margin-bottom: 6px;
     }
 
     .said {

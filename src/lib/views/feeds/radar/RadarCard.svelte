@@ -1,15 +1,20 @@
 <script lang="ts">
     // Layer 3, view partial of views/feeds/radar/Radar.svelte. One paper with its metadata, links,
-    // and writes. It receives the feed entry and project map and keeps only the optional idea form
-    // locally. The source line (authors, venue, year) is one line, cut with an ellipsis where the
-    // card ends, and its whole text is the line's tooltip. A project link ends in an ellipsis where
-    // the card ends, with the whole title as its tooltip.
+    // and writes: Dismiss and Restore set the entry's `dismissed`, Delete asks first and removes
+    // the entry, and the title opens the paper's page, where its fields are edited. It receives the
+    // feed entry and project map and keeps only the optional idea form locally. The source line
+    // (authors, venue, year) is one line, cut with an ellipsis where the card ends, and its whole
+    // text is the line's tooltip. A project link ends in an ellipsis where the card ends, with the
+    // whole title as its tooltip.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import NewIdeaForm from '$lib/views/shared/forms/NewIdeaForm.svelte';
+    import DeleteAsk from '$lib/views/shared/forms/entry/DeleteAsk.svelte';
+    import { pageFault, pageFile } from '$lib/views/shared/forms/entry/edit/page-file';
+    import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         crossLinksOf,
@@ -21,15 +26,19 @@
     } from '$lib/state/feeds/radar';
     import { posting } from '$lib/views/shared/forms/posting';
     import { textOrNumber } from '$lib/data/shapes/shapes';
-    import { feedRoot } from '$lib/state/feeds/idents';
+    import { entryPageState } from '$lib/state/forms/page-entry';
+    import { feedRoot } from '$lib/state/shared/page/idents';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
+    const client = useState();
     const {
         layout: { openView },
+        pages: { pageOf },
+        source: { unsavedFile },
         writes: { writeFeedField }
-    } = useState();
+    } = client;
 
     type Props = {
         entry: RadarEntry;
@@ -43,6 +52,20 @@
 
     let { entry, id, cursor, lastRun, projects, dismissed = false, onsaid }: Props = $props();
     let spinning = $state(false);
+
+    /** True while the question before a delete is open. */
+    let deleting = $state(false);
+
+    const page = $derived(pageOf('radar', id));
+    const file = $derived(page === null ? null : pageFile(client, page));
+    /** Why Delete is disabled: unsaved text of the radar file, or a title no write addresses. */
+    const blocked = $derived(
+        blockedBy(
+            file,
+            file !== null && unsavedFile(file.root, file.path),
+            page === null ? undefined : pageFault(client, page)
+        )
+    );
 
     const text = (field: string): string => textOrNumber(entry[field]);
     const identity = $derived(text('title'));
@@ -73,7 +96,16 @@
     }
 </script>
 
-<Card {id} {cursor} {title} titleHtml={inlineMarkdown(title)} tone={relevanceTone(relevance)}>
+<Card
+    {id}
+    {cursor}
+    {title}
+    titleHtml={inlineMarkdown(title)}
+    ontitle={identity === ''
+        ? undefined
+        : () => openView('entry', entryPageState('radar', id, title))}
+    tone={relevanceTone(relevance)}
+>
     {#snippet meta()}
         <RootChip record={{ root: feedRoot(entry) }} />
         {#if isNew(entry, lastRun)}
@@ -114,6 +146,14 @@
                         onclick={() => mark(true)}
                     />
                 {/if}
+                <ToolButton
+                    label={t('entry_form.delete')}
+                    title={blocked === '' ? t('radar.delete_tip') : blocked}
+                    disabled={blocked !== ''}
+                    glyph={t('entry_form.delete_glyph')}
+                    compact
+                    onclick={() => (deleting = true)}
+                />
             </span>
         {/if}
     {/snippet}
@@ -176,6 +216,10 @@
         />
     {/if}
 </Card>
+
+{#if deleting}
+    <DeleteAsk collection="radar" {id} {onsaid} onclose={() => (deleting = false)} />
+{/if}
 
 <style>
     .sub,

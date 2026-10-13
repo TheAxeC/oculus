@@ -98,7 +98,7 @@
 
 <Pane title={t('views.data')} toolbar={tools} {bar}>
     <div class="data" data-instance={instance.id}>
-        <RegistryHead said={file.said}>
+        <RegistryHead {file}>
             {#snippet intro()}
                 <Intro
                     lines={[

@@ -26,6 +26,7 @@ import {
     togglesPalette,
     type PaletteKey
 } from '$lib/data/helpers/keys/oculus/palette-keys';
+import { PREFIX_ROWS } from '$lib/data/helpers/keys/oculus/palette-table';
 import { initialKeyState, resolveKey, type KeyAction } from '$lib/data/helpers/keys/oculus/resolve';
 import { DOC_PICK, type RailOrder } from '$lib/state/workbench/navigation/catalogue';
 import type { PaletteMode } from '$lib/state/workbench/palette';
@@ -149,7 +150,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         }
         if (opensCommandLine(event) && !options.paletteOpen() && !typingIn(event.target)) {
             event.preventDefault();
-            options.openPalette(':');
+            options.openPalette(PREFIX_ROWS.command.prefix);
             return;
         }
         const pane = focusedPaneElement();
@@ -266,7 +267,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             options.find?.();
         } else if (action.kind === 'workspace-symbol') {
             clearCursor();
-            options.openPalette('#');
+            options.openPalette(PREFIX_ROWS.symbols.prefix);
         } else if (action.kind === 'new-session') {
             clearCursor();
             options.composeIn(pageOf());

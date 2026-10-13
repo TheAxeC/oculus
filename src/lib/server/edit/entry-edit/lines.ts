@@ -11,6 +11,7 @@ import { isBlockMap, isMetalist, renderBlockMap, renderMetalist } from '../yaml/
 import type { FieldValue } from '../yaml/yaml-values.ts';
 import { lineAt, listOf, renderScalar } from '../../../data/helpers/files/yaml/collection-text.ts';
 import {
+    lineStart,
     pairEnd,
     pairOf,
     rangeOf,
@@ -182,6 +183,26 @@ export function verified(source: string, text: string, changes: Change[]): boole
     return isDeepStrictEqual(after, wanted);
 }
 
+/**
+ * What an edit answers once its fields are written: the source back when nothing changed, the new
+ * text when it parses to the source with `changes` applied, and every field of `names` refused
+ * when it does not.
+ */
+export function settled(
+    source: string,
+    text: string,
+    changes: Change[],
+    names: string[],
+    changed: string[],
+    refused: EditResult['refused']
+): EditResult {
+    if (changed.length === 0) return { text: source, changed, refused };
+    if (!verified(source, text, changes)) {
+        return refuseAll(source, names, 'the edit did not verify; nothing was written');
+    }
+    return { text, changed, refused };
+}
+
 /** One expected change applied to the parsed source, or false when the path is not there. */
 function applyChange(root: unknown, change: Change): boolean {
     let holder: unknown = root;
@@ -201,6 +222,36 @@ function applyChange(root: unknown, change: Change): boolean {
     if (change.remove === true) delete holder[last];
     else holder[last] = change.value;
     return true;
+}
+
+/** Whether a scalar is written as a folded (`>`) or a literal (`|`) block. */
+function isBlockScalar(node: Scalar): boolean {
+    return node.type === 'BLOCK_FOLDED' || node.type === 'BLOCK_LITERAL';
+}
+
+/**
+ * A text written as the block scalar the old one was. A folded block keeps a text of one line
+ * folded, and a text with line breaks of its own is written literal, since folding would turn a
+ * break into a space. The clip, strip and keep marks follow the text's trailing line breaks, and
+ * the lines of the range the old block swallowed after its text are written back.
+ */
+function renderBlockScalar(text: string, node: Scalar, value: string): string {
+    const range = rangeOf(node);
+    const start = range === null ? 0 : range[0];
+    const end = range === null ? 0 : valueEnd(node);
+    const swallowed = /\n*$/.exec(text.slice(start, end))?.[0].length ?? 0;
+    const head = text.slice(lineStart(text, start), start);
+    const held = /\n( +)\S/.exec(text.slice(start, end));
+    const pad = ' '.repeat(
+        held === null ? head.length - head.trimStart().length + 2 : held[1].length
+    );
+    const trailing = /\n*$/.exec(value)?.[0].length ?? 0;
+    const body = value.slice(0, value.length - trailing);
+    const chomp = trailing === 0 ? '-' : trailing === 1 ? '' : '+';
+    const folded = node.type === 'BLOCK_FOLDED' && !body.includes('\n');
+    const lines = body.split('\n').map((line) => (line === '' ? '' : `${pad}${line}`));
+    const kept = '\n'.repeat(Math.max(trailing - 1, 0));
+    return `${folded ? '>' : '|'}${chomp}\n${lines.join('\n')}${kept}${'\n'.repeat(Math.max(swallowed, 1))}`;
 }
 
 /** Write a value over the bytes of an existing one, the quoting the file had kept. */
@@ -225,6 +276,9 @@ export function replaceIn(text: string, node: Node, value: Exclude<FieldValue, n
         rendered = renderFlowList(value, itemStyles(node));
     } else {
         if (isYamlMap(node) || isSeq(node)) return fail('the field is a block of its own');
+        if (isScalar(node) && isBlockScalar(node) && typeof value === 'string') {
+            return { text: splice(text, start, end, renderBlockScalar(text, node, value)) };
+        }
         rendered = renderScalar(value, isScalar(node) ? node.type : undefined);
         if (rendered.includes('\n')) return fail('the value does not fit on one line');
     }
@@ -235,7 +289,7 @@ export function replaceIn(text: string, node: Node, value: Exclude<FieldValue, n
 }
 
 /** A field the entry has not got, written on its own line at the entry's own indentation. */
-function appendField(
+export function appendField(
     text: string,
     found: Located,
     field: string,
@@ -270,7 +324,7 @@ function appendField(
 }
 
 /** The whole lines a field occupies, removed. */
-function removeField(text: string, pair: Pair<Scalar, Node>): Written {
+export function removeField(text: string, pair: Pair<Scalar, Node>): Written {
     const key = rangeOf(pair.key);
     const end = pairEnd(pair);
     if (key === null || end === null) return fail('the field has no place in the file');
@@ -279,26 +333,6 @@ function removeField(text: string, pair: Pair<Scalar, Node>): Written {
     const lines = text.split('\n');
     lines.splice(from, to - from + 1);
     return { text: lines.join('\n') };
-}
-
-/** One field of one entry written into the text, or the reason it was not. */
-export function applyEntryField(
-    text: string,
-    ident: string,
-    value: string,
-    field: string,
-    wanted: FieldValue
-): Written {
-    const found = locate(text, ident, value);
-    if (found === null) return fail('the entry is not in the file');
-    const pair = pairOf(found.node, field);
-    if (wanted === null) {
-        if (pair === undefined) return fail('the field is not there');
-        return removeField(text, pair);
-    }
-    if (pair === undefined) return appendField(text, found, field, wanted);
-    if (pair.value === null) return fail('the field has no value node');
-    return replaceIn(text, pair.value, wanted);
 }
 
 /** The line a new key is written on in a map: after its last key's last line. */

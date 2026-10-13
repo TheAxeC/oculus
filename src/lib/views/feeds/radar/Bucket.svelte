@@ -6,7 +6,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import RadarCard from './RadarCard.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
-    import type { FeedIdent } from '$lib/state/feeds/idents';
+    import type { FeedIdent } from '$lib/state/shared/page/idents';
     import {
         sortBucket,
         type Project,

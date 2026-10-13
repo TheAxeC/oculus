@@ -32,6 +32,12 @@ function within(into: WriteTarget, one: HubTarget): PrimaryTarget {
     };
 }
 
+/** The keys of every hub of the workspace, the primary's among them. */
+export function hubKeysOf(into: WriteTarget): string[] {
+    const keys = (into.hubs ?? []).map((one) => one.key);
+    return into.primary === null || keys.includes(into.primary) ? keys : [into.primary, ...keys];
+}
+
 /** The request's target as a target over the primary hub, or null while the workspace has none. */
 export function primaryOf(into: WriteTarget): PrimaryTarget | null {
     if (into.hub === null || into.primary === null) return null;

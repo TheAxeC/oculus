@@ -1,7 +1,8 @@
-// Layer 3, shared view support. What the Add and Edit in File controls of a collection, a registry
-// view and the leads feed do: open the YAML file in a source tab and put the caret where the entry
-// is, or in a new entry placed in the tab's unsaved text. The text rules and the refusals are
-// state/sessions/source/draft-entry.ts; this opens the tab around them.
+// Layer 3, shared view support. What Edit in File and a lead's `applied` control do: open the YAML
+// file in a source tab and put the caret where the entry is, or in a new entry placed in the tab's
+// unsaved text. The text rules and the refusals are state/sessions/source/draft-entry.ts; this
+// opens the tab around them. The Add of a collection, a registry view, the leads feed and Lit Watch
+// writes the entry itself and opens its page (entry/entry-add.ts).
 //
 // The tab is kept, so a single click elsewhere cannot point a preview tab at another file and drop
 // the new entry with it. The place is opened as an empty range, which the editor's range command
@@ -65,10 +66,10 @@ async function arrived(
 export type Placed = { placed: boolean; sentence: string };
 
 /**
- * Add a new entry to a file: the tab opened, the entry placed in its unsaved text, and the caret in
- * it. `values` are fields the entry starts with. `open` opens the tab (beside the reader's view for
- * a lead's `applied`); the place is opened in the tab that holds the file. Nothing is placed and
- * nothing said when no tab could be opened.
+ * Place a new entry in a file: the tab opened, the entry placed in its unsaved text, and the caret
+ * in it. `values` are fields the entry starts with. `open` opens the tab (beside the reader's view
+ * for a lead's `applied`); the place is opened in the tab that holds the file. Nothing is placed
+ * and nothing said when no tab could be opened.
  */
 export async function placeInFile(
     client: ClientState,
@@ -82,17 +83,6 @@ export async function placeInFile(
     if (id === '') return { placed: false, sentence: '' };
     const answer = placeEntry(client.source, id, schema, collection, values);
     return { placed: answer.ok, sentence: await arrived(client, file, answer) };
-}
-
-/** Add a new entry to a file as `placeInFile` does; the answer is the sentence to draw, or ''. */
-export async function addInFile(
-    client: ClientState,
-    file: ViewSource,
-    schema: SchemaField[] | undefined,
-    collection: string,
-    values: Record<string, unknown> = {}
-): Promise<string> {
-    return (await placeInFile(client, file, schema, collection, values)).sentence;
 }
 
 /**

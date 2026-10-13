@@ -24,6 +24,7 @@
 
 <div class:dormant={isDormant(projects)} data-domain={domain.id}>
     <RegistryCard
+        collection="domains"
         id={domain.id}
         {cursor}
         title={domain.title}

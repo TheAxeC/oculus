@@ -6,6 +6,7 @@
 
 import { debugKeyOf, type DebugKey } from './debug-keys.ts';
 import { SAVE_PRESS } from './editor-keys.ts';
+import { isPress, KEY_ROWS } from './palette-table.ts';
 
 /** The part of the rail's order the keys read: the lists a one-letter chord counts into. */
 export type ChordOrder = { chords: Record<string, readonly string[] | undefined> };
@@ -176,7 +177,9 @@ function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
     if (event.code === 'KeyW') return { kind: 'close-tab' };
     if (event.code === 'KeyN') return { kind: 'new-text-file' };
     if (event.code === 'KeyF') return { kind: 'find' };
-    if (event.code === 'KeyT') return { kind: 'workspace-symbol' };
+    if (KEY_ROWS.symbols.presses.some((press) => isPress(press, event, mac))) {
+        return { kind: 'workspace-symbol' };
+    }
     return null;
 }
 

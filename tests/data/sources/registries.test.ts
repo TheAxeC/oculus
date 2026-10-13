@@ -113,3 +113,17 @@ describe('readRegistries', () => {
         expect(out.pillars.meta).toEqual({ schema: [] });
     });
 });
+
+describe('a registry whose list key holds nothing', () => {
+    it('reads as a registry with no entries and no finding, as the file is after its last entry is deleted', () => {
+        const hub = scratch();
+        write(
+            hub,
+            REGISTRY_FILES.pillars,
+            'schema:\n  - { field: key, type: text }\nentries:\n  # none yet\n'
+        );
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
+        expect(out.pillars.entries).toEqual([]);
+        expect(out.findings.filter((one) => one.file.endsWith(REGISTRY_FILES.pillars))).toEqual([]);
+    });
+});

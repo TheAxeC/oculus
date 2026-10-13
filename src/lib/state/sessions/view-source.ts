@@ -1,5 +1,6 @@
 // Layer 2, client state. Which file of the primary hub a view is drawn from: one of the three feeds
-// by its kind, one of the five registry views with a pane of its own, or one collection by its key.
+// by its kind, the career file, one of the five registry views with a pane of its own, or one
+// collection by its key.
 // All of them are read from the merged configuration the config channel carries, so every view that
 // offers the file shares one rule and one answer.
 //
@@ -18,7 +19,7 @@ export type ViewSource = { root: string; path: string };
 /**
  * What a view is drawn from: one of the three feeds, one of the five registries, or a collection.
  */
-export type ViewSourceKind = FeedKind | 'collection' | RegistryKind;
+export type ViewSourceKind = FeedKind | 'collection' | 'career' | RegistryKind;
 
 /** The registry views drawn from a file of their own, each by the view's own id. */
 export type RegistryKind = 'people' | 'venues' | 'datasets' | 'pillars' | 'domains';
@@ -28,6 +29,7 @@ const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection'>, string> = {
     leads: 'leads_file',
     radar: 'radar_file',
     linkedin: 'linkedin_dir',
+    career: 'career_file',
     people: 'people_file',
     venues: 'venues_file',
     datasets: 'datasets_file',

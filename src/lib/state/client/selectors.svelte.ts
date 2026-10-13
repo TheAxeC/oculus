@@ -151,7 +151,7 @@ export type SelectorsStore = {
     archiveDead: () => string[];
     manifestFields: () => FormField[];
     manifestSections: () => string[];
-    fieldChoices: (field: FormField, project?: Project | null) => Choice[];
+    fieldChoices: (field: FormField, project?: Project | null, root?: string) => Choice[];
     contextWindow: () => number;
     waitingCount: () => number;
     sessionById: (id: string | null) => GroupedSession | null;
@@ -410,8 +410,12 @@ export function createSelectors(
      * What one field of choices may be set to, over the snapshot and the vocabulary as they stand,
      * offering the records of the project's own hub (the primary hub's for a new project).
      */
-    function fieldChoices(field: FormField, project: Project | null = null): Choice[] {
-        const root = project?.root ?? workspace().primary ?? '';
+    function fieldChoices(
+        field: FormField,
+        project: Project | null = null,
+        hub?: string
+    ): Choice[] {
+        const root = hub ?? project?.root ?? workspace().primary ?? '';
         const all = choicesFor(field, entities.portfolio(), configMap(), root, workspace().primary);
         // The Focus lane of a project offers only what the board may move it to, so `holding` is
         // not offered to a project of a tier the backlog does not draw.

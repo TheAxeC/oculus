@@ -1,21 +1,24 @@
-# Oculus text owned by the entry view, the tab one collection entry whose link names a folder opens
-# as. The view is opened from the title of that entry's card, so its words name what the reader came
-# from: the card, the folder's documents and files, and the sessions working in the folder.
+# Oculus text owned by the entry view, the tab one entry of a collection or of the leads or Lit Watch
+# feed opens as. The view is opened from the title of that entry's card, so its words name what the
+# reader came from: the card, the editor, what refers to the entry, and, for an entry whose link
+# names a folder, the folder's documents and files and the sessions working in the folder.
 text:
     views:
         entry: Entry
         entry_glyph: cards
     entry:
         toolbar: Entry controls
-        none: This tab was opened for no entry. Press the title of a card whose link names a folder to open its page.
-        unknown: 'The file of {0} holds no entry with the key {1}.'
+        none: This tab was opened for no entry. Press the title of a card to open its page.
+        unknown: 'The file of {0} holds no entry with the key {1}. If it was deleted, Undo in History brings it back and this page shows it again.'
         no_folder: This entry's link names no folder of the hub, so there are no documents, files or sessions to show.
         reading: Reading the folder ...
         open_collection: 'Show in {0}'
         open_collection_tip: 'Open {0} and scroll to this entry'
         open_workbench: Open Workbench
         open_workbench_tip: 'Open a workbench for {0}'
+        delete_tip: 'Delete {0}'
         documents: Documents
+        editor: Edit
         no_documents: The folder holds no Markdown file.
         doc_loading: loading the document ...
         doc_failed: 'the document was not read: {0}'

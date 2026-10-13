@@ -60,6 +60,9 @@ export type SubtaskAddWrite = {
 /** One host of registries/career.yml moved along the pipeline. */
 export type HostWrite = { kind: 'host'; name: string; status: string };
 
+/** Sections of registries/career.yml set from the career editor: the section and its new value. */
+export type CareerWrite = { kind: 'career'; fields: Record<string, unknown> };
+
 /** One new entry of one collection, and one new idea folder. */
 export type NewEntryWrite = {
     kind: 'new-entry';
@@ -251,6 +254,11 @@ const hostShape = z.object({
     name: wordShape,
     status: wordShape
 }) satisfies z.ZodType<HostWrite>;
+
+const careerShape = z.object({
+    kind: z.literal('career'),
+    fields: mapShape
+}) satisfies z.ZodType<CareerWrite>;
 
 const newEntryShape = z.object({
     kind: z.literal('new-entry'),
@@ -449,6 +457,11 @@ export function subtaskAdd(body: unknown): SubtaskAddWrite | null {
 /** The body as a host write, or null when it is not one. */
 export function hostWrite(body: unknown): HostWrite | null {
     return readAs(hostShape, body);
+}
+
+/** The body as a career write, or null when it is not one. */
+export function careerWrite(body: unknown): CareerWrite | null {
+    return readAs(careerShape, body);
 }
 
 /** The body as a new entry, or null when it is not one. */

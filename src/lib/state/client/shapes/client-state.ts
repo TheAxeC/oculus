@@ -32,7 +32,8 @@ import type { Desktop } from '../../shared/stores/desktop.ts';
 import type { Windows } from '../../workbench/layout/open/float/browser.ts';
 import type { LayoutStore } from '../../workbench/layout.svelte.ts';
 import type { LinesStore } from '../../system/lines.svelte.ts';
-import type { ManifestDraftStore } from '../../forms/manifest-draft.ts';
+import type { FormDraftStore } from '../../forms/form-draft.ts';
+import type { Pages } from '../../forms/page-entry.ts';
 import type { MemoriesStore } from '../../life/pictures/memories.svelte.ts';
 import type { WallpapersStore } from '../../life/pictures/wallpapers.svelte.ts';
 import type { NoticesStore } from '../../workbench/navigation/notices.svelte.ts';
@@ -119,7 +120,10 @@ export type ClientState = {
     source: SourceStore;
     /** Saving a source tab by `editor.autosave`: the editor's blur reaches it here. */
     autosave: AutosaveStore;
-    manifestDraft: ManifestDraftStore;
+    /** The unsaved edits of the project editor and of the forms over an entry or the career. */
+    formDraft: FormDraftStore;
+    /** The pages of collection entries, feed entries and the career file, found by name. */
+    pages: Pages;
     feeds: FeedsStore;
     hpc: HpcStore;
     processes: ProcessesStore;

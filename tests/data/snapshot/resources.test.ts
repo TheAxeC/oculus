@@ -24,6 +24,13 @@ function sentence(key: string, ...args: string[]): string {
 
 /** The three seed entries of registries/resources.yml. */
 const SEED = [
+    'schema:',
+    '  - { field: key, type: text }',
+    '  - { field: name, type: text }',
+    '  - { field: kind, type: text }',
+    '  - { field: host, type: text }',
+    '  - { field: access, type: text }',
+    '  - { field: links, type: tags }',
     'entries:',
     '  - key: "utwente"',
     '    name: "UTwente HPC"',

@@ -56,6 +56,7 @@ import { perOculus } from '../files/workspace/paths.ts';
 import { words } from '../core/words.ts';
 import {
     homeOf,
+    hubKeysOf,
     routed,
     routedEntry,
     routedOrder,
@@ -65,7 +66,13 @@ import {
 import { primaryConfig, hubManifests, hubTargets, type HubTarget } from '../files/roots.ts';
 import { filesTargetOf, undoFiles, type FilesDeps, type FilesTarget } from './writes/file-undo.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
-import { careerRules, writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
+import {
+    careerRules,
+    writeCareer,
+    writeHost,
+    writeSubtask,
+    writeSubtaskAdd
+} from './writes/subtasks.ts';
 import {
     addLead,
     addRadarEntry,
@@ -81,6 +88,7 @@ import {
     deleteEntryWrite,
     entryWrite,
     feedDeleteWrite,
+    careerWrite,
     feedFieldWrite,
     hostWrite,
     manifestWrite,
@@ -493,6 +501,19 @@ export async function handleWrite(
         return answer(outcome, 'host', into, undefined, app ?? undefined);
     }
 
+    const career = careerWrite(body);
+    if (career !== null) {
+        const home = homeOf(into);
+        if (home === null) return noHub(into);
+        const outcome = writeCareer(home.hub, career.fields, into.career, into.config.text);
+        if (!outcome.found)
+            return json(
+                { error: words(into.config.text, 'server.career.no_file') },
+                { status: 404 }
+            );
+        return answer(outcome, 'career', into, undefined, app ?? undefined);
+    }
+
     const fresh = newEntry(body);
     if (fresh !== null) {
         const home = homeOf(into);
@@ -502,7 +523,8 @@ export async function handleWrite(
             home.config,
             fresh.collection,
             fresh.fields,
-            home.bookmarks
+            home.bookmarks,
+            hubKeysOf(into)
         );
         if (!outcome.found)
             return json({ error: `no collection ${fresh.collection}` }, { status: 404 });

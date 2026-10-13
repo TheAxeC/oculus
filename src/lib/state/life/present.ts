@@ -360,7 +360,10 @@ export function nothingToShow(
 // is an entry of `present.yml` that Delete takes out of `order:`. The server decides the same thing
 // from the same facts and refuses the rest; the menu offers only what it would take.
 
-export type SlideAct = 'edit' | 'new' | 'duplicate' | 'delete';
+/** The acts a slide can offer, in the order its menu lists them. */
+export const SLIDE_ACTS = ['edit', 'new', 'duplicate', 'delete'] as const;
+
+export type SlideAct = (typeof SLIDE_ACTS)[number];
 
 /** The extensions an image dropped on a slide may have, which the server takes. */
 const IMAGE_ENDINGS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];

@@ -6,11 +6,15 @@
     // type their name and a space, which opens their list; the others change the theme, the file
     // icon theme, the CRT overlay, the tabs or the folder shown, and close the palette. A tab a
     // command showed takes the keyboard on its head once the page has drawn it, since the tab
-    // chosen is where the reader went. A refusal of Open Folder or of Close Workspace is said in
-    // the palette, which stays open.
+    // chosen is where the reader went. A refusal of Open Folder, of Close Workspace or of Add Task
+    // is said in the palette, which stays open. Add Task writes the task and posts a notice with an
+    // Open action; Shift+Enter, or a press with Shift held, opens the task's page as well.
 
+    import { opensTaskPage } from '$lib/data/helpers/keys/oculus/palette-table';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
     import { landOn } from '$lib/shell/keys/palette-open';
+    import { addTask } from '$lib/state/forms/new-entry';
+    import { pageView } from '$lib/state/forms/page-entry';
     import { fileIconThemeNamed, themeNamed } from '$lib/state/shared/words/appearance';
     import { opensAsMode } from '$lib/shell/keys/palette-modes';
     import {
@@ -25,8 +29,11 @@
 
     const {
         explorer,
-        fs: { closeWorkspace },
+        fs: { closeWorkspace, primary },
         layout: { openView },
+        notices,
+        selectors: { collectionsOfKey },
+        writes: { newEntry },
         paletteSource: { paletteSource },
         ui: { setCrt, setFileIcons, setTheme, crt },
         registry: { views },
@@ -47,6 +54,9 @@
 
     let { parsed, list, caret, onclose, onupdate, ontype, onsaid }: Props = $props();
 
+    /** Whether Shift is held, which the press of Add Task is read against. */
+    let shifted = false;
+
     const current = $derived(paletteSource());
     const knownViews = $derived(
         views().map((view) => ({ id: view.id, label: registrationLabel(view) }))
@@ -66,6 +76,26 @@
         else onsaid(result.said);
     }
 
+    /** Add Task: the task written, a notice that opens it, and its page when Shift is held. */
+    async function addTaskTitled(title: string, open: boolean): Promise<void> {
+        const added = await addTask(title, collectionsOfKey('tasks'), primary(), newEntry);
+        if (added.said !== '') {
+            onsaid(added.said);
+            return;
+        }
+        const page = pageView('tasks', added.id, added.label);
+        notices.post(t('app.palette.task_added', added.label), {
+            actions: [
+                {
+                    label: t('app.palette.task_open'),
+                    run: () => void openView(page.view, page.state)
+                }
+            ]
+        });
+        if (open) void landOn(openView(page.view, page.state));
+        onclose();
+    }
+
     function run(command: PaletteCommand): void {
         if (!command.available) return;
         const argument = parsed.argument;
@@ -73,6 +103,10 @@
         let shown = '';
         if (opensAsMode(command.name)) {
             ontype(`:${command.name} `);
+            return;
+        }
+        if (command.name === 'task-add') {
+            void addTaskTitled(argument, shifted);
             return;
         }
         if (command.name === 'folder') {
@@ -109,6 +143,11 @@
         if (shown !== '') void landOn(shown);
     }
 </script>
+
+<svelte:window
+    onkeydowncapture={(event: KeyboardEvent) => (shifted = opensTaskPage(event))}
+    onkeyupcapture={(event: KeyboardEvent) => (shifted = opensTaskPage(event))}
+/>
 
 {#if parsed.name === '' && caret !== null}
     <p class="empty" data-line-hint>

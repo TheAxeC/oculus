@@ -1,7 +1,8 @@
-// Layer 3, shell. Opens one palette result through the layout, then puts transient reveal state in
-// the UI store of the activated instance. Project state remains layout identity; reveal state does
-// not create a second tab for the same feed or collection view. The saved search of the instance is
-// cleared with it, so a card the search would hide is mounted for the reveal.
+// Layer 3, shell. Opens one palette result through the layout. A project, an entry's page and a
+// person's page are opened with the state that names them, as a card's title opens them. A result
+// that reveals a card (a LinkedIn idea) puts transient reveal state in the UI store of the
+// activated instance, so it does not create a second tab for the same view; the saved search of
+// the instance is cleared with it, so a card the search would hide is mounted for the reveal.
 //
 // An editor action opens nothing: it asks the source tab or diff pane it names to run the action,
 // and answers that tab's instance. Pin Editor and Unpin Editor are editor items too, and act on the
@@ -37,7 +38,6 @@ export function openPaletteItem(
     { layout, ui, editorStatus: editor, paletteSource: offers, appShell, commands }: Opener,
     item: PaletteItem
 ): string {
-    if (item.kind === 'project') return layout.openView(item.view, item.state);
     if (item.kind === 'app') {
         const app = item.state?.app;
         const command = item.state?.command;
@@ -71,9 +71,9 @@ export function openPaletteItem(
         return instance;
     }
 
-    const id = layout.openView(item.view);
     const reveal = item.state?.reveal;
-    if (typeof reveal !== 'string' || reveal === '') return id;
+    if (typeof reveal !== 'string' || reveal === '') return layout.openView(item.view, item.state);
+    const id = layout.openView(item.view);
     ui.setInstanceState(id, { ...instanceMap(ui.instanceState(id)), ...item.state, search: '' });
     return id;
 }

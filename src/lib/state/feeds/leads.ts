@@ -19,7 +19,7 @@ import {
     isLeadDeclined,
     isLeadOpen
 } from '../../data/accounts/leads.ts';
-import { feedCursorId, uniqueIdents } from './idents.ts';
+import { feedCursorId, uniqueIdents } from '../shared/page/idents.ts';
 
 export type LeadEntry = Record<string, unknown>;
 export type FitKey = 'strong' | 'moderate' | 'reach';

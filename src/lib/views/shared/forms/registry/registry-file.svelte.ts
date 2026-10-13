@@ -1,9 +1,9 @@
 // Layer 3, shared view support. The file a registry view (Venues, Data, Pillars, Domains) is drawn
-// from, and what its Add and Edit in File controls need of it: the collection read from the file,
-// the file's source address, the identities a write cannot address, the sentence the last Add or
-// Edit in File answered, and Add itself. A view makes one at its start and reads it by property. An
-// entry of a hub other than the primary is read from that hub's own registry file, so its card
-// edits that file with that file's schema and identities; Add writes the primary's.
+// from, and what its Add, Delete and Edit in File controls need of it: the collection read from
+// the file, the file's source address, the identities a write cannot address, the sentence the last
+// Delete or Edit in File answered, and the Add box. A view makes one at its start and reads it by
+// property. An entry of a hub other than the primary is read from that hub's own registry file, so
+// its card edits that file with that file's schema and identities; Add writes the primary's.
 
 import type { ClientState } from '$lib/state/client/context';
 import { fileUnder } from '$lib/state/shared/page/hubs';
@@ -20,7 +20,7 @@ import {
     type RegistryKind,
     type ViewSource
 } from '$lib/state/sessions/view-source';
-import { addInFile } from '../entry-file';
+import { collectionAsk, type Ask } from '../entry/entry-add';
 
 /** The file of one registry view and the reads and acts its controls make of it. */
 export type RegistryFile = {
@@ -38,8 +38,12 @@ export type RegistryFile = {
     sourceOf: (id: string) => ViewSource | null;
     /** Why a write cannot address the entry, from the identities of the file that holds it. */
     faultOf: (id: string) => IdentityFault | undefined;
-    /** Add opens the registry file with a new entry in its unsaved text and the caret in it. */
-    add: () => Promise<void>;
+    /** The Add box while it is open: it asks the new entry's name and opens the entry's page. */
+    readonly asking: Ask | null;
+    /** Open the Add box. */
+    add: () => void;
+    /** Close the Add box. */
+    closeAsk: () => void;
 };
 
 /**
@@ -64,6 +68,7 @@ export function registryFile(client: ClientState, kind: RegistryKind, key: strin
     /** The part whose file holds the entry of the id. */
     const partOf = (id: string) => parts.find((one) => entryById(one.collection, id) !== null);
     let said = $state('');
+    let asking = $state<Ask | null>(null);
     return {
         get collection() {
             return collection;
@@ -73,6 +78,9 @@ export function registryFile(client: ClientState, kind: RegistryKind, key: strin
         },
         get said() {
             return said;
+        },
+        get asking() {
+            return asking;
         },
         say: (words) => {
             said = words;
@@ -85,9 +93,11 @@ export function registryFile(client: ClientState, kind: RegistryKind, key: strin
             const entry = entryById(part?.collection, id);
             return entry === null ? undefined : part?.faults.get(entry.index);
         },
-        add: async () => {
-            if (source === null) return;
-            said = await addInFile(client, source, collection?.schema, key);
+        add: () => {
+            asking = collectionAsk(client, key, collection?.schema, collection?.title ?? key);
+        },
+        closeAsk: () => {
+            asking = null;
         }
     };
 }

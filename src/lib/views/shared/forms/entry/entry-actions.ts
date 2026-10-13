@@ -1,8 +1,22 @@
-// Layer 3, view helper of views/shared/forms/entry/EntryCard.svelte. The controls one entry's card
-// carries in its meta row, from what the card knows: whether a write can address the entry, why the
-// controls that write are disabled, and the handlers the card gives each.
+// Layer 3, view helper of views/shared/forms/entry/EntryCard.svelte and of the registry cards. The
+// controls one entry's card carries in its meta row, from what the card knows: whether a write can
+// address the entry, why the controls that write are disabled, and the handlers the card gives
+// each. The cards of a registry (Venues, Data and the others) take Edit in File and Delete from
+// `recordActions`.
 
+import {
+    hubPathsOf,
+    listsAsFolder,
+    pageFolder,
+    type Entry,
+    type IdentityFault,
+    type SchemaField
+} from '$lib/state/boards/collection';
+import type { ClientState } from '$lib/state/client/context';
+import type { ViewSource } from '$lib/state/sessions/view-source';
 import { t } from '$lib/state/shared/words/text';
+import { editAction } from '../../card/card';
+import { fileNameOf, openEntry } from '../entry-file';
 import type { CardAction } from '../../card/CardActions.svelte';
 
 /** What the card's controls are made from. */
@@ -26,8 +40,50 @@ export type EntryActionInput = {
     onstatus: (next: string) => void;
     onpin: () => void;
     onedit: () => void;
+    ondelete: () => void;
     onsubtask: () => void;
 };
+
+/** The control that asks before an entry is deleted; disabled, with the reason, while blocked. */
+function deleteAction(blocked: string, ondelete: () => void): CardAction {
+    return {
+        id: 'delete',
+        label: t('entry_form.delete'),
+        title: blocked === '' ? undefined : blocked,
+        glyph: t('entry_form.delete_glyph'),
+        disabled: blocked !== '',
+        onclick: ondelete
+    };
+}
+
+/** What the Edit in File control of a record card is made from. */
+export type RecordTarget = {
+    client: ClientState;
+    file: ViewSource | null;
+    entry: Entry | null;
+    schema: SchemaField[] | undefined;
+    fault: IdentityFault | undefined;
+    /** Says the sentence of a refusal to open the file. */
+    onsaid: (said: string) => void;
+};
+
+/**
+ * Edit in File and Delete, the two controls of a record whose file holds it; a line the file does
+ * not hold, or a file with no schema, has neither.
+ */
+export function recordActions(
+    target: RecordTarget,
+    blocked: string,
+    ondelete: () => void
+): CardAction[] {
+    const { client, file, entry, schema, fault, onsaid } = target;
+    if (entry === null || schema === undefined) return [];
+    const rows: CardAction[] = [
+        editAction(fileNameOf(file), () => openEntry(client, file, entry, schema, fault, onsaid)),
+        deleteAction(blocked, ondelete)
+    ];
+    return rows;
+}
 
 /** The words of a control that writes: its own, or the ones saying why it cannot. */
 function titled(input: EntryActionInput, own?: string): string | undefined {
@@ -35,10 +91,10 @@ function titled(input: EntryActionInput, own?: string): string | undefined {
 }
 
 /**
- * The card's controls: the pin, Edit in File, while the entry has no subtask adding its first, and
- * the Show in Files controls, then the controls the collection passes in. A file with no schema has
- * no identity to write by, so its cards carry the file's other lifecycle statuses instead of the
- * first three.
+ * The card's controls: the pin, Edit in File, Delete, while the entry has no subtask adding its
+ * first, and the Show in Files controls, then the controls the collection passes in. A file with no
+ * schema has no identity to write by, so its cards carry the file's other lifecycle statuses
+ * instead of the first three.
  */
 export function entryActions(input: EntryActionInput): CardAction[] {
     if (!input.addressable) {
@@ -69,7 +125,8 @@ export function entryActions(input: EntryActionInput): CardAction[] {
             title: t('collection.edit_in_file_title', input.fileName),
             glyph: t('collection.edit_glyph'),
             onclick: input.onedit
-        }
+        },
+        deleteAction(input.blocked, input.ondelete)
     ];
     if (input.firstSubtask) {
         rows.push({
@@ -83,4 +140,52 @@ export function entryActions(input: EntryActionInput): CardAction[] {
         });
     }
     return rows.concat(input.shows, input.extra);
+}
+
+/** What the Show in Files controls of a card are made from. */
+export type ShowInput = {
+    entry: Entry;
+    /** The root of the hub the entry is of, which every path of its fields is under. */
+    root: string;
+    /** The entries of one folder of the hub, from the file store's listing of it. */
+    listed: Parameters<typeof listsAsFolder>[1];
+    /** Whether the hub is served, which Open Workbench needs. */
+    served: boolean;
+    /** Show a path in a Files tab; `folder` says whether the path is a folder. */
+    onfiles: (path: string, folder: boolean) => void;
+    /** Open the workbench of a folder; `own` says it is the folder the entry's page is for. */
+    onworkbench: (path: string, own: boolean) => void;
+};
+
+/**
+ * One Show in Files control per hub path the entry's `link`, `url` or `folder` names: a folder
+ * opens a Files tab rooted at it and a file is selected in the page's Files tab. A folder of a
+ * served hub also gets Open Workbench, with the entry's page in its documents pane when the folder
+ * is the one the entry's page is for.
+ */
+export function showActions(input: ShowInput): CardAction[] {
+    return hubPathsOf(input.entry.fields).flatMap((path): CardAction[] => {
+        const folder = listsAsFolder(path, input.listed);
+        const show: CardAction = {
+            id: `files:${path}`,
+            label: t('collection.show_in_files'),
+            title: folder
+                ? t('folder_files.show_in_files_tip', path)
+                : t('collection.show_in_files_tip', path),
+            glyph: 'show_in_files',
+            onclick: () => input.onfiles(path, folder)
+        };
+        if (!folder || !input.served) return [show];
+        const own = pageFolder(input.entry.fields, input.listed) === path;
+        return [
+            show,
+            {
+                id: `workbench:${path}`,
+                label: t('collection.open_workbench'),
+                title: t('collection.open_workbench_tip', path),
+                glyph: 'app_view',
+                onclick: () => input.onworkbench(path, own)
+            }
+        ];
+    });
 }

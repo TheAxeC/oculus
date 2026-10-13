@@ -15,6 +15,7 @@
 
 import { z } from 'zod';
 import type { Id, Project, Resource, Snapshot } from '../../data/model/index.ts';
+import type { DraftTarget } from './form-draft.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
 import { rootOf } from '../../data/helpers/hub-names.ts';
 import { vocabKeys } from '../../data/shapes/vocab-keys.ts';
@@ -36,10 +37,18 @@ export type FormField = {
     type: string;
     /** One of the sections of `manifest_schema.sections`. */
     section: string;
-    /** Where the choices come from, when they are data. */
-    from?: string;
+    /** Where the choices come from, when they are data: one source or several offered together. */
+    from?: string | string[];
     /** The choices, when they are a literal list in the schema. */
     options?: string[];
+    /** On a `records` field: the fields of each record, in the schema's order. */
+    fields?: FormField[];
+    /** On a `records` field: the record takes keys no field of it names. */
+    open?: boolean;
+    /** On a `records` field: the value is a map from a name to one record. */
+    map?: boolean;
+    /** Whether the field must be present, as its schema says; a conditional rule is not drawn. */
+    required?: boolean;
 };
 
 /**
@@ -251,7 +260,11 @@ export function choicesFor(
 ): Choice[] {
     const own = (field.options ?? []).map((one) => ({ id: one, label: one }));
     if (field.from === undefined) return own;
-    return [...own, ...sourceChoices(field.from, snapshot, config, root, primary)];
+    const sources = Array.isArray(field.from) ? field.from : [field.from];
+    return [
+        ...own,
+        ...sources.flatMap((from) => sourceChoices(from, snapshot, config, root, primary))
+    ];
 }
 
 /** The choices a `from:` source offers: a registry's entities, the projects or a vocab list. */
@@ -425,4 +438,31 @@ export function refusedEdits(refused: string[]): string[] {
     return refused.flatMap((field) =>
         field === 'followup' ? [field, ...FOLLOWUP_FIELDS] : [field]
     );
+}
+
+/**
+ * Whether an edit says something other than what the project says. The two are compared trimmed,
+ * because the write trims: an edit that differs from the file by a space at the end is an edit the
+ * server would answer with nothing changed.
+ */
+export function editDiffers(edit: unknown, value: unknown): boolean {
+    return asText(edit).trim() !== asText(value).trim();
+}
+
+/**
+ * What the project editor's draft is judged by: the project's values in the snapshot now, the
+ * trimmed comparison above, and the fields the manifest form writes (`writableField`).
+ */
+export function projectDraftTarget(projectOf: (id: string) => Project | null): DraftTarget {
+    return {
+        values: (name) => {
+            const project = projectOf(name);
+            return project === null ? null : fieldValues(project);
+        },
+        differs: (_name, _field, edit, value) => editDiffers(edit, value),
+        writable: (name, field, edits) => {
+            const project = projectOf(name);
+            return project === null || writableField(project, field, edits);
+        }
+    };
 }

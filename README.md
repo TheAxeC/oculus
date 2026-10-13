@@ -25,6 +25,7 @@ The checks run from `tools/oculus`:
 - `npm run build` builds the server.
 - `npm run lint` and `npm run format:check` hold the source to its conventions: Prettier with four-space indentation, which `npm run format` applies.
 - `npm run diagrams` redraws the diagrams of `docs/diagrams/` from the source, and the tree check `tests/checks/diagrams/diagrams.test.ts`, one of those `npm run test:checks` runs, fails while a committed diagram differs from what the source gives now.
+- `npm run docs:palette` writes `docs/palette.md`, the list of every palette command, argument, prefix and key, from the tables the palette runs on, and `tests/checks/diagrams/palette.test.ts`, one of those `npm run test:checks` runs, fails while the committed page differs from what the registry gives now.
 
 ## Two Claude accounts
 

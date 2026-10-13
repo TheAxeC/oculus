@@ -13,8 +13,9 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, Data view partial. One dataset card, its registry metadata, recovery, project users
-    // and Edit in File. The server supplies the recovery command and working directory.
+    // Layer 3, Data view partial. One dataset card, its registry metadata, recovery, project users,
+    // Edit in File and Delete. The dataset's name opens its page. The server supplies the recovery
+    // command and working directory.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -22,12 +23,14 @@
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
-    import { editAction } from '$lib/views/shared/card/card';
-    import { fileNameOf, openEntry } from '$lib/views/shared/forms/entry-file';
+    import DeleteAsk from '$lib/views/shared/forms/entry/DeleteAsk.svelte';
+    import { recordActions } from '$lib/views/shared/forms/entry/entry-actions';
+    import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import { accessTone, type Dataset } from '$lib/state/sources/registries/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, IdentityFault, Project, SchemaField } from '$lib/state/boards/collection';
+    import { pageView } from '$lib/state/forms/page-entry';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { readOr } from '$lib/data/shapes/shapes';
     import { t } from '$lib/state/shared/words/text';
@@ -35,7 +38,9 @@
 
     const client = useState();
     const {
+        layout: { openView },
         selection: { select },
+        source: { unsavedFile },
         terminals: { recoverDataset, showTerminal }
     } = client;
 
@@ -55,6 +60,14 @@
     let { dataset, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
     let recovering = $state(false);
 
+    /** True while the question before a delete is open. */
+    let deleting = $state(false);
+
+    /** Why the controls that write are disabled, '' when they are not. */
+    const blocked = $derived(
+        blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
+    );
+
     const retrieval = $derived(
         readOr(retrievalShape, dataset.retrieval, { method: undefined, notes: '' })
     );
@@ -67,15 +80,14 @@
      * starting.
      */
     const actions = $derived.by((): CardAction[] => {
-        const rows: CardAction[] = [];
-        if (entry !== null && schema !== undefined) {
-            rows.push(
-                editAction(fileNameOf(file), () =>
-                    openEntry(client, file, entry, schema, fault, onsaid)
-                )
-            );
-        }
-        rows.push({
+        const record: CardAction[] = recordActions(
+            { client, file, entry, schema, fault, onsaid },
+            blocked,
+            () => {
+                deleting = true;
+            }
+        );
+        return record.concat({
             id: 'recover',
             label: t('data.recover'),
             title: t('data.recover_tip'),
@@ -83,8 +95,14 @@
             active: recovering,
             onclick: recover
         });
-        return rows;
     });
+
+    /** The dataset's page, opened from its heading. */
+    function openPage(): void {
+        if (entry === null) return;
+        const page = pageView('data', entry.id, dataset.name === '' ? dataset.id : dataset.name);
+        openView(page.view, page.state);
+    }
 
     async function recover(): Promise<void> {
         if (recovering) return;
@@ -106,6 +124,7 @@
         {cursor}
         title={dataset.name === '' ? dataset.id : dataset.name}
         titleHtml={inlineMarkdown(dataset.name === '' ? dataset.id : dataset.name)}
+        ontitle={entry === null ? undefined : openPage}
     >
         {#snippet meta()}
             <RootChip record={dataset} />
@@ -173,6 +192,10 @@
         {/if}
     </Card>
 </div>
+
+{#if deleting && entry !== null}
+    <DeleteAsk collection="data" id={entry.id} {onsaid} onclose={() => (deleting = false)} />
+{/if}
 
 <style>
     .meta,

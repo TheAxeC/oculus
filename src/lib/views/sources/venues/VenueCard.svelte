@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, Venues view partial. One catalogue venue, its metadata, project users, its deadline
-    // changed in place and Edit in File.
+    // changed in place, Edit in File and Delete. The venue's name opens its page.
     // The project list is already restricted to real users, and concentration arrives as a flag.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
@@ -16,10 +16,11 @@
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import CardActions, { type CardAction } from '$lib/views/shared/card/CardActions.svelte';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';
-    import { editAction } from '$lib/views/shared/card/card';
+    import DeleteAsk from '$lib/views/shared/forms/entry/DeleteAsk.svelte';
+    import { recordActions } from '$lib/views/shared/forms/entry/entry-actions';
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import InPlace from '$lib/views/shared/forms/InPlace.svelte';
-    import { blockedBy, fileNameOf, openEntry } from '$lib/views/shared/forms/entry-file';
+    import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         groupProjects,
@@ -29,6 +30,7 @@
         type IdentityFault,
         type SchemaField
     } from '$lib/state/boards/collection';
+    import { pageView } from '$lib/state/forms/page-entry';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { t } from '$lib/state/shared/words/text';
     import {
@@ -43,7 +45,7 @@
 
     const client = useState();
     const {
-        layout: { showInFiles },
+        layout: { openView, showInFiles },
         selectors: { archiveDead },
         source: { unsavedFile }
     } = client;
@@ -77,13 +79,21 @@
         onsaid
     }: Props = $props();
 
+    /** True while the question before a delete is open. */
+    let deleting = $state(false);
+
     const groups = $derived(groupProjects(projects, archiveDead()));
     /** The hub path the venue's `link` names, or undefined for an address or no link. */
     const linkPath = $derived(hubPathsOf({ link: venue.link }).at(0));
 
+    /** Why the deadline and Delete cannot be written, or '' when it can. */
+    const blocked = $derived(
+        blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
+    );
+
     /**
      * The card's controls, drawn while the card is hovered or holds the focus: Show in Files for a
-     * link that is a hub path, and Edit in File for a venue the collection file holds.
+     * link that is a hub path, Edit in File for a venue the collection file holds, and Delete.
      */
     const actions = $derived.by((): CardAction[] => {
         const rows: CardAction[] = [];
@@ -99,19 +109,22 @@
                 }
             });
         }
-        if (entry !== null && schema !== undefined) {
-            rows.push(
-                editAction(fileNameOf(file), () =>
-                    openEntry(client, file, entry, schema, fault, onsaid)
-                )
-            );
-        }
-        return rows;
+        const record: CardAction[] = recordActions(
+            { client, file, entry, schema, fault, onsaid },
+            blocked,
+            () => {
+                deleting = true;
+            }
+        );
+        return rows.concat(record);
     });
-    /** Why the deadline cannot be written, or '' when it can. */
-    const blocked = $derived(
-        blockedBy(file, file !== null && unsavedFile(file.root, file.path), fault)
-    );
+
+    /** The venue's page, opened from its heading. */
+    function openPage(): void {
+        if (entry === null) return;
+        const page = pageView('venues', entry.id, venue.name);
+        openView(page.view, page.state);
+    }
     const deadline = $derived(schema?.find((one) => one.field === 'deadline'));
 
     /** One item of the card's metadata line. */
@@ -171,7 +184,13 @@
 </script>
 
 <div class="slot" class:concentrated data-venue={venue.id}>
-    <Card id={venue.id} {cursor} title={venue.name} titleHtml={inlineMarkdown(venue.name)}>
+    <Card
+        id={venue.id}
+        {cursor}
+        title={venue.name}
+        titleHtml={inlineMarkdown(venue.name)}
+        ontitle={entry === null ? undefined : openPage}
+    >
         {#snippet meta()}
             <RootChip record={venue} />
             {#if venue.quartile}
@@ -249,6 +268,10 @@
         {/if}
     </Card>
 </div>
+
+{#if deleting && entry !== null}
+    <DeleteAsk collection="venues" id={entry.id} {onsaid} onclose={() => (deleting = false)} />
+{/if}
 
 <style>
     /* The concentration mark is the card's own border in its hue, drawn inside so a marked card and

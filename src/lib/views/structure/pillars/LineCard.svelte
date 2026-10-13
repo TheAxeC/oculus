@@ -56,6 +56,7 @@
 
 <div class:dormant={isDormant(projects)} class:muted data-pillar={line.id}>
     <RegistryCard
+        collection="pillars"
         id={line.id}
         {cursor}
         title={line.title}

@@ -4,7 +4,7 @@
 // state/life/present.ts's; this builds their words.
 
 import { grouped, type MenuItem } from '$lib/ui/menu/menu-items';
-import { slideActs, type SlideAct } from '$lib/state/life/present';
+import { SLIDE_ACTS, slideActs, type SlideAct } from '$lib/state/life/present';
 import { t } from '$lib/state/shared/words/text';
 import type { Deck, DeckSlide } from '$lib/state/life/present';
 
@@ -32,5 +32,5 @@ export function slideMenu(deck: Deck | null, row: DeckSlide | null): MenuItem[] 
 
 /** Whether an id a menu picked is one of the acts. */
 export function isAct(id: string): id is SlideAct {
-    return id === 'edit' || id === 'new' || id === 'duplicate' || id === 'delete';
+    return SLIDE_ACTS.some((act) => act === id);
 }

@@ -73,3 +73,38 @@ describe('normalising it', () => {
         ]);
     });
 });
+
+describe('what the editor edits', () => {
+    const SCHEMA = [
+        { field: 'title', type: 'text' },
+        { field: 'milestone', type: 'text' }
+    ];
+
+    it('keeps every section as the file holds it, with the schema left out', () => {
+        const read = career(readCareer(hub(CAREER), CAREER_FILE, CATALOG).career);
+        expect(Object.keys(read?.sections ?? {})).toEqual([
+            'title',
+            'milestone',
+            'situation',
+            'order',
+            'order_note',
+            'hosts',
+            'host_criteria',
+            'not_hosts',
+            'eligibility',
+            'dropped'
+        ]);
+        expect(read?.sections.situation).toEqual({
+            PhD: 'May 2023, KU Leuven',
+            Now: 'Postdoc, U Twente'
+        });
+        expect(read?.schema).toBeUndefined();
+    });
+
+    it('carries the file schema, one field per section, and not as a section', () => {
+        const body = `schema:\n  - { field: title, type: text }\n  - { field: milestone, type: text }\n${CAREER}`;
+        const read = career(readCareer(hub(body), CAREER_FILE, CATALOG).career);
+        expect(read?.schema).toMatchObject(SCHEMA);
+        expect(read?.sections).not.toHaveProperty('schema');
+    });
+});

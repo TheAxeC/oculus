@@ -14,3 +14,12 @@ export function answerWords(answer: WriteAnswer): string {
     }
     return t('editor.saved', answer.changed.join(', '));
 }
+
+/**
+ * Why a write that adds or removes an entry did not go through, in the server's own words, or the
+ * empty text when it did: the refusals it named, else the error it carried.
+ */
+export function refusalWords(answer: WriteAnswer): string {
+    if (!answer.ok) return answer.error ?? t('editor.failed', '');
+    return answer.refused.map((one) => one.reason).join('; ');
+}

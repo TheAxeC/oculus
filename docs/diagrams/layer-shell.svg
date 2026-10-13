@@ -269,7 +269,7 @@
 <g id="node28" class="node">
 <title>folder shell/keys to layer data</title>
 <polygon fill="none" stroke="none" points="169.88,-448.08 160.12,-448.08 160.12,-435.6 169.88,-435.6 169.88,-448.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="165" y="-439.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">4</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="165" y="-439.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">8</text>
 </g>
 <!-- folder shell/keys&#45;&gt;folder shell/keys to layer data -->
 <g id="edge46" class="edge">
@@ -280,7 +280,7 @@
 <g id="node29" class="node">
 <title>folder shell/keys to layer state</title>
 <polygon fill="none" stroke="none" points="85.88,-390.48 72.12,-390.48 72.12,-378 85.88,-378 85.88,-390.48"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="79" y="-381.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">42</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="79" y="-381.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">44</text>
 </g>
 <!-- folder shell/keys&#45;&gt;folder shell/keys to layer state -->
 <g id="edge48" class="edge">

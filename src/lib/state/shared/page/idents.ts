@@ -1,11 +1,12 @@
 // Layer 2, client state. The identity of a feed entry over the whole feed: the id a feed view's
-// cursor holds, the one the palette opens an entry by, and the lead view's own ids. The feeds
-// folder owns it because what makes an entry unique is a fact about the feed; the palette in
-// state/workbench, above the feeds folder, reads it from here.
+// cursor holds, the one the palette opens an entry by, the one an entry's page is opened with, and
+// the lead view's own ids. What makes an entry unique is a fact about the feed, and the feed views,
+// the palette and the form drafts all ask it, so it sits with the page addresses every layer of
+// state shares.
 
-import { hubId } from '../../data/helpers/hub-names.ts';
-import type { FeedKind } from '../../data/model/index.ts';
-import { filledTextShape, mapShape, readAs } from '../../data/shapes/shapes.ts';
+import { hubId } from '../../../data/helpers/hub-names.ts';
+import type { FeedKind } from '../../../data/model/index.ts';
+import { filledTextShape, mapShape, readAs } from '../../../data/shapes/shapes.ts';
 
 /** Every string nested in a value, in property order. */
 export function nestedStrings(value: unknown): string[] {
@@ -30,7 +31,7 @@ export function feedCursorId(entry: object, name: string): string {
 }
 
 /** The identity one entry carries on its own, before the feed is asked whether it is unique. */
-export function feedIdentity(kind: FeedKind, entry: object): string {
+function feedIdentity(kind: FeedKind, entry: object): string {
     const key = kind === 'linkedin' ? 'file' : 'title';
     const named = readAs(filledTextShape, readAs(mapShape, entry)?.[key]);
     if (named !== undefined && named !== null) return feedCursorId(entry, named);

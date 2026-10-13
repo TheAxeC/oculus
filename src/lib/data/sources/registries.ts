@@ -71,7 +71,9 @@ function readRegistry(
         if (key !== shape.list && key !== '__proto__') meta[key] = value;
     }
 
-    const list = readAs(itemsShape, data[shape.list]);
+    // A list key with nothing under it is an empty list: it is what a file holds after its last
+    // entry is deleted, and what one holds that has only comments there.
+    const list = data[shape.list] === null ? [] : readAs(itemsShape, data[shape.list]);
     if (list === null) {
         const message =
             shape.list in data

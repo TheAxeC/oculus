@@ -386,6 +386,36 @@ export function createWrites(
     }
 
     /**
+     * Set the changed sections of registries/career.yml: each key of `fields` is a section of the
+     * file, and a section set to null is removed. A value that does not fit the section's type in
+     * the file's own `schema:` is refused with its reason and the other sections are written.
+     */
+    async function writeCareer(fields: Record<string, unknown>): Promise<WriteAnswer> {
+        return send({ kind: 'career', fields });
+    }
+
+    /**
+     * Add one entry to a collection of the primary hub, else the first. The answer's `id` is the id
+     * the file gives the new entry, which is what its page is opened with.
+     */
+    async function newEntry(
+        collection: string,
+        fields: Record<string, unknown>
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'new-entry', collection, fields });
+    }
+
+    /** Remove one entry from a collection, in the hub the id names (the primary's when bare). */
+    async function deleteEntry(collection: string, id: string): Promise<WriteAnswer> {
+        return send({ kind: 'delete-entry', collection, id });
+    }
+
+    /** Add one position lead to the leads feed of the primary hub, else the first. */
+    async function addLead(fields: Record<string, unknown>): Promise<WriteAnswer> {
+        return send({ kind: 'lead-add', fields });
+    }
+
+    /**
      * Put one collection's entries in the order a drag left them. `order` is every entry's identity
      * value, the file's own schema's first field, in the new order; an order that does not name
      * every entry exactly once is refused by the server and the file is left alone.
@@ -754,6 +784,10 @@ export function createWrites(
         writeSubtask,
         addSubtask,
         writeHost,
+        writeCareer,
+        newEntry,
+        deleteEntry,
+        addLead,
         reorderEntries,
         writeFeedField,
         deleteFeedEntry,

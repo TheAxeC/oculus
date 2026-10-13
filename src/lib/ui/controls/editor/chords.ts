@@ -23,8 +23,11 @@ import type { editor } from 'monaco-editor';
 import { SAVE_PRESS } from '$lib/data/helpers/keys/oculus/editor-keys';
 import type { EditorAction, EditorOwnAction, KeyPress } from './types';
 
-/** A chord the editor gave up: the action or command it ran and its keys in order. */
-export type RemovedChord = { id: string; keys: KeyPress[] };
+/**
+ * A chord the editor gave up: the action or command it ran and its keys in order. A `command`
+ * chord runs a command rather than an editor action, so the palette has nothing to run for it.
+ */
+export type RemovedChord = { id: string; keys: KeyPress[]; command?: true };
 
 /** The save key: Cmd+S, Ctrl+S off macOS. */
 export const SAVE_KEY: KeyPress = SAVE_PRESS;
@@ -74,8 +77,8 @@ const CMD_K_CHORDS: RemovedChord[] = [
     underCmdK('editor.foldLevel5', 'Digit5'),
     underCmdK('editor.foldLevel6', 'Digit6'),
     underCmdK('editor.foldLevel7', 'Digit7'),
-    underCmdK('workbench.action.showHover', 'KeyI'),
-    { id: 'togglePeekWidgetFocus', keys: [CMD_K, { code: 'F2' }] }
+    { ...underCmdK('workbench.action.showHover', 'KeyI'), command: true },
+    { id: 'togglePeekWidgetFocus', keys: [CMD_K, { code: 'F2' }], command: true }
 ];
 
 /** Every chord the editor gives up on this platform: the Cmd+K chords, and Ctrl+K on macOS. */

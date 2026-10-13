@@ -165,4 +165,8 @@ export type Career = {
     notHosts: { who: string; why?: string }[];
     eligibility: { rule: string[]; shots: string[]; caveat?: string } | null;
     dropped: { what: string; why?: string }[];
+    /** Every section of the file as it holds it, its `schema:` left out: what the editor edits. */
+    sections: Record<string, unknown>;
+    /** The file's own `schema:`, one field per section, absent when the file has none. */
+    schema?: SchemaField[];
 };

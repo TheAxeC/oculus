@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import type { Id, Project, Resource, Tier, Venue } from '../../../data/model/index.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
-import { fields, strings, text as str } from '../../../data/helpers/guards.ts';
+import { fields, slugOf, strings, text as str } from '../../../data/helpers/guards.ts';
 import { fieldItemsShape, readAs, rowsShape, wordShape } from '../../../data/shapes/shapes.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
@@ -302,19 +302,11 @@ export function daysUntil(date: string, now: number): number | null {
     return Math.round((at - today(now)) / DAY);
 }
 
-/** A config label turned into an id: lower case, and every other run of characters a hyphen. */
-export function slug(label: string): string {
-    return label
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-}
-
 /** One bucket of `tab_rollup`: a row with words, its id the slug of them, its keys the strings. */
 const bucketShape = z
     .object({ label: z.string().min(1), keys: fieldItemsShape, color: wordShape })
     .transform((row) => ({
-        id: slug(row.label),
+        id: slugOf(row.label),
         label: row.label,
         keys: row.keys,
         color: row.color

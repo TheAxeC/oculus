@@ -40,23 +40,26 @@ pillars_file: registries/pillars.yml
 domains_file: registries/domains.yml
 
 
-# People registry: one entry per human the hub names. A project's `collaborators:` and `waiting-on:`, a joint-work entry's `person:` and the Person view all read a name from here. Exactly one entry carries `self: true`, the hub's owner, and `affiliations:` are keys of the organisations file below.
+# People registry: one entry per human the hub names, also the People card list of the References page, where each person has a page and an editor. A project's `collaborators:` and `waiting-on:`, a joint-work entry's `person:` and the Person view all read a name from here. Exactly one entry carries `self: true`, the hub's owner, and `affiliations:` are keys of the organisations file below.
 people_file: registries/people.yml
 
-# Organisation registry: the universities, hospitals, funders and companies that a person's `affiliations:` and a funding entry's `funder:` point at, so an organisation is named once.
+# Organisation registry, also the Organisations card list: the universities, hospitals, funders and companies that a person's `affiliations:` and a funding entry's `funder:` point at, so an organisation is named once.
 organisations_file: registries/organisations.yml
 
-# Resources registry: the clusters, machines and storage that a project's `compute:` and the `slurm.resource` of behavior.yml name by key.
+# Resources registry, also the Resources card list: the clusters, machines and storage that a project's `compute:` and the `slurm.resource` of behavior.yml name by key.
 resources_file: registries/resources.yml
 
 
-# Collection views: one card list per key, from one YAML file each, except the keys data, venues, pillars and domains, whose views are Data, Venues, Pillars and Domains and not a card list. The schema is the file's own `schema:` block, and the links between files are in docs/DATA-MAP.md. An entry is added and edited in the file, which Add and Edit in File open, and its status, deadline and date are changed on its card.
+# Collection views: one card list per key, from one YAML file each, except the keys data, venues, pillars and domains, whose views are Data, Venues, Pillars and Domains and not a card list. The schema is the file's own `schema:` block, and the links between files are in docs/DATA-MAP.md. Every entry has a page with an editor built from the schema, where it is edited and deleted, Add asks the new entry's name and opens that page, and an entry's status, deadline and date are also changed on its card. Edit in File opens the file at the entry.
 collections:
   - { key: data,           file: "registries/data.yml" }
   - { key: venues,         file: "registries/venues.yml" }
   - { key: pillars,        file: "registries/pillars.yml" }
   - { key: domains,        file: "registries/domains.yml" }
   - { key: statements,     file: "registries/boilerplate.yml" }
+  - { key: people,         file: "registries/people.yml" }
+  - { key: organisations,  file: "registries/organisations.yml" }
+  - { key: resources,      file: "registries/resources.yml" }
   - { key: funding,        file: "funding/funding.yml" }
   - { key: events,         file: "network/events.yml" }
   - { key: education,      file: "education/education.yml" }

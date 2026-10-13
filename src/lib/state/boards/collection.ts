@@ -29,6 +29,9 @@ import type { Entry, Project, SchemaField, Subtask } from '../../data/model/inde
 import { fileBytesUrl } from '../sources/fs-transport.ts';
 import { normalisePath } from '../sources/fs.ts';
 import { dirOf } from '../sources/repositories/change-tree.ts';
+import { entryPageState } from '../forms/page-entry.ts';
+import { JOINT_WORK } from '../forms/referrers.ts';
+import { TITLE_FIELD, identityField } from '../forms/record-fields.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
@@ -46,8 +49,9 @@ export function entryById(
     return collection?.entries.find((entry) => entry.id === id) ?? null;
 }
 
-/** The field that is the card's own heading; the Card draws it and no drawn field repeats it. */
-export const TITLE_FIELD = 'title';
+// The card's own heading and the field an entry is addressed by are the form's (state/forms), which
+// reads the same schema; the card draws the heading and no drawn field repeats it.
+export { TITLE_FIELD, identityField };
 
 /** The field the status chip and the status facet read. */
 export const STATUS_FIELD = 'status';
@@ -343,21 +347,12 @@ export function pageFolder(
     return path !== undefined && listsAsFolder(path, listed) ? path : undefined;
 }
 
-/**
- * The state an entry's page is opened with. Its `id` is what makes one entry one tab: the same
- * entry asked for again activates its tab, another entry of the collection gets its own, and the
- * same key in another collection is another entry.
- */
+/** The state an entry's page is opened with (state/forms/page-entry.ts). */
 export function pageState(
     collection: string,
     entry: Entry
 ): { id: string; collection: string; key: string; label: string } {
-    return {
-        id: `${collection}:${entry.id}`,
-        collection,
-        key: entry.id,
-        label: entry.title === '' ? entry.id : entry.title
-    };
+    return entryPageState(collection, entry.id, entry.title === '' ? entry.id : entry.title);
 }
 
 /** The entry's status, when it has one as a word. */
@@ -421,14 +416,7 @@ export const NO_FUNDING = 'no-funding';
 /** The collection key whose entries the manifests' `funding:` tags name. */
 export const FUNDING = 'funding';
 
-/** The collection key of the joint work, whose entries each name one person. */
-export const JOINT_WORK = 'joint-work';
-
-/** The field an entry is addressed by: the file's own schema's first field, `title` without one. */
-export function identityField(schema: SchemaField[] | undefined): string {
-    const first = (schema ?? []).at(0);
-    return first === undefined ? TITLE_FIELD : first.field;
-}
+export { JOINT_WORK };
 
 /** An identity a file writes as a string or a number, answered as text. */
 const identityShape = z.union([z.string(), anyNumberShape.transform(String)]);

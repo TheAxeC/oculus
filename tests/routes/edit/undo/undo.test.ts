@@ -475,6 +475,24 @@ describe('taking a change back', () => {
         expect(back.undoes).toBe(bareKeyed.at);
     });
 
+    it('puts a career section back, each section on its own', async () => {
+        const into = target();
+        const career = (): string => readFileSync(join(into.hub, 'registries/career.yml'), 'utf8');
+        const first = await made(into, { kind: 'career', fields: { milestone: 'Veni 2026' } });
+        const second = await made(into, { kind: 'career', fields: { title: 'Career strategy' } });
+        expect(career()).toContain('milestone: Veni 2026');
+        expect(career()).toContain('title: Career strategy');
+        expect(
+            (await handleWrite(request({ kind: 'undo', at: first.at }), TOKEN, into)).status
+        ).toBe(200);
+        expect(career()).not.toContain('milestone:');
+        expect(career()).toContain('title: Career strategy');
+        expect(
+            (await handleWrite(request({ kind: 'undo', at: second.at }), TOKEN, into)).status
+        ).toBe(200);
+        expect(career()).toContain('title: Career\n');
+    });
+
     it('puts a career host and a subtask line back', async () => {
         const into = target();
         const host = await made(into, { kind: 'host', name: 'Naesens', status: 'candidate' });
@@ -521,6 +539,18 @@ describe('taking a change back', () => {
         // What comes back is what the record holds and nothing derived: no date, no fit.
         const back = parse(leads()) as { entries: Record<string, unknown>[] };
         expect(back.entries).toEqual([{ title: 'Lead', status: 'open' }]);
+    });
+
+    it('puts a deleted Lit Watch entry back as it was recorded', async () => {
+        const into = target();
+        const radar = (): string =>
+            readFileSync(join(into.hub, 'feeds', 'literature-radar.yml'), 'utf8');
+        const gone = await made(into, { kind: 'feed-delete', feed: 'radar', id: 'Paper' });
+        expect(radar()).not.toContain('Paper');
+        expect(
+            (await handleWrite(request({ kind: 'undo', at: gone.at }), TOKEN, into)).status
+        ).toBe(200);
+        expect(radar()).toContain('Paper');
     });
 
     it('takes an added Lit Watch entry out again', { tags: ['slow'] }, async () => {

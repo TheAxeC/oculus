@@ -86,7 +86,7 @@ arrangements:
   pillars:
     root: { kind: pane, view: [pillars, domains, map] }
   references:
-    root: { kind: pane, view: [venues, data, statements] }
+    root: { kind: pane, view: [venues, data, statements, people, organisations, resources] }
   present:
     root: { kind: pane, view: present }
   help:

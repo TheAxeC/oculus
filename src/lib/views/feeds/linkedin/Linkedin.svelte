@@ -52,7 +52,7 @@
     import { IDEA_BODY_LINE } from '$lib/data/prose/linkedin-idea';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { feedIdents } from '$lib/state/feeds/idents';
+    import { feedIdents } from '$lib/state/shared/page/idents';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 

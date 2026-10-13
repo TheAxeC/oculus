@@ -1,6 +1,7 @@
-// Layer 2, server. The subtask half of the write path, and the one career write beside it: a line
-// ticked, reopened, snoozed or taken out, a line added to a host that may have no block yet, and
-// one host of registries/career.yml moved along its pipeline.
+// Layer 2, server. The subtask half of the write path, and the two career writes beside it: a line
+// ticked, reopened, snoozed or taken out, a line added to a host that may have no block yet, one
+// host of registries/career.yml moved along its pipeline, and the sections of that file set from
+// the career editor.
 //
 // A subtask hangs under one of two hosts, which is the whole of the difference between the two
 // views that draw the block: one manifest by its id, or one entry of one collection. subtaskHost
@@ -22,16 +23,19 @@ import {
     deleteSubtask,
     entryRange,
     setHostStatus,
+    setSections,
     setSubtask,
     subtaskValues
 } from '../entry-edit/index.ts';
 import { plain } from '../../core/changes.ts';
+import { words } from '../../core/words.ts';
+import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { mapShape } from '../../../data/shapes/shapes.ts';
 import { manifestSource } from './manifest.ts';
 import { identityOf, readCollection } from '../../files/fs/collections.ts';
-import { saved } from './entries.ts';
+import { saved, typeRefusals } from './entries.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
-import type { EditResult } from '../yaml/yaml-edit.ts';
+import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import type { LineRange } from '../entry-edit/index.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
@@ -279,4 +283,100 @@ export function writeHost(
             }
         ]
     };
+}
+
+/** What a read answers for an address that is not there. */
+const ABSENT = { found: false, value: null } as const;
+
+/** The section of registries/career.yml the file holds now, or nothing when the file is gone. */
+export function careerSection(
+    hub: string,
+    section: string,
+    rules: CareerRules
+): { found: boolean; value: unknown } {
+    const file = resolve(join(hub, rules.file));
+    if (!below(file, hub)) return { found: false, value: null };
+    try {
+        const data: unknown = parse(readFileSync(file, 'utf8'));
+        return isMap(data) ? { found: true, value: plain(data[section]) } : ABSENT;
+    } catch {
+        return ABSENT;
+    }
+}
+
+/**
+ * The refusals of the keys no career write may set: `schema`, a blank key, and a key the file's own
+ * `schema:` does not name; a file with no `schema:` refuses every key with one sentence.
+ */
+function careerKeyRefusals(
+    schema: unknown,
+    fields: Record<string, unknown>,
+    text: Record<string, string>
+): Refusal[] {
+    const declared = collectionSchema(schema);
+    const names = new Set((declared ?? []).map((one) => one.field));
+    return Object.keys(fields).flatMap((key): Refusal[] => {
+        if (declared === undefined || declared.length === 0)
+            return [{ field: key, reason: words(text, 'server.career.no_schema') }];
+        if (key.trim() === '')
+            return [{ field: key, reason: words(text, 'server.career.blank_key') }];
+        if (key === 'schema')
+            return [{ field: key, reason: words(text, 'server.career.schema_key') }];
+        if (!names.has(key))
+            return [{ field: key, reason: words(text, 'server.career.not_field', key) }];
+        return [];
+    });
+}
+
+/**
+ * Set sections of registries/career.yml, each to the value given: the changed sections are written
+ * in the bytes of their own values and every other line and comment of the file stays. A key that
+ * is no field of the file's own `schema:` is refused with nothing written for it, and a value is
+ * held to the type its section has there.
+ */
+export function writeCareer(
+    hub: string,
+    fields: Record<string, unknown>,
+    rules: CareerRules,
+    text: Record<string, string>
+): WriteOutcome {
+    const file = resolve(join(hub, rules.file));
+    if (!below(file, hub)) return { found: false, changed: [], refused: [] };
+    let source: string;
+    try {
+        source = readFileSync(file, 'utf8');
+    } catch {
+        return { found: false, changed: [], refused: [] };
+    }
+    let data: unknown;
+    try {
+        data = parse(source);
+    } catch {
+        return {
+            found: true,
+            changed: [],
+            refused: [{ field: '', reason: words(text, 'server.career.no_parse') }]
+        };
+    }
+    if (!isMap(data)) {
+        return {
+            found: true,
+            changed: [],
+            refused: [{ field: '', reason: words(text, 'server.career.no_map') }]
+        };
+    }
+    const keyed = careerKeyRefusals(data.schema, fields, text);
+    const typed = [...keyed, ...typeRefusals(data.schema, fields)];
+    const names = new Set(typed.map((one) => one.field));
+    const wanted = Object.fromEntries(Object.entries(fields).filter(([name]) => !names.has(name)));
+    const out = saved(file, source, setSections(source, wanted));
+    const records: ChangeRecord[] = out.changed.map((section) => ({
+        file,
+        key: 'career',
+        field: section,
+        before: plain(data[section]),
+        after: plain(wanted[section]),
+        undo: 'field'
+    }));
+    return { ...out, refused: [...typed, ...out.refused], records };
 }

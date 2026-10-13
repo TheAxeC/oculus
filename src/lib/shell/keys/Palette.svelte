@@ -80,6 +80,7 @@
         type PaletteStart
     } from '$lib/shell/keys/palette-modes';
     import { landOn, openPaletteItem } from '$lib/shell/keys/palette-open';
+    import { PREFIX_ROWS } from '$lib/data/helpers/keys/oculus/palette-table';
     import {
         appItems,
         buildIndex,
@@ -198,7 +199,7 @@
     const caret = $derived(source?.status.caret ?? null);
 
     /** The line a go-to-line query names, or null for another query. */
-    const line = $derived(lineQuery(parsed));
+    const line = $derived(lineQuery(query));
     const languageList = createLanguageList({
         parsed: () => parsed,
         source: () => source,
@@ -373,7 +374,9 @@
                                                 {#if symbolMode}
                                                     <SymbolRows
                                                         instance={source?.instance ?? null}
-                                                        query={query.slice(1)}
+                                                        query={query.slice(
+                                                            PREFIX_ROWS.symbols.prefix.length
+                                                        )}
                                                         {onclose}
                                                     />
                                                 {:else if fileMode}

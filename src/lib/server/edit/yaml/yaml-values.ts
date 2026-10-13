@@ -41,7 +41,7 @@ export function isBlockScalar(value: unknown): value is ScalarFieldValue {
 }
 
 /** Whether a value belongs inside a block: a scalar, a list of them, or a map of either. */
-function isBlockValue(value: unknown): value is BlockValue {
+export function isBlockValue(value: unknown): value is BlockValue {
     if (isBlockScalar(value)) return true;
     if (Array.isArray(value)) return value.every(isBlockValue);
     return isBlockMap(value);
@@ -97,6 +97,11 @@ function listLines(values: BlockValue[], indent: number): string[] {
         out.push(`${pad}- ${renderScalar(item)}`);
     }
     return out;
+}
+
+/** One block-list item as the lines it takes at an indentation, each line padded to it. */
+export function renderListItem(value: BlockValue, indent: number): string {
+    return listLines([value], indent).join('\n');
 }
 
 /**

@@ -9,7 +9,7 @@
 // A case that takes 100 ms or more in a run of its own, starts a process or waits on a timer is
 // tagged slow.
 
-import { mkdirSync, readdirSync, readFileSync, symlinkSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
@@ -21,11 +21,13 @@ import {
     writeSubtaskAdd
 } from '../../../src/lib/server/edit/writes.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
-import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
+import { words } from '../../../src/lib/server/core/words.ts';
+import { careerRules, writeCareer } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 import {
     MANIFEST,
     configFor,
+    hub,
     record,
     manifestPath,
     personalWorld,
@@ -33,6 +35,9 @@ import {
     tasksPath,
     TASKS,
     CAREER,
+    KEYED,
+    plant,
+    VENUES,
     wider,
     tasksOf
 } from './writes-fixture.ts';
@@ -259,7 +264,270 @@ describe('writing one career host', () => {
     });
 });
 
+const CAREER_SECTIONS = [
+    '# the strategy',
+    'title: Career strategy',
+    'milestone: Veni 2026',
+    'schema:',
+    '  - { field: title, type: text }',
+    '  - { field: milestone, type: text }',
+    '  - { field: situation, type: records, open: true, fields: [] }',
+    '  - field: hosts',
+    '    type: records',
+    '    open: true',
+    '    fields:',
+    '      - { field: name, type: text }',
+    '      - { field: status, type: select, options: [warm, candidate] }',
+    '  - field: eligibility',
+    '    type: records',
+    '    fields:',
+    '      - { field: caveat, type: text }',
+    'situation:',
+    '  PhD: "May 2023"   # the defence',
+    '  Now: "Postdoc"',
+    'hosts:',
+    '  - { name: "Naesens", status: "warm", proposal: "Strong" }',
+    '  - { name: "Moreau", status: "warm", proposal: "Good" }',
+    'eligibility:',
+    '  rule: ["a", "b"]',
+    '  caveat: "once"',
+    ''
+].join('\n');
+
+describe('writing career sections', () => {
+    const rules = careerRules(loadConfig(engineDir()).config);
+    const catalog = configFor().text;
+
+    function careerHub(): { root: string; file: string } {
+        const root = wider();
+        const file = join(root, 'registries/career.yml');
+        writeFileSync(file, CAREER_SECTIONS);
+        return { root, file };
+    }
+
+    it('writes the changed section alone and records its before and after', () => {
+        const { root, file } = careerHub();
+        const out = writeCareer(root, { milestone: 'Veni 2027' }, rules, catalog);
+        expect(out.changed).toEqual(['milestone']);
+        expect(out.records).toEqual([
+            record(file, 'career', 'milestone', 'Veni 2026', 'Veni 2027')
+        ]);
+        expect(readFileSync(file, 'utf8')).toBe(
+            CAREER_SECTIONS.replace('milestone: Veni 2026', 'milestone: Veni 2027')
+        );
+    });
+
+    it('writes a renamed label and a changed sentence of the situation as one map', () => {
+        const { root, file } = careerHub();
+        const out = writeCareer(
+            root,
+            { situation: { PhD: 'May 2023', 'Postdoc since': 'Sep 2024' } },
+            rules,
+            catalog
+        );
+        expect(out.changed).toEqual(['situation']);
+        const text = readFileSync(file, 'utf8');
+        expect(text).toContain('# the strategy');
+        expect(text).toContain('PhD: "May 2023"   # the defence');
+        expect(text).toContain('Postdoc since: "Sep 2024"');
+        expect(text).not.toContain('Now:');
+        expect(text).toContain('hosts:\n  - { name: "Naesens"');
+    });
+
+    it('changes a score column of a host and keeps the other hosts and columns', () => {
+        const { root, file } = careerHub();
+        const out = writeCareer(
+            root,
+            {
+                hosts: [
+                    { name: 'Naesens', status: 'warm', proposal: 'Weak' },
+                    { name: 'Moreau', status: 'warm', proposal: 'Good' }
+                ]
+            },
+            rules,
+            catalog
+        );
+        expect(out.changed).toEqual(['hosts']);
+        expect(readFileSync(file, 'utf8')).toBe(
+            CAREER_SECTIONS.replace('proposal: "Strong"', 'proposal: "Weak"')
+        );
+    });
+
+    it('changes the caveat of the eligibility map and keeps its rule', () => {
+        const { root, file } = careerHub();
+        writeCareer(root, { eligibility: { rule: ['a', 'b'], caveat: 'twice' } }, rules, catalog);
+        expect(readFileSync(file, 'utf8')).toBe(
+            CAREER_SECTIONS.replace('caveat: "once"', 'caveat: "twice"')
+        );
+    });
+
+    it('refuses a value of the wrong type for a section and writes nothing', () => {
+        const { root, file } = careerHub();
+        const out = writeCareer(
+            root,
+            { hosts: [{ name: 'Naesens', status: 'promoted' }] },
+            rules,
+            catalog
+        );
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toHaveLength(1);
+        expect(readFileSync(file, 'utf8')).toBe(CAREER_SECTIONS);
+    });
+
+    const NO_SCHEMA = 'title: Career strategy\nmilestone: Veni 2026\n';
+
+    it.each([
+        { name: 'the key schema', fields: { schema: 'x' }, key: 'schema_key' },
+        { name: 'an empty key', fields: { '': 'x' }, key: 'blank_key' },
+        { name: 'a blank key', fields: { '  ': 'x' }, key: 'blank_key' },
+        { name: 'a key the schema does not name', fields: { notes: 'x' }, key: 'not_field' }
+    ])('refuses $name and writes nothing for it', ({ fields, key }) => {
+        const { root, file } = careerHub();
+        const [name] = Object.keys(fields);
+        const out = writeCareer(root, { milestone: 'Veni 2027', ...fields }, rules, catalog);
+        expect(out.changed).toEqual(['milestone']);
+        expect(out.refused).toEqual([
+            { field: name, reason: words(catalog, `server.career.${key}`, name) }
+        ]);
+        expect(readFileSync(file, 'utf8')).toBe(
+            CAREER_SECTIONS.replace('milestone: Veni 2026', 'milestone: Veni 2027')
+        );
+    });
+
+    it('refuses every key of a file with no schema with the one sentence', () => {
+        const { root, file } = careerHub();
+        writeFileSync(file, NO_SCHEMA);
+        const out = writeCareer(root, { milestone: 'x', notes: 'y' }, rules, catalog);
+        const reason = words(catalog, 'server.career.no_schema');
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([
+            { field: 'milestone', reason },
+            { field: 'notes', reason }
+        ]);
+        expect(readFileSync(file, 'utf8')).toBe(NO_SCHEMA);
+    });
+
+    it('answers not found for a hub with no career file', () => {
+        const root = hub();
+        expect(writeCareer(root, { milestone: 'x' }, rules, catalog)).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+    });
+});
+
+/** An entry-adding row: the file, the call, and what the call answers and leaves in the file. */
+const ADD_ROWS = [
+    {
+        name: 'writes the key and nothing else',
+        path: 'tasks/tasks.yml',
+        file: KEYED,
+        collection: 'tasks',
+        fields: { key: 'review-x' },
+        hubKeys: [] as string[],
+        id: 'review-x',
+        changed: ['entries'],
+        refused: [],
+        after: `${KEYED}\n  - key: review-x\n`
+    },
+    {
+        name: 'writes under an `entries:` that holds only comments and keeps them',
+        path: 'tasks/tasks.yml',
+        file: KEYED.replace('  - key: held\n    title: Held\n', '  # a comment\n  # another\n'),
+        collection: 'tasks',
+        fields: { key: 'review-x' },
+        hubKeys: [] as string[],
+        changed: ['entries'],
+        refused: [],
+        after: KEYED.replace(
+            '  - key: held\n    title: Held\n',
+            '  - key: review-x\n  # a comment\n  # another\n'
+        )
+    },
+    {
+        name: 'refuses a held key',
+        path: 'tasks/tasks.yml',
+        file: KEYED,
+        collection: 'tasks',
+        fields: { key: 'held' },
+        hubKeys: [] as string[],
+        changed: [],
+        refused: [{ field: 'key', reason: 'an entry with that key is already in the file' }],
+        after: KEYED
+    },
+    {
+        name: 'refuses an empty key',
+        path: 'tasks/tasks.yml',
+        file: KEYED,
+        collection: 'tasks',
+        fields: { key: '  ' },
+        hubKeys: [] as string[],
+        changed: [],
+        refused: [{ field: 'key', reason: 'a new entry needs a key' }],
+        after: KEYED
+    },
+    {
+        name: 'refuses a key that begins with the key of a hub and a colon',
+        path: 'tasks/tasks.yml',
+        file: KEYED,
+        collection: 'tasks',
+        fields: { key: 'second:thing' },
+        hubKeys: ['second'],
+        changed: [],
+        refused: [{ field: 'key', reason: ['server.entries.hub_key', 'second'] }],
+        after: KEYED
+    },
+    {
+        name: 'refuses a venue with an empty id',
+        path: 'registries/venues.yml',
+        file: VENUES,
+        collection: 'venues',
+        fields: { name: 'New V', id: '' },
+        hubKeys: [] as string[],
+        changed: [],
+        refused: [{ field: 'id', reason: 'a new entry needs a non-empty id' }],
+        after: VENUES
+    },
+    {
+        name: 'writes a venue from its name and its id',
+        path: 'registries/venues.yml',
+        file: VENUES,
+        collection: 'venues',
+        fields: { name: 'New V', id: 'newv' },
+        hubKeys: [] as string[],
+        changed: ['venues'],
+        refused: [],
+        after: `${VENUES}\n  - name: New V\n    id: newv\n`
+    }
+];
+
 describe('adding an entry', () => {
+    it.each(ADD_ROWS)('$name', (row) => {
+        const root = wider();
+        const file = plant(root, row.path, row.file);
+        const out = createEntry(
+            root,
+            configFor(),
+            row.collection,
+            row.fields,
+            undefined,
+            row.hubKeys
+        );
+        if ('id' in row) expect(out).toMatchObject({ found: true, id: row.id });
+        expect(out.changed).toEqual(row.changed);
+        expect(out.refused).toEqual(
+            row.refused.map(({ field, reason }) => ({
+                field,
+                reason:
+                    typeof reason === 'string'
+                        ? reason
+                        : words(configFor().text, reason[0], ...reason.slice(1))
+            }))
+        );
+        expect(readFileSync(file, 'utf8')).toBe(row.after);
+    });
+
     it('appends a new entry rendered from the file schema', () => {
         const root = wider();
         const out = createEntry(root, configFor(), 'tasks', {

@@ -283,6 +283,14 @@ export type WritesStore = {
         fields: { do: string; deadline?: string }
     ) => Promise<WriteAnswer>;
     writeHost: (name: string, status: string) => Promise<WriteAnswer>;
+    /** Set the changed sections of registries/career.yml, a section cleared by null. */
+    writeCareer: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    /** Add one entry to a collection of the primary hub; the answer's `id` is the new entry's. */
+    newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    /** Remove one entry from a collection, in the hub the entry's id names. */
+    deleteEntry: (collection: string, id: string) => Promise<WriteAnswer>;
+    /** Add one position lead to the leads feed of the primary hub. */
+    addLead: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     reorderEntries: (collection: string, order: string[]) => Promise<WriteAnswer>;
     writeFeedField: (
         feed: string,

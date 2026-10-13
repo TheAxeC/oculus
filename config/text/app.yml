@@ -55,6 +55,8 @@ text:
             cmd_interpreter_hint: '<path>'
             cmd_language: Set the language of the source tab
             cmd_language_hint: '<language>'
+            cmd_task_add: Add a task to the tasks collection
+            cmd_task_add_hint: '<title>'
             cmd_svelte_config: Approve or stop running the Svelte configuration of the repository
             cmd_tab: Open a view in a tab
             cmd_tab_hint: '<view id>'
@@ -139,6 +141,11 @@ text:
             symbols_loading: Asking the language server...
             symbols_none: No symbol of the workspace matches.
             symbols_unavailable: No language server answers for the tab on screen.
+            task_add_collection: The hub has no tasks collection, so no task can be added.
+            task_add_key: 'The title gives no key: it needs a letter from A to Z or a digit.'
+            task_add_title: Type a title for the task.
+            task_added: 'Added the task {0}'
+            task_open: Open
             unpin_editor: Unpin Editor
             workspace_missing: gone
             workspace_new: 'Make the workspace {0} with no folder'

@@ -15,7 +15,6 @@ export {
     firstSentence,
     presetFor,
     setting,
-    slug,
     venueText
 } from './presets.ts';
 export type {

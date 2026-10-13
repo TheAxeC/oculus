@@ -12,7 +12,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
 import { localDate } from '../../data/helpers/dates.ts';
-import { isMap, scalar } from '../../data/helpers/guards.ts';
+import { isMap, scalar, slugOf } from '../../data/helpers/guards.ts';
 import { addressKey, radarText, sameTitle } from '../../data/prose/literature.ts';
 import { ideaStub } from '../../data/prose/linkedin-idea.ts';
 import { loadConfig } from '../../data/sources/config.ts';
@@ -30,24 +30,41 @@ import {
     takeOutAppended
 } from './entry-edit/index.ts';
 import { replacedText } from './writes/config/config-checks.ts';
-import { saved } from './writes/entries.ts';
+import { saved, sharedRefusal, typeRefusals } from './writes/entries.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from './yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../core/changes.ts';
 import type { Refusal } from './yaml/yaml-edit.ts';
 import type { FieldValue } from './yaml/yaml-values.ts';
-import type { FeedData, FeedKind, FeedsPayload, PortfolioConfig } from '../../data/model/index.ts';
+import type {
+    FeedData,
+    FeedKind,
+    FeedsPayload,
+    PortfolioConfig,
+    SchemaField
+} from '../../data/model/index.ts';
 import type { WriteOutcome } from './writes.ts';
 import { inside } from '../core/paths.ts';
 
 export type FeedRead = FeedData & { kind: FeedKind; file: string };
 
-type FeedRule = { identity: string; fields: string[]; deletable: boolean };
+/**
+ * What a feed's entries are addressed and edited by. `fields` are always writable. With `schema`,
+ * every other field the feed file's own `schema:` names is writable too, the identity excepted,
+ * since the identity is what every write and every reference addresses an entry by.
+ */
+type FeedRule = { identity: string; fields: string[]; schema: boolean; deletable: boolean };
 
 export const FEED_RULES: Record<FeedKind, FeedRule> = {
-    radar: { identity: 'title', fields: ['dismissed'], deletable: false },
-    leads: { identity: 'title', fields: ['status'], deletable: true },
-    linkedin: { identity: 'file', fields: [], deletable: false }
+    radar: { identity: 'title', fields: ['dismissed'], schema: true, deletable: true },
+    leads: { identity: 'title', fields: ['status'], schema: true, deletable: true },
+    linkedin: { identity: 'file', fields: [], schema: false, deletable: false }
 };
+
+/** The fields of a feed an entry may be written at: the rule's own and its file's schema's. */
+function writableFields(rule: FeedRule, schema: SchemaField[] | undefined): string[] {
+    const named = rule.schema ? (schema ?? []).map((one) => one.field) : [];
+    return [...new Set([...rule.fields, ...named])].filter((one) => one !== rule.identity);
+}
 
 export function isFeedKind(value: string): value is FeedKind {
     return value === 'radar' || value === 'leads' || value === 'linkedin';
@@ -216,16 +233,6 @@ function linkedinFolder(hub: string, config: PortfolioConfig): string | null {
  */
 const SLUG_MAX = 80;
 
-function slugOf(title: string): string {
-    const slug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, SLUG_MAX)
-        .replace(/-+$/, '');
-    return slug || 'post';
-}
-
 /**
  * Add one empty LinkedIn idea file without leaving its configured folder. The outcome's `id` is the
  * file's name, which the page opens the new file by.
@@ -243,7 +250,7 @@ export function addLinkedinIdea(
     const folder = linkedinFolder(hub, config);
     if (folder === null) return { found: false, changed: [], refused: [] };
     const category = typeof categoryValue === 'string' ? categoryValue.trim() : '';
-    const slug = slugOf(title);
+    const slug = slugOf(title, SLUG_MAX) || 'post';
     let file = `xx-${slug}.md`;
     let suffix = 2;
     while (existsSync(join(folder, file))) {
@@ -644,7 +651,11 @@ export function restoreFeedEntry(
     return { ...out, refused: [...refused, ...out.refused] };
 }
 
-/** Set or clear the one field that a feed allows on the entry named by its identity. */
+/**
+ * Set or clear one field that a feed allows on the entry named by its identity. The value is held
+ * to the type the feed file's schema gives the field, and a file with two entries of one identity
+ * is refused, since the second could not be addressed.
+ */
 export function writeFeedField(
     hub: string,
     config: PortfolioConfig,
@@ -654,19 +665,24 @@ export function writeFeedField(
     value: unknown
 ): WriteOutcome {
     const rule = FEED_RULES[feed];
-    if (!rule.fields.includes(field)) {
+    const full = feedFile(hub, config, feed);
+    if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
+    const source = readFileSync(full, 'utf8');
+    const parsed = readFeedFile(hub, config, feed);
+    if (parsed === null) return { found: false, changed: [], refused: [] };
+    if (!writableFields(rule, parsed.schema).includes(field)) {
         return {
             found: true,
             changed: [],
             refused: [{ field, reason: `the ${feed} feed does not allow that field` }]
         };
     }
-    const full = feedFile(hub, config, feed);
-    if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
-    const source = readFileSync(full, 'utf8');
-    const parsed = readFeedFile(hub, config, feed);
-    const entry = parsed?.entries.find((one) => scalar(one[rule.identity]) === id);
+    const entry = parsed.entries.find((one) => scalar(one[rule.identity]) === id);
     if (entry === undefined) return { found: false, changed: [], refused: [] };
+    const shared = sharedRefusal(parsed.entries, rule.identity);
+    if (shared !== null) return shared;
+    const typed = typeRefusals(parsed.schema, { [field]: value });
+    if (typed.length > 0) return { found: true, changed: [], refused: typed };
     const out = saved(full, source, setEntryFields(source, rule.identity, id, { [field]: value }));
     if (out.changed.length === 0) return out;
     return {
@@ -684,7 +700,7 @@ export function writeFeedField(
     };
 }
 
-/** Delete one lead; the other feed histories are append-only and return a field refusal. */
+/** Delete one lead or paper; the LinkedIn folder is not a list of entries and is refused. */
 export function deleteFeedEntry(
     hub: string,
     config: PortfolioConfig,
@@ -704,7 +720,9 @@ export function deleteFeedEntry(
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
     const entry = parsed?.entries.find((one) => scalar(one[rule.identity]) === id);
-    if (entry === undefined) return { found: false, changed: [], refused: [] };
+    if (parsed === null || entry === undefined) return { found: false, changed: [], refused: [] };
+    const shared = sharedRefusal(parsed.entries, rule.identity);
+    if (shared !== null) return shared;
     const out = saved(full, source, deleteEntry(source, rule.identity, id));
     if (out.changed.length === 0) return out;
     return {

@@ -1,8 +1,8 @@
 <script module lang="ts">
     // Layer 3, view registration. The generic collection component owns each configured
     // collection's place in the catalogue, which is the rail page it sits on: the Academic Life
-    // page's six, and the References page's for Code, Statements and a collection sources.yml adds
-    // that no placement names.
+    // page's six, and the References page's for Statements, People, Organisations, Resources and a
+    // collection sources.yml adds that no placement names.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const placements: Record<string, { group: string; order: number }> = {
@@ -12,8 +12,10 @@
         applications: { group: 'academic', order: 3 },
         'joint-work': { group: 'academic', order: 4 },
         tasks: { group: 'academic', order: 5 },
-        code: { group: 'references', order: 2 },
-        statements: { group: 'references', order: 3 }
+        statements: { group: 'references', order: 3 },
+        people: { group: 'references', order: 4 },
+        organisations: { group: 'references', order: 5 },
+        resources: { group: 'references', order: 6 }
     };
 
     export const registration = (keys: string[]): ViewRegistration[] =>
@@ -41,9 +43,9 @@
 <script lang="ts">
     // Layer 3, view. One collection file as its own tab: the file's title and intro, a search over
     // every word an entry holds and a facet bar of the statuses the file uses (both in the bar
-    // under the header), an Add that opens the file with a new entry, and one card per entry, the
-    // pinned ones first. The title of a card whose entry has a page opens it as the `entry` view's
-    // tab, which the card decides from the file store's listing of the entry's folder.
+    // under the header), an Add that asks the new entry's name and opens its page, and one card per
+    // entry, the pinned ones first. The title of a card opens the entry's page, the `entry` view's
+    // tab, where the entry is edited and deleted.
     //
     // It is registered once per collection key of config/sources.yml and reads which collection it
     // is from the id of the instance it was mounted as, exactly as Projects.svelte reads which
@@ -64,8 +66,10 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryCard from '../../shared/forms/entry/EntryCard.svelte';
     import { taskCardActions } from '../../shared/forms/entry/task-card';
+    import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
     import AddButton from '../../shared/forms/AddButton.svelte';
-    import { addInFile, blockedBy } from '../../shared/forms/entry-file';
+    import { collectionAsk, type Ask } from '../../shared/forms/entry/entry-add';
+    import { blockedBy } from '../../shared/forms/entry-file';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
@@ -79,13 +83,14 @@
         identityValue,
         movedOrder,
         offeredStatuses,
-        pageState,
         parseCollectionState,
         pinnedFirst,
         statusFacets,
         unfundedBy,
-        type CollectionState
+        type CollectionState,
+        type Entry
     } from '$lib/state/boards/collection';
+    import { pageView } from '$lib/state/forms/page-entry';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
@@ -167,10 +172,13 @@
         setInstanceState(instance.id, { ...held, ...next });
     }
 
-    /** Add opens the file with a new entry in its unsaved text and the caret in it. */
-    async function add(): Promise<void> {
-        if (source === null) return;
-        said = await addInFile(client, source, schema, key);
+    /** The Add box while it is open: it asks the new entry's name and opens the entry's page. */
+    let asking = $state<Ask | null>(null);
+
+    /** The page of one entry, opened from its card's title. */
+    function openPage(entry: Entry): void {
+        const page = pageView(key, entry.id, entry.title === '' ? entry.id : entry.title);
+        openView(page.view, page.state);
     }
 
     /** Hide one status's cards, or bring them back, which is what a facet toggle does. */
@@ -271,8 +279,8 @@
 
 {#snippet tools()}
     <Toolbar label={t('collection.toolbar')} overflow>
-        {#if schema !== undefined && source !== null}
-            <AddButton onclick={add} />
+        {#if schema !== undefined}
+            <AddButton onclick={() => (asking = collectionAsk(client, key, schema, title()))} />
         {/if}
         {#if source !== null}
             <SourceButton file={source} />
@@ -309,6 +317,8 @@
     </Toolbar>
 {/snippet}
 
+<AddAsk ask={asking} onclose={() => (asking = null)} />
+
 <Pane title={title()} toolbar={tools} {bar}>
     <div class="collection" data-instance={instance.id} data-collection={instance.view}>
         {#if collection?.intro}
@@ -343,7 +353,7 @@
                             onsaid={(words: string) => (said = words)}
                             more={held.more.includes(entry.id)}
                             onmore={() => toggleMore(entry.id)}
-                            onpage={() => openView('entry', pageState(key, entry))}
+                            onpage={() => openPage(entry)}
                             extra={taskCardActions(key, entry, configMap(), startAgent)}
                         />
                     </Reveal>

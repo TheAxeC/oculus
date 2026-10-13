@@ -43,6 +43,14 @@ text:
         auth:
             body_not_json: The body is not JSON
             token_refused: The write token is missing or stale
+        career:
+            blank_key: A section needs a name
+            no_file: The career file is not on this hub
+            no_map: The career file is no map
+            no_parse: The career file does not parse
+            no_schema: The career file has no schema, so no section can be written
+            not_field: "{0} is not a field of the career file's schema"
+            schema_key: The key schema is the file's own description of its sections and is not a section
         chat:
             chat_focus_note: "FOCUS: answer specifically about project `{0}` ({1}). Your working directory is the project's own folder `{2}` (absolute); read its files for depth."
             chat_index_note: The portfolio index is the file {0}; read it first.
@@ -224,6 +232,8 @@ text:
             scan_found_commit: The scan found something; nothing was committed
             scan_found_push: The scan found something; nothing was pushed
             snapshot_needs_message: A snapshot needs a message
+        entries:
+            hub_key: 'an id that begins with "{0}:" would name an entry of the hub {0}, so use another'
         export:
             agent: 'Agent: {0}'
             assistant: Agent

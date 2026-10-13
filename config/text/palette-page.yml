@@ -1,0 +1,37 @@
+# Oculus text owned by the palette page, docs/palette.md, which npm run docs:palette writes from the
+# palette's registry (src/lib/shell/keys/palette-page.ts).
+text:
+    palette_page:
+        col_action: Editor action
+        col_argument: Argument
+        col_chord: Chord
+        col_command: Command
+        col_does: What it does
+        col_id: Id
+        col_key: Key
+        col_type: Type
+        col_view: View
+        commands: Colon commands
+        commands_intro: A colon starts a command. The commands that list choices type their name and a space when chosen, and a command marked unavailable in the list is drawn and does not run.
+        editor: Editor commands
+        editor_intro: While a source tab is on screen the palette also lists the editor's own Cmd-K commands, each under the editor's own label with its chord beside it. The table names each by the editor's action id.
+        intro: Cmd+K opens the palette. With nothing typed it lists the views, and a typed word matches fuzzily, its letters in order, across views, projects, collection entries and feed entries. A collection entry or a lead or Lit Watch paper opens its page, and a person opens the person's page.
+        key_close: closes the palette
+        key_commands: opens the palette in its command mode, as a colon does; either key closes it again
+        key_files: lists files by name across the served roots
+        key_open: opens the palette, or closes it when it is open
+        key_symbols: lists the symbols of the workspace through the language server of the source tab on screen
+        key_task_add: on :task-add, adds the task and opens its page in its editor
+        key_walk: move through the results and open the selected one
+        keys: Keys
+        none: None.
+        prefix_colon: starts a command from the table of colon commands
+        prefix_files: lists files by name across the served roots, matching the name first and the whole path after
+        prefix_line: goes to that line of the source tab on screen
+        prefix_symbols: searches the symbols of the workspace through the language server of the source tab on screen
+        prefixes: Prefixes
+        present: Present commands
+        present_intro: While a Present tab is on screen the palette lists these commands for the slide on screen.
+        title: The palette
+        views: Views
+        views_intro: Every registered view is listed by its words.

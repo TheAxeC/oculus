@@ -2,11 +2,11 @@
 text:
     collection:
         add: + add
-        add_tip: Add an entry in the file
+        add_tip: Add an entry
         edit_glyph: edit
         edit_in_file: Edit in File
         edit_in_file_title: Open {0} at this entry
-        empty: No entries yet - add some to the YAML.
+        empty: No entries yet. Add the first one.
         entry_gone: '{0} is no longer in {1}'
         file_unparsed: '{0} does not parse: {1}'
         file_unsaved: '{0} has unsaved text in a tab; save or revert it first'
@@ -50,6 +50,12 @@ text:
         events_glyph: events
         funding: Funding
         funding_glyph: funding
+        organisations: Organisations
+        organisations_glyph: pillar
+        people: People
+        people_glyph: collab
+        resources: Resources
+        resources_glyph: hpc
         statements: Statements
         statements_glyph: draft
         tasks: Tasks & Service

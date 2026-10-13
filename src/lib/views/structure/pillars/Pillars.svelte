@@ -75,7 +75,7 @@
 
 <Pane title={t('views.pillars')} toolbar={tools}>
     <div class="pillars-view" data-instance={instance.id}>
-        <RegistryHead said={file.said} spaced>
+        <RegistryHead {file} spaced>
             {#snippet intro()}
                 <Intro html={inlineMarkdown(t('pillars.intro'))} trusted />
             {/snippet}

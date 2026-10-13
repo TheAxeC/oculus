@@ -54,6 +54,15 @@ export function instanceChoice(state: unknown, key: string, present: string[]): 
     return present.includes(held) ? held : (present[0] ?? '');
 }
 
+/** A tab's saved state with `key` set to `value` and every other key kept as it is. */
+export function withInstanceKey(
+    state: unknown,
+    key: string,
+    value: unknown
+): Record<string, unknown> {
+    return { ...readAs(mapShape, state), [key]: value };
+}
+
 /** Whether a tab's saved state holds `true` under `key`; any other value is not a set flag. */
 export function instanceFlag(state: unknown, key: string): boolean {
     return readAs(mapShape, state)?.[key] === true;

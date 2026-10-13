@@ -97,7 +97,8 @@ export const TASKS = [
     ''
 ].join('\n');
 
-const VENUES = [
+/** A venues file with one venue, named `Existing Venue` and identified as `existing`. */
+export const VENUES = [
     'title: Venues',
     'schema:',
     '  - { field: name, type: text }',
@@ -179,4 +180,25 @@ export function hubLinkedToEngine(engine: string): { hub: string; local: string 
     writeFileSync(local, 'port: 8791\n');
     symlinkSync(local, join(hub, '.oculus', 'config', 'behavior.yml'));
     return { hub, local };
+}
+
+/** A tasks file identified by `key`, holding one entry, `held`. */
+export const KEYED = [
+    'title: Tasks',
+    'schema:',
+    '  - { field: key, type: text }',
+    '  - { field: title, type: text, required: true }',
+    '  - { field: status, type: select, options: [todo, done] }',
+    'entries:',
+    '  - key: held',
+    '    title: Held',
+    ''
+].join('\n');
+
+/** A hub of this suite with a file planted at a path inside it. */
+export function plant(root: string, path: string, body: string): string {
+    const file = join(root, path);
+    mkdirSync(join(file, '..'), { recursive: true });
+    writeFileSync(file, body);
+    return file;
 }

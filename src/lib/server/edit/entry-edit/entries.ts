@@ -18,14 +18,14 @@ import {
     lineAt,
     listOf
 } from '../../../data/helpers/files/yaml/collection-text.ts';
+import { applyEntryField } from './merge.ts';
 import {
-    applyEntryField,
     asJs,
     document,
     linesOf,
     locate,
     refuseAll,
-    verified,
+    settled,
     type Change,
     type LineRange,
     type Located
@@ -91,11 +91,7 @@ export function setEntryFields(
         if (field === ident) ident_value = scalar(wanted);
     }
 
-    if (changed.length === 0) return { text: source, changed, refused };
-    if (!verified(source, text, applied)) {
-        return refuseAll(source, names, 'the edit did not verify; nothing was written');
-    }
-    return { text, changed, refused };
+    return settled(source, text, applied, names, changed, refused);
 }
 
 /** True for a list key holding nothing: absent, null (`entries:`), or an empty list. */

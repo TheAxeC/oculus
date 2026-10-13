@@ -23,7 +23,7 @@ import { parse } from 'yaml';
 import { z } from 'zod';
 import { ISO_DATE } from '../../../data/helpers/dates.ts';
 import { KEYED_FIELDS, LIST } from '../../../data/helpers/files/yaml/collection-text.ts';
-import { byKey, scalar } from '../../../data/helpers/guards.ts';
+import { byKey, isMap, scalar } from '../../../data/helpers/guards.ts';
 import { mapShape } from '../../../data/shapes/shapes.ts';
 import { throughSchema } from '../../../data/snapshot/hubs/references.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
@@ -38,6 +38,7 @@ import {
 } from '../entry-edit/index.ts';
 import { plain } from '../../core/changes.ts';
 import { writeTextAtomic } from '../../core/json.ts';
+import { words } from '../../core/words.ts';
 import {
     entryId,
     entryOf,
@@ -81,6 +82,7 @@ function typeRefusal(field: SchemaField, value: unknown): string {
     if (field.type === 'checkbox') {
         return typeof value === 'boolean' ? '' : `${name} takes true or false`;
     }
+    if (field.type === 'records') return recordRefusal(field, value);
     if (field.type !== 'select') return '';
     const options = field.options ?? [];
     if (typeof value !== 'string') return `${name} takes one of its own options`;
@@ -90,8 +92,31 @@ function typeRefusal(field: SchemaField, value: unknown): string {
     return options.includes(value.trim()) ? '' : `${name} takes one of ${options.join(', ')}`;
 }
 
+/**
+ * Why the value of a `records` field does not fit the sub-fields its schema declares, the first
+ * reason found, or the empty string. The value is a list of records, one record, or with `map` a
+ * map from a name to one record; a key no sub-field names is not checked.
+ */
+function recordRefusal(field: SchemaField, value: unknown): string {
+    const declared = field.fields ?? [];
+    const records: unknown[] = Array.isArray(value)
+        ? value
+        : field.map === true && isMap(value)
+          ? Object.values(value)
+          : [value];
+    for (const record of records) {
+        if (!isMap(record)) return `${field.field} takes records of named values`;
+        for (const sub of declared) {
+            if (!(sub.field in record)) continue;
+            const reason = typeRefusal(sub, record[sub.field]);
+            if (reason !== '') return reason;
+        }
+    }
+    return '';
+}
+
 /** Every field of the given ones whose value does not fit the file's own schema. */
-function typeRefusals(schema: unknown, fields: Record<string, unknown>): Refusal[] {
+export function typeRefusals(schema: unknown, fields: Record<string, unknown>): Refusal[] {
     const declared = collectionSchema(schema) ?? [];
     const refused: Refusal[] = [];
     for (const field of declared) {
@@ -161,15 +186,15 @@ export function identityOrder(collection: Collection): string[] {
 }
 
 /**
- * The file's first identity value that two entries share, or the empty string when every entry has
+ * The first identity value that two of the entries share, or the empty string when every entry has
  * its own. A write is refused while one exists: an edit addressed by that value reaches the first
  * entry alone, and the second could then be neither edited nor removed. validate reports the same
  * file, so the reader is told where it is.
  */
-export function sharedIdentity(collection: Collection): string {
+function sharedIdentity(items: Record<string, unknown>[], ident: string): string {
     const seen = new Set<string>();
-    for (const item of collection.items) {
-        const value = identityText(item, collection.ident);
+    for (const item of items) {
+        const value = identityText(item, ident);
         if (value === null) continue;
         if (seen.has(value)) return value;
         seen.add(value);
@@ -177,17 +202,23 @@ export function sharedIdentity(collection: Collection): string {
     return '';
 }
 
-/** The refusal a file with two entries of one identity value answers every write with. */
-function duplicate(collection: Collection): WriteOutcome | null {
-    const value = sharedIdentity(collection);
+/**
+ * The refusal a file with two entries of one identity value answers every write with, or null
+ * when the entries all have their own. A collection file and a feed file are refused the same way.
+ */
+export function sharedRefusal(
+    items: Record<string, unknown>[],
+    ident: string
+): WriteOutcome | null {
+    const value = sharedIdentity(items, ident);
     if (value === '') return null;
     return {
         found: true,
         changed: [],
         refused: [
             {
-                field: collection.ident,
-                reason: `two entries share the ${collection.ident} ${value}, so a write cannot address one of them`
+                field: ident,
+                reason: `two entries share the ${ident} ${value}, so a write cannot address one of them`
             }
         ]
     };
@@ -226,7 +257,7 @@ export function writeEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = duplicate(held);
+    const shared = sharedRefusal(held.items, held.ident);
     if (shared !== null) return shared;
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
@@ -332,7 +363,7 @@ export function reorderCollection(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = duplicate(held);
+    const shared = sharedRefusal(held.items, held.ident);
     if (shared !== null) return shared;
     const before = identityOrder(held);
     const out = saved(held.file, held.source, reorderEntries(held.source, held.ident, order));
@@ -362,7 +393,7 @@ export function removeEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = duplicate(held);
+    const shared = sharedRefusal(held.items, held.ident);
     if (shared !== null) return shared;
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
@@ -384,17 +415,30 @@ export function removeEntry(
     };
 }
 
-/** Add one entry to a collection, rendered from the file's own schema. */
+/**
+ * The key of the hub a new entry's id begins with, followed by a colon, or undefined. The
+ * portfolio reads such an id as an entry of that hub (server/edit/writes/hubs.ts), so a write
+ * addressed by it would go to the other hub's file and find no entry there.
+ */
+function hubPrefix(id: string, hubKeys: readonly string[]): string | undefined {
+    return hubKeys.find((key) => key !== '' && id.startsWith(`${key}:`));
+}
+
+/**
+ * Add one entry to a collection, rendered from the file's own schema. `hubKeys` are the keys of
+ * the workspace's hubs: an id that begins with one and a colon is refused.
+ */
 export function createEntry(
     hub: string,
     config: PortfolioConfig,
     collection: string,
     fields: Record<string, unknown>,
-    own?: string
+    own?: string,
+    hubKeys: readonly string[] = []
 ): WriteOutcome {
     const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
-    const shared = duplicate(held);
+    const shared = sharedRefusal(held.items, held.ident);
     if (shared !== null) return shared;
     const typed = typeRefusals(held.schema, fields);
     const wanted = fitting(fields, typed);
@@ -447,6 +491,18 @@ export function createEntry(
             refused: [
                 ...typed,
                 { field: ident, reason: `an entry with that ${ident} is already in the file` }
+            ]
+        };
+    }
+
+    const prefixed = hubPrefix(value, hubKeys) ?? hubPrefix(registryValue, hubKeys);
+    if (prefixed !== undefined) {
+        return {
+            found: true,
+            changed: [],
+            refused: [
+                ...typed,
+                { field: ident, reason: words(config.text, 'server.entries.hub_key', prefixed) }
             ]
         };
     }

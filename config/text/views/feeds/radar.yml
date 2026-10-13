@@ -2,6 +2,7 @@
 text:
     radar:
         count: '{0} ({1})'
+        delete_tip: delete this paper (removes the entry)
         dismiss: dismiss
         dismiss_tip: dismiss from the radar
         dismissed_sec: Dismissed

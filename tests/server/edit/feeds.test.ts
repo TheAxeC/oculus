@@ -179,7 +179,7 @@ describe('feed writes', () => {
         ).toEqual(['dismissed']);
         expect(readFileSync(join(into.hub, FILES.radar), 'utf8')).not.toContain('dismissed:');
         expect(
-            writeFeedField(into.hub, into.config, 'leads', 'Job', 'status', 'closed').changed
+            writeFeedField(into.hub, into.config, 'leads', 'Job', 'status', 'applied').changed
         ).toEqual(['status']);
         expect(
             writeFeedField(into.hub, into.config, 'radar', 'Paper', 'status', 'closed').refused
@@ -189,11 +189,60 @@ describe('feed writes', () => {
         ).toBe(false);
     });
 
-    it('deletes leads and refuses deletion from the other feeds', { tags: ['slow'] }, () => {
+    it('writes the fields the feed file schema names and holds each to its type', () => {
         const into = fixture();
-        expect(deleteFeedEntry(into.hub, into.config, 'leads', 'Job').changed).toEqual(['entries']);
-        expect(readFileSync(join(into.hub, FILES.leads), 'utf8')).not.toContain('Job');
-        expect(deleteFeedEntry(into.hub, into.config, 'radar', 'Paper').refused).toHaveLength(1);
+        const write = (field: string, value: string | number | boolean | null) =>
+            writeFeedField(into.hub, into.config, 'leads', 'Job', field, value);
+        expect(write('fit', 'a close fit').changed).toEqual(['fit']);
+        expect(write('country', 'NL').changed).toEqual(['country']);
+        expect(readFileSync(join(into.hub, FILES.leads), 'utf8')).toContain(
+            '  - title: "Job"\n    fit: a close fit\n    country: NL\n'
+        );
+        expect(write('status', 'closed')).toMatchObject({
+            changed: [],
+            refused: [{ field: 'status', reason: 'status takes one of open, applied, declined' }]
+        });
+        expect(write('date', 'tomorrow').refused).toHaveLength(1);
+        expect(write('title', 'Another').refused).toEqual([
+            { field: 'title', reason: 'the leads feed does not allow that field' }
+        ]);
+        expect(write('invented', 'x').refused).toEqual([
+            { field: 'invented', reason: 'the leads feed does not allow that field' }
+        ]);
+    });
+
+    it(
+        'deletes leads and papers and refuses deletion of a LinkedIn idea',
+        { tags: ['slow'] },
+        () => {
+            const into = fixture();
+            expect(deleteFeedEntry(into.hub, into.config, 'leads', 'Job').changed).toEqual([
+                'entries'
+            ]);
+            expect(readFileSync(join(into.hub, FILES.leads), 'utf8')).not.toContain('Job');
+            expect(deleteFeedEntry(into.hub, into.config, 'radar', 'Paper').changed).toEqual([
+                'entries'
+            ]);
+            expect(readFileSync(join(into.hub, FILES.radar), 'utf8')).not.toContain('Paper');
+            expect(
+                deleteFeedEntry(into.hub, into.config, 'linkedin', 'xx-easy-problems.md').refused
+            ).toHaveLength(1);
+        }
+    );
+
+    it('refuses a write and a deletion of an entry whose title another entry shares', () => {
+        const into = fixture();
+        const file = join(into.hub, FILES.leads);
+        writeFileSync(file, readFileSync(file, 'utf8') + '  - title: "Job"\n');
+        const before = readFileSync(file, 'utf8');
+        const shared = 'two entries share the title Job, so a write cannot address one of them';
+        expect(writeFeedField(into.hub, into.config, 'leads', 'Job', 'fit', 'x').refused).toEqual([
+            { field: 'title', reason: shared }
+        ]);
+        expect(deleteFeedEntry(into.hub, into.config, 'leads', 'Job').refused).toEqual([
+            { field: 'title', reason: shared }
+        ]);
+        expect(readFileSync(file, 'utf8')).toBe(before);
     });
 });
 

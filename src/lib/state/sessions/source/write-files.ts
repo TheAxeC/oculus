@@ -162,6 +162,7 @@ export function writtenFile(
             return look.projectManifest(text(target.id));
         }
         case 'host':
+        case 'career':
             return inHub(text(merged.career_file) || CAREER_FILE, look);
         case 'feed-field':
         case 'feed-delete': {

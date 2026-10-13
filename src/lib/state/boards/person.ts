@@ -1,6 +1,7 @@
 // Layer 2, client state. One person, joined to everything the hub knows about them: the registry
 // entry, the organisations they are affiliated to, the joint work that names them, the projects
-// whose `collaborators:` name them, and a student's supervision folder.
+// whose `collaborators:` name them, the projects whose `waiting-on:` names them, and a student's
+// supervision folder.
 //
 // Pure, so the Person view is tested without a browser: every join reads the snapshot it is given
 // and nothing else. The joins go through the relation tables rather than by scanning, since the
@@ -25,6 +26,8 @@ export type PersonJoin = {
     jointWork: Entry[];
     /** The projects whose `collaborators:` name this key, by project id. */
     projects: Project[];
+    /** The projects whose `waiting-on:` names this key, by project id. */
+    waitingOn: Project[];
     /** A student's supervision folder, hub-relative, and the empty string for anyone else. */
     folder: string;
 };
@@ -61,7 +64,14 @@ function jointWorkOf(snapshot: Snapshot, key: Id): Entry[] {
 export function personJoin(snapshot: Snapshot | null, key: Id): PersonJoin {
     const person = snapshot === null ? undefined : byKey(snapshot.entities.people, key);
     if (snapshot === null || person === undefined) {
-        return { person: null, organisations: [], jointWork: [], projects: [], folder: '' };
+        return {
+            person: null,
+            organisations: [],
+            jointWork: [],
+            projects: [],
+            waitingOn: [],
+            folder: ''
+        };
     }
     const organisations = person.affiliations
         .map((one) => byKey(snapshot.entities.organisations, one))
@@ -74,6 +84,9 @@ export function personJoin(snapshot: Snapshot | null, key: Id): PersonJoin {
         organisations,
         jointWork: jointWorkOf(snapshot, key),
         projects,
+        waitingOn: Object.values(snapshot.entities.projects).filter((project) =>
+            project.waitingOn.includes(key)
+        ),
         folder: person.folder ?? ''
     };
 }

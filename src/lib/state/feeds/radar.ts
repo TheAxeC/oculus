@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import type { Project } from '../../data/model/index.ts';
-import { byKey } from '../../data/helpers/guards.ts';
+import { byKey, slugOf } from '../../data/helpers/guards.ts';
 import {
     readAs,
     rowsShape,
@@ -12,6 +12,9 @@ import {
 } from '../../data/shapes/shapes.ts';
 
 export type { Project };
+
+/** How many characters of the title or motif a project id seeded from a spark keeps. */
+const SLUG_MAX = 40;
 
 export type RadarEntry = Record<string, unknown>;
 export type RadarBucket = { key: string; glyph: string; label: string; color: string };
@@ -102,16 +105,8 @@ export function radarSearch(entries: RadarEntry[], search: string): RadarEntry[]
 export function ideaSeed(entry: RadarEntry): { id: string; eli5: string } {
     // The motif seeds the id when it slugs to something; a motif of punctuation alone falls back
     // to the title, so a usable title never yields an empty id.
-    const id = slugOf(word(entry, 'motif')) || slugOf(word(entry, 'title'));
+    const id = slugOf(word(entry, 'motif'), SLUG_MAX) || slugOf(word(entry, 'title'), SLUG_MAX);
     return { id, eli5: word(entry, 'idea_spark') || word(entry, 'why') };
-}
-
-function slugOf(source: string): string {
-    return source
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .slice(0, 40)
-        .replace(/^-+|-+$/g, '');
 }
 
 /** Existing project records named by project and maps_to, in that order without duplicates. */

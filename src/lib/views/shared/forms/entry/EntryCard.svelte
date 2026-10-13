@@ -12,16 +12,15 @@
     // from the people registry for is the one exception in kind rather than in name: it holds a
     // person's key, so the card draws the control that opens that person by their name.
     //
-    // An entry whose `link` names a folder of the hub has a page, and the card's title opens it
-    // through `onpage`; a card handed none draws its title as words. Whether a path is a folder is
-    // the file store's listing of the folder that holds it (state/boards/collection.ts's
-    // listsAsFolder), held and marked again when the folder changes, so the title becomes a button
-    // when the folder appears.
+    // Every entry has a page, and the card's title opens it through `onpage`; a card handed none
+    // draws its title as words. The page holds the entry's editor, its referrers and, where its
+    // `link` names a folder of the hub, the folder's documents, files and sessions.
     //
     // The status, a deadline and a date change on the card (shared/forms/InPlace.svelte), every
-    // other field in the file, which Edit in File opens at the entry. The controls that write are
-    // disabled, the words saying why as their title, while the file has unsaved text in a source
-    // tab or the entry's identity cannot address a write.
+    // other field on the entry's page or in the file, which Edit in File opens at the entry. Delete
+    // asks first, naming what refers to the entry. The controls that write are disabled, the words
+    // saying why as their title, while the file has unsaved text in a source tab or the entry's
+    // identity cannot address a write.
     //
     // A link is one of three things: a local HTML file opens in the document view, a path inside
     // the hub whose extension `open.program_ext` of config/behavior.yml names an application for (a
@@ -43,7 +42,8 @@
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import CardActions, { type CardAction } from '../../card/CardActions.svelte';
-    import { entryActions } from './entry-actions';
+    import { entryActions, showActions } from './entry-actions';
+    import DeleteAsk from './DeleteAsk.svelte';
     import { blockedBy, fileNameOf, openEntry } from '../entry-file';
     import Clamp from '../../card/Clamp.svelte';
     import Grip from './Grip.svelte';
@@ -58,11 +58,8 @@
         drawnFields,
         entryStatus,
         entrySubtasks,
-        hubPathsOf,
-        listsAsFolder,
         isPinned,
         identityValue,
-        pageFolder,
         pageState,
         type Entry,
         type IdentityFault,
@@ -164,6 +161,9 @@
     /** True once the grip is held down, which is what makes the card draggable and nothing else. */
     let armed = $state(false);
 
+    /** True while the question before a delete is open. */
+    let deleting = $state(false);
+
     /** True while the add-subtask form is open, from the block's own control or the card's. */
     let addingSubtask = $state(false);
 
@@ -174,53 +174,29 @@
     const listed = (folder: string): ReturnType<typeof listing>['entries'] =>
         listing(root, folder).entries;
 
-    /** Whether the entry has a page, which is when its `link` names a folder of the hub. */
-    const hasPage = $derived(pageFolder(entry.fields, listed) !== undefined);
-
     /**
-     * One Show in Files control per hub path the entry's `link`, `url` or `folder` names: a folder
-     * opens a Files tab rooted at it and a file is selected in the page's Files tab. It needs no
-     * identity to write by, so a card of a file with no schema carries it too. A folder also gets
-     * Open Workbench, which opens the workbench of that folder, with the entry's page in its
-     * documents pane when the folder is the one the entry's page is for.
+     * One Show in Files control per hub path the entry's `link`, `url` or `folder` names, and Open
+     * Workbench for a folder (entry-actions.ts). They need no identity to write by, so a card of a
+     * file with no schema carries them too.
      */
     const shows: CardAction[] = $derived(
-        hubPathsOf(entry.fields).flatMap((path): CardAction[] => {
-            const folder = listsAsFolder(path, listed);
-            const show: CardAction = {
-                id: `files:${path}`,
-                label: t('collection.show_in_files'),
-                title: folder
-                    ? t('folder_files.show_in_files_tip', path)
-                    : t('collection.show_in_files_tip', path),
-                glyph: 'show_in_files',
-                onclick: () => {
-                    if (folder) showFolderInFiles(path, root);
-                    else showInFiles(path, root);
-                }
-            };
-            if (!folder || !folders.served(root)) return [show];
-            const own = pageFolder(entry.fields, listed) === path;
-            return [
-                show,
-                {
-                    id: `workbench:${path}`,
-                    label: t('collection.open_workbench'),
-                    title: t('collection.open_workbench_tip', path),
-                    glyph: 'app_view',
-                    onclick: () => {
-                        folders.open(
-                            { root, path },
-                            {
-                                label: entry.title === '' ? entry.id : entry.title,
-                                item: own
-                                    ? { view: 'entry', state: pageState(collection, entry) }
-                                    : undefined
-                            }
-                        );
+        showActions({
+            entry,
+            root,
+            listed,
+            served: folders.served(root),
+            onfiles: (path, folder) =>
+                folder ? showFolderInFiles(path, root) : showInFiles(path, root),
+            onworkbench: (path, own) =>
+                folders.open(
+                    { root, path },
+                    {
+                        label: entry.title === '' ? entry.id : entry.title,
+                        item: own
+                            ? { view: 'entry', state: pageState(collection, entry) }
+                            : undefined
                     }
-                }
-            ];
+                )
         })
     );
 
@@ -240,6 +216,7 @@
             onstatus: setStatus,
             onpin: pin,
             onedit: () => openEntry(client, file, entry, schema, fault, onsaid),
+            ondelete: () => (deleting = true),
             onsubtask: () => {
                 addingSubtask = !addingSubtask;
             }
@@ -315,7 +292,7 @@
         id={value}
         {cursor}
         title={entry.title === '' ? entry.id : entry.title}
-        ontitle={hasPage ? onpage : undefined}
+        ontitle={onpage}
         tone={status === undefined ? undefined : statusTone(status)}
         {pinned}
     >
@@ -425,6 +402,10 @@
         </div>
     </Card>
 </div>
+
+{#if deleting}
+    <DeleteAsk {collection} id={entry.id} {onsaid} onclose={() => (deleting = false)} />
+{/if}
 
 <style>
     /* The slot fills its grid cell and the card fills the slot, so the cards of one row are one

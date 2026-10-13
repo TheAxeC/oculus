@@ -4,6 +4,48 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z867 (2026-10-13, D72's landing, the orchestrator, automode): the card on a lead's and a Lit Watch paper's page, in D74
+
+- Chosen: part 12 of D74: the page of a lead and of a Lit Watch paper shows the entry's card above its editor with every control the card has in its view; `LeadCard.svelte` and `RadarCard.svelte` move into `src/lib/views/shared/` so the page may draw them. D72 landed with this part of its item 1 unmet.
+- Not chosen: the move at D72's landing, unreviewed; no change, the lazy option.
+
+Where it applies: D74. Booked in `plan.md` Rulings, D74's line and brief, and the closed log of `orchestrator-history.md`.
+
+## Z866 (2026-10-13, D72's landing, the orchestrator, automode): entry pages right after a write, in D74
+
+- Chosen: part 11 of D74: after Save the editors and the tab title show the saved values at once; a page opened by Add, `:task-add` or its notice's Open shows the new entry from the first frame; an undo's History row says what the undo did.
+- Not chosen: the page's gone sentence alone at D72's landing, the two older defects left; no change, the lazy option.
+
+Where it applies: D74. Booked in `plan.md` Rulings, D74's line and brief, and the closed log of `orchestrator-history.md`.
+
+## Z865 (2026-10-13, D72's landing, the orchestrator, automode): the refusal words of the server's edit layer from the catalog, in D74
+
+- Chosen: part 10 of D74: every refusal reason the server's edit layer answers (140 English sentences in 11 files of `src/lib/server/edit`, the 28 of D72's `merge.ts` among them) becomes a line of `config/text/server.yml` read through `words`, as the career write's are.
+- Not chosen: `merge.ts`'s sentences alone at D72's landing, which leaves the entry editor showing English literals from every function beside it; no change, the lazy option.
+
+Where it applies: D74. Booked in `plan.md` Rulings, D74's line and brief, and the closed log of `orchestrator-history.md`.
+
+## Z864 (2026-10-13, D74's preparation, the orchestrator, automode): each hub's vocabulary on the `config` payload
+
+- Chosen: a field of the `config` payload, keyed by hub, holding each hub's `domains`, `venue_themes` and `data_themes` from its own layer over the engine's defaults; listed in `docs/apps.md`, since the channel is open to apps
+- Not chosen: (b) a channel of its own; (c) the lists on each record; (d) the primary's lists alone, the lazy option.
+
+Where it applies: D74. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z863 (2026-10-13, D74's preparation, the orchestrator, automode): a `changes` channel announces each append of the change log
+
+- Chosen: a new hub channel `changes` with the payload `{ at: string }`, published by `logChanges` after the lines are on disk; the History store reads the newest page again when it hears one; the channel stays closed to apps
+- Not chosen: (b) polling GET /api/changes while History is open (reads on a timer, still misses a write between reads); (c) carrying the log on an existing channel; (d) no announcement, the lazy option.
+
+Where it applies: D74. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
+## Z862 (2026-10-13, D74's preparation, the orchestrator, automode): `none` for the HPC state with no cluster, and `top` in the git state
+
+- Chosen: a fifth `HpcStatus` value `none` for a hub that names no cluster, with the sentence as `hint`, no poll and no retry; a `GitState` field `top`, the real path `git rev-parse --show-toplevel` names, by which the page shows each repository once; both listed in `docs/apps.md`, since the `hpc` and `git` channels are open to apps.
+- Not chosen: (b) `unreachable` with a flag (keeps the error word); (c) the top folder derived from the `worktrees` list (not git's own answer); (d) neither, the lazy option.
+
+Where it applies: D74. Booked in `plan.md` Rulings, the brief and the closed log of `orchestrator-history.md`.
+
 ## Z848 (2026-10-12, D64's preparation, the orchestrator, automode): source control, decorations and the tools' menus
 
 - Chosen: every `scm/*`, `debug/*` and `terminal/*` menu id VS Code's contribution-points page lists is built (`terminal/title/context` in place of `terminal/title`, `scm/repository` among them) and an id the page does not list dropped with a finding; the input box last write wins; git's quick diff mark drawn and an app's offered beside it; several decoration providers joined (badges after git's letter, two characters in all, tooltips joined, git's colour first), a longer badge dropped with an output line, changes merged per frame and not counted under `messages_per_min`; a root app's contributions acting in its own root only.

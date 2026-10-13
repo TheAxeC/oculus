@@ -14,6 +14,7 @@ import {
     stringItemsShape
 } from '../../shapes/shapes.ts';
 import { compact } from '../compact.ts';
+import { fieldsOf } from '../schema/field.ts';
 
 /** The keys of a host row that are the host itself; every other string key is one of its scores. */
 const HOST_KEYS = ['name', 'inst', 'tag', 'status', 'note'];
@@ -153,6 +154,8 @@ export function career(raw: Record<string, unknown> | null): Career | null {
         hostCriteria: strings(raw.host_criteria),
         notHosts,
         eligibility: eligibility(raw.eligibility),
-        dropped
+        dropped,
+        sections: Object.fromEntries(Object.entries(raw).filter(([name]) => name !== 'schema')),
+        schema: fieldsOf(raw.schema)
     });
 }

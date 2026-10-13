@@ -12,5 +12,6 @@ export {
 } from './entries.ts';
 export { addSubtask, deleteSubtask, setSubtask, subtaskLines, subtaskValues } from './subtasks.ts';
 export { setHostStatus } from './host-status.ts';
+export { setSections } from './merge.ts';
 export { entryRange } from './lines.ts';
 export type { LineRange, SubtaskBlock, SubtaskLine } from './lines.ts';

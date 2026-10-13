@@ -156,6 +156,10 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // take out of the object are SHELL_STORES below, and the second rule checks each destructuring
 // against that list.
 //
+// `state/forms/new-entry` and `state/forms/page-entry` are in the shell's row because the palette's
+// Add Task command (`:task-add <title>`) makes the task a title gives and opens the page of the
+// entry it wrote, the same rules the Add boxes of the views use.
+//
 // `state/system/machine/lsp/lsp.svelte` and `state/system/machine/lsp/symbols` are in the shell's
 // row because the status bar's language server items and the palette's choice rows draw the
 // server states and the choices the relay sends, and the pane strip's breadcrumb draws the symbols
@@ -228,6 +232,8 @@ const ALLOWED: Record<string, string[]> = {
         'state/shared/words/appearance',
         'state/workbench/palette',
         'state/workbench/palette-source',
+        'state/forms/new-entry',
+        'state/forms/page-entry',
         'state/workbench/selection',
         'state/workbench/navigation/**',
         'state/system/machine/lsp/lsp.svelte',

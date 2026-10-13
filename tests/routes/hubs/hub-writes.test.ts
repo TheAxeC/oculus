@@ -185,6 +185,24 @@ const ROWS: {
         files: ['feeds/position-leads.yml']
     },
     {
+        name: 'a lead field the file schema names beyond its status',
+        body: {
+            kind: 'feed-field',
+            feed: 'leads',
+            id: 'Lead',
+            root: 'lab',
+            field: 'fit',
+            value: 'a close fit'
+        },
+        files: ['feeds/position-leads.yml']
+    },
+    {
+        name: 'a Lit Watch deletion',
+        body: { kind: 'feed-delete', feed: 'radar', id: 'Paper', root: 'lab' },
+        files: ['feeds/literature-radar.yml'],
+        values: true
+    },
+    {
         name: 'a lead deletion',
         body: { kind: 'feed-delete', feed: 'leads', id: 'Lead', root: 'lab' },
         files: ['feeds/position-leads.yml'],

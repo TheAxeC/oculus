@@ -29,7 +29,9 @@ import {
     type LspChoiceKind
 } from '../../data/prose/lsp-servers.ts';
 import { filledTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts';
-import { feedIdents, feedRoot, nestedStrings } from '../feeds/idents.ts';
+import { PREFIX_ROWS } from '../../data/helpers/keys/oculus/palette-table.ts';
+import { PAGE_FEEDS, pageView, revealState } from '../forms/page-entry.ts';
+import { feedIdents, feedRoot, nestedStrings } from '../shared/page/idents.ts';
 import { pickerLine, type PickRefusal } from '../sources/explorer/acts/folders.ts';
 import { refusal } from '../sources/explorer/acts/refusal.ts';
 import { workspaceMatches, type WorkspaceChoice } from '../sources/explorer/acts/workspaces.ts';
@@ -116,6 +118,7 @@ export type PaletteCommand = {
         | 'workspace-new'
         | 'workspace-close'
         | 'workspace-save'
+        | 'task-add'
         | 'folder';
     /** What the command does, drawn beside it in the list. */
     description: string;
@@ -125,16 +128,6 @@ export type PaletteCommand = {
 };
 
 export type ParsedCommand = { name: string; argument: string };
-
-/**
- * The state a feed view is given to reveal one entry: the id, and the disclosure the entry may sit
- * behind opened, since a card that is not mounted cannot be scrolled to.
- */
-function revealState(kind: FeedKind, id: string): Record<string, unknown> {
-    if (kind === 'leads') return { reveal: id, expiredOpen: true };
-    if (kind === 'radar') return { reveal: id, dismissedOpen: true };
-    return { reveal: id };
-}
 
 /** Build the complete searchable index from the values currently held by the client stores. */
 export function buildIndex(
@@ -180,14 +173,16 @@ export function buildIndex(
         }
         for (const collection of Object.values(snapshot.entities.collections)) {
             for (const entry of collection.entries) {
+                const label = entry.title || entry.id;
+                const page = pageView(bareId(collection), entry.id, label);
                 found.push({
                     id: `collection:${collection.id}:${entry.id}`,
                     kind: 'collection',
-                    label: entry.title || entry.id,
-                    title: entry.title || entry.id,
+                    label,
+                    title: label,
                     text: nestedStrings(entry.fields).join(' '),
-                    view: bareId(collection),
-                    state: { reveal: entry.id },
+                    view: page.view,
+                    state: page.state,
                     ...hubHint(rootOf(collection, null))
                 });
             }
@@ -200,14 +195,15 @@ export function buildIndex(
             const id = identOf(entry);
             const named = readAs(feedNameShape, entry);
             const label = named?.title ?? named?.subject ?? id;
+            const paged = PAGE_FEEDS.includes(kind) ? pageView(kind, id, label) : null;
             found.push({
                 id: `feed:${kind}:${id}`,
                 kind: 'feed',
                 label,
                 title: label,
                 text: nestedStrings(entry).join(' '),
-                view: kind,
-                state: revealState(kind, id),
+                view: paged === null ? kind : paged.view,
+                state: paged === null ? revealState(kind, id) : paged.state,
                 ...hubHint(feedRoot(entry))
             });
         }
@@ -394,8 +390,9 @@ export function kindWord(
 
 /** Split a leading-colon query into the command-name prefix and its argument. */
 export function parseCommand(query: string): ParsedCommand | null {
-    if (!query.startsWith(':')) return null;
-    const body = query.slice(1).trimStart();
+    const prefix = PREFIX_ROWS.command.prefix;
+    if (!query.startsWith(prefix)) return null;
+    const body = query.slice(prefix.length).trimStart();
     const space = body.search(/\s/);
     if (space < 0) return { name: body.toLowerCase(), argument: '' };
     return {
@@ -405,12 +402,15 @@ export function parseCommand(query: string): ParsedCommand | null {
 }
 
 /**
- * The line a go-to-line query names: a colon and a whole number, as VS Code's quick input reads
- * one, or null for any other query.
+ * The line a go-to-line query names: the line row's prefix and a whole number, as VS Code's quick
+ * input reads one, or null for any other query.
  */
-export function lineQuery(parsed: ParsedCommand | null): number | null {
-    if (parsed?.argument !== '' || !/^\d+$/.test(parsed.name)) return null;
-    const line = Number(parsed.name);
+export function lineQuery(query: string): number | null {
+    const row = PREFIX_ROWS.line;
+    if (!query.startsWith(row.prefix)) return null;
+    const name = query.slice(row.prefix.length).trim();
+    if (!row.only.pattern.test(name)) return null;
+    const line = Number(name);
     return Number.isSafeInteger(line) && line > 0 ? line : null;
 }
 
@@ -506,6 +506,12 @@ export function commands(
             name: 'clone',
             description: t('app.palette.cmd_clone'),
             hint: t('app.palette.cmd_clone_hint'),
+            available: true
+        },
+        {
+            name: 'task-add',
+            description: t('app.palette.cmd_task_add'),
+            hint: t('app.palette.cmd_task_add_hint'),
             available: true
         },
         { name: 'help', description: t('app.palette.cmd_help'), hint: '', available: false },
@@ -640,8 +646,8 @@ export type PaletteMode = 'search' | 'files' | 'commands' | 'symbols';
  * opened in.
  */
 export function modeOf(query: string, files: boolean): PaletteMode {
-    if (query.startsWith(':')) return 'commands';
-    if (query.startsWith('#')) return 'symbols';
+    if (query.startsWith(PREFIX_ROWS.command.prefix)) return 'commands';
+    if (query.startsWith(PREFIX_ROWS.symbols.prefix)) return 'symbols';
     return files ? 'files' : 'search';
 }
 

@@ -2,13 +2,14 @@
 //
 // A value from outside the process (a parsed file, a request body, a socket frame, an answer of
 // another program or service) is read through a zod schema at its reader, as DESIGN.md's "Untyped
-// input" says. What is here is for the bare map test and for the values a reader already holds:
-// is this a map, what map is it with an empty one for anything else, is this a string, what string
-// is it with a fallback, what text is this scalar, which items of this list are strings, and what
-// does a record or a list hold under a key or at a position it may not have, and are two values
-// equal with the keys of every map in the same order. The contracts here are the ones their readers
-// agreed on: nothing trims, nothing coerces a number to text, and a value of the wrong shape is
-// dropped rather than repaired, so a bad line of a config file loses that line and nothing else.
+// input" says. What is here is for the bare map test and for the values a reader already holds: is
+// this a map, what map is it with an empty one for anything else, is this a string, what string is
+// it with a fallback, what text is this scalar, which items of this list are strings, and what does
+// a record or a list hold under a key or at a position it may not have, and are two values equal
+// with the keys of every map in the same order, and what key does a title make. The contracts here
+// are the ones their readers agreed on: nothing trims, nothing coerces a number to text, and a
+// value of the wrong shape is dropped rather than repaired, so a bad line of a config file loses
+// that line and nothing else.
 //
 // `state/` may import this beside `data/model`, which is the one row of DESIGN.md's boundary table
 // this file widened; `ui/`, `shell/` and `themes/` may not.
@@ -88,4 +89,20 @@ export function numericSetting(config: Record<string, unknown>, key: string): nu
  */
 export function sameInOrder(a: unknown, b: unknown): boolean {
     return isEqual(a, b) && JSON.stringify(a) === JSON.stringify(b);
+}
+
+/**
+ * A text made into a key: the accents taken off, lower case, and every other run of characters a
+ * hyphen, with none at either end. `max` cuts the key to at most that many characters, and the cut
+ * never leaves a hyphen at its end. A text with no ASCII letter or digit gives the empty key.
+ */
+export function slugOf(source: string, max = Number.POSITIVE_INFINITY): string {
+    return source
+        .normalize('NFD')
+        .replace(/\p{M}+/gu, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+/, '')
+        .slice(0, max)
+        .replace(/-+$/, '');
 }

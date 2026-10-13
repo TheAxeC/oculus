@@ -16,12 +16,13 @@
     // Layer 3, view. Position Leads reads its socket feed, splits live from expired entries,
     // and keeps search plus the expired and run-log disclosures in this view instance's state.
     //
-    // Add opens the leads file with a new lead, dated today, in its unsaved text. A lead's
-    // `applied` control opens the Applications file beside the leads with an entry filled from the
-    // lead (state/feeds/lead-application.ts) in its unsaved text, and then sets the lead `applied`.
-    // A refused Add writes nothing to the lead, and a refused write of the lead leaves the entry in
-    // the text. The controls that write the leads file are disabled while a source tab holds
-    // unsaved text of it.
+    // Add asks the new lead's title, writes the lead to the leads file of the primary hub (else the
+    // first), dated today, and opens the lead's page, where the rest is filled in. A lead's title
+    // opens its page too. A lead's `applied` control opens the Applications file beside the leads
+    // with an entry filled from the lead (state/feeds/lead-application.ts) in its unsaved text, and
+    // then sets the lead `applied`. A refused placement writes nothing to the lead, and a refused
+    // write of the lead leaves the entry in the text. The controls that write the leads file are
+    // disabled while a source tab holds unsaved text of it.
 
     import Chip from '$lib/ui/controls/Chip.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -30,11 +31,13 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import LeadCard from './LeadCard.svelte';
-    import { addInFile, blockedBy, placeInFile } from '../../shared/forms/entry-file';
+    import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
+    import { leadAsk, type Ask } from '../../shared/forms/entry/entry-add';
+    import { blockedBy, placeInFile } from '../../shared/forms/entry-file';
     import { answerWords } from '../../shared/forms/answer-words';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
-    import SourceButton from '../../shared/links/SourceButton.svelte';
+    import SourceToolbar from '../../shared/links/SourceToolbar.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         APPLIED,
@@ -50,6 +53,7 @@
         type LeadsState
     } from '$lib/state/feeds/leads';
     import { asText } from '$lib/state/forms/schema';
+    import { entryPageState } from '$lib/state/forms/page-entry';
     import { sourceFileState } from '$lib/state/sessions/source/place';
     import {
         APPLICATIONS,
@@ -58,7 +62,7 @@
     } from '$lib/state/feeds/lead-application';
     import { t } from '$lib/state/shared/words/text';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
-    import { feedIdents, feedRoot } from '$lib/state/feeds/idents';
+    import { feedIdents, feedRoot } from '$lib/state/shared/page/idents';
     import { viewSourceFile } from '$lib/state/sessions/view-source';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -67,7 +71,7 @@
     const {
         entities: { config },
         feeds: { feed },
-        layout: { openBeside },
+        layout: { openBeside, openView },
         selectors: { collectionOf, configMap },
         source: { unsavedFile },
         ui: { instanceState, setInstanceState },
@@ -113,12 +117,13 @@
         setInstanceState(instance.id, { ...held, ...next });
     }
 
-    /** Add opens the leads file with a new lead, dated the day of the press, in its text. */
-    async function add(): Promise<void> {
-        if (source === null || data === null) return;
-        said = await addInFile(client, source, data.schema, LEADS_FEED, {
-            date: localDate(Date.now())
-        });
+    /** The Add box while it is open: it asks the new lead's title and opens the lead's page. */
+    let asking = $state<Ask | null>(null);
+
+    /** The page of one lead, opened from its title. */
+    function openPage(entry: LeadEntry): void {
+        const title = asText(entry.title);
+        openView('entry', entryPageState(LEADS_FEED, identOf(entry), title));
     }
 
     /**
@@ -159,18 +164,15 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('leads.toolbar')} overflow>
+    <SourceToolbar {source} label={t('leads.toolbar')}>
         <ToolButton
             bare
             glyph="add"
             label={t('leads.add')}
             title={t('leads.add_tip')}
-            onclick={add}
+            onclick={() => (asking = leadAsk(client))}
         />
-        {#if source !== null}
-            <SourceButton file={source} />
-        {/if}
-    </Toolbar>
+    </SourceToolbar>
 {/snippet}
 
 {#snippet bar()}
@@ -192,6 +194,8 @@
         {/if}
     </Toolbar>
 {/snippet}
+
+<AddAsk ask={asking} onclose={() => (asking = null)} />
 
 <Pane title={t('views.leads')} toolbar={tools} {bar}>
     <div class="leads" data-instance={instance.id}>
@@ -228,6 +232,7 @@
                                 cursor={cursor === leadOf(entry)}
                                 onsaid={(words: string) => (said = words)}
                                 onapply={() => toApplication(entry)}
+                                onpage={() => openPage(entry)}
                                 {blocked}
                             />
                         </Reveal>
@@ -261,6 +266,7 @@
                                         expired
                                         onsaid={(words: string) => (said = words)}
                                         onapply={() => toApplication(entry)}
+                                        onpage={() => openPage(entry)}
                                         {blocked}
                                     />
                                 </Reveal>

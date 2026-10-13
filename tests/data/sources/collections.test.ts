@@ -116,3 +116,87 @@ describe('readCollections', () => {
         expect(events.entries[1].year).toBe(2025);
     });
 });
+
+describe('the registries that are collections of their own', () => {
+    const REGISTRIES: CollectionFile[] = [
+        { key: 'people', file: 'registries/people.yml' },
+        { key: 'organisations', file: 'registries/organisations.yml' },
+        { key: 'resources', file: 'registries/resources.yml' }
+    ];
+
+    function registriesHub(): string {
+        const hub = scratch();
+        write(
+            hub,
+            'registries/people.yml',
+            [
+                'schema:',
+                '  - { field: key, type: text }',
+                '  - { field: affiliations, type: tags }',
+                'entries:',
+                '  - { key: wim, name: Wim, affiliations: [kuleuven, ut], self: true }',
+                '  - { key: an, name: An }',
+                ''
+            ].join('\n')
+        );
+        write(
+            hub,
+            'registries/organisations.yml',
+            [
+                'schema:',
+                '  - { field: key, type: text }',
+                'entries:',
+                '  - { key: ut, name: Twente, kind: university }',
+                ''
+            ].join('\n')
+        );
+        write(
+            hub,
+            'registries/resources.yml',
+            [
+                'schema:',
+                '  - { field: key, type: text }',
+                '  - { field: links, type: tags }',
+                'entries:',
+                '  - key: utwente',
+                '    kind: cluster',
+                '    links: [docs/HPC.md]',
+                '    retrieval: { host: hpc, ports: [22, 80] }',
+                ''
+            ].join('\n')
+        );
+        return hub;
+    }
+
+    it('reads each into entries keyed by their key, with every field as the file holds it', () => {
+        const { collections } = readCollections(registriesHub(), REGISTRIES, CATALOG);
+        expect(Object.keys(collections)).toEqual(['people', 'organisations', 'resources']);
+        expect(collections.people.entries.map((entry) => entry.key)).toEqual(['wim', 'an']);
+        expect(collections.people.entries[0]).toMatchObject({
+            name: 'Wim',
+            affiliations: ['kuleuven', 'ut'],
+            self: true
+        });
+        expect(collections.organisations.entries.map((entry) => entry.kind)).toEqual([
+            'university'
+        ]);
+        expect(collections.resources.entries[0]).toMatchObject({
+            key: 'utwente',
+            kind: 'cluster',
+            links: ['docs/HPC.md'],
+            retrieval: { host: 'hpc', ports: [22, 80] }
+        });
+    });
+
+    it('reads an `entries:` that holds only comments as a collection with no entries', () => {
+        const hub = scratch();
+        write(
+            hub,
+            'registries/people.yml',
+            'schema:\n  - { field: key, type: text }\nentries:\n  # none yet\n'
+        );
+        const { collections, findings } = readCollections(hub, [REGISTRIES[0]], CATALOG);
+        expect(collections.people.entries).toEqual([]);
+        expect(findings).toEqual([]);
+    });
+});

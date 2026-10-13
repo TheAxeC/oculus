@@ -20,9 +20,10 @@
     // What it holds is the edits, not the values. A field reads the project's current value until
     // it is edited, and the edit sits over it until it is saved or reverted; so nothing has to be
     // copied when the project changes, and what Save posts is exactly the map of edits. The edits
-    // are kept in the instance's state through state/forms/manifest-draft.ts rather than in this
+    // are kept in the instance's state through state/forms/form-draft.ts rather than in this
     // component, so a reload keeps them as a tab switch does, and the tab asks before it closes
-    // over them.
+    // over them. The controls are views/shared/forms/entry/edit/EntryForm.svelte, the form the
+    // entry pages and the career editor draw their fields with.
     //
     // A save the server took drops the edits it took, keeping an edit typed while it was on its way
     // and one the server refused. The page sees its own write when the watcher pushes the rebuilt
@@ -34,22 +35,14 @@
     // write).
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Checkbox from '$lib/ui/forms/Checkbox.svelte';
-    import DateInput from '$lib/ui/forms/DateInput.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Field from '$lib/ui/forms/Field.svelte';
-    import MultiSelect from '$lib/ui/forms/choice/MultiSelect.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
-    import Select from '$lib/ui/forms/choice/Select.svelte';
-    import TextArea from '$lib/ui/forms/TextArea.svelte';
-    import TextInput from '$lib/ui/forms/TextInput.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { editDiffers } from '$lib/state/forms/manifest-draft';
+    import EntryForm from '../../shared/forms/entry/edit/EntryForm.svelte';
     import {
-        asList,
-        asText,
         dateNeedsNote,
+        editDiffers,
         fieldsOfSection,
         fieldValues,
         followupWritable,
@@ -65,15 +58,15 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        manifestDraft: { editManifest, manifestEdits, revertManifest, settleManifest },
+        formDraft: { draftEdits, editDraft, revertDraft, settleDraft },
         selectors: { fieldChoices, manifestFields, manifestSections, projectOf },
         writes: { writeManifest }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    /** How tall the prose boxes open. */
-    const ROWS = 3;
+    /** The kind of draft the project editor keeps (state/client/context.ts names its target). */
+    const DRAFT_KIND = 'project';
 
     /** The project this instance was opened for, from the state the card handed openView. */
     const id = $derived(instanceText(instance.state, 'id'));
@@ -83,7 +76,7 @@
     const sections = $derived(manifestSections());
 
     /** The edits over the project's own values, by field name. Cleared by Revert and by a save. */
-    const edits = $derived(manifestEdits(instance.id, id));
+    const edits = $derived(draftEdits(instance.id, DRAFT_KIND, id));
     /** What the last save said, as lines the pane shows under the form. */
     let result = $state<string[]>([]);
     /** Whether this editor's own save is on its way. */
@@ -111,11 +104,11 @@
     }
 
     function edit(field: string, value: unknown): void {
-        editManifest(instance.id, id, field, value);
+        editDraft(instance.id, DRAFT_KIND, id, field, value);
     }
 
     function revert(): void {
-        revertManifest(instance.id);
+        revertDraft(instance.id);
         result = [];
     }
 
@@ -158,7 +151,7 @@
             return;
         }
         const refused = refusedEdits(answer.refused.map((one) => one.field));
-        settleManifest(from, taken, refused);
+        settleDraft(from, taken, refused);
         result = [
             t('editor.saved', answer.changed.join(', ')),
             ...answer.refused.map((one) => t('editor.refused', one.field, one.reason))
@@ -175,76 +168,7 @@
         }
         return NOT_IN_MODEL.includes(field.field) ? t('editor.not_in_model') : undefined;
     }
-
-    /** The handler of a read-only box: the typed character is dropped and the value stands. */
-    function keepValue(): void {
-        // A read-only TextInput still reports input; the form keeps what the snapshot holds.
-    }
 </script>
-
-{#snippet control(field: FormField)}
-    {#if field.type === 'readonly' || !writable(field.field)}
-        <TextInput
-            value={asText(valueOf(field.field))}
-            label={field.label}
-            readonly
-            oninput={keepValue}
-        />
-    {:else if field.type === 'checkbox'}
-        <Checkbox
-            checked={valueOf(field.field) === true}
-            label={field.label}
-            onchange={(on) => edit(field.field, on)}
-        />
-    {:else if field.type === 'select'}
-        <Select
-            value={asText(valueOf(field.field))}
-            label={field.label}
-            empty={t('editor.empty_choice')}
-            choices={fieldChoices(field, project)}
-            onchange={(value) => edit(field.field, value)}
-        />
-    {:else if field.type === 'chips' || field.type === 'tags'}
-        <MultiSelect
-            values={asList(valueOf(field.field))}
-            label={field.label}
-            choices={fieldChoices(field, project)}
-            onchange={(list) => edit(field.field, list)}
-            search={t('editor.search')}
-            remove={t('editor.remove')}
-            removeGlyph={t('editor.remove_glyph')}
-            free={field.type === 'tags'}
-            none={t('editor.no_choices')}
-        />
-    {:else if field.type === 'textarea' || field.type === 'lines'}
-        <TextArea
-            value={asText(valueOf(field.field))}
-            label={field.label}
-            rows={ROWS}
-            oninput={(value: string) =>
-                edit(field.field, field.type === 'lines' ? value.split('\n') : value)}
-        />
-    {:else if field.type === 'date'}
-        <DateInput
-            value={asText(valueOf(field.field))}
-            label={field.label}
-            oninput={(value) => edit(field.field, value)}
-        />
-    {:else if field.type === 'keymap'}
-        <TextInput
-            value={asText(valueOf(field.field))}
-            label={field.label}
-            readonly
-            oninput={keepValue}
-        />
-    {:else}
-        <TextInput
-            value={asText(valueOf(field.field))}
-            label={field.label}
-            oninput={(value) => edit(field.field, value)}
-        />
-    {/if}
-{/snippet}
 
 {#snippet tools()}
     <Toolbar label={t('editor.toolbar')} overflow>
@@ -284,17 +208,15 @@
                 {#if own.length > 0}
                     <section class="group">
                         <h3 class="heading">{section}</h3>
-                        {#each own as field (field.field)}
-                            <Field
-                                label={field.label}
-                                help={field.help}
-                                note={noteFor(field)}
-                                dirty={changed(field.field)}
-                            >
-                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                                {@render control(field)}
-                            </Field>
-                        {/each}
+                        <EntryForm
+                            fields={own}
+                            valueOf={(one: FormField) => valueOf(one.field)}
+                            onedit={(one: FormField, held: unknown) => edit(one.field, held)}
+                            {writable}
+                            {changed}
+                            choices={(one: FormField) => fieldChoices(one, project)}
+                            note={noteFor}
+                        />
                     </section>
                 {/if}
             {/each}

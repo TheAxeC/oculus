@@ -31,6 +31,8 @@ import { server } from '../sessions/source-server.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
+type Writes = ReturnType<typeof createWrites>;
+
 const CONFIG = {
     collections: [
         { key: 'tasks', file: 'tasks/tasks.yml' },
@@ -81,6 +83,64 @@ describe('a write over a file a source tab holds unsaved text of', () => {
         const free = await writes.writeEntry('events', 'An event', { status: 'done' });
         expect(posted.map((body) => body.collection)).toEqual(['events']);
         expect(free.ok).toBe(true);
+    });
+});
+
+describe('the writes of the entry pages over a file a source tab holds unsaved text of', () => {
+    it.each([
+        [
+            'a career save',
+            'registries/career.yml',
+            (w: Writes) => w.writeCareer({ milestone: 'Veni' })
+        ],
+        [
+            'an Add to People',
+            'registries/people.yml',
+            (w: Writes) => w.newEntry('people', { key: 'wim' })
+        ],
+        ['a Delete of a task', 'tasks/tasks.yml', (w: Writes) => w.deleteEntry('tasks', 'A task')]
+    ])('refuses %s and posts nothing', async (_name, path, send) => {
+        const posted: unknown[] = [];
+        vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
+            posted.push(JSON.parse(String(init?.body)));
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({ ok: true, changed: [], refused: [] })
+            });
+        });
+        const writes = createWrites(
+            () => ({
+                collections: [
+                    ...CONFIG.collections,
+                    { key: 'people', file: 'registries/people.yml' }
+                ]
+            }),
+            (file) => file.root === 'hub' && file.path === path,
+            { ...NO_LOOKUPS, primary: () => 'hub' }
+        );
+        const answer = await send(writes);
+        expect(posted).toEqual([]);
+        expect(answer.error).toBe(t('app.file_unsaved', path.split('/').at(-1) ?? path));
+    });
+
+    it('posts a career save when the tab holds another file', async () => {
+        const posted: unknown[] = [];
+        vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
+            posted.push(JSON.parse(String(init?.body)));
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({ ok: true, changed: ['milestone'], refused: [] })
+            });
+        });
+        const writes = createWrites(
+            () => CONFIG,
+            (file) => file.path === 'tasks/tasks.yml',
+            { ...NO_LOOKUPS, primary: () => 'hub' }
+        );
+        expect((await writes.writeCareer({ milestone: 'Veni' })).ok).toBe(true);
+        expect(posted).toEqual([{ kind: 'career', fields: { milestone: 'Veni' } }]);
     });
 });
 

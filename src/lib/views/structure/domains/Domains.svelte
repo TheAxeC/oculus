@@ -58,7 +58,7 @@
 
 <Pane title={t('views.domains')} toolbar={tools}>
     <div class="domains-view" data-instance={instance.id}>
-        <RegistryHead said={file.said}>
+        <RegistryHead {file}>
             {#snippet intro()}
                 <Intro html={inlineMarkdown(t('domains.intro'))} trusted />
             {/snippet}

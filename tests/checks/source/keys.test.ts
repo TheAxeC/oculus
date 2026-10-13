@@ -26,6 +26,8 @@ import {
 import { SETTINGS_MESSAGES } from '../../../src/lib/state/system/config/messages.ts';
 import { descriptionKey } from '../../../src/lib/state/system/config/config-files.ts';
 import { CHKTEX_FIXABLE, LINT_IDS } from '../../../src/lib/data/model/index.ts';
+import { PAGE_FEEDS } from '../../../src/lib/state/forms/page-entry.ts';
+import { KEY_ROWS, PREFIX_ROWS } from '../../../src/lib/data/helpers/keys/oculus/palette-table.ts';
 import { TIERS } from '../../../src/lib/data/helpers/hub-names.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
 import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
@@ -173,6 +175,28 @@ const COMPUTED_PREFIXES = [
         file: 'lib/views/boards/collection/Collection.svelte',
         start: 'lookup(`views.${instance.view}`',
         keys: () => collectionKeys(loadConfig(engineDir()).config).map((id) => `views.${id}`)
+    },
+    {
+        // An entry page names its collection by the key it was opened with when the collection
+        // is gone: a collection, or a feed that has pages.
+        file: 'lib/views/boards/entry/Entry.svelte',
+        start: 'lookup(`views.${collectionKey}`',
+        keys: () =>
+            [...collectionKeys(loadConfig(engineDir()).config), ...PAGE_FEEDS].map(
+                (id) => `views.${id}`
+            )
+    },
+    {
+        // The palette page reads the words of each row of the palette table by the catalog key the
+        // row names.
+        file: 'lib/shell/keys/palette-page.ts',
+        start: 't(row.word)',
+        keys: () => [
+            ...Object.values(KEY_ROWS).flatMap((row: { word: string; mode?: string }) =>
+                row.mode === undefined ? [row.word] : [row.word, row.mode]
+            ),
+            ...Object.values(PREFIX_ROWS).map((row) => row.word)
+        ]
     },
     {
         file: 'lib/views/boards/projects/Projects.svelte',

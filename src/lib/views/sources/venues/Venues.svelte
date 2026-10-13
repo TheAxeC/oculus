@@ -105,7 +105,7 @@
 
 <Pane title={t('views.venues')} toolbar={tools} {bar}>
     <div class="venues" data-instance={instance.id}>
-        <RegistryHead said={file.said} spaced>
+        <RegistryHead {file} spaced>
             {#snippet intro()}
                 <Intro html={t('venues.intro')} trusted />
             {/snippet}
