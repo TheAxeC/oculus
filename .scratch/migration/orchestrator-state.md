@@ -37,6 +37,9 @@ dispatch:   # steps in flight, up to six (Z632)
   landing: not-started
   brief_check: "agents/reviews/D76-brief-check.md (a258af2188e2127e1, claude-opus-5-5, 304,957 tokens, 108 tool uses, 15.5 min)"
   shared_paths: "with D74 (in flight, repair round 1): D76 starts from D74's built tree 69b944eca, so the files both write (paths.ts, Files.svelte, fs.svelte.ts, fs-transport.ts, behavior.yml, files.yml, views.ts, views/shared/explorer/, views/sources/source/, payloads.ts, data/model/, server/root/watch/, config-folder.test.ts, HELP.md, DESIGN.md, docs/apps.md, docs/palette.md, docs/diagrams/) differ only by D74's round; merged at D76's landing"
+- step: D73
+  landing: preparing
+  brief_check: "running: a70d783a1699be8de"
 ```
 
 ## The standing demands (from Axel, in force)
@@ -165,7 +168,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 95, part A (raised 2026-10-13): where the templates of the `.oculus` files and `project.yml` live. Axel declined a `tools/oculus/templates/` folder and a complete `demo/` hub as against O33, and proposed one Markdown file holding every template, shown on the Help page. Parts B and C are ruled (plan.md Rulings, "Open item 95"); D73's builder waits for the documents rewrite.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

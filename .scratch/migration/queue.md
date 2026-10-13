@@ -2,7 +2,7 @@ In flight (1 of 6 slots in use):
 - D76 (notes like Obsidian): building, from a commit of D74's built work (open item 93 (a)).
 
 Queued, in order (3 steps):
-- D73 (the Literature view, the Files view showing hidden and ignored files by default, and the domain, theme and feed settings moved to their files by open item 94): next, prepared from main's head now that D74 has landed.
+- D73 (the Literature view, the Files view showing hidden and ignored files by default, and the domain, theme and feed settings moved to their files by open item 94): next; its builder is launched after the documents rewrite (open item 95, part C) is committed, with its brief re-pointed at the new text.
 - Q72 (the architecture re-read): after D73, D74 and D76, so it reads their code.
 - O33 (oculus in its own repository; inline): after Q72.
 
