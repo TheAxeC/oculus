@@ -34,8 +34,12 @@ dispatch:   # steps in flight, up to six (Z632)
   brief_check: agents/reviews/D72-brief-check.md (a8e7f3738fcbe9974, claude-opus-5-5, 244,227 tokens, 106 tool uses, 11.7 min; closed in the brief by the orchestrator, under the report's Closed heading)
   launched: 2026-10-13
   report: agents/reviews/D72-report.md
-  round: 0
+  reviewer_report: agents/reviews/D72-refuter.md (aa2b5f3bc2f7eb249, claude-opus-5-5, 110,671 tokens, 119 tool uses, 22.3 min)
+  round: 1 (agents/briefs/D72-round1.md, 10 rulings; the tree before it in agents/reviews/D72-before-round1.patch)
   landing: not-started
+  builder_usage: to the pause, 363,670 tokens, 808 tool uses, 149.4 min; after the resume, 121,628 tokens, 27 tool uses, 19.4 min
+  pause_note: (done; the report written after the resume) the builder's hand-back at the pause; NOT DONE: (1) the full verify list again after the venue-name change, (2) the three venue tests run on the unchanged tree, (3) the report; resumed from (1)
+  paused: 2026-10-13, at Axel's word ("pause, not quit"); lifted the same day at his word ("Please resume D72"), the builder resumed by a message on its agent id from NOT DONE (1)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -160,10 +164,6 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 80 (2026-10-13, D71's landing; ruled (a) by Axel 2026-10-13; kind: needs Axel's information). The orchestrator opened `http://localhost:8790/api/wallpaper?list` and `http://127.0.0.1:8790/api/wallpaper?list` in a tab of its own in the one Chrome the extension is connected to (`list_connected_browsers`: one browser, "Browser 1", macOS): `localStorage.length` is 0 at both addresses, so neither `oculus.layout.v1` nor any `oculus.layout.*` key exists there and nothing was copied or written. Axel's pages are kept in another browser, another Chrome profile or another address. Options: (a) Axel names where he opens oculus (the browser, the profile and the address), and the orchestrator copies the key there; (b) the pages start from the default, the lazy option. Recommendation: (a).
-
-
-
 
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
@@ -185,6 +185,9 @@ An entry leaves this list for the closed log the moment Axel rules on it. What a
 - The fixture exports the four test sweeps leave unused (T1c's report names `ClientState` in `tests/fixtures/client.ts`, `sweepingOnError` in `scratch.ts` and `gitPayload` in `sessions-fixture.ts`; T1b, T1d and T1e name theirs): removed by the orchestrator at the landing of the last of T1b to T1e, after `sh utils/unused-exports.sh` and a grep of each name over `tests` and `src`, since each is unused only once all four have landed (T1e's brief, item 6).
 
 ## Closed items
+- Z380 taken up by Axel (2026-10-13): Q81's owed look taken by him, passed (`agents/reviews/owed-looks.md`, the Q81 line).
+- Open item 83 ruled (a) by Axel (2026-10-13), done inline at his word in 1d2133f72: the twelve finished personal projects are `type: finished`; CLAUDE.md and the schema's `type` help name idea, active or finished.
+- Open item 80 ruled (c) by Axel (2026-10-13): he copies the saved pages himself from the orchestrator's steps; nothing left for the orchestrator.
 
 - Open item 81 ruled (a) by Axel (2026-10-13): `software` becomes teal `#0d9488` in `tools/oculus/config/catalogs/vocab.yml:55` `type_color`, applied by the orchestrator at D72's landing as a fix at landing (the file is in no step's paths).
 - Open item 82 ruled (a) by Axel (2026-10-13): a venue's `name` editable, `id` read-only; the D72 brief rewritten (item 2, the venue editor's case, decision 2), copied into the worktree and sent to D72's builder.
@@ -265,6 +268,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - Refused by the auto-mode classifier, and not pursued by any route: reading `config/local.yml`; navigating to outside console pages (Google Cloud and the like); closing TEST's Account setup tab by JS. Choosing a permission mode or pressing Start in a task composer: refused as "Create Unsafe Agents". Nothing of this kind is attempted (Z551).
 
 ## Current position (rewrite at every package)
+- 2026-10-13 (D72 round 1 sent). D72's review (`agents/reviews/D72-refuter.md`, reviewer aa2b5f3bc2f7eb249 on claude-opus-5-5) and the orchestrator's read went back to its builder a321adcdf457b200a as repair round 1 (`agents/briefs/D72-round1.md`, 10 rulings; the tree before it in `agents/reviews/D72-before-round1.patch`). The builder's `git mv` left staged deletions in the worktree's index; the landing's `git add -A` covers them. Open items: none. In flight (1 of 6): D72. Next: the round's report, /refute over it, /land D72 with the teal `software` colour, the hub's Doc text lines and the look; then /spec D73; Q72; O33.
 - 2026-10-13 (rulings 80 to 82, Z861). Axel ruled 80 (a), 81 (a), 82 (a). 82 sent to D72's builder with the rewritten brief; 81 owed at D72's landing; 80 tried, no saved pages found in the connected Chrome, raised again for where his pages live. Z861: D74 and D75, added against Z468, folded into D73. In flight (1 of 6): D72 building. Next: D72's report, review, round, landing; then /spec D73.
 
 - 2026-10-13 (D72 launched). D72, collection entries as records of their own, prepared at base dece7bd18 (brief `agents/briefs/D72.md`, every brief-check finding closed under `agents/reviews/D72-brief-check.md`'s Closed; Z859 and Z860 taken in automode), its builder launched in `.agents/worktrees/D72` (claude-sonnet-5-5), the base copy in `.agents/worktrees/D72-base`. Open items 80, 81 and 82 wait for Axel. In flight (1 of 6): D72. Next: D72's report, /refute, its repair round, /land; then D73, D74, D75, Q72, O33.

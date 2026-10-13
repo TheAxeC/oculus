@@ -6,7 +6,7 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 ## To take
 
-- Q81: a Confirm over the update tray taking the first Escape. It shows only while `tasks.skip_permissions` is on, an edit the session's permission classifier refuses; it waits until Axel takes it up (Z380).
+- Q81: a dialog over the update tray taking the first Escape. Taken by Axel 2026-10-13 on his own page (the `tasks.skip_permissions` Confirm is gone with that retired setting; the schedule dialog checked in its place): Update opens the tray, Schedule... opens the schedule dialog over it, the first Escape closes the dialog and leaves the tray open, the second closes the tray and gives the focus back to Update. Passed.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 

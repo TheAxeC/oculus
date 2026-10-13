@@ -1,12 +1,11 @@
 In flight (1 of 6 slots in use):
-- D72 (collection entries as records of their own): building.
+- D72 (collection entries as records of their own): repair round 1 sent (10 rulings from its review).
 
 Queued, in order (3 steps):
 - D73 (the Literature view; the HPC view on a hub with no cluster; the focused source tab kept while hidden, and History shown live): after D72.
 - Q72 (the architecture re-read): after D72 and D73, so it reads their code.
 - O33 (oculus in its own repository; inline): after Q72.
 
-Owed: Q81 (a Confirm over the update tray): waiting for Axel.
 
 Landed, newest first:
 - D64 (apps in the tools), 2026-10-13, 8b5782e89.

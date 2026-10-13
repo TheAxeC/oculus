@@ -2073,3 +2073,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - 2026-10-13. D64's look: Z857 taken in automode (the focused source tab kept while hidden); step D75 booked after D74.
 - 2026-10-13. D64's landing: Z858 taken in automode (guarded entry G82 for the debug channel test).
 - 2026-10-13. Axel ruled open items 80 (a), 81 (a) and 82 (a). Z861 taken in automode: D74 and D75, added as steps against Z468, folded whole into D73.
+- 2026-10-13. Open item 80 ruled (c) by Axel: he copies the saved pages himself; the steps given in chat. D72's builder paused at his word and resumed at his word.
+- 2026-10-13. Axel took up Z380 and took Q81's owed look himself: the schedule dialog over the update tray takes the first Escape; passed. Open item 83 ruled (a) and done inline (1d2133f72).
+- 2026-10-13. D72 reviewed (aa2b5f3bc2f7eb249, opus): item 10 violated, item 11 partial; repair round 1 sent with 10 rulings.
