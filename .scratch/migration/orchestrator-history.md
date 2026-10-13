@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 93 (2026-10-13): ruled (a) by Axel: D76 starts now from a commit of D74's built work, D73 after the review of D74's repair round finds nothing in parts 8 to 12; an exception to the main's-head rule, granted.
 - Z869 (2026-10-13, D74's report, automode): the Apps view makes the Apps group a listed section with no chord, which the held chord row of `config-folder.test.ts` refuses; the group gets the chord `a`, the row kept whole; the lazy option was widening the row.
 - Z868 (2026-10-13, D73's preparation, automode): open item 76's collection key `literature` is the Literature search view's id, so the collection would get no view; the Literature search view's id becomes `literature-search` and the collection keeps the ruled key; the lazy option was another key for the collection.
 - Z867 (2026-10-13, D72's landing, automode): a lead's and a Lit Watch paper's page show the editor alone, against D72's item 1; the cards move to `views/shared` and are drawn on the page as part 12 of D74; the lazy option was no change.

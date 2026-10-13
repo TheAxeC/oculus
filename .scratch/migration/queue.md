@@ -2,8 +2,8 @@ In flight (1 of 6 slots in use):
 - D74 (the HPC view on a hub with no cluster; the focused source tab kept while hidden; History shown live; the Repositories list; the Apps page; pinned page tabs and Reopen Closed Tab; each hub's own vocabulary; one settings file per hub; one list of record files; refusal words from the catalog; entry pages right after a write; the card on a lead's and a paper's page; the Float group): built; the builder's report is read and its review is next, then one repair round (the Apps group gets the chord `a`).
 
 Queued, in order (4 steps):
-- D73 (the Literature view): waits for D74 to land, since the two share the Lit Watch card, the server's write refusals and the hub's settings files.
-- D76 (notes like Obsidian): waits for D74 to land, since D74 writes the notes folder's code in `src/lib/server/files/` and the whole of HELP.md and DESIGN.md; runs beside D73 when their briefs name disjoint paths.
+- D73 (the Literature view): starts from D74's worktree once the review of D74's repair round finds nothing in parts 8 to 12 (open item 93 (a)).
+- D76 (notes like Obsidian): being prepared now, from a commit of D74's built work (open item 93 (a)).
 - Q72 (the architecture re-read): after D73, D74 and D76, so it reads their code.
 - O33 (oculus in its own repository; inline): after Q72.
 
