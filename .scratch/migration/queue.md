@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D72 (collection entries as records of their own): prepared, its builder next.
+- D72 (collection entries as records of their own): building.
 
 Queued, in order (5 steps):
 - D73 (the Literature view): after D72.

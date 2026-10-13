@@ -26,8 +26,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
 - step: D72
+  executor: agent
+  worker: claude:sonnet at ordo-high
+  session_id: a321adcdf457b200a (claude-sonnet-5-5, the transcript's message.model, read after launch)
+  base: dece7bd18
+  worktree: .agents/worktrees/D72
   brief_check: agents/reviews/D72-brief-check.md (a8e7f3738fcbe9974, claude-opus-5-5, 244,227 tokens, 106 tool uses, 11.7 min; closed in the brief by the orchestrator, under the report's Closed heading)
-  landing: preparing
+  launched: 2026-10-13
+  report: agents/reviews/D72-report.md
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -257,6 +265,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-10-13 (D72 launched). D72, collection entries as records of their own, prepared at base dece7bd18 (brief `agents/briefs/D72.md`, every brief-check finding closed under `agents/reviews/D72-brief-check.md`'s Closed; Z859 and Z860 taken in automode), its builder launched in `.agents/worktrees/D72` (claude-sonnet-5-5), the base copy in `.agents/worktrees/D72-base`. Open items 80, 81 and 82 wait for Axel. In flight (1 of 6): D72. Next: D72's report, /refute, its repair round, /land; then D73, D74, D75, Q72, O33.
 - 2026-10-13 (D64 landed). D64, apps in the tools, landed (booking in plan.md under D64, `agents/reviews/D64-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D64-refuter.md`, Closed), five red lines of the gate and eleven defects of the look fixed at landing, and two causes found by diagnosis agents (`agents/reviews/D64-diagnosis.md`: the page dropped every `debug` message; app servers' features were never registered), G82 added (Z858) and G77 widened; `npm run test:landing` passed in the gate at main's head with the step and the fixes, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. An open History view not showing a new write folded into D75. Open items 80 and 81 wait for Axel. In flight (0 of 6). Next: /spec D72, D73, D74, D75; Q72 after D72 and D73; O33.
 - 2026-10-13 (D71 landed). D71, workspaces and repositories, landed (booking in plan.md under D71, `agents/reviews/D71-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D71-refuter.md`, Closed), the gate's timeouts under load answered by tagging D71's real-git tests slow, and two defects the look found fixed at landing (the Deposit view's loading sentence, the Present page of a hub with no deck); the HPC float on a hub with no cluster booked as D74 (Z855); the website moved to `side-projects/theaxec.github.io/` with its `.oculus/project.yml`; `npm run test:landing` passed in the gate at main's head with the step and the fixes, and main's staged change matched the gate's byte for byte; the look on a scratch oculus on port 8796. Open item 80 raised (the browser-key rename refused by the permission check). In flight (1 of 6): D64, its review over round 1 back. Next: /land D64 with the run's findings fixed at landing and its look; then /spec D72, D73, D74; Q72; O33.
 - 2026-10-12 (D64 round 1 sent). D64's review (`agents/reviews/D64-refuter.md`, reviewer a0d75a8f246193ddd on claude-opus-5-5) and the orchestrator's read went back to its builder af8ef9bc7f21f025e as repair round 1 (`agents/briefs/D64-round1.md`, 22 rulings; the tree before it in `agents/reviews/D64-before-round1.patch`); Pause drawn from a capability DAP does not have is a premise of the brief found wrong and corrected in ruling 3. D71's builder is on its round 1 with Axel's rulings on open items 77, 78 and 79. No open items. In flight (2 of 6): D64, D71. Next: each round's report, /refute over it, /land; then D72, D73, Q72, O33. Owed at D64's landing look, besides D64's own views under the light and the dark theme (the page-side parts its review left for the look: the terminal grid with an app's terminals, the Repositories sections of an app's source control, the Files view's decorations, the editor's app languages, F5, Add Configuration and Pause): the dark theme of the views D62, D65 and D66 changed, and D65's Focus lanes with a personal project and Edit Manifest form, which their landings did not look at.
