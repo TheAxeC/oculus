@@ -26,7 +26,15 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
 - step: D74
-  landing: preparing
+  executor: agent
+  worker: claude:sonnet
+  session_id: aac8ad09939b7cc54 (claude-sonnet-5-5)
+  worktree: .agents/worktrees/D74
+  base: 1e5cc69a8
+  launched: 2026-10-13
+  report: agents/reviews/D74-report.md
+  landing: not-started
+  round: 0
   brief_check: "agents/reviews/D74-brief-check.md (a1dd027bb4d25ddfb, claude-opus-5-5, 324,217 tokens, 144 tool uses, 17.4 min)"
 ```
 
@@ -265,6 +273,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - Refused by the auto-mode classifier, and not pursued by any route: reading `config/local.yml`; navigating to outside console pages (Google Cloud and the like); closing TEST's Account setup tab by JS. Choosing a permission mode or pressing Start in a task composer: refused as "Create Unsafe Agents". Nothing of this kind is attempted (Z551).
 
 ## Current position (rewrite at every package)
+- 2026-10-13 (D74 launched). D74 prepared at base 1e5cc69a8 (brief `agents/briefs/D74.md`, every brief-check finding closed under `agents/reviews/D74-brief-check.md`'s Closed), its builder aac8ad09939b7cc54 launched in `.agents/worktrees/D74` (claude-sonnet-5-5), the base copy in `.agents/worktrees/D74-base`. Open items: none. In flight (1 of 6): D74. Next: D74's report, /refute, its repair round, /land; then /spec D73, Q72, O33.
 - 2026-10-13 (D74 prepared). D74's brief check (`agents/reviews/D74-brief-check.md`, a1dd027bb4d25ddfb on claude-opus-5-5) found the page-driven case runs spec.md forbids, the status bar's code (`status.ts`) outside the write list, the test rule missing ten entries the step changes, the write list too narrow for the text part 8 makes false, and the tree checks that fail in a sparse worktree; every finding is closed in the brief (the report's Closed); the no-cluster HPC value is `unconfigured` (Z862 amended). Open items: none. In flight (1 of 6): D74. Next: the preparation commit, the worktree and the builder; D73 after D74 lands; then Q72, O33.
 - 2026-10-13 (D73 waits for D74). /spec D73 read its premises on f3c588783 and found open item 76's collection key `literature` already the Literature search view's id; closed in automode as Z868 (the search view becomes `literature-search`, the collection keeps `literature`; plan.md Rulings, choices.md). Its brief's paths share the Lit Watch card (which D74 moves to `views/shared/`), the server's edit layer (whose refusals D74 moves to the catalog), the hub's settings files (which D74 makes one file), the entry card and page, HELP.md and DESIGN.md with D74's brief; the merge is not simple, so D73 waits for D74 to land (spec Steps 5): its brief removed, its dispatch entry removed, a draft kept outside the ledger as a lead for the next /spec. D74's brief check a1dd027bb4d25ddfb runs. Open items: none. In flight (1 of 6): D74. Next: D74's brief check, its closings, the preparation commit, the worktree and the builder; D73 after D74 lands; then Q72, O33.
 - 2026-10-13 (D72 landed). D72, collection entries as records of their own, landed (booking in plan.md under D72, `agents/reviews/D72-landing.md`) after one repair round and the review over it, the run's findings closed at landing (`agents/reviews/D72-refuter.md`, Closed): four fixed, the refusal words placed in D74 (Z865); the palette's entry results fixed at landing; the gate's red lines fixed (format, lint, a comment's width, the integrity test's personal types after ruling 83); `npm run test:landing` in the gate at main's head with the step and the fixes, `test:checks` rerun after the last fix, main's staged change matching the gate's byte for byte; the look on a scratch oculus on port 8796. Folded into D74 from the look: entry pages right after a write (Z866, part 11) and the card on a lead's and a paper's page (Z867, part 12). Open items: none. In flight (1 of 6): D74 (preparing). Next: /spec D74 on the new base, its brief check and dispatch; then D73, Q72, O33.
