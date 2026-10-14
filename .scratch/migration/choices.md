@@ -4,6 +4,27 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z883 (2026-10-14, D73's brief check, the orchestrator, automode): what the Incoming page pins once the Literature search is renamed
+
+- Chosen: the Incoming page pins `literature-search` where `literature` was and the new Literature view after it, so the saved papers sit beside the search that fills them, as the step line puts the view beside Literature search and Lit Watch.
+- Not chosen: pinning only the search, which leaves the new view reachable from the catalogue alone; pinning only the new view, which takes the search off its page. The lazy option was pinning only the search.
+
+Where it applies: D73, item 2. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z882 (2026-10-14, D73's brief check, the orchestrator, automode): whether a project card's tree shows hidden and ignored files
+
+- Chosen: a project card's tree keeps hidden and ignored files out, as today; Axel's ruling names the Files view, and a card offers no menu to hide `.git`, `node_modules` and build folders again.
+- Not chosen: the card trees following the Files default, which fills every card with `.git` and `node_modules` and no way to hide them; a menu added to each card, which the ruling did not ask for. No option was the lazy one.
+
+Where it applies: D73, item 9. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z881 (2026-10-14, D73's brief check, the orchestrator, automode): the apps' per-hub vocabulary once the config keys go
+
+- Chosen: the `config` payload's `hubs.lists` keeps its shape (`domains`, `venue_themes`, `data_themes` per hub), built from each hub's domains registry and its `themes` options, so an app reads the same keys while the hub files hold the words.
+- Not chosen: removing `hubs.lists`, which breaks every app that reads it and leaves the theme labels out of the apps' reach; a new shape, which apps would have to learn for no gain. No option was the lazy one.
+
+Where it applies: D73, item 12. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z880 (2026-10-14, Axel's ruling on open item 99, the orchestrator, automode): the folder the demo hub moves to
 
 - Chosen: `tests/fixtures/hubs/demo/`, inside the folder that already holds the hub fixtures' helpers (`real-hub.ts`, `workspace.ts`, `deposit-world.ts`), keeping the name every comment and the README use.

@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z881, Z882, Z883 (2026-10-14): D73's brief-check findings closed in its brief; the apps' `hubs.lists` kept, the card trees kept as they are, both Literature views pinned on Incoming; booked in plan.md Rulings and choices.md.
 - Open item 102 (2026-10-14): `jsdom` and a DOM test project for the sanitiser rows (a), at D76's landing; booked in plan.md Rulings.
 - Open item 99 (2026-10-14): the demo hub moves to the tests as a fixture, in D73, at `tests/fixtures/hubs/demo/` (Z880); booked in plan.md Rulings.
 - Open item 101 (2026-10-14): the hub and project controls and the `.oculus/data/` defaults, agreed, in O33 part (5); booked in plan.md Rulings.
