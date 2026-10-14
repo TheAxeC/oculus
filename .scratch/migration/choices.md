@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z890 (2026-10-14, D77's brief, the orchestrator, automode): which guarded entries D77's tests are filed under
+
+- Chosen: a G13 row for the key `commit_message_account`, and a new entry G84 for the transcript route: it reads only a file that a session record of the last published payload names (the session's transcript, or an agent transcript the record lists), refuses an id or agent the record does not hold, and reads no path from the request. A failure there would let a request read a file outside the sessions' folders. The transcript flicker gets no entry, since no entry covers a view and its failure is a redraw; the diagnosis's harness is the brief's check and is not kept.
+- Not chosen: no entry for the route, which is the lazy option and leaves a read of any path unguarded; an entry for the Transcript view, against `agents/guarded.md:3`.
+
+Where it applies: D77, cases 1, 7 and 17. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z889 (2026-10-14, D77's brief, the orchestrator, automode): what VS Code's layout toggles and Go Back act on in oculus
+
+- Chosen: Toggle Primary Side Bar, Toggle Panel and Toggle Secondary Side Bar show and hide the docked floats at the left, bottom and right, which are window-wide areas over every page as VS Code's are; Go Back and Go Forward (Ctrl+Minus, Ctrl+Shift+Minus) walk a history kept per window in memory, a step being an active editor change, a cursor move of more than 10 lines, or a jump to a definition, a search hit or a problem.
+- Not chosen: toggles over a page's own split panes, which are the page's layout and have no VS Code counterpart; this was the lazy option. A history kept across reloads, which VS Code does not keep.
+
+Where it applies: D77, part 6 and decisions 1 and 2. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z887 (2026-10-14, D73's review, the orchestrator, automode): whether two papers with no title are the same paper
 
 - Chosen: two titles that hold no letter or digit are never the same paper, for Literature and for Lit Watch alike: an absent title says nothing about which paper an entry is, so two such entries are told apart by their DOI or address alone.

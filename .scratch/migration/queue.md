@@ -6,7 +6,7 @@ Queued, in order (2 steps):
 - O33 (oculus in its own repository; inline): after Q72; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project).
 
 Landed, newest first:
-- D73 (the Literature view, hidden and ignored files shown, the domain, theme and feed settings in their files, Copy on code blocks and the Help tabs), 2026-10-14, the landing commit.
+- D73 (the Literature view, hidden and ignored files shown, the domain, theme and feed settings in their files, Copy on code blocks and the Help tabs), 2026-10-14, 8af4c1dae.
 - D76 (notes like Obsidian), 2026-10-14, 8e41021f3.
 - D74 (the shell and source-control fixes), 2026-10-13, f92a0abe6.
 - D72 (collection entries as records of their own), 2026-10-13, f3c588783.
