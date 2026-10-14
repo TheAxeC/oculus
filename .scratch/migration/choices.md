@@ -4,6 +4,34 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z887 (2026-10-14, D73's review, the orchestrator, automode): whether two papers with no title are the same paper
+
+- Chosen: two titles that hold no letter or digit are never the same paper, for Literature and for Lit Watch alike: an absent title says nothing about which paper an entry is, so two such entries are told apart by their DOI or address alone.
+- Not chosen: the literal rule of the brief's decision 3, under which two empty titles are equal and Lit Watch refuses a second untitled paper with a different address. No option was the lazy one.
+
+Where it applies: D73, decision 3 and item 4; the report states the before and after for Lit Watch. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z886 (2026-10-14, D73's review, the orchestrator, automode): what an option row holding a key besides `key` and `label` does
+
+- Chosen: the extra key is a finding that names it and its row, and the row stays an option with its key and label, so one stray key never turns every entry that uses the word into a finding.
+- Not chosen: dropping the whole row (the builder's version), which cascades into a "not one of" finding on every entry using the word; ignoring the key silently, which hides a typo. The lazy option was keeping the builder's version.
+
+Where it applies: D73, item 11. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z885 (2026-10-14, D73's review, the orchestrator, automode): whether a Literature entry needs a title
+
+- Chosen: `title` is not required in the Literature schema (the Doc text file and the demo's copy): an entry saved from an address no source knows is a real saved paper keyed by its address, and the reader adds the title on its page when they have it.
+- Not chosen: keeping `title` required, which puts a finding on every address-only save; Add asking a title, which makes the one-value box of item 5 a form; the address written as the title, which puts a false title in the file. No option was the lazy one.
+
+Where it applies: D73, items 1 and 5, case 9. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z884 (2026-10-14, D73's review, the orchestrator, automode): which hub the Literature view's Add writes to when more than one hub names `literature`
+
+- Chosen: the Literature view's Add asks the hub in its box, as every collection's Add does under Axel's ruling on open item 100, listing only the hubs whose `collections:` name `literature`, the primary chosen first; with one such hub it asks nothing and writes to that hub, primary or not. Save to Literature on a card writes to the primary, else the first hub naming `literature`, as item 21 says.
+- Not chosen: Add always writing to the primary (the builder's version), which leaves case 34 unmet and ignores open item 100 for one collection. The lazy option was keeping the builder's version.
+
+Where it applies: D73, item 21 and case 34; the same rule closes the one-hub case of the review's Behaviour 1 for every collection. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z883 (2026-10-14, D73's brief check, the orchestrator, automode): what the Incoming page pins once the Literature search is renamed
 
 - Chosen: the Incoming page pins `literature-search` where `literature` was and the new Literature view after it, so the saved papers sit beside the search that fills them, as the step line puts the view beside Literature search and Lit Watch.

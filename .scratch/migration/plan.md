@@ -1966,6 +1966,10 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Z881 (2026-10-14): in D73, the apps' `hubs.lists` keeps its shape, built from each hub's domains registry and `themes` options. (self-rule)
 - Z882 (2026-10-14): in D73, a project card's tree keeps hidden and ignored files out; the Files view's new default is the Files view's. (self-rule)
 - Z883 (2026-10-14): in D73, the Incoming page pins the Literature search and the new Literature view after it. (self-rule)
+- Z884 (2026-10-14): in D73, the Literature view's Add asks the hub when more than one hub names `literature`, and an Add with one hub naming a collection writes to that hub. (self-rule)
+- Z885 (2026-10-14): in D73, `title` is not required in the Literature schema. (self-rule)
+- Z886 (2026-10-14): in D73, an option row's extra key is a finding and the row is kept. (self-rule)
+- Z887 (2026-10-14): in D73, two titles with no letter or digit are never the same paper. (self-rule)
 
 ## Agents
 
