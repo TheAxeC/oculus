@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z891 (2026-10-14): D77's brief check: the editor actions draw in the window strip when the tab bar is not drawn, as VS Code's `editorActionsLocation` default; Z889's chords corrected to VS Code's per platform from its source; booked in plan.md Rulings and choices.md.
 - Z889, Z890 (2026-10-14): D77's choices closed in its brief: the layout toggles act on the docked floats and the navigation history follows VS Code's steps, per window; the transcript route's agent read guarded by the new entry G84 and `commit_message_account` by a G13 row, the flicker checked by the diagnosis's harness with no kept test; booked in plan.md Rulings and choices.md.
 - Open item 109 (2026-10-14): the research-cockpit skill, Axel agreed to every part of the proposal, `.oculus/tasks/` and Inbox and LinkedIn as hub files included; project-cleanup stays in the hub, unnamed by oculus; folded into O33 part (2); Z888's key name `commit_message_account` agreed by Axel; booked in plan.md Rulings and under O33.
 - Open items 103 to 108 and 110, and D77 (2026-10-14): Axel's notes on the Sessions view and the title bar ruled (a) or agreed, as one new step, D77, by his word ("I would argue for a new step"); Z888 names the commit message's account key `commit_message_account`; booked in plan.md Rulings, D77's line and choices.md. Open item 109 stays open with the orchestrator's proposal.

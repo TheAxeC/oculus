@@ -61,6 +61,9 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
 - G83. `docs/templates.md` shows every key a template stands for and no other: the config.yml block every key of the hub's settings file (`hubKeys` of `src/lib/data/helpers/hub-names.ts`), the local.yml block every key the options catalog lists under local.yml (`config/catalogs/options.yml`), and the project.yml block every field of `config/schemas/manifest-schema.yml` whose type is not `readonly`; a key is a line of the block, commented or not, and an `example:` key and the lines under it show a value and name no key. A key added to a list without its template line, or a template line whose key left its list, fails.
   Code: `docs/templates.md`; `tests/checks/config/template-keys.ts` (the reading of a block).
   Test: `tests/checks/config/templates.test.ts`, describe 'the keys of a template': 'are the leaves of a block, commented or not, with its examples left out', 'differ from a list by the keys each lacks'; describe 'docs/templates.md': 'shows every key of a hub settings file in the config.yml template, and no other', 'shows every local.yml key of the options catalog in the local.yml template, and no other', 'shows every field of the manifest schema a file holds in the project.yml template'.
+- G84. The transcript route reads only a file a session record of the last published payload names, the session's transcript or an agent transcript the record lists; an id or an agent the record does not hold is refused, and no path of the request is read.
+  Code: `src/lib/server/sessions/transcript-routes.ts`.
+  Test: `tests/server/sessions/transcript-routes.test.ts`, every row (D77, case 17).
 
 ## Your work is not lost or misplaced
 
