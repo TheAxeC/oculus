@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z897 (2026-10-15, D77 repair round 1, the orchestrator, automode): the colours of the window strip
+
+- Chosen: three title bar tokens of the strip's own; oculus's own themes set them to the rail's colours, so their strip looks as it does now, and every VS Code theme takes its `titleBar.activeBackground`, `titleBar.activeForeground` and `titleBar.border`, or VS Code's registered defaults when it sets none (dark `#3C3C3C` on `#CCCCCC` ink, light `#DDDDDD` with `#333333`).
+- Not chosen: the rail's colours for every theme, the lazy option, which leaves no theme a title bar colour of its own.
+
+Where it applies: D77, repair round 1 (`agents/briefs/D77-round1.md`, item 1). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z896 (2026-10-14, D77 part 11, the orchestrator, automode): the colours of the graph's branch names
 
 - Chosen: three theme colours after VS Code's graph colours: local branches (the checked-out one included) in the reference colour, remote branches in the remote colour with a cloud glyph, the base in the base colour; tags plain.

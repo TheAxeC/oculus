@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- D77 repair round 1 (2026-10-15): Z897 taken (the strip's three title bar tokens, VS Code themes mapped from `titleBar.*` with VS Code's registered defaults); booked in plan.md Rulings and choices.md.
 - Open item 113 (2026-10-14): the graph's doubled outgoing commits and its branch colours, defects folded into D77 as part 11; Z895 (one history over HEAD and upstream, one entry each for incoming and outgoing) and Z896 (three name colours after VS Code's) taken; booked in plan.md Rulings and choices.md.
 - Open item 112 (2026-10-14), part 3: Axel's pointer to ordo's changes showed a new folder listed as one row; folded into D77 part 10 as `-uall`, as VS Code.
 - Open item 112 (2026-10-14), parts 1 and 2: the Repositories view's group heads' indent and the right-click menu over a selection, defects folded into D77 as part 10; part 3 (folders) open with Axel.
