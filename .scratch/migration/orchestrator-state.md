@@ -166,7 +166,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 112, part 3 (2026-10-14): what Axel saw with folders in the Repositories view. The lead: a new untracked folder is listed as one row `dir/` and not its files, since `src/lib/server/core/git/state.ts:192-197` runs `status --untracked-files=normal`, where VS Code's `getStatus` passes `-uall` (its `extensions/git/src/git.ts`, read by the orchestrator). If that is it, the fix is `-uall` as VS Code, folded into D77 part 10; the cap of 200 entries and its warning stay.
+- None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -281,6 +281,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-14 (D77 part 10 widened). Axel pointed the folders note at ordo's changes: `.scratch/rulings/` listed as one row instead of its new file, from `--untracked-files=normal`; part 10 item 3 lists every untracked file as VS Code's `-uall`, sent to D77's builder. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 part 10 sent). Axel's Repositories notes (open item 112): the group heads' indent and the right-click menu acting on the selection are defects, folded into D77 as part 10 (`agents/briefs/D77-part10.md`) and sent to its builder; the folders note asked back to him with the `-uall` lead. Open items: 112 part 3. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 part 9 sent). Axel ruled open item 111 whole: a Literature page after Registries (chord `b`), References renamed Registries, Tasks & Service renamed Tasks, Memories to Academic Life, LinkedIn and Leads kept, all built in D77 as part 9 (`agents/briefs/D77-part9.md`, Z894 for the Literature page's split); sent to D77's builder. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 round 0 sent). D77's builder stopped after its first run (report saved at `agents/reviews/D77-report.md`): case 18 rested on a false premise (a Codex agent's id is its agent path, not a rollout path). Ruled in `agents/briefs/D77-cases.md` (Z892: the Codex agent's thread id as its `agentId`, read through the child's session record; Z893: child rollouts stay listed; six paths added), the builder resumed with it. Open items: none. In flight (1 of 6): D77 (building, round 0 ruling). Next: D77's report, /refute, its round, /land; Q72, O33.
