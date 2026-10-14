@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D77 (the Sessions view and the title bar, open items 103 to 108 and 110): building, with part 9 (the rail pages) added.
+- D77 (the Sessions view and the title bar, open items 103 to 108 and 110): building, with part 9 (the rail pages) and part 10 (the Repositories change groups) added.
 
 Queued, in order (2 steps):
 - Q72 (the architecture re-read): after D77, so it reads the code of D73, D74, D76 and D77.

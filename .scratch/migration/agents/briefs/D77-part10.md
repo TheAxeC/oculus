@@ -1,0 +1,28 @@
+# D77, part 10: the Repositories view's change groups (open item 112)
+
+Size: added to the full step D77, as defects of delivered work folded into the step in flight (Z468; Axel's notes: "Repositories view: Changed and Untracked need to be slightly indented", "Can we remove multiple selected untracked files at once (discard changes on right click)? Or stage multiple at once?"). Every rule of the brief, the launch prompt and `agents/briefs/D77-cases.md` holds. Line numbers are as on main at the base abe5c9651.
+
+## What is on the tree
+
+- `src/lib/views/sources/repositories/changes/Changes.svelte`: the group heads (Merge Changes, Staged, Changed, Untracked) are `TreeItem`s with `level={2}` and no `depth` (`groupHead`, line 287-292), so they are drawn at the indent of the section head "Changes" (`TreeSection`, line 200); the file rows are `depth={1 + row.depth}` (lines 267-268), the cut warning `depth={1}` (line 228). `FolderRow.svelte:76-77` gives folder rows `level={3 + row.depth}`, `depth={1 + row.depth}`.
+- Selection exists: Cmd+press, Shift+press, Shift+Up/Down and Cmd+A select rows of a group (`changes/picking.ts`), and the hover controls of a selected row act on every selected row of its group (`acted`, `ChangeRow.svelte:94`; Discard `askDiscardPaths(root, acted, ...)`, Trash `askTrash(root, acted, ...)`, Stage `stagePaths(root, acted)`, Unstage `unstagePaths(root, acted)`).
+- The right-click menu does not: `ChangeRow.svelte:131-139` calls `changePicked(pick, { root, group, path: entry.path }, deps, t)`, and `changePicked` (`menus/change-menu.ts:261-276`) runs each pick on that one path (`deps.stage(root, path)`, `askTrash(root, [path], ...)`, `askDiscard(root, path, ...)`, `deps.ignore(root, [path])`).
+- The rule of item 2 (a pick on a selected row acts on the selection, on an unselected row on that row alone) is the rule this view's hover controls already follow and the Files view's menu follows for its own selection; VS Code's Source Control behaves the same way in use, which the orchestrator did not check in its source.
+
+## What to build
+
+1. **The group heads indented one step under "Changes"**: Merge Changes, Staged, Changed and Untracked drawn at depth 1, their file and folder rows at depth 2 and below (each one step deeper than now), the cut warning and an empty group's muted row at the file rows' depth, in list mode and tree mode alike. The keyboard's `level` values stay consistent with the drawn depth.
+2. **The right-click menu acts on the selection**: a pick from a row's menu whose row is among the selected rows of its group acts on every selected row of that group, as the row's hover controls do: Stage Changes, Unstage Changes, Discard Changes (one question naming the count: the restore question for Changed, the Trash question for Untracked, as `askDiscardPaths` and `askTrash` word them) and Add to .gitignore. A pick on a row outside the selection acts on that row alone and the selection is left. Open Changes, Open File, Open File (HEAD), Reveal in Explorer View and Compare with Workspace open the pressed row only. `changePicked` takes the acted paths, as the hover controls compute them, so the menu and the controls cannot disagree.
+3. The comment heads of `Changes.svelte`, `ChangeRow.svelte` and `menus/change-menu.ts` say what the code then does; `HELP.md`'s Source Control text names the menu acting on the selection.
+
+## Cases
+
+35. Three untracked files selected with Cmd+press, right-click on one of them, Discard Changes: one Trash question naming 3, its yes trashes the three (a unit run of `changePicked` with the acted paths and stubbed `trash`).
+36. Two changed files selected, right-click on one, Stage Changes: both staged; right-click on a third, unselected row, Stage Changes: that row alone (a unit run).
+37. Open Changes from the menu with three rows selected: the pressed row's diff only (a unit run).
+38. The look: the group heads one step in from "Changes", their rows one step further, in list and tree mode.
+
+## Paths this part adds
+
+- `src/lib/views/sources/repositories/changes/Changes.svelte`, `changes/ChangeRow.svelte`, `changes/FolderRow.svelte`, `menus/change-menu.ts`
+- `HELP.md`

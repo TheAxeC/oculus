@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 112 (2026-10-14), parts 1 and 2: the Repositories view's group heads' indent and the right-click menu over a selection, defects folded into D77 as part 10; part 3 (folders) open with Axel.
 - Open item 111 (2026-10-14), part 6 ruled by Axel: Memories to Academic Life, the change built in D77 as part 9, the Literature page after Registries with chord `b`, page keys `literature` and `registries`; Z894 the Literature page's split; booked in plan.md Rulings and choices.md.
 - Open item 111 (2026-10-14), parts 1 to 5 ruled by Axel: a Literature rail page, References renamed Registries, LinkedIn kept in Incoming, Tasks & Service renamed Tasks, Leads and Applications kept; part 6 (Memories, and which step builds it) still open; booked in plan.md Rulings.
 - Z892, Z893 (2026-10-14): D77's builder stopped at its first run on case 18 (a Codex agent's id is its agent path, not a rollout path); ruled in `agents/briefs/D77-cases.md`: the Codex agent's thread id as its `agentId`, read through the child's own session record, and the child rollouts kept in the Sessions list; booked in plan.md Rulings and choices.md.
