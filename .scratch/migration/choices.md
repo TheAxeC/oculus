@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z894 (2026-10-14, D77 part 9, the orchestrator, automode): how the Literature page is arranged
+
+- Chosen: a split row, Literature search and Lit Watch on the left (0.6), Literature on the right (0.4), so a saved paper shows beside the feed it came from.
+- Not chosen: the three as tabs of one pane, the lazy option, which hides the library behind the feed.
+
+Where it applies: D77, part 9 (`agents/briefs/D77-part9.md`). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z893 (2026-10-14, D77's first run, the orchestrator, automode): whether a Codex subagent stays listed as a session
 
 - Chosen: kept as now, each Codex subagent rollout listed as a session of its own; the open items behind D77 asked for an agent's transcript from its row, and Z892 reads the child through that listing.

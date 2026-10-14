@@ -32,6 +32,7 @@ dispatch:   # steps in flight, up to six (Z632)
   report: agents/reviews/D77-report.md
   builder_usage: "first run, stopped at case 18: 208,864 tokens, 159 tool uses, 21.8 min"
   round: 0   # agents/briefs/D77-cases.md (Z892, Z893)
+  part9: agents/briefs/D77-part9.md   # open item 111, sent to the builder while it builds
   worktree: .agents/worktrees/D77
   base: abe5c9651   # the preparation commit, main after D73 landed; base copy .agents/worktrees/D77-base with unused-exports.txt
   landing: preparing
@@ -164,7 +165,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- Open item 111, parts left open (2026-10-14): where Memories goes (Axel: "Maybe to Academic Life?"; the orchestrator recommends Academic Life as its last tab) and how the rail change is built (the orchestrator recommends folding it into D77, which is building and already writes HELP.md, `config/text/app.yml` and the palette page; inline by the orchestrator is the cheaper option and skips the review; Q72 is excluded by Axel). Parts 1 to 5 ruled, booked in plan.md Rulings (Open item 111).
+- None.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -279,6 +280,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-14 (D77 part 9 sent). Axel ruled open item 111 whole: a Literature page after Registries (chord `b`), References renamed Registries, Tasks & Service renamed Tasks, Memories to Academic Life, LinkedIn and Leads kept, all built in D77 as part 9 (`agents/briefs/D77-part9.md`, Z894 for the Literature page's split); sent to D77's builder. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 round 0 sent). D77's builder stopped after its first run (report saved at `agents/reviews/D77-report.md`): case 18 rested on a false premise (a Codex agent's id is its agent path, not a rollout path). Ruled in `agents/briefs/D77-cases.md` (Z892: the Codex agent's thread id as its `agentId`, read through the child's session record; Z893: child rollouts stay listed; six paths added), the builder resumed with it. Open items: none. In flight (1 of 6): D77 (building, round 0 ruling). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 launched). Preparation commit abe5c9651 is the base; sparse worktree `.agents/worktrees/D77` with `npm ci` and `svelte-kit sync`, base copy `.agents/worktrees/D77-base` with `unused-exports.txt` (238 unused exports at the base); the builder a8345a31acc9caff4 launched on claude-opus-5-5 with `agents/briefs/D77-launch.md`. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 prepared). D77's brief check (`agents/reviews/D77-brief-check.md`, a54a1d685d11d12dd on claude-opus-5-5) closed in the brief, each finding named under its Closed heading; Z891 taken (the editor actions draw in the window strip when the tab bar is not drawn, as VS Code's `editorActionsLocation` default) and Z889's chords corrected to VS Code's per platform from its source (plan.md Rulings, choices.md); G84 written into `agents/guarded.md` under Z890. Open items: none. In flight (1 of 6): D77 (preparation commit, then its worktree and builder). Next: D77's builder on Opus, its report, /refute, its round, /land; Q72, O33.
