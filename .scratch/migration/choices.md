@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z893 (2026-10-14, D77's first run, the orchestrator, automode): whether a Codex subagent stays listed as a session
+
+- Chosen: kept as now, each Codex subagent rollout listed as a session of its own; the open items behind D77 asked for an agent's transcript from its row, and Z892 reads the child through that listing.
+- Not chosen: a Codex subagent listed only as its parent's agent row, as a Claude agent is, a change of the Sessions list nobody asked for. Neither option leaves asked work undone.
+
+Where it applies: D77, part 5. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z892 (2026-10-14, D77's first run, the orchestrator, automode): how a Codex agent's own transcript is found
+
+- Chosen: the Codex fold keeps each agent's `agent_thread_id` (named by the parent's `SubAgentActivity` items) as its `agentId`, and the transcript route reads the session record whose id is that `agentId` and whose tool is `codex`, 404 when there is none; nothing of the request becomes a path and no folder is searched.
+- Not chosen: no agent id and no press for Codex agents, the lazy option, which drops part 5 for Codex; the builder's search of the store's date folders for the child's file, which reads a file no published record names.
+
+Where it applies: D77, part 5 and case 18 (`agents/briefs/D77-cases.md`). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z891 (2026-10-14, D77's brief check, the orchestrator, automode): where the editor actions draw once oculus has a window title bar
 
 - Chosen: with the tab bar not drawn and the editor actions at their first place, the active pane's editor actions draw in the window strip, as VS Code's `editorActionsLocation` default does; the submenu's "Title Bar" then names the window strip. With the tab bar drawn nothing changes.
