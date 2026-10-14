@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z896 (2026-10-14, D77 part 11, the orchestrator, automode): the colours of the graph's branch names
+
+- Chosen: three theme colours after VS Code's graph colours: local branches (the checked-out one included) in the reference colour, remote branches in the remote colour with a cloud glyph, the base in the base colour; tags plain.
+- Not chosen: one other shade for the remote pill alone, the lazy option, which gives a theme no named colour to set.
+
+Where it applies: D77, part 11 (`agents/briefs/D77-part11.md`). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z895 (2026-10-14, D77 part 11, the orchestrator, automode): how the graph shows incoming and outgoing commits
+
+- Chosen: one history over HEAD and its upstream, each commit once, incoming and outgoing commits marked in their lanes, and one Incoming Changes and one Outgoing Changes entry whose press opens the files of the whole range, as VS Code's graph.
+- Not chosen: the outgoing commits kept under Outgoing and taken out of the history, which splits the branch's history in two; hiding the duplicates in the view, the lazy option.
+
+Where it applies: D77, part 11. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z894 (2026-10-14, D77 part 9, the orchestrator, automode): how the Literature page is arranged
 
 - Chosen: a split row, Literature search and Lit Watch on the left (0.6), Literature on the right (0.4), so a saved paper shows beside the feed it came from.

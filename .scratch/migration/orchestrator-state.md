@@ -34,6 +34,7 @@ dispatch:   # steps in flight, up to six (Z632)
   round: 0   # agents/briefs/D77-cases.md (Z892, Z893)
   part9: agents/briefs/D77-part9.md   # open item 111, sent to the builder while it builds
   part10: agents/briefs/D77-part10.md   # open item 112, the Repositories view's change groups
+  part11: agents/briefs/D77-part11.md   # open item 113, the graph's doubled commits and branch colours
   worktree: .agents/worktrees/D77
   base: abe5c9651   # the preparation commit, main after D73 landed; base copy .agents/worktrees/D77-base with unused-exports.txt
   landing: preparing
@@ -281,6 +282,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-14 (D77 part 11 sent). Axel's Graph notes (open item 113): outgoing commits listed twice and the checked-out branch and its remote alike in colour, folded into D77 as part 11 (`agents/briefs/D77-part11.md`, Z895, Z896) and sent to its builder. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 part 10, indent widened). Axel's note on the Graph's indent: part 10 item 1 now indents the content of every section of a repository (Changes, Graph, Branches, Tags, Stashes, Worktrees, an app's source sections), sent to D77's builder. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 part 10 widened). Axel pointed the folders note at ordo's changes: `.scratch/rulings/` listed as one row instead of its new file, from `--untracked-files=normal`; part 10 item 3 lists every untracked file as VS Code's `-uall`, sent to D77's builder. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 part 10 sent). Axel's Repositories notes (open item 112): the group heads' indent and the right-click menu acting on the selection are defects, folded into D77 as part 10 (`agents/briefs/D77-part10.md`) and sent to its builder; the folders note asked back to him with the `-uall` lead. Open items: 112 part 3. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
