@@ -125,10 +125,14 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // in a scan folder: the scan reader, the server's check of a new project's folder and the page's
 // new-project form ask the same question, so they cannot disagree.
 //
-// `data/prose/markdown` is in the primitives' row, the one module of layer 1 there: a Markdown
+// `data/prose/markdown/**` is in the primitives' row, the one folder of layer 1 there: a Markdown
 // document is rendered by the document route on the server and by ui/html.ts on the page, and the
 // heading ids and the table of contents are one rule for both, so a document reads the same in the
-// doc view and in the source tab's preview. It holds no reader and no I/O. `data/prose/languages`,
+// doc view and in the source tab's preview; a note's links, embeds and tags are drawn by its
+// note-render.ts on the page. It is in the state row too, because the Notes section, the notes'
+// moves and the language servers' edits take the rule of a note's name and the reading of its
+// links from note-names.ts and note-links.ts, the rules the server's notes reader takes. It holds
+// no reader and no I/O. `data/prose/languages`,
 // the highlighter, is in the state row for the same reason: the server paints a document's and a
 // transcript turn's code with it, and the page reaches it through state/shared/words/languages.ts.
 // `data/prose/latex`, the reader of a LaTeX text (magic comments, sections, includes), is in the
@@ -210,7 +214,7 @@ const ALLOWED: Record<string, string[]> = {
         'themes/**',
         'state/shared/words/text',
         'state/shared/words/appearance',
-        'data/prose/markdown',
+        'data/prose/markdown/**',
         'data/prose/lsp-servers',
         'data/prose/lsp-addresses',
         'data/prose/text-edits',
@@ -287,6 +291,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/helpers/files/yaml/collection-text',
         'data/prose/latex',
         'data/prose/bib',
+        'data/prose/markdown/**',
         'data/helpers/files/nesting',
         'data/helpers/run/tasks',
         'data/helpers/run/schedules',

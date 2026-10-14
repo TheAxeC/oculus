@@ -87,7 +87,6 @@ export async function writeFs(
         workspace: workspaceOf(state),
         machine: { set: [], defaults: {}, values: {}, hubs: {} },
         bookmarks: null,
-        notes: null,
         writes: fsWrites(),
         ignored: ignoredCache()
     });

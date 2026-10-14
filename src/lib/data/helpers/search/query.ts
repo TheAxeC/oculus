@@ -22,8 +22,19 @@
 // In regular-expression mode the arguments also carry the replacement template of ./replace.ts, so
 // that each match ripgrep reports holds the text of every group of the pattern. A replace names one
 // file instead of a directory and asks for every match of it (`fileArgs`).
+//
+// What one root's search runs over is the query's arguments with that root's own place
+// (`rootSearchArgs`): an anchored glob for each private folder inside the root (the `secrets`
+// folder of every hub and `~/.oculus`, as the name list leaves them out), and, for a hub, its notes
+// folder `.oculus/notes/` named beside `.`, since ripgrep leaves out every folder whose name starts
+// with a dot and the notes are the one such folder a search reads. A scope in a hub's `.oculus/`
+// folder searches the notes folder and nothing else of it, so the scope `.oculus` searches the
+// notes and a scope elsewhere in it searches nothing. A search of every root may be scoped to one
+// folder only, the notes folder (`NOTES_FOLDER`), which searches the notes of every hub and nothing
+// of a root that is no hub: the search a press on a tag opens.
 
 import { z } from 'zod';
+import { NOTES_FOLDER, inNotes } from '../../prose/markdown/note-names.ts';
 import { fields } from '../guards.ts';
 import { replaceTemplate } from './replace.ts';
 
@@ -115,11 +126,12 @@ export function refusalOf(query: SearchQuery, rootKeys: string[]): QueryRefusal 
 
 /**
  * Whether the folder a query is scoped to can lie under one root: a relative path with no `..`
- * segment, on a query that names one root. Whether the folder is really there, and not a link out
- * of the root, is the server's to read from the disk.
+ * segment, on a query that names one root, or the notes folder on a query of every root. Whether
+ * the folder is really there, and not a link out of the root, is the server's to read from the
+ * disk.
  */
 function scopedInside(query: SearchQuery): boolean {
-    if (query.root === ALL_ROOTS) return false;
+    if (query.root === ALL_ROOTS) return query.under === NOTES_FOLDER;
     if (query.under.startsWith('/') || query.under.startsWith('\\')) return false;
     return !query.under.split(/[\\/]/).includes('..');
 }
@@ -162,10 +174,11 @@ function matchArgs(query: MatchQuery): string[] {
 
 /**
  * ripgrep's arguments for this query. The order is fixed so a test reads the list word for word:
- * the JSON stream, the caps, the skipped directories, the options that say how the pattern is read
- * (with the replacement template in regular-expression mode), the pattern, and the directory.
+ * the JSON stream, the caps, the skipped directories, a root's own globs, the options that say how
+ * the pattern is read (with the replacement template in regular-expression mode), the pattern, and
+ * the directory, or the paths a root's place names in its place.
  */
-function searchArgs(query: SearchQuery): string[] {
+function searchArgs(query: SearchQuery, globs: string[] = [], paths?: string[]): string[] {
     const args = [
         '--json',
         '--max-count',
@@ -173,8 +186,9 @@ function searchArgs(query: SearchQuery): string[] {
         '--max-filesize',
         MAX_FILESIZE
     ];
-    for (const glob of SKIP_GLOBS) args.push('--glob', glob);
-    args.push(...matchArgs(query), query.under === '' ? SEARCH_PATH : `./${query.under}`);
+    for (const glob of [...SKIP_GLOBS, ...globs]) args.push('--glob', glob);
+    const scoped = query.under === '' ? SEARCH_PATH : `./${query.under}`;
+    args.push(...matchArgs(query), ...(paths ?? [scoped]));
     return args;
 }
 
@@ -185,6 +199,44 @@ function searchArgs(query: SearchQuery): string[] {
  */
 export function fileArgs(query: MatchQuery, path: string): string[] {
     return ['--json', ...matchArgs(query), `./${path}`];
+}
+
+/**
+ * What one root's search runs over besides the query: the folders inside it no hit is answered
+ * from, and whether it is a hub whose notes folder is there.
+ */
+export type RootPlace = { withheld: string[]; notes: boolean };
+
+/** The name of the folder a hub's notes folder lies in, which a repository's own folder has too. */
+const STATE_FOLDER = NOTES_FOLDER.split('/')[0] ?? '';
+
+/**
+ * The paths ripgrep searches in one root, or none: the whole root with its notes folder beside it,
+ * the scope's folder, and nothing for a scope inside the root's own `.oculus` folder unless the
+ * scope is a hub's notes folder that is there, or a folder under it. A whole-root search reads no
+ * `.oculus` folder but the notes, since ripgrep passes over a folder whose name starts with a dot.
+ */
+function searchedPaths(under: string, place: RootPlace): string[] {
+    const notes = `./${NOTES_FOLDER}`;
+    if (under === '') return place.notes ? [SEARCH_PATH, notes] : [SEARCH_PATH];
+    const segments = under.split('/').filter((one) => one !== '');
+    if (segments[0] !== STATE_FOLDER) return [`./${under}`];
+    return place.notes && inNotes(under) !== null ? [`./${under}`] : [];
+}
+
+/**
+ * ripgrep's arguments for one root of a planned search, or null when the root's place leaves
+ * nothing of the scope to search (a scope in a `.oculus` folder outside a hub's notes, the notes
+ * folder of a search of every root in a root that is no hub with notes): the plan's arguments with
+ * the root's private folders left out by a glob each before the pattern, and its paths in place of
+ * the plan's one.
+ */
+export function rootSearchArgs(query: SearchQuery, place: RootPlace): string[] | null {
+    if (query.root === ALL_ROOTS && query.under !== '' && !place.notes) return null;
+    const paths = searchedPaths(query.under, place);
+    if (paths.length === 0) return null;
+    const globs = place.withheld.map((path) => `!/${globEscape(path)}`);
+    return searchArgs(query, globs, paths);
 }
 
 /** The checks and the arguments as one call, which is what both sides use. */

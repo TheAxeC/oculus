@@ -31,7 +31,6 @@ function placed(source: PrivateSource): string[] {
         local.sessionsCache,
         local.sessionsOverrides,
         local.bookmarks,
-        local.notes,
         local.changes,
         local.history,
         local.approvals,

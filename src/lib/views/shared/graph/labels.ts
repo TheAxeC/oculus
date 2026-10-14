@@ -1,12 +1,15 @@
-// Layer 3, Map partial helper. Which node labels the graph draws. The labels the pointer or the
-// keyboard is on are drawn first, whatever they overlap; then the pillars' labels, so a project's
-// label never hides its pillar's; then every other label in the graph's own order. A label after
-// the leading ones is left out when it overlaps a label already drawn or any node but its own: a
-// project is its circle, a pillar or a collaborator its square.
+// Layer 3, shared graph helper. Which node labels the graph draws (Graph.svelte, the Map's and the
+// Notes Graph's). The labels the pointer or the keyboard is on are drawn first, whatever they
+// overlap; then the pillars' labels, so a project's label never hides its pillar's; then every
+// other label in the graph's own order. A label after the leading ones is left out when it
+// overlaps a label already drawn or any node but its own: a project or a note is its circle, a
+// pillar or a collaborator its square.
 //
 // The rule is over boxes in the graph's own coordinates, so it holds at every zoom: the labels and
 // the nodes are scaled together. The size of each label is the page's measure of it, handed in, and
 // a label not measured yet has no width and overlaps nothing.
+
+import type { GraphKind } from '$lib/state/boards/structure/graph';
 
 /** One label's box in the graph's coordinates. */
 export type LabelBox = { id: string; left: number; top: number; right: number; bottom: number };
@@ -54,7 +57,7 @@ export type LabelNode = {
     x: number;
     y: number;
     radius: number;
-    kind: 'project' | 'line' | 'collaborator';
+    kind: GraphKind;
 };
 
 function empty(box: LabelBox): boolean {
@@ -65,10 +68,10 @@ function overlaps(a: LabelBox, b: LabelBox): boolean {
     return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 }
 
-/** Whether a box overlaps a node: a project's circle, or the square of any other node. */
+/** Whether a box overlaps a node: a project's or a note's circle, or the square of any other. */
 function coversNode(box: LabelBox, node: LabelNode): boolean {
     const { x, y, radius } = node;
-    if (node.kind !== 'project') {
+    if (node.kind !== 'project' && node.kind !== 'note') {
         const square = {
             id: node.id,
             left: x - radius,

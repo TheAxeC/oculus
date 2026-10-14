@@ -16,12 +16,32 @@ import { extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import MarkdownIt from 'markdown-it';
 import { TEXT_LIMIT } from '../../../../../data/file-ops.ts';
+import { FRONT_MATTER } from '../../../../../data/prose/markdown/note-links.ts';
 import type { Introduction } from '../asks.ts';
 import type { ServerAsk } from '../../servers.ts';
 import { listing, markdownFiles, reachable, statOf } from './places.ts';
 
-/** The tokens of a text, as the server reads them; raw HTML is parsed as VS Code's preview does. */
+/**
+ * The tokens of a text, as the server reads them; raw HTML is parsed as VS Code's preview does, and
+ * a YAML front matter block at the top (`FRONT_MATTER`, a note's `tags:` among it) is one hidden
+ * `front_matter` token, as VS Code's Markdown engine reads it, so its last line is no heading.
+ */
 const parser = new MarkdownIt({ html: true });
+parser.block.ruler.before('table', 'front_matter', (state, start, _end, silent) => {
+    if (start !== 0 || state.blkIndent !== 0) return false;
+    const found = FRONT_MATTER.exec(state.src);
+    if (found === null) return false;
+    if (silent) return true;
+    const lines = found[0].replace(/\r?\n$/, '').split(/\r?\n/).length;
+    const token = state.push('front_matter', '', 0);
+    token.hidden = true;
+    token.block = true;
+    token.markup = '---';
+    token.content = found[0];
+    token.map = [0, lines];
+    state.line = lines;
+    return true;
+});
 
 /** A non-empty text of a request's parameter, or undefined. */
 function textOf(value: unknown): string | undefined {

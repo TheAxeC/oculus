@@ -22,10 +22,10 @@
 
 import { Marked, type MarkedExtension, type Tokens } from 'marked';
 import { getHeadingList, gfmHeadingId } from 'marked-gfm-heading-id';
-import type { RenderedHeading } from '../model/index.ts';
+import type { RenderedHeading } from '../../model/index.ts';
 
 export type { RenderedHeading };
-import { codeColour } from './languages.ts';
+import { codeColour } from '../languages.ts';
 
 /** What every heading id starts with, as GitHub renders one. */
 export const HEADING_PREFIX = 'user-content-';

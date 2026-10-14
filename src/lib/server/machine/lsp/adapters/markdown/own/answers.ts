@@ -7,9 +7,9 @@
 
 import { existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import { inside } from '../../../../core/paths.ts';
-import type { PageAnswer, PageRequest, PageView } from '../../servers.ts';
-import { normal, pageUri, parsePageUri } from '../../uris.ts';
+import { inside } from '../../../../../core/paths.ts';
+import type { PageAnswer, PageRequest, PageView } from '../../../servers.ts';
+import { normal, pageUri, parsePageUri } from '../../../uris.ts';
 import { resolvedPaths, spanAt } from './backticks.ts';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -17,7 +17,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** The page's address of a real path: its open tab's, else its address under its innermost root. */
-function addressOf(real: string, view: PageView): string | null {
+export function addressOf(real: string, view: PageView): string | null {
     const open = view.documents.find((one) => normal(one.real) === normal(real));
     if (open !== undefined) return open.pageUri;
     let best: (typeof view.roots)[number] | null = null;

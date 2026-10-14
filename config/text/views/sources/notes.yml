@@ -1,0 +1,41 @@
+# Oculus text owned by the notes of every hub: the Notes section of the Files view, the Backlinks and Tags sections, the Notes Graph view, the names a note may take, a picture pasted into a note, and a formula a note or any Markdown file holds that KaTeX refuses.
+text:
+    notes:
+        add_folder_title: New Folder in the notes of {0}
+        add_title: New Note in the notes of {0}
+        attach_refused: 'The folder {0} could not be made: {1}'
+        backlinks: Backlinks
+        backlinks_line_title: Open {0} at line {1}
+        backlinks_no_tab: No file is open.
+        backlinks_none: No note links here.
+        backlinks_not_note: The open file is not a note.
+        backlinks_open_title: Open {0}
+        failed: 'The notes could not be read: {0}'
+        folder_refused: The notes folder of this hub is a link to a folder outside it, so it is not read.
+        graph: Graph
+        graph_all: All hubs
+        graph_bar: Notes Graph filter
+        graph_empty: No note yet.
+        graph_failed: 'The notes could not be laid out: {0}'
+        graph_glyph: link
+        graph_hub: Hub
+        graph_title: Open the Notes Graph
+        links_unread: The notes of {0} could not be read, so the links to the note were not checked and nothing was moved.
+        math_refused: This formula could not be typeset.
+        name_char: A note's name cannot hold {0}.
+        name_control: A note's name cannot hold the control character {0}.
+        name_dot: A note's name cannot start with a dot.
+        name_empty: A note needs a name.
+        name_long: A note's name is at most 200 characters long.
+        name_taken: '{0} is taken: a note of this folder has that name, but for letter case or the way its accented letters are encoded.'
+        new_folder: New Folder
+        new_note: New Note
+        no_hub: No folder of this workspace is a hub, so there are no notes.
+        tag_glyph: tag
+        tag_label: '#{0}'
+        tag_title: 'Search the notes of every hub for #{0}'
+        tags: Tags
+        tags_none: No note carries a tag.
+    views:
+        notes_graph: Notes Graph
+        notes_graph_glyph: link

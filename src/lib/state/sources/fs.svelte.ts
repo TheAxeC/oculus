@@ -1,6 +1,7 @@
 // Layer 2, client state. What the file browser fetched: one directory's entries, the workspaces,
-// one file's text, the reader's own bookmarks and their scratch notes, and the history of one file
-// (fs-history.ts): the copies the server kept before its saves and the commits that touched it.
+// one file's text, the reader's own bookmarks and the notes of every hub, and the history of one
+// file (fs-history.ts): the copies the server kept before its saves and the commits that touched
+// it.
 //
 // It is state/system/docs.svelte.ts's shape over the reads this endpoint offers, and for the same
 // reason: none of them is in the snapshot, so the first call asks the server and every later call
@@ -19,7 +20,10 @@
 // The disk is followed through the `files` channel, which is why no poller is needed:
 // `afterReceive` below lists the folders a message names again (explorer/view/disk.ts maps the
 // message onto the served roots), reads a whole root again for a message that names none, and
-// everything again after a gap in the versions.
+// everything again after a gap in the versions. The notes are read again when a message names a
+// folder of a hub's notes folder or a whole root, and when the workspace moves, so a note another
+// program wrote reaches the Notes section, Backlinks, Tags and the graph of an open page; a file
+// operation in a notes folder reads them again too (`relistFolder`).
 //
 // A read of the workspaces, the bookmarks or the notes that ended in an error is held as the
 // answer, with the sentence saying why, and a held answer is asked for once until it is marked:
@@ -60,7 +64,6 @@ import {
     type HeldListing,
     NO_BOOKMARKS,
     NO_LISTING,
-    NO_NOTE,
     NO_NOTES,
     NO_TEXT,
     noMachine,
@@ -72,20 +75,18 @@ import {
     listingForm,
     listingKey as keyOfListing,
     listingUrl,
-    noteShape,
     notesShape,
-    noteUrl,
     readAnswer,
     readCappedBytes,
     readText,
     type BookmarksState,
     type FileText,
     type Listing,
-    type NoteState,
     type NotesState,
     type WorkspacesState,
     workspacesShape
 } from './fs-transport.ts';
+import { NOTES_FOLDER, inNotes } from '../../data/prose/markdown/note-names.ts';
 import { diskPlan } from './explorer/view/disk.ts';
 import {
     SHOWN_DEFAULT,
@@ -111,8 +112,6 @@ export type {
     BookmarksState,
     FileText,
     Listing,
-    NoteRow,
-    NoteState,
     NotesState,
     WorkspacesState
 } from './fs-transport.ts';
@@ -124,9 +123,6 @@ export type {
  */
 export const BOOKMARK_COLLECTION = 'bookmarks';
 
-/** What a save of a note this page deleted is refused with, in the endpoint's own vocabulary. */
-export const NOTE_GONE = 'no-such-note';
-
 /** The query keys the three whole-file answers are held under. */
 const WORKSPACES = ['fs', 'workspaces'];
 
@@ -136,8 +132,6 @@ const NOTES = ['fs', 'notes'];
 
 /** What every key of this store opens with, and the marks the kinds of answer are found by. */
 const ALL = ['fs'];
-
-const NOTE = ['fs', 'note'];
 
 /** The pair of toggles that asks a folder for every entry it holds. */
 const EVERYTHING: ListingShown = { hidden: true, ignored: true };
@@ -240,10 +234,8 @@ export type FsStore = {
      * one request made for them. A caller that has to rewrite the bookmarks awaits it.
      */
     bookmarksNow: () => Promise<BookmarksState>;
-    /** Every scratch note, newest first. */
+    /** The notes of every hub, one answer per hub in the workspace's folder order. */
     notes: () => NotesState;
-    /** One note's own text. */
-    note: (id: string) => NoteState;
     /** Add a folder to the open workspace: its file's `folders:` list, or the unsaved state. */
     addRoot: (dir: string) => Promise<WriteAnswer>;
     /** Take the folder of that name out of the open workspace. */
@@ -253,8 +245,11 @@ export type FsStore = {
      * whatever it was, so a refused order is drawn as the server holds it.
      */
     orderRoots: (keys: string[]) => Promise<WriteAnswer>;
-    /** Put the notes in the order the ids name, newest first for any a list leaves out. */
-    orderNotes: (ids: string[]) => Promise<WriteAnswer>;
+    /**
+     * Put one hub's notes in the order the paths name (each a path inside the notes folder without
+     * `.md`), newest first for any a list leaves out.
+     */
+    orderNotes: (root: string, paths: string[]) => Promise<WriteAnswer>;
     /**
      * Save the open workspace as `.oculus/workspaces/<name>.yml` of the primary hub (or the first).
      */
@@ -284,10 +279,6 @@ export type FsStore = {
     retryBookmarks: () => void;
     /** Ask for the notes again after a read that failed. */
     retryNotes: () => void;
-    saveNote: (id: string, title: string, body: string) => Promise<WriteAnswer>;
-    deleteNote: (id: string) => Promise<WriteAnswer>;
-    /** Whether this page deleted that note, so nothing tries to write it back. */
-    noteDeleted: (id: string) => boolean;
     /** Ask for every held answer again, keeping what is held drawn until the new one lands. */
     invalidate: () => void;
 };
@@ -298,12 +289,6 @@ export function createFs(
     queries: Queries,
     carry: (identity: string) => void = () => undefined
 ): FsStore {
-    /**
-     * The notes this page deleted. A deleted note is never asked for again and never written again,
-     * which is what keeps a wait that was still running from putting one back on the disk.
-     */
-    const deleted = new Set<string>();
-
     /** The version one root was last refreshed at, by root key. */
     const refreshed = new Map<string, number>();
 
@@ -345,6 +330,7 @@ export function createFs(
         if (message.channel === 'config') {
             queries.mark(WORKSPACES, 'replace');
             queries.mark(BOOKMARKS, 'replace');
+            queries.mark(NOTES, 'replace');
             return;
         }
         if (message.channel !== 'files' || (heard !== null && message.version <= heard)) return;
@@ -354,16 +340,22 @@ export function createFs(
         if (gap) {
             queries.mark(WORKSPACES, 'replace');
             queries.mark(BOOKMARKS, 'replace');
+            queries.mark(NOTES, 'replace');
             for (const one of heldRoots()) refresh(one.key, message.version);
         }
         if (payload === null) return;
-        if (payload.workspaces === true) queries.mark(WORKSPACES, 'replace');
+        if (payload.workspaces === true) {
+            queries.mark(WORKSPACES, 'replace');
+            queries.mark(NOTES, 'replace');
+        }
         if (payload.bookmarks === true || payload.workspaces === true) {
             queries.mark(BOOKMARKS, 'replace');
         }
         const plan = diskPlan(payload, heldRoots());
         for (const key of plan.roots) refresh(key, message.version);
         for (const folder of plan.folders) relistFiles(folder.root, folder.path);
+        const notes = plan.folders.some((folder) => inNotes(folder.path) !== null);
+        if (plan.roots.length > 0 || notes) queries.mark(NOTES, 'replace');
     });
 
     /** The roots of the workspace as far as they have been read; asks the server for nothing. */
@@ -430,6 +422,8 @@ export function createFs(
     }
 
     function relistFolder(root: string, path: string, below = false): void {
+        const holds = below && (path === '' || `${NOTES_FOLDER}/`.startsWith(`${path}/`));
+        if (inNotes(path) !== null || holds) queries.mark(NOTES, 'replace');
         const own = treeKey(root, path);
         for (const one of queries.entries<Listing>(['fs', 'listing', root])) {
             const at = one.key[3];
@@ -468,7 +462,9 @@ export function createFs(
     /**
      * Whether one file is off the disk. A listing of its folder that is held in any form, current,
      * and names the file answers no and asks nothing; any other folder is read with everything
-     * shown, the one listing that holds a hidden or an ignored file.
+     * shown, the one listing that holds a hidden or an ignored file. While that listing is read
+     * again (an operation that made the file marked it) the answer is no, so a file just made is
+     * not drawn as gone from the held listing that does not name it yet.
      */
     function gone(root: string, path: string): boolean {
         if (root === '' || path === '') return false;
@@ -479,7 +475,8 @@ export function createFs(
             !one.stale && one.data?.error === '' && one.data.entries.some((e) => e.name === name);
         if (heldListings(peekListing, root, folder).some(named)) return false;
         const found = listing(root, folder, EVERYTHING);
-        if (found.loading) return false;
+        if (found.loading || peekListing(listingQuery(root, folder, EVERYTHING)).stale)
+            return false;
         if (found.refused === 'missing') return true;
         return found.error === '' && !found.entries.some((one) => one.name === name);
     }
@@ -636,7 +633,7 @@ export function createFs(
         }
     }
 
-    /** Every scratch note, asked for once and held until the notes are marked. */
+    /** The notes of every hub, asked for once and held until the notes are marked. */
     function noteList(): NotesState {
         const { data } = queries.read(NOTES, readNotes, { enabled: inBrowser() });
         return data ?? NO_NOTES;
@@ -647,42 +644,12 @@ export function createFs(
             const answer = await readAnswer(await fetch(`${FS_PATH}?notes=1`));
             if (!answer.ok) return { ...NO_NOTES, error: answer.error, loading: false };
             return {
-                notes: readAs(notesShape, answer.body)?.notes ?? [],
+                hubs: readAs(notesShape, answer.body)?.hubs ?? [],
                 error: '',
                 loading: false
             };
         } catch (error) {
             return { ...NO_NOTES, error: reasonOf(error), loading: false };
-        }
-    }
-
-    /**
-     * One note's own text, asked for once and held until the notes are marked. A note that was
-     * deleted is not asked for.
-     */
-    function note(id: string): NoteState {
-        if (id === '') return { ...NO_NOTE, loading: false };
-        const { data } = queries.read([...NOTE, id], () => readNote(id), {
-            enabled: inBrowser() && !deleted.has(id)
-        });
-        return data ?? NO_NOTE;
-    }
-
-    async function readNote(id: string): Promise<NoteState> {
-        try {
-            const answer = await readAnswer(await fetch(noteUrl(id)));
-            if (!answer.ok) return { ...NO_NOTE, id, error: answer.error, loading: false };
-            const body = readAs(noteShape, answer.body);
-            return {
-                id,
-                title: body?.title ?? '',
-                body: body?.body ?? '',
-                modified: body?.modified ?? 0,
-                error: '',
-                loading: false
-            };
-        } catch (error) {
-            return { ...NO_NOTE, id, error: reasonOf(error), loading: false };
         }
     }
 
@@ -694,12 +661,6 @@ export function createFs(
      */
     function invalidate(): void {
         queries.mark(ALL, 'replace');
-    }
-
-    /** Ask the server again for the notes and for each note, and for nothing else. */
-    function notesChanged(): void {
-        queries.mark(NOTES, 'replace');
-        queries.mark(NOTE, 'replace');
     }
 
     /**
@@ -734,44 +695,13 @@ export function createFs(
         return answer;
     }
 
-    /** One note action. It marks the notes and leaves every other held answer where it is. */
-    async function noteAct(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        const answer = await writes.send(fields, FS_PATH);
-        if (answer.ok) notesChanged();
-        return answer;
-    }
-
     /**
-     * Write one note, unless it is one this page deleted. A save is scheduled behind a wait, so a
-     * note deleted while that wait was running would otherwise be written back to the disk by it;
-     * the refusal is answered here rather than sent, since the endpoint would write the file again.
+     * Write the order of one hub's notes. The notes are read again whatever the answer, so a
+     * refused order is drawn as the server holds it.
      */
-    async function saveNote(id: string, title: string, body: string): Promise<WriteAnswer> {
-        if (deleted.has(id)) {
-            return { ok: false, changed: [], refused: [], error: NOTE_GONE };
-        }
-        const answer = await noteAct({ action: 'note-save', id, title, body });
-        // What was just written is what is held, so a tab opened on this note before the re-read
-        // lands is seeded from the text on the disk and not from the text before the save.
-        if (answer.ok) {
-            const saved: NoteState = {
-                id,
-                title,
-                body,
-                modified: Date.now(),
-                error: '',
-                loading: false
-            };
-            queries.hold([...NOTE, id], saved);
-            queries.mark([...NOTE, id], 'drop');
-        }
-        return answer;
-    }
-
-    /** Take one note off the disk, and remember that this page did so. */
-    async function deleteNote(id: string): Promise<WriteAnswer> {
-        const answer = await noteAct({ action: 'note-delete', id });
-        if (answer.ok) deleted.add(id);
+    async function orderNotes(root: string, paths: string[]): Promise<WriteAnswer> {
+        const answer = await writes.send({ action: 'order-notes', root, ids: paths }, FS_PATH);
+        queries.mark(NOTES, 'replace');
         return answer;
     }
 
@@ -818,7 +748,6 @@ export function createFs(
         bookmarks,
         bookmarksNow,
         notes: noteList,
-        note,
         addRoot: (dir: string) => rootsWrite({ action: 'add', dir }),
         removeRoot: (key: string) => rootsWrite({ action: 'remove', key }),
         orderRoots: async (keys: string[]) => {
@@ -826,7 +755,7 @@ export function createFs(
             queries.mark(WORKSPACES, 'replace');
             return answer;
         },
-        orderNotes: (ids: string[]) => noteAct({ action: 'order-notes', ids }),
+        orderNotes,
         saveWorkspace: (name: string) => saveAs({ action: 'save-workspace', name }),
         newWorkspace: (name: string) => act({ action: 'new-workspace', name }),
         selectWorkspace: (path: string) => act({ action: 'select-workspace', path }),
@@ -844,9 +773,6 @@ export function createFs(
         retryWorkspaces: () => retry(WORKSPACES),
         retryBookmarks: () => retry(BOOKMARKS),
         retryNotes: () => retry(NOTES),
-        saveNote,
-        deleteNote,
-        noteDeleted: (id: string) => deleted.has(id),
         invalidate
     };
 }

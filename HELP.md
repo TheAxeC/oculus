@@ -108,7 +108,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 | a1-a9 | the Apps view, then the apps |
 | h1-h9 | the Help page's tabs |
 | j / k, J / K, i / o | move the card cursor left / right, move the card, cursor up / down a row |
-| Enter | open what the cursor is on (a card, an Audit row, a Settings card, a row of Open Editors, Outline, Timeline, Bookmarks or Notes) |
+| Enter | open what the cursor is on (a card, an Audit row, a Settings card, a row of Open Editors, Outline, Backlinks, Timeline, Bookmarks or Notes; a Tags row opens Search over the notes) |
 | / | focus the board's search; in Search, back to the query box |
 | Cmd+Shift+F / Cmd+Shift+H | Search / Search with replace |
 | Enter; Up / Down | in a Search box: run; walk the last twenty texts |
@@ -181,10 +181,11 @@ Off macOS, Cmd is Ctrl.
 | `people` | People | The people. |
 | `organisations` | Organisations | The organisations. |
 | `resources` | Resources | Clusters, machines and storage. |
-| `files` | Files | The folders of the workspace, with Open Editors, Outline, Timeline, Bookmarks and Notes. |
+| `files` | Files | The folders of the workspace, with Open Editors, Outline, Backlinks, Timeline, Bookmarks, Notes and Tags. |
 | `repositories` | Repositories | VS Code's Source Control over every repository. |
 | `search` | Search | A pattern across the files, with replace. |
 | `references` | References | Find All References, implementations, call and type hierarchies, and the places that name a hub key. |
+| `notes-graph` | Notes Graph | The notes of every hub as a graph: a node per note, an edge per `[[link]]`, filtered to one hub. |
 | `latex` | TeX view | Commands, Structure and Math Symbols for the LaTeX file in front. |
 | `problems` | Problems | Errors and warnings of language servers, commands, LaTeX builds and linters. |
 | `debug` | Debug | The debugger: configurations, Variables, Watch, Call Stack, Breakpoints. |
@@ -224,7 +225,7 @@ Off macOS, Cmd is Ctrl.
 | `pages` | Pages | Every page, with New page. |
 | `workbenches` | Workbenches | Open and closed workbenches. |
 
-Views opened for one thing, and not in the catalogue: `project`, `person`, `entry`, `editor` (a project's form), `deposit`, `doc`, `math-preview`, `refactor-preview`, `source`, `document` (a local HTML file), `file` (a picture, a PDF, or a download), `note`, `slides`, `customization`, `repositories-diff`, `repositories-merge`, `markdown-preview` and `lsp-output`.
+Views opened for one thing, and not in the catalogue: `project`, `person`, `entry`, `editor` (a project's form), `deposit`, `doc`, `math-preview`, `refactor-preview`, `source`, `document` (a local HTML file), `file` (a picture, a PDF, or a download), `slides`, `customization`, `repositories-diff`, `repositories-merge`, `markdown-preview` and `lsp-output`. A saved page that names a view oculus no longer has shows that tab as an unknown view and keeps the rest.
 
 ### Entries and their editor
 
@@ -289,7 +290,6 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - Drag onto a folder to move (Option to copy). Files dragged in from the system upload.
 - Every create, rename, move, copy, paste, upload and delete is undoable in History (Cmd+Z in Files). An undone delete restores files up to 5 MB.
 - Before each save, the old text is kept in the local history (`~/.oculus/history`, 50 copies per file, none over 256 KB). The Timeline section lists those copies and the file's commits; Restore writes a copy back.
-- A scratch note is a file in the hub's notes folder, made by the first keystroke typed into it; the delete control in the Notes list removes it.
 - A single click opens a preview tab (italic); typing, a double click or a second click keeps it.
 - A file locked, too long, not UTF-8, or a version at a commit, opens read-only with a line saying why.
 - Every text file opens in a source tab, unless an approved app's editor is the default for it.
@@ -300,6 +300,22 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - On save: `editor.trim_trailing_whitespace`, then the language's `format_on_save`, then `editor.final_newline`. One Cmd+Z undoes all of it.
 - Indentation, word wrap and rulers come from, in order: the tab's own choice, the file, the repository's `.oculus/settings.yml`, `editor.languages`, the global keys. The template of `settings.yml` is in [templates](docs/templates.md).
 
+### Notes
+
+- Notes are Markdown files in each hub's `.oculus/notes/`. The Notes section lists every hub's notes, one group per hub, with folders; `attachments/` shows as a folder and `order.json` (the order of the list) is hidden.
+- New Note and New Folder on a group write into that hub; New Note on the head writes into the primary hub. A hub's notes folder is made with its first note.
+- A note's name is its file name without `.md`. A name is refused when it is empty, starts with a dot, is over 200 characters, or holds a control character or one of `/ \ : [ ] # ^ |`. Two names that differ only in letter case or in how an accent is encoded are the same name.
+- Rename (F2), Move to Trash, a drag onto a folder and Undo work as for any file. Alt+Up / Alt+Down or a drag reorders notes in a folder; a note not yet ordered is listed first.
+- A note saves itself 800 ms after the last edit (`notes.autosave_ms`), whatever `editor.autosave` says, and closing its tab saves it first.
+- `[[name]]` links to a note of the same hub (`[[folder/name]]` when two folders hold one name), `[[name#heading]]` to a heading, and `[[name|words]]` shows the words. A link to a missing note is drawn dashed, and a press makes the note. A link never reaches another hub, and `[[...]]` in code is text.
+- The Markdown server completes note names after `[[` and headings after `#`, goes to a note, and lists the links to it. Renaming or moving a note rewrites every `[[...]]` that names it in its hub, each in History; it is refused when a note it would rewrite is open in another page.
+- `![[picture.png]]` shows a picture from the notes folder, `![[name]]` the text of another note, and `![[name#heading]]` that section. Inside a line of text the embedded note is shown as plain text, its other blocks as their source. An embed of its own note stops at the second level.
+- A pasted picture is saved to `attachments/` as `Pasted image <yyyymmddhhmmss>.<ext>`, a dropped file under its own name, and `![[<name>]]` goes in at the caret. Files over 32 MB are refused.
+- A tag is a `#word` in the text (letters, digits, `_`, `-`, `/`; not only digits; not in code, a link, a heading mark or an address) or an entry of the front matter's `tags:`. The Tags section lists every tag with its count, nested on `/`. A press on a tag opens Search over the notes of every hub, listing each place the tag stands.
+- Backlinks lists the notes of the same hub that link to the note in front, with the lines that hold the links.
+- The Notes Graph view (in the catalogue, or Graph on the Notes head) draws every note as a node and every link between notes as an edge; a press opens the note, and the menu filters to one hub.
+- In every Markdown preview, `$...$` and `$$...$$` are typeset with KaTeX. A formula KaTeX cannot typeset shows as red source. `$` in code and amounts like `$5 and $10` stay text.
+
 ### Language servers
 
 - Python (pyright), C and C++ (clangd), TypeScript and JavaScript, Svelte, YAML, Markdown, and LaTeX and BibTeX (texlab) are served by a language server per folder. It stops 60 seconds after the last tab closes. Restart is in the status bar's language menu.
@@ -308,7 +324,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - clangd uses the compile database the status bar names: a `compile_commands.json` at the root or in `build/*/`, or a configuration of `.oculus/cpp.yml` (template in [templates](docs/templates.md)).
 - The Svelte server runs a repository's `svelte.config.*` and `vite.config.*` only after `:svelte-config` approves them.
 - The YAML server checks a hub file against its schema: undeclared keys, wrong values, keys that name nothing, missing required fields. `local.yml` is checked against the options catalog.
-- The Markdown server marks links to missing files and renames a heading with its links. After a move in Files, it offers to update the links that broke, as a Refactor Preview.
+- The Markdown server marks links to missing files and renames a heading with its links. After a move in Files, it offers to update the links that broke, as a Refactor Preview. It also serves the notes in each hub's `.oculus/notes/`, and no other file under a dot folder.
 - A definition outside the workspace opens in a read-only library tab.
 - An edit a server makes to other files is one History record. It is refused whole if a file it names is open in another page, outside the workspace, in `secrets` or `~/.oculus`, over 5 MB, or changed on disk, or if it creates, renames or deletes a file.
 - Apps can add languages and servers ([Apps guide](docs/apps.md), The tools). When oculus and an app both serve a language, their lists are joined, and single answers come from oculus first.
@@ -329,7 +345,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 ## Searching the files
 
 - A pattern runs on Enter. `word`, `case` and `regex` decide what it means; without `case` it ignores case.
-- It searches the workspace's folders with a local ripgrep. It skips ignored and hidden files, `node_modules`, `.git` and files over 2 MB. Find in Folder (Files menu) limits it to one folder, which is searched even when hidden or ignored.
+- It searches the workspace's folders with a local ripgrep. It skips ignored and hidden files, `node_modules`, `.git` and files over 2 MB. Find in Folder (Files menu) limits it to one folder, which is searched even when hidden or ignored. The notes in each hub's `.oculus/notes/` are searched too, listed under their hub; nothing else under a root's own `.oculus` is.
 - `search.max_hits` and `search.timeout_s` limit it. A line with two matches is two rows.
 - Replace: in regex mode `$0` to `$99` are groups, `\n` and `\t` escapes, and `\u`, `\U`, `\l`, `\L` change case. Preserve Case keeps the match's capitals.
 - Replace All asks first. A file changed since the search, locked, binary or open with unsaved text is skipped and named. The whole replace is one History record.
@@ -429,7 +445,7 @@ configurations:
 - A hub's `.oculus/local.yml` is this machine's: the port, `hpc_host`, the programs, the agent accounts, the calendar and mail accounts, the Literature keys, and where oculus keeps its files. Every key has a default. It stays out of git, and only the primary hub's file is read (the account rows are joined over every hub). The keys are in its template.
 - The rest of `.oculus/` (bookmarks, workspaces, schedules, notes, apps, pictures) is listed in the hub's Data map, `docs/DATA-MAP.md`.
 - `~/.oculus/` is oculus's own state: the open workspace, the change log, the local history, approvals, the language servers' folder, app stores, provider credentials. It is not for editing.
-- The change log (`changes.jsonl`) records every write oculus makes; History undoes one. A file saved from a source tab is not in it (its copy is in the local history). `changes.keep` sets how many are kept.
+- The change log (`changes.jsonl`) records every write oculus makes; History undoes one. A file saved from a source tab, a note included, is not in it (its copy is in the local history). `changes.keep` sets how many are kept.
 - The hub's data files, their keys and the views that show them are in the hub's Data map, `docs/DATA-MAP.md`, on the Help page.
 
 ### Hubs and projects

@@ -33,6 +33,13 @@
     // writing rules that ../WritingFixDialog.svelte draws, view-access.ts the tab's state. A row on
     // the clipboard as Cut is drawn faded, and a row marked `editing` by treeRows() is drawn as an
     // input (tree/NameInput.svelte) in place of its name.
+    //
+    // The Notes section draws its notes with this tree as well, handing in what only it has: the
+    // order its rows keep (`rowOrder`, which a drag between rows and Alt+Up and Alt+Down write),
+    // what its typed names make (`naming`), the controls of its group rows (`rowActions`), and the
+    // read again of a group whose row says why it could not be read (`onretry`). A row that is a
+    // sentence (`said`) is drawn muted, with the read again when it offers one, and takes no press
+    // or key.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
@@ -41,6 +48,7 @@
     import type { Attachment } from 'svelte/attachments';
     import { untrack, type Snippet } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import Failed from './Failed.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import FileChooser from '$lib/ui/forms/file/FileChooser.svelte';
     import { onMac } from '$lib/ui/controls/editor/kit/load';
@@ -49,8 +57,9 @@
     import Questions from '../Questions.svelte';
     import WritingFixDialog from '../WritingFixDialog.svelte';
     import { menuHints } from './menu/row-menu';
+    import type { NamingHooks } from './menu/row-ops';
     import { createAsking } from './control/asking.svelte';
-    import { createDragging } from './control/dragging.svelte';
+    import { createDragging, type RowOrder } from './control/dragging.svelte';
     import { createKeyed } from './control/keyed';
     import { createPicks } from './control/picks.svelte';
     import { createPressed } from './control/pressing';
@@ -130,6 +139,14 @@
          * none says it above its rows.
          */
         onrefused?: (note: string) => void;
+        /** The order the caller keeps its rows in; none for a tree whose rows the disk orders. */
+        rowOrder?: RowOrder;
+        /** What a typed name makes beyond what the Files tree makes. */
+        naming?: NamingHooks;
+        /** Controls a row draws beside its own, handed the row and the tabindex they take. */
+        rowActions?: Snippet<[TreeRow, number]>;
+        /** Read again what a row that is a sentence says could not be read. */
+        onretry?: () => void;
     };
 
     let {
@@ -154,7 +171,11 @@
         order = [],
         onreorder,
         onmoveheader,
-        onrefused
+        onrefused,
+        rowOrder,
+        naming: namingHooks,
+        rowActions,
+        onretry
     }: Props = $props();
 
     const client = useState();
@@ -200,7 +221,10 @@
         hints: menuHints(keymap, keyWords(t, mac)),
         isSelected,
         select: (row: TreeRow) => onselect(row),
-        onrefused: (note: string) => onrefused?.(note)
+        onrefused: (note: string) => onrefused?.(note),
+        get naming() {
+            return namingHooks;
+        }
     });
     const naming = picks.naming;
     const fix = $derived(picks.fixing.view());
@@ -232,7 +256,8 @@
         drawn: () => drawn,
         dropper: picks.dropper,
         order: () => order,
-        onreorder: (keys) => onreorder?.(keys)
+        onreorder: (keys) => onreorder?.(keys),
+        rowOrder: () => rowOrder
     });
 
     const keyed = createKeyed({
@@ -248,7 +273,8 @@
         onup: (to) => onup?.(to),
         order: () => order,
         onreorder: (keys) => onreorder?.(keys),
-        onmoveheader: (direction) => onmoveheader?.(direction)
+        onmoveheader: (direction) => onmoveheader?.(direction),
+        rowOrder: () => rowOrder
     });
 
     // The log is read again whenever a file operation was answered, so the next Cmd+Z is the
@@ -338,7 +364,25 @@
                         ondragend={dragger.ended}
                         {@attach measure}
                     >
-                        {#if row.editing !== undefined}
+                        {#if row.said !== undefined}
+                            {#if row.said.retry === true && onretry !== undefined}
+                                <Failed
+                                    label={row.said.text}
+                                    title={t('files.read_again_notes')}
+                                    {onretry}
+                                    row={{ id: rowKey(row), nav, depth: row.depth }}
+                                />
+                            {:else}
+                                <TreeItem
+                                    label={row.said.text}
+                                    id={rowKey(row)}
+                                    {nav}
+                                    level={row.depth + 1}
+                                    depth={row.depth}
+                                    tone="muted"
+                                />
+                            {/if}
+                        {:else if row.editing !== undefined}
                             <TreeItem
                                 label=""
                                 name={t('files.name_label')}
@@ -400,6 +444,7 @@
                                         onopen(one, false, pressedAt);
                                     }}
                                     {onbookmark}
+                                    more={rowActions}
                                 />
                             </ContextMenu>
                         {/if}

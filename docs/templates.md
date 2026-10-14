@@ -174,7 +174,6 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 
 # Where oculus keeps its files.
 # bookmarks: .oculus/bookmarks.yml
-# notes: .oculus/notes
 # schedules: .oculus/schedules.yml
 # apps_dir: .oculus/apps
 # changes: ~/.oculus/changes.jsonl

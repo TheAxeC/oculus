@@ -235,8 +235,8 @@ writes:
   timeout_seconds: 30
 
 
-# === Scratch notes ==========================================================
-# How long a note waits after the last keystroke before it is written, in milliseconds.
+# === Notes ==================================================================
+# How long a note of a hub's `.oculus/notes/` waits after the last keystroke before its source tab saves it, in milliseconds, whatever `editor.autosave` says. The save is the source tab's own, with its base, its history copy and its conflict rules, and closing the tab inside the wait saves first. A note renamed or moved while its tab holds unsaved text is followed by the tab, so the save writes to the new path; a note moved to the Trash closes its tab and its unsaved text is dropped, so no file appears at the old path.
 notes:
   autosave_ms: 800
 

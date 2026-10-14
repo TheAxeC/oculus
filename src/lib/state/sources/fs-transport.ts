@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import type { OpsRefusal } from '../../data/file-ops.ts';
-import type { Entry } from '../../data/model/index.ts';
+import type { Entry, HubNotes, NoteEntry } from '../../data/model/index.ts';
 import { OCULUS_CONFIG_ROOT, fileBytesUrl } from '../../data/helpers/files/address.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
 import {
@@ -103,14 +103,8 @@ export type BookmarksState = {
     loading: boolean;
 };
 
-/** One scratch note as the Files view lists it. */
-export type NoteRow = { id: string; title: string; modified: number };
-
-/** The scratch notes as the Files view reads them. */
-export type NotesState = { notes: NoteRow[]; error: string; loading: boolean };
-
-/** One note as its own view reads it. */
-export type NoteState = NoteRow & { body: string; error: string; loading: boolean };
+/** The notes of every hub as the Files view reads them, one answer per hub. */
+export type NotesState = { hubs: HubNotes[]; error: string; loading: boolean };
 
 /** One file's text as the code window reads it. */
 export type FileText = {
@@ -212,16 +206,7 @@ export const NO_TEXT: FileText = { text: '', truncated: false, error: '', loadin
 
 export const NO_BOOKMARKS: BookmarksState = { entries: [], error: '', loading: true };
 
-export const NO_NOTES: NotesState = { notes: [], error: '', loading: true };
-
-export const NO_NOTE: NoteState = {
-    id: '',
-    title: '',
-    body: '',
-    modified: 0,
-    error: '',
-    loading: true
-};
+export const NO_NOTES: NotesState = { hubs: [], error: '', loading: true };
 
 export { fileBytesUrl };
 
@@ -290,20 +275,30 @@ const bookmarkShape = unchanged(
 /** The bookmarks answer: the well-formed entries. */
 export const bookmarksShape = z.object({ entries: survivorsShape(bookmarkShape).catch([]) });
 
-/** One note of the list, answered as the endpoint sent it. */
-const noteRowShape = unchanged(
-    z.object({ id: z.string(), title: z.string(), modified: anyNumberShape })
-) satisfies z.ZodType<NoteRow>;
+/** One file or folder of a hub's notes folder, answered as the endpoint sent it. */
+const noteEntryShape = unchanged(
+    z.object({
+        path: z.string(),
+        kind: z.enum(['file', 'dir']),
+        modified: anyNumberShape,
+        links: z
+            .array(z.object({ to: z.string(), line: anyNumberShape, text: z.string() }))
+            .optional(),
+        tags: z.array(z.object({ tag: z.string(), line: anyNumberShape })).optional()
+    })
+) satisfies z.ZodType<NoteEntry>;
 
-/** The notes answer: the well-formed notes. */
-export const notesShape = z.object({ notes: survivorsShape(noteRowShape).catch([]) });
+/** One hub's notes, answered as the endpoint sent them: its well-formed entries. */
+const hubNotesShape = z.object({
+    root: z.string(),
+    primary: z.boolean().catch(false),
+    state: z.enum(['ok', 'none', 'refused', 'unreadable']),
+    error: z.string().catch(''),
+    entries: survivorsShape(noteEntryShape).catch([])
+}) satisfies z.ZodType<HubNotes>;
 
-/** One note's own answer: its title, its text and when it was written. */
-export const noteShape = z.object({
-    title: z.string().catch(''),
-    body: z.string().catch(''),
-    modified: anyNumberShape.catch(0)
-});
+/** The notes answer: the well-formed hubs. */
+export const notesShape = z.object({ hubs: survivorsShape(hubNotesShape).catch([]) });
 
 /** The endpoint the tree reads and the workspace actions write. */
 export const FS_PATH = '/api/fs';
@@ -415,11 +410,6 @@ export async function listingAnswer(url: string): Promise<Listing> {
             loading: false
         };
     }
-}
-
-/** The address one note's own text is read at. */
-export function noteUrl(id: string): string {
-    return `${FS_PATH}?note=${encodeURIComponent(id)}`;
 }
 
 /**

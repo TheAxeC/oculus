@@ -2,7 +2,8 @@
     // Layer 3, partial of views/sources/search/Search.svelte. What a search is asked for: the
     // pattern, which root it runs over, the folder under that root it is scoped to, and the three
     // options. The folder is a line of its own with a control that sends the search back to the
-    // whole root (views/shared/links/FolderLine.svelte).
+    // whole root (views/shared/links/FolderLine.svelte); a search of every root scoped to the notes
+    // folder, which a press on a tag opens, says it searches the notes of every hub.
     //
     // Nothing here runs a search on a keystroke. Typing writes the tab's own state and stops there;
     // Enter in the box and the pane's Search action are the two ways a run starts, since a search
@@ -118,9 +119,9 @@
 </Toolbar>
 {#if under !== ''}
     <FolderLine
-        text={t('search.in_folder', root, under)}
-        clear={t('search.clear_scope')}
-        title={t('search.clear_scope_title')}
+        text={root === ALL_ROOTS ? t('search.in_notes') : t('search.in_folder', root, under)}
+        clear={root === ALL_ROOTS ? t('search.clear_notes') : t('search.clear_scope')}
+        title={root === ALL_ROOTS ? t('search.clear_notes_title') : t('search.clear_scope_title')}
         onclear={onclearscope}
     />
 {/if}

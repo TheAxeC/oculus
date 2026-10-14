@@ -14,7 +14,9 @@
 // boxes hold now. The replace row, the replace text, Preserve Case and the last texts each box ran
 // are the tab's own state beside the query. A hit the reader dismissed is kept as a place
 // (`Dismissed`) beside the answer, so a replace that reads the written files' hits again leaves out
-// the ones the reader had taken out.
+// the ones the reader had taken out. A tab a press on a tag opened holds the tag (`tag`), and its
+// run keeps the hits the tag index holds and dismisses the others, so a replace's re-read leaves
+// them out too; a change to the query, a toggle, the root or the scope drops the tag.
 
 import { z } from 'zod';
 import type { Reread, ReplaceQuery } from '../../../data/file-ops.ts';
@@ -74,6 +76,8 @@ export type SearchState = SearchQuery & {
     queries: string[];
     /** The last texts the replace box ran, newest first. */
     replaces: string[];
+    /** The tag a press opened this search for, whose index the hits are kept to, or empty. */
+    tag: string;
 };
 
 /** The state a Search tab opens with. */
@@ -88,7 +92,8 @@ function emptySearchState(max: number): SearchState {
         replace: '',
         preserve: false,
         queries: [],
-        replaces: []
+        replaces: [],
+        tag: ''
     };
 }
 
@@ -248,7 +253,8 @@ const searchStateShape = z.object({
     replace: z.string().catch(''),
     preserve: z.boolean().catch(false),
     queries: z.array(z.string()).catch([]),
-    replaces: z.array(z.string()).catch([])
+    replaces: z.array(z.string()).catch([]),
+    tag: z.string().catch('')
 });
 
 /** One instance's saved state, read back safely from whatever the store holds. */
@@ -271,7 +277,8 @@ export function parseSearchState(value: unknown, max: number): SearchState {
         replace: held.replace,
         preserve: held.preserve,
         queries: held.queries.slice(0, HISTORY_KEPT),
-        replaces: held.replaces.slice(0, HISTORY_KEPT)
+        replaces: held.replaces.slice(0, HISTORY_KEPT),
+        tag: held.tag
     };
 }
 

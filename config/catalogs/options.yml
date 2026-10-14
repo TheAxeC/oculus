@@ -797,7 +797,7 @@ options:
         notes.autosave_ms:
             heading: editor
             section: Notes
-            help: Milliseconds a scratch note waits after the last keystroke before it is written.
+            help: Milliseconds a note of a hub's notes folder waits after the last keystroke before its tab saves it, whatever editor.autosave says. Closing the tab inside the wait saves first.
             default: 800
             control: number
         changes.keep:
@@ -1398,9 +1398,6 @@ options:
         bookmarks:
             section: Saved files
             help: Where the reader's own bookmarks live. Without it the file is .oculus/bookmarks.yml in the primary hub. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
-        notes:
-            section: Saved files
-            help: Where the scratch notes live. Without it the folder is .oculus/notes in the primary hub. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.
         changes:
             section: Saved files
             help: Where the change log lives. Without it the file is ~/.oculus/changes.jsonl. A value of ~ or one starting with ~/ is under the home folder, and any other relative value is resolved against the folder of the hub that holds this file. A change is read again at once.

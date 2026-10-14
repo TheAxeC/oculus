@@ -12,7 +12,10 @@ import { anyNumberShape, fieldItemsShape, readAs, wordShape } from '../../../dat
 import { personNames } from '../person.ts';
 import { typeTone } from '../../shared/words/tones.ts';
 
-export type GraphKind = 'project' | 'line' | 'collaborator';
+/**
+ * What a node stands for: the Map's projects, pillar lines and collaborators, a Notes Graph note.
+ */
+export type GraphKind = 'project' | 'line' | 'collaborator' | 'note';
 export type EdgeKind = 'membership' | 'collaborator' | 'related';
 export type Direction = 'none' | 'one' | 'mutual';
 

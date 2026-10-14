@@ -1,9 +1,9 @@
-// Layer 3, Map partial helper. Where a pointer lands in the graph, and what it holds there. The SVG
-// draws its box under `preserveAspectRatio="xMidYMid meet"`, so in a pane of another shape the
-// picture is scaled evenly and centred with empty bands on two sides; a pointer is mapped through
-// that letterbox to the box, then through the pane's pan and zoom to the graph. A dragged node
-// keeps the offset from the pointer it was grabbed at and is placed again only once the pointer has
-// moved a screen pixel, and the link pointer takes the nearest project in reach.
+// Layer 3, shared graph helper. Where a pointer lands in the graph (Graph.svelte), and what it
+// holds there. The SVG draws its box under `preserveAspectRatio="xMidYMid meet"`, so in a pane of
+// another shape the picture is scaled evenly and centred with empty bands on two sides; a pointer
+// is mapped through that letterbox to the box, then through the pane's pan and zoom to the graph.
+// A dragged node keeps the offset from the pointer it was grabbed at and is placed again only once
+// the pointer has moved a screen pixel, and the link pointer takes the nearest project in reach.
 //
 // Every function here is pure, so the drag, the link pointer, the pan and the wheel zoom share one
 // rule and it is checked without a page.

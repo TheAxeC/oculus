@@ -113,6 +113,8 @@ export type Join = {
     replied: boolean;
     /** The answer of every part that has answered, mapped to the page's addresses. */
     errors: unknown[];
+    /** The entry's own result the joined answer is joined to (held/requests/merged.ts). */
+    adds?: unknown;
 };
 
 /** Whether a server has declared the feature a request needs. */

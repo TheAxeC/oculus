@@ -145,19 +145,33 @@ export default defineConfig(({ mode }) => {
             // the machine's own sessions, and a suite that takes every core makes the timed cases
             // of the others miss their limits under the load.
             maxWorkers: 4,
-            // Two projects, each with its own files, so neither list is merged into the other's. A
-            // file named *.client.test.ts runs in Svelte's client runtime, where effects and their
+            // Three projects, each with its own files, so no list is merged into another's. A file
+            // named *.client.test.ts runs in Svelte's client runtime, where effects and their
             // teardowns run (tests/ui/frame/client-runtime.ts), with Svelte inlined so it is
             // resolved with the browser's conditions rather than loaded as Node loads its server
-            // build. Every other file runs in node against the server build, which renders a
-            // component to a string.
+            // build. A file named *.dom.test.ts runs in jsdom, a document in node, so a library that
+            // needs one (DOMPurify, which ui/html.ts sanitises with) runs as in the page. Every
+            // other file runs in node against the server build, which renders a component to a
+            // string.
             projects: [
                 {
                     extends: true,
                     test: {
                         name: 'unit',
                         environment: 'node',
-                        include: ['tests/**/*.test.ts', '!tests/**/*.client.test.ts']
+                        include: [
+                            'tests/**/*.test.ts',
+                            '!tests/**/*.client.test.ts',
+                            '!tests/**/*.dom.test.ts'
+                        ]
+                    }
+                },
+                {
+                    extends: true,
+                    test: {
+                        name: 'dom',
+                        environment: 'jsdom',
+                        include: ['tests/**/*.dom.test.ts']
                     }
                 },
                 {

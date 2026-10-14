@@ -502,6 +502,7 @@
         failed={draft.failed}
         said={note.words}
         tone={note.tone}
+        onsaid={(words: string) => note.say(words)}
     />
 </Pane>
 

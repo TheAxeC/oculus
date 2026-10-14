@@ -867,6 +867,8 @@ export type Pending = {
     address: string;
     /** The joined request this is one server's share of, when several servers answer it. */
     join?: Join;
+    /** The entry's own result the answer is joined to (requests/merged.ts), when it has one. */
+    adds?: unknown;
 };
 
 /** A server's request waiting for the page's answer, or one nobody waits for. */

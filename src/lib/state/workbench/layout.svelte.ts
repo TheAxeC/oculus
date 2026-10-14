@@ -764,7 +764,6 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         change,
         activateInstance: instances.activateInstance,
         closeInstancesOfView: instances.closeInstancesOfView,
-        closeRecord: instances.closeRecord,
         moveInstanceToPage: instances.moveInstanceToPage,
         closeInstance: instances.closeInstance,
         closePane: instances.closePane,

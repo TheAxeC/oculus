@@ -15,6 +15,7 @@ import {
 } from 'vscode-jsonrpc/node';
 import { afterEach, beforeEach, vi } from 'vitest';
 import type { Sink } from '../../../../src/lib/server/core/channels.ts';
+import type { Root } from '../../../../src/lib/server/files/files.ts';
 import type { LspRpc } from '../../../../src/lib/data/model/index.ts';
 import type { AppServersFeed } from '../../../../src/lib/server/machine/lsp/relay/relay-apps.ts';
 import type { LibraryRules } from '../../../../src/lib/server/machine/lsp/library/rules.ts';
@@ -235,7 +236,7 @@ export function plantRoot(
 
 /** A relay over stub processes, its roots handed in by a function so a case can change them. */
 export function makeRelay(options: {
-    roots: () => { key: string; dir: string }[];
+    roots: () => Root[];
     spawn: Spawn;
     run?: (command: string, args: string[]) => Promise<string | null>;
     exists?: (path: string) => boolean;

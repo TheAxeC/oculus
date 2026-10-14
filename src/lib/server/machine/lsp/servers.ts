@@ -21,7 +21,10 @@
 // root (adapters/markdown/). An entry may answer a request of the page itself (`answers`) before it
 // reaches the server: the YAML entry does so for the definition, references and rename of a hub
 // key, from the index the snapshot build makes, and the Markdown entry for the definition of a
-// backticked path. The Markdown server takes the notice of a created file only for a file it holds,
+// backticked path and the rename of a note a link names. An entry may also add a result of its own
+// to its server's answer (`adds`), which the relay joins to it: the Markdown entry adds the
+// completions, definitions and references of the links between notes (adapters/markdown/own/
+// wiki.ts). The Markdown server takes the notice of a created file only for a file it holds,
 // so the entry's `introduce` words the request that makes it read the file first
 // (adapters/markdown/requests.ts). clangd is the `clangd` on the oculus process's PATH, with
 // oculus's own arguments and no `--query-driver`; its index is written under the folder oculus
@@ -47,7 +50,8 @@ import { typescriptAdapter } from './adapters/web/typescript-adapter.ts';
 import { texlabAdapter } from './adapters/texlab/adapter.ts';
 import { texlabSettings } from './adapters/texlab/settings.ts';
 import { markdownAdapter } from './adapters/markdown/adapter.ts';
-import { answerMarkdown } from './adapters/markdown/answers.ts';
+import { answerMarkdown } from './adapters/markdown/own/answers.ts';
+import { addedWiki, answerWiki } from './adapters/markdown/own/wiki.ts';
 import { markdownDiagnostics } from './adapters/markdown/diagnostics.ts';
 import { markdownFiles } from './adapters/markdown/places.ts';
 import { introduceMarkdown, markdownRequests } from './adapters/markdown/requests.ts';
@@ -536,8 +540,8 @@ function texlab(options: ServersOptions): ServerEntry {
  * nothing else. It reads files only through the requests it makes of its client, which the entry
  * answers inside the served root (adapters/markdown/requests.ts). It publishes no diagnostics: the
  * relay asks for them (`pulls`). The entry adds its own mark and its own definition for a
- * backticked path (adapters/markdown/backticks.ts) and keeps every file `yaml` keeps from its
- * server.
+ * backticked path (adapters/markdown/own/backticks.ts), the answers of the links between notes
+ * (adapters/markdown/own/wiki.ts), and keeps every file `yaml` keeps from its server.
  */
 function markdown(options: ServersOptions): ServerEntry {
     const extensions = options.markdown ?? ((): string[] => ['md']);
@@ -565,7 +569,8 @@ function markdown(options: ServersOptions): ServerEntry {
         filesUnder: (folder, root, roots) => markdownFiles({ root, roots }, extensions(), folder),
         refuses: (real, roots) => isPrivateFile(real, roots),
         diagnostics: markdownDiagnostics,
-        answers: answerMarkdown,
+        answers: (request, view) => answerWiki(request, view) ?? answerMarkdown(request, view),
+        adds: addedWiki,
         results: markdownResults,
         capabilities: (language) => markdownCapabilities(language, serving, INCREMENTAL),
         commands: []

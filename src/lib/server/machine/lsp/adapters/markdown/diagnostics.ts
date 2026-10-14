@@ -2,12 +2,12 @@
 // marks for links to files that are not there, with the path inside the root in place of the
 // absolute path the server writes, and with every mark dropped whose path lies outside the root or
 // in a folder the server is never given; plus the entry's own mark for a backticked path that is
-// not there (backticks.ts). Both are worded by one catalog sentence, `source.md_no_such_path`.
+// not there (own/backticks.ts). Both are worded by one catalog sentence, `source.md_no_such_path`.
 
 import { relative, sep } from 'node:path';
 import { words } from '../../../../core/words.ts';
 import type { DiagnosticView } from '../../servers.ts';
-import { resolvedPaths } from './backticks.ts';
+import { resolvedPaths } from './own/backticks.ts';
 import { served } from './places.ts';
 
 /** The code of the server's mark for a link to a file that is not there. */

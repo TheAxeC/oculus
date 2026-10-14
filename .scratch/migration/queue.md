@@ -1,12 +1,12 @@
 In flight (1 of 6 slots in use):
-- D76 (notes like Obsidian): repair round 1 reported, its review over the round running, open item 102 to be done at its landing, from its review (Rename on a link, the .oculus search scope, tag search and multiline, the first note's name rule, a real sanitiser run, embeds as valid HTML, comment wraps).
+- D73 (the Literature view, the Files view showing hidden and ignored files by default, the domain, theme and feed settings moved to their files by open item 94, and the fourth part from open items 97 and 100): preparing; its brief and brief check are written and are checked again on main's head after D76's landing.
 
-Queued, in order (3 steps):
-- D73 (the Literature view, the Files view showing hidden and ignored files by default, and the domain, theme and feed settings moved to their files by open item 94): next; the documents and templates rewrite (open item 95) is agreed and committed; open items 97 and 100 are ruled into its fourth part (the palette and templates tabs, the generated Contents block, Add asking which hub), open item 99 adds the demo hub's move to the tests; then its brief check's findings are closed and the fourth part of open item 96 added.
-- Q72 (the architecture re-read): after D73, D74 and D76, so it reads their code.
+Queued, in order (2 steps):
+- Q72 (the architecture re-read): after D73, so it reads the code of D73, D74 and D76.
 - O33 (oculus in its own repository; inline): after Q72; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project).
 
 Landed, newest first:
+- D76 (notes like Obsidian), 2026-10-14, the landing commit (its hash written at the next commit).
 - D74 (the shell and source-control fixes), 2026-10-13, f92a0abe6.
 - D72 (collection entries as records of their own), 2026-10-13, f3c588783.
 - D64 (apps in the tools), 2026-10-13, 8b5782e89.

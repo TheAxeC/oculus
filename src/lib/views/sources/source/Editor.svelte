@@ -22,6 +22,12 @@
     // at most half the row (`EDITOR_LEAST`) and follows how far the editor is scrolled through its
     // text. A file of any other kind is the editor alone.
     //
+    // A note of a hub (a Markdown file of its `.oculus/notes/`) takes a picture pasted into it, and
+    // a file dropped on it from outside the page, into `attachments/` of its hub's notes folder and
+    // inserts `![[<file name>]]` at the caret (views/shared/explorer/control/note-actions.ts); a
+    // file refused inserts nothing and is said on the tab's line (`onsaid`). Any other paste and
+    // drop, and every paste and drop in a file that is no note, is the editor's own.
+    //
     // The editor spends no row on controls: Save, Revert, Blame and the rendered half are palette
     // actions of the tab, and Cmd+S saves it. The rendered half is
     // views/shared/prose/RenderedMarkdown.svelte. What the status bar and the palette ask of the
@@ -45,6 +51,9 @@
     import { NOWHERE, type OpenedAt } from './status/tab-state';
     import type { EditorOptions } from '$lib/ui/controls/editor/options';
     import { languageOf } from '$lib/state/sources/fs';
+    import { noteOf } from '$lib/state/sources/explorer/notes/note-index';
+    import type { Attached } from '$lib/state/sources/explorer/notes/note-attach';
+    import { attachToNote } from '$lib/views/shared/explorer/control/note-actions';
     import {
         shownLanguage,
         type Indent,
@@ -54,13 +63,19 @@
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
 
+    const client = useState();
     const {
+        fs: { notes },
         selectors: { editorOptions, languages, paintLimit },
         ui: { codeTheme, theme, textScale }
-    } = useState();
+    } = client;
 
     type Props = {
         path: string;
+        /** The root the file is under, which a note is read in; none for a file of no root. */
+        root?: string;
+        /** Says why a file pasted or dropped into a note was refused, '' when none was. */
+        onsaid?: (words: string) => void;
         text: string;
         /** The edits the text was last replaced by, which the editor makes as they are. */
         reached?: () => EditorReach | null;
@@ -112,6 +127,8 @@
 
     let {
         path,
+        root = '',
+        onsaid,
         text,
         reached,
         instance = 'tab',
@@ -233,6 +250,47 @@
     function reset(): void {
         share = 0.5;
     }
+
+    /** Whether the file is a note of a hub, which takes pictures and dropped files. */
+    const note = $derived(root !== '' && noteOf(notes().hubs, root, path) !== null);
+
+    /** Write files into the note's attachments and insert their links at the caret. */
+    async function attach(files: Attached[]): Promise<void> {
+        const answer = await attachToNote(client, root, files);
+        if (answer.inserted !== '') editor?.perform({ kind: 'insert', text: answer.inserted });
+        onsaid?.(answer.said);
+    }
+
+    /** A paste into a note holding pictures writes them; any other paste is the editor's. */
+    function pasted(event: ClipboardEvent): void {
+        const files = [...(event.clipboardData?.files ?? [])];
+        const pictures = files.filter((file) => file.type.startsWith('image/'));
+        if (!note || pictures.length === 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        void attach(pictures.map((file) => ({ file, pasted: true })));
+    }
+
+    /** Whether a drag carries files from outside the page, which a note takes. */
+    function carriesFiles(event: DragEvent): boolean {
+        return note && (event.dataTransfer?.types.includes('Files') ?? false);
+    }
+
+    /** A drag of files over a note is let drop; any other drag is the editor's. */
+    function dragging(event: DragEvent): void {
+        if (!carriesFiles(event)) return;
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    /** Files dropped on a note are written; any other drop is the editor's. */
+    function dropped(event: DragEvent): void {
+        const files = [...(event.dataTransfer?.files ?? [])];
+        if (!carriesFiles(event) || files.length === 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        void attach(files.map((file) => ({ file, pasted: false })));
+    }
 </script>
 
 <div
@@ -242,7 +300,13 @@
     data-language={shown}
 >
     <div class="row" bind:this={box}>
-        <div class="editor-wrap" style="flex: {split ? share : 1} 1 0">
+        <div
+            class="editor-wrap"
+            style="flex: {split ? share : 1} 1 0"
+            onpastecapture={pasted}
+            ondragovercapture={dragging}
+            ondropcapture={dropped}
+        >
             <MonacoEditor
                 bind:this={editor}
                 {text}
@@ -284,7 +348,7 @@
         {#if split}
             <Sash dir="row" {share} onresize={moved} onreset={reset} />
             <div class="rendered" style="flex: {1 - share} 1 0">
-                <RenderedMarkdown {path} {text} {fraction} />
+                <RenderedMarkdown {path} {root} {text} {fraction} />
             </div>
         {/if}
     </div>

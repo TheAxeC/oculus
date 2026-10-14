@@ -99,7 +99,6 @@ const FIELDS: (keyof LocalConfig)[] = [
     'sessionsCache',
     'sessionsOverrides',
     'bookmarks',
-    'notes',
     'changes',
     'history',
     'approvals',

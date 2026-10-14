@@ -1,153 +1,146 @@
 <script lang="ts">
-    // Layer 3, partial of views/sources/files/Files.svelte. The scratch notes as a section under
-    // the trees: a head that opens and closes it and carries the control that opens a new note, and
-    // one explorer row per note in the order kept in the notes folder (a new note is on top, and a
-    // row drags and moves with Alt+Up and Alt+Down), with what it is called, when it was last
-    // written, and its removal behind the confirm every write that can lose work sits behind.
+    // Layer 3, partial of views/sources/files/Files.svelte. The notes of every hub as a section
+    // under the trees: a head that opens and closes it and carries New Note (into the primary hub's
+    // notes folder, else the first hub's) and the control that opens the Notes Graph, and under it
+    // the Explorer's own tree (views/shared/explorer/tree/Tree.svelte) over each hub's
+    // `.oculus/notes/`, each hub a group row named by the workspace's name for it, with its own New
+    // Note and New Folder. A press, a key, the menu, the name input, Rename, Move to Trash and a
+    // drag act on a note as on any file of the Files tree, through the file operations, so each is
+    // in History and a note trashed is in the Trash.
     //
-    // The head is drawn in every state, since it is where a note is started: with no note the
-    // section says so in one muted row, and with notes that could not be read it says why in that
-    // row instead, with the control that reads them again beside it, as every other row of the tree
-    // carries its controls. The section is one stop of the focus order through
-    // ui/tree/TreeView.svelte.
-    //
-    // It holds nothing of its own but which row the confirm is open for, and even that is the id
-    // rather than a flag, so the dialog names the note it is about to remove.
+    // The rows, the record the tree keeps and what only this tree does (a typed name made a note,
+    // the order the notes keep) are notes-section.svelte.ts's. A group that lists nothing says why
+    // in one muted row, with the read again for notes that could not be read; a workspace with no
+    // hub is that one row and no New Note. The head is the tree's first row, so the arrow keys walk
+    // from it into the groups, and Alt+Up and Alt+Down on it move the section.
 
-    import Confirm from '$lib/ui/controls/Confirm.svelte';
-    import Failed from '$lib/views/shared/explorer/tree/Failed.svelte';
-    import Section from '$lib/views/shared/explorer/sections/Section.svelte';
+    import { untrack } from 'svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import TreeView from '$lib/ui/tree/TreeView.svelte';
-    import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import {
-        createListDrag,
-        listKeys,
-        type ListSectionProps
-    } from '$lib/views/shared/explorer/sections/list-drag.svelte';
-    import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import type { TreeNav } from '$lib/ui/tree/tree-keys';
+    import Tree from '$lib/views/shared/explorer/tree/Tree.svelte';
+    import type { SectionMove } from '$lib/views/shared/explorer/sections/list-drag.svelte';
+    import { HEADER_ID, type TreeRow } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
-    import { stamp } from '$lib/state/life/notes';
+    import { useState } from '$lib/state/client/use';
+    import { createNotesSection } from './notes-section.svelte';
 
     type Props = {
-        rows: { id: string; title: string; modified: number }[];
-        onadd: () => void;
-        onopen: (id: string) => void;
-        onremove: (id: string) => void;
-    } & ListSectionProps;
+        /** The Files tab the section is drawn in. */
+        owner: string;
+        open: boolean;
+        ontoggle: () => void;
+        move: SectionMove;
+        /** Say what a press answered on the Files view's line of the instance it was made in. */
+        onnote: (owner: string, note: string) => void;
+    };
 
-    let { rows, error, open, ontoggle, onadd, onopen, onremove, onretry, move, onorder }: Props =
-        $props();
+    let { owner, open, ontoggle, move, onnote }: Props = $props();
 
-    /** The drags of the note rows over each other. */
-    const list = createListDrag({
-        type: 'application/x-oculus-note',
-        order: () => rows.map((row) => row.id),
-        drawn: () => rows.map((row) => row.id),
-        write: (ids) => onorder(ids)
+    const client = useState();
+    const {
+        fs: { retryNotes },
+        layout: { openView }
+    } = client;
+
+    const section = createNotesSection(client, {
+        owner: () => owner,
+        say: (from: string, note: string) => onnote(from, note)
     });
 
-    /** The note the confirm is open for, and the empty string while it is closed. */
-    let asked = $state('');
+    // A read that failed holds nothing, so the section asks again when it is drawn; untracked, so
+    // a read that fails again is not itself the reason for another ask.
+    $effect(() => {
+        untrack(() => retryNotes());
+    });
 
-    const named = $derived(rows.find((row) => row.id === asked));
-
-    const keyRows = $derived([
-        { id: 'head', parent: null, open },
-        ...(open ? rows.map((row) => ({ id: `note:${row.id}`, parent: 'head' })) : [])
-    ]);
-
-    /** What a note is listed as: its own title, or the words for one that has none yet. */
-    function nameOf(row: { title: string }): string {
-        return row.title.trim() === '' ? t('files.note_untitled') : row.title;
-    }
+    /** The roots of the groups, for the absolute path a dragged row carries. */
+    const roots = $derived(section.groups.map((one) => one.root));
 </script>
 
-<div class="notes" data-fs-notes>
-    <TreeView
+{#snippet header(nav: TreeNav)}
+    <TreeItem
         label={t('files.notes')}
-        rows={keyRows}
-        {ontoggle}
-        keymap={MOVE_KEYMAP}
-        onkey={listKeys(move, list, 'note:')}
+        id={HEADER_ID}
+        {nav}
+        level={1}
+        heading
+        expanded={open}
+        title={open
+            ? t('files.header_close_title', t('files.notes'))
+            : t('files.header_open_title', t('files.notes'))}
+        onclick={ontoggle}
+        drag={move.drag}
+        showActions
     >
-        {#snippet children(nav: TreeNav)}
-            <Section
-                label={t('files.notes')}
-                {nav}
-                count={rows.length}
-                {open}
-                {ontoggle}
-                add={{
-                    label: t('files.add_note'),
-                    title: t('files.add_note_title'),
-                    glyph: t('files.note_glyph')
-                }}
-                {onadd}
-                showActions
-                drag={move?.drag}
-            >
-                {#if error !== ''}
-                    <li role="none">
-                        <Failed
-                            label={t('files.notes_failed', error)}
-                            title={t('files.read_again_notes')}
-                            {onretry}
-                        />
-                    </li>
-                {:else if rows.length === 0}
-                    <li role="none">
-                        <TreeItem label={t('files.notes_empty')} tone="muted" />
-                    </li>
-                {/if}
-                {#each rows as row (row.id)}
-                    <li role="none" data-fs-note={row.id}>
-                        <TreeItem
-                            label={nameOf(row)}
-                            id={`note:${row.id}`}
-                            {nav}
-                            level={2}
-                            glyph={t('files.note_glyph')}
-                            title={t('files.note_open_title', nameOf(row))}
-                            onclick={() => onopen(row.id)}
-                            drag={list.row(row.id)}
-                        >
-                            {#snippet detail()}
-                                {stamp(row.modified)}
-                            {/snippet}
-                            {#snippet actions(reach: number)}
-                                <ToolButton
-                                    label={t('files.note_delete')}
-                                    glyph="trash"
-                                    compact
-                                    tabindex={reach}
-                                    title={t('files.note_delete_title', nameOf(row))}
-                                    onclick={() => (asked = row.id)}
-                                />
-                            {/snippet}
-                        </TreeItem>
-                    </li>
-                {/each}
-            </Section>
+        {#snippet actions(reach: number)}
+            {#if section.headHub !== undefined}
+                <ToolButton
+                    label={t('files.add_note')}
+                    title={t('notes.add_title', section.headHub.root.key)}
+                    glyph={t('files.note_glyph')}
+                    compact
+                    tabindex={reach}
+                    onclick={section.newNote}
+                />
+            {/if}
+            <ToolButton
+                label={t('notes.graph')}
+                title={t('notes.graph_title')}
+                glyph={t('notes.graph_glyph')}
+                compact
+                tabindex={reach}
+                onclick={() => openView('notes-graph')}
+            />
         {/snippet}
-    </TreeView>
-</div>
+    </TreeItem>
+{/snippet}
 
-{#if named !== undefined}
-    <Confirm
-        message={t('files.note_delete_confirm')}
-        detail={nameOf(named)}
-        confirm={t('files.note_delete')}
-        cancel={t('files.cancel')}
-        onconfirm={() => {
-            const id = asked;
-            asked = '';
-            onremove(id);
-        }}
-        oncancel={() => (asked = '')}
+{#snippet groupActions(row: TreeRow, reach: number)}
+    {#if row.depth === 0}
+        <ToolButton
+            label={t('notes.new_note')}
+            title={t('notes.add_title', row.name)}
+            glyph="file_add"
+            compact
+            tabindex={reach}
+            onclick={() => section.start('file', row)}
+        />
+        <ToolButton
+            label={t('notes.new_folder')}
+            title={t('notes.add_folder_title', row.name)}
+            glyph="folder_add"
+            compact
+            tabindex={reach}
+            onclick={() => section.start('folder', row)}
+        />
+    {/if}
+{/snippet}
+
+<div class="notes" data-fs-notes>
+    <Tree
+        rows={section.rows}
+        {roots}
+        filtering={false}
+        selected={section.view.selected}
+        owner={section.key}
+        fixed={roots.map((one) => one.key)}
+        marked={section.marked}
+        {header}
+        headerOpen={open}
+        onselect={section.select}
+        ontoggle={section.toggle}
+        onopen={section.open}
+        onremove={() => undefined}
+        onbookmark={(row: TreeRow) => void section.marking.bookmark(row)}
+        onmoveheader={(direction: 'up' | 'down') => move.step(direction)}
+        onrefused={(note: string) => onnote(owner, note)}
+        rowOrder={section.rowOrder}
+        naming={section.naming}
+        rowActions={groupActions}
+        onretry={retryNotes}
     />
-{/if}
+</div>
 
 <style>
     .notes {

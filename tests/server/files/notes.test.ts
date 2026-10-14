@@ -9,15 +9,15 @@ import { lstatSync, readFileSync, readlinkSync, symlinkSync, writeFileSync } fro
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
-import { saveNote, writeNoteOrder } from '../../../src/lib/server/files/fs/notes.ts';
+import { writeNoteOrder } from '../../../src/lib/server/files/fs/notes.ts';
 import { it, scratchDir } from '../../fixtures/scratch.ts';
 
 /** A notes folder holding the notes `one` and `two`, inside the temporary directory. */
 function folder(): string {
     const dir = scratchDir('oculus-notes-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    saveNote(dir, 'one', 'One', 'first');
-    saveNote(dir, 'two', 'Two', 'second');
+    writeFileSync(join(dir, 'one.md'), 'first');
+    writeFileSync(join(dir, 'two.md'), 'second');
     return dir;
 }
 

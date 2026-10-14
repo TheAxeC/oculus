@@ -32,6 +32,10 @@ import { HUB_FILE, TIERS } from '../../../src/lib/data/helpers/hub-names.ts';
 import { REFUSALS } from '../../../src/lib/server/edit/yaml/why.ts';
 import { SERVED_LANGUAGES, factsForLanguage } from '../../../src/lib/data/prose/lsp-servers.ts';
 import { LSP_EDIT_NOTICES } from '../../../src/lib/data/prose/text-edits.ts';
+import {
+    nameRefusalMessage,
+    type NameRefusal
+} from '../../../src/lib/data/prose/markdown/note-names.ts';
 import { symbolKindName } from '../../../src/lib/data/prose/symbol-kinds.ts';
 import { registerAll, registerApps, registerCollections } from '../../../src/routes/views.ts';
 import { fixtureApp } from '../../fixtures/entities-fixture.ts';
@@ -169,6 +173,21 @@ const INDEX =
 
 /** The first argument when it is a plain string literal, and nothing when it is not. */
 const LITERAL = /^\s*(?:'([^'\\]*)'|"([^"\\]*)")\s*[,)]/;
+
+/** One refusal of each reason a note's name is refused for, held to the type's list of reasons. */
+const NAME_REFUSALS: Record<NameRefusal['why'], NameRefusal> = {
+    empty: { why: 'empty' },
+    dot: { why: 'dot' },
+    long: { why: 'long' },
+    char: { why: 'char', char: ':' },
+    control: { why: 'control', char: '\u0001' },
+    taken: { why: 'taken', name: 'Kickoff' }
+};
+
+/** The catalog keys a refused note name is worded by. */
+function nameRefusalKeys(): string[] {
+    return Object.values(NAME_REFUSALS).map((refusal) => nameRefusalMessage(refusal).key);
+}
 
 /** The computed prefixes, with the file that computes each and the catalog keys it covers. */
 const COMPUTED_PREFIXES = [
@@ -346,6 +365,19 @@ const COMPUTED_PREFIXES = [
         file: 'lib/state/workbench/navigation/registry.ts',
         start: 'lookup(registration.headingKey)',
         keys: () => ['apps.heading_explorer']
+    },
+    {
+        // A note's name the rule refuses is worded by the key nameRefusalMessage of
+        // data/prose/markdown/note-names.ts gives for the reason, on the page and in the Markdown
+        // server's rename alike.
+        file: 'lib/state/sources/explorer/notes/note-tree.ts',
+        start: 't(message.key',
+        keys: () => nameRefusalKeys()
+    },
+    {
+        file: 'lib/server/machine/lsp/adapters/markdown/own/wiki.ts',
+        start: 'words(view.catalog, message.key',
+        keys: () => nameRefusalKeys()
     },
     {
         // A symbol of the palette's `#` list is worded by its kind, the protocol's own list.

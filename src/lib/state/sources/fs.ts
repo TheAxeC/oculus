@@ -13,8 +13,10 @@
 //   acts/                   what a press, a key or a drop does to rows: selection, keys, drops,
 //                           the folder panel's answer, which log record Cmd+Z takes back
 //   sections/               the Open Editors, Outline and Timeline sections under the tree
+//   notes/                  the notes of every hub: the Notes section's tree, what the page
+//                           reads out of them, the links a move rewrites, the stores' asks
 //
-// The modules of acts/ and sections/ are imported by their own paths.
+// The modules of acts/, sections/ and notes/ are imported by their own paths.
 //
 // What a name says about a file is state/sources/explorer/file-type.ts's, exported from here with
 // the rest of the browser. Whether a Monaco language is a LaTeX source tab's (`latex` or `bibtex`)

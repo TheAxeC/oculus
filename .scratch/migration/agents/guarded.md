@@ -18,7 +18,7 @@ One entry per guarantee. An entry keeps one test per unit it covers: each API ro
   Test: mail callback: `tests/server/accounts/mail/routes.test.ts`, 'writes nothing for a state this process never minted'; calendar callback: `tests/server/accounts/connect/oauth.test.ts`, 'answers 400 and writes nothing for a state this process did not mint'.
 - G5. Hub or feed text reaches HTML only through the sanitiser.
   Code: `src/lib/ui/html.ts`.
-  Test: `tests/ui/html.test.ts`, 'is the sanitiser over the inline renderer, so no field reaches a card around it'.
+  Test: `tests/ui/html.dom.test.ts` (run in jsdom, so DOMPurify filters), 'is the sanitiser over the inline renderer, so no field reaches a card around it', 'drops a handler, a script and a style from a slide's Markdown and keeps its markup' and 'keeps KaTeX's markup of a formula and drops a handler written beside it'.
 - G6. A git action that can lose work or move a branch needs `confirm: true`. Each action of the `CONFIRMED` lists is a unit.
   Code: `CONFIRMED` in `src/lib/server/git/git-routes.ts` and `deposit-routes.ts`.
   Test: git route, 18 actions: `tests/routes/git/git.test.ts`, 'refuses each asking action unconfirmed, and takes it confirmed with its fields'; commit: same file, 'refuses a commit that the page did not confirm'; push: same file, 'asks for the confirm of an action whose confirm is not the boolean true'; trashUntracked: `tests/routes/git/untracked.test.ts`, 'refuses a request the page did not confirm'; deposit push: `tests/routes/git/deposit.test.ts`, 'refuses a push that the page did not confirm'.

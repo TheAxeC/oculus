@@ -18,7 +18,10 @@ export type NamedBy = {
     versions: Map<string, number | null>;
 };
 
-/** The files a workspace edit names; a create, rename or delete is for the page to refuse. */
+/**
+ * The files a workspace edit names with a text edit. A create, rename or delete is for the page,
+ * which makes the rename of a note in its notes folder and refuses every other.
+ */
 export function namedBy(edit: unknown): NamedBy {
     const named: NamedBy = { pages: [], versions: new Map() };
     if (!isRecord(edit)) return named;
@@ -137,7 +140,8 @@ export function nameOfPage(page: string): string {
 /**
  * The `initialize` parameters with the capabilities of the edits the page makes: the server may
  * ask for `workspace/applyEdit`, and its workspace edits may hold `documentChanges` that are all
- * applied or none. No resource operation is declared, so a server sends none.
+ * applied or none. No resource operation is declared, so a server sends none; the one the page
+ * is sent is the rename of a note, in the Markdown entry's own answer to a rename on a link.
  */
 export function declaringEdits(params: unknown): unknown {
     if (!isRecord(params)) return params;

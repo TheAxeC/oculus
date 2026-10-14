@@ -1,7 +1,8 @@
 // Layer 2, client-state tests. The autosave store (state/sessions/source/autosave.svelte.ts), in
 // Svelte's client runtime since it registers an effect: which tabs `editor.autosave` saves, when,
-// and what it refuses. The store runs on a pair of timers the test moves by hand, over the fake
-// server of source-server.ts, so each case says exactly how much time has passed.
+// and what it refuses, and a note's own wait, which saves it whatever the mode. The store runs on a
+// pair of timers the test moves by hand, over the fake server of source-server.ts, so each case
+// says exactly how much time has passed.
 //
 // It does not cover the editor's blur or the window's focus events, which the look does.
 
@@ -20,6 +21,9 @@ afterEach(() => vi.unstubAllGlobals());
 
 const KEY = 'fixture/a.md';
 const ONE = hashOf('one\n');
+
+/** The wait of a note, as `notes.autosave_ms` ships it. */
+const NOTE_WAIT = 800;
 
 type Timers = Parameters<typeof createAutosave>[0]['timers'];
 
@@ -47,8 +51,11 @@ function clock(settled: () => Promise<void>): Timers & { advance: (ms: number) =
     };
 }
 
-/** An autosave store over a fake server, in a mode and with a delay the test can change. */
-function make(over: { mode: Autosave; delay: number; format: boolean }) {
+/**
+ * An autosave store over a fake server, in a mode and with a delay the test can change; with
+ * `note`, fixture/a.md is a note that waits NOTE_WAIT.
+ */
+function make(over: { mode: Autosave; delay: number; format: boolean; note: boolean }) {
     const env = server({
         rules: () => ({ trim: false, finalNewline: false, formatOnSave: over.format })
     });
@@ -60,7 +67,8 @@ function make(over: { mode: Autosave; delay: number; format: boolean }) {
             source: env.source,
             options: () => ({ autosave: mode.get(), autosaveDelay: delay.get() }),
             rules: () => ({ trim: false, finalNewline: false, formatOnSave: over.format }),
-            timers: time
+            timers: time,
+            note: (file) => (over.note && file === KEY ? NOTE_WAIT : null)
         })
     );
     flushSync();
@@ -87,6 +95,8 @@ type Step =
     | { save: string }
     /** A close of these tabs asks the autosave store to save the ones its mode covers. */
     | { close: string[] }
+    /** The tab's file was removed, and its waiting save is dropped. */
+    | { drop: string }
     /** The number of saves the store has sent so far. */
     | { sentSoFar: number };
 
@@ -96,6 +106,8 @@ type Row = {
     mode: Autosave;
     delay?: number;
     format?: boolean;
+    /** Whether fixture/a.md is a note. */
+    note?: true;
     steps: Step[];
     sent?: Record<string, unknown>[];
     files?: Record<string, string>;
@@ -281,6 +293,60 @@ const rows: Row[] = [
         sent: saves ? [{ content: 'typed\n' }] : []
     })),
     {
+        title: 'saves a note once, notes.autosave_ms after its last edit, under off',
+        mode: 'off',
+        note: true,
+        steps: [
+            ...TYPED,
+            { advance: NOTE_WAIT - 1 },
+            { sentSoFar: 0 },
+            { advance: 1 },
+            { sentSoFar: 1 },
+            { advance: 5000 }
+        ],
+        sent: [{ content: 'typed\n', base: ONE }],
+        dirty: { one: false }
+    },
+    {
+        title: "starts a note's wait again at each edit, so typing every 500 ms for 3 s saves it once",
+        mode: 'off',
+        note: true,
+        steps: [
+            { open: 'one' },
+            ...KEYSTROKES,
+            { sentSoFar: 0 },
+            { advance: NOTE_WAIT - 500 - 1 },
+            { sentSoFar: 0 },
+            { advance: 1 }
+        ],
+        sent: [{ content: 'typed 6\n' }]
+    },
+    {
+        title: 'writes nothing for a note marked changed, and keeps its text',
+        mode: 'off',
+        note: true,
+        steps: [...TYPED, { outside: 'another program\n' }, { advance: 5000 }],
+        sent: [],
+        files: { [KEY]: 'another program\n' },
+        dirty: { one: true },
+        drafts: { one: { disk: 'changed', text: 'typed\n' } }
+    },
+    {
+        title: 'writes nothing for a note whose file was removed while its save waited',
+        mode: 'off',
+        note: true,
+        steps: [...TYPED, { drop: 'one' }, { advance: 5000 }],
+        sent: []
+    },
+    {
+        title: "under off saves a note's tab first on a close",
+        mode: 'off',
+        note: true,
+        steps: [...TYPED, { close: ['one'] }],
+        dirty: { one: false },
+        sent: [{ content: 'typed\n', base: ONE }]
+    },
+    {
         title: 'leaves a tab whose save is refused unsaved, for the question to ask about',
         mode: 'on_focus_change',
         steps: [...TYPED, { silently: 'another program\n' }, { close: ['one'] }],
@@ -291,7 +357,12 @@ const rows: Row[] = [
 
 describe('the autosave store', () => {
     it.each(rows)('$title', async (row) => {
-        const env = make({ mode: row.mode, delay: row.delay ?? 1000, format: row.format === true });
+        const env = make({
+            mode: row.mode,
+            delay: row.delay ?? 1000,
+            format: row.format === true,
+            note: row.note === true
+        });
         for (const step of row.steps) {
             if ('open' in step) {
                 const [path, text] = step.open === 'one' ? ['a.md', 'one\n'] : ['b.md', 'b\n'];
@@ -323,6 +394,8 @@ describe('the autosave store', () => {
                 await env.source.saveSourceDraft(step.save, 'fixture', 'a.md');
             } else if ('close' in step) {
                 await env.autosave.saveBeforeClose(step.close);
+            } else if ('drop' in step) {
+                env.autosave.drop(step.drop);
             } else {
                 expect(env.sent).toHaveLength(step.sentSoFar);
             }

@@ -37,7 +37,8 @@ import {
     rowPicker,
     rowStores
 } from '../menu/row-menu';
-import { holdsContents, rowNaming, rowOpsPicker } from '../menu/row-ops';
+import { holdsContents, rowNaming, rowOpsPicker, type NamingHooks } from '../menu/row-ops';
+import { landingRefusal } from '$lib/state/sources/explorer/notes/note-tree';
 import type { Asking } from './asking.svelte';
 import { createFixing } from './fixing.svelte';
 import type { ViewAccess } from './view-access';
@@ -69,6 +70,8 @@ export type PicksDeps = {
     select: (row: TreeRow) => void;
     /** Say a refusal, or its end with the empty text, on the caller's own line. */
     onrefused?: (note: string) => void;
+    /** What the tree does with a typed name beyond the Files tree's (the Notes section's notes). */
+    naming?: NamingHooks;
 };
 
 export type Picks = ReturnType<typeof createPicks>;
@@ -148,7 +151,16 @@ export function createPicks(deps: PicksDeps) {
                 deckMade(
                     { act: 'create', root: folder.root, folder: folder.path, title },
                     folder.root
-                )
+                ),
+            refuse: (root: string, path: string) =>
+                landingRefusal(
+                    client.fs.roots().some((one) => one.key === root && one.hub === true),
+                    path,
+                    t
+                ),
+            get hooks() {
+                return deps.naming;
+            }
         },
         t
     );

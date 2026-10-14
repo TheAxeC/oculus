@@ -64,7 +64,7 @@ import { decodeHTML } from 'entities';
 import type { MarkedExtension, Token, Tokens } from 'marked';
 import { fileBytesUrl } from '../../data/helpers/files/address.ts';
 import { hasHiddenSegment } from '../../data/helpers/files/paths.ts';
-import { renderDocumentParts } from '../../data/prose/markdown.ts';
+import { renderDocumentParts } from '../../data/prose/markdown/markdown.ts';
 import { configDir } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../../data/sources/documents/docs.ts';
@@ -288,7 +288,7 @@ function climbs(path: string): boolean {
  * A document of oculus's own (`own`) is also cut at its diagrams: see cutDiagrams.
  *
  * Every heading carries an id and a `[TOC]` paragraph is drawn as the document's table of
- * contents, by the document rule of data/prose/markdown.ts the page renders with too.
+ * contents, by the document rule of data/prose/markdown/markdown.ts the page renders with too.
  */
 export function renderMarkdown(
     text: string,

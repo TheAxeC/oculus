@@ -1,10 +1,9 @@
 // Layer 3, shared view partial. The drag and the keys that put one item of a list before or after
-// another: the section heads of the Files view and of the Session view, the bookmarks and the
-// notes. A list is named by the type its drags carry, and each list holds the item its own drag
-// carries and marks that drag with a type of its own, so a drag from another list, from the same
-// kind of list of another Files tab, or from outside the page is no drop, whatever an earlier drag
-// left behind. The order arithmetic is state/sources/explorer/acts/reorder.ts's and the write is
-// the caller's.
+// another: the section heads of the Files view and of the Session view, and the bookmarks. A list
+// is named by the type its drags carry, and each list holds the item its own drag carries and marks
+// that drag with a type of its own, so a drag from another list, from the same kind of list of
+// another Files tab, or from outside the page is no drop, whatever an earlier drag left behind. The
+// order arithmetic is state/sources/explorer/acts/reorder.ts's and the write is the caller's.
 //
 // `order` is every item of the list in the order written and `drawn` the ones the reader sees, so
 // an item that is not drawn is no drop target and keeps its place among its neighbours. A drop
@@ -119,7 +118,7 @@ export type SectionMove = {
 };
 
 /**
- * What a section with a list of movable rows (Bookmarks, Notes) is handed besides its rows: the
+ * What a section with a list of movable rows (Bookmarks) is handed besides its rows: the
  * failure of its read, whether it is open, and the controls that toggle it, read it again and put
  * its rows in the order the ids name after a drop or Alt+Up/Down on a row.
  */

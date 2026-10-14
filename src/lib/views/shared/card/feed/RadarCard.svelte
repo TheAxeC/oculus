@@ -25,7 +25,7 @@
         type Project,
         type RadarEntry
     } from '$lib/state/feeds/radar';
-    import { posting } from '$lib/views/shared/forms/posting';
+    import { posting } from './posting';
     import { textOrNumber } from '$lib/data/shapes/shapes';
     import { entryPageState } from '$lib/state/forms/page-entry';
     import { feedRoot } from '$lib/state/shared/page/idents';

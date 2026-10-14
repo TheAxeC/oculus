@@ -33,10 +33,11 @@
     // breadcrumb bar (shared/links/FileBarActions.svelte) with Open Source, which opens the file's
     // source tab, kept, in the same pane as VS Code's Markdown: Open Source does on its preview,
     // and the bookmark and Open in Program items are in the tab's right-click menu
-    // (shell/panes/strip/tab-menu.ts). The rendering is shared/prose/RenderedMarkdown.svelte,
-    // which the source tab's rendered half draws too; here its scroll box is where the keyboard
-    // goes when a double click keeps the tab (PaneBody.svelte). The headings it draws are said to
-    // the Outline, and a press on an Outline row scrolls the tab to that heading
+    // (shell/panes/strip/tab-menu.ts). The rendering is shared/prose/RenderedMarkdown.svelte, which
+    // the source tab's rendered half draws too, handed the root so a note of a hub is drawn with
+    // its links, embeds and tags, and its formulas typeset; here its scroll box is where the
+    // keyboard goes when a double click keeps the tab (PaneBody.svelte). The headings it draws are
+    // said to the Outline, and a press on an Outline row scrolls the tab to that heading
     // (shared/prose/rendered-headings.svelte.ts).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -132,6 +133,7 @@
             {/if}
             <RenderedMarkdown
                 {path}
+                {root}
                 text={file.text}
                 loading={file.loading}
                 error={file.error}

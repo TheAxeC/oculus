@@ -13,9 +13,9 @@
 
 import { readdirSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { inside } from '../../../../core/paths.ts';
-import { normal } from '../../uris.ts';
-import { withheld, type Reach } from './places.ts';
+import { inside } from '../../../../../core/paths.ts';
+import { normal } from '../../../uris.ts';
+import { withheld, type Reach } from '../places.ts';
 
 /** A counted span of one line of a text. */
 type Backticked = {

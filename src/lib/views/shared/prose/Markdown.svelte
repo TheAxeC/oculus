@@ -1,14 +1,18 @@
 <script lang="ts">
     // Layer 3, shared view partial. One Markdown document drawn as prose: the answer is still being
-    // read, it failed, or it is the HTML the document rule of data/prose/markdown.ts rendered. The
-    // doc, help and project views draw a fetched document with it, and RenderedMarkdown.svelte
-    // draws the text it renders on the page, for the source tab's rendered half and for the
-    // Markdown preview tab.
+    // read, it failed, or it is the HTML the document rule of data/prose/markdown/markdown.ts
+    // rendered. The doc, help and project views draw a fetched document with it, and
+    // RenderedMarkdown.svelte draws the text it renders on the page, for the source tab's rendered
+    // half and for the Markdown preview tab.
     //
-    // The HTML is somebody's Markdown turned into markup by marked, so it is drawn through
-    // ui/html.ts's sanitise and holds only what that profile allows. The words for the two states
-    // the document is not in come from the view that owns the document, since each of them names
-    // what it is reading; the pending line is an Empty state and the failure its error box.
+    // The HTML is somebody's Markdown turned into markup by marked, so it is sanitised by
+    // ui/html.ts and holds only what its profiles allow. The words for the two states the document
+    // is not in come from the view that owns the document, since each of them names what it is
+    // reading; the pending line is an Empty state and the failure its error box.
+    //
+    // A view that hands `onlink` answers a press on its own links first (a note's links and tags),
+    // and one that hands `slots` hands the formulas its renderer held apart (RenderedMarkdown's),
+    // which the sanitiser puts back through a profile of their own.
     //
     // A press on a link to a fragment is handled inside the view by jump.ts, never through the
     // address. A view that says `follow` also has a press on a relative link to a Markdown file
@@ -27,7 +31,7 @@
     // hub serves, which opens it in the file view. With neither, nothing opens.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import { sanitise } from '$lib/ui/html';
+    import { sanitise, type MathSlots } from '$lib/ui/html';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { t } from '$lib/state/shared/words/text';
@@ -62,9 +66,13 @@
         surface?: boolean;
         /** Whether a relative link to a Markdown file opens that document in a tab. */
         follow?: boolean;
+        /** The formulas the renderer held apart from `doc.html` (blockMarkdownParts). */
+        slots?: MathSlots;
+        /** Answers a press on a link first: true when it handled the address, which is kept. */
+        onlink?: (href: string) => boolean;
     };
 
-    let { doc, loading, failed, surface = true, follow = false }: Props = $props();
+    let { doc, loading, failed, surface = true, follow = false, slots, onlink }: Props = $props();
 
     /**
      * The client's stores, which Open Image opens the file view through. A document drawn outside
@@ -140,6 +148,19 @@
         follow ? { from: doc.path, open } : undefined
     );
 
+    /**
+     * A press in the document: a link the view answers itself, else the fragment and the follower.
+     */
+    function pressed(event: MouseEvent): void {
+        const link = event.target instanceof Element ? event.target.closest('a') : null;
+        const href = link?.getAttribute('href') ?? '';
+        if (onlink !== undefined && href !== '' && onlink(href)) {
+            event.preventDefault();
+            return;
+        }
+        jump(event, follower);
+    }
+
     function picked(pick: string): void {
         prosePicked(pick, heard, {
             openView: (view: string, state: unknown) => client?.layout.openView(view, state)
@@ -156,14 +177,9 @@
          box only hears it bubble up, so the box itself takes no key and no focus. -->
     <ContextMenu label={t('ui.prose_menu')} read={pointed} onpick={picked}>
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div
-            class="doc"
-            class:surfaced={surface}
-            onclick={(event) => jump(event, follower)}
-            bind:this={box}
-        >
+        <div class="doc" class:surfaced={surface} onclick={pressed} bind:this={box}>
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
-            {@html sanitise(doc.html)}
+            {@html sanitise(doc.html, slots)}
         </div>
     </ContextMenu>
 {/if}
@@ -287,6 +303,38 @@
         padding: 3px 6px;
         text-align: left;
         overflow-wrap: normal;
+    }
+
+    /* A note's link, a link to no note, a tag, an embedded note's frame and a formula KaTeX
+       refused. */
+    .doc :global(a.wikilink.unresolved) {
+        color: var(--muted-txt, var(--muted));
+        text-decoration-line: underline;
+        text-decoration-style: dashed;
+    }
+
+    .doc :global(a.note-tag) {
+        padding: 0 4px;
+        border-radius: var(--radius-sm);
+        background: var(--chip);
+        text-decoration: none;
+    }
+
+    .doc :global(.embed) {
+        margin: 6px 0;
+        padding: 4px 8px;
+        border-left: 2px solid var(--accent-txt, var(--accent));
+        border-radius: var(--radius-sm);
+        background: var(--chip);
+    }
+
+    .doc :global(span.embed-head) {
+        margin-right: 6px;
+    }
+
+    .doc :global(span.math-error) {
+        color: var(--c-red-txt);
+        font-family: var(--font-mono);
     }
 
     .doc :global(blockquote) {

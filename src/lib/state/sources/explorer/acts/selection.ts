@@ -148,11 +148,13 @@ export function selectionChanged(a: Picked, b: Picked): boolean {
 }
 
 /**
- * The rows of the tree an action may act on: not a root's line, the `..` line or a name being
- * typed.
+ * The rows of the tree an action may act on: not a root's line, the `..` line, a name being typed
+ * or a row that is a sentence.
  */
 export function actable(row: TreeRow): boolean {
-    return row.depth > 0 && row.up === undefined && row.editing === undefined;
+    return (
+        row.depth > 0 && row.up === undefined && row.editing === undefined && row.said === undefined
+    );
 }
 
 /**

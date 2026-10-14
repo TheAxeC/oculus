@@ -5,9 +5,10 @@
 // under, and one tab draws many cards, so each card has a record of its own: the tab's id,
 // `#files:` and the project's id. The project id is a folder name that may hold `#`, `:` or `/`, so
 // it is percent-encoded, which leaves no such character after the prefix and keeps one project's
-// key from reaching another's. The tab's close clears every record under `cardTreePrefix(tab)`
-// (state/client/context.ts), and a rename or a move restates them with the tab's own
-// (explorer/ops.svelte.ts).
+// key from reaching another's. A Files tab's Notes section keeps its tree in a record under the
+// same prefix (`notesTreeKey`), whose `#` no encoded project id holds. The tab's close clears every
+// record under `cardTreePrefix(tab)` (state/client/context.ts), and a rename or a move restates
+// them with the tab's own (explorer/ops.svelte.ts).
 
 import { isMap } from '../../../../data/helpers/guards.ts';
 
@@ -27,6 +28,11 @@ export function cardTreeKey(tab: string, project: string): string {
  */
 export function unopened(record: unknown): boolean {
     return record === undefined || (isMap(record) && !('expanded' in record));
+}
+
+/** The key of the record a Files tab's Notes section keeps its tree under. */
+export function notesTreeKey(tab: string): string {
+    return `${tab}${CARD_TREE}#notes`;
 }
 
 /** The start of every key a tab's cards keep their trees under. */

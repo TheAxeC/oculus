@@ -12,6 +12,13 @@
 // tab opened or closed while the request was out is the one that is restated or left alone, and two
 // operations in flight each re-read the folders of their own answer.
 //
+// A rename or a move asks the notes' `moving` first
+// (state/system/machine/refactor/note-link-plan.ts), which plans the `[[links]]` that name the
+// notes it moves: a refusal there posts nothing and answers the refusal's sentence (`said`), and
+// once the move has landed the planned links are rewritten and what that said, when it was refused,
+// is told through the notes' `said`. A move to the Trash or a delete tells the notes' `removed`
+// what went, so the tabs of notes removed close.
+//
 // The questions an operation can ask (replace what is there, delete for good after the Trash
 // failed) are a call handed in, `confirm`, which answers yes or no; the view that draws the
 // question is the one that hands it. A cut clipboard is emptied by the paste that used it, as VS
@@ -55,6 +62,7 @@ import { t } from '../../shared/words/text.ts';
 import { replacedPlaces, undoneMoves, type FileRecord } from './acts/undo.ts';
 import { nameOf } from './file-type.ts';
 import { cardTreePrefix } from './view/card-tree.ts';
+import { NOTHING_MOVES, NO_NOTES_HOOKS, type NotesMoving } from './notes/note-moves.ts';
 import { patchedFilesView } from './view/files-view.ts';
 import {
     followedAny,
@@ -84,6 +92,12 @@ export type Outcome =
           failed?: string;
           rereads?: unknown;
       };
+
+/** A rename or a move of notes the link plan refused, with the sentence that names why. */
+type Said = { ok: false; error: 'said'; said: string };
+
+/** What a rename, a move, a drop or a paste came to: an outcome, or a refusal of the notes. */
+export type Placed = Outcome | Said;
 
 /** The two questions an operation asks, with the name the question is about. */
 export type Question = { kind: 'replace' | 'permanent'; name: string };
@@ -152,12 +166,12 @@ export type ExplorerStore = {
      */
     unsaved: (item: OpsPlace, folder: boolean) => boolean;
     /** Paste the clipboard into a folder. Nothing on the clipboard pastes nothing, and is ok. */
-    paste: (into: OpsPlace, confirm: Confirm) => Promise<Outcome>;
+    paste: (into: OpsPlace, confirm: Confirm) => Promise<Placed>;
     /**
      * Move items into a folder, or copy them with `copy`, as a drop does: the same operation as
      * Paste over the items given, with the clipboard left as it is.
      */
-    drop: (items: OpsPlace[], into: OpsPlace, copy: boolean, confirm: Confirm) => Promise<Outcome>;
+    drop: (items: OpsPlace[], into: OpsPlace, copy: boolean, confirm: Confirm) => Promise<Placed>;
     /**
      * How many operations the server has answered since the page opened, which moves whenever the
      * change log may hold a record the page has not read.
@@ -166,7 +180,7 @@ export type ExplorerStore = {
     /** Move items to the Trash; when the Trash fails, ask whether to delete for good. */
     trash: (items: OpsPlace[], confirm: Confirm) => Promise<Outcome>;
     create: (into: OpsPlace, name: string, folder: boolean) => Promise<Outcome>;
-    rename: (item: OpsPlace, name: string) => Promise<Outcome>;
+    rename: (item: OpsPlace, name: string) => Promise<Placed>;
     /** Write one file's bytes (base64) into a folder; ask before replacing a file of that name. */
     upload: (into: OpsPlace, name: string, data: string, confirm: Confirm) => Promise<Outcome>;
     /**
@@ -267,13 +281,25 @@ function doneOf(outcome: Outcome, asked: string[]): string[] {
  */
 export type MovedItems = (moves: Move[]) => void;
 
+/**
+ * What the explorer asks of the notes: the link plan of a move, where its refusal is told, and what
+ * follows a move to the Trash or a delete (the tabs of the notes removed close, their waiting saves
+ * dropped).
+ */
+export type ExplorerNotes = {
+    moving: NotesMoving;
+    said: (sentence: string) => void;
+    removed: (places: OpsPlace[]) => void;
+};
+
 export function createExplorer(
     writes: WritesStore,
     fs: FsStore,
     layout: ExplorerLayout,
     ui: InstanceStates,
     source: ExplorerSource,
-    moved: MovedItems = () => undefined
+    moved: MovedItems = () => undefined,
+    notes: () => ExplorerNotes = () => NO_NOTES_HOOKS
 ): ExplorerStore {
     // Two signals, each replaced whole, so a view that reads one is drawn again when it changes.
     let clip: Clipboard | null = $state.raw(null);
@@ -449,14 +475,25 @@ export function createExplorer(
         return outcome;
     }
 
-    async function rename(item: OpsPlace, name: string): Promise<Outcome> {
+    /** Make the link edit of a move of notes over the moves that landed, telling a refusal. */
+    async function notesLanded(ahead: Awaited<ReturnType<NotesMoving>>, moves: Move[]) {
+        if (!('landed' in ahead)) return;
+        const said = await ahead.landed(moves);
+        if (said !== '') notes().said(said);
+    }
+
+    async function rename(item: OpsPlace, name: string): Promise<Placed> {
+        const parent = { root: item.root, path: parentPath(item.path) };
+        const meant = { root: item.root, path: joined(parent.path, name.trim().normalize('NFC')) };
+        const ahead = await notes().moving([{ from: item, to: meant }]);
+        if ('refused' in ahead) return { ok: false, error: 'said', said: ahead.refused };
         const outcome = await send({ op: 'rename', root: item.root, path: item.path, name });
         if (!answered(outcome)) return outcome;
-        const parent = { root: item.root, path: parentPath(item.path) };
         const renamed = outcome.ok ? outcome.paths.at(0) : undefined;
         const moves: Move[] =
             renamed === undefined ? [] : [{ from: item, to: { root: item.root, path: renamed } }];
         await landed(moves, [parent], moves.length > 0 ? [item] : []);
+        await notesLanded(ahead, moves);
         if (moves.length > 0) moved(moves);
         return outcome;
     }
@@ -466,6 +503,7 @@ export function createExplorer(
         const outcome = await send({ op, root, paths });
         if (!answered(outcome)) return outcome;
         const gone = doneOf(outcome, paths).map((path) => ({ root, path }));
+        if (gone.length > 0) notes().removed(gone);
         await landed(
             [],
             gone.map((one) => ({ root, path: parentPath(one.path) })),
@@ -516,8 +554,15 @@ export function createExplorer(
         into: OpsPlace,
         mode: 'move' | 'copy',
         confirm: Confirm
-    ): Promise<{ outcome: Outcome; kept: boolean }> {
+    ): Promise<{ outcome: Placed; kept: boolean }> {
         let waiting = once(items);
+        const ahead =
+            mode === 'move'
+                ? await notes().moving(waiting.map((one) => movedTo(one, into)))
+                : NOTHING_MOVES;
+        if ('refused' in ahead) {
+            return { outcome: { ok: false, error: 'said', said: ahead.refused }, kept: true };
+        }
         let replace = false;
         const done: string[] = [];
         const paths: string[] = [];
@@ -565,6 +610,7 @@ export function createExplorer(
             replace = true;
             waiting = sent.filter((one) => !finished.includes(one.path));
         }
+        await notesLanded(ahead, finishedMoves);
         if (finishedMoves.length > 0) moved(finishedMoves);
         if (lost) return { outcome, kept: true };
         return {
@@ -575,7 +621,7 @@ export function createExplorer(
         };
     }
 
-    async function paste(into: OpsPlace, confirm: Confirm): Promise<Outcome> {
+    async function paste(into: OpsPlace, confirm: Confirm): Promise<Placed> {
         const used = clip;
         if (used === null) return { ok: true, paths: [] };
         const placed = await place(
@@ -593,7 +639,7 @@ export function createExplorer(
         into: OpsPlace,
         copied: boolean,
         confirm: Confirm
-    ): Promise<Outcome> {
+    ): Promise<Placed> {
         return (await place(items, into, copied ? 'copy' : 'move', confirm)).outcome;
     }
 

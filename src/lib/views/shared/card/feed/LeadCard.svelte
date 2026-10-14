@@ -29,7 +29,7 @@
         leadId,
         type LeadEntry
     } from '$lib/state/feeds/leads';
-    import { posting } from '$lib/views/shared/forms/posting';
+    import { posting } from './posting';
     import { textOrNumber } from '$lib/data/shapes/shapes';
     import { feedRoot } from '$lib/state/shared/page/idents';
     import RootChip from '$lib/views/shared/card/RootChip.svelte';

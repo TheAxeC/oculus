@@ -87,6 +87,8 @@ text:
         capped: cut at {0}
         case: case
         case_title: Match the pattern's own upper and lower case
+        clear_notes: Search every root
+        clear_notes_title: Search every folder of every root again
         clear_scope: Search the whole root
         clear_scope_title: Search every folder of the root again
         count: '{0} hits in {1} files, {2} ms'
@@ -104,6 +106,7 @@ text:
         help: Finding every reference to a name is this view with the word toggle on, over a root that holds the code.
         hit_title: Open {0} at line {1}
         in_folder: In {0}/{1}
+        in_notes: In the notes of every hub
         none: Nothing in these files carries that.
         placeholder: What to find
         preserve: AB

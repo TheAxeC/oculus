@@ -1,7 +1,7 @@
 // Layer 2, server. The marks of a Markdown file: its banned characters in the text of the document,
 // and its paragraphs broken across lines. The document is lexed by marked 18, the parser that draws
-// oculus's preview (data/prose/markdown.ts), after the front matter is cut off with the tree's one
-// split (`splitFrontmatter`), so a mark falls where the preview shows prose.
+// oculus's preview (data/prose/markdown/markdown.ts), after the front matter is cut off with the
+// tree's one split (`splitFrontmatter`), so a mark falls where the preview shows prose.
 //
 // Where a block starts is counted in lines. marked's tokens carry the text of each block without
 // the markers of the blocks around it (the `> ` of a quote, the bullet and the indentation of a

@@ -47,7 +47,6 @@ export function machineDefaults(text: Record<string, string>): Record<string, st
         sessions_cache: defaultCachePath(),
         sessions_overrides: defaultOverridesPath(),
         bookmarks: inPrimary(PER_OCULUS_NAMES.bookmarks),
-        notes: inPrimary(PER_OCULUS_NAMES.notes),
         changes: defaultChangesPath(),
         history: defaultHistoryDir(),
         approvals: defaultApprovalsPath(),

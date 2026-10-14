@@ -12,7 +12,6 @@ import {
     findInstance,
     findView,
     instanceMap,
-    isInstanceOf,
     stateId,
     panes as panesIn,
     tabsOf
@@ -70,7 +69,6 @@ export type Instances = {
     unpinTab: (id: string) => void;
     activateInstance: (id: string, page?: string) => void;
     closeInstancesOfView: (view: ViewId) => void;
-    closeRecord: (view: ViewId, id: string) => void;
     moveInstanceToPage: (id: string, page: string) => void;
     closeInstance: (id: string, page?: string) => void;
     closePane: (path: number[], page?: string) => void;
@@ -216,19 +214,6 @@ export function createInstances(
         for (const host of hostsOf(access.held())) {
             for (const tab of tabsOf(host.workbench.root)) {
                 if (tab.view === view) closeInstanceAnywhere(tab.id);
-            }
-        }
-    }
-
-    /**
-     * Close the instance a view was opened for one record with, wherever it is. It is what a record
-     * going away means for the arrangement: a note deleted from the Files view leaves no tab
-     * drawing a file that is not there.
-     */
-    function closeRecord(view: ViewId, id: string): void {
-        for (const host of hostsOf(access.held())) {
-            for (const tab of tabsOf(host.workbench.root)) {
-                if (isInstanceOf(tab, view, id)) closeInstanceAnywhere(tab.id);
             }
         }
     }
@@ -401,7 +386,6 @@ export function createInstances(
         unpinTab,
         activateInstance,
         closeInstancesOfView,
-        closeRecord,
         moveInstanceToPage,
         closeInstance,
         closePane,

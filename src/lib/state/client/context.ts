@@ -96,6 +96,9 @@ import { createRepositories, DIFF_VIEW } from '../sources/repositories/repositor
 import { heldDiff } from '../sources/repositories/diff/subject.ts';
 import { createSelection } from '../workbench/selection.svelte.ts';
 import { createExplorer, type MovedItems } from '../sources/explorer/ops.svelte.ts';
+import { noteWait, pageNotes } from '../life/note-hooks.ts';
+import { NO_NOTES_HOOKS } from '../sources/explorer/notes/note-moves.ts';
+import { taggedHits } from '../sources/explorer/notes/note-index.ts';
 import { createSearch } from '../sources/search/search.svelte.ts';
 import { createLint } from '../system/machine/lint/lint.svelte.ts';
 import { createClangd } from '../system/machine/lsp/clangd.svelte.ts';
@@ -219,6 +222,7 @@ export function createClientState(
         desktop === undefined ? undefined : { turn: desktop.bridge.saveLayout }
     );
     const drag = createDrag(layout, desktop);
+    const openTabs = () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root));
     const clock = createClock();
     const changes = withQueries('changes', createChanges(queries, entities));
     const selection = createSelection();
@@ -403,7 +407,8 @@ export function createClientState(
         timers: {
             setTimeout: (run, ms) => setTimeout(run, ms),
             clearTimeout: (handle) => clearTimeout(handle as ReturnType<typeof setTimeout>)
-        }
+        },
+        note: (file) => noteWait(fs.roots(), file, entities.config()?.config)
     });
     if (typeof window !== 'undefined') autosave.followPage(window);
     // The pane asks the instance id whether a tab holds unsaved text before it closes it, and asks
@@ -440,27 +445,35 @@ export function createClientState(
     // The offer to rewrite Markdown links over moved items needs the language server and refactor
     // stores, which are made after the explorer; it is told what moved from the time it is made.
     let movedItems: MovedItems = () => undefined;
+    let notesHooks = NO_NOTES_HOOKS;
     const explorer = createExplorer(
         writes,
         fs,
         {
-            tabs: () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root)),
+            tabs: openTabs,
             restateInstance: layout.restateInstance,
             openView: (view: string) => layout.openView(view),
             showFolderInFiles: layout.showFolderInFiles
         },
         ui,
         source,
-        (moves) => movedItems(moves)
+        (moves) => movedItems(moves),
+        () => notesHooks
     );
-    const search = createSearch(entities, writes, ui, explorer, {
-        open: repositories.openDiff,
-        shown: () =>
-            layout
-                .hosts()
-                .flatMap((host) => tabsOf(host.workbench.root))
-                .some((tab) => tab.view === DIFF_VIEW && heldDiff(tab.state).replace !== undefined)
-    });
+    const search = createSearch(
+        entities,
+        writes,
+        ui,
+        explorer,
+        {
+            open: repositories.openDiff,
+            shown: () =>
+                openTabs().some(
+                    (tab) => tab.view === DIFF_VIEW && heldDiff(tab.state).replace !== undefined
+                )
+        },
+        (tag, files) => taggedHits(fs.notes().hubs, tag, files)
+    );
     const folders = createFolderPages({
         config: () => entities.config()?.config,
         roots: () => fs.roots(),
@@ -521,7 +534,7 @@ export function createClientState(
     const headings = createHeadings();
     const lsp = createLsp(socket);
     const lspEdits = createLspEdits({
-        tabs: () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root)),
+        tabs: openTabs,
         draft: source.sourceDraft,
         edit: source.editSourceDraft,
         read: async (root, path) => {
@@ -537,6 +550,7 @@ export function createClientState(
         roots: () => fs.roots(),
         withheld: (place) => isPrivateFile(place, fs.roots(), fs.workspaces().home)
     });
+    notesHooks = pageNotes(fs, source, layout, autosave, notices, lspEdits, openTabs);
     const refactor = createRefactor({
         lspEdits,
         show: () => void layout.openView(REFACTOR_VIEW)
@@ -660,16 +674,13 @@ export function createClientState(
             debugTabs: () => {
                 const taken = breakpointLanguages(entities.apps()?.rows ?? []);
                 const languages = selectors.languages();
-                return layout
-                    .hosts()
-                    .flatMap((host) => tabsOf(host.workbench.root))
-                    .flatMap((tab) => {
-                        const file = tab.view === 'source' ? fileOfTab(tab) : null;
-                        if (file === null || !taken.includes(languageOf(file.path, languages))) {
-                            return [];
-                        }
-                        return [{ id: tab.id, ...file, dirty: ui.unsaved(tab.id) }];
-                    });
+                return openTabs().flatMap((tab) => {
+                    const file = tab.view === 'source' ? fileOfTab(tab) : null;
+                    if (file === null || !taken.includes(languageOf(file.path, languages))) {
+                        return [];
+                    }
+                    return [{ id: tab.id, ...file, dirty: ui.unsaved(tab.id) }];
+                });
             },
             breakpointLanguages: () => breakpointLanguages(entities.apps()?.rows ?? []),
             languageOf: (path) => languageOf(path, selectors.languages()),

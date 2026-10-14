@@ -15,6 +15,11 @@
 // drags carry, which a drag over the tree is read for, so a drag that ended without `dragend`
 // leaves nothing a later drag from another tree is read against. The order
 // arithmetic is state/sources/explorer/acts/reorder.ts's and the write is the caller's `onreorder`.
+//
+// A tree whose rows keep an order of the caller's (`RowOrder`, the Notes section's notes) is asked
+// of each drag of rows over a row whether the drop would reorder them rather than move them: such
+// a drop draws the line on the edge of the row the pointer is nearer and hands the caller the rows
+// and that edge; every other drop moves or copies as in any tree.
 
 import { absoluteOf } from '$lib/state/workbench/navigation/pages';
 import {
@@ -42,6 +47,17 @@ import {
 import { carriesOutside, carriesRow, outsideThings, targetOf } from '../drag';
 import type { rowDropper } from '../menu/row-drop';
 
+/**
+ * A tree whose rows keep an order of the caller's: whether a drop of rows on a row puts them before
+ * or after it rather than into its folder, the write of that order, and Alt+Up and Alt+Down on a
+ * row, which answers whether it moved the row.
+ */
+export type RowOrder = {
+    takes: (rows: readonly RowRef[], onto: TreeRow) => boolean;
+    place: (rows: readonly RowRef[], onto: TreeRow, place: Place) => void;
+    step: (row: TreeRow, direction: 'up' | 'down') => boolean;
+};
+
 export type DraggingDeps = {
     roots: () => FsRoot[] | undefined;
     picked: () => Picked;
@@ -54,6 +70,8 @@ export type DraggingDeps = {
     order: () => string[];
     /** Write the new order of the movable roots. */
     onreorder: (keys: string[]) => void;
+    /** The order the caller keeps its rows in, or undefined for a tree that keeps none. */
+    rowOrder?: () => RowOrder | undefined;
 };
 
 const dropRowOf = (row: TreeRow): DropRow => ({ root: row.root, path: row.path, kind: row.kind });
@@ -228,6 +246,8 @@ export function createDragging(deps: DraggingDeps) {
         }
         const here = targetOf(row, event);
         const typing = row.editing !== undefined;
+        if (carriesRow(event) && reordering(event, here)) return;
+        line = null;
         if (carriesRow(event)) {
             const verdict = dropVerdict(dragging, dropRowOf(here), event.altKey, typing);
             if (verdict.kind === 'nothing') {
@@ -246,6 +266,25 @@ export function createDragging(deps: DraggingDeps) {
         }
     }
 
+    /**
+     * A drag of rows over a row of a tree that keeps their order: when the drop would reorder
+     * them, the line on the nearer edge and true; else false and nothing drawn.
+     */
+    function reordering(event: DragEvent, here: TreeRow): boolean {
+        const order = deps.rowOrder?.();
+        const rect =
+            event.currentTarget instanceof Element
+                ? event.currentTarget.getBoundingClientRect()
+                : null;
+        if (order === undefined || rect === null || !order.takes(dragging, here)) return false;
+        event.preventDefault();
+        if (event.dataTransfer !== null) event.dataTransfer.dropEffect = 'move';
+        landing = null;
+        const place = dropPlace(rect, event.clientY);
+        line = { row: rowKey(here), edge: place, target: '', place };
+        return true;
+    }
+
     function dropped(event: DragEvent, row: TreeRow): void {
         if (carriesRoot(event)) {
             droppedRoot(event);
@@ -254,6 +293,15 @@ export function createDragging(deps: DraggingDeps) {
         const here = targetOf(row, event);
         const typing = row.editing !== undefined;
         landing = null;
+        const order = deps.rowOrder?.();
+        const at = line;
+        line = null;
+        if (carriesRow(event) && order !== undefined && at?.row === rowKey(here)) {
+            event.preventDefault();
+            if (order.takes(dragging, here)) order.place(dragging, here, at.place);
+            dragging = [];
+            return;
+        }
         if (carriesRow(event)) {
             event.preventDefault();
             void deps.dropper.rows(dragging, dropRowOf(here), event.altKey, typing);

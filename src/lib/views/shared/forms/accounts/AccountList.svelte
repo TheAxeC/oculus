@@ -15,7 +15,7 @@
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import RemoveAccount from './RemoveAccount.svelte';
-    import RootChip from '../card/RootChip.svelte';
+    import RootChip from '../../card/RootChip.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';

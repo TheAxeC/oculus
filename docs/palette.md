@@ -44,7 +44,7 @@ Every registered view is listed by its words.
 | Document | document |
 | File | file |
 | Files | files |
-| Note | note |
+| Notes Graph | notes-graph |
 | Diff | repositories-diff |
 | Merge Editor | repositories-merge |
 | Repositories | repositories |

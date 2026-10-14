@@ -20,7 +20,7 @@
     import { routeBody } from '$lib/state/feeds/literature/answers';
     import { entryFor } from '$lib/state/feeds/literature/bibtex';
     import type { MergedHit } from '$lib/state/feeds/literature/merge';
-    import { posting } from '../../shared/forms/posting';
+    import { posting } from '../../shared/card/feed/posting';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 

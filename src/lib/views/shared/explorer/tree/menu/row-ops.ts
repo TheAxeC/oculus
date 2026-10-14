@@ -9,7 +9,12 @@
 // in the sentence of the refusal word (`files.refused_*`), never as the word.
 //
 // rowNaming holds the three calls of the name input the same way: starting one, accepting the text
-// typed in it (which makes the item or renames the row), and testing a name against the folder.
+// typed in it (which makes the item or renames the row), and testing a name against the folder. A
+// tree whose names mean more hands in `NamingHooks`: the Notes section refuses a typed name its
+// rule refuses, makes a typed name a note (`<name>.md`, in a notes folder made first when the hub
+// has none), lists its folders from the notes it holds, and opens the note it made. A name that
+// lands in a hub's notes folder and breaks the name rule of the notes is refused before anything is
+// sent, in the sentence that names why (`refuse`), whichever tree it was typed in.
 
 import {
     ancestorsOf,
@@ -19,14 +24,14 @@ import {
     type FilesView,
     type TreeRow
 } from '$lib/state/sources/fs';
-import { namingStarted } from '$lib/state/sources/explorer/naming';
+import { namingStarted, type Naming } from '$lib/state/sources/explorer/naming';
 import { actable } from '$lib/state/sources/explorer/acts/selection';
 import {
     MAX_UPLOAD_BYTES,
     checkName,
     type Confirm,
     type ExplorerStore,
-    type Outcome,
+    type Placed,
     type Place,
     type Question
 } from '$lib/state/sources/explorer/ops.svelte';
@@ -105,15 +110,19 @@ export type RowOpsDeps = {
     confirmDelete?: () => boolean;
 };
 
-/** The refusal words a sentence is held for, as the catalog's literal keys. */
-function refusalSentence(outcome: Extract<Outcome, { ok: false }>, t: Words): string {
+/**
+ * The refusal words a sentence is held for, as the catalog's literal keys, and the sentence of a
+ * refusal that came with its own (a rename or move of notes whose link edit was refused).
+ */
+function refusalSentence(outcome: Extract<Placed, { ok: false }>, t: Words): string {
+    if (outcome.error === 'said') return outcome.said;
     return outcome.error === 'network'
         ? t('files.refused_network')
         : refusalWordSentence(outcome.error, t);
 }
 
 /** What a refused operation says, and the empty string for one that went through. */
-export function refusalLine(outcome: Outcome, t: Words): string {
+export function refusalLine(outcome: Placed, t: Words): string {
     return outcome.ok ? '' : refusalSentence(outcome, t);
 }
 
@@ -168,7 +177,7 @@ export function rowOpsPicker(deps: RowOpsDeps, t: Words): (row: TreeRow, pick: s
     const asked: Confirm = (question) => deps.confirm(question);
 
     /** Say what an operation came to, and nothing when it went through. */
-    function report(outcome: Outcome): void {
+    function report(outcome: Placed): void {
         if (!outcome.ok) deps.say(refusalLine(outcome, t));
     }
 
@@ -376,6 +385,18 @@ export function nameMessage(
     return checked.whitespace ? { text: t('files.name_whitespace'), error: false } : null;
 }
 
+/** What a tree whose names mean more does with a typed name (the Notes section's notes). */
+export type NamingHooks = {
+    /** The sentence refusing the text typed, and the empty string for a text the tree takes. */
+    refuse?: (text: string) => string;
+    /** The folder a new item is made in and the name it is made as, from the text typed. */
+    making?: (naming: Naming, text: string) => { into: Place; name: string };
+    /** The names a folder holds, where the tree lists folders of its own. */
+    entries?: (root: string, path: string) => { name: string }[] | null;
+    /** A file the name input made. */
+    made?: (file: Place) => void;
+};
+
 /** What the name being typed needs: the store, the Files view's state and the folder listings. */
 export type RowNamingDeps = {
     explorer: Pick<ExplorerStore, 'create' | 'rename'>;
@@ -392,6 +413,12 @@ export type RowNamingDeps = {
      * not made, and the empty string when it was.
      */
     deck: (folder: Place, title: string) => Promise<string>;
+    /**
+     * The sentence refusing a name that lands at a path of a root, segments and all, and the
+     * empty string for one the folders it lands in take.
+     */
+    refuse?: (root: string, path: string) => string;
+    hooks?: NamingHooks;
 };
 
 /** The calls of the name input: start one, accept its text, and test a name against its folder. */
@@ -412,14 +439,31 @@ export function rowNaming(deps: RowNamingDeps, t: Words) {
             deps.say(await deps.deck(place, text));
             return;
         }
+        const own = deps.hooks?.refuse?.(text) ?? '';
+        if (own !== '') {
+            deps.say(own);
+            return;
+        }
+        const making =
+            naming.mode === 'rename'
+                ? { into: parentOf(place) ?? place, name: text }
+                : (deps.hooks?.making?.(naming, text) ?? { into: place, name: text });
+        const landing =
+            making.into.path === '' ? making.name : `${making.into.path}/${making.name}`;
+        const refused = deps.refuse?.(naming.root, landing) ?? '';
+        if (refused !== '') {
+            deps.say(refused);
+            return;
+        }
         const outcome =
             naming.mode === 'rename'
                 ? await deps.explorer.rename(place, text)
-                : await deps.explorer.create(place, text, naming.mode === 'folder');
+                : await deps.explorer.create(making.into, making.name, naming.mode === 'folder');
         deps.say(refusalLine(outcome, t));
         const made = outcome.ok && naming.mode !== 'rename' ? outcome.paths[0] : undefined;
         if (made === undefined) return;
         const row = { root: naming.root, path: made };
+        if (naming.mode === 'file') deps.hooks?.made?.(row);
         const opened = ancestorsOf(row).reduce(
             (kept, one) => setExpanded(kept, treeKey(one.root, one.path), true),
             deps.view().expanded
@@ -433,11 +477,26 @@ export function rowNaming(deps: RowNamingDeps, t: Words) {
             row.editing === 'rename'
                 ? parentOf(row)
                 : { root: row.root, path: row.path.slice(0, -1) };
+        const entries = deps.hooks?.entries ?? deps.entries;
+        const named = (name: string): string =>
+            row.editing === 'rename' || deps.hooks?.making === undefined
+                ? name
+                : (deps.hooks
+                      .making(
+                          {
+                              mode: row.kind === 'dir' ? 'folder' : 'file',
+                              root: row.root,
+                              path: row.path.slice(0, -1)
+                          },
+                          name
+                      )
+                      .name.split('/')
+                      .at(-1) ?? name);
         return (name: string) =>
             folder !== null &&
-            (deps.entries(folder.root, folder.path) ?? []).some(
+            (entries(folder.root, folder.path) ?? []).some(
                 (entry) =>
-                    entry.name.toLowerCase() === name.toLowerCase() &&
+                    entry.name.toLowerCase() === named(name).toLowerCase() &&
                     !(row.editing === 'rename' && entry.name === row.name)
             );
     }

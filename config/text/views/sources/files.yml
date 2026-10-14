@@ -1,8 +1,7 @@
-# Oculus text owned by the file browser: the workspace header and its menu, its trees and their heads, its sections (open editors, outline, timeline, bookmarks and notes), the keys its row menu shows, what a refused workspace write says, and the file operations of its row menu: the menu words, the questions, the name messages, the refusals and the upload and compare lines.
+# Oculus text owned by the file browser: the workspace header and its menu, its trees and their heads, its sections (open editors, outline, timeline, bookmarks, and the head and the empty row of the notes), the keys its row menu shows, what a refused workspace write says, and the file operations of its row menu: the menu words, the questions, the name messages, the refusals and the upload and compare lines.
 text:
     files:
         add_note: + note
-        add_note_title: Open a scratch note of your own
         add_skipped: 'Already folders of this workspace: {0}'
         ast: AST
         ast_close: Close
@@ -146,15 +145,9 @@ text:
         names_more: ...and {0} more
         none: No folders yet. Add a folder to this workspace.
         none_glyph: info
-        note_delete: delete
-        note_delete_confirm: Delete this note? Its file goes off this machine.
-        note_delete_title: Delete the note {0}
         note_glyph: note
-        note_open_title: Open the note {0}
-        note_untitled: Untitled note
         notes: Notes
         notes_empty: No note yet.
-        notes_failed: 'The notes could not be read: {0}'
         open_title: Open {0} as a tab
         outline: Outline
         outline_empty: The file has no headings.

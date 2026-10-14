@@ -13,10 +13,14 @@
     // of the name is git's when git gives one and the apps' otherwise. A folder an app's decoration
     // propagates to takes the colour alone.
     //
+    // A tree that gives its rows controls of their own (`more`, the New Note and New Folder of a
+    // notes group) has them drawn after the row's own, in the same row of controls.
+    //
     // A press on the row is handed up with the event, so the tree reads the modifiers, and with the
     // path of the segment it landed on when the row is a chain of folders: each segment is a target
     // of its own, marked `data-fs-seg`, for a press, the menu and a drop.
 
+    import type { Snippet } from 'svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
@@ -61,6 +65,8 @@
          */
         onkeep: (row: TreeRow, pressedAt?: number) => void;
         onbookmark: (row: TreeRow) => void;
+        /** Controls of the caller's, drawn after the row's own. */
+        more?: Snippet<[TreeRow, number]>;
     };
 
     let {
@@ -73,7 +79,8 @@
         apps,
         onpress,
         onkeep,
-        onbookmark
+        onbookmark,
+        more
     }: Props = $props();
 
     const opens = $derived((row.kind === 'dir' && row.up !== true) || row.nests === true);
@@ -168,6 +175,7 @@
             onclick={(event: MouseEvent) => onkeep(row, event.timeStamp)}
         />
     {/if}
+    {@render more?.(row, reach)}
 {/snippet}
 
 <TreeItem

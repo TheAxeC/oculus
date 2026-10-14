@@ -1,14 +1,15 @@
 // Layer 2, server. The file browser's server concerns: the entries of one directory under a named
 // folder of the open workspace, the workspace itself (its folders, primary, recent list and the
 // files that can be switched to), and the two things the reader keeps beside them, their own
-// bookmarks and their scratch notes.
+// bookmarks and the notes of every hub.
 //
-// The bookmarks and the notes are read here and written through this route because they are the
-// file browser's: a bookmark is a file, a folder or the top of a folder of the workspace and a note
-// is a file in a folder. What each one is kept in is its own module, fs/bookmarks.ts and
-// fs/notes.ts; a bookmark is written by the collection write path instead, since it is a collection
-// file and the entry writers edit it. Both live in the primary hub's `.oculus` folder, so a
-// workspace with no primary has none: the lists answer empty and a write is refused `no-primary`.
+// The bookmarks are read here because they are the file browser's: a bookmark is a file, a folder
+// or the top of a folder of the workspace, kept in the primary hub's `.oculus` folder, so a
+// workspace with no primary has none and the list answers empty. A bookmark is written by the
+// collection write path, since it is a collection file and the entry writers edit it. The notes are
+// the files of each hub's `.oculus/notes/` folder, read by fs/notes.ts, one answer per hub in the
+// workspace's folder order; a note is written, renamed, moved and trashed by the file operations
+// like any file of its hub, so the only note write here is the order they are listed in.
 //
 // A listing is one level deep and read at the call. The tree asks for a folder when the folder is
 // opened, so nothing walks a root: a home directory with a hundred thousand files under it costs
@@ -26,12 +27,12 @@
 // no root answers it, and the actions on it as a whole are Save Workspace As (`save-workspace`, a
 // name), New Workspace (`new-workspace`, a name), Switch Workspace (`select-workspace`, a workspace
 // file's path) and Close Workspace (`close-workspace`). The folders of the open file are written
-// through the write route's `roots` kind. The notes are written in a new order through the same
-// route (`order-notes`).
+// through the write route's `roots` kind. The notes of one hub are written in a new order through
+// the same route (`order-notes`, the hub's name and the notes' paths).
 //
-// Nothing here holds state between calls: the workspace, the paths of the bookmarks and the notes
-// and the write chain all come in from the request's ServerContext, so two servers in one process
-// read two workspaces.
+// Nothing here holds state between calls: the workspace, the path of the bookmarks and the write
+// chain all come in from the request's ServerContext, so two servers in one process read two
+// workspaces.
 //
 // Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
 // (`inside`, `realPath`).
@@ -47,7 +48,7 @@ import { tokenedBody } from '../core/auth.ts';
 import { resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git/files.ts';
-import { deleteNote, listNotes, readNote, saveNote, writeNoteOrder } from './fs/notes.ts';
+import { notesFolderOf, notesFolderState, readAllNotes, writeNoteOrder } from './fs/notes.ts';
 import { chained, type FsWrites } from '../core/json.ts';
 import { foldsCase, inside, realPath } from '../core/paths.ts';
 import {
@@ -183,8 +184,8 @@ export async function cachedIgnored(
 }
 
 /**
- * What one request needs: the open workspace, the primary hub's bookmarks file and notes folder
- * (null while the workspace has no primary), the chain and the ignored-names cache.
+ * What one request needs: the open workspace, whose hubs hold the notes, the primary hub's
+ * bookmarks file (null while the workspace has no primary), the chain and the ignored-names cache.
  */
 export type FsTarget = {
     /** The folder of oculus itself. */
@@ -195,8 +196,6 @@ export type FsTarget = {
     machine: MachineAnswer;
     /** The reader's own bookmarks file, which this request reads and the write path writes. */
     bookmarks: string | null;
-    /** The folder the scratch notes live in. */
-    notes: string | null;
     /** The process's write chain. */
     writes: FsWrites;
     /** The ignored names asked for lately, which listings reuse for a moment. */
@@ -362,8 +361,8 @@ export function workspacesAnswer(
 }
 
 /**
- * GET /api/fs: one of five reads, chosen by what the query names. `bookmarks` answers the reader's
- * own bookmarks, `notes` every scratch note, `note` one note's own text, a root and a path the
+ * GET /api/fs: one of four reads, chosen by what the query names. `bookmarks` answers the reader's
+ * own bookmarks, `notes` the notes of every hub (fs/notes.ts's readAllNotes), a root and a path the
  * entries of that directory (with `hidden=1` and `ignored=1` asking for what the tree leaves out by
  * default), and nothing at all the workspace.
  *
@@ -380,17 +379,7 @@ export async function handleFs(request: Request, into: FsTarget): Promise<Respon
         );
     }
     if (url.searchParams.get('notes') !== null) {
-        return json(
-            { notes: into.notes === null ? [] : listNotes(into.notes) },
-            { headers: NO_STORE }
-        );
-    }
-    const one = url.searchParams.get('note');
-    if (one !== null) {
-        const note = into.notes === null ? null : readNote(into.notes, one);
-        return note === null
-            ? json({ error: 'no-such-note' }, { status: 404, headers: NO_STORE })
-            : json(note, { headers: NO_STORE });
+        return json({ hubs: readAllNotes(open.hubs, open.primary) }, { headers: NO_STORE });
     }
     const key = url.searchParams.get('root') ?? '';
     const path = url.searchParams.get('path') ?? '';
@@ -407,8 +396,6 @@ export const ACTIONS = [
     'new-workspace',
     'close-workspace',
     'select-workspace',
-    'note-save',
-    'note-delete',
     'order-notes'
 ] as const;
 
@@ -420,9 +407,7 @@ const fsBodyShape = z.object({
     action: z.enum(ACTIONS),
     path: textShape,
     name: textShape,
-    id: textShape,
-    title: textShape,
-    body: textShape,
+    root: textShape,
     ids: z.array(z.string()).catch([])
 });
 
@@ -454,28 +439,18 @@ function actionAnswer(
     );
 }
 
-/** Write one note, which is a file of its own rather than a change to the workspace. */
-function writeNote(fields: FsFields, notes: string | null): Response {
-    if (notes === null) return json({ error: 'no-primary' }, { status: 400, headers: NO_STORE });
-    const id = fields.id.trim();
-    const row = saveNote(notes, id, fields.title, fields.body);
-    if (row === null) return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
-    return json({ ok: true, changed: ['note'], refused: [], note: row }, { headers: NO_STORE });
-}
-
-/** Take one note off the disk. */
-function removeNote(fields: FsFields, notes: string | null): Response {
-    if (notes === null) return json({ error: 'no-primary' }, { status: 400, headers: NO_STORE });
-    const id = fields.id.trim();
-    if (!deleteNote(notes, id))
+/**
+ * Write the order one hub's notes are listed in. A name that is no hub's is refused `no-such-hub`,
+ * and a notes folder that is not there, or is a link out of its hub, `no-such-note`, with nothing
+ * written.
+ */
+function orderNotes(fields: FsFields, hubs: readonly { name: string; dir: string }[]): Response {
+    const hub = hubs.find((one) => one.name === fields.root);
+    if (hub === undefined)
+        return json({ error: 'no-such-hub' }, { status: 400, headers: NO_STORE });
+    if (notesFolderState(hub.dir).state !== 'ok')
         return json({ error: 'no-such-note' }, { status: 400, headers: NO_STORE });
-    return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
-}
-
-/** Write the order the notes are listed in. */
-function orderNotes(fields: FsFields, notes: string | null): Response {
-    if (notes === null) return json({ error: 'no-primary' }, { status: 400, headers: NO_STORE });
-    const refused = writeNoteOrder(notes, fields.ids);
+    const refused = writeNoteOrder(notesFolderOf(hub.dir), fields.ids);
     if (refused !== null) return json({ error: refused }, { status: 400, headers: NO_STORE });
     return json({ ok: true, changed: ['note'], refused: [] }, { headers: NO_STORE });
 }
@@ -485,9 +460,7 @@ function orderNotes(fields: FsFields, notes: string | null): Response {
  */
 function act(fields: FsFields, into: FsTarget): Response {
     const action = fields.action;
-    if (action === 'note-save') return writeNote(fields, into.notes);
-    if (action === 'note-delete') return removeNote(fields, into.notes);
-    if (action === 'order-notes') return orderNotes(fields, into.notes);
+    if (action === 'order-notes') return orderNotes(fields, into.workspace.open().hubs);
     if (action === 'save-workspace') {
         return actionAnswer(saveWorkspaceAs(into.workspace.stateFolder, fields.name));
     }
@@ -501,8 +474,8 @@ function act(fields: FsFields, into: FsTarget): Response {
 }
 
 /**
- * POST /api/fs: one action on the workspace or the notes. The order is the order of the refusals:
- * the token, the body, the action, and only then the files.
+ * POST /api/fs: one action on the workspace or the order of a hub's notes. The order is the order
+ * of the refusals: the token, the body, the action, and only then the files.
  */
 export async function handleFsWrite(
     request: Request,

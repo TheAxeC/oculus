@@ -14,13 +14,14 @@
 <script lang="ts">
     // Layer 3, view. The workspace in force as an explorer: a header row for the workspace with its
     // four actions and its menu, every root as a top-level folder row under it, and, in the same
-    // row style, the open editors of the page, the outline, clangd's AST and Memory Usage while the
-    // file tab the reader looked at last holds an answer, the timeline of that tab, the bookmarks
-    // and the notes. The sections are drawn in the order the tab keeps (`sections`, open editors
-    // first and the tree second until the reader drags a head or presses Alt+Up or Alt+Down on it).
-    // The view's toolbar holds the follow toggle and the pin, and its bar the filter with the fuzzy
-    // toggle. Every control is drawn in every state the view is in: a section whose file could not
-    // be read keeps its head and its control and says why in its one row.
+    // row style, the open editors of the page, the outline and the backlinks, clangd's AST and
+    // Memory Usage while the file tab the reader looked at last holds an answer, the timeline of
+    // that tab, the bookmarks, the notes of every hub and their tags. The sections are drawn in the
+    // order the tab keeps (`sections`, open editors first and the tree second until the reader
+    // drags a head or presses Alt+Up or Alt+Down on it). The view's toolbar holds the follow toggle
+    // and the pin, and its bar the filter with the fuzzy toggle. Every control is drawn in every
+    // state the view is in: a section whose file could not be read keeps its head and its control
+    // and says why in its one row.
     //
     // A folder is read one level at a time, when it is opened: a root is a whole checkout and
     // walking one to draw it would read a hundred thousand names to show twenty. Which folders are
@@ -35,13 +36,14 @@
     // shared/explorer/control/bookmark-actions.ts's. What stays in this view is what only a Files
     // tab has: the workspace header, follow mode, the rooted tab and the sections.
     //
-    // The sections are files/sections/'s: the outline and clangd's two read the file tab shown last
-    // on the page, the timeline the file pinned, else the one selected, else the one of the file
-    // tab shown last, the bookmarks and the notes read their own files and answer a read of either
-    // that failed. What this view reads of them is the bookmarks the tree draws its stars from. A
-    // bookmark is added by the star on a file, a folder or a root and renamed and removed on its
-    // row in the Bookmarks section; the file `bookmarks.yml` in the hub's `.oculus` folder is
-    // written by those controls and by the star, and no form edits it.
+    // The sections are files/sections/'s: the outline, the backlinks and clangd's two read the file
+    // tab shown last on the page, the timeline the file pinned, else the one selected, else the one
+    // of the file tab shown last, the bookmarks and the notes read their own files and answer a
+    // read of either that failed, and the tags are read from the notes. What this view reads of
+    // them is the bookmarks the tree draws its stars from. A bookmark is added by the star on a
+    // file, a folder or a root and renamed and removed on its row in the Bookmarks section; the
+    // file `bookmarks.yml` in the hub's `.oculus` folder is written by those controls and by the
+    // star, and no form edits it.
     //
     // The folders of the workspace are those of its workspace file (`.oculus/workspaces/<name>.yml`
     // of a hub), or those the state keeps for an unsaved workspace, and any of them can be taken

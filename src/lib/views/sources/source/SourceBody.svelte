@@ -77,6 +77,8 @@
         failed: boolean;
         said: string;
         tone: SaidTone;
+        /** Says why a file pasted or dropped into a note was refused. */
+        onsaid: (words: string) => void;
     };
 
     let {
@@ -118,7 +120,8 @@
         saveMessage,
         failed,
         said,
-        tone
+        tone,
+        onsaid
     }: Props = $props();
 </script>
 
@@ -146,6 +149,8 @@
             <Editor
                 bind:this={editor}
                 path={at}
+                {root}
+                {onsaid}
                 {place}
                 {onwent}
                 {first}

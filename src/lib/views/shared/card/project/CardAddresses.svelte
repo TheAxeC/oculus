@@ -1,10 +1,10 @@
 <script lang="ts">
     // Layer 3, shared view. The `links:` of a project's manifest, one line each. An entry is
-    // an address only when views/shared/forms/posting.ts says it names a web page; every other
+    // an address only when views/shared/card/feed/posting.ts says it names a web page; every other
     // entry is drawn as the words it is.
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
-    import { posting } from '../../forms/posting';
+    import { posting } from '../feed/posting';
     import type { BoardItem } from '$lib/state/boards/board';
 
     type Props = {

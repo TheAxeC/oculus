@@ -4,7 +4,9 @@
 // server's root or through a link out of it; the lists they answer hold none of them; the entry's
 // `refuses` is true for a Markdown file under `secrets`; a change on disk of a file under `secrets`
 // or `node_modules` is not told to the server; and the entry's diagnostics hook drops a mark whose
-// path lies outside the root or in `secrets`. No server process runs: each handler is called as
+// path lies outside the root or in `secrets`. A hub's notes folder `.oculus/notes/` is the one
+// folder under a dot folder whose files are listed and told, and the hub's other `.oculus`
+// folders and its `secrets` stay out. No server process runs: each handler is called as
 // the relay calls it, over a scratch hub and a scratch home folder that `os.homedir` answers
 // through `HOME`.
 //
@@ -188,6 +190,37 @@ describe('the Markdown server may not be given the machine or the outside', () =
     });
 
     describe('findMarkdownFilesInWorkspace', () => {
+        it("lists a hub's notes and no other file under .oculus or secrets", async () => {
+            const dir = realpathSync(scratchDir('oculus-md-notes-'));
+            const files = [
+                'README.md',
+                '.oculus/notes/Kickoff.md',
+                '.oculus/notes/sub/Plan.md',
+                '.oculus/notes/.hidden/x.md',
+                '.oculus/workspaces/x.md',
+                '.oculus/wallpaper/README.md',
+                'secrets/s.md'
+            ];
+            for (const path of files) {
+                mkdirSync(join(dir, path, '..'), { recursive: true });
+                writeFileSync(join(dir, path), '# n\n');
+            }
+            const roots = servedRoots([{ key: 'notes', dir, hub: true }]);
+            const found = (await HANDLERS['markdown/findMarkdownFilesInWorkspace'](
+                {},
+                {
+                    ...askOf('hub'),
+                    root: roots[0],
+                    roots
+                }
+            )) as string[];
+            expect(found.sort()).toEqual(
+                ['.oculus/notes/Kickoff.md', '.oculus/notes/sub/Plan.md', 'README.md']
+                    .map((path) => pathToFileURL(join(dir, path)).href)
+                    .sort()
+            );
+        });
+
         it('lists the files of the root and none under secrets or beside it', async () => {
             const found = (await call('markdown/findMarkdownFilesInWorkspace', {})) as string[];
             expect(found.sort()).toEqual(
@@ -266,6 +299,21 @@ describe('the Markdown server may not be given the machine or the outside', () =
                 (path) => entry?.refuses?.(join(planted.hub, path), planted.roots) ?? false
             );
             expect(match(relative)).toBe(told);
+        });
+
+        it.each([
+            ['a note of the notes folder', join('.oculus', 'notes', 'Kickoff.md'), true],
+            ['a note in a folder of it', join('.oculus', 'notes', 'sub', 'Plan.md'), true],
+            ['a file in a dot folder of it', join('.oculus', 'notes', '.hidden', 'x.md'), false],
+            ['a file of the workspaces folder', join('.oculus', 'workspaces', 'x.md'), false],
+            ['the wallpaper folder README', join('.oculus', 'wallpaper', 'README.md'), false],
+            ['a Markdown file under secrets', join('secrets', 'key.md'), false]
+        ])('tells the server a change on disk in a hub of %s: %s', (_name, relative, told) => {
+            const match = entryFiles(
+                entry?.fileEvents?.() ?? [],
+                (path) => entry?.refuses?.(join(planted.hub, path), planted.roots) ?? false
+            );
+            expect(match(relative, true)).toBe(told);
         });
     });
 

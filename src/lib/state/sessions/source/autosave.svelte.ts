@@ -18,6 +18,11 @@
 // tabs it could not save are the ones the close still asks about. An app's `workspace.saveAll` asks
 // for every tab with unsaved text to be saved whatever the mode (`saveEvery`), as a press of Save
 // on each does, formatting where the language's record says so and the tab's editor is mounted.
+//
+// A note (a Markdown file of a hub's notes folder, `note` says which tab holds one and how long it
+// waits) saves itself `notes.autosave_ms` after its last edit whatever the mode, through the same
+// save with the same rules, and a close of its tab always saves it first. A note removed while its
+// save waits has the save dropped (`drop`), so nothing is written where it was.
 
 import type { Autosave } from '../../../data/helpers/editor/editor.ts';
 import { diskFileOf, type SourceDraft } from './draft.ts';
@@ -44,6 +49,8 @@ export type AutosaveDeps = {
     options: () => AutosaveOptions;
     rules: (id: string, draft: SourceDraft, root: string, path: string) => SaveRules;
     timers: Timers;
+    /** The wait of a tab's file, `root/path`, when it is a note, else null. */
+    note?: (file: string) => number | null;
 };
 
 export type AutosaveStore = {
@@ -53,8 +60,13 @@ export type AutosaveStore = {
     pageBlurred: () => void;
     /** Save every tab with unsaved text; whether every one was written. */
     saveEvery: () => Promise<boolean>;
-    /** Save the tabs among these that the mode saves on a close; the others are left alone. */
+    /**
+     * Save the tabs among these that the mode saves on a close, and every note among them; the
+     * others are left alone.
+     */
     saveBeforeClose: (ids: string[]) => Promise<void>;
+    /** Drop a tab's waiting save, for a tab whose file was removed. */
+    drop: (id: string) => void;
     /** Follow the page's focus: the window's blur and the document turning hidden. */
     followPage: (page: {
         addEventListener: (type: string, listener: () => void) => void;
@@ -138,18 +150,26 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         waiting.delete(id);
     }
 
+    /** The wait of a tab that holds a note, or null for one that does not. */
+    function noteWait(id: string): number | null {
+        return deps.note?.(source.sourceDraft(id).file) ?? null;
+    }
+
     // Each edit starts the wait again, and an edit lifts a refusal.
     source.onEdit((id) => {
         blocked.delete(id);
         cancel(id);
         const options = current();
-        if (options?.autosave !== 'after_delay') return;
+        const note = noteWait(id);
+        if (note === null && options?.autosave !== 'after_delay') return;
+        const wait = note ?? options?.autosaveDelay ?? 0;
         waiting.set(
             id,
             timers.setTimeout(() => {
                 waiting.delete(id);
-                if (current()?.autosave === 'after_delay' && eligible(id)) void save(id);
-            }, options.autosaveDelay)
+                const saves = noteWait(id) !== null || current()?.autosave === 'after_delay';
+                if (saves && eligible(id)) void save(id);
+            }, wait)
         );
     });
 
@@ -183,8 +203,8 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         const covers =
             options?.autosave === 'on_focus_change' ||
             (options?.autosave === 'after_delay' && options.autosaveDelay <= CLOSE_SAVES_WITHIN);
-        if (!covers) return;
-        await Promise.all(ids.filter((id) => eligible(id)).map((id) => save(id)));
+        const saved = ids.filter((id) => (covers || noteWait(id) !== null) && eligible(id));
+        await Promise.all(saved.map((id) => save(id)));
     }
 
     function followPage(page: Parameters<AutosaveStore['followPage']>[0]): void {
@@ -194,5 +214,5 @@ export function createAutosave(deps: AutosaveDeps): AutosaveStore {
         });
     }
 
-    return { blurred, pageBlurred, saveBeforeClose, saveEvery, followPage };
+    return { blurred, pageBlurred, saveBeforeClose, saveEvery, followPage, drop: cancel };
 }

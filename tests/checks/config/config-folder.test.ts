@@ -272,7 +272,7 @@ describe("oculus's own config directory", () => {
         'views/sources/document.yml',
         'views/sources/file.yml',
         'views/sources/files.yml',
-        'views/sources/note.yml',
+        'views/sources/notes.yml',
         'views/sources/repositories.yml',
         'views/sources/search.yml',
         'views/sources/source.yml',

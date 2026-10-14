@@ -1,14 +1,15 @@
 <svelte:options namespace="svg" />
 
 <script lang="ts">
-    // Layer 3, Map partial. The node layer of the graph, drawn inside the SVG of Graph.svelte: a
-    // circle in the tone of its project type for a project (node-view.ts), a square for a pillar
-    // or a collaborator, each a keyboard stop that opens its view on Enter or Space. The layer
+    // Layer 3, shared graph partial. The node layer of the graph, drawn inside the SVG of
+    // Graph.svelte: a circle in the tone of its project type for a project (node-tone.ts), a circle
+    // in the accent for a note, a square for a pillar or a collaborator, each a keyboard stop that
+    // opens it on Enter or Space. The layer
     // holds no pointer state of its own: a press goes to the graph, which owns the drag, the link
     // and the pan, and the node the pointer or the keyboard is on is handed back through the two
     // bound props, since the graph draws that node's label on top. An archived project is dimmed.
 
-    import { nodeTone } from './node-view';
+    import { nodeTone } from './node-tone';
     import type { PointNode } from '$lib/state/boards/structure/graph';
 
     type Props = {
@@ -64,6 +65,8 @@
                 r={node.radius}
                 style={`--node-fill: var(--c-${nodeTone(node)})`}
             ></circle>
+        {:else if node.kind === 'note'}
+            <circle class="note-node" cx={node.x} cy={node.y} r={node.radius}></circle>
         {:else}
             <rect
                 class:line-node={node.kind === 'line'}
@@ -82,6 +85,10 @@
 <style>
     circle {
         fill: var(--node-fill);
+    }
+
+    circle.note-node {
+        fill: var(--accent);
     }
 
     rect.line-node {

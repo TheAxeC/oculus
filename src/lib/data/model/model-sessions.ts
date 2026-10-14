@@ -533,6 +533,40 @@ export type FilesPayload = {
     workspaces?: boolean;
 };
 
+// ------------------------------------------------------------------ notes
+/** One link of a note to another file of its notes folder: the file, the line and its text. */
+export type NoteLinkRow = { to: string; line: number; text: string };
+
+/** One place a note carries a tag: the tag's words and the line, counted from zero. */
+type NoteTagRow = { tag: string; line: number };
+
+/**
+ * One file or folder of a hub's notes folder, by its path inside the folder: when it was written,
+ * and for a note the files its links and embeds find and its tags.
+ */
+export type NoteEntry = {
+    path: string;
+    kind: 'file' | 'dir';
+    modified: number;
+    links?: NoteLinkRow[];
+    tags?: NoteTagRow[];
+};
+
+/**
+ * One hub's notes, as GET /api/fs?notes=1 answers them: the hub's workspace name, whether it is the
+ * primary, and its notes folder, which is read (`ok`), not there yet (`none`), a link out of the
+ * hub (`refused`) or unreadable (`unreadable`, with the reason). The entries are in the order the
+ * Notes section lists them, each folder's together: its folders by name, then its notes the order
+ * file does not name, newest first, then the ones it names in its order, then its other files.
+ */
+export type HubNotes = {
+    root: string;
+    primary: boolean;
+    state: 'ok' | 'none' | 'refused' | 'unreadable';
+    error: string;
+    entries: NoteEntry[];
+};
+
 // ------------------------------------------------------------------ hpc
 /**
  * `unconfigured` is a hub whose settings name no cluster: there is nothing to ask, so nothing is

@@ -30,6 +30,11 @@
 // below it) and clangd's two extensions hand their answers to the page's stores
 // (state/system/machine/lsp/), which the Explorer's and the Files view's sections draw. The tab
 // answers the palette's workspace symbols (`#`) through the same server.
+//
+// An edit a server asks for is made by the page's edit plan (state/system/machine/lsp/edits.ts),
+// except the rename of a note the Markdown entry answers a rename on a `[[link]]` with, which is
+// the Notes section's rename of the note (`explorer.rename`), so the links are rewritten once and a
+// refusal is the sentence the Notes section says.
 
 import type * as Monaco from 'monaco-editor';
 import type { ClientState } from '$lib/state/client/context';
@@ -58,6 +63,8 @@ import { symbolRowsOf, type SymbolRow } from '$lib/state/system/machine/lsp/work
 import { t } from '$lib/state/shared/words/text';
 import { isPrivateFile } from '$lib/state/system/config/config-files';
 import { noticeWords } from '$lib/state/system/machine/refactor/notice-words';
+import { noteRenameOf } from '$lib/state/system/machine/lsp/edits';
+import { sentenceOf } from '$lib/state/sources/explorer/notes/note-attach';
 
 /** The milliseconds a save waits for the language server's formatting (VS Code's participant). */
 const FORMAT_TIMEOUT_MS = 60_000;
@@ -225,8 +232,23 @@ export function createLspTab(input: LspTabInput): LspTab {
             }
         },
         library: lsp.named,
-        applyEdit: (edit, held, options) =>
-            refactor.submit(edit, held, { ...options, words: noticeWords }),
+        applyEdit: async (edit, held, options) => {
+            const hubs = client.fs.roots().flatMap((one) => (one.hub === true ? [one.key] : []));
+            const note = noteRenameOf(edit, hubs);
+            if (note === null) {
+                return refactor.submit(edit, held, { ...options, words: noticeWords });
+            }
+            const renamed = await client.explorer.rename(note.item, note.name);
+            if (!renamed.ok) {
+                return {
+                    applied: false,
+                    notice: 'lsp_edit_refused',
+                    words: [sentenceOf(renamed, t)]
+                };
+            }
+            await options.applied();
+            return { applied: true };
+        },
         diagnostics: documents.setDiagnostics,
         symbols: documents.setSymbols,
         notice: (key, ...words) => input.say(noticeWords(key, words)),

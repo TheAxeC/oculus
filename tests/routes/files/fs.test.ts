@@ -1,7 +1,7 @@
 // Layer 2, route tests. What the /api/fs route answers. The route itself is a few lines handing the
-// request to lib/server/files/fs.ts with the open workspace, the bookmarks and notes places and the
-// process's write chain, which is what this calls: handleFsWrite takes a Request and the target to
-// read and write.
+// request to lib/server/files/fs.ts with the open workspace, the bookmarks place and the process's
+// write chain, which is what this calls: handleFsWrite takes a Request and the target to read
+// and write.
 //
 // Every folder and the workspace state here are synthetic, under the system temporary directory,
 // and every path written is asserted to be inside it first. What this does NOT cover: the route
@@ -51,7 +51,6 @@ function target(): FsTarget & { hub: string } {
         workspace: workspaceWith([{ name: 'hub', dir: hub }]),
         machine: { set: [], defaults: {}, values: {}, hubs: {} },
         bookmarks: join(store, 'bookmarks.yml'),
-        notes: join(store, 'notes'),
         writes: fsWrites(),
         ignored: ignoredCache()
     };

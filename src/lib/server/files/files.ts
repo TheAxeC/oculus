@@ -13,6 +13,11 @@
 // the file is then required to be the directory itself or something under it. Where the request
 // came from is answered before any of that, by the origin guard in src/hooks.server.ts.
 //
+// An SVG file is served with `x-content-type-options: nosniff` and a content security policy that
+// lets it carry its own styles and nothing that loads or runs (`SVG_GUARD`), whatever folder holds
+// it, so a drawing a note embeds, or any SVG whose address is opened on its own, stays an image and
+// never runs its script. The diagrams route (server/content/diagrams.ts) sends the same pair.
+//
 // Whether a path lies in a folder and where a path really is are read from server/core/paths.ts
 // (`inside`, `realPath`).
 
@@ -131,6 +136,15 @@ export function resolveRootPath(
     return { path: full };
 }
 
+/** The headers that keep an SVG file an image wherever its address is opened. */
+export const SVG_GUARD = {
+    'x-content-type-options': 'nosniff',
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'"
+} as const;
+
+/** The type every SVG file is served as. */
+const SVG_TYPE = 'image/svg+xml';
+
 /**
  * The file the request names, streamed from disk. 404 covers every way there is nothing to send: a
  * root nothing configures, a root whose directory is not there, a path that leaves the root once
@@ -149,12 +163,14 @@ export function serveFile(
     // A file of an apps folder is app code. It is sent as plain text with sniffing off, so a page
     // that opens it (the Document view's frame has this origin) shows its source and never runs it.
     const app = inAppsFolder(appFolders, full, '');
+    const type = app ? 'text/plain; charset=utf-8' : typeOf(full);
     return new Response(body, {
         status: 200,
         headers: {
-            'content-type': app ? 'text/plain; charset=utf-8' : typeOf(full),
+            'content-type': type,
             'cache-control': CACHE,
-            ...(app ? { 'x-content-type-options': 'nosniff' } : {})
+            ...(app ? { 'x-content-type-options': 'nosniff' } : {}),
+            ...(type.startsWith(SVG_TYPE) ? SVG_GUARD : {})
         }
     });
 }

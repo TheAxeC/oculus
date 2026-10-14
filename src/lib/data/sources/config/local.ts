@@ -59,11 +59,6 @@ export type LocalConfig = {
      */
     bookmarks?: string;
     /**
-     * Where the scratch notes live, `notes` in the file. Absent unless the machine sets it, and the
-     * file browser then uses .oculus/notes in the primary's folder.
-     */
-    notes?: string;
-    /**
      * Where the change log lives, `changes` in the file. Absent unless the machine sets it, and the
      * write path then uses ~/.oculus/changes.jsonl.
      */
@@ -153,7 +148,6 @@ export const LOCAL_KEYS = [
     'sessions_cache',
     'sessions_overrides',
     'bookmarks',
-    'notes',
     'changes',
     'history',
     'approvals',
@@ -416,7 +410,6 @@ export const STATE_PATHS = [
     ['sessions_cache', 'sessionsCache'],
     ['sessions_overrides', 'sessionsOverrides'],
     ['bookmarks', 'bookmarks'],
-    ['notes', 'notes'],
     ['changes', 'changes'],
     ['history', 'history'],
     ['approvals', 'approvals'],

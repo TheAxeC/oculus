@@ -1,7 +1,8 @@
 // Layer 4, server test. A Markdown file created or moved on disk while the Markdown server runs is
 // in the server's workspace answers (G72): references to a heading list the links of a file that no
 // tab opened, whether the file was written new, moved from another place, or moved inside a folder
-// that was renamed.
+// that was renamed, and a note written new in the hub's notes folder `.oculus/notes/`, the one
+// folder under a dot folder the server is given.
 //
 // The server is the real `vscode-markdown-languageserver` of oculus's own `node_modules`, started
 // through the relay as the page starts it, over a scratch root; the page is a recording sink. The
@@ -113,8 +114,14 @@ function tapped(): {
     };
 }
 
-/** The relay over the real server, a recording page, and the requests a page makes. */
-function scene(root: string): {
+/**
+ * The relay over the real server, a recording page, and the requests a page makes; `hub` serves
+ * the root as a hub.
+ */
+function scene(
+    root: string,
+    hub: boolean
+): {
     ask: (method: string, params: unknown) => Promise<unknown>;
     open: (path: string, text: string) => void;
     /** Wait until the server has read the file again, after being told of it, and has its bytes. */
@@ -122,7 +129,7 @@ function scene(root: string): {
 } {
     const wire = tapped();
     const relay = makeRelay({
-        roots: () => [{ key: 'hub', dir: root }],
+        roots: () => [hub ? { key: 'hub', dir: root, hub: true } : { key: 'hub', dir: root }],
         spawn: wire.spawn,
         own: { oculus: ownFolder(), node: process.execPath }
     });
@@ -196,9 +203,14 @@ type Row = {
     listed: string;
     /** The place the references must not list, when the change took a file from it. */
     gone?: string;
+    /** Whether the root is a hub, with its settings file. */
+    hub?: true;
 };
 
 const LINK = '[sec](docs/DATA.md#intro)\n';
+
+/** The hub's settings file, which makes the scratch root a hub. */
+const HUB = { '.oculus/config.yml': 'domains: {}\n' };
 
 const rows: Row[] = [
     {
@@ -221,6 +233,14 @@ const rows: Row[] = [
         listed: 'notes/README.md'
     },
     {
+        title: "a note created in the hub's notes folder after the first references is listed by references to its heading",
+        start: { ...HUB, 'warm.md': WARM, 'docs/DATA.md': DATA, '.oculus/notes/Old.md': WARM },
+        hub: true,
+        change: (root) =>
+            put(root, '.oculus/notes/Kickoff.md', '[sec](../../docs/DATA.md#intro)\n'),
+        listed: '.oculus/notes/Kickoff.md'
+    },
+    {
         title: 'a folder moved after the first references is listed at its new path, not its old',
         start: {
             'warm.md': WARM,
@@ -241,10 +261,10 @@ function addresses(result: unknown): string[] {
 describe('a Markdown file the server learns of from disk', () => {
     it.each(rows)(
         '$title',
-        async ({ start, change, listed, gone }) => {
+        async ({ start, change, listed, gone, hub }) => {
             const root = realpathSync(scratchDir('oculus-md-created-'));
             for (const [path, text] of Object.entries(start)) put(root, path, text);
-            const page = scene(root);
+            const page = scene(root, hub === true);
             page.open('warm.md', WARM);
             await page.ask('textDocument/references', {
                 textDocument: { uri: pageFile('hub', 'warm.md') },

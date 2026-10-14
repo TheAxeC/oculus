@@ -93,7 +93,7 @@ digraph channels {
         "? src/lib/server/machine/runs/schedules/watch.ts:294" [label="src/lib/server/machine/runs/schedules/watch.ts:294 publish(CHANNEL)"];
         "? src/lib/server/root/context.ts:403" [label="src/lib/server/root/context.ts:403 publish(set)"];
         "? src/lib/shell/panes/PaneView.svelte:476" [label="src/lib/shell/panes/PaneView.svelte:476 message()"];
-        "? src/lib/state/client/context.ts:171" [label="src/lib/state/client/context.ts:171 message(
+        "? src/lib/state/client/context.ts:174" [label="src/lib/state/client/context.ts:174 message(
                 key.startsWith('page:leads:')"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
         "? src/lib/state/client/queries.svelte.ts:82" [label="src/lib/state/client/queries.svelte.ts:82 .subscribe((event)"];
@@ -215,7 +215,7 @@ digraph channels {
         "routes/+page";
     }
     "? src/lib/shell/panes/PaneView.svelte:476" -> "shell/panes/PaneView";
-    "? src/lib/state/client/context.ts:171" -> "state/client/context";
+    "? src/lib/state/client/context.ts:174" -> "state/client/context";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
     "? src/lib/state/client/queries.svelte.ts:82" -> "state/client/queries";
     "? src/lib/state/sessions/source/disk.svelte.ts:123" -> "state/sessions/source/disk";

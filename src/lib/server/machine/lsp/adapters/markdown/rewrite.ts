@@ -3,15 +3,15 @@
 // and knows nothing of backticks, so the paths that were written as `docs/DATA.md:3` are rewritten
 // here, in the form they were written in: from the root, or from the folder of the file.
 //
-// The move has happened when this is asked, so the rule of backticks.ts is run over the disk as it
-// was before: a place under a moved item was there if the item is there now, and a place under a
+// The move has happened when this is asked, so the rule of own/backticks.ts is run over the disk as
+// it was before: a place under a moved item was there if the item is there now, and a place under a
 // new place was not. A path that led to something that moved leads to its new place, written again
 // the way it was written; the file's own folder is its old folder when the file itself moved.
 
 import { readdirSync } from 'node:fs';
 import { basename, dirname, relative, sep } from 'node:path';
 import { normal } from '../../uris.ts';
-import { diskGround, resolvedPaths, type Ground, type Kind } from './backticks.ts';
+import { diskGround, resolvedPaths, type Ground, type Kind } from './own/backticks.ts';
 import type { Reach } from './places.ts';
 
 /** One item that moved, by real paths. */

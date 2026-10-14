@@ -1,8 +1,8 @@
 // Layer 2, server. The files and folders the machine keeps one of per oculus (the reader's own
-// bookmarks, the scratch notes, the schedules and the machine's apps), which live in the primary
-// hub's `.oculus/` folder. A key of the machine's values that names one of them wins; otherwise the
-// default lies in the primary's folder; a workspace with no primary has none, and the sections that
-// read them are empty and the actions that would write them say why.
+// bookmarks, the schedules and the machine's apps), which live in the primary hub's `.oculus/`
+// folder. A key of the machine's values that names one of them wins; otherwise the default lies in
+// the primary's folder; a workspace with no primary has none, and the sections that read them are
+// empty and the actions that would write them say why.
 
 import { join } from 'node:path';
 import { ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
@@ -13,7 +13,6 @@ import type { LocalConfig } from '../../../data/sources/config.ts';
  */
 export type PerOculus = {
     bookmarks: string | null;
-    notes: string | null;
     schedules: string | null;
     appsDir: string | null;
 };
@@ -21,7 +20,6 @@ export type PerOculus = {
 /** The name of each per-oculus path inside the primary hub's `.oculus/` folder. */
 export const PER_OCULUS_NAMES: Record<keyof PerOculus, string> = {
     bookmarks: 'bookmarks.yml',
-    notes: 'notes',
     schedules: 'schedules.yml',
     appsDir: 'apps'
 };
@@ -37,7 +35,6 @@ export function perOculus(primaryDir: string | null, local: LocalConfig): PerOcu
     const under = (name: string): string | null => (base === null ? null : join(base, name));
     return {
         bookmarks: local.bookmarks ?? under(PER_OCULUS_NAMES.bookmarks),
-        notes: local.notes ?? under(PER_OCULUS_NAMES.notes),
         schedules: local.schedules ?? under(PER_OCULUS_NAMES.schedules),
         appsDir: local.appsDir ?? under(PER_OCULUS_NAMES.appsDir)
     };

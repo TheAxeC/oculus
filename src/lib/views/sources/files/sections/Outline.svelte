@@ -28,14 +28,9 @@
     // is loaded and after each change of the text, through outlineFollower over the client state's
     // LaTeX reader, and the list of the last one stays drawn while the next is read.
 
-    import Section from '$lib/views/shared/explorer/sections/Section.svelte';
+    import ListedSection from '$lib/views/shared/explorer/sections/ListedSection.svelte';
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
-    import TreeView from '$lib/ui/tree/TreeView.svelte';
-    import { MOVE_KEYMAP } from '$lib/state/sources/explorer/acts/keys';
-    import {
-        headKeys,
-        type SectionMove
-    } from '$lib/views/shared/explorer/sections/list-drag.svelte';
+    import type { SectionMove } from '$lib/views/shared/explorer/sections/list-drag.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { isLatexLanguage, languageOf, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
     import { fileOfTab } from '$lib/state/workbench/navigation/pages';
@@ -233,55 +228,43 @@
 </script>
 
 <div class="outline" data-fs-outline>
-    <TreeView
+    <ListedSection
         label={t('files.outline')}
         rows={keyRows}
+        count={rows.length}
+        {open}
         {ontoggle}
-        keymap={MOVE_KEYMAP}
-        onkey={headKeys(move)}
+        {move}
+        {empty}
     >
         {#snippet children(nav: TreeNav)}
-            <Section
-                label={t('files.outline')}
-                {nav}
-                count={rows.length}
-                {open}
-                {ontoggle}
-                drag={move?.drag}
-            >
-                {#if empty !== ''}
-                    <li role="none">
-                        <TreeItem label={empty} tone="muted" />
-                    </li>
-                {/if}
-                {#each rows as row (row.key)}
-                    <li role="none" data-fs-symbol={rendered ? row.id : row.line}>
-                        <TreeItem
-                            label={row.title}
-                            id={row.key}
-                            {nav}
-                            level={row.depth + 2}
-                            depth={row.depth}
-                            glyph={row.glyph === '' ? undefined : row.glyph}
-                            glyphStyle={row.colour === '' ? undefined : `color: ${row.colour}`}
-                            tone={row.problem === 'error'
-                                ? 'error'
-                                : row.problem === 'warning'
-                                  ? 'warn'
-                                  : undefined}
-                            title={rendered
-                                ? t('files.outline_go_heading_title', row.title)
-                                : t('files.outline_go_title', row.title, row.line)}
-                            onclick={() => goTo(row)}
-                        >
-                            {#snippet detail()}
-                                {#if row.detail !== ''}{row.detail}
-                                {:else if !rendered}{row.line}{/if}
-                            {/snippet}
-                        </TreeItem>
-                    </li>
-                {/each}
-            </Section>
+            {#each rows as row (row.key)}
+                <li role="none" data-fs-symbol={rendered ? row.id : row.line}>
+                    <TreeItem
+                        label={row.title}
+                        id={row.key}
+                        {nav}
+                        level={row.depth + 2}
+                        depth={row.depth}
+                        glyph={row.glyph === '' ? undefined : row.glyph}
+                        glyphStyle={row.colour === '' ? undefined : `color: ${row.colour}`}
+                        tone={row.problem === 'error'
+                            ? 'error'
+                            : row.problem === 'warning'
+                              ? 'warn'
+                              : undefined}
+                        title={rendered
+                            ? t('files.outline_go_heading_title', row.title)
+                            : t('files.outline_go_title', row.title, row.line)}
+                        onclick={() => goTo(row)}
+                    >
+                        {#snippet detail()}
+                            {#if row.detail !== ''}{row.detail}
+                            {:else if !rendered}{row.line}{/if}
+                        {/snippet}
+                    </TreeItem>
+                </li>
+            {/each}
         {/snippet}
-    </TreeView>
+    </ListedSection>
 </div>

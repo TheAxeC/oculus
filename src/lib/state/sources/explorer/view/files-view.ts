@@ -109,21 +109,30 @@ const SECTION_ORDER: readonly string[] = [
     'editors',
     'files',
     'outline',
+    'backlinks',
     'ast',
     'memory',
     'timeline',
     'bookmarks',
-    'notes'
+    'notes',
+    'tags'
 ];
 
 /**
  * The order a saved record names, read as a whole one: the ids it holds that are sections, each
- * once at its first place, then every section it lacks in the default order. A record that is no
- * list reads as the default order.
+ * once at its first place, and every section it lacks placed after the nearest section that comes
+ * before it in the default order (at the top when none does), so a saved order gets the Backlinks
+ * after its Outline and the Tags after its Notes. A record that is no list reads as the default
+ * order.
  */
 function sectionsOf(held: string[]): string[] {
-    const known = held.filter((id, at) => SECTION_ORDER.includes(id) && held.indexOf(id) === at);
-    return [...known, ...SECTION_ORDER.filter((id) => !known.includes(id))];
+    const order = held.filter((id, at) => SECTION_ORDER.includes(id) && held.indexOf(id) === at);
+    for (const [at, id] of SECTION_ORDER.entries()) {
+        if (order.includes(id)) continue;
+        const before = SECTION_ORDER.slice(0, at).findLast((one) => order.includes(one));
+        order.splice(before === undefined ? 0 : order.indexOf(before) + 1, 0, id);
+    }
+    return order;
 }
 
 /** A count a saved record holds, and 0 for anything that is not a whole number from 0 up. */

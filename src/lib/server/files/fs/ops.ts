@@ -41,6 +41,11 @@
 // `exists` until the page sends `replace: true`, which sends the taken item to the Trash first. The
 // GET answers the two sides of a comparison as a `DiffSides`, `with*` being the left side; a folder
 // on a side is `not_a_folder` and a file over `TEXT_LIMIT` is `too_large`.
+//
+// A name that lands in a hub's notes folder, or a folder under it, follows the name rule of the
+// notes (fs/notes.ts's noteLanding) on top of the rules here: a create, a rename, a move, a copy
+// and an upload there refuse a name the rule refuses as `invalid_name` and a name another item of
+// the folder has but for letter case or normalisation as `exists`, and write the name in NFC.
 
 import { json } from '@sveltejs/kit';
 import { constants, lstatSync, readFileSync, statSync } from 'node:fs';
@@ -75,6 +80,7 @@ import type { SearchRunner } from '../search/search.ts';
 import { recordOf, stampKept, stampOf, unkeep } from './file-changes.ts';
 import { defaultHistoryDir, historyPath, readCopy } from './history.ts';
 import { lspEditFiles } from './lsp-edit.ts';
+import { noteLanding, type Landing } from './notes.ts';
 import { opsShape } from './operations/ops-shape.ts';
 import { previewReplace, replaceFiles } from './operations/replace.ts';
 
@@ -128,8 +134,13 @@ export type Fail = { ok: false; error: OpsRefusal };
 const fail = (error: OpsRefusal): Fail => ({ ok: false, error });
 
 /** Whether a step answered a refusal rather than its value. */
-function refused(step: object): step is Fail {
-    return 'ok' in step && step.ok === false;
+function refused(step: unknown): step is Fail {
+    return typeof step === 'object' && step !== null && 'ok' in step && step.ok === false;
+}
+
+/** The name a landing writes, or the refusal it answers. */
+function landingOf(landing: Landing): string | Fail {
+    return 'refused' in landing ? fail(landing.refused) : landing.name;
 }
 
 /** What one operation runs with: the roots, the Trash and the rest of an operation's inputs. */
@@ -140,6 +151,8 @@ export type Scope = {
     trashReplaced: boolean;
     /** The folders no `lsp-edit` or `writing-fix` writes in (`privateFolders`). */
     withheld: readonly string[];
+    /** The folders of the served hubs, whose notes folders a name lands in by their rule. */
+    hubs: readonly string[];
     history?: string;
     /** The search timeout and the ripgrep runner a replace uses. */
     search: { timeout?: number; run?: SearchRunner };
@@ -296,6 +309,20 @@ async function newFile(path: string): Promise<void> {
     await handle.close();
 }
 
+/**
+ * The segments of a name still to be made under a folder that is there, each as it lands by the
+ * rule of a notes folder where it lands in one.
+ */
+function landedSegments(scope: Scope, dir: string, segments: string[]): string[] | Fail {
+    const out: string[] = [];
+    for (const segment of segments) {
+        const one = landingOf(noteLanding(scope.hubs, join(dir, ...out), segment));
+        if (refused(one)) return one;
+        out.push(one);
+    }
+    return out;
+}
+
 /** A new empty file or folder, with the folders its name names made between. */
 async function createItem(
     scope: Scope,
@@ -307,7 +334,9 @@ async function createItem(
     if (!made.ok) return fail('invalid_name');
     const walked = walkTo(folder.rootFolder, folder.real, made.segments.slice(0, -1));
     if (refused(walked)) return walked;
-    const target = join(walked.dir, ...walked.rest, made.segments.at(-1) ?? '');
+    const named = landedSegments(scope, walked.dir, [...walked.rest, made.segments.at(-1) ?? '']);
+    if (refused(named)) return named;
+    const target = join(walked.dir, ...named);
     if (walked.rest.length === 0 && pathExists(target)) return fail('exists');
     const outcome = await attempt(async () => {
         if (walked.rest.length > 0) await mkdir(dirname(target), { recursive: true });
@@ -315,7 +344,7 @@ async function createItem(
         else await newFile(target);
     });
     if (outcome !== null) return outcome;
-    const first = walked.rest.length > 0 ? join(walked.dir, walked.rest[0] ?? '') : target;
+    const first = walked.rest.length > 0 ? join(walked.dir, named[0] ?? '') : target;
     noted(scope, 'create', [], [stampOf(first)]);
     return { ok: true, path: under(folder.rootFolder, target) };
 }
@@ -347,7 +376,12 @@ async function renameItem(
     if (isFolder && below(lexical, item.real)) return fail('into_itself');
     const walked = walkTo(item.rootFolder, dirname(item.real), middle);
     if (refused(walked)) return walked;
-    const target = join(walked.dir, ...walked.rest, name);
+    const own = walked.dir === dirname(item.real) ? basename(item.real) : undefined;
+    const rest = landedSegments(scope, walked.dir, walked.rest);
+    if (refused(rest)) return rest;
+    const last = landingOf(noteLanding(scope.hubs, join(walked.dir, ...rest), name, own));
+    if (refused(last)) return last;
+    const target = join(walked.dir, ...rest, last);
     if (isFolder && below(target, item.real)) return fail('into_itself');
     if (target !== item.real && walked.rest.length === 0 && pathExists(target)) {
         if (!(await sameFile(item.real, target))) return fail('exists');
@@ -447,19 +481,23 @@ async function pasteItems(
         if (refused(found)) return stopped(found.error, done, path);
         if (found.isRoot && request.mode === 'move') return stopped('root', done, path);
         const name = basename(found.real);
-        const taken = join(dest.real, name);
         const isFolder = (await lstatOrNull(found.real))?.isDirectory() === true;
         if (isFolder && inside(dest.real, found.real)) return stopped('into_itself', done, path);
+        const moves = request.mode === 'move' && dirname(found.real) !== dest.real;
+        const own = request.replace ? name : undefined;
+        const kept = moves ? landingOf(noteLanding(scope.hubs, dest.real, name, own)) : name;
+        if (refused(kept)) return stopped(kept.error, done, path);
+        const taken = join(dest.real, kept);
         let landed = taken;
         if (request.mode === 'copy') {
-            landed = join(
-                dest.real,
-                freeName(name, (one) => pathExists(join(dest.real, one)), isFolder)
-            );
+            const free = freeName(name, (one) => pathExists(join(dest.real, one)), isFolder);
+            const copied = landingOf(noteLanding(scope.hubs, dest.real, free));
+            if (refused(copied)) return stopped(copied.error, done, path);
+            landed = join(dest.real, copied);
             const outcome = await attempt(() => copyItem(found.real, landed));
             if (outcome !== null) return stopped(outcome.error, done, path);
             noted(scope, 'copy', [], [stampOf(landed)]);
-        } else if (dirname(found.real) !== dest.real) {
+        } else if (moves) {
             const from = stampOf(found.real);
             if (pathExists(taken)) {
                 if (!request.replace) return stopped('exists', done, path);
@@ -495,7 +533,10 @@ async function uploadItem(
     const made = checkName(request.name);
     const single = made.ok && made.segments.length === 1 && !/[\\/]/.test(request.name);
     if (!made.ok || !single) return fail('invalid_name');
-    const target = join(dest.real, made.segments[0] ?? '');
+    const own = request.replace ? (made.segments[0] ?? '') : undefined;
+    const name = landingOf(noteLanding(scope.hubs, dest.real, made.segments[0] ?? '', own));
+    if (refused(name)) return name;
+    const target = join(dest.real, name);
     const bytes = decoded(request.data);
     if (refused(bytes)) return bytes;
     const there = await lstatOrNull(target);
@@ -642,6 +683,7 @@ export function runOpsFrom(
             trash,
             trashReplaced: deps.trashReplaced ?? true,
             withheld: privateFolders(hubDirs(into.roots), into.home ?? homedir()),
+            hubs: hubDirs(into.roots),
             history: into.history,
             search: { timeout: into.searchTimeout, run: deps.search },
             note: { field: null, before: [], after: [] },

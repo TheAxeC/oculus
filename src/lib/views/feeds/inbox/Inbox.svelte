@@ -31,11 +31,11 @@
     import Search from '$lib/ui/controls/text/Search.svelte';
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import AccountActions from '../../shared/accounts/AccountActions.svelte';
-    import AccountList from '../../shared/accounts/AccountList.svelte';
-    import AddAccount from '../../shared/accounts/AddAccount.svelte';
-    import ConnectorHead from '../../shared/accounts/ConnectorHead.svelte';
-    import NoAccounts from '../../shared/accounts/NoAccounts.svelte';
+    import AccountActions from '../../shared/forms/accounts/AccountActions.svelte';
+    import AccountList from '../../shared/forms/accounts/AccountList.svelte';
+    import AddAccount from '../../shared/forms/accounts/AddAccount.svelte';
+    import ConnectorHead from '../../shared/forms/accounts/ConnectorHead.svelte';
+    import NoAccounts from '../../shared/forms/accounts/NoAccounts.svelte';
     import InboxCard from './InboxCard.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
     import {

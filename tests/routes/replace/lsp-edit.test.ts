@@ -47,6 +47,19 @@ describe('what an lsp-edit writes', () => {
         );
         expect(bytes(w, 'b.txt').toString()).toBe('bar\n');
     });
+
+    it("writes the edit of a note of a hub's notes folder, and refuses a file of another .oculus folder as outside", async () => {
+        const note = '.oculus/notes/sub/A.md';
+        const other = '.oculus/workspaces/x.md';
+        const w = replaceWorld({ [note]: 'foo [[Kickoff]]\n', [other]: 'foo\n' });
+        const edits = [lspEdit([0, 6], [0, 13], 'Plan')];
+        const written = await lspEditPost(w, [lspFile(note, 'foo [[Kickoff]]\n', edits)]);
+        expect(written.body).toEqual({ ok: true, paths: [`hub/${note}`] });
+        expect(bytes(w, note).toString()).toBe('foo [[Plan]]\n');
+        const refused = await lspEditPost(w, [lspFile(other, 'foo\n', edits)]);
+        expect(refused.body).toMatchObject({ ok: false, error: 'outside', failed: `hub/${other}` });
+        expect(bytes(w, other).toString()).toBe('foo\n');
+    });
 });
 
 describe('the size of a file an lsp-edit writes (case 30)', () => {

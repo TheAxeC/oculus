@@ -90,6 +90,21 @@ describe('checkLocal', () => {
     ])('answers %j with the sentence it would throw', (text, expected) => {
         expect(sentence(text)).toBe(expected);
     });
+
+    it('takes a notes key as a key it does not know, which readLocal names as unknown', () => {
+        const text = 'notes: ~/elsewhere';
+        expect(sentence(text)).toBeNull();
+        const hub = hubWith(text);
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        try {
+            const read = readLocal(hub, true);
+            expect(read.problems).toStrictEqual([]);
+            expect(read.unknown).toStrictEqual(['notes']);
+            expect(read.config).not.toHaveProperty('notes');
+        } finally {
+            warn.mockRestore();
+        }
+    });
 });
 
 describe('readLocalText', () => {

@@ -1,12 +1,14 @@
 <script lang="ts">
-    // Layer 3, Map partial. The hand-drawn SVG graph and its drag, pan, zoom, open and related-edge
-    // interactions. The nodes are placed by Graphviz's neato through @viz-js/viz in the page
-    // (state/boards/structure/layout.ts, whose loader the client state holds as `graphviz`), from
+    // Layer 3, shared graph partial. The hand-drawn SVG graph the Map and the Notes Graph draw, and
+    // its drag, pan, zoom, open and link interactions; what a press opens and what a link drawn in
+    // link mode writes are the caller's (`onopen`, `onlink`). The nodes are placed by Graphviz's
+    // neato through @viz-js/viz in the page (state/boards/structure/layout.ts, whose loader the
+    // client state holds as `graphviz`), from
     // the start seed the pane hands down, and each edge is drawn between the ends edgeEnds() of
     // that module answers. The SVG draws the nodes once the placement has come back, draws nothing
     // before that, and says in one line why when the engine refuses the graph or does not load.
     // A pointer is mapped through the letterbox the SVG draws its box in, then the pan and zoom
-    // (views/structure/map/pointer.ts). The view goes on with the one simulation mapPlacement()
+    // (pointer.ts beside this file). The view goes on with the one simulation mapPlacement()
     // settled from neato's placement (state/boards/structure/forces.ts, on d3-force): an effect
     // draws each tick, kept in the box, and stops it when the pane goes or placementKey() changes.
     // A press fixes the node and moves nothing (press()); past the click threshold and a screen
@@ -16,7 +18,7 @@
     //
     // The nodes are one layer of their own, Nodes.svelte, which draws them and reports a press, the
     // node under the pointer and the node holding the keyboard back here. The labels are one layer
-    // over every node. By the rule of views/structure/map/labels.ts a label is hidden when it would
+    // over every node. By the rule of labels.ts beside this file a label is hidden when it would
     // overlap a label already drawn or any node but its own, the pillars' labels placed first,
     // until its node is hovered or holds the keyboard; those labels are drawn whatever they
     // overlap, and last, so they sit on top.
@@ -24,7 +26,6 @@
     import { tick, untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import { onShown } from '$lib/ui/shown';
-    import { writeRelated } from './edge-write';
     import {
         LABEL_DROP,
         LABEL_GAP,
@@ -34,7 +35,6 @@
         shownLabels,
         type LabelSize
     } from './labels';
-    import { viewOf } from './node-view';
     import Nodes from './Nodes.svelte';
     import { dragTarget, movedEnough, nearestProject, toBox, toGraph } from './pointer';
     import { DEFAULT_BOUNDS, type Graph, type PointNode } from '$lib/state/boards/structure/graph';
@@ -57,21 +57,36 @@
     import { useState } from '$lib/state/client/use';
 
     const {
-        entities: { portfolio },
         graphviz,
-        layout: { openView },
-        ui: { textScale },
-        writes: { writeManifest }
+        ui: { textScale }
     } = useState();
 
     type Props = {
         graph: Graph;
         instanceId: string;
-        linkMode: boolean;
         /** The start seed the graph is laid out from, which the pane keeps for its node set. */
         seed: number;
+        /** The words the graph is named by for a reader. */
+        label: string;
+        /** Open what a node stands for, on a click or on Enter or Space. */
+        onopen: (node: PointNode) => void;
+        /** Whether a drag from a project draws a link to the project it ends on. */
+        linkMode?: boolean;
+        /** Write the link drawn in link mode; the sentence saying why it was refused, or ''. */
+        onlink?: (source: PointNode, target: PointNode) => Promise<string>;
+        /** The sentence a placement the engine refused says, with the engine's reason. */
+        failed?: (reason: string) => string;
     };
-    let { graph, instanceId, linkMode, seed }: Props = $props();
+    let {
+        graph,
+        instanceId,
+        seed,
+        label,
+        onopen,
+        linkMode = false,
+        onlink,
+        failed = (reason: string) => t('map.layout_failed', reason)
+    }: Props = $props();
 
     /** The page's Graphviz once loaded, or the reason it did not load. */
     let viz = $state<GraphvizAnswer>(graphviz.loaded());
@@ -238,18 +253,8 @@
         }
     }
 
-    async function toggleRelated(source: PointNode, target: PointNode): Promise<void> {
-        const project = portfolio()?.entities.projects[source.entityId];
-        if (project === undefined) return;
-        const related = project.relatedIds.includes(target.entityId)
-            ? project.relatedIds.filter((id) => id !== target.entityId)
-            : [...project.relatedIds, target.entityId];
-        status = await writeRelated(source.entityId, related, writeManifest);
-    }
-
-    function open(node: PointNode): void {
-        const target = viewOf(node);
-        openView(target.view, target.state);
+    async function linked(source: PointNode, target: PointNode): Promise<void> {
+        if (onlink !== undefined) status = await onlink(source, target);
     }
 
     /** Put the dragged node under the pointer, once it has moved a pixel, and run the forces. */
@@ -263,8 +268,8 @@
     }
 
     function pointerUp(event: PointerEvent): void {
-        if (linkSource !== null && linkTarget !== null) void toggleRelated(linkSource, linkTarget);
-        else if (drag !== null && !moved) open(drag);
+        if (linkSource !== null && linkTarget !== null) void linked(linkSource, linkTarget);
+        else if (drag !== null && !moved) onopen(drag);
         else if (drag !== null && event.type === 'pointerup') dragTo(event);
         if (drag !== null && chosen.forces !== null) release(chosen.forces, drag.id);
         drag = null;
@@ -297,7 +302,7 @@
     {/if}
     {#if failure !== null}
         <div class="status">
-            <Empty error message={t('map.layout_failed', failure)} />
+            <Empty error message={failed(failure)} />
         </div>
     {/if}
     <svg
@@ -306,7 +311,7 @@
         preserveAspectRatio="xMidYMid meet"
         data-map-graph
         role="application"
-        aria-label={t('views.map')}
+        aria-label={label}
         onpointerdown={backgroundDown}
         onpointermove={pointerMove}
         onpointerup={pointerUp}
@@ -362,7 +367,7 @@
                 bind:hovered
                 bind:focused
                 onpress={nodeDown}
-                onopen={open}
+                {onopen}
             />
             <g class="labels">
                 {#each labelled as node (node.id)}

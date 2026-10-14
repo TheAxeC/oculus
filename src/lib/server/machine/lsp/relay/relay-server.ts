@@ -1,9 +1,10 @@
 // Layer 2, server. What the relay does with the messages a language server sends: the answer to a
-// page's request, with the page's id put back and the addresses turned into the page's; a request
-// of the server to its client, which is answered here and not forwarded (`workspace/configuration`
-// from the registry, `client/registerCapability` as file watchers and as features the server
-// declares, progress as `state` messages), except `workspace/applyEdit` and the two refreshes,
-// which reach the page; and the diagnostics a server publishes.
+// page's request, with the page's id put back, the addresses turned into the page's and the entry's
+// own result for the request joined to it (held/requests/merged.ts); a request of the server to its
+// client, which is answered here and not forwarded (`workspace/configuration` from the registry,
+// `client/registerCapability` as file watchers and as features the server declares, progress as
+// `state` messages), except `workspace/applyEdit` and the two refreshes, which reach the page; and
+// the diagnostics a server publishes.
 //
 // The features the servers of apps declare are registered with the page's client of each channel
 // they serve, and withdrawn when no server of the page declares them: when a server answers
@@ -18,6 +19,7 @@ import { normal, toPage } from '../uris.ts';
 import { editAddress, isRecord, languageOf } from '../wire.ts';
 import { fileURLToPath } from 'node:url';
 import { joinedDiagnostics, remainingDiagnostics } from '../held/diagnostics/published.ts';
+import { merged } from '../held/requests/merged.ts';
 import { appInfo, type CollectionHeard } from './relay-apps.ts';
 import {
     complete,
@@ -67,7 +69,7 @@ function response(state: RelayState, held: Held, message: LspRpc): void {
         settleJoin(state, join, join.timer === null);
         return;
     }
-    if (message.error !== undefined) {
+    if (message.error !== undefined && pending.adds === undefined) {
         send(state, pending.page, pending.channel, {
             jsonrpc: '2.0',
             id: pending.id,
@@ -75,12 +77,16 @@ function response(state: RelayState, held: Held, message: LspRpc): void {
         });
         return;
     }
+    const result =
+        message.error === undefined
+            ? mappedResult(state, held, pending, message.result ?? null)
+            : null;
     reply(
         state,
         pending.page,
         pending.channel,
         pending.id,
-        mappedResult(state, held, pending, message.result ?? null)
+        merged(pending.method, pending.adds, result)
     );
 }
 
@@ -95,12 +101,13 @@ export function settleJoin(state: RelayState, join: Join, late: boolean): void {
     join.timer = null;
     for (const part of join.parts) state.pending.delete(part.relayId);
     const answered = join.parts.some((part) => part.result !== null && part.result !== undefined);
-    if (!answered && join.errors.length === join.parts.length && join.errors.length > 0) {
+    const failed = join.errors.length === join.parts.length && join.errors.length > 0;
+    if (!answered && failed && join.adds === undefined) {
         const error = join.errors[0] as { code: number; message: string };
         send(state, join.page, join.channel, { jsonrpc: '2.0', id: join.id, error });
         return;
     }
-    reply(state, join.page, join.channel, join.id, joined(join));
+    reply(state, join.page, join.channel, join.id, merged(join.method, join.adds, joined(join)));
 }
 
 /** The page's channel for a document a server names, or its first channel of the entry. */

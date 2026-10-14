@@ -39,7 +39,6 @@ async function answered(primary: boolean) {
         workspace,
         machine: { set: read.set, defaults, values: {}, hubs: {} },
         bookmarks: null,
-        notes: null,
         writes: fsWrites(),
         ignored: ignoredCache()
     };

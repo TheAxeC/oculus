@@ -3,10 +3,15 @@
 // at goes through the requests answered here (requests.ts), and each one asks first whether the
 // file is in the server's root and does not lie in the `secrets` folder of every hub or in
 // `~/.oculus`, whatever letter case names it.
+//
+// The Markdown files of a root leave out every folder whose name starts with a dot but one: a
+// hub's notes folder `.oculus/notes/`, whose notes are in the server's workspace as the hub's other
+// Markdown files are, and the folders under it that are not dot folders themselves.
 
 import { readdir, stat } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { NOTES_FOLDER, inHiddenFolder } from '../../../../../data/prose/markdown/note-names.ts';
 import { inside, realPath } from '../../../../core/paths.ts';
 import type { ServedRoot } from '../../uris.ts';
 import { isPrivateFile } from '../yaml/private-file.ts';
@@ -62,9 +67,24 @@ function hasExtension(name: string, extensions: readonly string[]): boolean {
 }
 
 /**
+ * The folders a walk for a root's Markdown files starts at, from a folder of the root: the root
+ * with a hub's notes folder beside it, the notes folder for a folder above it, none for a folder in
+ * another dot folder, and the folder itself otherwise.
+ */
+function startsOf(reach: Reach, from: string): string[] {
+    const hub = reach.root.hub === true;
+    const notes = realPath(join(reach.root.real, ...NOTES_FOLDER.split('/')), true);
+    const there = hub && notes !== null && served(notes, reach) ? notes : null;
+    if (resolve(from) === resolve(reach.root.real)) return there === null ? [from] : [from, there];
+    if (there !== null && inside(there, from)) return [there];
+    const path = relative(reach.root.real, from).split(sep).join('/');
+    return inHiddenFolder(`${path}/.`, hub) ? [] : [from];
+}
+
+/**
  * The Markdown files of a root, or of a folder of it, as real paths: the folders are read one at a
- * time without blocking the process, a folder whose name starts with a dot, `node_modules`, a link
- * to a folder and everything withheld are left out.
+ * time without blocking the process, a folder whose name starts with a dot but a hub's notes
+ * folder, `node_modules`, a link to a folder and everything withheld are left out.
  */
 export async function markdownFiles(
     reach: Reach,
@@ -72,7 +92,7 @@ export async function markdownFiles(
     from: string = reach.root.real
 ): Promise<string[]> {
     const found: string[] = [];
-    const folders = [from];
+    const folders = startsOf(reach, from);
     for (let folder = folders.pop(); folder !== undefined; folder = folders.pop()) {
         let entries;
         try {

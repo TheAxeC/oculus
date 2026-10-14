@@ -1,14 +1,14 @@
 // The file browser's endpoint. A route module may export only its verbs, so everything it does
 // lives in lib/server/files/fs.ts and this is the few lines that join them. The GET lists one
-// directory, or the open workspace when it names no root, and is same-origin only; the POST saves
-// or switches the workspace, writes the notes and carries the token ServerContext minted, as with
-// /api/write, /api/git and /api/deposit.
+// directory, the bookmarks, the notes of every hub, or the open workspace when it names no root,
+// and is same-origin only; the POST saves or switches the workspace, writes the order of a hub's
+// notes and carries the token ServerContext minted, as with /api/write, /api/git and /api/deposit.
 //
 // The workspace, the machine's values and the write chain come off the ServerContext, which holds
 // the workspace and the values and reads them again only when a file of theirs changed, so a
-// request reads no workspace file. The bookmarks and the notes are kept in the primary hub's
-// `.oculus` folder unless its `local.yml` names another place, and a workspace with no primary has
-// none.
+// request reads no workspace file. The bookmarks are kept in the primary hub's `.oculus` folder
+// unless its `local.yml` names another place, and a workspace with no primary has none; the notes
+// are each hub's own `.oculus/notes/` folder, read from the workspace's hubs.
 
 import { textCatalog } from '$lib/data/sources/config';
 import { handleFs, handleFsWrite, type FsTarget } from '$lib/server/files/fs';
@@ -29,7 +29,6 @@ const target = (locals: App.Locals): FsTarget => {
         workspace: { open: () => open, stateFolder: open.stateFolder },
         machine: { set, defaults, ...machineValues(server.machine(), set, defaults, lists) },
         bookmarks: own.bookmarks,
-        notes: own.notes,
         writes: server.fsWrites,
         ignored: server.ignoredCache
     };

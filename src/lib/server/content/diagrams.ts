@@ -14,10 +14,11 @@
 // The doc view passes what this answers through ui/html.ts's graph filter before it draws it. The
 // headers keep the file an image when its address is opened on its own: `nosniff` holds the type,
 // and the content security policy lets the file carry its own styles and nothing that loads or
-// runs.
+// runs, the pair the file route sends with every SVG (server/files/files.ts's SVG_GUARD).
 
 import { readFileSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { SVG_GUARD } from '../files/files.ts';
 
 /** The folder of the engine directory the diagrams are written to, as utils/diagrams/ names it. */
 export const DIAGRAM_DIR = join('docs', 'diagrams');
@@ -28,8 +29,7 @@ export const DIAGRAM_NAME = /^[a-z0-9][a-z0-9-]*\.svg$/;
 /** What an SVG answer carries, so the file stays an image wherever its address is opened. */
 const HEADERS = {
     'content-type': 'image/svg+xml',
-    'x-content-type-options': 'nosniff',
-    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'",
+    ...SVG_GUARD,
     // The drawing changes each time the generator is run over a changed source, so the browser asks
     // again rather than draw yesterday's graph.
     'cache-control': 'no-cache'

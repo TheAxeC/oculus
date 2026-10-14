@@ -208,6 +208,13 @@ export type ServerEntry = {
      */
     answers?(request: PageRequest, view: PageView): PageAnswer | undefined;
     /**
+     * A result of the entry's own for a request of the page that its server answers too, from what
+     * the relay holds: the relay joins it to the server's (held/requests/merged.ts), the entry's
+     * first, and answers it alone when the server has none to give. Nothing means the server's
+     * answer goes as it is.
+     */
+    adds?(request: PageRequest, view: PageView): unknown;
+    /**
      * The sections of `workspace/configuration` that follow the shipped settings: the server is
      * asked again when the answer for one changes.
      */

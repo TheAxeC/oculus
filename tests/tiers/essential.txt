@@ -15,6 +15,6 @@ tests/server/files/fs.test.ts              # directory listing: paths that leave
 tests/routes/git/git.test.ts               # git route: token, confirm for lossy actions
 tests/server/edit/config-value.test.ts     # config writer: local.yml refused, stale base
 tests/server/edit/writes.test.ts           # each write changes only the file and key it names
-tests/ui/html.test.ts                      # the sanitiser every hub text passes through
+tests/ui/html.dom.test.ts                  # the sanitiser every hub text passes through
 tests/routes/files/open-program.test.ts    # open: the path is an argument, never a shell string
 tests/shell/panes/strip/tab-menu.test.ts   # closing asks before it drops unsaved text

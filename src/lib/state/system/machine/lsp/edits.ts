@@ -21,8 +21,9 @@
 // text the server read.
 //
 // The plan refuses the whole edit, with the notice that names the file, when
-// - a file is a library file, outside the served roots, under a `node_modules` or dot folder, or in
-//   the `secrets` folder of every hub or `~/.oculus`,
+// - a file is a library file, outside the served roots, under a `node_modules` or dot folder other
+//   than a hub's notes folder `.oculus/notes/` (data/prose/markdown/note-names.ts's
+//   inHiddenFolder), or in the `secrets` folder of every hub or `~/.oculus`,
 // - the roots are not read yet and a source tab is open, so no tab can be told from a file,
 // - an entry creates, renames or deletes a file, or one file is named twice,
 // - a file it names is open in a tab of another page (asked of the relay), whether or not a tab of
@@ -30,9 +31,16 @@
 // - a tab's text no longer matches the positions of its edits, or the tab is read-only,
 // - a tab's text is not the text the server computed the edit on,
 // - a file that no tab holds cannot be read, is larger than the write limit or is not UTF-8 text
-//   throughout, or its text no longer matches the positions of its edits, or
+//   throughout, or its text no longer matches the positions of its edits, or is not the text
+//   `held` names for it when it names one, or
 // - the edit is the rename of a hub key (it carries the change annotation of that rename) and a
 //   file does not hold the old key at an edited place.
+//
+// One edit with a rename of a file never reaches the plan: the rename of a note of a hub's notes
+// folder to a name in the same folder, which the Markdown entry answers a rename on a `[[link]]`
+// with. `noteRenameOf` names it, and the source tab renames the note as the Notes section does
+// (views/sources/source/language/lsp.ts), which rewrites the links that name it; the text edits the
+// entry sent for those links are not made a second time.
 //
 // The commit reads the tabs again and refuses when a planned tab was closed, is read-only or no
 // longer holds the text it was planned on, or when a tab now holds a file the plan posts. It
@@ -45,6 +53,7 @@ import { WRITE_MAX_MEGABYTES, type LspEditFile } from '../../../../data/file-ops
 import { diskRelation, sameDiskFile, type RootFolder } from '../../../../data/helpers/hub-names.ts';
 import type { LspPlace } from '../../../../data/model/index.ts';
 import { libraryOf, placeOf } from '../../../../data/prose/lsp-addresses.ts';
+import { inHiddenFolder, inNotes, isNote } from '../../../../data/prose/markdown/note-names.ts';
 import {
     RENAME_ANNOTATION,
     applyTextEdits,
@@ -89,8 +98,11 @@ export type LspEditsParts = {
     publishTabs: (files: LspPlace[]) => void;
     /** Post an `lsp-edit` of files no tab holds. */
     write: (files: LspEditFile[]) => Promise<Outcome>;
-    /** The roots the file browser serves, which decide whether two names are one file on disk. */
-    roots: () => readonly RootFolder[];
+    /**
+     * The roots the file browser serves, which decide whether two names are one file on disk, each
+     * marked when it is a hub, whose notes folder an edit is made in.
+     */
+    roots: () => readonly (RootFolder & { hub?: true })[];
     /**
      * Whether a file is in a folder no edit is made in: the `secrets` folder of every hub and
      * `~/.oculus`.
@@ -171,28 +183,61 @@ function placeOfName(name: string): LspPlace {
     return { root: name.slice(0, at), path: name.slice(at + 1) };
 }
 
-/** Whether an edit is never made in a file: under a `node_modules` folder or a dot folder. */
-function inLibraryFolder(path: string): boolean {
-    return path
-        .split('/')
-        .slice(0, -1)
-        .some((part) => part === 'node_modules' || part.startsWith('.') || part === '..');
+/** The folder a path lies in, as a path of the same root. */
+function folderOf(path: string): string {
+    return path.slice(0, Math.max(0, path.lastIndexOf('/')));
+}
+
+/**
+ * The note a workspace edit renames and its new name, or null for any other edit: its one entry
+ * that is no text edit renames a note of the notes folder of a hub (`hubs` the keys of the roots
+ * that are hubs) to another note's name in the same folder. The text edits beside it are left
+ * aside, since the rename of the note makes the rewrite of the links itself.
+ */
+export function noteRenameOf(
+    edit: unknown,
+    hubs: readonly string[]
+): { item: LspPlace; name: string } | null {
+    if (!isRecord(edit) || !Array.isArray(edit.documentChanges)) return null;
+    const other = (edit.documentChanges as unknown[]).filter(
+        (change) => !isRecord(change) || !isRecord(change.textDocument)
+    );
+    const change = other.length === 1 ? other[0] : null;
+    if (!isRecord(change) || change.kind !== 'rename') return null;
+    if (typeof change.oldUri !== 'string' || typeof change.newUri !== 'string') return null;
+    const from = placeOf(change.oldUri);
+    const to = placeOf(change.newUri);
+    if (from === null || to?.root !== from.root || !hubs.includes(from.root)) return null;
+    const note = (path: string): boolean => {
+        const inside = inNotes(path);
+        return inside !== null && isNote(inside);
+    };
+    if (!note(from.path) || !note(to.path) || folderOf(from.path) !== folderOf(to.path)) {
+        return null;
+    }
+    const name = to.path.slice(to.path.lastIndexOf('/') + 1);
+    return from.path === to.path ? null : { item: from, name };
 }
 
 /**
  * The files a workspace edit names with the edits of each, or the refusal: an entry that creates,
- * renames or deletes a file, an address that is a library file or is no file of the page, or a
- * file `withheld` names.
+ * renames or deletes a file, an address that is a library file or is no file of the page, a file
+ * under a `node_modules` folder or a dot folder but a hub's notes folder (`hubs` the keys of the
+ * roots that are hubs), or a file `withheld` names.
  */
-function namedBy(edit: unknown, withheld: LspEditsParts['withheld']): Named[] | LspEditOutcome {
+function namedBy(
+    edit: unknown,
+    withheld: LspEditsParts['withheld'],
+    hubs: readonly string[]
+): Named[] | LspEditOutcome {
     if (!isRecord(edit)) return refuse('lsp_edit_empty');
     const files = new Map<string, Named>();
     const add = (address: string, edits: unknown): LspEditOutcome | null => {
         if (libraryOf(address) !== null)
             return refuse('lsp_edit_library', libraryOf(address)?.name ?? '');
         const place = placeOf(address);
-        if (place === null || inLibraryFolder(place.path) || withheld(place))
-            return refuse('lsp_edit_outside', address);
+        const hidden = place !== null && inHiddenFolder(place.path, hubs.includes(place.root));
+        if (place === null || hidden || withheld(place)) return refuse('lsp_edit_outside', address);
         const key = nameOf(place);
         // A file named twice is refused as the server refuses it, so the answer does not depend on
         // which of the two entries was meant.
@@ -277,7 +322,8 @@ export function createLspEdits(parts: LspEditsParts): LspEdits {
         held: ReadonlyMap<string, string> = new Map()
     ): Promise<Planned> {
         const stop = (outcome: LspEditOutcome): Planned => ({ ok: false, outcome });
-        const named = namedBy(edit, parts.withheld);
+        const hubs = parts.roots().flatMap((one) => (one.hub === true ? [one.key] : []));
+        const named = namedBy(edit, parts.withheld, hubs);
         if (!Array.isArray(named)) return stop(named);
         // With the roots unread no tab can be told from the file: nothing is written until they
         // are.
@@ -343,7 +389,11 @@ export function createLspEdits(parts: LspEditsParts): LspEdits {
             }
             if (read === 'not_text') return stop(refuse('lsp_edit_not_text', file.name));
             if (read === null) return stop(refuse('lsp_edit_failed', file.name));
-            if (!applyTextEdits(read.text, file.edits).ok) {
+            const named = served.get(file.name);
+            if (
+                !applyTextEdits(read.text, file.edits).ok ||
+                (named ?? lf(read.text)) !== lf(read.text)
+            ) {
                 return stop(refuse('lsp_edit_changed', file.name));
             }
             file.text = read.text;

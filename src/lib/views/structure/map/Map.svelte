@@ -19,7 +19,9 @@
     //
     // The header holds the two icon actions, link mode and re-tune. The bar holds the filters and
     // the visibility toggles (Controls.svelte), and the body the heading, the legend
-    // (Legend.svelte) and the graph.
+    // (Legend.svelte) and the graph, drawn by views/shared/graph/Graph.svelte, which the Notes
+    // Graph draws too; what a node opens (node-view.ts) and the related edge a link writes
+    // (edge-write.ts) are the Map's.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -27,8 +29,10 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Controls from '$lib/views/structure/map/Controls.svelte';
-    import Graph from '$lib/views/structure/map/Graph.svelte';
+    import Graph from '$lib/views/shared/graph/Graph.svelte';
     import Legend from '$lib/views/structure/map/Legend.svelte';
+    import { writeRelated } from './edge-write';
+    import { viewOf } from './node-view';
     import {
         archiveStatuses,
         buildGraph,
@@ -43,13 +47,20 @@
         typeFilters as typeChips
     } from '$lib/state/boards/structure/graph';
     import { t } from '$lib/state/shared/words/text';
-    import { labelModeOf, parseMapState, type MapState } from '$lib/state/boards/structure/graph';
+    import {
+        labelModeOf,
+        parseMapState,
+        type MapState,
+        type PointNode
+    } from '$lib/state/boards/structure/graph';
     import { useState } from '$lib/state/client/use';
 
     const {
         entities: { portfolio },
+        layout: { openView },
         selectors: { configMap },
-        ui: { instanceState, setInstanceState }
+        ui: { instanceState, setInstanceState },
+        writes: { writeManifest }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -101,6 +112,25 @@
     /** Lay the map out again from the next seed, and keep that picture with the pane. */
     function retune(): void {
         write({ start: nextStart(held, graph.nodes) });
+    }
+
+    /** Open the view a node stands for: a project, the pillars or a person. */
+    function open(node: PointNode): void {
+        const target = viewOf(node);
+        openView(target.view, target.state);
+    }
+
+    /**
+     * A link drawn in link mode: the target is added to the source project's related list, or
+     * taken off it when it is there; the sentence of a refused write, else ''.
+     */
+    async function toggleRelated(source: PointNode, target: PointNode): Promise<string> {
+        const project = portfolio()?.entities.projects[source.entityId];
+        if (project === undefined) return '';
+        const related = project.relatedIds.includes(target.entityId)
+            ? project.relatedIds.filter((id) => id !== target.entityId)
+            : [...project.relatedIds, target.entityId];
+        return writeRelated(source.entityId, related, writeManifest);
     }
 </script>
 
@@ -163,7 +193,15 @@
             <Empty message={t('map.empty_filtered')} glyph={t('map.empty_glyph')} />
         {:else}
             {#key `${layoutKey(graph.nodes)}-${seed}`}
-                <Graph {graph} instanceId={instance.id} {linkMode} {seed} />
+                <Graph
+                    {graph}
+                    instanceId={instance.id}
+                    {linkMode}
+                    {seed}
+                    label={t('views.map')}
+                    onopen={open}
+                    onlink={toggleRelated}
+                />
             {/key}
         {/if}
     </div>

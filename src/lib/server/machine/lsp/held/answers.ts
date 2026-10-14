@@ -1,10 +1,11 @@
 // Layer 2, server. What the relay hands an entry that answers a request of the page itself
-// (`ServerEntry.answers`): a view of the page it answers, made when the request arrives. The view
-// holds the served roots, the reference index of the latest build, the catalog, and every document
-// of the entry's servers the page has open with the text the page holds it at, one for each file
-// whatever name the page opened it under. A file the answer needs that no tab holds is read from
-// the disk, up to the most a write by a language server's edit may be, and only when its bytes
-// are UTF-8 text throughout by the rule every layer uses (`isWholeText`).
+// (`ServerEntry.answers`) or adds a result of its own to its server's (`ServerEntry.adds`): a view
+// of the page it answers, made when the request arrives. The view holds the served roots, the
+// reference index of the latest build, the catalog, and every document of the entry's servers the
+// page has open with the text the page holds it at, one for each file whatever name the page opened
+// it under. A file the answer needs that no tab holds is read from the disk, up to the most a write
+// by a language server's edit may be, and only when its bytes are UTF-8 text throughout by the rule
+// every layer uses (`isWholeText`).
 
 import { readFileSync, statSync } from 'node:fs';
 import { WRITE_MAX_BYTES } from '../../../../data/file-ops.ts';
@@ -53,17 +54,10 @@ function openDocument(doc: Doc): OpenDocument {
     };
 }
 
-/** The answer an entry gives to a request of a page, or undefined to send the request on. */
-export function answerFor(
-    entry: ServerEntry,
-    page: Page,
-    answering: Answering,
-    request: PageRequest
-): PageAnswer | undefined {
+/** The view an entry's answer reads, or null while the relay holds no index or catalog. */
+function viewOf(entry: ServerEntry, page: Page, answering: Answering): PageView | null {
     const { feed, catalog } = answering;
-    if (entry.answers === undefined || feed === undefined || catalog === undefined) {
-        return undefined;
-    }
+    if (feed === undefined || catalog === undefined) return null;
     const docs = new Set<Doc>();
     for (const open of page.docs.values()) {
         if (open.held.entry === entry) docs.add(open.doc);
@@ -80,5 +74,29 @@ export function answerFor(
         read: readText,
         heldElsewhere: (real) => isHeldElsewhere(answering.pages(), page, real)
     };
-    return entry.answers(request, view);
+    return view;
+}
+
+/** The answer an entry gives to a request of a page, or undefined to send the request on. */
+export function answerFor(
+    entry: ServerEntry,
+    page: Page,
+    answering: Answering,
+    request: PageRequest
+): PageAnswer | undefined {
+    if (entry.answers === undefined) return undefined;
+    const view = viewOf(entry, page, answering);
+    return view === null ? undefined : entry.answers(request, view);
+}
+
+/** The result an entry adds to its server's answer to a request of a page, or undefined. */
+export function addedFor(
+    entry: ServerEntry,
+    page: Page,
+    answering: Answering,
+    request: PageRequest
+): unknown {
+    if (entry.adds === undefined) return undefined;
+    const view = viewOf(entry, page, answering);
+    return view === null ? undefined : entry.adds(request, view);
 }

@@ -2,17 +2,19 @@
 // read as a frame, and its message is answered by the relay (`initialize`, `shutdown`), applied to
 // the page's documents (`didOpen`, `didChange`, `didClose`, `didSave`), turned into an answer of
 // the entry's own (`answers`), or routed by the document it names to the server that holds the
-// document, with the addresses turned into the server's and the id into one of the relay's. A
-// request about the workspace (its symbols) and a follow-up of a hierarchy item name a root and a
-// file that may be open in no tab, and go to the server of that root. A request for a feature no
-// server of an app it would go to declared is answered with no result (relay-join.ts), and each
-// `initialize` of the page's client is followed by the registrations of the features the page's
-// servers of apps declare (relay-server.ts).
+// document, with the addresses turned into the server's and the id into one of the relay's, the
+// entry's own result for it (`adds`) kept to be joined to the server's answer. A request about the
+// workspace (its symbols) and a follow-up of a hierarchy item name a root and a file that may be
+// open in no tab, and go to the server of that root. A request for a feature no server of an app it
+// would go to declared is answered with no result (relay-join.ts), and each `initialize` of the
+// page's client is followed by the registrations of the features the page's servers of apps declare
+// (relay-server.ts).
 
 import type { LspRpc } from '../../../../data/model/index.ts';
 import { WORKSPACE_LANGUAGE } from '../../../../data/prose/lsp-servers.ts';
 import type { Sink } from '../../../core/channels.ts';
-import { answerFor } from '../held/answers.ts';
+import { addedFor, answerFor, type Answering } from '../held/answers.ts';
+import { merged } from '../held/requests/merged.ts';
 import {
     adoptHeld,
     changeDocument,
@@ -223,6 +225,11 @@ function route(
         else fail(state, page, channel, message.id, given.error.code, given.error.message);
         return;
     }
+    const adds =
+        isRequest && appInfo(entry) === undefined
+            ? addedFor(entry, page, answeringOf(state), { method, params: resolved.params })
+            : undefined;
+    const alone = (): void => reply(state, page, channel, message.id, merged(method, adds, null));
     const address = addressOf(method, resolved.params);
     const open = address === null ? undefined : page.docs.get(address);
     const targets = open === undefined ? [] : [open.held, ...open.also.map((one) => one.held)];
@@ -260,12 +267,13 @@ function route(
         held.whenDeclared((known) => {
             if (known && declares(starting, resolveOf(method) ?? method, language)) {
                 route(state, page, channel, language, entries, message);
-            } else reply(state, page, channel, message.id, null);
+            } else alone();
         });
         return;
     }
     if (held === undefined) {
-        if (isRequest) {
+        if (isRequest && adds !== undefined) alone();
+        else if (isRequest) {
             const text =
                 address === null ? `${method} names no document` : 'the document is not open';
             fail(
@@ -291,7 +299,7 @@ function route(
         return;
     }
     if (joinWith.length > 1) {
-        requestJoined(state, page, channel, message, joinWith, address ?? '', sendTo);
+        requestJoined(state, page, channel, message, joinWith, address ?? '', sendTo, adds);
         return;
     }
     const params = sendTo(held);
@@ -306,8 +314,11 @@ function route(
         method,
         params: params.value
     });
+    if (!accepted && adds !== undefined) alone();
     if (!accepted) {
-        fail(state, page, channel, message.id, REQUEST_CANCELLED, 'the server is not running');
+        if (adds === undefined) {
+            fail(state, page, channel, message.id, REQUEST_CANCELLED, 'the server is not running');
+        }
         return;
     }
     state.pending.set(state.next, {
@@ -316,7 +327,8 @@ function route(
         id: message.id ?? null,
         held,
         method,
-        address: address ?? ''
+        address: address ?? '',
+        adds
     });
 }
 
@@ -331,7 +343,8 @@ function requestJoined(
     message: LspRpc,
     helds: readonly Held[],
     address: string,
-    sendTo: (held: Held) => { value: unknown } | null
+    sendTo: (held: Held) => { value: unknown } | null,
+    adds: unknown
 ): void {
     const method = message.method ?? '';
     const join: Join = {
@@ -342,7 +355,8 @@ function requestJoined(
         parts: [],
         timer: null,
         replied: false,
-        errors: []
+        errors: [],
+        adds
     };
     for (const held of helds) {
         const params = sendTo(held);
@@ -385,6 +399,16 @@ function requestJoined(
     settleJoin(state, join, false);
 }
 
+/** What an entry's own answers read of the relay: the latest build and the page's tabs. */
+function answeringOf(state: RelayState): Answering {
+    return {
+        roots: rootsOf(state),
+        feed: state.options.schemas,
+        catalog: state.options.catalog,
+        pages: () => state.pages.values()
+    };
+}
+
 /** What the entry answers to a request itself, from the latest build and the page's tabs. */
 function givenBy(
     state: RelayState,
@@ -393,13 +417,7 @@ function givenBy(
     method: string,
     params: unknown
 ): PageAnswer | undefined {
-    const answering = {
-        roots: rootsOf(state),
-        feed: state.options.schemas,
-        catalog: state.options.catalog,
-        pages: () => state.pages.values()
-    };
-    return answerFor(entry, page, answering, { method, params });
+    return answerFor(entry, page, answeringOf(state), { method, params });
 }
 
 /** The server of the root a page names by its key, if the page holds one of the entry. */

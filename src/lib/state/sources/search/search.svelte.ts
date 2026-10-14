@@ -107,6 +107,9 @@ type Previews = {
     shown: () => boolean;
 };
 
+/** The hits of a tag's search that the tag index holds, from the files a run answered. */
+type Tagged = (tag: string, files: SearchFile[]) => SearchFile[];
+
 /** A box of the Search view that a key asks the focus for. */
 type FocusTarget = 'query' | 'replace';
 
@@ -171,7 +174,8 @@ export function createSearch(
     writes: WritesStore,
     ui: InstanceStates,
     explorer: Pick<ExplorerStore, 'replace' | 'unsaved'>,
-    previews: Previews
+    previews: Previews,
+    tagged: Tagged
 ): SearchStore {
     const state: {
         running: string[];
@@ -202,7 +206,9 @@ export function createSearch(
     /**
      * A search is over the folder it was scoped to only while it is over that root, so a change
      * that names a root and no folder leaves the whole root. What a replace said stays until the
-     * results next change: the query edited or run again, a Replace or a Dismiss.
+     * results next change: the query edited or run again, a Replace or a Dismiss. A change to the
+     * query, a toggle, the root or the scope that names no tag drops the tag the tab was opened
+     * for.
      */
     function setSearchState(id: string, changes: Partial<SearchState>): void {
         const scoped = 'root' in changes && !('under' in changes) ? { under: '' } : {};
@@ -211,7 +217,11 @@ export function createSearch(
             (key) => key in changes && changes[key] !== held[key]
         );
         if (edited) unsay(id);
-        ui.setInstanceState(id, { ...held, ...scoped, ...changes });
+        const moved = (['q', 'word', 'case', 'regex', 'root', 'under'] as const).some(
+            (key) => key in changes && changes[key] !== held[key]
+        );
+        const untagged = moved && !('tag' in changes) ? { tag: '' } : {};
+        ui.setInstanceState(id, { ...held, ...scoped, ...untagged, ...changes });
     }
 
     async function toggleMode(id: string, mode: SearchMode, roots: string[]): Promise<void> {
@@ -295,11 +305,16 @@ export function createSearch(
                 replaces: held.replacing ? remembered(held.replaces, held.replace) : held.replaces
             };
             if (answer.ok) {
+                const found = answer.answer.files;
+                const kept = held.tag === '' ? found : tagged(held.tag, found);
                 setSearchState(id, {
-                    answer: answer.answer,
+                    answer:
+                        held.tag === ''
+                            ? answer.answer
+                            : { ...answer.answer, files: kept, total: totals(kept).hits },
                     error: '',
                     ran: ranOf(query),
-                    dismissed: [],
+                    dismissed: held.tag === '' ? [] : dismissedOf(without(found, kept)),
                     ...remember
                 });
                 return;

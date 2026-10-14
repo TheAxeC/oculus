@@ -101,6 +101,12 @@ export type TreeRow = {
     hits?: number[];
     /** Set on the row above a rooted tab's head, which moves the head one folder up. */
     up?: true;
+    /**
+     * Set on a row that is a sentence and no file: the one muted row of a notes group that lists
+     * nothing, or says why it could not be read (`retry` then offers the read again). No action
+     * acts on it and it opens nothing.
+     */
+    said?: { text: string; retry?: true };
 };
 
 /** How one open folder is addressed in the set of open folders, and in a listing's own cache. */

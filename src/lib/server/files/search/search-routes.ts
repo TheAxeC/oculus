@@ -17,7 +17,9 @@
 // empty, repeated or any other value is refused as the word `list`, and a root that is not served
 // as `unknown_root`, both before any process starts. The folders no name is listed from are the
 // machine's private ones (`privateFolders`: the `secrets` folder of every hub and `~/.oculus`),
-// which the language server relay and the writing rules leave out too.
+// which the language server relay and the writing rules leave out too, and a search leaves them out
+// as well. A search reads each hub's notes folder `.oculus/notes/` beside the rest of the hub, and
+// nothing else of its `.oculus/` folder.
 //
 // A refusal is answered as a word (data/helpers/search/query.ts SearchRefusal) and the page says it
 // in the catalog's sentence for that word. A pattern ripgrep could not read is the word `pattern`
@@ -73,7 +75,10 @@ export async function handleSearch(
         return json({ ok: true, ...listed.answer }, { headers: NO_STORE });
     }
     const query = asked.query;
-    const outcome = await runSearch(options.roots, query, options);
+    const outcome = await runSearch(options.roots, query, {
+        ...options,
+        withheld: privateFolders(hubDirs(options.roots), homedir())
+    });
     if (!outcome.ok) {
         const body =
             'refused' in outcome

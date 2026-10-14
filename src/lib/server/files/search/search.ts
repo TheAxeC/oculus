@@ -18,7 +18,10 @@
 // stream. MAX_OUTPUT is the bound on one root's read while it is still under the cap.
 //
 // Nothing is searched outside a served root: the roots come in as the list the route composed, and
-// a key that is not one of them is refused before any process starts.
+// a key that is not one of them is refused before any process starts. A search leaves out the
+// machine's private folders inside each root, as the names do, and reads each hub's notes folder
+// beside the rest of the hub (query.ts's rootSearchArgs); a root that lies in a private folder is
+// not searched.
 //
 // The names of the files of the served roots (`runNames`) are listed by the same call site with
 // `--files`, one run for each root and all of them at once, so the answer waits at most one
@@ -39,6 +42,7 @@ import {
     namesArgs,
     namesRefusal,
     pathIn,
+    rootSearchArgs,
     rootsOf,
     searchQuery,
     trimAround,
@@ -58,6 +62,7 @@ import type {
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
 import { below, realPath, under } from '../../core/paths.ts';
 import { expandHome, resolveRootPath, type Root } from '../files.ts';
+import { notesFolderState } from '../fs/notes.ts';
 
 /**
  * How much of one root's output is read while the fold still has room for what it carries, counted
@@ -99,6 +104,10 @@ export type SearchOptions = {
     timeout: number;
     /** The clock the elapsed time is read from, so a test can hold it still. */
     now?: () => number;
+    /**
+     * The folders no hit is answered from (`privateFolders`), as absolute paths; none by default.
+     */
+    withheld?: string[];
 };
 
 /** What a search answers: the files, or the reason it did not run. */
@@ -441,10 +450,11 @@ function createFold(root: string, room: number, pattern?: string): Fold {
 /**
  * Why the folder a query is scoped to cannot be searched, or null. It is resolved by real path
  * under the root it names, so a link to a folder outside the root is `outside`, and a folder that
- * is not there, or a path that is a file, is `missing`.
+ * is not there, or a path that is a file, is `missing`. A search of every root scoped to the notes
+ * folder is read per root, as each hub's notes folder is there or not.
  */
 function scopeRefusal(roots: Root[], query: SearchQuery): 'outside' | 'missing' | null {
-    if (query.under === '') return null;
+    if (query.under === '' || query.root === ALL_ROOTS) return null;
     const found = resolveRootPath(roots, query.root, query.under);
     if ('error' in found) return found.error;
     try {
@@ -482,15 +492,21 @@ export async function runSearch(
     const failed: SearchFailure[] = [];
     let total = 0;
     let truncated = false;
+    const places = namesPlans(roots, options.withheld ?? [], false);
     for (const root of rootsOf(query, roots)) {
         if (total >= query.max) {
             // The cap is spent, so the roots behind it are not opened at all.
             truncated = true;
             break;
         }
+        const place = places.find((one) => one.key === root.key);
+        if (place?.private === true) continue;
+        const notes = root.hub === true && notesFolderState(expandHome(root.dir)).state === 'ok';
+        const args = rootSearchArgs(query, { withheld: place?.withheld ?? [], notes });
+        if (args === null) continue;
         const fold = createFold(root.key, query.max - total, query.regex ? query.q : undefined);
         const outcome = await within(
-            run(root.dir, plan.args, options.timeout, (line) => {
+            run(root.dir, args, options.timeout, (line) => {
                 fold.line(line);
                 return !fold.cut();
             }),

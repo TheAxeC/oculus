@@ -17,6 +17,7 @@ import { undoPlan } from '$lib/state/sources/explorer/acts/undo';
 import { undoSaid } from '$lib/views/shared/writes/undo-said';
 import { pickOfKey } from '../menu/row-menu';
 import type { Asking } from './asking.svelte';
+import type { RowOrder } from './dragging.svelte';
 import type { Picks } from './picks.svelte';
 import type { ViewAccess } from './view-access';
 
@@ -37,6 +38,8 @@ export type KeyedDeps = {
     onreorder: (keys: string[]) => void;
     /** Alt+Up or Alt+Down on the workspace header row, which moves the tree's section. */
     onmoveheader: (direction: 'up' | 'down') => void;
+    /** The order the caller keeps its rows in, which Alt+Up and Alt+Down step a row through. */
+    rowOrder?: () => RowOrder | undefined;
 };
 
 /** The key handler of the tree: true when the key was the tree's, false to leave it to the page. */
@@ -95,6 +98,8 @@ export function createKeyed(
                 }) !== 'pass'
             );
         }
+        // A row that is a sentence takes no key; the page's own keys still reach it.
+        if (found.said !== undefined) return false;
         const row = cursorOf(found);
         const group = picks.acted(row);
         const plan = keyPlan(action as FilesAction, {
@@ -117,10 +122,11 @@ export function createKeyed(
         } else if (plan === 'cancel-cut') explorer.clearClipboard();
         else if (plan === 'move-up' || plan === 'move-down') {
             const order = deps.order();
+            const direction = plan === 'move-up' ? 'up' : 'down';
             if (row.depth === 0 && row.path === '' && order.includes(row.root)) {
-                const next = steppedKeys(order, row.root, plan === 'move-up' ? 'up' : 'down');
+                const next = steppedKeys(order, row.root, direction);
                 if (next !== order) deps.onreorder(next);
-            }
+            } else deps.rowOrder?.()?.step(row, direction);
         } else if (plan === 'undo') void undone(false);
         else if (plan === 'redo') void undone(true);
         else if (plan === 'select-all') view.select(selectEvery(view.picked(), deps.drawn()));
