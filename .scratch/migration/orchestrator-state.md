@@ -26,6 +26,12 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
 - step: D77
+  executor: agent
+  worker: claude:opus
+  session_id: a8345a31acc9caff4 (claude-opus-5-5)   # launched with the prompt of agents/briefs/D77-launch.md word for word
+  report: agents/reviews/D77-report.md
+  worktree: .agents/worktrees/D77
+  base: abe5c9651   # the preparation commit, main after D73 landed; base copy .agents/worktrees/D77-base with unused-exports.txt
   landing: preparing
   brief_check: "agents/reviews/D77-brief-check.md (a54a1d685d11d12dd, claude-opus-5-5, 299,890 tokens, 105 tool uses, 15.2 min)"
 ```
@@ -271,6 +277,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-14 (D77 launched). Preparation commit abe5c9651 is the base; sparse worktree `.agents/worktrees/D77` with `npm ci` and `svelte-kit sync`, base copy `.agents/worktrees/D77-base` with `unused-exports.txt` (238 unused exports at the base); the builder a8345a31acc9caff4 launched on claude-opus-5-5 with `agents/briefs/D77-launch.md`. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D77 prepared). D77's brief check (`agents/reviews/D77-brief-check.md`, a54a1d685d11d12dd on claude-opus-5-5) closed in the brief, each finding named under its Closed heading; Z891 taken (the editor actions draw in the window strip when the tab bar is not drawn, as VS Code's `editorActionsLocation` default) and Z889's chords corrected to VS Code's per platform from its source (plan.md Rulings, choices.md); G84 written into `agents/guarded.md` under Z890. Open items: none. In flight (1 of 6): D77 (preparation commit, then its worktree and builder). Next: D77's builder on Opus, its report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D73 landed). D73, the Literature view, landed (booking in plan.md under D73, `agents/reviews/D73-landing.md`) after one repair round and the review over it; the run's six findings closed at landing (`agents/reviews/D73-refuter.md`, Closed) with two defects of the look (the Contents block listing the title and its own heading; the Literature Add's empty answer resetting the hub chosen), the hub's Doc text written by hand, and `test:landing` passing in the gate after one comment rewrap (`test:checks` 294 of 294). D77's diagnosis of part (1) is saved (`agents/reviews/D77-diagnosis.md`, its cause in D77's Step 0), its brief is written with the cause, and Z889 and Z890 are booked (plan.md Rulings, choices.md). Open items: none. In flight (1 of 6): D77 preparing. D77's premises rechecked on 7fa484997 and G84 written into `agents/guarded.md`; its brief check runs (a54a1d685d11d12dd, claude-opus-5-5). Next: the brief check's findings closed in the brief, the preparation commit and the builder; then Q72, then O33.
 - 2026-10-14 (D73 repair round 1 sent). D73's builder reported (`agents/reviews/D73-report.md`, usage in `builder_usage`); the review (`agents/reviews/D73-refuter.md`, ad6b64b3f5ddc2cac on claude-opus-5-5) found 17 findings, ruled in `agents/briefs/D73-round1.md` (17 items), four of them closed by self-rule Z884 to Z887 (plan.md Rulings, choices.md); snapshot `.agents/worktrees/D73-round-1` with `files.txt`; the builder a37eb2c2709eb3729 resumed with the round. Open items: none. In flight (1 of 6): D73 (round 1). Next: the review over the round, /land D73 (the Doc text applied to the hub, the look); Q72, O33.
