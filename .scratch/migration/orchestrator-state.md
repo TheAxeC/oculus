@@ -33,7 +33,7 @@ dispatch:   # steps in flight, up to six (Z632)
   base: f4ed47774   # tree 69b944eca (D74 before its round) with the hub's .oculus/config.yml, on 0bd9d483d
   launched: 2026-10-13
   paused: "2026-10-13, at Axel's word, held at a safe point; resumed 2026-10-14 at Axel's word; reported 2026-10-14"
-  builder_usage: "up to the pause: 160,847 tokens, 787 tool uses, 143.2 min; after the resume: 273,461 tokens, 176 tool uses, 50.9 min"
+  builder_usage: "up to the pause: 160,847 tokens, 787 tool uses, 143.2 min; after the resume: 273,461 tokens, 176 tool uses, 50.9 min; round 1: 229,913 tokens, 244 tool uses, 53.8 min (claude-opus-5-5)"
   report: agents/reviews/D76-report.md
   reviewer_report: "agents/reviews/D76-refuter.md (a92c8631fdab55e6c, claude-opus-5-5, 76,065 tokens, 90 tool uses, 17.5 min)"
   round: 1   # sent 2026-10-14, agents/briefs/D76-round1.md
@@ -171,7 +171,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 99 (2026-10-14), Axel asked whether it is only for the tests: `demo/` is used by `tests/data/hubs/hubs-fixture.ts`, the Playwright run of every landing and O33 part (4). Recommended (a): keep it, kept current by every step that changes a file shape (D73 edits it for open item 94).
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

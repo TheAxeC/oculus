@@ -4,6 +4,10 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 101 (2026-10-14): the hub and project controls and the `.oculus/data/` defaults, agreed, in O33 part (5); booked in plan.md Rulings.
+- Open item 100 (2026-10-14): Add asks which hub among those naming the collection (a), in D73; booked in plan.md Rulings.
+- Open item 98 (2026-10-14): the Data map moves to oculus (a), in O33 part (5); booked in plan.md Rulings.
+- Open item 97 (2026-10-14): the palette and templates tabs and the generated Contents block (a), in D73's fourth part; booked in plan.md Rulings.
 - Open item 96 (2026-10-13): the code of open item 95 folded into D73 as a fourth part (a); booked in plan.md Rulings.
 - Open item 95, part A (2026-10-13): the templates in one file, `docs/templates.md` of oculus, shown on the Help page, with a Copy button on code blocks (a); booked in plan.md Rulings.
 - Open item 95, parts B and C (2026-10-13): the templates held true by a key-set test (a); the documents rewritten now, D73's builder waiting for it (a); part A open; booked in plan.md Rulings.
