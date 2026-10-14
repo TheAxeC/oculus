@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D73 (the Literature view, the Files view showing hidden and ignored files by default, the domain, theme and feed settings moved to their files by open item 94, and the fourth part from open items 97 and 100): preparing; its brief and brief check are written and are checked again on main's head after D76's landing.
+- D73 (the Literature view, the Files view showing hidden and ignored files by default, the domain, theme and feed settings moved to their files by open item 94, and the fourth part from open items 97 and 100): building on Opus, from main after D76's landing.
 
 Queued, in order (2 steps):
 - Q72 (the architecture re-read): after D73, so it reads the code of D73, D74 and D76.

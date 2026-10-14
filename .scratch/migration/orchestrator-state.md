@@ -26,7 +26,15 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:   # steps in flight, up to six (Z632)
 - step: D73
-  landing: preparing
+  executor: agent
+  worker: claude:opus
+  session_id: a37eb2c2709eb3729 (claude-opus-5-5)   # launched with the prompt of agents/briefs/D73-launch.md word for word
+  worktree: .agents/worktrees/D73
+  base: 233a2e2d0   # the preparation commit, main after D76 landed; base copy .agents/worktrees/D73-base with unused-exports.txt
+  launched: 2026-10-14
+  report: agents/reviews/D73-report.md
+  round: 0
+  landing: not-started
   brief_check: "agents/reviews/D73-brief-check.md (a70d783a1699be8de, claude-opus-5-5, 239,040 tokens, 92 tool uses, 16.1 min)"
 ```
 
@@ -271,6 +279,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-14 (D73 launched). D73's line numbers checked again on main after D76's landing and corrected in the brief (noted under the brief check's Closed); preparation commit 233a2e2d0 is the base; sparse worktree `.agents/worktrees/D73` with `npm ci` and `svelte-kit sync`, base copy `.agents/worktrees/D73-base` with `unused-exports.txt` (238 unused exports at the base); the builder a37eb2c2709eb3729 launched on claude-opus-5-5 with `agents/briefs/D73-launch.md`. Axel's uncommitted Contents block in `docs/palette.md` is on main's disk; D73's part 18 has the generator write that block. Open items: none. In flight (1 of 6): D73. Next: D73's report, /refute, its round, /land; Q72, O33.
 - 2026-10-14 (D76 landed). D76, notes like Obsidian, landed (booking in plan.md under D76, `agents/reviews/D76-landing.md`) after one repair round and the review over it; its nine findings and the three tree checks and three look defects of the landing were fixed at landing, open item 102 (a) carried out as the `dom` test project with jsdom, `test:landing` passing every command (the gate log, 412.7 s, quoted in the booking). Open items: none. In flight (1 of 6): D73 (preparing; its brief and brief check written, line numbers to be checked again on this commit). Next: /spec D73 (preparation commit, worktree, builder on Opus); Q72, O33.
 - 2026-10-13 (D74 landed again). Axel undid D74's first landing commit after his look at the Repositories view; the look was redone over this hub's real folders and three parts that did not do what was asked were fixed at landing (the agents' worktrees as Repositories rows, an app's tab opening over the Apps list, the focused source tab lost on a reload), with `test:landing` passing every command (`scratchpad/gate-runs/D74-gate-4.log`); booking and `agents/reviews/D74-landing.md` updated. D74, the shell and source-control fixes, landed (booking in plan.md under D74, `agents/reviews/D74-landing.md`): the gate's `npm run test:landing` passed every command, the round review's four findings were fixed at landing, the hub's `.oculus/config.yml` replaced `.oculus/config/`, and the look ran on a scratch oculus on 8796 (Axel's server on 8790 does not load in the automation browser). Open items: none. In flight (1 of 6): D76 building. Next: /spec D73 from main's head (its draft brief is rewritten against D74's code); D76's report, /refute; Q72, O33.
 - 2026-10-13 (D76 launched). D76's base commit f4ed47774 (tree 69b944eca with the hub's `.oculus/config.yml`, on the preparation commit 0bd9d483d), its sparse worktree `.agents/worktrees/D76` with `npm ci`, the base copy `.agents/worktrees/D76-base` with `unused-exports.txt`; the builder a167a0af4861f0040 launched on claude-opus-5-5 with `agents/briefs/D76-launch.md`. The reviewer over D74's round 1, ace5c1e4521c02fb0 on claude-opus-5-5, runs. Open items: none. In flight (2 of 6): D74, D76. Next: D74's review over round 1, then /land D74; D76's report, /refute; D73 from D74's worktree; Q72, O33.
