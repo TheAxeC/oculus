@@ -4,13 +4,6 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
-## Z888 (2026-10-14, D77, the orchestrator, automode): the name of the `local.yml` key that names the commit message's Claude account
-
-- Chosen: `commit_message_account`, a flat key beside `claude_bin` and `accounts:` in the machine's `local.yml`, whose value is an `accounts:` label of tool `claude`; empty or absent is the default folder `~/.claude`. It names what it is for and what it holds.
-- Not chosen: `git.message_account` in `config/behavior.yml` beside `git.message_model`, which puts a machine's account label in a file every machine shares; `message_account`, which does not say which message. No option was the lazy one.
-
-Where it applies: D77, part (2), by open item 104 (a). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
-
 ## Z887 (2026-10-14, D73's review, the orchestrator, automode): whether two papers with no title are the same paper
 
 - Chosen: two titles that hold no letter or digit are never the same paper, for Literature and for Lit Watch alike: an absent title says nothing about which paper an entry is, so two such entries are told apart by their DOI or address alone.
