@@ -16,10 +16,10 @@ Size: added to the full step D77, defects of delivered work folded into the step
 
 ## Cases
 
-40. A scratch repository whose branch is 2 commits ahead of its upstream and 1 behind: the graph lists each of the 4 commits involved once (the 2 outgoing and the 1 incoming among them), the Outgoing Changes entry counts 2 and the Incoming Changes entry 1, and a press on Outgoing Changes lists the files of `@{upstream}..HEAD` (a unit run of the read and of the rows, run on the unchanged tree first, where the 2 outgoing commits are listed twice).
-41. A branch with no upstream: the history as now, no entry.
-42. The pills: `main` (checked out), `feature` (local) and `origin/main` (remote) on commits: `main` and `feature` in the reference colour, `origin/main` in the remote colour with the cloud glyph, a tag plain (a unit run of `commitPills` and the drawn `data-pill`; the look for the colours).
-43. The look: the hub's Graph (3 commits ahead of `origin/main`) lists each commit once, Outgoing Changes counts 3, and `main` and `origin/main` differ in colour, under the dark and a light theme.
+41. A scratch repository whose branch is 2 commits ahead of its upstream and 1 behind: the graph lists each of the 4 commits involved once (the 2 outgoing and the 1 incoming among them), the Outgoing Changes entry counts 2 and the Incoming Changes entry 1, and a press on Outgoing Changes lists the files of `@{upstream}..HEAD` (a unit run of the read and of the rows, run on the unchanged tree first, where the 2 outgoing commits are listed twice).
+42. A branch with no upstream: the history as now, no entry.
+43. The pills: `main` (checked out), `feature` (local) and `origin/main` (remote) on commits: `main` and `feature` in the reference colour, `origin/main` in the remote colour with the cloud glyph, a tag plain (a unit run of `commitPills` and the drawn `data-pill`; the look for the colours).
+44. The look: the hub's Graph (3 commits ahead of `origin/main`) lists each commit once, Outgoing Changes counts 3, and `main` and `origin/main` differ in colour, under the dark and a light theme.
 
 Folders: `src/lib/state/sources/repositories/` holds 10 items (`ls | wc -l`), so no new file goes there; `graph/` holds 8 view files.
 
