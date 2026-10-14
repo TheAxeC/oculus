@@ -164,7 +164,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 111, parts left open (2026-10-14): where Memories goes (Axel: "Maybe to Academic Life?"; the orchestrator recommends Academic Life as its last tab) and how the rail change is built (the orchestrator recommends folding it into D77, which is building and already writes HELP.md, `config/text/app.yml` and the palette page; inline by the orchestrator is the cheaper option and skips the review; Q72 is excluded by Axel). Parts 1 to 5 ruled, booked in plan.md Rulings (Open item 111).
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
