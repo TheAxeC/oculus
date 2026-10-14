@@ -65,6 +65,11 @@ export type RootedInput = {
     following?: () => boolean;
     /** The folders drawn open while the owner's record has never been opened (`unopened`). */
     unsaved?: () => string[];
+    /**
+     * The two toggles the owner holds whatever its record says, so a tree that lists no hidden and
+     * no ignored entry (a project card's) lists none from its first draw.
+     */
+    toggles?: Pick<FilesView, 'showHidden' | 'showIgnored'>;
 };
 
 export type RootedTree = ReturnType<typeof createRootedTree>;
@@ -109,7 +114,7 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
 
     const record = $derived(instanceState(input.owner()));
     const view = $derived.by((): FilesView => {
-        const kept = filesViewOf(record);
+        const kept = { ...filesViewOf(record), ...input.toggles };
         return input.unsaved !== undefined && unopened(record)
             ? { ...kept, expanded: input.unsaved() }
             : kept;
@@ -183,7 +188,6 @@ export function createRootedTree(client: ClientState, input: RootedInput) {
         client,
         id: input.owner,
         view: () => view,
-        listed: () => listed,
         rows: () => rows,
         shownRoots: input.roots,
         top: input.top,

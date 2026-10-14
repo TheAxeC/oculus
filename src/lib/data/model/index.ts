@@ -132,16 +132,19 @@ export type PortfolioConfig = {
     portfolioDeck: string | null;
     /** The hue each `tag.class` wears, the engine's `defaults.tag_tones`. */
     tagTones: Record<string, string>;
-    /** The keys of the `domains:` of vocab.yml, which a project's `domain:` is checked against. */
-    domains: string[];
     /**
      * What the hub's own `.oculus/config.yml` does not name, so that its value came from the
-     * engine's defaults: the registries whose key is absent from its `collections:` list, whether
-     * the list is, and whether `portfolio_deck:` is. A hub reports only what it names,
-     * so a file in this list that is missing is no finding. Absent for a config read without
-     * knowing where each key came from, where every file counts as named.
+     * engine's defaults: the registries and the YAML feeds (`leads`, `radar`) whose key is absent
+     * from its `collections:` list, whether the list is, and whether `portfolio_deck:` is. A hub
+     * reports only what it names, so a file in this list that is missing is no finding. Absent for
+     * a config read without knowing where each key came from, where every file counts as named.
      */
-    unnamed?: { registries: RegistryName[]; collections: boolean; deck: boolean };
+    unnamed?: {
+        registries: RegistryName[];
+        feeds: ('leads' | 'radar')[];
+        collections: boolean;
+        deck: boolean;
+    };
     /**
      * The flat text catalog of the merged config, which the readers and the validation rules word
      * their findings from.
@@ -281,14 +284,15 @@ export type ConfigPayload = {
 };
 
 /**
- * The words one hub gives its own records, as its settings file gives them over the engine's
- * defaults: the research `domains` (a key to its colour and label), and the `venue_themes` and
- * `data_themes` lists (rows of a key and a label).
+ * The words one hub gives its own records, read from its own files: the research `domains` (each
+ * key of its domains registry to the entry's colour and title as `label`; a colour not written
+ * `#rrggbb` is left out), and `venue_themes` and `data_themes`, the `{ key, label }` options of the
+ * `themes` field of its venue and dataset registries (a plain word is its own label).
  */
 export type HubVocab = {
-    domains: Record<string, unknown>;
-    venue_themes: unknown[];
-    data_themes: unknown[];
+    domains: Record<string, { color?: string; label: string }>;
+    venue_themes: { key: string; label: string }[];
+    data_themes: { key: string; label: string }[];
 };
 
 /**
@@ -513,6 +517,7 @@ export type {
     Lead,
     RawFeeds,
     SchemaField,
+    SchemaOption,
     When
 } from './model-collections.ts';
 
@@ -617,7 +622,15 @@ export { BRANCH_NOT_MERGED } from './model-sessions.ts';
 
 export { DECK_GAP } from './model-deck.ts';
 export { confirmValues } from './model-agents.ts';
-export { entryIdOf, entryTitleOf } from './model-collections.ts';
+export { domainColorOf } from './model-entities.ts';
+export {
+    FILTERED_TYPES,
+    entryIdOf,
+    entryTitleOf,
+    optionKey,
+    optionKeys,
+    optionLabel
+} from './model-collections.ts';
 export type {
     AgentAccount,
     AgentChoice,

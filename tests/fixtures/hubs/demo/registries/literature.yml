@@ -1,0 +1,40 @@
+# Literature: the papers kept for reading and citing, one entry per paper, drawn by the Literature view. Save to Literature on a card of the Literature search or of Lit Watch writes an entry, and so does Add on the Literature view, which looks a DOI, an arXiv or a PubMed address up through the search's sources. `key` is the citation key oculus makes from the first author's surname, the year and the first word of the title, and Copy BibTeX writes it as the BibTeX key. The `schema:` block drives the fields a new entry is built with, the editor's completion and marks, the type check of a write and the filters of the view (`filter: true`).
+
+title: Literature
+intro: "Papers kept for reading and citing, saved from the Literature search, Lit Watch or by hand."
+
+# Schema: field -> type / options / required / help.
+schema:
+  - { field: key,      type: text,     required: true, label: "Citation key", help: "The paper's citation key: the first author's surname, the year and the first word of the title, with b, c and on added when the file holds it already." }
+  - { field: title,    type: text,     help: "The paper's title. A paper saved from an address alone has none, and its title is filled in on the entry's page." }
+  - { field: authors,  type: tags,     filter: true, help: "The paper's authors, each name as the source wrote it." }
+  - { field: venue,    type: text,     filter: true, help: "The journal or conference; a name that matches a venue of the Venues view links to its page." }
+  - { field: year,     type: text,     filter: true, help: "The year the paper appeared, a whole number." }
+  - { field: doi,      type: text,     label: "DOI", help: "The paper's DOI, without the doi.org address." }
+  - { field: url,      type: text,     label: "Address", help: "The web address of the paper." }
+  - { field: abstract, type: textarea, help: "The paper's abstract, as plain text." }
+  - { field: keywords, type: tags,     filter: true, help: "Words the reader files the paper under." }
+  - { field: projects, type: tags,     from: projects, filter: true, help: "The projects the paper is read or cited for." }
+  - { field: source,   type: select,   options: [search, lit-watch, hand], filter: true, help: "Where the entry came from: the Literature search, Lit Watch, or Add by hand." }
+  - { field: added,    type: date,     help: "The day the paper was saved." }
+  - { field: note,     type: textarea, help: "The reader's own notes on the paper." }
+
+entries:
+  - key: example2024bandit
+    title: Bandit exploration over changing graphs
+    authors: [A. Example, B. Coauthor]
+    venue: ACM SIGKDD
+    year: 2024
+    url: https://example.org/papers/bandit-graphs
+    keywords: [bandits, graphs]
+    projects: [graph-bandits]
+    source: hand
+  - key: coauthor2021sketching
+    title: Sketching tensors in a stream
+    authors: [B. Coauthor]
+    venue: Journal of Machine Learning Research
+    year: 2021
+    url: https://example.org/papers/tensor-sketch
+    keywords: [tensors, streaming]
+    projects: [tensor-sketch]
+    source: search

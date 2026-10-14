@@ -1,11 +1,11 @@
 // Layer 1, data. The plain rules of the literature search that both sides read: a source's text as
 // plain text, that text as the Lit Watch file takes it, and the identifiers two hits are merged on.
 //
-// The server reads a hit out of a source's answer with them (server/content/literature/) and the
-// page merges the hits with them (state/feeds/literature/) and the Lit Watch writer cleans an
-// entry's text with them (server/edit/feeds.ts), so one rule decides what a DOI or a title is. The
-// bounds of a request are here too, so the page refuses a request with the rule the route refuses
-// it by.
+// The server reads a hit out of a source's answer with them (server/content/literature/), the page
+// merges the hits with them (state/feeds/literature/), and the Lit Watch and Literature writers
+// clean an entry's text and find a paper the file holds with them (server/edit/feeds/), so one rule
+// decides what a DOI or a title is. The bounds of a request are here too, so the page refuses a
+// request with the rule the route refuses it by.
 
 import { decodeHTML } from 'entities';
 import { FIELD_MAX, QUERY_MAX, type LiteratureRefusal } from '../model/index.ts';
@@ -30,9 +30,34 @@ export function addressKey(url: string): string {
     return url.trim().toLowerCase().replace(/\/+$/, '');
 }
 
-/** Whether two titles are one for Lit Watch: equal once trimmed and lower cased. */
+/** A title as two titles are compared: lower cased, every character but a letter or digit out. */
+function titleKey(title: string): string {
+    return title.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+}
+
+/**
+ * Whether two titles are one paper's, for Lit Watch and for the Literature collection: equal once
+ * lower cased and every character that is not a letter or a digit is dropped. Two titles that hold
+ * no letter or digit at all are no paper's.
+ */
 export function sameTitle(left: string, right: string): boolean {
-    return left.trim().toLowerCase() === right.trim().toLowerCase();
+    const key = titleKey(left);
+    return key !== '' && key === titleKey(right);
+}
+
+/** What the Literature collection compares two papers by: the DOI, else the title. */
+export type PaperIds = { doi?: string; title: string };
+
+/**
+ * Whether two papers are one for the Literature collection: the same DOI as normalDoi spells it,
+ * or, when either has no DOI, the same title by sameTitle. Two papers with different DOIs are two
+ * papers whatever their titles.
+ */
+export function samePaper(left: PaperIds, right: PaperIds): boolean {
+    const one = normalDoi(left.doi);
+    const other = normalDoi(right.doi);
+    if (one !== undefined && other !== undefined) return one === other;
+    return sameTitle(left.title, right.title);
 }
 
 /** What the Lit Watch file takes in place of a character outside printable ASCII. */

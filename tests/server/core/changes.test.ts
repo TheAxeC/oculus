@@ -15,6 +15,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect } from 'vitest';
 import { handleWrite } from '../../../src/lib/server/edit/writes.ts';
+import { undoChange } from '../../../src/lib/server/edit/writes/undo.ts';
 import { logChanges, readChanges, writtenWith } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
@@ -38,6 +39,9 @@ const TASKS =
 
 const VENUES =
     'title: Venues\nschema:\n  - { field: name, type: text }\n  - { field: id, type: text }\nvenues:\n  - name: Existing Venue\n    id: existing\n';
+
+const LITERATURE =
+    'title: Literature\nschema:\n  - { field: key, type: text, required: true }\n  - { field: title, type: text, required: true }\n  - { field: authors, type: tags }\n  - { field: year, type: text }\n  - { field: doi, type: text }\n  - { field: url, type: text }\n  - { field: source, type: select, options: [search, lit-watch, hand] }\n  - { field: added, type: date }\nentries: []\n';
 
 const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
 const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
@@ -66,7 +70,8 @@ function target(keep = 500): PrimaryTarget {
         ['registries/venues.yml', VENUES],
         ['registries/career.yml', CAREER],
         ['feeds/literature-radar.yml', RADAR],
-        ['feeds/position-leads.yml', LEADS]
+        ['feeds/position-leads.yml', LEADS],
+        ['registries/literature.yml', LITERATURE]
     ]) {
         const file = join(dir, path);
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
@@ -347,6 +352,26 @@ describe('what each writer records', { tags: ['slow'] }, () => {
             after: true,
             undo: 'field'
         });
+    });
+
+    it('records a paper saved to Literature, and its undo leaves the file as it was', async () => {
+        const into = target();
+        const file = join(into.hub, 'registries', 'literature.yml');
+        const before = readFileSync(file, 'utf8');
+        const rows = await written(into, {
+            kind: 'literature-save',
+            source: 'search',
+            paper: {
+                title: 'Block-term tensor regression for ECoG',
+                authors: ['Axel Faes', 'Marc M. Van Hulle'],
+                year: 2024,
+                doi: '10.1016/j.neucom.2024.127654'
+            }
+        });
+        expect(rows[0]).toMatchObject({ kind: 'literature-save', file, key: 'faes2024blockterm' });
+        expect(readFileSync(file, 'utf8')).toContain('key: faes2024blockterm');
+        expect(undoChange(into, rows[0])).not.toHaveProperty('error');
+        expect(readFileSync(file, 'utf8')).toBe(before);
     });
 
     it("records each list of a deck write as the file held it and as it holds it now, and the order's entries", async () => {

@@ -89,7 +89,7 @@ text:
             group_not_a_map: group {0} is not a map and is not read
             sort_unknown: group {0} sorts by {1}, which is not folder or title; folder is used
             order_shape: an order entry is not a slide file, a slides group, a summary or a grid; it is not placed
-            domain_unknown: 'project {0} names the domain {1}, which is not in the domains of .oculus/config.yml in the hub (of config/catalogs/vocab.yml when the hub sets none); its slides are drawn in the neutral tone'
+            domain_unknown: "project {0} names the domain {1}, which is no key of the domains registry (registries/domains.yml, or the file the domains entry of the hub's collections list names); its slides are drawn in the neutral tone"
             no_file: '{0} holds no present.yml'
             unreadable: present.yml does not parse
             not_a_map: present.yml is not a map
@@ -210,6 +210,13 @@ text:
             bad_from: 'the field {0} takes its keys from {1}, which is no registry, projects or vocab list'
             bad_when: 'the field {0} is conditioned on {1}, which is no field of its record'
             bad_map: 'the field {0} has map set but is not a records field'
+            option_kind: 'an option of the field {0} is neither a word nor a map of key and label, so it is left out'
+            option_no_key: 'an option row of the field {0} has no key, so it is left out'
+            option_not_word: 'the option key {1} of the field {0} is not one word of letters, digits, - and _, so the row is left out'
+            option_label: 'the label of the option {1} of the field {0} is not a text, so the row is left out'
+            option_taken: 'the option {1} of the field {0} is held by an earlier option, so this one is left out'
+            option_extra: 'the option row {2} of the field {0} holds the key {1}, which is neither key nor label; the row stays an option with its key and label'
+            bad_filter: 'the field {0} is of the type {1}, which no filter is drawn for; filter takes a select, tags or text field'
             is_list: a list
             is_map: a map
             is_text: a text
@@ -232,7 +239,8 @@ text:
             self_not_one: '{0} people entries carry self: true, and exactly one may'
             resource_reserved: 'key {0} is reserved, so the entry is left out'
             funding_no_statement: funding entry {0} is {1} and has no statement
-            theme_labels_retired: 'theme_labels is not read; the labels are data_themes in .oculus/config.yml in the hub, or in config/catalogs/vocab.yml when the hub sets none'
+            theme_labels_retired: 'theme_labels is not read; the labels are the options of the themes field in the schema of this file'
+            domain_color: 'the domain {0} has the color {1}, which is not a colour written #rrggbb, so it is drawn in the neutral tone'
         apps:
             name_empty: the name is missing or empty, so the folder is not an app
             name_shape: 'the name {0} must start with a lowercase letter and hold only lowercase letters, digits and hyphens, 40 characters at most, so the folder is not an app'

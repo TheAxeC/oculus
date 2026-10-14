@@ -16,7 +16,11 @@ import { globSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect } from 'vitest';
-import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import {
+    buildPortfolioWithSchemas,
+    hubDomainsOf,
+    portfolioConfigFrom
+} from '../../../src/lib/data/index.ts';
 import { tex } from '../../../src/lib/views/academic/present/markup.ts';
 import { ENTITY_KINDS } from '../../../src/lib/data/snapshot/normalise.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
@@ -88,7 +92,7 @@ function readProjectDeck(projects: Project[], folder: string): Deck {
     return createReader({
         hub: root,
         projects: deckProjects(projects),
-        domains: config.domains,
+        domains: Object.keys(hubDomainsOf(hub, config)),
         tagTones: config.tagTones,
         catalog: textCatalog(merged)
     }).read(root, `${folder}/present`);
@@ -240,7 +244,7 @@ describe.skipIf(!present)('the real hub', () => {
         const deck = createReader({
             hub: root,
             projects: deckProjects(projects),
-            domains: config.domains,
+            domains: Object.keys(hubDomainsOf(hub, config)),
             tagTones: config.tagTones,
             catalog: textCatalog(merged)
         }).read(root, config.portfolioDeck ?? '');

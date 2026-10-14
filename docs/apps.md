@@ -353,7 +353,7 @@ They are not called for what oculus already holds at connect: use `read(channel)
 | `feeds` | every app | Lit Watch, position leads, LinkedIn posts |
 | `hpc` | every app | the cluster queue, recent jobs, partitions, quota |
 | `audit` | every app | the audit findings and the muted ones |
-| `config` | every app | the configuration, each hub's lists, the text catalog, the icons, this machine's name and address |
+| `config` | every app | the configuration, each hub's lists (read from its domains, venues and data registries), the text catalog, the icons, this machine's name and address |
 | `git` | every app | the state of each repository |
 | `files` | every app | which folder changed, with no content |
 | `inbox` | machine only | mail threads |
@@ -374,12 +374,12 @@ Payloads are plain JSON. `X?` may be absent. A `Finding` is `{ file, key, messag
 | `projects` | `id`, `title`, `folder`, `file`, `workspaceFolder?`, `repository?` (with `clones`), `chips`, `results`, `ideas`, `docs`, `waitingOn`, `resourceIds`, `relatedIds`, `fundingIds`, `datasetIds`, `pillarIds`, `domainIds`, `collaborators`, `followups`, `subtasks`, `tier?`, `category?`, `type?`, `short?`, `lead?`, `statusLine?`, `focus?`, `priority?`, `eli5?`, `next?`, `latest?`, `deadline?`, `snooze?`, `doi?`, `outcome?`, `venue?`, `deck?`, `venueId?`, `authors?`, `year?`, `staleDays?`, `pin?`, `deckTags?`, `codeAvailability?`, `reproduced?`, `links?`, `tags?`, `codeFolder?` |
 | `venues` | `id`, `name`, `themes`, `short?`, `tier?`, `category?`, `jif?`, `quartile?`, `wos?`, `scopus?`, `free?`, `format?`, `wants?`, `link?`, `deadline?`, `deadlineMonth?`, `heldMonth?`, `timing?`, `call?`, `email?`, `wosMark?`, `scopusMark?` |
 | `datasets` | `id`, `name`, `themes`, `projectIds`, `modality?`, `description?`, `size?`, `access?`, `source?`, `hpcPath?`, `retrieval?` |
-| `pillars`, `domains` | `id`, `title`, `projectIds`, `blurb?`; a pillar also `fundingIds`, `color?`, `kind?`, `goal?` |
+| `pillars`, `domains` | `id`, `title`, `projectIds`, `blurb?`; a pillar also `fundingIds`, `color?`, `kind?`, `goal?`; a domain also `color?` (`#rrggbb`) and `expectsDatasets?` |
 | `funding` | `id`, `title`, `followups`, `subtasks`, `tags`, `projectIds`, `pillarIds`, `sub?`, `status?`, `date?`, `deadline?`, `note?`, `statement?`, `link?`, `url?`, `snooze?`, `funder?` |
 | `people` | `id`, `name`, `affiliations`, `links`, `projectIds`, `jointWorkIds`, `role?`, `orcid?`, `email?`, `folder?`, `file?`, `self?` |
 | `organisations` | `id`, `name`, `links`, `personIds`, `fundingIds`, `kind?`, `country?` |
 | `resources` | `id`, `name`, `kind`, `links`, `order`, `host?`, `access?` |
-| `collections` | `id`, `title`, `file`, `entries`, `intro?`, `schema?` |
+| `collections` | `id`, `title`, `file`, `entries`, `intro?`, `schema?`; a schema line is `{ field, type, label?, required?, options?, from?, when?, help?, open?, map?, fields?, filter? }`, an option a word or `{ key, label }` |
 | `feeds` | `leads`, `radar`, `scout`, `linkedin` summaries |
 | `career` | the career file, or `null` |
 
@@ -392,7 +392,7 @@ A record of a hub other than the primary carries `root` (the hub's name) and has
 | `feeds` | `radar`, `leads`, `linkedin`, each `{ ok, kind, file, meta, entries, cadenceDays?, schema?, missing?, error?, hubFiles? }` |
 | `hpc` | `status` (`starting`, `ok`, `unreachable`, `error`, `unconfigured`), `hint?`, `jobs`, `running`, `pending`, `total`, `recent`, `sinfo`, `quota`, `updated`, `lastOk?`, `host`, `pollMin`, `retryMin?` |
 | `audit` | `{ findings: [{ scope, where, root?, file, kind, message, signature }], muted }` |
-| `config` | `{ config, hubs: { primary, lists }, text, icons, host: { name, address }, findings }` |
+| `config` | `{ config, hubs: { primary, lists }, text, icons, host: { name, address }, findings }`; `lists` holds each hub's `{ domains, venue_themes, data_themes }`, built from its domains registry and the `themes` options of its venues and data registries |
 | `git` | per repository folder: `branch`, `ahead`, `behind`, `upstream?`, `detached`, `present`, `repository`, `inWorkspace`, `top`, `staged`, `unstaged`, `untracked`, `conflicted`, `sequence`, `mergeMessage`, `remotes`, `stashes`, `tags`, `log`, `branches`, `worktrees`, `error` |
 | `files` | `{ root, folders?, bookmarks?, workspaces? }` |
 | `inbox` | `status`, `accounts`, `threads`, `updated`, `pollMin`, `retryMin`, `notesRun`, `notesError?` |
@@ -411,7 +411,7 @@ A record of a hub other than the primary carries `root` (the hub's name) and has
 | `subtask` | `{ kind, target: { id, collection? }, key, action, value? }`; `action` `done`, `reopen`, `snooze` or `delete` | no |
 | `subtask-add` | `{ kind, target: { id, collection? }, fields }`; `fields.do` the text | no |
 | `host` | `{ kind, name, status }` for a career host | no |
-| `new-entry` | `{ kind, collection, fields }` | no |
+| `new-entry` | `{ kind, collection, fields, root? }`; `root` names the hub, which for an app is the primary hub alone | no |
 | `reorder` | `{ kind, collection, order }` | no |
 | `delete-entry` | `{ kind, collection, id }` | yes |
 | `feed-field` | `{ kind, feed, id, field, value, root? }`; `feed` `radar`, `leads` or `linkedin` | no |

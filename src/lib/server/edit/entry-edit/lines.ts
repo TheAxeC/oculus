@@ -133,11 +133,20 @@ export function flowScalar(value: FieldValue): string {
     return renderScalar(value);
 }
 
-/** A list as the tree writes it inline: `[one, two]`, each item quoted as the old one was. */
+/**
+ * A list as the tree writes it inline: `[one, two]`, each item quoted as the old one was. An item
+ * the plain style would write with a comma, a bracket or a brace in it is written double quoted,
+ * since inside the brackets that character would end the item or open another.
+ */
 export function renderFlowList(values: string[], styles: (string | undefined)[]): string {
-    const items = values.map((item, at) =>
-        renderScalar(item, at < styles.length ? styles[at] : styles[styles.length - 1])
-    );
+    const items = values.map((item, at) => {
+        const written = renderScalar(
+            item,
+            at < styles.length ? styles[at] : styles[styles.length - 1]
+        );
+        const quoted = written.startsWith('"') || written.startsWith("'");
+        return !quoted && /[,{}[\]]/.test(written) ? JSON.stringify(item) : written;
+    });
     return `[${items.join(', ')}]`;
 }
 

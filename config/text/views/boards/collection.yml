@@ -39,6 +39,9 @@ text:
         stub_unparsed: '{0} would not parse with the new entry in it; add the entry in the file'
         toolbar: Collection controls
         unpin: Unpin
+        open_venue: Open this venue as its own tab
+        range_from: '{0} from'
+        range_to: '{0} to'
     views:
         applications: Applications
         applications_glyph: inbox
@@ -50,6 +53,8 @@ text:
         events_glyph: events
         funding: Funding
         funding_glyph: funding
+        literature: Literature
+        literature_glyph: book
         organisations: Organisations
         organisations_glyph: pillar
         people: People

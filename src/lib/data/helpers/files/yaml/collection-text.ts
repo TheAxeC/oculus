@@ -13,7 +13,7 @@
 import { isEqual } from 'lodash-es';
 import { isMap as isYamlMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
-import type { SchemaField, When } from '../../../model/index.ts';
+import { optionKey, type SchemaField, type When } from '../../../model/index.ts';
 import {
     editsBetween,
     textInRange,
@@ -259,9 +259,8 @@ function stubValueOf(field: SchemaField, values: Record<string, unknown>): Scala
     if (typeof given === 'string' || typeof given === 'number' || typeof given === 'boolean') {
         return given;
     }
-    if (field.type === 'select' && field.options !== undefined && field.options.length > 0) {
-        return field.options[0];
-    }
+    const first = field.options?.at(0);
+    if (field.type === 'select' && first !== undefined) return optionKey(first);
     return field.type === 'text' || field.type === 'textarea' ? '' : null;
 }
 

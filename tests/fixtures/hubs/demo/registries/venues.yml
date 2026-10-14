@@ -4,11 +4,13 @@ schema:
   - { field: name,     type: text, required: true }
   - { field: tier,     type: select, options: [flagship, strong, specialist] }
   - { field: category, type: select, options: [journal, conference] }
+  - { field: themes,   type: tags, options: [{ key: core-ml, label: "Core ML" }, { key: graphs, label: "Graphs" }, { key: systems, label: "Systems" }] }
 entries:
   - id: jmlr
     name: Journal of Machine Learning Research
     tier: strong
     category: journal
+    themes: [core-ml]
   - id: tmlr
     name: Transactions on Machine Learning Research
     tier: specialist
@@ -25,3 +27,4 @@ entries:
     name: ACM SIGKDD
     tier: strong
     category: conference
+    themes: [graphs, systems]

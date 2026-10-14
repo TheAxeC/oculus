@@ -77,13 +77,14 @@ function files(at: string): string[] {
 }
 
 /**
- * The prose of each line of a file, by line: every line of a text file whole, the comment of a YAML
- * line (a `#` opening the line or following a space), and for a file of code the comment text the
- * code reader finds on the line, trailing comments included and code and strings left out.
+ * The prose of each line of a file, by line: every line of a text file whole (a list, a Markdown
+ * page or a LaTeX source of a fixture hub), the comment of a YAML line (a `#` opening the line or
+ * following a space), and for a file of code the comment text the code reader finds on the line,
+ * trailing comments included and code and strings left out.
  */
 function proseLines(file: string, source: string): string[] {
     const lines = source.split('\n');
-    if (file.endsWith('.txt')) return lines;
+    if (/\.(txt|md|tex)$/.test(file)) return lines;
     if (file.endsWith('.yml')) {
         return lines.map((line) =>
             line.trimStart().startsWith('#') || line.includes(' # ') ? line : ''
@@ -150,8 +151,9 @@ describe('no history in code', () => {
 
     // The planted tree tells apart a code line read whole from one read only for its comment: the
     // trailing comments of src/trail.ts and utils/trail.sh are hits, while the url of src/url.ts
-    // and the code `const Q1` of src/quartile.ts are not (its block comment is a hit). A document
-    // under docs/ holding an id is a hit of the documents.
+    // and the code `const Q1` of src/quartile.ts are not (its block comment is a hit). A Markdown
+    // page under tests/ is read whole like a list. A document under docs/ holding an id is a hit of
+    // the documents.
     it('reads every line of a text file, every document and every comment of code', () => {
         const dir = scratchDir('oculus-history-');
         const plant = (rel: string, body: string): void => {
@@ -161,6 +163,7 @@ describe('no history in code', () => {
             writeFileSync(full, body, 'utf8');
         };
         plant('tests/list.txt', 'a.ts b.ts the clone the split of Q51 made\n');
+        plant('tests/hub/README.md', 'A hub of synthetic data, set up for D22.\n');
         plant('utils/run.sh', '#!/bin/sh\n# written for D22\necho "#D22 is data"\n');
         plant('config/keys.yml', 'key: 1 # kept since 2026-09-10\n');
         plant('src/url.ts', "const url = 'http://x/Q12';\n");
@@ -176,6 +179,7 @@ describe('no history in code', () => {
             'src/app.html:2: <!-- the page of D19c -->',
             'src/quartile.ts:4: * the split of Q51',
             'src/trail.ts:1: const a = 1; // written for Q12',
+            'tests/hub/README.md:1: A hub of synthetic data, set up for D22.',
             'tests/list.txt:1: a.ts b.ts the clone the split of Q51 made',
             'utils/run.sh:2: # written for D22',
             'utils/trail.sh:1: x=1 # Q12',

@@ -18,6 +18,7 @@ import type {
     RegistryName,
     ValidationRules
 } from '../model/index.ts';
+import { domainColorOf } from '../model/index.ts';
 import { z } from 'zod';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import {
@@ -366,7 +367,7 @@ export function sortFindings(findings: Finding[]): Finding[] {
     });
 }
 
-/** The dataset registry's own label map, which the labels of `data_themes` replace. */
+/** The dataset registry's own label map, which the options of its `themes` field replace. */
 const RETIRED_LABELS = 'theme_labels';
 
 /** A dataset registry that still holds `theme_labels:` is one finding: nothing reads that map. */
@@ -376,6 +377,24 @@ function checkRetiredLabels(raw: RawPortfolio, rules: ValidationRules, findings:
         file: rules.datasetsFile ?? '',
         key: RETIRED_LABELS,
         message: findingText(rules.text, 'findings.validate.theme_labels_retired')
+    });
+}
+
+/** A domain whose `color` is there and not written `#rrggbb` is one finding, on the entry. */
+function checkDomainColors(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
+    raw.registries.domains.entries.forEach((entry, index) => {
+        if (entry.color === undefined || entry.color === null) return;
+        if (domainColorOf(entry) !== undefined) return;
+        findings.push({
+            file: entry.file,
+            key: `entries[${index}].color`,
+            message: findingText(
+                catalog,
+                'findings.validate.domain_color',
+                entry.key,
+                typeof entry.color === 'string' ? entry.color : JSON.stringify(entry.color)
+            )
+        });
     });
 }
 
@@ -402,6 +421,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkEntryStatus(raw, rules.vocab.statuses, catalog, findings);
     checkEntryIdentity(raw, catalog, findings);
     checkRetiredLabels(raw, rules, findings);
+    checkDomainColors(raw, catalog, findings);
 
     return sortFindings(findings);
 }

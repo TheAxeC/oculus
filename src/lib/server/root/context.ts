@@ -35,7 +35,7 @@ import {
     usageTiers,
     type LocalConfig
 } from '../../data/sources/config.ts';
-import { hubVocabs, readHubVocab } from '../../data/index.ts';
+import { workspaceVocabs } from '../../data/index.ts';
 import type { HostInfo, Snapshot } from '../../data/model/index.ts';
 import { mintToken } from '../core/auth.ts';
 import { words } from '../core/words.ts';
@@ -282,11 +282,7 @@ export function createServerContext(
                 .hubs.filter((one) => one.name !== open().primary)
                 .map((one) => ({ key: one.name, dir: one.dir })),
         vocabs: (read, others) =>
-            hubVocabs(
-                open().primary,
-                read.config,
-                others.map((one) => ({ key: one.key, vocab: readHubVocab(engine, one) }))
-            )
+            workspaceVocabs(engine, { name: open().primary, dir: open().primaryDir }, read, others)
     });
     const { config, from } = configCache.read();
     const slurm = slurmSettings(config);

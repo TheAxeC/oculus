@@ -3,8 +3,10 @@
 // and a datasets registry that carry schemas, built through buildPortfolioWithSchemas, and the
 // findings of the planted files asserted by file, line and sentence. One table, one row per rule:
 // a reference to a key that does not exist, a key that stands twice in the referenced file, a
-// value outside its options, a field outside its `when:`, a required field that is missing, and a
-// field no schema declares. Every sentence is looked up in the shipped catalog.
+// value outside its options, written as words or as `{ key, label }` rows, an option row that is
+// no such row, an option row holding a key besides key and label, which stays an option, a field
+// outside its `when:`, a required field that is missing, and a field no schema declares. Every
+// sentence is looked up in the shipped catalog.
 
 import { describe, expect } from 'vitest';
 import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib/data/index.ts';
@@ -30,6 +32,19 @@ function venues(entries: string[]): string {
         '  - { field: name, type: text, required: true, help: The venue name. }',
         '  - { field: category, type: select, options: [journal, conference], help: The kind. }',
         '  - { field: month, type: text, when: { category: conference }, help: The month. }',
+        'entries:',
+        ...entries,
+        ''
+    ].join('\n');
+}
+
+/** The registry of venues with a field of themes, its options the rows given. */
+function themedVenues(options: string, entries: string[]): string {
+    return [
+        'schema:',
+        '  - { field: id, type: text, required: true, help: The venue key. }',
+        '  - { field: name, type: text, required: true, help: The venue name. }',
+        `  - { field: themes, type: tags, options: ${options}, help: The themes. }`,
         'entries:',
         ...entries,
         ''
@@ -87,6 +102,43 @@ const ROWS: Row[] = [
             'workshop',
             'journal, conference'
         )
+    },
+    {
+        name: 'a value outside its options written as key and label',
+        file: 'venues.yml',
+        text: themedVenues(
+            '[{ key: core-ml, label: "Core ML" }, { key: clinical, label: "Clinical" }]',
+            ['  - { id: v1, name: One, themes: [core-ml, quantum] }']
+        ),
+        key: 'entries[0].themes[1]',
+        line: 6,
+        message: sentence(
+            'findings.schema.not_allowed',
+            'entries[0].themes[1]',
+            'quantum',
+            'core-ml, clinical'
+        )
+    },
+    {
+        name: 'an option row that holds no key',
+        file: 'venues.yml',
+        text: themedVenues('[{ key: core-ml, label: "Core ML" }, { label: "No key" }]', [
+            '  - { id: v1, name: One, themes: [core-ml] }'
+        ]),
+        key: 'schema[2].options[1]',
+        line: 4,
+        message: sentence('findings.schema.option_no_key', 'themes')
+    },
+    {
+        name: 'an option row that holds a key besides key and label, which stays an option',
+        file: 'venues.yml',
+        text: themedVenues(
+            '[{ key: core-ml, label: "Core ML" }, { key: clinical, label: "Clinical", color: "#ff0000" }]',
+            ['  - { id: v1, name: One, themes: [clinical] }']
+        ),
+        key: 'schema[2].options[1]',
+        line: 4,
+        message: sentence('findings.schema.option_extra', 'themes', 'color', 'clinical')
     },
     {
         name: 'a field outside its when',

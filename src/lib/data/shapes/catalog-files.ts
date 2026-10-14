@@ -49,9 +49,6 @@ const drawn = z.strictObject({
     color: colour.optional()
 });
 
-/** A research domain: its colour and label. */
-const domain = z.strictObject({ color: colour.optional(), label: text.optional() });
-
 /** One stage of the funding pipeline. */
 const fundStage = z.strictObject({
     label: text,
@@ -74,7 +71,6 @@ const lifecycle = z.strictObject({
 /** config/catalogs/vocab.yml: the controlled vocabularies the boards and the schemas draw from. */
 const vocabFileShape = z.strictObject({
     palette: textMap.optional(),
-    domains: z.record(z.string(), domain).optional(),
     type_color: textMap.optional(),
     type_order: z.array(text).optional(),
     status_legend: z.array(keyed).optional(),
@@ -93,8 +89,6 @@ const vocabFileShape = z.strictObject({
     data_access: textMap.optional(),
     venue_categories: z.array(text).optional(),
     venue_tiers: z.array(keyed).optional(),
-    venue_themes: z.array(keyed).optional(),
-    data_themes: z.array(keyed).optional(),
     radar_buckets: z.array(keyed).optional()
 });
 

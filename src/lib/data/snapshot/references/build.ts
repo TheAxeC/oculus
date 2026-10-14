@@ -9,7 +9,8 @@
 // a workspace folder outside the hub are never read.
 //
 // What a file defines: a registry file its entries' identity scalars (`REGISTRY_SHAPES`), a
-// manifest its `id:` line, and vocab.yml the items of the lists some reference names.
+// manifest its `id:` line, vocab.yml the items of the lists some reference names, and a hub file
+// the keys of the option rows of its own schema's fields.
 //
 // Files are named by the workspace folder they are served under: the hub's name for a hub's files,
 // and for oculus's own configuration folder the name of the first workspace folder that holds it,
@@ -36,10 +37,11 @@ import { scanText } from './scan.ts';
 import {
     VOCAB_SOURCE,
     fileRecord,
+    hasOptionRows,
     manifestRecord,
+    optionSource,
     schemaRecord,
-    sourcesOf,
-    vocabRecord
+    sourcesOf
 } from './specs.ts';
 
 /**
@@ -140,8 +142,14 @@ function hubScans(
     };
     for (const file of sources.read.hub) {
         const spec =
-            file.fields === undefined ? null : fileRecord(file.fields, file.kind, file.list);
-        add(file.path, file.text, { spec, defines: registryOf(config, file.path) });
+            file.fields === undefined
+                ? null
+                : fileRecord(file.fields, file.kind, file.list, file.path);
+        const options = (file.fields ?? []).filter(hasOptionRows).map((field) => ({
+            field: field.field,
+            source: optionSource(file.path, field.field)
+        }));
+        add(file.path, file.text, { spec, defines: registryOf(config, file.path), options });
     }
     const manifest = manifestRecord(manifestFields(config.schema));
     const ids = new Map(sources.manifests.map((one) => [one.file, one.id]));
@@ -203,7 +211,7 @@ function engineScans(
     }
     const vocab = read(join(engine.dir, VOCAB_FILE));
     if (vocab !== undefined) {
-        const reading: Reading = { spec: vocabRecord(), defines: { kind: 'vocab', lists } };
+        const reading: Reading = { spec: null, defines: { kind: 'vocab', lists } };
         found.push({ ...scanText(named(VOCAB_FILE), vocab, reading), engine: true });
     }
     return found;

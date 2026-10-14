@@ -1,9 +1,10 @@
 // Layer 4, test helper. Two hubs under the system temporary directory and the portfolio the watcher
 // publishes for them, which is the entry point the server builds several hubs through.
 //
-// Both hubs are copies of demo/, so every id of one is also an id of the other. The hubs are the
-// folders of an unsaved workspace, the first of them its primary, and the watcher's first build is
-// read from its channels and the watcher is closed after it, so nothing here waits on the disk.
+// Both hubs are copies of tests/fixtures/hubs/demo/, so every id of one is also an id of the other.
+// The hubs are the folders of an unsaved workspace, the first of them its primary, and the
+// watcher's first build is read from its channels and the watcher is closed after it, so nothing
+// here waits on the disk.
 
 import { cpSync } from 'node:fs';
 import { join } from 'node:path';
@@ -14,6 +15,9 @@ import { watchPortfolio } from '../../../src/lib/server/root/watch/portfolio.ts'
 import { scratchDir } from '../../fixtures/scratch.ts';
 import { workspaceWith, type FolderSpec } from '../../fixtures/hubs/workspace.ts';
 
+/** The demo hub the copies are made from. */
+const DEMO = join(engineDir(), 'tests', 'fixtures', 'hubs', 'demo');
+
 /** Two copies of the demo hub, the first hub's and the second's, and the folder holding both. */
 export type Copies = { base: string; hub: string; lab: string };
 
@@ -21,8 +25,8 @@ export function copies(): Copies {
     const base = scratchDir('oculus-hubs-');
     const hub = join(base, 'hub');
     const lab = join(base, 'lab');
-    cpSync(join(engineDir(), 'demo'), hub, { recursive: true });
-    cpSync(join(engineDir(), 'demo'), lab, { recursive: true });
+    cpSync(DEMO, hub, { recursive: true });
+    cpSync(DEMO, lab, { recursive: true });
     return { base, hub, lab };
 }
 

@@ -3,11 +3,13 @@ schema:
   - { field: key,    type: text, required: true }
   - { field: name,   type: text, required: true }
   - { field: access, type: select, options: [open, registration, credentialed, private] }
+  - { field: themes, type: tags, options: [{ key: graphs, label: "Graphs" }, { key: timeseries, label: "Time series" }] }
 datasets:
   - key: synthgraph
     name: Synthetic evolving-graph benchmark
     modality: graphs
     access: open
+    themes: [graphs]
     used_by:
     - graph-bandits
     - graph-transfer
@@ -15,6 +17,7 @@ datasets:
     name: Streaming anomaly benchmark
     modality: timeseries
     access: registration
+    themes: [timeseries]
     used_by:
     - graph-bandits
     - streaming-anomaly

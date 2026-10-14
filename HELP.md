@@ -23,7 +23,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - Drag a button to move it. Right-click it (or Shift+F10) to hide it, reset its page, or open the rail list in Settings. History undoes a move or a hide. Reset asks first.
 - Every view sits on one rail page, or in the float (Live HPC, Usage, Workbenches). The Views catalogue lists them by group; `nav_groups` and `docs` set the groups, their order and their letters.
 - A click on a catalogue entry opens the view on the page you came from. A view that is already open somewhere is shown where it is. Shift-click opens it in a new pane to the right. The right-click menu has Open on this page and Open beside on this page.
-- The Help page holds this manual, the Apps guide, the Memories wall, and the hub's documents (each `docs:` entry with `group: help`). A `docs:` entry whose `group` is another page's key becomes a tab of that page.
+- The Help page holds this manual, the Apps guide, the Templates and Palette pages, the Memories wall, and the hub's documents (each `docs:` entry with `group: help`). A `docs:` entry whose `group` is another page's key becomes a tab of that page.
 - A tab you closed stays closed; a document added to `docs:` later is added once. Reset puts every document back.
 - Bookmarks, at the foot of the rail, lists `.oculus/bookmarks.yml` of the primary hub. A file bookmark opens the file; a folder bookmark shows it in Files.
 
@@ -198,7 +198,8 @@ Off macOS, Cmd is Ctrl.
 | `tasks` | Tasks & Service | Tasks. |
 | `present` | Present | A deck, with overview, full screen, presenter screen and PDF export. |
 | `radar` | Lit Watch | The literature radar. |
-| `literature` | Literature search | One query to OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC and arXiv, and Web of Science and Scopus with keys. |
+| `literature-search` | Literature search | One query to OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC and arXiv, and Web of Science and Scopus with keys. |
+| `literature` | Literature | The papers kept, from `registries/literature.yml`. |
 | `leads` | Position Leads | Position leads. |
 | `inbox` | Inbox | Your mailboxes, with each thread's wish and a drafted answer. |
 | `linkedin` | LinkedIn | Posts and post ideas. |
@@ -232,7 +233,8 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - A card's title opens the entry's page: its editor, what refers to it, and, when its `link` is a folder of the hub, that folder's documents, files and sessions. A person opens the Person view.
 - The editor has one control per field of the file's `schema:`. The key that names the entry cannot be edited. A venue's `name` can, and every `venue_id` stays.
 - Save writes only the changed fields and keeps the file's other lines and comments. A refused field keeps what you typed and says why. Unsaved edits survive a tab switch and a reload.
-- Add asks for the fields that name the new entry, writes it to the primary hub's file and opens its page. A taken key is refused.
+- Add asks for the fields that name the new entry, writes it to the file of the hub that lists the collection in its `collections:` and opens its page. A taken key is refused. When more than one hub lists the collection, Add also asks which hub's file takes the entry, the primary chosen first. The Literature view's Add asks the same when it is given a DOI or an address.
+- A field whose schema line says `filter: true` is a filter in the bar beside the search: a select or tags field as chips of its values with their counts, a text field whose values are all whole numbers as a range (from, to), and any other text field as chips. The filters are kept per tab.
 - Delete asks first and names everything that refers to the entry; those references become findings. History undoes it.
 - A card's status, deadline and date change on the card and are written at once.
 - Edit in File opens the file at the entry. Each view drawn from one file has a control, last in its toolbar, that opens the file.
@@ -246,7 +248,8 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - **Deposit.** Every project has one. It keeps a mirror clone under `~/.oculus/deposits`, synced from the project's `code/`, with sync, commit, push, snapshot, branches, Fetch, and the diffs against `origin/main`.
 - **Map.** Press a node to fix it, drag to move it; re-tune lays the map out again.
 - **Present.** A deck is a folder with a `present.yml` and Markdown slides (several per file, split by `---`). The deck menu opens the portfolio deck (`portfolio_deck`), a project's `present/` deck, or one opened from Files. Right-click a slide to edit, add, duplicate or delete it; History undoes each. A dropped image is copied into the deck. Export to PDF writes `<name>.pdf` in the deck's folder (in the app; the print dialog in a browser). Notes come from the slide's `notes:` key.
-- **Literature search.** Sends the query only to the sources that are on. Results with one DOI, PubMed id or arXiv id merge. Copy BibTeX writes no file. Add to Lit Watch is the one write.
+- **Literature search.** Sends the query only to the sources that are on. Results with one DOI, PubMed id or arXiv id merge. Copy BibTeX writes no file. Add to Lit Watch and Save to Literature are the writes.
+- **Literature.** The papers kept, one entry each, keyed by citation key: the first author's surname, the year and the first word of the title (`faes2024blockterm`), with `b`, `c` and on added when the key is taken. Save to Literature on a Literature search card and on a Lit Watch card writes the paper to the primary hub's Literature file (else the first hub's) and is undoable in History; a card whose paper is there reads In Literature. A paper with the DOI of one already kept, or with the title of one when either has no DOI, is refused. Add asks for one value: a DOI or its doi.org address, an arXiv id or address, or a PubMed id or address is looked up through the sources the search asks and saved, and any other address is saved as it is with a key made from its last path word. When every source fails nothing is saved and Add names them; an empty answer asks for the new entry's key, as Add does on every collection. A venue that names an entry of the venues registry opens it. Copy BibTeX on an entry, and in the toolbar for the entries shown, fetches each entry's BibTeX by DOI or makes it from the fields, under the entry's own key, and says how many were copied and which were not.
 - **Position Leads.** `applied` opens a new Applications entry filled from the lead and marks the lead applied. `decline` marks it declined; reopen undoes that.
 - **Inbox.** Send and Archive are the only writes to a mailbox, each after a confirmation. No draft is made at the provider.
 - **LinkedIn.** One file per post in `linkedin_dir`. Add asks for a title and a category and opens the new file.
@@ -276,7 +279,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 
 ## Files and the editor
 
-- The Files view follows the disk within a couple of seconds. Show Hidden Files, Show Ignored Files and File Nesting are toggles of the view, kept per tab.
+- The Files view follows the disk within a couple of seconds. Show Hidden Files, Show Ignored Files and File Nesting are toggles of the view, kept per tab. A tab lists hidden files (dotfiles and the build folders) and the files git ignores until its menu turns them off. The file tree of a project card lists neither.
 - A workspace is a file `.oculus/workspaces/<name>.yml` of a hub: `folders:` (each `{ name, path }`) and `primary:`. The template is in [templates](docs/templates.md). With no workspace open, the workspace is unsaved and starts empty.
 - The `...` menu and the palette (`:workspace`, `:workspace-save`, `:workspace-new`, `:workspace-close`, `:folder`) switch, save, make and close workspaces. Each workspace keeps its own pages.
 - Add Folder to Workspace opens the folder panel; Remove Folder takes a folder out. Both keep the file's comments and are undoable. Drag folders to reorder them.
@@ -314,6 +317,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - A tag is a `#word` in the text (letters, digits, `_`, `-`, `/`; not only digits; not in code, a link, a heading mark or an address) or an entry of the front matter's `tags:`. The Tags section lists every tag with its count, nested on `/`. A press on a tag opens Search over the notes of every hub, listing each place the tag stands.
 - Backlinks lists the notes of the same hub that link to the note in front, with the lines that hold the links.
 - The Notes Graph view (in the catalogue, or Graph on the Notes head) draws every note as a node and every link between notes as an edge; a press opens the note, and the menu filters to one hub.
+- A code block of a rendered Markdown document has a Copy control at its top right, which puts the block's text on the clipboard and says Copied.
 - In every Markdown preview, `$...$` and `$$...$$` are typeset with KaTeX. A formula KaTeX cannot typeset shows as red source. `$` in code and amounts like `$5 and $10` stay text.
 
 ### Language servers
@@ -441,7 +445,8 @@ configurations:
   - `schemas/`: the forms of `project.yml`, a deck's `present.yml` and `cpp.yml`.
   - `text/`: every word on screen.
 - Every option is described in `catalogs/options.yml` and set in Settings. A wrong value is a finding, and that option takes its default.
-- A hub's `.oculus/config.yml` may set exactly the keys listed in its template ([templates](docs/templates.md)); any other key is a finding. A key it sets replaces oculus's value whole; inside a map, per dotted path.
+- A hub's `.oculus/config.yml` may set exactly the keys listed in its template ([templates](docs/templates.md)); any other key is a finding. A key it sets replaces oculus's value whole; inside a map, per dotted path. Its `collections:` names the file of each registry, card list and feed: `leads` and `radar` name the Position Leads and Lit Watch files.
+- A domain's card colour (`color`, `#rrggbb`) and label (`title`), and whether its active projects must list a dataset (`expects_datasets`), are fields of its entry in the domains registry. The theme words of venues and datasets are the options of the `themes` field of the venues and data registries, each a word or `{ key, label }`.
 - A hub's `.oculus/local.yml` is this machine's: the port, `hpc_host`, the programs, the agent accounts, the calendar and mail accounts, the Literature keys, and where oculus keeps its files. Every key has a default. It stays out of git, and only the primary hub's file is read (the account rows are joined over every hub). The keys are in its template.
 - The rest of `.oculus/` (bookmarks, workspaces, schedules, notes, apps, pictures) is listed in the hub's Data map, `docs/DATA-MAP.md`.
 - `~/.oculus/` is oculus's own state: the open workspace, the change log, the local history, approvals, the language servers' folder, app stores, provider credentials. It is not for editing.
@@ -451,7 +456,7 @@ configurations:
 ### Hubs and projects
 
 - A folder of the workspace with `.oculus/config.yml` is a hub. Every hub is read and merged into one portfolio. A record of another hub than the primary has the id `<hub>:<id>` and a hub chip.
-- A change goes to its own hub's file; a new record goes to the primary hub.
+- A change goes to its own hub's file. A new record goes to the file of the hub that lists its collection, and Add asks which one when more than one hub does.
 - A project is a folder holding `project.yml` or `.oculus/project.yml`, found by a `scan:` folder or as a folder of the workspace. Its id is the folder's name. Its `tier` and `type` set its board and stage.
 - A project's `repository:` block (`url`, `visibility`, `description`, `homepage`, `topics`, `date`) says where its code lives. It counts as cloned wherever a repository of the workspace has that `url` as `origin`.
 - Clone (on a project) asks for a folder and checks the repository out there. `:clone` lists your GitHub repositories (through `gh`) and clones one into a folder you pick. Afterwards oculus asks: Open (the clone alone) or Add to Workspace.

@@ -8,14 +8,13 @@
 // The files of oculus's own configuration come from the options catalog, read by
 // data/sources/config/catalog/schemas/references.ts into the same nodes.
 //
-// One rule is stated here and in docs/DATA-MAP.md and applied by name: the keys of the `domains:`
-// map of config/catalogs/vocab.yml are references to the domains registry entry of the same key,
-// since the map colours and labels the domain the entry defines.
-//
 // A source is the name a `from` uses: a registry (`venues`), `projects`, `clusters` (the resources
-// of kind cluster) or `vocab.<key>`, a list of vocab.yml.
+// of kind cluster) or `vocab.<key>`, a list of vocab.yml. A field of a hub file's own schema whose
+// `options:` hold a `{ key, label }` row (the `themes` field of the venues and data registries)
+// takes its keys from those options: its source is `optionSource` of the file and the field, and
+// the rows' keys in the schema are the definitions (scan.ts).
 
-import type { SchemaField } from '../../model/index.ts';
+import { optionKey, type SchemaField } from '../../model/index.ts';
 import type { FieldNode } from './model.ts';
 
 /** The prefix of a source that names a list of config/catalogs/vocab.yml. */
@@ -26,24 +25,45 @@ export function recordOf(fields: Record<string, FieldNode>): FieldNode | null {
     return Object.keys(fields).length === 0 ? null : { kind: 'record', fields };
 }
 
-/** The node of one schema field, or null when nothing in it names a key. */
-function nodeOf(field: SchemaField): FieldNode | null {
+/** The prefix of the source a field's own option rows define. */
+const OPTION_SOURCE = 'options:';
+
+/** The source of the option rows of `field` in the schema of the hub file at `path`. */
+export function optionSource(path: string, field: string): string {
+    return `${OPTION_SOURCE}${path}#${field}`;
+}
+
+/** Whether a field's options hold a `{ key, label }` row, which makes its options a source. */
+export function hasOptionRows(field: SchemaField): boolean {
+    return (field.options ?? []).some((one) => typeof one !== 'string' && optionKey(one) !== '');
+}
+
+/**
+ * The node of one schema field, or null when nothing in it names a key. `owner` is the hub file
+ * whose own schema the field is in, whose option rows are then a source of the field.
+ */
+function nodeOf(field: SchemaField, owner?: string): FieldNode | null {
     if (field.type === 'records' && field.fields !== undefined) {
         const record = schemaRecord(field.fields);
         if (record === null) return null;
         return field.map === true ? { kind: 'named', record } : { kind: 'records', record };
     }
+    const own =
+        owner !== undefined && hasOptionRows(field) ? [optionSource(owner, field.field)] : [];
     const from = field.from;
-    if (from === undefined) return null;
-    if (Array.isArray(from)) return from.length === 0 ? null : { kind: 'leaf', sources: from };
-    return { kind: 'leaf', sources: [], picked: from };
+    if (from === undefined) return own.length === 0 ? null : { kind: 'leaf', sources: own };
+    if (Array.isArray(from)) {
+        const sources = [...own, ...from];
+        return sources.length === 0 ? null : { kind: 'leaf', sources };
+    }
+    return { kind: 'leaf', sources: own, picked: from };
 }
 
-/** The record node of a list of schema fields. */
-export function schemaRecord(fields: SchemaField[]): FieldNode | null {
+/** The record node of a list of schema fields, the top-level fields of the file `owner`. */
+export function schemaRecord(fields: SchemaField[], owner?: string): FieldNode | null {
     const held: Record<string, FieldNode> = {};
     for (const field of fields) {
-        const node = nodeOf(field);
+        const node = nodeOf(field, owner);
         if (node !== null) held[field.field] = node;
     }
     return recordOf(held);
@@ -51,14 +71,16 @@ export function schemaRecord(fields: SchemaField[]): FieldNode | null {
 
 /**
  * The node of a hub data file from the fields of its `schema:` block: a list of records under
- * `list` for a file that lists entries, the fields themselves for one that holds sections.
+ * `list` for a file that lists entries, the fields themselves for one that holds sections. `owner`
+ * is the file's path from the hub, which names the sources of its fields' option rows.
  */
 export function fileRecord(
     fields: SchemaField[],
     kind: 'entries' | 'sections',
-    list: string
+    list: string,
+    owner?: string
 ): FieldNode | null {
-    const record = schemaRecord(fields);
+    const record = schemaRecord(fields, owner);
     if (record === null || kind === 'sections') return record;
     return { kind: 'record', fields: { [list]: { kind: 'records', record } } };
 }
@@ -85,14 +107,6 @@ export function manifestRecord(fields: SchemaField[]): FieldNode | null {
     }
     for (const [prefix, held] of inner) top[prefix] = { kind: 'record', fields: held };
     return recordOf(top);
-}
-
-/** The node of the `domains:` map of vocab.yml: its keys are references to the domains registry. */
-export function vocabRecord(): FieldNode {
-    return {
-        kind: 'record',
-        fields: { domains: { kind: 'named', record: null, keys: ['domains'] } }
-    };
 }
 
 /** Every source a node names, for the lists of vocab.yml the index must define. */

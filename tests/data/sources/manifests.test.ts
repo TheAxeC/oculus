@@ -641,6 +641,28 @@ describe('a hub reports only the files its own configuration names', () => {
         expect(named.unnamed?.registries).not.toContain('venues');
     });
 
+    it('reads a feed from the collections entry that names it, as no collection, and finds a named file that is not there', () => {
+        const hub = plantScratch('oculus-collections-feed-', {
+            '.oculus/config.yml':
+                'collections:\n  - { key: radar, file: elsewhere/radar.yml }\n  - { key: leads, file: gone/leads.yml }\n',
+            'elsewhere/radar.yml': 'meta:\n  last_run: the last pass\nentries: []\n'
+        });
+        const { config, from } = loadConfig(engineDir(), { hub });
+        const portfolio = portfolioConfigFrom(config, from);
+        expect(portfolio.feeds.radar).toBe('elsewhere/radar.yml');
+        expect(portfolio.feeds.leads).toBe('gone/leads.yml');
+        expect(portfolio.unnamed?.feeds).toEqual([]);
+        const built = buildPortfolioWithSchemas(hub, portfolio);
+        expect(Object.keys(built.snapshot.entities.collections)).toEqual([]);
+        expect(built.snapshot.entities.feeds.radar).toEqual({ lastRun: 'the last pass' });
+        const missing = built.snapshot.findings.filter(
+            (one) => one.file === join(hub, 'gone/leads.yml')
+        );
+        expect(missing.map((one) => one.message)).toEqual([
+            findingText(textCatalog(config), 'findings.registries.file_missing')
+        ]);
+    });
+
     it('reads the first of two collections entries for one key and names the key in a finding', () => {
         const hub = plantScratch('oculus-collections-twice-', {
             '.oculus/config.yml':

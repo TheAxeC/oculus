@@ -25,7 +25,14 @@ import {
     readAs,
     searchRevealShape
 } from '../../data/shapes/shapes.ts';
-import type { Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
+import {
+    FILTERED_TYPES,
+    optionLabel,
+    type Entry,
+    type Project,
+    type SchemaField,
+    type Subtask
+} from '../../data/model/index.ts';
 import { fileBytesUrl } from '../sources/fs-transport.ts';
 import { normalisePath } from '../sources/fs.ts';
 import { dirOf } from '../sources/repositories/change-tree.ts';
@@ -36,6 +43,7 @@ import { TITLE_FIELD, identityField } from '../forms/record-fields.ts';
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
 export type { Collection, Entry, Project, SchemaField, Subtask } from '../../data/model/index.ts';
+export { optionKeys, optionLabel } from '../../data/model/index.ts';
 
 // The address rule lives in the data layer, where the Audit reads it too; a view reaches it from
 // here, since the boundary table keeps `views/` out of `data/`.
@@ -75,8 +83,8 @@ export type Drawn = {
 };
 
 /**
- * What the view holds per instance: the search box, the status values in force, and the statuses
- * the reader has switched off in the facet bar.
+ * What the view holds per instance: the search box, the status values in force, the statuses the
+ * reader has switched off in the facet bar, and the schema filters' picks and ranges.
  *
  * The two status fields are not one field. `statuses` is a selection: empty means every status, and
  * a value in it means that value alone. `hidden` is the facet bar of the acceptance list, where
@@ -89,20 +97,35 @@ export type CollectionState = {
     hidden: string[];
     /** The ids of the entries whose long text is drawn whole rather than cut to its clamp. */
     more: string[];
+    /**
+     * The values picked in each chip filter of the bar, by field (fieldFilters): an entry is drawn
+     * when it holds one of them. A field with none picked lets every entry through.
+     */
+    picked: Record<string, string[]>;
+    /** The bounds typed in each range filter of the bar, by field, either one empty for none. */
+    range: Record<string, Bounds>;
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
 
+/** The two bounds of a range filter as typed. */
+export type Bounds = { from: string; to: string };
+
 /** The state of an instance nobody has typed in yet. */
 export function emptyCollectionState(): CollectionState {
-    return { search: '', statuses: [], hidden: [], more: [] };
+    return { search: '', statuses: [], hidden: [], more: [], picked: {}, range: {} };
 }
+
+/** The two bounds of a range, each the empty text unless it is text. */
+const boundsShape = z.object({ from: z.string().catch(''), to: z.string().catch('') });
 
 /** The fields of a saved instance, each read apart so a wrong one costs that field alone. */
 const collectionStateShape = searchRevealShape.extend({
     statuses: fieldItemsShape,
     hidden: fieldItemsShape,
-    more: fieldItemsShape
+    more: fieldItemsShape,
+    picked: z.record(z.string(), fieldItemsShape).catch({}),
+    range: z.record(z.string(), boundsShape).catch({})
 });
 
 /** The saved state of one instance, with anything that is not the shape above replaced by it. */
@@ -113,7 +136,9 @@ export function parseCollectionState(raw: unknown): CollectionState {
         search: held.search,
         statuses: held.statuses,
         hidden: held.hidden,
-        more: held.more
+        more: held.more,
+        picked: held.picked,
+        range: held.range
     };
     if (held.reveal !== undefined) state.reveal = held.reveal;
     return state;
@@ -396,7 +421,8 @@ function haystack(value: unknown): string {
  */
 export function applyCollectionFilters(
     entries: Entry[],
-    state: Pick<CollectionState, 'search' | 'statuses' | 'hidden'>
+    state: Pick<CollectionState, 'search' | 'statuses' | 'hidden'> &
+        Partial<Pick<CollectionState, 'picked' | 'range'>>
 ): Entry[] {
     const needle = state.search.trim().toLowerCase();
     return entries.filter((entry) => {
@@ -405,9 +431,102 @@ export function applyCollectionFilters(
             if (status === undefined || !state.statuses.includes(status)) return false;
         }
         if (status !== undefined && state.hidden.includes(status)) return false;
+        if (!passesFields(entry, state.picked ?? {}, state.range ?? {})) return false;
         if (needle === '') return true;
         return haystack(entry.fields).toLowerCase().includes(needle);
     });
+}
+
+/** The words one field of an entry holds: each item of a list, or its one value, as text. */
+function fieldWords(value: unknown): string[] {
+    const items = Array.isArray(value) ? value : [value];
+    return items
+        .flatMap((one) =>
+            typeof one === 'string' || typeof one === 'number' ? [String(one).trim()] : []
+        )
+        .filter((one) => one !== '');
+}
+
+/** A whole number written in digits, or null for any other text. */
+function wholeOf(text: string): number | null {
+    return /^\d{1,9}$/.test(text.trim()) ? Number(text.trim()) : null;
+}
+
+/** Whether an entry holds one picked value of every chip filter and lies in every range. */
+function passesFields(
+    entry: Entry,
+    picked: Record<string, string[]>,
+    range: Record<string, Bounds>
+): boolean {
+    for (const [field, values] of Object.entries(picked)) {
+        if (values.length === 0) continue;
+        if (!fieldWords(entry.fields[field]).some((one) => values.includes(one))) return false;
+    }
+    for (const [field, bounds] of Object.entries(range)) {
+        const from = wholeOf(bounds.from);
+        const to = wholeOf(bounds.to);
+        if (from === null && to === null) continue;
+        const held = wholeOf(fieldWords(entry.fields[field]).at(0) ?? '');
+        if (held === null) return false;
+        if ((from !== null && held < from) || (to !== null && held > to)) return false;
+    }
+    return true;
+}
+
+/** One chip of a chip filter: its value, the words it is drawn with, how many entries hold it. */
+type FilterChip = { value: string; label: string; count: number };
+
+/**
+ * One filter of the bar, for a schema field marked `filter: true`: the chips of the values the
+ * entries hold, or, for a text field whose values are all whole numbers, a range from the least to
+ * the greatest of them.
+ */
+export type FieldFilter =
+    | { field: string; label: string; kind: 'chips'; chips: FilterChip[] }
+    | { field: string; label: string; kind: 'range'; least: number; most: number };
+
+/**
+ * The filters of a collection view, one per field marked `filter: true` in the schema of any of its
+ * files, in the order the files name them, over every entry the view holds. A select or tags field
+ * is drawn as chips labelled by its options; a text field as a range when every value it holds is a
+ * whole number, else as chips. A field no entry holds a value of draws nothing.
+ */
+export function fieldFilters(
+    schemas: (SchemaField[] | undefined)[],
+    entries: Entry[]
+): FieldFilter[] {
+    const fields = new Map<string, SchemaField>();
+    for (const one of schemas.flatMap((schema) => schema ?? [])) {
+        if (one.filter === true && FILTERED_TYPES.includes(one.type) && !fields.has(one.field)) {
+            fields.set(one.field, one);
+        }
+    }
+    const filters: FieldFilter[] = [];
+    for (const field of fields.values()) {
+        const held = entries.flatMap((entry) => fieldWords(entry.fields[field.field]));
+        if (held.length === 0) continue;
+        const label = field.label ?? field.field;
+        const numbers = held.map(wholeOf);
+        if (field.type === 'text' && numbers.every((one) => one !== null)) {
+            filters.push({
+                field: field.field,
+                label,
+                kind: 'range',
+                least: Math.min(...numbers),
+                most: Math.max(...numbers)
+            });
+            continue;
+        }
+        const counts = new Map<string, number>();
+        for (const value of held) counts.set(value, (counts.get(value) ?? 0) + 1);
+        const chips = [...counts].map(([value, count]) => ({
+            value,
+            label: optionLabel(field, value),
+            count
+        }));
+        filters.push({ field: field.field, label, kind: 'chips', chips });
+    }
+    return filters;
 }
 
 /** The facet value of the synthetic card the Funding view draws for the projects with no scheme. */

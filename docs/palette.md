@@ -2,6 +2,12 @@
 
 Cmd+K opens the palette. With nothing typed it lists the views, and a typed word matches fuzzily, its letters in order, across views, projects, collection entries and feed entries. A collection entry or a lead or Lit Watch paper opens its page, and a person opens the person's page.
 
+## Contents
+
+[TOC]
+
+---
+
 ## Views
 
 Every registered view is listed by its words.
@@ -27,7 +33,7 @@ Every registered view is listed by its words.
 | Inbox | inbox |
 | Position Leads | leads |
 | LinkedIn | linkedin |
-| Literature search | literature |
+| Literature search | literature-search |
 | Lit Watch | radar |
 | Account setup | account-setup |
 | Calendar | calendar |
@@ -83,6 +89,7 @@ Every registered view is listed by its words.
 | Applications | applications |
 | Joint work | joint-work |
 | Tasks & Service | tasks |
+| Literature | literature |
 
 ## Colon commands
 

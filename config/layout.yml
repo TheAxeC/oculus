@@ -98,6 +98,7 @@ arrangements:
             - { view: radar, pinned: true }
             - { view: leads, pinned: true }
             - { view: linkedin, pinned: true }
+            - { view: literature-search, pinned: true }
             - { view: literature, pinned: true }
         - kind: pane
           view:
@@ -155,6 +156,8 @@ arrangements:
       view:
         - { view: help, pinned: true }
         - { view: doc, state: { id: engine:docs/apps.md, path: docs/apps.md, engine: true, label: "Apps guide" }, pinned: true }
+        - { view: doc, state: { id: engine:docs/templates.md, path: docs/templates.md, engine: true, label: "Templates" }, pinned: true }
+        - { view: doc, state: { id: engine:docs/palette.md, path: docs/palette.md, engine: true, label: "Palette" }, pinned: true }
         - { view: memories, pinned: true }
   views:
     root:

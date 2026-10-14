@@ -13,6 +13,7 @@ text:
         col_view: View
         commands: Colon commands
         commands_intro: A colon starts a command. The commands that list choices type their name and a space when chosen, and a command marked unavailable in the list is drawn and does not run.
+        contents: Contents
         editor: Editor commands
         editor_intro: While a source tab is on screen the palette also lists the editor's own Cmd-K commands, each under the editor's own label with its chord beside it. The table names each by the editor's action id.
         intro: Cmd+K opens the palette. With nothing typed it lists the views, and a typed word matches fuzzily, its letters in order, across views, projects, collection entries and feed entries. A collection entry or a lead or Lit Watch paper opens its page, and a person opens the person's page.

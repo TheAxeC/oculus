@@ -1,7 +1,15 @@
 // Layer 2, client state. Deadline, follow-up, subtask and venue-load arithmetic lives here because
 // ticker timing changes independently of the Focus board lanes.
 
-import type { Collection, Followup, Id, Project, Snapshot, Venue } from '../../data/model/index.ts';
+import {
+    optionKeys,
+    type Collection,
+    type Followup,
+    type Id,
+    type Project,
+    type Snapshot,
+    type Venue
+} from '../../data/model/index.ts';
 import { z } from 'zod';
 import { text as str } from '../../data/helpers/guards.ts';
 import { bareId, hubId, rootOf } from '../../data/helpers/hub-names.ts';
@@ -96,7 +104,7 @@ function isoOf(value: unknown): string {
  * and its lines carry no status buttons.
  */
 export function collectionStatuses(collection: Collection | undefined): string[] {
-    return collection?.schema?.find((field) => field.field === 'status')?.options ?? [];
+    return optionKeys(collection?.schema?.find((field) => field.field === 'status'));
 }
 
 /** The whole ticker, in the order the board shows its groups. */

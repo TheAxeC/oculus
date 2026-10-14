@@ -177,6 +177,36 @@ describe('a write to an entry of a hub other than the primary', () => {
         expect(first.ok).toBe(true);
         expect(posted.map((body) => body.id)).toEqual(['Review the draft']);
     });
+
+    it("checks a Literature save that names a hub against that hub's Literature file", async () => {
+        const posted: Record<string, unknown>[] = [];
+        vi.stubGlobal('fetch', (_url: string, init?: { body?: string }) => {
+            posted.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+            return Promise.resolve({
+                ok: true,
+                status: 200,
+                json: () => Promise.resolve({ ok: true, changed: [], refused: [], id: 'faes2024' })
+            });
+        });
+        const lab = { root: 'lab', path: 'registries/literature.yml' };
+        const writes = createWrites(
+            () => ({ collections: [{ key: 'literature', file: 'registries/literature.yml' }] }),
+            (file) => file.root === lab.root && file.path === lab.path,
+            {
+                ...NO_LOOKUPS,
+                primary: () => 'hub',
+                collectionFile: (id) => (id === 'lab:literature' ? lab : null)
+            }
+        );
+        const paper = { doi: '10.1000/one' };
+        const held = await writes.saveLiterature('hand', paper, 'lab');
+        expect(posted).toEqual([]);
+        expect(held.error).toBe(t('app.file_unsaved', 'literature.yml'));
+
+        const own = await writes.saveLiterature('hand', paper);
+        expect(own.ok).toBe(true);
+        expect(posted).toEqual([{ kind: 'literature-save', source: 'hand', paper }]);
+    });
 });
 
 describe('a rail reorder over a layout file a source tab holds unsaved text of', () => {

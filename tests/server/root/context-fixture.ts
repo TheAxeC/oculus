@@ -1,7 +1,7 @@
 // Layer 2, server test support. Builds a complete inert ServerContext for route tests without
 // opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture.
 
-import { hubVocabs } from '../../../src/lib/data/index.ts';
+import { workspaceVocabs } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig, type LocalConfig } from '../../../src/lib/data/sources/config.ts';
 import { latexBuild } from '../../../src/lib/data/sources/config/settings.ts';
 import { ConnectStates } from '../../../src/lib/server/accounts/connect/oauth.ts';
@@ -169,7 +169,13 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
                 report: () => undefined,
                 primary: () => workspace.open().primary,
                 others: () => [],
-                vocabs: (read) => hubVocabs(workspace.open().primary, read.config, [])
+                vocabs: (read) =>
+                    workspaceVocabs(
+                        engine,
+                        { name: workspace.open().primary, dir: workspace.open().primaryDir },
+                        read,
+                        []
+                    )
             }),
         fsWrites: overrides.fsWrites ?? fsWrites(),
         opsWrites: overrides.opsWrites ?? fsWrites(),

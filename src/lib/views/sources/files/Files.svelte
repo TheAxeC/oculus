@@ -29,10 +29,11 @@
     // closed or open, the name being typed (`naming`) and the three listing toggles (hidden files,
     // ignored files, nested files) live in the instance's own state, so a tree left half open is
     // the same tree after a reload, and two file browsers on two pages are open at two different
-    // places and list the same folder each their own way. The refusal line (`note`) is kept there
-    // too. The tree is built by shared/explorer/rooted-tree.svelte.ts and drawn by
-    // shared/explorer/RootedTree.svelte, the tree a project card draws as well; the writes into the
-    // state are shared/explorer/control/tab-actions.ts's, and the bookmark's are
+    // places and list the same folder each their own way. A tab lists hidden and ignored files
+    // until its menu's Show Hidden Files and Show Ignored Files turn them off. The refusal line
+    // (`note`) is kept there too. The tree is built by shared/explorer/rooted-tree.svelte.ts and
+    // drawn by shared/explorer/RootedTree.svelte, the tree a project card draws as well; the writes
+    // into the state are shared/explorer/control/tab-actions.ts's, and the bookmark's are
     // shared/explorer/control/bookmark-actions.ts's. What stays in this view is what only a Files
     // tab has: the workspace header, follow mode, the rooted tab and the sections.
     //

@@ -10,7 +10,8 @@
     // collection key, and every control is one call of the write path, except the `extra` ones the
     // collection passes in (Start Agent on a task's card). A field the schema draws its choices
     // from the people registry for is the one exception in kind rather than in name: it holds a
-    // person's key, so the card draws the control that opens that person by their name.
+    // person's key, so the card draws the control that opens that person by their name. A
+    // Literature entry's `venue` that names a venue record is the other: it opens that venue.
     //
     // Every entry has a page, and the card's title opens it through `onpage`; a card handed none
     // draws its title as words. The page holds the entry's editor, its referrers and, where its
@@ -69,6 +70,8 @@
     import { rootOf } from '$lib/state/shared/page/hubs';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { personName } from '$lib/state/boards/person';
+    import { LITERATURE, venueNamed } from '$lib/state/feeds/literature/saved';
+    import { pageView } from '$lib/state/forms/page-entry';
     import { t } from '$lib/state/shared/words/text';
     import { statusTone } from '$lib/state/shared/words/tones';
     import { useState } from '$lib/state/client/use';
@@ -79,7 +82,7 @@
         folders,
         fs: { listing, primary },
         layout: { openView, showFolderInFiles, showInFiles },
-        selectors: { archiveDead },
+        selectors: { archiveDead, venues },
         source: { unsavedFile },
         writes: { writeEntry }
     } = client;
@@ -241,6 +244,13 @@
         said(await writeEntry(collection, entry.id, { status: next }));
     }
 
+    /** The page of the venue record a Literature entry's venue names, by name ignoring case. */
+    const venuePage = $derived.by(() => {
+        const name = collection === LITERATURE ? entry.fields.venue : undefined;
+        const one = typeof name === 'string' ? venueNamed(name, venues()) : undefined;
+        return one === undefined ? undefined : pageView('venues', one.id, one.name);
+    });
+
     /** One person as their own tab, the tab a collaborator tag on a project card opens. */
     function openPerson(key: string): void {
         openView('person', { key, label: personName(portfolio(), key) });
@@ -358,6 +368,16 @@
                             glyph={t('collection.person_glyph')}
                             title={t('collection.open_person')}
                             onclick={() => openPerson(drawn.values[0])}
+                        />
+                    </div>
+                {:else if drawn.field === 'venue' && venuePage !== undefined}
+                    <div class="row">
+                        <span class="label">{drawn.label}</span>
+                        <Chip
+                            label={drawn.values[0]}
+                            glyph="goto"
+                            title={t('collection.open_venue')}
+                            onclick={() => openView(venuePage.view, venuePage.state)}
                         />
                     </div>
                 {:else if drawn.kind === 'link'}

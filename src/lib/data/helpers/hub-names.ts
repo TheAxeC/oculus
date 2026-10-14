@@ -219,16 +219,15 @@ export const HUB_FILE = `${ROOT_FOLDER}/config.yml`;
  * (named relative to config/), which is the group the Settings view draws it in. Each key is a
  * dotted path into the hub file; a value the file holds at one of these paths replaces the engine's
  * value whole, and a key outside the list is a finding and is not applied. They are the keys that
- * describe this hub rather than the engine: its folders and the files of its records, its domains
- * and themes, the cluster its jobs run on, and the values its apps' settings hold.
+ * describe this hub rather than the engine: its folders and the files of its records, the cluster
+ * its jobs run on, and the values its apps' settings hold. Its domains and theme words are its own
+ * registry files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'scan', file: 'sources.yml' },
     { key: 'portfolio_deck', file: 'sources.yml' },
     { key: 'collections', file: 'sources.yml' },
     { key: 'new_project_dir', file: 'sources.yml' },
-    { key: 'leads_file', file: 'sources.yml' },
-    { key: 'radar_file', file: 'sources.yml' },
     { key: 'publications_file', file: 'sources.yml' },
     { key: 'linkedin_dir', file: 'sources.yml' },
     { key: 'career_file', file: 'sources.yml' },
@@ -237,11 +236,7 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'wallpaper.image', file: 'appearance.yml' },
     { key: 'docs', file: 'layout.yml' },
     { key: 'slurm.resource', file: 'behavior.yml' },
-    { key: 'data_domains', file: 'behavior.yml' },
-    { key: 'app_settings', file: 'behavior.yml' },
-    { key: 'domains', file: 'catalogs/vocab.yml' },
-    { key: 'venue_themes', file: 'catalogs/vocab.yml' },
-    { key: 'data_themes', file: 'catalogs/vocab.yml' }
+    { key: 'app_settings', file: 'behavior.yml' }
 ];
 
 /** Every dotted key the hub list names, in the list's order. */

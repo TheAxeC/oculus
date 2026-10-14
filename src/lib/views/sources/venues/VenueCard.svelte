@@ -56,7 +56,7 @@
         cursor: boolean;
         projects: Project[];
         concentrated: boolean;
-        /** The labels of `venue_themes`, which the theme tags draw in place of the word. */
+        /** The labels of the venue theme words, which the theme tags draw in place of the word. */
         labels: ThemeWordLabels;
         entry: Entry | null;
         schema: SchemaField[] | undefined;

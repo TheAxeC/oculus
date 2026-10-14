@@ -1,6 +1,7 @@
 // Layer 2, client state. Which file of the primary hub a view is drawn from: one of the three feeds
 // by its kind, the career file, one of the five registry views with a pane of its own, or one
-// collection by its key.
+// collection by its key. The registries' and the leads and radar feeds' files are the entries of
+// the `collections:` list under their keys.
 // All of them are read from the merged configuration the config channel carries, so every view that
 // offers the file shares one rule and one answer.
 //
@@ -24,26 +25,29 @@ export type ViewSourceKind = FeedKind | 'collection' | 'career' | RegistryKind;
 /** The registry views drawn from a file of their own, each by the view's own id. */
 export type RegistryKind = 'people' | 'venues' | 'datasets' | 'pillars' | 'domains';
 
-/** The configuration key each feed's and the career's path is written under. */
-const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection' | RegistryKind>, string> = {
-    leads: 'leads_file',
-    radar: 'radar_file',
+/** The kinds whose file the `collections:` list names: the registry views and the YAML feeds. */
+type ListedKind = RegistryKind | 'leads' | 'radar';
+
+/** The configuration key the LinkedIn folder's and the career's path is written under. */
+const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection' | ListedKind>, string> = {
     linkedin: 'linkedin_dir',
     career: 'career_file'
 };
 
-/** The key of the `collections:` list each registry view's file is named under. */
-const REGISTRY_COLLECTIONS: Record<RegistryKind, string> = {
+/** The key of the `collections:` list each registry view's and YAML feed's file is named under. */
+const LISTED_COLLECTIONS: Record<ListedKind, string> = {
     people: 'people',
     venues: 'venues',
     datasets: 'data',
     pillars: 'pillars',
-    domains: 'domains'
+    domains: 'domains',
+    leads: 'leads',
+    radar: 'radar'
 };
 
-/** Whether a kind is one of the registry views, whose file the `collections:` list names. */
-function isRegistryKind(kind: ViewSourceKind): kind is RegistryKind {
-    return Object.hasOwn(REGISTRY_COLLECTIONS, kind);
+/** Whether a kind is one whose file the `collections:` list names. */
+function isListedKind(kind: ViewSourceKind): kind is ListedKind {
+    return Object.hasOwn(LISTED_COLLECTIONS, kind);
 }
 
 /** A configured path: a string with something in it once trimmed, answered trimmed. */
@@ -79,8 +83,8 @@ export function viewSourceFile(
     const file =
         kind === 'collection'
             ? collectionPath(config, collection)
-            : isRegistryKind(kind)
-              ? collectionPath(config, REGISTRY_COLLECTIONS[kind])
+            : isListedKind(kind)
+              ? collectionPath(config, LISTED_COLLECTIONS[kind])
               : readAs(pathShape, config[FILE_KEYS[kind]]);
     return file === null ? null : { root: primary, path: file };
 }

@@ -431,6 +431,10 @@ text:
             worktree_name: The name {0} is not one a worktree folder can carry
         latex:
             name: latex {0} {1}/{2}
+        literature:
+            file_unread: the Literature file does not read
+            paper_in_file: this paper is in Literature already
+            paper_needs_address: a paper needs a title, a DOI or an address
         machine_default:
             hpc_host: the host of the cluster that slurm.resource of behavior.yml names
             no_accounts: no accounts
@@ -500,10 +504,12 @@ text:
             restart_key: '{0} is set to another value in the workspace just opened; the running server keeps its own value, and a restart takes the new one'
         write_route:
             no_collection: 'no collection {0}'
+            no_collection_in_hub: 'the hub {0} lists no collection {1}'
             no_entry: 'no entry {0} in {1}'
             no_host: 'no host named {0}'
             no_idea_file: the LinkedIn idea file is not on this hub
             no_leads_feed: the leads feed is not on this hub
+            no_literature_file: "Literature has no file on this hub: its collections list names none, and the engine's path for it holds none"
             no_linkedin_folder: the LinkedIn folder is not on this hub
             no_project: 'no project with the id {0}'
             no_radar_file: Lit Watch has no file on this hub

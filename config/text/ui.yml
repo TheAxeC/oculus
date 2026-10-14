@@ -60,7 +60,11 @@ text:
         pane_restore: Restore panes
         pin_glyph: pin
         preview_tab: 'The next single click replaces this tab; double-click to keep it.'
+        prose_code_copied: Copied
+        prose_code_not_copied: The clipboard refused the text
         prose_copy: Copy
+        prose_copy_code: Copy
+        prose_copy_code_tip: Copy the text of this code block
         prose_copy_image: Copy Image
         prose_menu: Document
         prose_open_image: Open Image

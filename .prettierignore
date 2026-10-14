@@ -9,10 +9,10 @@ package-lock.json
 
 # The configuration is written in two-space YAML with each key beside the comment block that explains
 # it, and a formatter pass would rewrite the indentation and the comment columns of every file listed.
-# meta.yml and icons.yml are formatted. The demo hub is data, not source: a formatter pass would
-# rewrite the indentation and the quoting of every manifest and every collection file, which is what
-# tests/data/demo-hub.test.ts reads.
-demo/
+# meta.yml and icons.yml are formatted. The demo hub the tests copy is data, not source: a formatter
+# pass would rewrite the indentation and the quoting of every manifest and every collection file,
+# which tests/data/hubs/hub-portfolio.test.ts reads through tests/data/hubs/hubs-fixture.ts.
+tests/fixtures/hubs/demo/
 
 # config/catalogs/unimath.yml holds one symbol to a line, which a formatter pass would spread over
 # four times as many lines.

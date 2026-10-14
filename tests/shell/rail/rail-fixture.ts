@@ -28,7 +28,7 @@ setCatalog(catalog);
 
 setGlyphs(glyphCatalog(config));
 
-setVocab(vocabCatalog(config), hubVocabs(null, config, []));
+setVocab(vocabCatalog(config), hubVocabs(null, null, []));
 
 setAppearance(config);
 

@@ -240,6 +240,28 @@ function defineVocab(walk: Walk, list: unknown, source: string): void {
     }
 }
 
+/**
+ * The definitions of a file's own option rows: the `key` of each row (and each plain word) of the
+ * `options:` of the named fields of its `schema:` list.
+ */
+function defineOptions(walk: Walk, root: YAMLMap, options: Reading['options']): void {
+    const schema = followed(walk, root.get('schema', true));
+    if (options === undefined || !isSeq(schema)) return;
+    for (const item of schema.items) {
+        const field = followed(walk, item);
+        if (!isMap(field)) continue;
+        const name = valueOf(walk, field, 'field');
+        const held = options.find((one) => isScalar(name) && one.field === name.value);
+        if (held === undefined) continue;
+        const list = followed(walk, field.get('options', true));
+        if (!isSeq(list)) continue;
+        for (const option of list.items) {
+            const row = followed(walk, option);
+            define(walk, isMap(row) ? row.get('key', true) : row, [held.source]);
+        }
+    }
+}
+
 /** The definitions a document gives by what its file defines. */
 function defineDocument(walk: Walk, root: YAMLMap, defines: Reading['defines']): void {
     switch (defines.kind) {
@@ -280,6 +302,7 @@ export function scanText(file: FileId, text: string, reading: Reading): FileScan
             seen: new Set()
         };
         defineDocument(walk, root, reading.defines);
+        defineOptions(walk, root, reading.options);
         if (reading.spec !== null) visit(walk, root, reading.spec, null);
     }
     return scan;

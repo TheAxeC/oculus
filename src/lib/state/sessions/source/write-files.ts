@@ -154,8 +154,18 @@ export function writtenFile(
         case 'entry':
         case 'delete-entry':
             return collection(body.collection, body.id);
-        case 'new-entry':
-            return collection(body.collection);
+        case 'new-entry': {
+            const root = text(body.root);
+            return root === '' || root === look.primary()
+                ? collection(body.collection)
+                : look.collectionFile(`${root}:${text(body.collection)}`);
+        }
+        case 'literature-save': {
+            const root = text(body.root);
+            return root === '' || root === look.primary()
+                ? collection('literature')
+                : look.collectionFile(`${root}:literature`);
+        }
         case 'reorder':
             return collection(body.collection, Array.isArray(body.order) ? body.order[0] : '');
         case 'subtask':

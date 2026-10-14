@@ -1,9 +1,10 @@
-// Layer 2, client state. The theme words of venues and datasets: their labels, read from a
-// `venue_themes` or `data_themes` list of config/catalogs/vocab.yml, the facet row a view draws
-// over them and the filter its toggles apply. One helper, one fold and one filter serve both
-// registries, because the two lists share the `{ key, label }` row shape and a venue and a dataset
-// both carry `themes: string[]`. The Venues and Data views pass the list they draw; the facets show
-// the label and match by the word, and the filter holds words alone.
+// Layer 2, client state. The theme words of venues and datasets: their labels, read from the
+// `venue_themes` or `data_themes` list of a hub's vocabulary (the options of the `themes` field of
+// that hub's venues or data registry), the facet row a view draws over them and the filter its
+// toggles apply. One helper, one fold and one filter serve both registries, because the two lists
+// share the `{ key, label }` row shape and a venue and a dataset both carry `themes: string[]`. The
+// Venues and Data views pass the list they draw; the facets show the label and match by the word,
+// and the filter holds words alone.
 //
 // A venue and a dataset are labelled by the lists of their own hub: `themeLabeller` gives the
 // labels of the hub a record's `root` names (the primary's for a record with none), and a hub that

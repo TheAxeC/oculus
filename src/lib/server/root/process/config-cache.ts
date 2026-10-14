@@ -9,9 +9,10 @@
 // the hub is the open workspace's primary at each request; a hub without the file is stamped as
 // absent, so making the file moves the stamp.
 //
-// The vocabulary of the other hubs of the workspace (their own `domains` and themes) is kept the
-// same way: its stamp adds the settings file of every other hub, so a request parses a hub's
-// settings again only when its file or the engine's folder changed.
+// The vocabulary of the hubs of the workspace (their domains and theme words, read from each hub's
+// registry files) is kept the same way: its stamp adds the settings file of every other hub and the
+// registry files the last read took the vocabulary from, so a request reads it again only when one
+// of those files or the engine's folder changed.
 //
 // A stamp that cannot be made (an entry that cannot be read, such as a dangling link) says
 // nothing about whether the folder changed, so a parse made under it is returned and not kept,
@@ -71,6 +72,11 @@ function fileStamp(file: string): string {
     }
 }
 
+/** The stamps of a list of files, one line each. */
+function filesStamp(files: readonly string[]): string {
+    return files.map(fileStamp).join('\n');
+}
+
 /** What the engine's folder and the hub's settings file hold, and which hub the file is of. */
 function configStamp(engine: string, hub: string | null): string {
     const engineStamp = folderStamp(configDir(engine));
@@ -89,8 +95,11 @@ export type ConfigCacheDeps = {
     /** The name of the primary hub, and the hubs of the workspace other than it. */
     primary: () => string | null;
     others: () => HubRoot[];
-    /** The vocabulary of the hubs, from the primary's config and each other hub's settings. */
-    vocabs: (primary: LoadedConfig, others: HubRoot[]) => HubVocabs;
+    /**
+     * The vocabulary of the hubs, read by the primary's config and each other hub's settings from
+     * the hubs' registry files, and the files it was read from.
+     */
+    vocabs: (primary: LoadedConfig, others: HubRoot[]) => { vocabs: HubVocabs; files: string[] };
 };
 
 /**
@@ -98,7 +107,7 @@ export type ConfigCacheDeps = {
  */
 export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
     let held: { stamp: string; read: LoadedConfig } | undefined;
-    let heldVocab: { stamp: string; vocab: HubVocabs } | undefined;
+    let heldVocab: { stamp: string; files: string[]; read: string; vocab: HubVocabs } | undefined;
     const read = (): LoadedConfig => {
         const stamp = configStamp(deps.engine, deps.hub());
         if (stamp !== UNREADABLE && held?.stamp === stamp) return held.read;
@@ -118,10 +127,20 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
             const readable = !stamps.includes(UNREADABLE);
             const names = others.map((one) => one.key).join('\n');
             const stamp = `${deps.primary() ?? ''}\n${names}\n${stamps.join('\n')}`;
-            if (readable && heldVocab?.stamp === stamp) return heldVocab.vocab;
-            const vocab = deps.vocabs(read(), others);
-            heldVocab = readable ? { stamp, vocab } : undefined;
-            return vocab;
+            if (
+                readable &&
+                heldVocab?.stamp === stamp &&
+                filesStamp(heldVocab.files) === heldVocab.read
+            ) {
+                return heldVocab.vocab;
+            }
+            const made = deps.vocabs(read(), others);
+            const files = filesStamp(made.files);
+            const kept = readable && !files.split('\n').includes(UNREADABLE);
+            heldVocab = kept
+                ? { stamp, files: made.files, read: files, vocab: made.vocabs }
+                : undefined;
+            return made.vocabs;
         }
     };
 }

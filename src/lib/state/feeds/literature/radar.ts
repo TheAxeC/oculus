@@ -1,8 +1,8 @@
 // Layer 2, client state. How a paper of the Literature search meets Lit Watch: whether the radar
 // holds it already, and the fields an Add to Lit Watch sends. The refusal of a paper the file holds
-// is the server's (server/edit/feeds.ts, `addRadarEntry`); this asks the same question of the feed
-// the page already has, with the same two rules (data/prose/literature.ts), so the card can say
-// `In Lit Watch` without a request.
+// is the server's (server/edit/feeds/feeds.ts, `addRadarEntry`); this asks the same question of the
+// feed the page already has, with the same two rules (data/prose/literature.ts), so the card can
+// say `In Lit Watch` without a request.
 
 import { addressKey, sameTitle } from '../../../data/prose/literature.ts';
 import { textOrNumber } from '../../../data/shapes/shapes.ts';

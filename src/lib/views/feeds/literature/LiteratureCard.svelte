@@ -8,7 +8,9 @@
     //
     // Open PDF is a link and only drawn when a source named an open one. Copy BibTeX puts one entry
     // on the clipboard and says where it came from; it writes no file. Add to Lit Watch opens the
-    // small form and reads `In Lit Watch`, not pressable, once the radar holds the paper.
+    // small form and reads `In Lit Watch`, not pressable, once the radar holds the paper. Save to
+    // Literature writes the paper to the Literature collection and reads `In Literature` once the
+    // collection holds it.
 
     import { onDestroy } from 'svelte';
     import Card from '$lib/ui/frame/Card.svelte';
@@ -21,6 +23,8 @@
     import { entryFor } from '$lib/state/feeds/literature/bibtex';
     import type { MergedHit } from '$lib/state/feeds/literature/merge';
     import { posting } from '../../shared/card/feed/posting';
+    import SaveToLiterature from '../../shared/card/feed/SaveToLiterature.svelte';
+    import { hitPaper } from '$lib/state/feeds/literature/saved';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -160,6 +164,12 @@
                 onclick={add}
             />
         {/if}
+        <SaveToLiterature
+            ids={{ doi: hit.doi, title: hit.title }}
+            paper={hitPaper(hit)}
+            source="search"
+            {onsaid}
+        />
     </div>
 
     {#if open}

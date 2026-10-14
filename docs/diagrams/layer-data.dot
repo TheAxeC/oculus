@@ -14,9 +14,10 @@ digraph layer_data {
         "folder data/places" [label="data/places"];
         "folder data/model" [label="data/model"];
         "folder data to folder data/helpers" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data to folder data/shapes" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder data to folder data/snapshot" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder data to folder data/sources" [label="11", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data to folder data/snapshot" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data to folder data/sources" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/accounts" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/helpers" [label="39", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -25,13 +26,13 @@ digraph layer_data {
         "folder data/sources to folder data/shapes" [label="22", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/sources to folder data/snapshot" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/snapshot to folder data/helpers" [label="25", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder data/snapshot to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/snapshot to folder data/model" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/snapshot to folder data/prose" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/snapshot to folder data/shapes" [label="9", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/accounts to folder data/helpers" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/shapes to folder data/helpers" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/shapes to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder data/helpers to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder data/helpers to folder data/model" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/helpers to folder data/prose" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder data/prose to folder data/model" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     }
@@ -45,6 +46,8 @@ digraph layer_data {
     "folder data/places" -> "folder data/model" [style=invis, weight=10, minlen=2];
     "folder data" -> "folder data to folder data/helpers" [arrowhead=none, minlen=5, weight=10];
     "folder data to folder data/helpers" -> "folder data/helpers" [];
+    "folder data" -> "folder data to folder data/model" [arrowhead=none, minlen=7, weight=10];
+    "folder data to folder data/model" -> "folder data/model" [];
     "folder data" -> "folder data to folder data/shapes" [arrowhead=none, minlen=3, weight=10];
     "folder data to folder data/shapes" -> "folder data/shapes" [];
     "folder data" -> "folder data to folder data/snapshot" [arrowhead=none, minlen=1, weight=10];

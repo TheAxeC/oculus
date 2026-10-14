@@ -16,6 +16,7 @@
 // note or a list of one note as a map carries the text it replaced, which the manifest writer puts
 // back over the lines the write left while the file still holds them.
 
+import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { z } from 'zod';
 import { scalar } from '../../../data/helpers/guards.ts';
@@ -33,7 +34,8 @@ import {
     removeRadarEntry,
     restoreFeedEntry,
     writeFeedField
-} from '../feeds.ts';
+} from '../feeds/feeds.ts';
+import { literatureEntry, removeLiterature } from '../feeds/literature.ts';
 import { overrides, setFlag, setOverride } from '../../sessions/overrides.ts';
 import { deckSlidesNow, undoDeckSlides } from './config/lists/deck/deck.ts';
 import { appSettingNow, undoAppSetting } from './config/app-setting.ts';
@@ -136,6 +138,9 @@ function collectionFor(
     return held === null ? null : { key, held };
 }
 
+/** The kind a paper saved to the Literature collection is logged under. */
+const LITERATURE_SAVE = 'literature-save';
+
 /** What a value read answers for an address that is not there. */
 const ABSENT = { found: false, value: null } as const;
 
@@ -183,6 +188,11 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         return configValueNow(into.engine, change.key, change.field, layerHub(into, change));
     }
     if (own === null) return ABSENT;
+    if (change.kind === LITERATURE_SAVE) {
+        const file = fileOf(change);
+        if (!existsSync(file)) return ABSENT;
+        return { found: true, value: literatureEntry(file, change.key) ?? null };
+    }
     if (change.kind === 'subtask' || change.kind === 'subtask-add') {
         return subtaskValue(own.hub, own.config, subtaskTarget(own, change), change.field);
     }
@@ -293,6 +303,7 @@ const RECORD_KINDS: readonly string[] = [
     'feed-delete',
     'lead-add',
     'radar-add',
+    LITERATURE_SAVE,
     'entry',
     'new-entry',
     'delete-entry',
@@ -483,6 +494,9 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | { error: 'unwr
         return { found: true, ...outcome };
     }
     if (own === null) return null;
+    if (change.kind === LITERATURE_SAVE) {
+        return removeLiterature(fileOf(change), change.key, change.replaced, own.config.text);
+    }
     if (change.kind === 'subtask') {
         const target = subtaskTarget(own, change);
         const before = mapBeforeShape.parse(change.before);

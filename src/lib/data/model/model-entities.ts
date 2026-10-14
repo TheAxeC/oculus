@@ -62,7 +62,8 @@ export type CollectionFile = {
 
 /**
  * The three generated feed files the command center reads a count and a run date out of. They are
- * hub-relative like every other path in the config: `leads_file`, `radar_file` and `linkedin_dir`.
+ * hub-relative like every other path in the config: the files of the `collections:` entries keyed
+ * `leads` and `radar`, and `linkedin_dir`.
  */
 export type FeedFiles = {
     leads: string;
@@ -483,11 +484,29 @@ export type Pillar = Rooted & {
     projectIds: Id[];
 };
 
+/** How a domain's `color` is written: `#` and six hexadecimal digits. */
+const DOMAIN_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * The colour a domains registry entry is drawn in: its `color` when it is written `#rrggbb`, and
+ * undefined for any other value, which draws the domain in the neutral tone. The snapshot's domain
+ * records, each hub's vocabulary and the finding on a bad colour (snapshot/validate.ts) read it.
+ */
+export function domainColorOf(entry: Record<string, unknown>): string | undefined {
+    return typeof entry.color === 'string' && DOMAIN_COLOR.test(entry.color)
+        ? entry.color
+        : undefined;
+}
+
 /** A domain from registries/domains.yml. */
 export type Domain = Rooted & {
     id: Id;
     title: string;
     blurb?: string;
+    /** The entry's `color` written `#rrggbb`, which a project card of the domain wears. */
+    color?: string;
+    /** The entry's `expects_datasets: true`: an active project of the domain lists a dataset. */
+    expectsDatasets?: boolean;
     projectIds: Id[];
 };
 

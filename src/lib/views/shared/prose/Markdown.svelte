@@ -29,13 +29,20 @@
     // A right-click on the document opens the prose menu (prose-menu.ts), read as the right-click
     // arrives: Copy over a selection, Copy Image over an image, and Open Image over an image the
     // hub serves, which opens it in the file view. With neither, nothing opens.
+    //
+    // Each code block carries a Copy control at its top right: a press puts the block's text on
+    // the clipboard, as written and without the highlighter's markup, and the control says Copied,
+    // or that the clipboard refused it, until the pointer leaves it. The HTML is the sanitiser's,
+    // so the control is the page's own button mounted into each block after the document is drawn,
+    // with the contexts of this component, and taken away when the document is drawn again.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { sanitise, type MathSlots } from '$lib/ui/html';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { t } from '$lib/state/shared/words/text';
-    import { getContext } from 'svelte';
+    import { getAllContexts, getContext, mount, unmount } from 'svelte';
     import { STATE_KEY } from '$lib/state/client/use';
     import type { ClientState } from '$lib/state/client/context';
     import { proseAt, proseMenu, prosePicked } from './prose-menu';
@@ -84,7 +91,7 @@
     let heard: { text: string; image: string | null } = { text: '', image: null };
 
     /** The document's box, which a selection must start in for Copy to copy it. */
-    let box: HTMLDivElement | null = $state(null);
+    let box = $state<HTMLDivElement | null>(null);
 
     function pointed(event: MouseEvent): MenuItem[] {
         const selection = window.getSelection();
@@ -160,6 +167,57 @@
         }
         jump(event, follower);
     }
+
+    /** The contexts the mounted controls are drawn with, the tooltip group's among them. */
+    const contexts = getAllContexts();
+
+    /** A code block's text as written: every node of the block but the control's own. */
+    function blockText(block: HTMLElement, control: HTMLElement): string {
+        return [...block.childNodes]
+            .filter((node) => node !== control)
+            .map((node) => node.textContent ?? '')
+            .join('');
+    }
+
+    /** Draw the Copy control in one code block, and hand back what takes it away. */
+    function copyControl(block: HTMLElement): () => void {
+        const host = document.createElement('div');
+        host.className = 'copy-code';
+        block.prepend(host);
+        const props = $state({
+            label: t('ui.prose_copy_code'),
+            glyph: 'copy',
+            small: true,
+            title: t('ui.prose_copy_code_tip'),
+            onclick: () => void copy()
+        });
+        async function copy(): Promise<void> {
+            const said = await navigator.clipboard
+                .writeText(blockText(block, host))
+                .then(() => t('ui.prose_code_copied'))
+                .catch(() => t('ui.prose_code_not_copied'));
+            props.label = said;
+            props.title = said;
+            host.addEventListener('pointerleave', reset, { once: true });
+        }
+        function reset(): void {
+            props.label = t('ui.prose_copy_code');
+            props.title = t('ui.prose_copy_code_tip');
+        }
+        const control = mount(ToolButton, { target: host, props, context: contexts });
+        return () => {
+            void unmount(control);
+            host.remove();
+        };
+    }
+
+    $effect(() => {
+        if (box === null || doc.html === '') return;
+        const taken = [...box.querySelectorAll<HTMLElement>('pre')].map(copyControl);
+        return () => {
+            for (const take of taken) take();
+        };
+    });
 
     function picked(pick: string): void {
         prosePicked(pick, heard, {
@@ -280,6 +338,19 @@
     :global(body.wall) .doc.surfaced :global(pre) {
         background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
+    }
+
+    /* The Copy control of a code block: a strip as wide as the block's box that holds still while
+       the block scrolls sideways, no taller than nothing, with the button at its right over the
+       block's first line. Selecting the block's text never takes the control's words with it. */
+    .doc :global(.copy-code) {
+        position: sticky;
+        left: 0;
+        display: flex;
+        justify-content: flex-end;
+        height: 0;
+        overflow: visible;
+        user-select: none;
     }
 
     .doc :global(pre code) {

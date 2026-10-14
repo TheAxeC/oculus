@@ -14,7 +14,15 @@
 // note, so a project with two or more notes shows them read-only (followupWritable below).
 
 import { z } from 'zod';
-import type { Id, Project, Resource, Snapshot } from '../../data/model/index.ts';
+import {
+    optionKey,
+    optionLabel,
+    type Id,
+    type Project,
+    type Resource,
+    type SchemaOption,
+    type Snapshot
+} from '../../data/model/index.ts';
 import type { DraftTarget } from './form-draft.ts';
 import { byKey, scalar } from '../../data/helpers/guards.ts';
 import { rootOf } from '../../data/helpers/hub-names.ts';
@@ -39,8 +47,8 @@ export type FormField = {
     section: string;
     /** Where the choices come from, when they are data: one source or several offered together. */
     from?: string | string[];
-    /** The choices, when they are a literal list in the schema. */
-    options?: string[];
+    /** The choices, when they are a literal list in the schema: words or `{ key, label }` rows. */
+    options?: SchemaOption[];
     /** On a `records` field: the fields of each record, in the schema's order. */
     fields?: FormField[];
     /** On a `records` field: the record takes keys no field of it names. */
@@ -258,7 +266,10 @@ export function choicesFor(
     root: string,
     primary: string | null
 ): Choice[] {
-    const own = (field.options ?? []).map((one) => ({ id: one, label: one }));
+    const own = (field.options ?? []).map((one) => {
+        const id = optionKey(one);
+        return { id, label: optionLabel(field, id) };
+    });
     if (field.from === undefined) return own;
     const sources = Array.isArray(field.from) ? field.from : [field.from];
     return [

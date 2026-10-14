@@ -49,11 +49,8 @@ type Row = {
 
 const ALPHA = HUB_FILES['projects/active/alpha/project.yml'];
 
-/** vocab.yml as a tab holds it after the line of the `heart` domain was deleted. */
-const VOCAB_WITHOUT_HEART = ENGINE_FILES['catalogs/vocab.yml']
-    .split('\n')
-    .filter((line) => !line.startsWith('  heart:'))
-    .join('\n');
+/** behavior.yml as a tab holds it with a heading line typed above its keys. */
+const BEHAVIOR_WITH_HEADING = `# The cluster.\n${ENGINE_FILES['behavior.yml']}`;
 
 /** A joint-work file whose `target` takes the keys of the source the `kind` of its record picks. */
 const PICKED = [
@@ -209,16 +206,16 @@ const ROWS: Row[] = [
         at: ['hub', 'projects/active/alpha/project.yml', 8, 11],
         kind: 'reference',
         key: 'ds1',
-        targets: ['hub:registries/data.yml:3'],
+        targets: ['hub:registries/data.yml:4'],
         references: ['hub:projects/active/alpha/project.yml:8:11']
     },
     {
-        name: 'the domains of the options catalog, in behavior.yml',
-        at: ['engine', 'behavior.yml', 0, 15],
+        name: 'a theme word of a dataset, defined by its option row in the schema of its registry',
+        at: ['hub', 'registries/data.yml', 5, 13],
         kind: 'reference',
-        key: 'heart',
-        targets: ['hub:registries/domains.yml:3'],
-        references: ['engine:behavior.yml:0:15', 'engine:catalogs/vocab.yml:1:2']
+        key: 'eeg',
+        targets: ['hub:registries/data.yml:2'],
+        references: ['hub:registries/data.yml:5:13']
     },
     {
         name: 'the clusters of the options catalog, the resources of kind cluster',
@@ -262,14 +259,6 @@ const ROWS: Row[] = [
         key: 'manuscript',
         targets: ['engine:catalogs/vocab.yml:3'],
         references: ['engine:layout.yml:2:35']
-    },
-    {
-        name: 'a key of the domains: map of vocab.yml, a reference to the domains registry',
-        at: ['engine', 'catalogs/vocab.yml', 2, 2],
-        kind: 'reference',
-        key: 'brain',
-        targets: ['hub:registries/domains.yml:4'],
-        references: ['engine:catalogs/vocab.yml:2:2']
     },
     {
         name: "a deck group's slide, a project id",
@@ -364,22 +353,22 @@ const ROWS: Row[] = [
     },
     {
         name: 'an open text under the hub root of a config file that lies inside the hub folder',
-        at: ['hub', 'tools/oculus/config/behavior.yml', 0, 15],
+        at: ['hub', 'tools/oculus/config/behavior.yml', 3, 12],
         options: { engineInHub: true },
-        open: { 'hub:tools/oculus/config/catalogs/vocab.yml': VOCAB_WITHOUT_HEART },
+        open: { 'hub:tools/oculus/config/behavior.yml': BEHAVIOR_WITH_HEADING },
         kind: 'reference',
-        key: 'heart',
-        targets: ['hub:registries/domains.yml:3'],
-        references: ['hub:tools/oculus/config/behavior.yml:0:15']
+        key: 'hpc',
+        targets: ['hub:registries/resources.yml:4'],
+        references: ['hub:tools/oculus/config/behavior.yml:3:12']
     },
     {
         name: 'an open text under the hub root of a config file that another workspace folder holds',
-        at: ['engine', 'behavior.yml', 0, 15],
-        open: { 'hub:tools/oculus/config/catalogs/vocab.yml': VOCAB_WITHOUT_HEART },
+        at: ['engine', 'behavior.yml', 2, 12],
+        open: { 'hub:tools/oculus/config/behavior.yml': BEHAVIOR_WITH_HEADING },
         kind: 'reference',
-        key: 'heart',
-        targets: ['hub:registries/domains.yml:3'],
-        references: ['engine:behavior.yml:0:15', 'engine:catalogs/vocab.yml:1:2']
+        key: 'hpc',
+        targets: ['hub:registries/resources.yml:4'],
+        references: ['engine:behavior.yml:2:12']
     },
     {
         name: 'a from picked by another field of the record, the person source',

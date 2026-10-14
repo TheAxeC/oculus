@@ -1,6 +1,6 @@
 # ===========================================================================
 # vocab.yml
-# oculus's own configuration: words and their colours, and nothing else: the palette every hex maps onto, the research domains, the chip and status vocabularies, and the lane/tier/bucket words the surfaces group by. Merged with the other configuration files by loadConfig().
+# oculus's own configuration: words and their colours, and nothing else: the palette every hex maps onto, the chip and status vocabularies, and the lane/tier/bucket words the surfaces group by. The research domains and the venue and dataset theme words are each hub's own, in its domains registry and in the themes field of its venues and data registries. Merged with the other configuration files by loadConfig().
 # ===========================================================================
 
 
@@ -46,10 +46,6 @@ palette:
   "#9ca3af": c-grey
   "#6b7280": c-grey-d
   "#475569": c-slate
-
-# Research-domain colours and project-card labels, keyed by the manifest's `domain` value. The engine names none: a hub lists its own in .oculus/config.yml.
-domains: {}
-
 
 # Project-type colours, keyed by the manifest's `type`: the colour of a project's type wherever it is drawn (its board card, the Map, the Present view's project chip).
 type_color: { active: "#ea580c", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", paused: "#9ca3af",  tech-report: "#0891b2", software: "#0d9488", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1", finished: "#16a34a", archived: "#16a34a" }
@@ -234,13 +230,6 @@ venue_tiers:
   - { key: strong,     color: "#0d9488", label: "strong" }
   - { key: specialist, color: "#0891b2", label: "specialist" }
   - { key: unrated,    color: "#94a3b8", label: "unrated", assignable: false }
-
-# The theme words a venue's `themes:` may use (registries/venues.yml) and the label each is drawn with; a word used in the registry and missing here is a finding. The engine names none: a hub lists its own in .oculus/config.yml.
-venue_themes: []
-
-# The theme words a dataset's `themes:` may use (registries/data.yml) and the label each is drawn with; a word used in the registry and missing here is a finding. The engine names none: a hub lists its own in .oculus/config.yml.
-data_themes: []
-
 
 # Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one of these; `glyph` is a `glyphs:` key. Edit a label/colour HERE (was hardcoded in config.py before 2026-07).
 radar_buckets:

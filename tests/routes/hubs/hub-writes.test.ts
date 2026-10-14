@@ -81,6 +81,31 @@ entries:
     person: rivera-lab
 `;
 
+/** A Literature file with no entry, which a save adds one to. */
+const LITERATURE = `title: Literature
+schema:
+  - { field: key, type: text, required: true }
+  - { field: title, type: text }
+  - { field: authors, type: tags }
+  - { field: year, type: text }
+  - { field: doi, type: text }
+  - { field: url, type: text }
+  - { field: source, type: select, options: [search, lit-watch, hand] }
+  - { field: added, type: date }
+entries: []
+`;
+
+/** Plant the Literature file in a hub's folder, the path checked to lie inside it. */
+function plantLiterature(hub: string): void {
+    const file = join(hub, 'registries', 'literature.yml');
+    expect(heldBy(hub, file)).toBe(true);
+    mkdirSync(join(file, '..'), { recursive: true });
+    writeFileSync(file, LITERATURE);
+}
+
+/** A paper saved by DOI, as Literature's Add sends it. */
+const PAPER = { kind: 'literature-save', source: 'hand', paper: { doi: '10.1000/route.paper' } };
+
 /** The primary hub with `lab` as another hub, both holding the same ids. */
 function twoHubs(): { into: PrimaryTarget; first: string; lab: string } {
     const first = target();
@@ -270,6 +295,115 @@ describe('a write to a record of the second hub', () => {
         expect(differing(before.lab, filesOf(lab))).toEqual([]);
         const [change] = changesOf(into);
         expect(change.file).toBe(join(first, 'tasks', 'tasks.yml'));
+    });
+
+    it('writes a new entry into the file of the hub its root names, and no byte of the other (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(
+            request({
+                kind: 'new-entry',
+                collection: 'tasks',
+                root: 'lab',
+                fields: { title: 'A lab task' }
+            }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual(['tasks/tasks.yml']);
+        const [change] = changesOf(into);
+        expect(change.file).toBe(join(lab, 'tasks', 'tasks.yml'));
+    });
+
+    it('refuses a new entry for a hub whose collections list names no such collection, or no hub, and writes nothing (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        const held = into.hubs?.[0];
+        if (held === undefined) throw new Error('the target names no second hub');
+        const collections = held.config.collections.filter((one) => one.key !== 'tasks');
+        const narrowed: PrimaryTarget = {
+            ...into,
+            hubs: [{ ...held, config: { ...held.config, collections } }]
+        };
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const body = { kind: 'new-entry', collection: 'tasks', fields: { title: 'A lab task' } };
+        const unlisted = await handleWrite(request({ ...body, root: 'lab' }), TOKEN, narrowed);
+        expect(unlisted.status).toBe(404);
+        expect(await unlisted.json()).toEqual({
+            error: words(
+                into.config.text,
+                'server.write_route.no_collection_in_hub',
+                'lab',
+                'tasks'
+            )
+        });
+        const unknown = await handleWrite(request({ ...body, root: 'nolab' }), TOKEN, narrowed);
+        expect(unknown.status).toBe(404);
+        expect(await unknown.json()).toEqual({
+            error: words(into.config.text, 'server.workspace.no_hub_named', 'nolab')
+        });
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        expect(changesOf(narrowed)).toEqual([]);
+    });
+
+    it('saves a paper into the Literature file of the hub its root names, and no byte of the other (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        plantLiterature(first);
+        plantLiterature(lab);
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(request({ ...PAPER, root: 'lab' }), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual(['registries/literature.yml']);
+        const [change] = changesOf(into);
+        expect(change.file).toBe(join(lab, 'registries', 'literature.yml'));
+    });
+
+    it('saves a paper that names no hub into the one hub whose collections list names Literature, primary or not (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        plantLiterature(first);
+        plantLiterature(lab);
+        const collections = into.config.collections.filter((one) => one.key !== 'literature');
+        const narrowed: PrimaryTarget = { ...into, config: { ...into.config, collections } };
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const response = await handleWrite(request(PAPER), TOKEN, narrowed);
+        expect(response.status).toBe(200);
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual(['registries/literature.yml']);
+    });
+
+    it('refuses a paper for a hub whose collections list names no Literature, or no hub, and writes nothing (G8)', async () => {
+        const { into, first, lab } = twoHubs();
+        plantLiterature(first);
+        plantLiterature(lab);
+        const held = into.hubs?.[0];
+        if (held === undefined) throw new Error('the target names no second hub');
+        const collections = held.config.collections.filter((one) => one.key !== 'literature');
+        const narrowed: PrimaryTarget = {
+            ...into,
+            hubs: [{ ...held, config: { ...held.config, collections } }]
+        };
+        const before = { first: filesOf(first), lab: filesOf(lab) };
+        const unlisted = await handleWrite(request({ ...PAPER, root: 'lab' }), TOKEN, narrowed);
+        expect(unlisted.status).toBe(404);
+        expect(await unlisted.json()).toEqual({
+            error: words(
+                into.config.text,
+                'server.write_route.no_collection_in_hub',
+                'lab',
+                'literature'
+            )
+        });
+        const unknown = await handleWrite(request({ ...PAPER, root: 'nolab' }), TOKEN, narrowed);
+        expect(unknown.status).toBe(404);
+        expect(await unknown.json()).toEqual({
+            error: words(into.config.text, 'server.workspace.no_hub_named', 'nolab')
+        });
+        expect(differing(before.first, filesOf(first))).toEqual([]);
+        expect(differing(before.lab, filesOf(lab))).toEqual([]);
+        expect(changesOf(narrowed)).toEqual([]);
     });
 
     it('refuses a record of a hub that is not named, with the route sentence, and writes nothing', async () => {

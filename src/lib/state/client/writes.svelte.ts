@@ -420,17 +420,25 @@ export function createWrites(
     }
 
     /**
-     * Add one entry to a collection of the primary hub, else the first. The answer's `id` is the id
-     * the file gives the new entry, which is what its page is opened with.
+     * Add one entry to a collection of the hub `root` names, else the primary (else the first). The
+     * answer's `id` is the new entry's id in the portfolio, which its page is opened with.
      */
     async function newEntry(
         collection: string,
-        fields: Record<string, unknown>
+        fields: Record<string, unknown>,
+        root?: string
     ): Promise<WriteAnswer> {
         const seq = settle.begin();
-        const answer = await send({ kind: 'new-entry', collection, fields });
-        if (answer.ok && answer.id !== undefined) settle.added(collection, answer.id, fields, seq);
-        return answer;
+        const own = root === undefined || root === look.primary();
+        const answer = await send(
+            own
+                ? { kind: 'new-entry', collection, fields }
+                : { kind: 'new-entry', collection, fields, root }
+        );
+        if (!answer.ok || answer.id === undefined) return answer;
+        const id = own ? answer.id : `${root}:${answer.id}`;
+        settle.added(collection, id, fields, seq);
+        return { ...answer, id };
     }
 
     /** Remove one entry from a collection, in the hub the id names (the primary's when bare). */
@@ -497,6 +505,30 @@ export function createWrites(
         const answer = await send({ kind: 'radar-add', fields });
         if (answer.ok) settle.added('radar', titleOf(fields), fields, seq);
         return answer;
+    }
+
+    /**
+     * Save one paper to the Literature collection of the hub `root` names, else of the primary when
+     * it names the collection, else of the first hub that does. The answer's `id` is the paper's
+     * id in the portfolio: the key it was given, under the hub's name for a hub other than the
+     * primary.
+     */
+    async function saveLiterature(
+        source: 'search' | 'lit-watch' | 'hand',
+        paper: Record<string, unknown>,
+        root?: string
+    ): Promise<WriteAnswer> {
+        const seq = settle.begin();
+        const own = root === undefined || root === look.primary();
+        const answer = await send(
+            own
+                ? { kind: 'literature-save', source, paper }
+                : { kind: 'literature-save', source, paper, root }
+        );
+        if (!answer.ok || answer.id === undefined) return answer;
+        const id = own ? answer.id : `${root}:${answer.id}`;
+        settle.added('literature', id, { ...paper, key: answer.id }, seq);
+        return { ...answer, id };
     }
 
     /** Add one LinkedIn idea stub through the configured folder. */
@@ -835,6 +867,7 @@ export function createWrites(
         writeFeedField,
         deleteFeedEntry,
         addRadarEntry,
+        saveLiterature,
         addLinkedinIdea,
         markPosted,
         writeDeckSlides,

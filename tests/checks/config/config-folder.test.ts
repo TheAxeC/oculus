@@ -125,7 +125,6 @@ describe("oculus's own config directory", () => {
             'usage_tiers',
             'usage_refresh_min',
             'usage_refresh_model',
-            'data_domains',
             'waiting_status',
             'audit_ignore',
             'calendar',
@@ -188,8 +187,6 @@ describe("oculus's own config directory", () => {
             'scan',
             'new_project_dir',
             'collections',
-            'leads_file',
-            'radar_file',
             'career_file',
             'portfolio_deck',
             'memories_dir',
@@ -199,7 +196,6 @@ describe("oculus's own config directory", () => {
         ],
         'catalogs/vocab.yml': [
             'palette',
-            'domains',
             'type_color',
             'type_order',
             'status_legend',
@@ -218,8 +214,6 @@ describe("oculus's own config directory", () => {
             'data_access',
             'venue_categories',
             'venue_tiers',
-            'venue_themes',
-            'data_themes',
             'radar_buckets'
         ]
     };

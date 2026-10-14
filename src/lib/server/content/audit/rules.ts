@@ -8,7 +8,7 @@ import { relative } from 'node:path';
 import { z } from 'zod';
 import { findingText } from '../../../data/helpers/finding-text.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
-import type { AuditFinding, Collection, Project } from '../../../data/model/index.ts';
+import type { AuditFinding, Collection, Domain, Project } from '../../../data/model/index.ts';
 import { below, realPath } from '../../core/paths.ts';
 
 /** The thresholds and vocabularies the rules read, out of the merged configuration. */
@@ -17,7 +17,10 @@ export type AuditRules = {
     readLimits: Record<string, number>;
     /** Whole days a document may be ahead of its own manifest before the manifest is behind. */
     staleLagDays: number;
-    /** The domains a project is expected to name a dataset in. */
+    /**
+     * The domains a project is expected to name a dataset in: the entries of the hub's domains
+     * registry marked `expects_datasets: true`.
+     */
     dataDomains: Set<string>;
     /** The collection-entry statuses that wait on someone else, so a date is asked for. */
     waitingStatus: Set<string>;
@@ -99,8 +102,14 @@ const staleLagShape = z.number();
 /** `publications_file`: text. */
 const publicationsFileShape = z.string();
 
-/** The rules the scan runs under, read out of the merged configuration. */
-export function auditRules(config: Record<string, unknown>): AuditRules {
+/**
+ * The rules the scan runs under, read out of the merged configuration, and the domains of the
+ * hub's registry, whose `expectsDatasets` say where a dataset is expected.
+ */
+export function auditRules(
+    config: Record<string, unknown>,
+    domains: readonly Domain[] = []
+): AuditRules {
     const limits = readLimitsShape.safeParse(config.read_limits);
     const readLimits: Record<string, number> = {};
     for (const [key, value] of Object.entries(limits.success ? limits.data : {})) {
@@ -110,13 +119,14 @@ export function auditRules(config: Record<string, unknown>): AuditRules {
     const lifecycle = lifecycleShape.safeParse(config.lifecycle);
     const chips = lifecycle.success ? lifecycle.data : lifecycleShape.parse({});
     const lag = staleLagShape.safeParse(config.stale_lag_days);
-    const domains = wordSetShape.safeParse(config.data_domains);
     const waiting = wordSetShape.safeParse(config.waiting_status);
     const publications = publicationsFileShape.safeParse(config.publications_file);
     return {
         readLimits,
         staleLagDays: lag.success ? lag.data : 1,
-        dataDomains: domains.success ? domains.data : new Set(),
+        dataDomains: new Set(
+            domains.filter((one) => one.expectsDatasets === true).map((one) => one.id)
+        ),
         waitingStatus: waiting.success ? waiting.data : new Set(),
         publicationsFile: publications.success ? publications.data : '',
         liveChips: new Set(chips.live_chips),

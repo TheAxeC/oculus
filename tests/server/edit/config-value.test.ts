@@ -106,15 +106,15 @@ describe("the machine's own file", () => {
         const { hub, local } = linkedHub();
         const outcome = writeConfigValue(
             engine,
-            'behavior.yml',
-            'data_domains',
-            ['x'],
+            'sources.yml',
+            'scan',
+            [{ dir: 'x' }],
             [],
             undefined,
             hub,
             [hub]
         );
-        expect(refusalOf(outcome, 'behavior.yml:data_domains')).toBe(why('local'));
+        expect(refusalOf(outcome, 'sources.yml:scan')).toBe(why('local'));
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 
@@ -123,15 +123,15 @@ describe("the machine's own file", () => {
         const { hub, local } = hubLinkedToEngine(engine);
         const outcome = writeConfigValue(
             engine,
-            'behavior.yml',
-            'data_domains',
-            ['x'],
+            'sources.yml',
+            'scan',
+            [{ dir: 'x' }],
             [],
             undefined,
             hub,
             [hub]
         );
-        expect(refusalOf(outcome, 'behavior.yml:data_domains')).toBe(why('local'));
+        expect(refusalOf(outcome, 'sources.yml:scan')).toBe(why('local'));
         expect(readFileSync(local, 'utf8')).toBe('port: 8791\n');
     });
 });

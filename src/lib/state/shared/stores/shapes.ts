@@ -287,8 +287,15 @@ export type WritesStore = {
     writeHost: (name: string, status: string) => Promise<WriteAnswer>;
     /** Set the changed sections of registries/career.yml, a section cleared by null. */
     writeCareer: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
-    /** Add one entry to a collection of the primary hub; the answer's `id` is the new entry's. */
-    newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    /**
+     * Add one entry to a collection of the hub `root` names, the primary (else the first) when it
+     * is absent; the answer's `id` is the new entry's id in the portfolio.
+     */
+    newEntry: (
+        collection: string,
+        fields: Record<string, unknown>,
+        root?: string
+    ) => Promise<WriteAnswer>;
     /** Remove one entry from a collection, in the hub the entry's id names. */
     deleteEntry: (collection: string, id: string) => Promise<WriteAnswer>;
     /** Add one position lead to the leads feed of the primary hub. */
@@ -303,6 +310,16 @@ export type WritesStore = {
     ) => Promise<WriteAnswer>;
     deleteFeedEntry: (feed: string, id: string, root?: string) => Promise<WriteAnswer>;
     addRadarEntry: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    /**
+     * Save one paper to the Literature collection of the hub `root` names, else of the primary when
+     * it names the collection, else of the first hub that does; the answer's `id` is the paper's id
+     * in the portfolio, the key the server made under the hub's name for another hub.
+     */
+    saveLiterature: (
+        source: 'search' | 'lit-watch' | 'hand',
+        paper: Record<string, unknown>,
+        root?: string
+    ) => Promise<WriteAnswer>;
     addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     markPosted: (file: string, root?: string) => Promise<WriteAnswer>;
     writeDeckSlides: (

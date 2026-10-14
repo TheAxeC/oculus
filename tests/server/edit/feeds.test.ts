@@ -14,7 +14,7 @@ import {
     deleteFeedEntry,
     markLinkedinPosted,
     writeFeedField
-} from '../../../src/lib/server/edit/feeds.ts';
+} from '../../../src/lib/server/edit/feeds/feeds.ts';
 import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { localDate } from '../../../src/lib/data/helpers/dates.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';

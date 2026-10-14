@@ -207,8 +207,8 @@ const DATA = {
     }
 };
 
-/** The demo hub's folder under the hub. */
-const DEMO = 'tools/oculus/demo';
+/** The demo hub's folder under the hub, the hub the tests copy. */
+const DEMO = 'tools/oculus/tests/fixtures/hubs/demo';
 
 /** The chip of an idea the idea grid gives no maturity. */
 const NASCENT = 'nascent';

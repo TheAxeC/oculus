@@ -22,10 +22,6 @@ usage_tiers:
 usage_refresh_min: 10
 usage_refresh_model: "haiku"
 
-# Domains expected to have a dataset. Oculus reports projects in these domains without a Data section. The engine names none: a hub lists its own in .oculus/config.yml.
-data_domains: []
-
-
 # Collection-entry statuses that wait on someone else, so the audit asks for a date to track them by.
 waiting_status: [submitted, pending, under review, under-review]
 

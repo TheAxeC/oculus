@@ -7,6 +7,7 @@
     // locally. The source line (authors, venue, year) is one line, cut with an ellipsis where the
     // card ends, and its whole text is the line's tooltip; on the paper's page it is drawn whole.
     // A project link ends in an ellipsis where the card ends, with the whole title as its tooltip.
+    // Save to Literature writes the paper to the Literature collection (SaveToLiterature.svelte).
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -26,6 +27,8 @@
         type RadarEntry
     } from '$lib/state/feeds/radar';
     import { posting } from './posting';
+    import SaveToLiterature from './SaveToLiterature.svelte';
+    import { radarPaper } from '$lib/state/feeds/literature/saved';
     import { textOrNumber } from '$lib/data/shapes/shapes';
     import { entryPageState } from '$lib/state/forms/page-entry';
     import { feedRoot } from '$lib/state/shared/page/idents';
@@ -218,6 +221,16 @@
                 {t('radar.paper')}
             </a>
         </p>
+    {/if}
+    {#if identity !== ''}
+        <div class="row">
+            <SaveToLiterature
+                ids={{ title: identity }}
+                paper={radarPaper(entry)}
+                source="lit-watch"
+                {onsaid}
+            />
+        </div>
     {/if}
     {#if spinning && identity !== ''}
         <NewIdeaForm

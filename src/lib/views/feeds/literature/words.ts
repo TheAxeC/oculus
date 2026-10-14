@@ -12,25 +12,17 @@ import type {
     LiteratureSource
 } from '$lib/state/feeds/literature/form';
 import type { SourceRun } from '$lib/state/feeds/literature/run.svelte';
+import { sourceName } from '$lib/state/feeds/literature/lookup';
 import { t } from '$lib/state/shared/words/text';
+
+// A source's name is said by the Literature view's Add as well, which is no partial of this view.
+export { sourceName };
 
 /** A wait of the source's, in the largest unit that keeps it a small number. */
 function waitWords(seconds: number): string {
     if (seconds < 90) return t('literature.wait_s', seconds);
     if (seconds < 5400) return t('literature.wait_min', Math.ceil(seconds / 60));
     return t('literature.wait_h', Math.ceil(seconds / 3600));
-}
-
-/** The name of a source. */
-export function sourceName(source: LiteratureSource): string {
-    if (source === 'openalex') return t('literature.source_openalex');
-    if (source === 'semantic_scholar') return t('literature.source_semantic_scholar');
-    if (source === 'crossref') return t('literature.source_crossref');
-    if (source === 'pubmed') return t('literature.source_pubmed');
-    if (source === 'europe_pmc') return t('literature.source_europe_pmc');
-    if (source === 'arxiv') return t('literature.source_arxiv');
-    if (source === 'wos') return t('literature.source_wos');
-    return t('literature.source_scopus');
 }
 
 /** What a source's chip says: its count while it answers, otherwise why it does not. */

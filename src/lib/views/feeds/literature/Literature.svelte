@@ -1,11 +1,12 @@
 <script module lang="ts">
     // Layer 3, view registration. The Literature search follows the Calendar in the Incoming page's
-    // group, so the chords of the views before it stay as they are.
+    // group, so the chords of the views before it stay as they are. Its id is `literature-search`,
+    // since `literature` is the key of the collection of saved papers, whose view follows it.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
-        id: 'literature',
-        label: 'views.literature',
-        glyph: 'views.literature_glyph',
+        id: 'literature-search',
+        label: 'views.literature_search',
+        glyph: 'views.literature_search_glyph',
         group: 'incoming',
         order: 5
     };
@@ -173,7 +174,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.literature')} {bar}>
+<Pane title={t('views.literature_search')} {bar}>
     <div class="literature" data-instance={instance.id}>
         <Head
             {form}

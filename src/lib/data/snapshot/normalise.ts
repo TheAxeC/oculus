@@ -46,7 +46,7 @@ import type {
     Snapshot,
     Venue
 } from '../model/index.ts';
-import { entryIdOf, entryTitleOf } from '../model/index.ts';
+import { domainColorOf, entryIdOf, entryTitleOf } from '../model/index.ts';
 import { isMap, str, strings } from '../helpers/guards.ts';
 import { tierOf } from '../helpers/hub-names.ts';
 import { mapShape, readOr, rowsShape, stringItemsShape } from '../shapes/shapes.ts';
@@ -65,16 +65,25 @@ const collectionKeyShape = z.object({ key: z.string().min(1) }).transform((entry
 /** The `collections:` list as the keys it names. */
 const collectionKeysShape = rowsShape(collectionKeyShape);
 
+/** The keys of the `collections:` list that name a YAML feed's file, which is no collection. */
+export const FEED_COLLECTION_KEYS = ['leads', 'radar'] as const;
+
+/** Whether a key of the `collections:` list names a YAML feed's file. */
+export function isFeedCollection(key: string): key is (typeof FEED_COLLECTION_KEYS)[number] {
+    return (FEED_COLLECTION_KEYS as readonly string[]).includes(key);
+}
+
 /**
  * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
- * that name a registry with a dedicated view. They ship as the page's data and the page registers
- * the collection view once per key and again on every config push, so a collection is added through
- * sources.yml and its owner catalog file; the collection registration supplies its group and order.
+ * that name a registry with a dedicated view and the two that name a feed's file. They ship as the
+ * page's data and the page registers the collection view once per key and again on every config
+ * push, so a collection is added through sources.yml and its owner catalog file; the collection
+ * registration supplies its group and order.
  */
 export function collectionKeys(config: Record<string, unknown>): string[] {
     const keys: string[] = [];
     for (const key of readOr(collectionKeysShape, config.collections, [])) {
-        if (REGISTRY_KEYS.includes(key)) continue;
+        if (REGISTRY_KEYS.includes(key) || isFeedCollection(key)) continue;
         if (!keys.includes(key)) keys.push(key);
     }
     return keys;
@@ -440,11 +449,17 @@ function resource(entry: RawRegistryEntry, order: number): Resource {
     });
 }
 
+/**
+ * One research domain. Its colour is the entry's `color` when it is written `#rrggbb` (validate.ts
+ * reports any other value), and `expectsDatasets` is its `expects_datasets: true`.
+ */
 function domain(entry: RawRegistryEntry): Domain {
     return compact({
         id: entry.key,
         title: str(entry.title) ?? '',
         blurb: str(entry.blurb),
+        color: domainColorOf(entry),
+        expectsDatasets: entry.expects_datasets === true ? true : undefined,
         projectIds: []
     });
 }

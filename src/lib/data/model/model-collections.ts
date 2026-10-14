@@ -58,8 +58,11 @@ export type SchemaField = {
     type: string;
     /** The words over the field, when the file gives it words other than its own name. */
     label?: string;
-    /** The allowed values of a `select`. */
-    options?: string[];
+    /**
+     * The allowed values of a `select` or a `tags` field, each a plain word or a `{ key, label }`
+     * row whose label is drawn in place of the key.
+     */
+    options?: SchemaOption[];
     /**
      * Where the field's keys come from: registry names, `projects` or `vocab.<key>` offered
      * together, or the source another field of the record picks. A `select` is held to them; a
@@ -78,7 +81,37 @@ export type SchemaField = {
     map?: boolean;
     /** The fields of each record of a `records` field. */
     fields?: SchemaField[];
+    /** The collection view draws a filter of the field's values beside its search. */
+    filter?: boolean;
 };
+
+/** One allowed value of a field: a plain word, or a key with the label it is drawn with. */
+export type SchemaOption = string | { key: string; label: string };
+
+/**
+ * The types a field's `filter: true` draws a filter for. The schema run gives a finding for
+ * `filter: true` on any other type, and the collection board draws no filter for it.
+ */
+export const FILTERED_TYPES: readonly string[] = ['select', 'tags', 'text'];
+
+/** The key of one option: the word itself, or the row's key. */
+export function optionKey(option: SchemaOption): string {
+    return typeof option === 'string' ? option : option.key;
+}
+
+/** The keys a field's options allow, in the order the file writes them. */
+export function optionKeys(field: Pick<SchemaField, 'options'> | undefined): string[] {
+    return (field?.options ?? []).map(optionKey);
+}
+
+/** The label a field's options give a value: the row's label, else the value itself. */
+export function optionLabel(
+    field: Pick<SchemaField, 'options'> | undefined,
+    value: string
+): string {
+    const row = field?.options?.find((one) => optionKey(one) === value);
+    return row === undefined || typeof row === 'string' ? value : row.label;
+}
 
 /** A `from` whose source is the one another field of the record picks by its word. */
 export type FromPicked = { field: string; sources: Record<string, string> };

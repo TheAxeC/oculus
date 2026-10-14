@@ -29,8 +29,9 @@
     // shown again when Undo brings it back.
     //
     // The card is views/shared/forms/entry/EntryCard.svelte, the one the collection view draws,
-    // with every control it has there and, since it is handed neither a grip nor a title opener,
-    // with the long fields whole and the title as words.
+    // with every control it has there (Start Agent on a task, Copy BibTeX on a Literature entry)
+    // and, since it is handed neither a grip nor a title opener, with the long fields whole and the
+    // title as words.
     //
     // A toolbar action opens the workbench of the entry's folder with this page in its documents
     // pane (state/workbench/layout/open/float/folder-opener.ts). Whether the entry has a folder is
@@ -49,7 +50,8 @@
     import EntryEditor from '../../shared/forms/entry/edit/EntryEditor.svelte';
     import { pageFault, pageFile } from '../../shared/forms/entry/edit/page-file';
     import Referrers from '../../shared/forms/entry/Referrers.svelte';
-    import { taskCardActions } from '../../shared/forms/entry/task-card';
+    import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
+    import { literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import { blockedBy } from '../../shared/forms/entry-file';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import {
@@ -84,7 +86,8 @@
         pages: { pageOf },
         selectors: { collectionsOfKey, configMap, projects },
         source: { unsavedFile },
-        terminals: { composeAt }
+        terminals: { composeAt },
+        writes: { writeToken }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -259,7 +262,11 @@
                     fault={faults.get(entry.index)}
                     onsaid={(answer: string) => (said = answer)}
                     more
-                    extra={taskCardActions(collectionKey, entry, configMap(), startAgent)}
+                    extra={taskCardActions(collectionKey, entry, configMap(), startAgent).concat(
+                        literatureCardActions(collectionKey, entry, writeToken, (words) => {
+                            said = words;
+                        })
+                    )}
                 />
             {:else if feedEntry !== null && collectionKey === 'leads'}
                 <LeadCard

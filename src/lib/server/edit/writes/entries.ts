@@ -51,7 +51,7 @@ import { asFieldValue } from '../yaml/yaml-edit.ts';
 import type { ChangeRecord } from '../../core/changes.ts';
 import type { EditResult, Refusal } from '../yaml/yaml-edit.ts';
 import type { FieldValue } from '../yaml/yaml-values.ts';
-import type { PortfolioConfig, SchemaField } from '../../../data/model/index.ts';
+import { optionKeys, type PortfolioConfig, type SchemaField } from '../../../data/model/index.ts';
 import type { WriteOutcome } from '../writes.ts';
 
 /** One edit put on disk the way writeManifest does it: only when the edit changed something. */
@@ -62,9 +62,10 @@ export function saved(file: string, source: string, edit: EditResult): WriteOutc
 
 /**
  * Why a value does not fit the type its schema field declares, or the empty string when it does.
- * The five types a control writes are checked; a `tags`, `metalist` or `raw` field carries a shape
- * rather than a value and is left to yaml-edit's own vocabulary. An empty value clears a field,
- * whatever its type, so it is never refused here.
+ * The five types a control writes are checked, and a `tags` field with options of its own is held
+ * to their keys; any other `tags`, a `metalist` or a `raw` field carries a shape rather than a
+ * value and is left to yaml-edit's own vocabulary. An empty value clears a field, whatever its
+ * type, so it is never refused here.
  */
 function typeRefusal(field: SchemaField, value: unknown, catalog: Record<string, string>): string {
     if (value === null || value === undefined || value === '') return '';
@@ -85,13 +86,32 @@ function typeRefusal(field: SchemaField, value: unknown, catalog: Record<string,
             : words(catalog, 'server.entries.type_checkbox', name);
     }
     if (field.type === 'records') return recordRefusal(field, value, catalog);
+    // A field whose options come from a source (`from`) alone has none of its own here, and its
+    // value is then not held to a list: the sources are the page's data, not the file's.
+    const options = optionKeys(field);
+    if (field.type === 'tags') return tagsRefusal(name, options, value, catalog);
     if (field.type !== 'select') return '';
-    const options = field.options ?? [];
     if (typeof value !== 'string') return words(catalog, 'server.entries.type_option', name);
-    // A select whose options come from a source (`from`) has none of its own here, and the value
-    // is then checked as text: the sources are the page's data, not the file's.
     if (options.length === 0) return '';
     return options.includes(value.trim())
+        ? ''
+        : words(catalog, 'server.entries.type_options', name, options.join(', '));
+}
+
+/**
+ * Why the words of a `tags` field are not all keys of its own options, or the empty string. A
+ * field with no options of its own, and a value that is no list of words, are left to yaml-edit.
+ */
+function tagsRefusal(
+    name: string,
+    options: string[],
+    value: unknown,
+    catalog: Record<string, string>
+): string {
+    if (options.length === 0 || !Array.isArray(value)) return '';
+    const held: unknown[] = value;
+    const stray = held.find((one) => typeof one === 'string' && !options.includes(one.trim()));
+    return stray === undefined
         ? ''
         : words(catalog, 'server.entries.type_options', name, options.join(', '));
 }

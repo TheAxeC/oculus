@@ -46,7 +46,7 @@ export type DeckContext = {
     /** The hub's folder, and the key its files are served under. */
     hub: DeckRoot;
     projects: DeckProject[];
-    /** The keys of `domains:` in vocab.yml. */
+    /** The keys of the hub's domains registry, which a project's `domain:` is checked against. */
     domains: string[];
     /** The engine's `tag_tones`, which a deck's own `defaults` override. */
     tagTones: Record<string, string>;
@@ -128,7 +128,7 @@ export function createReader(context: DeckContext): DeckReader {
         if (dir !== null) projectDirs.set(dir, { project, root });
     }
 
-    /** The project a deck folder belongs to, with a domain the vocabulary lacks reported. */
+    /** The project a deck folder belongs to, with a domain the domains registry lacks reported. */
     function projectOf(dir: string): DeckProject | null {
         const project = projectDirs.get(dir)?.project;
         if (project === undefined) return null;

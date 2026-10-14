@@ -91,7 +91,7 @@ digraph channels {
         "? src/lib/server/machine/processes/watch.ts:63" [label="src/lib/server/machine/processes/watch.ts:63 publish(CHANNEL)"];
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:294" [label="src/lib/server/machine/runs/schedules/watch.ts:294 publish(CHANNEL)"];
-        "? src/lib/server/root/context.ts:403" [label="src/lib/server/root/context.ts:403 publish(set)"];
+        "? src/lib/server/root/context.ts:399" [label="src/lib/server/root/context.ts:399 publish(set)"];
         "? src/lib/shell/panes/PaneView.svelte:476" [label="src/lib/shell/panes/PaneView.svelte:476 message()"];
         "? src/lib/state/client/context.ts:174" [label="src/lib/state/client/context.ts:174 message(
                 key.startsWith('page:leads:')"];
@@ -400,7 +400,7 @@ digraph channels {
     "server/machine/pty/channel" -> "ch pty:*";
     "server/machine/runs/schedules/watch" -> "? src/lib/server/machine/runs/schedules/watch.ts:294";
     "server/machine/usage/watch" -> "ch usage";
-    "server/root/context" -> "? src/lib/server/root/context.ts:403";
+    "server/root/context" -> "? src/lib/server/root/context.ts:399";
     "server/root/context" -> "ch files";
     "server/root/hooks" -> "ch sessions";
     "server/root/watch/apps" -> "ch apps";

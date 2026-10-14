@@ -100,6 +100,17 @@ text:
         wait_h: '{0} h'
         wait_min: '{0} min'
         wait_s: '{0} s'
+        save: Save to Literature
+        save_tip: Save this paper to the Literature collection
+        saved: 'Saved to Literature as {0}'
+        in_literature: In Literature
+        in_literature_tip: The Literature collection holds this paper
+        bibtex_copied_one: '1 BibTeX entry copied'
+        bibtex_copied: '{0} BibTeX entries copied'
+        bibtex_not_copied: '{0}; not copied: {1}'
+        bibtex_entry_tip: 'Copy this entry as BibTeX, under its own key'
+        bibtex_shown: Copy BibTeX
+        bibtex_shown_tip: 'Copy the entries shown as BibTeX, in the order shown'
     views:
-        literature: Literature search
-        literature_glyph: book
+        literature_search: Literature search
+        literature_search_glyph: search

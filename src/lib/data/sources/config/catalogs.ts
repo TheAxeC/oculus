@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { z } from 'zod';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
-import type { Finding, HubVocab } from '../../model/index.ts';
+import type { Finding } from '../../model/index.ts';
 import { standInShape } from '../../shapes/catalog-files.ts';
 import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
 import { mustBe } from './catalog/value-words.ts';
@@ -25,7 +25,7 @@ import { closedPaths, settingProblems } from './settings.ts';
  * CRT default, the code theme, and the pane strip's three settings state/shared/words/appearance.ts
  * reads. `themes`, `wallpaper`, `crt`, `code_theme`, `file_icons`, `show_tabs`, `editor_actions`,
  * `wrap_tabs` and `terminal` are config/appearance.yml's. The research domains and the venue and
- * dataset themes are each hub's own and ride as `hubVocabOf` of every hub.
+ * dataset themes are each hub's own, read from its registry files (`hubVocabOf` of data/index.ts).
  */
 export const VOCAB_KEYS = [
     'palette',
@@ -54,20 +54,6 @@ export function vocabCatalog(config: Record<string, unknown>): Record<string, un
     const vocab: Record<string, unknown> = {};
     for (const key of VOCAB_KEYS) if (config[key] !== undefined) vocab[key] = config[key];
     return vocab;
-}
-
-/**
- * The words a hub gives its own records, out of the config merged for that hub: `domains`,
- * `venue_themes` and `data_themes`. A key the config does not hold, or holds as another kind of
- * value, is an empty list or map, so a hub that sets none draws its records as unlisted.
- */
-export function hubVocabOf(config: Record<string, unknown>): HubVocab {
-    const themes = (value: unknown): unknown[] => (Array.isArray(value) ? value : []);
-    return {
-        domains: readOr(mapShape, config.domains, {}),
-        venue_themes: themes(config.venue_themes),
-        data_themes: themes(config.data_themes)
-    };
 }
 
 /**

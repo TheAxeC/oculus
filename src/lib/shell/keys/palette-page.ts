@@ -6,9 +6,10 @@
 // server module loading; tests/checks/diagrams/palette.test.ts compares the committed page with a
 // fresh generation, and tests/shell/keys/palette-page.test.ts gives this function a small registry.
 //
-// The page is Markdown tables, one row per entry of the registry in the registry's order, and a
-// sentence under each heading. The words are the catalog's: `palette_page.*`, and the colon
-// commands' own descriptions.
+// The page opens with its first paragraph and the contents block every document of the engine opens
+// with (a Contents heading, `[TOC]` and a rule), then Markdown tables, one row per entry of the
+// registry in the registry's order, and a sentence under each heading. The words are the catalog's:
+// `palette_page.*`, and the colon commands' own descriptions.
 
 import {
     KEY_ROWS,
@@ -114,6 +115,12 @@ export function palettePage(registry: PaletteRegistry, catalog: Record<string, s
         `# ${t('palette_page.title')}`,
         '',
         t('palette_page.intro'),
+        '',
+        `## ${t('palette_page.contents')}`,
+        '',
+        '[TOC]',
+        '',
+        '---',
         '',
         `## ${t('palette_page.views')}`,
         '',

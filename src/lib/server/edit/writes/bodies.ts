@@ -63,11 +63,15 @@ export type HostWrite = { kind: 'host'; name: string; status: string };
 /** Sections of registries/career.yml set from the career editor: the section and its new value. */
 export type CareerWrite = { kind: 'career'; fields: Record<string, unknown> };
 
-/** One new entry of one collection, and one new idea folder. */
+/**
+ * One new entry of one collection, in the hub `root` names (the primary, else the first, when it
+ * is absent), and one new idea folder.
+ */
 export type NewEntryWrite = {
     kind: 'new-entry';
     collection: string;
     fields: Record<string, unknown>;
+    root?: string;
 };
 export type NewIdeaWrite = { kind: 'new-idea'; fields: Record<string, unknown> };
 
@@ -98,6 +102,21 @@ export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> }
 
 /** One paper appended to the Lit Watch radar from the literature search. */
 export type RadarAddWrite = { kind: 'radar-add'; fields: Record<string, unknown> };
+
+/** Where a paper saved to the Literature collection came from: its `source` field's options. */
+const LITERATURE_SAVE_SOURCES = ['search', 'lit-watch', 'hand'] as const;
+
+/**
+ * One paper saved to the Literature collection of the hub `root` names, else of the primary when
+ * its `collections:` names `literature`, else of the first hub that does: the fields it carries,
+ * and where it came from. The server makes its key and its `added` date.
+ */
+export type LiteratureSaveWrite = {
+    kind: 'literature-save';
+    source: (typeof LITERATURE_SAVE_SOURCES)[number];
+    paper: Record<string, unknown>;
+    root?: string;
+};
 
 /**
  * The lists of a deck's `present.yml` to write in one edit: the served root and the file's path
@@ -262,7 +281,8 @@ const careerShape = z.object({
 const newEntryShape = z.object({
     kind: z.literal('new-entry'),
     collection: wordShape,
-    fields: mapShape
+    fields: mapShape,
+    root: z.string().optional()
 }) satisfies z.ZodType<NewEntryWrite>;
 
 const reorderShape = z.object({
@@ -305,6 +325,13 @@ const radarAddShape = z.object({
     kind: z.literal('radar-add'),
     fields: mapShape
 }) satisfies z.ZodType<RadarAddWrite>;
+
+const literatureSaveShape = z.object({
+    kind: z.literal('literature-save'),
+    source: z.enum(LITERATURE_SAVE_SOURCES),
+    paper: mapShape,
+    root: z.string().optional()
+}) satisfies z.ZodType<LiteratureSaveWrite>;
 
 /** A missing `category` is the empty category; a `category` that is not text refuses the body. */
 const linkedinIdeaShape = z.object({
@@ -500,6 +527,11 @@ export function leadAddWrite(body: unknown): LeadAddWrite | null {
 /** The body as one new Lit Watch entry. */
 export function radarAddWrite(body: unknown): RadarAddWrite | null {
     return readAs(radarAddShape, body);
+}
+
+/** The body as one paper saved to the Literature collection. */
+export function literatureSaveWrite(body: unknown): LiteratureSaveWrite | null {
+    return readAs(literatureSaveShape, body);
 }
 
 /** The body as one new LinkedIn idea. Empty titles reach the writer and become field refusals. */

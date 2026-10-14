@@ -299,8 +299,7 @@ describe("loadConfig with the hub's settings file", () => {
                 'memories_dir: .oculus/photos',
                 'scan:',
                 '  - { dir: work }',
-                'domains:',
-                '  kidney: { color: "#334155", label: Kidney }',
+                'career_file: other/career.yml',
                 'app_settings:',
                 '  notes.width: 100',
                 ''
@@ -315,7 +314,7 @@ describe("loadConfig with the hub's settings file", () => {
         );
         expect(config.memories_dir).toBe('.oculus/photos');
         expect(config.scan).toEqual([{ dir: 'work' }]);
-        expect(config.domains).toEqual({ kidney: { color: '#334155', label: 'Kidney' } });
+        expect(config.career_file).toBe('other/career.yml');
         expect(config.app_settings).toEqual({ 'notes.width': 100 });
         expect(from['slurm.resource']).toBe(HUB_FILE);
         expect(from.memories_dir).toBe(HUB_FILE);
@@ -327,7 +326,7 @@ describe("loadConfig with the hub's settings file", () => {
         const hub = scratch();
         const file = settings(
             hub,
-            'theme: dark\nslurm: { resource: x, poll_min: 3 }\nvenues_file: other/venues.yml\nleads_file: other/leads.yml\n'
+            'theme: dark\nslurm: { resource: x, poll_min: 3 }\nvenues_file: other/venues.yml\ncareer_file: other/career.yml\n'
         );
         const engineOnly = loadConfig(engine).config;
         const { config, findings } = loadConfig(engine, { hub });
@@ -342,7 +341,7 @@ describe("loadConfig with the hub's settings file", () => {
         expect(messages).toContain(sentence(config, 'hub_key_unknown', 'venues_file'));
         expect(config.theme).toEqual(engineOnly.theme);
         expect(config.venues_file).toBeUndefined();
-        expect(config.leads_file).toBe('other/leads.yml');
+        expect(config.career_file).toBe('other/career.yml');
         const slurm = config.slurm as Record<string, unknown>;
         expect(slurm.poll_min).toBe((engineOnly.slurm as Record<string, unknown>).poll_min);
         expect(slurm.resource).toBe('x');
@@ -352,7 +351,7 @@ describe("loadConfig with the hub's settings file", () => {
         ['is empty', ''],
         ['is a list', '- a\n- b\n'],
         ['does not parse', 'slurm: [unclosed\n'],
-        ['holds a key twice', 'domains: {}\ndomains: {}\n']
+        ['holds a key twice', 'career_file: other/a.yml\ncareer_file: other/b.yml\n']
     ])('keeps the engine values and names the file when the file %s', (_row, body) => {
         const engine = engineCopy();
         const hub = scratch();
@@ -360,7 +359,9 @@ describe("loadConfig with the hub's settings file", () => {
         const { config, findings } = loadConfig(engine, { hub });
         expect(findings.map((one) => [one.file, one.key])).toEqual([[file, '']]);
         expect((config.slurm as Record<string, unknown>).resource).toBe('');
-        expect(config.domains).toEqual(loadConfig(engine).config.domains);
+        const engineCareer = loadConfig(engine).config.career_file;
+        expect(engineCareer).toBe('registries/career.yml');
+        expect(config.career_file).toBe(engineCareer);
     });
 
     it('reads the engine alone for a hub without the file, for a call that passes no hub and for a .oculus/config/ folder', () => {

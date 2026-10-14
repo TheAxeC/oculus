@@ -81,8 +81,9 @@ const PRIMARY = '';
 /**
  * Install the vocabulary from the merged config: `palette` (hex to token name), `status_palette`
  * and `type_color` (a name to a hex) and `status_legend` (the chips), and from `hubs` the research
- * `domains` of every hub of the workspace, each under its hub's name and the primary's under the
- * empty name. A key the config does not hold installs as empty, so every lookup answers with its
+ * `domains` of every hub of the workspace, read from each hub's domains registry, each under its
+ * hub's name and the primary's under the empty name; a domain with no colour wears the neutral
+ * tone. A key the config does not hold installs as empty, so every lookup answers with its
  * unknown case rather than throwing: a half-read config still renders a page.
  */
 export function setVocab(config: Record<string, unknown>, hubs: HubVocabs): void {
@@ -182,10 +183,10 @@ export function domainTone(domain: unknown): string {
 }
 
 /**
- * A research domain's words, the `label` of its `domains` entry ("Cardiology | ECG"), and the
- * domain's own key for one the config does not list. This is the label a project card carries; a UI
- * theme's name in the picker is themeLabel() of state/shared/words/appearance.ts, which is another
- * thing.
+ * A research domain's words, the `label` of its `domains` entry ("Cardiology | ECG"), which is the
+ * `title` of its entry in the hub's domains registry, and the domain's own key for one the registry
+ * does not list. This is the label a project card carries; a UI theme's name in the picker is
+ * themeLabel() of state/shared/words/appearance.ts, which is another thing.
  */
 export function domainLabel(domain: unknown): string {
     configGeneration();

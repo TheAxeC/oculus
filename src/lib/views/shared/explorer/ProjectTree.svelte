@@ -5,8 +5,11 @@
     //
     // The tree keeps its state in the record the card owns
     // (state/sources/explorer/view/card-tree.ts), which is a record of the Files view's shape, so a
-    // press, a key, a menu and a drag act as they do there. A record that was never opened gets the
-    // head written into it once the card is drawn; a record the tab's close cleared is not written
+    // press, a key, a menu and a drag act as they do there. Unlike a Files tab, which lists hidden
+    // and ignored entries until its reader turns them off, a card keeps both out: the tree is built
+    // with both toggles off (`toggles`), so its first listing holds neither, and its record is
+    // written with both off once the card is drawn. A record that was never opened gets the head
+    // written into it once the card is drawn; a record the tab's close cleared is not written
     // again, since the seed is keyed on the head alone and reads the record without tracking it.
     //
     // A folder no root of the workspace holds is said above the tree with the control that adds it
@@ -20,7 +23,13 @@
     import RootedTree from './RootedTree.svelte';
     import { createRootedTree, readWorkspace } from './rooted-tree.svelte';
     import { refusal } from '$lib/state/sources/explorer/acts/refusal';
-    import { folderView, patchedFilesView, treeKey, unopened } from '$lib/state/sources/fs';
+    import {
+        filesViewOf,
+        folderView,
+        patchedFilesView,
+        treeKey,
+        unopened
+    } from '$lib/state/sources/fs';
     import { folderOf } from '$lib/state/client/selectors.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
     import { t } from '$lib/state/shared/words/text';
@@ -34,6 +43,9 @@
     };
 
     let { item, owner }: Props = $props();
+
+    /** The toggles of a card's tree: hidden and ignored entries kept out. */
+    const CARD_SHOWN = { showHidden: false, showIgnored: false };
 
     const client = useState();
     const {
@@ -56,16 +68,24 @@
         roots: () => place.roots,
         top: () => place.top,
         up: () => null,
-        unsaved: () => (head === '' ? [] : [head])
+        unsaved: () => (head === '' ? [] : [head]),
+        toggles: CARD_SHOWN
     });
 
-    // A card whose record was never opened keeps its head open from then on.
+    // A card whose record was never opened keeps its head open from then on. A card lists no
+    // hidden and no ignored entry and offers no toggle, so its record holds both toggles off.
     $effect(() => {
         if (head === '') return;
         untrack(() => {
             const held = instanceState(owner);
-            if (unopened(held))
-                setInstanceState(owner, patchedFilesView(held, { expanded: [head] }));
+            const view = filesViewOf(held);
+            const part = {
+                ...(unopened(held) ? { expanded: [head] } : {}),
+                ...(view.showHidden || view.showIgnored ? CARD_SHOWN : {})
+            };
+            if (Object.keys(part).length > 0) {
+                setInstanceState(owner, patchedFilesView(held, part));
+            }
         });
     });
 

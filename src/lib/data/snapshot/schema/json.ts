@@ -5,7 +5,8 @@
 // `x-from` names the sources an enum was made from, `x-when` the condition under which a field is
 // allowed, and `x-required-when` the condition under which it is required. They validate nothing;
 // they let a finding say "this value is not a key of venues" rather than "this value is not one of
-// 71 words".
+// 71 words". `enumDescriptions` gives the editor's completion the label of each enum word, from
+// the field's `{ key, label }` options.
 
 import type { SchemaObject } from 'ajv';
 import { z } from 'zod';
@@ -14,7 +15,7 @@ import { z } from 'zod';
 export type JsonSchema = SchemaObject;
 
 /** The annotation keywords oculus puts on a schema, each registered with ajv as a no-op. */
-export const ANNOTATIONS = ['x-from', 'x-when', 'x-required-when'] as const;
+export const ANNOTATIONS = ['x-from', 'x-when', 'x-required-when', 'enumDescriptions'] as const;
 
 /** The scalar types a plain text field accepts: a text, and the integer a year is written as. */
 export const TEXT_TYPES = ['string', 'number', 'null'];

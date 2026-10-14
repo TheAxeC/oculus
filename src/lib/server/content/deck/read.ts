@@ -15,6 +15,7 @@
 // names through the same function.
 
 import { createReader } from '../../../data/sources/deck/read.ts';
+import { hubDomainsOf } from '../../../data/index.ts';
 import type { DeckProject } from '../../../data/sources/deck/kinds.ts';
 import type { Deck, PortfolioConfig, Project } from '../../../data/model/index.ts';
 import { ofHub } from '../../../data/helpers/hub-names.ts';
@@ -90,7 +91,7 @@ export function readDeck(
     const reader = createReader({
         hub,
         projects: ofHub(source.projects, hub.key, source.primary?.key ?? null).map(deckProject),
-        domains: config.domains,
+        domains: Object.keys(hubDomainsOf(hub.dir, config)),
         tagTones: config.tagTones,
         catalog: config.text,
         drafts: draftsOf(source.roots, drafts)

@@ -12,7 +12,7 @@
 // the portfolio on every write. An event counts only when its filename ends in .yml or .md, which
 // the later filter narrows to the Markdown slide files of a deck, and no segment of its path is
 // `code` or `attic`, which also drops an editor's swap and lock files. The flat LinkedIn folder
-// also accepts the post filenames read by server/edit/feeds.ts.
+// also accepts the post filenames read by server/edit/feeds/feeds.ts.
 //
 // One rebuild too many is possible and harmless: the first fs.watch of a process on darwin can
 // deliver an event for a write that happened shortly before the watch was opened, so a start that
@@ -27,6 +27,7 @@ import {
     buildFolderProjects,
     buildPortfolioWithSchemas,
     joinHubs,
+    hubVocabOf,
     hubVocabs,
     readOtherHub,
     sourcesFindings
@@ -75,7 +76,7 @@ import type { OpenWorkspace } from '../../files/workspace/open.ts';
 import { hubOption } from '../../files/workspace/paths.ts';
 import type { MachineProblem } from '../../../data/sources/config/machine.ts';
 import { workspaceFindings } from '../../files/workspace/words.ts';
-import { buildFeeds, isLinkedinFile } from '../../edit/feeds.ts';
+import { buildFeeds, isLinkedinFile } from '../../edit/feeds/feeds.ts';
 import type {
     AuditFinding,
     Finding,
@@ -349,6 +350,8 @@ export function watchPortfolio(
      */
     let named: (path: string) => boolean = () => true;
     let configTouched = false;
+    /** The hubs' vocabulary the config channel last carried, as its JSON text. */
+    let publishedHubs = '';
     let feedsTouched = false;
     let closed = false;
     /**
@@ -423,7 +426,7 @@ export function watchPortfolio(
     /**
      * One file watched on its own: the career file, which sits wherever `career_file` names it, and
      * a hub's settings file, `<hub>/.oculus/config.yml`, whose change is a config change
-     * (`isConfig`) for every hub, since each hub's own words ride on the `config` channel; a name
+     * (`isConfig`) for every hub, since each hub's settings ride on the `config` channel; a name
      * in the hub root would make a recursive watch of its folder cover the whole hub a second time,
      * and where its folder is already watched recursively (the configured `registries/career.yml`),
      * the debounce makes the two one rebuild. It is watched through its folder (`watchFile`), so an
@@ -524,8 +527,9 @@ export function watchPortfolio(
      * folder was opened by this call, which republishes the feeds. Every hub's settings file is
      * watched the same way, as a config change: its change rebuilds the portfolio and publishes the
      * `config` channel again. For the primary hub that carries the merged configuration read from
-     * the file; for another hub it carries that hub's domains and theme words in `hubs`, and the
-     * portfolio rebuild reads its scan folders and record files from the file again.
+     * the file; for another hub the portfolio rebuild reads its scan folders and record files from
+     * the file again. A hub's domains and theme words in `hubs` are read from its registry files,
+     * whose change republishes the channel when they changed.
      */
     const watchHubFolders = (
         dir: string,
@@ -597,7 +601,18 @@ export function watchPortfolio(
             const others = workspace.hubs
                 .filter((one) => one.name !== workspace.primary)
                 .map((one) => readOtherHub(paths.engine, { key: one.name, dir: one.dir }));
-            if (withConfig) {
+            const portfolio = primaryConfig(config, workspace, from);
+            // Each hub's domains and theme words are read from its registry files, so a change of
+            // one of them republishes the config channel that carries them, as a settings change
+            // does.
+            const hubs = hubVocabs(
+                workspace.primary,
+                primaryDir === null ? null : hubVocabOf(primaryDir, portfolio),
+                others.map((one) => ({ key: one.key, vocab: one.vocab }))
+            );
+            const hubsText = JSON.stringify(hubs);
+            if (withConfig || hubsText !== publishedHubs) {
+                publishedHubs = hubsText;
                 // The roots of sources.yml, the documents of layout.yml and the icon map are
                 // checked here rather than in loadConfig, which merges files and never touches the
                 // disk: a root whose directory is not on this machine, a document with no file at
@@ -609,11 +624,7 @@ export function watchPortfolio(
                 paths.icons.set = iconSet(config);
                 const payload: ConfigPayload = {
                     config,
-                    hubs: hubVocabs(
-                        workspace.primary,
-                        config,
-                        others.map((one) => ({ key: one.key, vocab: one.vocab }))
-                    ),
+                    hubs,
                     text: textCatalog(config),
                     icons: paths.icons.set,
                     host: paths.host,
@@ -678,7 +689,6 @@ export function watchPortfolio(
                 if (closed) return;
             }
             const roots = repositoriesOf(workspace);
-            const portfolio = primaryConfig(config, workspace, from);
             const held = engineConfigIn(workspace.folders, engineConfig);
             const byHub =
                 primaryDir === null
@@ -739,7 +749,7 @@ export function watchPortfolio(
                         ...(root === undefined ? {} : { root }),
                         projects: Object.values(part.snapshot.entities.projects),
                         collections: Object.values(part.snapshot.entities.collections),
-                        rules: auditRules(settings),
+                        rules: auditRules(settings, Object.values(part.snapshot.entities.domains)),
                         catalog: textCatalog(settings)
                     });
                 const audit: AuditPayload = {

@@ -47,62 +47,65 @@ export type RevealOutcome = {
 };
 
 /**
- * What one file browser keeps about itself: the open folders, the cursor row (`selected`), the rows
- * selected with it (`selection`, empty while only the cursor row is selected) and the row a range
- * grows from (`anchor`), the filter text and whether it matches fuzzily, the sections under the
- * tree that are closed (`collapsed`) and the ones that start closed and the reader opened
- * (`opened`), its open line form with what was typed into it, the line that answered its last press
- * (`note`), its toggles (hidden files, the files git ignores, nested files), the folder a rooted
- * tab is drawn from (`top`) and the folder Open Folder found outside every root (`outside`), and
- * the Timeline's pin and the two lists it shows (`timelinePinned`, `timelineGit`,
- * `timelineLocal`), and the order its sections are drawn in (`sections`, every section's id once,
- * the ones not drawn included).
+ * What one file browser keeps about itself: the open folders, the cursor row (`selected`), the
+ * rows selected with it (`selection`, empty while only the cursor row is selected) and the row a
+ * range grows from (`anchor`), the filter text and whether it matches fuzzily, the sections under
+ * the tree that are closed (`collapsed`) and the ones that start closed and the reader opened
+ * (`opened`), its open line form with what was typed into it, the line that answered its last
+ * press (`note`), its toggles (hidden files and the files git ignores, both listed until the
+ * reader turns them off, and nested files), the folder a rooted tab is drawn from (`top`) and the
+ * folder Open Folder found outside every root (`outside`), and the Timeline's pin and the two
+ * lists it shows (`timelinePinned`, `timelineGit`, `timelineLocal`), and the order its sections
+ * are drawn in (`sections`, every section's id once, the ones not drawn included).
  */
-export type FilesView = FilesForms &
-    ListingShown & {
-        expanded: string[];
-        selected: RowRef | null;
-        selection: RowRef[];
-        anchor: RowRef | null;
-        filter: string;
-        fuzzy: boolean;
-        nesting: boolean;
-        collapsed: string[];
-        opened: string[];
-        /**
-         * The path another view asked this browser to show, until it is selected and scrolled to.
-         */
-        reveal: RevealAsk | null;
-        /** What the last ask came to when it did not find its path, for the view's outcome line. */
-        revealed: RevealOutcome | null;
-        /**
-         * How many times this browser has been asked to show a path, which tells one ask from the
-         * next.
-         */
-        revealing: number;
-        /**
-         * What the last press was refused with, in the reader's words, and the empty string for
-         * none.
-         */
-        note: string;
-        /** The name being typed for a new file or folder, or a renamed row; null for none. */
-        naming: Naming | null;
-        /** The folder a rooted tab is drawn from, or null for a tab that draws the workspace. */
-        top: RowRef | null;
-        /** The folder Open Folder found outside every root, or the empty string. */
-        outside: string;
-        /** The file the Timeline section is held on, or null while it follows the editor. */
-        timelinePinned: RowRef | null;
-        /** Whether the Timeline lists the commits that touched its file. */
-        timelineGit: boolean;
-        /** Whether the Timeline lists the copies of its file in the local history. */
-        timelineLocal: boolean;
-        /**
-         * The order the sections are drawn in: every id of SECTION_ORDER once. A section that is
-         * not drawn keeps its place here.
-         */
-        sections: string[];
-    };
+export type FilesView = FilesForms & {
+    /** Whether the tab lists dotfiles and the build folders; on unless the reader turned it off. */
+    showHidden: boolean;
+    /** Whether the tab lists what git ignores; on unless the reader turned it off. */
+    showIgnored: boolean;
+    expanded: string[];
+    selected: RowRef | null;
+    selection: RowRef[];
+    anchor: RowRef | null;
+    filter: string;
+    fuzzy: boolean;
+    nesting: boolean;
+    collapsed: string[];
+    opened: string[];
+    /**
+     * The path another view asked this browser to show, until it is selected and scrolled to.
+     */
+    reveal: RevealAsk | null;
+    /** What the last ask came to when it did not find its path, for the view's outcome line. */
+    revealed: RevealOutcome | null;
+    /**
+     * How many times this browser has been asked to show a path, which tells one ask from the
+     * next.
+     */
+    revealing: number;
+    /**
+     * What the last press was refused with, in the reader's words, and the empty string for
+     * none.
+     */
+    note: string;
+    /** The name being typed for a new file or folder, or a renamed row; null for none. */
+    naming: Naming | null;
+    /** The folder a rooted tab is drawn from, or null for a tab that draws the workspace. */
+    top: RowRef | null;
+    /** The folder Open Folder found outside every root, or the empty string. */
+    outside: string;
+    /** The file the Timeline section is held on, or null while it follows the editor. */
+    timelinePinned: RowRef | null;
+    /** Whether the Timeline lists the commits that touched its file. */
+    timelineGit: boolean;
+    /** Whether the Timeline lists the copies of its file in the local history. */
+    timelineLocal: boolean;
+    /**
+     * The order the sections are drawn in: every id of SECTION_ORDER once. A section that is
+     * not drawn keeps its place here.
+     */
+    sections: string[];
+};
 
 /** The sections of the view in the order a fresh Files tab draws them. */
 const SECTION_ORDER: readonly string[] = [
@@ -197,8 +200,8 @@ const filesViewShape = z
         revealing: countShape,
         note: z.string().catch(''),
         naming: namingShape.nullable().catch(null),
-        hidden: z.boolean().catch(false),
-        ignored: z.boolean().catch(false),
+        showHidden: z.boolean().catch(true),
+        showIgnored: z.boolean().catch(true),
         selection: selectionShape,
         anchor: selectedShape.nullable().catch(null),
         fuzzy: z.boolean().catch(false),
@@ -238,8 +241,8 @@ function emptyFilesView(): FilesView {
         revealing: 0,
         note: '',
         naming: null,
-        hidden: false,
-        ignored: false,
+        showHidden: true,
+        showIgnored: true,
         selection: [],
         anchor: null,
         fuzzy: false,
@@ -255,8 +258,8 @@ function emptyFilesView(): FilesView {
 }
 
 /** The two toggles of one file browser, which is what each of its listings is asked with. */
-export function shownOf(view: ListingShown): ListingShown {
-    return { hidden: view.hidden, ignored: view.ignored };
+export function shownOf(view: Pick<FilesView, 'showHidden' | 'showIgnored'>): ListingShown {
+    return { hidden: view.showHidden, ignored: view.showIgnored };
 }
 
 /**

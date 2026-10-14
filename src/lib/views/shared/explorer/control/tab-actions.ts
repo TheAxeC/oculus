@@ -25,8 +25,6 @@ export type TabActionsDeps = {
     /** The id of the Files tab on screen. */
     id: () => string;
     view: () => FilesView;
-    /** What the tab's listings show beside the default: its two toggles. */
-    listed: () => ReturnType<typeof shownOf>;
     rows: () => TreeRow[];
     shownRoots: () => FsRoot[];
     /** The folder a rooted tab is drawn from, or null. */
@@ -81,16 +79,23 @@ export function tabActions(deps: TabActionsDeps) {
         patch({ ...selectOnly({ root: row.root, path: row.path }), revealed: null });
     }
 
-    /** Flip one of the tab's toggles, and read every folder held under the pair it now names. */
+    /**
+     * Flip one of the tab's toggles, and read every folder held under the pair it now names. It and
+     * a project card's tree (ProjectTree.svelte, which writes both off into the card's record) are
+     * the writers of `showHidden` and `showIgnored`.
+     */
     function flip(which: 'hidden' | 'ignored' | 'nesting'): void {
+        const view = deps.view();
         if (which === 'nesting') {
-            patch({ nesting: !deps.view().nesting, ...LINES_CLEARED });
+            patch({ nesting: !view.nesting, ...LINES_CLEARED });
             return;
         }
-        const listed = deps.listed();
-        const next = { ...listed, [which]: !listed[which] };
-        client.fs.relist(next);
-        patch({ ...next, ...LINES_CLEARED });
+        const part =
+            which === 'hidden'
+                ? { showHidden: !view.showHidden }
+                : { showIgnored: !view.showIgnored };
+        client.fs.relist(shownOf({ ...view, ...part }));
+        patch({ ...part, ...LINES_CLEARED });
     }
 
     /** Open or close one section, or the workspace header's roots. */

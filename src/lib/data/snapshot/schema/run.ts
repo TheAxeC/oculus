@@ -15,15 +15,16 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse } from 'yaml';
-import { findingText } from '../../helpers/finding-text.ts';
+import { LineCounter, isNode, parse, parseDocument } from 'yaml';
+import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { VOCAB_FILE_KEYS } from '../../shapes/catalog-files.ts';
-import type {
-    Finding,
-    PortfolioConfig,
-    RawPortfolio,
-    ScanRule,
-    SchemaField
+import {
+    FILTERED_TYPES,
+    type Finding,
+    type PortfolioConfig,
+    type RawPortfolio,
+    type ScanRule,
+    type SchemaField
 } from '../../model/index.ts';
 import { MANIFEST, ROOT_FOLDER } from '../../helpers/hub-names.ts';
 import { checkDocument, isWords, type Checker, type SchemaDoc } from './check.ts';
@@ -31,7 +32,7 @@ import { fileSchema, writtenFields, type FileKind } from './hub.ts';
 import { schemaText, type JsonSchema } from './json.ts';
 import { duplicateKeys, hubLists, listsOf, vocabLists } from './lists.ts';
 import { manifestSchema } from './manifest.ts';
-import { fieldsOf } from './field.ts';
+import { fieldsOf, readOptions, type OptionProblem } from './field.ts';
 import { problemText, type Context, type SchemaProblem } from './record.ts';
 import type { SchemaRule, SchemaSet } from './set.ts';
 import { projectFileSchemas } from './static.ts';
@@ -114,6 +115,80 @@ function problemFinding(config: PortfolioConfig, file: string, problem: SchemaPr
     return { file, key: problem.key, message: problemText(config.text, problem) };
 }
 
+/** The line of the node a path reaches in a text, or undefined when the path reaches none. */
+function lineAt(text: string, path: (string | number)[]): number | undefined {
+    const lines = new LineCounter();
+    const node = parseDocument(text, { lineCounter: lines }).getIn(path, true);
+    return isNode(node) && node.range ? lines.linePos(node.range[0]).line : undefined;
+}
+
+/** The sentence of one option problem of the field `field`, in the catalog's words. */
+function optionText(catalog: TextCatalog, field: string, problem: OptionProblem): string {
+    switch (problem.word) {
+        case 'kind':
+            return findingText(catalog, 'findings.schema.option_kind', field);
+        case 'no_key':
+            return findingText(catalog, 'findings.schema.option_no_key', field);
+        case 'not_word':
+            return findingText(catalog, 'findings.schema.option_not_word', field, problem.key);
+        case 'label':
+            return findingText(catalog, 'findings.schema.option_label', field, problem.key);
+        case 'taken':
+            return findingText(catalog, 'findings.schema.option_taken', field, problem.key);
+        case 'extra':
+            return findingText(
+                catalog,
+                'findings.schema.option_extra',
+                field,
+                problem.extra ?? '',
+                problem.key
+            );
+    }
+}
+
+/**
+ * The findings of a `schema:` block's own fields that the schema of a schema cannot word: an
+ * option of a field's `options:` that does not read, on its line, and a `filter: true` on a type
+ * no filter is drawn for, on the line of the flag. Both name the field.
+ */
+function fieldFindings(
+    config: PortfolioConfig,
+    file: string,
+    text: string,
+    schema: unknown[],
+    fields: SchemaField[]
+): Finding[] {
+    const found: Finding[] = [];
+    fields.forEach((field, at) => {
+        const held = schema[at] as Record<string, unknown>;
+        for (const problem of readOptions(held.options).problems) {
+            const path = ['schema', at, 'options', problem.index];
+            const line = lineAt(text, path);
+            found.push({
+                file,
+                key: `schema[${at}].options[${problem.index}]`,
+                message: optionText(config.text, field.field, problem),
+                ...(line === undefined ? {} : { line })
+            });
+        }
+        if (field.filter === true && !FILTERED_TYPES.includes(field.type)) {
+            const line = lineAt(text, ['schema', at, 'filter']);
+            found.push({
+                file,
+                key: `schema[${at}].filter`,
+                message: findingText(
+                    config.text,
+                    'findings.schema.bad_filter',
+                    field.field,
+                    field.type
+                ),
+                ...(line === undefined ? {} : { line })
+            });
+        }
+    });
+    return found;
+}
+
 /**
  * Generate the schemas of one build and check the hub against them. `checker` holds the validators
  * compiled so far, so a build whose schemas did not change compiles nothing. `unread` names the
@@ -191,6 +266,7 @@ export function runSchemas(
             { hub: [file.path] }
         );
         findings.push(...ctx.problems.map((problem) => problemFinding(config, path, problem)));
+        findings.push(...fieldFindings(config, path, text, held.schema as unknown[], fields));
         docs.push({ name, file: path, text });
     }
 

@@ -170,6 +170,19 @@ export function homeOf(into: WriteTarget): PrimaryTarget | null {
     return first === undefined ? null : within(into, first);
 }
 
+/**
+ * The target for a write to a collection that names no hub: the primary's when its `collections:`
+ * names the collection, else the first hub's whose list does, else `homeOf`'s.
+ */
+export function homeNaming(into: WriteTarget, collection: string): PrimaryTarget | null {
+    const names = (config: WriteTarget['config']): boolean =>
+        config.collections.some((one) => one.key === collection);
+    const own = primaryOf(into);
+    if (own !== null && names(own.config)) return own;
+    const one = (into.hubs ?? []).find((held) => held.key !== into.primary && names(held.config));
+    return one === undefined ? homeOf(into) : within(into, one);
+}
+
 /** A subtask write's target, and the record it names by the ids inside the hub. */
 export type RoutedTarget = { into: PrimaryTarget; target: SubtaskTarget };
 

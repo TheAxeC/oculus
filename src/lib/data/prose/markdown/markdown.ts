@@ -105,26 +105,30 @@ export function tocList(headings: { level: number; text: string; id: string }[])
  * an outline of the rendered document shows, and the ids are the ones the HTML carries, so a press
  * on a row reaches the heading drawn.
  *
- * The table of contents needs every heading, and a `[TOC]` paragraph is drawn before the headings
- * after it are, so the paragraph leaves a mark that only this call can have written, and the list
- * replaces it once the whole document is drawn. The heading list is the library's own record of
- * this parse, which its preprocess hook clears as the parse starts; the parse is synchronous, so
- * no other parse runs between the two.
+ * The table of contents lists the headings after the `[TOC]` paragraph, so a page's title and the
+ * heading the list sits under are not entries of it. The paragraph is drawn before the headings
+ * after it are, so it leaves a mark that only this call can have written, with the number of
+ * headings drawn before it, and the list replaces the mark once the whole document is drawn. The
+ * heading list is the library's own record of this parse, which its preprocess hook clears as the
+ * parse starts; the parse is synchronous, so no other parse runs between the two.
  */
 export function renderDocumentParts(
     text: string,
     ...extra: MarkedExtension[]
 ): { html: string; headings: RenderedHeading[] } {
     const mark = `<!--toc-${crypto.randomUUID()}-->`;
+    let before: number | null = null;
     const contents: MarkedExtension = {
         renderer: {
             paragraph({ text: said }: Tokens.Paragraph) {
-                return said.trim() === TOC_MARK ? mark : false;
+                if (said.trim() !== TOC_MARK) return false;
+                before ??= getHeadingList().length;
+                return mark;
             }
         },
         hooks: {
             postprocess(html: string) {
-                return html.split(mark).join(tocList(getHeadingList()));
+                return html.split(mark).join(tocList(getHeadingList().slice(before ?? 0)));
             }
         }
     };

@@ -44,6 +44,8 @@ type Edited = {
     at: At;
     newKey: string;
     hub?: Texts;
+    /** The engine's config files the row plants in place of the standard ones. */
+    engine?: Texts;
     /** The files that change, by `root:path`, with the text each has after the rename. */
     after: Texts;
 };
@@ -181,23 +183,21 @@ const EDITED: Edited[] = [
         }
     },
     {
-        name: 'a key of the domains: map of vocab.yml, the domains registry entry and the engine reference',
+        name: 'a domain key, the domains registry entry and the domain of each manifest',
         at: ['hub', 'registries/domains.yml', 3, 9],
         newKey: 'cardio',
+        hub: { 'projects/active/beta/project.yml': `${BETA}domain: heart\n` },
+        // Config files that name the domain by keys oculus does not read stay as they are.
+        engine: {
+            'behavior.yml': 'data_domains: [heart]\nslurm:\n  resource: hpc\n',
+            'catalogs/vocab.yml': 'domains:\n  heart: { color: "#e2374d", label: Heart }\n'
+        },
         after: {
             'hub:registries/domains.yml': HUB_FILES['registries/domains.yml'].replace(
                 'key: heart',
                 'key: cardio'
             ),
-            'engine:behavior.yml': 'data_domains: [cardio]\nslurm:\n  resource: hpc\n',
-            'engine:catalogs/vocab.yml': [
-                'domains:',
-                '  cardio: { color: "#e2374d", label: Heart }',
-                '  brain: { color: "#7c3aed", label: Brain }',
-                'type_color: { active: "#ea580c", manuscript: "#0d9488" }',
-                'type_order: [active, manuscript]',
-                ''
-            ].join('\n')
+            'hub:projects/active/beta/project.yml': `${BETA}domain: cardio\n`
         }
     }
 ];
@@ -350,7 +350,7 @@ const REFUSED: Refused[] = [
 
 describe('the rename of a hub key', () => {
     it.each(EDITED)('edits $name', (row) => {
-        const hub = plantHub(row.hub);
+        const hub = plantHub(row.hub, row.engine);
         const [root, path, line, character] = row.at;
         const { hit, graph } = hub.hit(root, path, { line, character });
         expect(hit).not.toBeNull();

@@ -138,6 +138,8 @@
                 return t('history.undid_lead_add');
             case 'radar-add':
                 return t('history.undid_radar_add');
+            case 'literature-save':
+                return t('history.undid_literature_save');
             case 'subtask-add':
                 return t('history.undid_subtask_add');
             case 'reorder':

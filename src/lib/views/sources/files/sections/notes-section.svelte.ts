@@ -94,9 +94,13 @@ export function createNotesSection(client: ClientState, deps: NotesSectionDeps) 
         });
     });
 
-    /** Write part of the tree's record. */
+    /**
+     * Write part of the tree's record, with the folders it draws open, which a record never opened
+     * holds only once this is written.
+     */
     function patch(part: Partial<FilesView>): void {
-        ui.setInstanceState(key, patchedFilesView(ui.instanceState(key), { ...view, ...part }));
+        const held = ui.instanceState(key);
+        ui.setInstanceState(key, patchedFilesView(held, { expanded: view.expanded, ...part }));
     }
 
     /** The group a root key draws. */

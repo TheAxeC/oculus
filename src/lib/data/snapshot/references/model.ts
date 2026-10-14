@@ -37,9 +37,14 @@ export type Definition = Mention & { sources: string[] };
 
 /**
  * How one kind of file is read. `spec` says where its fields stand (specs.ts); `defines` says what
- * its identity scalars define, and is empty for a file that defines nothing.
+ * its identity scalars define, and is empty for a file that defines nothing. `options` are the
+ * fields of the file's own `schema:` whose option rows define the keys of a source.
  */
-export type Reading = { spec: FieldNode | null; defines: Defines };
+export type Reading = {
+    spec: FieldNode | null;
+    defines: Defines;
+    options?: { field: string; source: string }[];
+};
 
 /** What a file defines. */
 type Defines =
@@ -56,7 +61,7 @@ type Defines =
  * scalars; a `record` is a map of fields; `records` is a list of records or one record; a `family`
  * is an options family (a list of records with a key, or a map from the key to a record, a list of
  * records or a value); a `named` is a map from a name to one record, whose names are keys of the
- * sources in `keys` when it has them (the domains map of vocab.yml) and no keys otherwise.
+ * sources in `keys` when it has them and no keys otherwise.
  */
 export type FieldNode =
     | { kind: 'leaf'; sources: string[]; picked?: Picked }

@@ -167,13 +167,6 @@ options:
                 value:
                     help: the most characters the field may hold before it earns a finding
                     control: number
-        data_domains:
-            heading: boards
-            section: Audit checks
-            help: Domains expected to have a dataset. The audit reports an active project in one of these domains that has no datasets entry. This is a setting of the hub, kept in the hub's .oculus/config.yml, and a hub that sets none expects no dataset.
-            default: []
-            control: multi
-            from: domains
         waiting_status:
             heading: boards
             section: Audit checks
@@ -1318,24 +1311,12 @@ options:
         collections:
             heading: sources
             section: Collections
-            help: The hub's record files, each from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the first file being the one read. The keys data (the dataset registry), venues, pillars, domains, funding, people, organisations and resources name the file of the registry of that name; a registry the list leaves out is read from the engine's path. Each key except data, venues, pillars and domains also becomes a collection view, a generic card list.
+            help: The hub's record files, each from one YAML file. An entry needs a key and a file, and two entries with one key are a finding, the first file being the one read. The keys data (the dataset registry), venues, pillars, domains, funding, people, organisations and resources name the file of the registry of that name, and the keys leads and radar the files the Position Leads and Lit Watch views read; a registry or feed the list leaves out is read from the engine's path, and one it names whose file is not there is a finding. Each key except data, venues, pillars, domains, leads and radar also becomes a collection view, a generic card list. A domain's card colour, its label and whether it expects a dataset are its entry's color, title and expects_datasets in the domains registry, and the theme words are the options of the themes field of the venues and data registries.
             fields:
                 key: the collection's key, which the view and the entries' cross-links use
                 file:
                     help: the YAML file of the collection, relative to the hub
                     control: file
-        leads_file:
-            heading: sources
-            section: Registry and feed files
-            help: The position scout's YAML that the Position Leads view reads as cards. Its search specification belongs to the research-cockpit skill.
-            default: feeds/position-leads.yml
-            control: file
-        radar_file:
-            heading: sources
-            section: Registry and feed files
-            help: The literature scout's accumulated radar that the Lit Watch view reads. The refresh workflow deduplicates by URL and appends entries.
-            default: feeds/literature-radar.yml
-            control: file
         publications_file:
             heading: sources
             section: Registry and feed files

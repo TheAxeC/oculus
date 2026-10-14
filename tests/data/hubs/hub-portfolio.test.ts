@@ -3,9 +3,10 @@
 // is what its files say, every record of both hubs is present under an id of its own, and a
 // reference never crosses from one hub to the other.
 //
-// The hubs are two copies of demo/ under the system temporary directory (hubs-fixture.ts), so every
-// id of the second hub is also an id of the first, which is the case the prefix exists for.
-// tests/data/hubs/hub-folders.test.ts reads what makes a folder of a workspace a hub.
+// The hubs are two copies of tests/fixtures/hubs/demo/ under the system temporary directory
+// (hubs-fixture.ts), so every id of the second hub is also an id of the first, which is the case
+// the prefix exists for. tests/data/hubs/hub-folders.test.ts reads what makes a folder of a
+// workspace a hub.
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -193,7 +193,7 @@
 <g id="node25" class="node">
 <title>folder server/edit to folder server/core</title>
 <polygon fill="none" stroke="none" points="326.88,-392.84 313.12,-392.84 313.12,-380.36 326.88,-380.36 326.88,-392.84"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="320" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">43</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="320" y="-384.2" font-family="Helvetica,Arial,sans-serif" font-size="8.00">46</text>
 </g>
 <!-- folder server/edit&#45;&gt;folder server/edit to folder server/core -->
 <g id="edge38" class="edge">
@@ -236,13 +236,13 @@
 <!-- folder server/edit to layer data -->
 <g id="node29" class="node">
 <title>folder server/edit to layer data</title>
-<polygon fill="none" stroke="none" points="257.88,-764.12 244.12,-764.12 244.12,-751.64 257.88,-751.64 257.88,-764.12"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="251" y="-755.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">97</text>
+<polygon fill="none" stroke="none" points="259.88,-764.12 242.12,-764.12 242.12,-751.64 259.88,-751.64 259.88,-764.12"/>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="251" y="-755.48" font-family="Helvetica,Arial,sans-serif" font-size="8.00">104</text>
 </g>
 <!-- folder server/edit&#45;&gt;folder server/edit to layer data -->
 <g id="edge46" class="edge">
 <title>folder server/edit&#45;&gt;folder server/edit to layer data</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M201,-757.88C215.32,-757.88 229.65,-757.88 243.97,-757.88"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M201,-757.88C214.54,-757.88 228.08,-757.88 241.62,-757.88"/>
 </g>
 <!-- folder server/content -->
 <g id="node5" class="node">
@@ -361,7 +361,7 @@
 <g id="node39" class="node">
 <title>folder server/content to layer data</title>
 <polygon fill="none" stroke="none" points="197.88,-551.96 184.12,-551.96 184.12,-539.48 197.88,-539.48 197.88,-551.96"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="191" y="-543.32" font-family="Helvetica,Arial,sans-serif" font-size="8.00">40</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="191" y="-543.32" font-family="Helvetica,Arial,sans-serif" font-size="8.00">41</text>
 </g>
 <!-- folder server/content&#45;&gt;folder server/content to layer data -->
 <g id="edge66" class="edge">
@@ -523,8 +523,8 @@
 <!-- folder server/root to folder server/machine&#45;&gt;folder server/machine -->
 <g id="edge23" class="edge">
 <title>folder server/root to folder server/machine&#45;&gt;folder server/machine</title>
-<path fill="none" stroke="currentColor" d="M194.29,-808.63C210.48,-805.33 249.19,-794.92 265,-768.68 287.31,-731.65 241.01,-689.01 212.02,-667.24"/>
-<polygon fill="currentColor" stroke="currentColor" points="213.43,-665.67 207.34,-663.81 210.94,-669.05 213.43,-665.67"/>
+<path fill="none" stroke="currentColor" d="M193.98,-808.79C210.26,-805.73 250.57,-795.63 267,-768.68 289.68,-731.47 242.23,-688.91 212.53,-667.19"/>
+<polygon fill="currentColor" stroke="currentColor" points="213.82,-665.54 207.72,-663.76 211.38,-668.96 213.82,-665.54"/>
 </g>
 <!-- folder server/root to folder server/sessions&#45;&gt;folder server/sessions -->
 <g id="edge25" class="edge">
@@ -613,8 +613,8 @@
 <!-- folder server/edit to layer data&#45;&gt;layer data from folder server/edit -->
 <g id="edge47" class="edge">
 <title>folder server/edit to layer data&#45;&gt;layer data from folder server/edit</title>
-<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M258.28,-757.88C290.32,-757.88 322.37,-757.88 354.41,-757.88"/>
-<polygon fill="currentColor" stroke="currentColor" points="354.17,-759.98 360.17,-757.88 354.17,-755.78 354.17,-759.98"/>
+<path fill="none" stroke="currentColor" stroke-dasharray="5,2" d="M260.16,-757.88C291.59,-757.88 323.02,-757.88 354.44,-757.88"/>
+<polygon fill="currentColor" stroke="currentColor" points="354.06,-759.98 360.06,-757.88 354.06,-755.78 354.06,-759.98"/>
 </g>
 <!-- folder server/machine to folder server/content&#45;&gt;folder server/content -->
 <g id="edge49" class="edge">

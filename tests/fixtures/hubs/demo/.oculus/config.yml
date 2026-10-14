@@ -1,0 +1,30 @@
+# ===========================================================================
+# .oculus/config.yml
+# The demo hub's settings: the files of its records and feeds, and the cluster its jobs run on. Its domains, with their colours and labels, are registries/domains.yml's, and the theme words of its venues and datasets are the options of the `themes` field of registries/venues.yml and registries/data.yml.
+# ===========================================================================
+
+
+# The hub's data files, one entry per key: the registries under registries/, the card lists under records/ and network/, and the Position Leads (`leads`) and Lit Watch (`radar`) feeds under feeds/.
+collections:
+  - { key: data,           file: "registries/data.yml" }
+  - { key: venues,         file: "registries/venues.yml" }
+  - { key: pillars,        file: "registries/pillars.yml" }
+  - { key: domains,        file: "registries/domains.yml" }
+  - { key: statements,     file: "registries/boilerplate.yml" }
+  - { key: people,         file: "registries/people.yml" }
+  - { key: organisations,  file: "registries/organisations.yml" }
+  - { key: resources,      file: "registries/resources.yml" }
+  - { key: funding,        file: "records/funding.yml" }
+  - { key: events,         file: "network/events.yml" }
+  - { key: education,      file: "records/education.yml" }
+  - { key: applications,   file: "records/applications.yml" }
+  - { key: joint-work,     file: "network/joint-work.yml" }
+  - { key: tasks,          file: "records/tasks.yml" }
+  - { key: literature,     file: "registries/literature.yml" }
+  - { key: leads,          file: "feeds/position-leads.yml" }
+  - { key: radar,          file: "feeds/literature-radar.yml" }
+
+
+# `resource` is the key of a cluster entry of registries/resources.yml, whose `host` is the ssh alias the poller uses.
+slurm:
+  resource: utwente

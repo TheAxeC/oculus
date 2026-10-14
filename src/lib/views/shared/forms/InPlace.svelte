@@ -18,6 +18,7 @@
     import DateInput from '$lib/ui/forms/DateInput.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';
+    import { optionKeys, optionLabel } from '$lib/state/boards/collection';
     import type { Entry, SchemaField } from '$lib/state/boards/collection';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -43,7 +44,7 @@
         const value = entry.fields[field];
         return typeof value === 'string' ? value : typeof value === 'number' ? String(value) : '';
     });
-    const options = $derived(declared?.options ?? []);
+    const options = $derived(optionKeys(declared));
     const stray = $derived(held !== '' && !options.includes(held));
 
     /** Counts the refusals, so the control is drawn again with the file's value in it. */
@@ -82,7 +83,7 @@
         <Select
             value={held}
             {label}
-            choices={options.map((id) => ({ id, label: id }))}
+            choices={options.map((id) => ({ id, label: optionLabel(declared, id) }))}
             disabled={blocked !== ''}
             title={blocked === '' ? undefined : blocked}
             onchange={write}

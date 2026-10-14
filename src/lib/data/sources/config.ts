@@ -54,8 +54,7 @@ export {
     iconSet,
     localFindings,
     settingFindings,
-    vocabCatalog,
-    hubVocabOf
+    vocabCatalog
 } from './config/catalogs.ts';
 export {
     type AppsSettings,

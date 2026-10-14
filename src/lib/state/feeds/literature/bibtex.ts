@@ -5,11 +5,13 @@
 // serves is formatted by citation-js from CSL-JSON built from the hit, which does the escaping,
 // the name formatting and the entry type; no BibTeX text is written here.
 //
-// The key of a formatted entry is citation-js's own: the plugin's `useIdAsLabel` option is off, so
-// the key is made from the first author, the year and the first word of the title, where the
-// option on would use the identifier of the hit, which is an OpenAlex or Semantic Scholar id.
-// citation-js is loaded when the first entry is formatted, so the page does not carry it until a
-// paper needs it.
+// The key of a formatted entry of the search is citation-js's own: the plugin's `useIdAsLabel`
+// option is off, so the key is made from the first author, the year and the first word of the
+// title, where the option on would use the identifier of the hit, which is an OpenAlex or Semantic
+// Scholar id. An entry of the Literature collection is copied under its own key whichever way it
+// was made: the served entry has its key replaced, and the formatted one is made with the option
+// on and the entry's key as the item's id. citation-js is loaded when the first entry is
+// formatted, so the page does not carry it until a paper needs it.
 
 import type { HitType } from '../../../data/model/index.ts';
 import { bibtexAnswer, bibtexUrl } from './answers.ts';
@@ -61,14 +63,14 @@ function cslOf(hit: MergedHit): Record<string, unknown> {
     return item;
 }
 
-/** The entry citation-js formats from a hit. */
-async function formatted(hit: MergedHit): Promise<string> {
+/** The entry citation-js formats from one CSL item, its key the item's id when `byId`. */
+async function formatted(item: Record<string, unknown>, byId: boolean): Promise<string> {
     const [{ Cite, plugins }] = await Promise.all([
         import('@citation-js/core'),
         import('@citation-js/plugin-bibtex')
     ]);
-    plugins.config.get('@bibtex').format.useIdAsLabel = false;
-    return new Cite([cslOf(hit)]).format('bibtex', { format: 'text' }).trim();
+    plugins.config.get('@bibtex').format.useIdAsLabel = byId;
+    return new Cite([item]).format('bibtex', { format: 'text' }).trim();
 }
 
 /** The entry for a paper: the first source that serves one, else the one citation-js formats. */
@@ -81,5 +83,75 @@ export async function entryFor(hit: MergedHit, ask: AskRoute): Promise<Entry> {
         const served = bibtexAnswer(await ask(url));
         if (served !== null) return { text: served.bibtex, from: served.from };
     }
-    return { text: await formatted(hit), from: 'citation_js' };
+    return { text: await formatted(cslOf(hit), false), from: 'citation_js' };
+}
+
+/** The fields of a Literature entry a BibTeX entry is made from. */
+export type SavedPaper = {
+    key: string;
+    title: string;
+    authors: string[];
+    venue: string;
+    year: string;
+    doi: string;
+    url: string;
+};
+
+/** The opening of a BibTeX entry up to its key: `@type{`, and the key after it. */
+const OPENING = /^(\s*@[A-Za-z]+\s*\{\s*)[^,\s]*/;
+
+/** A BibTeX entry with its key replaced by `key`. */
+function rekeyed(text: string, key: string): string {
+    return text.replace(OPENING, (_whole, opening: string) => `${opening}${key}`);
+}
+
+/** The CSL-JSON item of a saved paper, its id the entry's key. */
+function savedCsl(paper: SavedPaper): Record<string, unknown> {
+    const item: Record<string, unknown> = {
+        id: paper.key,
+        type: 'article-journal',
+        title: paper.title,
+        author: paper.authors.map((literal) => ({ literal }))
+    };
+    const year = /^\d{1,4}$/.test(paper.year) ? Number(paper.year) : undefined;
+    if (paper.venue !== '') item['container-title'] = paper.venue;
+    if (year !== undefined) item.issued = { 'date-parts': [[year]] };
+    if (paper.doi !== '') item.DOI = paper.doi;
+    if (paper.url !== '') item.URL = paper.url;
+    return item;
+}
+
+/**
+ * The entry for a saved paper, under the paper's own key: the one `doi.org` serves for its DOI,
+ * else the one citation-js formats from its fields.
+ */
+async function savedEntryFor(paper: SavedPaper, ask: AskRoute): Promise<Entry> {
+    if (paper.doi !== '') {
+        const served = bibtexAnswer(await ask(bibtexUrl('doi', paper.doi)));
+        if (served !== null) return { text: rekeyed(served.bibtex, paper.key), from: served.from };
+    }
+    return { text: await formatted(savedCsl(paper), true), from: 'citation_js' };
+}
+
+/** What a copy of several entries came to: the text, and the keys copied and not copied. */
+export type Copied = { text: string; copied: string[]; failed: string[] };
+
+/**
+ * The BibTeX entries of several saved papers, in the order given, one blank line between two. A
+ * paper whose entry could not be made is left out and named in `failed`.
+ */
+export async function savedEntriesFor(papers: SavedPaper[], ask: AskRoute): Promise<Copied> {
+    const made = await Promise.all(
+        papers.map(async (paper) => {
+            try {
+                return (await savedEntryFor(paper, ask)).text;
+            } catch {
+                return null;
+            }
+        })
+    );
+    const copied = papers.filter((_paper, at) => made[at] !== null).map((one) => one.key);
+    const failed = papers.filter((_paper, at) => made[at] === null).map((one) => one.key);
+    const text = made.filter((one) => one !== null).join('\n\n');
+    return { text, copied, failed };
 }

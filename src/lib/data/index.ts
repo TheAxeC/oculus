@@ -10,7 +10,14 @@ import { basename, join } from 'node:path';
 import { z } from 'zod';
 import { isMap, str, strings } from './helpers/guards.ts';
 import { MEMORIES_DIR, WALLPAPER_DIR, hubFolderIn } from './helpers/files/paths.ts';
-import { filledTextShape, keysOfShape, readAs, readOr, rowsShape } from './shapes/shapes.ts';
+import {
+    filledTextShape,
+    keysOfShape,
+    mapShape,
+    readAs,
+    readOr,
+    rowsShape
+} from './shapes/shapes.ts';
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
@@ -29,9 +36,11 @@ import {
 } from './helpers/hub-names.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
-import { hubVocabOf, loadConfig, textCatalog } from './sources/config.ts';
+import { loadConfig, textCatalog } from './sources/config.ts';
+import { readYamlMap } from './sources/yaml-file.ts';
+import { fieldsOf } from './snapshot/schema/field.ts';
 import { mergeHubs, type HubSnapshot } from './snapshot/hubs/merge.ts';
-import { normalise } from './snapshot/normalise.ts';
+import { FEED_COLLECTION_KEYS, isFeedCollection, normalise } from './snapshot/normalise.ts';
 import { sortFindings, validate } from './snapshot/validate.ts';
 import { createChecker, type Checker } from './snapshot/schema/check.ts';
 import { REGISTRIES, unreadSources } from './snapshot/schema/lists.ts';
@@ -52,6 +61,7 @@ import { optionFiles } from './sources/config/catalog/schemas/references.ts';
 import { DECK_FILE } from './sources/deck/read.ts';
 import { buildReferences, type EngineConfigFolder } from './snapshot/references/build.ts';
 import type { ReferenceIndex } from './snapshot/references/model.ts';
+import { domainColorOf, optionKeys, optionLabel } from './model/index.ts';
 import type {
     CollectionFile,
     DocPresence,
@@ -244,14 +254,17 @@ function collectionFiles(value: unknown): CollectionFile[] {
     return readOr(collectionFilesShape, value, []);
 }
 
+/** A key of the `collections:` list that names a YAML feed's file. */
+type FeedKey = (typeof FEED_COLLECTION_KEYS)[number];
+
 /**
- * The feed paths for a config that names none of them. The LinkedIn folder is the hub's own, so a
- * config that names none has no LinkedIn feed, and its path is empty.
+ * The engine's path of each YAML feed, the file of its entry in config/sources.yml, which a hub
+ * whose own `collections:` list does not name the key reads, as a registry it does not name is
+ * read from REGISTRY_FILES: the merged config holds the hub's list in place of the engine's.
  */
-const FEED_FILES: FeedFiles = {
+const FEED_PATHS: Record<FeedKey, string> = {
     leads: 'feeds/position-leads.yml',
-    radar: 'feeds/literature-radar.yml',
-    linkedin: ''
+    radar: 'feeds/literature-radar.yml'
 };
 
 /** The `tag_tones` of the engine's `defaults:`, each class with the hue name it wears. */
@@ -269,10 +282,11 @@ const pathShape = z.string();
 
 /**
  * The portfolio's half of the merged config. The `collections:` list gives the eight registry
- * paths, each registry being the first entry of the list under its fixed key (`REGISTRY_KEYS`). A
- * registry the list does not name falls back to the engine's path, so a config that has moved on in
- * one place still builds. The text catalog travels with it, since every reader words its findings
- * from config/text/findings.yml.
+ * paths, each registry being the first entry of the list under its fixed key (`REGISTRY_KEYS`),
+ * and the two YAML feeds' paths, under the keys `leads` and `radar`, which are no collection. A
+ * registry or feed the list does not name falls back to the engine's path, so a config that has
+ * moved on in one place still builds. The text catalog travels with it, since every reader words
+ * its findings from config/text/findings.yml.
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,
@@ -280,9 +294,12 @@ export function portfolioConfigFrom(
 ): PortfolioConfig {
     const path = (key: string, fallback: string): string =>
         readOr(pathShape, merged[key], fallback);
-    const collections = collectionFiles(merged.collections);
+    const listed = collectionFiles(merged.collections);
+    const collections = listed.filter((file) => !isFeedCollection(file.key));
     const registryFile = (name: RegistryName): string =>
         collections.find((file) => file.key === REGISTRY_KEYS[name])?.file ?? REGISTRY_FILES[name];
+    const feedFile = (key: FeedKey): string =>
+        listed.find((file) => file.key === key)?.file ?? FEED_PATHS[key];
 
     const registries: RegistryFiles = {
         venues: registryFile('venues'),
@@ -297,10 +314,11 @@ export function portfolioConfigFrom(
 
     const vocab: Vocabulary = { statuses: readOr(keysOfShape, merged.status_palette, []) };
 
+    // The LinkedIn folder is the hub's own, so a config that names none has no LinkedIn feed.
     const feeds: FeedFiles = {
-        leads: path('leads_file', FEED_FILES.leads),
-        radar: path('radar_file', FEED_FILES.radar),
-        linkedin: path('linkedin_dir', FEED_FILES.linkedin)
+        leads: feedFile('leads'),
+        radar: feedFile('radar'),
+        linkedin: path('linkedin_dir', '')
     };
 
     const scan = scanRules(merged.scan);
@@ -308,7 +326,7 @@ export function portfolioConfigFrom(
     return {
         scan,
         repositories: [],
-        ...(from === undefined ? {} : { unnamed: unnamedBy(from, collections) }),
+        ...(from === undefined ? {} : { unnamed: unnamedBy(from, listed) }),
         newProjectDir: newProjectDirs(merged.new_project_dir, scan, '', text).dirs,
         registries,
         collections,
@@ -320,7 +338,6 @@ export function portfolioConfigFrom(
         merged,
         portfolioDeck: readAs(filledTextShape, merged.portfolio_deck) ?? null,
         tagTones: tagTones(merged.defaults),
-        domains: readOr(keysOfShape, merged.domains, []),
         text
     };
 }
@@ -355,7 +372,10 @@ function unnamedBy(
     const registries = (Object.keys(REGISTRY_KEYS) as RegistryName[]).filter(
         (name) => !listed || !collections.some((file) => file.key === REGISTRY_KEYS[name])
     );
-    return { registries, collections: !listed, deck: !named(from, 'portfolio_deck') };
+    const feeds = FEED_COLLECTION_KEYS.filter(
+        (key) => !listed || !collections.some((file) => file.key === key)
+    );
+    return { registries, feeds, collections: !listed, deck: !named(from, 'portfolio_deck') };
 }
 
 /**
@@ -392,18 +412,22 @@ function deckProjects(manifests: RawManifest[]): DeckProject[] {
     });
 }
 
-/** The portfolio deck and every project deck read, with what was wrong in them. */
+/**
+ * The portfolio deck and every project deck read, with what was wrong in them. `domains` are the
+ * keys of the hub's domains registry, which a project's `domain:` is checked against.
+ */
 function decks(
     hub: string,
     name: string,
     manifests: RawManifest[],
-    config: PortfolioConfig
+    config: PortfolioConfig,
+    domains: string[]
 ): { decks: Record<Id, RawDeck>; findings: Finding[] } {
     const root = { key: name, dir: hub };
     const reader = createReader({
         hub: root,
         projects: deckProjects(manifests),
-        domains: config.domains,
+        domains,
         tagTones: config.tagTones,
         catalog: config.text
     });
@@ -472,12 +496,13 @@ export function buildPortfolioWithSchemas(
         config.text,
         config.unnamed?.collections ?? false
     );
-    const feeds = readFeeds(hub, config.feeds, config.text);
+    const feeds = readFeeds(hub, config.feeds, config.text, config.unnamed?.feeds);
     const career =
         config.career === null
             ? { career: null, findings: [] }
             : readCareer(hub, config.career, config.text);
-    const deck = decks(hub, root, manifests.manifests, config);
+    const domainKeys = registries.domains.entries.map((entry) => entry.key);
+    const deck = decks(hub, root, manifests.manifests, config, domainKeys);
 
     const raw: RawPortfolio = {
         manifests: manifests.manifests,
@@ -589,7 +614,7 @@ export function readOtherHub(engine: string, root: HubRoot): OtherHub {
     return {
         ...root,
         portfolio,
-        vocab: hubVocabOf(config),
+        vocab: hubVocabOf(root.dir, portfolio),
         findings: [
             ...findings,
             ...sourcesFindings(
@@ -606,24 +631,106 @@ export function readOtherHub(engine: string, root: HubRoot): OtherHub {
     };
 }
 
+/** The maps of a registry file's `entries:` list. */
+const entryMapsShape = rowsShape(mapShape);
+
+/** A hub file read as a map, or null when it cannot be read or holds no map. */
+function hubMap(hub: string, file: string, catalog: TextCatalog): Record<string, unknown> | null {
+    return readYamlMap(join(hub, file), catalog, [], () => null);
+}
+
+/** The options of the `themes` field of a registry file's schema, each as a key and a label. */
+function themeRows(file: Record<string, unknown> | null): HubVocab['venue_themes'] {
+    const themes = fieldsOf(file?.schema)?.find((field) => field.field === 'themes');
+    return optionKeys(themes).map((key) => ({ key, label: optionLabel(themes, key) }));
+}
+
 /**
- * The vocabulary of every hub of the workspace: the primary's from the config read for it (null
- * `primary` in a workspace with none) and each other hub's from its own settings.
+ * The domains one hub gives its own projects, read from its domains registry: each entry by key,
+ * with its `#rrggbb` colour and its title (its key when it has none). A file that does not read
+ * gives none; its reader reports why. The vocabulary (`hubVocabOf`) and the deck reader, which
+ * checks a project's `domain:` against these keys, both read the registry here.
+ */
+export function hubDomainsOf(hub: string, config: PortfolioConfig): HubVocab['domains'] {
+    const domains: HubVocab['domains'] = {};
+    const held = hubMap(hub, config.registries.domains, config.text);
+    for (const entry of readOr(entryMapsShape, held?.entries, [])) {
+        const key = str(entry.key);
+        if (key === undefined || key === '') continue;
+        const color = domainColorOf(entry);
+        const title = str(entry.title);
+        domains[key] = {
+            ...(color === undefined ? {} : { color }),
+            label: title === undefined || title === '' ? key : title
+        };
+    }
+    return domains;
+}
+
+/**
+ * The words one hub gives its own records, read from its own files: its domains (`hubDomainsOf`)
+ * and the `themes` options of its venue and dataset registries. A file that does not read gives
+ * none; its reader reports why.
+ */
+export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
+    return {
+        domains: hubDomainsOf(hub, config),
+        venue_themes: themeRows(hubMap(hub, config.registries.venues, config.text)),
+        data_themes: themeRows(hubMap(hub, config.registries.datasets, config.text))
+    };
+}
+
+/** The files `hubVocabOf` reads for one hub, absolute. */
+function hubVocabFiles(hub: string, config: PortfolioConfig): string[] {
+    const { domains, venues, datasets } = config.registries;
+    return [domains, venues, datasets].map((file) => join(hub, file));
+}
+
+/**
+ * The vocabulary of every hub of the workspace: the primary's (none in a workspace with no
+ * primary, whose name is then null) and each other hub's, each read from that hub's own files.
  */
 export function hubVocabs(
     primary: string | null,
-    primaryConfig: Record<string, unknown>,
+    primaryVocab: HubVocab | null,
     others: readonly { key: string; vocab: HubVocab }[]
 ): HubVocabs {
     const lists: Record<string, HubVocab> = {};
-    if (primary !== null) lists[primary] = hubVocabOf(primaryConfig);
+    if (primary !== null && primaryVocab !== null) lists[primary] = primaryVocab;
     for (const one of others) lists[one.key] = one.vocab;
     return { primary, lists };
 }
 
-/** The vocabulary of the hub at `root`, read from its own settings. */
-export function readHubVocab(engine: string, root: HubRoot): HubVocab {
-    return hubVocabOf(loadConfig(engine, { hub: root.dir }).config);
+/**
+ * The vocabulary of the hub at `root` and the files it was read from, by its own settings.
+ */
+function readHubVocab(engine: string, root: HubRoot): { vocab: HubVocab; files: string[] } {
+    const { config, from } = loadConfig(engine, { hub: root.dir });
+    const portfolio = portfolioConfigFrom(config, from);
+    return { vocab: hubVocabOf(root.dir, portfolio), files: hubVocabFiles(root.dir, portfolio) };
+}
+
+/**
+ * The vocabulary of a workspace and every file it was read from: the primary hub's, read from its
+ * folder `dir` by the settings `read` holds (none when the workspace has no primary folder), and
+ * each other hub's, read by its own settings.
+ */
+export function workspaceVocabs(
+    engine: string,
+    primary: { name: string | null; dir: string | null },
+    read: { config: Record<string, unknown>; from?: ReturnType<typeof loadConfig>['from'] },
+    others: readonly HubRoot[]
+): { vocabs: HubVocabs; files: string[] } {
+    const settings = portfolioConfigFrom(read.config, read.from);
+    const own = primary.dir === null ? null : hubVocabOf(primary.dir, settings);
+    const held = others.map((one) => ({ key: one.key, ...readHubVocab(engine, one) }));
+    return {
+        vocabs: hubVocabs(primary.name, own, held),
+        files: [
+            ...(primary.dir === null ? [] : hubVocabFiles(primary.dir, settings)),
+            ...held.flatMap((one) => one.files)
+        ]
+    };
 }
 
 /** The merged build and each hub's own snapshot, the primary's under its name (empty with none). */

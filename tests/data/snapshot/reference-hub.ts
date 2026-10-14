@@ -90,8 +90,10 @@ export const HUB_FILES: Record<string, string> = {
     'registries/data.yml': [
         'schema:',
         '  - { field: key, type: text, required: true, help: The dataset key. }',
+        '  - { field: themes, type: tags, options: [{ key: eeg, label: EEG }], help: The themes. }',
         'datasets:',
         '  - key: ds1',
+        '    themes: [eeg]',
         ''
     ].join('\n'),
     'funding/funding.yml': [
@@ -183,12 +185,12 @@ export const HUB_FILES: Record<string, string> = {
 
 /** The engine's configuration files the index reads, planted with the keys the rows name. */
 export const ENGINE_FILES: Record<string, string> = {
-    'behavior.yml': ['data_domains: [heart]', 'slurm:', '  resource: hpc', ''].join('\n'),
+    'behavior.yml': ['usage_refresh_min: 10', 'slurm:', '  resource: hpc', ''].join('\n'),
     'sources.yml': ['scan:', '  - { dir: projects/manuscripts }', ''].join('\n'),
     'catalogs/vocab.yml': [
-        'domains:',
-        '  heart: { color: "#e2374d", label: Heart }',
-        '  brain: { color: "#7c3aed", label: Brain }',
+        'palette:',
+        '  "#e2374d": c-red',
+        '  "#7c3aed": c-violet',
         'type_color: { active: "#ea580c", manuscript: "#0d9488" }',
         'type_order: [active, manuscript]',
         ''

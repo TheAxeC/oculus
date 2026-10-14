@@ -210,7 +210,7 @@ type Row = {
 const LINK = '[sec](docs/DATA.md#intro)\n';
 
 /** The hub's settings file, which makes the scratch root a hub. */
-const HUB = { '.oculus/config.yml': 'domains: {}\n' };
+const HUB = { '.oculus/config.yml': 'new_project_dir: {}\n' };
 
 const rows: Row[] = [
     {

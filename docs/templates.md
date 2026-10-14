@@ -57,7 +57,10 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # portfolio_deck: deck
 
 # The hub's data files, one entry per key. The keys data, venues, pillars, domains, funding,
-# people, organisations and resources are the registries; every other key is a card list.
+# people, organisations and resources are the registries, leads and radar the Position Leads and
+# Lit Watch feeds, and every other key is a card list. The domains registry holds each domain's
+# colour and label and which domains expect a dataset; the venues and data registries hold their
+# theme words as the options of their `themes` field.
 # collections:
 #   - { key: data,           file: "registries/data.yml" }
 #   - { key: venues,         file: "registries/venues.yml" }
@@ -73,12 +76,9 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 #   - { key: applications,   file: "applications/applications.yml" }
 #   - { key: joint-work,     file: "network/joint-work.yml" }
 #   - { key: tasks,          file: "tasks/tasks.yml" }
-
-# The Position Leads feed.
-# leads_file: feeds/position-leads.yml
-
-# The Lit Watch feed.
-# radar_file: feeds/literature-radar.yml
+#   - { key: literature,     file: "registries/literature.yml" }
+#   - { key: leads,          file: "feeds/position-leads.yml" }
+#   - { key: radar,          file: "feeds/literature-radar.yml" }
 
 # A website's publication list, compared with the manifests by the Audit view. None by default.
 # publications_file: path/to/publications.yml
@@ -109,26 +109,8 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # slurm:
 #   resource: ""
 
-# The domains whose active projects must list a dataset; the Audit reports one that does not.
-# data_domains: []
-
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}
-
-# The colour and card label of each domain, keyed by a domain of the domains registry.
-# domains: {}
-#   example:
-#   heart: { color: "#dc2626", label: "Heart" }
-
-# The theme words a venue's `themes:` may use, each with its label.
-# venue_themes: []
-#   example:
-#   - { key: clinical, label: "Clinical" }
-
-# The theme words a dataset's `themes:` may use, each with its label.
-# data_themes: []
-#   example:
-#   - { key: eeg, label: "EEG" }
 ```
 
 ## local.yml
@@ -284,6 +266,7 @@ type: idea              # active, published, submitted, in-prep, paused, idea, t
 #   do: ""
 #   after: YYYY-MM-DD   # hidden until this date
 # snooze: YYYY-MM-DD    # off the ticker until this date
+# subtasks: {}          # written by the card
 
 # --- Deposit and compute
 # code_availability:
@@ -420,6 +403,8 @@ bridge: 1
 
 Every data file has the same shape: an optional `title:` and `intro:`, a `schema:` that lists its fields, and the entries. The first field of the schema is the one an entry is found by. Each template ends with one entry, commented, holding every field; uncomment it and fill it in.
 
+A new entry is written into the file of the hub that lists its collection. With more than one hub listing the collection, Add asks which hub's file takes it, and the `new-entry` write names that hub by its `root`; an app's `new-entry` reaches the primary hub alone.
+
 A schema line takes these keys:
 
 ```yaml
@@ -427,8 +412,9 @@ A schema line takes these keys:
   type: text           # text, textarea, date, checkbox, select, tags, metalist, raw or records
   label: "Name"        # the label in the editor; the field name when absent
   required: true       # or required: { when: { role: present } }
-  options: [a, b]      # the values a select or tags field takes
+  options: [a, b]      # the values a select or tags field takes: a word, or { key: a, label: "A" }
   from: people         # takes its values from a registry, `projects`, or `vocab.<list>`
+  filter: true         # select, tags or text: a filter of the field beside the view's search
   when: { category: conference }   # the field is allowed only while this holds
   help: "One line."    # shown in the editor and on hover
   # records only: fields (the inner schema), open (more keys allowed), map (a map, not a list)
@@ -451,7 +437,7 @@ schema:
   - { field: format,         type: text,     help: "LaTeX class or template." }
   - { field: free,           type: text,     help: "Open-access and charge note." }
   - { field: wants,          type: textarea, help: "What it publishes." }
-  - { field: themes,         type: tags,     from: vocab.venue_themes, help: "Theme words of config.yml's venue_themes." }
+  - { field: themes,         type: tags,     options: [{ key: core-ml, label: "Core ML" }, { key: clinical, label: "Clinical" }], help: "Theme words: core-ml or clinical." }
   - { field: link,           type: text,     help: "Web address." }
   - { field: timing,         type: text,     help: "When submissions are open." }
   - { field: deadline,       type: date,     help: "Next submission deadline." }
@@ -472,7 +458,7 @@ entries:
 #    format: elsarticle
 #    free: "read-and-publish deal"
 #    wants: ""                    # what it publishes
-#    themes: [core-ml]            # words of config.yml's venue_themes
+#    themes: [core-ml]            # keys of the themes field's options
 #    link: https://example.org
 #    timing: "rolling"
 #    deadline: YYYY-MM-DD
@@ -492,7 +478,7 @@ schema:
   - { field: key,         type: text,     required: true, help: "The dataset's key, used by a project's datasets." }
   - { field: name,        type: text,     required: true, help: "Full name." }
   - { field: modality,    type: text,     help: "Kind of data." }
-  - { field: themes,      type: tags,     from: vocab.data_themes, help: "Theme words of config.yml's data_themes." }
+  - { field: themes,      type: tags,     options: [{ key: eeg, label: "EEG" }, { key: ecg, label: "ECG" }], help: "Theme words: eeg or ecg." }
   - { field: description, type: textarea, help: "What it holds and why it is used." }
   - { field: size,        type: text,     help: "How large it is." }
   - { field: hpc_path,    type: text,     help: "Where it lives." }
@@ -508,7 +494,7 @@ datasets:
 #  - key: my-eeg                  # required; what a project's datasets names
 #    name: "My EEG set"           # required
 #    modality: EEG
-#    themes: [eeg]                # words of config.yml's data_themes
+#    themes: [eeg]                # keys of the themes field's options
 #    description: ""
 #    size: "12 GB"
 #    hpc_path: ~/data/my-eeg
@@ -547,13 +533,17 @@ entries:
 ```yaml
 title: Domains
 schema:
-  - { field: key,   type: text,     required: true, help: "The domain's key, used by a project's domain." }
-  - { field: title, type: text,     required: true, help: "Name." }
-  - { field: blurb, type: textarea, help: "What it covers." }
+  - { field: key,              type: text,     required: true, help: "The domain's key, used by a project's domain." }
+  - { field: title,            type: text,     required: true, help: "Name, the label of a project card of the domain." }
+  - { field: blurb,            type: textarea, help: "What it covers." }
+  - { field: color,            type: text,     help: "The colour of a project card of the domain, as #rrggbb." }
+  - { field: expects_datasets, type: checkbox, help: "Whether an active project of the domain must list a dataset." }
 entries:
 #  - key: heart                   # required; what a project's domain names
 #    title: "Heart"               # required
 #    blurb: ""
+#    color: "#dc2626"             # #rrggbb; a neutral tone when absent
+#    expects_datasets: true       # the Audit reports an active project with no dataset
 ```
 
 ### registries/people.yml
@@ -830,6 +820,43 @@ entries:
 #    note: ""
 #    tags: []
 #    followup: ""
+```
+
+### registries/literature.yml
+
+The papers kept for reading and citing. Save to Literature on a card of the Literature search or Lit Watch writes an entry, and so does Add on the Literature view, which takes a DOI, an arXiv or PubMed id, or an address. Oculus makes the key, the citation key: the first author's surname, the year and the first word of the title.
+
+```yaml
+title: Literature
+intro: "Papers kept for reading and citing."
+schema:
+  - { field: key,      type: text,     required: true, help: "The citation key: the first author's surname, the year and the first word of the title." }
+  - { field: title,    type: text,     required: true, help: "The paper's title." }
+  - { field: authors,  type: tags,     filter: true, help: "The authors in order, one name per entry." }
+  - { field: venue,    type: text,     filter: true, help: "The journal or conference; a venue of the venues registry by this name opens from it." }
+  - { field: year,     type: text,     filter: true, help: "The year it appeared, as a whole number." }
+  - { field: doi,      type: text,     help: "The DOI, without the address in front of it." }
+  - { field: url,      type: text,     help: "The paper's address." }
+  - { field: abstract, type: textarea, help: "The abstract, as plain text." }
+  - { field: keywords, type: tags,     filter: true, help: "Words the paper is found by." }
+  - { field: projects, type: tags,     from: projects, filter: true, help: "The projects the paper is for." }
+  - { field: source,   type: select,   options: [search, lit-watch, hand], filter: true, help: "Where it came from: search, lit-watch or hand." }
+  - { field: added,    type: date,     help: "The day it was saved." }
+  - { field: note,     type: textarea, help: "Notes on the paper." }
+entries:
+#  - key: faes2024blockterm       # required; the citation key
+#    title: "Block-term tensor regression for ECoG"   # required
+#    authors: [Axel Faes, Marc M. Van Hulle]
+#    venue: Neurocomputing
+#    year: 2024
+#    doi: 10.1016/j.neucom.2024.127654
+#    url: https://doi.org/10.1016/j.neucom.2024.127654
+#    abstract: ""
+#    keywords: [tensor]
+#    projects: [my-project]
+#    source: search               # search, lit-watch or hand
+#    added: YYYY-MM-DD
+#    note: ""
 ```
 
 ### feeds/position-leads.yml

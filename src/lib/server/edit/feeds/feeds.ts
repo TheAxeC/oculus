@@ -11,17 +11,17 @@ import { basename, join, resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { parse } from 'yaml';
 import { z } from 'zod';
-import { localDate } from '../../data/helpers/dates.ts';
-import { isMap, scalar, slugOf } from '../../data/helpers/guards.ts';
-import { addressKey, radarText, sameTitle } from '../../data/prose/literature.ts';
-import { ideaStub } from '../../data/prose/linkedin-idea.ts';
-import { loadConfig } from '../../data/sources/config.ts';
-import { collectionSchema } from '../../data/snapshot/normalise.ts';
-import { fieldNames } from '../../data/snapshot/validate.ts';
-import { plain } from '../core/changes.ts';
-import { writeTextAtomic } from '../core/json.ts';
-import { words } from '../core/words.ts';
-import { mapShape, unchanged } from '../../data/shapes/shapes.ts';
+import { localDate } from '../../../data/helpers/dates.ts';
+import { isMap, scalar, slugOf } from '../../../data/helpers/guards.ts';
+import { addressKey, radarText, sameTitle } from '../../../data/prose/literature.ts';
+import { ideaStub } from '../../../data/prose/linkedin-idea.ts';
+import { loadConfig } from '../../../data/sources/config.ts';
+import { collectionSchema } from '../../../data/snapshot/normalise.ts';
+import { fieldNames } from '../../../data/snapshot/validate.ts';
+import { plain } from '../../core/changes.ts';
+import { writeTextAtomic } from '../../core/json.ts';
+import { words } from '../../core/words.ts';
+import { mapShape, unchanged } from '../../../data/shapes/shapes.ts';
 import {
     appendEntry,
     deleteEntry,
@@ -29,22 +29,22 @@ import {
     setEntryFields,
     startEntries,
     takeOutAppended
-} from './entry-edit/index.ts';
-import { replacedText } from './writes/config/config-checks.ts';
-import { saved, sharedRefusal, typeRefusals } from './writes/entries.ts';
-import { asFieldValue } from './yaml/yaml-edit.ts';
-import type { ChangeRecord } from '../core/changes.ts';
-import type { Refusal } from './yaml/yaml-edit.ts';
-import type { FieldValue } from './yaml/yaml-values.ts';
+} from '../entry-edit/index.ts';
+import { replacedText } from '../writes/config/config-checks.ts';
+import { saved, sharedRefusal, typeRefusals } from '../writes/entries.ts';
+import { asFieldValue } from '../yaml/yaml-edit.ts';
+import type { ChangeRecord } from '../../core/changes.ts';
+import type { Refusal } from '../yaml/yaml-edit.ts';
+import type { FieldValue } from '../yaml/yaml-values.ts';
 import type {
     FeedData,
     FeedKind,
     FeedsPayload,
     PortfolioConfig,
     SchemaField
-} from '../../data/model/index.ts';
-import type { WriteOutcome } from './writes.ts';
-import { inside } from '../core/paths.ts';
+} from '../../../data/model/index.ts';
+import type { WriteOutcome } from '../writes.ts';
+import { inside } from '../../core/paths.ts';
 
 export type FeedRead = FeedData & { kind: FeedKind; file: string };
 

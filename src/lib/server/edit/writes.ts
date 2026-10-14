@@ -18,14 +18,15 @@
 // registry keys its entities by it.
 //
 // The work is in the modules below it, one concern each: writes/manifest.ts for a project.yml and a
-// new idea, writes/entries.ts for a collection file, writes/subtasks.ts for a subtask line and a
-// career host, writes/bodies.ts for the body parsers (one per kind of write), writes/file-undo.ts
-// for taking back a file operation, and the writers of the engine's own configuration files, in
-// writes/config/: deck.ts for a deck group's slides, audit-mute.ts for the audit's mute list,
-// rail.ts for the rail list, folders.ts for the open workspace's folders, config-key.ts for one
-// option of a tracked config file and config-value.ts for one list or family of one. What an
-// importer of this module needs of them is re-exported here, so an importer may name this module or
-// the one that holds the function.
+// new idea, feeds/feed-route.ts for the feed writes and Save to Literature (feeds/feeds.ts and
+// feeds/literature.ts write them), writes/entries.ts for a collection file, writes/subtasks.ts for
+// a subtask line and a career host, writes/bodies.ts for the body parsers (one per kind of write),
+// writes/file-undo.ts for taking back a file operation, and the writers of the engine's own
+// configuration files, in writes/config/: deck.ts for a deck group's slides, audit-mute.ts for the
+// audit's mute list, rail.ts for the rail list, folders.ts for the open workspace's folders,
+// config-key.ts for one option of a tracked config file and config-value.ts for one list or family
+// of one. What an importer of this module needs of them is re-exported here, so an importer may
+// name this module or the one that holds the function.
 
 import { json } from '@sveltejs/kit';
 import { join, resolve } from 'node:path';
@@ -73,29 +74,14 @@ import {
     writeSubtask,
     writeSubtaskAdd
 } from './writes/subtasks.ts';
-import {
-    addLead,
-    addRadarEntry,
-    addLinkedinIdea,
-    radarBucketKeys,
-    deleteFeedEntry,
-    isFeedKind,
-    markLinkedinPosted,
-    writeFeedField
-} from './feeds.ts';
+import { feedRoute } from './feeds/feed-route.ts';
 import {
     deckEditWrite,
     deleteEntryWrite,
     entryWrite,
-    feedDeleteWrite,
     careerWrite,
-    feedFieldWrite,
     hostWrite,
     manifestWrite,
-    leadAddWrite,
-    radarAddWrite,
-    linkedinIdeaWrite,
-    linkedinPostWrite,
     newEntry,
     newIdea,
     reorderWrite,
@@ -532,8 +518,24 @@ export async function handleWrite(
 
     const fresh = newEntry(body);
     if (fresh !== null) {
-        const home = homeOf(into);
+        const home = fresh.root === undefined ? homeOf(into) : routedRoot(into, fresh.root, app);
+        if (home === null && fresh.root !== undefined) {
+            const error = words(into.config.text, 'server.workspace.no_hub_named', fresh.root);
+            return json({ error }, { status: 404 });
+        }
         if (home === null) return noHub(into);
+        if (
+            fresh.root !== undefined &&
+            !home.config.collections.some((one) => one.key === fresh.collection)
+        ) {
+            const error = words(
+                into.config.text,
+                'server.write_route.no_collection_in_hub',
+                fresh.root,
+                fresh.collection
+            );
+            return json({ error }, { status: 404 });
+        }
         const outcome = createEntry(
             home.hub,
             home.config,
@@ -596,127 +598,10 @@ export async function handleWrite(
         return answer(outcome, 'delete-entry', into, undefined, app ?? undefined);
     }
 
-    const feedField = feedFieldWrite(body);
-    if (feedField !== null) {
-        if (!isFeedKind(feedField.feed)) {
-            const error = words(
-                into.config.text,
-                'server.write_route.unknown_feed',
-                feedField.feed
-            );
-            return json({ error }, { status: 400 });
-        }
-        const at = routedRoot(into, feedField.root, app);
-        const outcome =
-            at === null
-                ? NOT_FOUND
-                : writeFeedField(
-                      at.hub,
-                      at.config,
-                      feedField.feed,
-                      feedField.id,
-                      feedField.field,
-                      feedField.value
-                  );
-        if (!outcome.found) {
-            const error = words(
-                into.config.text,
-                'server.write_route.no_entry',
-                feedField.id,
-                feedField.feed
-            );
-            return json({ error }, { status: 404 });
-        }
-        return answer(outcome, 'feed-field', into, undefined, app ?? undefined);
-    }
-
-    const feedDelete = feedDeleteWrite(body);
-    if (feedDelete !== null) {
-        if (!isFeedKind(feedDelete.feed)) {
-            const error = words(
-                into.config.text,
-                'server.write_route.unknown_feed',
-                feedDelete.feed
-            );
-            return json({ error }, { status: 400 });
-        }
-        const at = routedRoot(into, feedDelete.root, app);
-        const outcome =
-            at === null
-                ? NOT_FOUND
-                : deleteFeedEntry(at.hub, at.config, feedDelete.feed, feedDelete.id);
-        if (!outcome.found) {
-            const error = words(
-                into.config.text,
-                'server.write_route.no_entry',
-                feedDelete.id,
-                feedDelete.feed
-            );
-            return json({ error }, { status: 404 });
-        }
-        return answer(outcome, 'feed-delete', into, undefined, app ?? undefined);
-    }
-
-    const lead = leadAddWrite(body);
-    if (lead !== null) {
-        const home = homeOf(into);
-        if (home === null) return noHub(into);
-        const outcome = addLead(home.hub, home.config, lead.fields);
-        if (!outcome.found) {
-            const error = words(into.config.text, 'server.write_route.no_leads_feed');
-            return json({ error }, { status: 404 });
-        }
-        return answer(outcome, 'lead-add', into, undefined, app ?? undefined);
-    }
-
-    const radar = radarAddWrite(body);
-    if (radar !== null) {
-        const home = homeOf(into);
-        if (home === null) return noHub(into);
-        const outcome = addRadarEntry(
-            home.hub,
-            home.config,
-            radar.fields,
-            radarBucketKeys(into.engine)
-        );
-        if (!outcome.found) {
-            return json(
-                { error: words(into.config.text, 'server.write_route.no_radar_file') },
-                { status: 404 }
-            );
-        }
-        return answer(outcome, 'radar-add', into, undefined, app ?? undefined);
-    }
-
-    const linkedinIdea = linkedinIdeaWrite(body);
-    if (linkedinIdea !== null) {
-        const home = homeOf(into);
-        if (home === null) return noHub(into);
-        const outcome = addLinkedinIdea(
-            home.hub,
-            home.config,
-            linkedinIdea.title,
-            linkedinIdea.category
-        );
-        if (!outcome.found)
-            return json(
-                { error: words(into.config.text, 'server.write_route.no_linkedin_folder') },
-                { status: 404 }
-            );
-        return answer(outcome, 'linkedin-idea', into, undefined, app ?? undefined);
-    }
-
-    const linkedinPost = linkedinPostWrite(body);
-    if (linkedinPost !== null) {
-        const at = routedRoot(into, linkedinPost.root, app);
-        const outcome =
-            at === null ? NOT_FOUND : markLinkedinPosted(at.hub, at.config, linkedinPost.file);
-        if (!outcome.found)
-            return json(
-                { error: words(into.config.text, 'server.write_route.no_idea_file') },
-                { status: 404 }
-            );
-        return answer(outcome, 'linkedin-post', into, undefined, app ?? undefined);
+    const fed = feedRoute(body, into, app);
+    if (fed !== null) {
+        if (fed instanceof Response) return fed;
+        return answer(fed.outcome, fed.kind, into, undefined, app ?? undefined);
     }
 
     const deckEdit = deckEditWrite(body);

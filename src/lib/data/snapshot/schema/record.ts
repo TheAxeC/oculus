@@ -5,9 +5,9 @@
 // Each type accepts what its reader accepts. A `text` field takes a text and the integer a year is
 // written as, a `date` a day written YYYY-MM-DD, a `checkbox` a flag, `tags` a list, `metalist` a
 // list of label and value maps, `raw` anything. Every field also accepts null, which is what a bare
-// `key:` reads as. A `select` takes its `options` and the keys of its `from` sources; a `text`
-// takes its `from` keys as suggestions only. A record allows no key it does not declare unless it
-// is `open`.
+// `key:` reads as. A `select` takes the keys of its `options` and of its `from` sources, a `tags`
+// field each of them as an item; a `text` takes its `from` keys as suggestions only. A record
+// allows no key it does not declare unless it is `open`.
 //
 // A `records` field holds a list of records, one record, or with `map: true` a map from a name to
 // one record (the groups of a deck). A condition (`when`, `required: { when }`) becomes an `if`
@@ -17,7 +17,13 @@
 import { ISO_DATE } from '../../helpers/dates.ts';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
 import { withoutPath } from '../../helpers/files/yaml/collection-text.ts';
-import type { FromPicked, SchemaField, When } from '../../model/index.ts';
+import {
+    optionKeys,
+    optionLabel,
+    type FromPicked,
+    type SchemaField,
+    type When
+} from '../../model/index.ts';
 import { TEXT_TYPES, type JsonSchema } from './json.ts';
 
 /**
@@ -102,6 +108,26 @@ const METALIST_ROW: JsonSchema = {
     additionalProperties: false
 };
 
+/**
+ * An enum of the words a field takes, with the label of each word its options give it as the
+ * editor's completion text when any option is a `{ key, label }` row.
+ */
+function wordsEnum(field: SchemaField, words: unknown[]): JsonSchema {
+    const schema: JsonSchema = { enum: words };
+    const rows = (field.options ?? []).some((one) => typeof one !== 'string');
+    if (rows) {
+        schema.enumDescriptions = words.map((word) =>
+            typeof word === 'string' ? optionLabel(field, word) : ''
+        );
+    }
+    return schema;
+}
+
+/** The words of a tags field's enum, each once, or null alone when it has none. */
+function tagWords(words: string[]): (string | null)[] {
+    return words.length > 0 ? [...new Set(words)] : [null];
+}
+
 /** The schema of one field's value, without its title and description. */
 function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
     const from = listed(field, ctx);
@@ -114,23 +140,28 @@ function valueSchema(field: SchemaField, ctx: Context): JsonSchema {
             return {};
         case 'metalist':
             return { type: ['array', 'null'], items: METALIST_ROW };
-        case 'tags':
+        case 'tags': {
             // A list of keys is exactly a list; free words may be written as one text as well. A
             // source with no key yet leaves null alone, which no item equals, since ajv takes no
-            // empty enum.
+            // empty enum. A field with options and no source takes the options' keys alone.
+            const own = optionKeys(field);
+            if (from === undefined && own.length > 0) {
+                return { type: ['array', 'null'], items: wordsEnum(field, own) };
+            }
             return from === undefined || from.unread
                 ? { type: ['array', 'string', 'null'], items: { type: ['string', 'number'] } }
                 : {
                       type: ['array', 'null'],
                       items: {
-                          enum: from.words.length > 0 ? from.words : [null],
+                          ...wordsEnum(field, tagWords([...own, ...from.words])),
                           'x-from': from.sources.join(' ')
                       }
                   };
+        }
         case 'select': {
-            const words = [...(field.options ?? []), ...(from?.words ?? [])];
+            const words = [...optionKeys(field), ...(from?.words ?? [])];
             if (isPicked(field.from) || from?.unread === true) return { type: ['string', 'null'] };
-            const schema: JsonSchema = { enum: [...new Set(words), null] };
+            const schema = wordsEnum(field, [...new Set(words), null]);
             if (from !== undefined) schema['x-from'] = from.sources.join(' ');
             return schema;
         }
@@ -252,8 +283,8 @@ const SCHEMA_FIELD: JsonSchema = {
         label: { type: 'string', description: 'The words the form draws over the field.' },
         options: {
             type: 'array',
-            items: { type: 'string' },
-            description: 'The allowed values of a select.'
+            description:
+                'The allowed values of a select or a tags field, each a word or a { key, label } row.'
         },
         from: {
             anyOf: [
@@ -294,6 +325,11 @@ const SCHEMA_FIELD: JsonSchema = {
             type: 'array',
             items: { $ref: '#/definitions/field' },
             description: 'The fields of each record of a records field.'
+        },
+        filter: {
+            type: 'boolean',
+            description:
+                'Whether the collection view draws a filter of the field beside its search.'
         }
     },
     required: ['field', 'type'],

@@ -1,12 +1,12 @@
 In flight (1 of 6 slots in use):
-- D73 (the Literature view, the Files view showing hidden and ignored files by default, the domain, theme and feed settings moved to their files by open item 94, and the fourth part from open items 97 and 100): review over repair round 1 running.
+- D77 (the Sessions view and the title bar, open items 103 to 108 and 110): being prepared; its diagnosis of the transcript flicker is done and its brief written.
 
-Queued, in order (3 steps):
-- D77 (the Sessions view and the title bar, open items 103 to 108 and 110): being prepared.
-- Q72 (the architecture re-read): after D73 and D77, so it reads the code of D73, D74, D76 and D77.
+Queued, in order (2 steps):
+- Q72 (the architecture re-read): after D77, so it reads the code of D73, D74, D76 and D77.
 - O33 (oculus in its own repository; inline): after Q72; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project).
 
 Landed, newest first:
+- D73 (the Literature view, hidden and ignored files shown, the domain, theme and feed settings in their files, Copy on code blocks and the Help tabs), 2026-10-14, the landing commit.
 - D76 (notes like Obsidian), 2026-10-14, 8e41021f3.
 - D74 (the shell and source-control fixes), 2026-10-13, f92a0abe6.
 - D72 (collection entries as records of their own), 2026-10-13, f3c588783.

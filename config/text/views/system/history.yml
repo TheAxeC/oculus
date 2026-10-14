@@ -47,6 +47,7 @@ text:
         kind_feed_delete: feed entry removed
         kind_lead_add: lead added
         kind_radar_add: Lit Watch entry added
+        kind_literature_save: paper saved to Literature
         kind_linkedin_idea: LinkedIn idea
         kind_linkedin_post: LinkedIn post
         kind_deck: deck
@@ -67,6 +68,7 @@ text:
         undid_new_entry: entry removed
         undid_lead_add: lead removed
         undid_radar_add: Lit Watch entry removed
+        undid_literature_save: paper removed from Literature
         undid_subtask_add: subtask removed
         undid_reorder: order put back
         undid_field: '{0} set back'

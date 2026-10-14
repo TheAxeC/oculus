@@ -1,8 +1,9 @@
 <script module lang="ts">
     // Layer 3, view registration. The generic collection component owns each configured
     // collection's place in the catalogue, which is the rail page it sits on: the Academic Life
-    // page's six, and the References page's for Statements, People, Organisations, Resources and a
-    // collection sources.yml adds that no placement names.
+    // page's six, the Incoming page's Literature after the Literature search, and the References
+    // page's for Statements, People, Organisations, Resources and a collection sources.yml adds
+    // that no placement names.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const placements: Record<string, { group: string; order: number }> = {
@@ -12,6 +13,7 @@
         applications: { group: 'academic', order: 3 },
         'joint-work': { group: 'academic', order: 4 },
         tasks: { group: 'academic', order: 5 },
+        literature: { group: 'incoming', order: 6 },
         statements: { group: 'references', order: 3 },
         people: { group: 'references', order: 4 },
         organisations: { group: 'references', order: 5 },
@@ -54,7 +56,12 @@
     // state/boards/collection.ts.
     //
     // The funding collection carries one thing of its own, its file joined to the projects rather
-    // than a second view: the card of the projects no scheme covers.
+    // than a second view: the card of the projects no scheme covers. The Literature collection
+    // carries three: Add asks a DOI or an address and looks the paper up, its cards copy their
+    // BibTeX, and the toolbar copies the BibTeX of the entries shown.
+    //
+    // A schema field marked `filter: true` is a filter in the bar (FieldFilters.svelte), its picks
+    // and ranges the tab's instance state beside the search.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Chip from '$lib/ui/controls/Chip.svelte';
@@ -65,10 +72,12 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import EntryCard from '../../shared/forms/entry/EntryCard.svelte';
-    import { taskCardActions } from '../../shared/forms/entry/task-card';
+    import { taskCardActions } from '$lib/views/shared/forms/entry/task-card';
     import AddAsk from '../../shared/forms/entry/AddAsk.svelte';
+    import FieldFilters from './FieldFilters.svelte';
+    import { copyBibtex, literatureCardActions } from '$lib/views/shared/card/feed/literature-card';
     import AddButton from '../../shared/forms/AddButton.svelte';
-    import { collectionAsk, type Ask } from '../../shared/forms/entry/entry-add';
+    import { collectionAsk, literatureAsk, type Ask } from '../../shared/forms/entry/entry-add';
     import { blockedBy } from '../../shared/forms/entry-file';
     import Intro from '../../shared/prose/Intro.svelte';
     import Reveal from '../../shared/card/Reveal.svelte';
@@ -78,6 +87,7 @@
         FUNDING,
         NO_FUNDING,
         applyCollectionFilters,
+        fieldFilters,
         fileOrder,
         identityFaults,
         identityValue,
@@ -87,9 +97,11 @@
         pinnedFirst,
         statusFacets,
         unfundedBy,
+        type Bounds,
         type CollectionState,
         type Entry
     } from '$lib/state/boards/collection';
+    import { LITERATURE } from '$lib/state/feeds/literature/saved';
     import { pageView } from '$lib/state/forms/page-entry';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { lookup, t } from '$lib/state/shared/words/text';
@@ -108,7 +120,7 @@
         selectors: { collectionOf, collectionsOfKey, configMap, projects },
         source: { unsavedFile },
         ui: { cardMoveRequested, instanceState, setInstanceState },
-        writes: { reorderEntries }
+        writes: { reorderEntries, writeToken }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -146,6 +158,12 @@
         )
     );
     const facets = $derived(statusFacets(entries));
+    const filters = $derived(
+        fieldFilters(
+            parts.map((part) => part.schema),
+            entries
+        )
+    );
 
     const lifecycle = $derived(offeredStatuses(schema, facets));
 
@@ -189,6 +207,32 @@
                 ? shownNow.filter((other) => other !== value)
                 : [...shownNow, value]
         });
+    }
+
+    /** Press or release one value of a schema filter. */
+    function pick(field: string, value: string): void {
+        const now = held.picked[field] ?? [];
+        const next = now.includes(value) ? now.filter((one) => one !== value) : [...now, value];
+        write({ picked: { ...held.picked, [field]: next } });
+    }
+
+    /** The bounds of one range filter as typed. */
+    function bound(field: string, bounds: Bounds): void {
+        write({ range: { ...held.range, [field]: bounds } });
+    }
+
+    /** The Add of this collection: a DOI or an address for Literature, the key for any other. */
+    function addAsk(): Ask {
+        const plain = (chosen?: string): Ask => collectionAsk(client, key, schema, title(), chosen);
+        return key === LITERATURE ? literatureAsk(client, plain) : plain();
+    }
+
+    /** Copy the BibTeX of the entries the search and the filters leave, in the view's order. */
+    async function copyShown(): Promise<void> {
+        said = await copyBibtex(
+            shown.map((one) => one.entry),
+            writeToken()
+        );
     }
 
     /** Draw one entry's long text whole, or cut it to its clamp again. */
@@ -280,7 +324,16 @@
 {#snippet tools()}
     <Toolbar label={t('collection.toolbar')} overflow>
         {#if schema !== undefined}
-            <AddButton onclick={() => (asking = collectionAsk(client, key, schema, title()))} />
+            <AddButton onclick={() => (asking = addAsk())} />
+        {/if}
+        {#if key === LITERATURE}
+            <ToolButton
+                label={t('literature.bibtex_shown')}
+                title={t('literature.bibtex_shown_tip')}
+                glyph="copy"
+                disabled={shown.length === 0}
+                onclick={copyShown}
+            />
         {/if}
         {#if source !== null}
             <SourceButton file={source} />
@@ -314,6 +367,13 @@
                 />
             {/if}
         {/if}
+        <FieldFilters
+            {filters}
+            picked={held.picked}
+            range={held.range}
+            onpick={pick}
+            onrange={bound}
+        />
     </Toolbar>
 {/snippet}
 
@@ -354,7 +414,11 @@
                             more={held.more.includes(entry.id)}
                             onmore={() => toggleMore(entry.id)}
                             onpage={() => openPage(entry)}
-                            extra={taskCardActions(key, entry, configMap(), startAgent)}
+                            extra={taskCardActions(key, entry, configMap(), startAgent).concat(
+                                literatureCardActions(key, entry, writeToken, (words) => {
+                                    said = words;
+                                })
+                            )}
                         />
                     </Reveal>
                 {/each}
