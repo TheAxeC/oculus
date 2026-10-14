@@ -32,8 +32,11 @@ dispatch:   # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/D76
   base: f4ed47774   # tree 69b944eca (D74 before its round) with the hub's .oculus/config.yml, on 0bd9d483d
   launched: 2026-10-13
+  paused: "2026-10-13, at Axel's word, held at a safe point; resumed 2026-10-14 at Axel's word; reported 2026-10-14"
+  builder_usage: "up to the pause: 160,847 tokens, 787 tool uses, 143.2 min; after the resume: 273,461 tokens, 176 tool uses, 50.9 min"
   report: agents/reviews/D76-report.md
-  round: 0
+  reviewer_report: "agents/reviews/D76-refuter.md (a92c8631fdab55e6c, claude-opus-5-5, 76,065 tokens, 90 tool uses, 17.5 min)"
+  round: 1   # sent 2026-10-14, agents/briefs/D76-round1.md
   landing: not-started
   brief_check: "agents/reviews/D76-brief-check.md (a258af2188e2127e1, claude-opus-5-5, 304,957 tokens, 108 tool uses, 15.5 min)"
   shared_paths: "with D74 (in flight, repair round 1): D76 starts from D74's built tree 69b944eca, so the files both write (paths.ts, Files.svelte, fs.svelte.ts, fs-transport.ts, behavior.yml, files.yml, views.ts, views/shared/explorer/, views/sources/source/, payloads.ts, data/model/, server/root/watch/, config-folder.test.ts, HELP.md, DESIGN.md, docs/apps.md, docs/palette.md, docs/diagrams/) differ only by D74's round; merged at D76's landing"

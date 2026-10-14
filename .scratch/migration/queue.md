@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- D76 (notes like Obsidian): building, from a commit of D74's built work (open item 93 (a)).
+- D76 (notes like Obsidian): repair round 1 sent, from its review (Rename on a link, the .oculus search scope, tag search and multiline, the first note's name rule, a real sanitiser run, embeds as valid HTML, comment wraps).
 
 Queued, in order (3 steps):
 - D73 (the Literature view, the Files view showing hidden and ignored files by default, and the domain, theme and feed settings moved to their files by open item 94): next; waits for the documents and templates rewrite (open item 95), started at Axel's greenlight and agreed by him, then its brief check's findings are closed and the fourth part of open item 96 added.
