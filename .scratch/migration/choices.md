@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z880 (2026-10-14, Axel's ruling on open item 99, the orchestrator, automode): the folder the demo hub moves to
+
+- Chosen: `tests/fixtures/hubs/demo/`, inside the folder that already holds the hub fixtures' helpers (`real-hub.ts`, `workspace.ts`, `deposit-world.ts`), keeping the name every comment and the README use.
+- Not chosen: `tests/fixtures/hub/`, the name first offered, which would sit beside `tests/fixtures/hubs/` and read as a second home for the same thing; a new name such as `sample`, which every comment would then have to learn. No option was the lazy one.
+
+Where it applies: D73, in its brief. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z879 (2026-10-13, D76's preparation, the orchestrator, automode): the names and folders of pasted images, of a missing note a link makes, and of the head's New Note, in D76
 
 - Chosen: a pasted image is named `Pasted image <yyyymmddhhmmss>.<ext>` (Obsidian's name), a dropped file keeps its own name, both into `attachments/` at the top of the hub's notes folder with ` 1`, ` 2` on a taken name; a press on a link to a missing note makes it at the top of the linking note's hub's notes folder, or in the folder its `[[folder/name]]` names; the Notes section head's New Note writes into the primary hub, or the first hub of the workspace when none is primary, as the Memories wall adds to the primary hub.
