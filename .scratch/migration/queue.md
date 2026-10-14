@@ -1,8 +1,9 @@
 In flight (1 of 6 slots in use):
-- D73 (the Literature view, the Files view showing hidden and ignored files by default, the domain, theme and feed settings moved to their files by open item 94, and the fourth part from open items 97 and 100): repair round 1, 17 items from its review, four closed by choices (the Literature Add asks the hub, `title` not required, an option row's extra key a finding, untitled papers never the same).
+- D73 (the Literature view, the Files view showing hidden and ignored files by default, the domain, theme and feed settings moved to their files by open item 94, and the fourth part from open items 97 and 100): review over repair round 1 running.
 
-Queued, in order (2 steps):
-- Q72 (the architecture re-read): after D73, so it reads the code of D73, D74 and D76.
+Queued, in order (3 steps):
+- D77 (the Sessions view and the title bar, open items 103 to 108 and 110): being prepared.
+- Q72 (the architecture re-read): after D73 and D77, so it reads the code of D73, D74, D76 and D77.
 - O33 (oculus in its own repository; inline): after Q72; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project).
 
 Landed, newest first:

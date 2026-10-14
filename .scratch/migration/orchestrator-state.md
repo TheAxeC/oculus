@@ -32,9 +32,9 @@ dispatch:   # steps in flight, up to six (Z632)
   worktree: .agents/worktrees/D73
   base: 233a2e2d0   # the preparation commit, main after D76 landed; base copy .agents/worktrees/D73-base with unused-exports.txt
   launched: 2026-10-14
-  builder_usage: "227,155 tokens, 820 tool uses, 152.7 min (claude-opus-5-5)"
+  builder_usage: "227,155 tokens, 820 tool uses, 152.7 min; round 1: 137,894 tokens, 306 tool uses, 66.9 min (claude-opus-5-5)"
   report: agents/reviews/D73-report.md
-  reviewer_report: "agents/reviews/D73-refuter.md (ad6b64b3f5ddc2cac, claude-opus-5-5, 288,307 tokens, 179 tool uses, 39.3 min)"
+  reviewer_report: "agents/reviews/D73-refuter.md (ad6b64b3f5ddc2cac, claude-opus-5-5, 288,307 tokens, 179 tool uses, 39.3 min); over round 1: running: a2a35873b46a38dbf (claude-opus-5-5)"
   round: 1   # sent 2026-10-14, agents/briefs/D73-round1.md; snapshot .agents/worktrees/D73-round-1 with files.txt
   landing: not-started
   brief_check: "agents/reviews/D73-brief-check.md (a70d783a1699be8de, claude-opus-5-5, 239,040 tokens, 92 tool uses, 16.1 min)"
@@ -166,7 +166,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- Open item 109 (2026-10-14, Axel asked for a proposal): the research-cockpit skill, in O33 part (2). The proposal: (1) each update task is a Markdown file of the hub, `.oculus/tasks/<kind>.md` for `litwatch`, `scout`, `inbox` and `linkedin`, holding the whole instruction: the skill's section for that kind merged with `litwatch-runbook.md` (into `litwatch.md`) and `position-leads-readme.md` (into `scout.md`); (2) oculus starts a task as `claude '<one fixed sentence>'`, the sentence from oculus's text catalogue telling the session to do the task its hub file describes, in place of `/research-cockpit <kind>` (`server/machine/runs/schedules/task.ts:45`), and the tray offers only the kinds whose file the primary hub holds, as a hub offers only the collections it names (open item 100); (3) `docs/templates.md` holds a template of each of the four files, written for any person, so another hub starts from them; (4) the texts that say `run /research-cockpit <kind>` (`config/text/views/boards/focus.yml:64-66`, `feeds/leads.yml:15`, `feeds/linkedin.yml:23`, `feeds/radar.yml:9,19,26`, `config/behavior.yml:43-45`, `config/sources.yml:46`, `config/catalogs/options.yml:1330`, `HELP.md:72,466`, `DESIGN.md:689`) name the tray's task instead; (5) the skill's other modes (sync, audit, build, open, present, serve, help, update) serve the cockpit, which O33 part (2) archives, and go with it; then the `research-cockpit` folder is deleted; (6) `remove-unicode` deleted: its rules already stand in the hub `CLAUDE.md` "Writing docs" section, whose three lines that name the skill (39, 41, 47) and `README.md:22,26` are reworded to state the rule alone; (7) `project-new` deleted: oculus's make-a-project control (open item 101) writes the manifest, and its other output is empty folders that git does not keep; `README.md:22` and `docs/HPC-UTwente-howto.md:183` reworded; (8) `project-cleanup` kept, against Axel's note: it is the procedure that brings one project's README, manifest and `code/` deposit to the hub standard, which nothing in oculus does, and its pointer to `tools/cockpit/DESIGN.md` moves to the hub's own README standard when O33 archives the cockpit. Options for (8): (a) keep it as above; (b) delete it, its standard written into the hub `CLAUDE.md` alone. Recommendation (a). Every deletion is listed path by path for Axel's yes before it is made, as O29 ruled. Also Axel's: the folder name `.oculus/tasks/`.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 

@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open items 103 to 108 and 110, and D77 (2026-10-14): Axel's notes on the Sessions view and the title bar ruled (a) or agreed, as one new step, D77, by his word ("I would argue for a new step"); Z888 names the commit message's account key `commit_message_account`; booked in plan.md Rulings, D77's line and choices.md. Open item 109 stays open with the orchestrator's proposal.
 - Z884, Z885, Z886, Z887 (2026-10-14): D73's review findings that needed a choice: the Literature Add asks the hub (open item 100), `title` not required, an option row's extra key a finding with the row kept, untitled papers never the same; booked in plan.md Rulings and choices.md, sent in D73's repair round 1.
 - Z881, Z882, Z883 (2026-10-14): D73's brief-check findings closed in its brief; the apps' `hubs.lists` kept, the card trees kept as they are, both Literature views pinned on Incoming; booked in plan.md Rulings and choices.md.
 - Open item 102 (2026-10-14): `jsdom` and a DOM test project for the sanitiser rows (a), at D76's landing; booked in plan.md Rulings.
