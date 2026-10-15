@@ -9,6 +9,7 @@
     // is drawn under it as an `<optgroup>`, after the choices given none.
 
     import { choiceGroups, isStray, type SelectChoice } from './choices';
+    import '../../theme/field.css';
 
     type Props = {
         value: string;
@@ -41,7 +42,7 @@
     const drawn = $derived(choiceGroups(choices));
 </script>
 
-<select class="select" aria-label={label} {disabled} {title} onchange={picked}>
+<select class="select oculus-field" aria-label={label} {disabled} {title} onchange={picked}>
     {#if empty !== undefined}
         <option value="" selected={value === ''}>{empty}</option>
     {/if}
@@ -63,32 +64,5 @@
 <style>
     .select {
         max-width: 100%;
-        min-width: 0;
-        border: 1px solid var(--line);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-md);
-        line-height: calc(var(--button-line) * var(--text-scale, 1));
-        padding: 4px 6px;
-    }
-
-    .select:disabled {
-        color: var(--muted-txt, var(--muted));
-        cursor: not-allowed;
-    }
-
-    .select:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
-    }
-
-    :global(body.rice) .select {
-        border: 0;
-        border-bottom: 1px solid var(--line);
-        border-radius: 0;
-        background: none;
-        font-family: var(--font-mono);
     }
 </style>

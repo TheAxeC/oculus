@@ -34,8 +34,9 @@
     // reads the diff again. The layout, the toggle and the folded files are kept as the pane's own
     // state. Each file is views/sources/repositories/diff/DiffSection.svelte under a header row
     // (diff/FileHeader.svelte) that folds it when the diff holds several, Monaco's diff editor over
-    // the file's two versions, which the server answers whole. For a file's own diff each hunk can
-    // be staged, unstaged or reverted whole or for the lines the selections choose in it, the patch
+    // the file's two versions, which the server answers whole, with git's line changes for a file
+    // it read a git diff of; the editor draws those changes. For a file's own diff each hunk can be
+    // staged, unstaged or reverted whole or for the lines the selections choose in it, the patch
     // cut by state/sources/repositories/diff/diff-patch.ts and applied by git
     // (diff/hunk-acts.svelte.ts). A revert throws work away, so it asks first.
     //
@@ -134,7 +135,7 @@
     let taken = $state('');
     /** Each file's hunk count once its editor has drawn it, null before. */
     let counts: (number | null)[] = $state([]);
-    /** Each file's line changes, as its editor last answered them. */
+    /** Each file's line changes as its editor last answered them: git's where it drew them. */
     let changes: LineChange[][] = [];
     /** The change the pane is at, and the way it was going when its file was not drawn yet. */
     let at: ChangeAt | null = $state(null);

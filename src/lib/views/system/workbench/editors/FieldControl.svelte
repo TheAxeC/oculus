@@ -20,7 +20,7 @@
 
     import Checkbox from '$lib/ui/forms/Checkbox.svelte';
     import GlyphSelect from '$lib/ui/forms/choice/GlyphSelect.svelte';
-    import HueSelect from '$lib/ui/forms/choice/drawn/HueSelect.svelte';
+    import HueSelect from '$lib/ui/forms/choice/select/HueSelect.svelte';
     import MultiSelect from '$lib/ui/forms/choice/MultiSelect.svelte';
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import SuggestInput from '$lib/ui/forms/choice/SuggestInput.svelte';

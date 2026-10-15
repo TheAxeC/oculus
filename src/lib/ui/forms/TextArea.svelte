@@ -15,6 +15,7 @@
 
     import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
     import { typedInto } from '../controls/text/text-menu';
+    import '../theme/field.css';
 
     type Props = {
         value: string;
@@ -77,7 +78,7 @@
 
 <TextBoxMenu {label} box={() => box}>
     <textarea
-        class="area"
+        class="area oculus-field"
         class:bare
         class:code
         class:grow={grow !== undefined}
@@ -99,16 +100,7 @@
     .area {
         width: 100%;
         box-sizing: border-box;
-        min-width: 0;
         resize: vertical;
-        border: 1px solid var(--line);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-md);
-        line-height: calc(var(--button-line) * var(--text-scale, 1));
-        padding: 4px 6px;
     }
 
     .area.bare,
@@ -117,10 +109,6 @@
         background: none;
         padding: 0;
         resize: none;
-    }
-
-    .area::placeholder {
-        color: var(--muted-txt, var(--muted));
     }
 
     .area.tree {
@@ -151,16 +139,10 @@
         white-space: pre;
     }
 
-    .area:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
-    }
-
+    /* In the rice theme a text area is marked by a line down its left side, where a field of one
+       line has it under it. */
     :global(body.rice) .area {
-        border: 0;
+        border-bottom: 0;
         border-left: 1px solid var(--line);
-        border-radius: 0;
-        background: none;
-        font-family: var(--font-mono);
     }
 </style>

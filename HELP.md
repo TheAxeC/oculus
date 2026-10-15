@@ -434,7 +434,7 @@ configurations:
 - `git.autofetch_minutes` fetches on a timer; 0 (default) never.
 - The commit box keeps one message per repository. With nothing staged it becomes Sync Changes or Publish Branch. The button in the field writes a message from the staged diff.
 - Hooks run. A write that runs them, and Stage All on Untracked, whose time grows with the files it stages, has no time limit; Cancel stops a running write. Other git commands time out after 10 seconds (60 for Fetch).
-- A changed row opens its diff, side by side or inline. Blocks have Stage Block, Revert Block (asks) and Unstage Block; a line selection narrows them.
+- A changed row opens its diff, side by side or inline, with the changes git finds. Each block is a hunk as `git add -p` offers it, with Stage Block, Revert Block (asks) and Unstage Block; a line selection narrows them.
 - A merge, pull or stash that stops on conflicts lists them under Merge Changes. The merge editor writes the Result; Complete Merge stages it.
 - Stash, Stash (Include Untracked), Stash Staged; Apply, Pop, Drop. Create Tag, Delete Tag, Push Tags. Create, Delete and switch Branch; Checkout (Detached).
 - The Graph shows the history of the branch and its upstream together, fifty commits at a time, each commit once: a commit only the upstream holds is marked incoming and one only the branch holds outgoing, each with a dashed circle. Incoming Changes and Outgoing Changes stand above their commits with their count, and a press on one lists the files changed over its whole range, each opening that range's diff. The checked-out branch and the local branches, the remote branches (with a cloud) and the branch's base are drawn in colours of their own; a tag is plain. Cherry Pick and the Compare commands are on a commit.

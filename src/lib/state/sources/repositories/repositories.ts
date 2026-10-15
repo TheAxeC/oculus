@@ -301,6 +301,23 @@ export function viewKeeper(
     };
 }
 
+/** Whether two lists of git's line changes are the same changes, both absent included. */
+function sameChanges(a: DiffSides['changes'], b: DiffSides['changes']): boolean {
+    if (a === undefined || b === undefined) return a === b;
+    const numbers = (changes: NonNullable<DiffSides['changes']>): string =>
+        changes
+            .map((one) =>
+                [
+                    one.originalStartLineNumber,
+                    one.originalEndLineNumber,
+                    one.modifiedStartLineNumber,
+                    one.modifiedEndLineNumber
+                ].join(',')
+            )
+            .join(' ');
+    return numbers(a) === numbers(b);
+}
+
 /** Whether two answers of a diff read hold the same files, so a re-read keeps the view state. */
 export function sameFiles(a: readonly DiffSides[], b: readonly DiffSides[]): boolean {
     return (
@@ -313,7 +330,8 @@ export function sameFiles(a: readonly DiffSides[], b: readonly DiffSides[]): boo
                 file.encoded === b[at].encoded &&
                 file.original === b[at].original &&
                 file.modified === b[at].modified &&
-                file.head.join('\n') === b[at].head.join('\n')
+                file.head.join('\n') === b[at].head.join('\n') &&
+                sameChanges(file.changes, b[at].changes)
         )
     );
 }

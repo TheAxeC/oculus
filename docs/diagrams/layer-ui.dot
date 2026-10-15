@@ -25,10 +25,11 @@ digraph layer_ui {
         "folder ui/forms to folder ui/controls" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/forms to folder ui/display" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/forms to folder ui/frame" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder ui/forms to folder ui/theme" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/controls to folder ui/display" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/controls to folder ui/frame" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/controls to folder ui/menu" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder ui/controls to folder ui/theme" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder ui/controls to folder ui/theme" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/controls to layer data" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/controls to layer state" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/controls to layer themes" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
@@ -89,6 +90,8 @@ digraph layer_ui {
     "folder ui/forms to folder ui/display" -> "folder ui/display" [];
     "folder ui/forms" -> "folder ui/forms to folder ui/frame" [arrowhead=none, minlen=5, weight=10];
     "folder ui/forms to folder ui/frame" -> "folder ui/frame" [];
+    "folder ui/forms" -> "folder ui/forms to folder ui/theme" [arrowhead=none, minlen=7, weight=10];
+    "folder ui/forms to folder ui/theme" -> "folder ui/theme" [];
     "folder ui/controls" -> "folder ui/controls to folder ui/display" [arrowhead=none, minlen=5, weight=10];
     "folder ui/controls to folder ui/display" -> "folder ui/display" [];
     "folder ui/controls" -> "folder ui/controls to folder ui/frame" [arrowhead=none, minlen=3, weight=10];

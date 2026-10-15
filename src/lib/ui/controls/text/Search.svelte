@@ -21,6 +21,7 @@
 
     import TextBoxMenu from './TextBoxMenu.svelte';
     import { typedInto } from './text-menu';
+    import '../../theme/field.css';
 
     type Props = {
         value: string;
@@ -69,7 +70,7 @@
 <TextBoxMenu label={placeholder} box={() => input}>
     <input
         {...field}
-        class="search"
+        class="oculus-field"
         class:fill
         data-search
         type="search"
@@ -83,38 +84,8 @@
 </TextBoxMenu>
 
 <style>
-    .search {
-        min-width: 0;
-        border: 1px solid var(--line);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-md);
-        line-height: calc(var(--button-line) * var(--text-scale, 1));
-        padding: 4px 6px;
-    }
-
     .fill {
         flex: 1 1 12em;
         max-width: 32em;
-    }
-
-    .search::placeholder {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .search:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
-    }
-
-    /* The terminal shape: a prompt on the panel, no box round it. */
-    :global(body.rice) .search {
-        border: 0;
-        border-bottom: 1px solid var(--line);
-        border-radius: 0;
-        background: none;
-        font-family: var(--font-mono);
     }
 </style>

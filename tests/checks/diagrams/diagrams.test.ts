@@ -23,6 +23,7 @@ import {
     NAMES,
     ORDERING,
     OUT,
+    arrowsAlong,
     channelsDot,
     generate,
     halves,
@@ -832,8 +833,19 @@ describe('where the words of an arrow land', () => {
         const crossed = drawn.flatMap((one) =>
             labelsAcross(one.svg).map((line) => `${one.name}: ${line}`)
         );
-        // Each count and call list is a node on its arrow; the router keeps other arrows off it.
+        // Each count and call list is a node on its arrow. In the layer drawings Graphviz's router
+        // keeps other arrows off it; the channel and write diagrams have every arrow drawn by
+        // utils/diagrams/drawing/apart.mjs, which keeps them off it there.
         expect(crossed).toEqual([]);
+    });
+
+    it('run no two arrows along each other in any drawing the source gives', async () => {
+        const drawn = await engineDrawn();
+        expect(drawn.map((one) => one.name)).toEqual(NAMES);
+        const along = drawn.flatMap((one) =>
+            arrowsAlong(one.svg).map((line) => `${one.name}: ${line}`)
+        );
+        expect(along).toEqual([]);
     });
 });
 

@@ -6,8 +6,11 @@
     // them. It takes values and callbacks, and imports nothing of the state, the views or the
     // shell; the values it takes and hands back are types.ts's.
     //
-    // It draws Monaco's diff: the two sides side by side or one inline, as the parent's layout
-    // says, and inline whenever the editor is narrower than `NARROW` pixels, as VS Code's is. The
+    // It draws the diff of the two texts: git's line changes where the parent hands them
+    // (`changes`), which the page's diff provider gives Monaco while the models hold those texts
+    // (diff/git-provider.ts), else Monaco's own. The two sides are side by side or one inline, as
+    // the parent's layout says, and inline whenever the editor is narrower than `NARROW` pixels, as
+    // VS Code's is. The
     // layout drawn is read off the diff editor, since the comment sides and the sizing follow it.
     // It shows the line numbers of both, the changed words of a changed line, whitespace changes,
     // and the unchanged runs hidden with `context` lines kept each side, which Monaco reveals on a
@@ -91,6 +94,8 @@
         path: string;
         /** The file's path on the original side, the modified side's when it was not renamed. */
         originalPath?: string;
+        /** Git's line changes between the two texts; absent, the diff is Monaco's own. */
+        changes?: DiffLineChange[];
         /** Side by side, or one column. */
         mode: 'side' | 'inline';
         /** The unchanged lines kept each side of a change when Monaco hides the run between. */
@@ -132,6 +137,7 @@
         model: name,
         path,
         originalPath,
+        changes,
         mode,
         context,
         hideUnchanged = true,
@@ -227,6 +233,7 @@
             original: fresh(loaded, originalPath ?? path, 'original', original),
             modified: fresh(loaded, path, 'modified', modified)
         };
+        hold(loaded, pair.modified, { original, modified, changes });
         made.setModel(pair);
         const sides = [made.getOriginalEditor(), made.getModifiedEditor()];
         restore = view;
@@ -270,6 +277,19 @@
         return loaded.monaco.editor.createModel(text, shikiId(language), uri);
     }
 
+    /** Hand the page's diff provider git's changes of the two texts, or drop them for none. */
+    function hold(
+        loaded: EditorKit,
+        on: Monaco.editor.ITextModel,
+        held: { original: string; modified: string; changes?: DiffLineChange[] }
+    ): void {
+        const given =
+            held.changes === undefined
+                ? null
+                : { ...held, changes: held.changes.map((change) => ({ ...change })) };
+        loaded.gitDiffs.hold(on.uri.toString(), given);
+    }
+
     /** A diff drawn: its line changes said, and a view state waiting put back. */
     function updated(made: Monaco.editor.IStandaloneDiffEditor): void {
         const changes = lineChangesOf(made);
@@ -298,13 +318,17 @@
     }
 
     // A text handed in that a model does not hold replaces it; the view state is carried over to
-    // the diff Monaco draws for it.
+    // the diff Monaco draws for it. Git's changes are handed over first, so the diff drawn for the
+    // new texts is theirs.
     $effect(() => {
         const held = models;
         const made = diff;
+        const loaded = kit;
         const texts = { original, modified };
-        if (held === null || made === null) return;
+        const given = changes;
+        if (held === null || made === null || loaded === null) return;
         untrack(() => {
+            hold(loaded, held.modified, { ...texts, changes: given });
             if (
                 held.original.getValue() === texts.original &&
                 held.modified.getValue() === texts.modified
@@ -430,6 +454,7 @@
         placedOriginal.unmount();
         made?.dispose();
         widgets?.dispose();
+        if (kit !== null && models !== null) kit.gitDiffs.release(models.modified);
         models?.original.dispose();
         models?.modified.dispose();
         diff = null;

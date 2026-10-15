@@ -48,8 +48,12 @@
 // Monaco takes its service overrides from the first editor made on the page and fixes its defaults
 // at its first call into a service, so the load starts by making and disposing a detached editor
 // with the overrides that draw every context view (the right-click menu, the code action list) in
-// the page's node on the document body (options.ts `pageWidgets`); every call after it finds them
-// in force, and the editors take the widgets of their boxes from the kit (`widgets`).
+// the page's node on the document body (options.ts `pageWidgets`), and the one that gives a diff
+// editor git's line changes for a file that carries them (diff/git-provider.ts, whose providers
+// make Monaco's own for every other diff, and which starts the worker
+// diff/inner-changes.worker.ts at the first ask that has git's changes); every call after it finds
+// them in force, the editors take the widgets of their boxes from the kit (`widgets`) and a diff
+// editor holds its file's changes there (`gitDiffs`).
 //
 // Format Document is answered by one provider per language (`createFormatting`), which hands the
 // model it is asked about to the formatter the model's owner gave.
@@ -83,6 +87,7 @@ import { grammarsOf, hasGrammar, injectionsOf } from './languages/app-grammars';
 import { applyAppLanguages, type Applied } from './languages/register';
 import { COMMAND_PALETTE_EVENT, freedKeys } from '../chords';
 import { pageWidgets, type PageWidgets } from '../options';
+import type { GitDiffs } from '../diff/git-provider';
 import { RITE_GRAMMAR } from './rite/rite';
 import { registerSettings } from './rite/settings';
 import { registerFolding } from './languages/folding';
@@ -177,6 +182,8 @@ export type EditorKit = {
     lsp: LspKit;
     /** Where the editors of the page draw their widgets (options.ts). */
     widgets: PageWidgets;
+    /** Git's line changes of the files the page's diff editors draw (diff/git-provider.ts). */
+    gitDiffs: GitDiffs;
 };
 
 /** The one load of the page, started by the first editor that mounts. */
@@ -232,6 +239,32 @@ export function keysCode(monaco: typeof Monaco, keys: EditorKey): number {
     return monaco.KeyMod.chord(keyCode(monaco, keys[0]), keyCode(monaco, keys[1]));
 }
 
+/**
+ * The page's git diffs, whose providers make Monaco's own provider for every other diff through
+ * the page's instantiation service, read when the first diff editor asks for a provider, after the
+ * services were started with the overrides. The worker that finds the changed characters inside
+ * git's changes is handed over as its constructor, which the git diffs call at the first ask that
+ * has git's changes and again after a worker fails; its module is imported here, so no server
+ * bundle carries it.
+ */
+async function pageDiffs(): Promise<GitDiffs> {
+    const [git, inner, standalone, instantiation, provider] = await Promise.all([
+        import('../diff/git-provider'),
+        import('../diff/inner-changes.worker.ts?worker'),
+        import('monaco-editor/editor/standalone/browser/standaloneServices'),
+        import('monaco-editor/platform/instantiation/common/instantiation'),
+        import('monaco-editor/editor/browser/widget/diffEditor/diffProviderFactoryService')
+    ]);
+    return git.createGitDiffs(
+        (options) =>
+            standalone.StandaloneServices.get(instantiation.IInstantiationService).createInstance(
+                provider.WorkerBasedDocumentDiffProvider,
+                options
+            ),
+        () => new inner.default()
+    );
+}
+
 async function start(): Promise<EditorKit> {
     const [monaco, shiki, bridge, workers] = await Promise.all([
         import('monaco-editor'),
@@ -250,8 +283,13 @@ async function start(): Promise<EditorKit> {
         (await import('monaco-editor/platform/contextview/browser/contextViewService'))
             .ContextViewService
     );
+    const gitDiffs = await pageDiffs();
     monaco.editor
-        .create(document.createElement('div'), { model: null }, widgets.services)
+        .create(
+            document.createElement('div'),
+            { model: null },
+            { ...widgets.services, diffProviderFactoryService: gitDiffs.service }
+        )
         .dispose();
     const mac = onMac();
     monaco.editor.addKeybindingRules(
@@ -326,7 +364,8 @@ async function start(): Promise<EditorKit> {
         ensureLanguage: made.ensureLanguage,
         formatting: createFormatting(monaco),
         lsp,
-        widgets
+        widgets,
+        gitDiffs
     };
 }
 

@@ -33,7 +33,7 @@ import { basename, dirname, join, sep } from 'node:path';
 import type { DiffSides, GitBlameLine, GitCommitFile } from '../../../data/model/index.ts';
 import { permitted } from '../paths.ts';
 import { words } from '../words.ts';
-import { NO_CONTEXT, parseBlame, parseNameStatus } from './parse.ts';
+import { PANE_DIFF, parseBlame, parseNameStatus } from './parse.ts';
 import { sidesOf } from './reads.ts';
 import {
     HASH,
@@ -239,17 +239,7 @@ export async function compareSides(
     const paths = renamed ? [renamed.from, path] : [path];
     const done = await diff(
         root,
-        [
-            '--no-color',
-            '--no-ext-diff',
-            NO_CONTEXT,
-            '-M',
-            '--end-of-options',
-            start.value,
-            to,
-            '--',
-            ...paths
-        ],
+        [...PANE_DIFF, '-M', '--end-of-options', start.value, to, '--', ...paths],
         ms
     );
     if (!done.ok) return refused(reasonOf(done, text));
@@ -428,6 +418,8 @@ export async function workspaceSides(
     if (!left.ok) return left;
     if (!right.ok) return right;
     const binary = left.value.binary || right.value.binary;
+    // The two worktrees' files are read from disk and no git diff compares them: no git line
+    // changes, so the pane draws Monaco's own diff.
     return {
         ok: true,
         value: [

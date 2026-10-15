@@ -620,3 +620,150 @@ cd .agents/worktrees/Q72 && printf '%s\0' $(sed 's#^#tools/oculus/#' $TMPDIR/q72
 ```
 
 Output: no line, then `exit 0`.
+
+## Repair round 1
+
+All three items of `agents/briefs/Q72-round1.md` are built. Three things you need to know first:
+
+- **Item 2 drops providers through a new `release(model)`, not on `hold(model, null)`.** The brief's premise is incomplete. `DiffEditor.svelte` calls `hold(model, null)` in two places, not one:
+  - in `onDestroy`, as the brief says;
+  - in its `$effect` (`DiffEditor.svelte:331`, through its `hold` helper at :281-291), every time a live editor is handed texts with no git changes. This covers every compare, Replace Preview and save conflict.
+
+  Dropping providers and clearing their listeners there would cut a live editor off from its provider's `onDidChange`. So the providers are dropped by a new `GitDiffs.release(model)`, which `onDestroy` calls (`DiffEditor.svelte:457`). `hold(model, null)` keeps its meaning: drop the held changes and fire.
+- **`DESIGN.md:680` is outside this round's path list.** It gained one sentence recording the decision to run the worker, with its reason (spec.md: "a decision with its reason into DESIGN.md").
+- **No test file was added.** spec.md's test rule allows a test only as the test of a `guarded.md` entry. No entry names `git-provider.ts` or the worker: G33's Code line names `parse.ts` and `diff-patch.ts`. Items 1 and 2 are shown by the one-line `node -e` runs below.
+
+### Open items of the state file
+
+- `orchestrator-state.md:169` (main checkout, read only) lists one open item, 116: Q72's review, Spec 1, the builder's scripts outside the tree. Its recommendation is (a): leave them unapproved and unused, and allow no script of the builder's again. This round wrote no script. Every probe was a one-line `node -e`, and every edit was made with the edit tool.
+
+### Item 1: the changed characters are found off the page's thread
+
+First run, on the round-0 tree.
+
+`refineDiff` called directly, as the review did. The review's own command is not quoted in its report, so this is my one-liner with the same call. The block is N lines `const value<i> = compute(<i>, 'alpha', <3i>);` rewritten as `let item<i> = transform(<i+1>, "beta", <5i>) + 1;`:
+```
+N=500 node --input-type=module -e "import {DefaultLinesDiffComputer} from 'monaco-editor/editor/common/diff/defaultLinesDiffComputer/defaultLinesDiffComputer'; ... new DefaultLinesDiffComputer().refineDiff(a,b,new SequenceDiff(new OffsetRange(0,n),new OffsetRange(0,n)),InfiniteTimeout.instance,true,{extendToSubwords:false}) ..."
+lines 500 mappings 1 ms 3616
+N=5000 (same command)
+lines 5000 mappings 1 ms 416743
+```
+
+The page's thread time of a `computeDiff` through `createGitDiffs`, with stand-ins for the models and for Monaco's own provider (as case 21 ran), 500 lines:
+```
+lines 500 page thread ms 3925 answer 1,501,1,501,1
+```
+The 5000-line block was not measured through `createGitDiffs` on the round-0 tree. Only the direct `refineDiff` run above was.
+
+The change:
+- `src/lib/ui/controls/editor/diff/inner-changes.worker.ts` (new, 70 lines). It is the worker. It runs `DefaultLinesDiffComputer.refineDiff` per run with `InfiniteTimeout`, and answers `{ id, ranges }`. `ranges` holds, per run, eight whole numbers per changed range (original start line, start column, end line, end column, then the same four for the modified side). If the computation refuses a run, `ranges` is null.
+- `git-provider.ts`: `gitDocumentDiff` is gone.
+  - `computeDiff` is async. It checks the runs with `modelChanges` as before, then posts the two line lists and the runs through `innerAsker`.
+  - It builds `RangeMapping`/`DetailedLineRangeMapping` from the numbers (`mappingsOf`, `documentDiff`).
+  - It answers Monaco's own diff when the worker fails, when a reply does not fit the runs asked (`fits`), or when the held entry or the models' lines changed while the worker computed.
+  - The worker is started at the first ask that has runs. A diff with no runs, or with no git changes, starts none.
+  - A worker that fires `error` or `messageerror`, or answers without a known id, is terminated. Its waiting asks answer null, and the next ask starts a new worker.
+  - No time limit is set.
+- `kit/load.ts` `pageDiffs()` imports `../diff/inner-changes.worker.ts?worker` dynamically, beside `git-provider`, and passes `() => new inner.default()` to `createGitDiffs`.
+- `src/monaco-modules.d.ts` declares `monaco-editor/editor/common/core/range` (re-exporting the public `Range`), and `RangeMapping` as the class it is.
+
+After, the same blocks through `createGitDiffs`. The stand-in worker is a Node `worker_threads` thread that imports the real `inner-changes.worker.ts`; the probe sets `self` there, since Node has none:
+```
+lines 500 computeDiff call ms 1 page thread busy ms 0 answered after ms 3866 workers started 1 answer 1,501,1,501,1,[1,1 -> 501,1]->[1,1 -> 501,1]
+lines 5000 computeDiff call ms 3 page thread busy ms 6 answered after ms 463104 workers started 1 answer 1,5001,1,5001,1,[1,1 -> 5001,1]->[1,1 -> 5001,1]
+```
+"page thread busy" is `performance.eventLoopUtilization().active` over the whole call, from the call until the answer.
+
+The answer is the same as before. On case 9's texts (`$TMPDIR/q72/c/channels`), the provider gives `changes 14,14,14,26`, `inner via worker [14,1 -> 14,1]->[14,1 -> 26,1]` and `same as refineDiff on the page thread: true`.
+
+The asynchronous paths (spec.md "every asynchronous path in flight, after close, and superseded"), with a stand-in worker the probe answers by hand:
+```
+answered in time: git [1,3 -> 1,4]->[1,3 -> 1,4] | workers 1
+held changes replaced while computing: monaco own
+modified model edited while computing: monaco own
+reply of 4 numbers for a range: monaco own
+reply with no id: monaco own | that worker ended true
+next ask starts worker number 2
+worker error: monaco own | ended true
+models disposed while computing: monaco own
+no changes held: identical true | workers started for it 0
+```
+
+Build. `npx vite build --mode app` in the scratch copy `$TMPDIR/q72/r1/appbuild` (copied without `local.yml`, sharing the worktree's `node_modules`) exits 0. It writes `_app/immutable/workers/inner-changes.worker-DDFLUF8Y.js` (105.96 kB, an IIFE holding `refineDiff`, 0 imports).
+- The one chunk that names it (`chunks/DXOGzm-j.js`, 145 bytes, `new Worker(new URL(...))`) is reached by `import(`../chunks/DXOGzm-j.js`)` in `nodes/2`.
+- `grep -rl "inner-changes" .svelte-kit-app/output/server` prints nothing.
+
+Vite's dev optimizer, run in that copy with a `node -e` of `resolveConfig` and `optimizeDeps`, puts `core/range` in one chunk `range-DQsvnEgT.js`. That chunk is imported by `editor.api-BihzCHcZ.js` and `standaloneServices-HGp72i4g.js` among others. `rangeMapping-DE4nkgxT.js` is shared with `editor.api` and `diffProviderFactoryService`. So the `Range` and `RangeMapping` the provider builds are the classes Monaco's diff editor reads.
+
+The live diff editor drawing the worker's answer is checked by the look at landing (cases 21 and 22).
+
+### Item 2: providers are forgotten with their editor
+
+First run, on the round-0 tree. Providers A and B both computed (models `a`, `b`); C was made and never asked; then model `a` was dropped with `hold('a', null)`. Fires are counted through `onDidChange`:
+```
+A and B computed: holds of a and b fire A 1 B 1 C (never asked) 2
+model a released, A fired 1
+after the release: holds of a and b fire A 1 B 1 C (never asked) 2
+```
+
+The change:
+- `asked` maps each provider's signal to `{ uri, model, dispose }`. A provider enters it at its first `computeDiff`, never at creation, so C holds no entry.
+- `hold` fires the providers whose last `uri` is the model's.
+- `release(model)` runs `hold(uri, null)`, then calls `dispose` on each provider whose last model is that model object. That removes it from `asked`, disposes the relay of Monaco's own provider, clears its listeners and disposes Monaco's own provider.
+
+After:
+```
+A and B computed: holds of a and b fire A 1 B 1 C (never asked) 0
+b dropped by a live editor, then: holds of a and b fire A 1 B 1 C (never asked) 0
+model a released, A fired 1 | own providers disposed [0] | relay of A dropped
+after the release: holds of a and b fire A 0 B 1 C (never asked) 0
+```
+Read through the fires, `asked` holds A and B, then only B. The second line shows that `hold('b', null)` from a live editor keeps B listed.
+
+### Item 3: the stale comment
+
+- First run: `tests/checks/diagrams/diagrams.test.ts:836`: "// Each count and call list is a node on its arrow; the router keeps other arrows off it."
+- After (:836-838): "// Each count and call list is a node on its arrow. In the layer drawings Graphviz's router // keeps other arrows off it; the channel and write diagrams have every arrow drawn by // utils/diagrams/drawing/apart.mjs, which keeps them off it there."
+- No assertion changed. This round adds or changes no test.
+
+### Files this round changed
+
+| File | Lines after | What |
+| --- | --- | --- |
+| `diff/git-provider.ts` | 352 | items 1 and 2, head comment rewritten |
+| `diff/inner-changes.worker.ts` | 70 (new) | item 1 |
+| `kit/load.ts` | 640 | the worker's import, `pageDiffs` doc comment and head comment rewritten |
+| `diff/DiffEditor.svelte` | 519 | `onDestroy` calls `release`; `hold` helper takes no null, doc comment rewritten |
+| `src/monaco-modules.d.ts` | 188 | `core/range` declared, `RangeMapping` a class, head comment rewritten |
+| `tests/checks/diagrams/diagrams.test.ts` | 879 | item 3 |
+| `DESIGN.md` (outside the path list) | 759 | one sentence in :680 |
+
+- `ui/controls/editor/diff/` holds 5 items.
+- Comments re-read:
+  - Rewritten: the head comments of `git-provider.ts`, `inner-changes.worker.ts` and `monaco-modules.d.ts`; the `kit/load.ts` head comment and `pageDiffs`; `DiffEditor.svelte`'s `hold` helper.
+  - Still true: `DiffEditor.svelte`'s head comment (:9-11) and `read.ts:3`.
+- History words in the lines this round added: the grep of `before|used to|no longer|still|always ha|as before|previously` over the changed files hits only lines this round did not write. The worker's variables are named `original`/`modified`.
+- Reuse grep: `grep -rn '?worker\|new Worker' src | grep -v "^src/lib/server"` finds `kit/workers.ts` (Monaco's workers by label), `state/sources/search/file-match.worker.ts` with `file-matcher.svelte.ts:48` (the palette's matcher), and the new `load.ts:252`. Neither existing worker computes a diff. The new worker follows the `file-match.worker.ts` form: `self.onmessage`, `self.postMessage`, and a dynamic `?worker` import.
+
+### Verify
+
+- `npm run lint`: `lint exit 0`.
+- `npm run format:check`: `All matched files use Prettier code style!`.
+- `npm run check`: `COMPLETED 4053 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- Tree checks (`npx vitest run tests/checks/diagrams tests/checks/source/comment-width.test.ts tests/checks/imports tests/checks/tree tests/checks/source/history.test.ts --testTimeout 0 --hookTimeout 0`): `Test Files  10 passed (10)` / `Tests  121 passed (121)`.
+  - Run after `test:quick`.
+  - An earlier run in this round had `comment-width` red at `git-provider.ts:158` (a doc comment of 101 columns). That line was shortened, the file rerun alone (`Tests  2 passed (2)`), and then the whole command run as quoted.
+- `npx vitest run tests/server/git/git-ops.test.ts`: `Tests  17 passed (17)`.
+- `sh utils/folder-check.sh`: `folder exit 0`. `sh utils/size-check.sh`: `size exit 0`. Both print nothing.
+- `sh utils/unused-exports.sh`, diffed against `Q72-base/unused-exports.txt`: `< Unused exports (240)` / `> Unused exports (241)` / `> src/lib/ui/controls/editor/diff/git-provider.ts: createGitDiffs`.
+  - This is the same single line as round 0. Its importer is `kit/load.ts:251` `import('../diff/git-provider')`.
+  - The worker's exported types `InnerAsk` and `InnerAnswer` are imported by `git-provider.ts` and are not listed.
+- ASCII gate (the perl form) over the seven files above: `ascii exit 0`.
+- `npm run diagrams` ran right before the list. `diff -rq` against a copy taken before it printed nothing.
+- `npm run test:quick`, run once after the last change: `test:quick: 55 changed file(s)`, `176 test file(s), 10 essential`, `test:quick: 55.3 s (limit 45.0 s); every command passed`, `test:quick: over the time limit`.
+
+### Judgment calls
+
+- **`release(model)` beside `hold`.** It is keyed by the model object, so that an editor made over the same URI keeps its providers when an older editor is destroyed.
+- **A failed worker is replaced.** It is terminated, and the next ask starts another. The page's diffs with git's changes are not left on Monaco's own diff for the rest of the page's life after one crash. A worker that can never load costs one start and one failed ask per diff, and each such diff is Monaco's own.
+- **A reply with no known id ends the worker**, because it cannot be tied to an ask.

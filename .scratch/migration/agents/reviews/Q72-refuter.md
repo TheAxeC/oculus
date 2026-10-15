@@ -132,3 +132,123 @@ Cases of the brief's "Cases":
 - Whether `writes.svg` at 4225 pt is acceptable in Help, and whether the unused-exports explanation is accepted: the orchestrator's and the user's call.
 
 Reviewer usage: a036aa66bc03d3ab8, claude-opus-5-5, 138,952 tokens, 124 tool uses, 29.3 min.
+
+## Repair round 1, refuted
+
+```
+All commands ran from /Users/axelfaes/workspace/research-hub/.agents/worktrees/Q72/tools/oculus with PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH.
+
+The round's delta: cmp of each files.txt path, snapshot against worktree
+  -> CHANGED DESIGN.md, DiffEditor.svelte, kit/load.ts, src/monaco-modules.d.ts, tests/checks/diagrams/diagrams.test.ts, diff/git-provider.ts; new and not in files.txt: diff/inner-changes.worker.ts (70 lines); every other listed path byte-identical to the snapshot
+npm run lint                                   -> lint exit 0
+npm run format:check                           -> All matched files use Prettier code style!
+npm run check                                  -> COMPLETED 4053 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npx vitest run tests/checks/diagrams tests/checks/source/comment-width.test.ts tests/checks/imports tests/checks/tree tests/checks/source/history.test.ts --testTimeout 0 --hookTimeout 0
+                                               -> Test Files  10 passed (10) / Tests  121 passed (121)
+npx vitest run tests/server/git/git-ops.test.ts -> Test Files  1 passed (1) / Tests  17 passed (17)
+npx vitest run tests/state/client/terminal/terminal-close.test.ts tests/state/system/link-rewrite.test.ts
+                                               -> Test Files  2 passed (2) / Tests  6 passed (6)
+sh utils/folder-check.sh                       -> prints nothing, folder exit 0
+sh utils/size-check.sh                         -> prints nothing, size exit 0
+sh utils/unused-exports.sh, diffed against Q72-base/unused-exports.txt
+                                               -> < Unused exports (240) / > Unused exports (241) / > src/lib/ui/controls/editor/diff/git-provider.ts: createGitDiffs
+ASCII gate, perl form, over the seven files the round changed   -> prints nothing, ascii exit 0
+ASCII gate, perl form, over the 48 added or modified non-svg files since the base -> prints nothing, ascii exit 0
+LC_ALL=C grep -n '[^ -~]' over the report's "Repair round 1" section (lines 624-800) -> prints nothing
+History words (before|used to|no longer|still|always ha|as before|previously) over the round's added lines and the worker file -> no hit
+npm run test:quick, npm run diagrams, vite build, the dev optimizer -> not run (the brief allows one test:quick run, the builder's; the others write the tree or the shared node_modules)
+
+Case 1 (the report's quoted graph.ts one-liner):
+  -> modules 1762 edges 7044 / module cycles 0 [] / folder rings [] / views->state 1254 files 391 targets 187
+Case 3 (the report's quoted arrowsAlong/labelsAcross one-liner, import from ./utils/diagrams/drawing/labels.mjs):
+  -> channels.svg 0 0 1703x3440; layer-data.svg 0 0 304x921; layer-server.svg 0 0 428x1027; layer-shell.svg 0 0 305x1481; layer-state.svg 0 0 469x1039; layer-ui.svg 0 0 328x1209; layer-views.svg 0 0 325x1910; layers.svg 0 0 826x569; writes.svg 0 0 4225x1927; drawings 9
+
+Item 1, the report's direct refineDiff probe (its command is quoted with "..."; rebuilt from the text it describes):
+  -> lines 500 mappings 1 ms 3784        (report: lines 500 mappings 1 ms 3616)
+Item 1, the report's "after" probe through createGitDiffs (its command is not quoted; rebuilt: a node:worker_threads thread importing the real inner-changes.worker.ts with self bridged to parentPort, stand-in models and own provider):
+  -> lines 500 computeDiff call ms 2 page thread busy ms 0 answered after ms 3907 workers started 1 answer [ '1,501,1,501,1,[1,1 -> 501,1]->[1,1 -> 501,1]' ]
+     (report: lines 500 computeDiff call ms 1 page thread busy ms 0 answered after ms 3866 workers started 1)
+  The 5000-line forms (report: 416743 ms direct, 463104 ms through the worker) were not rerun; the 500-line forms above were.
+Item 1, the worker module alone, posted {id:0, original:['a x'], modified:['a y'], runs:[[0,1,0,1]], ...}:
+  -> {"id":0,"ranges":[[1,3,1,4,1,3,1,4]]}
+Item 2, the report's provider probe (command not quoted; rebuilt with stand-ins, fires counted through onDidChange):
+  -> A and B computed, holds of a and b: {"A":1,"B":1,"C":0}
+     release(a): fires {"A":1,"B":0,"C":0} own disposed [0]
+     after release, holds of a and b: {"A":0,"B":1,"C":0}
+Reviewer probe, the order a superseded ask and the newer ask resolve in (stand-in worker answered by hand, stand-in own provider answering after 20 ms; hold of a new entry between the two computeDiff calls):
+  -> asks posted 2
+     resolved in order: run2 git at 6 | run1 own at 26 => written last: run1 own at 26
+Reviewer probe, a worker constructor that throws (start = () => { throw new Error('SecurityError stand-in') }):
+  -> computeDiff rejected: SecurityError stand-in
+The builder's scratch build ($TMPDIR/q72/r1/appbuild/.svelte-kit-app/output), read only:
+  -> ./client/_app/immutable/workers/inner-changes.worker-DDFLUF8Y.js 105966 bytes, 0 lines matching "import "; chunks/DXOGzm-j.js names it; grep -rl "inner-changes" server prints nothing
+The builder's optimizer output ($TMPDIR/q72/r1/optim/deps), read only:
+  -> range-DQsvnEgT.js is imported by editor.api-BihzCHcZ.js, standaloneServices-HGp72i4g.js, rangeMapping-DE4nkgxT.js, lineRange-CA6RlLMA.js and monaco-editor_editor_common_core_range.js
+grep -rn "instanceof Range\b|instanceof RangeMapping|instanceof DetailedLineRangeMapping|instanceof LineRange\b" over Monaco's diffEditor widget and common/diff -> prints nothing
+```
+
+### Verdicts
+
+The round's three items:
+
+- Round item 1 (the character changes off the page's thread): closed for the freeze; the page thread is busy 0 ms for a 500-line block whose answer takes 3907 ms, and the worker is built into the client only. The requirement that a superseded request never draws over the newer one is partial: Behaviour 1.
+- Round item 2 (providers forgotten with their editor): closed. The builder's departure (a new `release(model)` in place of dropping providers on `hold(model, null)`) rests on a right premise: `DiffEditor.svelte:331` calls the `hold` helper from its `$effect` for a live editor, and the helper (`:287-290`) passes `null` whenever `changes` is undefined, so the brief's form would have cut a live compare, Replace Preview or save conflict editor off from its provider's `onDidChange`. `asked` lists A and B, then only B; Monaco's own provider of A disposed.
+- Round item 3 (the stale comment): closed, `tests/checks/diagrams/diagrams.test.ts:836-838` names `utils/diagrams/drawing/apart.mjs`.
+
+Items of the brief's "What to build", for the whole diff since the base:
+
+- 1: holds. Case 1 rerun; the round's new module moves the module count to 1762 (Proof 2), the cycles, rings and views-into-state numbers unchanged.
+- 2: holds. Case 3 rerun 0/0 on all nine drawings; the G25 row passes; the comment fixed.
+- 3: violated, Behaviour 1 (a superseded ask's Monaco diff can be drawn over git's changes of the newer read). Every other part holds.
+- 4: holds; the field files and `field.css` byte-identical to the snapshot; the look at landing.
+- 5: holds; the three checks unchanged since the snapshot, 6 pass.
+
+Cases of the brief's "Cases":
+
+- 1: met, rerun; the report's "after" count is stale by one module (Proof 2).
+- 2 to 7: met, as in the first review; the code they run unchanged since the snapshot.
+- 8: not verifiable, the look at landing.
+- 9 to 13, 15 to 20: met; the code these cases run is byte-identical to the snapshot the first review reran them on, and `git-ops.test.ts` passes.
+- 14: met for the changes and the patch as in the first review; the stage through `stagePatch` was not rerun (it writes an index).
+- 21: partial: in the superseded state the editor can end on Monaco's changes (Behaviour 1); the plain state is the look at landing.
+- 22, 23: not verifiable, the look at landing.
+- 24: met as in the first review.
+- 25: met, rerun 6 pass.
+
+### 1. Spec
+
+- `DESIGN.md:680`: the sentence on the web worker; DESIGN.md is not in the round's "Paths this round writes"; the sentence is true, sits in the bullet the step's own write list names, and is named in the round report; failure scenario: none at run time; verdict: none.
+- `src/lib/ui/controls/editor/diff/git-provider.ts:80-81` and `DiffEditor.svelte:457`: a new `release` member of `GitDiffs` in place of the brief's named form; the premise behind it is right and the departure is stated first in the round report; failure scenario: none, the brief's form would have broken live editors; verdict: none.
+
+### 2. Proof
+
+- Report, "Repair round 1", Item 1 and Item 2: the probes are quoted with "..." or with no command; the evidence cannot be rerun in the form quoted. Rebuilt from the text, the numbers reproduce (3784 against 3616 ms; page thread 0 ms; Item 2's fires exactly); failure scenario: a later reader cannot repeat the probes the closure rests on; verdict: none.
+- Report, case 1 "After: `modules 1761 edges 7044`" and "The re-read" table: the same command now prints `modules 1762 edges 7044`, the round having added `inner-changes.worker.ts`. No decision rests on it; failure scenario: a reader comparing the re-read with the tree finds one module more; verdict: none.
+
+### 3. Standards
+
+- `src/lib/ui/controls/editor/kit/load.ts:245-247` ("which the git diffs call once"), `inner-changes.worker.ts:3-5` ("kit/load.ts starts this module ... the first time a diff editor draws git's changes"), `git-provider.ts:14-15` ("The answer is Monaco's own diff when the worker fails"); what is wrong: the constructor is called again after every failed worker; `load.ts` imports the `?worker` constructor at every kit start and `git-provider.ts` starts the worker at the first ask that has runs; and a constructor that throws is not answered with Monaco's diff: `started()` runs outside the `try` in the promise executor (`git-provider.ts:212-224`), so `computeDiff` rejects, Monaco's view model rethrows it (`rejectIfNotCanceled`, `base/common/async.js:89-94`) and the diff is never drawn. Today's page sets only `frame-src 'self'` (`src/hooks.server.ts`), so the throw has no known trigger; failure scenario: a worker CSP added later gives diffs with git's changes that never draw, with an unhandled rejection; verdict: none.
+
+### 4. Behaviour
+
+- `src/lib/ui/controls/editor/diff/git-provider.ts:320-328`: "const current = held.get(uri) === entry && ... return ranges !== null && current ? documentDiff(runs, ranges) : monaco.computeDiff(original, modified, wanted, token);"; what is wrong: the round brief asks that a request superseded by a newer `computeDiff` of the same editor never draw over the newer. The stale check stops the older git answer but replaces it with a Monaco computation started only when the older ask is answered. Monaco's view model writes whichever run resolves last (`diffEditorViewModel.js:209-229`, only cancellation checked). Probe: "run2 git at 6 | run1 own at 26 => written last: run1 own at 26". Monaco treats a `CancellationError` from `computeDiff` as no result (`rejectIfNotCanceled`), which would let a superseded run draw nothing; failure scenario: a large file rewritten while the worker still computes the previous read ends drawn with Monaco's grouping, and Stage Block follows it, until the next change; verdict: step item 3 violated, case 21 partial, round item 1 partial.
+- Report, "Repair round 1", Item 1, and "Every host- or user-visible change": the reader-visible before and after is not stated: before, a diff with a large changed block froze the page until drawn; after, the page responds and the diff shows its two texts unmarked until the worker answers. Also unstated: one worker serves every diff with git's changes and asks run in order with no cancellation, so a diff opened after a long computation, a closed pane's included, waits behind it for its marks; not worse than before the round; verdict: none.
+
+### Declined to judge
+
+- The 5000-line probes, direct and through the worker: not rerun for their length; the 500-line forms reproduce.
+- `vite build --mode app` and the dev optimizer: not rerun, since both write into the shared `node_modules` or a cache; their outputs in the builder's scratch folder were read. Monaco's diff editor uses no `instanceof` on these classes.
+- The real-browser timing of Behaviour 1's race: needs a live page.
+- Cases 8, 21's plain state, 22 and 23: the look at landing.
+- Open item 116: the user's; the round wrote no script file.
+
+Reviewer usage: acde5bd1c306120e1, claude-opus-5-5, 235,844 tokens, 70 tool uses, 16.9 min.
+
+### Closed
+
+- Repair round 1, refuted, Behaviour 1 (a superseded ask draws Monaco's diff over the newer): fixed at landing on main; a computation whose held changes or lines moved while the worker computed answers Monaco's cancellation, so the newer run's answer stands, and Monaco's own diff is kept for a worker that failed while the texts still hold.
+- Repair round 1, refuted, Standards 1 (a throwing worker constructor, three comments): fixed at landing; the worker is started inside the guarded block, so a constructor that throws answers Monaco's own diff, and the three comments say what the code does.
+- Repair round 1, refuted, Behaviour 2 (the reader-visible before and after): stated in the landing booking and report.
+- Repair round 1, refuted, Proof 1 and 2 (probes quoted without their command; the stale module count): the landing booking quotes the count after the last change (1762); no decision rests on either.
+- Repair round 1, refuted, Spec 1 and 2: accepted, as the verdicts say.
+- First review, Spec 1: open item 116. Spec 2, Proof 1 to 3: accepted with the reasons of `agents/briefs/Q72-round1.md`. Standards 1 and 2, Behaviour 1: closed in round 1. Behaviour 2: stated by the report; the 4225 pt drawing is for the look.

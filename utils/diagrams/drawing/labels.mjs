@@ -6,13 +6,15 @@
 // different: the router takes every edge around the nodes it passes. So every count and every call
 // list is drawn as a small node of words standing on its arrow, the arrow drawn in two halves
 // through it (the first without a head, both in the arrow's own style), which keeps the words off
-// the other arrows by the router's own rule rather than by a spacing chosen for one drawing.
+// the other arrows by the router's own rule, or in the channel and write diagrams by the rule of
+// apart.mjs, which crosses a column of nodes only clear of them, rather than by a spacing chosen
+// for one drawing.
 //
 // labelsAcross() is the check: it reads a rendered drawing and names every piece of text, an edge
 // label or a label node's line, whose box a curve or an arrowhead of an arrow other than its own
 // crosses, testing each Bezier segment against the box exactly rather than at sample points.
 
-import { quote } from './source.mjs';
+import { quote } from '../source.mjs';
 
 /**
  * How wide a character of an edge's own label is taken to be, as a share of its font size, where

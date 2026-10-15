@@ -29,6 +29,8 @@ let reads: string[][] = [];
 /** What the busy read answers per terminal; a terminal missing from it fails the read. */
 let busy: Record<string, { busy: boolean; command: string }> = {};
 let failRead = false;
+/** Called with each stop the stubbed server records, while a case waits on one. */
+let onStop: ((id: string) => void) | null = null;
 
 function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
     return {
@@ -60,10 +62,14 @@ beforeEach(() => {
     reads = [];
     busy = {};
     failRead = false;
+    onStop = null;
     vi.stubGlobal('fetch', (url: string, init?: { method?: string; body?: string }) => {
         if (init?.method === 'POST') {
             const post = JSON.parse(String(init.body)) as Record<string, unknown>;
-            if (post.action === 'stop') stops.push(String(post.id));
+            if (post.action === 'stop') {
+                stops.push(String(post.id));
+                onStop?.(String(post.id));
+            }
             return Promise.resolve({
                 ok: true,
                 status: 200,
@@ -120,7 +126,20 @@ function instances(ids: string[]) {
         .filter((one) => ids.includes(one.id));
 }
 
-const settle = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+/**
+ * Close the tab and wait for the stop of `id` its close posts. A tab's close ends its terminals
+ * through the same path a move, a split or an opened layout would take if it ended them, so every
+ * such stop is recorded before this one, and the check after it sees each of them.
+ */
+function closedAndStopped(tab: string, id: string, page?: string): Promise<void> {
+    const stopped = new Promise<void>((resolve) => {
+        onStop = (one) => {
+            if (one === id) resolve();
+        };
+    });
+    client.layout.closeInstance(tab, page);
+    return stopped;
+}
 
 describe('a tab that is moved, split or reloaded', () => {
     it('ends no terminal when it moves to another pane, to another page, or is split', async () => {
@@ -134,19 +153,19 @@ describe('a tab that is moved, split or reloaded', () => {
         client.layout.openPage('Other');
         const other = client.layout.currentPage().id;
         client.layout.moveInstanceToPage(id, other);
-        await settle();
-        expect(stops).toEqual([]);
         expect(holds(id)).toBe(true);
+        await closedAndStopped(id, A, other);
+        expect(stops).toEqual([A]);
     });
 
     it('ends no terminal when the layout of another workspace is opened', async () => {
         const storage = fakeStorage();
         openLayout(client.layout, storage);
         owning([A]);
-        listed([A]);
+        listed([A, B]);
         openLayout(client.layout, storage, '/w/other.yml');
-        await settle();
-        expect(stops).toEqual([]);
+        await closedAndStopped(owning([B]), B);
+        expect(stops).toEqual([B]);
     });
 });
 

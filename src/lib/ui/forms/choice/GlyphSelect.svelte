@@ -10,7 +10,7 @@
     // option: "Icon of button 2 sliders".
 
     import Glyph from '../../display/Glyph.svelte';
-    import FieldSelect from './drawn/FieldSelect.svelte';
+    import FieldSelect from './select/FieldSelect.svelte';
     import GlyphList from './GlyphList.svelte';
     import { glyphItems, isStray } from './choices';
 

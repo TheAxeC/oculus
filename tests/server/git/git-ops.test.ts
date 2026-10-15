@@ -25,6 +25,9 @@ import {
     unstageAll
 } from '../../../src/lib/server/git/git-index.ts';
 import { createTag, deleteTag, stash, stashAct } from '../../../src/lib/server/git/git-refs.ts';
+import { fileSides } from '../../../src/lib/server/git/git-reads.ts';
+import { hunkRows, hunksOf } from '../../../src/lib/state/sources/repositories/diff/diff-hunks.ts';
+import { sidesPatch } from '../../../src/lib/state/sources/repositories/diff/diff-patch.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { DELETED, deletionConflicts } from './deletions.ts';
 import { TEXT } from '../text.ts';
@@ -221,6 +224,38 @@ describe('hunks and lines', () => {
         expect(unstaged.ok).toBe(true);
         expect(git(repo, 'diff', '--cached')).toBe('');
         expect(read(repo, 'kept.txt')).toContain('TWO');
+    });
+
+    it("reads a file's changes as git's hunks, and stages one block as exactly git's hunk", async () => {
+        // On this pair git adds `const C = 3;` and a blank line after line 2 (`@@ -2,0 +3,2 @@`),
+        // where Monaco's own diff adds a blank line and `const C = 3;` after line 1. The change of
+        // the last line is a second block, far enough below to be a hunk of its own.
+        const middle = ['four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven'];
+        const before = ['const A = 1;', '', 'const B = 2;', ...middle, 'const Z = 9;'];
+        const after = ['const A = 1;', '', 'const C = 3;', '', 'const B = 2;', ...middle];
+        write(repo, 'slide.ts', `${before.join('\n')}\n`);
+        git(repo, 'add', 'slide.ts');
+        git(repo, 'commit', '-qm', 'Slide');
+        write(repo, 'slide.ts', `${[...after, 'const Z = 10;'].join('\n')}\n`);
+        const read = await fileSides(repo, 'slide.ts', false, TEXT, ROOTS);
+        if (!read.ok) throw new Error(read.error);
+        const [file] = read.value.files;
+        const change = (a: number, b: number, c: number, d: number) => ({
+            originalStartLineNumber: a,
+            originalEndLineNumber: b,
+            modifiedStartLineNumber: c,
+            modifiedEndLineNumber: d
+        });
+        expect(file.changes).toEqual([change(2, 0, 3, 4), change(12, 12, 14, 14)]);
+        const blocks = hunksOf(file.changes ?? []);
+        expect(blocks).toHaveLength(2);
+        const unstaged = git(repo, 'diff', '-U0', '--', 'slide.ts');
+        const [hunk] = /^@@[^]*?(?=^@@)/m.exec(unstaged) ?? [];
+        const patch = sidesPatch(file, file.changes ?? [], hunkRows(blocks[0]), 'stage');
+        expect((await applyHunk(repo, patch, 'stage', TEXT, ROOTS)).ok).toBe(true);
+        const staged = git(repo, 'diff', '--cached', '-U0', '--', 'slide.ts');
+        expect(staged.slice(staged.indexOf('@@'))).toBe(hunk);
+        expect(hunk).toBe('@@ -2,0 +3,2 @@ const A = 1;\n+const C = 3;\n+\n');
     });
 
     it('reverts one hunk in the worktree and leaves the other', async () => {

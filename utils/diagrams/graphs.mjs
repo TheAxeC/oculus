@@ -4,7 +4,7 @@
 // from the server module that publishes each to the client modules that read it.
 
 import { posix } from 'node:path';
-import { halves, labelledEdge, wordNode } from './labels.mjs';
+import { halves, labelledEdge, wordNode } from './drawing/labels.mjs';
 import { parseReader } from './parsed.mjs';
 import {
     UNPLACED,
@@ -325,19 +325,53 @@ function namers(/** @type {string} */ text) {
     for (const match of text.matchAll(pattern)) {
         found.set(
             match[1],
-            match[2].replace(/\$\{(\w+)\}/g, (_, name) => held.get(name) ?? '*')
+            match[2].replace(/\$\{([^}]*)\}/g, (_, part) => held.get(part.trim()) ?? '*')
         );
     }
     return found;
 }
 
 /**
- * What a channel argument names: a literal as it is written, a call to a channel-naming function as
- * the channel it builds, and null for anything else, which the caller names as not placed.
+ * The channel-naming functions a module can call, by the name it calls each by: those it declares,
+ * and those it imports by name from the module that declares them. A function of the same name
+ * declared in a module it does not import from is another function and names nothing here.
+ *
+ * @param {Sources} sources
+ * @param {Reader} read
+ * @param {string} path Relative to src.
+ * @returns {Map<string, string>}
  */
-function channelOf(/** @type {string} */ argument, /** @type {Map<string, string>} */ named) {
+function callableNamers(sources, read, path) {
+    const raw = sources.get(path) ?? '';
+    const found = namers(read.code(path, raw));
+    for (const one of read.imports(path, raw)) {
+        const resolved = one.spec === null ? null : resolveSpec(path, one.spec);
+        const file = resolved === null ? null : moduleFile(sources, resolved);
+        if (file === null || one.bindings === undefined) continue;
+        const declared = namers(read.code(file, sources.get(file) ?? ''));
+        for (const { local, imported } of one.bindings.names) {
+            const channel = declared.get(imported);
+            if (channel !== undefined) found.set(local, channel);
+        }
+    }
+    return found;
+}
+
+/**
+ * What a channel argument names: a literal as it is written, a string constant the module declares
+ * as its value, a call to a channel-naming function as the channel it builds, and null for anything
+ * else, which the caller names as not placed.
+ *
+ * @param {string} argument
+ * @param {Map<string, string>} named The channel-naming functions the module can call.
+ * @param {Map<string, string>} held The string constants the module declares.
+ * @returns {string | null}
+ */
+function channelOf(argument, named, held) {
     const literal = /^'([^']+)'$/.exec(argument.trim());
     if (literal !== null) return literal[1];
+    const constant = held.get(argument.trim());
+    if (constant !== undefined) return constant;
     const call = /^(\w+)\(/.exec(argument.trim());
     return (call === null ? undefined : named.get(call[1])) ?? null;
 }
@@ -372,28 +406,39 @@ function readerGroup(/** @type {string} */ path) {
 /**
  * Every channel read on the page, by the module that reads it: `message('x')`, `channel === 'x'`
  * or `case 'x':` under `switch (channel)`, a store accessor (`name: () => payload('x')` read as
- * `entities.name` or out of `entities: { name }`), a channel a naming function builds where the
- * module listens or subscribes, and the page's connect list, a subscription. Each of these whose
- * channel is not a literal, and a listen or subscribe with no naming function, comes back as
- * `lost`, by its index in the text.
+ * `entities.name` or out of `entities: { name }`), a channel a listen or a subscribe names as a
+ * literal (`.listen('x', ...)`, `.subscribe(['x'])`, a subscription), a channel a naming function
+ * builds where the module listens or subscribes, and the page's connect list, a subscription.
+ * Each of these whose channel is not a literal, and a listen or subscribe that names no literal in
+ * a module with no naming function, comes back as `lost`, by its index in the text.
+ *
+ * `message(` is the channel store's accessor when it is called on `entities` or bare in a module
+ * that neither imports a name `message` nor declares a function of that name; a bare call in a
+ * module that does calls that other function, and a call on any other object is that object's
+ * method, so neither is a read. A comparison of `channel` with `undefined` or `null` names no
+ * channel and is no read.
  *
  * @param {string} text Uncommented.
  * @param {Map<string, string>} accessors Accessor name to channel.
- * @param {Map<string, string>} named Every channel-naming function of the client.
+ * @param {Map<string, string>} named The channel-naming functions the module can call.
+ * @param {boolean} ownMessage Whether the module imports or declares a name `message`.
  * @returns {{ found: Read[], lost: { at: number, what: string }[] }}
  */
-function readsOf(text, accessors, named) {
+function readsOf(text, accessors, named, ownMessage) {
     /** @type {Read[]} */
     const found = [];
     /** @type {{ at: number, what: string }[]} */
     const lost = [];
     const read = (/** @type {string} */ channel) => found.push({ channel, subscribes: false });
-    for (const match of text.matchAll(/(?<!function\s+)\bmessage\(\s*([^)]*)\)/g)) {
-        const literal = /^'([^']+)'$/.exec(match[1].trim());
+    const calls = /((?<![\w$])entities\s*\.\s*|(?<![\w$.]|function\s+))message\(\s*([^)]*)\)/g;
+    for (const match of text.matchAll(calls)) {
+        if (match[1] === '' && ownMessage) continue;
+        const literal = /^'([^']+)'$/.exec(match[2].trim());
         if (literal !== null) read(literal[1]);
         else lost.push({ at: match.index, what: match[0] });
     }
-    for (const match of text.matchAll(/\bchannel\s*===\s*(?:'([^']+)'|[\w$.]+)/g)) {
+    const compared = /\bchannel\s*===\s*(?:'([^']+)'|(?!(?:undefined|null)\b)[\w$.]+)/g;
+    for (const match of text.matchAll(compared)) {
         if (match[1] !== undefined) read(match[1]);
         else lost.push({ at: match.index, what: match[0] });
     }
@@ -414,8 +459,13 @@ function readsOf(text, accessors, named) {
         if (channel !== undefined) read(channel);
     }
     const builds = [...named].filter(([name]) => new RegExp(`(?<![\\w$.])${name}\\(`).test(text));
-    for (const match of text.matchAll(/\.(?:listen|subscribe)\([^)\n]*\)?/g)) {
-        if (builds.length === 0) lost.push({ at: match.index, what: match[0] });
+    for (const match of text.matchAll(/\.(listen|subscribe)\(([^)\n]*)\)?/g)) {
+        const listed = /^\s*(?:'([^']+)'\s*,|\[((?:\s*'[^']+'\s*,?)+)\])/.exec(match[2]);
+        if (listed !== null && listed[1] !== undefined) read(listed[1]);
+        for (const one of listed?.[2]?.matchAll(/'([^']+)'/g) ?? []) {
+            found.push({ channel: one[1], subscribes: match[1] === 'subscribe' });
+        }
+        if (listed === null && builds.length === 0) lost.push({ at: match.index, what: match[0] });
     }
     if (/\b(?:listen|subscribe)\(/.test(text)) for (const [, channel] of builds) read(channel);
     for (const match of text.matchAll(/\bconnect\(\s*\[([^\]]*)\]/g)) {
@@ -432,7 +482,9 @@ function readsOf(text, accessors, named) {
 /**
  * The channel diagram: every module that publishes, grouped by its folder under server; every
  * channel it publishes; and every client module that reads the channel, grouped by layer. A dashed
- * edge is the page's subscription, a solid one a read.
+ * edge is the page's subscription, a solid one a read. A publish is a call of `publish` on the
+ * channel hub, which the server holds under the name `hub` (a variable, a property or a private
+ * field), so the `publish` method of another object names no channel.
  *
  * @param {Sources} sources
  * @param {Reader} [read] The parse of each file, shared with the other diagrams of a generation.
@@ -451,18 +503,19 @@ export function channelsDot(sources, read = parseReader()) {
     };
     /** @type {Map<string, string>} */
     const accessors = new Map();
-    /** @type {Map<string, string>} */
-    const clientNamed = new Map();
-    /** @type {[string, string][]} */
+    /** @type {[string, string, boolean][]} */
     const client = [];
     /** @type {string[]} */
     const lost = [];
     for (const [path, raw] of sources) {
         const text = read.code(path, raw);
         if (path.startsWith('lib/server/')) {
-            const named = namers(text);
-            for (const match of text.matchAll(/\.publish\(\s*('[^']*'|\w+\([^)]*\)|[^,)]+)/g)) {
-                const channel = channelOf(match[1], named);
+            const named = callableNamers(sources, read, path);
+            const held = constants(text);
+            for (const match of text.matchAll(
+                /\bhub\??\.publish\(\s*('[^']*'|\w+\([^)]*\)|[^,)]+)/g
+            )) {
+                const channel = channelOf(match[1], named, held);
                 const node = path.slice('lib/'.length).replace(/\.ts$/, '');
                 const folder = node.split('/').slice(0, 2).join('/');
                 place(`publish ${folder}`, node);
@@ -478,14 +531,19 @@ export function channelsDot(sources, read = parseReader()) {
             continue;
         }
         if (readerGroup(path) === null || path.endsWith('+server.ts')) continue;
-        client.push([path, text]);
+        const own =
+            read
+                .imports(path, raw)
+                .some((one) =>
+                    (one.bindings?.names ?? []).some((name) => name.local === 'message')
+                ) || /\bfunction\s+message\s*\(/.test(text);
+        client.push([path, text, own]);
         for (const match of text.matchAll(/(\w+)\s*:\s*\(\)\s*=>\s*\(?\s*payload\(\s*'([^']+)'/g)) {
             accessors.set(match[1], match[2]);
         }
-        for (const [name, channel] of namers(text)) clientNamed.set(name, channel);
     }
-    for (const [path, text] of client) {
-        const reads = readsOf(text, accessors, clientNamed);
+    for (const [path, text, own] of client) {
+        const reads = readsOf(text, accessors, callableNamers(sources, read, path), own);
         const node = readerNode(path);
         for (const { channel, subscribes } of reads.found) {
             place(readerGroup(path) ?? '', node);

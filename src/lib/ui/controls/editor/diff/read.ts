@@ -1,6 +1,7 @@
 // Layer 3, primitive, partial of DiffEditor.svelte. What the diff editor reads off Monaco's: the
-// layout it draws, the line changes of its diff, the selections of its two sides and the height
-// of its content. Monaco is only a type here: the editor passes in the diff editor it made.
+// layout it draws, the line changes of the diff it drew (git's where the editor was handed them,
+// diff/git-provider.ts, else Monaco's own), the selections of its two sides and the height of its
+// content. Monaco is only a type here: the editor passes in the diff editor it made.
 
 import type * as Monaco from 'monaco-editor';
 import type { DiffLineChange, DiffSelection, DiffSelections } from '../types';
@@ -22,7 +23,7 @@ export function layoutWatch(
     return { dispose: () => watch.disconnect() };
 }
 
-/** The line changes of the diff drawn, as plain numbers; null while Monaco has none yet. */
+/** The line changes of the diff drawn, as plain numbers; null while Monaco has drawn none yet. */
 export function lineChangesOf(
     made: Pick<Monaco.editor.IStandaloneDiffEditor, 'getLineChanges'>
 ): DiffLineChange[] | null {

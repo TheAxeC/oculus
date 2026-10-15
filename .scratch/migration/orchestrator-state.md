@@ -24,19 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:      # steps in flight, up to six (Z632)
-- step: Q72
-  executor: agent
-  worker: claude:opus
-  session_id: af9a2233fb1dc8792 (claude-opus-5-5)   # launched with the prompt of agents/briefs/Q72-launch.md word for word
-  report: agents/reviews/Q72-report.md
-  builder_usage: "372,954 tokens, 862 tool uses, 223.3 min"
-  worktree: .agents/worktrees/Q72
-  base: e36bcd0b4   # the preparation commit; base copy .agents/worktrees/Q72-base with unused-exports.txt
-  round: 1   # agents/briefs/Q72-round1.md; snapshot .agents/worktrees/Q72-round-1 with files.txt
-  landing: preparing
-  reviewer_report: "agents/reviews/Q72-refuter.md (a036aa66bc03d3ab8, claude-opus-5-5, 138,952 tokens, 124 tool uses, 29.3 min)"
-  brief_check: "agents/reviews/Q72-brief-check.md (a82475b292d05b5f0, claude-opus-5-5, 270,707 tokens, 93 tool uses, 16.6 min)"
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -281,6 +269,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-15 (Q72 landed). Q72, the architecture re-read with its four carried fixes, landed on main (booking in plan.md under Q72, `agents/reviews/Q72-landing.md`) after one repair round and the review over it: the re-read finds no major architectural problem in any layer, good enough to maintain and to open-source; the channel and write drawings hold no two arrows along each other (G25's row); the diff pane draws git's hunks, the character changes found in a worker of their own; the eight form fields read one stylesheet; the three negative checks wait on a signal. Five findings of the review over round 1 fixed at landing (a superseded worker answer no longer draws over the newer, a throwing worker start falls back to Monaco's diff, three head comments); G33's Test line names the new row (Z901). `npm run test:landing` passed in the gate (557.2 s); the look on 8796 saw the diff pane, the drawings and the fields in dark, light and nord. Open items: 116. In flight (0 of 6): none. Next: O33, built inline by the orchestrator; its deletions of research-cockpit, remove-unicode and project-new and the repointing of `.agents/skills/project-cleanup/SKILL.md:18` are listed path by path for Axel's yes first.
 - 2026-10-15 (Q72 round 1 sent). Q72's builder reported all five parts (`agents/reviews/Q72-report.md`, usage in `builder_usage`); the reviewer a036aa66bc03d3ab8 on claude-opus-5-5 wrote `agents/reviews/Q72-refuter.md`: every item holds, cases 8, 21, 22 and 23 wait on the look; findings: the character changes of git's blocks computed on the page's thread (a 5000-line block 167 s), the providers' map never shrinking, a stale comment in the G25 describe, the builder's unapproved scripts (open item 116). Round 1 (`agents/briefs/Q72-round1.md`, three items) sent to the builder af9a2233fb1dc8792; snapshot `.agents/worktrees/Q72-round-1`. Open items: 116. In flight (1 of 6): Q72 (round 1). Next: the review over the round, /land Q72 (looks: diff pane, drawings, fields), then O33.
 - 2026-10-15 (the Pillars page back, inline). Axel: "I think I want the pillars rail back" (open item 115): the Pillars page restored with Pillars, Domains and Map (l1 to l3), Registries ends at Resources (r1 to r6); the foot keeps Workbenches and Update. `npm run diagrams && npm run test:landing` in the gate: every command passed; a look on 8796 saw both pages and l1, l3, r1, r2. Open items: none. In flight (0 of 6): none. Next: on Axel's word, /spec Q72, then O33.
 - 2026-10-15 (the rail, inline). At Axel's word ("Can't we do it inline now?"), open item 114 done inline on main with no step added (plan.md Rulings, open item 114): the rail foot holds Workbenches and Update, the Search button and the Bookmarks menu gone; the Pillars page merged into Registries, Pillars, Domains and Map at r7 to r9, twelve rail pages. `npm run diagrams && npm run test:landing` in the gate: every command passed; a look on a scratch oculus on 8796 saw the twelve pages, the two-button foot, r7 and r9, and both bookmarks opening from the Files view. Open items: none. In flight (0 of 6): none. Next: on Axel's word, /spec Q72, then O33.

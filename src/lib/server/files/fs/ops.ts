@@ -751,6 +751,8 @@ export function handleCompare(
         save === '' ? side(roots, withRoot, withPath) : savedSide(roots, history, root, path, save);
     if (refused(original)) return json(original, { status: 400, headers: NO_STORE });
     const binary = original.binary || modified.binary;
+    // Two files, or a file and a version of it, that no git diff compares: no git line changes, so
+    // the pane draws Monaco's own diff.
     const files: DiffSides[] = [
         {
             oldPath: save === '' ? `${withRoot}:${withPath}` : `${root}:${path}@${save}`,
@@ -786,6 +788,8 @@ async function previewed(
         request
     );
     if (refused(preview)) return json(preview, { status: 400, headers: NO_STORE });
+    // A file and the text the replacements would leave, which no git diff compares: no git line
+    // changes, so the pane draws Monaco's own diff.
     const files: DiffSides[] = [
         {
             oldPath: `${root}:${path}`,

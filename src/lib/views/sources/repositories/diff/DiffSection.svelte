@@ -2,11 +2,11 @@
     // Layer 3, partial of views/sources/repositories/diff/Diff.svelte. One file of a diff: its
     // header row (diff/FileHeader.svelte) above it when the diff holds several or is not a file's
     // own, and Monaco's diff editor over its two versions
-    // (ui/controls/editor/diff/DiffEditor.svelte). A folded file draws its header alone. The editor
-    // hides the unchanged runs of the file, or draws them all, as the pane says. A binary file is a
-    // note, and a file whose two texts are equal (a rename or a mode change alone, a new empty
-    // file) is git's head lines for it. A file whose line endings alone changed, which Monaco draws
-    // as no change, says so at its head and shows all its lines.
+    // (ui/controls/editor/diff/DiffEditor.svelte), drawing git's line changes where the file
+    // carries them. A folded file draws its header alone. The editor hides the unchanged runs, or
+    // draws them all, as the pane says. A binary file is a note, and a file whose two texts are
+    // equal (a rename or a mode change alone, a new empty file) is git's head lines for it. A file
+    // whose line endings alone changed says so at its head and shows all its lines.
     //
     // In a diff of several files the section's editor is made when the section first comes within
     // one screen of the pane's view, since each is two editors, and until then the section holds
@@ -15,18 +15,18 @@
     // file is folded, or not made yet) is kept and brought into view once the editor reports its
     // changes.
     //
-    // Above each hunk (git's grouping of Monaco's line changes,
-    // state/sources/repositories/diff/diff-hunks.ts) is a bar (diff/HunkBar.svelte) with git's hunk
-    // head and the actions the file allows: Stage Block and Revert Block, or Unstage Block in a
-    // staged diff, each over the rows the selections choose in that hunk while they choose any.
-    // Where a partial patch cannot be built the bar says to act on the file whole from Changes, or,
-    // for a path in conflict, to resolve it in the merge editor. The bar draws its buttons as
-    // glyphs while the editor leaves it too little width for their words. What the actions do is
-    // the pane's: this reports presses. A diff against the original an app's source control gives
-    // (`source`) puts the actions of the app's `scm/change/title` menu in each bar, and pressing
-    // one runs its command in the app's host with the file, the diff's changes and the hunk's
-    // first change as the index. Bars sit after lines of either side: the hunk bars of the modified
-    // side, and the comment box.
+    // Above each hunk (the editor's line changes as git groups them, git's own hunk for a file git
+    // diffed, state/sources/repositories/diff/diff-hunks.ts) is a bar (diff/HunkBar.svelte) with
+    // its head as git writes it and the actions the file allows: Stage Block and Revert Block, or
+    // Unstage Block in a staged diff, each over the rows the selections choose in that hunk while
+    // they choose any. Where a partial patch cannot be built the bar says to act on the file whole
+    // from Changes, or, for a path in conflict, to resolve it in the merge editor. The bar draws
+    // its buttons as glyphs while the editor leaves it too little width for their words. What the
+    // actions do is the pane's: this reports presses. A diff against the original an app's source
+    // control gives (`source`) puts the actions of the app's `scm/change/title` menu in each bar,
+    // and pressing one runs its command in the app's host with the file, the diff's changes and the
+    // hunk's first change as the index. Bars sit after lines of either side: the hunk bars of the
+    // modified side, and the comment box.
     //
     // A file's own diff opened for a session that the sessions payload still holds takes a comment
     // on a line of either side (the editor's `+` or Add Comment on Line): the box opens after that
@@ -457,6 +457,7 @@
                     {model}
                     {path}
                     originalPath={file.oldPath === '' ? path : file.oldPath}
+                    changes={file.changes}
                     {mode}
                     context={CONTEXT}
                     hideUnchanged={unchanged && !endings}

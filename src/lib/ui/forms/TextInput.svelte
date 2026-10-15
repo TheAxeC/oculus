@@ -23,6 +23,7 @@
 
     import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
     import { typedInto } from '../controls/text/text-menu';
+    import '../theme/field.css';
 
     type Props = {
         value: string;
@@ -86,7 +87,7 @@
 
 <TextBoxMenu {label} box={() => input} {secret}>
     <input
-        class="text"
+        class="text oculus-field"
         type={secret ? 'password' : 'text'}
         autocomplete={secret ? 'off' : undefined}
         {value}
@@ -110,42 +111,10 @@
         width: 100%;
         max-width: 40em;
         box-sizing: border-box;
-        min-width: 0;
-        border: 1px solid var(--line);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-md);
-        line-height: calc(var(--button-line) * var(--text-scale, 1));
-        padding: 4px 6px;
-    }
-
-    .text::placeholder {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .text:disabled {
-        color: var(--muted-txt, var(--muted));
-        cursor: not-allowed;
-    }
-
-    .text:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
     }
 
     .text[readonly] {
         color: var(--muted-txt, var(--muted));
         background: none;
-    }
-
-    /* The terminal shape: a prompt on the panel, no box round it. */
-    :global(body.rice) .text {
-        border: 0;
-        border-bottom: 1px solid var(--line);
-        border-radius: 0;
-        background: none;
-        font-family: var(--font-mono);
     }
 </style>

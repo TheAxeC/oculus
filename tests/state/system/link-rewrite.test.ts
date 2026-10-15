@@ -37,21 +37,43 @@ const rows: { title: string; reply: LinksReply; said: string[] }[] = [
     }
 ];
 
+/** The one entry of the edit a second offer is answered with. */
+const CREATED = { kind: 'create', uri: 'oculus-file:///inner/shown.md' };
+
 describe('the offer to rewrite the links of moved items', () => {
     it.each(rows)('$title', async ({ reply, said }) => {
         const told: string[] = [];
-        let submitted = 0;
+        const submitted: unknown[] = [];
+        const answers: LinksReply[] = [
+            reply,
+            {
+                ok: true,
+                edit: { documentChanges: [CREATED] },
+                held: new Map(),
+                overlaps: [],
+                unanswered: []
+            }
+        ];
+        // A second offer, answered with an edit, runs through the same steps as the row's and
+        // reaches its submit after the row's offer has ended, so the checks made once it is
+        // submitted see everything the row's offer said and submitted.
+        let shown: (() => void) | null = null;
+        const second = new Promise<void>((resolve) => {
+            shown = resolve;
+        });
         const offer = createLinkRewrite({
-            askLinks: () => Promise.resolve(reply),
-            submit: () => {
-                submitted += 1;
-                return Promise.reject(new Error('an answer with no edit is not shown'));
+            askLinks: () => Promise.resolve(answers.shift() ?? reply),
+            submit: (edit) => {
+                submitted.push(edit);
+                shown?.();
+                return Promise.resolve({ applied: true });
             },
             say: (message) => told.push(message)
         });
         offer([MOVE]);
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        offer([MOVE]);
+        await second;
         expect(told).toEqual(said);
-        expect(submitted).toBe(0);
+        expect(submitted).toEqual([{ documentChanges: [CREATED] }]);
     });
 });

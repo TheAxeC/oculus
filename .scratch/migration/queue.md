@@ -1,10 +1,10 @@
-In flight (1 of 6 slots in use):
-- Q72 (the architecture re-read, with the channels and writes diagrams readable, the diff pane drawing and building its blocks from git's hunks, one field look, and three negative checks waiting on a signal): repair round 1 (the review found the diff provider computing on the page thread and a stale comment; open item 116 on the builder's scratch scripts).
+In flight (0 of 6 slots in use): none.
 
 Queued, in order (1 step):
-- O33 (oculus in its own repository; inline): straight after Q72 lands, at Axel's word; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project); part (10) the Literature view's scrolling and long authors filter; part (11) the title bar strip in the desktop app only; part (12) the hidden Transcript tab's update loop and the agent rows reading running; part (13) the Session view's text size; part (14) a PDF opened at a page.
+- O33 (oculus in its own repository; inline): next, straight after Q72, at Axel's word; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project); part (10) the Literature view's scrolling and long authors filter; part (11) the title bar strip in the desktop app only; part (12) the hidden Transcript tab's update loop and the agent rows reading running; part (13) the Session view's text size; part (14) a PDF opened at a page.
 
 Landed, newest first:
+- Q72 (the architecture re-read: no major problem, good enough to maintain and to open-source; the channel and write drawings with no two arrows along each other; the diff pane on git's hunks; one stylesheet for the form fields; three negative checks on a signal), 2026-10-15, the landing commit "Land Q72".
 - The Pillars page back on the rail (open item 115), 2026-10-15, inline on main.
 - The rail inline (open item 114: the foot's Search and Bookmarks removed, the Pillars page merged into Registries), 2026-10-15, inline on main.
 - D77 (the Sessions view and the title bar, the rail pages, the Repositories change groups and the graph), 2026-10-15, 9e250b73d.

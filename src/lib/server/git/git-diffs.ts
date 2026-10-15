@@ -7,7 +7,7 @@
 
 import { permitted } from '../core/paths.ts';
 import { words } from '../core/words.ts';
-import { NO_CONTEXT } from '../core/git/parse.ts';
+import { PANE_DIFF } from '../core/git/parse.ts';
 import {
     allowedRoots,
     checkPaths,
@@ -45,7 +45,7 @@ export async function fileDiff(
 ): Promise<Outcome & { ours: boolean }> {
     const wrong = checkPaths(root, [path], text, roots);
     if (wrong !== '') return { ...failed(wrong), ours: false };
-    const flags = ['--no-color', '--no-ext-diff', NO_CONTEXT, '--', path];
+    const flags = [...PANE_DIFF, '--', path];
     const read = await diff(root, [...(staged ? ['--cached'] : []), ...flags]);
     if (staged || !read.ok || !read.output.startsWith('diff --cc '))
         return { ...read, ours: false };
@@ -89,5 +89,5 @@ export async function worktreeDiff(
 
 /** The three-dot diff of a worktree from the branch `worktreeFrom` named, which it checked. */
 export function worktreeRange(path: string, from: string): Promise<Outcome> {
-    return diff(path, ['--no-color', '--no-ext-diff', NO_CONTEXT, `${from}...HEAD`]);
+    return diff(path, [...PANE_DIFF, `${from}...HEAD`]);
 }

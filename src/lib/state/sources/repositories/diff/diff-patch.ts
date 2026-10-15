@@ -10,8 +10,10 @@
 // whose context would overlap are one. The server runs `apply --recount`.
 //
 // The rows are laid out by the line changes the pane drew, so a chosen row is the line the reader
-// saw. Those are Monaco's model lines, where a text that ends with a newline has one more, empty,
-// line; that line is not one of git's, and a change of it is the change of the newline before it.
+// saw: git's changes of the file where the pane drew them, which makes a whole block's patch git's
+// own hunk, else Monaco's. Their numbers are of Monaco's model lines, where a text that ends with
+// a newline has one more, empty, line; that line is not one of git's, and a change of it is the
+// change of the newline before it.
 
 import type { DiffSides } from '../../../../data/model/index.ts';
 import { CONTEXT, type ChosenRows, type LineChange } from './diff-hunks.ts';

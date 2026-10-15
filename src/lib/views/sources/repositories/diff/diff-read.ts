@@ -43,7 +43,11 @@ async function answer(request: DiffRequest): Promise<DiffAnswer> {
     return diffAnswerOf(response.ok, await readJson(response));
 }
 
-/** The file of a save conflict as the disk holds it; a file that is not there is an empty side. */
+/**
+ * The file of a save conflict as the disk holds it; a file that is not there is an empty side. No
+ * git diff compares it with the tab's text, so it carries no git line changes and the pane draws
+ * Monaco's own diff.
+ */
 async function diskSide(state: DiffState): Promise<DiffAnswer> {
     const response = await fetch(diffUrl(state), { cache: 'no-cache' });
     if (!response.ok && response.status !== 404) {
@@ -70,7 +74,8 @@ async function diskSide(state: DiffState): Promise<DiffAnswer> {
 
 /**
  * The file as the disk holds it against the original an app's source control gives it (the
- * control's quick diff). A control that is gone, or gives no original, is an unread side.
+ * control's quick diff). A control that is gone, or gives no original, is an unread side. No git
+ * diff compares the two, so the file carries no git line changes and the pane draws Monaco's own.
  */
 async function sourceSide(state: DiffState, token: string): Promise<DiffAnswer> {
     const { original } = state;
@@ -109,7 +114,8 @@ async function sourceSide(state: DiffState, token: string): Promise<DiffAnswer> 
 
 /**
  * The file of a Refactor Preview as the preview holds it: the file as it is on the left and the
- * file with the checked edits on the right. A preview that is no longer pending has none.
+ * file with the checked edits on the right. A preview that is no longer pending has none. No git
+ * diff compares the two, so the file carries no git line changes and the pane draws Monaco's own.
  */
 function refactorSide(state: DiffState, sides: RefactorSides): DiffAnswer {
     const held =

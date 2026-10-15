@@ -1,0 +1,43 @@
+/* Layer 3, stylesheet of the form fields: ui/forms/choice/Select.svelte,
+   ui/forms/choice/select/FieldSelect.svelte's trigger, ui/forms/choice/MultiSelect.svelte's filter,
+   ui/forms/choice/SuggestInput.svelte, ui/forms/TextInput.svelte, ui/forms/TextArea.svelte,
+   ui/forms/DateInput.svelte and ui/controls/text/Search.svelte. It sits in the lowest folder of
+   ui, so both folders may import it. Each field imports it and puts the class on its field, so
+   every kind of field reads as one kind: the same border, corner, ground, words, line and padding,
+   the same focus outline, a disabled field muted, and the rice theme's terminal shape, a prompt on
+   the panel with a line under it and no box round it. What one kind sets otherwise (its width, a
+   text area's height, the rice line of a text area) is in its own style, whose class selector
+   outranks this one. */
+.oculus-field {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--input-radius);
+    background: var(--chip);
+    color: var(--ink-txt, var(--ink));
+    font: inherit;
+    font-size: var(--fs-md);
+    line-height: calc(var(--button-line) * var(--text-scale, 1));
+    padding: 4px 6px;
+}
+
+.oculus-field::placeholder {
+    color: var(--muted-txt, var(--muted));
+}
+
+.oculus-field:disabled {
+    color: var(--muted-txt, var(--muted));
+    cursor: not-allowed;
+}
+
+.oculus-field:focus-visible {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+}
+
+body.rice .oculus-field {
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: none;
+    font-family: var(--font-mono);
+}

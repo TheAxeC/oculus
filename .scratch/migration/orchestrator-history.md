@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Q72's landing (2026-10-15): the review over round 1's findings closed at landing (`agents/reviews/Q72-refuter.md`, Closed): a superseded worker answer answers Monaco's cancellation, a throwing worker start falls back to Monaco's diff, three head comments made exact; G33's Test line names the new row under Z901; open item 116 stays open for Axel, the landing having gone on under its option (a).
 - Q72 review (2026-10-15): three findings sent back as round 1 (the character changes off the page's thread, the providers' map, a stale comment); Spec 2, Proof 1 to 3 accepted with reasons in `agents/briefs/Q72-round1.md`; the builder's scripts raised as open item 116.
 - PDF page on open (2026-10-15): Axel put opening a PDF at a page, in the desktop app and in a browser, into O33 as part (14).
 - Z905 (2026-10-15, Q72's brief check, automode): one field look for all eight form fields that repeat it; the lazy option, the select pair alone, not taken.

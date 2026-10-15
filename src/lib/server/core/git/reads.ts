@@ -21,9 +21,10 @@ import type {
 } from '../../../data/model/index.ts';
 import {
     GRAPH_FORMAT,
-    NO_CONTEXT,
+    PANE_DIFF,
     STASH_REF,
     diffHeads,
+    gitLineChanges,
     parseAttributes,
     parseBlame,
     parseGraph,
@@ -183,17 +184,7 @@ export async function commitDiff(
     const paths = renamed ? [renamed.from, path] : [path];
     const done = await show(
         root,
-        [
-            '--format=',
-            '--no-color',
-            '--no-ext-diff',
-            NO_CONTEXT,
-            '-M',
-            '--diff-merges=first-parent',
-            hash,
-            '--',
-            ...paths
-        ],
+        ['--format=', ...PANE_DIFF, '-M', '--diff-merges=first-parent', hash, '--', ...paths],
         ms
     );
     if (!done.ok) return refused(reasonOf(done, text));
@@ -212,11 +203,7 @@ export async function stashDiff(
 ): Promise<Read<DiffSides[]>> {
     if (!STASH_REF.test(ref)) return refused(words(text, 'server.git.not_a_stash'));
     const ms = milliseconds(timeout);
-    const done = await readDiff(
-        root,
-        ['--no-color', '--no-ext-diff', NO_CONTEXT, '-M', `${ref}^1`, ref],
-        ms
-    );
+    const done = await readDiff(root, [...PANE_DIFF, '-M', `${ref}^1`, ref], ms);
     if (!done.ok) return refused(reasonOf(done, text));
     const tracked = await sidesOf(root, done.text, `${ref}^1:`, `${ref}:`, text, ms);
     if (!tracked.ok) return tracked;
@@ -225,22 +212,20 @@ export async function stashDiff(
     if (parents.text.trim().split(/\s+/).length < 3) return tracked;
     // The untracked files are a third parent with no parent of its own, so `show` lists each as
     // new.
-    const loose = await show(
-        root,
-        ['--format=', '--no-color', '--no-ext-diff', NO_CONTEXT, `${ref}^3`],
-        ms
-    );
+    const loose = await show(root, ['--format=', ...PANE_DIFF, `${ref}^3`], ms);
     if (!loose.ok) return refused(reasonOf(loose, text));
     const added = await sidesOf(root, loose.text, `${ref}^3:`, `${ref}^3:`, text, ms);
     return added.ok ? { ok: true, value: [...tracked.value, ...added.value] } : added;
 }
 
 /**
- * The two versions of each file of a diff: its head lines cut from the diff's text, and each side
- * read whole, `before` and `after` naming where (a revision and a colon, `:` for the index, `:2:`
- * for Current's stage of a conflict, or null for the worktree). A binary file, and the side a file
- * was created or deleted on, is the empty string; a submodule's sides are git's own lines for it.
- * `encoded` says whether both sides' bytes were UTF-8 before they were decoded.
+ * The two versions of each file of a diff run with PANE_DIFF: its head lines cut from the diff's
+ * text, each side read whole, `before` and `after` naming where (a revision and a colon, `:` for
+ * the index, `:2:` for Current's stage of a conflict, or null for the worktree), and git's line
+ * changes from its hunk heads where they match the two texts read (`gitLineChanges`). A binary
+ * file, and the side a file was created or deleted on, is the empty string; a submodule's sides
+ * are git's own lines for it, and neither carries changes. `encoded` says whether both sides'
+ * bytes were UTF-8 before they were decoded.
  */
 export async function sidesOf(
     root: string,
@@ -268,12 +253,14 @@ export async function sidesOf(
             : await version(root, after, file.newPath, text, ms);
         if (!original.ok) return refused(original.text);
         if (!modified.ok) return refused(modified.text);
+        const changes = gitLineChanges(file.body, original.text, modified.text);
         files.push({
             ...sides,
             binary: false,
             encoded: original.utf8 && modified.utf8,
             original: original.text,
-            modified: modified.text
+            modified: modified.text,
+            ...(changes === null ? {} : { changes })
         });
     }
     return { ok: true, value: files };

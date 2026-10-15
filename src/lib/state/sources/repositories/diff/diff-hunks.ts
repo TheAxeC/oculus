@@ -1,23 +1,20 @@
 // Layer 2, client state. The diff pane's hunks and the rows a reader chooses in them, over the line
-// changes Monaco's diff editor answers: the hunks by git's own grouping, so a hunk staged is the
-// hunk `git add -p` offers; the rows a selection chooses by VS Code's rule; the step from hunk to
-// hunk and from file to file; the hunk a pane opens at; and which actions a file allows.
+// changes the diff editor answers: for a file a git diff was read for, git's own changes, one per
+// hunk head of the `-U0` diff (`DiffSides.changes`), which the editor draws; for a comparison no
+// git diff ran for, Monaco's. The hunks are grouped as git groups changes, so a block staged is
+// the hunk `git add -p` offers. Then the rows a selection chooses by VS Code's rule; the step from
+// hunk to hunk and from file to file; the hunk a pane opens at; and which actions a file allows.
 //
 // Line numbers are Monaco's, from 1. A change with an empty side names that side by the line
 // before where it would be, with an end of 0, as `getLineChanges()` answers it.
 
-import type { DiffAttributes, DiffSides } from '../../../../data/model/index.ts';
+import type { DiffAttributes, DiffSides, GitLineChange } from '../../../../data/model/index.ts';
 
 /** The lines of unchanged context a hunk keeps each side, as git's default. */
 export const CONTEXT = 3;
 
-/** One line change as the diff editor answers it. */
-export type LineChange = {
-    originalStartLineNumber: number;
-    originalEndLineNumber: number;
-    modifiedStartLineNumber: number;
-    modifiedEndLineNumber: number;
-};
+/** One line change as the diff editor answers it, in the numbers git's changes are read in. */
+export type LineChange = GitLineChange;
 
 /** A run of lines, from its first to the line after its last; an empty run has `from === to`. */
 export type LineSpan = { from: number; to: number };
@@ -235,8 +232,8 @@ export function revealDue(pending: number | null): RevealStep {
     return { now: pending, pending: null };
 }
 
-/** Whether a file's two texts differ only in their line endings, which Monaco does not draw as a
- * change: the pane says so at the file's head. */
+/** Whether a file's two texts differ only in their line endings, which leave no changed word on a
+ * changed line and no change at all in Monaco's own diff: the pane says so at the file's head. */
 export function endingsOnly(sides: DiffSides): boolean {
     if (sides.binary || sides.original === sides.modified) return false;
     const plain = (text: string): string => text.replace(/\r\n?/g, '\n');
@@ -244,12 +241,15 @@ export function endingsOnly(sides: DiffSides): boolean {
 }
 
 /** The hunk counts of a diff's files before they are drawn: 0 for a file that has no change to
- * step to (a binary file, two equal texts, or line endings alone), null for one whose hunks its
- * editor reports once drawn. */
+ * step to (a binary file, two equal texts, git finding no hunk, or line endings alone where no git
+ * diff ran, which Monaco draws as no change), null for one whose hunks its editor reports once
+ * drawn. */
 export function countsOf(files: readonly DiffSides[]): (number | null)[] {
-    return files.map((file) =>
-        file.binary || file.original === file.modified || endingsOnly(file) ? 0 : null
-    );
+    return files.map((file) => {
+        if (file.binary || file.original === file.modified) return 0;
+        if (file.changes !== undefined) return file.changes.length === 0 ? 0 : null;
+        return endingsOnly(file) ? 0 : null;
+    });
 }
 
 /** The hunk a pane opened at a modified line goes to: the hunk holding it, else the first after

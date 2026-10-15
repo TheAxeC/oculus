@@ -18,7 +18,8 @@
 
 import { posix } from 'node:path';
 import ts from 'typescript';
-import { arrowsAlong, labelledEdge, labelsAcross } from './labels.mjs';
+import { drawnApart } from './drawing/apart.mjs';
+import { labelledEdge } from './drawing/labels.mjs';
 import { parseReader } from './parsed.mjs';
 import {
     BARE,
@@ -228,16 +229,14 @@ const METHOD = /(?<![\w$.])([\w$]+)\.([\w$]+)\s*\(/g;
  * refusal of one of them calls; a module the trace reaches that is none of these is left out, with
  * its edges. A call in a condition that answers 4xx is a refusal, drawn dashed; an edge to the disk
  * is labelled with its node:fs calls; every other edge's tooltip, which renderSvg() makes its
- * title, names the functions it calls. A plain arrow `ports` names (`from->to`) carries the port
- * attribute given, a `tailport=` or a `headport=`, which writesDrawn() chooses.
+ * title, names the functions it calls.
  *
  * @param {Sources} sources
  * @param {string} [route]
- * @param {Map<string, string>} [ports]
  * @param {Reader} [read] The parse of each file, shared with the other diagrams of a generation.
  * @returns {string}
  */
-export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read = parseReader()) {
+export function writesDot(sources, route = WRITE_ROUTE, read = parseReader()) {
     if (!sources.has(route)) throw new Error(`the write route ${route} is not in the source`);
     /** @type {Map<string, Module>} */
     const modules = new Map();
@@ -481,7 +480,7 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read 
         const folder = posix.dirname(path);
         folders.set(folder, [...(folders.get(folder) ?? []), path]);
     }
-    const lines = header('writes', 'rankdir=LR', RANKSEP);
+    const lines = header('writes', 'rankdir=LR');
     for (const folder of sorted(folders.keys())) {
         const nodes = sorted(folders.get(folder) ?? []).map(
             (path) => `${quote(path)} [label=${quote(posix.basename(path))}];`
@@ -502,11 +501,7 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read 
         } else if (shown) {
             lines.push(...labelledEdge(from, to, names, style, kind));
         } else {
-            const attrs = [
-                ports.get(`${from}->${to}`) ?? '',
-                `tooltip=${quote(names)}`,
-                style
-            ].filter((one) => one !== '');
+            const attrs = [`tooltip=${quote(names)}`, style].filter((one) => one !== '');
             lines.push(`    ${quote(from)} -> ${quote(to)} [${attrs.join(', ')}];`);
         }
     }
@@ -515,64 +510,19 @@ export function writesDot(sources, route = WRITE_ROUTE, ports = new Map(), read 
 }
 
 /**
- * The rank separation of the write diagram, in inches: wider than the other diagrams' 0.5, so the
- * calls from one module into a folder several ranks on have room to part before they reach it.
- */
-const RANKSEP = 0.8;
-
-/**
- * The port attributes writesDrawn() tries, in order, for a plain arrow that runs along another
- * arrow: first the tail ports beside the east side a left-to-right arrow leaves by, then the head
- * ports beside the west side it arrives by, which part the arrows that reach one module together.
- */
-export const PORTS = [
-    'tailport=se',
-    'tailport=s',
-    'tailport=ne',
-    'tailport=n',
-    'headport=nw',
-    'headport=sw'
-];
-
-/**
- * The write diagram drawn, with no two arrows running along each other where a port can part
- * them: while arrowsAlong() names a pair, the later plain arrow of the pair (by name) is given the
- * next port of PORTS and the diagram is drawn again; so is a plain arrow that labelsAcross() names
- * as running through the words of another arrow. A plain arrow joins two modules directly;
- * an arrow drawn through its words or its calls is not one, so a pair of a plain arrow and another
- * kind is parted by the plain one. The pair may leave one module or reach one: two arrows from one
- * module leave it at one point and two arrows into one module reach it at one point, and when their
- * heads lie in one direction the router lays them together for as long as they head that way,
- * which a tail port parts at the module they leave and a head port at the module they reach. It
- * stops when no pair is left whose plain arrow has a port it has not tried, so what it cannot part
- * stays for the check to name.
+ * The write diagram drawn by drawing/apart.mjs's drawnApart(), so no two of its arrows run along
+ * each other and no words sit across an arrow. Where its rule cannot clear the drawing,
+ * drawnApart() throws an error naming every pair and every label left, and `npm run diagrams`
+ * writes nothing and exits with it.
  *
  * @param {Sources} sources
- * @param {(dot: string) => string} draw The renderer, DOT to SVG.
+ * @param {import('./drawing/apart.mjs').Renderer} renderer
  * @param {string} [route]
- * @param {Reader} [read] The parse of each file, read by every round of the search.
+ * @param {Reader} [read] The parse of each file.
  * @returns {{ dot: string, svg: string }}
  */
-export function writesDrawn(sources, draw, route = WRITE_ROUTE, read = parseReader()) {
-    /** @type {Map<string, string>} */
-    const ports = new Map();
-    /** The index in PORTS of the port the arrow takes next; PORTS.length when it has tried all. */
-    const nextPort = (/** @type {string} */ arrow) => PORTS.indexOf(ports.get(arrow) ?? '') + 1;
-    for (;;) {
-        const dot = writesDot(sources, route, ports, read);
-        const svg = draw(dot);
-        const along = arrowsAlong(svg)
-            .map((line) => /^(.*) along (.*) for \d+$/.exec(line)?.slice(1) ?? [])
-            .map((pair) => pair.reverse().find((one) => !one.includes(' to ')));
-        const across = labelsAcross(svg).map(
-            (line) => /^.* label .* across (.*?)(?:: .*)?$/.exec(line)?.[1]
-        );
-        const arrow = [...along, ...across].find(
-            (one) => one !== undefined && !one.includes(' to ') && nextPort(one) < PORTS.length
-        );
-        if (arrow === undefined) return { dot, svg };
-        ports.set(arrow, PORTS[nextPort(arrow)]);
-    }
+export function writesDrawn(sources, renderer, route = WRITE_ROUTE, read = parseReader()) {
+    return drawnApart('writes', writesDot(sources, route, read), renderer);
 }
 
 /**

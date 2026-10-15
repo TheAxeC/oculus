@@ -403,12 +403,31 @@ export type GitMergeSides = {
 };
 
 /**
+ * One change of a diff in the numbers Monaco's diff editor answers its line changes in: the first
+ * and the last line of each side, from 1, and a side that holds no line named by the line before
+ * where it would be, with an end of 0, which is how a hunk head of `git diff -U0` names it.
+ */
+export type GitLineChange = {
+    originalStartLineNumber: number;
+    originalEndLineNumber: number;
+    modifiedStartLineNumber: number;
+    modifiedEndLineNumber: number;
+};
+
+/**
  * One file of a diff as the diff pane reads it: its two paths (the same but for a rename), git's
  * head lines for it (from `diff --git` to the line before its first hunk, or its `Binary files`
  * line), which a patch cut from it repeats, whether git called it binary, whether both versions'
  * bytes are UTF-8, and the two whole texts. A side that does not hold the file, and a binary file,
  * has the empty string. A side that is not UTF-8 is decoded with U+FFFD for each byte it cannot
  * read, so its text is for reading only: no patch may be cut from it.
+ *
+ * `changes` are git's line changes of the file, one per hunk head of the `-U0` diff it was read
+ * from, which the pane draws and builds its blocks on, so a block is the hunk `git add -p` offers.
+ * They are absent where no git diff ran for the file (a comparison the page or the server makes of
+ * two texts), for a binary file and a submodule, and for a file whose hunks do not match the two
+ * texts read (the worktree written between the diff and the read): the pane then draws Monaco's
+ * own diff. An empty list is git finding no hunk: a pure rename, a mode change, a new empty file.
  */
 export type DiffSides = {
     oldPath: string;
@@ -418,6 +437,7 @@ export type DiffSides = {
     encoded: boolean;
     original: string;
     modified: string;
+    changes?: GitLineChange[];
 };
 
 /**

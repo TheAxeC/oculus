@@ -11,6 +11,7 @@
 
     import TextBoxMenu from '../controls/text/TextBoxMenu.svelte';
     import { typedInto } from '../controls/text/text-menu';
+    import '../theme/field.css';
 
     type Props = {
         value: string;
@@ -49,7 +50,7 @@
 
 {#if kind === 'date'}
     <input
-        class="date"
+        class="oculus-field"
         type="date"
         {value}
         aria-label={label}
@@ -62,7 +63,7 @@
 {:else}
     <TextBoxMenu {label} box={() => box}>
         <input
-            class="date"
+            class="oculus-field"
             type="text"
             {value}
             aria-label={label}
@@ -75,35 +76,3 @@
         />
     </TextBoxMenu>
 {/if}
-
-<style>
-    .date {
-        min-width: 0;
-        border: 1px solid var(--line);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-md);
-        line-height: calc(var(--button-line) * var(--text-scale, 1));
-        padding: 4px 6px;
-    }
-
-    .date:disabled {
-        color: var(--muted-txt, var(--muted));
-        cursor: not-allowed;
-    }
-
-    .date:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
-    }
-
-    :global(body.rice) .date {
-        border: 0;
-        border-bottom: 1px solid var(--line);
-        border-radius: 0;
-        background: none;
-        font-family: var(--font-mono);
-    }
-</style>

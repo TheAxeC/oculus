@@ -26,6 +26,7 @@
     import TextBoxMenu from '../../controls/text/TextBoxMenu.svelte';
     import { typedInto } from '../../controls/text/text-menu';
     import FloatingList from '../../frame/FloatingList.svelte';
+    import '../../theme/field.css';
 
     type Props = {
         value: string;
@@ -114,7 +115,7 @@
             {#snippet child({ props })}
                 <input
                     {...props}
-                    class="suggest"
+                    class="suggest oculus-field"
                     type="text"
                     autocomplete="off"
                     aria-label={label}
@@ -164,37 +165,11 @@
 </TextBoxMenu>
 
 <style>
-    /* The look of TextInput.svelte, so the two kinds of box read as one kind. */
+    /* The width of TextInput.svelte, so the two kinds of box read as one kind. */
     .suggest {
         width: 100%;
         max-width: 40em;
         box-sizing: border-box;
-        min-width: 0;
-        border: 1px solid var(--line);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-md);
-        line-height: calc(var(--button-line) * var(--text-scale, 1));
-        padding: 4px 6px;
-    }
-
-    .suggest::placeholder {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .suggest:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
-    }
-
-    :global(body.rice) .suggest {
-        border: 0;
-        border-bottom: 1px solid var(--line);
-        border-radius: 0;
-        background: none;
-        font-family: var(--font-mono);
     }
 
     /* The box that scrolls, as GlyphList.svelte's: bits-ui scrolls the item the keys reach into

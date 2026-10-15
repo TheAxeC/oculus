@@ -23,6 +23,7 @@ import type {
     GitEntry,
     GitFileCommit,
     GitGraphCommit,
+    GitLineChange,
     GitLineMark,
     GitStash,
     GitState,
@@ -474,10 +475,112 @@ export function parseLineMarks(output: string): GitLineMark[] {
 }
 
 /**
- * The context the diff pane's reads run `git diff` and `show` with: none, since the diff is read
- * for each file's head lines and the two texts come whole from `show`.
+ * The options the diff pane's reads run `git diff` and `show` with: no colour and no external diff
+ * program, so the output is git's own; no context, since the diff is read for each file's head
+ * lines and hunk heads and the two texts come whole from `show` or the worktree; and no textconv,
+ * so the hunks name lines of the stored text, which is what the pane shows (`version` in reads.ts
+ * reads each side with `--no-textconv` too).
  */
-export const NO_CONTEXT = '-U0';
+export const PANE_DIFF = ['--no-color', '--no-ext-diff', '--no-textconv', '-U0'];
+
+/** One line of a text as git counts it: its words, and whether a line break ends it. */
+type GitLine = { text: string; ended: boolean };
+
+/**
+ * A text's lines as git counts them: split at each line feed, a carriage return kept in its line,
+ * and a final line break ending the last line rather than starting another.
+ */
+function gitLines(text: string): GitLine[] {
+    if (text === '') return [];
+    const parts = text.split('\n');
+    const ended = parts.at(-1) === '';
+    if (ended) parts.pop();
+    return parts.map((line, at) => ({ text: line, ended: ended || at < parts.length - 1 }));
+}
+
+/** Whether two lines are the same, line break included. */
+function sameLine(a: GitLine | undefined, b: GitLine | undefined): boolean {
+    if (a === undefined || b === undefined) return false;
+    return a.text === b.text && a.ended === b.ended;
+}
+
+/** The marker git writes after a line of a hunk that no line break ends. */
+const NO_NEWLINE = '\\ No newline at end of file';
+
+/**
+ * One side's lines of a hunk from the lines after its head: each line marked `mark`, with the line
+ * break git's marker after it says it lacks; null where a line of the hunk is not one git writes.
+ */
+function hunkSide(lines: string[], at: number, count: number, mark: string): GitLine[] | null {
+    const side: GitLine[] = [];
+    let next = at;
+    while (side.length < count) {
+        if (next >= lines.length || !lines[next].startsWith(mark)) return null;
+        const line = lines[next];
+        const ended = lines[next + 1] !== NO_NEWLINE;
+        side.push({ text: line.slice(1), ended });
+        next += ended ? 1 : 2;
+    }
+    return side;
+}
+
+/**
+ * Git's line changes of one file from the hunk lines of its `-U0` diff (`DiffHead.body`), one per
+ * hunk head, in the numbers Monaco's diff editor answers: `@@ -a,b +c,d @@` (a count left out is
+ * one line) is `a` to `a + b - 1` of the original and `c` to `c + d - 1` of the modified, and a
+ * side of count 0 is named by the line before where it would be, its end 0. The hunks are checked
+ * against the two texts read: each removed line must be the original's line at the place its head
+ * names, each added line the modified's, the final-newline marker as git writes it, and every line
+ * between the hunks the same in both texts, so the changes are a diff of exactly those texts. A
+ * file whose hunks fail the check (the worktree written between the diff and the read of its text)
+ * answers null, and so does a hunk line git does not write at `-U0`.
+ */
+export function gitLineChanges(
+    body: string[],
+    original: string,
+    modified: string
+): GitLineChange[] | null {
+    const before = gitLines(original);
+    const after = gitLines(modified);
+    const changes: GitLineChange[] = [];
+    let was = 0;
+    let now = 0;
+    let at = 0;
+    while (at < body.length) {
+        const head = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(body[at]);
+        if (head === null) return null;
+        const [start, removed, place, added] = [1, 2, 3, 4].map((group) =>
+            Number(head[group] ?? 1)
+        );
+        const from = removed === 0 ? start : start - 1;
+        const to = added === 0 ? place : place - 1;
+        if (from < was || from - was !== to - now) return null;
+        for (let line = 0; line < from - was; line += 1) {
+            if (!sameLine(before[was + line], after[now + line])) return null;
+        }
+        const gone = hunkSide(body, at + 1, removed, '-');
+        if (gone === null) return null;
+        const taken = gone.length + gone.filter((line) => !line.ended).length;
+        const made = hunkSide(body, at + 1 + taken, added, '+');
+        if (made === null) return null;
+        if (gone.some((line, offset) => !sameLine(line, before[from + offset]))) return null;
+        if (made.some((line, offset) => !sameLine(line, after[to + offset]))) return null;
+        changes.push({
+            originalStartLineNumber: start,
+            originalEndLineNumber: removed === 0 ? 0 : start + removed - 1,
+            modifiedStartLineNumber: place,
+            modifiedEndLineNumber: added === 0 ? 0 : place + added - 1
+        });
+        was = from + removed;
+        now = to + added;
+        at += 1 + taken + made.length + made.filter((line) => !line.ended).length;
+    }
+    if (before.length - was !== after.length - now) return null;
+    for (let line = 0; was + line < before.length; line += 1) {
+        if (!sameLine(before[was + line], after[now + line])) return null;
+    }
+    return changes;
+}
 
 /**
  * One file of a diff as its head lines say: the lines from `diff --git` to the line before the

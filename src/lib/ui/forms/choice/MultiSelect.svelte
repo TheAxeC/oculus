@@ -15,6 +15,7 @@
     // The filter box carries the text boxes' editing menu (TextBoxMenu.svelte).
 
     import Glyph from '../../display/Glyph.svelte';
+    import '../../theme/field.css';
     import TextBoxMenu from '../../controls/text/TextBoxMenu.svelte';
     import Tag from '../../controls/Tag.svelte';
     import ToolButton from '../../controls/ToolButton.svelte';
@@ -154,7 +155,7 @@
     {/if}
     <TextBoxMenu label={search} box={() => box}>
         <input
-            class="filter"
+            class="oculus-field"
             type="search"
             value={typed}
             placeholder={search}
@@ -204,34 +205,5 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 4px;
-    }
-
-    .filter {
-        min-width: 0;
-        border: 1px solid var(--line);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-md);
-        line-height: calc(var(--button-line) * var(--text-scale, 1));
-        padding: 4px 6px;
-    }
-
-    .filter::placeholder {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .filter:focus-visible {
-        outline: 1px solid var(--accent);
-        outline-offset: -1px;
-    }
-
-    :global(body.rice) .filter {
-        border: 0;
-        border-bottom: 1px solid var(--line);
-        border-radius: 0;
-        background: none;
-        font-family: var(--font-mono);
     }
 </style>

@@ -50,7 +50,15 @@ const commitFileShape = unchanged(
     z.object({ status: z.string(), path: z.string(), from: z.string() })
 ) satisfies z.ZodType<GitCommitFile>;
 
-/** One file of a diff with its two whole texts, as the server sent it. */
+/** One line change of git's, as the server sent it. */
+const lineChangeShape = z.object({
+    originalStartLineNumber: z.number().int().nonnegative(),
+    originalEndLineNumber: z.number().int().nonnegative(),
+    modifiedStartLineNumber: z.number().int().nonnegative(),
+    modifiedEndLineNumber: z.number().int().nonnegative()
+});
+
+/** One file of a diff with its two whole texts and git's line changes, as the server sent it. */
 const diffSidesShape = unchanged(
     z.object({
         oldPath: z.string(),
@@ -59,7 +67,8 @@ const diffSidesShape = unchanged(
         binary: z.boolean(),
         encoded: z.boolean(),
         original: z.string(),
-        modified: z.string()
+        modified: z.string(),
+        changes: z.array(lineChangeShape).optional()
     })
 ) satisfies z.ZodType<DiffSides>;
 
