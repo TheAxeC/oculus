@@ -7,7 +7,7 @@ Queued, in order (2 steps):
 Owed looks (agents/reviews/owed-looks.md): D77, the Sessions page's parts and the window buttons off macOS.
 
 Landed, newest first:
-- D77 (the Sessions view and the title bar, the rail pages, the Repositories change groups and the graph), 2026-10-15, LANDING.
+- D77 (the Sessions view and the title bar, the rail pages, the Repositories change groups and the graph), 2026-10-15, 9e250b73d.
 - D73 (the Literature view, hidden and ignored files shown, the domain, theme and feed settings in their files, Copy on code blocks and the Help tabs), 2026-10-14, 8af4c1dae.
 - D76 (notes like Obsidian), 2026-10-14, 8e41021f3.
 - D74 (the shell and source-control fixes), 2026-10-13, f92a0abe6.
