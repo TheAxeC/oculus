@@ -6,6 +6,12 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 - Open item 117 (2026-10-15): Axel agreed to all five recommendations on the Focus page (unplaced projects in Needs attention, the Awaiting box in rows, Deadlines & dates flowing across both columns, Situation in rows, the career banner at the top with the band above the lanes), built by O33's builder as part 15.
 - Open item 116 (2026-10-15): Axel agreed to (a): Q72's builder's unapproved scripts stay unused, and builder prompts forbid scripts their brief does not build.
+- Z926 (2026-10-16, O33's builder report, automode): the folded career banner's milestone: the banner cuts the milestone at its first " - " or " (", which gives the brief's own example "Next: FWO Senior" from this hub's milestone.
+- Z925 (2026-10-16, O33's builder report, automode): no title bar strip on a float tab in the browser: a float tab of the browser draws no strip, as part 11 says the strip is the app's only.
+- Z924 (2026-10-16, O33's builder report, automode): where `app:package` puts the app on Linux: `~/Applications` on macOS and `~/.local/share/oculus` on Linux, where Linux keeps per-user programs.
+- Z923 (2026-10-16, O33's builder report, automode): the version of the first Release: 0.1.0, as the builder set it (it was 0.0.1), so the archives are `oculus-0.1.0-<platform>-<arch>`.
+- Z922 (2026-10-16, O33's builder report, automode): the Status view's line counts in a release app: when `git ls-files` gives nothing (a release app's folder is no repository), the counts walk the shipped files with the same filters.
+- Z921 (2026-10-16, O33's builder report, automode): the label of the reveal control on Linux and WSL2: a label per platform, the words VS Code uses: "Reveal in Finder" on macOS and "Open Containing Folder" on Linux and WSL2, read from `platform.ts`.
 - Z920 (2026-10-15, O33's diagnosis, automode): `lastStamp` rereads an agent transcript's end only when its size or time changed.
 - Z919 (2026-10-15, O33's diagnosis, automode): guarded entries G86 and G87 for the two Sessions defects; the follow mark moves into state so its test needs no DOM; the lazy option, looks alone, not taken.
 - O33 ledger (2026-10-15): Axel chose (a): the ledger moves into the oculus repository with its history, keeping every step and `queue.md`; it replaces the ledger part of Steps after O33.

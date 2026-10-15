@@ -4,6 +4,48 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z926 (2026-10-16, O33's builder report, the orchestrator, automode): the folded career banner's milestone
+
+- Chosen: the banner cuts the milestone at its first " - " or " (", which gives the brief's own example "Next: FWO Senior" from this hub's milestone; the unfolded panel shows the whole milestone.
+- Not chosen: the whole milestone in the folded line, which the banner then cuts with an ellipsis mid-sentence; no lazier option.
+
+Where it applies: O33 part 15, `src/lib/state/boards/career.ts:83` (builder's open item 12). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z925 (2026-10-16, O33's builder report, the orchestrator, automode): no title bar strip on a float tab in the browser
+
+- Chosen: a float tab of the browser draws no strip, as part 11 says the strip is the app's only; a browser page has the browser's own bar.
+- Not chosen: a strip in browser floats too, against Axel's "only wanted the top vscode bar thing in the app, not in the browser view"; no lazier option.
+
+Where it applies: O33 part 11 (builder's open item 5). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z924 (2026-10-16, O33's builder report, the orchestrator, automode): where `app:package` puts the app on Linux
+
+- Chosen: `~/Applications` on macOS and `~/.local/share/oculus` on Linux, where Linux keeps per-user programs.
+- Not chosen: (a) `~/Applications` on Linux too, a folder no Linux desktop reads, with a README line to excuse it: the lazy option.
+
+Where it applies: O33 part 3, `src/desktop/package.ts` (builder's open item 4), sent in repair round 1. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z923 (2026-10-16, O33's builder report, the orchestrator, automode): the version of the first Release
+
+- Chosen: 0.1.0, as the builder set it (it was 0.0.1), so the archives are `oculus-0.1.0-<platform>-<arch>`; Axel can change the number before he publishes the draft Release.
+- Not chosen: 1.0.0, which claims a stable public shape before anyone outside has run it; no lazier option.
+
+Where it applies: O33 part 9, `tools/oculus/package.json` (builder's open item 3). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z922 (2026-10-16, O33's builder report, the orchestrator, automode): the Status view's line counts in a release app
+
+- Chosen: when `git ls-files` gives nothing (a release app's folder is no repository), the counts walk the shipped files with the same filters.
+- Not chosen: (a) leaving the counts failing in every release app, the lazy option; (b) a second list of files written by `app:release`.
+
+Where it applies: O33 part 9 (builder's open item 2), sent in repair round 1. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z921 (2026-10-16, O33's builder report, the orchestrator, automode): the label of the reveal control on Linux and WSL2
+
+- Chosen: a label per platform, the words VS Code uses: "Reveal in Finder" on macOS and "Open Containing Folder" on Linux and WSL2, read from `platform.ts`.
+- Not chosen: (a) "Reveal in Finder" on every platform, wrong off a Mac: the lazy option; (b) one neutral label, which VS Code does not use.
+
+Where it applies: O33 part 3, `config/text/views/sources/files.yml` and the row menu (builder's open item 1), sent in repair round 1. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z920 (2026-10-15, O33's diagnosis, the orchestrator, automode): the cost of reading record stamps
 
 - Chosen: `lastStamp` keeps each agent transcript's last record stamp with the file's size and modification time, and reads the file's end again only when either changed, so an unchanged agent costs the one `stat` it costs today.

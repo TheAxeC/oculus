@@ -19,3 +19,9 @@ The paths this round writes widen the brief's list by: `docs/templates.md` (ocul
 13. The builder's open item 7. Make Folder a Hub and Make Folder a Project record what they wrote in the change log the way New File and New Folder of the same view do; if those record nothing, the make records nothing, and the report says which with the file and line.
 
 Not sent, the orchestrator's: Spec 2 (the README commit id, written at phase B), Spec 3 (the `.scratch/migration` globs, kept until phase C removes the `tools/oculus` pair), Proof 6 (the archives, rebuilt in phase C), Proof 7 (booked at landing).
+
+Added to the round while it runs, from the builder's open items as the orchestrator ruled them:
+
+14. The builder's open item 1. The reveal control's label is per platform, the words VS Code uses: "Reveal in Finder" on macOS, "Open Containing Folder" on Linux and on WSL2, read from `platform.ts`'s `openPlatform`, in the row menu and every other place that names the reveal (`config/text/views/sources/files.yml` and its catalog keys). The wording of a refusal that names Finder follows the same platform.
+15. The builder's open item 2. The Status view's line counts walk the shipped files, with the filters the `git ls-files` count uses, when git gives no list (a release app's folder is no repository), so the view counts in a release app.
+16. The builder's open item 4. `app:package`'s default `--out` is `~/Applications` on macOS and `~/.local/share/oculus` on Linux; the README and HELP.md say so where they name the folder.
