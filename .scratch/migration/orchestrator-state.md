@@ -30,9 +30,11 @@ dispatch:      # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: a20f2cebacd022c8d (claude-opus-5-5)   # launched with the prompt of agents/briefs/O33-launch.md word for word
   report: agents/reviews/O33-report.md
+  builder_usage: "151,315 tokens, 1713 tool uses, 232.4 min"
+  reviewer_report: "agents/reviews/O33-refuter.md (a1b12a5347e0657cb, claude-opus-5-5, 286,616 tokens, 168 tool uses, 29.8 min)"
   worktree: .agents/worktrees/O33
   base: b80e3a9cd   # the preparation commit; base copy .agents/worktrees/O33-base with unused-exports.txt
-  round: 0
+  round: 1   # sent 2026-10-16, agents/briefs/O33-round1.md; snapshot .agents/worktrees/O33-round-1
   landing: not-started
   brief_check: "agents/reviews/O33-brief-check.md (adcbfd466be0be62e, claude-opus-5-5, 249,112 tokens, 79 tool uses, 11.8 min)"
 ```
