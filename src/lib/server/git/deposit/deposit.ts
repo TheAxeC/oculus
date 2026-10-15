@@ -20,7 +20,9 @@
 // is deposit-routes.ts, itself reached only from POST /api/deposit with the write token.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`below`); the records of
-// `status --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
+// `status --porcelain=v1 -z` are taken one by one as git writes them, through deposit-git.ts's
+// `statusIn`: the plan keeps every change, and the switch's check of a dirty mirror ends git at the
+// first record.
 
 import {
     cpSync,
@@ -53,7 +55,7 @@ import {
     initMirror,
     lsFiles,
     parseBranches,
-    porcelain,
+    statusIn,
     push as pushCurrent,
     remoteCmd,
     revParse,
@@ -70,7 +72,7 @@ import {
     defaultBranchOf,
     urlOf
 } from './deposit-git.ts';
-import { REFS_FORMAT, statusRecords } from '../../core/git/parse.ts';
+import { REFS_FORMAT } from '../../core/git/parse.ts';
 import { scan, type Finding } from './deposit-scan.ts';
 import {
     UNCOMPARED,
@@ -381,7 +383,10 @@ export async function sync(
     if (!listed.ok) return { ...listed, plan: null };
     const files = listed.output.split('\n').filter((one) => one !== '');
 
-    const state = await porcelain(deposit.at);
+    const changes: Change[] = [];
+    const state = await statusIn(deposit.at, (record) => {
+        changes.push({ letters: record.code, path: record.path });
+    });
     if (!state.ok) return { ...state, plan: null };
 
     const plan: Plan = {
@@ -390,7 +395,7 @@ export async function sync(
         branch: await currentBranch(deposit.at),
         remote: await remoteUrl(deposit.at),
         files,
-        changes: changesIn(state.output),
+        changes,
         findings: scan(deposit.at.dir, files)
     };
     options.plans?.set(id, plan);
@@ -584,9 +589,13 @@ export async function switchBranch(
     if (deposit === null) return failed(words(text, 'server.deposit.no_project', id));
     const wrong = await checkName(deposit.at, name, text);
     if (wrong !== '') return failed(wrong);
-    const state = await porcelain(deposit.at);
+    let records = 0;
+    const state = await statusIn(deposit.at, () => {
+        records += 1;
+        return false;
+    });
     if (!state.ok) return state;
-    if (state.output.trim() !== '') return failed(words(text, 'server.deposit.mirror_dirty'));
+    if (records > 0) return failed(words(text, 'server.deposit.mirror_dirty'));
     // Both listings are what the deletion is computed from. Without them there is no difference to
     // delete, and copying the new branch on top of what the old one left would leave `code/`
     // holding the union of the two, which is the state the switch is there to avoid: a listing that
@@ -798,14 +807,6 @@ function dropEmpty(from: string, root: string): void {
         }
         at = dirname(at);
     }
-}
-
-/**
- * The rows of `status --porcelain=v1 -z`, as the plan lists them: each path as it is, never quoted,
- * and a rename by its new path.
- */
-function changesIn(output: string): Change[] {
-    return statusRecords(output).map((record) => ({ letters: record.code, path: record.path }));
 }
 
 // ---------------------------------------------------------------- small reads

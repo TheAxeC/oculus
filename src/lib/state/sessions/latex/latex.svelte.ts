@@ -10,8 +10,8 @@
 // of the snapshot, so a board of fifty projects carries none of it and an open tab asks api/latex
 // for its own. Every path the page holds is against the root (latex-state.ts).
 //
-// The answer is held in the client state's query client (state/client/queries.svelte.ts). What
-// makes it stale is a build ending, which builds.ts hears, or a `files` message for the
+// The answer is held in the client state's query client (state/client/queries/queries.svelte.ts).
+// What makes it stale is a build ending, which builds.ts hears, or a `files` message for the
 // folder. watch() is told the terminal one press or one save started and every held folder is
 // marked, and asked for again, on every `sessions` push until that terminal has ended (a tab the
 // pane hides asks once when it is shown). The push that finds it ended is the one whose answer

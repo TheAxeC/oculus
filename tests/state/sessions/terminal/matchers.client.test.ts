@@ -14,7 +14,7 @@ import type {
     AppProblemPattern,
     CommandDiagnostic
 } from '../../../../src/lib/data/model/index.ts';
-import { createQueries } from '../../../../src/lib/state/client/queries.svelte.ts';
+import { createQueries } from '../../../../src/lib/state/client/queries/queries.svelte.ts';
 import { stubbedCommands } from './commands-fixture.ts';
 import {
     matchersFor,

@@ -6,8 +6,9 @@
 // and every later call for that pair reads what is held. hubDocument(path), engineDocument(path)
 // and manual() are the same rule over the other shapes the endpoint answers, and enginePlace() is
 // the engine folder's place in a hub as the manual's answer gives it. Each answer is held in the
-// client state's query client through state/client/queries.svelte.ts, which schedules the fetch on
-// a microtask, so reading this from a $derived never writes state while a derived is running.
+// client state's query client through state/client/queries/queries.svelte.ts, which schedules the
+// fetch on a microtask, so reading this from a $derived never writes state while a derived is
+// running.
 //
 // A write is what makes a document stale. The git watcher publishes a `files` message naming the
 // watched root and the folders written in it each time a window of writes ends, and every answer of

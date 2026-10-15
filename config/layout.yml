@@ -14,7 +14,8 @@ rail:
   - { label: "Explorer", glyph: folder, page: explorer }
   - { label: "Academic Life", glyph: scout, page: academic }
   - { label: "Pillars", glyph: pillar, page: pillars }
-  - { label: "References", glyph: venue, page: references }
+  - { label: "Registries", glyph: venue, page: registries }
+  - { label: "Literature", glyph: journals, page: literature }
   - { label: "Present", glyph: poster, page: present }
   - { label: "Apps", glyph: app, page: apps }
   - { label: "Help", glyph: question, page: help }
@@ -31,7 +32,8 @@ nav_groups:
   explorer: { label: "Explorer", glyph: folder, chord: s }
   academic: { label: "Academic Life", glyph: scout, chord: c }
   pillars: { label: "Pillars", glyph: book, chord: l }
-  references: { label: "References", glyph: venue_dist, chord: r }
+  registries: { label: "Registries", glyph: venue_dist, chord: r }
+  literature: { label: "Literature", glyph: journals, chord: b }
   present: { label: "Present", glyph: conference, chord: t }
   apps: { label: "Apps", glyph: app, chord: a }
   help: { label: "Help", glyph: page, chord: h }
@@ -95,11 +97,8 @@ arrangements:
         - kind: pane
           view:
             - { view: inbox, pinned: true }
-            - { view: radar, pinned: true }
             - { view: leads, pinned: true }
             - { view: linkedin, pinned: true }
-            - { view: literature-search, pinned: true }
-            - { view: literature, pinned: true }
         - kind: pane
           view:
             - { view: calendar, pinned: true }
@@ -128,6 +127,7 @@ arrangements:
         - { view: applications, pinned: true }
         - { view: joint-work, pinned: true }
         - { view: tasks, pinned: true }
+        - { view: memories, pinned: true }
   pillars:
     root:
       kind: pane
@@ -135,7 +135,7 @@ arrangements:
         - { view: pillars, pinned: true }
         - { view: domains, pinned: true }
         - { view: map, pinned: true }
-  references:
+  registries:
     root:
       kind: pane
       view:
@@ -145,6 +145,19 @@ arrangements:
         - { view: people, pinned: true }
         - { view: organisations, pinned: true }
         - { view: resources, pinned: true }
+  literature:
+    root:
+      kind: split
+      dir: row
+      sizes: [0.6, 0.4]
+      children:
+        - kind: pane
+          view:
+            - { view: literature-search, pinned: true }
+            - { view: radar, pinned: true }
+        - kind: pane
+          view:
+            - { view: literature, pinned: true }
   present:
     root:
       kind: pane
@@ -158,7 +171,6 @@ arrangements:
         - { view: doc, state: { id: engine:docs/apps.md, path: docs/apps.md, engine: true, label: "Apps guide" }, pinned: true }
         - { view: doc, state: { id: engine:docs/templates.md, path: docs/templates.md, engine: true, label: "Templates" }, pinned: true }
         - { view: doc, state: { id: engine:docs/palette.md, path: docs/palette.md, engine: true, label: "Palette" }, pinned: true }
-        - { view: memories, pinned: true }
   views:
     root:
       kind: split

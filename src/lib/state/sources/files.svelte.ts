@@ -5,7 +5,7 @@
 // wire model keeps a folder listing out of the snapshot, so a board of fifty projects carries none
 // of them and an opened card asks api/project-files for its own. files(id) asks the first time an
 // id is wanted and holds the answer in the client state's query client; every later call reads what
-// is held. The fetch is scheduled on a microtask by state/client/queries.svelte.ts rather
+// is held. The fetch is scheduled on a microtask by state/client/queries/queries.svelte.ts rather
 // than run inside the call, so reading this from a $derived never writes state while a derived is
 // running.
 //

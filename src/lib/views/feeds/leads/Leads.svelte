@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. Position Leads follows Lit Watch in the Incoming page's group.
+    // Layer 3, view registration. Position Leads follows Inbox in the Incoming page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'leads',

@@ -1,16 +1,20 @@
 // Layer 2, server (the desktop host). Find in the page. Electron draws no find bar, and a bar in
 // the page's own document would be counted as a match of the query it holds (`findInPage` counts a
 // text box), so the bar is a view of its own: a `WebContentsView` laid over the window's top right,
-// loading the server's `/find` route. The host runs `findInPage` and `stopFindInPage` on the
-// window's page and sends the bar's page the count each time Chromium reports one.
+// under the page's title bar strip, loading the server's `/find` route. The host runs `findInPage`
+// and `stopFindInPage` on the window's page and sends the bar's page the count each time Chromium
+// reports one.
 
 import { WebContentsView, type BrowserWindow, type WebContents } from 'electron';
 import type { FindOptions } from '../../lib/state/shared/stores/desktop.ts';
-import { WINDOW_BACKGROUND, windowPreferences } from '../decide/window-options.ts';
+import { TITLEBAR_HEIGHT, WINDOW_BACKGROUND, windowPreferences } from '../decide/window-options.ts';
 import { FIND_PATH } from '../decide/sender.ts';
 import { EVENT } from '../decide/channels.ts';
 
-/** The bar's width and height, and its distance from the window's top and right, in points. */
+/**
+ * The bar's width and height, and its distance from the window's right, in points. Its top is the
+ * foot of the page's title bar strip, so the bar covers none of the strip's controls.
+ */
 const WIDTH = 400;
 const HEIGHT = 48;
 const INSET = 8;
@@ -48,7 +52,7 @@ export function createFindBar(options: FindBarOptions): FindBar {
         const { width } = win.getContentBounds();
         view.setBounds({
             x: Math.max(0, width - WIDTH - INSET),
-            y: INSET,
+            y: TITLEBAR_HEIGHT,
             width: WIDTH,
             height: HEIGHT
         });

@@ -248,8 +248,8 @@ describe('a binding whose first key starts a chord of the rail', () => {
     });
 
     it('binds a letter that no chord and no bare key of the workbench uses', () => {
-        expect(LETTERS).not.toContain('b');
-        expect(takenOn('linux', 'b').bound.map((one) => one.app)).toEqual(['app:notes']);
+        expect(LETTERS).not.toContain('q');
+        expect(takenOn('linux', 'q').bound.map((one) => one.app)).toEqual(['app:notes']);
     });
 });
 

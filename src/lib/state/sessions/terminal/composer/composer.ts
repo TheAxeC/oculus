@@ -7,9 +7,10 @@
 // agent, so switching from Claude to Codex and back keeps both agents' choices, and a tab's next
 // composer opens on the accounts and picks its last start used. Its folder and kind are what the
 // last start used until New sets them back to a new composer's own (`freshComposer`) or a New with
-// a prompt in a tab sets them to the tab's folder and the kind chosen (`splitState`). A value the
-// catalog does not offer is dropped when it is read, so a pick never reaches a start the server
-// would refuse.
+// a prompt in a tab sets them to the tab's folder and the kind chosen (`splitState`). The folder
+// the composer was opened in and the folder of the last worktree a start with New worktree made are
+// kept apart (`split` and `worktree`), and the picker offers both. A value the catalog does not
+// offer is dropped when it is read, so a pick never reaches a start the server would refuse.
 
 import {
     confirmValues,
@@ -21,7 +22,8 @@ import {
     type Workspace
 } from '../../../../data/model/index.ts';
 import { z } from 'zod';
-import { isMap } from '../../../../data/helpers/guards.ts';
+import { byKey, isMap } from '../../../../data/helpers/guards.ts';
+import { validName, worktreePath } from '../../../../data/helpers/worktrees.ts';
 import {
     filledTextShape,
     mapOfShape,
@@ -43,10 +45,16 @@ export type ComposerRecord = {
     /** The value id per list key, per agent. */
     picks: Partial<Record<AgentId, Record<string, string>>>;
     /**
-     * The tab's folder a New with a prompt opened the composer in, offered as a place of its own
-     * whether or not a place holds it; absent on a composer opened without one.
+     * The folder a New with a prompt, or a start from a place or a task, opened the composer in,
+     * offered as a place of its own whether or not a place holds it; absent on a composer opened
+     * without one.
      */
     split?: string;
+    /**
+     * The folder of the last worktree a start with New worktree made, offered as a place of its
+     * own beside the split whether or not a place holds it; absent until a start makes one.
+     */
+    worktree?: string;
     /**
      * The hub task the composer is seeded with, its reference only. The seed text the server
      * answered for it is held by the terminals store per tab and never saved with the layout.
@@ -73,7 +81,10 @@ const picksShape = z
     .object({ claude: wordsShape, codex: wordsShape })
     .catch(() => ({ claude: {}, codex: {} }));
 
-/** The record a tab keeps, each field as typed or unset; the split is absent unless it is named. */
+/**
+ * The record a tab keeps, each field as typed or unset; the split and the worktree are absent
+ * unless they are named.
+ */
 const composerShape = z
     .object({
         workspace: z.string().catch(''),
@@ -81,11 +92,13 @@ const composerShape = z
         accounts: wordsShape.transform((words) => ({ claude: words.claude, codex: words.codex })),
         picks: picksShape,
         split: filledTextShape,
+        worktree: filledTextShape,
         task: z.unknown().optional().transform(taskRefOf)
     })
-    .transform(({ split, task, ...record }) => ({
+    .transform(({ split, worktree, task, ...record }) => ({
         ...record,
         ...(split === undefined ? {} : { split }),
+        ...(worktree === undefined ? {} : { worktree }),
         ...(task === undefined ? {} : { task })
     })) satisfies z.ZodType<ComposerRecord>;
 
@@ -106,12 +119,16 @@ export function splitRecord(folder: string, agent: ComposerAgent): ComposerRecor
 }
 
 /**
- * The places a composer offers: its places as they are, with the tab's folder it was opened in
- * listed first when no place equals it. A composer opened without one offers its places unchanged.
+ * The places a composer offers: its places as they are, with the folder it was opened in and then
+ * the folder of the last worktree it made listed first, each when no place equals it. A composer
+ * with neither offers its places unchanged.
  */
 export function offeredPlaces(places: readonly string[], record: ComposerRecord): string[] {
-    const split = record.split ?? '';
-    return split === '' || places.includes(split) ? [...places] : [split, ...places];
+    const own = [record.split ?? '', record.worktree ?? ''].filter(
+        (folder, at, both) =>
+            folder !== '' && !places.includes(folder) && both.indexOf(folder) === at
+    );
+    return [...own, ...places];
 }
 
 /**
@@ -369,22 +386,72 @@ export function promptKey(event: {
 }
 
 /**
- * The branch the composer shows beside its workspace, read only: the branch of the deepest root of
- * the `git` channel that holds the workspace, or nothing when no watched root holds it or git named
- * no branch there.
+ * The repository a folder lies in: the deepest root of the `git` channel that holds it, or nothing
+ * when no watched root holds it. A folder inside a worktree under that root's worktrees folder
+ * (`<root>/.agents/worktrees/<name>`) lies in that worktree, which is a repository of its own, as
+ * the Repositories view takes it.
  */
-export function branchOf(
-    workspace: string,
-    git: Readonly<Record<string, { branch: string }>> | null
-): string {
+function repositoryOf(workspace: string, git: Readonly<Record<string, unknown>> | null): string {
     if (git === null || workspace === '') return '';
     let best = '';
     for (const root of Object.keys(git)) {
-        const holds =
-            workspace === root || workspace.startsWith(root.endsWith('/') ? root : `${root}/`);
-        if (holds && root.length > best.length) best = root;
+        if (inside(workspace, root) && root.length > best.length) best = root;
     }
-    return best === '' ? '' : git[best].branch;
+    if (best === '') return '';
+    const folder = worktreePath(best, '');
+    if (!workspace.startsWith(folder)) return best;
+    const name = workspace.slice(folder.length).split('/')[0];
+    return validName(name) ? worktreePath(best, name) : best;
+}
+
+/**
+ * The repository the composer's New worktree makes a worktree of: the folder's repository when the
+ * `git` channel watches it, since a git write names only a root of the channel's last payload, and
+ * nothing otherwise.
+ */
+export function worktreeRoot(
+    workspace: string,
+    git: Readonly<Record<string, unknown>> | null
+): string {
+    const root = repositoryOf(workspace, git);
+    return git !== null && byKey(git, root) !== undefined ? root : '';
+}
+
+/**
+ * Whether the repository at `root` keeps its worktrees out of its history (its .gitignore names
+ * the worktrees folder), as the `git` channel reads it; a repository the channel does not hold is
+ * taken as keeping them out, so no warning is drawn for it.
+ */
+export function keepsWorktreesOut(
+    git: Readonly<Record<string, { ignoresWorktrees?: boolean }>> | null,
+    root: string
+): boolean {
+    return byKey(git ?? {}, root)?.ignoresWorktrees ?? true;
+}
+
+/** Whether a folder is the root or lies under it. */
+function inside(folder: string, root: string): boolean {
+    return folder === root || folder.startsWith(root.endsWith('/') ? root : `${root}/`);
+}
+
+/**
+ * The branch the composer shows beside its workspace, read only: the branch of the repository the
+ * workspace lies in (`repositoryOf`), read from the worktree list of the repository it belongs to
+ * when the channel does not watch that worktree itself, or nothing when no watched root holds the
+ * workspace or git named no branch there.
+ */
+export function branchOf(
+    workspace: string,
+    git: Readonly<
+        Record<string, { branch: string; worktrees?: readonly { path: string; branch: string }[] }>
+    > | null
+): string {
+    const root = repositoryOf(workspace, git);
+    if (root === '' || git === null) return '';
+    const own = byKey(git, root);
+    if (own !== undefined) return own.branch;
+    const listed = Object.values(git).flatMap((one) => one.worktrees ?? []);
+    return listed.find((one) => one.path === root)?.branch ?? '';
 }
 
 /**

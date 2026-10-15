@@ -10,7 +10,7 @@
 // The four diff reads answer `files`, the two versions of each file with git's head lines for it
 // (`DiffSides`); a file's own diff also answers what git's attributes say of converting it, which
 // decides whether the pane may cut a partial patch from it. A file's and a worktree's diff text
-// comes from server/git/git-write.ts, whose `diff` call site has always answered them, and the
+// comes from server/git/git-diffs.ts, through git-write.ts's `diff` call site, and the
 // versions from server/core/git/reads.ts, the read-only module, which answers every other read.
 // Every read is an option with a real default, so tests/routes/git/git.test.ts drives the endpoint
 // without git.
@@ -44,14 +44,8 @@ import {
     workspaceSides,
     type HeadStage
 } from '../core/git/compare.ts';
-import {
-    allowedRoots,
-    branches,
-    fileDiff,
-    parseBranches,
-    worktreeFrom,
-    worktreeRange
-} from './git-write.ts';
+import { allowedRoots, branches, parseBranches } from './git-write.ts';
+import { fileDiff, worktreeFrom, worktreeRange } from './git-diffs.ts';
 
 /**
  * A file's own diff: its files, what git's attributes say of converting it, and whether the path is

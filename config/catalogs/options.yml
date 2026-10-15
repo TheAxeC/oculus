@@ -137,14 +137,14 @@ options:
         show_tabs:
             heading: appearance
             section: Pane tabs
-            help: How many tabs the top row of a pane draws. multiple draws every tab, single draws the active tab alone, none draws no tab and keeps a title row that holds the pane's actions. Any other value counts as multiple. The Tab Bar submenu of a pane strip's right-click menu writes this key.
+            help: How many tabs the top row of a pane draws. multiple draws every tab, single draws the active tab alone, none draws no tab and no row, but a title row with the lock mark while the pane is locked, and the pane's actions go to the window's title bar strip. Any other value counts as multiple. The Tab Bar submenu of a pane strip's right-click menu writes this key.
             default: multiple
             control: choice
             options: [multiple, single, none]
         editor_actions:
             heading: appearance
             section: Pane tabs
-            help: Where a pane draws its Split Right button and its pane menu. strip draws them at the right end of the top row, hidden draws neither; the pane menu stays reachable by a right click on the strip or on an empty pane. Any other value counts as strip. The Editor Actions Position submenu of a pane strip's right-click menu writes this key.
+            help: Where a pane draws its Split Right button and its pane menu. strip draws them at the right end of the top row, or while show_tabs is none in the window's title bar strip for the active pane, hidden draws neither; the pane menu stays reachable by a right click on the strip or on an empty pane. Any other value counts as strip. The Editor Actions Position submenu of a pane strip's right-click menu writes this key.
             default: strip
             control: choice
             options: [strip, hidden]
@@ -1400,6 +1400,9 @@ options:
         claude_bin:
             section: Programs
             help: The Claude command line that the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages are started with, an absolute path or a name resolved on PATH. Without it the name is claude. A change is read again at once.
+        commit_message_account:
+            section: Programs
+            help: The Claude account that the suggested commit message runs under, the label of a claude row of accounts in any hub's file, compared once reduced to lowercase letters, digits and dashes. Empty or without it the run takes the default folder, ~/.claude. A label that is not a Claude row's is a finding and the default folder is used. It is read from the primary hub's file only. A change is read again at once.
         open_bin:
             section: Programs
             help: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open. A change is read again at once.

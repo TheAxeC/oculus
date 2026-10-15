@@ -3,9 +3,9 @@
 // The folder is not in the snapshot: it is a directory of images beside the wallpaper, not
 // portfolio data, so it is fetched from GET /api/memories the first time the wall asks and read
 // again after the wall adds one. The answer is held in the client state's query client, and the
-// fetch is scheduled on a microtask by state/client/queries.svelte.ts rather than run inside
-// the call, so reading this from a $derived never writes state while a derived is running. It is
-// only ever made in the browser: a server-rendered page holds nothing and asks for nothing.
+// fetch is scheduled on a microtask by state/client/queries/queries.svelte.ts rather than run
+// inside the call, so reading this from a $derived never writes state while a derived is running.
+// It is only ever made in the browser: a server-rendered page holds nothing and asks for nothing.
 //
 // The sizes are what give a tile its shape before its picture has arrived. They are read off the
 // answer as whole positive numbers or not at all, since the shape a tile takes is written into its

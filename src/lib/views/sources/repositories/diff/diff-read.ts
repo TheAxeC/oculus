@@ -3,7 +3,8 @@
 // last a POST, answers.ts's diffRequest), a file of the Refactor Preview (read from the preview),
 // or several reads joined into one answer. A group of changes is one read per path, and a
 // comparison of a ref with a commit is one read of the files the two differ in and then one per
-// file, each holding the file's two sides. Reads of the same diff run a few at a time. The
+// file, each holding the file's two sides; a comparison named with a path is that one file's
+// read. Reads of the same diff run a few at a time. The
 // comparison of a save conflict is one read of the file as the disk holds it, which is the left
 // side; the right side is the source tab's own text, which the pane puts in as the tab changes.
 // The comparison of an app's quick diff is the file as the disk holds it against the original the
@@ -145,6 +146,8 @@ export async function readPaneDiff(
     if ((state.unsaved ?? '') !== '') return diskSide(state);
     if (state.original !== undefined) return sourceSide(state, token);
     const url = diffUrl(state);
+    // A comparison named with a path is that one file's two sides; without one, every file.
+    if (compare !== undefined && state.path !== '') return answer({ url });
     if (compare !== undefined) {
         const listing = await fetch(url);
         const listed = commitFilesOf(listing.ok, await readJson(listing));

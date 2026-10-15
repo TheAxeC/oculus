@@ -169,7 +169,7 @@
                         move={move(id)}
                     >
                         {#snippet body(nav)}
-                            <AgentRows {agents} {nav} />
+                            <AgentRows {agents} session={record} {nav} />
                         {/snippet}
                     </SessionSection>
                 {/if}

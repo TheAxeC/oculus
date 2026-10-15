@@ -25,6 +25,10 @@
     //
     // Under the conversation sits the prompt box that steers the session, which works for a
     // session running in a terminal oculus started and says so for any other.
+    //
+    // A tab opened from an agent row of the Session details shows that subagent's own transcript:
+    // its saved state names the session and the agent, and it has no session picker and no prompt
+    // box, since the agent is steered through the session that started it.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -37,7 +41,7 @@
     import { sanitise } from '$lib/ui/html';
     import { clock } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
-    import type { Turn } from '$lib/state/sessions/transcript.svelte';
+    import { pinnedAgent, type Turn } from '$lib/state/sessions/transcript.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -50,7 +54,15 @@
     let { instance }: ViewProps = $props();
 
     const record = $derived(sessionFor(instance.id));
-    const held = $derived(turnsFor(record?.id ?? ''));
+    /**
+     * The session's id, which the effects that fetch and hold its turns read. The sessions channel
+     * hands every record anew with each message, so an effect reading the record re-runs at every
+     * write of any session; a derived of the id changes only when the session does.
+     */
+    const sessionId = $derived(record?.id ?? '');
+    /** The subagent this tab shows, or the empty text for the session's own transcript. */
+    const agent = $derived(pinnedAgent(instance.state));
+    const held = $derived(turnsFor(sessionId, agent));
     const turns = $derived(held.turns);
 
     let column: HTMLDivElement | undefined = $state();
@@ -69,18 +81,33 @@
     /** Pixels from the foot that still count as reading the newest turn. */
     const SLACK = 40;
 
+    /** How many sessions messages this tab has seen while its subagent runs. */
+    let beat = 0;
+
+    // The record is read here, so this re-runs at each sessions message. A session's tab asks for
+    // the tail when its lastActivity moves. A subagent's file grows while that stamp stands still,
+    // so an agent's tab hands a mark that moves at each message while the agent runs and once more
+    // when it ends.
     $effect(() => {
-        const id = record?.id ?? '';
-        if (id !== '') follow(id, record?.lastActivity ?? null);
+        const id = sessionId;
+        if (id === '') return;
+        if (agent === '') {
+            follow(id, record?.lastActivity ?? null);
+            return;
+        }
+        const row = record?.agents.find((one) => one.id === agent);
+        const mark = row?.status === 'running' ? `running ${beat++}` : `ended ${row?.ended ?? ''}`;
+        follow(id, mark, agent);
     });
 
-    // The store keeps a session's turns while an instance is showing it and drops them when the
+    // The store keeps a transcript's turns while an instance is showing it and drops them when the
     // last one stops; the effect's cleanup is that release, so a change of session or a teardown
-    // lets go.
-    $effect(() => showing(record?.id ?? ''));
+    // lets go. It reads the id and never the record, so a new record of the same session keeps the
+    // turns held and the next read asks only from the offset held.
+    $effect(() => showing(sessionId, agent));
 
     $effect(() => {
-        const id = record?.id ?? '';
+        const id = sessionId;
         // The count is read here as well as the id, so an appended turn re-runs this too; then the
         // column follows the newest turn only if the reader was at the foot before it was appended.
         const count = turns.length;
@@ -147,7 +174,12 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.view_transcript')} toolbar={tools} {bar} tinted>
+<Pane
+    title={t('sessions.view_transcript')}
+    toolbar={tools}
+    bar={agent === '' ? bar : undefined}
+    tinted
+>
     <div class="frame">
         <div
             class="chat"
@@ -164,7 +196,11 @@
             {:else if held.error !== ''}
                 <Empty error message={held.error} />
             {:else if turns.length === 0}
-                <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
+                <!-- The sentence is for a read that landed with no turns; a read still out draws
+                     nothing. -->
+                {#if !held.pending}
+                    <Empty message={t('sessions.turns_empty')} glyph={t('sessions.empty_glyph')} />
+                {/if}
             {:else}
                 {#each turns as turn, at (key(turn, at))}
                     <div class="turn {turn.role}">
@@ -192,7 +228,7 @@
                 {/each}
             {/if}
         </div>
-        {#if record !== null}
+        {#if record !== null && agent === ''}
             <SteerBox terminal={terminalOfSession(record)} />
         {/if}
     </div>

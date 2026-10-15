@@ -23,6 +23,14 @@ export type SessionFile = {
 export type SessionAgent = {
     /** The tool-use id on a Claude transcript, the agent's path on a Codex rollout. */
     id: string;
+    /**
+     * Where the agent's own transcript is found: on a Claude transcript the agent id the Agent
+     * call's result names, whose file is `<session>/subagents/agent-<agentId>.jsonl` beside the
+     * session's; on a Codex rollout the thread id of the agent's own rollout, which is a session
+     * record of its own. Empty when nothing named one, and on a Claude record when that file is
+     * not there.
+     */
+    agentId: string;
     description: string;
     subagentType: string;
     model: string | null;
@@ -333,7 +341,14 @@ export type GitGraphCommit = GitCommit & {
 };
 
 /** One page of the graph and, on the first page, the commits either side of the upstream. */
+/**
+ * The commits Incoming Changes and Outgoing Changes list the files between: the merge base of HEAD
+ * and its upstream, the upstream's commit and HEAD's commit, each a full hash.
+ */
+export type GitGraphRange = { base: string; incoming: string; outgoing: string };
+
 export type GitGraphPage = {
+    /** The history of HEAD and its upstream together, each commit once. */
     commits: GitGraphCommit[];
     /** Whether the log goes on past this page. */
     more: boolean;
@@ -341,6 +356,8 @@ export type GitGraphPage = {
     incoming: GitGraphCommit[];
     /** What HEAD holds that the upstream does not, newest first; empty with no upstream. */
     outgoing: GitGraphCommit[];
+    /** The span either side of the upstream, on the first page of a branch that has one. */
+    range?: GitGraphRange;
     /**
      * The ref the checked-out branch is compared against by Compare with Merge Base, read the way
      * VS Code reads a branch's base; the empty string when there is none. Set on the first page.
@@ -454,6 +471,13 @@ export type GitState = {
      * `merge` is `conflicted`. A list shorter than its count has rows that are not shown.
      */
     held: { staged: number; changes: number; untracked: number; merge: number };
+    /**
+     * The untracked paths as git lists them folder by folder (`--untracked-files=normal`: a folder
+     * holding only untracked files is one `dir/` entry), cut to the first 200. Read only when
+     * `untracked` was cut, and empty otherwise, so the Explorer marks the untracked files the cut
+     * list leaves out.
+     */
+    untrackedByFolder: GitEntry[];
     /** What the repository is in the middle of, which Abort and Commit act on. */
     sequence: GitSequence;
     /** The message git prepared for the merge or cherry-pick in progress, comments left out. */

@@ -1,7 +1,7 @@
 // Layer 3, primitive types. The props of ui/controls/ToolButton.svelte, kept apart from the
 // component so its file holds the markup and the styles of the variants. Every flag but `label`
-// and `onclick` is optional; the variants (`rail`, `bare`, `status`, `cell`, `plain`, `primary`)
-// are looks of one button, each drawn by its own rules in the component.
+// and `onclick` is optional; the variants (`rail`, `bare`, `status`, `cell`, `plain`, `primary`,
+// `wide`) are looks of one button, each drawn by its own rules in the component.
 
 import type { Snippet } from 'svelte';
 
@@ -101,6 +101,11 @@ export type ToolButtonProps = {
      * the accent fill with the text colour that reads on it.
      */
     primary?: boolean;
+    /**
+     * As wide as the box it is in (its tooltip wrapper too), the glyph and the words in its
+     * middle: the title bar's Command Center, which VS Code draws as a search field's box.
+     */
+    wide?: boolean;
     /**
      * A primary button followed by a dropdown part: its right corners are square and a
      * separator parts it from the dropdown, which the caller draws next to it.

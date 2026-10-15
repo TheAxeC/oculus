@@ -5,6 +5,9 @@
 // naming the later row, which is left out. Every other key is one value per oculus, read from the
 // primary hub's file alone: a hub that is not the primary and sets such a key is a problem naming
 // the hub and the key, and its value is not used. A workspace with no primary holds the defaults.
+// `commit_message_account` is read from the primary's file and checked against the joined
+// accounts: a label no `claude` row holds, compared reduced, is a problem naming the key, and no
+// account is used.
 
 import type {
     CalendarAccountConfig,
@@ -82,6 +85,29 @@ function joinRows<T extends { label: string; hub?: string }>(
 }
 
 /**
+ * Clear `commitMessageAccount` when no `claude` row of the joined accounts holds its label,
+ * compared reduced, with a problem naming the key against the primary's file.
+ */
+function checkMessageAccount(config: LocalConfig, file: string, problems: MachineProblem[]): void {
+    const label = config.commitMessageAccount;
+    if (label === undefined) return;
+    const reduced = usageAccountLabel(label);
+    const held = config.accounts.some(
+        (row) => row.tool === 'claude' && usageAccountLabel(row.label) === reduced
+    );
+    if (held) return;
+    delete config.commitMessageAccount;
+    problems.push({
+        file,
+        problem: {
+            key: 'commit_message_account',
+            kind: 'label',
+            sentence: 'commit_message_account is not the label of a Claude row of accounts:'
+        }
+    });
+}
+
+/**
  * Read the `.oculus/local.yml` of every hub in `hubs` (in the workspace's folder order) and join
  * them. `primary` is the name of the hub whose file gives the one-per-oculus keys, or null. Nothing
  * throws, and an unknown key is warned of on stderr when `warn` is true.
@@ -142,6 +168,7 @@ export function readMachine(
         (row) => `${row.provider}-${row.label}`,
         problems
     );
+    if (own !== undefined) checkMessageAccount(config, own.file, problems);
     const lists: Record<string, string[]> = {};
     for (const key of JOINED) {
         const names = setting(key).map((one) => one.hub.name);

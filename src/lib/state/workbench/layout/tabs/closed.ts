@@ -5,13 +5,15 @@
 // whole. Only a close the reader commands is put on the list, through the store's `rememberClosed`:
 // a close the code makes (a file view closing itself, a document closing, an app going) is not.
 //
-// Each tab is kept with its view, the state its instance held in the layout, its pin and its index
-// in its pane, and with the folder a Terminal tab's shell ran in, since what the close ended stays
-// ended and a Terminal tab comes back with a new shell there. The pure functions here read and
-// make the list; the layout store holds it and opens the tabs.
+// Each tab is kept with its view, the state its instance held in the layout, its pin, the page or
+// float and the pane it was closed from and its index in that pane, the ids of the tabs that pane
+// kept, and with the folder a Terminal tab's shell ran in, since what the close ended stays ended
+// and a Terminal tab comes back with a new shell there. The pure functions here read and make the
+// list; the layout store holds it and opens the tabs.
 
 import { findInstance } from '../instance.ts';
 import { hostsOf, pinnedRun, type Instance, type Pages, type ViewId } from '../model.ts';
+import { paneAt } from '../tree.ts';
 
 /** How many closed tabs the list keeps, VS Code's number. */
 const CLOSED_KEPT = 20;
@@ -21,8 +23,18 @@ export type ClosedTab = {
     view: ViewId;
     state: unknown;
     pinned: boolean;
+    /** The page or float it was closed from. */
+    host: string;
+    /** The path of the pane it was closed from in that page's or float's tree. */
+    path: number[];
     /** Its index in the pane it was closed from. */
     index: number;
+    /**
+     * The ids of the tabs its pane held besides the tabs closed with it. A pane has no id of its
+     * own and a pane left empty is removed, so the pane at `path` is the one it was closed from
+     * only while it holds one of these.
+     */
+    siblings: string[];
     /** The folder a Terminal tab's shell ran in, else the empty text. */
     folder: string;
 };
@@ -50,7 +62,12 @@ export function closedTabsOf(
                     view: tab.view,
                     state: tab.state,
                     pinned: tab.pinned === true,
+                    host: host.id,
+                    path: found.path,
                     index: found.index,
+                    siblings: (paneAt(host.workbench.root, found.path)?.tabs ?? [])
+                        .map((one) => one.id)
+                        .filter((one) => !ids.includes(one)),
                     folder: folderOf(tab)
                 }
             ];

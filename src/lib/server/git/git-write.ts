@@ -4,6 +4,7 @@
 // therefore lives here.
 //
 //     git -C <root> add [-u] -- <paths | .>
+//     git -C <root> add --pathspec-from-file=- --pathspec-file-nul    (the paths on standard input)
 //     git -C <root> apply --cached [--reverse] --recount -    (the patch on standard input)
 //     git -C <root> apply --reverse --recount -
 //     git -C <root> restore [--staged] -- <paths | .>
@@ -18,7 +19,7 @@
 //     git -C <root> branch [--format=... | -d <name> | -D <name>]
 //     git -C <root> switch [-c <name> [<hash>] | --detach <ref> | <name>]
 //     git -C <root> check-ref-format [--branch <name> | refs/tags/<name>]
-//     git -C <root> status --porcelain=v1 -z
+//     git -C <root> status --porcelain=v1 -z --untracked-files=<all | normal>
 //     git -C <root> diff [--cached | --ours] [-U0] [--name-only --diff-filter=U | <range>]
 //         [-- <path>]
 //     git -C <root> rev-parse [--abbrev-ref] <rev> | rev-parse --verify --quiet MERGE_HEAD |
@@ -31,9 +32,10 @@
 //     git -C <root> tag [-a <name> -F <file> [<hash>] | <name> [<hash>] | -d <name>]
 //
 // A command that runs the repository's hooks (commit, merge, cherry-pick, rebase --continue, push,
-// pull, switch and worktree add) has no time limit, as `NO_TIME_LIMIT` of server/core/git/parse.ts
-// says, and takes the signal of the run it belongs to: Cancel (server/core/git/running.ts) aborts
-// it and the write answers `cancelled`. Every other command keeps its limit.
+// pull, switch and worktree add), and Stage All's add of the untracked group, whose time grows with
+// the files it stages, has no time limit, as `NO_TIME_LIMIT` of server/core/git/parse.ts says, and
+// takes the signal of the run it belongs to: Cancel (server/core/git/running.ts) aborts it and the
+// write answers `cancelled`. Every other command keeps its limit.
 //
 // A commit is made with `user.useConfigOnly` set through the environment (`GIT_CONFIG_COUNT`,
 // `GIT_CONFIG_KEY_0`, `GIT_CONFIG_VALUE_0`), so a repository with no configured name and email is
@@ -67,26 +69,29 @@
 //
 // Whether a root is one the payload names and where a path really is are read from
 // server/core/paths.ts (`permitted`, `realPath`); a path handed to git is checked by
-// core/git/run.ts's `pathInside`; the records of `status --porcelain=v1 -z` are split by
-// core/git/parse.ts's `statusRecords`.
+// core/git/run.ts's `pathInside`. The `status` is read record by record as git writes it
+// (`statusIn`, through core/git/records.ts), with no limit on the output, and each check keeps only
+// what it asks: whether a record of a kind is there, which ends git at the first, or the paths it
+// names, so no number of untracked files makes a check fail.
 
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, isAbsolute, join, resolve } from 'node:path';
+import type { Readable } from 'node:stream';
 import { scalar } from '../../data/helpers/guards.ts';
 import type { GitBranch } from '../../data/model/index.ts';
 import { isWorktreePath, validName, worktreePath } from '../../data/helpers/worktrees.ts';
 import { defaultMirrorsDir } from './deposit/deposit-git.ts';
 import {
-    NO_CONTEXT,
     NO_TIME_LIMIT,
     REFS_FORMAT,
     classifyFailure,
     parseBranches,
-    statusRecords,
-    type CommandFailure
+    type CommandFailure,
+    type StatusRecord
 } from '../core/git/parse.ts';
+import { readRecords, type RecordVisit } from '../core/git/records.ts';
 import { endWith } from '../core/git/running.ts';
 import { GIT, pathInside } from '../core/git/run.ts';
 import { permitted, realPath } from '../core/paths.ts';
@@ -127,12 +132,12 @@ export function failed(error: string): Outcome {
 }
 
 /**
- * What one command may carry beside its arguments: text on its standard input, variables, the
- * codes of refusals the page acts on, each named by a phrase of git's whole error stream, and the
- * signal that ends the run when Cancel aborts it.
+ * What one command may carry beside its arguments: its standard input, as one text or as a stream
+ * written while git runs, variables, the codes of refusals the page acts on, each named by a phrase
+ * of git's whole error stream, and the signal that ends the run when Cancel aborts it.
  */
 type Extra = {
-    input?: string;
+    input?: string | Readable;
     env?: Record<string, string>;
     codes?: Record<string, string>;
     signal?: AbortSignal;
@@ -140,11 +145,12 @@ type Extra = {
 
 /**
  * One git command, as a list, with a timeout (`NO_TIME_LIMIT` for none). This is the module's one
- * subprocess call site, and every refusal above it has run when it is reached. A failure says git's
- * own reason as `classifyFailure` (server/core/git/parse.ts) reads it: the last `fatal: ` line of
- * the error stream, else its first line, and where that stream is empty the last non-empty line of
- * the output stream (a merge that stopped on conflicts, a commit with nothing to commit); a command
- * that gave none is answered with its code.
+ * subprocess call site besides the status read (`statusIn`), which streams its output, and every
+ * refusal above it has run when it is reached. A failure says git's own reason as `classifyFailure`
+ * (server/core/git/parse.ts) reads it: the last `fatal: ` line of the error stream, else its first
+ * line, and where that stream is empty the last non-empty line of the output stream (a merge that
+ * stopped on conflicts, a commit with nothing to commit); a command that gave none is answered with
+ * its code.
  */
 function run(root: string, args: string[], timeout: number, extra: Extra = {}): Promise<Outcome> {
     const argv = ['-C', root, ...args];
@@ -161,34 +167,49 @@ function run(root: string, args: string[], timeout: number, extra: Extra = {}): 
                 env: extra.env === undefined ? process.env : { ...process.env, ...extra.env }
             },
             (error, stdout, stderr) => {
-                if (error !== null) {
-                    const said = classifyFailure(
-                        ended(error),
-                        stdout,
-                        stderr,
-                        { timeoutMs: timeout, maxBytes: MAX_OUTPUT },
-                        REASON_WIDTH,
-                        'git'
-                    );
-                    if (said.failure !== undefined) {
-                        settle({ ...failed(said.reason), failure: said.failure });
-                        return;
-                    }
-                    const whole = typeof stderr === 'string' ? stderr : '';
-                    const code = Object.entries(extra.codes ?? {}).find(([phrase]) =>
-                        whole.includes(phrase)
-                    )?.[1];
-                    settle(
-                        code === undefined ? failed(said.reason) : { ...failed(said.reason), code }
-                    );
-                    return;
-                }
-                settle({ ok: true, output: typeof stdout === 'string' ? stdout : '', error: '' });
+                settle(
+                    error === null
+                        ? { ok: true, output: typeof stdout === 'string' ? stdout : '', error: '' }
+                        : refusalOf(ended(error) ?? error, stdout, stderr, timeout, extra.codes)
+                );
             }
         );
         const ended = endWith(child, extra.signal);
-        child.stdin?.end(extra.input ?? '');
+        if (extra.input === undefined || typeof extra.input === 'string') {
+            child.stdin?.end(extra.input ?? '');
+        } else if (child.stdin !== null) {
+            // A git that ends before it has read the whole stream answers through the callback
+            // above; the broken pipe that leaves behind says nothing more.
+            child.stdin.on('error', () => undefined);
+            extra.input.pipe(child.stdin);
+        }
     });
+}
+
+/**
+ * What a command that failed answers: a code `classifyFailure` names when it ended with no reason
+ * of git's own, else git's reason, with the code of a refusal the page acts on when a phrase of
+ * `codes` is in its error stream.
+ */
+function refusalOf(
+    error: Error,
+    stdout: unknown,
+    stderr: unknown,
+    timeout: number,
+    codes: Record<string, string> = {}
+): Outcome {
+    const said = classifyFailure(
+        error,
+        stdout,
+        stderr,
+        { timeoutMs: timeout, maxBytes: MAX_OUTPUT },
+        REASON_WIDTH,
+        'git'
+    );
+    if (said.failure !== undefined) return { ...failed(said.reason), failure: said.failure };
+    const whole = typeof stderr === 'string' ? stderr : '';
+    const code = Object.entries(codes).find(([phrase]) => whole.includes(phrase))?.[1];
+    return code === undefined ? failed(said.reason) : { ...failed(said.reason), code };
 }
 
 // ---------------------------------------------------------------- what may be written where
@@ -397,13 +418,13 @@ export async function createBranch(
 }
 
 /**
- * Whether the porcelain reports a change of the repository's own content. An untracked file is not
+ * Whether a status record is a change of the repository's own content. An untracked file is not
  * one: git carries it across a switch or a merge and never overwrites it, so refusing over one
  * would refuse every repository with a build folder in it. A switch that would overwrite an
  * untracked file is git's own refusal, which `switched` words.
  */
-export function trackedChange(output: string): boolean {
-    return statusRecords(output).some((record) => record.code !== '??');
+export function trackedChange(record: StatusRecord): boolean {
+    return record.code !== '??';
 }
 
 /**
@@ -433,9 +454,9 @@ export async function switchBranch(
 ): Promise<Outcome> {
     const wrong = await checkName(root, name, text, roots);
     if (wrong !== '') return failed(wrong);
-    const state = await porcelain(root);
-    if (!state.ok) return state;
-    if (trackedChange(state.output)) return failed(words(text, 'server.git.dirty_switch'));
+    const dirty = await statusHolds(root, trackedChange);
+    if (dirty !== false)
+        return dirty === true ? failed(words(text, 'server.git.dirty_switch')) : dirty;
     return switched(switchTo(root, [name], signal), text);
 }
 
@@ -452,84 +473,10 @@ export async function switchDetached(
 ): Promise<Outcome> {
     const wrong = await checkName(root, ref, text, roots);
     if (wrong !== '') return failed(wrong);
-    const state = await porcelain(root);
-    if (!state.ok) return state;
-    if (trackedChange(state.output)) return failed(words(text, 'server.git.dirty_switch'));
+    const dirty = await statusHolds(root, trackedChange);
+    if (dirty !== false)
+        return dirty === true ? failed(words(text, 'server.git.dirty_switch')) : dirty;
     return switched(switchTo(root, ['--detach', ref], signal), text);
-}
-
-/** What is staged right now, which is what the suggested message is written from. */
-export async function stagedDiff(
-    root: string,
-    text: Record<string, string>,
-    roots: string[] = allowedRoots()
-): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    return diff(root, ['--cached']);
-}
-
-/**
- * One file's diff, staged or not, for the pane the Repositories view opens over a row: its head
- * lines, which the read answers beside the file's two versions. A read: the `git` channel carries
- * the paths and this answers one of them, since a diff of every changed file of every root on every
- * event is what the channel's throttle is there to avoid. A path in conflict, which `git diff`
- * answers as a combined diff, is read as Current's version (stage 2, `--ours`) against the
- * worktree, the side the reader's edits go to.
- */
-export async function fileDiff(
-    root: string,
-    path: string,
-    staged: boolean,
-    text: Record<string, string>,
-    roots: string[] = allowedRoots()
-): Promise<Outcome & { ours: boolean }> {
-    const wrong = checkPaths(root, [path], text, roots);
-    if (wrong !== '') return { ...failed(wrong), ours: false };
-    const flags = ['--no-color', '--no-ext-diff', NO_CONTEXT, '--', path];
-    const read = await diff(root, [...(staged ? ['--cached'] : []), ...flags]);
-    if (staged || !read.ok || !read.output.startsWith('diff --cc '))
-        return { ...read, ours: false };
-    return { ...(await diff(root, ['--ours', ...flags])), ours: true };
-}
-
-/**
- * The branch a worktree's diff starts from: the repository's checked-out branch, or its HEAD for a
- * detached checkout, which has no branch to name. The worktree's diff is the three-dot diff from it
- * to the worktree's own HEAD, which is what the reader is about to merge back.
- *
- * The repository is named by the caller and never worked out from the path: a worktree of the hub
- * is itself a workspace on the `git` channel and therefore a root of its own, so a path would
- * answer with itself and every worktree this hub makes would be refused.
- */
-export async function worktreeFrom(
-    root: string,
-    path: string,
-    text: Record<string, string>,
-    roots: string[] = allowedRoots()
-): Promise<Outcome> {
-    if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
-    if (!worktreeUnder(root, path)) return failed(words(text, 'server.git.outside_worktrees'));
-    const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
-    if (!head.ok) return head;
-    const name = head.output.trim();
-    const from = name === '' || name === 'HEAD' ? await revParse(root, ['HEAD']) : head;
-    return from.ok ? { ...from, output: from.output.trim() } : from;
-}
-
-/** What a worktree holds that the repository's checked-out branch does not, as a diff. */
-export async function worktreeDiff(
-    root: string,
-    path: string,
-    text: Record<string, string>,
-    roots: string[] = allowedRoots()
-): Promise<Outcome> {
-    const from = await worktreeFrom(root, path, text, roots);
-    return from.ok ? worktreeRange(path, from.output) : from;
-}
-
-/** The three-dot diff of a worktree from the branch `worktreeFrom` named, which it checked. */
-export function worktreeRange(path: string, from: string): Promise<Outcome> {
-    return diff(path, ['--no-color', '--no-ext-diff', NO_CONTEXT, `${from}...HEAD`]);
 }
 
 // ---------------------------------------------------------------- worktrees and the merge back
@@ -541,7 +488,7 @@ export function worktreeRange(path: string, from: string): Promise<Outcome> {
  * exist is refused too, since there is nothing to remove or diff. The rule itself is
  * data/helpers/worktrees.ts's, which the page reads too.
  */
-function worktreeUnder(root: string, path: string): boolean {
+export function worktreeUnder(root: string, path: string): boolean {
     if (typeof path !== 'string' || path === '' || !isAbsolute(path)) return false;
     if (!validName(basename(resolve(path)))) return false;
     const full = realPath(path);
@@ -585,11 +532,12 @@ export async function removeWorktree(
     if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if (!worktreeUnder(root, path)) return failed(words(text, 'server.git.outside_worktrees'));
     if (!existsSync(path)) return failed(words(text, 'server.git.no_worktree_at', path));
-    const state = await porcelain(path);
-    if (!state.ok) return state;
     // Untracked files count here, unlike the merge: `git worktree remove` would take the folder and
     // them with it, and a file git never saw is a file nobody can get back.
-    if (state.output.trim() !== '') return failed(words(text, 'server.git.worktree_dirty'));
+    const dirty = await statusHolds(path, () => true);
+    if (dirty !== false) {
+        return dirty === true ? failed(words(text, 'server.git.worktree_dirty')) : dirty;
+    }
     const head = await revParse(path, ['--abbrev-ref', 'HEAD']);
     const name = head.ok ? head.output.trim() : '';
     const gone = await worktree(root, ['remove', path]);
@@ -620,9 +568,18 @@ export function removeIn(root: string, args: string[]): Promise<Outcome> {
     return run(root, ['rm', ...args], TIMEOUT_MS);
 }
 
-/** The one `add` call site: named paths, and every tracked change under the root with `-u`. */
-export function addTo(root: string, args: string[]): Promise<Outcome> {
-    return run(root, ['add', ...args], TIMEOUT_MS);
+/**
+ * The one `add` call site: named paths, every tracked change under the root with `-u`, and a list
+ * of paths too long for the argument vector read from standard input (`extra.input`), under the
+ * write's time limit or `NO_TIME_LIMIT` where Cancel ends it.
+ */
+export function addTo(
+    root: string,
+    args: string[],
+    extra: Extra = {},
+    timeout: number = TIMEOUT_MS
+): Promise<Outcome> {
+    return run(root, ['add', ...args], timeout, extra);
 }
 
 /**
@@ -745,9 +702,48 @@ function switchTo(root: string, args: string[], signal?: AbortSignal): Promise<O
     return run(root, ['switch', ...args], NO_TIME_LIMIT, { signal });
 }
 
-/** The one `status` call site: the dirty check and the untracked list read the same output. */
-export function porcelain(root: string): Promise<Outcome> {
-    return run(root, ['status', '--porcelain=v1', '-z'], TIMEOUT_MS);
+/**
+ * The one `status` call site, read record by record as git writes it, each record handed to
+ * `visit`, which answers false to end git once it has its answer; the outcome carries no output,
+ * since what the read found is what `visit` kept. By default every untracked file is listed on its
+ * own line, as server/core/git/state.ts lists them for the view, so a write over the paths the view
+ * drew finds each of them here; `untracked` `normal` lists a folder git tracks nothing in as one
+ * entry, which Stage All hands to the add. A read that fails, runs out of time or cannot start
+ * answers as `run` answers.
+ */
+export function statusIn(
+    root: string,
+    visit: RecordVisit,
+    untracked: 'all' | 'normal' = 'all'
+): Promise<Outcome> {
+    const child = spawn(
+        GIT,
+        ['-C', root, 'status', '--porcelain=v1', '-z', `--untracked-files=${untracked}`],
+        {
+            stdio: ['ignore', 'pipe', 'pipe']
+        }
+    );
+    return readRecords(child, { timeout: TIMEOUT_MS }, visit).then(({ error, stderr }) =>
+        error === null
+            ? { ok: true, output: '', error: '' }
+            : refusalOf(error, '', stderr, TIMEOUT_MS)
+    );
+}
+
+/**
+ * Whether git lists a record `wanted` takes, the status read only up to the first such record, or
+ * the outcome of a read that failed.
+ */
+export async function statusHolds(
+    root: string,
+    wanted: (record: StatusRecord) => boolean
+): Promise<boolean | Outcome> {
+    let found = false;
+    const done = await statusIn(root, (record) => {
+        found = wanted(record);
+        return !found;
+    });
+    return done.ok ? found : done;
 }
 
 /**
@@ -816,18 +812,10 @@ export function refFormat(root: string, args: string[]): Promise<Outcome> {
 
 // ---------------------------------------------------------------- small stuff
 
-/** The paths `status --porcelain=v1 -z` reported as untracked. */
-export function untrackedIn(output: string): Set<string> {
-    return new Set(
-        statusRecords(output)
-            .filter((record) => record.code === '??')
-            .map((record) => record.path)
-    );
-}
-
 /**
- * The paths git lists as untracked in a repository, or the refusal when `paths` holds one the
- * write may not touch or the status could not be read.
+ * The paths of `paths` git lists as untracked in a repository, or the refusal when `paths` holds
+ * one the write may not touch or the status could not be read. Only the paths asked about are
+ * kept, however many untracked files git lists.
  */
 export async function untrackedAmong(
     root: string,
@@ -837,6 +825,11 @@ export async function untrackedAmong(
 ): Promise<Set<string> | Outcome> {
     const wrong = checkPaths(root, paths, text, roots);
     if (wrong !== '') return failed(wrong);
-    const state = await porcelain(root);
-    return state.ok ? untrackedIn(state.output) : state;
+    const asked = new Set(paths);
+    const loose = new Set<string>();
+    const state = await statusIn(root, (record) => {
+        if (record.code === '??' && asked.has(record.path)) loose.add(record.path);
+        return loose.size < asked.size;
+    });
+    return state.ok ? loose : state;
 }

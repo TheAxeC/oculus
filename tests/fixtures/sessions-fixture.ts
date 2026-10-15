@@ -138,6 +138,7 @@ export function git(over: Partial<GitState> = {}): GitState {
         untracked: [],
         conflicted: [],
         held: { staged: 0, changes: 0, untracked: 0, merge: 0 },
+        untrackedByFolder: [],
         sequence: '',
         mergeMessage: '',
         remotes: [],

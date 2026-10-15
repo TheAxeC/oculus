@@ -3,7 +3,9 @@
 // tokens, the wallpaper's layer and the properties its translucent surfaces read, the text scale,
 // which of the two glyph vocabularies renders, and the icon theme of an app when `file_icons` names
 // one. Called once from the page's script body (Workbench.svelte), which draws the wallpaper's
-// layer from the two values it answers.
+// layer from the two values it answers. In the desktop app the colours the title bar strip is drawn
+// in go to the host each time a theme is drawn, the first time included, for the window buttons the
+// system draws over the strip off macOS; a page in a browser has no host and sends nothing.
 
 import { WALL_CLASS, applyWallpaper } from '$lib/ui/theme/theme';
 import { drawTheme } from '$lib/ui/theme/app-theme';
@@ -24,6 +26,7 @@ import {
     wallpaperSettings
 } from '$lib/state/shared/words/appearance';
 import type { ClientState } from '$lib/state/client/context';
+import { stripColours } from '$lib/shell/window/strip-colours';
 
 /** What the page draws its wallpaper layer from. */
 export type Appearance = {
@@ -40,8 +43,9 @@ export type Appearance = {
 export function useAppearance({
     ui,
     notices,
-    appShell
-}: Pick<ClientState, 'ui' | 'notices' | 'appShell'>): Appearance {
+    appShell,
+    desktop
+}: Pick<ClientState, 'ui' | 'notices' | 'appShell' | 'desktop'>): Appearance {
     const { crt, icons, textScale, theme, wallpaper } = ui;
     /** The app themes the page said are unavailable, so a theme is told once. */
     const told = new Set<string>();
@@ -79,6 +83,8 @@ export function useAppearance({
             () => current
         ).then((drawn) => {
             if (current) setIconsDark(getComputedStyle(document.body).colorScheme === 'dark');
+            const strip = current && desktop !== undefined ? stripColours(document) : null;
+            if (strip !== null) desktop?.bridge.titleColours(strip.color, strip.symbolColor);
             if (!current || (state !== 'missing' && drawn) || told.has(choice)) return;
             told.add(choice);
             notices.post(t('apps.theme_unavailable', appThemeLabel(choice)));

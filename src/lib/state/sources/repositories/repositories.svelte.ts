@@ -126,6 +126,11 @@ export type RepositoriesStore = {
      * path is the view's own rule.
      */
     createWorktree: (root: string, name: string, start: WorktreeStart) => Promise<void>;
+    /**
+     * Make the worktree of `name` on the root, the write New worktree sends, and answer whether it
+     * went with the sentence a refusal gave; the view's notice says the outcome as for any write.
+     */
+    makeWorktree: (root: string, name: string) => Promise<{ ok: boolean; error: string }>;
     removeWorktree: (root: string, path: string) => Promise<void>;
     merge: (root: string, branch: string) => Promise<void>;
     /** Open a shell in a worktree that is already there. */
@@ -239,8 +244,8 @@ export function createRepositories(
         fields: Record<string, unknown> = {},
         confirmed = false,
         options: SendOptions = {}
-    ): Promise<{ ok: boolean; output: string; code?: string }> {
-        if (root === '' || busy(root)) return { ok: false, output: '' };
+    ): Promise<{ ok: boolean; output: string; error: string; code?: string }> {
+        if (root === '' || busy(root)) return { ok: false, output: '', error: '' };
         state.busy = [...state.busy, root];
         say(root, '');
         try {
@@ -254,10 +259,23 @@ export function createRepositories(
             const asked =
                 answer.code !== undefined && options.asked?.includes(answer.code) === true;
             say(root, answer.ok ? t('git.done') : asked ? '' : (answer.error ?? ''));
-            return { ok: answer.ok, output: answer.output ?? '', code: answer.code };
+            return {
+                ok: answer.ok,
+                output: answer.output ?? '',
+                error: answer.ok ? '' : (answer.error ?? ''),
+                code: answer.code
+            };
         } finally {
             state.busy = state.busy.filter((one) => one !== root);
         }
+    }
+
+    async function makeWorktree(
+        root: string,
+        name: string
+    ): Promise<{ ok: boolean; error: string }> {
+        const answer = await send(root, 'createWorktree', { name }, true);
+        return { ok: answer.ok, error: answer.error };
     }
 
     async function act(
@@ -312,7 +330,8 @@ export function createRepositories(
     }
 
     function openFile(root: string, path: string, line?: number, beside = false): boolean {
-        // A folder (an untracked directory) has no source tab; the Files view shows it.
+        // A folder (a nested repository, which git lists as its folder) has no source tab; the
+        // Files view shows it.
         if (isFolderPath(path)) return revealFile(root, path);
         const tab = tabOf(root, path);
         if (tab === null) {
@@ -480,10 +499,11 @@ export function createRepositories(
         },
         async createWorktree(root, name, start) {
             const path = plannedPath(root, name);
-            if (!(await act(root, 'createWorktree', { name }, true))) return;
+            if (!(await makeWorktree(root, name)).ok) return;
             if (start === 'shell') await shellIn(root, path, name);
             else await agentIn(root, path, start);
         },
+        makeWorktree,
         async removeWorktree(root, path) {
             await act(root, 'removeWorktree', { path }, true);
         },

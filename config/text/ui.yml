@@ -127,6 +127,19 @@ text:
         text_undo: Undo
         theme: Theme
         theme_glyph: darkmode
+        titlebar: Title bar
+        titlebar_actions: Editor actions
+        titlebar_back: Go Back
+        titlebar_back_glyph: go_back
+        titlebar_center_title: 'Search {0}: views, projects and entries, commands after : (Cmd+K)'
+        titlebar_dock_bottom_glyph: dock_bottom
+        titlebar_dock_left_glyph: dock_left
+        titlebar_dock_right_glyph: dock_right
+        titlebar_dock_none: '{0}: no float is docked at this edge'
+        titlebar_docks: Docks
+        titlebar_forward: Go Forward
+        titlebar_forward_glyph: go_forward
+        titlebar_untitled: Untitled (Workspace)
         toolbar_more: More actions
         toolbar_more_glyph: more
         unknown_view: 'Unknown view: {0}'

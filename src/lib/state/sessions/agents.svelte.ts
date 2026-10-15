@@ -4,7 +4,7 @@
 // for the viewer, and a session's transcript saved as Markdown.
 //
 // Each answer is held per key in the client state's query client and asked for the first time a
-// view reads it, on a microtask (state/client/queries.svelte.ts), so a read from a $derived
+// view reads it, on a microtask (state/client/queries/queries.svelte.ts), so a read from a $derived
 // never writes state while the derived runs. A key whose answer is still out is not asked twice,
 // and a refresh cancels the request still out for its key, so an answer that would land after the
 // key was asked again is never held.

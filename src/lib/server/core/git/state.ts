@@ -14,6 +14,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, sep } from 'node:path';
 import type {
     GitCommit,
+    GitEntry,
     GitSequence,
     GitStash,
     GitState,
@@ -29,10 +30,10 @@ import {
     parseStashes,
     parseRefs,
     parseWorktrees,
-    statusLists,
-    statusRecords,
+    statusCollector,
     type RefRows
 } from './parse.ts';
+import type { RecordVisit } from './records.ts';
 import {
     NO_REPOSITORY,
     TIMEOUT_MS,
@@ -41,6 +42,7 @@ import {
     milliseconds,
     reasonOf,
     run,
+    runRecords,
     seen,
     short,
     whole,
@@ -58,8 +60,16 @@ export const LOG_ENTRIES = 20;
 /** One root's state, and whether every git command of its read finished within its time limit. */
 export type StateRead = { state: GitState; finished: boolean };
 
-/** One read's git: a command run in the read's root under the read's time limit. */
-type Git = (args: string[]) => Promise<Outcome>;
+/** A command run in a root under a time limit. */
+type Run = (args: string[]) => Promise<Outcome>;
+
+/**
+ * One read's git: a command run in the read's root under the read's time limit, and `records`, a
+ * status read whose records are handed to a visitor as git writes them.
+ */
+type Git = Run & {
+    records: (args: string[], visit: RecordVisit) => Promise<Outcome>;
+};
 
 /** The shape every caller can count on, with nothing in it. */
 export function empty(error: string | null = null): GitState {
@@ -75,6 +85,7 @@ export function empty(error: string | null = null): GitState {
         untracked: [],
         conflicted: [],
         held: { staged: 0, changes: 0, untracked: 0, merge: 0 },
+        untrackedByFolder: [],
         sequence: '',
         mergeMessage: '',
         remotes: [],
@@ -118,11 +129,14 @@ export async function readState(
 ): Promise<StateRead> {
     const ms = milliseconds(timeout);
     let finished = true;
-    const git: Git = async (args) => {
-        const done = await run(root, args, ms);
+    const seenBy = (done: Outcome): Outcome => {
         if (!done.answered) finished = false;
         return done;
     };
+    const git: Git = Object.assign(async (args: string[]) => seenBy(await run(root, args, ms)), {
+        records: async (args: string[], visit: RecordVisit) =>
+            seenBy(await runRecords(root, args, ms, visit))
+    });
     try {
         const found = await state(root, text, git);
         return { state: found, finished };
@@ -188,21 +202,39 @@ async function state(root: string, text: Record<string, string>, git: Git): Prom
     found.worktrees = await worktreesOf(root, git);
     found.ignoresWorktrees = ignored(root);
     sequenceOf(root, gitDir.text.trim(), found);
-    const listing = await git([
-        'status',
-        '--porcelain=v1',
-        '-z',
-        '--untracked-files=normal',
-        '--renames'
-    ]);
+    // Every untracked file is listed on its own line, as VS Code's status read lists them, so a new
+    // folder's files are rows of their own; a nested repository is listed as its folder alone. The
+    // records are taken as git writes them, each list keeping its first MAX_ENTRIES and counting
+    // the rest, so no number of untracked files makes the read fail; the line counts are read
+    // first, since an entry is made with its counts.
+    const counts = await git(['diff', '--numstat', '-z']);
+    const lists = statusCollector(parseNumstat(counts.ok ? counts.text : ''), MAX_ENTRIES);
+    const listing = await git.records(
+        ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--renames'],
+        lists.add
+    );
     if (!listing.ok) {
         found.error = reasonOf(listing, text);
         return found;
     }
-    const counts = await git(['diff', '--numstat', '-z']);
-    const lines = parseNumstat(counts.ok ? counts.text : '');
-    Object.assign(found, statusLists(statusRecords(listing.text), lines, MAX_ENTRIES));
+    Object.assign(found, lists.lists());
+    if (found.held.untracked > found.untracked.length)
+        found.untrackedByFolder = await byFolder(git);
     return found;
+}
+
+/**
+ * The untracked paths folder by folder, read when the untracked list was cut: a folder holding
+ * only untracked files is one entry, so the Explorer marks every file under it, the files the cut
+ * list leaves out included. A read that fails gives none.
+ */
+async function byFolder(git: Git): Promise<GitEntry[]> {
+    const lists = statusCollector(new Map(), MAX_ENTRIES);
+    const done = await git.records(
+        ['status', '--porcelain=v1', '-z', '--untracked-files=normal'],
+        lists.add
+    );
+    return done.ok ? lists.lists().untracked : [];
 }
 
 /**
@@ -318,7 +350,7 @@ export async function worktrees(
 }
 
 /** The worktrees of the repository at `root`, listed through the git of one read. */
-async function worktreesOf(root: string, git: Git): Promise<GitWorktree[]> {
+async function worktreesOf(root: string, git: Run): Promise<GitWorktree[]> {
     const done = await git(['worktree', 'list', '--porcelain']);
     if (!done.ok) return [];
     const real = realpath(root);

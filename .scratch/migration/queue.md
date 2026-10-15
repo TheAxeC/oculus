@@ -1,11 +1,13 @@
-In flight (1 of 6 slots in use):
-- D77 (the Sessions view and the title bar, open items 103 to 108 and 110, with part 9 (the rail pages), part 10 (the Repositories change groups) and part 11 (the graph)): reviewed, in its repair round 1; it lands after the review over the round, and the plan stops there at Axel's word.
+In flight (0 of 6 slots in use): none; the plan stops after D77's landing at Axel's word.
 
 Queued, in order (2 steps):
-- Q72 (the architecture re-read): after D77, so it reads the code of D73, D74, D76 and D77.
+- Q72 (the architecture re-read): next, on Axel's word to go on; it reads the code of D73, D74, D76 and D77.
 - O33 (oculus in its own repository; inline): after Q72; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project).
 
+Owed looks (agents/reviews/owed-looks.md): D77, the Sessions page's parts and the window buttons off macOS.
+
 Landed, newest first:
+- D77 (the Sessions view and the title bar, the rail pages, the Repositories change groups and the graph), 2026-10-15, LANDING.
 - D73 (the Literature view, hidden and ignored files shown, the domain, theme and feed settings in their files, Copy on code blocks and the Help tabs), 2026-10-14, 8af4c1dae.
 - D76 (notes like Obsidian), 2026-10-14, 8e41021f3.
 - D74 (the shell and source-control fixes), 2026-10-13, f92a0abe6.

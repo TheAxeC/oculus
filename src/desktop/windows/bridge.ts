@@ -5,7 +5,13 @@
 // arguments are read before they are used, since a page is not trusted with the shape of what it
 // sends.
 
-import { ipcMain, type IpcMainEvent, type IpcMainInvokeEvent, type WebContents } from 'electron';
+import {
+    ipcMain,
+    systemPreferences,
+    type IpcMainEvent,
+    type IpcMainInvokeEvent,
+    type WebContents
+} from 'electron';
 import {
     CLOSE_FIND,
     CLOSE_SELF,
@@ -14,16 +20,20 @@ import {
     EVENT,
     FIND,
     FOCUS_MAIN,
+    FULL_SCREEN,
     OPEN_FLOAT_WINDOW,
     PRINT_PDF,
     SAVE_LAYOUT,
     SHOW_FIND,
-    STOP_FIND
+    STOP_FIND,
+    TITLE_COLOURS,
+    TITLE_DOUBLE_CLICK
 } from '../decide/channels.ts';
 import { windowAt } from '../decide/drop.ts';
 import { rectOf, type Rect } from '../decide/place.ts';
 import type { SaveTurn } from '../decide/save-turn.ts';
 import { mayCall, printTarget, senderOf, type Sender } from '../decide/sender.ts';
+import { overlayColours, titleAction } from '../decide/window-options.ts';
 import type {
     FindOptions,
     PrintAnswer,
@@ -213,6 +223,38 @@ export function registerBridge(windows: Windows, turn: SaveTurn, print: Printer)
                 ? null
                 : printTarget(address, caller.entry.origin);
         return target === null ? Promise.resolve(PRINT_REFUSED) : print(target);
+    });
+
+    // macOS's setting is read at each press, so a change in System Settings applies at once; on
+    // another system the press zooms, as a title bar there does. A window in full screen has no
+    // size to change, so the press does nothing there.
+    ipcMain.on(TITLE_DOUBLE_CLICK, (event) => {
+        const caller = callerOf(event, TITLE_DOUBLE_CLICK);
+        if (caller === null || caller.entry.win.isFullScreen()) return;
+        const { win } = caller.entry;
+        const setting =
+            process.platform === 'darwin'
+                ? systemPreferences.getUserDefault('AppleActionOnDoubleClick', 'string')
+                : undefined;
+        const action = titleAction(setting);
+        if (action === 'minimise') win.minimize();
+        else if (action === 'zoom' && win.isMaximized()) win.unmaximize();
+        else if (action === 'zoom') win.maximize();
+    });
+
+    // Off macOS the window buttons the system draws over the strip take the strip's colours, as
+    // the window's own page sent them; a call from any other sender, and a value that is not a hex
+    // colour, changes nothing.
+    ipcMain.on(TITLE_COLOURS, (event, color: unknown, symbolColor: unknown) => {
+        const caller = callerOf(event, TITLE_COLOURS);
+        const colours = overlayColours(process.platform, color, symbolColor);
+        if (caller === null || colours === null) return;
+        caller.entry.win.setTitleBarOverlay(colours);
+    });
+
+    ipcMain.handle(FULL_SCREEN, (event) => {
+        const caller = callerOf(event, FULL_SCREEN);
+        return caller?.entry.win.isFullScreen() === true;
     });
 
     ipcMain.on(SHOW_FIND, (event) => {

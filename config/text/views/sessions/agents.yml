@@ -6,6 +6,7 @@ text:
         ag_empty: This session dispatched no agents.
         ag_error: error
         ag_mins: '{0}m {1}s'
+        ag_no_transcript: This agent's own transcript is not available.
         ag_running: running
         ag_secs: '{0} s'
         ag_stopped: stopped

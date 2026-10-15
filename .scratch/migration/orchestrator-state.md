@@ -24,22 +24,7 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch:   # steps in flight, up to six (Z632)
-- step: D77
-  executor: agent
-  worker: claude:opus
-  session_id: a8345a31acc9caff4 (claude-opus-5-5)   # launched with the prompt of agents/briefs/D77-launch.md word for word
-  report: agents/reviews/D77-report.md
-  builder_usage: "first run, stopped at case 18: 208,864 tokens, 159 tool uses, 21.8 min; resumed run (round 0 and parts 9 to 11): 344,995 tokens, 880 tool uses, 234.1 min"
-  round: 1   # round 0: agents/briefs/D77-cases.md (Z892, Z893); round 1: agents/briefs/D77-round1.md (Z897), snapshot .agents/worktrees/D77-round-1
-  part9: agents/briefs/D77-part9.md   # open item 111, sent to the builder while it builds
-  part10: agents/briefs/D77-part10.md   # open item 112, the Repositories view's change groups
-  part11: agents/briefs/D77-part11.md   # open item 113, the graph's doubled commits and branch colours
-  worktree: .agents/worktrees/D77
-  base: abe5c9651   # the preparation commit, main after D73 landed; base copy .agents/worktrees/D77-base with unused-exports.txt
-  reviewer_report: "agents/reviews/D77-refuter.md (a24c5c9f54be2a471, claude-opus-5-5, 259,610 tokens, 159 tool uses, 31.2 min)"
-  landing: preparing
-  brief_check: "agents/reviews/D77-brief-check.md (a54a1d685d11d12dd, claude-opus-5-5, 299,890 tokens, 105 tool uses, 15.2 min)"
+dispatch: []   # steps in flight, up to six (Z632)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -284,6 +269,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-15 (D77 landed; stopped at Axel's word). D77, the Sessions view and the title bar with parts 9 to 11, landed on main (booking in plan.md under D77, `agents/reviews/D77-landing.md`) after one repair round and the review over it; the run's eleven findings and the declined overlay-colour point closed at landing (`agents/reviews/D77-refuter.md`, Closed), Z898 (Stage All of Untracked by folder entries, no time limit) and Z899 (guarded entries name D77's rows) taken; `npm run test:landing` passed in the gate. The look found a collection tab drawn "Unknown view" on a hub that lists no such collection, a defect from before D77, folded into O33 (plan.md, O33). Open items: none. In flight (0 of 6). Queued: Q72, O33. Per Axel's word the orchestrator stops here: nothing is prepared or dispatched until he says to go on.
 - 2026-10-15 (D77 round 1 sent). Axel: "Please continue until the step is landed"; the pause after D77's review is lifted to its landing. D77's review went back to its builder a8345a31acc9caff4 as repair round 1 (`agents/briefs/D77-round1.md`, ten items: the strip's own title bar tokens mapped from VS Code's `titleBar.*` (Z897), context.ts split, Back reopening a closed tab at its place, HELP for Pin and agent rows, the graph's colours mapped from `scmGraph.*`, streamed status reads with no output cap, the window buttons' overlay following the theme off macOS, the composer keeping its unlisted folder, the report's corrections); snapshot `.agents/worktrees/D77-round-1`. Open items: none. In flight (1 of 6): D77 (round 1). Next: the round's report, /refute over it, /land D77; then stop at Axel's word.
 - 2026-10-15 (D77 reviewed; paused at Axel's word). D77's builder reported all eleven parts (`agents/reviews/D77-report.md`, usage in `builder_usage`); the reviewer a24c5c9f54be2a471 on claude-opus-5-5 wrote `agents/reviews/D77-refuter.md`: items 6 violated (the strip not in title bar colours of its own; context.ts at 890 not split; HELP says Back reopens a closed tab where it was), HELP lacks Pin across hubs and the agent-row press, the tokens.css comment is false for the VS Code themes, the report's 207 count does not reproduce (160), the old References page lingers unsaid, the overlay colour is fixed off macOS, -uall can pass the 8 MiB output limit, the composer's split is overwritten; test:quick passes on the final tree in the reviewer's run. Open items: none. In flight (1 of 6): D77 (reviewed, no round sent). Paused: no repair round, landing or dispatch until Axel says to go on. Next on his go: D77's repair round, its review, /land D77; Q72, O33.
 - 2026-10-14 (D77 part 10, count before the menu). Axel: a repository row's change count goes before its `...`; added to part 10 as item 4 (case 39), part 11's cases renumbered 41 to 44, sent to D77's builder. Open items: none. In flight (1 of 6): D77 (building). Next: D77's report, /refute, its round, /land; Q72, O33.

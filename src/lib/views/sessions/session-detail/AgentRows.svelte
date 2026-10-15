@@ -4,6 +4,11 @@
     // section's tree (level 2, ids from rowKey). Each says what kind it was, on what model, what it
     // was asked for, and how it went. Each is named by the session's own transcript.
     //
+    // A press on a row opens the agent's own transcript in a Transcript tab keyed on the session
+    // and the agent, or brings that tab forward. A row whose agent named no transcript (no agent
+    // id, its file not there, or for a Codex agent no session of its own in the payload) has no
+    // press and says so in its title.
+    //
     // A finished agent reports what it took, from its start to its end, and nothing when its end is
     // not known. A running one is counted from its start to now, which is the number that says
     // whether to wait for it, so the moment it counts to moves every second while a row runs. The
@@ -14,13 +19,23 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import { compactCount, modelShort, seconds, span } from '$lib/state/shared/words/format';
-    import type { SessionAgent } from '$lib/state/client/selectors.svelte';
+    import type { GroupedSession, SessionAgent } from '$lib/state/client/selectors.svelte';
+    import { useState } from '$lib/state/client/use';
     import { agentTokens, anyRunning } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { rowKey } from './session-sections';
 
-    /** The agents newest first, and the tree the rows are drawn in. */
-    let { agents, nav }: { agents: SessionAgent[]; nav: TreeNav } = $props();
+    const {
+        layout: { openView },
+        selectors: { sessionById }
+    } = useState();
+
+    /** The agents newest first, the session that sent them, and the tree they are drawn in. */
+    let {
+        agents,
+        session,
+        nav
+    }: { agents: SessionAgent[]; session: GroupedSession | null; nav: TreeNav } = $props();
 
     /** The hue of the status dot: at work, failed, stopped before it finished, or come back. */
     const TONES: Record<string, string> = {
@@ -81,6 +96,22 @@
     function kind(agent: SessionAgent): string {
         return agent.subagentType === '' ? t('sessions.ag_type') : agent.subagentType;
     }
+
+    /**
+     * Whether the agent's own transcript can be read: the record names it, and a Codex agent's
+     * rollout is a session the payload holds.
+     */
+    function readable(agent: SessionAgent): boolean {
+        if (session === null || agent.agentId === '') return false;
+        return session.tool !== 'codex' || sessionById(agent.agentId) !== null;
+    }
+
+    /** Open the agent's transcript, or bring its open tab forward. */
+    function open(agent: SessionAgent): void {
+        if (session === null) return;
+        const label = `${kind(agent)} ${agent.description}`.trim();
+        openView('transcript', { session: session.id, agent: agent.id, label });
+    }
 </script>
 
 {#if agents.length === 0}
@@ -96,6 +127,8 @@
                 id={rowKey('agent', agent.id)}
                 {nav}
                 level={2}
+                title={readable(agent) ? undefined : t('sessions.ag_no_transcript')}
+                onclick={readable(agent) ? () => open(agent) : undefined}
             >
                 {#snippet words()}
                     <span class="dot" style={dotStyle(agent.status)}></span>

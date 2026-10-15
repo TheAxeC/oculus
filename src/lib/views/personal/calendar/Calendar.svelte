@@ -1,7 +1,7 @@
 <script module lang="ts">
-    // Layer 3, view registration. The calendar is the fifth of the Incoming page's group, in the
-    // pane beside the feeds, and the Literature search follows it. The view's badge is how many of
-    // today's events have not ended yet, and nothing when none are left.
+    // Layer 3, view registration. The calendar is the last of the Incoming page's group, `e` then
+    // `4`, in the pane beside the feeds. The view's badge is how many of today's events have not
+    // ended yet, and nothing when none are left.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {

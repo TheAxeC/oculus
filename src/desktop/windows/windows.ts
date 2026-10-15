@@ -5,6 +5,9 @@
 //
 // The audience window of a presentation is made by show.ts and is not one of these entries.
 //
+// Every one of them is made with no title bar of the system's (decide/window-options.ts's
+// `windowFrame`): its page draws the strip, and the window buttons sit inside it.
+//
 // A main window closed leaves the app and the server running; the popped-out windows close with
 // the last main window and keep their places in the arrangement, so they open again with the next
 // main window. A popped-out window closed by the reader is asked to put its tabs back in the main
@@ -14,7 +17,7 @@
 import { BrowserWindow, screen, shell, type WebContents } from 'electron';
 import { linkDecision, movedPort } from '../decide/links.ts';
 import { placeWindow, rectOf, type Rect } from '../decide/place.ts';
-import { WINDOW_BACKGROUND, windowPreferences } from '../decide/window-options.ts';
+import { WINDOW_BACKGROUND, windowFrame, windowPreferences } from '../decide/window-options.ts';
 import {
     NO_ZOOM,
     recordWindow,
@@ -350,6 +353,7 @@ export function createWindows(deps: WindowsDeps): Windows {
             useContentSize: content,
             show: false,
             backgroundColor: WINDOW_BACKGROUND,
+            ...windowFrame(process.platform),
             webPreferences: windowPreferences(deps.preload)
         });
         const entry: Entry = {
@@ -366,6 +370,10 @@ export function createWindows(deps: WindowsDeps): Windows {
         list.push(entry);
         guard(entry);
         win.on('focus', () => (entry.focusedAt = ++clock));
+        // The page's strip leaves room for the window buttons except in full screen, where macOS
+        // hides them, so the page is told each time the window enters or leaves it.
+        win.on('enter-full-screen', () => win.webContents.send(EVENT, 'full-screen', true));
+        win.on('leave-full-screen', () => win.webContents.send(EVENT, 'full-screen', false));
         win.once('ready-to-show', () => win.show());
         win.on('close', (event) => {
             if (entry.kind === 'float' && !entry.allowClose && !quit) {

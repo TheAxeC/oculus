@@ -4,12 +4,13 @@
     // and not run. Above them, a bare colon says which line the caret of the source tab on screen
     // is on and how many the file has. A press runs the command: the commands that list choices
     // type their name and a space, which opens their list; the others change the theme, the file
-    // icon theme, the CRT overlay, the tabs or the folder shown, or reopen the tabs closed last,
-    // and close the palette. A tab a command showed takes the keyboard on its head once the page
-    // has drawn it, since the tab chosen is where the reader went. A refusal of Open Folder, of
-    // Close Workspace or of Add Task is said in the palette, which stays open. Add Task writes the
-    // task and posts a notice with an Open action; Shift+Enter, or a press with Shift held, opens
-    // the task's page as well.
+    // icon theme, the CRT overlay, the tabs or the folder shown, reopen the tabs closed last, walk
+    // the navigation history back or forward (shell/titlebar/history-walk.ts), or hide or show the
+    // floats docked at an edge, and close the palette. A tab a command showed takes the keyboard on
+    // its head once the page has drawn it, since the tab chosen is where the reader went. A refusal
+    // of Open Folder, of Close Workspace or of Add Task is said in the palette, which stays open.
+    // Add Task writes the task and posts a notice with an Open action; Shift+Enter, or a press with
+    // Shift held, opens the task's page as well.
 
     import { opensTaskPage } from '$lib/data/helpers/keys/oculus/palette-table';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
@@ -27,11 +28,12 @@
     import { registrationLabel } from '$lib/state/workbench/navigation/registry';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { useWalk } from '$lib/shell/titlebar/history-walk';
 
     const {
         explorer,
         fs: { closeWorkspace, primary },
-        layout: { openView, reopenClosed },
+        layout: { openView, reopenClosed, toggleDock },
         notices,
         selectors: { collectionsOfKey },
         writes: { newEntry },
@@ -40,6 +42,7 @@
         registry: { views },
         appShell: { offers }
     } = useState();
+    const history = useWalk();
 
     type Props = {
         parsed: ParsedCommand;
@@ -141,6 +144,16 @@
             onupdate();
         } else if (command.name === 'reopen-closed-tab') {
             void reopenClosed();
+        } else if (command.name === 'go-back') {
+            void history.back();
+        } else if (command.name === 'go-forward') {
+            void history.forward();
+        } else if (command.name === 'toggle-left-dock') {
+            toggleDock('left');
+        } else if (command.name === 'toggle-bottom-dock') {
+            toggleDock('bottom');
+        } else if (command.name === 'toggle-right-dock') {
+            toggleDock('right');
         }
         onclose();
         if (shown !== '') void landOn(shown);

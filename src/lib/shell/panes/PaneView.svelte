@@ -448,6 +448,7 @@
             onunpin={unpinTab}
             {dropIndex}
             focused={activePane}
+            lead={activePane || client.float === page}
             onselect={(id: string) => activateInstance(id, page)}
             onclose={closeTab}
             ondblclick={(id: string) => keepPreview(id)}

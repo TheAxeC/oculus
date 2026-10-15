@@ -117,12 +117,15 @@
     }
 
     /**
-     * The areas the session may be pinned to: every project folder, touched by a session or not.
+     * The areas the session may be pinned to: its workspace's known areas, then every project of
+     * every hub, grouped by hub, touched by a session or not.
      */
-    const areas = $derived(pinnableAreas(record.workspace));
-
     const choices = $derived(
-        areas.map((area) => ({ id: area.key, label: area.short === '' ? area.key : area.full }))
+        pinnableAreas(record.workspace).map((one) => ({
+            id: one.key,
+            label: one.label,
+            group: one.group === '' ? undefined : one.group
+        }))
     );
 
     /** What the pin control shows: the area a pin chose, and nothing when the score chose it. */
@@ -347,7 +350,7 @@
     /* A value in a panel of facts is the panel's main words. */
     .kv dd {
         margin: 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -379,7 +382,7 @@
     }
 
     .pin .outcome {
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -405,7 +408,7 @@
 
     .line .vl {
         margin-left: auto;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         font-family: var(--font-num);
         text-align: right;
     }

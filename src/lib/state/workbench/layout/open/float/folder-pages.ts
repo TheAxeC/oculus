@@ -51,7 +51,7 @@ export function withKept(held: Pages, entry: KeptWorkbench): Pages {
 export function withoutKept(held: Pages, folder: FolderRef): Pages {
     if (keptFor(held, folder) === null) return held;
     const kept = (held.kept ?? []).filter((one) => !sameFolder(one.folder, folder));
-    const rest: Pages = { pages: held.pages, current: held.current, floats: held.floats };
+    const { kept: _, ...rest } = held;
     return kept.length === 0 ? rest : { ...rest, kept };
 }
 

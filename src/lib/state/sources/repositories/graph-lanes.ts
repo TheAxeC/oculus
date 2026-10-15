@@ -8,6 +8,10 @@
 // takes the lane already waiting for that parent or a free one. Lanes are never moved sideways, so
 // a line is straight down its lane until a commit it waits for joins it.
 //
+// The commits are HEAD's and its upstream's together, so a commit only one of them holds is marked
+// by the side it is on (`commitKind`), and Incoming Changes and Outgoing Changes are drawn above
+// the first commit of their side (`entryPlaces`) with the lanes that pass there (`entryRow`).
+//
 // Coordinates of a LaneRow are in lanes across and in rows down, 0 at the top of a row and 1 at
 // its foot. `lanePaths`, `laneX`, `laneWidth` and `commitCircles` turn them into the units of the
 // 22-high row VS Code draws, an SVG the view scales to the text size through its viewBox.
@@ -153,10 +157,56 @@ export function lanesBelow(row: LaneRow): number[] {
 /** What a commit's circle stands for: the checked-out commit is first, a merge second. */
 export type CommitKind = 'commit' | 'merge' | 'head' | 'incoming' | 'outgoing';
 
-/** Which circle a commit is drawn with, HEAD before a merge. */
-export function commitKind(commit: { parents: readonly string[] }, head: boolean): CommitKind {
+/** The side of the upstream a commit only one of HEAD and the upstream holds is on. */
+export type GraphSide = 'incoming' | 'outgoing';
+
+/**
+ * Which circle a commit is drawn with: HEAD's first, then the dashed circle of the side of the
+ * upstream it is on, then a merge's.
+ */
+export function commitKind(
+    commit: { parents: readonly string[] },
+    head: boolean,
+    side?: GraphSide
+): CommitKind {
     if (head) return 'head';
+    if (side !== undefined) return side;
     return commit.parents.length > 1 ? 'merge' : 'commit';
+}
+
+/**
+ * Where Incoming Changes and Outgoing Changes are drawn: above the first commit of their side in
+ * the order given, or above the first commit when none of their side is among them yet. A side
+ * with no commits has no entry. The answer maps a commit's index to the entries drawn above it,
+ * Incoming Changes first.
+ */
+export function entryPlaces(
+    commits: readonly { hash: string }[],
+    sides: Record<GraphSide, ReadonlySet<string>>
+): Map<number, GraphSide[]> {
+    const places = new Map<number, GraphSide[]>();
+    for (const side of ['incoming', 'outgoing'] as const) {
+        if (sides[side].size === 0) continue;
+        const at = Math.max(
+            0,
+            commits.findIndex((one) => sides[side].has(one.hash))
+        );
+        places.set(at, [...(places.get(at) ?? []), side]);
+    }
+    return places;
+}
+
+/**
+ * The lanes of an entry drawn above a commit: every line that enters the commit's row from above
+ * passes straight through the entry's row in the lane it comes down, and the entry's circle sits
+ * in the commit's lane. Above no commit, its circle sits in lane 0 alone.
+ */
+export function entryRow(below: LaneRow | undefined): LaneRow {
+    if (below === undefined) return { lane: 0, width: 1, lines: [] };
+    const lines = below.lines
+        .filter((line) => line.y1 === 0)
+        .map((line) => ({ x1: line.x1, y1: 0, x2: line.x1, y2: 1, lane: line.lane }));
+    return { lane: below.lane, width: below.width, lines };
 }
 
 /**

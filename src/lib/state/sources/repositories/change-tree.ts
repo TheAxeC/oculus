@@ -5,8 +5,10 @@
 // It also holds the rows of a repository as the keyboard walks them (`repositoryKeyRows`,
 // `repoListRows`) and the change groups they are drawn in (`changeGroups`).
 //
-// An untracked folder that git lists as a whole (`newdir/`, from `--untracked-files=normal`) is one
-// file row named for the folder, not a folder row holding a row without a name.
+// The status read lists every untracked file on its own line (`--untracked-files=all`), so a new
+// folder's files fall into folder rows as any other path does. A path git lists as a whole
+// folder (`nested/`, a nested repository with its own `.git`) is one file row named for the folder,
+// not a folder row holding a row without a name.
 //
 // A folder row is made for a folder that holds a file or more than one child; a chain of folders
 // that each hold one folder and nothing else is one row named by the joined path (`a/b/c`), as

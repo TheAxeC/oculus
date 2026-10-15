@@ -2,16 +2,16 @@
 // adapter beside it supplies the snapshot, socket feeds, config and current time.
 
 import { z } from 'zod';
-import { byKey, fields, scalar } from '../../data/helpers/guards.ts';
+import { byKey, fields, scalar } from '../../../data/helpers/guards.ts';
 import {
     filledTextShape,
     optionalTextShape,
     readAs,
     stringItemsShape
-} from '../../data/shapes/shapes.ts';
-import { daysUntil } from '../boards/board/index.ts';
-import { deadlineOf, isClosed } from '../feeds/leads.ts';
-import { daysSince } from '../feeds/feeds.ts';
+} from '../../../data/shapes/shapes.ts';
+import { daysUntil } from '../../boards/board/index.ts';
+import { deadlineOf, isClosed } from '../../feeds/leads.ts';
+import { daysSince } from '../../feeds/feeds.ts';
 
 export type LiveRule = { match: string[]; label?: string; tone?: string };
 

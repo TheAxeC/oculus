@@ -14,15 +14,18 @@
 //     git -C <root> rev-parse --abbrev-ref HEAD
 //     git -C <root> symbolic-ref --short HEAD
 //     git -C <root> rev-list --left-right --count @{upstream}...HEAD
-//     git -C <root> status --porcelain=v1 -z --untracked-files=normal --renames
+//     git -C <root> status --porcelain=v1 -z --untracked-files=all --renames
+//     git -C <root> status --porcelain=v1 -z --untracked-files=normal
+//         (only when the untracked list was cut)
 //     git -C <root> diff --numstat -z
 //     git -C <root> diff --no-color --no-ext-diff -U0 -- <path>
 //     git -C <root> diff --no-color --no-ext-diff -U0 -M <stash>^1 <stash>
 //     git -C <root> log -<n> --format=...
 //     git -C <root> log --follow --relative -z --name-status --diff-merges=first-parent
 //         --format=... [-51] -- <path>   (GIT_LITERAL_PATHSPECS=1)
-//     git -C <root> log --topo-order --format=... --skip=<n> -<n> HEAD --
-//     git -C <root> log --topo-order --format=... -<n> <HEAD..@{upstream} | @{upstream}..HEAD> --
+//     git -C <root> log --topo-order --format=... --skip=<n> -<n> HEAD [<upstream>] --
+//     git -C <root> log --topo-order --format=... -<n> <HEAD..<upstream> | <upstream>..HEAD> --
+//     git -C <root> rev-parse --verify --quiet <@{upstream} | HEAD>^{commit}
 //     git -C <root> log --walk-reflogs --format=... refs/stash --
 //     git -C <root> worktree list --porcelain
 //     git -C <root> check-ignore --stdin -z
@@ -39,7 +42,7 @@
 //         <commit> -- [<old path>] <path>
 //     git -C <root> show -s --format=%P <stash>
 //     git -C <root> show --format= --no-color --no-ext-diff -U0 <stash>^3
-//     git -C <root> merge-base <branch> HEAD
+//     git -C <root> merge-base <branch | upstream> HEAD
 //     git -C <root> check-attr filter text eol working-tree-encoding ident -- <path>
 //     git -C <root> config --get --default= core.autocrlf
 //     git -C <root> config --get --default= core.sshCommand
@@ -72,24 +75,31 @@
 // dashboard watcher must never be the thing that runs one. compare.ts lists its own forms in its
 // head.
 //
-// A repository on a slow mount must not stall the server, so the one call site runs git as a child
-// process and answers a promise: the event loop goes on serving requests while git works, which a
-// read held on the loop would not let it do. It takes a list argument (never a shell string),
-// carries a timeout, and collapses any failure into an outcome with a short reason. A failure with
-// no reason of git's own is carried as `failure`, a code the reader words from the text catalog
-// (`reasonOf`).
+// A repository on a slow mount must not stall the server, so each of the two call sites runs git as
+// a child process and answers a promise: the event loop goes on serving requests while git works,
+// which a read held on the loop would not let it do. It takes a list argument (never a shell
+// string), carries a timeout, and collapses any failure into an outcome with a short reason. A
+// failure with no reason of git's own is carried as `failure`, a code the reader words from the
+// text catalog (`reasonOf`).
+//
+// The status read is the one read whose output grows with the repository rather than with a page a
+// reader asked for: a folder of untracked files puts a line per file on it. It is therefore run by
+// `runRecords`, the second call site, which starts git with `spawn` and hands its output to
+// records.ts record by record, with no limit on the output, so the state read keeps the lists it
+// carries and their counts and never fails on the number of files.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`); the records of
-// `status --porcelain=v1 -z` are split by parse.ts's `statusRecords` and sorted into the change
-// lists by its `statusLists`.
+// `status --porcelain=v1 -z` are split by records.ts as git writes them and sorted into the change
+// lists by parse.ts's `statusCollector`.
 
-import { execFile, type ExecFileException } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { isUtf8 } from 'node:buffer';
 import { lstatSync, statSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import { inside } from '../paths.ts';
 import { failureLine } from './failure.ts';
 import { classifyFailure, shortReason, type CommandFailure } from './parse.ts';
+import { readRecords, type RecordError, type RecordVisit } from './records.ts';
 
 export const GIT = 'git';
 /** The most output one read takes, which a whole version of a large file read by `show` needs. */
@@ -170,7 +180,7 @@ export function reasonOf(done: Outcome, text: Record<string, string>): string {
  * wrote none, the failure `classifyFailure` names.
  */
 function outcomeOf(
-    error: ExecFileException | null,
+    error: RecordError | null,
     stdout: Buffer,
     stderr: Buffer,
     timeout: number
@@ -211,8 +221,8 @@ function outcomeOf(
  * works. Standard input is given and closed, or closed at once when there is none, so no git waits
  * on an open one. A non-zero exit, a broken git, or a repository too slow to answer all come back
  * as not ok with a reason, and only the non-zero exit as answered. The output is read as bytes,
- * `utf8` says whether they were UTF-8, and `text` is them decoded as UTF-8. This is the module's
- * one call site.
+ * `utf8` says whether they were UTF-8, and `text` is them decoded as UTF-8. This is one of the
+ * module's two call sites; `runRecords` is the other.
  */
 export function run(
     root: string,
@@ -241,6 +251,26 @@ export function run(
         child.stdin?.on('error', () => undefined);
         child.stdin?.end(input ?? '');
     });
+}
+
+/**
+ * One `status` read, run as `run` runs a command, with each record handed to `visit` as git writes
+ * it and no limit on the output; `visit` answers false to end git once it has its answer, which is
+ * a read that answered. The outcome is `run`'s with no text on success: what the read found is
+ * what `visit` kept.
+ */
+export function runRecords(
+    root: string,
+    args: string[],
+    timeout: number,
+    visit: RecordVisit
+): Promise<Outcome> {
+    const child = spawn(GIT, ['-C', root, '--no-optional-locks', ...args], {
+        stdio: ['ignore', 'pipe', 'pipe']
+    });
+    return readRecords(child, { timeout }, visit).then(({ error, stderr }) =>
+        outcomeOf(error, Buffer.alloc(0), Buffer.from(stderr, 'utf8'), timeout)
+    );
 }
 
 // ---------------------------------------------------------------- small stuff

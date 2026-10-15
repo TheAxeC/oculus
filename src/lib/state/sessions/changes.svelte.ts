@@ -14,7 +14,7 @@
 // loaded stay. While a request is out, the read again follows it.
 //
 // The answer is held in the client state's query client, and the fetch is scheduled on a microtask
-// by state/client/queries.svelte.ts rather than run inside the call, so reading this from a
+// by state/client/queries/queries.svelte.ts rather than run inside the call, so reading this from a
 // $derived never writes state while a derived is running. It is only ever made in the browser: a
 // server-rendered page holds nothing and asks for nothing. A page asked for while a request is out
 // is dropped, and the older page is merged into the rows held inside the request.

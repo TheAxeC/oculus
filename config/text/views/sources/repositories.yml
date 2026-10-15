@@ -101,7 +101,7 @@ text:
         hunk_stage: Stage Block
         hunk_unstage: Unstage Block
         in_folder: In {0}/{1}
-        incoming: Incoming
+        incoming: Incoming Changes
         lines_revert: Revert {0} Selected Lines
         lines_revert_confirm: Revert {0} chosen lines of {1}?
         lines_stage: Stage {0} Selected Lines
@@ -152,7 +152,7 @@ text:
         open_unserved: No served folder holds {0}, so it cannot open in a tab.
         outcome_close: Close
         outcome_close_glyph: dismiss
-        outgoing: Outgoing
+        outgoing: Outgoing Changes
         publish: Publish Branch
         publish_confirm: Publish {0} to {1}?
         publish_detail: The branch is pushed to that remote and tracks it from then on. Nothing is forced.
@@ -160,6 +160,7 @@ text:
         pull: Pull
         pull_confirm: Pull {1} into {0}?
         pull_detail: git fetches the upstream and merges it into the branch. A conflict stops the merge and is shown under Merge Changes.
+        range_diff_label: '{0} ({1})'
         rebasing: A rebase is in progress. {0} files are in conflict.
         rebasing_one: A rebase is in progress. 1 file is in conflict.
         renamed_from: '{0}, renamed from {1}'

@@ -27,7 +27,7 @@ import type { EntitiesStore } from './entities.svelte.ts';
 import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
 import type { HubVocabs } from '../../data/model/index.ts';
-import { collectionsOf } from '../../data/helpers/hub-names.ts';
+import { collectionsOf, rootOf } from '../../data/helpers/hub-names.ts';
 import { readAs, stringItemsShape } from '../../data/shapes/shapes.ts';
 import { pathUnder } from '../../data/helpers/files/paths.ts';
 import type { EditorOptions } from '../../data/helpers/editor/editor.ts';
@@ -83,6 +83,12 @@ export type {
     Subtask,
     Workspace
 } from '../../data/model/index.ts';
+
+/**
+ * One choice of a session's Pin control: the area's folder, its words, and the name of the hub its
+ * project is grouped under, empty for a known area of the session's workspace.
+ */
+type PinChoice = { key: string; label: string; group: string };
 
 /**
  * The absolute folder of one project: the manifest's own path, less the file name. The snapshot
@@ -166,7 +172,7 @@ export type SelectorsStore = {
     sessionFor: (instanceId: string) => GroupedSession | null;
     sessionsByWorkspace: (includeDismissed?: boolean) => Workspace[];
     knownAreas: (workspace: string) => Area[];
-    pinnableAreas: (workspace: string) => Area[];
+    pinnableAreas: (workspace: string) => PinChoice[];
     gitFor: (workspace: string) => GitState | null;
     gitRoots: () => string[];
     /**
@@ -527,35 +533,45 @@ export function createSelectors(
     }
 
     /**
-     * The areas a session in one workspace may be pinned to by hand: the known areas of the
-     * grouping, plus every project folder of the snapshot that no session has touched yet, which is
-     * why a folder with no session of its own is still offered. The snapshot's folders join only
-     * for the workspace that is the hub the project is of, since a folder outside it is no project
-     * of the portfolio.
+     * The areas a session in the workspace `own` may be pinned to by hand: the known areas of the
+     * grouping first, then every project of every hub of the portfolio, a folder no session has
+     * touched included, grouped under its hub's name: the session's own hub first, the others by
+     * name, each hub's projects by title. A project read from a repository workspace folder is
+     * grouped under that folder's name, and a project that is already a known area is listed once,
+     * among the areas. A pin to another hub's project moves the session to that hub's workspace
+     * (server/sessions/group.ts `forcedWorkspace`).
      */
-    function pinnableAreas(workspace: string): Area[] {
-        const known = knownAreas(workspace);
-        if (workspace === '') return known;
+    function pinnableAreas(own: string): PinChoice[] {
+        const known = knownAreas(own);
         const held = new Set(known.map((area) => area.key));
-        const snapshot = entities.portfolio();
-        const extra: Area[] = [];
-        for (const project of Object.values(snapshot?.entities.projects ?? {})) {
-            if (hubOfProject(project) !== workspace) continue;
+        const { primary } = workspace();
+        const groups = new Map<string, { first: boolean; rows: PinChoice[] }>();
+        for (const project of Object.values(entities.portfolio()?.entities.projects ?? {})) {
             const key = folderOf(project);
             if (key === '' || held.has(key)) continue;
             held.add(key);
             const short = project.workspaceFolder?.root ?? project.folder;
-            extra.push({
-                key,
-                short,
-                full: project.title === '' ? short : project.title,
-                known: true,
-                lastActivity: null,
-                sessions: []
-            });
+            const label = project.title !== '' ? project.title : short === '' ? key : short;
+            const group = project.workspaceFolder?.root ?? rootOf(project, primary);
+            const rows = groups.get(group) ?? { first: false, rows: [] };
+            rows.first ||= own !== '' && hubOfProject(project) === own;
+            rows.rows.push({ key, label, group });
+            groups.set(group, rows);
         }
-        extra.sort((one, two) => one.full.localeCompare(two.full));
-        return [...known, ...extra];
+        const ordered = [...groups.entries()].sort(
+            ([one, a], [two, b]) => Number(b.first) - Number(a.first) || one.localeCompare(two)
+        );
+        const areas = known.map((area) => ({
+            key: area.key,
+            label: area.short === '' ? area.key : area.full,
+            group: ''
+        }));
+        return [
+            ...areas,
+            ...ordered.flatMap(([, { rows }]) =>
+                rows.sort((one, two) => one.label.localeCompare(two.label))
+            )
+        ];
     }
 
     /** The git state of one workspace root, or null when the payload carries none for it. */

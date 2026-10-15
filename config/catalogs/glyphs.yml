@@ -48,6 +48,7 @@ glyphs:
   save_all: "[S]"
   close_all: "[x]"
   branch: "[Y]"
+  remote_branch: "(Y)"
   merge: "><"
   commit: "o"
   head: "@"
@@ -174,6 +175,12 @@ glyphs:
   # the tab strip's header actions: a pane's more-actions opener and its split control
   more: "..."
   split_right: "||"
+  # the window's title bar strip: Back and Forward, and the three dock toggles
+  go_back: "<-"
+  go_forward: "->"
+  dock_left: "[|"
+  dock_bottom: "[_]"
+  dock_right: "|]"
   # the System page's rail button and its Views and Pages views
   catalogue: "[V]"
   sliders: "[S]"

@@ -88,7 +88,7 @@ Every registered view is listed by its words.
 | Education & Service | education |
 | Applications | applications |
 | Joint work | joint-work |
-| Tasks & Service | tasks |
+| Tasks | tasks |
 | Literature | literature |
 
 ## Colon commands
@@ -103,6 +103,11 @@ A colon starts a command. The commands that list choices type their name and a s
 | `:accent` | `<name / #hex / reset>` | Set the accent colour |
 | `:tab` | `<view id>` | Open a view in a tab |
 | `:reopen-closed-tab` | - | Reopen the tabs closed last |
+| `:go-back` | - | Go Back |
+| `:go-forward` | - | Go Forward |
+| `:toggle-left-dock` | - | Toggle Left Dock |
+| `:toggle-bottom-dock` | - | Toggle Bottom Dock |
+| `:toggle-right-dock` | - | Toggle Right Dock |
 | `:goto` | `<project id>` | Open a project in a tab |
 | `:language` | `<language>` | Set the language of the source tab |
 | `:interpreter` | `<path>` | Choose the Python interpreter of the repository |

@@ -74,7 +74,7 @@
             {id}
             {nav}
             level={3 + row.depth}
-            depth={1 + row.depth}
+            depth={2 + row.depth}
             expanded={open}
             onclick={() => ontoggle(id)}
         >

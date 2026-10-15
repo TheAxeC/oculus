@@ -8,7 +8,10 @@
     // so the tab strip, the menus, the keyboard and the drops reach it as they reach the pane of a
     // page.
     //
-    // A float placed in a window of the desktop app is left out: that window's page draws it.
+    // A float placed in a window of the desktop app is left out: that window's page draws it. So is
+    // a float docked on an edge whose toggle in the window's title bar strip hides it (the layout
+    // store's `shownFloats`); its views are unmounted until the edge shows again. A free float is
+    // drawn below the strip, whatever its fractions say, so the strip stays whole above it.
     //
     // One keyed block draws every float and its place is a class and a style, so docking or
     // freeing a float changes the class and mounts no PaneView again. This is mounted once, outside
@@ -40,7 +43,7 @@
     } from './float-geometry';
 
     const {
-        layout: { dockFloat, floats, placeFloat }
+        layout: { dockFloat, shownFloats, placeFloat }
     } = useState();
 
     type Props = {
@@ -54,9 +57,9 @@
 
     let { area, onpalette = () => undefined }: Props = $props();
 
-    /** The floats this layer draws: every one not placed in a window of the app. */
+    /** The floats this layer draws: every one shown and not placed in a window of the app. */
     const drawn = $derived(
-        floats().filter((one): one is DrawnFloat => one.place.kind !== 'window')
+        shownFloats().filter((one): one is DrawnFloat => one.place.kind !== 'window')
     );
 
     const free = $derived(drawn.filter((one) => one.place.kind === 'free').map((one) => one.id));

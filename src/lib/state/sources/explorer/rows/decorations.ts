@@ -7,11 +7,12 @@
 // `statusFold` turns those lists into one lookup by absolute path, built once per payload;
 // `decorationOf` then answers for one row. A file in several lists takes the strongest letter, so a
 // staged add that was edited since still reads `A`. A folder takes the colour of the strongest
-// change below it (conflict, then deleted, then modified, then added) and shows no letter. An
-// untracked folder that git lists as a whole (`newdir/`) decorates everything under it as
-// untracked. A problem mark is drawn beside the letter and in its own colour, which the name takes
-// in place of git's: `problemMarkOf` turns the errors and warnings the store counts for a row into
-// the mark, and the infos are no part of it.
+// change below it (conflict, then deleted, then modified, then added) and shows no letter. The
+// untracked list names every untracked file; where it was cut at its 200 entries, the folder form
+// of it (`untrackedByFolder`) is read too, and an untracked folder git lists there as a whole
+// (`newdir/`) decorates everything under it as untracked. A problem mark is drawn beside the
+// letter and in its own colour, which the name takes in place of git's: `problemMarkOf` turns the
+// errors and warnings the store counts for a row into the mark, and the infos are no part of it.
 
 import type { GitEntry, GitState } from '../../../../data/model/index.ts';
 import { joinPath, pathUnder, trimSlash } from '../../../../data/helpers/files/paths.ts';
@@ -29,7 +30,7 @@ export type Decoration = { mark: Mark | ''; tone: Tone };
 /** The lists of one repository the fold reads, and the folder the repository is. */
 export type FoldRepo = {
     dir: string;
-    git: Pick<GitState, 'staged' | 'unstaged' | 'untracked' | 'conflicted'>;
+    git: Pick<GitState, 'staged' | 'unstaged' | 'untracked' | 'untrackedByFolder' | 'conflicted'>;
 };
 
 /** Every decorated path: files by their letter, folders by their hue, whole untracked folders. */
@@ -119,6 +120,7 @@ export function statusFold(repos: readonly FoldRepo[]): StatusFold {
         for (const entry of repo.git.staged) put(entry, false);
         for (const entry of repo.git.unstaged) put(entry, false);
         for (const entry of repo.git.untracked) put(entry, false);
+        for (const entry of repo.git.untrackedByFolder) put(entry, false);
     }
     return fold;
 }

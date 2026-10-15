@@ -47,6 +47,7 @@ icons:
     save_all: save-all
     close_all: list-x
     branch: git-branch
+    remote_branch: cloud
     merge: git-merge
     commit: git-commit-horizontal
     head: target
@@ -173,6 +174,12 @@ icons:
     # the tab strip's header actions: a pane's more-actions opener and its split control
     more: ellipsis
     split_right: columns-2
+    # the window's title bar strip: Back and Forward, and the three dock toggles
+    go_back: arrow-left
+    go_forward: arrow-right
+    dock_left: panel-left
+    dock_bottom: panel-bottom
+    dock_right: panel-right
     # the System page's rail button and its Views and Pages views
     catalogue: layout-grid
     sliders: sliders-horizontal

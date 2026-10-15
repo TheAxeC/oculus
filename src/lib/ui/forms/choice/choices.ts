@@ -1,7 +1,7 @@
 // Layer 3, primitive helper. The rule the choice fields share: a value the choices do not hold is
 // still shown, so a manifest is never silently retyped by a field that could not name its value.
 // The icon dropdown's items are built here too, so its trigger's type-ahead and its open list read
-// one list in one order.
+// one list in one order, and so are the groups a plain pick draws its grouped choices under.
 
 /** One entry of the icon dropdown: the value a pick hands on, its words, whether it has an icon. */
 export type GlyphItem = { value: string; label: string; icon: boolean };
@@ -23,4 +23,29 @@ export function glyphItems(value: string, empty: string, choices: string[]): Gly
     const head: GlyphItem[] = [{ value: '', label: empty, icon: false }];
     if (isStray(value, names)) head.push({ value, label: value, icon: false });
     return [...head, ...names.map((name) => ({ value: name, label: name, icon: true }))];
+}
+
+/** One choice of a plain pick: the value it hands on, its words, and the group it is drawn in. */
+export type SelectChoice = { id: string; label: string; group?: string };
+
+/**
+ * A pick's choices split for drawing: the ones with no group in their order, then each group once,
+ * in the order its first choice comes, with its choices in their order.
+ */
+export function choiceGroups(choices: SelectChoice[]): {
+    loose: SelectChoice[];
+    groups: { name: string; choices: SelectChoice[] }[];
+} {
+    const loose: SelectChoice[] = [];
+    const groups: { name: string; choices: SelectChoice[] }[] = [];
+    for (const choice of choices) {
+        if (choice.group === undefined) {
+            loose.push(choice);
+            continue;
+        }
+        const found = groups.find((group) => group.name === choice.group);
+        if (found === undefined) groups.push({ name: choice.group, choices: [choice] });
+        else found.choices.push(choice);
+    }
+    return { loose, groups };
 }

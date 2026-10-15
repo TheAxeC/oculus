@@ -40,7 +40,8 @@ import type { WallpapersStore } from '../../life/pictures/wallpapers.svelte.ts';
 import type { NoticesStore } from '../../workbench/navigation/notices.svelte.ts';
 import type { PaletteSourceStore } from '../../workbench/palette-source.svelte.ts';
 import type { PresentStore } from '../../life/present.svelte.ts';
-import type { RailBadgesStore } from '../../workbench/rail-badges.svelte.ts';
+import type { RailBadgesStore } from '../../workbench/rail-badges/rail-badges.svelte.ts';
+import type { HistoryStore } from '../../workbench/history/history.svelte.ts';
 import type { RepositoriesStore } from '../../sources/repositories/repositories.svelte.ts';
 import type { SelectionStore } from '../../workbench/selection.svelte.ts';
 import type { ExplorerStore } from '../../sources/explorer/ops.svelte.ts';
@@ -152,6 +153,8 @@ export type ClientState = {
     /** Cloning the repository of a project, and a repository of the reader's GitHub account. */
     clone: CloneStore;
     railBadges: RailBadgesStore;
+    /** The window's navigation history, which Back and Forward walk. */
+    history: HistoryStore;
     paletteSource: PaletteSourceStore;
     /** What each source tab says of its text, for the status bar, and what the bar asks of it. */
     editorStatus: EditorStatusStore;

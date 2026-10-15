@@ -132,6 +132,7 @@ text:
             local_unparsed: does not parse; every key takes its default
             local_not_a_map: is not a map of keys; every key takes its default
             local_unreadable: 'could not be read ({0}); every key takes its default'
+            claude_label: 'the label of a Claude row of accounts:'
             editor_unknown_language: '{0} is not a language the editor colours; its record is not read'
             editor_unknown_field: '{0} is not a field of a language record; it is not read'
             editor_not_a_map: '{0} is not a map; it is not read'

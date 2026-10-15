@@ -8,7 +8,7 @@
 // @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
@@ -20,11 +20,17 @@ import {
     push,
     removeWorktree,
     stage,
+    statusHolds,
+    statusIn,
     switchBranch,
-    unstage
+    trackedChange,
+    unstage,
+    untrackedAmong
 } from '../../../src/lib/server/git/git-write.ts';
+import type { StatusRecord } from '../../../src/lib/server/core/git/parse.ts';
 import { worktreePath } from '../../../src/lib/data/helpers/worktrees.ts';
-import { abortMerge, merge, stoppedOn } from '../../../src/lib/server/git/git-index.ts';
+import { abortMerge, merge, stageAll, stoppedOn } from '../../../src/lib/server/git/git-index.ts';
+import { stash } from '../../../src/lib/server/git/git-refs.ts';
 import { pull } from '../../../src/lib/server/git/git-remote.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TEXT } from '../text.ts';
@@ -286,5 +292,84 @@ describe('the merge back', () => {
         expect(answer.ok).toBe(true);
         expect(existsSync(path)).toBe(false);
         expect(git(repo, 'branch', '--list', name).trim()).toBe('');
+    });
+});
+
+describe('the status read', () => {
+    /** A repository of its own under the scratch folder, with one commit holding `kept.txt`. */
+    function fresh(name: string): string {
+        const root = join(dir, name);
+        execFileSync('git', ['init', '-q', '-b', 'main', root]);
+        git(root, 'config', 'user.email', 'nobody@example.invalid');
+        git(root, 'config', 'user.name', 'Nobody');
+        git(root, 'config', 'commit.gpgsign', 'false');
+        write(root, 'kept.txt', 'one\n');
+        write(root, 'moved.txt', 'two\n');
+        git(root, 'add', 'kept.txt', 'moved.txt');
+        git(root, 'commit', '-q', '-m', 'First');
+        ROOTS = [...ROOTS, root];
+        return root;
+    }
+
+    it("hands each record to the reader as git writes it, and ends git at the reader's answer", async () => {
+        const root = fresh('reads');
+        write(root, 'kept.txt', 'changed\n');
+        git(root, 'mv', 'moved.txt', 'renamed.txt');
+        write(root, 'loose one.txt', '');
+        write(root, 'loose\u00e9.txt', '');
+        const seen: StatusRecord[] = [];
+        const whole = await statusIn(root, (record) => {
+            seen.push(record);
+        });
+        expect(whole).toEqual({ ok: true, output: '', error: '' });
+        expect(seen).toEqual([
+            { code: ' M', path: 'kept.txt', from: null },
+            { code: 'R ', path: 'renamed.txt', from: 'moved.txt' },
+            { code: '??', path: 'loose one.txt', from: null },
+            { code: '??', path: 'loose\u00e9.txt', from: null }
+        ]);
+        const first: StatusRecord[] = [];
+        expect((await statusIn(root, (record) => first.push(record) === 0)).ok).toBe(true);
+        expect(first).toEqual([seen[0]]);
+        expect(await statusHolds(root, trackedChange)).toBe(true);
+        expect(await statusHolds(root, (record) => record.path === 'gone.txt')).toBe(false);
+        const loose = await untrackedAmong(root, ['loose\u00e9.txt', 'kept.txt'], TEXT, ROOTS);
+        expect(loose).toEqual(new Set(['loose\u00e9.txt']));
+    });
+
+    it('stages every untracked path the read lists, as a literal name, and nothing else', async () => {
+        const root = fresh('stage-all');
+        write(root, 'kept.txt', 'changed\n');
+        mkdirSync(join(root, 'deep', 'er'), { recursive: true });
+        for (const name of ['a*b.txt', ':(top)c.txt', 'deep/er/d.txt']) write(root, name, '');
+        write(root, 'ab.txt', '');
+        write(root, '.gitignore', '*.log\n');
+        write(root, 'deep/er/skip.log', '');
+        const answer = await stageAll(root, 'untracked', TEXT, ROOTS);
+        expect(answer.ok).toBe(true);
+        expect(git(root, 'diff', '--cached', '--name-only').split('\n').sort()).toEqual([
+            '',
+            '.gitignore',
+            ':(top)c.txt',
+            'a*b.txt',
+            'ab.txt',
+            'deep/er/d.txt'
+        ]);
+        expect(git(root, 'diff', '--name-only')).toBe('kept.txt\n');
+        const again = await stageAll(root, 'untracked', TEXT, ROOTS);
+        expect(again.error).toBe(TEXT['server.git.nothing_untracked']);
+    });
+
+    it('stashes only when the read finds a change the way to stash takes', async () => {
+        const root = fresh('stash');
+        write(root, 'loose.txt', '');
+        const tracked = await stash(root, 'tracked', '', TEXT, ROOTS);
+        expect(tracked.error).toBe(TEXT['server.git.nothing_to_stash']);
+        const staged = await stash(root, 'staged', '', TEXT, ROOTS);
+        expect(staged.error).toBe(TEXT['server.git.nothing_to_stash']);
+        const untracked = await stash(root, 'untracked', '', TEXT, ROOTS);
+        expect(untracked.ok).toBe(true);
+        expect(existsSync(join(root, 'loose.txt'))).toBe(false);
+        expect(git(root, 'stash', 'list').split('\n').filter(Boolean)).toHaveLength(1);
     });
 });

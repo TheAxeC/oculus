@@ -70,6 +70,8 @@ export type KeyAction =
     | { kind: 'debug'; which: DebugKey }
     | { kind: 'close-tab' }
     | { kind: 'reopen-closed-tab' }
+    | { kind: 'go-back' }
+    | { kind: 'go-forward' }
     | { kind: 'new-text-file' }
     | { kind: 'find' }
     | { kind: 'workspace-symbol' }
@@ -187,6 +189,23 @@ function appKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
 }
 
 /**
+ * VS Code's Go Back and Go Forward (`NavigateBackwardsAction` and `NavigateForwardAction` of VS
+ * Code's src/vs/workbench/browser/parts/editor/editorActions.ts): Ctrl+Minus and Ctrl+Shift+Minus
+ * on macOS, and Ctrl+Alt+Minus and Ctrl+Shift+Minus elsewhere, the key read from the physical key
+ * since Shift and Minus type another character. They answer with a field focused, as the editor
+ * is one, and under no overlay, as the app keys do, in a browser too; a key a view took itself
+ * (the terminal, which hands Ctrl and Minus to its program) stays that view's.
+ */
+function navigateKey(event: KeyEventLike, context: KeyContext): KeyAction | null {
+    if (event.defaultPrevented === true || event.code !== 'Minus') return null;
+    if (context.paletteOpen || context.trayOpen || context.confirmOpen) return null;
+    if (event.ctrlKey !== true || event.metaKey === true) return null;
+    const alt = event.altKey === true;
+    if (event.shiftKey === true) return alt ? null : { kind: 'go-forward' };
+    return alt === (context.mac === false) ? { kind: 'go-back' } : null;
+}
+
+/**
  * A debug key (F5, Shift+F5, Cmd+Shift+F5, F9, F10, F11, Shift+F11) answers with a field or the
  * editor focused and under no overlay, as the default build does. It is swallowed, so the browser
  * never reloads the page or goes fullscreen on it, whenever a debug session runs or the editor
@@ -261,7 +280,7 @@ export function resolveKey(
     if (which !== null) {
         return { action: { kind: 'command-default', which }, state: { ...state, chord: '' } };
     }
-    const taken = appKey(event, context);
+    const taken = appKey(event, context) ?? navigateKey(event, context);
     if (taken !== null) return { action: taken, state: { ...state, chord: '' } };
     const debug = debugAction(event, context, state);
     if (debug !== null) return debug;

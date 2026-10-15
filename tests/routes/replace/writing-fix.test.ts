@@ -3,6 +3,7 @@
 // makes of the files the reader ticked, `writing-fix` (server/files/fs/lsp-edit.ts), which runs the
 // chain `lsp-edit` runs. The plan is read with the real lint route and its edits are posted to the
 // real ops route over the same scratch folder.
+// @module-tag slow: its rows time out at 5 s when the whole suite loads the machine.
 //
 // What this does NOT cover: the dialog that lists the files and the boxes (seen at the look), the
 // plan's own check of a result that fails to parse, which no file the reader accepts can reach, and

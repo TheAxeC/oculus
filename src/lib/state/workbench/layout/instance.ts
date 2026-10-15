@@ -24,6 +24,7 @@ const cursorShape = z.object({ cursor: filledTextShape });
 const identityShape = z.object({
     id: filledTextShape,
     session: filledTextShape,
+    agent: filledTextShape,
     root: filledTextShape,
     path: filledTextShape
 });
@@ -236,15 +237,17 @@ export function activePath(layout: Layout, id: string | null): number[] {
 
 /**
  * The identity an instance state carries, or null for a state that carries none. A project uses
- * `id`; a session or terminal pin uses `session`; a local file uses its root and path. Each makes
- * two records two instances of one registered view, while opening the same record again activates
- * its existing instance.
+ * `id`; a session or terminal pin uses `session`, and a subagent's transcript its session and
+ * `agent`; a local file uses its root and path. Each makes two records two instances of one
+ * registered view, while opening the same record again activates its existing instance.
  */
 export function stateId(state: unknown): string | null {
     const held = readAs(identityShape, state);
     if (held === null) return null;
     if (held.id !== undefined) return held.id;
-    if (held.session !== undefined) return held.session;
+    if (held.session !== undefined) {
+        return held.agent === undefined ? held.session : JSON.stringify([held.session, held.agent]);
+    }
     if (held.root !== undefined && held.path !== undefined) {
         return JSON.stringify([held.root, held.path]);
     }

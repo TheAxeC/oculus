@@ -31,13 +31,17 @@
 // server/git/clone/ takes this module's `Outcome`, `GitRunner` and `GhRun` types and runs its own
 // commands (clone-git.ts).
 //
-// Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
+// Whether a path lies in a folder is read from server/core/paths.ts (`inside`). The status read
+// (`statusIn`) is the one command whose output grows with the mirror rather than with a request, so
+// it starts git itself and takes the records as git writes them; it refuses a directory outside the
+// mirrors folder exactly as `run` does.
 
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { z } from 'zod';
 import { endWith } from '../../core/git/running.ts';
+import { readRecords, visitText, type RecordVisit } from '../../core/git/records.ts';
 import { GIT } from '../../core/git/run.ts';
 import { inside } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
@@ -252,11 +256,40 @@ export function lsFiles(at: Where): Promise<Outcome> {
 }
 
 /**
- * What changed against the mirror's last commit, in git's own letters, NUL separated and never
- * quoted, for core/git/parse.ts's statusRecords to read.
+ * What changed against the mirror's last commit, in git's own letters, every untracked file on its
+ * own line as the other status readers list them, each record handed to `visit` as git writes it
+ * (core/git/records.ts), with no limit on the output; `visit` answers false to end git once it has
+ * its answer. The outcome carries no output, since what the read found is what `visit` kept. A
+ * runner `Where` carries in place of git answers the whole output, which is read the same way.
  */
-export function porcelain(at: Where): Promise<Outcome> {
-    return run(at, ['status', '--porcelain=v1', '-z']);
+export async function statusIn(at: Where, visit: RecordVisit): Promise<Outcome> {
+    const args = ['status', '--porcelain=v1', '-z', '--untracked-files=all'];
+    if (!underMirrors(at.dir, at.mirrors)) {
+        return failed(words(at.text, 'server.deposit.not_a_mirror'));
+    }
+    if (at.git !== undefined) {
+        const done = await at.git(['-C', at.dir, ...args], TIMEOUT_MS, at.signal);
+        if (done.ok) visitText(done.output, visit);
+        return { ...done, output: '' };
+    }
+    const child = spawn(GIT, ['-C', at.dir, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const { error, stderr } = await readRecords(
+        child,
+        { timeout: TIMEOUT_MS, signal: at.signal },
+        visit
+    );
+    if (error === null) return { ok: true, output: '', error: '' };
+    const said = classifyFailure(
+        error,
+        '',
+        stderr,
+        { timeoutMs: TIMEOUT_MS, maxBytes: MAX_OUTPUT },
+        REASON_WIDTH,
+        GIT
+    );
+    return said.failure === undefined
+        ? failed(said.reason)
+        : { ...failed(said.reason), failure: said.failure };
 }
 
 /**

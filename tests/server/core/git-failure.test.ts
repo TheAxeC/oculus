@@ -2,9 +2,15 @@
 // codes in their order (Cancel, the time limit, the output limit, a signal), then git's own text,
 // then an exit status with nothing written. failureLine of core/git/failure.ts says each code in
 // the catalog's words, with the program first and the operation a run left unfinished after it. One
-// row per input that gives a different outcome.
+// row per input that gives a different outcome. A status read taken record by record
+// (core/git/records.ts) ends with an error the same classifier reads: out of time, cancelled, an
+// exit status with git's text, and a program that cannot start; a reader that ended it early is no
+// failure; a record cut across the chunks the program writes in reads whole. Those rows start a
+// program standing in for git, so their describe is tagged slow.
 
+import { spawn } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
+import { readRecords } from '../../../src/lib/server/core/git/records.ts';
 import {
     classifyFailure,
     type Classified,
@@ -167,5 +173,89 @@ const SENTENCES: [CommandFailure, string][] = [
 describe('failureLine', () => {
     it.each(SENTENCES)('says %j as its sentence', (failure, sentence) => {
         expect(failureLine(failure, TEXT)).toBe(sentence);
+    });
+});
+
+/** A program standing in for git: node running `script`, its output in pipes. */
+function program(script: string): ReturnType<typeof spawn> {
+    return spawn(process.execPath, ['-e', script], { stdio: ['ignore', 'pipe', 'pipe'] });
+}
+
+/** What the classifier says of how a read of `child` ended. */
+async function endOf(
+    child: ReturnType<typeof spawn>,
+    limits: { timeout: number; signal?: AbortSignal },
+    visit: (path: string) => boolean | undefined = () => undefined
+): Promise<Classified | null> {
+    const { error, stderr } = await readRecords(child, limits, (record) => visit(record.path));
+    if (error === null) return null;
+    return classifyFailure(error, '', stderr, { ...LIMITS, timeoutMs: 1000 }, 200, 'git');
+}
+
+describe('a status read taken record by record', { tags: ['slow'] }, () => {
+    const HANGS = "process.stdout.write('?? a.txt\\0'); setTimeout(() => {}, 20000);";
+
+    it('says the limit when the read runs out of time', async () => {
+        expect(await endOf(program(HANGS), { timeout: 300 })).toEqual(coded('timed-out', '1'));
+    });
+
+    it('says Cancel when the run is cancelled', async () => {
+        const stop = new AbortController();
+        const said = await endOf(program(HANGS), { timeout: 0, signal: stop.signal }, () => {
+            stop.abort();
+            return undefined;
+        });
+        expect(said?.failure?.code).toBe('cancelled');
+    });
+
+    it('reads a record cut across the chunks the program writes it in', async () => {
+        const whole = '?? caf\u00e9 one.txt\0R  new name.txt\0old name.txt\0 M b\u00e9.txt\0';
+        const writes = [
+            "const all = Buffer.from(process.argv[1], 'hex');",
+            'let at = 0;',
+            'const next = () => {',
+            '    if (at >= all.length) return;',
+            '    process.stdout.write(all.subarray(at, at + 3));',
+            '    at += 3;',
+            '    setTimeout(next, 5);',
+            '};',
+            'next();'
+        ].join('\n');
+        const child = spawn(process.execPath, ['-e', writes, Buffer.from(whole).toString('hex')], {
+            stdio: ['ignore', 'pipe', 'pipe']
+        });
+        const seen: unknown[] = [];
+        const { error } = await readRecords(child, { timeout: 0 }, (record) => {
+            seen.push(record);
+        });
+        expect(error).toBeNull();
+        expect(seen).toEqual([
+            { code: '??', path: 'caf\u00e9 one.txt', from: null },
+            { code: 'R ', path: 'new name.txt', from: 'old name.txt' },
+            { code: ' M', path: 'b\u00e9.txt', from: null }
+        ]);
+    });
+
+    it("says git's own text for an exit status, and the start's error when it cannot start", async () => {
+        const refused = program(
+            "process.stderr.write('fatal: not a git repository\\n'); process.exit(128);"
+        );
+        expect(await endOf(refused, { timeout: 0 })).toEqual({
+            reason: 'not a git repository'
+        });
+        const missing = spawn('/nonexistent/git', [], { stdio: ['ignore', 'pipe', 'pipe'] });
+        expect(await endOf(missing, { timeout: 0 })).toEqual({
+            reason: 'spawn /nonexistent/git ENOENT'
+        });
+    });
+
+    it('is no failure when the reader ends it at its answer', async () => {
+        const seen: string[] = [];
+        const said = await endOf(program(HANGS), { timeout: 10000 }, (path) => {
+            seen.push(path);
+            return false;
+        });
+        expect(said).toBeNull();
+        expect(seen).toEqual(['a.txt']);
     });
 });

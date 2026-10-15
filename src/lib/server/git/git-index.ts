@@ -12,14 +12,15 @@
 // one call site server/git/git-write.ts exports for its subcommand.
 //
 // A path handed to git is checked by core/git/run.ts's `pathInside`; the records of `status
-// --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
+// --porcelain=v1 -z` are read one by one as git writes them, through git-write.ts's `statusIn`.
 
 import { basename, dirname, isAbsolute, join } from 'node:path';
+import { PassThrough } from 'node:stream';
 import { existsSync, lstatSync, readFileSync } from 'node:fs';
 import { byKey } from '../../data/helpers/guards.ts';
 import { writeBytesAtomic, writeTextAtomic } from '../core/json.ts';
 import { HASH, pathInside } from '../core/git/run.ts';
-import { REFS_FORMAT, parseBranches, statusRecords, type Unfinished } from '../core/git/parse.ts';
+import { NO_TIME_LIMIT, REFS_FORMAT, parseBranches, type Unfinished } from '../core/git/parse.ts';
 import { inside, permitted, realPath } from '../core/paths.ts';
 import { words } from '../core/words.ts';
 import {
@@ -32,15 +33,15 @@ import {
     cherryPickIn,
     diff,
     failed,
-    porcelain,
     rebaseIn,
     removeIn,
     restore,
     mergeIn,
     revParse,
+    statusHolds,
+    statusIn,
     trackedChange,
     untrackedAmong,
-    untrackedIn,
     type Outcome
 } from './git-write.ts';
 
@@ -110,22 +111,87 @@ export async function applyHunk(
 
 /**
  * Stage a whole group: every tracked change with `add -u`, or every untracked path as git lists
- * it now, which is the whole group rather than the capped list the channel carries.
+ * it now, which is the whole group rather than the capped list the channel carries. The untracked
+ * paths are read as `status --untracked-files=normal` lists them, a folder git tracks nothing in as
+ * one entry, so the add matches each file of a large new folder against one pathspec rather than
+ * one per file, whose cost grows with the square of the count; the files staged are the same. The
+ * status is read record by record, and each entry is written to the add's standard input as it is
+ * read, NUL separated, which no count of them can make too long for the argument vector, each read
+ * as a literal name; nothing else of the status is kept. The add starts at the first entry: `git
+ * status` lets go of the index before it writes its first record, so the add never waits on it.
+ * git reads every path before it stages one, so a status read that fails ends the add with nothing
+ * staged, and the status read's failure is the answer. The add has no time limit, since its time
+ * grows with the files it stages, and Cancel ends it.
  */
 export async function stageAll(
     root: string,
     group: string,
     text: Record<string, string>,
-    roots: string[] = allowedRoots()
+    roots: string[] = allowedRoots(),
+    signal?: AbortSignal
 ): Promise<Outcome> {
     if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     if (group === 'changed') return addTo(root, ['-u', '--', '.']);
     if (group !== 'untracked') return failed(words(text, 'server.git.not_a_group'));
-    const state = await porcelain(root);
-    if (!state.ok) return state;
-    const loose = [...untrackedIn(state.output)];
-    if (loose.length === 0) return failed(words(text, 'server.git.nothing_untracked'));
-    return addTo(root, ['--', ...loose]);
+    const add = pathAdder(root, signal);
+    const state = await statusIn(
+        root,
+        (record) => {
+            if (record.code === '??') add.take(record.path);
+        },
+        'normal'
+    );
+    if (!add.taken()) {
+        return state.ok ? failed(words(text, 'server.git.nothing_untracked')) : state;
+    }
+    const added = await add.end(state.ok);
+    return state.ok ? added : state;
+}
+
+/**
+ * Stage All's add of the untracked paths, started at the first path it takes, each path written to
+ * its standard input as it is taken. `end` closes the input of a read that went, so git stages what
+ * it read, or ends git for a read that failed, before it has staged anything; Cancel's `signal`
+ * ends it too.
+ */
+function pathAdder(
+    root: string,
+    signal?: AbortSignal
+): {
+    take: (path: string) => void;
+    taken: () => boolean;
+    end: (went: boolean) => Promise<Outcome>;
+} {
+    const stop = new AbortController();
+    let paths: PassThrough | null = null;
+    let added: Promise<Outcome> = Promise.resolve(failed(''));
+    return {
+        take(path) {
+            if (paths === null) {
+                paths = new PassThrough();
+                added = addTo(
+                    root,
+                    ['--pathspec-from-file=-', '--pathspec-file-nul'],
+                    {
+                        input: paths,
+                        env: { GIT_LITERAL_PATHSPECS: '1' },
+                        signal:
+                            signal === undefined
+                                ? stop.signal
+                                : AbortSignal.any([stop.signal, signal])
+                    },
+                    NO_TIME_LIMIT
+                );
+            }
+            paths.write(`${path}\0`);
+        },
+        taken: () => paths !== null,
+        end(went) {
+            if (went) paths?.end();
+            else stop.abort();
+            return added;
+        }
+    };
 }
 
 /** Take everything back out of the index, leaving the worktree as it is. */
@@ -183,11 +249,17 @@ export async function resolveMerge(
 /** The conflicts in which a side deleted the path: both sides, ours (DU) or theirs (UD). */
 const DELETIONS = ['DD', 'DU', 'UD'];
 
-/** The porcelain's two letters for one path, or the empty string when git lists it as clean. */
+/**
+ * The status's two letters for one path, or the empty string when git lists it as clean or the
+ * read failed. The read ends at the path's record.
+ */
 async function pairOf(root: string, path: string): Promise<string> {
-    const state = await porcelain(root);
-    if (!state.ok) return '';
-    return statusRecords(state.output).find((record) => record.path === path)?.code ?? '';
+    let code = '';
+    const state = await statusIn(root, (record) => {
+        if (record.path === path) code = record.code;
+        return code === '';
+    });
+    return state.ok ? code : '';
 }
 
 /**
@@ -262,9 +334,9 @@ export async function merge(
     if (!parseBranches(listed.output).some((one) => one.name === other)) {
         return failed(words(text, 'server.git.not_a_branch_here', other));
     }
-    const state = await porcelain(root);
-    if (!state.ok) return state;
-    if (trackedChange(state.output)) return failed(words(text, 'server.git.dirty_merge'));
+    const dirty = await statusHolds(root, trackedChange);
+    if (dirty !== false)
+        return dirty === true ? failed(words(text, 'server.git.dirty_merge')) : dirty;
     const done = await mergeIn(root, [other], signal);
     if (done.ok) return done;
     return stoppedOn(root, done, text, 'merge');

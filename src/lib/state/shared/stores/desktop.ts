@@ -63,6 +63,8 @@ type DesktopEvents = {
     restore: null;
     /** The server listens at another origin after a restart; the page goes there itself. */
     'move-to': string;
+    /** The window entered full screen (true) or left it (false). */
+    'full-screen': boolean;
 };
 
 /** The bridge. */
@@ -89,6 +91,18 @@ export type DesktopBridge = {
     closeFind: () => void;
     /** Print the deck the print route at `address` draws to a PDF, in a window the host hides. */
     printPdf: (address: string) => Promise<PrintAnswer>;
+    /**
+     * The reader pressed the empty part of the title bar strip twice: the host does what the
+     * system's title bar does (zoom, minimise or nothing, as macOS's setting says).
+     */
+    titleDoubleClick: () => void;
+    /**
+     * The colours the title bar strip is drawn in, its background and its words, each a hex
+     * colour: off macOS the host draws the window buttons over the strip in them.
+     */
+    titleColours: (color: string, symbolColor: string) => void;
+    /** Whether this page's window is in full screen now. */
+    fullScreen: () => Promise<boolean>;
     /** Whether the spell checker holds a word wrong, and what it suggests. */
     spelling: (word: string) => Promise<Spelling>;
     /** Hear a message of the host; answers how to stop. */

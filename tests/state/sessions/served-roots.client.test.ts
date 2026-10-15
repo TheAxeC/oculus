@@ -11,7 +11,7 @@
 import { flushSync } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CommandDiagnostic } from '../../../src/lib/data/model/index.ts';
-import { createQueries } from '../../../src/lib/state/client/queries.svelte.ts';
+import { createQueries } from '../../../src/lib/state/client/queries/queries.svelte.ts';
 import { watchServedRoots } from '../../../src/lib/state/shared/stores/served-roots.svelte.ts';
 import { createLatex } from '../../../src/lib/state/sessions/latex/latex.svelte.ts';
 import type { LatexState } from '../../../src/lib/state/sessions/latex/latex-state.ts';

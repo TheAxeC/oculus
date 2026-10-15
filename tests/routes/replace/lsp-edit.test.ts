@@ -2,6 +2,7 @@
 // the edits a language server asks for in files no tab holds, written file by file from the end of
 // each, the checks that refuse the whole edit before anything is written, and the record the edit
 // leaves in the change log and the local history.
+// @module-tag slow: its rows time out at 5 s when the whole suite loads the machine.
 //
 // What this does NOT cover: the page that sends the edits (a rename, a code action, a server's
 // `workspace/applyEdit`), which is seen at the look, and the undo, which is replace-undo.test.ts.

@@ -1,11 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Lit Watch follows Inbox in the Incoming page's group.
+    // Layer 3, view registration. Lit Watch follows the Literature search in the Literature page's
+    // group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'radar',
         label: 'views.radar',
         glyph: 'views.radar_glyph',
-        group: 'incoming',
+        group: 'literature',
         order: 1
     };
 </script>

@@ -52,3 +52,12 @@ text:
         why_unknown_agent: 'config/catalogs/agents.yml line {0}: {1} is not an agent the composer starts'
         why_unknown_key: 'config/catalogs/agents.yml line {0}: {1} is not a key the file takes'
         why_value: 'config/catalogs/agents.yml line {0}: {1} cannot follow its flag'
+        worktree: New worktree
+        worktree_back_title: Start in the folder as it is, without a new worktree (Esc in the name)
+        worktree_branch_title: The branch the new worktree is made on, from the repository's HEAD
+        worktree_failed: The worktree was not made.
+        worktree_invalid: 'A worktree name is one folder name, not starting with -, with no / or \ in it.'
+        worktree_made: 'The worktree {0} was made. {1}'
+        worktree_name: The name of the new worktree and its branch
+        worktree_path: 'The session starts in {0}.'
+        worktree_title: Make a new worktree of this repository and start the session in it

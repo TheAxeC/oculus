@@ -268,3 +268,106 @@ Cases of the brief's "Cases":
 - VS Code's own default title bar colours for each converted theme were not read, since the theme sources are not in the repository. The `#252526` side bar value is from `vscode.css:376`.
 
 Reviewer usage: a24c5c9f54be2a471, claude-opus-5-5, 259,610 tokens, 159 tool uses, 31.2 min.
+
+## Repair round 1, refuted
+
+The reviewer changed no file in the worktree or the ledger, invoked no skill and started no agent; in the worktree it ran only `git diff abe5c9651`, `git status --short` and `git show abe5c9651:<path>`. It disclosed one departure: it ran the builder's diagnosis probes (`npx vitest run tests/diag`) twice in its scratch copy `$TMPDIR/d77/after`, several of which start git in scratch repositories they make under the system temp folder (`d77-cap-`, `d77-graph-`, `d77-untracked-`, `d77-many-`, `d77-hub-`, `d77-stub-`); no project repository was touched, and every folder its two runs made was removed (`ls -dlT d77-* | awk '$7=="15" && $8 ~ /^03:1/' | wc -l` prints `0`).
+
+```
+ps -ax | grep -e vitest -e svelte-check | grep -v grep          -> nothing (exit=1)
+
+npm run test:quick -- --base abe5c9651
+  test:quick: 186 changed file(s), from git since abe5c9651
+  test:quick: 191 test file(s), 10 essential
+  ok ASCII gate (0.6 s)
+  ok prettier (0.6 s): All matched files use Prettier code style!
+  ok eslint (1.5 s)
+  ok svelte-kit sync (2.3 s)
+  ok svelte-check (5.5 s): 1792025833345 COMPLETED 508 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+  ok vitest (50.5 s): Duration 45.22s
+  test:quick: 51.2 s (limit 45.0 s); every command passed
+  test:quick: over the time limit
+  exit=0
+
+npm run test:checks
+  FAIL |unit| tests/checks/config/config-folder.test.ts > oculus's own config directory > names a group of its own and a path under the hub for every document
+  Error: expected any number of assertion, but got none
+  Test Files 1 failed | 18 passed (19)
+  Tests 1 failed | 296 passed (297)
+  exit=1
+  (unrelated to D77: the worktree has no .oculus/; config/layout.yml:300 `docs: []`; vite.config.ts:139 `requireAssertions: true`)
+
+npx vitest run tests/checks/look/contrast.test.ts                 -> Tests 41 passed (41)
+node utils/migrations/convert-vscode-themes.ts --check            -> 19 themes up to date (exit 0)
+sh utils/folder-check.sh                                          -> exit 0
+sh utils/size-check.sh                                            -> exit 0
+sh utils/unused-exports.sh                                        -> exit 0; (238) at base, (239) now; new line
+  src/lib/server/git/git-diffs.ts: worktreeDiff (moved from git-write.ts, unused at base too)
+npx vitest run tests/server/core tests/server/git tests/state/sources tests/views/sources
+  Test Files 23 passed (23)
+  Tests 168 passed (168)
+one file at a time: git-write.test.ts 14 passed; git-failure.test.ts 27 passed; window-guard.test.ts 8 passed;
+  deposit-compare.test.ts 8 passed; machine.test.ts 11 passed; transcript-routes.test.ts 10 passed
+chunk probe over records.ts readRecords (a child writing in 10 to 11 chunks, cut inside a path, a rename's two fields and two
+  2-byte characters): {"code":"R ","path":"new name.txt","from":"old name.txt"}, multibyte names intact, error null;
+  stopped by the visitor: error null, child signal SIGTERM; trailing field without NUL at exit 0: visited
+```
+
+### Verdicts
+
+- Brief items 1 to 5, 7 and 8: hold (8 with Standards 1 and 2). Item 6: violated in one case, Spec 1.
+- Part 9 items 1 to 6, part 10 items 1 to 5 (item 3 for the listing; Stage All is Behaviour 1), part 11 items 1 to 3: hold.
+- Round 1: item 1 violated (Standards 1, the path DESIGN.md:748 names), else holds; item 2 holds (context.ts 871); item 3 violated (Spec 1); item 4 holds; item 5 holds; item 6 violated (Behaviour 1, Proof 1, Standards 2, Standards 4), the streaming itself holds by reading and by the chunk probe; item 7 holds (the alpha format declined); item 8 holds; item 9 holds, with Proof 2; item 10 holds as disclosed.
+- Cases 1 to 14, 14b, 16 to 19, 21 to 33, 35 to 39, 41 to 43: met (38 for the state read; 42 alone). 20: met for the unit rows. 22b: partial (Spec 1). 15, 34, 40, 44: not verifiable, the look.
+
+### 1. Spec
+
+- 1. `src/lib/state/workbench/layout/tabs/reopen.svelte.ts:123-126`, `homeOf`: a closed tab's home is found by its host and its position in the pane tree; a pane has no identity of its own, and tree.ts:174-183 removes a pane when its last tab closes, so a sibling moves into its place. Failure scenario: panes [A, B, C], B made by a split holding one tab; that tab is closed, B goes, C sits at index 1; Back reopens the tab in C, where it should reopen in the focused pane since B is gone. Verdict: round item 3 violated; case 22b partial; brief item 6 violated in this case.
+
+### 2. Proof
+
+- 1. `tests/server/git/git-write.test.ts` 'the status read' rows (G33) and the G79 row: every scratch repository's status fits one chunk, so the splitter's carry-over across chunks in records.ts, the code that ends the caps, is reached by no row. Failure scenario: a later change drops a record's tail at a chunk boundary and the suite stays green. Verdict: round item 6 violated on its rows clause, for the boundary part.
+- 2. D77-report.md, case 38 and round item 7: the case 38 after-run quoted (6002 staged, listed=200 held=251) predates round 1, and the builder's probes `untracked.probe` (`porcelain is not a function`), `strip-colours.probe.dom` (old import path) and `strip.probe` (no assertion) no longer run as written on the final tree. The state-read half of case 38 and the strip colours are right on the final code by the reviewer's runs. Verdict: none; the evidence is stale.
+- 3. D77-report.md, "Item 6: Stage All's add": the add timings behind the options (2.7 s, 7.5 s, over 10 min; 19.7 s, 21.0 s) are the builder's and not reproduced. Verdict: none.
+
+### 3. Standards
+
+- 1. DESIGN.md:748 names `src/lib/ui/theme/vscode-map.ts`, which does not exist; the mapping is `src/lib/themes/vscode-map.ts`. Verdict: round item 1 violated.
+- 2. DESIGN.md:139 ("through one subprocess call site, `run.ts`'s asynchronous `execFile` runner"), run.ts:78 and run.ts:225 ("This is the module's one call site.") are false after `runRecords`'s `spawn` (run.ts:268); run.ts:87 "starts git at this same call site" is not so. Verdict: round item 6 violated (documentation).
+- 3. `src/lib/server/git/git-write.ts:147-148`: an edited doc comment has a short line inside a sentence; the rules file asks an edited comment to be rewrapped whole at 100 columns. Verdict: none.
+- 4. `tests/server/core/git-failure.test.ts:194-221`: the new rows start a node process, two wait on real timers (305 ms, 342 ms), and the file carries no slow tag (vite.config.ts:126-128); the Cancel row aborts on a 300 ms wall clock rather than on a signal from the child. Verdict: round item 6 violated on the test discipline.
+- 5. `agents/guarded.md` does not yet name the new rows of G33, G41, G79 and G47; a landing item. Verdict: none.
+- 6. `utils/unused-exports.sh` prints the moved `worktreeDiff`; unused at base under its old path too. Verdict: none.
+
+### 4. Behaviour
+
+- 1. `src/lib/server/git/git-index.ts:122-160` (Stage All untracked) with `TIMEOUT_MS = 10000` (git-write.ts:102): one pathspec per untracked file, and `git add` with N pathspecs is quadratic; on the 200,000-file scratch repository Stage All answers `timed-out` after 10405 ms with nothing staged (builder's measurement). At base the status read used the default folder entries and staged one pathspec per wholly untracked folder, so this is a regression for a large untracked folder. On the options: (a) folder entries from `--untracked-files=normal` stage the same set as the `-uall` list and restore the base's behaviour, but stay one pathspec per file where many untracked files sit directly in a tracked folder; (b) `update-index --add -z --stdin` is linear, with its filters and nested repositories not verified; (c) keep is the lazy option. Any option needs the add freed from the 10 s limit. Verdict: round item 6 violated (Stage All).
+
+### Declined to judge
+
+- The 200,000-file measurement and the add timings behind options (a) and (b), not rebuilt.
+- Whether `update-index --add` stages the same blobs as `git add` (a clean filter and `core.autocrlf` compared through `git ls-files -s`).
+- Whether `setTitleBarOverlay` reads `#rrggbbaa` (strip-colours.ts:9-15); Electron's typings document AARRGGBB for `setBackgroundColor` and "The CSS color" for `TitleBarOverlayOptions`; needs the app on Windows or Linux.
+- Whether one double press zooms once in the app (case 20); the looks of cases 15, 34, 40 and 44.
+- Graph case 42 in a shared run of `tests/diag`; it passes alone.
+- `config-folder.test.ts` red: confirmed unrelated to D77.
+- `test:quick` over its time limit (51.2 s against 45.0 s) with every command passing.
+
+Reviewer usage: a71d02f07696002c8, claude-opus-5-5, 124,724 tokens, 129 tool uses, 27.8 min.
+
+## Closed
+
+The first run's findings went to the builder in repair round 1 (`agents/briefs/D77-round1.md`); the run over round 1 judged them again, and its verdicts above stand for them. The run over round 1's findings, each with its disposition, all fixed at landing on the gate `.agents/worktrees/gate` and carried to main:
+
+- Spec 1 (homeOf by position): fixed at landing. `src/lib/state/workbench/layout/tabs/closed.ts`: a closed tab records `siblings`, the ids of the other tabs of its pane outside the closed batch (`paneAt` of tree.ts). `reopen.svelte.ts` `homeOf` takes the pane at the recorded path only when it still holds one of those siblings, or is empty when the tab had none; otherwise the tab reopens in the focused pane of the page on screen. The reviewer's scenario (panes [x], [m], [r1], m closed, x focused, Back twice) reopened m in r1's pane on the round-end tree and reopens it in x's pane after the fix; the builder's case 22b gives the same results on both trees.
+- Proof 1 (no chunk-boundary row): fixed at landing. `tests/server/core/git-failure.test.ts` gains the row "reads a record cut across the chunks the program writes it in": the program writes a rename record, a name with a non-ASCII letter and a change in three-byte chunks, and the read gives each record whole.
+- Proof 2 (stale probe evidence): closed by the landing's own runs, which the booking quotes in place of the report's: the gate's full verify list, the look at the strip colours, and the Stage All runs below.
+- Proof 3 (timings not reproduced): closed by the landing's measurements through the code: Stage All on 200,000 files in one new folder (35,000,000 bytes of `-uall` output) staged in 21,393 ms; 30,000 loose files in the repository's root staged in 10,650 ms.
+- Standards 1 (DESIGN.md:748 path): fixed at landing, the path is `src/lib/themes/vscode-map.ts`.
+- Standards 2 ("one call site"): fixed at landing, DESIGN.md:139 names the two call sites, `run` and `runRecords`, and run.ts's comments say the same.
+- Standards 3 (git-write.ts short line): fixed at landing, the comment rewrapped whole.
+- Standards 4 (untagged process-starting rows, wall-clock Cancel): fixed at landing, the describe "a status read taken record by record" carries `tags: ['slow']`, and the Cancel row aborts when the first record arrives.
+- Standards 5 (guarded.md rows): fixed at landing, the Test lines of G13, G33, G41, G47 and G79 name the new rows; guarded-entry wording, taken by self-rule under the state file's automode order.
+- Standards 6 (`worktreeDiff` printed by unused-exports): none, the export was unused at the base under its old path as well.
+- Behaviour 1 (Stage All regression): fixed at landing. Stage All of the untracked group reads `status --untracked-files=normal`, so a wholly untracked folder is one pathspec as at the base, and its `git add` runs with no time limit and stops on Cancel. HELP.md:436 says so. Loose untracked files in a tracked folder are still one pathspec each; the add has no limit now, as measured above.
+- Declined, `#rrggbbaa` for `setTitleBarOverlay`: closed at landing by sending opaque colours only. `src/lib/shell/window/strip-colours.ts` paints the strip's background over the page's background over the window's fill, and the words over that, and sends `#rrggbb`, so no alpha byte reaches Electron.

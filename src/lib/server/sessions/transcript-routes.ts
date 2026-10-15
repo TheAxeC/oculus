@@ -4,12 +4,19 @@
 //
 // The path read is never the request's. The id names a session the last published `sessions`
 // payload holds, and the path and the tool come off that record, so the page can ask for a session
-// it can already see and for nothing else. A read, so it is same-origin and carries no write token.
+// it can already see and for nothing else. An `agent` beside the id names one subagent that record
+// lists, by the agent's id there: a Claude agent's own transcript is the file its agent id names
+// beside the session's (stores/background.ts `agentFile`), and a Codex agent's is the rollout of
+// the Codex session record whose id is the agent's thread id. An agent the record does not list,
+// one whose agent id is empty and one whose transcript is not there are refused as an unknown
+// session is. A read, so it is same-origin and carries no write token.
 
+import { existsSync } from 'node:fs';
 import { json } from '@sveltejs/kit';
+import { agentFile } from './stores/background.ts';
 import { readTurns } from './stores/turns.ts';
 import { words } from '../core/words.ts';
-import type { SessionRecord, Turn } from '../../data/model/index.ts';
+import type { SessionAgent, SessionRecord, SessionTool, Turn } from '../../data/model/index.ts';
 
 /**
  * How many turns a first read answers with. A session that has run all day holds thousands, and the
@@ -32,6 +39,32 @@ export type TranscriptOptions = {
 /** What every answer of this route carries besides its type: nothing of it is cached. */
 const NO_STORE = { 'cache-control': 'no-store' };
 
+/** The characters of an agent id Claude Code names a subagent's transcript file with. */
+const CLAUDE_AGENT_ID = /^[A-Za-z0-9_-]+$/;
+
+/** The transcript one request reads: its file and the tool that wrote it. */
+type Source = { path: string; tool: SessionTool };
+
+/**
+ * The transcript of the agent `agent` of `record`, or null when the record lists no such agent,
+ * its agent id is empty, or its transcript is not there. The path comes off the record, or off the
+ * record of the agent's own Codex rollout, never off the request.
+ */
+function agentSource(
+    record: SessionRecord,
+    agent: SessionAgent | undefined,
+    recordFor: (id: string) => SessionRecord | null
+): Source | null {
+    if (agent === undefined || agent.agentId === '') return null;
+    if (record.tool === 'codex') {
+        const own = recordFor(agent.agentId);
+        return own?.tool === 'codex' ? { path: own.path, tool: own.tool } : null;
+    }
+    if (!CLAUDE_AGENT_ID.test(agent.agentId)) return null;
+    const path = agentFile(record.path, record.id, agent.agentId);
+    return existsSync(path) ? { path, tool: record.tool } : null;
+}
+
 /**
  * GET /api/transcript: the turns of one session from a byte offset, and the offset to ask next;
  * with `format=markdown`, the whole conversation as a Markdown file to save.
@@ -44,14 +77,27 @@ export function handleTranscript(request: Request, options: TranscriptOptions = 
         return json({ error: `not a byte offset: ${asked}` }, { status: 400, headers: NO_STORE });
     }
     const id = url.searchParams.get('id') ?? '';
-    const record = (options.recordFor ?? (() => null))(id);
+    const recordFor = options.recordFor ?? (() => null);
+    const record = recordFor(id);
     if (record === null)
         return json({ error: `no session with the id ${id}` }, { status: 404, headers: NO_STORE });
+    const named = url.searchParams.get('agent');
+    const agent = named === null ? undefined : record.agents.find((one) => one.id === named);
+    const source =
+        named === null
+            ? { path: record.path, tool: record.tool }
+            : agentSource(record, agent, recordFor);
+    if (source === null) {
+        return json(
+            { error: `no agent transcript of the session ${id}` },
+            { status: 404, headers: NO_STORE }
+        );
+    }
     if (url.searchParams.get('format') === 'markdown') {
         if (options.catalogFor === undefined) throw new Error('an export needs the text catalog');
-        return exported(record, options.catalogFor());
+        return exported(record, agent, source, options.catalogFor());
     }
-    const read = readTurns(record.path, record.tool, from);
+    const read = readTurns(source.path, source.tool, from);
     if (from > 0 || read.turns.length <= FIRST_READ_TURNS) return json(read, { headers: NO_STORE });
     // The offset is the file's end either way, so the client's append path continues from the same
     // place; what is dropped is the oldest turns, which is the end of the conversation nobody is
@@ -59,9 +105,13 @@ export function handleTranscript(request: Request, options: TranscriptOptions = 
     return json({ ...read, turns: read.turns.slice(-FIRST_READ_TURNS) }, { headers: NO_STORE });
 }
 
-/** The file name an export is offered under: the title's letters and digits, else the id. */
-export function exportName(record: SessionRecord): string {
-    const stem = record.title
+/**
+ * The file name an export is offered under: the title's letters and digits, else the id; for an
+ * agent's transcript, the agent's description joined after them.
+ */
+export function exportName(record: SessionRecord, agent?: SessionAgent): string {
+    const words = agent === undefined ? record.title : `${record.title} ${agent.description}`;
+    const stem = words
         .replace(/[^A-Za-z0-9._-]+/g, '-')
         .replace(/^-+|-+$/g, '')
         .slice(0, 80);
@@ -137,9 +187,17 @@ function* markdownStream(pieces: Iterable<string>): Generator<string> {
     yield '\n';
 }
 
-/** The export's answer: the Markdown as a file the browser saves, streamed. */
-function exported(record: SessionRecord, catalog: Record<string, string>): Response {
-    const read = readTurns(record.path, record.tool, 0, Number.POSITIVE_INFINITY);
+/**
+ * The export's answer: the Markdown of the transcript `source` as a file the browser saves,
+ * streamed, headed with the session's facts.
+ */
+function exported(
+    record: SessionRecord,
+    agent: SessionAgent | undefined,
+    source: Source,
+    catalog: Record<string, string>
+): Response {
+    const read = readTurns(source.path, source.tool, 0, Number.POSITIVE_INFINITY);
     const pieces = markdownStream(transcriptPieces(record, read.turns, catalog));
     const encoder = new TextEncoder();
     const body = new ReadableStream<Uint8Array>({
@@ -153,7 +211,7 @@ function exported(record: SessionRecord, catalog: Record<string, string>): Respo
         status: 200,
         headers: {
             'content-type': 'text/markdown; charset=utf-8',
-            'content-disposition': `attachment; filename="${exportName(record)}"`,
+            'content-disposition': `attachment; filename="${exportName(record, agent)}"`,
             'cache-control': 'no-store'
         }
     });

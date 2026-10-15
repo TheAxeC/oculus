@@ -3,8 +3,9 @@
     // workbench cannot do for itself: fill the view registry, open the socket, and read the two
     // saved stores. The rail's pages and the chords' groups come from the merged config the socket
     // delivers, and so do the words of the status bar's items, which the page makes from stores the
-    // shell may not read itself; the rail's own rewrite of its list and the git writes of the
-    // status bar's branch and sync items are the page's for the same reason.
+    // shell may not read itself; the rail's own rewrite of its list, the git writes of the status
+    // bar's branch and sync items and the window's navigation history, which the title bar strip
+    // walks, are the page's to hand in for the same reason.
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
@@ -334,4 +335,5 @@
     {git}
     waiting={waitingCount()}
     walkProblem={problems.walk}
+    history={client.history}
 />

@@ -92,11 +92,11 @@ digraph channels {
         "? src/lib/server/machine/processes/watch.ts:67" [label="src/lib/server/machine/processes/watch.ts:67 publish(CHANNEL)"];
         "? src/lib/server/machine/runs/schedules/watch.ts:294" [label="src/lib/server/machine/runs/schedules/watch.ts:294 publish(CHANNEL)"];
         "? src/lib/server/root/context.ts:399" [label="src/lib/server/root/context.ts:399 publish(set)"];
-        "? src/lib/shell/panes/PaneView.svelte:476" [label="src/lib/shell/panes/PaneView.svelte:476 message()"];
-        "? src/lib/state/client/context.ts:174" [label="src/lib/state/client/context.ts:174 message(
+        "? src/lib/shell/panes/PaneView.svelte:477" [label="src/lib/shell/panes/PaneView.svelte:477 message()"];
+        "? src/lib/state/client/context.ts:166" [label="src/lib/state/client/context.ts:166 message(
                 key.startsWith('page:leads:')"];
         "? src/lib/state/client/entities.svelte.ts:56" [label="src/lib/state/client/entities.svelte.ts:56 channel === channel"];
-        "? src/lib/state/client/queries.svelte.ts:82" [label="src/lib/state/client/queries.svelte.ts:82 .subscribe((event)"];
+        "? src/lib/state/client/queries/queries.svelte.ts:82" [label="src/lib/state/client/queries/queries.svelte.ts:82 .subscribe((event)"];
         "? src/lib/state/sessions/source/disk.svelte.ts:123" [label="src/lib/state/sessions/source/disk.svelte.ts:123 channel === undefined"];
         "? src/lib/state/sessions/source/disk.svelte.ts:137" [label="src/lib/state/sessions/source/disk.svelte.ts:137 channel === undefined"];
         "? src/lib/state/sessions/source/disk.svelte.ts:154" [label="src/lib/state/sessions/source/disk.svelte.ts:154 channel === undefined"];
@@ -142,7 +142,7 @@ digraph channels {
         label="state"; style=solid;
         "state/client/context";
         "state/client/entities";
-        "state/client/queries";
+        "state/client/queries/queries";
         "state/client/selectors";
         "state/client/socket";
         "state/feeds/feeds";
@@ -178,7 +178,7 @@ digraph channels {
         "state/system/machine/usage/usage-refresh";
         "state/workbench/navigation/notice-sources";
         "state/workbench/palette-source";
-        "state/workbench/rail-badges";
+        "state/workbench/rail-badges/rail-badges";
     }
     subgraph "cluster_read views" {
         label="views"; style=solid;
@@ -214,10 +214,10 @@ digraph channels {
         label="routes"; style=solid;
         "routes/+page";
     }
-    "? src/lib/shell/panes/PaneView.svelte:476" -> "shell/panes/PaneView";
-    "? src/lib/state/client/context.ts:174" -> "state/client/context";
+    "? src/lib/shell/panes/PaneView.svelte:477" -> "shell/panes/PaneView";
+    "? src/lib/state/client/context.ts:166" -> "state/client/context";
     "? src/lib/state/client/entities.svelte.ts:56" -> "state/client/entities";
-    "? src/lib/state/client/queries.svelte.ts:82" -> "state/client/queries";
+    "? src/lib/state/client/queries/queries.svelte.ts:82" -> "state/client/queries/queries";
     "? src/lib/state/sessions/source/disk.svelte.ts:123" -> "state/sessions/source/disk";
     "? src/lib/state/sessions/source/disk.svelte.ts:137" -> "state/sessions/source/disk";
     "? src/lib/state/sessions/source/disk.svelte.ts:154" -> "state/sessions/source/disk";
@@ -350,7 +350,7 @@ digraph channels {
     "ch portfolio" -> "state/life/present";
     "ch portfolio" -> "state/workbench/navigation/notice-sources";
     "ch portfolio" -> "state/workbench/palette-source";
-    "ch portfolio" -> "state/workbench/rail-badges";
+    "ch portfolio" -> "state/workbench/rail-badges/rail-badges";
     "ch portfolio" -> "views/boards/entry";
     "ch portfolio" -> "views/boards/focus";
     "ch portfolio" -> "views/boards/person";

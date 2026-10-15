@@ -91,7 +91,8 @@ import { createPaletteSource } from '../workbench/palette-source.svelte.ts';
 import { createPresent } from '../life/present.svelte.ts';
 import { SETTINGS_VIEW, configRail, railTyped } from '../workbench/navigation/rail.ts';
 import { settingsTyped } from '../system/config/typed.ts';
-import { createRailBadges } from '../workbench/rail-badges.svelte.ts';
+import { createRailBadges } from '../workbench/rail-badges/rail-badges.svelte.ts';
+import { createHistory } from '../workbench/history/history.svelte.ts';
 import { createRepositories, DIFF_VIEW } from '../sources/repositories/repositories.svelte.ts';
 import { heldDiff } from '../sources/repositories/diff/subject.ts';
 import { createSelection } from '../workbench/selection.svelte.ts';
@@ -137,7 +138,7 @@ import { createTranscripts } from '../sessions/transcript.svelte.ts';
 import { createUi } from '../workbench/ui.svelte.ts';
 import { createDebug } from '../system/machine/debug/debug.svelte.ts';
 import { createUsageRefresh } from '../system/machine/usage/usage-refresh.svelte.ts';
-import { createQueries, scopedStore } from './queries.svelte.ts';
+import { createQueryScope } from './queries/tab-scope.ts';
 import { createWrites } from './writes.svelte.ts';
 import { createGraphviz } from '../boards/structure/layout.ts';
 import { createLatexReader } from '../sources/explorer/sections/outline.ts';
@@ -154,18 +155,9 @@ export function createClientState(
     pageId = 'main',
     owner: string | null = desktop?.owner ?? null
 ): ClientState {
-    // Every store that fetches an answer holds it in this one query client.
-    const queries = createQueries();
-    // The stores handed the query client, by their name in the client object, which is what a tab's
-    // copy replaces. A store handed `queries` is recorded where it is made.
-    const queried = new Map<string, Record<string, unknown>>();
-    function withQueries<N extends keyof ClientState>(
-        name: N,
-        store: ClientState[N] & Record<string, unknown>
-    ): ClientState[N] {
-        queried.set(name, store);
-        return store;
-    }
+    // Every store that fetches an answer holds it in this one query client, and a store handed
+    // `queries` is recorded where it is made, so a tab's copy replaces it (queries/tab-scope.ts).
+    const { queries, withQueries, tabScope } = createQueryScope();
     const entities = createEntities();
     // What a write took is shown by the pages before the rebuilt snapshot arrives; the version a
     // held value is dated by is that of the channel the record is read in.
@@ -797,16 +789,6 @@ export function createClientState(
         holds: apps.holds,
         fileOfTab
     });
-    const tabScope: TabScopeStore = {
-        wrap: (state, shown) =>
-            Object.assign(
-                {},
-                state,
-                Object.fromEntries(
-                    [...queried].map(([name, store]) => [name, scopedStore(queries, store, shown)])
-                )
-            )
-    };
     const windows = createWindows(
         layout,
         desktop !== undefined,
@@ -866,6 +848,7 @@ export function createClientState(
         selectors,
         clone,
         railBadges,
+        history: createHistory(layout, editorStatus, source, float),
         paletteSource,
         editorStatus,
         headings,

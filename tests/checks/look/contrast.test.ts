@@ -8,21 +8,33 @@
 // own tint; a hue's `-lane-txt` on its `-lane` and on nothing else, since a Focus lane or column
 // header is where it is painted. That every word of those headers sits on its own lane surface in
 // the page needs a DOM and is not run here; the src/ reading case below only reports a lane text
-// token referenced outside the one shape the header uses; `--on-accent-bg` on the selected tree
-// row's surface `--accent-bg`; the on-chip ink on its filled chip; and the ink of the orange
-// debugging status bar on the fill its hovered and open items take. A pair below the threshold is
-// printed with its ratio and fails. It is never fixed by loosening the threshold or by editing a
-// colour here: a colour is an authored value in tokens.css or themes.css, or a generated one in
-// vscode.css. A failure of an authored value is a finding about that value or about derive.ts, and
-// a failure of a generated value is a finding about the mapping in
-// utils/migrations/convert-vscode-themes.ts, not something this file repairs.
+// token referenced outside the one shape the header uses. Then the window's title bar strip's
+// words on its surface and on nothing else, read from the `.titlebar` rule of
+// shell/titlebar/TitleBar.svelte and resolved in the theme: the block's own `--titlebar-txt` and
+// `--titlebar-bg`, else tokens.css's defaults on `body`, else the fallbacks the rule names;
+// `--on-accent-bg` on the selected tree row's surface `--accent-bg`; the on-chip ink on its filled
+// chip; and the ink of the orange debugging status bar on the fill its hovered and open items
+// take. A pair below the threshold is printed with its ratio and fails. It is never fixed by
+// loosening the threshold or by editing a colour here: a colour is an authored value in tokens.css
+// or themes.css, or a generated one in vscode.css. A failure of an authored value is a finding
+// about that value or about derive.ts, and a failure of a generated value is a finding about the
+// mapping in utils/migrations/convert-vscode-themes.ts, not something this file repairs.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { SCROLL_THUMB_RATIO, deriveTokens, ratio } from '../../../src/lib/themes/derive.ts';
-import { NAMES, THEMES, TOKENS, VSCODE, blocks, themeTokens } from './themes.ts';
+import {
+    BODY_TOKENS,
+    NAMES,
+    THEMES,
+    TOKENS,
+    VSCODE,
+    blocks,
+    resolveValue,
+    themeTokens
+} from './themes.ts';
 import { treeFiles } from '../walk.ts';
 
 const MINIMUM = 4.5;
@@ -44,12 +56,49 @@ const TINTS = ['--c-scm-added-bg', '--c-scm-deleted-bg', '--c-scm-conflict-bg'];
 const TAB_TEXT = /^--tab-.+-txt$/;
 const TAB_SURFACES = ['--bg', '--panel'];
 
+/** The title bar strip's words, which land on the strip's own surface and on nothing else. */
+const STRIP_TEXT = '--titlebar-txt';
+const STRIP_SURFACE = '--titlebar-bg';
+
 type Pair = { fg: string; bg: string; ratio: number };
+
+/** The `.titlebar` rule of the strip's component, whose colours are measured as it paints them. */
+const STRIP_RULE = /\n\s*\.titlebar \{([^}]*)\}/.exec(
+    readFileSync(join(SRC, 'lib', 'shell', 'titlebar', 'TitleBar.svelte'), 'utf8')
+)?.[1];
+
+/** The value the strip's rule gives a property, or undefined. */
+function stripDeclaration(property: string): string | undefined {
+    return new RegExp(`(?:^|\\n)\\s*${property}\\s*:\\s*([^;]+);`).exec(STRIP_RULE ?? '')?.[1];
+}
+
+/**
+ * The strip's surface and words in one theme, as the strip's rule resolves them: the theme block's
+ * own title bar tokens, else tokens.css's defaults on `body` resolved in the theme, else the
+ * fallbacks the rule names.
+ */
+function stripOf(
+    theme: Record<string, string>,
+    all: Record<string, string>
+): Record<string, string> {
+    const scope = { ...all };
+    for (const [token, value] of Object.entries(BODY_TOKENS)) {
+        const resolved = resolveValue(value, all);
+        if (!(token in theme) && resolved !== undefined) scope[token] = resolved;
+    }
+    const found: Record<string, string> = {};
+    const words = resolveValue(stripDeclaration('color'), scope);
+    const surface = resolveValue(stripDeclaration('background'), scope);
+    if (words !== undefined) found[STRIP_TEXT] = words;
+    if (surface !== undefined) found[STRIP_SURFACE] = surface;
+    return found;
+}
 
 /** Every pair one theme declares: the token names, and the ratio between their two colours. */
 function pairs(name: string): Pair[] {
     const { theme, derived } = themeTokens(name);
     const all: Record<string, string> = { ...theme, ...derived };
+    Object.assign(all, stripOf(theme, all));
     const found: Pair[] = [];
 
     const measure = (fg: string, bg: string): void => {
@@ -59,7 +108,8 @@ function pairs(name: string): Pair[] {
     // A `-txt` token the theme authors by hand is measured as one derive.ts mints.
     for (const fg of Object.keys(all)) {
         if (!fg.endsWith('-txt')) continue;
-        const grounds = TAB_TEXT.test(fg) ? TAB_SURFACES : SURFACES;
+        const grounds =
+            fg === STRIP_TEXT ? [STRIP_SURFACE] : TAB_TEXT.test(fg) ? TAB_SURFACES : SURFACES;
         if (!LANE_TEXT.test(fg))
             for (const surface of grounds) if (all[surface]) measure(fg, surface);
         if (CODE_TEXT.test(fg)) for (const tint of TINTS) if (all[tint]) measure(fg, tint);
@@ -176,6 +226,22 @@ describe('contrast', () => {
             return found < SCROLL_THUMB_RATIO ? [`${name}: ${found.toFixed(2)}:1`] : [];
         });
         expect(failures).toEqual([]);
+    });
+
+    it("measures the title bar strip's words on the strip in every theme", () => {
+        const missing = NAMES.filter(
+            (name) =>
+                !(measured.get(name) ?? []).some(
+                    (pair) => pair.fg === STRIP_TEXT && pair.bg === STRIP_SURFACE
+                )
+        );
+        expect(missing).toEqual([]);
+        for (const name of NAMES) {
+            const { theme, derived } = themeTokens(name);
+            const strip = stripOf(theme, { ...theme, ...derived });
+            expect(strip[STRIP_TEXT]).toMatch(/^#[0-9a-f]{3,6}$/i);
+            expect(strip[STRIP_SURFACE]).toMatch(/^#[0-9a-f]{3,6}$/i);
+        }
     });
 
     it('measures a lane header pair for every hue of every theme', () => {

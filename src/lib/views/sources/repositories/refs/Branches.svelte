@@ -87,6 +87,7 @@
                     label={unborn
                         ? t('repositories.branches_unborn', git.branch)
                         : t('repositories.branches_empty')}
+                    depth={1}
                     tone="muted"
                 />
             </li>
@@ -98,6 +99,7 @@
                     id={`branch:${branch.name}`}
                     {nav}
                     level={2}
+                    depth={1}
                     glyph="branch"
                     current={branch.current}
                 >
@@ -130,7 +132,7 @@
             </li>
         {/each}
         <li role="none" data-form="branch">
-            <TreeItem label={t('git.branch_new')} glyph="branch">
+            <TreeItem label={t('git.branch_new')} depth={1} glyph="branch">
                 {#snippet field()}
                     <TextInput
                         value={branchName}

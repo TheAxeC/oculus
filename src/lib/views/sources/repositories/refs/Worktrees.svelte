@@ -145,17 +145,17 @@
     >
         {#if !git.ignoresWorktrees}
             <li role="none">
-                <TreeItem label={t('repositories.worktrees_unignored')} tone="warn" />
+                <TreeItem label={t('repositories.worktrees_unignored')} depth={1} tone="warn" />
             </li>
         {/if}
         {#if refused !== ''}
             <li role="none" data-refused>
-                <TreeItem label={refused} tone="error" />
+                <TreeItem label={refused} depth={1} tone="error" />
             </li>
         {/if}
         {#if others.length === 0}
             <li role="none">
-                <TreeItem label={t('repositories.worktrees_empty')} tone="muted" />
+                <TreeItem label={t('repositories.worktrees_empty')} depth={1} tone="muted" />
             </li>
         {/if}
         {#each others as tree (tree.path)}
@@ -171,6 +171,7 @@
                         id={`worktree:${tree.path}`}
                         {nav}
                         level={2}
+                        depth={1}
                         glyph="worktree"
                         title={tree.path}
                         onclick={() => diff(tree.path, label)}
@@ -221,7 +222,7 @@
             </li>
         {/each}
         <li role="none" data-form="worktree">
-            <TreeItem label={t('repositories.worktree_new')} glyph="worktree">
+            <TreeItem label={t('repositories.worktree_new')} depth={1} glyph="worktree">
                 {#snippet field()}
                     <TextInput
                         value={name}
@@ -260,7 +261,7 @@
         </li>
         {#if planned !== ''}
             <li role="none">
-                <TreeItem label={t('repositories.worktree_path', planned)} tone="muted" />
+                <TreeItem label={t('repositories.worktree_path', planned)} depth={1} tone="muted" />
             </li>
         {/if}
     </TreeSection>

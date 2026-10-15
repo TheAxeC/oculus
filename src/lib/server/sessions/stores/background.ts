@@ -18,7 +18,7 @@
 // resume and its next notice the subagent writes its own transcript again, later than the notice
 // that ended it, and that write puts the row back to running.
 
-import { statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
 import type { SessionRecord } from '../../../data/model/index.ts';
@@ -70,10 +70,14 @@ export function isLaunch(acc: Acc, id: string, answer: LaunchAnswer): boolean {
     return answer !== undefined && (answer.isAsync === true || answer.status === 'async_launched');
 }
 
-/** Take one launch answer: the agent stays running, and the agent id it names is kept. */
+/**
+ * Take one launch answer: the agent stays running, and the agent id it names is kept, on the
+ * launch and on the agent's entry.
+ */
 export function takeLaunch(acc: Acc, id: string, answer: LaunchAnswer, content: unknown): void {
     const named = answer?.agentId ?? '';
     acc.background[id] = named || (AGENT_ID.exec(contentTextShape.parse(content))?.[1] ?? '');
+    if (Object.hasOwn(acc.agents, id)) acc.agents[id].agentId = acc.background[id];
 }
 
 /**
@@ -126,11 +130,10 @@ export function settleBackground(
     sessionModified: number | null,
     now: number
 ): void {
-    const folder = join(dirname(acc.path), acc.id, 'subagents');
     for (const [id, agentId] of Object.entries(acc.background)) {
         const agent = record.agents.find((one) => one.id === id);
         if (agent === undefined) continue;
-        const own = agentId === '' ? null : modified(join(folder, `agent-${agentId}.jsonl`));
+        const own = agentId === '' ? null : modified(agentFile(acc.path, acc.id, agentId));
         if (agent.status !== 'running') {
             const ended = agent.ended === null ? NaN : Date.parse(agent.ended);
             if (own !== null && own > ended + RESUMED_AFTER_MS) {
@@ -143,5 +146,23 @@ export function settleBackground(
         if (last === null || now - last <= IDLE_AFTER_SECONDS * 1000) continue;
         agent.status = 'done';
         agent.ended = new Date(last).toISOString();
+    }
+}
+
+/** The file of a Claude subagent's own transcript, beside the session's file. */
+export function agentFile(sessionPath: string, sessionId: string, agentId: string): string {
+    return join(dirname(sessionPath), sessionId, 'subagents', `agent-${agentId}.jsonl`);
+}
+
+/**
+ * On a finished Claude record, the agent id of every subagent whose own transcript is not there is
+ * emptied, so the record names only a transcript the route can read and the page offers no press
+ * for the others. The accumulator keeps the id, so a file written later is named by the next read.
+ */
+export function settleAgentFiles(acc: Acc, record: SessionRecord): void {
+    if (acc.tool !== 'claude') return;
+    for (const agent of record.agents) {
+        if (agent.agentId === '') continue;
+        if (!existsSync(agentFile(acc.path, acc.id, agent.agentId))) agent.agentId = '';
     }
 }

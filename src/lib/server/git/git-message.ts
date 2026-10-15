@@ -9,12 +9,23 @@
 // config/behavior.yml, read through a schema, with a default when the key is missing or malformed.
 // Empty means the CLI's own default model, so nothing is passed.
 //
+// The run writes no session (`--no-session-persistence`), so a suggestion never lists in the
+// Sessions view. It runs under the account `commit_message_account` of local.yml names, applied as
+// a terminal applies an account to an agent (`accountEnv` of server/machine/pty/start/compose.ts):
+// the account's folder in CLAUDE_CONFIG_DIR over the server's environment, or `env -u
+// CLAUDE_CONFIG_DIR` in front of the program for the default folder and for no account. No shell
+// runs, so a label reaches nothing but the lookup.
+//
 // The diff and the subprocess are both options with real defaults.
 
 import { execFile } from 'node:child_process';
 import { z } from 'zod';
+import type { AgentAccount } from '../../data/model/index.ts';
+import { usageAccountLabel, type LocalConfig } from '../../data/sources/config.ts';
 import { words } from '../core/words.ts';
-import { allowedRoots, MAX_OUTPUT, stagedDiff, type Outcome } from './git-write.ts';
+import { accountEnv, agentAccounts } from '../machine/pty/start/compose.ts';
+import { allowedRoots, MAX_OUTPUT, type Outcome } from './git-write.ts';
+import { stagedDiff } from './git-diffs.ts';
 
 /** Milliseconds the CLI is given to answer. */
 export const TIMEOUT_MS = 60000;
@@ -25,13 +36,29 @@ export const TIMEOUT_MS = 60000;
 export type Ask = (prompt: string, model: string, input: string) => Promise<Outcome>;
 
 export type MessageOptions = {
-    /** What is staged; server/git/git-write.ts's own reader when absent. */
+    /** What is staged; server/git/git-diffs.ts's own reader when absent. */
     diff?: (root: string, text: Record<string, string>, roots: string[]) => Promise<Outcome>;
     /** How the CLI is asked; the real subprocess when absent. */
     ask?: Ask;
     /** The model to pass, or the empty string for the CLI's default. */
     model?: string;
+    /** The Claude account the run is under; the default folder when absent or null. */
+    account?: AgentAccount | null;
 };
+
+/**
+ * The Claude account `commit_message_account` names: the `claude` row of the joined accounts whose
+ * label is the key's, compared reduced, or null for no key and for a label no row holds.
+ */
+export function messageAccount(local: LocalConfig): AgentAccount | null {
+    const label = local.commitMessageAccount ?? '';
+    if (label === '') return null;
+    const reduced = usageAccountLabel(label);
+    const found = agentAccounts(local).find(
+        (one) => one.tool === 'claude' && usageAccountLabel(one.label) === reduced
+    );
+    return found ?? null;
+}
 
 /** The `git.message_model` text of a configuration, or the empty text when a part is missing. */
 const messageModelShape = z
@@ -60,7 +87,9 @@ export async function suggestMessage(
     roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     const read = options.diff ?? stagedDiff;
-    const asked = options.ask ?? ((one, model, input) => run(claudeBin, one, model, input, text));
+    const account = options.account ?? null;
+    const asked =
+        options.ask ?? ((one, model, input) => run(claudeBin, account, one, model, input, text));
     const diff = await read(root, text, roots);
     if (!diff.ok) return diff;
     if (diff.output.trim() === '') {
@@ -82,20 +111,33 @@ export async function suggestMessage(
     return { ok: true, output: answer.output.trim(), error: '' };
 }
 
-/** The real subprocess: one non-interactive run, the diff on stdin, the text on stdout. */
+/**
+ * The real subprocess: one non-interactive run under the account, the diff on stdin, the text on
+ * stdout. The account's prefix goes in front of the program, and its variable over the server's
+ * environment.
+ */
 function run(
     claudeBin: string,
+    account: AgentAccount | null,
     prompt: string,
     model: string,
     input: string,
     text: Record<string, string>
 ): Promise<Outcome> {
-    const args = model === '' ? ['-p', prompt] : ['--model', model, '-p', prompt];
+    const chosen = model === '' ? [] : ['--model', model];
+    const args = ['--no-session-persistence', ...chosen, '-p', prompt];
+    const { prefix, env } = accountEnv('claude', account);
+    const [program, ...argv] = [...prefix, claudeBin, ...args];
     return new Promise((settle) => {
         const child = execFile(
-            claudeBin,
-            args,
-            { encoding: 'utf8', timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT },
+            program,
+            argv,
+            {
+                encoding: 'utf8',
+                timeout: TIMEOUT_MS,
+                maxBuffer: MAX_OUTPUT,
+                env: { ...process.env, ...env }
+            },
             (error, stdout, stderr) => {
                 if (error !== null) {
                     const first = (stderr || error.message).trim().split('\n')[0];

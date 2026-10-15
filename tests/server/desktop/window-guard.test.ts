@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { linkDecision, movedPort } from '../../../src/desktop/decide/links.ts';
 import { permissionGranted } from '../../../src/desktop/decide/permissions.ts';
 import { mayCall, printTarget, senderOf } from '../../../src/desktop/decide/sender.ts';
-import { windowPreferences } from '../../../src/desktop/decide/window-options.ts';
+import { overlayColours, windowPreferences } from '../../../src/desktop/decide/window-options.ts';
 import * as channels from '../../../src/desktop/decide/channels.ts';
 import {
     CLOSE_FIND,
@@ -15,7 +15,8 @@ import {
     OPEN_FLOAT_WINDOW,
     PRINT_PDF,
     SAVE_LAYOUT,
-    STOP_FIND
+    STOP_FIND,
+    TITLE_COLOURS
 } from '../../../src/desktop/decide/channels.ts';
 
 const ORIGIN = 'http://127.0.0.1:8817';
@@ -136,6 +137,38 @@ describe('the desktop host decisions', () => {
         expect(named).toContain(SAVE_LAYOUT);
         for (const channel of named) {
             expect(mayCall('audience', channel), channel).toBe(false);
+        }
+    });
+
+    it("takes the strip's colours from the window's own page alone, each a hex colour, off macOS", () => {
+        expect(mayCall('page', TITLE_COLOURS)).toBe(true);
+        for (const who of ['find-bar', 'print', 'audience', null] as const) {
+            expect(mayCall(who, TITLE_COLOURS), String(who)).toBe(false);
+        }
+        expect(overlayColours('win32', '#1f1f1f', '#cccccc')).toEqual({
+            color: '#1f1f1f',
+            symbolColor: '#cccccc'
+        });
+        expect(overlayColours('linux', '#ABC', '#1f1f1f80')).toEqual({
+            color: '#ABC',
+            symbolColor: '#1f1f1f80'
+        });
+        expect(overlayColours('darwin', '#1f1f1f', '#cccccc')).toBeNull();
+        for (const wrong of [
+            'red',
+            'rgb(31, 31, 31)',
+            '#12345',
+            '#1f1f1g',
+            ' #1f1f1f',
+            '#1f1f1f; color: red',
+            '',
+            31,
+            null,
+            undefined,
+            ['#1f1f1f']
+        ]) {
+            expect(overlayColours('win32', wrong, '#cccccc'), String(wrong)).toBeNull();
+            expect(overlayColours('linux', '#1f1f1f', wrong), String(wrong)).toBeNull();
         }
     });
 

@@ -88,6 +88,7 @@ const ORDER: Record<string, string[]> = {
         'shell/panes',
         'shell/keys',
         'shell/commands',
+        'shell/titlebar',
         'shell/window'
     ],
     views: [

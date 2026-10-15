@@ -252,6 +252,7 @@ function foldUser(acc: Acc, record: UserRecord): void {
         agent.ended = stamp;
         agent.status = block.is_error === true ? 'error' : 'done';
         agent.resultChars = resultLength(block.content);
+        agent.agentId = answer?.agentId ?? '';
         const spent = spentTokens(record.toolUseResult);
         if (spent !== null) agent.tokens = spent;
     }

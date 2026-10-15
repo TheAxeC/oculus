@@ -198,6 +198,7 @@ export const accShape = z.object({
                 ended: nullableTextShape,
                 status: z.string(),
                 resultChars: z.number(),
+                agentId: z.string(),
                 tokens: z.number().optional()
             })
         )
@@ -262,7 +263,8 @@ export function agentEntry(acc: Acc, id: string, stamp: string | null): SizedAge
         started: stamp,
         ended: null,
         status: 'running',
-        resultChars: 0
+        resultChars: 0,
+        agentId: ''
     };
     acc.agents[id] = agent;
     return agent;

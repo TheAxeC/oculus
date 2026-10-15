@@ -96,6 +96,12 @@ export type LocalConfig = {
      */
     claudeBin: string;
     /**
+     * The account the suggested commit message runs under, `commit_message_account` in the file:
+     * the label of a `claude` row of the accounts joined from every hub's file, compared reduced
+     * as the join compares Claude labels. Absent or empty, the run takes the default folder.
+     */
+    commitMessageAccount?: string;
+    /**
      * The program an `https` address is handed to, `open_bin` in the file: a provider's consent
      * page, an event or a thread at its provider. Absent unless the machine sets it, and the server
      * then hands the address to macOS's /usr/bin/open.
@@ -155,6 +161,7 @@ export const LOCAL_KEYS = [
     'schedules',
     'schedule_record',
     'claude_bin',
+    'commit_message_account',
     'open_bin',
     'rite_dap_bin',
     'accounts',
@@ -217,6 +224,7 @@ export type LocalProblem =
     | { key: string; kind: 'value' | 'row'; words: string; sentence: string }
     | { key: string; kind: 'repeat'; sentence: string }
     | { key: string; kind: 'other-hub'; hub: string; sentence: string }
+    | { key: string; kind: 'label'; sentence: string }
     | { key: ''; kind: 'unparsed' | 'not-a-map'; sentence: string }
     | { key: ''; kind: 'unreadable'; code: string; sentence: string };
 
@@ -478,6 +486,13 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
         const value = filledAt(record, key);
         if (value === undefined) problems.push(wrong(key, 'a non-empty string'));
         else config[field] = value;
+    }
+    // Empty is the default folder and no problem; whether the label is a Claude row's is read
+    // after every hub's accounts are joined (data/sources/config/machine.ts).
+    const account = record.commit_message_account;
+    if (account !== undefined) {
+        if (typeof account !== 'string') problems.push(wrong('commit_message_account', 'a label'));
+        else if (account !== '') config.commitMessageAccount = account;
     }
     if (record.accounts !== undefined) {
         const rows = usageAccounts(record.accounts, base, problems);

@@ -97,6 +97,7 @@
             id={head}
             {nav}
             level={2}
+            depth={1}
             count={group.resources.length}
             badge
             expanded={open}
@@ -146,7 +147,7 @@
                             {id}
                             {nav}
                             level={3 + row.depth}
-                            depth={1 + row.depth}
+                            depth={2 + row.depth}
                             expanded={!collapsed.includes(id)}
                             onclick={() => ontoggle(id)}
                         >
@@ -168,7 +169,7 @@
                     resource={row.entry}
                     {nav}
                     level={3 + row.depth}
-                    depth={1 + row.depth}
+                    depth={2 + row.depth}
                     showFolder={mode !== 'tree'}
                     {picked}
                     {onpress}

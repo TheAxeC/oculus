@@ -6,11 +6,14 @@
 // The saved unit is every page: each one a whole workbench (one tree and the maximised pane, if
 // there is one) with a name and the rail button it came from, which page is on screen, and the
 // floats beside the pages: each a pane drawn over every page, addressed by its id wherever a page
-// id is taken and never listed as a page. Every operation that names a path names the page it
-// addresses, and the page on screen is what it means when it names none, so a caller that knows
-// nothing of pages reads and writes the one on screen. Every change reaches the store through
-// apply() or savePages(), which are also what save, so neither an arrangement nor a page is changed
-// without being written down.
+// id is taken and never listed as a page. The window strip's dock toggles hide the float docked on
+// an edge, which the saved unit records; a change that docks a float on a hidden edge, or shows
+// another tab in the float there, shows the edge again (`settleHidden` of layout/model.ts).
+//
+// Every operation that names a path names the page it addresses, and the page on screen is what it
+// means when it names none, so a caller that knows nothing of pages reads and writes the one on
+// screen. Every change reaches the store through apply() or savePages(), which are also what save,
+// so neither an arrangement nor a page is changed without being written down.
 //
 // What the factory keeps is the reactive page list and the write path over it. Everything a caller
 // does to the instances in that list is built beside the factory, one module per concern under
@@ -21,6 +24,14 @@
 // second place an arrangement can change.
 
 import { item } from '../../data/helpers/guards.ts';
+import {
+    dockedAt,
+    edgeHidden,
+    settleHidden,
+    shownFloats,
+    withHidden,
+    type DockEdge
+} from './layout/model.ts';
 import { createArmedKeeps, type ArmedKeep } from './layout/open/armed-keep.svelte.ts';
 import { createRailPages } from './layout/open/float/rail-pages.ts';
 import { createReopen, type Reopen } from './layout/tabs/reopen.svelte.ts';
@@ -113,6 +124,15 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
         pageOf: (id: string) => Page | null;
         /** The floats, in the order they were made. */
         floats: () => Float[];
+        /** The floats the window draws: every one but a float docked on a hidden edge. */
+        shownFloats: () => Float[];
+        /** Whether the float docked on an edge is hidden by its toggle. */
+        dockHidden: (edge: DockEdge) => boolean;
+        /**
+         * Hide the float docked on an edge, or show it again: VS Code's Toggle Primary Side Bar,
+         * Panel and Secondary Side Bar. An edge no float is docked on changes nothing.
+         */
+        toggleDock: (edge: DockEdge) => void;
         /** Every page and every float as a host, pages first: what a walk over every tab needs. */
         hosts: () => Host[];
         /** The page or float with this id. */
@@ -546,12 +566,36 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         if (written !== held) savePages(written);
     }
 
-    /** Make a set of pages current and save it. */
-    function savePages(next: Pages): void {
+    /**
+     * Make a set of pages current and save it. A hidden edge whose docked float the change made new
+     * or moved to another tab is shown again first.
+     */
+    function savePages(given: Pages): void {
+        const next = settleHidden(store.current, given);
         fresh = false;
         if (next.current !== store.current.current) previous = store.current.current;
         store.current = next;
         storage.write(next, writing);
+    }
+
+    /**
+     * Show the edge whose hidden docked float holds the tab `id`, which a view opened or a tab
+     * activated there asks for even when the tab was already the float's active one. Answers `id`.
+     */
+    function revealed(id: string): string {
+        const float = store.current.floats.find((one) =>
+            one.pane.tabs.some((tab) => tab.id === id)
+        );
+        const place = float?.place;
+        if (place?.kind === 'dock' && edgeHidden(store.current, place.edge)) {
+            savePages(withHidden(store.current, place.edge, false));
+        }
+        return id;
+    }
+
+    function toggleDock(edge: DockEdge): void {
+        if (dockedAt(store.current, edge) === undefined) return;
+        savePages(withHidden(store.current, edge, !edgeHidden(store.current, edge)));
     }
 
     /** Apply an operation to a page's tree, which is how every tree edit reaches the store. */
@@ -717,6 +761,9 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         pages,
         pageOf,
         floats,
+        shownFloats: () => shownFloats(store.current),
+        dockHidden: (edge) => edgeHidden(store.current, edge),
+        toggleDock,
         hosts: () => hostsOf(store.current),
         hostOf,
         holding,
@@ -762,7 +809,10 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         closePage,
         apply,
         change,
-        activateInstance: instances.activateInstance,
+        activateInstance: (id, page) => {
+            instances.activateInstance(id, page);
+            revealed(id);
+        },
         closeInstancesOfView: instances.closeInstancesOfView,
         moveInstanceToPage: instances.moveInstanceToPage,
         closeInstance: instances.closeInstance,
@@ -776,7 +826,8 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
         foldPane,
         expandChild,
         focused,
-        openView: placed.openView,
+        openView: (view, state, page, options) =>
+            revealed(placed.openView(view, state, page, options)),
         openBeside: opening.openBeside,
         openInPane: opening.openInPane,
         openAway: away.openAway,

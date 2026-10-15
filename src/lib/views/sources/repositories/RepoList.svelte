@@ -2,18 +2,19 @@
     // Layer 3, partial of views/sources/repositories/Repositories.svelte. VS Code's Source Control
     // Repositories section: one row per root of the `git` channel, the chosen one drawn as the one
     // in force. Pressing a row chooses it, which the view keeps as its instance state. The section
-    // folds like every other.
+    // folds like every other, and its rows stand one step in from its head.
     //
     // A readable repository's row carries, always drawn and at its right, the Branch control (the
     // branch's glyph and name, or for a detached HEAD the first 8 characters of HEAD's commit, cut
     // when the row is narrow, the whole name as its hover words), then the Sync control (the sync
     // glyph, the behind count and the ahead count, each with its arrow when above 0, and the
     // distance as its hover words) or, for a branch with no upstream that can be published, Publish
-    // Branch, then the `...` menu of the row (the items of its right-click menu) and the number of
-    // changed paths as a badge. The controls give way before the repository's name does. Sync and
-    // Publish ask the question the view's `...` menu asks and press through the same store call;
-    // the Branch control asks the view to show the repository and open its Branches section.
-    // Branch, Sync and Publish are disabled while a write runs on the repository.
+    // Branch, then the number of changed paths as a badge, and last the `...` menu of the row (the
+    // items of its right-click menu). The Branch, Sync and Publish controls give way before the
+    // repository's name does; the badge and the `...` keep their room. Sync and Publish ask the
+    // question the view's `...` menu asks and press through the same store call; the Branch
+    // control asks the view to show the repository and open its Branches section. Branch, Sync
+    // and Publish are disabled while a write runs on the repository.
     //
     // A root that is no repository, that is gone or whose read failed keeps its row, with the few
     // words and the tone of views/shared/changes/repo-shape.ts at its end and git's reason as
@@ -179,6 +180,7 @@
                                 id={`repo:${root}`}
                                 {nav}
                                 level={2}
+                                depth={1}
                                 glyph="repositories"
                                 title={root}
                                 current={root === shown}
@@ -237,6 +239,10 @@
                                                 onclick={() => publish(root, git)}
                                             />
                                         {/if}
+                                    {/if}
+                                {/snippet}
+                                {#snippet after(reach: number)}
+                                    {#if git !== null && readable}
                                         <Menu
                                             label={t('ui.row_menu')}
                                             glyph="more"

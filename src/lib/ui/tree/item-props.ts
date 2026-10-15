@@ -100,6 +100,12 @@ export type TreeItemProps = {
     actions?: Snippet<[number]>;
     /** Draw the controls at full strength whether or not the pointer is over the row. */
     showActions?: boolean;
+    /**
+     * Controls drawn after the count, handed the tabindex they take: a repository row's `...`
+     * menu, which comes after its count of changed paths. They do not give way when the row is
+     * narrow.
+     */
+    after?: Snippet<[number]>;
     /** Drawn at the right edge after the controls: a status letter. */
     end?: Snippet;
     /** What lets the row be dragged within its list, and where a drop on it would land. */

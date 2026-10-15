@@ -2,8 +2,10 @@
     // Layer 3, partial of views/sources/repositories/Repositories.svelte. What is changed in one
     // repository, as the Changes section: Merge Changes while anything is unmerged, then the
     // staged, changed and untracked groups, each a row that opens and closes with its count as a
-    // badge at the right edge, and under each one explorer row per path. An empty merge or staged
-    // group is not drawn, and an empty changed or untracked group says so in one muted row.
+    // badge at the right edge, and under each one explorer row per path. The group heads are drawn
+    // one step in from the section's head and their rows one step further, in list and tree mode,
+    // as VS Code draws a repository's groups under it. An empty merge, staged or untracked group
+    // is not drawn, and an empty changed group keeps its head with no rows.
     //
     // A group's head carries what acts on the whole group, as VS Code's do: Open Changes (the diff
     // pane over every path of the group; the untracked group has none), Unstage All on the staged
@@ -24,7 +26,8 @@
     //
     // A press with Cmd (Ctrl off macOS) held adds the row to a selection or takes it out, a press
     // with Shift held selects the rows from the last one pressed (picking.ts), and the Stage,
-    // Unstage and Discard controls of a selected row act on every selected row of its group.
+    // Unstage and Discard controls of a selected row, and the same writes and Add to .gitignore
+    // picked from its right-click menu, act on every selected row of its group.
     //
     // A group's head opens a right-click menu of what its controls do (menus/change-menu.ts), with
     // Reveal in Explorer View on a file row; the merge group keeps its own controls and has none.
@@ -225,7 +228,7 @@
             </li>
             {#if open && cut.includes(group.id)}
                 <li role="none" data-cut={group.id}>
-                    <TreeItem label={t('git.cut_warning')} tone="warn" depth={1} />
+                    <TreeItem label={t('git.cut_warning')} tone="warn" depth={2} />
                 </li>
             {/if}
             {#if open}
@@ -265,7 +268,7 @@
                                 group={group.id}
                                 {nav}
                                 level={3 + row.depth}
-                                depth={1 + row.depth}
+                                depth={2 + row.depth}
                                 showFolder={mode !== 'tree' || group.id === 'merge'}
                                 {busy}
                                 {ask}
@@ -288,6 +291,7 @@
         id={`group:${group.id}`}
         {nav}
         level={2}
+        depth={1}
         count={group.entries.length}
         badge
         expanded={open}

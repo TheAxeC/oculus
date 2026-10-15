@@ -6,7 +6,7 @@
 // It is state/system/docs.svelte.ts's shape over the reads this endpoint offers, and for the same
 // reason: none of them is in the snapshot, so the first call asks the server and every later call
 // reads what is held. Every answer is held in the client state's query client, under a key that
-// opens with `fs` and the kind of the answer, and state/client/queries.svelte.ts schedules
+// opens with `fs` and the kind of the answer, and state/client/queries/queries.svelte.ts schedules
 // the request on a microtask rather than running it inside the call, so reading this from a
 // $derived never writes state while a derived is running.
 //

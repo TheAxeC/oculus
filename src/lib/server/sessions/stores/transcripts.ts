@@ -38,7 +38,7 @@ import {
 import { isMap } from '../../core/json.ts';
 import { claudeTranscripts, codexRollouts, isRollout } from '../../transcripts/stores.ts';
 import { claudeState, foldClaude } from '../fold.ts';
-import { settleBackground } from './background.ts';
+import { settleAgentFiles, settleBackground } from './background.ts';
 import { distinctFolders } from '../folders.ts';
 import { defaultOverridesPath, hiddenIds } from '../overrides.ts';
 import { liveFrom, mergeLive, registryCandidates, systemProbe, type Probe } from '../registry.ts';
@@ -212,6 +212,7 @@ export function readSession(path: string, store: string | null = null): SessionR
     const now = Date.now();
     const record = finish(acc, stateOf(acc, mtimeMs, now));
     settleBackground(acc, record, mtimeMs, now);
+    settleAgentFiles(acc, record);
     return record;
 }
 
@@ -261,6 +262,7 @@ function session(
     };
     const record = finish(acc, stateOf(acc, found.mtimeMs, now));
     settleBackground(acc, record, found.mtimeMs, now);
+    settleAgentFiles(acc, record);
     return { record, entry, usage: startedByUsage(acc) };
 }
 

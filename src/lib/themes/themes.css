@@ -81,6 +81,10 @@ body.mocha {
     --c-scm-added-bg: #34413e;
     --c-scm-deleted-bg: #442f3f;
     --c-scm-conflict-bg: #3f324c;
+    /* The Source Control Graph's names: Catppuccin Mocha's blue, mauve and peach. */
+    --c-graph-ref: #89b4fa;
+    --c-graph-remote: #cba6f7;
+    --c-graph-base: #fab387;
 }
 
 /* --- Gruvbox dark -------------------------------------------------------- */
@@ -128,6 +132,10 @@ body.gruvbox {
     --c-scm-added-bg: #3c3f22;
     --c-scm-deleted-bg: #492825;
     --c-scm-conflict-bg: #413439;
+    /* The Source Control Graph's names: Gruvbox's blue, purple and bright orange. */
+    --c-graph-ref: #458588;
+    --c-graph-remote: #b16286;
+    --c-graph-base: #fe8019;
 }
 
 /* --- Nord ---------------------------------------------------------------- */
@@ -175,6 +183,11 @@ body.nord {
     --c-scm-added-bg: #45504f;
     --c-scm-deleted-bg: #4b3d48;
     --c-scm-conflict-bg: #494656;
+    /* The Source Control Graph's names: Nord's frost blue (nord10), a muted purple and the aurora
+       orange (nord12). */
+    --c-graph-ref: #5e81ac;
+    --c-graph-remote: #a37b9c;
+    --c-graph-base: #d08770;
 }
 
 /* --- Tokyo Night (folke/tokyonight.nvim) --------------------------------- */
@@ -230,6 +243,10 @@ body.tokyonight {
     --c-scm-added-bg: #313b2d;
     --c-scm-deleted-bg: #432934;
     --c-scm-conflict-bg: #373049;
+    /* The Source Control Graph's names: Tokyo Night's blue, magenta and orange. */
+    --c-graph-ref: #7aa2f7;
+    --c-graph-remote: #bb9af7;
+    --c-graph-base: #ff9e64;
 }
 
 /* --- Rose Pine (rosepinetheme.com) --------------------------------------- */
@@ -285,6 +302,11 @@ body.rosepine {
     --c-scm-added-bg: #333c48;
     --c-scm-deleted-bg: #43293a;
     --c-scm-conflict-bg: #43293a;
+    /* The Source Control Graph's names: Rose Pine's pine, iris and rose, a teal, a purple and a
+       pale pink, since Rose Pine has no blue or orange. */
+    --c-graph-ref: #31748f;
+    --c-graph-remote: #c4a7e7;
+    --c-graph-base: #ebbcba;
 }
 
 /* --- Everforest (sainnhe/everforest) ------------------------------------- */
@@ -340,6 +362,10 @@ body.everforest {
     --c-scm-added-bg: #414b42;
     --c-scm-deleted-bg: #4d3e42;
     --c-scm-conflict-bg: #4a434d;
+    /* The Source Control Graph's names: Everforest's blue, purple and orange. */
+    --c-graph-ref: #7fbbb3;
+    --c-graph-remote: #d699b6;
+    --c-graph-base: #e69875;
 }
 
 /* --- Dracula (draculatheme.com) ------------------------------------------ */
@@ -395,6 +421,11 @@ body.dracula {
     --c-scm-added-bg: #2a4d3c;
     --c-scm-deleted-bg: #4d2c34;
     --c-scm-conflict-bg: #4d334b;
+    /* The Source Control Graph's names: Dracula's comment colour (its one blue), purple and
+       orange. */
+    --c-graph-ref: #6272a4;
+    --c-graph-remote: #bd93f9;
+    --c-graph-base: #ffb86c;
 }
 
 /* --- Latte (light) (catppuccin.com) -------------------------------------- */
@@ -449,6 +480,10 @@ body.latte {
     --c-scm-added-bg: #cce1cd;
     --c-scm-deleted-bg: #e9c4cf;
     --c-scm-conflict-bg: #eed8ed;
+    /* The Source Control Graph's names: Catppuccin Latte's blue, mauve and peach. */
+    --c-graph-ref: #1e66f5;
+    --c-graph-remote: #8839ef;
+    --c-graph-base: #fe640b;
 }
 
 /* --- Solarized (ethanschoonover.com/solarized) --------------------------- */
@@ -504,6 +539,10 @@ body.solarized {
     --c-scm-added-bg: #1b412b;
     --c-scm-deleted-bg: #2c2c35;
     --c-scm-conflict-bg: #2a2d45;
+    /* The Source Control Graph's names: Solarized's blue, violet and orange. */
+    --c-graph-ref: #268bd2;
+    --c-graph-remote: #6c71c4;
+    --c-graph-base: #cb4b16;
 }
 
 /* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
@@ -559,6 +598,10 @@ body.kanagawa {
     --c-scm-added-bg: #373e36;
     --c-scm-deleted-bg: #40262d;
     --c-scm-conflict-bg: #43323f;
+    /* The Source Control Graph's names: Kanagawa's crystal blue, oni violet and surimi orange. */
+    --c-graph-ref: #7e9cd8;
+    --c-graph-remote: #957fb8;
+    --c-graph-base: #ffa066;
 }
 
 /* --- Gruvbox Light (morhetz/gruvbox) ------------------------------------- */
@@ -613,6 +656,10 @@ body.gruvboxlight {
     --c-scm-added-bg: #dfdbaf;
     --c-scm-deleted-bg: #e7c4ad;
     --c-scm-conflict-bg: #e4d1c3;
+    /* The Source Control Graph's names: Gruvbox Light's faded blue, purple and orange. */
+    --c-graph-ref: #076678;
+    --c-graph-remote: #8f3f71;
+    --c-graph-base: #af3a03;
 }
 
 /* --- Synthwave '84 (robb0wen/synthwave-vscode) - neon, pairs with the CRT overlay --- */
@@ -668,6 +715,10 @@ body.synthwave {
     --c-scm-added-bg: #34464a;
     --c-scm-deleted-bg: #502336;
     --c-scm-conflict-bg: #502f51;
+    /* The Source Control Graph's names: Synthwave '84's cyan, a purple and its orange. */
+    --c-graph-ref: #03edf9;
+    --c-graph-remote: #b381c5;
+    --c-graph-base: #ff8b39;
 }
 
 /* --- Tokyo Neon (folke/tokyonight.nvim, neon) - neon, pairs with the CRT overlay --- */
@@ -723,6 +774,10 @@ body.tokyoneon {
     --c-scm-added-bg: #333a2f;
     --c-scm-deleted-bg: #3f0c2b;
     --c-scm-conflict-bg: #3f0c2b;
+    /* The Source Control Graph's names: Tokyo Night Moon's blue, magenta and orange. */
+    --c-graph-ref: #82aaff;
+    --c-graph-remote: #c099ff;
+    --c-graph-base: #ff966c;
 }
 
 /* --- Rice: the shape the thirteen terminal palettes share ---------------- */

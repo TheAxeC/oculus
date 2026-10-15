@@ -2,17 +2,17 @@
 // drawn in the view catalogue and on pane tabs.
 // The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
 
-import { scalar, isMap, numericSetting } from '../../data/helpers/guards.ts';
-import type { EntitiesStore } from '../shared/stores/shapes.ts';
-import type { FeedsStore, FeedState } from '../feeds/feeds.svelte.ts';
-import type { AuditStore } from '../system/audit.svelte.ts';
-import type { ProblemsStore } from '../system/problems.svelte.ts';
-import type { CalendarStore } from '../life/calendar.svelte.ts';
-import type { HpcStore } from '../system/machine/hpc/hpc.svelte.ts';
-import type { InboxStore } from '../feeds/inbox.svelte.ts';
-import { splitPosts } from '../feeds/linkedin.ts';
-import { t } from '../shared/words/text.ts';
-import { statusTone, toneOf, UNKNOWN_TONE } from '../shared/words/tones.ts';
+import { scalar, isMap, numericSetting } from '../../../data/helpers/guards.ts';
+import type { EntitiesStore } from '../../shared/stores/shapes.ts';
+import type { FeedsStore, FeedState } from '../../feeds/feeds.svelte.ts';
+import type { AuditStore } from '../../system/audit.svelte.ts';
+import type { ProblemsStore } from '../../system/problems.svelte.ts';
+import type { CalendarStore } from '../../life/calendar.svelte.ts';
+import type { HpcStore } from '../../system/machine/hpc/hpc.svelte.ts';
+import type { InboxStore } from '../../feeds/inbox.svelte.ts';
+import { splitPosts } from '../../feeds/linkedin.ts';
+import { t } from '../../shared/words/text.ts';
+import { statusTone, toneOf, UNKNOWN_TONE } from '../../shared/words/tones.ts';
 import {
     countText,
     leadsDue,
@@ -22,8 +22,8 @@ import {
     rollup,
     typeSplit
 } from './rail-badges.ts';
-import type { BoardItem, BoardPreset } from '../boards/board/index.ts';
-import type { Collection, GitState } from '../../data/model/index.ts';
+import type { BoardItem, BoardPreset } from '../../boards/board/index.ts';
+import type { Collection, GitState } from '../../../data/model/index.ts';
 
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };

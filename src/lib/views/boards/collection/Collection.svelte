@@ -1,9 +1,9 @@
 <script module lang="ts">
     // Layer 3, view registration. The generic collection component owns each configured
     // collection's place in the catalogue, which is the rail page it sits on: the Academic Life
-    // page's six, the Incoming page's Literature after the Literature search, and the References
-    // page's for Statements, People, Organisations, Resources and a collection sources.yml adds
-    // that no placement names.
+    // page's six, the Literature page's Literature after the Literature search and Lit Watch, and
+    // the Registries page's for Statements, People, Organisations, Resources and a collection
+    // sources.yml adds that no placement names.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const placements: Record<string, { group: string; order: number }> = {
@@ -13,17 +13,17 @@
         applications: { group: 'academic', order: 3 },
         'joint-work': { group: 'academic', order: 4 },
         tasks: { group: 'academic', order: 5 },
-        literature: { group: 'incoming', order: 6 },
-        statements: { group: 'references', order: 3 },
-        people: { group: 'references', order: 4 },
-        organisations: { group: 'references', order: 5 },
-        resources: { group: 'references', order: 6 }
+        literature: { group: 'literature', order: 2 },
+        statements: { group: 'registries', order: 3 },
+        people: { group: 'registries', order: 4 },
+        organisations: { group: 'registries', order: 5 },
+        resources: { group: 'registries', order: 6 }
     };
 
     export const registration = (keys: string[]): ViewRegistration[] =>
         keys.map((id, index) => {
             const applications = id === 'applications';
-            const place = placements[id] ?? { group: 'references', order: 100 + index };
+            const place = placements[id] ?? { group: 'registries', order: 100 + index };
             return {
                 id,
                 label: `views.${id}`,

@@ -3,16 +3,22 @@
 // alone and a hub that is not the primary and sets it is a problem naming the hub and the key; the
 // three account lists are the rows of every hub's file in folder order, each row marked with its
 // hub, a label two files both give is a problem that leaves the later row out, and the default
-// accounts stand once when no file sets any. A key the reader does not know is ignored and warned
-// of. Every hub is a scratch folder under the system temporary directory.
+// accounts stand once when no file sets any. `commit_message_account` is a key of the primary's
+// file whose label is checked against the Claude rows joined from every hub, compared reduced: a
+// label no such row holds is a finding naming the key, with no value of the file in it, and no
+// account is used. A key the reader does not know is ignored and warned of. Every hub is a scratch
+// folder under the system temporary directory.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
     DEFAULT_PORT,
+    engineDir,
+    loadConfig,
     localDefaults,
     localFile,
+    localFindings,
     readMachine
 } from '../../../../src/lib/data/sources/config.ts';
 import { readLocal } from '../../../../src/lib/data/sources/config/local.ts';
@@ -110,6 +116,76 @@ describe('the account lists', () => {
         expect(read.config.accounts.every((one) => one.hub === undefined)).toBe(true);
         expect(read.problems.filter((one) => one.problem.key === 'accounts')).toEqual([]);
     });
+});
+
+describe('commit_message_account', () => {
+    const config = loadConfig(engineDir()).config;
+    const work = 'accounts:\n  - { tool: claude, dir: /w, label: Work }\n';
+    const codex = 'accounts:\n  - { tool: codex, dir: /c, label: nobody-codex }\n';
+
+    it.each([
+        {
+            name: "a label of a Claude row in the second hub's accounts",
+            primary: 'commit_message_account: work\n',
+            second: work,
+            account: 'work',
+            problems: []
+        },
+        {
+            name: 'a label no row holds',
+            primary: 'commit_message_account: nobody\n',
+            second: work,
+            account: undefined,
+            problems: [['first', 'commit_message_account', 'label']]
+        },
+        {
+            name: 'the label of a Codex row',
+            primary: 'commit_message_account: nobody-codex\n',
+            second: codex,
+            account: undefined,
+            problems: [['first', 'commit_message_account', 'label']]
+        },
+        {
+            name: "the default's label when the primary's accounts hold no Claude row",
+            primary: `commit_message_account: claude\n${codex}`,
+            second: null,
+            account: undefined,
+            problems: [['first', 'commit_message_account', 'label']]
+        },
+        {
+            name: "a value in the second hub's file alone",
+            primary: work,
+            second: 'commit_message_account: work\n',
+            account: undefined,
+            problems: [['second', 'commit_message_account', 'other-hub']]
+        }
+    ])(
+        'takes $name as the run account or as a finding',
+        ({ primary, second, account, problems }) => {
+            const hubs = { first: hubWith(primary), second: hubWith(second) };
+            const read = readMachine(
+                [
+                    { name: 'first', dir: hubs.first },
+                    { name: 'second', dir: hubs.second }
+                ],
+                'first'
+            );
+            expect(read.config.commitMessageAccount).toBe(account);
+            expect(
+                read.problems.map(({ file, problem }) => [
+                    file === localFile(hubs.first) ? 'first' : 'second',
+                    problem.key,
+                    problem.kind
+                ])
+            ).toEqual(problems);
+            for (const finding of localFindings(config, read.problems)) {
+                expect(finding.message).toContain('commit_message_account');
+                for (const value of ['nobody', 'work']) {
+                    expect(finding.message.toLowerCase()).not.toContain(value);
+                }
+            }
+        }
+    );
 });
 
 describe('a key the reader does not know', () => {

@@ -297,12 +297,13 @@ export function floatMenu(
  * File; the four splits of the active tab and Float, while the pane of a page holds a tab; Lock
  * Group or Unlock Group, on the pane of a page or of a float; the Tab Bar and Editor Actions
  * Position submenus, each marking the setting in force with a check, the first place named Tab
- * Bar, or Title Bar while the tab bar is not drawn; Close, while the page holds more than one
- * pane; and New Terminal. The pane of a float (`float`, its place) has the float's items in place
- * of the splits and always offers Close, which closes the float. With the editor actions hidden the
- * pane menu's `...` button is not drawn, so the menu also holds the pane menu's items that it has
- * none of its own for (`paneItems`, the pane menu as the pane draws it), and Close is always
- * offered, as the pane menu offers it.
+ * Bar, or Title Bar while the tab bar is not drawn, when the window's title bar strip draws the
+ * actions (shell/titlebar/); Close, while the page holds more than one pane; and New Terminal. The
+ * pane of a float (`float`, its place) has the float's items in place of the splits and always
+ * offers Close, which closes the float. With the editor actions hidden the pane menu's `...` button
+ * is not drawn, so the menu also holds the pane menu's items that it has none of its own for
+ * (`paneItems`, the pane menu as the pane draws it), and Close is always offered, as the pane menu
+ * offers it.
  */
 export function stripMenu(
     facts: {

@@ -91,8 +91,14 @@ const graphCommitShape = unchanged(
     })
 ) satisfies z.ZodType<GitGraphCommit>;
 
+/** The span either side of the upstream: three commits, each a full hash. */
+const graphRangeShape = unchanged(
+    z.object({ base: z.string(), incoming: z.string(), outgoing: z.string() })
+);
+
 /**
- * One page of the graph: its commits, the commits either side of the upstream, and the rest. A page
+ * One page of the graph: its commits, the commits either side of the upstream and their span, and
+ * the rest. A page
  * whose every commit passes is answered as it came; a page with a commit that fails is answered as
  * a new page of the commits that pass.
  */
@@ -103,6 +109,7 @@ const graphPageShape = z.union([
             more: z.boolean(),
             incoming: z.array(graphCommitShape),
             outgoing: z.array(graphCommitShape),
+            range: graphRangeShape.optional(),
             base: z.string().optional()
         })
     ),
@@ -111,6 +118,7 @@ const graphPageShape = z.union([
         more: z.boolean(),
         incoming: survivorsShape(graphCommitShape),
         outgoing: survivorsShape(graphCommitShape),
+        range: graphRangeShape.optional(),
         base: z.string().optional()
     })
 ]) satisfies z.ZodType<GitGraphPage>;

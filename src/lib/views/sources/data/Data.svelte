@@ -1,11 +1,11 @@
 <script module lang="ts">
-    // Layer 3, view registration. Data follows Venues in the References page's group.
+    // Layer 3, view registration. Data follows Venues in the Registries page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'data',
         label: 'views.data',
         glyph: 'views.data_glyph',
-        group: 'references',
+        group: 'registries',
         order: 1
     };
 </script>

@@ -1,14 +1,14 @@
 <script module lang="ts">
-    // Layer 3, view registration. The photo wall is the last tab of the Help page, after Help, the
-    // hub's documents and the Apps guide, and follows Help in the Help page's group.
+    // Layer 3, view registration. The photo wall is the last tab of the Academic Life page, after
+    // its six collections, and the last view of its group, so it is `c` then `7`.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     export const registration: ViewRegistration = {
         id: 'memories',
         label: 'views.memories',
         glyph: 'views.memories_glyph',
-        group: 'help',
-        order: 1
+        group: 'academic',
+        order: 6
     };
 </script>
 

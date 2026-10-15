@@ -6,6 +6,7 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 ## To take
 
+- D77: the Sessions page's parts, not looked at at the landing since a look never presses the Sessions rail: Pin listing every project of every hub grouped by hub, an agent row opening the agent's own transcript, the composer's New worktree keeping an unlisted folder, the Session details at the smaller text size, and the Transcript view not flickering on a running session. Also the window buttons off macOS taking the strip's colours, which needs the app on Windows or Linux.
 - Q81: a dialog over the update tray taking the first Escape. Taken by Axel 2026-10-13 on his own page (the `tasks.skip_permissions` Confirm is gone with that retired setting; the schedule dialog checked in its place): Update opens the tray, Schedule... opens the schedule dialog over it, the first Escape closes the dialog and leaves the tray open, the second closes the tray and gives the focus back to Update. Passed.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)

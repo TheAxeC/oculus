@@ -77,6 +77,16 @@
     --c-scm-added-bg: #c5e5d6;
     --c-scm-deleted-bg: #edcccf;
     --c-scm-conflict-bg: #e1caea;
+    /* The Source Control Graph's names in the three colours VS Code draws them in: the reference
+       colour (the checked-out branch and every local branch), the remote reference colour (a
+       remote branch) and the base reference colour (the upstream's base). These are the light and
+       dark themes' blue, purple and orange; every palette block of themes.css sets its own three,
+       and the converter sets them for the VS Code themes from the theme's `scmGraph.*` keys, else
+       VS Code's defaults, its charts' blue and purple and, for the base colour, VS Code's fixed
+       orange. Palette entries, so derive.ts mints the ink a pill's words take on each fill. */
+    --c-graph-ref: #2563eb;
+    --c-graph-remote: #7c3aed;
+    --c-graph-base: #ea580c;
     /* The colours of a file's Seti icon, one per colour name seti-ui's table uses, each the value
        seti-ui's ui-variables.less gives it. They are the same in every theme, as VS Code's Seti
        colours are. ui/display/FileIcon.svelte reads the token named for a file's colour. */
@@ -118,6 +128,17 @@
     --status-text: 12px;
     /* The status bar's icon, the size VS Code draws a codicon in its status bar at. */
     --status-icon: 14px;
+    /* The window's title bar strip (shell/titlebar/): VS Code's title bar height, fixed as the
+       status bar's is, since the desktop app places the window buttons in it at that height
+       (src/desktop/decide/window-options.ts, TITLEBAR_HEIGHT); the room either end and between two
+       groups; the width of the middle, VS Code's Command Center's; and the room the window
+       buttons of macOS take at its left: the buttons' place and width, and to their right as much
+       room again as lies to their left. */
+    --titlebar-height: 35px;
+    --titlebar-pad: 6px;
+    --titlebar-gap: 8px;
+    --titlebar-center-width: 38vw;
+    --titlebar-buttons: 78px;
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
     --font-num: var(--font-mono); /* counts, dates, ids - mono in every theme */
@@ -256,6 +277,18 @@ body {
    theme that sets `--c-orange` on its class is taken and not the default one. */
 body {
     --float-border: var(--c-orange);
+}
+
+/* The window's title bar strip (shell/titlebar/TitleBar.svelte): its surface `--titlebar-bg`, its
+   words `--titlebar-txt` and its bottom line `--titlebar-line`. By default they are the window
+   chrome's, the surface the rail and the status bar are drawn on; a theme block may set its own,
+   and the converter sets all three for the VS Code themes from VS Code's title bar keys. Declared
+   on body for the same reason as above, so a theme that sets `--bg` or `--line` on its class is
+   taken. The words have no default here: their default is the derived ink, which derive.ts sets
+   on the root element and no sheet names, so TitleBar.svelte falls back to it. */
+body {
+    --titlebar-bg: var(--bg);
+    --titlebar-line: var(--line);
 }
 
 /* A link is underlined under the pointer and with the focus, and not at rest, as VS Code draws a

@@ -13,6 +13,13 @@
 // alpha is composited over `--panel`. The tab label colours that fall under 4.5:1 on the strip or
 // the shown tab are nudged in lightness by derive.ts's `readable`, as are the foreground of each
 // rule on `--panel` and on the Source Control tints.
+//
+// Besides the chrome, the Source Control, the tab and the code tokens, a block sets the window's
+// title bar strip from VS Code's title bar keys (`--titlebar-bg`, `--titlebar-txt`, whose words
+// are nudged to 4.5:1 on the strip, and `--titlebar-line`, transparent when VS Code draws no
+// border) and the Source Control Graph's name colours from its `scmGraph.*` keys
+// (`--c-graph-ref`, `--c-graph-remote`, `--c-graph-base`), all with VS Code's registered defaults
+// when the theme holds none.
 
 import { ratio, readable } from './derive.ts';
 import { parseBlocks } from './parse.ts';
@@ -148,7 +155,13 @@ const WORKBENCH: Record<string, TypeDefaults> = {
         fade('#ff0000', 0.2),
         null,
         null
-    )
+    ),
+    'titleBar.activeBackground': table('#3C3C3C', '#DDDDDD', '#000000', '#FFFFFF'),
+    'titleBar.activeForeground': table('#CCCCCC', '#333333', '#FFFFFF', '#292929'),
+    'titleBar.border': table(null, null, via('contrastBorder'), via('contrastBorder')),
+    'scmGraph.historyItemRefColor': table('#59a4f9', '#0063d3', '#59a4f9', '#0063d3'),
+    'scmGraph.historyItemRemoteRefColor': table('#B180D7', '#652D90', '#B180D7', '#652D90'),
+    'scmGraph.historyItemBaseRefColor': table('#EA5C00', '#EA5C00', '#EA5C00', '#EA5C00')
 };
 
 /** The scopes each code hue is read from, in list order. */
@@ -171,6 +184,27 @@ const SCM_KEYS: [string, string][] = [
     ['--c-scm-added-bg', 'diffEditor.insertedLineBackground'],
     ['--c-scm-deleted-bg', 'diffEditor.removedLineBackground']
 ];
+
+/**
+ * The Source Control Graph's three name colours and the keys each is read from. VS Code registers
+ * the reference colour as `charts.blue`, itself `editorInfo.foreground`, and the remote reference
+ * colour as `charts.purple`, so a theme that sets one of those colours its graph with it; the base
+ * reference colour is a fixed orange.
+ */
+const GRAPH_KEYS: [string, string[]][] = [
+    ['--c-graph-ref', ['scmGraph.historyItemRefColor', 'charts.blue', 'editorInfo.foreground']],
+    ['--c-graph-remote', ['scmGraph.historyItemRemoteRefColor', 'charts.purple']],
+    ['--c-graph-base', ['scmGraph.historyItemBaseRefColor']]
+];
+
+/**
+ * The window's title bar strip: its surface, its words and its bottom line, each from the theme's
+ * key or VS Code's registered default. A line with no colour is drawn transparent, as VS Code
+ * draws no title bar border then.
+ */
+const STRIP_BG: [string, string] = ['--titlebar-bg', 'titleBar.activeBackground'];
+const STRIP_TXT: [string, string] = ['--titlebar-txt', 'titleBar.activeForeground'];
+const STRIP_LINE: [string, string] = ['--titlebar-line', 'titleBar.border'];
 
 /** The surfaces a tab label lands on, and the tints the editor draws code over. */
 const TAB_SURFACES = ['--bg', '--panel'];
@@ -416,6 +450,9 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
     const accentKeys = ['focusBorder', 'button.background', 'activityBarBadge.background'];
     pick('--accent', highContrast ? ['contrastActiveBorder', ...accentKeys] : accentKeys);
     for (const [token, key] of SCM_KEYS) pick(token, [key]);
+    for (const [token, keys] of GRAPH_KEYS) pick(token, keys);
+    for (const [token, key] of [STRIP_BG, STRIP_TXT, STRIP_LINE]) pick(token, [key]);
+    tokens[STRIP_LINE[0]] ??= 'transparent';
     for (const [name, scopes] of CODE_SCOPES) {
         const colour = codeColour(theme, scopes);
         if (colour !== null) tokens[`--c-code-${name}`] = settle(colour, over());
@@ -459,6 +496,18 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
         }
     }
 
+    // The strip's words are nudged on the strip alone, the one surface they are drawn on.
+    const [stripTxt, stripKey] = STRIP_TXT;
+    const stripGiven = tokens[stripTxt];
+    tokens[stripTxt] = clear(stripGiven, [tokens[STRIP_BG[0]]]);
+    if (tokens[stripTxt] !== stripGiven) {
+        nudged.push(`${stripTxt} from ${stripGiven} (${stripKey})`);
+    }
+    const stripRatio = ratio(tokens[stripTxt], tokens[STRIP_BG[0]]);
+    if (stripRatio < MINIMUM) {
+        unreadable.push(`${stripTxt} clears only ${stripRatio.toFixed(2)}:1`);
+    }
+
     const order = [
         '--bg',
         '--panel',
@@ -471,7 +520,11 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
         ...(dark ? DARK_TINTS : []),
         ...SCM_KEYS.map(([token]) => token),
         '--c-scm-conflict-bg',
+        ...GRAPH_KEYS.map(([token]) => token),
         ...TAB_KEYS.map(([token]) => token),
+        STRIP_BG[0],
+        STRIP_TXT[0],
+        STRIP_LINE[0],
         ...CODE_SCOPES.map(([name]) => `--c-code-${name}`)
     ];
     const entries: [string, string][] = [];

@@ -16,6 +16,16 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - The app adds: windows that remember their place, floats that become windows, a native folder panel, a find bar, spelling suggestions, and the keys marked "in the app" under [The keys](#the-keys).
 - In the app a link to another site opens in the default browser, and the presenter screen opens the audience window on another display when there is one.
 
+### The title bar
+
+- A strip runs across the top of the window, in the app and in a browser. Left: Go Back and Go Forward. Middle: the Command Center, the open workspace's name (with its hub's name in front when the two differ); a press opens the palette, as Cmd+K does. Right: the three dock toggles.
+- The Command Center is the strip's button that opens the palette. The Focus board's "Command center" is a different thing: the board's panel of what wants attention.
+- Go Back and Go Forward walk the tabs you made active, on any page, pane or float, and in a source tab the places you jumped to (Go to Definition, a search result, a problem) and caret moves of more than 10 lines. Back or Forward to a closed tab opens it again in the page, pane or float it was closed from, at its place among the tabs there, while that page and pane are still there; otherwise it opens in the pane you are in on the page on screen. A step whose file is gone is skipped. Each window keeps its own last fifty steps until it reloads, and a button is disabled at either end. The keys are under [The keys](#the-keys); the palette has `:go-back` and `:go-forward`.
+- Toggle Left Dock, Toggle Bottom Dock and Toggle Right Dock hide or show the float docked at that edge. A toggle is drawn pressed while its float shows and disabled when no float is docked there. Docking a float at a hidden edge, by drag or from a menu, or opening a view in its float, shows the edge again. Which edges are hidden is saved with the layout. The palette has `:toggle-left-dock`, `:toggle-bottom-dock` and `:toggle-right-dock`.
+- With `show_tabs: none` and `editor_actions: strip` in `appearance.yml`, the active pane's Split Right and `...` stand in the strip, before the toggles, and no pane draws them in its own head; the strip's right-click menu names that place Title Bar. With a tab bar drawn they stay in the pane's tab bar.
+- In the app the window has no title bar of the system's: the strip moves the window, the window buttons sit at its left on macOS and over its right end elsewhere, where they take the strip's colours of the theme on screen (no room is kept for them in full screen, where macOS hides them), and a double press on its empty part does what macOS's "Double-click a window's title bar to" setting says: zoom, minimise or nothing. The find bar opens under the strip.
+- A float's window has the same strip, with the name of the float's tab in the middle and no toggles; its Back and Forward walk that window's own steps.
+
 ### The rail
 
 - One button per entry of `rail:` in `config/layout.yml`: `{ label, glyph, page }`, where `page` names an arrangement under `arrangements:`.
@@ -23,7 +33,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - Drag a button to move it. Right-click it (or Shift+F10) to hide it, reset its page, or open the rail list in Settings. History undoes a move or a hide. Reset asks first.
 - Every view sits on one rail page, or in the float (Live HPC, Usage, Workbenches). The Views catalogue lists them by group; `nav_groups` and `docs` set the groups, their order and their letters.
 - A click on a catalogue entry opens the view on the page you came from. A view that is already open somewhere is shown where it is. Shift-click opens it in a new pane to the right. The right-click menu has Open on this page and Open beside on this page.
-- The Help page holds this manual, the Apps guide, the Templates and Palette pages, the Memories wall, and the hub's documents (each `docs:` entry with `group: help`). A `docs:` entry whose `group` is another page's key becomes a tab of that page.
+- The Help page holds this manual, the Apps guide, the Templates and Palette pages, and the hub's documents (each `docs:` entry with `group: help`). A `docs:` entry whose `group` is another page's key becomes a tab of that page.
 - A tab you closed stays closed; a document added to `docs:` later is added once. Reset puts every document back.
 - Bookmarks, at the foot of the rail, lists `.oculus/bookmarks.yml` of the primary hub. A file bookmark opens the file; a folder bookmark shows it in Files.
 
@@ -39,7 +49,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - A view opened for something (a project, a person, an entry, a document, a file, a diff) never covers the tool views. It lands, in this order: in a workbench's documents pane; in the pane that took the last such tab; in the pane you are in, if it holds such tabs; in an empty documents pane; in a new pane split off to the right.
 - A pane from the arrangement stays, empty, when its last tab closes; a pane you split off closes with its last tab. Lock Group (pane right-click) makes a pane take no tab opened from elsewhere.
 - The tabs a page starts with are pinned. Cmd+W on a pinned tab closes nothing; Close in its menu does. Pin and unpin from the tab's menu, Pin Editor in the palette, or by dragging into the pinned tabs.
-- Reopen Closed Tab (Cmd+Shift+T in the app, `:reopen-closed-tab` in the palette) reopens the tabs the last close closed. The window keeps twenty until it reloads.
+- Reopen Closed Tab (Cmd+Shift+T in the app, `:reopen-closed-tab` in the palette) reopens the tabs the last close closed, in the pane you are in on the page on screen. The window keeps twenty until it reloads.
 - A new tab opens right after the active one; closing the shown tab shows the one shown before it.
 - `show_tabs` (`multiple`, `single`, `none`), `editor_actions` (`strip`, `hidden`) and `wrap_tabs` in `appearance.yml` set the tab strip; they are also in Settings and in the strip's right-click menu.
 - New Text File (right-click on a strip's empty part) opens an untitled text. Its first Save asks for a folder and a name.
@@ -98,12 +108,13 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 | Ctrl+Tab / Ctrl+Shift+Tab | next / previous tab (in the app) |
 | Cmd+W | close the active tab, asking over unsaved text; on a pinned tab, show the first unpinned one (in the app) |
 | Cmd+Shift+T | reopen the tabs closed last (in the app) |
+| Ctrl+- / Ctrl+Shift+- | go back / forward through the tabs and places visited; off macOS back is Ctrl+Alt+- (in a terminal the program gets them) |
 | Cmd+N; Cmd+Shift+N / Cmd+Shift+W; Cmd+,; Cmd+R | new text file; new window / close window; settings; reload (in the app) |
 | Tab / Shift+Tab | move between controls; in an editor Tab indents, and Escape then Tab moves on |
 | arrows, Home / End | along the rail or a tab strip |
 | arrows, Home / End, a letter | in a tree: move a row, open or close a folder, first / last row, next row starting with that letter; Shift extends; Cmd+A selects every row |
 | Delete | close the focused tab (not a pinned one) |
-| f1, m1-m5, p1-p4, e1-e6, s1-s8, c1-c6, l1-l3, r1-r4, t1, y1-y9 | open a view of a group (f Focus, m Sessions, p Projects, e Incoming, s Explorer, c Academic Life, l Pillars, r References, t Present, y System) |
+| f1, m1-m5, p1-p4, e1-e4, s1-s8, c1-c7, l1-l3, r1-r6, b1-b3, t1, y1-y9 | open a view of a group (f Focus, m Sessions, p Projects, e Incoming, s Explorer, c Academic Life, l Pillars, r Registries, b Literature, t Present, y System) |
 | w1-w3 | Live HPC, Usage, Workbenches |
 | a1-a9 | the Apps view, then the apps |
 | h1-h9 | the Help page's tabs |
@@ -195,7 +206,7 @@ Off macOS, Cmd is Ctrl.
 | `education` | Education & Service | Teaching and service. |
 | `applications` | Applications | Position applications. |
 | `joint-work` | Joint work | Work with one person each. |
-| `tasks` | Tasks & Service | Tasks. |
+| `tasks` | Tasks | Tasks. |
 | `present` | Present | A deck, with overview, full screen, presenter screen and PDF export. |
 | `radar` | Lit Watch | The literature radar. |
 | `literature-search` | Literature search | One query to OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC and arXiv, and Web of Science and Scopus with keys. |
@@ -253,7 +264,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - **Position Leads.** `applied` opens a new Applications entry filled from the lead and marks the lead applied. `decline` marks it declined; reopen undoes that.
 - **Inbox.** Send and Archive are the only writes to a mailbox, each after a confirmation. No draft is made at the provider.
 - **LinkedIn.** One file per post in `linkedin_dir`. Add asks for a title and a category and opens the new file.
-- **Session.** Details, Changes (the git state of the session's folder) and Agents (its subagents).
+- **Session.** Details, Changes (the git state of the session's folder) and Agents (its subagents). Pin in Details offers the areas first and then every project of every hub of the workspace, grouped by hub, whether a session touched it or not. A press on an agent row opens that agent's own transcript in a Transcript tab; a row whose transcript cannot be read opens nothing and says why in its tooltip: "This agent's own transcript is not available."
 - **Live HPC.** The cluster is `slurm.resource` of the hub's `config.yml`; the host is `hpc_host` of `local.yml`, else the cluster entry's `host`. It runs `squeue`, `sacct` and `sinfo` over ssh every `slurm.poll_min` minutes. Submit Job (on a `.slurm` file) shows its plan (folders, rsync arguments, the `sbatch` command) before it runs, and warns when the script does not use `/local/$SLURM_JOB_ID`. It never uses rsync `--delete`. Cancel runs `scancel`.
 - **Processes.** Lists terminals, processes matching `processes.patterns`, and app hosts. Stop asks first.
 - **Usage.** Refreshed every `usage_refresh_min` minutes.
@@ -358,6 +369,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 ## Terminals
 
 - A Terminal tab holds terminals running Claude, Codex or a shell, in tmux, so they survive a server restart. A new tab shows the composer: workspace, agent, account, options, first prompt.
+- New worktree, beside the composer's branch, is offered for a folder inside a repository Source Control watches. Type a name: Start makes `<root>/.agents/worktrees/<name>` on a new branch, as Source Control's New worktree does, then starts Claude, Codex or the shell there, in the same subfolder (a project's folder starts in that project's folder of the new worktree). Esc or a second press takes the choice back. A refused name or write starts nothing; a worktree made whose start failed stays picked, so Start again starts there. After a start the folder list offers both the new worktree's folder and the folder the composer was opened in, even when no place lists either.
 - An option that makes the agent ask less (Accept edits, Auto, Bypass permissions, Full access) asks first, every time. A value of `catalogs/agents.yml` with `confirm: true` asks too.
 - A start from a hub task (a task's `agent` button, Start Agent) opens the composer in the task's folder with the task as prompt. The task's text runs only after Approve and Start, kept in `~/.oculus/approvals.json`; a changed text asks again.
 - Once an agent runs, the steer box sends more text and Stop interrupts.
@@ -417,15 +429,16 @@ configurations:
 
 - Repositories lists the repositories of the workspace: its folders, the repositories below them down to `repository_scan_depth` levels (1 by default, at most 3), and cloned projects. An agent's worktree is listed under its repository's Worktrees.
 - A commit made in a terminal shows within two seconds.
-- Stage, Unstage and Discard act on the selected rows. Every write runs from a press; discarding work, reaching a remote and committing ask first (not Fetch).
+- Cmd+press and Shift+press select rows of a group. Stage, Unstage and Discard on a selected row, from its controls or its right-click menu, act on every selected row of the group, and so does Add to .gitignore from the menu; Discard asks once, naming how many. On a row outside the selection they act on that row, and the menu's open items open the row pressed. Every write runs from a press; discarding work, reaching a remote and committing ask first (not Fetch).
 - These are fixed: Pull is plain `git pull`; Sync pulls then pushes; Fetch prunes; signing follows `commit.gpgsign`; a commit needs a configured name and email; Stage All never stages new files. Nothing force-pushes except a deposit's snapshot.
 - `git.autofetch_minutes` fetches on a timer; 0 (default) never.
 - The commit box keeps one message per repository. With nothing staged it becomes Sync Changes or Publish Branch. The button in the field writes a message from the staged diff.
-- Hooks run; Cancel stops a running write. Other git commands time out after 10 seconds (60 for Fetch).
+- Hooks run. A write that runs them, and Stage All on Untracked, whose time grows with the files it stages, has no time limit; Cancel stops a running write. Other git commands time out after 10 seconds (60 for Fetch).
 - A changed row opens its diff, side by side or inline. Blocks have Stage Block, Revert Block (asks) and Unstage Block; a line selection narrows them.
 - A merge, pull or stash that stops on conflicts lists them under Merge Changes. The merge editor writes the Result; Complete Merge stages it.
 - Stash, Stash (Include Untracked), Stash Staged; Apply, Pop, Drop. Create Tag, Delete Tag, Push Tags. Create, Delete and switch Branch; Checkout (Detached).
-- The Graph shows fifty commits at a time, with Incoming and Outgoing. Cherry Pick and the Compare commands are on a commit.
+- The Graph shows the history of the branch and its upstream together, fifty commits at a time, each commit once: a commit only the upstream holds is marked incoming and one only the branch holds outgoing, each with a dashed circle. Incoming Changes and Outgoing Changes stand above their commits with their count, and a press on one lists the files changed over its whole range, each opening that range's diff. The checked-out branch and the local branches, the remote branches (with a cloud) and the branch's base are drawn in colours of their own; a tag is plain. Cherry Pick and the Compare commands are on a commit.
+- Untracked lists every new file on its own row, a new folder's files under that folder in tree view; a repository inside the repository is one folder row, whose press shows it in Files. A group of more than 200 changes shows the first 200 under a warning that says so.
 - Discard on an untracked file moves it to the Trash. Add to .gitignore appends the path.
 - Close Repository hides a repository from that tab; Reopen Closed Repositories brings it back. Open Worktree adds a worktree's folder to the workspace; Open Worktree in New Window also opens a new window.
 - In a source tab the gutter marks changes; Blame shows who changed each line.
@@ -448,6 +461,7 @@ configurations:
 - A hub's `.oculus/config.yml` may set exactly the keys listed in its template ([templates](docs/templates.md)); any other key is a finding. A key it sets replaces oculus's value whole; inside a map, per dotted path. Its `collections:` names the file of each registry, card list and feed: `leads` and `radar` name the Position Leads and Lit Watch files.
 - A domain's card colour (`color`, `#rrggbb`) and label (`title`), and whether its active projects must list a dataset (`expects_datasets`), are fields of its entry in the domains registry. The theme words of venues and datasets are the options of the `themes` field of the venues and data registries, each a word or `{ key, label }`.
 - A hub's `.oculus/local.yml` is this machine's: the port, `hpc_host`, the programs, the agent accounts, the calendar and mail accounts, the Literature keys, and where oculus keeps its files. Every key has a default. It stays out of git, and only the primary hub's file is read (the account rows are joined over every hub). The keys are in its template.
+- `commit_message_account` in `local.yml` names the Claude account the suggested commit message runs under: the label of a `claude` row of `accounts:` in any hub's file. Empty or absent, it runs on `~/.claude`; a label no Claude row holds is a finding and `~/.claude` is used. The run saves no session, so it is never listed in Sessions.
 - The rest of `.oculus/` (bookmarks, workspaces, schedules, notes, apps, pictures) is listed in the hub's Data map, `docs/DATA-MAP.md`.
 - `~/.oculus/` is oculus's own state: the open workspace, the change log, the local history, approvals, the language servers' folder, app stores, provider credentials. It is not for editing.
 - The change log (`changes.jsonl`) records every write oculus makes; History undoes one. A file saved from a source tab, a note included, is not in it (its copy is in the local history). `changes.keep` sets how many are kept.

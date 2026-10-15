@@ -1,7 +1,8 @@
 // Layer 4, server test. What the Deposit view shows of a mirror beside the plan: the two texts of a
 // changed file of the sync plan, Fetch, how far the mirror's branch is ahead of and behind
-// `origin/main` with the files that differ and the two texts of each, and the projects that have a
-// deposit (a hub project of either placement, a workspace folder project of either placement).
+// `origin/main` with the files that differ and the two texts of each, the projects that have a
+// deposit (a hub project of either placement, a workspace folder project of either placement), and
+// the changes the plan lists, read from the mirror's status record by record.
 //
 // Every repository is made under the system temporary directory with the real git: a hub, a mirrors
 // folder, a bare repository standing in for GitHub and a second clone that pushes to it. `gh` is
@@ -21,6 +22,7 @@ import {
     mirrorOf,
     projectIds,
     state,
+    switchBranch,
     sync
 } from '../../../src/lib/server/git/deposit/deposit.ts';
 import type { Plan } from '../../../src/lib/server/git/deposit/deposit.ts';
@@ -224,6 +226,24 @@ describe('the projects that have a deposit', () => {
         }
         expect(readFileSync(join(mirrorOf('nested', options()), 'nested.py'), 'utf8')).toBe(
             'print("nested")\n'
+        );
+    });
+});
+
+describe('the changes of the sync plan', () => {
+    it("lists each change of the mirror with git's letters, and refuses a switch while there is one", async () => {
+        expect((await commit('top', 'Add top', TEXT, options())).ok).toBe(true);
+        write(join(folderTop, 'code'), 'top.py', 'print("changed")\n');
+        write(join(folderTop, 'code'), 'new.py', 'print("new")\n');
+        const planned = await sync('top', TEXT, options());
+        expect(planned.plan?.changes).toEqual([
+            { letters: 'A ', path: 'new.py' },
+            { letters: 'M ', path: 'top.py' }
+        ]);
+        const refused = await switchBranch('top', 'other', TEXT, options());
+        expect(refused.error).toBe(TEXT['server.deposit.mirror_dirty']);
+        expect(gitIn(mirrorOf('top', options()), 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe(
+            'main'
         );
     });
 });

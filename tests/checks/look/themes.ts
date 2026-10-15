@@ -34,6 +34,34 @@ export const VSCODE = readFileSync(join(THEMES_DIR, 'vscode.css'), 'utf8');
 /** Every `:root` and `body.<class>` block of the sheets. */
 export const blocks = parseBlocks(`${TOKENS}\n${THEMES}\n${VSCODE}`);
 
+/**
+ * The custom properties tokens.css declares on a bare `body`, where a token built from a theme's
+ * colours is declared so that the theme's class is taken. parseBlocks reads no such block, since it
+ * is no theme; a theme block sets its own value over it.
+ */
+export const BODY_TOKENS: Record<string, string> = Object.fromEntries(
+    [...TOKENS.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(?:^|\n)body \{([^}]*)\}/g)].flatMap(
+        (block) =>
+            [...block[1].matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)].map(
+                (one): [string, string] => [one[1], one[2].trim()]
+            )
+    )
+);
+
+/**
+ * A declared value with its `var()` references resolved against a theme's tokens: `var(--a, b)`
+ * is the theme's `--a`, else `b` resolved in turn. Undefined when nothing resolves.
+ */
+export function resolveValue(
+    value: string | undefined,
+    tokens: Record<string, string>
+): string | undefined {
+    if (value === undefined) return undefined;
+    const reference = /^var\(\s*(--[a-z0-9-]+)\s*(?:,\s*(.+))?\)$/.exec(value.trim());
+    if (reference === null) return value;
+    return tokens[reference[1]] ?? resolveValue(reference[2], tokens);
+}
+
 setAppearance(loadConfig(engineDir()).config);
 
 /** The themes the picker offers, by name, in the picker's order. */

@@ -1,6 +1,7 @@
 // Layer 2, route tests. POST /api/terminal, the latex action's approvals: the latexmkrc files and
 // weave tools a build or clean waits on, the answer that names them, and the `approve-latex` action
 // that writes them (server/machine/pty/latex/approval.ts, pty/latex/latex.ts).
+// @module-tag slow: its rows time out at 5 s when the whole suite loads the machine.
 //
 // Nothing here runs tmux. handleTerminal is called with an options bag holding a `run` that
 // records the argv, an approvals file under the scratch folder and a scratch home, so no case reads

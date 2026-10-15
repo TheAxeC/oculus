@@ -1,10 +1,9 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/Repo.svelte. VS Code's Source Control Graph:
-    // Incoming and Outgoing first when the branch has an upstream (what the upstream holds that
-    // HEAD does not, and the other way round), then one row per commit of the checked-out branch's
-    // history with its lanes drawn from its parents, the names on it as pills (the first whole, the
-    // rest as glyphs grouped by kind, and a head pill on HEAD's commit) and the head's subject in
-    // bold, fifty at a time with a Load More row after them.
+    // one row per commit of the history of the checked-out branch and its upstream together, each
+    // commit once, with its lanes drawn from its parents, the names on it as pills (the first
+    // whole, the rest as glyphs grouped by kind, and a head pill on HEAD's commit) and the head's
+    // subject in bold, fifty at a time with a Load More row after them.
     //
     // While the section is open its head carries, on hover, Go to Current (HEAD's row scrolled into
     // view with the focus on it; not drawn for a repository with no commit), Fetch, Pull and Push
@@ -12,8 +11,14 @@
     // Fetch acts at once; Pull, Push and Publish ask the question the view's `...` menu asks. All
     // but Go to Current wait while a write is in flight on the repository.
     //
-    // The commits under Incoming and under Outgoing are drawn as the others are, each list with its
-    // own lanes laid out over its commits alone, under the head row's dashed circle.
+    // A commit only the upstream holds is incoming and one only HEAD holds outgoing, each drawn in
+    // its lane of the one graph with the dashed circle of its side. Incoming Changes and Outgoing
+    // Changes are one entry each, with the number of commits of their side, above the first
+    // commit of that side (graph/GraphHead.svelte); a press on one opens under it the files
+    // changed over its whole range, from the merge base of HEAD and the upstream to the upstream's
+    // commit or HEAD's, each opening that range's diff of the file. Every row of the section, its
+    // lanes included, stands one step in from the section head, and a commit's files one step
+    // under their commit.
     //
     // Pressing a commit opens its changed files under it, each of which opens that commit's diff of
     // the file, with the lanes that pass beside them. A commit's menu and its names' menus are
@@ -58,13 +63,17 @@
     import type { Attachment } from 'svelte/attachments';
     import CommitRow from './CommitRow.svelte';
     import CommitFiles from './CommitFiles.svelte';
+    import { graphRows, itemOf, keptItems, type GraphRowsOf } from './graph-rows';
     import GraphHead from './GraphHead.svelte';
     import GraphActions from './GraphActions.svelte';
     import { readJson } from '$lib/data/shapes/shapes';
     import { graphPageOf, refNamesOf } from '$lib/state/sources/repositories/answers';
     import {
+        entryPlaces,
+        entryRow,
         laneRows,
         lanesBelow,
+        type GraphSide,
         type LaneRow
     } from '$lib/state/sources/repositories/graph-lanes';
     import {
@@ -72,7 +81,8 @@
         refsUrl,
         noCommitYet,
         upstreamOf,
-        type GitGraphCommit
+        type GitGraphCommit,
+        type GitGraphRange
     } from '$lib/state/sources/repositories/repositories';
     import type { GitState } from '$lib/state/client/selectors.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -146,6 +156,10 @@
     let failure = $state('');
     /** The merge base the first page named for the checked-out branch, or the empty string. */
     let base = $state('');
+    /** The span either side of the upstream the first page named, or null with no upstream. */
+    let range: GitGraphRange | null = $state(null);
+    /** The entry whose range's files are open, or the empty string for none. */
+    let ranged: GraphSide | '' = $state('');
     /** The prompt of Create Branch or Create Tag while one is open. */
     let prompting: PromptRequest | null = $state(null);
     /** The refs and the commit of Compare with... while its quick pick is open. */
@@ -154,15 +168,16 @@
     /** Each read takes the next number, and only the newest may write what it read. */
     let asked = 0;
 
-    /** The lanes of each list, laid out over that list's commits alone. */
+    /** The lanes of the history, laid out over its commits. */
     const lanes = $derived(laneRows(commits));
-    const lanesIncoming = $derived(laneRows(incoming));
-    const lanesOutgoing = $derived(laneRows(outgoing));
-    const missing = $derived(
-        commit !== '' &&
-            !commits.some((one) => one.hash === commit) &&
-            !incoming.some((one) => one.hash === commit)
-    );
+    /** The commits on each side of the upstream. */
+    const sides = $derived<Record<GraphSide, Set<string>>>({
+        incoming: new Set(incoming.map((one) => one.hash)),
+        outgoing: new Set(outgoing.map((one) => one.hash))
+    });
+    /** The entries drawn above each commit, by the commit's index. */
+    const places = $derived(entryPlaces(commits, sides));
+    const missing = $derived(commit !== '' && !commits.some((one) => one.hash === commit));
     /** What moves the history: the head, the distance from the upstream, the names on commits. */
     const moved = $derived(
         [
@@ -183,6 +198,7 @@
             commits = [];
             incoming = [];
             outgoing = [];
+            range = null;
             more = false;
             failure = '';
             gate.clear();
@@ -191,45 +207,31 @@
         if (gate.due([moved])) void load(0);
     });
 
+    /** What the keyboard's rows and the list's items are read from. */
+    const shape = $derived<GraphRowsOf>({
+        commits,
+        places,
+        commit,
+        ranged,
+        missing,
+        more,
+        files: fileRows
+    });
+
     $effect(() => {
-        const rows: KeyRow[] = [];
-        const under = (id: string): void => {
-            rows.push({ id, parent: 'graph' });
-        };
-        /** A commit's row, and its files under it when it is the open one. */
-        const row = (id: string, hash: string, place: string): void => {
-            const open = hash === commit;
-            rows.push({ id, parent: 'graph', open, fixed: true });
-            if (open)
-                for (const file of fileRows[place] ?? [])
-                    rows.push({ ...file, parent: file.parent ?? id });
-        };
-        if (missing) row(`commit:${commit}`, commit, 'outside');
-        if (incoming.length > 0) {
-            under('graph:incoming');
-            for (const one of incoming) row(`in:${one.hash}`, one.hash, 'in');
-        }
-        if (outgoing.length > 0) {
-            under('graph:outgoing');
-            for (const one of outgoing) row(`out:${one.hash}`, one.hash, 'out');
-        }
-        for (const one of commits) row(`commit:${one.hash}`, one.hash, 'log');
-        if (more) under('graph:more');
-        onrows(rows);
+        onrows(graphRows(shape));
     });
 
-    /** The index of the loaded commit drawing the row `id`: its own, or a file of the open one. */
-    function commitAt(id: string): number {
-        const hash = id.startsWith('commit:') ? id.slice('commit:'.length) : '';
-        const held = (fileRows.log ?? []).some((file) => file.id === id) ? commit : hash;
-        return held === '' ? -1 : commits.findIndex((one) => one.hash === held);
+    /** The commits kept drawn wherever the list is scrolled, so their files are read once. */
+    const opened = $derived(keptItems(shape));
+
+    /** The words a file of an entry's range is named by, and the two commits of the range. */
+    function rangeFor(kind: GraphSide): { from: string; to: string; label: string } | null {
+        if (range === null) return null;
+        const to = kind === 'incoming' ? range.incoming : range.outgoing;
+        const label = kind === 'incoming' ? t('repositories.incoming') : t('repositories.outgoing');
+        return { from: range.base, to, label };
     }
-
-    /** The open commit's index among the loaded ones, kept drawn so its files are read once. */
-    const opened = $derived.by(() => {
-        const at = commits.findIndex((one) => one.hash === commit);
-        return at < 0 ? [] : [at];
-    });
 
     /** The subject of a loaded commit by its row id, for the type-ahead. */
     function subjectOf(id: string): string | undefined {
@@ -256,7 +258,9 @@
             if (skip === 0) {
                 incoming = page.incoming;
                 outgoing = page.outgoing;
+                range = page.range ?? null;
                 base = page.base ?? '';
+                if (range === null) ranged = '';
             }
             more = page.more;
         } catch {
@@ -276,9 +280,15 @@
     /** The refs the compare items name: the upstream and the merge base. */
     const compare = $derived({ upstream: upstreamOf(git), base });
 
-    /** What HEAD says of a commit of a list: the log and the outgoing commits are HEAD's own. */
-    function hereOf(place: string): HeadFacts {
-        return { contained: place !== 'in', detached: git.detached };
+    /** What HEAD says of a commit: every commit but an incoming one is HEAD's own. */
+    function hereOf(hash: string): HeadFacts {
+        return { contained: !sides.incoming.has(hash), detached: git.detached };
+    }
+
+    /** The side of the upstream a commit is on, when only one of HEAD and the upstream holds it. */
+    function sideOf(hash: string): GraphSide | undefined {
+        if (sides.incoming.has(hash)) return 'incoming';
+        return sides.outgoing.has(hash) ? 'outgoing' : undefined;
     }
 
     /** Open the refs git lists in a quick pick, to compare the commit with the one chosen. */
@@ -319,16 +329,45 @@
     }
 </script>
 
+{#snippet side(kind: GraphSide, below: LaneRow | undefined)}
+    {@const span = rangeFor(kind)}
+    <GraphHead
+        {kind}
+        {nav}
+        count={kind === 'incoming' ? git.behind : git.ahead}
+        lane={entryRow(below)}
+        open={ranged === kind}
+        onpress={span === null ? undefined : () => (ranged = ranged === kind ? '' : kind)}
+    />
+    {#if ranged === kind && span !== null}
+        <CommitFiles
+            {root}
+            hash={span.to}
+            short={span.to.slice(0, 7)}
+            range={span}
+            place={kind}
+            {nav}
+            passing={below === undefined ? [] : lanesBelow(entryRow(below))}
+            open={below === undefined ? -1 : below.lane}
+            {mode}
+            {collapsed}
+            {onfolder}
+            onrows={(rows: KeyRow[]) => (fileRows[kind] = rows)}
+        />
+    {/if}
+{/snippet}
+
 {#snippet entry(one: GitGraphCommit, id: string, place: string, lane: LaneRow | undefined)}
     <CommitRow
         commit={one}
         {id}
         {nav}
         {lane}
+        side={sideOf(one.hash)}
         open={commit === one.hash}
         {branches}
         {compare}
-        here={hereOf(place)}
+        here={hereOf(one.hash)}
         {busy}
         {onpick}
         {onswitch}
@@ -369,7 +408,7 @@
     >
         {#if failure !== ''}
             <li role="none">
-                <TreeItem label={failure} tone="error" />
+                <TreeItem label={failure} depth={1} tone="error" />
             </li>
         {/if}
         {#if missing}
@@ -379,6 +418,7 @@
                     id={`commit:${commit}`}
                     {nav}
                     level={2}
+                    depth={1}
                     glyph="commit"
                     expanded
                     onclick={() => onpick('')}
@@ -398,24 +438,17 @@
                 onrows={(rows: KeyRow[]) => (fileRows.outside = rows)}
             />
         {/if}
-        {#if incoming.length > 0}
-            <GraphHead kind="incoming" {nav} count={incoming.length} />
-            {#each incoming as one, at (one.hash)}
+        {#if commits.length === 0}
+            {#each places.get(0) ?? [] as kind (kind)}
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render entry(one, `in:${one.hash}`, 'in', lanesIncoming[at])}
-            {/each}
-        {/if}
-        {#if outgoing.length > 0}
-            <GraphHead kind="outgoing" {nav} count={outgoing.length} />
-            {#each outgoing as one, at (one.hash)}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render entry(one, `out:${one.hash}`, 'out', lanesOutgoing[at])}
+                {@render side(kind, undefined)}
             {/each}
         {/if}
         {#if commits.length === 0 && failure === ''}
             <li role="none">
                 <TreeItem
                     label={reading ? t('repositories.graph_pending') : t('repositories.log_empty')}
+                    depth={1}
                     tone="muted"
                 />
             </li>
@@ -424,13 +457,17 @@
             count={commits.length}
             key={(at: number) => commits[at].hash}
             {nav}
-            owns={commitAt}
+            owns={(id: string) => itemOf(shape, id)}
             label={subjectOf}
             keep={opened}
         >
             {#snippet item(at: number, measure: Attachment<HTMLElement>)}
                 <li role="none" class="entry" {@attach measure}>
                     <ul class="entry-rows" role="none">
+                        {#each places.get(at) ?? [] as kind (kind)}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render side(kind, lanes[at])}
+                        {/each}
                         <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                         {@render entry(commits[at], `commit:${commits[at].hash}`, 'log', lanes[at])}
                     </ul>

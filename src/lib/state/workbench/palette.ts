@@ -108,6 +108,11 @@ export type PaletteCommand = {
         | 'accent'
         | 'tab'
         | 'reopen-closed-tab'
+        | 'go-back'
+        | 'go-forward'
+        | 'toggle-left-dock'
+        | 'toggle-bottom-dock'
+        | 'toggle-right-dock'
         | 'goto'
         | 'language'
         | 'eslint-config'
@@ -497,6 +502,15 @@ export function commands(
                   }
               ]
             : []),
+        ...(
+            [
+                ['go-back', t('app.palette.cmd_go_back')],
+                ['go-forward', t('app.palette.cmd_go_forward')],
+                ['toggle-left-dock', t('app.palette.cmd_toggle_left_dock')],
+                ['toggle-bottom-dock', t('app.palette.cmd_toggle_bottom_dock')],
+                ['toggle-right-dock', t('app.palette.cmd_toggle_right_dock')]
+            ] as const
+        ).map(([name, description]) => ({ name, description, hint: '', available: true })),
         {
             name: 'goto',
             description: t('app.palette.cmd_goto'),

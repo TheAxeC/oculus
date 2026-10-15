@@ -72,6 +72,7 @@ import {
     type StashMode
 } from './git-refs.ts';
 import { messageModel, suggestMessage, type MessageOptions } from './git-message.ts';
+import type { AgentAccount } from '../../data/model/index.ts';
 import { handleGitBranches, handleGitGet, type ReadOptions } from './git-reads.ts';
 
 export { handleGitBranches, handleGitGet };
@@ -192,6 +193,11 @@ export type GitOptions = {
     config: Record<string, unknown>;
     /** The `claude_bin` of local.yml: the program that suggests a commit message. */
     claudeBin: string;
+    /**
+     * The Claude account `commit_message_account` of local.yml names, which the suggestion runs
+     * under; the default folder when absent or null.
+     */
+    account?: AgentAccount | null;
     /** What an action does; the real git-write.ts operations when absent. */
     run?: GitRun;
     /** Which roots a request may name; the published workspaces and the hub when absent. */
@@ -290,7 +296,10 @@ export function messagePrompt(config: Record<string, unknown>): string {
     return prompt;
 }
 
-/** The real suggestion: the instruction from the catalog, the model from config/behavior.yml. */
+/**
+ * The real suggestion: the instruction from the catalog, the model from config/behavior.yml, under
+ * the account the route read.
+ */
 async function suggestFor(
     root: string,
     roots: string[],
@@ -337,7 +346,8 @@ export const OPERATIONS: Record<string, GitOperation> = {
         applyHunk(root, fields.patch, 'unstage', text, roots),
     revertPatch: (root, fields, text, roots) =>
         applyHunk(root, fields.patch, 'revert', text, roots),
-    stageAll: (root, fields, text, roots) => stageAll(root, fields.group, text, roots),
+    stageAll: (root, fields, text, roots, _options, signal) =>
+        stageAll(root, fields.group, text, roots, signal),
     unstageAll: (root, _fields, text, roots) => unstageAll(root, text, roots),
     discardAll: (root, _fields, text, roots) => discardAll(root, text, roots),
     commit: (root, fields, text, roots, _options, signal) =>
@@ -431,14 +441,10 @@ export async function handleGit(
         const answer = await (
             options.suggest ??
             ((selected, allowed) =>
-                suggestFor(
-                    selected,
-                    allowed,
-                    options.config,
-                    text,
-                    options.claudeBin,
-                    options.message
-                ))
+                suggestFor(selected, allowed, options.config, text, options.claudeBin, {
+                    ...options.message,
+                    account: options.account ?? null
+                }))
         )(root, roots);
         if (!answer.ok) return json({ error: answer.error }, { status: 400, headers: NO_STORE });
         return json({ ok: true, output: answer.output }, { headers: NO_STORE });

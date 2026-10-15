@@ -35,6 +35,10 @@ const bridge = {
     stopFind: () => ipcRenderer.send('oculus:stop-find'),
     closeFind: () => ipcRenderer.send('oculus:close-find'),
     printPdf: (address) => ipcRenderer.invoke('oculus:print-pdf', address),
+    titleDoubleClick: () => ipcRenderer.send('oculus:title-double-click'),
+    titleColours: (color, symbolColor) =>
+        ipcRenderer.send('oculus:title-colours', color, symbolColor),
+    fullScreen: () => ipcRenderer.invoke('oculus:full-screen'),
     spelling: (word) =>
         Promise.resolve({
             misspelled: webFrame.isWordMisspelled(word),

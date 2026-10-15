@@ -3,9 +3,9 @@
 // The count is not in the snapshot: it runs cloc over oculus's own tracked files, which takes
 // seconds, so it is asked for the first time the view reads it and again on Count again, and held
 // for the page's life in between. The answer is held in the client state's query client, and the
-// fetch is scheduled on a microtask by state/client/queries.svelte.ts rather than run inside
-// the read, so reading this from a $derived never writes state while a derived is running. It is
-// only ever made in the browser: a server-rendered page holds nothing and asks for nothing.
+// fetch is scheduled on a microtask by state/client/queries/queries.svelte.ts rather than run
+// inside the read, so reading this from a $derived never writes state while a derived is running.
+// It is only ever made in the browser: a server-rendered page holds nothing and asks for nothing.
 //
 // An answer the server could not have meant (no list of rows, a row that is not a folder's count,
 // no total, no time) is held as a failed read naming what was wrong, never as a table with fewer

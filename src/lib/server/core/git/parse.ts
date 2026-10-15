@@ -5,11 +5,11 @@
 // server/core/git/reads.ts the graph, the blame and the gutter marks on demand, and
 // server/git/git-write.ts and server/git/deposit/deposit.ts read the branches for their branch
 // menus. Every reader of `status --porcelain=v1 -z` (core/git/state.ts, and git-write.ts,
-// git-refs.ts, git-index.ts and deposit.ts under server/git) splits its records through
-// statusRecords, and core/git/state.ts sorts them into the change lists by statusLists with the
-// line counts of parseNumstat. One parser with one format beside it is what keeps them from
-// disagreeing about what a row is: a branch row is read from REFS_FORMAT by parseRefs, whether
-// `for-each-ref` or `branch` printed it.
+// git-refs.ts, git-index.ts and deposit.ts under server/git) takes its records one by one through
+// core/git/records.ts as `StatusRecord`, and core/git/state.ts sorts them into the change lists by
+// statusCollector with the line counts of parseNumstat. One parser with one format beside it is
+// what keeps them from disagreeing about what a row is: a branch row is read from REFS_FORMAT by
+// parseRefs, whether `for-each-ref` or `branch` printed it.
 //
 // Nothing here runs a process or touches a file: text in, rows out, and nothing thrown for output
 // that is not what was asked for.
@@ -260,26 +260,6 @@ export const STASH_REF = /^stash@\{\d+\}$/;
 /** One record of `status --porcelain=v1 -z`: the two letters, the path, and a rename's old path. */
 export type StatusRecord = { code: string; path: string; from: string | null };
 
-/**
- * The records of `status --porcelain=v1 -z`. Each is two letters, a space and a path, never quoted.
- * A rename or a copy, in either column, carries its old path as the next field, which is a path
- * rather than a record of its own, so it is read into `from` and stepped over.
- */
-export function statusRecords(output: string): StatusRecord[] {
-    const fields = output.split('\0');
-    const records: StatusRecord[] = [];
-    for (let at = 0; at < fields.length; at += 1) {
-        const field = fields[at];
-        if (field.length < 4) continue;
-        const code = field.slice(0, 2);
-        const moved = /[RC]/.test(code);
-        const from = moved ? (fields[at + 1] ?? null) : null;
-        if (moved) at += 1;
-        records.push({ code, path: field.slice(3), from });
-    }
-    return records;
-}
-
 /** git's own letter for a path it does not track. */
 export const UNTRACKED = '?';
 /** An index or worktree column saying "nothing here". */
@@ -324,11 +304,16 @@ export function parseNumstat(output: string): LineCounts {
 }
 
 /**
- * The status records sorted into the four lists, each cut to `cap`, and `held`, the count each list
- * had before the cut. Line counts come from the worktree diff, which says nothing about the index,
- * so a staged file reports its letter and no numbers rather than the wrong ones.
+ * The status records sorted into the four lists one record at a time, as a status read streams
+ * them, and `held`, the count each list had: a list keeps its first `cap` entries and counts every
+ * one, so a repository with any number of untracked files is held in `cap` entries a list. Line
+ * counts come from the worktree diff, which says nothing about the index, so a staged file reports
+ * its letter and no numbers rather than the wrong ones.
  */
-export function statusLists(records: StatusRecord[], counts: LineCounts, cap: number): StatusLists {
+export function statusCollector(
+    counts: LineCounts,
+    cap: number
+): { add: (record: StatusRecord) => void; lists: () => StatusLists } {
     const lists: StatusLists = {
         staged: [],
         unstaged: [],
@@ -348,33 +333,34 @@ export function statusLists(records: StatusRecord[], counts: LineCounts, cap: nu
         deleted: lines === undefined ? 0 : lines[1],
         ...(from === null || from === undefined ? {} : { from })
     });
+    /** Put an entry on a list while the list is under the cap, and count it either way. */
+    const put = (list: GitEntry[], held: keyof StatusLists['held'], made: () => GitEntry): void => {
+        lists.held[held] += 1;
+        if (list.length < cap) list.push(made());
+    };
     /** The old path for the column that holds the rename or copy, not for one holding a change. */
     const movedIn = (letter: string, from: string | null): string | null =>
         letter === 'R' || letter === 'C' ? from : null;
-    for (const { code, path, from } of records) {
+    const add = ({ code, path, from }: StatusRecord): void => {
         const [index, work] = [code[0], code[1]];
         if (UNMERGED.includes(index + work)) {
-            lists.conflicted.push(entry(path, index + work));
+            put(lists.conflicted, 'merge', () => entry(path, index + work));
         } else if (index === UNTRACKED || work === UNTRACKED) {
-            lists.untracked.push(entry(path, UNTRACKED));
+            put(lists.untracked, 'untracked', () => entry(path, UNTRACKED));
         } else {
-            if (!QUIET.includes(index))
-                lists.staged.push(entry(path, index, undefined, movedIn(index, from)));
+            if (!QUIET.includes(index)) {
+                put(lists.staged, 'staged', () =>
+                    entry(path, index, undefined, movedIn(index, from))
+                );
+            }
             if (!QUIET.includes(work)) {
-                lists.unstaged.push(entry(path, work, counts.get(path), movedIn(work, from)));
+                put(lists.unstaged, 'changes', () =>
+                    entry(path, work, counts.get(path), movedIn(work, from))
+                );
             }
         }
-    }
-    lists.held = {
-        staged: lists.staged.length,
-        changes: lists.unstaged.length,
-        untracked: lists.untracked.length,
-        merge: lists.conflicted.length
     };
-    for (const list of [lists.staged, lists.unstaged, lists.untracked, lists.conflicted]) {
-        list.length = Math.min(list.length, cap);
-    }
-    return lists;
+    return { add, lists: () => lists };
 }
 
 /**

@@ -35,6 +35,7 @@
         cell = false,
         plain = false,
         primary = false,
+        wide = false,
         joined = false,
         cut = false,
         dataView,
@@ -61,7 +62,7 @@
     text={tip}
     placement={rail ? 'beside' : status ? 'above' : 'below'}
     presentational={checked !== undefined}
-    block={rail || cell || primary}
+    block={rail || cell || primary || wide}
 >
     <button
         type="button"
@@ -78,6 +79,7 @@
         class:cell
         class:plain
         class:primary
+        class:wide
         class:joined
         class:cut
         class:inert
@@ -345,6 +347,13 @@
         color: var(--on-accent);
         font-size: calc(var(--button-font) * var(--text-scale, 1));
         line-height: calc(var(--button-line) * var(--text-scale, 1));
+    }
+
+    /* The Command Center: the width of its box, the glyph and the words centred in it. */
+    .tool.wide {
+        justify-content: center;
+        box-sizing: border-box;
+        width: 100%;
     }
 
     .tool.primary:hover:not(:disabled) {

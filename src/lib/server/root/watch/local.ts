@@ -106,6 +106,7 @@ const FIELDS: (keyof LocalConfig)[] = [
     'schedules',
     'scheduleRecord',
     'claudeBin',
+    'commitMessageAccount',
     'openBin',
     'riteDapBin',
     'accounts',

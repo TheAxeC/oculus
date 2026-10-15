@@ -126,6 +126,7 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 
 # The programs oculus starts.
 # claude_bin: claude
+# commit_message_account: work
 # open_bin: /usr/bin/open
 # rite_dap_bin: rite_dap
 
@@ -801,7 +802,7 @@ entries:
 ### tasks/tasks.yml
 
 ```yaml
-title: Tasks & Service
+title: Tasks
 schema:
   - { field: key,      type: text,     required: true, help: "Short name." }
   - { field: title,    type: text,     required: true, help: "What to do." }

@@ -3,6 +3,7 @@
 
 import type { DragStore } from '$lib/state/workbench/drag.svelte';
 import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
+import type { HistoryWalk } from '../titlebar/history-walk';
 import type { Focus, Instance, Pane } from '$lib/state/workbench/layout';
 import {
     cardCursor,
@@ -34,6 +35,8 @@ import type { PaletteMode } from '$lib/state/workbench/palette';
 type Options = {
     drag: DragStore;
     layout: LayoutStore;
+    /** The window's navigation history, which the Go Back and Go Forward keys walk. */
+    history: HistoryWalk;
     ui: UiStore;
     navigation: () => RailOrder;
     activeMain: () => Instance | null;
@@ -268,6 +271,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         } else if (action.kind === 'reopen-closed-tab') {
             clearCursor();
             void options.layout.reopenClosed();
+        } else if (action.kind === 'go-back' || action.kind === 'go-forward') {
+            clearCursor();
+            void (action.kind === 'go-back' ? options.history.back() : options.history.forward());
         } else if (action.kind === 'find') {
             clearCursor();
             options.find?.();

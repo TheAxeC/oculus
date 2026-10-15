@@ -1,5 +1,6 @@
 <script lang="ts">
-    // Layer 3, shell. The window: the rail, the one tree the page on screen is, and the status bar
+    // Layer 3, shell. The window: the title bar strip across its top (titlebar/TitleBar.svelte),
+    // the rail, the one tree the page on screen is (panes/leaf/PageArea.svelte), and the status bar
     // along the foot under both. It reads the arrangement from the store and every change goes back
     // through the store, so the whole of what is on screen is the saved workbench and a reload puts
     // it back as it was. Several of the status bar's items read stores the shell may not, so the
@@ -13,15 +14,22 @@
     // The body is a grid so that a float docked to an edge takes a track of its own beside the
     // area.
     //
+    // A float docked on an edge its toggle in the strip hides is drawn by no one, and its grid
+    // track takes no room (the layout store's `shownFloats`). The window's navigation history,
+    // which the strip's Back and Forward, their keys and the palette walk, is handed in by the page
+    // and provided to everything under it (titlebar/history-walk.ts), and so is the store the
+    // leading pane hands its editor actions up to while the strip draws them
+    // (titlebar/strip-actions).
+    //
     // The frames of the tabs are not part of any tree either: frames/FrameLayer.svelte draws each
     // once, outside the block keyed by the page, and a pane draws only the slot a frame is laid
     // over, so a layout change never loads a frame's document again.
     //
     // In the desktop app, and in a browser tab opened for a float, the page of a popped-out window
     // (`?float=<id>`) is this component with the body drawn as that one float alone, filling the
-    // window (panes/floats/FloatWindow.svelte): no rail, no status bar and no page, and none of the
-    // work that fills the rail's pages and takes in the shipped floats, which the main window's
-    // page does for every window.
+    // window (panes/floats/FloatWindow.svelte), under a strip of its own: no rail, no status bar
+    // and no page, and none of the work that fills the rail's pages and takes in the shipped
+    // floats, which the main window's page does for every window.
     //
     // It is also where the appearance is put on the document (window/appearance.svelte.ts): the
     // theme, the wallpaper and which of the two glyph vocabularies renders.
@@ -39,14 +47,11 @@
     import { pressDebug } from './commands/debug/debug-key';
     import Palette from './keys/Palette.svelte';
     import type { PaletteStart } from './keys/palette-modes';
-    import FoldedPane from './panes/leaf/FoldedPane.svelte';
-    import PageLeaf from './panes/leaf/PageLeaf.svelte';
-    import PaneView from './panes/PaneView.svelte';
+    import PageArea from './panes/leaf/PageArea.svelte';
     import FloatLayer from './panes/floats/FloatLayer.svelte';
     import FloatWindow from './panes/floats/FloatWindow.svelte';
     import FrameLayer from './frames/FrameLayer.svelte';
     import { bodyTracks } from './panes/floats/float-geometry';
-    import SplitView from './panes/SplitView.svelte';
     import UpdateTray from './rail/UpdateTray.svelte';
     import KeySheet from '$lib/ui/menu/keys/KeySheet.svelte';
     import { provideTabFrames } from '$lib/ui/tabs/tab-frames.svelte';
@@ -54,7 +59,10 @@
     import { useAppearance } from './window/appearance.svelte';
     import { useAppLanguages } from './window/app-languages.svelte';
     import { sourceKeys } from './window/source-keys';
-    import { paneAt, resize, type FloatSpec, type Layout } from '$lib/state/workbench/layout';
+    import TitleBar from './titlebar/TitleBar.svelte';
+    import { NO_WALK, provideWalk, type HistoryWalk } from './titlebar/history-walk';
+    import { provideStripActions } from './titlebar/strip-actions.svelte';
+    import type { FloatSpec } from '$lib/state/workbench/layout';
     import type { PaletteKey } from '$lib/data/helpers/keys/oculus/palette-keys';
     import { modeOf } from '$lib/state/workbench/palette';
     import { COMMAND_PALETTE_EVENT } from '$lib/ui/controls/editor/chords';
@@ -87,7 +95,7 @@
     $effect(() => client.layout.settleBeforeWindow(() => frames.flush()));
 
     const {
-        layout: { change, activeInstance, currentPage, expandChild, floats, focused, layout },
+        layout: { activeInstance, currentPage, focused, shownFloats },
         ui: { paletteRequested, updateTrayRequested },
         registry: { views }
     } = client;
@@ -142,6 +150,8 @@
         waiting?: number;
         /** The F8 walk: opens the next or previous problem, and answers false with none. */
         walkProblem?: (by: 1 | -1) => boolean;
+        /** The window's navigation history, which the page reads since the shell may not. */
+        history?: HistoryWalk;
     };
 
     let {
@@ -156,8 +166,12 @@
         status = NO_STATUS,
         git = NO_GIT,
         waiting = 0,
-        walkProblem = () => false
+        walkProblem = () => false,
+        history = NO_WALK
     }: Props = $props();
+
+    const walk = provideWalk(() => history);
+    provideStripActions();
 
     /** The float this page draws alone in a popped-out window of the app, or null. */
     const floatId = client.float;
@@ -173,15 +187,8 @@
     let handledUpdateRequest = $state(updateTrayRequested());
     let handledPaletteRequest = $state(paletteRequested().seq);
 
-    /**
-     * The maximised pane, when one is: it is drawn alone and the rest of the workbench is not
-     * drawn.
-     */
+    /** The maximised pane, when one is, which the keys move the card cursor in. */
     const focus = $derived(focused());
-    const zoomed = $derived(focus === null ? null : paneAt(layout(), focus.path));
-
-    /** The page on screen: its trees are the ones drawn, and its id is what remounts them. */
-    const page = $derived(currentPage());
     const activeMain = $derived(activeInstance());
     /** The engine documents the rail pages' arrangements show, then the `docs:` entries. */
     const listedDocs = $derived([
@@ -199,6 +206,7 @@
     const keyboard = createWorkbenchKeys({
         drag: client.drag,
         layout: client.layout,
+        history: walk,
         ui: client.ui,
         navigation: () => navigation,
         activeMain: () => activeMain,
@@ -341,18 +349,6 @@
     });
 </script>
 
-{#snippet paneOf(node: Layout, path: number[], of: string)}
-    <PaneView {node} {path} page={of} onpalette={openPalette} />
-{/snippet}
-
-{#snippet foldOf(node: Layout, dir: 'row' | 'col', onexpand: () => void)}
-    <FoldedPane {node} {dir} {onexpand} />
-{/snippet}
-
-{#snippet leafOf(nested: string, path: number[], of: string)}
-    <PageLeaf {nested} {path} host={of} onpalette={openPalette} />
-{/snippet}
-
 <svelte:window
     onkeydown={keyboard.keys}
     onfocusin={keyboard.paneFocused}
@@ -374,7 +370,8 @@
              negative depth paints over the page's own background and under every panel. -->
             <div class="wallpaper" style={image}></div>
         {/if}
-        <div class="body" style={bodyTracks(floats())}>
+        <TitleBar onpalette={openPalette} />
+        <div class="body" style={bodyTracks(shownFloats())}>
             <ActivityRail
                 {pages}
                 {saved}
@@ -383,40 +380,7 @@
                 onupdate={openUpdate}
             />
             <div class="column">
-                <div class="area" bind:this={area}>
-                    <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts
-                     the shown page's: nothing is drawn twice, and every view rebuilds from the
-                     stores. -->
-                    {#key page.id}
-                        {#if client.layout.startingFresh()}
-                            <!-- No page until the rail list chose the first, so no view mounts
-                             twice. -->
-                        {:else if zoomed !== null && focus !== null}
-                            <div class="tree" style="flex: 1 1 0">
-                                <PaneView
-                                    node={zoomed}
-                                    path={focus.path}
-                                    page={page.id}
-                                    onpalette={openPalette}
-                                />
-                            </div>
-                        {:else}
-                            <div class="tree" style="flex: 1 1 0">
-                                <SplitView
-                                    layout={layout()}
-                                    page={page.id}
-                                    pane={paneOf}
-                                    fold={foldOf}
-                                    leaf={leafOf}
-                                    onresize={(path: number[], sizes: number[]) =>
-                                        change((tree) => resize(tree, path, sizes))}
-                                    onexpand={(path: number[], index: number) =>
-                                        expandChild(path, index)}
-                                />
-                            </div>
-                        {/if}
-                    {/key}
-                </div>
+                <PageArea bind:area onpalette={openPalette} />
             </div>
             <FloatLayer {area} onpalette={openPalette} />
         </div>
@@ -446,8 +410,9 @@
 {/if}
 
 <style>
-    /* The rail and the column beside it over the status bar, which runs the window's whole width
-       under both, as VS Code's status bar runs under its activity bar. */
+    /* The title bar strip over the rail and the column beside it over the status bar, the strip
+       and the bar each running the window's whole width, as VS Code's title bar and status bar run
+       above and under its activity bar. */
     .workbench {
         display: flex;
         flex-direction: column;
@@ -482,38 +447,12 @@
         pointer-events: none;
     }
 
-    /* The column right of the rail: the area the page's tree fills. */
+    /* The column right of the rail: the area the page's tree fills (panes/leaf/PageArea.svelte). */
     .column {
         display: flex;
         flex-direction: column;
         grid-column: 3;
         grid-row: 1;
-        min-width: 0;
-        min-height: 0;
-    }
-
-    /* One stacking context for the page, so a depth a view sets inside it (Monaco's overview ruler
-       and scrollbars) stays below the floats drawn over the page. */
-    .area {
-        display: flex;
-        flex: 1 1 auto;
-        min-width: 0;
-        min-height: 0;
-        padding: 4px;
-        gap: 0;
-        box-sizing: border-box;
-        isolation: isolate;
-    }
-
-    .tree {
-        display: flex;
-        min-width: 0;
-        min-height: 0;
-        overflow: hidden;
-    }
-
-    .tree > :global(*) {
-        flex: 1 1 auto;
         min-width: 0;
         min-height: 0;
     }

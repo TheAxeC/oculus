@@ -12,7 +12,8 @@
     // rectangle of a drop.
     //
     // A tab dragged with Alt held lands nowhere in particular: it becomes a float at the pointer,
-    // so the layer draws the outline of that float there in place of the rectangle of a drop.
+    // so the layer draws the outline of that float there in place of the rectangle of a drop, below
+    // the title bar strip as the float will be drawn.
     //
     // What the pointer is over may be a place the thing being dragged cannot land: a page already
     // drawn on the screen, or one that would draw the page it is over. Then no rectangle is drawn
@@ -45,12 +46,16 @@
         return `left: ${area.x}px; top: ${area.y}px; width: ${area.width}px; height: ${area.height}px`;
     }
 
+    /** The foot of the window's title bar strip, which no float is drawn above. */
+    function stripFoot(): number {
+        return document.querySelector('[data-titlebar]')?.getBoundingClientRect().bottom ?? 0;
+    }
+
     /** The half of the body a new pane on this edge would take, or the whole of it for a centre. */
     function indicator(): string | null {
         if (held !== null && floating) {
-            return box(
-                outlineAt(held.point, { width: window.innerWidth, height: window.innerHeight })
-            );
+            const view = { width: window.innerWidth, height: window.innerHeight };
+            return box(outlineAt(held.point, view, stripFoot()));
         }
         if (rect === null || drop === null) return null;
         if (drop.kind === 'centre') return box(rect);

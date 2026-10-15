@@ -19,18 +19,23 @@
     // read-only, and offers Claude and Codex; what is typed is added to the seed. A start whose
     // permission mode skips what the agent asks is confirmed first, and a task's seed that was
     // never approved for the folder and agent is shown for approval first.
+    //
+    // New worktree (state/sessions/terminal/composer/worktree.ts) makes a worktree of the folder's
+    // repository through the Repositories view's own write and starts there; a write that went
+    // leaves the composer on the new worktree's folder, whether or not the start landed.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import AgentFindings from './AgentFindings.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import AttachPicker from './AttachPicker.svelte';
     import SeedApproval from './SeedApproval.svelte';
     import TaskBlock from './TaskBlock.svelte';
     import WorkspacePicker from '$lib/views/shared/sessions/WorkspacePicker.svelte';
+    import WorktreeName from './worktree/WorktreeName.svelte';
+    import WorktreeToggle from './worktree/WorktreeToggle.svelte';
     import {
         accountFor,
         accountsOf,
@@ -40,17 +45,22 @@
         composerPlaces,
         composerWorkspace,
         insertMention,
+        keepsWorktreesOut,
         mention,
         offeredPlaces,
         promptKey,
         picksFor,
         relativeIn,
+        worktreeRoot,
         skipQuestion,
         withComposer,
         type SkipQuestion,
         type ComposerAgent,
         type ComposerRecord
     } from '$lib/state/sessions/terminal/composer/composer';
+    import { makeChosen, plannedFolder } from '$lib/state/sessions/terminal/composer/worktree';
+    import type { WorktreeChoice } from '$lib/state/sessions/terminal/composer/worktree';
+    import { markGlyph } from '$lib/state/sessions/terminal/terminal-marks';
     import type { AgentChoices } from '$lib/state/sessions/agents.svelte';
     import type { SeedApproval as Approval } from '$lib/state/sessions/terminals.svelte';
     import { FILE_DRAG } from '$lib/state/sources/fs';
@@ -70,6 +80,7 @@
         agents: { agentChoices },
         entities: { git },
         fs: { workspaces },
+        repositories: { makeWorktree },
         selectors: { hubRoot, sessionsByWorkspace },
         terminals: { approveSeed, composeTerminal, dropTask, loadTask, taskOf },
         ui: { instanceState, setInstanceState }
@@ -93,6 +104,9 @@
     let approvingNow = $state(false);
     let loadingTask = false;
 
+    /** The New worktree choice, which holds while the folder stays in the repository it names. */
+    let worktree = $state<WorktreeChoice | null>(null);
+
     const record = $derived(composerOf(instanceState(owner)));
     const hub = $derived(hubRoot());
     const places = $derived(
@@ -100,6 +114,9 @@
     );
     const workspace = $derived(composerWorkspace(record, places, hub));
     const branch = $derived(branchOf(workspace, git()));
+    const root = $derived(worktreeRoot(workspace, git()));
+    const choosing = $derived(worktree !== null && worktree.root === root ? worktree : null);
+    const planned = $derived(plannedFolder(choosing, workspace));
     const agent = $derived(record.agent);
     const base = $derived(agentChoices().value);
     const accounts = $derived(accountsOf(base?.accounts ?? [], agent));
@@ -146,12 +163,6 @@
         if (one === 'claude') return t('sessions.kind_claude');
         if (one === 'codex') return t('sessions.kind_codex');
         return t('sessions.kind_shell');
-    }
-
-    function agentGlyph(one: ComposerAgent): string {
-        if (one === 'claude') return t('sessions.kind_claude_glyph');
-        if (one === 'codex') return t('sessions.kind_codex_glyph');
-        return t('sessions.kind_shell_glyph');
     }
 
     /** Keep one change of the record in the tab's instance state. */
@@ -219,7 +230,10 @@
         if (field instanceof HTMLTextAreaElement) caret = field.selectionStart;
     }
 
-    /** Start, asking first when a value the start resolves to skips what the agent asks. */
+    /**
+     * Start, asking first when a value the start resolves to skips what the agent asks. With New
+     * worktree chosen the worktree is made first, and a refusal starts nothing and keeps the name.
+     */
     async function start(confirmed = false): Promise<void> {
         if (starting) return;
         const question =
@@ -230,9 +244,17 @@
         }
         starting = true;
         failure = '';
+        const made = choosing === null ? null : await makeChosen(choosing, workspace, makeWorktree);
+        if (made !== null && made.error !== '') {
+            starting = false;
+            failure = made.error;
+            return;
+        }
+        const cwd = made?.cwd ?? workspace;
+        if (made !== null) worktree = null;
         const shape = composeStart(
             agent,
-            workspace,
+            cwd,
             account,
             picks,
             prompt,
@@ -242,8 +264,9 @@
                 : { ref: record.task, seed: task.seed },
             question !== null
         );
-        // The folder and kind the start used stay with this composer, whether or not it lands.
-        keep({ workspace, agent });
+        // The folder and kind the start used stay with this composer, whether or not it lands; a
+        // new worktree's folder is offered beside the folder the composer was opened in.
+        keep({ workspace: cwd, agent, ...(made === null ? {} : { worktree: cwd }) });
         const answer = await composeTerminal(shape, owner);
         starting = false;
         // A start whose tab closed meanwhile was ended by the store, and there is nothing to say.
@@ -253,7 +276,8 @@
             return;
         }
         if (!answer.ok || answer.id === '') {
-            failure = answer.error === '' ? t('composer.failed') : answer.error;
+            const said = answer.error === '' ? t('composer.failed') : answer.error;
+            failure = made === null ? said : t('composer.worktree_made', cwd, said);
             // The server's seed differs from the one shown: show the current one.
             if (answer.refused === 'task-changed') void loadTask(owner, true);
             return;
@@ -336,27 +360,27 @@
                     onclick={() => (picking = !picking)}
                 />
                 <WorkspacePicker
-                    {workspace}
+                    workspace={planned}
                     {places}
                     {hub}
                     placement="down"
                     onpick={(dir: string) => keep({ workspace: dir })}
                 />
-                {#if branch !== ''}
-                    <span class="branch" data-composer-branch title={t('composer.branch_title')}>
-                        <Glyph name="branch" />
-                        <span class="branch-name">{branch}</span>
-                    </span>
-                {/if}
+                <WorktreeToggle
+                    {branch}
+                    {root}
+                    name={choosing?.name ?? null}
+                    ontoggle={() => (worktree = choosing === null ? { root, name: '' } : null)}
+                />
                 <span class="picker" data-picker="agent">
                     <Menu
                         label={agentLabel(agent)}
-                        glyph={agentGlyph(agent)}
+                        glyph={markGlyph(agent, '')}
                         placement="down"
                         items={AGENTS.map((one) => ({
                             id: one,
                             label: agentLabel(one),
-                            glyph: agentGlyph(one),
+                            glyph: markGlyph(one, ''),
                             active: one === agent
                         }))}
                         onpick={(id) => keep({ agent: id as ComposerAgent })}
@@ -407,6 +431,16 @@
                     onclick={() => void start()}
                 />
             </div>
+            {#if choosing !== null}
+                <WorktreeName
+                    name={choosing.name}
+                    {planned}
+                    ignored={keepsWorktreesOut(git(), root)}
+                    oninput={(name: string) => (worktree = { root, name })}
+                    oncancel={() => (worktree = null)}
+                    onstart={() => void start()}
+                />
+            {/if}
         </div>
     {/if}
     {#if failure !== ''}
@@ -466,22 +500,6 @@
 
     .grow {
         flex: 1 1 auto;
-    }
-
-    .branch {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        min-width: 0;
-        padding: 0 4px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
-    .branch-name {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     .picker {

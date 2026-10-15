@@ -41,7 +41,7 @@ import type {
     Queries,
     Read,
     WhileFetching
-} from '../shared/stores/shapes.ts';
+} from '../../shared/stores/shapes.ts';
 
 export function createQueries(): Queries {
     const client = new QueryClient({

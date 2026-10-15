@@ -46,7 +46,7 @@
     >
         {#if git.stashes.length === 0}
             <li role="none">
-                <TreeItem label={t('repositories.stashes_empty')} tone="muted" />
+                <TreeItem label={t('repositories.stashes_empty')} depth={1} tone="muted" />
             </li>
         {/if}
         {#each git.stashes as stash (stash.ref)}
@@ -56,6 +56,7 @@
                     id={`stash:${stash.ref}`}
                     {nav}
                     level={2}
+                    depth={1}
                     glyph="stash"
                     title={t('repositories.stash_view_title', stash.ref)}
                     onclick={() => view(stash)}

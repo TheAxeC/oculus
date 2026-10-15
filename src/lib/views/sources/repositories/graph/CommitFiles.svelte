@@ -2,9 +2,11 @@
     // Layer 3, partial of views/sources/repositories/graph/Graph.svelte. The paths one commit
     // changed, read from GET /api/git when the commit is opened, each a row of the tree under its
     // commit with its Seti icon, its folder after the name in the list and its status, that opens
-    // the commit's diff of that path in a diff pane. Beside each row are the lanes of the graph
-    // that pass the commit, 3 px on the open commit's own. The rows go to the graph, which puts
-    // them after the commit's own in the keyboard's order.
+    // the commit's diff of that path in a diff pane. Given a `range` in place of a commit, the rows
+    // are the paths changed between its two commits (Incoming Changes and Outgoing Changes), read
+    // as a comparison, each opening that comparison's diff of its path. Beside each row are the
+    // lanes of the graph that pass the commit, 3 px on the open commit's own. The rows go to the
+    // graph, which puts them after the commit's own in the keyboard's order.
     //
     // In the view's tree mode the paths fall into folder rows as the change groups' do, a folder
     // opening and closing by a press, and taking the focus when it closes over the row that holds
@@ -32,6 +34,7 @@
         statusStyle,
         type GitCommitFile
     } from '$lib/state/sources/repositories/repositories';
+    import { refCompareUrl } from '$lib/state/sources/repositories/diff/compare';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -41,8 +44,14 @@
         /** The commit's abbreviated hash, git's `%h`, which a file's diff names the commit by. */
         short: string;
         /**
-         * Where the commit is drawn (`in`, `out`, `log` or `outside`), which a commit drawn in two
-         * lists needs so the ids of its rows and its folders are each one row's.
+         * The two commits whose difference is listed in place of the commit's own change (`hash`
+         * is then `to`), and the words a file's diff is named by.
+         */
+        range?: { from: string; to: string; label: string };
+        /**
+         * Where the files are drawn (`log` under a commit of the history, `outside` under a commit
+         * drawn above it, `incoming` or `outgoing` under the entry of that side), so the ids of
+         * the rows and the folders of two lists drawn at once are each one row's.
          */
         place: string;
         nav: TreeNav;
@@ -69,6 +78,7 @@
         root,
         hash,
         short,
+        range,
         place,
         nav,
         onrows,
@@ -145,7 +155,11 @@
     async function load(from: string, commit: string): Promise<void> {
         reading = true;
         try {
-            const response = await fetch(commitUrl(from, commit));
+            const response = await fetch(
+                range === undefined
+                    ? commitUrl(from, commit)
+                    : refCompareUrl(from, range.from, range.to)
+            );
             const read = commitFilesOf(response.ok, await readJson(response));
             files = read.files ?? files;
             failure = read.failure;
@@ -157,6 +171,14 @@
     }
 
     function opened(file: GitCommitFile): void {
+        if (range !== undefined) {
+            const compare = { from: range.from, to: range.to };
+            repositories.openDiff(
+                { root, path: file.path, staged: false, worktree: false, compare },
+                t('repositories.range_diff_label', nameOf(file.path), range.label)
+            );
+            return;
+        }
         repositories.openDiff(
             { root, path: file.path, staged: false, worktree: false, commit: hash, short },
             t('repositories.commit_diff_label', nameOf(file.path), short)
@@ -166,11 +188,11 @@
 
 {#if failure !== ''}
     <li role="none">
-        <TreeItem label={failure} depth={1} tone="error" />
+        <TreeItem label={failure} depth={2} tone="error" />
     </li>
 {:else if reading && files.length === 0}
     <li role="none">
-        <TreeItem label={t('repositories.graph_pending')} depth={1} tone="muted" />
+        <TreeItem label={t('repositories.graph_pending')} depth={2} tone="muted" />
     </li>
 {/if}
 {#each rows as row (row.kind === 'folder' ? `dir:${row.path}` : row.path)}
@@ -219,10 +241,13 @@
 {/each}
 
 <style>
+    /* A file row stands one step in from the Graph's section head, as its commit does, its lanes
+       included, and its own depth puts it one step under the commit. */
     .file {
         display: flex;
         align-items: center;
         min-width: 0;
+        padding-left: calc(var(--tree-guide-gap, 4px) + var(--tree-indent) * var(--text-scale, 1));
     }
 
     .item {

@@ -3,6 +3,12 @@
 // is one the row's or the head's own controls already offer, and a pick runs the function that
 // control calls, a Discard behind the question the row's Discard control asks.
 //
+// A write picked from a changed file's menu acts on the paths the row's controls act on
+// (`actedPaths` of changes/picking.ts): every selected row of the group when the pressed row is
+// among them, the pressed row alone otherwise. Stage, Unstage and Add to .gitignore write them in
+// one call, and Discard asks one question naming their count. The items that open something open
+// the pressed row alone.
+//
 // A folder row of the tree mode offers the actions of its group over every path under it: Unstage
 // in Staged, Stage and Discard in Changes, Stage in Untracked.
 //
@@ -211,9 +217,9 @@ export type ChangeDeps = {
     openChange: (root: string, group: string, path: string) => void;
     openHead: (root: string, group: string, path: string) => void;
     openFile: (root: string, path: string) => void;
-    stage: (root: string, path: string) => void;
-    unstage: (root: string, path: string) => void;
-    discard: (root: string, path: string) => void;
+    stagePaths: (root: string, paths: readonly string[]) => void;
+    unstagePaths: (root: string, paths: readonly string[]) => void;
+    discardPaths: (root: string, paths: readonly string[]) => void;
     trash: (root: string, paths: readonly string[]) => void;
     ignore: (root: string, paths: readonly string[]) => void;
     compareWorkspace: (root: string, group: string, path: string) => void;
@@ -224,7 +230,7 @@ export type ChangeDeps = {
 function askDiscard(
     root: string,
     path: string,
-    deps: Pick<ChangeDeps, 'ask' | 'discard'>,
+    deps: { ask: Ask; discard: (root: string, path: string) => void },
     t: Words
 ): void {
     deps.ask(t('git.discard_confirm', path), t('git.discard_detail'), () => {
@@ -257,22 +263,25 @@ export function askDiscardPaths(
     });
 }
 
-/** Run a pick from a changed file's menu. */
+/**
+ * Run a pick from a changed file's menu: `path` is the pressed row's, which the items that open
+ * something open, and `acted` the paths the row's controls act on, which the writes take.
+ */
 export function changePicked(
     pick: string,
-    row: { root: string; group: string; path: string },
+    row: { root: string; group: string; path: string; acted: readonly string[] },
     deps: ChangeDeps,
     t: Words
 ): void {
-    const { root, group, path } = row;
+    const { root, group, path, acted } = row;
     if (pick === CHANGE_OPEN_CHANGES) deps.openChange(root, group, path);
     else if (pick === CHANGE_OPEN_HEAD) deps.openHead(root, group, path);
     else if (pick === CHANGE_OPEN_FILE) deps.openFile(root, path);
-    else if (pick === CHANGE_STAGE) deps.stage(root, path);
-    else if (pick === CHANGE_UNSTAGE) deps.unstage(root, path);
-    else if (pick === CHANGE_IGNORE) deps.ignore(root, [path]);
+    else if (pick === CHANGE_STAGE) deps.stagePaths(root, acted);
+    else if (pick === CHANGE_UNSTAGE) deps.unstagePaths(root, acted);
+    else if (pick === CHANGE_IGNORE) deps.ignore(root, acted);
     else if (pick === CHANGE_COMPARE_WORKSPACE) deps.compareWorkspace(root, group, path);
-    else if (pick === CHANGE_DISCARD && group === 'untracked') askTrash(root, [path], deps, t);
-    else if (pick === CHANGE_DISCARD) askDiscard(root, path, deps, t);
+    else if (pick === CHANGE_DISCARD && group === 'untracked') askTrash(root, acted, deps, t);
+    else if (pick === CHANGE_DISCARD) askDiscardPaths(root, acted, deps, t);
     else if (pick === CHANGE_REVEAL) deps.reveal(root, path);
 }

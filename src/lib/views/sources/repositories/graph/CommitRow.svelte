@@ -1,12 +1,16 @@
 <script lang="ts">
     // Layer 3, partial of views/sources/repositories/graph/Graph.svelte. One commit of the Source
     // Control Graph, drawn from its props alone so a test renders it without the graph's reads: its
-    // lanes and circle, its subject, its author muted after it, and at the right the names on it as
-    // pills, then its `...` on hover. The commit HEAD is on carries a head pill first, named by the
-    // checked-out branch, or by the short hash while HEAD is detached. The first pill keeps its
+    // lanes and circle (the dashed circle of its side for a commit only HEAD or only the upstream
+    // holds), its subject, its author muted after it, and at the right the names on it as pills,
+    // then its `...` on hover. The commit HEAD is on carries a head pill first, named by the
+    // checked-out branch, or by the short hash while HEAD is detached. The pills take VS Code's
+    // three colours of the graph's names: the checked-out branch and the local branches the
+    // reference colour, a remote branch the remote reference colour with the cloud glyph, and the
+    // upstream's base the base reference colour; a tag is a plain pill. The first pill keeps its
     // name, cut at 100 pixels; every other name is drawn as its kind's glyph alone, the names of
-    // one kind (local branch, remote branch, tag) grouped in one pill with their count when there
-    // is more than one, and the names in the pill's tooltip. The subject keeps at least four
+    // one kind (local branch, remote branch, base, tag) grouped in one pill with their count when
+    // there is more than one, and the names in the pill's tooltip. The subject keeps at least four
     // characters of the row. The checked-out commit's subject and author are at weight 600. The
     // short hash and the time are in the row's hover words, not in the row.
     //
@@ -38,7 +42,11 @@
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import Lanes from './Lanes.svelte';
     import { commitPills, type Pill } from './pills';
-    import { commitKind, type LaneRow } from '$lib/state/sources/repositories/graph-lanes';
+    import {
+        commitKind,
+        type GraphSide,
+        type LaneRow
+    } from '$lib/state/sources/repositories/graph-lanes';
     import type { GitGraphCommit } from '$lib/state/sources/repositories/repositories';
     import { t } from '$lib/state/shared/words/text';
 
@@ -49,6 +57,8 @@
         nav: TreeNav;
         /** The lanes of the row, in the list the commit is drawn in. */
         lane?: LaneRow;
+        /** The side of the upstream the commit is on, when only one of HEAD and it holds it. */
+        side?: GraphSide;
         /** Whether the commit's files are open under it. */
         open: boolean;
         branches: BranchFacts;
@@ -70,6 +80,7 @@
         id,
         nav,
         lane,
+        side,
         open,
         branches,
         compare,
@@ -82,14 +93,14 @@
     }: Props = $props();
 
     /** The names on the commit: HEAD's pill, local branches, then remote branches, then tags. */
-    const pills = $derived<Pill[]>(commitPills(commit, branches, here));
+    const pills = $derived<Pill[]>(commitPills(commit, branches, here, compare));
 
     /** The pill that keeps its name. */
     const first = $derived<Pill | undefined>(pills.at(0));
 
     /** The other names, one pill of a kind's glyph for each kind that has any. */
     const grouped = $derived(
-        (['local', 'remote', 'tag'] as const)
+        (['local', 'remote', 'base', 'tag'] as const)
             .map((kind) => ({
                 kind,
                 names: pills
@@ -124,9 +135,13 @@
     /** The glyph of the pill that marks the commit HEAD is at. */
     const HEAD_GLYPH = 'head';
 
-    /** The glyph of a kind of name. */
+    /** The glyph of a remote branch's pill, the base's among them. */
+    const REMOTE_GLYPH = 'remote_branch';
+
+    /** The glyph of a kind of name: a remote branch, the base among them, has the cloud. */
     function glyphOf(kind: Pill['kind']): string {
         if (kind === 'head') return HEAD_GLYPH;
+        if (kind === 'remote' || kind === 'base') return REMOTE_GLYPH;
         return kind === 'tag' ? 'tag' : 'branch';
     }
 </script>
@@ -157,7 +172,7 @@
 
 <li role="none" class="commit" data-commit={commit.hash}>
     {#if lane !== undefined}
-        <Lanes row={lane} kind={commitKind(commit, commit.head)} />
+        <Lanes row={lane} kind={commitKind(commit, commit.head, side)} />
     {/if}
     <div class="item">
         <ContextMenu label={commit.subject} {items} onpick={picked}>
@@ -215,11 +230,13 @@
        not inside it, read from here: the two values TreeItem gives its own line at rest and under
        the pointer (a graph row is never drawn selected, so its third value has no row here).
        Under the pointer the same background is painted under the lanes, so the row reads as one
-       line with its circle. */
+       line with its circle. The row stands one step in from the Graph's section head, the width
+       of one guide of a tree row, its lanes included. */
     .commit {
         display: flex;
         align-items: center;
         min-width: 0;
+        padding-left: calc(var(--tree-guide-gap, 4px) + var(--tree-indent) * var(--text-scale, 1));
         border-radius: var(--radius-sm);
         --row-bg: var(--panel);
     }
@@ -266,10 +283,31 @@
         background: transparent;
     }
 
+    /* VS Code's three colours of the graph's names, filled, the words in the ink that reads on the
+       fill: the checked-out branch and every local branch in the reference colour, a remote branch
+       in the remote reference colour, the upstream's base in the base reference colour. A tag
+       keeps the plain pill. */
+    .pill[data-pill='head'],
     .pill[data-pill='local'],
+    :global(body.wall) .pill[data-pill='head'],
     :global(body.wall) .pill[data-pill='local'] {
-        background: var(--accent-bg);
-        color: var(--on-accent-bg, var(--ink));
+        border-color: var(--c-graph-ref);
+        background: var(--c-graph-ref);
+        color: var(--on-c-graph-ref, var(--ink));
+    }
+
+    .pill[data-pill='remote'],
+    :global(body.wall) .pill[data-pill='remote'] {
+        border-color: var(--c-graph-remote);
+        background: var(--c-graph-remote);
+        color: var(--on-c-graph-remote, var(--ink));
+    }
+
+    .pill[data-pill='base'],
+    :global(body.wall) .pill[data-pill='base'] {
+        border-color: var(--c-graph-base);
+        background: var(--c-graph-base);
+        color: var(--on-c-graph-base, var(--ink));
     }
 
     .pill.alone {

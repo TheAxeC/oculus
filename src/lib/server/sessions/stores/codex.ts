@@ -123,6 +123,7 @@ const itemShape = quickly(
             content: codexContentTextShape,
             changes: z.unknown().optional(),
             agent_path: textShape,
+            agent_thread_id: textShape,
             kind: textShape,
             receiver_agents: z.array(filledTextShape).optional().catch(undefined),
             agents_states: mapShape.optional().catch(undefined)
@@ -329,12 +330,16 @@ const changedPathsShape = z
     ])
     .catch(() => []);
 
-/** A subagent's own activity, keyed by its path. `/root` is the session itself, not a subagent. */
+/**
+ * A subagent's own activity, keyed by its path. `/root` is the session itself, not a subagent. The
+ * thread id the item names is the id of the subagent's own rollout, a session of its own.
+ */
 function subAgent(acc: Acc, item: Item, stamp: string | null): void {
     const path = item.agent_path;
     if (!path || path === ROOT_AGENT) return;
     const agent = agentEntry(acc, path, stamp);
     if (!agent.subagentType) agent.subagentType = basename(path);
+    if (item.agent_thread_id) agent.agentId = item.agent_thread_id;
     if (item.kind === 'completed') {
         agent.status = 'done';
         agent.ended = stamp;

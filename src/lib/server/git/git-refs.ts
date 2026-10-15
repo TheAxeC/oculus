@@ -10,21 +10,22 @@
 // changes it conflicts with leaves the conflicts in the index, as git does, and the answer names
 // them: the view draws them under Merge Changes, and a popped stash that conflicted is kept.
 //
-// The records of `status --porcelain=v1 -z` are split by core/git/parse.ts's `statusRecords`.
+// The records of `status --porcelain=v1 -z` are read one by one as git writes them, through
+// git-write.ts's `statusHolds`, which ends the read at the first record a stash would take.
 
 import { permitted } from '../core/paths.ts';
 import { words } from '../core/words.ts';
 import { byKey } from '../../data/helpers/guards.ts';
 import { BRANCH_NOT_MERGED } from '../../data/model/index.ts';
-import { REFS_FORMAT, STASH_REF, parseBranches, statusRecords } from '../core/git/parse.ts';
+import { REFS_FORMAT, STASH_REF, parseBranches, type StatusRecord } from '../core/git/parse.ts';
 import {
     allowedRoots,
     branch as branchIn,
     checkName,
     checkStart,
     failed,
-    porcelain,
     refFormat,
+    statusHolds,
     stashIn,
     tagIn,
     withFile,
@@ -42,15 +43,13 @@ const STASH_FLAGS: Record<StashMode, string[]> = {
 };
 
 /**
- * Whether the porcelain holds something the stash would take, so a stash of nothing is refused
+ * Whether a status record is something the stash would take, so a stash of nothing is refused
  * with a sentence rather than git's own quiet success that made no stash.
  */
-function holds(output: string, mode: StashMode): boolean {
-    return statusRecords(output).some(({ code }) => {
-        if (mode === 'staged') return !code.startsWith(' ') && !code.startsWith('?');
-        if (mode === 'tracked') return code !== '??';
-        return true;
-    });
+function takes({ code }: StatusRecord, mode: StashMode): boolean {
+    if (mode === 'staged') return !code.startsWith(' ') && !code.startsWith('?');
+    if (mode === 'tracked') return code !== '??';
+    return true;
 }
 
 /** Stash the changes the mode names, with the message when one is given. */
@@ -64,9 +63,10 @@ export async function stash(
     if (!permitted(root, roots)) return failed(words(text, 'server.git.unknown_directory'));
     const flags = byKey(STASH_FLAGS, mode);
     if (flags === undefined) return failed(words(text, 'server.git.not_a_way_to_stash'));
-    const state = await porcelain(root);
-    if (!state.ok) return state;
-    if (!holds(state.output, mode)) return failed(words(text, 'server.git.nothing_to_stash'));
+    const something = await statusHolds(root, (record) => takes(record, mode));
+    if (something !== true) {
+        return something === false ? failed(words(text, 'server.git.nothing_to_stash')) : something;
+    }
     const body = typeof message === 'string' ? message.trim() : '';
     const done = await stashIn(root, [
         'push',

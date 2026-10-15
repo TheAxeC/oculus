@@ -44,17 +44,20 @@ function viewport(fraction: number, unit: 'vw' | 'vh'): string {
 }
 
 /**
- * The style a float is drawn with. A free float is placed by its fractions of the window; a docked
- * float is placed by the grid track it sits in (bodyTracks), so it carries the border alone. A
- * float in a window of its own is drawn by no one here, so it has no style.
+ * The style a float is drawn with. A free float is placed by its fractions of the window, its top
+ * no higher than the foot of the window's title bar strip (`--titlebar-height`) and its height
+ * cut to what the window holds below that top, so the strip stays whole above every float; a
+ * docked float is placed by the grid track it sits in (bodyTracks), so it carries the border alone.
+ * A float in a window of its own is drawn by no one here, so it has no style.
  */
 export function floatStyle(place: DrawnPlace): string {
     if (place.kind === 'dock') return BORDER;
+    const top = `max(var(--titlebar-height), ${viewport(place.y, 'vh')})`;
     return [
         `left: ${viewport(place.x, 'vw')}`,
-        `top: ${viewport(place.y, 'vh')}`,
+        `top: ${top}`,
         `width: ${viewport(place.w, 'vw')}`,
-        `height: ${viewport(place.h, 'vh')}`,
+        `height: min(${viewport(place.h, 'vh')}, calc(100vh - ${top}))`,
         BORDER
     ].join('; ');
 }
@@ -151,19 +154,23 @@ export function snapEdge(
 
 /**
  * The rectangle in the viewport a tab dragged with Alt held would float as, were it released at
- * `point`: the starting size, its corner at the point, kept inside the window.
+ * `point`: the starting size, its corner at the point, kept inside the window, and drawn as
+ * floatStyle draws it, its top no higher than `top` (the foot of the title bar strip) and its
+ * height cut to what the window holds below that.
  */
 export function outlineAt(
     point: { x: number; y: number },
-    window: { width: number; height: number }
+    window: { width: number; height: number },
+    top = 0
 ): { x: number; y: number; width: number; height: number } {
     const width = window.width * START_W;
-    const height = window.height * START_H;
+    const start = window.height * START_H;
+    const y = Math.max(Math.min(Math.max(point.y, 0), window.height - start), top);
     return {
         x: Math.min(Math.max(point.x, 0), window.width - width),
-        y: Math.min(Math.max(point.y, 0), window.height - height),
+        y,
         width,
-        height
+        height: Math.min(start, window.height - y)
     };
 }
 

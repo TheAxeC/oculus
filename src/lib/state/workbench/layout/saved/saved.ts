@@ -6,28 +6,32 @@
 // data/helpers/guards.ts's `isMap`; what the schemas leave to the checks below is how the parts
 // add up: sizes that sum to one, a minimum size, a folded index inside the children.
 //
-// The envelope is `{ version, pages, current, floats, kept }`, each float `{ id, pane, place }`; a
-// page may carry `folder` (`{ root, path }`) and `item` (`{ view, state }`), and `kept` lists the
-// layouts of the folder pages that were closed (kept.ts reads them). Only an envelope of
-// LAYOUT_VERSION is read; any other version is not, and the text of one is kept under UNREAD_KEY by
-// the load (load.ts) while the default pages show. A float that does not add up (no tab, a place
-// past the window, an id a page or another float already uses, a tab id held twice, a second float
-// docked on one edge, a window place with a size that is not finite or is under 200) is dropped on
-// reading and the rest kept, and so is a kept layout that does not add up. A pane carries `locked`
-// (a pane without the field reads as unlocked), `added` (a pane without the field reads as one its
-// page's arrangement defined, and a float's pane never carries it), `documents` (a pane without the
-// field reads as not the documents pane of a workbench, and a float's pane never carries it) and
-// `recent`, the ids of the other tabs it showed, and a saved pane whose pinned tabs are not first
-// is put in that order on reading.
+// The envelope is `{ version, pages, current, floats, kept, hidden }`, each float `{ id, pane,
+// place }`; a page may carry `folder` (`{ root, path }`) and `item` (`{ view, state }`), `kept`
+// lists the layouts of the folder pages that were closed (kept.ts reads them), and `hidden` the
+// edges whose docked float the window strip's toggles hide, read with an edge no float docks on and
+// an edge named twice dropped and absent when none is. Only an envelope of LAYOUT_VERSION is read;
+// any other version is not, and the text of one is kept under UNREAD_KEY by the load (load.ts)
+// while the default pages show. A float that does not add up (no tab, a place past the window, an
+// id a page or another float already uses, a tab id held twice, a second float docked on one edge,
+// a window place with a size that is not finite or is under 200) is dropped on reading and the rest
+// kept, and so is a kept layout that does not add up. A pane carries `locked` (a pane without the
+// field reads as unlocked), `added` (a pane without the field reads as one its page's arrangement
+// defined, and a float's pane never carries it), `documents` (a pane without the field reads as not
+// the documents pane of a workbench, and a float's pane never carries it) and `recent`, the ids of
+// the other tabs it showed, and a saved pane whose pinned tabs are not first is put in that order
+// on reading.
 
 import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
 import {
+    DOCK_EDGES,
     LAYOUT_VERSION,
     MIN_SIZE,
     pageLeaf,
     pinnedTabsFirst,
     show,
+    type DockEdge,
     type Float,
     type Instance,
     type KeptWorkbench,
@@ -111,7 +115,8 @@ const pagesEnvelopeShape = z.object({
     pages: listShape,
     current: z.string(),
     floats: z.unknown().optional(),
-    kept: z.unknown().optional()
+    kept: z.unknown().optional(),
+    hidden: z.unknown().optional()
 });
 
 /** A saved float: its id, with its pane and its place read apart. */
@@ -477,7 +482,8 @@ export function serialiseLayout(pages: Pages): string {
         pages: pages.pages,
         current: pages.current,
         floats: pages.floats,
-        ...keptField(pages)
+        ...keptField(pages),
+        ...(pages.hidden === undefined || pages.hidden.length === 0 ? {} : { hidden: pages.hidden })
     });
 }
 
@@ -523,10 +529,21 @@ export function parseLayout(value: unknown): Pages | null {
         pages.push(page);
     }
     const floats = readFloats(held.floats, pages);
-    const read: Pages = settlePageLeaves({ pages, current, floats });
-    if (checkPages(read).length > 0) return null;
+    const settled: Pages = settlePageLeaves({ pages, current, floats });
+    if (checkPages(settled).length > 0) return null;
+    const hidden = hiddenOf(held.hidden);
+    const read = hidden.length === 0 ? settled : { ...settled, hidden };
     const kept = keptOf(held.kept, readWorkbench, instanceIds(read));
     return kept.length === 0 ? read : { ...read, kept };
+}
+
+/**
+ * The hidden edges of a saved envelope: a value that is not a list hides none, and an entry that is
+ * no edge a float docks on, or an edge already read, is dropped.
+ */
+function hiddenOf(value: unknown): DockEdge[] {
+    const listed = readAs(listShape, value) ?? [];
+    return DOCK_EDGES.filter((edge) => listed.includes(edge));
 }
 
 /**

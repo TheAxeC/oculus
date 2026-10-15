@@ -40,7 +40,7 @@
     >
         {#if git.tags.length === 0}
             <li role="none">
-                <TreeItem label={t('repositories.tags_empty')} tone="muted" />
+                <TreeItem label={t('repositories.tags_empty')} depth={1} tone="muted" />
             </li>
         {/if}
         {#each git.tags as tag (tag.name)}
@@ -50,6 +50,7 @@
                     id={`tag:${tag.name}`}
                     {nav}
                     level={2}
+                    depth={1}
                     glyph="tag"
                     title={t('repositories.tag_title', tag.commit.slice(0, 7))}
                     onclick={() => repositories.openCommit(root, tag.commit)}

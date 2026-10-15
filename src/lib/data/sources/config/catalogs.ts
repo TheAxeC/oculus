@@ -278,6 +278,13 @@ function localText(catalog: TextCatalog, problem: LocalProblem): string {
                 problem.key,
                 problem.hub
             );
+        case 'label':
+            return findingText(
+                catalog,
+                'findings.config.setting_default',
+                problem.key,
+                findingText(catalog, 'findings.config.claude_label')
+            );
         case 'unparsed':
             return findingText(catalog, 'findings.config.local_unparsed');
         case 'not-a-map':

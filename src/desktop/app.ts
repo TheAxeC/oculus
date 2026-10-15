@@ -74,7 +74,7 @@ export function startApp(options: StartOptions): void {
         process.stdout.write(`${t('server.start.already_running')}\n`, () => app.exit(0));
         return;
     }
-    // The title bar, the sheets and the dialogs the app shows follow the page's dark theme.
+    // The sheets and the dialogs the app shows follow the page's dark theme.
     nativeTheme.themeSource = 'dark';
     process.on('SIGTERM', () => app.quit());
     process.on('SIGINT', () => app.quit());

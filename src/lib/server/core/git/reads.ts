@@ -1,9 +1,9 @@
 // Layer 2, server. The git reads a page asks for on demand through GET /api/git: a page of the
-// graph, a commit's files and diffs, a stash's diff, the two versions of a file, the merge base,
-// the attributes that decide whether a diff may be cut, the blame, the gutter marks and the three
-// stages of a conflicted path. Every command goes through run.ts, which answers a promise, so each
-// read here is awaited by its caller and the event loop serves other requests while git works. A
-// refusal is worded from the `text` catalog each read is handed.
+// graph over HEAD and its upstream, a commit's files and diffs, a stash's diff, the two versions of
+// a file, the merge base, the attributes that decide whether a diff may be cut, the blame, the
+// gutter marks and the three stages of a conflicted path. Every command goes through run.ts, which
+// answers a promise, so each read here is awaited by its caller and the event loop serves other
+// requests while git works. A refusal is worded from the `text` catalog each read is handed.
 
 import { isUtf8 } from 'node:buffer';
 import { lstatSync, readFileSync, readlinkSync } from 'node:fs';
@@ -15,6 +15,7 @@ import type {
     GitCommitFile,
     GitGraphCommit,
     GitGraphPage,
+    GitGraphRange,
     GitLineMark,
     GitMergeSides
 } from '../../../data/model/index.ts';
@@ -49,10 +50,14 @@ import {
 export const GRAPH_PAGE = 50;
 
 /**
- * One page of the graph: GRAPH_PAGE commits of HEAD's history in topological order after the
- * first `skip`, whether more follow, and on the first page the commits the upstream holds that
- * HEAD does not and the other way round. A branch with no upstream answers both lists empty, and
- * a repository with no commit answers git's own reason.
+ * One page of the graph: GRAPH_PAGE commits in topological order after the first `skip`, read over
+ * HEAD and, when the branch has one, its upstream together, as VS Code's graph is one graph of the
+ * branch and its upstream, so a commit only one of them holds sits in its own lane and every
+ * commit is listed once; and whether more follow. The first page also carries the commits the
+ * upstream holds that HEAD does not and the other way round, which the page marks as incoming and
+ * outgoing, and the range they span (`rangeOf`), which Incoming Changes and Outgoing Changes list
+ * the files of. A branch with no upstream reads HEAD alone and answers both lists empty and no
+ * range, and a repository with no commit answers git's own reason.
  */
 export async function graphPage(
     root: string,
@@ -62,22 +67,60 @@ export async function graphPage(
 ): Promise<Read<GitGraphPage>> {
     const from = Number.isInteger(skip) && skip > 0 ? skip : 0;
     const ms = milliseconds(timeout);
+    const upstream = await commitOf(root, '@{upstream}', ms);
+    const tips = upstream === '' ? ['HEAD'] : ['HEAD', upstream];
     const done = await run(
         root,
-        ['log', '--topo-order', GRAPH_FORMAT, `--skip=${from}`, `-${GRAPH_PAGE + 1}`, 'HEAD', '--'],
+        [
+            'log',
+            '--topo-order',
+            GRAPH_FORMAT,
+            `--skip=${from}`,
+            `-${GRAPH_PAGE + 1}`,
+            ...tips,
+            '--'
+        ],
         ms
     );
     if (!done.ok) return refused(reasonOf(done, text));
     const rows = parseGraph(done.text);
+    const first = from === 0 && upstream !== '';
+    const range = first ? await rangeOf(root, upstream, ms) : null;
     return {
         ok: true,
         value: {
             commits: rows.slice(0, GRAPH_PAGE),
             more: rows.length > GRAPH_PAGE,
-            incoming: from === 0 ? await between(root, 'HEAD..@{upstream}', ms) : [],
-            outgoing: from === 0 ? await between(root, '@{upstream}..HEAD', ms) : []
+            incoming: first ? await between(root, `HEAD..${upstream}`, ms) : [],
+            outgoing: first ? await between(root, `${upstream}..HEAD`, ms) : [],
+            ...(range === null ? {} : { range })
         }
     };
+}
+
+/** The commit a ref names, or the empty string when it names none (a branch with no upstream). */
+async function commitOf(root: string, ref: string, timeout: number): Promise<string> {
+    const done = await run(root, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], timeout);
+    const hash = done.text.trim();
+    return done.ok && HASH.test(hash) ? hash : '';
+}
+
+/**
+ * The commits either side of the upstream span: the merge base of HEAD and the upstream, the
+ * upstream's commit and HEAD's. Incoming Changes are the files between the base and the upstream,
+ * Outgoing Changes the files between the base and HEAD. Null when git names no base, as for two
+ * histories with nothing in common.
+ */
+async function rangeOf(
+    root: string,
+    upstream: string,
+    timeout: number
+): Promise<GitGraphRange | null> {
+    const head = await commitOf(root, 'HEAD', timeout);
+    const based = await run(root, ['merge-base', upstream, 'HEAD'], timeout);
+    const base = based.text.trim();
+    if (head === '' || !based.ok || !HASH.test(base)) return null;
+    return { base, incoming: upstream, outgoing: head };
 }
 
 /** The commits of one range around the upstream, capped; a range git cannot read is empty. */

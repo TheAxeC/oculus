@@ -8,6 +8,7 @@
 // discard and a Files operation over one file are ordered.
 
 import { handleGit, handleGitGet } from '$lib/server/git/git-routes';
+import { messageAccount } from '$lib/server/git/git-message';
 import { allowedRoots } from '$lib/server/git/git-write';
 import { gitRoots } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
@@ -17,6 +18,7 @@ const options = (locals: App.Locals) => {
     return {
         config: locals.config().config,
         claudeBin: server.local.claudeBin,
+        account: messageAccount(server.local),
         rootsFor: () =>
             allowedRoots([
                 ...gitRoots(server.hub),

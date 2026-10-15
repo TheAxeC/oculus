@@ -11,6 +11,18 @@ export const CLOSE_SELF = 'oculus:close-self';
 export const FOCUS_MAIN = 'oculus:focus-main';
 export const SHOW_FIND = 'oculus:show-find';
 
+/** A double press on the empty part of the page's title bar strip, nothing answered. */
+export const TITLE_DOUBLE_CLICK = 'oculus:title-double-click';
+
+/**
+ * A page telling the host the colours its title bar strip is drawn in, for the window buttons the
+ * system draws over the strip off macOS, nothing answered.
+ */
+export const TITLE_COLOURS = 'oculus:title-colours';
+
+/** A page asking whether its window is in full screen, answered with the state. */
+export const FULL_SCREEN = 'oculus:full-screen';
+
 /** The find channels, which the find bar's view may use as well as a window's page. */
 export const FIND = 'oculus:find';
 export const STOP_FIND = 'oculus:stop-find';

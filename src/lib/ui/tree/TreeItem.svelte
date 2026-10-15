@@ -2,7 +2,8 @@
     // Layer 3, primitive. One row of an explorer: a line of one fixed height holding the indent
     // guides of its depth, the expand arrow of a row that opens, a glyph or a file's Seti icon, the
     // name and a muted detail, then the row's own controls, and at the right edge a count or a
-    // mark. A heading row is the same line drawn as the head of a section, its name in capitals.
+    // mark; controls given as `after` follow the count. A heading row is the same line drawn as the
+    // head of a section, its name in capitals.
     //
     // A row with something to do when pressed carries a button over its name, which is what a
     // pointer presses, and the row itself answers a press on the space beyond its parts, so the
@@ -93,6 +94,7 @@
         field,
         actions,
         showActions = false,
+        after,
         end,
         drag
     }: TreeItemProps = $props();
@@ -237,6 +239,11 @@
     {/if}
     {#if count !== undefined}
         <span class="count" class:badge title={countTitle}>{count}</span>
+    {/if}
+    {#if after !== undefined}
+        <TreeActions shown={showActions} yielding={false}>
+            {@render after(inside ? 0 : -1)}
+        </TreeActions>
     {/if}
     {#if !trailing && end !== undefined}
         <span class="end">{@render end()}</span>

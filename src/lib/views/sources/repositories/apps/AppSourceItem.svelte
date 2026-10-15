@@ -52,6 +52,7 @@
             id={`source:${key}`}
             {nav}
             level={2}
+            depth={1}
             glyph="repositories"
             title={t('repositories.app_source_title', control.label, owner)}
             {current}

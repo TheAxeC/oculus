@@ -147,6 +147,9 @@ export type Host = { id: string; workbench: Workbench };
 /** The side of the window a docked float is drawn along. */
 export type DockEdge = 'left' | 'right' | 'bottom';
 
+/** Every edge a float docks on, in the order the window strip draws their toggles. */
+export const DOCK_EDGES: readonly DockEdge[] = ['left', 'bottom', 'right'];
+
 /**
  * Where a float is drawn. A free float is a rectangle in fractions of the window; a docked one
  * runs along an edge and takes `size` of the window's width, or of its height along the bottom; a
@@ -180,13 +183,15 @@ export const KEPT_MAX = 20;
 
 /**
  * Every page, the floats beside them, and which page is on screen, with the layouts of the folder
- * pages that were closed, oldest first. This is the unit that is saved.
+ * pages that were closed, oldest first, and the edges whose docked float the window strip's toggles
+ * hide (absent when none is). This is the unit that is saved.
  */
 export type Pages = {
     pages: Page[];
     current: string;
     floats: Float[];
     kept?: KeptWorkbench[];
+    hidden?: DockEdge[];
 };
 
 /** The side of a pane a dropped tab takes, which is what says where the new pane goes. */
@@ -204,14 +209,62 @@ export const MAIN_VIEW = 'status';
 /**
  * The envelope version serialiseLayout writes and the only one parseLayout reads: the list of
  * pages, one tree each, with the folder a page belongs to, the floats beside them, with the tabs a
- * pane pins and the order it showed them in, and the layouts of the folder pages that were closed.
- * An envelope of any other version is not read.
+ * pane pins and the order it showed them in, the layouts of the folder pages that were closed, and
+ * the optional list of the edges whose docked float is hidden. An envelope of any other version is
+ * not read.
  */
 export const LAYOUT_VERSION = 7;
 
 /** A float as a host: a workbench of its one pane, with no maximised pane. */
 export function floatHost(float: Float): Host {
     return { id: float.id, workbench: { root: float.pane } };
+}
+
+/** Whether the float docked on an edge is hidden by its toggle. */
+export function edgeHidden(held: Pages, edge: DockEdge): boolean {
+    return held.hidden?.includes(edge) === true;
+}
+
+/** The float docked on an edge, or undefined when none is. */
+export function dockedAt(held: Pages, edge: DockEdge): Float | undefined {
+    return held.floats.find((one) => one.place.kind === 'dock' && one.place.edge === edge);
+}
+
+/** The floats the window draws: every one but a float docked on a hidden edge. */
+export function shownFloats(held: Pages): Float[] {
+    const hidden = held.hidden ?? [];
+    if (hidden.length === 0) return held.floats;
+    return held.floats.filter(
+        (one) => one.place.kind !== 'dock' || !hidden.includes(one.place.edge)
+    );
+}
+
+/** The pages with an edge hidden or shown; the list is left out when no edge is hidden. */
+export function withHidden(held: Pages, edge: DockEdge, hide: boolean): Pages {
+    if (edgeHidden(held, edge) === hide) return held;
+    const others = (held.hidden ?? []).filter((one) => one !== edge);
+    const hidden = hide ? DOCK_EDGES.filter((one) => one === edge || others.includes(one)) : others;
+    const { hidden: _, ...rest } = held;
+    return hidden.length === 0 ? rest : { ...rest, hidden };
+}
+
+/**
+ * The pages after a change, with each hidden edge shown again whose docked float is new there or
+ * shows another tab: a float docked on a hidden edge, by a drag or a command, and a view opened in
+ * the float of a hidden edge, show that edge. Pages whose hidden edges stay as they are come back
+ * as given.
+ */
+export function settleHidden(before: Pages, after: Pages): Pages {
+    let settled = after;
+    for (const edge of after.hidden ?? []) {
+        const was = dockedAt(before, edge);
+        const now = dockedAt(after, edge);
+        if (now === undefined) continue;
+        if (was?.id !== now.id || was.pane.active !== now.pane.active) {
+            settled = withHidden(settled, edge, false);
+        }
+    }
+    return settled;
 }
 
 /** Every page and every float as a host, pages first. */

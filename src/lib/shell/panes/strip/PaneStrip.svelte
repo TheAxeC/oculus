@@ -1,11 +1,14 @@
 <script lang="ts">
     // Layer 3, shell. The top row of one pane, drawn under the two settings of
     // config/appearance.yml (strip-shape.ts): the tab strip of every tab (`show_tabs: multiple`) or
-    // of the active tab alone (`single`), a title row naming the active tab above the actions
-    // (`none`), or no row at all. The actions are the Split Right button, the lock mark of a locked
-    // pane, and the pane menu's `...` opener; `editor_actions: hidden` leaves out the first and the
-    // last, and a locked pane keeps its mark whatever either setting says, since the mark is what
-    // unlocks the group. With `wrap_tabs` and `show_tabs: multiple` the tabs wrap onto rows.
+    // of the active tab alone (`single`), or with `none` no row but a title row naming the active
+    // tab while the pane is locked. The actions are the Split Right button, the lock mark of a
+    // locked pane, and the pane menu's `...` opener; `editor_actions: hidden` leaves out the first
+    // and the last, and a locked pane keeps its mark whatever either setting says, since the mark
+    // is what unlocks the group. Under `show_tabs: none` with `editor_actions: strip` the first and
+    // the last go up to the window's title bar strip: the pane that leads the window (`lead`) hands
+    // them up (shell/titlebar/strip-actions.svelte.ts), and no pane draws them in its own head.
+    // With `wrap_tabs` and `show_tabs: multiple` the tabs wrap onto rows.
     //
     // The path of the active file tab is a breadcrumb: under the strip, or, when the strip shows
     // the active tab alone, in the strip's own row beside the tab. After the file it goes on with
@@ -37,6 +40,7 @@
     import type { Tab } from '$lib/ui/tabs/tab-strip';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { stripShape } from './strip-shape';
+    import { useStripActions } from '$lib/shell/titlebar/strip-actions.svelte';
     import { stripWraps } from '$lib/ui/tabs/tab-strip';
     import { editorActions, showTabs, wrapTabs } from '$lib/state/shared/words/appearance';
     import { t } from '$lib/state/shared/words/text';
@@ -61,6 +65,11 @@
         /** Where a dragged tab would land, in the index of `tabs`. */
         dropIndex: number | null;
         focused: boolean;
+        /**
+         * Whether this pane leads the window: the active pane of the page the reader is in, or the
+         * one pane of a float's window. Its actions are the ones the window strip draws.
+         */
+        lead?: boolean;
         onselect: (id: string) => void;
         onclose: (id: string) => void;
         ondblclick: (id: string) => void;
@@ -84,6 +93,7 @@
         onunpin,
         dropIndex,
         focused,
+        lead = false,
         onselect,
         onclose,
         ondblclick,
@@ -95,6 +105,13 @@
     }: Props = $props();
 
     const shape = $derived(stripShape(showTabs(), editorActions(), tabs, active, locked));
+
+    /** The window strip the actions go up to, when the settings send them there. */
+    const strip = useStripActions();
+
+    $effect(() => {
+        if (shape.up && lead && strip !== undefined) return strip.hand(heading);
+    });
     const wrap = $derived(stripWraps(wrapTabs(), showTabs()));
     /** Whether the bar has anything to draw: a path, or the actions of the file tab. */
     const barred = $derived(crumbs.length > 0 || barActions !== undefined);
@@ -188,27 +205,33 @@
         />
     {/if}
     {#if shape.actions}
-        {#if canSplit}
-            <ToolButton
-                label={t('ui.split_right')}
-                glyph={t('ui.split_right_glyph')}
-                compact
-                bare
-                tabindex={-1}
-                onclick={onsplit}
-            />
-        {/if}
-        <Menu
-            label={t('ui.pane_menu')}
-            glyph={t('ui.pane_more_glyph')}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render heading()}
+    {/if}
+{/snippet}
+
+<!-- The pane's own actions, drawn in its head or handed up to the window strip. -->
+{#snippet heading()}
+    {#if canSplit}
+        <ToolButton
+            label={t('ui.split_right')}
+            glyph={t('ui.split_right_glyph')}
             compact
             bare
-            placement="down"
-            align="right"
-            {items}
-            {onpick}
+            tabindex={-1}
+            onclick={onsplit}
         />
     {/if}
+    <Menu
+        label={t('ui.pane_menu')}
+        glyph={t('ui.pane_more_glyph')}
+        compact
+        bare
+        placement="down"
+        align="right"
+        {items}
+        {onpick}
+    />
 {/snippet}
 
 <style>

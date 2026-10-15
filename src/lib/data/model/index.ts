@@ -574,6 +574,7 @@ export type {
     GitFilePage,
     GitGraphCommit,
     GitGraphPage,
+    GitGraphRange,
     GitLineMark,
     GitMergeDeleted,
     GitMergeSides,

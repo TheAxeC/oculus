@@ -17,18 +17,18 @@ import { refactorShape, type RefactorSubject } from './refactor-subject.ts';
 /**
  * What one diff pane is over: a file under a root, staged or not; a whole worktree; one commit's
  * change to a file (`commit`); a whole stash (`stash`); every path of a change group (`group`); the
- * files between a ref and a commit (`compare`); or one file of a linked worktree against the main
- * worktree's (`workspace`). `against` is the file selected for compare, which makes the pane the
- * comparison of two files: the file at `root` and `path` on the right and `against` on the left.
- * `unsaved` is the instance id of a source tab, which makes the pane the comparison of that tab's
- * file as the disk holds it (left) with the tab's own text (right, editable): the tab's save
- * conflict. `original` names a source control of an app whose quick diff gives the file's original,
- * which makes the pane the comparison of the file as the disk holds it (right) with the text the
- * control gives as its original (left). `refactor` names the pending Refactor Preview, which makes
- * the pane the comparison of one of its files with the file as the checked edits would leave it.
- * `line` is the line of the new side the pane opens at, 0 for its top. `session` is the id of the
- * session record the pane was opened for, empty or absent for a pane opened from the Repositories
- * view.
+ * files between a ref and a commit, or one of them (`compare`); or one file of a linked worktree
+ * against the main worktree's (`workspace`). `against` is the file selected for compare, which
+ * makes the pane the comparison of two files: the file at `root` and `path` on the right and
+ * `against` on the left. `unsaved` is the instance id of a source tab, which makes the pane the
+ * comparison of that tab's file as the disk holds it (left) with the tab's own text (right,
+ * editable): the tab's save conflict. `original` names a source control of an app whose quick diff
+ * gives the file's original, which makes the pane the comparison of the file as the disk holds it
+ * (right) with the text the control gives as its original (left). `refactor` names the pending
+ * Refactor Preview, which makes the pane the comparison of one of its files with the file as the
+ * checked edits would leave it. `line` is the line of the new side the pane opens at, 0 for its
+ * top. `session` is the id of the session record the pane was opened for, empty or absent for a
+ * pane opened from the Repositories view.
  */
 export type DiffSubject = {
     root: string;
@@ -41,7 +41,11 @@ export type DiffSubject = {
     stash?: string;
     /** Every path of a change group, for the diff pane a group head opens; the path is empty. */
     group?: 'staged' | 'changed';
-    /** A ref and a commit hash, for the pane over `git diff <from> <to>`; the path is empty. */
+    /**
+     * A ref and a commit hash, for the pane over `git diff <from> <to>`: every file when the path
+     * is empty, the one file at the path otherwise (a file of Incoming Changes or Outgoing
+     * Changes).
+     */
     compare?: { from: string; to: string };
     /** The file is read from the main worktree (left) and this worktree (right), both on disk. */
     workspace?: true;
@@ -178,7 +182,7 @@ export function diffUrl(state: DiffSubject): string {
     if (state.against !== undefined) return compareUrl(state, state.against);
     if ((state.save ?? '') !== '') return savedUrl(state, state.save ?? '');
     if (state.compare !== undefined)
-        return refCompareUrl(state.root, state.compare.from, state.compare.to);
+        return refCompareUrl(state.root, state.compare.from, state.compare.to, state.path);
     if (state.workspace === true) return workspaceUrl(state.root, state.path);
     if (state.worktree) return worktreeDiffUrl(state.root, state.path);
     if ((state.commit ?? '') !== '') return commitUrl(state.root, state.commit ?? '', state.path);

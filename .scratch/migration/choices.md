@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z899 (2026-10-15, D77's landing, the orchestrator, automode): the guarded entries name D77's rows
+
+- Chosen: the Test lines of G13, G33, G41, G47 and G79 in `agents/guarded.md` name the rows D77 added, so each new test is a row of a guarded entry as `agents/spec.md` asks.
+- Not chosen: leaving the rows unnamed, the lazy option, which leaves tests outside any guarded entry.
+
+Where it applies: D77's landing (`agents/reviews/D77-refuter.md`, Closed, Standards 5). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z898 (2026-10-15, D77's landing, the orchestrator, automode): Stage All on a large untracked folder
+
+- Chosen: Stage All of the Untracked group reads `git status --untracked-files=normal`, so a wholly untracked folder is one pathspec, and its `git add` has no time limit and stops on Cancel. Measured through the code: 200,000 files in one new folder staged in 21,393 ms; 30,000 loose files in the repository's root staged in 10,650 ms.
+- Not chosen: `git update-index --add --stdin`, whose filters and nested repositories are not verified to match `git add`; keeping the add as built under its 10 s limit, the lazy option, which staged nothing on a folder of 200,000 files.
+
+Where it applies: D77's landing (`agents/reviews/D77-refuter.md`, Closed, Behaviour 1). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z897 (2026-10-15, D77 repair round 1, the orchestrator, automode): the colours of the window strip
 
 - Chosen: three title bar tokens of the strip's own; oculus's own themes set them to the rail's colours, so their strip looks as it does now, and every VS Code theme takes its `titleBar.activeBackground`, `titleBar.activeForeground` and `titleBar.border`, or VS Code's registered defaults when it sets none (dark `#3C3C3C` on `#CCCCCC` ink, light `#DDDDDD` with `#333333`).

@@ -17,10 +17,12 @@
     //
     // A row of Changes, Staged and Untracked opens a right-click menu of what its controls do
     // (menus/change-menu.ts), with Reveal in Explorer View, Add to .gitignore, Open File (HEAD)
-    // and, on a linked worktree, Compare with Workspace besides; the merge group has none. A
-    // Discard picked there asks the question the row's Discard control asks: the restore question
-    // on a changed row, and on an untracked row the Trash question, whose yes moves the file to the
-    // Trash.
+    // and, on a linked worktree, Compare with Workspace besides; the merge group has none. The
+    // controls and the menu's writes act on the same paths (`acted`): every selected row of the
+    // group when this row is among them, this row alone otherwise; the menu's items that open
+    // something open this row. A Discard picked there asks the question the row's Discard control
+    // asks: the restore question on a changed row, and on an untracked row the Trash question,
+    // whose yes moves the files to the Trash, each naming the count when it acts on several.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -109,7 +111,8 @@
     const deps = {
         ask: (message: string, detail: string, act: () => void, confirm?: string) =>
             ask(message, detail, act, confirm),
-        discard: (at: string, path: string) => void repositories.discard(at, path),
+        discardPaths: (at: string, paths: readonly string[]) =>
+            void repositories.discardPaths(at, paths),
         trash: (at: string, paths: readonly string[]) =>
             void repositories.trashUntracked(at, paths),
         ignore: (at: string, paths: readonly string[]) => void repositories.ignore(at, paths),
@@ -120,8 +123,10 @@
             repositories.compareWorkspace(at, path);
         },
         openFile: (at: string, path: string) => void repositories.openFile(at, path),
-        stage: (at: string, path: string) => void repositories.stage(at, path),
-        unstage: (at: string, path: string) => void repositories.unstage(at, path),
+        stagePaths: (at: string, paths: readonly string[]) =>
+            void repositories.stagePaths(at, paths),
+        unstagePaths: (at: string, paths: readonly string[]) =>
+            void repositories.unstagePaths(at, paths),
         reveal: (at: string, path: string) => void repositories.revealFile(at, path)
     };
 </script>
@@ -132,7 +137,7 @@
             label={entry.path}
             items={changeMenu(group, busy, t, linked)}
             onpick={(pick: string) =>
-                changePicked(pick, { root, group, path: entry.path }, deps, t)}
+                changePicked(pick, { root, group, path: entry.path, acted }, deps, t)}
         >
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render item()}
@@ -194,17 +199,7 @@
                     compact
                     tabindex={reach}
                     disabled={busy}
-                    onclick={() =>
-                        askDiscardPaths(
-                            root,
-                            acted,
-                            {
-                                ask,
-                                discardPaths: (at, paths) =>
-                                    void repositories.discardPaths(at, paths)
-                            },
-                            t
-                        )}
+                    onclick={() => askDiscardPaths(root, acted, deps, t)}
                 />
             {:else if group === 'untracked'}
                 <ToolButton
@@ -225,7 +220,7 @@
                     compact
                     tabindex={reach}
                     disabled={busy}
-                    onclick={() => void repositories.unstagePaths(root, acted)}
+                    onclick={() => deps.unstagePaths(root, acted)}
                 />
             {:else if group === 'merge'}
                 <ToolButton
@@ -245,7 +240,7 @@
                     compact
                     tabindex={reach}
                     disabled={busy}
-                    onclick={() => void repositories.stagePaths(root, acted)}
+                    onclick={() => deps.stagePaths(root, acted)}
                 />
             {/if}
         {/snippet}
