@@ -4,6 +4,24 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z920 (2026-10-15, O33's diagnosis, automode): `lastStamp` rereads an agent transcript's end only when its size or time changed.
+- Z919 (2026-10-15, O33's diagnosis, automode): guarded entries G86 and G87 for the two Sessions defects; the follow mark moves into state so its test needs no DOM; the lazy option, looks alone, not taken.
+- O33 ledger (2026-10-15): Axel chose (a): the ledger moves into the oculus repository with its history, keeping every step and `queue.md`; it replaces the ledger part of Steps after O33.
+- O33 history (2026-10-15): Axel chose (a): the new repository keeps oculus's 392 commits through `git filter-repo`; it replaces Z906.
+- Z918 (2026-10-15, O33's brief check, automode): the guarded entry of the platform branches.
+- Z917 (2026-10-15, O33's brief check, automode): three release archives.
+- Z916 (2026-10-15, O33's brief check, automode): the plan roadmap's new place.
+- Z915 (2026-10-15, O33's brief check, automode): "archived" is delivered as deletion.
+- O33 builder (2026-10-15): Axel agreed to the split: one builder builds O33's phase A in the worktree, and the orchestrator keeps the deletions, the new repository, the Release, the Lima run, the looks and the landing.
+- Z914 (2026-10-15, O33's /spec, automode): the Release is `v0.1.0`, a draft Axel publishes.
+- Z913 (2026-10-15, O33's /spec, automode): the update task sentence names the task file and asks the session to follow it.
+- Z912 (2026-10-15, O33's /spec, automode): a collection view no hub lists is left out of its page; an empty page names the missing key.
+- Z911 (2026-10-15, O33's /spec, automode): a chips filter over 12 values becomes a MultiSelect; the lazy option, a capped chip row, not taken.
+- Z910 (2026-10-15, O33's /spec, automode): `app:release` is a new script and `app:package`'s stub stays.
+- Z909 (2026-10-15, O33's /spec, automode): Linux opens with `xdg-open` (`wslview` under WSL2), refuses `.desktop` and executable files, picks folders with `zenity`.
+- Z908 (2026-10-15, O33's /spec, automode): the real-hub test helpers read `OCULUS_TEST_HUB`; the code cases run over the demo hub; the lazy option, silent skips, not taken.
+- Z907 (2026-10-15, O33's /spec, automode): the cockpit launchers go with `tools/cockpit`; oculus's app is the launcher.
+- Z906 (2026-10-15, O33's /spec, automode): the oculus repository starts with one commit; the hub keeps the history; the lazy option, the folder copied with its history unread, not taken.
 - Q72's landing (2026-10-15): the review over round 1's findings closed at landing (`agents/reviews/Q72-refuter.md`, Closed): a superseded worker answer answers Monaco's cancellation, a throwing worker start falls back to Monaco's diff, three head comments made exact; G33's Test line names the new row under Z901; open item 116 stays open for Axel, the landing having gone on under its option (a).
 - Q72 review (2026-10-15): three findings sent back as round 1 (the character changes off the page's thread, the providers' map, a stale comment); Spec 2, Proof 1 to 3 accepted with reasons in `agents/briefs/Q72-round1.md`; the builder's scripts raised as open item 116.
 - PDF page on open (2026-10-15): Axel put opening a PDF at a page, in the desktop app and in a browser, into O33 as part (14).

@@ -4,6 +4,104 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z920 (2026-10-15, O33's diagnosis, the orchestrator, automode): the cost of reading record stamps
+
+- Chosen: `lastStamp` keeps each agent transcript's last record stamp with the file's size and modification time, and reads the file's end again only when either changed, so an unchanged agent costs the one `stat` it costs today.
+- Not chosen: reading up to 64 KiB of every background agent's transcript on every fold of its session, a cost nobody measured; no lazier option.
+
+Where it applies: O33 part 12 (ii). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z919 (2026-10-15, O33's diagnosis, the orchestrator, automode): tests for the two Sessions defects
+
+- Chosen: two guarded entries, G86 (an agent tab of a running agent asks for its transcript once per sessions message and never loops, hidden or shown) and G87 (a background agent's status and end are read from its records' timestamps, never from a file's modification time); the follow mark is derived by a function in `state/sessions/`, so G86's test is a client test with no DOM.
+- Not chosen: (b) G87 alone with the Transcript defect held by the look; (c), the lazy option, both held by looks, which see neither a request chain nor a moved file time.
+
+Where it applies: O33 part 12. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z918 (2026-10-15, O33's brief check, the orchestrator, automode): the guarded entry of the platform branches
+
+- Chosen: a new entry G85 holds the fallback shell and the packager's steps per platform; open and reveal stay under G7, the picker under G42, first-run under G73.
+- Not chosen: no test for those two branches, which the step line asks for ("each platform branch held by a unit test").
+
+Where it applies: O33 part 3; the brief check's Cases finding 1. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z917 (2026-10-15, O33's brief check, the orchestrator, automode): three release archives
+
+- Chosen: the Release holds `darwin-arm64`, `linux-x64` and `linux-arm64`, each packaged on the Mac with the production dependencies installed for its target through npm's `--os` and `--cpu`; the arm64 Linux one is run in Lima.
+- Not chosen: the lazy option, one Linux archive for the Lima machine's architecture only, which leaves most Linux machines (x64) with none.
+
+Where it applies: O33 part 9; the brief check's Implied inputs finding 9. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z916 (2026-10-15, O33's brief check, the orchestrator, automode): the plan roadmap's new place
+
+- Chosen: `tools/cockpit/ROADMAP.md` moves to `tools/oculus/.scratch/ROADMAP.md` beside the ledger, and `.agents/plan.yaml:5` follows.
+- Not chosen: leaving the roadmap inside the deleted cockpit, which breaks every plan skill that reads it.
+
+Where it applies: O33 part 2; the brief check's Names finding 8. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z915 (2026-10-15, O33's brief check, the orchestrator, automode): "archived" is delivered as deletion
+
+- Chosen: `tools/cockpit` is deleted in phase B after Axel's path-by-path yes; git keeps it, and the hub README names the last commit that holds it.
+- Not chosen: a move to an archive folder, which keeps 190 files of a retired tool in the tree; the lazy option was leaving the folder in place.
+
+Where it applies: O33 part 2; the brief check's finding 1 of "The step line". Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z914 (2026-10-15, O33's /spec, the orchestrator, automode): the Release is a draft `v0.1.0`
+
+- Chosen: the Release of part 9 is created as `v0.1.0`, a draft holding the zipped macOS app and the Linux tarball, which Axel publishes.
+- Not chosen: a published Release made by the orchestrator, which would publish without Axel's look; no lazier option.
+
+Where it applies: O33 part 9 (`agents/briefs/O33.md`). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z913 (2026-10-15, O33's /spec, the orchestrator, automode): the update task sentence
+
+- Chosen: `taskCommand` starts `claude 'Do the update task described in .oculus/tasks/<kind>.md, following it step by step.'`, the sentence in oculus's text catalogue.
+- Not chosen: a sentence that restates the task's steps, which would put the hub's personal content into oculus; no lazier option.
+
+Where it applies: O33 part 2 (b). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z912 (2026-10-15, O33's /spec, the orchestrator, automode): a collection view no hub lists
+
+- Chosen: a rail page leaves out a collection view whose key no hub of the workspace lists under `collections:`, a page left with no tab draws one line naming the missing key, and the tab comes back when a hub lists it.
+- Not chosen: an empty tab per missing view, which keeps a dead tab on every hub that does not use the collection; the lazy option was leaving "Unknown view" as it is.
+
+Where it applies: O33 part 5 (folded at D77's landing). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z911 (2026-10-15, O33's /spec, the orchestrator, automode): a long chips filter
+
+- Chosen: a chips filter whose field holds more than 12 values (such as `authors`) draws as one MultiSelect with a search, labelled with the field and the number picked; 12 or fewer stay chips.
+- Not chosen: the lazy option, the first chips and a "more" count, which leaves most authors unreachable.
+
+Where it applies: O33 part 10. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z910 (2026-10-15, O33's /spec, the orchestrator, automode): the self-contained build is a new script
+
+- Chosen: `npm run app:release` builds the self-contained app the Release holds; `npm run app:package` keeps its stub that runs the checkout's code, unchanged.
+- Not chosen: replacing the stub, which would make Axel package the app again after every landing.
+
+Where it applies: O33 part 9. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z909 (2026-10-15, O33's /spec, the orchestrator, automode): Linux open, reveal and folder picker
+
+- Chosen: on Linux a file opens with `xdg-open` (`wslview` under WSL2) only for an extension `open.program_ext` lists, a `.desktop` file or one with an execute bit refused; reveal opens the holding folder; the folder picker is `zenity`, which the first-run check names.
+- Not chosen: per-platform program ids in `open.program_ext`, a config shape no ruling names; the lazy option was leaving Linux with no picker.
+
+Where it applies: O33 part 3. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z908 (2026-10-15, O33's /spec, the orchestrator, automode): the real-hub tests
+
+- Chosen: the test helpers that find the real hub two folders above oculus read it from `OCULUS_TEST_HUB`, skipping with one printed line when it is unset; the cases that check oculus's own code run over the demo hub.
+- Not chosen: the lazy option, leaving them to skip silently once oculus leaves the hub.
+
+Where it applies: O33 part 5. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z907 (2026-10-15, O33's /spec, the orchestrator, automode): the cockpit launchers
+
+- Chosen: `tools/cockpit/app/` is deleted with `tools/cockpit` after Axel's yes on the path list, and oculus's own app is the launcher.
+- Not chosen: the lazy option, keeping launchers that start a server that no longer exists.
+
+Where it applies: O33 part 2. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z905 (2026-10-15, Q72's brief check, the orchestrator, automode): one field look for every form field
 
 - Chosen: `Select.svelte`, the `FieldSelect.svelte` trigger, `MultiSelect.svelte`, `SuggestInput.svelte`, `TextInput.svelte`, `TextArea.svelte`, `DateInput.svelte` and `Search.svelte` import one stylesheet holding the field look they repeat today, each keeping only its own rules, and each looking exactly as on main.
