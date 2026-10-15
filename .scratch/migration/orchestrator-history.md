@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Q72 review (2026-10-15): three findings sent back as round 1 (the character changes off the page's thread, the providers' map, a stale comment); Spec 2, Proof 1 to 3 accepted with reasons in `agents/briefs/Q72-round1.md`; the builder's scripts raised as open item 116.
+- PDF page on open (2026-10-15): Axel put opening a PDF at a page, in the desktop app and in a browser, into O33 as part (14).
 - Z905 (2026-10-15, Q72's brief check, automode): one field look for all eight form fields that repeat it; the lazy option, the select pair alone, not taken.
 - Z904 (2026-10-15, Q72's brief check, automode): G33's wording and Code line widened to the diff pane's blocks; the lazy option, the row under the old wording, not taken.
 - Z903 (2026-10-15, Q72's brief check, automode): the diff pane draws git's changes through Monaco's diff-provider service; the lazy option, Monaco drawing its own changes beside git's blocks, not taken.

@@ -30,10 +30,12 @@ dispatch:      # steps in flight, up to six (Z632)
   worker: claude:opus
   session_id: af9a2233fb1dc8792 (claude-opus-5-5)   # launched with the prompt of agents/briefs/Q72-launch.md word for word
   report: agents/reviews/Q72-report.md
+  builder_usage: "372,954 tokens, 862 tool uses, 223.3 min"
   worktree: .agents/worktrees/Q72
   base: e36bcd0b4   # the preparation commit; base copy .agents/worktrees/Q72-base with unused-exports.txt
-  round: 0
+  round: 1   # agents/briefs/Q72-round1.md; snapshot .agents/worktrees/Q72-round-1 with files.txt
   landing: preparing
+  reviewer_report: "agents/reviews/Q72-refuter.md (a036aa66bc03d3ab8, claude-opus-5-5, 138,952 tokens, 124 tool uses, 29.3 min)"
   brief_check: "agents/reviews/Q72-brief-check.md (a82475b292d05b5f0, claude-opus-5-5, 270,707 tokens, 93 tool uses, 16.6 min)"
 ```
 
@@ -164,7 +166,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
-- None.
+- 116 (2026-10-15, Q72's review, Spec 1). Q72's builder wrote throwaway scripts outside the tree, in its scratch folder, with no approval from Axel: measuring scripts (a Python re-run of Q71's import count, a shell measure of the drawings, a Node trace of each arrow's ends, a multi-line Node runner for cases 9 to 20) and three Perl one-offs that edited `graphs.mjs`, `DESIGN.md` and its report. None is in the tree. Nothing they produced is used: case 8 (each arrow traced) rests on the look at landing, the Q71 comparison bears no decision, and the Perl edits are ordinary lines of the diff, read hunk by hunk by the orchestrator and the reviewer. Options: (a) leave the scripts unapproved and unused, and the round brief forbids any script of the builder's again (recommended); (b) approve one of them as a tool of the tree, which would need its own step and his yes on what it computes. The lazy option is none here: (a) loses nothing the step needs. Q72's landing goes on under (a) unless Axel rules otherwise.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -279,6 +281,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-15 (Q72 round 1 sent). Q72's builder reported all five parts (`agents/reviews/Q72-report.md`, usage in `builder_usage`); the reviewer a036aa66bc03d3ab8 on claude-opus-5-5 wrote `agents/reviews/Q72-refuter.md`: every item holds, cases 8, 21, 22 and 23 wait on the look; findings: the character changes of git's blocks computed on the page's thread (a 5000-line block 167 s), the providers' map never shrinking, a stale comment in the G25 describe, the builder's unapproved scripts (open item 116). Round 1 (`agents/briefs/Q72-round1.md`, three items) sent to the builder af9a2233fb1dc8792; snapshot `.agents/worktrees/Q72-round-1`. Open items: 116. In flight (1 of 6): Q72 (round 1). Next: the review over the round, /land Q72 (looks: diff pane, drawings, fields), then O33.
 - 2026-10-15 (the Pillars page back, inline). Axel: "I think I want the pillars rail back" (open item 115): the Pillars page restored with Pillars, Domains and Map (l1 to l3), Registries ends at Resources (r1 to r6); the foot keeps Workbenches and Update. `npm run diagrams && npm run test:landing` in the gate: every command passed; a look on 8796 saw both pages and l1, l3, r1, r2. Open items: none. In flight (0 of 6): none. Next: on Axel's word, /spec Q72, then O33.
 - 2026-10-15 (the rail, inline). At Axel's word ("Can't we do it inline now?"), open item 114 done inline on main with no step added (plan.md Rulings, open item 114): the rail foot holds Workbenches and Update, the Search button and the Bookmarks menu gone; the Pillars page merged into Registries, Pillars, Domains and Map at r7 to r9, twelve rail pages. `npm run diagrams && npm run test:landing` in the gate: every command passed; a look on a scratch oculus on 8796 saw the twelve pages, the two-button foot, r7 and r9, and both bookmarks opening from the Files view. Open items: none. In flight (0 of 6): none. Next: on Axel's word, /spec Q72, then O33.
 - 2026-10-15 (D77 landed; stopped at Axel's word). D77, the Sessions view and the title bar with parts 9 to 11, landed on main (booking in plan.md under D77, `agents/reviews/D77-landing.md`) after one repair round and the review over it; the run's eleven findings and the declined overlay-colour point closed at landing (`agents/reviews/D77-refuter.md`, Closed), Z898 (Stage All of Untracked by folder entries, no time limit) and Z899 (guarded entries name D77's rows) taken; `npm run test:landing` passed in the gate. The look found a collection tab drawn "Unknown view" on a hub that lists no such collection, a defect from before D77, folded into O33 (plan.md, O33). Open items: none. In flight (0 of 6). Queued: Q72, O33. Per Axel's word the orchestrator stops here: nothing is prepared or dispatched until he says to go on.
