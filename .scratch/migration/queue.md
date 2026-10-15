@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O33 (oculus in its own repository, the cockpit retired and Linux): prepared; phase A goes to one builder (Axel's ruling), then the landing; the deletions and the new repository wait for Axel's yes and his push.
+- O33 (oculus in its own repository, the cockpit retired and Linux): phase A building, one Opus 5.5 builder launched 2026-10-15; then the review and the landing; the deletions and the new repository wait for Axel's yes and his push.
 
 Queued, in order (0 steps): none.
 

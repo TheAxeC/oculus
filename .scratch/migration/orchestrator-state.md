@@ -26,7 +26,14 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:      # steps in flight, up to six (Z632)
 - step: O33
-  landing: preparing
+  executor: agent   # phase A only (ruling O33 builder); phases B and C, the looks and the landing are the orchestrator's
+  worker: claude:opus
+  session_id: a20f2cebacd022c8d (claude-opus-5-5)   # launched with the prompt of agents/briefs/O33-launch.md word for word
+  report: agents/reviews/O33-report.md
+  worktree: .agents/worktrees/O33
+  base: b80e3a9cd   # the preparation commit; base copy .agents/worktrees/O33-base with unused-exports.txt
+  round: 0
+  landing: not-started
   brief_check: "agents/reviews/O33-brief-check.md (adcbfd466be0be62e, claude-opus-5-5, 249,112 tokens, 79 tool uses, 11.8 min)"
 ```
 
