@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Pillars opens the Pillars page's group.
+    // Layer 3, view registration. Pillars follows Resources in the Registries page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'pillars',
         label: 'views.pillars',
         glyph: 'views.pillars_glyph',
-        group: 'pillars',
-        order: 0
+        group: 'registries',
+        order: 7
     };
 </script>
 

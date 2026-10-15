@@ -6,7 +6,7 @@
 //   view/files-view.ts      the record one tab keeps about itself, and the functions that write it
 //   view/forms.ts           the root and workspace line forms and their typed text
 //   view/reveal.ts          showing one path in the tree
-//   view/bookmark-rows.ts   the reader's bookmarks as tree stars and as the rail's rows
+//   view/bookmark-rows.ts   the reader's bookmarks as tree stars and the label a new one takes
 //   view/tab-roots.ts       which roots and folder a following or a rooted tab draws
 //   view/card-tree.ts       the key a project card keeps its tree's record under
 //   rows/                   the rows of the tree: nesting, compaction, decorations, the filter

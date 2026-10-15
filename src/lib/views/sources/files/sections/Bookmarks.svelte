@@ -23,9 +23,8 @@
     // control that reads it again beside it, as every other row of the tree carries its controls.
     // The section is one stop of the focus order through ui/tree/TreeView.svelte.
     //
-    // The star on a file, a folder or a root adds a bookmark. The rail draws the same bookmarks as
-    // buttons, which is where they are pressed from; this is where they are renamed, removed and
-    // put in order.
+    // The star on a file, a folder or a root adds a bookmark. This section is where bookmarks are
+    // opened, renamed, removed and put in order.
 
     import Failed from '$lib/views/shared/explorer/tree/Failed.svelte';
     import Section from '$lib/views/shared/explorer/sections/Section.svelte';

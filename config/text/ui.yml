@@ -5,9 +5,6 @@ text:
         answer_refused: 'The server refused the request (HTTP {0}).'
         answer_unreachable: The server did not answer.
         answer_unreadable: "The server's answer could not be read (HTTP {0})."
-        bookmarks_glyph: star
-        bookmarks_none: No bookmarks
-        bookmarks_none_tip: The star on a file, a folder or a root in the Files view adds one.
         close_glyph: dismiss
         close_tab: Close tab
         code_theme: Code theme
@@ -18,7 +15,6 @@ text:
         crt_on: CRT
         crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
         dirty_glyph: bullet
-        docs: Bookmarks
         drag_float: Floating {0}
         drag_hint: Moving {0}
         drag_open: Opening {0}

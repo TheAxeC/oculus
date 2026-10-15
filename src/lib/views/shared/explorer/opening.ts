@@ -5,9 +5,9 @@
 // opens in the source tab, which says it cannot be opened and offers to read it again.
 //
 // Whether a file is text is its own first bytes, so a row's kind is awaited before a tab is opened.
-// A bookmark opens through documentState for a document, the way the rail opens one, so a bookmark
-// pressed here and the same one pressed there are the one tab. The store calls are passed in, so
-// the rule reads the same whichever client it runs in.
+// A bookmark opens through documentState for a document, so a bookmark pressed and the same page
+// opened from the tree are the one tab. The store calls are passed in, so the rule reads the same
+// whichever client it runs in.
 
 import type { Entry } from '$lib/state/boards/collection';
 import { bookmarkRef, typeOfFile, type BookmarkKind, type TreeRow } from '$lib/state/sources/fs';

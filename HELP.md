@@ -35,7 +35,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 - A click on a catalogue entry opens the view on the page you came from. A view that is already open somewhere is shown where it is. Shift-click opens it in a new pane to the right. The right-click menu has Open on this page and Open beside on this page.
 - The Help page holds this manual, the Apps guide, the Templates and Palette pages, and the hub's documents (each `docs:` entry with `group: help`). A `docs:` entry whose `group` is another page's key becomes a tab of that page.
 - A tab you closed stays closed; a document added to `docs:` later is added once. Reset puts every document back.
-- Bookmarks, at the foot of the rail, lists `.oculus/bookmarks.yml` of the primary hub. A file bookmark opens the file; a folder bookmark shows it in Files.
+- The foot of the rail holds Workbenches and Update.
 
 ### Pages and the pane tree
 
@@ -114,7 +114,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 | arrows, Home / End | along the rail or a tab strip |
 | arrows, Home / End, a letter | in a tree: move a row, open or close a folder, first / last row, next row starting with that letter; Shift extends; Cmd+A selects every row |
 | Delete | close the focused tab (not a pinned one) |
-| f1, m1-m5, p1-p4, e1-e4, s1-s8, c1-c7, l1-l3, r1-r6, b1-b3, t1, y1-y9 | open a view of a group (f Focus, m Sessions, p Projects, e Incoming, s Explorer, c Academic Life, l Pillars, r Registries, b Literature, t Present, y System) |
+| f1, m1-m5, p1-p4, e1-e4, s1-s8, c1-c7, r1-r9, b1-b3, t1, y1-y9 | open a view of a group (f Focus, m Sessions, p Projects, e Incoming, s Explorer, c Academic Life, r Registries, b Literature, t Present, y System) |
 | w1-w3 | Live HPC, Usage, Workbenches |
 | a1-a9 | the Apps view, then the apps |
 | h1-h9 | the Help page's tabs |
@@ -298,7 +298,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 - The filter box matches names already read; Fuzzy Match matches letters in order.
 - On a row: Enter or F2 renames, Cmd+Down opens, Cmd+Enter opens beside, Cmd+Backspace deletes, Cmd+C / X / V copy, cut and paste, Option+Cmd+C copies the path. A name with `/` makes the folders between.
 - Show in Files on a card or a link opens Files at that folder or file.
-- The star on a row bookmarks it in `.oculus/bookmarks.yml`. Bookmarks can be renamed, removed and reordered.
+- The star on a row bookmarks it in `.oculus/bookmarks.yml` of the primary hub. The Bookmarks section lists them: a file bookmark opens the file, a folder bookmark shows it in Files. Bookmarks can be renamed, removed and reordered.
 - An app can add a badge and a colour to a row.
 - Delete moves to the Trash after asking. Do not ask me again writes `files: { confirm_delete: false }` to `behavior.yml`.
 - Drag onto a folder to move (Option to copy). Files dragged in from the system upload.

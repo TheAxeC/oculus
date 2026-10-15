@@ -8,7 +8,6 @@
 import { describe, expect } from 'vitest';
 import { inAppsFolder } from '../../../../src/lib/data/helpers/files/apps/apps.ts';
 import type { Entry } from '../../../../src/lib/state/boards/collection.ts';
-import { bookmarkRows } from '../../../../src/lib/state/sources/explorer/view/bookmark-rows.ts';
 import {
     openBookmark,
     openPage,
@@ -147,23 +146,6 @@ const ROWS: Row[] = [
             }).view;
         },
         'source'
-    ],
-    [
-        'the rail bookmark of a file of an app, an ordinary page and a folder',
-        () =>
-            bookmarkRows(
-                [
-                    { title: 'App', fields: { root: 'hub', path: APP_PAGE } },
-                    { title: 'Manual', fields: { root: 'hub', path: PLAIN_PAGE } },
-                    {
-                        title: 'Folder',
-                        fields: { root: 'hub', path: '.oculus/apps' },
-                        kind: 'folder'
-                    }
-                ],
-                opens
-            ).map((one) => one.view),
-        ['source', 'document', 'files']
     ],
     [
         'a page opened through openPage, which the project, card, entry and README openers call',

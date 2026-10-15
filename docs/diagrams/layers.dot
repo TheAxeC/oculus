@@ -50,10 +50,10 @@ digraph layers {
     "shell to data" [label="10", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "shell" -> "shell to data" [arrowhead=none];
     "shell to data" -> "data" [];
-    "shell to state" [label="176", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "shell to state" [label="173", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "shell" -> "shell to state" [arrowhead=none];
     "shell to state" -> "state" [];
-    "shell to ui" [label="108", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+    "shell to ui" [label="107", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
     "shell" -> "shell to ui" [arrowhead=none];
     "shell to ui" -> "ui" [];
     "src to data" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

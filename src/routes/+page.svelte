@@ -11,7 +11,6 @@
     import Workbench from '$lib/shell/Workbench.svelte';
     import { shouldCancel } from '$lib/shell/context-guard';
     import { provideFileProblems } from '$lib/shell/panes/strip/file-problems';
-    import type { Bookmark } from '$lib/shell/rail/rail';
     import { parseFloats } from '$lib/state/workbench/navigation/arrangement';
     import { readChord, readDocs, readGroups } from '$lib/state/workbench/navigation/catalogue';
     import {
@@ -31,7 +30,7 @@
     } from '$lib/state/workbench/navigation/status';
     import { repositoriesViewOf } from '$lib/state/sources/repositories/repositories';
     import { configGeneration } from '$lib/state/shared/words/generation.svelte';
-    import { bookmarkRows, problemMarkOf, problemWords } from '$lib/state/sources/fs';
+    import { problemMarkOf, problemWords } from '$lib/state/sources/fs';
     import { allRoots, readRoots } from '$lib/state/sources/fs-transport';
     import { takeCarried } from '$lib/state/workbench/layout/saved/carry';
     import { createClientState } from '$lib/state/client/context';
@@ -73,10 +72,9 @@
     provideSpelling(desktop?.bridge.spelling);
     const {
         apps: { findings: appFindings, rows: appRows },
-        appShell,
         debug: { load: loadDebug, stopFollowing: stopFollowingDebug },
         entities: { config, git: gitPayload, hpc, portfolio, sessions, usage },
-        fs: { bookmarks: savedBookmarks, primary, workspaces },
+        fs: { primary, workspaces },
         layout: {
             activeInstance,
             currentPage,
@@ -255,14 +253,6 @@
     };
 
     /**
-     * The reader's own bookmarks, from bookmarks.yml in the hub's .oculus folder through the fs
-     * store. They are read here rather than in the rail because the shell's row of the boundary
-     * table does not name that store; the rail is handed what to draw. Which view opens one is a
-     * question about a file name, which state/sources/fs.ts answers.
-     */
-    const saved = $derived<Bookmark[]>(bookmarkRows(savedBookmarks().entries, appShell.opens));
-
-    /**
      * Rewrite the rail's `rail:` list as the rail asks, a page button moved or hidden, through the
      * rail write the Settings view saves with. The edit is made to the list the file holds, every
      * entry whether or not the rail draws it. It answers the sentence saying why the server refused
@@ -328,7 +318,6 @@
     {pages}
     {floats}
     configured={merged !== undefined}
-    {saved}
     {editRail}
     {directChord}
     {status}

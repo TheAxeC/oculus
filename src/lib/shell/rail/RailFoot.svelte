@@ -1,107 +1,31 @@
 <script lang="ts">
     // Layer 3, shell. The rail's foot, where VS Code's activity bar keeps Accounts and Manage:
-    // Bookmarks, Workbenches, Search and Update, each an icon with its name as the tooltip.
-    // Bookmarks opens a menu of the reader's own bookmarks by name, beside the rail, and a choice
-    // opens the bookmark as the file browser opens it (a folder is shown open in the Files view);
-    // with no bookmark the menu says there is none. Workbenches opens the menu of the open
-    // workbenches (WorkbenchMenu.svelte), which switches to one, closes one and shows the
-    // Workbenches view.
+    // Workbenches and Update, each an icon with its name as the tooltip. Workbenches opens the menu
+    // of the open workbenches (WorkbenchMenu.svelte), which switches to one, closes one and shows
+    // the Workbenches view. The reader's bookmarks are in the Files view's Bookmarks section, and
+    // the search is Cmd-K and the title bar's Command Center.
     //
     // The keyboard ring is the rail's, so each control is handed its place in the focus order and
     // its key handler.
 
-    import {
-        bookmarkChoices,
-        bookmarkPicked,
-        documentState,
-        editorTab,
-        sourceTabState,
-        type Bookmark
-    } from '$lib/shell/rail/rail';
-    import Menu from '$lib/ui/menu/Menu.svelte';
     import WorkbenchMenu from './WorkbenchMenu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import type { MenuItem } from '$lib/ui/menu/menu-items';
     import { t } from '$lib/state/shared/words/text';
-    import { useState } from '$lib/state/client/use';
-
-    const {
-        layout: { openView, showInFiles }
-    } = useState();
 
     type Props = {
-        /** The reader's own bookmarks, in the order their file holds them. */
-        saved: Bookmark[];
         stopIndex: (id: string) => number;
         ringKeys: (id: string) => (event: KeyboardEvent) => void;
-        onsearch: () => void;
         onupdate: () => void;
         /** Show the Workbenches view. */
         onworkbenches: () => void;
     };
 
-    let { saved, stopIndex, ringKeys, onsearch, onupdate, onworkbenches }: Props = $props();
-
-    const items = $derived<MenuItem[]>(bookmarkChoices(saved));
-
-    /**
-     * What one bookmark opens as, which the bookmark itself says. The file view is given the root,
-     * the path and the label and no id of its own, so a file opened from here and the same file
-     * opened from the tree are the one tab.
-     */
-    function pick(id: string): void {
-        const mark = bookmarkPicked(saved, id);
-        if (mark === null) return;
-        if (mark.view === 'files') {
-            showInFiles(mark.path, mark.root, true);
-            return;
-        }
-        if (mark.view === 'source') {
-            openView('source', sourceTabState(mark.root, mark.path));
-            return;
-        }
-        if (mark.view === 'editor' && mark.editor !== undefined) {
-            const tab = editorTab(mark.editor, mark.root, mark.path);
-            openView(tab.view, tab.state);
-            return;
-        }
-        if (mark.view === 'file') {
-            openView('file', { root: mark.root, path: mark.path, label: mark.label });
-            return;
-        }
-        openView('document', documentState(mark));
-    }
+    let { stopIndex, ringKeys, onupdate, onworkbenches }: Props = $props();
 </script>
 
 <div class="foot" data-foot>
-    <div data-action="bookmarks">
-        <Menu
-            label={t('ui.docs')}
-            glyph={t('ui.bookmarks_glyph')}
-            rail
-            placement="beside"
-            {items}
-            onpick={pick}
-            stop="bookmarks"
-            tabindex={stopIndex('bookmarks')}
-            onkeydown={ringKeys('bookmarks')}
-        />
-    </div>
     <div data-action="workbenches">
         <WorkbenchMenu {stopIndex} {ringKeys} onmanage={onworkbenches} />
-    </div>
-    <div data-action="search">
-        <ToolButton
-            label={t('app.search')}
-            title={t('app.search_tip')}
-            glyph="cmd"
-            compact
-            rail
-            stop="search"
-            tabindex={stopIndex('search')}
-            onkeydown={ringKeys('search')}
-            onclick={onsearch}
-        />
     </div>
     <div data-action="update">
         <ToolButton

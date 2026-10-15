@@ -33,7 +33,6 @@ glyphs:
   chat: "(@)"
   clear: "[~]"
   dismiss: "x"
-  cmd: "^"
   cards: "[#]"
   list: "==="
   disclosure: "v"

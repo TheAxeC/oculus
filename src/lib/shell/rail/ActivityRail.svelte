@@ -1,7 +1,7 @@
 <script lang="ts">
     // Layer 3, shell. The strip down the left, drawn as VS Code's activity bar: one icon per page
-    // of the `rail:` list of config/layout.yml (RailPages.svelte), and at the foot Bookmarks,
-    // Workbenches, Search and Update (RailFoot.svelte). A page button shows its page, made from its
+    // of the `rail:` list of config/layout.yml (RailPages.svelte), and at the foot Workbenches and
+    // Update (RailFoot.svelte). A page button shows its page, made from its
     // arrangement the first time and switched to after that, which is the whole of what the rail
     // decides about pages; what a page holds is the layout store's, and every view is reached from
     // the catalogue on the System page. A workbench, a page that belongs to one folder, has no
@@ -24,14 +24,7 @@
     import RailList from './RailList.svelte';
     import RailPages from './RailPages.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
-    import {
-        RAIL_HIDE,
-        RAIL_RESET,
-        railHidden,
-        railMoved,
-        railStop,
-        type Bookmark
-    } from '$lib/shell/rail/rail';
+    import { RAIL_HIDE, RAIL_RESET, railHidden, railMoved, railStop } from '$lib/shell/rail/rail';
     import {
         questionFor,
         railPageViews,
@@ -72,25 +65,17 @@
         /** The rail's pages, read by the page out of the merged config and handed on. */
         pages?: RailPage[];
         /**
-         * The reader's own bookmarks, from bookmarks.yml in the hub's .oculus folder; the page
-         * reads them off the fs store and passes them on, since the shell may not read that store
-         * itself.
-         */
-        saved?: Bookmark[];
-        /**
          * Rewrite the `rail:` list with an edit, answering why the server refused the write or the
          * empty string when it was written. The page owns the write.
          */
         editRail?: (edit: (rail: RailEntry[]) => RailEntry[]) => Promise<string>;
-        /** Open the workbench search overlay. */
-        onsearch?: () => void;
         /** Open the update-task tray. */
         onupdate?: () => void;
     };
 
     /** The default for a callback the page did not pass: the control is drawn and does nothing. */
     function ignore(): void {
-        // A rail without a search or update owner still draws its buttons.
+        // A rail without an update owner still draws its button.
     }
 
     /** The default for a rail with no owner of its list: nothing written, and nothing refused. */
@@ -98,13 +83,7 @@
         return Promise.resolve('');
     }
 
-    let {
-        pages = [],
-        saved = [],
-        editRail = unwritten,
-        onsearch = ignore,
-        onupdate = ignore
-    }: Props = $props();
+    let { pages = [], editRail = unwritten, onupdate = ignore }: Props = $props();
 
     /**
      * Write the rail's list as a drag or a Hide changed it, and say in a notification why the
@@ -215,9 +194,7 @@
      */
     const stops = $derived([
         ...pages.map((entry) => `page:${entry.page}`),
-        'bookmarks',
         'workbenches',
-        'search',
         'update'
     ]);
 
@@ -349,14 +326,7 @@
         <RailList>
             <RailPages {pages} {stopIndex} {ringKeys} onmove={moved} onmenu={menuPick} />
         </RailList>
-        <RailFoot
-            {saved}
-            {stopIndex}
-            {ringKeys}
-            {onsearch}
-            {onupdate}
-            onworkbenches={openWorkbenches}
-        />
+        <RailFoot {stopIndex} {ringKeys} {onupdate} onworkbenches={openWorkbenches} />
     </div>
 </nav>
 

@@ -1,56 +1,12 @@
-// Layer 3, shell. What the activity rail is made of apart from its markup: a bookmark with the
-// state that opens it and the Bookmarks menu's choices, the fades of its scrolled list, where an
-// arrow key takes its stop, the one badge a page button draws, a page button's right-click menu,
-// and the `rail:` list a drag or a Hide on a page button writes. Apart from the components so each
-// can be read without a rendering.
+// Layer 3, shell. What the activity rail is made of apart from its markup: the fades of its
+// scrolled list, where an arrow key takes its stop, the one badge a page button draws, a page
+// button's right-click menu, and the `rail:` list a drag or a Hide on a page button writes. Apart
+// from the components so each can be read without a rendering.
 
 import { nextStop } from '$lib/ui/tree/roving';
 import type { MenuItem } from '$lib/ui/menu/menu-items';
-import { placeOf, type Bookmark, type RailEntry } from '$lib/state/workbench/navigation/rail';
+import type { RailEntry } from '$lib/state/workbench/navigation/rail';
 import { t } from '$lib/state/shared/words/text';
-
-export type { Bookmark };
-
-/** The prefix of a bookmark's choice in the Bookmarks menu, before its place in the file. */
-const MARK = 'mark:';
-
-/**
- * The Bookmarks menu's choices: one per bookmark in the order the file holds them, by its label,
- * with the place it names as the hover words (the root alone for a root's top) so two bookmarks
- * under one label are told apart. A folder and a root's top are drawn with the folder icon, and a
- * bookmark whose path is gone is dimmed and says so instead of opening. With no bookmark, one
- * choice that says so and opens nothing.
- */
-export function bookmarkChoices(saved: readonly Bookmark[]): MenuItem[] {
-    if (saved.length === 0) {
-        return [{ id: 'none', label: t('ui.bookmarks_none'), title: t('ui.bookmarks_none_tip') }];
-    }
-    return saved.map((mark, at) => ({
-        id: `${MARK}${at}`,
-        label: mark.label,
-        title: mark.kind === 'missing' ? t('files.bookmark_missing_title') : placeOf(mark),
-        ...(mark.kind === 'folder' ? { glyph: t('files.folder_glyph') } : {}),
-        ...(mark.kind === 'missing' ? { disabled: true } : {})
-    }));
-}
-
-/**
- * The bookmark a choice of the Bookmarks menu names, or null for the choice that says none and for
- * a bookmark whose path is gone.
- */
-export function bookmarkPicked(saved: readonly Bookmark[], id: string): Bookmark | null {
-    if (!id.startsWith(MARK)) return null;
-    const mark = saved.at(Number(id.slice(MARK.length))) ?? null;
-    return mark?.kind === 'missing' ? null : mark;
-}
-
-/**
- * What openView is handed for a bookmark. It is state/workbench/layout/instance.ts's, since the
- * file browser opens a bookmark as well and the same document opened from the two places is one
- * tab; the rail re-exports it under the name its own readers know it by.
- */
-export { documentState, editorTab } from '$lib/state/workbench/layout';
-export { sourceTabState } from '$lib/state/workbench/navigation/rail';
 
 /**
  * Which edges of the rail's list have more entries past them, each drawn as a fade at that edge.

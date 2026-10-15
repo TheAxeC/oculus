@@ -3,7 +3,7 @@
     // collection's place in the catalogue, which is the rail page it sits on: the Academic Life
     // page's six, the Literature page's Literature after the Literature search and Lit Watch, and
     // the Registries page's for Statements, People, Organisations, Resources and a collection
-    // sources.yml adds that no placement names.
+    // sources.yml adds that no placement names, which comes after the Registries page's Map.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
 
     const placements: Record<string, { group: string; order: number }> = {

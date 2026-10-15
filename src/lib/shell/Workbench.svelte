@@ -39,7 +39,6 @@
 
     import { activeLabel, windowTitle } from '$lib/shell/panes/workbench-title';
     import ActivityRail from './rail/ActivityRail.svelte';
-    import type { Bookmark } from './rail/rail';
     import DropLayer from './panes/DropLayer.svelte';
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
     import Asks from './commands/Asks.svelte';
@@ -118,11 +117,6 @@
          */
         configured?: boolean;
         /**
-         * The reader's own bookmarks, for the rail's Bookmarks menu. The page reads them off the
-         * fs store and hands them on, since the shell may not read that store itself.
-         */
-        saved?: Bookmark[];
-        /**
          * Rewrite the rail's list with an edit, a page button moved or hidden, answering why the
          * write was refused or the empty string. The page owns it, since the shell may not write.
          */
@@ -160,7 +154,6 @@
         pages = [],
         floats: shipped = [],
         configured = true,
-        saved = [],
         editRail,
         directChord,
         status = NO_STATUS,
@@ -372,13 +365,7 @@
         {/if}
         <TitleBar onpalette={openPalette} />
         <div class="body" style={bodyTracks(shownFloats())}>
-            <ActivityRail
-                {pages}
-                {saved}
-                {editRail}
-                onsearch={() => openPalette('')}
-                onupdate={openUpdate}
-            />
+            <ActivityRail {pages} {editRail} onupdate={openUpdate} />
             <div class="column">
                 <PageArea bind:area onpalette={openPalette} />
             </div>

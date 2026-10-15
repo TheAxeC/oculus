@@ -32,7 +32,6 @@ icons:
     chat: message-square
     clear: eraser
     dismiss: x
-    cmd: command
     cards: layout-grid
     list: list
     disclosure: chevron-down
