@@ -1,10 +1,8 @@
-In flight (0 of 6 slots in use): none; the plan stops after D77's landing at Axel's word.
+In flight (1 of 6 slots in use):
+- Q72 (the architecture re-read, with the channels and writes diagrams readable, the diff pane drawing and building its blocks from git's hunks, one field look, and three negative checks waiting on a signal): preparing, its brief check closed; the builder next.
 
-Queued, in order (2 steps):
-- Q72 (the architecture re-read): next, on Axel's word to go on; it reads the code of D73, D74, D76 and D77.
-- O33 (oculus in its own repository; inline): after Q72; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project).
-
-Owed looks (agents/reviews/owed-looks.md): D77, the Sessions page's parts and the window buttons off macOS.
+Queued, in order (1 step):
+- O33 (oculus in its own repository; inline): straight after Q72 lands, at Axel's word; open items 98 and 101 ruled into its part (5) (the Data map in oculus, the controls that make a hub or a project); part (10) the Literature view's scrolling and long authors filter; part (11) the title bar strip in the desktop app only; part (12) the hidden Transcript tab's update loop and the agent rows reading running; part (13) the Session view's text size.
 
 Landed, newest first:
 - The Pillars page back on the rail (open item 115), 2026-10-15, inline on main.

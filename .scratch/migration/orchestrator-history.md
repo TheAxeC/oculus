@@ -4,6 +4,18 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Z905 (2026-10-15, Q72's brief check, automode): one field look for all eight form fields that repeat it; the lazy option, the select pair alone, not taken.
+- Z904 (2026-10-15, Q72's brief check, automode): G33's wording and Code line widened to the diff pane's blocks; the lazy option, the row under the old wording, not taken.
+- Z903 (2026-10-15, Q72's brief check, automode): the diff pane draws git's changes through Monaco's diff-provider service; the lazy option, Monaco drawing its own changes beside git's blocks, not taken.
+- Q72's brief check (2026-10-15): every finding closed in the brief (`agents/reviews/Q72-brief-check.md`, Closed); the carried waits fix corrected to the three zero-delay negative checks.
+- The window buttons off macOS (2026-10-15): Axel took that look himself ("I did the look myself, looks good"); D77 owes no look.
+- Session view text size (2026-10-15): Axel put the Session view's and the Transcript's text size into O33, as part (13).
+- Z902 (2026-10-15, D77's owed look, automode): the hidden Transcript tab's update loop and the agent rows reading running built in O33 as part (12); the lazy option, booking them for later, not taken.
+- D77's owed look (2026-10-15): taken on a scratch oculus on 8796 (`agents/reviews/owed-looks.md`, Taken); the window buttons off macOS cannot be taken on this machine.
+- Title bar in the app only (2026-10-15): Axel ruled the title bar strip is the desktop app's alone; built in O33 as part (11).
+- Literature view fixes (2026-10-15): Axel put the Literature view's scrolling and its long authors filter into O33, as part (10).
+- Z901 (2026-10-15, Q72's /spec, automode): the diff pane's blocks held by a row of G33 in `tests/server/git/git-ops.test.ts`; the lazy option, a quoted run alone, not taken.
+- Z900 (2026-10-15, Q72's /spec, automode): G25's wording widened to the drawings' arrows and a row of `diagrams.test.ts` holding `arrowsAlong()` to no pair; the lazy option, a quoted run at Q72 alone, not taken.
 - The Pillars page back (2026-10-15): open item 115, Axel reversed part (5) of open item 114; the Pillars page restored on the rail (l1 to l3) and Registries back to r1 to r6, inline; the rail foot stays as open item 114 left it. Booked in plan.md Rulings.
 - The rail after D77 (2026-10-15): open item 114 ruled by Axel and done inline at his word, with no step added: the rail foot's Search and Bookmarks removed, Workbenches and Update kept, the Pillars page merged into Registries (r7 to r9); booked in plan.md Rulings. The "Unknown view" defect stays in O33.
 - D77's landing (2026-10-15): Z898 taken (Stage All of Untracked by folder entries, its add with no time limit and stopped by Cancel) and Z899 taken (the guarded entries G13, G33, G41, G47 and G79 name D77's rows); booked in plan.md Rulings and choices.md. The look found a page tab of a collection the hub does not list drawn as "Unknown view"; folded into O33 (plan.md, O33, Z468).

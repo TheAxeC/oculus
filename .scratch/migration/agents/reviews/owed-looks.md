@@ -6,7 +6,6 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 ## To take
 
-- D77: the Sessions page's parts, not looked at at the landing since a look never presses the Sessions rail: Pin listing every project of every hub grouped by hub, an agent row opening the agent's own transcript, the composer's New worktree keeping an unlisted folder, the Session details at the smaller text size, and the Transcript view not flickering on a running session. Also the window buttons off macOS taking the strip's colours, which needs the app on Windows or Linux.
 - Q81: a dialog over the update tray taking the first Escape. Taken by Axel 2026-10-13 on his own page (the `tasks.skip_permissions` Confirm is gone with that retired setting; the schedule dialog checked in its place): Update opens the tray, Schedule... opens the schedule dialog over it, the first Escape closes the dialog and leaves the tray open, the second closes the tray and gives the focus back to Update. Passed.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
@@ -22,6 +21,16 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 - Q97: the one-pane System arrangement. It no longer exists: S4 (1184e5f38) replaced the `info` page with the `views` page, three panes (`config/layout.yml:98-110`), and the rail's System button now opens it. That page is seen only by a rail press or a reset of Axel's System page, which a look on TEST never does; `tests/data/sources/config/rail.test.ts` holds that every rail page names an arrangement.
 
 ## Taken
+
+- D77, the window buttons off macOS taking the strip's colours: taken by Axel 2026-10-15 ("I did the look myself, looks good").
+- D77, taken 2026-10-15 on a scratch oculus on 8796 over the gate at 317acc041 (main's head), with a scratch home holding four Claude transcripts with background agents and two scratch hubs; the Sessions view opened from the palette, never from the rail; no agent started.
+  - The Session details: values at 11px and labels at 10px under the scaled theme (nord, rice), the smaller size D77 asked for (`getComputedStyle` of `.kv dd` and `.kv dt`).
+  - Pin: 229 choices, "(scored)" first, then two groups by hub, look-hub 114 and look-hub2 114.
+  - An agent row (probe-max) opened a Transcript tab of the agent's own transcript (its Bash call and its answer).
+  - The Transcript view of a session kept its turns while two session files were written twelve times: a MutationObserver over 25 updates saw no node removed, the text never shorter and no "no turns yet". The server log of that run holds 30 `effect_update_depth_exceeded` errors raised from `Transcript.svelte`'s effect through `follow`, `refetch`, `deferRefetch` and `invalidate` while Transcript tabs were hidden (excerpt in `$TMPDIR/q72look/transcript-loop.txt` at the look); booked to O33 part (12).
+  - The agent rows of an ended session whose transcript reports each background agent finished read "running | 22502m 33s"; booked to O33 part (12).
+  - The composer: New worktree showed the name field, the gitignore warning and the planned folder; Start with Shell made `.agents/worktrees/look-wt` on branch `look-wt` (`git worktree list`), and with the start failing (the scratch tmux socket path too long, the look's own setup) the failure line named the worktree made and the ended terminal, the folder picker kept `look-wt` and New worktree was taken back; after a reload the composer still held the unlisted folder, and Start opened a shell in it (prompt `look-wt %`).
+  - After: the scratch tmux server killed, the scratch server stopped, port 8796 free, the tab closed; Axel's server and tabs untouched.
 
 - D17, taken 2026-10-05 on TEST: a scratch idea project `projects/ideas/d17-look` (a `project.yml`, a `package.json` with two scripts, `git init` and one commit) served as the root `d17-look` in `config/sources.yml` for the look. Its card on the Projects board draws the commands bar below its chips: `npm: hello`, `npm: build` and `Add Command...`; no button was pressed. After: `sources.yml` put back from its copy (`git diff --exit-code` on the config exits 0), the folder removed (`ls` says no such file, `git status --short -- projects` prints nothing), snapshots unchanged (`changes.jsonl` 00b23e5d with 39 lines, `workspaces.json` 1bf5d57a, `behavior.yml` e3bb8249), `~/.oculus/commands.json` last written 2026-10-04 19:28. The bar's test named in `D17-landing.md`, `tests/views/shared/commands/commands.test.ts`, was removed by T2c (0ccfa372a), so this look is what shows it now.
 

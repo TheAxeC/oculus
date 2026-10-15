@@ -4,6 +4,48 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z905 (2026-10-15, Q72's brief check, the orchestrator, automode): one field look for every form field
+
+- Chosen: `Select.svelte`, the `FieldSelect.svelte` trigger, `MultiSelect.svelte`, `SuggestInput.svelte`, `TextInput.svelte`, `TextArea.svelte`, `DateInput.svelte` and `Search.svelte` import one stylesheet holding the field look they repeat today, each keeping only its own rules, and each looking exactly as on main.
+- Not chosen: the select pair alone, the lazy option: the carried fix named two components, and the same rules stand in six more, so the cause would stay in six places.
+
+Where it applies: Q72 part 4 (`agents/briefs/Q72.md`). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z904 (2026-10-15, Q72's brief check, the orchestrator, automode): G33 names the diff pane's blocks
+
+- Chosen: G33's wording adds "and a block of the diff pane is git's hunk of its file, so Stage Block, Unstage Block and Revert Block change exactly that hunk", and its Code line adds `server/core/git/parse.ts` and `state/sources/repositories/diff/diff-patch.ts`.
+- Not chosen: the new row under G33's old wording, the lazy option, which leaves a test whose entry does not name what it tests.
+
+Where it applies: `agents/guarded.md` G33, Q72 part 3. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z903 (2026-10-15, Q72's brief check, the orchestrator, automode): the diff pane draws git's changes
+
+- Chosen: Monaco's diff editor is given git's changes through its own diff-provider service, overridden where `load.ts` already hands Monaco its service overrides, so the lines marked green and red, the lines a selection chooses and the lines a block stages are the same lines; a file with no git changes is drawn by Monaco's own diff as today.
+- Not chosen: Monaco drawing its own changes beside blocks built on git's, the lazy option: on `channels.ts` Monaco marks lines 13 to 24 while git's hunk is 14 to 25, so a selection on marked line 13 would choose nothing and Stage Block would stage line 25, which is not marked.
+
+Where it applies: Q72 part 3 (`agents/briefs/Q72.md`). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z902 (2026-10-15, D77's owed look, the orchestrator, automode): the look's two Sessions defects built in O33
+
+- Chosen: O33 part (12) fixes the hidden Transcript tab's `effect_update_depth_exceeded` loop on each write of its session's file and the agent rows that read running after their agents finished, each cause found by a red run first.
+- Not chosen: booking them for later, the lazy option, which leaves a defect of delivered work standing; Q72 is not offered, since it takes no folded work.
+
+Where it applies: O33 (`plan.md`), `agents/reviews/owed-looks.md` (Taken, D77). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z901 (2026-10-15, Q72's /spec, the orchestrator, automode): the diff pane's blocks held by a row of G33
+
+- Chosen: a row of `tests/server/git/git-ops.test.ts` under G33: on a file where Monaco and git place a change differently, the file's diff read answers git's `-U0` changes and Stage Block of one block leaves exactly git's hunk in the index.
+- Not chosen: a quoted run at Q72 alone, the lazy option, which leaves the blocks with no test while a wrong block puts lines into a commit the reader did not choose.
+
+Where it applies: Q72 part 3 (`agents/briefs/Q72.md`). Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z900 (2026-10-15, Q72's /spec, the orchestrator, automode): the diagrams' arrows held by a row of G25
+
+- Chosen: G25's wording widened to "The committed diagrams and the palette page match the source they are drawn from, and in each drawing no label crosses an arrow and no two arrows run along each other", with a row of `tests/checks/diagrams/diagrams.test.ts` holding `arrowsAlong()` to no pair over every drawing.
+- Not chosen: a quoted run at Q72 alone, the lazy option: the writes drawing went from none to 61 pairs once the test that held it was deleted, so without a row the pairs come back unseen.
+
+Where it applies: Q72 part 2 (`agents/briefs/Q72.md`) and `agents/guarded.md` G25. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z899 (2026-10-15, D77's landing, the orchestrator, automode): the guarded entries name D77's rows
 
 - Chosen: the Test lines of G13, G33, G41, G47 and G79 in `agents/guarded.md` name the rows D77 added, so each new test is a row of a guarded entry as `agents/spec.md` asks.

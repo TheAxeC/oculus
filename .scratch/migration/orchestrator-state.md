@@ -24,11 +24,14 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```
 
 ```yaml
-dispatch: []   # steps in flight, up to six (Z632)
+dispatch:      # steps in flight, up to six (Z632)
+- step: Q72
+  landing: preparing
+  brief_check: agents/reviews/Q72-brief-check.md (a82475b292d05b5f0, claude-opus-5-5, 270,707 tokens, 93 tool uses, 16.6 min)
 ```
 
 ## The standing demands (from Axel, in force)
-- Run to D77's landing (Axel, 2026-10-15: "Please continue until the step is landed"): the pause after D77's review is lifted; D77's repair round, the review over it and its landing run, and after the landing the orchestrator stops: no new dispatch until Axel says to go on.
+- Run Q72, then O33 straight after it (Axel, 2026-10-15: "I was thinking we can start Q72 and also immediately start working on O33 after?"): the stop after D77's landing is lifted; Q72 is prepared, built, reviewed and landed, and O33 starts as soon as Q72 has landed, with no pause between them. O33's deletions of research-cockpit, remove-unicode and project-new, and the repointing of `.agents/skills/project-cleanup/SKILL.md:18`, still go to Axel path by path for his yes before they are made.
 - A question Axel asks is answered by the session itself, by reading the code, the files and the data and running the commands that show the answer (Axel, 2026-10-13): `/diagnose` and diagnosis agents are never used to answer a question of his; `/diagnose` runs only where a plan skill calls for it on a step, a finding or a red line.
 - No migration code, in any step, whatever an earlier ruling said (Axel, 2026-10-10): no code reads, carries, converts or tolerates an older form of stored data; a change of shape is made once on the data by the orchestrator or the old data shows as unknown or as a finding (`agents/spec.md`, What every package obeys).
 - A brief is written, its premises checked and its findings closed by the orchestrator itself through the `spec` skill, never by an agent (Axel, 2026-10-09): no brief-writing agent, no premise survey or premise recheck agent, no agent that edits a brief; the one agent `/spec` starts is the brief check, as the skill says.
