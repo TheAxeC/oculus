@@ -7,6 +7,7 @@ Queued, in order (2 steps):
 Owed looks (agents/reviews/owed-looks.md): D77, the Sessions page's parts and the window buttons off macOS.
 
 Landed, newest first:
+- The Pillars page back on the rail (open item 115), 2026-10-15, inline on main.
 - The rail inline (open item 114: the foot's Search and Bookmarks removed, the Pillars page merged into Registries), 2026-10-15, inline on main.
 - D77 (the Sessions view and the title bar, the rail pages, the Repositories change groups and the graph), 2026-10-15, 9e250b73d.
 - D73 (the Literature view, hidden and ignored files shown, the domain, theme and feed settings in their files, Copy on code blocks and the Help tabs), 2026-10-14, 8af4c1dae.

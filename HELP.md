@@ -114,7 +114,7 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 | arrows, Home / End | along the rail or a tab strip |
 | arrows, Home / End, a letter | in a tree: move a row, open or close a folder, first / last row, next row starting with that letter; Shift extends; Cmd+A selects every row |
 | Delete | close the focused tab (not a pinned one) |
-| f1, m1-m5, p1-p4, e1-e4, s1-s8, c1-c7, r1-r9, b1-b3, t1, y1-y9 | open a view of a group (f Focus, m Sessions, p Projects, e Incoming, s Explorer, c Academic Life, r Registries, b Literature, t Present, y System) |
+| f1, m1-m5, p1-p4, e1-e4, s1-s8, c1-c7, l1-l3, r1-r6, b1-b3, t1, y1-y9 | open a view of a group (f Focus, m Sessions, p Projects, e Incoming, s Explorer, c Academic Life, l Pillars, r Registries, b Literature, t Present, y System) |
 | w1-w3 | Live HPC, Usage, Workbenches |
 | a1-a9 | the Apps view, then the apps |
 | h1-h9 | the Help page's tabs |

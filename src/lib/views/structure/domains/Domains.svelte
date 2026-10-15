@@ -1,12 +1,12 @@
 <script module lang="ts">
-    // Layer 3, view registration. Domains follows Pillars in the Registries page's group.
+    // Layer 3, view registration. Domains follows Pillars in the Pillars page's group.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
     export const registration: ViewRegistration = {
         id: 'domains',
         label: 'views.domains',
         glyph: 'views.domains_glyph',
-        group: 'registries',
-        order: 8
+        group: 'pillars',
+        order: 1
     };
 </script>
 

@@ -13,6 +13,7 @@ rail:
   - { label: "Sessions", glyph: live, page: sessions }
   - { label: "Explorer", glyph: folder, page: explorer }
   - { label: "Academic Life", glyph: scout, page: academic }
+  - { label: "Pillars", glyph: pillar, page: pillars }
   - { label: "Registries", glyph: venue, page: registries }
   - { label: "Literature", glyph: journals, page: literature }
   - { label: "Present", glyph: poster, page: present }
@@ -30,6 +31,7 @@ nav_groups:
   sessions: { label: "Sessions", glyph: live, chord: m }
   explorer: { label: "Explorer", glyph: folder, chord: s }
   academic: { label: "Academic Life", glyph: scout, chord: c }
+  pillars: { label: "Pillars", glyph: book, chord: l }
   registries: { label: "Registries", glyph: venue_dist, chord: r }
   literature: { label: "Literature", glyph: journals, chord: b }
   present: { label: "Present", glyph: conference, chord: t }
@@ -126,6 +128,13 @@ arrangements:
         - { view: joint-work, pinned: true }
         - { view: tasks, pinned: true }
         - { view: memories, pinned: true }
+  pillars:
+    root:
+      kind: pane
+      view:
+        - { view: pillars, pinned: true }
+        - { view: domains, pinned: true }
+        - { view: map, pinned: true }
   registries:
     root:
       kind: pane
@@ -136,9 +145,6 @@ arrangements:
         - { view: people, pinned: true }
         - { view: organisations, pinned: true }
         - { view: resources, pinned: true }
-        - { view: pillars, pinned: true }
-        - { view: domains, pinned: true }
-        - { view: map, pinned: true }
   literature:
     root:
       kind: split

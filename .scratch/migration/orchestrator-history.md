@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- The Pillars page back (2026-10-15): open item 115, Axel reversed part (5) of open item 114; the Pillars page restored on the rail (l1 to l3) and Registries back to r1 to r6, inline; the rail foot stays as open item 114 left it. Booked in plan.md Rulings.
 - The rail after D77 (2026-10-15): open item 114 ruled by Axel and done inline at his word, with no step added: the rail foot's Search and Bookmarks removed, Workbenches and Update kept, the Pillars page merged into Registries (r7 to r9); booked in plan.md Rulings. The "Unknown view" defect stays in O33.
 - D77's landing (2026-10-15): Z898 taken (Stage All of Untracked by folder entries, its add with no time limit and stopped by Cancel) and Z899 taken (the guarded entries G13, G33, G41, G47 and G79 name D77's rows); booked in plan.md Rulings and choices.md. The look found a page tab of a collection the hub does not list drawn as "Unknown view"; folded into O33 (plan.md, O33, Z468).
 - D77 repair round 1 (2026-10-15): Z897 taken (the strip's three title bar tokens, VS Code themes mapped from `titleBar.*` with VS Code's registered defaults); booked in plan.md Rulings and choices.md.
