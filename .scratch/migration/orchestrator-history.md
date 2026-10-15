@@ -4,6 +4,7 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 117 (2026-10-15): Axel agreed to all five recommendations on the Focus page (unplaced projects in Needs attention, the Awaiting box in rows, Deadlines & dates flowing across both columns, Situation in rows, the career banner at the top with the band above the lanes), built by O33's builder as part 15.
 - Open item 116 (2026-10-15): Axel agreed to (a): Q72's builder's unapproved scripts stay unused, and builder prompts forbid scripts their brief does not build.
 - Z920 (2026-10-15, O33's diagnosis, automode): `lastStamp` rereads an agent transcript's end only when its size or time changed.
 - Z919 (2026-10-15, O33's diagnosis, automode): guarded entries G86 and G87 for the two Sessions defects; the follow mark moves into state so its test needs no DOM; the lazy option, looks alone, not taken.

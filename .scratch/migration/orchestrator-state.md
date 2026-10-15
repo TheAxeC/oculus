@@ -165,6 +165,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
 - The Apps page shows no apps (booked 2026-10-13 from Axel's look, Axel: "this is a bug, (a) was the intended outcome of the step that built apps"): the rail's Apps button opens the page `apps`, one empty pane (`tools/oculus/config/layout.yml:107-108`), which shows only "Files and documents you open on this page appear here." (`config/text/ui.yml:51`). Fixed as E4 intended: the Apps page is an Apps view drawn as VS Code's Extensions view, every machine and root app with its glyph, title and state (approved, waiting for approval, changed, disabled, disabled for this workspace), Add app from folder in its title bar, a search box, and on each row the catalogue's actions (open the app's tab or its approval panel, Enable, Disable, Disable (Workspace), Enable (Workspace), Remove for a machine app), the app's tab opening beside the list; folded into D74, part 5.
