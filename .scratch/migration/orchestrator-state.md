@@ -26,8 +26,15 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:      # steps in flight, up to six (Z632)
 - step: Q72
+  executor: agent
+  worker: claude:opus
+  session_id: af9a2233fb1dc8792 (claude-opus-5-5)   # launched with the prompt of agents/briefs/Q72-launch.md word for word
+  report: agents/reviews/Q72-report.md
+  worktree: .agents/worktrees/Q72
+  base: e36bcd0b4   # the preparation commit; base copy .agents/worktrees/Q72-base with unused-exports.txt
+  round: 0
   landing: preparing
-  brief_check: agents/reviews/Q72-brief-check.md (a82475b292d05b5f0, claude-opus-5-5, 270,707 tokens, 93 tool uses, 16.6 min)
+  brief_check: "agents/reviews/Q72-brief-check.md (a82475b292d05b5f0, claude-opus-5-5, 270,707 tokens, 93 tool uses, 16.6 min)"
 ```
 
 ## The standing demands (from Axel, in force)
