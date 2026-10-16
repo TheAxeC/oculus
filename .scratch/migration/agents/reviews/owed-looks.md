@@ -9,7 +9,6 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
 - Narrow panes, the part left: Live HPC's Refresh in a narrow pane, which shows only when a cluster is configured, so it is taken on TEST.
-- D49: the rewritten Data map tab drawn on a real hub.
 - D51: a diff under a VS Code theme, and the themes Red, Dark High Contrast, Light High Contrast and Dark+ (`config/appearance.yml:21,26,29,30`).
 - D52: the person page's Folder block, the Documents switch between files, and an undo from History on an entry page.
 - D53: Copy into New Window, Reset, Reset all pages, and a drop from the catalogue.
@@ -405,11 +404,22 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
   - D47-look-2: the Details section's title controls read "Title" and "clear the title", one capitalised and one not (the second as D-look-2's lower-case buttons).
   - Case 17, the rest, passed: from the Agents head Tab goes to the Details head; Right expands Details; Tab then reaches the Pin select, the title input, Title and clear the title in order. The section heads are tree items that Tab reaches in turn.
 
+- D49, 2026-10-16, TEST on 8790 (made again in the Pages view), dark theme, the real hub: Help's "data map" link opened the Data map tab (`tools/oculus/docs/data-map.md`).
+  - Passed: the title, the contents with 9 links, 10 sections, 5 tables with 66 rows and the code blocks with their Copy control draw; no line of the drawn text is raw Markdown (a page script over `innerText` for table pipes, fences, heading marks, `**` and `](`: 0 lines); each table is 1096 px wide and ends at 1177 px inside the pane's 1206 px.
+  - Seen beside, booked as D-look-4: `: tab <id>` with an id no view has (typed `: tab session`; the view's id is `session-detail`) closes the palette and says nothing (`src/lib/shell/keys/rows/CommandRows.svelte:133` opens only a known id).
+
+- D44, 2026-10-16, TEST on 8790 (the real hub, dark theme) for the two confirms, the scratch oculus on 8796 (light theme) for the refusal; Axel allowed the press, and every confirm was closed without its yes.
+  - btfno (`projects/manuscripts/btfno/code/hpc/job.slurm`), passed: the confirm opens with the warning "This job script never names /local/$SLURM_JOB_ID, the per-job scratch folder of the cluster.", then "Not read: env/bin/activate.", then "Copy the code of btfno to utwente and submit projects/manuscripts/btfno/code/hpc/job.slurm?"; the detail names the rsync from `projects/manuscripts/btfno/code/` to `utwente:~/projects/btfno/` with its flags, "Sends 84 files (257 KB in all).", "Then runs on utwente: cd ~/'projects/btfno' && sbatch --parsable 'hpc/job.slurm'" and "The job then shows in Live HPC."; the yes reads "Submit Anyway". Cancel closed it.
+  - ward (`projects/manuscripts/ward-bttr-crosssubject/code/hpc/ward_tcn.slurm`, which names `SLURM_JOB_ID`), passed: no warning, "Copy the code of ward-bttr-crosssubject to utwente and submit projects/manuscripts/ward-bttr-crosssubject/code/hpc/ward_tcn.slurm?", "Sends 110 files (543 KB in all).", the sbatch line for `hpc/ward_tcn.slurm`, and a yes reading "Submit". The keyboard opens on Submit, which `views/shared/writes/ask.ts` gives a question the reader raised. Escape closed it.
+  - Refusal, passed: a `.slurm` in the btfno folder outside `code/` on the scratch hub (made for the look and removed after it) gave "This job script is not inside the code folder of its project." under the editor in red (rgb(204, 32, 32)), in an element with role alert; no confirm opened.
+  - Defect, booked for O37's repair round:
+  - D44-look-1: after a press of Submit Job the keyboard is on the page body, not on Submit Job: after Cancel on the btfno confirm, after Escape on the ward confirm, and after the refusal (a page script reading `document.activeElement`: BODY each time). The control is drawn disabled while the plan is asked (`disabled={submitting}`, `src/lib/views/sources/source/actions/BarActions.svelte:137`), and `Modal.svelte` gives the keyboard back to the control that held it when the confirm was drawn. Goes into O37's repair round with this symptom and no diagnosis runs (O37 Step 0).
+  - Not taken: opening the confirm from the keyboard (Submit Job focused, Enter); the session's permission check refused that press. The two mouse presses above cover the confirms and the refusal.
+
 ## Blocked, for Axel
 
 Looks that need the desktop app's windows or a physical device, which nothing here can drive: the session has no screen control of the Electron app and no trackpad or mouse of its own.
 
-- D44: the Submit Job confirms for btfno (`projects/manuscripts/btfno/code/hpc/job.slurm`) and ward, and a refusal's sentence with its alert tone. The session's permission check refuses the press of Submit Job on TEST ("Unrequested Commit in a Connected App"), and refused staging copies of the two scripts on the scratch hub as well ("Shared Cluster Mutation"). The press only asks the plan and the confirm is cancelled, so nothing runs; it needs Axel to take it, or to allow the press in the session's permissions. TEST was made again in the Pages view (it was missing) and holds the btfno `job.slurm` tab.
 - D15, the desktop part: Open in New Window and Copy into New Window in the desktop app (Copy into New Window is not in the browser's tab menu).
 - D38: Web of Science and Scopus hits drawn. They need Axel's API keys, which the session does not read or enter; with the keys set, the Lit Watch search draws the two lists.
 - The terminal's wheel speed with a real trackpad and a real mouse, against VS Code's integrated terminal on the same output; the synthetic measurement is under "Taken".

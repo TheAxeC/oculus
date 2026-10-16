@@ -5,7 +5,7 @@ Queued, in order (2 steps):
 - O38 (the cockpit retired and the hub's tools cleaned): once O37 has landed; each deletion on Axel's yes, path by path.
 - O39 (oculus in its own repository): once O38 has landed.
 
-Owed looks (agents/reviews/owed-looks.md): taken while O37 builds; 51 left to take, 4 blocked for Axel (D44's Submit press among them), the defects found booked for O37's repair round.
+Owed looks (agents/reviews/owed-looks.md): taken while O37 builds; 50 left to take, 3 blocked for Axel (the desktop app's windows, the Web of Science and Scopus keys, the trackpad wheel), the defects found booked for O37's repair round.
 
 Landed, newest first:
 - O33 (phase A: oculus ready for its own repository, parts 1 to 15 with the Focus page), 2026-10-16, bda7b0346.
