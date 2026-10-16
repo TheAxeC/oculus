@@ -5,7 +5,7 @@ Queued, in order (2 steps):
 - O38 (the cockpit retired and the hub's tools cleaned): once O37 has landed; each deletion on Axel's yes, path by path.
 - O39 (oculus in its own repository): once O38 has landed.
 
-Owed looks (agents/reviews/owed-looks.md): taken while O37 is built and reviewed; 30 left to take, six blocked for Axel (the macOS folder panel, a Stop press and the desktop app's own window), the defects found booked for O37's repair round.
+Owed looks (agents/reviews/owed-looks.md): taken while O37 is built and reviewed; 21 left to take, seven blocked for Axel (the macOS folder panel, the native file dialog, a Stop press and the desktop app's own window), the defects found booked for O37's repair round.
 
 Landed, newest first:
 - O33 (phase A: oculus ready for its own repository, parts 1 to 15 with the Focus page), 2026-10-16, bda7b0346.
