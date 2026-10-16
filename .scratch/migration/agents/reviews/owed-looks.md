@@ -15,20 +15,13 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
 - PR1: Present's real full-screen states.
 - PR3: the Export to PDF print dialog (case 25), and case 16's live redraw timed end to end.
 - PR4: the audience popup, the desktop audience window, Close Window, real full screen (cases 16 to 18) and the light theme (case 19).
-- Q96: an icon pick that changes a rail row, on a scratch oculus whose `rail:` a look may write.
-- Q30: the Findings sentences for a broken reference, an unknown status and a schema error.
-- R18: the Help diagrams under the light theme, seen as a picture.
-- S3c, the rest: a row's hover under a wallpaper theme.
 - S4 and D25: the emptied-family save (every `read_limits` entry removed, then Save).
 - S5: look-table rows 5, 6, 7, 10, 11, 14, 15, 17, 19 (`port: x`) and 21.
 - X3e: the E80 "unreadable" state in between, and case 121's timings under load.
 - X3f case 7: the index tab's staged-line blame colours, read on the gutter.
 - Q35: the Present `#` link jump in a scaled frame, on a scratch hub whose `PRESENT.md` holds a fragment link (no test holds it).
 - Q91: the follow-up editor with several notes, on a scratch hub whose manifest lists two or more notes.
-- Q98: the Audit view's code drawing, on a scratch hub with a finding that holds a backticked word.
 - U1: the Teaching column's icon, on a scratch hub with an active teaching entry.
-- Q89: a terminal split outside every place, on a scratch oculus.
-- Q86b: a press on a mover while the last drag still settles.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
@@ -514,6 +507,34 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
   - Seen working: a pointer press on a row handed the focus to its grid (the active element became xterm's "Terminal input"); with the focus on the list, Down and Up moved the one focus stop between the rows; Enter showed the row's terminal; three held Delete keydowns (`repeat: true`) armed nothing; one Delete armed Kill (its bin drawn dark) and Backspace then ended that shell and the list went with one terminal left; Shift+Enter split the group, a new shell drawn beside the row's terminal and a third row added; a three-line paste asked "Paste 3 lines into the terminal?" and Cancel dropped it; a one-line paste `echo ONELINE` went through with no Enter; a drop of `application/x-oculus-file` naming `.../q88/it's a.txt` typed `'.../q88/it'\''s a.txt' ` with no Enter; dragging the second row onto the first moved it first, and the order held after a reload.
   - Q89-look-1: Kill armed by the first Delete shows only as the bin icon drawn darker; the row says nothing in words, so a reader who pressed Delete once cannot tell a second press ends the terminal.
   - Q89-look-2 (seen on the way, every confirm): the page vanishes behind every confirm (the paste question, Move to Trash, Add to Statements): pdf.js's stylesheet `node_modules/pdfjs-dist/web/pdf_viewer.css` carries a global `.dialog` rule whose background is `--dialog-bg-color` (white), and it matches `ui/frame/Modal.svelte`'s `.ground.dialog`, so the ground is painted opaque white under the 0.72 scrim (`getComputedStyle` of `.ground.dialog`: `rgb(255, 255, 255)`); the comment at `Modal.svelte:155-157` names this risk for an extension's style, and the page's own pdf.js style hits it. This corrects the D71 note that the confirm's ground is `--bg` at 0.72.
+
+- Q89, a terminal split outside every place (taken on the scratch oculus at 8796, on the terminal `hello` of the scratch tmux, attached through the kinds dropdown's Attach to Session; its pane had ended, "Pane is dead (status 0, ...)").
+  - Q89-look-3: the row's Split on `hello` answers "The terminal request was not valid." beside the toolbar and starts nothing; a terminal oculus knows no folder for is offered Split and then refused with a sentence that tells the reader neither why nor what to do.
+  - Q89-look-4: the row's tooltip prints an empty line "Folder:" (and "Command: cd") for that terminal, where a field with no value is left out.
+
+- Q86b, a press on a mover while the last drag still settles (taken on the scratch oculus at 8796 in the Map view; positions read from each circle's box).
+  - Seen working: a drag of one node to (1100, 600) and, straight after it, a press and drag of another node to (700, 700) left the first at (1100, 600) and the second at (700, 688) at once, and 3 s later at (1102, 601) and (701, 688): the second press took its own node and the first did not creep.
+
+- Q96, an icon pick that changes a rail row (taken on the scratch oculus at 8796, whose `config/layout.yml` is the gate's, backed up first and put back after; Settings filtered to "rail").
+  - Seen working: picking a glyph for the Focus row and pressing the editor's Save wrote `glyph:` on the Focus line of `config/layout.yml` (one line in `git diff`), the editor said "Saved.", the rail's first button redrew with the new icon, and putting the file back redrew the rail and the editor with `compass` and cleared the unsaved dot.
+  - Q96-look-1: Cmd+S on a focused closed icon picker changes the pick: with "teaching" picked and the focus left on the trigger, Cmd+S turned it into "settings", the first glyph starting with s, and Save then wrote that. bits-ui 2.19.3's closed-trigger type-ahead (`node_modules/bits-ui/dist/bits/select/select.svelte.js:661-664`) passes `e.key` on without looking at `metaKey`, `ctrlKey` or `altKey`, so every FieldSelect and GlyphSelect (Q72) takes Cmd+S, Cmd+C or Cmd+A as a letter and changes its value; Cmd+Shift+P, pressed to open the palette with the focus still on the Focus row's picker, turned it into "page" the same way.
+  - Q96-look-2: an icon pick puts the unsaved dot on the Settings tab, but Cmd+S saves nothing there (`shell/keys/workbench-keys.svelte.ts:263-266` calls `saveSource()` alone), so the rail edit is written only by the Save button at the foot of the rail list, about 1500px below the row; VS Code saves a tab that shows the dot on Cmd+S.
+
+- Q30, the Findings sentences for a broken reference, an unknown status and a schema error (taken on the scratch oculus at 8796 with a scratch manifest `projects/ideas/zz-q30-look/project.yml`, removed after).
+  - Seen working: the Findings view listed, each under the manifest's path and line, "key q30_undeclared is not declared by the schema of this file", "related[0] is no-such-project-q30, which is not a key of projects", "status.chips[0] is bogus-q30, which is not a key of vocab.status_legend", "title must be a text or a number, not a list" and "venue_id is no-such-venue-q30, which is not a key of venues", the key in the muted mono face and the sentence in amber.
+  - Q30-look-1: each row's file is the whole absolute path (`/private/tmp/claude-502/.../look37/hub/projects/ideas/zz-q30-look/project.yml:13`), drawn with `word-break: break-all` (`views/system/findings/Findings.svelte:83-89`), so it takes two or three lines and breaks inside a word ("p" / "roject.yml:13"); VS Code's Problems view names the file and its folder relative to the workspace.
+
+- Q98, the Audit view's code drawing (taken on the scratch oculus at 8796 with a scratch manifest `projects/active/zz-q98-look/project.yml` of type active with no results, removed after; Audit filtered to "zz-q98").
+  - Seen working: under Missing data the row read "projects/active/zz-q98-look missing `results` project.yml" with `results` in a `<code>` chip, mono at 11px on the chip background, under the light and the dark theme.
+  - Q98-look-1: under mocha, a wallpaper theme, the chip's background is transparent (`rgba(0, 0, 0, 0)`, as the brief and the manual's `body.wall` rule give it) and every word of a rice theme is already mono, so `results` looks the same as "missing" beside it and nothing marks it as code; the same holds for the backticked words of the Settings descriptions under mocha.
+
+- S3c, the rest: a row's hover under a wallpaper theme (taken on the scratch oculus at 8796 under mocha, Settings filtered to "editor.tab_size").
+  - Seen working: hovering the "Editor: Tab size" row tinted it (`rgb(41, 44, 60)` over the see-through panel) and drew its More actions mark ("...", visible, opacity 1) at the row's top right; the description, the value and the "Default: 4" line stayed readable on the tint.
+
+- R18, the diagrams under the light theme, seen as a picture (taken on the scratch oculus at 8796 under the light theme; the gate's `tools/oculus` added to the scratch workspace as `look-engine` for the look, the workspace file put back after).
+  - Where they are now: the Help view draws no diagram (D49 cut the manual's section, and Q125 had moved "How the code fits together" to DESIGN.md), and D49 took DESIGN.md out of the view list, so DESIGN.md opened as a file is the one place left that holds the nine diagrams.
+  - R18-look-1: DESIGN.md's Markdown preview (the source tab's Open Preview to the Side) draws all nine diagrams as broken images, the alternative text beside a broken-image mark: each `<img>` keeps its `src` relative to the page (`docs/diagrams/channels.svg` loads `/docs/diagrams/channels.svg`, `naturalWidth` 0), so no diagram of oculus can be seen inside oculus, where Z643 asked that DESIGN.md's diagrams be drawn in the page's text colour.
+  - R18-look-2: Open Preview to the Side put the preview into the source tab's own pane, as a tab in front of the source, where VS Code opens it in a group beside: `openBeside` (`state/workbench/layout/open/opening.ts:170-180`) hands the view to the pane the last open-beside made while that pane is open, and that pane was the one the source had opened in.
 
 ## Blocked, for Axel
 
