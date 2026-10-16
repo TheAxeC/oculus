@@ -140,6 +140,9 @@ L90. D11, seen once (:47): a pause reveals the execution line in the editor, wha
 L91. The schedules watcher with a long tmux folder (:49): when tmux lists no terminal the tray says the schedules cannot run and why.
 
 
+L92. X3e-121-look-1 (owed-looks.md, the X3e case 121 records): under builder load a Delete in the Files tree takes 2.9 s from Move to Trash to the row's going, where X3e case 121 asks for about a second. Cause not known: read the path from the press to the row's removal (the trash call and the history copy in `server/edit/writes/file-undo.ts`, the answer to the page, and whether the tree drops the row on the answer or waits for the watcher's next read) and end the wait at the operation that holds it; the report gives the time measured after the change the way the record measured it.
+L93. The first Open Changes of a commit file on TEST reloaded the whole page, white for over 10 s (owed-looks.md, "Seen once at the X3e case 121 look"). Cause not verified: read what in development makes Vite reload the page on the first open of the diff (a module first imported then, which Vite's dependency optimisation then bundles and answers with a reload) and end it, for example by listing the module in `optimizeDeps.include` in `vite.config.ts`; the report names the module and the run that shows the reload gone on a server started with an empty `node_modules/.vite`.
+
 ## Verify before you report
 
 Run the scoped tests while working. After the last change, run the brief's "Verify before you report" list once, through the filter the rules file names, and the tree checks `npx vitest run tests/checks/source/comment-width.test.ts tests/checks/tree/duplication.test.ts tests/checks/source/history.test.ts`; a failed command is rerun alone, then the full list once more. The report states the number of full-list runs and quotes the outputs.
