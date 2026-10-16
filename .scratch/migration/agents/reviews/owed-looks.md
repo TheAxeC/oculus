@@ -10,18 +10,11 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
 
 - Narrow panes, the part left: Live HPC's Refresh in a narrow pane, which shows only when a cluster is configured, so it is taken on TEST.
 - D52, the rest: an undo from History on an entry page, taken once D52-look-2 is fixed (History cannot draw on the scratch hub until then).
-- D53: Copy into New Window, Reset, Reset all pages, and a drop from the catalogue.
-- D55: case 19d, a `lab:` tab after its root is removed.
-- D56: a workbench root that leaves the workspace, and the Code theme menu's 19 themes.
-- D57: the drag of case 5.
-- D59: the rice red command's two states (an open CAREER.yml, and the Nudge approval panel), and a repository personal project's page.
 - D62: calls from the page into a frame (onTheme, onChannel, onStore, onHost), and the dark theme.
 - D63: the status item's dimmed strength through the button primitive's `inert` flag.
 - D64: the stop dialog's background.
-- D65: the Focus lanes with a personal project, the boards in the dark theme, and the Edit Manifest form under the one schema.
 - D66: the Usage live-session rows, and the dark theme.
 - D67: the root-bookmark star, its row and menus in the dark theme.
-- D68: Save Workspace As, and Add and Remove Folder through the menus.
 - D69: the diff, merge and peek editors' widgets, a wheel scroll of a diff list, a high-contrast theme, and the linter item at its cap.
 - D70: the `lsp_edit_readonly` notice.
 - D71: the question after a clone, and a deposit mirror with an origin (Fetch, ahead and behind).
@@ -46,7 +39,7 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
 - Q96: an icon pick that changes a rail row, on a scratch oculus whose `rail:` a look may write.
 - Q30: the Findings sentences for a broken reference, an unknown status and a schema error.
 - R18: the Help diagrams under the light theme, seen as a picture.
-- S3c: the wide table of contents (700 px and up), the reveal from the rail's Settings, and a row's hover under a wallpaper theme.
+- S3c, the rest: a row's hover under a wallpaper theme.
 - S4 and D25: the emptied-family save (every `read_limits` entry removed, then Save).
 - S5: look-table rows 5, 6, 7, 10, 11, 14, 15, 17, 19 (`port: x`) and 21.
 - X3e: the E80 "unreadable" state in between, and case 121's timings under load.
@@ -433,8 +426,34 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
   - D52-look-1: the Documents switch does not follow the keyboard: each of its four buttons is its own Tab stop (tabIndex 0 on all four) and Right on the checked one leaves the choice and the focus where they were (a page script reading `aria-checked` and `document.activeElement` after the key). It is `src/lib/ui/controls/segment/Segment.svelte`, a `radiogroup` of ToolButtons with no arrow handling, so every Segment of the tree behaves the same.
   - D52-look-2: the History view stays at "Reading the change log..." when the change log holds a write of the schedules file: the console throws "text key not in the text catalog (config/text/): history.kind_schedules" from `kindOf` (`src/lib/views/system/history/History.svelte:121`). The change log is also written with the kinds `lsp` (`src/lib/server/machine/lsp/choices.ts:45`) and `commands` (`src/lib/server/machine/runs/commands/routes.ts:46`), and `config/text/views/system/history.yml` has no `kind_schedules`, `kind_lsp` or `kind_commands`. Goes into O37's repair round with this symptom and no diagnosis runs (O37 Step 0); the undo look is taken after it.
 
+- D53, 2026-10-16, the scratch oculus on 8796 (built from bda7b0346), light theme. Seen working:
+  - Reset on the Sessions page rebuilt that page to its arrangement.
+  - Reset all pages asked "Reset every rail page to its arrangement?" with "Rebuilt: Focus, Sessions, Explorer, System, Help. Floats: replaced by the ones the config ships." and, confirmed, rebuilt them; after it, the System rail button shows the System page from Sessions.
+  - A press on Workbenches in the Views catalogue dragged onto the Settings pane opened Workbenches as a tab of that pane.
+  - Copy into New Window: taken by Axel in the desktop app (D15, under "Taken").
+  - D53-look-1: before Reset all pages, once the System page was left, the System rail button (and `: tab settings` in the palette) never showed it again from Sessions, Help or Focus; the stored `current` in `oculus.layout.v1` stayed on the page shown before; after `: tab settings` the palette could not be closed (Escape cleared the input, a second Escape and a press outside did nothing); a reload showed the System page. After Reset all pages the stored `current` still reads the Sessions page's id while the System page is drawn.
+
+- D55 case 19d, D56 and D68, 2026-10-16, the scratch oculus on 8796 (built from bda7b0346), light theme; the second hub is the root `look-hub2` (the scratch hub2), and `look.yml` was put back byte for byte after each removal (`cmp` with its copy). Seen working:
+  - D55 19d: with `look-hub2:loewner` open as a tab on the System page, Remove Folder from Workspace on the `look-hub2` row (Files view) asked "Take look-hub2 out of this workspace?" and, pressed, took the root out: Projects went from 228 to 114 and the tab shows "The snapshot holds no project with the id look-hub2:loewner." With the root put back, the tab draws the project again.
+  - D68: Remove Folder from Workspace, as above. Save Workspace As from the Files header's More menu opens the palette at `:workspace-save`; the name `lookcopy` wrote `lookcopy.yml` with the four folders and the primary, and made it the open workspace; the header read LOOKCOPY a few seconds later. Switch Workspace back to `look` did the same. The scratch `lookcopy.yml` was then removed.
+  - D56: "Open in New Files" on the `look-hub2` row opened a workbench page on that root; with the root taken out of the workspace, its Search tab says "look-hub2 is not a root this workspace serves, so it has nothing to search.", and with the root back it says "Type a pattern and press Enter." The Code theme menu under This browser lists From the theme, the 19 VS Code themes (abyss to light high contrast) and the Shiki themes, 85 rows; the config's code theme select lists the same 85.
+  - D56-look-1: on that workbench page with its root gone, the Files tab says "No folders yet. Add a folder to this workspace." while the workspace still serves three folders; the Files tab of a workbench whose root left says nothing of the root that is gone.
+  - D68-look-1: the confirm of Remove Folder from Workspace has its buttons in lower case, "cancel" and "remove", where every other confirm seen (Reset all pages, Submit) writes "Cancel" and a capitalised action.
+
+- D57 case 5 and S3c (part), 2026-10-16, the scratch oculus on 8796, the System page, light theme; each drag driven by pointer events from a page script (press, eight moves, release), the path the drag store follows. Seen working:
+  - D57: the `look-hub2:loewner` tab dragged onto the right edge of the Views pane made a pane beside it holding the tab; dragged back onto the Views pane, the tab joined Views, Pages and Processes and the pane beside was gone. Account setup and then Settings dragged out of the Settings pane left that arrangement pane in place and empty, with "Files and documents you open on this page appear here."; Reset to its arrangement ("Reset System to its arrangement?", "Rebuilt: System.") put the four panes back.
+  - S3c: the Settings tab at 712 px wide draws the table of contents beside the list (This browser, Appearance with its rows, Editor, ...). The rail button's menu (Hide, Reset to its arrangement, Settings) opens Settings at "Rail".
+  - S3c-look-1: after that reveal, the table of contents marks "Rail buttons" as current (`aria-selected`), but the row sits at y 956 while the pane shows y 120 to 358, so the table of contents still shows its top and not where the list went.
+
+- D59 and D65, 2026-10-16, the scratch oculus on 8796. The scratch hub got `CAREER.yml` (a copy of `tools/cockpit/dummy/CAREER.yml`) and the Nudge app of `docs/apps.md` (its three files, `app.yml` last), and the scratch repository `look-repo` got `.oculus/project.yml` (tier personal, type active, chip building, then `focus: run`). Font sizes were read by a page script (the computed `font-size` of every element with its own text, keyed by tag, class and text) under mocha and under vscode-dark-2026, set through `:theme`. Seen working:
+  - D59, the rice red command: `CAREER.yml` open in the editor, 197 texts in both themes, none at or above its vscode-dark-2026 size under mocha. The Nudge approval panel ("Approve this app", Name, Folder, the four abilities, Approve, Keep approved while I edit, Open the app's folder, Disable, Disable (Workspace), Remove), 41 texts keyed alike in both, none at or above.
+  - D59, the repository personal project's page: "Look repository project" with the active chip, `look-repo`, the building chip, Add Command, ELI5, Status, Next, its Files (`repo`, `a.txt` marked M), Documents and Sessions.
+  - D65: with `focus: run` the card "building Look repository project / Look at its page." stands in the Run lane of Focus; the lanes, the Projects board and the Personal board drawn in the dark theme; the pencil of the Personal card opens the Editor on the one schema (Id `look-repo`, Tier personal, Type active, Short handle, Title, Lead, Authors, Status chips, Status line, ...), and closing it with nothing changed writes nothing.
+  - D65-look-1: the Status chips picker of that form offers 12 chips (submit-ready to PhD thesis) and says nothing of the others; none of the personal chips (nascent, running, paused, finished) is among them, and "run" typed in its filter finds "running".
+  - D55-look-1: the Focus lanes draw each project of both hubs twice with no hub chip on either card (EEG-sAAD, Sandpile-Op, BTTN, ... each twice), so the second hub's card cannot be told from the first's; the Command center rows and the Projects board cards carry the `look-hub2` chip.
+
 ## Blocked, for Axel
 
-None: Axel took the last three (under "Taken").
+- D68, Add Folder to Workspace through the menus: it opens the macOS folder panel (`pick()`, `state/sources/explorer/ops.svelte.ts:716`), which a look here never opens.
 
 

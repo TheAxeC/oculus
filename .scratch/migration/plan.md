@@ -2123,6 +2123,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O33 split (2026-10-16): O33 is its phase A, landed as bda7b0346; O37 fixes phase A's defects and takes its owed looks, starting from `agents/briefs/O37-start.patch`, with no diagnosis by anyone; O38 retires the cockpit and deletes `tools/cockpit`, `tools/present`, `tools/data` and `tools/deposit`; O39 makes oculus's own repository; O38 and O39 run only on Axel's approval (the user).
 - Open item 121 (2026-10-16): (a), O38 runs once O37 has landed, and every deletion and every edit of a skill's file still goes to Axel path by path for his yes before it is made (the user).
 - Open item 122 (2026-10-16): (a), O39 runs once O38 has landed (the user).
+- Open item 123 (2026-10-16): (b), the sessions fold cache is keyed by a digest of its reader's source files computed at build time in `vite.config.ts`, in place of the hand-raised `CACHE_VERSION` (`cache.ts:31`); approved as a computed fact (a hash), it goes into O37's repair round (the user).
 
 ## Agents
 
