@@ -10,9 +10,10 @@ import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import type { Finding, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { withHubCollections } from '../../fixtures/hubs/collections.ts';
 
 const ENGINE = engineDir();
-const LOADED = loadConfig(ENGINE).config;
+const LOADED = withHubCollections(loadConfig(ENGINE).config);
 const CATALOG = textCatalog(LOADED);
 const CONFIG = portfolioConfigFrom(LOADED);
 

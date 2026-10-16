@@ -199,6 +199,11 @@ export type SchedulePayload = {
      * The hub folder first, then each root the file browser serves, for the dialog's folder box.
      */
     folders: string[];
+    /**
+     * The update tasks whose file `.oculus/tasks/<kind>.md` the primary hub holds, which the tray
+     * offers; null while the workspace has no primary.
+     */
+    tasks: UpdateTask[] | null;
     /** The files that do not read, with the parser's line when it gave one. */
     unread: { file: 'schedules' | 'record' | 'commands'; line: number | null }[];
 };
@@ -294,6 +299,7 @@ export const TERMINAL_REFUSALS = [
     'task-changed',
     'task-too-long',
     'task-needs-agent',
+    'task-file-missing',
     'needs-confirm',
     'approvals-unwritable',
     'latex-program',

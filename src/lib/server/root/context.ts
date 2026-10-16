@@ -48,7 +48,8 @@ import {
     type CalendarWatcher
 } from '../accounts/calendar/poll.ts';
 import { watchMail, type MailOptions, type MailWatcher } from '../accounts/mail/poll.ts';
-import { addressOpener, macOpenAddress, macOpenPath, type Opener } from '../files/open.ts';
+import { addressOpener, pathOpener, type Opener } from '../files/open.ts';
+import { openProgram } from '../../data/places/platform.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { Hub } from '../core/channels.ts';
 import { target } from '../edit/writes.ts';
@@ -99,7 +100,7 @@ import {
     type SchedulesWatcher
 } from '../machine/runs/schedules/watch.ts';
 import { projectFolders } from '../sessions/index.ts';
-import { HookStore, sessionRecord } from '../sessions/stores/hooks.ts';
+import { HookStore } from '../sessions/stores/hooks.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import { sessionFolders } from '../sessions/folders.ts';
 import { watchUsageRefresh } from '../machine/usage/refresh.ts';
@@ -206,7 +207,7 @@ const dependencies: ContextDependencies = {
 
 /** How an `https` address reaches the operating system for these machine values. */
 function openerOf(local: LocalConfig): Opener {
-    return local.openBin === undefined ? macOpenAddress : addressOpener(local.openBin);
+    return addressOpener(local.openBin ?? openProgram());
 }
 
 /**
@@ -350,8 +351,7 @@ export function createServerContext(
         store,
         hub,
         limiter: new RateLimiter(),
-        logged: new Set<string>(),
-        recordFor: (session) => sessionRecord(hub, session)
+        logged: new Set<string>()
     };
     // The icon map is read once here and by the watcher on every config push; a page load takes
     // what is held. The drift between the map and the glyph vocabulary is a fact about this
@@ -454,6 +454,7 @@ export function createServerContext(
                 runEntry(entry, size, {
                     hub: open().primaryDir,
                     claudeBin: local.claudeBin,
+                    text: textCatalog(load().config),
                     rootsFor,
                     commands: files.commands,
                     approvalsFor: () => local.approvals ?? defaultApprovalsPath()
@@ -644,7 +645,7 @@ export function createServerContext(
             reload: () => reloadLocal()
         },
         opener: openerOf(local),
-        openPath: macOpenPath,
+        openPath: pathOpener(),
         depositPlans: new Map(),
         rescan: () => owned().portfolio.rescan(),
         wallpaper: wallpaperMemory(),

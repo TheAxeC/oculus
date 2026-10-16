@@ -1,38 +1,60 @@
-// Layer 4, test helper. Whether the real hub is there to be read, for the cases that read it.
+// Layer 4, test helper. The real hub the cases over a real hub read, and the demo hub the cases
+// that check oculus's own code read.
 //
-// A case over the real hub skips where the hub is not on the machine. The hub's path existing is
-// not that question: a sparse checkout of this repository holds the root and its documents and none
-// of the data folders, so the path is there and every folder under it is empty. A case guarded on
-// the path alone then runs against nothing and fails on a count, which reads as a defect in the
-// code and is a fact about the checkout. The question asked here is whether the folders the config
-// names hold anything, so such a checkout skips and a hub that lost its data still fails loudly.
+// Oculus is a repository of its own, so no hub sits at a fixed place beside it: the real hub is
+// the folder the environment variable OCULUS_TEST_HUB names. Unset, the cases over a real hub skip,
+// the file prints one line naming the variable, and the name of each skipped describe or case ends
+// with the same reason. Set to a folder that holds no
+// `.oculus/config.yml`, those cases fail with words naming the variable and the folder, so a
+// mistyped path reads as a mistake and never as a skip. The cases that check oculus's own code run
+// over the demo hub of tests/fixtures/hubs/demo/, which is always there, and never skip.
 
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { loadConfig, engineDir } from '../../../src/lib/data/sources/config.ts';
-import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
+import { engineDir } from '../../../src/lib/data/sources/config.ts';
+import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 
-/** Whether a folder is there and holds anything at all. */
-function filled(path: string): boolean {
-    try {
-        return readdirSync(path).length > 0;
-    } catch {
-        return false;
-    }
+/** The environment variable that names the real hub. */
+export const TEST_HUB_VARIABLE = 'OCULUS_TEST_HUB';
+
+/** The demo hub, the synthetic research hub the tests read. */
+export const DEMO_HUB = join(engineDir(), 'tests', 'fixtures', 'hubs', 'demo');
+
+/** The real hub as the environment names it. */
+export type RealHub = {
+    /** The hub folder, resolved; empty when the variable is unset. */
+    hub: string;
+    /** Whether the variable is set, so the cases over a real hub run. */
+    asked: boolean;
+    /** The words a case fails with when the folder is no hub, or null when it is one. */
+    wrong: string | null;
+};
+
+/** The real hub the environment names, read once per file. */
+export function realHub(env: NodeJS.ProcessEnv = process.env): RealHub {
+    const named = env[TEST_HUB_VARIABLE] ?? '';
+    if (named === '') return { hub: '', asked: false, wrong: null };
+    const hub = resolve(named);
+    if (existsSync(join(hub, HUB_FILE))) return { hub, asked: true, wrong: null };
+    const wrong = `${TEST_HUB_VARIABLE} names ${hub}, which is no hub: it holds no ${HUB_FILE}`;
+    return { hub, asked: true, wrong };
+}
+
+/** The one line a file prints when its cases over a real hub skip. */
+export function skipLine(file: string): string {
+    return `${file}: the cases over a real hub skipped, since ${TEST_HUB_VARIABLE} is not set`;
 }
 
 /**
- * The real hub's path, the folder two levels above oculus's folder (`<hub>/tools/oculus`), and
- * whether it is there with its data. Read once per file: the answer cannot change while a suite
- * runs, and every case over the hub asks the same question.
+ * The name of a describe or a case over the real hub, which carries the reason when it skips, so
+ * the reporter that lists the skipped names says why.
  */
-export function realHub(engine: string = engineDir()): { hub: string; present: boolean } {
-    const hub = resolve(engine, '..', '..');
-    if (!existsSync(hub)) return { hub, present: false };
-    const config = portfolioConfigFrom(loadConfig(engine, { hub }).config);
-    // The registries file the config names, and a scan folder with projects in it. A hub may not
-    // carry every folder the scan lists, so one that is filled is what says the data is here.
-    const registries = existsSync(join(hub, config.registries.venues));
-    const scanned = config.scan.some((rule) => filled(join(hub, rule.dir)));
-    return { hub, present: registries && scanned };
+export function realHubName(name: string, real: RealHub): string {
+    return real.asked ? name : `${name} (skipped: ${TEST_HUB_VARIABLE} is not set)`;
+}
+
+/** The hub folder of a case over the real hub, which fails when the variable names no hub. */
+export function hubOf(real: RealHub): string {
+    if (real.wrong !== null) throw new Error(real.wrong);
+    return real.hub;
 }

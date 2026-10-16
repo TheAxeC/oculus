@@ -39,6 +39,7 @@ import { isMap } from '../../core/json.ts';
 import { claudeTranscripts, codexRollouts, isRollout } from '../../transcripts/stores.ts';
 import { claudeState, foldClaude } from '../fold.ts';
 import { settleAgentFiles, settleBackground } from './background.ts';
+import { createStamps, type Stamps } from './stamps.ts';
 import { distinctFolders } from '../folders.ts';
 import { defaultOverridesPath, hiddenIds } from '../overrides.ts';
 import { liveFrom, mergeLive, registryCandidates, systemProbe, type Probe } from '../registry.ts';
@@ -72,6 +73,11 @@ export type ScanOptions = {
     maxFirstReadBytes?: number;
     /** The moment to measure ages against, in milliseconds. */
     now?: number;
+    /**
+     * The latest record stamps of the subagents' transcripts, kept across the scans of one watch so
+     * an unchanged file is not read again; a scan without them reads each file once.
+     */
+    stamps?: Stamps;
 };
 
 /** The bytes `foldFrom` reads at a time. */
@@ -211,7 +217,7 @@ export function readSession(path: string, store: string | null = null): SessionR
     }
     const now = Date.now();
     const record = finish(acc, stateOf(acc, mtimeMs, now));
-    settleBackground(acc, record, mtimeMs, now);
+    settleBackground(acc, record, now, createStamps());
     settleAgentFiles(acc, record);
     return record;
 }
@@ -233,7 +239,8 @@ function session(
     store: string | null,
     cached: CacheEntry | undefined,
     limit: number,
-    now: number
+    now: number,
+    stamps: Stamps
 ): Folded {
     const tool = toolOf(found.path);
     const empty = accFor(found.path, store, tool);
@@ -261,7 +268,7 @@ function session(
         acc
     };
     const record = finish(acc, stateOf(acc, found.mtimeMs, now));
-    settleBackground(acc, record, found.mtimeMs, now);
+    settleBackground(acc, record, now, stamps);
     settleAgentFiles(acc, record);
     return { record, entry, usage: startedByUsage(acc) };
 }
@@ -292,6 +299,7 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     const cachePath = options.cachePath ?? defaultCachePath();
     const limit = options.maxFirstReadBytes ?? MAX_FIRST_READ_BYTES;
     const now = options.now ?? Date.now();
+    const stamps = options.stamps ?? createStamps();
 
     const previous = loadCache(cachePath);
     const probe = options.probe ?? systemProbe;
@@ -308,7 +316,14 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
      * for a session a usage refresh started, which the cache still remembers.
      */
     const take = (file: Found, store: string, tool: SessionTool): boolean => {
-        const folded = fold(file, tool === 'codex' ? store : null, previous[file.path], limit, now);
+        const folded = fold(
+            file,
+            tool === 'codex' ? store : null,
+            previous[file.path],
+            limit,
+            now,
+            stamps
+        );
         if (folded === null) return false;
         if (folded.entry !== null) fresh[file.path] = folded.entry;
         if (folded.usage) return false;
@@ -356,10 +371,11 @@ function fold(
     store: string | null,
     cached: CacheEntry | undefined,
     limit: number,
-    now: number
+    now: number,
+    stamps: Stamps
 ): Folded | null {
     try {
-        return session(file, store, cached, limit, now);
+        return session(file, store, cached, limit, now, stamps);
     } catch {
         return null;
     }

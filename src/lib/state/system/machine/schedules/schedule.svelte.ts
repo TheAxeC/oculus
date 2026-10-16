@@ -130,6 +130,16 @@ export type ScheduleStore = {
     nextOfTask: (kind: UpdateTask) => string;
     /** A task's label in the tray. */
     taskLabel: (kind: UpdateTask) => string;
+    /**
+     * The update tasks whose file the primary hub holds, in the order of UPDATE_TASKS, which the
+     * tray and the Focus board offer; none before the first payload.
+     */
+    offered: () => UpdateTask[];
+    /**
+     * The line the tray shows when it offers no task, for a workspace with no primary hub or a hub
+     * with no task file; '' when it offers one and before the first payload.
+     */
+    noTasks: () => string;
     /** The choices of the dialog's Runs, Task and When boxes, and the names of the seven days. */
     kinds: () => CommandChoice[];
     tasks: () => CommandChoice[];
@@ -340,6 +350,11 @@ export function createSchedule(
         });
     }
 
+    function offered(): UpdateTask[] {
+        const held = new Set<unknown>(entities.schedule()?.tasks ?? []);
+        return UPDATE_TASKS.filter((kind) => held.has(kind));
+    }
+
     function nextOfTask(kind: UpdateTask): string {
         let best: { next: string; name: string } | null = null;
         for (const row of entities.schedule()?.schedules ?? []) {
@@ -541,6 +556,12 @@ export function createSchedule(
         unread,
         nextOfTask,
         taskLabel: (kind) => TASK_LABELS[kind](),
+        offered,
+        noTasks: () => {
+            const payload = entities.schedule();
+            if (payload === null || offered().length > 0) return '';
+            return payload.tasks === null ? t('app.tasks.no_primary') : t('app.tasks.no_files');
+        },
         kinds: () => KINDS.map(choice(KIND_LABELS)),
         tasks: () => UPDATE_TASKS.map(choice(TASK_LABELS)),
         whens: () => WHEN_CHOICES.map(choice(WHEN_LABELS)),

@@ -1,4 +1,4 @@
-// Layer 2, client state. Pure dataset summaries, search, tones, saved state and recovery command.
+// Layer 2, client state. Pure dataset summaries, search, tones and saved state.
 // The Data view receives records ready to draw and keeps its search words and disabled facets.
 
 import { dataAccessTone } from '../../shared/words/tones.ts';
@@ -43,12 +43,6 @@ export function datasetSearch(datasets: Dataset[], words: string | string[]): Da
             .toLowerCase();
         return needles.every((word) => haystack.includes(word));
     });
-}
-
-/** The shell command the server gives tmux, with the dataset key as one quoted word. */
-export function recoveryCommand(key: string): string {
-    const quoted = `'${key.replaceAll("'", `'"'"'`)}'`;
-    return `python3 tools/data/redownload.py ${quoted}`;
 }
 
 /** The fields a Data instance keeps, each read as absent when wrong. */

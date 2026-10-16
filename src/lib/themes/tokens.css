@@ -1,11 +1,10 @@
-/* The palette, ported from the cockpit's assets/css/01-base.css :root block, values unchanged.
-   Two layers of colour:
+/* The palette. Two layers of colour:
      - chrome  (--bg/--panel/--card/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
      - palette (--c-*), the status hues shared by the sheets and the config vocabulary.
    A theme is a block of overrides on these tokens and never a per-rule edit; themes.css holds the
-   ported blocks and vscode.css the generated ones. Every colour a component uses resolves through
-   a token here, so the contrast test can walk them all. The -txt and --on-* tokens the components
-   read are derived from these by derive.ts, the way the cockpit derived them at build time. */
+   hand-written blocks and vscode.css the generated ones. Every colour a component uses resolves
+   through a token here, so the contrast test can walk them all. The -txt and --on-* tokens the
+   components read are derived from these by derive.ts. */
 :root {
     --bg: #f1f5f9;
     --panel: #fff;

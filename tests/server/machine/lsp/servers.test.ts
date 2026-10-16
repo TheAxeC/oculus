@@ -9,6 +9,7 @@ import {
     readdirSync,
     readlinkSync,
     realpathSync,
+    symlinkSync,
     writeFileSync
 } from 'node:fs';
 import { join } from 'node:path';
@@ -194,6 +195,39 @@ const ROWS: Row[] = [
                 '--header-insertion=never',
                 '--background-index',
                 `--compile-commands-dir=/lsp/${AWKWARD}/build`
+            ]);
+        }
+    },
+    {
+        name: 'names a node_modules that is a link by its real path, in the permission flag and the script of the YAML and Markdown servers',
+        steps: () => {
+            const modules = realpathSync(scratchDir('oculus-modules-'));
+            const oculus = realpathSync(scratchDir('oculus-own-'));
+            symlinkSync(modules, join(oculus, 'node_modules'));
+            const servers = createServers({
+                oculus,
+                node: '/a node',
+                exists: () => true,
+                latex: () => shippedLatex()
+            });
+            const setup = {
+                root: AWKWARD,
+                interpreter: null,
+                interpreterPrefixes: [],
+                databaseFolder: `/lsp/${AWKWARD}/build`,
+                fallbackFlags: []
+            };
+            expect(servers.forId('yaml').launch(setup)?.args).toEqual([
+                '--permission',
+                `--allow-fs-read=${modules}`,
+                join(modules, 'yaml-language-server', 'bin', 'yaml-language-server'),
+                '--stdio'
+            ]);
+            expect(servers.forId('markdown').launch(setup)?.args).toEqual([
+                '--permission',
+                `--allow-fs-read=${modules}`,
+                join(modules, 'vscode-markdown-languageserver', 'dist', 'node', 'workerMain.js'),
+                '--stdio'
             ]);
         }
     },

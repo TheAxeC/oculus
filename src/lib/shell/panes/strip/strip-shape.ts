@@ -8,7 +8,9 @@
 // (`editor_actions: strip`) go up to the window strip, as VS Code's `editorActionsLocation`
 // default shows them in the window title bar when `showTabs` is `none`; the strip draws the active
 // pane's (shell/titlebar/strip-actions.svelte.ts). The pane then keeps a title row only while it is
-// locked, since the mark that unlocks it is drawn in that row, as with the actions hidden.
+// locked, since the mark that unlocks it is drawn in that row, as with the actions hidden. A
+// window with no strip, which is every page in a browser, keeps the actions in a title row of the
+// pane, the place they have when the tab bar is drawn.
 
 import type { EditorActions, TabBar } from '$lib/state/shared/words/appearance';
 import type { Tab } from '$lib/ui/tabs/tab-strip';
@@ -28,18 +30,24 @@ export type StripShape = {
 };
 
 /**
- * The row of a pane under `show_tabs` (`bar`) and `editor_actions` (`place`). `none` sends the
- * actions up to the window strip, or with the actions hidden draws none, and keeps a title row
- * only while the pane is locked, since the mark that unlocks it is drawn in that row.
+ * The row of a pane under `show_tabs` (`bar`) and `editor_actions` (`place`), in a window that has
+ * a title bar strip (`windowStrip`) or none. `none` sends the actions up to the window strip, or
+ * with the actions hidden draws none, and keeps a title row only while the pane is locked, since
+ * the mark that unlocks it is drawn in that row; with no window strip the actions stay in a title
+ * row of the pane.
  */
 export function stripShape(
     bar: TabBar,
     place: EditorActions,
     tabs: Tab[],
     active: string,
-    locked: boolean
+    locked: boolean,
+    windowStrip: boolean
 ): StripShape {
     const actions = place === 'strip';
+    if (bar === 'none' && actions && !windowStrip) {
+        return { tabs: [], row: 'title', actions: true, up: false, lock: locked };
+    }
     if (bar === 'none') {
         return {
             tabs: [],

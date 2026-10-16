@@ -14,7 +14,8 @@
 // session writes: the overrides file, which is api/write's, and without it a dismissal or a pin
 // made on one page would not reach another until a transcript happened to change. The byte-offset
 // cache in sessions/cache.ts is what makes the rescan cost the appended bytes rather than the
-// whole store.
+// whole store, and the watch keeps the latest record stamp of each subagent's transcript
+// (sessions/stores/stamps.ts), so such a file is read again only when its size or time moved.
 //
 // The 15 s liveness re-check covers the changes to the payload no file event announces. A process
 // can die without its registry file changing, and a Codex rollout is live only while a codex
@@ -41,6 +42,7 @@ import type { Probe } from '../../sessions/registry.ts';
 import { defaultOverridesPath } from '../../sessions/overrides.ts';
 import type { ProjectFolder } from '../../sessions/group.ts';
 import type { HookStore } from '../../sessions/stores/hooks.ts';
+import { createStamps } from '../../sessions/stores/stamps.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds of quiet after the last file event before one rescan runs. */
@@ -156,6 +158,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     let clock: ReturnType<typeof setInterval> | null = null;
     let signature: string | null = null;
     let closed = false;
+    const stamps = createStamps();
 
     const read = (): SessionsPayload =>
         sessions({
@@ -171,6 +174,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
             probe: options.probe,
             codexProbe: options.codexProbe,
             hooks: options.hooks,
+            stamps,
             terminals: options.terminals === undefined ? null : options.terminals.list()
         });
 

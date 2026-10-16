@@ -10,8 +10,8 @@
 // the repository holding the folder of the workbench on screen, else the repository last chosen in
 // the repository item's picker (`chosenState` says whether the channel reports it), else the hub's.
 // A file or a workbench folder in no repository decides and draws nothing. A repository is one top
-// folder however many roots of the `git` channel lie in it, so a file under `tools/oculus` of the
-// hub names the hub's repository, by the folder its top names, and the picker lists it once: the
+// folder however many roots of the `git` channel lie in it, so a file under a subfolder of the hub
+// names the hub's repository, by the folder its top names, and the picker lists it once: the
 // roots git read without an error are grouped by `repositoryGroups` (`readableGroups`). "The
 // repository holding a place" is `holdingRepository`: the deepest root of the channel holding the
 // place, read through deepestHolding of data/helpers/files/paths.ts, the rule the source tab's

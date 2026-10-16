@@ -12,9 +12,13 @@ import type { ScheduleEntry } from '../../../../../src/lib/data/model/index.ts';
 import { runEntry } from '../../../../../src/lib/server/machine/runs/schedules/run.ts';
 import { it, scratchDir } from '../../../../fixtures/scratch.ts';
 import { lineOf, tmux } from '../../../../routes/sessions/terminal-fixture.ts';
+import { TEXT } from '../../../text.ts';
 import { CLAUDE, world, type World } from './schedules-fixture.ts';
 
 const SIZE = { cols: 80, rows: 24 };
+
+/** The sentence the Lit Watch task starts with, read through the catalog rather than typed. */
+const LITWATCH = TEXT['server.task.update_task'].replace('{0}', '.oculus/tasks/litwatch.md');
 
 const PROMPT = 'Summarise what is blocked';
 
@@ -43,16 +47,16 @@ const ROWS: Row[] = [
         entry: () => entry({ task: 'litwatch' }),
         expected: {
             cwd: (w) => w.hub,
-            words: [`'${CLAUDE}' '/research-cockpit litwatch'`],
+            words: [`'${CLAUDE}' '${LITWATCH}'`],
             terminalName: 'task litwatch'
         }
     },
     {
-        name: 'an unattended update task carries the flag before the skill',
+        name: 'an unattended update task carries the flag before the sentence',
         entry: () => entry({ task: 'litwatch' }, true),
         expected: {
             cwd: (w) => w.hub,
-            words: [`'${CLAUDE}' '--dangerously-skip-permissions' '/research-cockpit litwatch'`],
+            words: [`'${CLAUDE}' '--dangerously-skip-permissions' '${LITWATCH}'`],
             terminalName: 'task litwatch'
         }
     },
@@ -140,6 +144,7 @@ describe('runEntry', () => {
                 run: driver.run,
                 hub: w.hub,
                 claudeBin: CLAUDE,
+                text: TEXT,
                 rootsFor: () => roots,
                 commands: w.files.commands,
                 approvalsFor: () => join(scratchDir('oculus-approvals-'), 'approvals.json')

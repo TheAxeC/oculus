@@ -1,6 +1,8 @@
 <script lang="ts">
     // Layer 3, shell. The window's title bar strip, drawn as VS Code's title bar across the top of
-    // the window, above the rail and the area, in the desktop app and in a browser alike: 35 px
+    // the window, above the rail and the area, in the desktop app's windows only (a page in a
+    // browser has the browser's own bar above it, and reaches Go Back, Go Forward, the dock toggles
+    // and the palette through their keys and the palette, the editor actions in each pane): 35 px
     // high in the theme's title bar colours. From left to right: Go Back and Go Forward, which walk
     // the window's navigation history (history-walk.ts) and are drawn disabled at either end of it;
     // the Command Center in the middle, a box as wide as VS Code's, whose words are the open

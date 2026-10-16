@@ -4,6 +4,27 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z929 (2026-10-16, O33's landing, the orchestrator, automode): the hub's text about where oculus lives
+
+- Chosen: the hub's `CLAUDE.md`, `README.md` and `CONTEXT.md` say oculus is in `tools/oculus/` until it moves to its own repository at `~/workspace/oculus`, which is true until phase C moves it; the final texts wait in `agents/briefs/O33-phase-c-hub-text.patch`, applied at phase C, and README's sentence naming the last commit that holds the cockpit is written at phase B with the real commit id.
+- Not chosen: the builder's texts as written, which name `~/workspace/oculus` as where oculus is and a commit id as the cockpit's last, both false on main until phases B and C; the lazy option was landing them as written.
+
+Where it applies: O33 phase A landing; hub `CLAUDE.md:33,35,99`, `README.md:3,12,22`, `CONTEXT.md:3`. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z928 (2026-10-16, O33's landing, the orchestrator, automode): the guarded entries' Test lines for O33's rows
+
+- Chosen: the Test lines of G1, G2, G7, G9 and G49 in `agents/guarded.md` name O33's rows by their exact titles: the make route's token and outside rows (G1, G2) with its refusing rows, the servers row that names a linked node_modules by its real path (G7), the make route's rows that record only what a make brings into being (G9, the new row added at landing), and the PDF-at-a-page rows of the app methods and the app-open route (G49); this is the wording of guarded entries, which the automode order closes by self-rule.
+- Not chosen: leaving the rows unnamed in the guarded list, so a later step could change them as unguarded tests; the lazy option was that.
+
+Where it applies: `agents/guarded.md` G1, G2, G7, G9, G49; O33's `tests/routes/hubs/make.test.ts`, `tests/server/machine/lsp/servers.test.ts`, `tests/state/system/apps/methods.test.ts`, `tests/routes/apps/app-open.test.ts`. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
+## Z927 (2026-10-16, O33's review over round 1, the orchestrator, automode): what a folder offers beyond the home stop
+
+- Chosen: a folder holding `project.yml` or `.oculus/project.yml` is offered neither Make Folder a Hub nor Make Folder a Project, and a hub folder is not offered Make Folder a Project, as the builder built it: oculus reads no project in a hub folder (`manifests.ts:81`), so a project made there would never show, and a hub made of a project folder would hide the project; HELP.md says what each folder offers.
+- Not chosen: the brief's part 5 wording, which offers Make Folder a Project on a hub and Make Folder a Hub on a folder holding `project.yml`, so the control makes a file oculus then ignores; no lazier option.
+
+Where it applies: O33 part 5 and round-1 item 4, `src/lib/server/files/project/make.ts:109-117`, `tests/routes/hubs/make.test.ts` describe 'what a folder offers'. Booked in `plan.md` Rulings and the closed log of `orchestrator-history.md`.
+
 ## Z926 (2026-10-16, O33's builder report, the orchestrator, automode): the folded career banner's milestone
 
 - Chosen: the banner cuts the milestone at its first " - " or " (", which gives the brief's own example "Next: FWO Senior" from this hub's milestone; the unfolded panel shows the whole milestone.

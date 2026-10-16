@@ -37,6 +37,7 @@ import { createRailPages } from './layout/open/float/rail-pages.ts';
 import { createReopen, type Reopen } from './layout/tabs/reopen.svelte.ts';
 import type { Load } from './layout/saved/load.ts';
 import type { UiStore } from './ui.svelte.ts';
+import type { HubVocabs } from '../../data/model/index.ts';
 import {
     clearPage,
     createAttention,
@@ -290,7 +291,15 @@ export type LayoutStore = Omit<Instances, 'forgetTabs'> &
  */
 export type LayoutDesktop = { turn: SaveTurn };
 
-export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore {
+/**
+ * The layout store. `hubs` answers the collections the hubs of the workspace list, which decide
+ * the tabs a pane draws and so which tab is the active one (layout/tabs/left-out.ts).
+ */
+export function createLayout(
+    ui: UiStore,
+    desktop?: LayoutDesktop,
+    hubs?: () => HubVocabs | null
+): LayoutStore {
     /**
      * The pages, and which of them is on screen. The label of the page this starts on is empty
      * because the catalog is not installed when this module is evaluated; loadLayout names it, and
@@ -431,7 +440,7 @@ export function createLayout(ui: UiStore, desktop?: LayoutDesktop): LayoutStore 
     const builds: Builds = { unique: (view) => uniqueRule(view), keep: keepRule };
 
     const attention = createAttention(access, where);
-    const instances = createInstances(access, attention, keepRule);
+    const instances = createInstances(access, attention, keepRule, hubs);
     const reopen = createReopen(access, attention, instances.activateInstance);
     const opening = createOpening(
         access,

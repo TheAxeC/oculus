@@ -17,7 +17,7 @@ export { engineDir } from '../places/engine-dir.ts';
 /**
  * The pure reader of the `collections:` keys lives with the registry keys it excludes, client-safe.
  */
-export { collectionKeys } from '../snapshot/normalise.ts';
+export { collectionKeys, workspaceCollectionKeys } from '../snapshot/normalise.ts';
 
 export {
     type LocalConfig,

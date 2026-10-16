@@ -53,12 +53,26 @@ const IMPORT = /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)['"]([^'"\n]+)['"]/g;
 /** The endings a specifier may leave off, and the index file of a folder. */
 const TAILS = ['', '.ts', '/index.ts', '.svelte', '.js', '/index.js'];
 
-/** The path of a changed file as the ROOT-relative path with forward slashes, or null outside. */
+/**
+ * The root of the repository that holds ROOT: the nearest folder at or above it that holds a
+ * `.git`, at whatever depth, or ROOT itself when none does.
+ */
+function repositoryRoot() {
+    for (let dir = ROOT; ; dir = dirname(dir)) {
+        if (existsSync(join(dir, '.git'))) return dir;
+        if (dirname(dir) === dir) return ROOT;
+    }
+}
+
+/**
+ * The path of a changed file as the ROOT-relative path with forward slashes, or null outside. A
+ * path is read as relative to the working folder, to ROOT, or to the root of the repository.
+ */
 function normalise(path) {
     const options = [
         resolve(process.cwd(), path),
         resolve(ROOT, path),
-        resolve(ROOT, '..', '..', path)
+        resolve(repositoryRoot(), path)
     ];
     const full = options.find((one) => existsSync(one)) ?? options[0];
     const rel = relative(ROOT, full).split(sep).join('/');

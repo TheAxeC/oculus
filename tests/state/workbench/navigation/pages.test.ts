@@ -123,10 +123,17 @@ describe('the file a tab names', () => {
         view: 'doc',
         state: { id: 'engine:docs/apps.md', path: 'docs/apps.md', engine: true }
     };
-    const hubTab = { view: 'doc', state: { id: 'docs/DATA-MAP.md', path: 'docs/DATA-MAP.md' } };
+    const hubTab = {
+        view: 'doc',
+        state: { id: 'docs/RESEARCH-APPROACH.md', path: 'docs/RESEARCH-APPROACH.md' }
+    };
     const labTab = {
         view: 'doc',
-        state: { id: 'lab:docs/DATA-MAP.md', path: 'docs/DATA-MAP.md', hub: 'lab' }
+        state: {
+            id: 'lab:docs/RESEARCH-APPROACH.md',
+            path: 'docs/RESEARCH-APPROACH.md',
+            hub: 'lab'
+        }
     };
     const IN_HUB = { primary: 'hub', engineHub: 'hub', engineAt: 'tools/oculus' };
     const ROWS = [
@@ -152,13 +159,13 @@ describe('the file a tab names', () => {
             row: 'a hub document tab, which is a document of the primary hub',
             tab: hubTab,
             place: IN_HUB,
-            file: { root: 'hub', path: 'docs/DATA-MAP.md' }
+            file: { root: 'hub', path: 'docs/RESEARCH-APPROACH.md' }
         },
         {
             row: 'a document tab that names its hub',
             tab: labTab,
             place: IN_HUB,
-            file: { root: 'lab', path: 'docs/DATA-MAP.md' }
+            file: { root: 'lab', path: 'docs/RESEARCH-APPROACH.md' }
         },
         {
             row: 'a hub document tab with no primary hub',

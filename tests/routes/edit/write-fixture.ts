@@ -26,6 +26,7 @@ import type { PrimaryTarget, WriteTarget } from '../../../src/lib/server/edit/wr
 import type { ConfigKeyOutcome } from '../../../src/lib/server/edit/writes/config/config-key.ts';
 import { present } from '../../fixtures/present.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
+import { withHubCollections } from '../../fixtures/hubs/collections.ts';
 import { careerRules } from '../../../src/lib/server/edit/writes/subtasks.ts';
 import { fixtureProject } from '../../fixtures/entities-fixture.ts';
 
@@ -126,7 +127,7 @@ export function targetOver(
     files: { overrides: string; bookmarks: string; changes: string },
     keep = 500
 ): PrimaryTarget {
-    const merged = loadConfig(engineDir()).config;
+    const merged = withHubCollections(loadConfig(engineDir()).config);
     const real = portfolioConfigFrom(merged);
     return {
         hub: dir,
@@ -297,7 +298,7 @@ export function deckTarget(): PrimaryTarget {
         writeFileSync(join(folder, 'present.yml'), 'order: [main.md]\n');
         writeFileSync(join(folder, 'main.md'), `# ${project.id}\n`);
     }
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(withHubCollections(loadConfig(engineDir()).config));
     const changes = join(dir, 'changes.jsonl');
     expect(resolve(changes).startsWith(resolve(dir) + sep)).toBe(true);
     return {

@@ -118,6 +118,11 @@ export type PortfolioConfig = {
     feeds: FeedFiles;
     /** The configured interval between LinkedIn posts. */
     linkedinCadenceDays: number;
+    /**
+     * The hub's `recover_command` when it holds `{key}`, so its datasets have a Recover control;
+     * null when it is empty, absent or names no `{key}`.
+     */
+    recoverCommand: string | null;
     /** The career file, hub-relative, or null for a hub whose career is not read. */
     career: string | null;
     /** The merged `manifest_schema`, the form the manifest's JSON Schema is made from. */
@@ -287,12 +292,15 @@ export type ConfigPayload = {
  * The words one hub gives its own records, read from its own files: the research `domains` (each
  * key of its domains registry to the entry's colour and title as `label`; a colour not written
  * `#rrggbb` is left out), and `venue_themes` and `data_themes`, the `{ key, label }` options of the
- * `themes` field of its venue and dataset registries (a plain word is its own label).
+ * `themes` field of its venue and dataset registries (a plain word is its own label), and the
+ * `collections` it lists: the keys its own `collections:` names, or, when its settings name no
+ * list, the keys of the engine's list whose file the hub holds at the engine's path.
  */
 export type HubVocab = {
     domains: Record<string, { color?: string; label: string }>;
     venue_themes: { key: string; label: string }[];
     data_themes: { key: string; label: string }[];
+    collections: string[];
 };
 
 /**

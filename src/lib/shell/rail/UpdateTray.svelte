@@ -2,12 +2,14 @@
     // Layer 3, shell. The update tray. It holds two sections under its heading. Schedules
     // (ScheduleList.svelte) lists the entries of `schedules.yml` in the hub's `.oculus` folder with
     // their next and latest runs and the controls that edit, pause, run and delete them. Tasks
-    // lists the four update tasks: each control starts the server-built Claude command in a
-    // terminal, selects it, and shows it in the Terminal tab of the page on screen, or a new one
-    // (the terminals store's `showTerminal`); the snapshot's feed summary supplies the last-run
-    // value beside each control, the inbox triage's comes from the `inbox` channel, whose notes
-    // file is what that task writes, and each row says which schedule runs the task next and opens
-    // the schedule dialog for the task.
+    // lists the update tasks whose file `.oculus/tasks/<task>.md` the primary hub holds (the
+    // schedule store's `offered`), and one line in their place when it holds none or there is no
+    // primary: each control starts the server-built Claude command in a terminal, selects it, and
+    // shows it in the Terminal tab of the page on screen, or a new one (the terminals store's
+    // `showTerminal`); the snapshot's feed summary supplies the last-run value beside each control,
+    // the inbox triage's comes from the `inbox` channel, whose notes file is what that task writes,
+    // and each row says which schedule runs the task next and opens the schedule dialog for the
+    // task.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
     // pane and a press starts it straight away. A run that goes unattended is a schedule's Run
@@ -25,7 +27,7 @@
     import ScheduleDialog from './ScheduleDialog.svelte';
     import ScheduleList from './ScheduleList.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
-    import { UPDATE_TASKS, type UpdateTask } from '$lib/state/sessions/terminals.svelte';
+    import type { UpdateTask } from '$lib/state/sessions/terminals.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -62,7 +64,7 @@
         inbox: () => current.notesRun ?? undefined
     };
     const tasks = $derived(
-        UPDATE_TASKS.map((kind) => ({
+        schedule.offered().map((kind) => ({
             kind,
             label: schedule.taskLabel(kind),
             note: NOTES[kind](),
@@ -139,6 +141,9 @@
                 />
                 <section class="tasks" aria-label={t('app.tasks.tasks')}>
                     <h3>{t('app.tasks.tasks')}</h3>
+                    {#if schedule.noTasks() !== ''}
+                        <p class="none">{schedule.noTasks()}</p>
+                    {/if}
                     {#each tasks as task (task.kind)}
                         <div class="task" data-task={task.kind}>
                             <ToolButton
@@ -230,6 +235,7 @@
 
     h2,
     h3,
+    .none,
     .said {
         margin: 0;
     }
@@ -251,6 +257,7 @@
     .last,
     .next,
     .note,
+    .none,
     .said {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);

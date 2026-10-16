@@ -8,21 +8,27 @@
 // session carries its completion notice (a `<task-notification>`, in a user message, or in the
 // attachment of a queued command when the session was busy, naming the call's `<tool-use-id>`,
 // or its agent id as the `<task-id>`, with the `<status>` it ended in), and without one it is
-// running while its own transcript still grows and done once that has been still for
-// IDLE_AFTER_SECONDS, the time after which a session reads idle. A subagent whose transcript is not
-// found is judged by the session's own file the same way.
+// running while the latest record of its own transcript is within IDLE_AFTER_SECONDS of now, the
+// time after which a session reads idle, and done at that record once it is older. A subagent whose
+// transcript is not found is judged by the latest record of the session's own transcript the same
+// way.
+//
+// When a subagent last worked is the timestamp its latest record carries (stores/stamps.ts), never
+// a file's modification time: a copy, a restore or a sync moves that time while no record is
+// written, and a transcript days old would read as running again.
 //
 // A notice fires each time the agent stops, so a subagent resumed after its notice is ended again
 // by the next one: the row reads what the latest notice says. `completed` reads done and `killed`,
 // an agent stopped before it finished, reads stopped; any other status reads error. Between a
-// resume and its next notice the subagent writes its own transcript again, later than the notice
-// that ended it, and that write puts the row back to running.
+// resume and its next notice the subagent writes records into its own transcript again, stamped
+// later than the notice that ended it, and those records put the row back to running.
 
-import { existsSync, statSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
 import type { SessionRecord } from '../../../data/model/index.ts';
 import { IDLE_AFTER_SECONDS, textShape, type Acc } from '../record.ts';
+import type { Stamps } from './stamps.ts';
 
 /** How a launch notice names the subagent, when the answer carries no structured field for it. */
 const AGENT_ID = /agentId:\s*([A-Za-z0-9_-]+)/;
@@ -103,37 +109,31 @@ export function takeNotices(acc: Acc, text: string, stamp: string | null): void 
     }
 }
 
-/** A file's modification time in milliseconds, or null when it cannot be read. */
-function modified(path: string): number | null {
-    try {
-        return statSync(path).mtimeMs;
-    } catch {
-        return null;
-    }
-}
-
 /**
- * How much later than the notice that ended it a subagent's own transcript must be written to read
- * as resumed: the notice follows the subagent's last write, and a file system's times are coarse.
+ * How much later than the notice that ended it a subagent's latest record must be stamped to read
+ * as resumed: the notice follows the subagent's last record, so a record stamped within a few
+ * seconds of it is that last record and no resume.
  */
 const RESUMED_AFTER_MS = 5000;
 
 /**
  * Settle, on a finished record, every background subagent: one no completion notice ended is
- * running while its own transcript (or, without one, the session's file) was written within
- * IDLE_AFTER_SECONDS of `now`, done otherwise, ended at that last write; one a notice ended whose
- * own transcript was written after that notice has been resumed, and is running again.
+ * running while the latest record of its own transcript (or, without one, of the session's) is
+ * stamped within IDLE_AFTER_SECONDS of `now`, done otherwise, ended at that record; one a notice
+ * ended whose own transcript holds a record stamped after that notice has been resumed, and is
+ * running again. `stamps` reads the latest record stamp of an agent's transcript.
  */
 export function settleBackground(
     acc: Acc,
     record: SessionRecord,
-    sessionModified: number | null,
-    now: number
+    now: number,
+    stamps: Stamps
 ): void {
+    const session = acc.lastActivity === null ? NaN : Date.parse(acc.lastActivity);
     for (const [id, agentId] of Object.entries(acc.background)) {
         const agent = record.agents.find((one) => one.id === id);
         if (agent === undefined) continue;
-        const own = agentId === '' ? null : modified(agentFile(acc.path, acc.id, agentId));
+        const own = agentId === '' ? null : stamps.of(agentFile(acc.path, acc.id, agentId));
         if (agent.status !== 'running') {
             const ended = agent.ended === null ? NaN : Date.parse(agent.ended);
             if (own !== null && own > ended + RESUMED_AFTER_MS) {
@@ -142,7 +142,7 @@ export function settleBackground(
             }
             continue;
         }
-        const last = own ?? sessionModified;
+        const last = own ?? (Number.isNaN(session) ? null : session);
         if (last === null || now - last <= IDLE_AFTER_SECONDS * 1000) continue;
         agent.status = 'done';
         agent.ended = new Date(last).toISOString();

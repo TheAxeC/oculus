@@ -13,7 +13,21 @@ import {
     NO_PLACE,
     type DocPlace
 } from '$lib/state/workbench/navigation/pages';
-import type { SymbolRow } from '$lib/state/system/machine/lsp/symbols';
+import { symbolsAround, type SymbolRow } from '$lib/state/system/machine/lsp/symbols';
+
+/**
+ * The symbols of a file that hold its caret, outermost first: none while the symbols are being
+ * read or the file has none (a word in place of the tree), and none for a tab with no caret.
+ */
+export function caretSymbols(
+    tree: Parameters<typeof symbolsAround>[0] | string | null,
+    caret: { line: number; column: number } | null | undefined
+): SymbolRow[] {
+    if (tree === null || typeof tree === 'string' || caret === null || caret === undefined) {
+        return [];
+    }
+    return symbolsAround(tree, caret.line, caret.column);
+}
 
 /** The symbol a segment stands for: where it starts, and the icon its kind draws. */
 type CrumbSymbol = { line: number; column: number; glyph: string; colour: string };

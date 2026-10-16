@@ -1,6 +1,6 @@
 // Layer 2, client state. The career panel's arithmetic: the host statuses and their tones, the
 // score dimensions a host row draws a chip for, which tier a score value falls in, how many hosts
-// are in flight, and the short milestone the collapsed summary carries.
+// are in flight, and the short milestone the folded banner carries.
 //
 // Pure over the merged config and the career entity. No words live here: a status carries its own
 // label and glyph name out of config/catalogs/vocab.yml, and every other panel string comes from
@@ -75,10 +75,11 @@ export function inFlight(hosts: Host[]): number {
 }
 
 /**
- * The milestone as the collapsed summary carries it: everything before the first parenthesis, so a
- * milestone that spells out its dates in brackets still fits on the one line of the summary.
+ * The milestone as the folded banner carries it: its name, everything before the first spaced
+ * hyphen or parenthesis, so a milestone that spells out its details after the name still fits on
+ * the one line of the banner. The unfolded panel shows the whole milestone.
  */
 export function summaryOf(career: Career | null): string {
     const milestone = career?.milestone ?? '';
-    return milestone.split(' (')[0].trim();
+    return milestone.split(' (')[0].split(' - ')[0].trim();
 }

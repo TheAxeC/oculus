@@ -2,10 +2,10 @@
 // Layer 1, data. Convert a hub's PRESENT.md files, the idea grid and config/present.yml into decks.
 //
 // A deck is a folder holding a present.yml and Markdown slide files (DESIGN.md, "Decks"). Run it
-// from the hub's root:
+// from the hub's root, or name the hub with `--hub`, with `<oculus>` the folder oculus is in:
 //
-//     node tools/oculus/utils/migrations/convert-decks.mjs [--hub <dir>]
-//     node tools/oculus/utils/migrations/convert-decks.mjs --check [--hub <dir>]
+//     node <oculus>/utils/migrations/convert-decks.mjs [--hub <dir>]
+//     node <oculus>/utils/migrations/convert-decks.mjs --check [--hub <dir>]
 //
 // `--check` prints what is left to convert and writes nothing. A target file is written only when
 // it does not exist, so a second run changes nothing, and a PRESENT.md is removed only once the
@@ -31,6 +31,7 @@ import {
     writeFileSync
 } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { parse, stringify } from 'yaml';
 
@@ -207,8 +208,8 @@ const DATA = {
     }
 };
 
-/** The demo hub's folder under the hub, the hub the tests copy. */
-const DEMO = 'tools/oculus/tests/fixtures/hubs/demo';
+/** The demo hub's folder, the hub the tests copy, found from this script's own place in oculus. */
+const DEMO = fileURLToPath(new URL('../../tests/fixtures/hubs/demo', import.meta.url));
 
 /** The chip of an idea the idea grid gives no maturity. */
 const NASCENT = 'nascent';
@@ -457,8 +458,8 @@ function hubDeck(hub, check) {
 }
 
 /** A small portfolio deck for the demo hub. */
-function demoDeck(hub, check) {
-    const root = join(hub, DEMO, 'deck');
+function demoDeck(check) {
+    const root = join(DEMO, 'deck');
     put(
         join(root, 'title.md'),
         `${slideText({ kind: 'title', kicker: 'Demo hub', legend: 'projects' })}# A synthetic research hub\n\n{{projects.count}} project slides, found by the deck itself.\n`,
@@ -493,10 +494,10 @@ function demoDeck(hub, check) {
 /** Every PRESENT.md under the hub's projects/ and under the demo hub's projects/, sorted. */
 function sources(hub) {
     const found = [];
-    for (const base of ['projects', `${DEMO}/projects`]) {
-        if (!existsSync(join(hub, base))) continue;
-        const names = globSync('**/PRESENT.md', { cwd: join(hub, base) }).sort();
-        found.push(...names.map((name) => join(hub, base, name)));
+    for (const base of [join(hub, 'projects'), join(DEMO, 'projects')]) {
+        if (!existsSync(base)) continue;
+        const names = globSync('**/PRESENT.md', { cwd: base }).sort();
+        found.push(...names.map((name) => join(base, name)));
     }
     return found;
 }
@@ -528,7 +529,7 @@ for (const source of sources(hub)) {
 for (const idea of GRID_ORDER) ideaDeck(join(hub, 'projects', 'ideas', idea), check);
 chips(hub, check);
 hubDeck(hub, check);
-demoDeck(hub, check);
+demoDeck(check);
 if (check) console.log(left.length > 0 ? left.join('\n') : 'nothing left to convert');
 else {
     for (const path of written) console.log(`wrote ${path}`);

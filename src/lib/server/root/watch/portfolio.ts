@@ -64,6 +64,7 @@ import {
     type IconMemory
 } from '../../../data/sources/config.ts';
 import { HUB_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import { platformText } from '../../../data/places/platform.ts';
 import { DECK_FILE, PROJECT_DECK } from '../../../data/sources/deck/read.ts';
 import { docFindings, layoutFile } from '../../content/docs.ts';
 import { picturesOf } from '../../content/images.ts';
@@ -625,7 +626,7 @@ export function watchPortfolio(
                 const payload: ConfigPayload = {
                     config,
                     hubs,
-                    text: textCatalog(config),
+                    text: platformText(textCatalog(config)),
                     icons: paths.icons.set,
                     host: paths.host,
                     findings: [
@@ -673,6 +674,12 @@ export function watchPortfolio(
                                           primaryDir,
                                           from,
                                           'wallpaper_dir'
+                                      ),
+                                      recoverCommand: sourceFile(
+                                          paths.engine,
+                                          primaryDir,
+                                          from,
+                                          'recover_command'
                                       )
                                   },
                                   primaryDir

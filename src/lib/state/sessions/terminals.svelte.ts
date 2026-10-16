@@ -34,7 +34,7 @@
 // POST carries the token state/client/writes.svelte.ts holds, and the socket carries it in its
 // subscribe message, which is what lets that socket send input at all.
 
-import { UPDATE_TASKS, type UpdateTask } from '../../data/helpers/run/tasks.ts';
+import type { UpdateTask } from '../../data/helpers/run/tasks.ts';
 import type { EntitiesStore, SocketStore, WritesStore } from '../shared/stores/shapes.ts';
 import { t } from '../shared/words/text.ts';
 import type {
@@ -104,10 +104,9 @@ export { RESIZE_WAIT } from './terminal/pty/pty-subscribe.ts';
 // state/client/selectors.svelte.ts re-exports the ones the session views read.
 export type { TaskRef, Terminal, TerminalKind, TerminalResume } from '../../data/model/index.ts';
 
-// The four update tasks the server's task action accepts, in the order the tray lists them. The
-// boundary table lets a shell file import this module and not `data/helpers/run/tasks`, so they
-// reach the tray from here.
-export { UPDATE_TASKS, type UpdateTask };
+// The name of an update task the server's task action accepts. The boundary table lets a shell
+// file import this module and not `data/helpers/run/tasks`, so the type reaches the tray from here.
+export type { UpdateTask };
 
 /**
  * What a LaTeX terminal does to one main file: build it, clear what a build left beside it, stop

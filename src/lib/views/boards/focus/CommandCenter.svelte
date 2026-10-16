@@ -42,6 +42,7 @@
         entities: { portfolio },
         inbox: { actionable, state: inboxState },
         layout: { openView },
+        schedule: { offered },
         ui: { instanceState, requestUpdateTray, setInstanceState }
     } = client;
 
@@ -51,7 +52,9 @@
     const snapshot = $derived(portfolio());
     const needs = $derived(snapshot === null ? [] : attention(snapshot, config, now, actionable()));
     const nudges = $derived(
-        snapshot === null ? [] : refresh(snapshot, config, now, inboxState()?.notesRun ?? null)
+        snapshot === null
+            ? []
+            : refresh(snapshot, config, now, inboxState()?.notesRun ?? null, offered())
     );
 
     /** The threshold the venue-load line quotes, the `venue_conc_warn` of behavior.yml. */

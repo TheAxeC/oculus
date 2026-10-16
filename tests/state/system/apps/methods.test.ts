@@ -47,9 +47,11 @@ function context(over: Partial<MethodsContext> = {}) {
         confirm: vi.fn((_question: { message: string; detail: string }) => Promise.resolve(true)),
         openView: vi.fn((_view: string) => undefined),
         openProject: vi.fn((_key: string) => undefined),
-        openFile: vi.fn((_root: string, _path: string) => undefined),
+        openFile: vi.fn((_root: string, _path: string, _page: number | null) => undefined),
         openUrl: vi.fn((_address: string) => undefined),
-        check: vi.fn((_root: string, _path: string) => Promise.resolve<OpenResult | null>('ok')),
+        check: vi.fn((_root: string, _path: string, _page: number | null) =>
+            Promise.resolve<OpenResult | null>('ok')
+        ),
         refused: vi.fn((_kind: string, _name: string) => undefined),
         runCommand: vi.fn((_name: string) => Promise.resolve<CommandOutcome>('ok')),
         secrets: vi.fn((_action: string, _key: unknown, _value?: unknown) =>
@@ -134,7 +136,17 @@ const OPENS: [string, unknown, string][] = [
     ['a file of a name no folder has', { file: { root: 'engine', path: 'x' } }, 'missing'],
     ['a file of a root that is not shown', { file: { root: 'other', path: 'x' } }, 'missing'],
     ['a file target with an extra key', { file: { root: 'hub', path: 'a', more: 1 } }, 'closed'],
-    ['a file target that is not an object', { file: 'hub/a' }, 'closed']
+    ['a file target that is not an object', { file: 'hub/a' }, 'closed'],
+    ['a PDF at page 0', { file: { root: 'hub', path: 'paper.pdf', page: 0 } }, 'closed'],
+    ['a PDF at page 2.5', { file: { root: 'hub', path: 'paper.pdf', page: 2.5 } }, 'closed'],
+    [
+        "a PDF at the page '3', a string",
+        { file: { root: 'hub', path: 'paper.pdf', page: '3' } },
+        'closed'
+    ],
+    ['a PDF at page -1', { file: { root: 'hub', path: 'paper.pdf', page: -1 } }, 'closed'],
+    ['a Markdown file at a page', { file: { root: 'hub', path: 'README.md', page: 2 } }, 'closed'],
+    ['A.PDF at page 2', { file: { root: 'hub', path: 'A.PDF', page: 2 } }, 'resolved']
 ];
 
 /** One row for the open of a target, answered by a word. */
@@ -431,7 +443,20 @@ const ROWS: Row[] = [
                 calls.openFile.mock.calls
             ];
         },
-        [[['focus']], [['alpha']], [['hub', 'README.md']]]
+        [[['focus']], [['alpha']], [['hub', 'README.md', null]]]
+    ],
+    [
+        'a PDF at a page is checked and opened at that page, and a page refused asks the server nothing',
+        async () => {
+            const { methods, calls } = context();
+            for (const page of [0, 2.5, '3', -1]) {
+                await outcome(methods.open({ file: { root: 'hub', path: 'paper.pdf', page } }));
+            }
+            await outcome(methods.open({ file: { root: 'hub', path: 'README.md', page: 2 } }));
+            await methods.open({ file: { root: 'hub', path: 'A.PDF', page: 2 } });
+            return [calls.check.mock.calls, calls.openFile.mock.calls];
+        },
+        [[['hub', 'A.PDF', 2]], [['hub', 'A.PDF', 2]]]
     ],
     ...(
         [

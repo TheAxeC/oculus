@@ -2,7 +2,7 @@
 // Layer 1, data. Convert the colour themes Visual Studio Code ships into oculus's theme blocks and
 // the editor's colour rules.
 //
-// Run it from tools/oculus:
+// Run it from oculus's folder:
 //
 //     node utils/migrations/convert-vscode-themes.ts [--from <extensions folder>] [--check]
 //

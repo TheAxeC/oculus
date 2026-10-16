@@ -3,12 +3,13 @@
 // each extension that may open.
 //
 // One rule, imported by both layers: the open endpoint hands a file only to the application its
-// extension names, and the cards, the file view and the source tab offer "Open in its program" only
-// for a name with such an entry. The name is all the page can see, so what the name cannot tell (an
-// execute bit, a Finder alias, a file that cannot be read) is refused by the server when the
-// control is pressed rather than hidden beforehand. Naming the program per extension, rather than
-// leaving it to the machine's default for the type, is what keeps a per-file Open With choice or a
-// changed default from handing a document to a program that runs it.
+// extension names (on Linux, to the desktop's program for a listed extension), and the cards, the
+// file view and the source tab offer "Open in its program" only for a name with such an entry. The
+// name is all the page can see, so what the name cannot tell (an execute bit, a Finder alias, a
+// file that cannot be read) is refused by the server when the control is pressed rather than
+// hidden beforehand. Naming the program per extension, rather than leaving it to the machine's
+// default for the type, is what keeps a per-file Open With choice or a changed default from
+// handing a document to a program that runs it.
 //
 // The map is read out of the configuration by `programApps` of data/sources/config/settings.ts, the
 // reader the page and the server both use, so an extension the cards offer is one the open endpoint

@@ -2,7 +2,8 @@
 // has a cron pattern, is not paused and has no problem has one croner job, in the local time zone;
 // at each due time the entry starts what it runs (schedules/run.ts), unless its earlier run is
 // still working. The watcher publishes one complete payload on the `schedule` channel after every
-// change of a job, of the run record or of one of the files it reads.
+// change of a job, of the run record or of one of the files it reads, the payload naming the update
+// tasks whose file the primary hub's `.oculus/tasks/` holds.
 //
 // The file and the saved commands file are read at start and again on every change of either, and
 // through `reload()` after the route's write. A reload stops the job of an entry that went, became
@@ -34,7 +35,7 @@
 // A Run now follows the same rule, handles no due time, and runs a paused or Off entry.
 
 import { mkdirSync, watch, type FSWatcher } from 'node:fs';
-import { basename, dirname } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { Cron } from 'croner';
 import { z } from 'zod';
 import type {
@@ -58,7 +59,7 @@ import {
     type Settle
 } from './record.ts';
 import type { RunAnswer } from './run.ts';
-import { SCHEDULED_SIZE } from './task.ts';
+import { SCHEDULED_SIZE, TASKS_FOLDER, tasksWithFile } from './task.ts';
 
 /** The channel the payload is published on. */
 const CHANNEL = 'schedule';
@@ -280,6 +281,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             schedules: rows,
             commands: saved.ok ? saved.commands : [],
             folders: roots.filter((root, at) => roots.indexOf(root) === at),
+            tasks: primary === null ? null : tasksWithFile(primary),
             unread
         };
     };
@@ -666,6 +668,34 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
         }
     }
 
+    // The primary hub's task files are watched in their folder, and the folder holding it is
+    // watched for that folder coming or going, so a task file written, renamed or removed reaches
+    // the tray. Neither folder is made: a hub with no task file offers no task.
+    const taskHub = options.hub();
+    let tasksWatch: FSWatcher | null = null;
+    const listen = (folder: string, heard: (file: string | null) => void): FSWatcher | null => {
+        try {
+            const handle = watch(folder, { persistent: false }, (_event, file) => heard(file));
+            handle.on('error', () => undefined);
+            return handle;
+        } catch {
+            return null;
+        }
+    };
+    const watchTasks = (): void => {
+        tasksWatch?.close();
+        tasksWatch = taskHub === null ? null : listen(join(taskHub, TASKS_FOLDER), () => publish());
+    };
+    watchTasks();
+    const tasksParent =
+        taskHub === null
+            ? null
+            : listen(join(taskHub, dirname(TASKS_FOLDER)), (file) => {
+                  if (file !== null && file !== basename(TASKS_FOLDER)) return;
+                  watchTasks();
+                  publish();
+              });
+
     const check = setInterval(() => {
         for (const name of [...jobs.keys()]) consider(name);
     }, CHECK_MS);
@@ -739,6 +769,8 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             stopWaiting();
             clearInterval(check);
             for (const handle of folders.values()) handle.close();
+            tasksWatch?.close();
+            tasksParent?.close();
         }
     };
 }

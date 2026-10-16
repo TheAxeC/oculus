@@ -1,5 +1,5 @@
 # Lit Watch radar (FAKE example data) - new-paper radar per active/manuscript project, classified into buckets
-# (pre-emption / cite-baseline / adjacent) plus cross-pollination idea sparks. Populated by /research-cockpit litwatch.
+# (pre-emption / cite-baseline / adjacent) plus cross-pollination idea sparks. Populated by the Lit Watch update task.
 meta:
   last_run: 2026-06-27
   note: "Example sweep - a couple of fake radar hits so the Lit Watch tab renders."

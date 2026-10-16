@@ -1,13 +1,16 @@
 // Layer 1, data. The vocabulary, glyph and icon catalogs read out of the merged map, and the
-// findings over them: an icon name no installed set holds, a retired behavior key, a setting of
+// findings over them: an icon name no installed set holds, a key behavior.yml holds that the
+// options catalog names no option under, a retired behavior key, a setting of
 // behavior.yml whose value the options catalog's rule refuses, and a key or row of local.yml that
 // fails to read.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
+import { parse } from 'yaml';
 import { z } from 'zod';
 import { findingText, type TextCatalog } from '../../helpers/finding-text.ts';
+import { isMap } from '../../helpers/guards.ts';
 import type { Finding } from '../../model/index.ts';
 import { standInShape } from '../../shapes/catalog-files.ts';
 import { mapOfShape, mapShape, readAs, readOr } from '../../shapes/shapes.ts';
@@ -16,7 +19,8 @@ import { readEditorOptions, type EditorProblem } from './editor-options.ts';
 import { configDir } from './folder.ts';
 import type { LocalProblem } from './local.ts';
 import type { MachineProblem } from './machine.ts';
-import { CATALOGS_DIR, textCatalog } from './merge.ts';
+import { CATALOGS_DIR, TEXT_KEY, textCatalog } from './merge.ts';
+import { catalogOf } from './catalog/options.ts';
 import { closedPaths, settingProblems } from './settings.ts';
 
 /**
@@ -151,18 +155,41 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
 }
 
 /**
+ * The top-level keys the engine's behavior.yml holds as written, none when the file cannot be read
+ * as a map (loadConfig reports that file itself).
+ */
+function writtenKeys(file: string): string[] {
+    try {
+        const parsed: unknown = parse(readFileSync(file, 'utf8'));
+        return isMap(parsed) ? Object.keys(parsed) : [];
+    } catch {
+        return [];
+    }
+}
+
+/**
  * What is wrong with `behavior.yml` that only the reader can put right and that the options
- * catalog does not describe, as findings on the config channel: a key written under a name the tree
- * does not read, which is ignored where it stands (`chat.skip_permissions` and
- * `tasks.skip_permissions`, whose place is a schedule's Run unattended choice), and an
- * `apps.closed_paths` that is missing, is no list of strings or holds an entry that is no folder
- * path, since the default of the entry does not stand in for it. It is worded from the merged
- * catalog, as iconFindings' are.
+ * catalog does not describe, as findings on the config channel: a top-level key no option of the
+ * catalog's `behavior.yml` names, which nothing reads; a key written under a name the tree does
+ * not read, which is ignored where it stands (`chat.skip_permissions` and `tasks.skip_permissions`,
+ * whose place is a schedule's Run unattended choice); and an `apps.closed_paths` that is missing,
+ * is no list of strings or holds an entry that is no folder path, since the default of the entry
+ * does not stand in for it. It is worded from the merged catalog, as iconFindings' are.
  */
 export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), 'behavior.yml');
     const catalog = textCatalog(config);
     const findings: Finding[] = [];
+    const named = Object.keys(catalogOf(config)['behavior.yml'] ?? {});
+    const read = new Set(named.map((path) => path.split('.')[0]));
+    for (const key of writtenKeys(file)) {
+        if (key === TEXT_KEY || read.has(key)) continue;
+        findings.push({
+            file,
+            key,
+            message: findingText(catalog, 'findings.config.shape_unknown', key)
+        });
+    }
     for (const group of ['chat', 'tasks']) {
         const keys = readAs(mapShape, config[group]);
         if (keys === null || !('skip_permissions' in keys)) continue;

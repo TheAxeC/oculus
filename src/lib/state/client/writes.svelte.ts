@@ -335,8 +335,8 @@ export function createWrites(
     }
 
     /**
-     * Ask the local server to reveal one file or folder in Finder without opening it, addressed
-     * as `openFile` addresses it.
+     * Ask the local server to reveal one file or folder in the file manager without opening it,
+     * addressed as `openFile` addresses it.
      */
     async function revealPath(root: string, path: string): Promise<WriteAnswer> {
         return send({ root, path, reveal: true }, OPEN_PATH);

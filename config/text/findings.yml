@@ -69,6 +69,7 @@ text:
             new_project_dir_outside: 'the folder {1} of new_project_dir for {0} is not a scan folder and lies under none; the entry is not used'
             picture_folder_text: '{0} is no folder name; the folder {1} is used'
             picture_folder_outside: 'the folder {1} of {0} lies outside the hub; the folder {2} is used'
+            recover_command_key: 'recover_command holds no {0} for the dataset key; no dataset of this hub has a Recover control'
         wallpaper:
             form: 'wallpaper.image is {0}, which is neither random nor a hub name and a file name joined by a slash; no wallpaper is shown'
             name: 'wallpaper.image is {0}, whose file part is a path and not a file name; no wallpaper is shown'

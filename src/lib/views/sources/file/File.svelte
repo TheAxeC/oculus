@@ -42,7 +42,9 @@
     // shown. A click on the page with Cmd or Ctrl held, or a double click when
     // `latex.reverse_synctex` says so, asks the LaTeX actions for the source line of that place
     // (state/sessions/latex/actions.ts), and a forward search that named this PDF is drawn once
-    // the viewer holds it.
+    // the viewer holds it. A page an app's `open({ file: { root, path, page } })` asked is held in
+    // the tab's record (state/sources/explorer/pdf-place.ts) and turned to once the pages are laid
+    // out, in a tab just opened and in one that already showed the file.
     //
     // The tab draws no row of controls and hands none to the pane's strip: its path is the
     // breadcrumb the pane draws under the strip, and the viewer's controls (pdf/Controls.svelte),
@@ -95,8 +97,10 @@
     import { fileBytesUrl } from '$lib/state/sources/fs.svelte';
     import {
         PDF_PLACES_ID,
+        readAskedPage,
         readPdfPlaces,
         readTabPlace,
+        withAskedPage,
         withPdfPlace,
         withTabPlace,
         type PdfPlace
@@ -366,6 +370,23 @@
         if (viewer === undefined || place === null) return;
         viewer.reveal(place);
         latexActions.taken(drawn.root, drawn.path);
+    });
+
+    // A page an app's `open` asked of this PDF is turned to once the viewer has laid out the pages
+    // of the file and put back the place kept for it, which would otherwise undo the turn, and is
+    // then taken out of the tab's record; a page past the end is the last.
+    $effect(() => {
+        const asked = readAskedPage(instanceMap(instanceState(instance.id)));
+        if (viewer === undefined || type.kind !== 'pdf' || asked === null) return;
+        if (!viewer.laidOut) return;
+        viewer.goToPage(asked);
+        setInstanceState(
+            instance.id,
+            withAskedPage(
+                untrack(() => instanceState(instance.id)),
+                null
+            )
+        );
     });
 
     /** The four ways to open the PDF, as the viewer's menu lists them. */

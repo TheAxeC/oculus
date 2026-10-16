@@ -7,8 +7,9 @@
     // and the last, and a locked pane keeps its mark whatever either setting says, since the mark
     // is what unlocks the group. Under `show_tabs: none` with `editor_actions: strip` the first and
     // the last go up to the window's title bar strip: the pane that leads the window (`lead`) hands
-    // them up (shell/titlebar/strip-actions.svelte.ts), and no pane draws them in its own head.
-    // With `wrap_tabs` and `show_tabs: multiple` the tabs wrap onto rows.
+    // them up (shell/titlebar/strip-actions.svelte.ts), and no pane draws them in its own head. A
+    // page in a browser has no window strip, so there every pane draws them in a title row. With
+    // `wrap_tabs` and `show_tabs: multiple` the tabs wrap onto rows.
     //
     // The path of the active file tab is a breadcrumb: under the strip, or, when the strip shows
     // the active tab alone, in the strip's own row beside the tab. After the file it goes on with
@@ -104,10 +105,15 @@
         onpick
     }: Props = $props();
 
-    const shape = $derived(stripShape(showTabs(), editorActions(), tabs, active, locked));
-
-    /** The window strip the actions go up to, when the settings send them there. */
+    /**
+     * The window strip the actions go up to, when the settings send them there; a window that
+     * draws no strip, a page in a browser, provides none.
+     */
     const strip = useStripActions();
+
+    const shape = $derived(
+        stripShape(showTabs(), editorActions(), tabs, active, locked, strip !== undefined)
+    );
 
     $effect(() => {
         if (shape.up && lead && strip !== undefined) return strip.hand(heading);

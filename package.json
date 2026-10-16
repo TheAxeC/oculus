@@ -1,7 +1,7 @@
 {
     "name": "oculus",
     "private": true,
-    "version": "0.0.1",
+    "version": "0.1.0",
     "type": "module",
     "main": "src/desktop/main.ts",
     "scripts": {
@@ -24,7 +24,8 @@
         "docs:palette": "node utils/diagrams/palette.mjs",
         "preapp": "node src/lib/server/root/process/start/first-run.ts --install",
         "app": "electron .",
-        "app:package": "node src/desktop/package.ts"
+        "app:package": "node src/desktop/package.ts",
+        "app:release": "node src/desktop/release.ts"
     },
     "engines": {
         "node": "^24.15.0 || >=26.0.0",

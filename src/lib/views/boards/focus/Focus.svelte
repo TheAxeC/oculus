@@ -12,22 +12,21 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The landing board: the command center of everything with a date, the tasks
-    // section of the open work that carries none, the quick add, the strip of what is out for an
-    // answer, the lanes each manifest's `focus:` puts it on, the ideas backlog, the band of durable
-    // work that is not a project, and the career panel.
+    // Layer 3, view. The landing board, one page, top to bottom: the career banner, the command
+    // center of everything with a date, the tasks section of the open work that carries none, the
+    // quick add, the box of what is out for an answer, the band of durable work that is not a
+    // project, the lanes each manifest's `focus:` puts it on, and the ideas backlog.
     //
     // It counts nothing and draws little. The arithmetic is the pure functions of
     // state/boards/focus.ts, state/feeds/feeds.ts and state/boards/career.ts; the markup is six
     // partials under views/boards/focus/, which are this view's own and which nothing else may
-    // import. What is left here is the composition, the awaiting-a-response strip, and the one line
+    // import. What is left here is the composition, the awaiting-a-response box, and the one line
     // that says what the last write answered. The command center and the tasks section fold, each
     // by a control on its heading, and which of them is closed is kept in the tab's instance state,
-    // so a reload and a move of the tab keep it; both start open. The career panel folds by itself.
+    // so a reload and a move of the tab keep it; both start open. The career banner folds by itself
+    // and starts folded.
 
-    import Tag from '$lib/ui/controls/Tag.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Band from './Band.svelte';
     import CareerPanel from './career/CareerPanel.svelte';
@@ -44,7 +43,6 @@
         liveProjects,
         portfolioProjects,
         waiting,
-        waitingTotal,
         type FoldKey,
         type Id
     } from '$lib/state/boards/focus';
@@ -87,13 +85,63 @@
 
     /**
      * The projects quick add may write to: the three live tiers, the ones the ideas backlog reads.
-     * The awaiting strip's people and venue tallies read them and every project of another tier
+     * The awaiting box's people and venue tallies read them and every project of another tier
      * drawn on a lane, since a lane draws a project of any tier whose `focus:` names it.
      */
     const live = $derived(liveProjects(projects));
 
     const strip = $derived(
         snapshot === null ? null : waiting(snapshot, config, personNames(snapshot))
+    );
+
+    /** One name of a tally, with its count only when the count is above one: "BSPC (2)". */
+    function counted(label: string, count: number): string {
+        return count > 1 ? t('focus.wait_count', label, count) : label;
+    }
+
+    /** A list of names with each name once, in the order it first comes, counted as above. */
+    function countedNames(names: readonly string[]): string[] {
+        const labels = [...new Set(names)];
+        return labels.map((label) => counted(label, names.filter((one) => one === label).length));
+    }
+
+    /**
+     * The rows of the awaiting box, in its fixed order, each a label and the names it lists; a kind
+     * with nothing draws no row, and Blocked lists its count.
+     */
+    const awaiting = $derived(
+        strip === null
+            ? []
+            : [
+                  {
+                      key: 'people',
+                      label: t('focus.wait_people'),
+                      names: strip.people.map((one) => counted(one.label, one.count))
+                  },
+                  {
+                      key: 'review',
+                      label: t('focus.wait_review'),
+                      names: strip.venues.map((one) =>
+                          counted(one.label === '' ? t('focus.venue_unset') : one.label, one.count)
+                      )
+                  },
+                  {
+                      key: 'apps',
+                      label: t('focus.wait_apps'),
+                      names: countedNames(strip.applications)
+                  },
+                  {
+                      key: 'grants',
+                      label: t('focus.wait_grants'),
+                      names: countedNames(strip.grants)
+                  },
+                  { key: 'hosts', label: t('focus.wait_hosts'), names: countedNames(strip.hosts) },
+                  {
+                      key: 'blocked',
+                      label: t('focus.wait_blocked'),
+                      names: strip.blocked > 0 ? [String(strip.blocked)] : []
+                  }
+              ].filter((row) => row.names.length > 0)
     );
 
     /** What the last write on this board answered, whichever partial made it. */
@@ -105,8 +153,6 @@
         openView('project', { id, label: project === undefined ? id : labelOf(project) });
     }
 
-    const waited = $derived(waitingTotal(strip));
-
     /** The tab's folded sections, which its instance state keeps. */
     const folds = $derived(instanceState(instance.id));
 
@@ -116,19 +162,10 @@
     }
 </script>
 
-{#snippet segment(label: string, names: string[])}
-    {#if names.length > 0}
-        <span class="seg">
-            <span class="seg-lbl">{label}</span>
-            {#each names as name, at (`${at}:${name}`)}
-                <Tag wrap label={name} />
-            {/each}
-        </span>
-    {/if}
-{/snippet}
-
 <Pane title={t('views.focus')}>
     <div class="focus" data-instance={instance.id}>
+        <CareerPanel instance={instance.id} onsaid={(text: string) => (said = text)} />
+
         <CommandCenter
             {week}
             {now}
@@ -153,62 +190,25 @@
             <p class="said">{said}</p>
         {/if}
 
-        {#if strip !== null && waited > 0}
+        {#if awaiting.length > 0}
             <section class="waitroll">
-                <span class="wait-head">
-                    <Glyph name={t('focus.wait_glyph')} />{t('focus.awaiting_response')}
-                </span>
-                {#if strip.people.length > 0}
-                    <span class="seg">
-                        <span class="seg-lbl">{t('focus.wait_people')}</span>
-                        {#each strip.people as one (one.label)}
-                            <Tag
-                                wrap
-                                label={t('focus.command.venue_count', one.label, one.count)}
-                            />
-                        {/each}
-                    </span>
-                {/if}
-                {#if strip.venues.length > 0}
-                    <span class="seg">
-                        <span class="seg-lbl">{t('focus.wait_review')}</span>
-                        {#each strip.venues as one (one.label)}
-                            <Tag
-                                wrap
-                                label={t(
-                                    'focus.command.venue_count',
-                                    one.label === '' ? t('focus.venue_unset') : one.label,
-                                    one.count
-                                )}
-                                tone="violet"
-                            />
-                        {/each}
-                    </span>
-                {/if}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render segment(t('focus.wait_apps'), strip.applications)}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render segment(t('focus.wait_grants'), strip.grants)}
-                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                {@render segment(t('focus.wait_hosts'), strip.hosts)}
-                {#if strip.blocked > 0}
-                    <span class="seg">
-                        <span class="seg-lbl">{t('focus.wait_blocked')}</span>
-                        <Tag wrap label={String(strip.blocked)} tone="red" />
-                    </span>
-                {/if}
+                <p class="wait-head">{t('focus.awaiting_response')}</p>
+                {#each awaiting as row (row.key)}
+                    <span class="wait-lbl">{row.label}</span>
+                    <span class="wait-names" class:blocked={row.key === 'blocked'}
+                        >{row.names.join(', ')}</span
+                    >
+                {/each}
             </section>
         {/if}
+
+        <Band {now} />
 
         {#if board.length === 0 || projects.length === 0}
             <Empty message={t('focus.none')} glyph={t('focus.empty_glyph')} />
         {/if}
 
         <Lanes {now} {cursor} onproject={openProject} onsaid={(text: string) => (said = text)} />
-
-        <Band {now} />
-
-        <CareerPanel instance={instance.id} onsaid={(text: string) => (said = text)} />
     </div>
 </Pane>
 
@@ -226,29 +226,38 @@
         color: var(--accent-txt, var(--accent));
     }
 
+    /* The box is a grid of two columns: the labels, one width for every row since a grid column
+       is as wide as its widest cell, and the names, which wrap inside their own column. The
+       heading spans both. */
     .waitroll {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 4px;
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        align-items: baseline;
+        gap: 2px 12px;
         padding: 4px 8px;
         border: 1px solid var(--line);
         border-radius: var(--input-radius);
     }
 
+    .wait-head {
+        grid-column: 1 / -1;
+        margin: 0;
+    }
+
     .wait-head,
-    .seg-lbl {
+    .wait-lbl {
         font-size: var(--fs-xs);
         font-weight: 700;
         color: var(--muted-txt, var(--muted));
     }
 
-    .seg {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 4px;
+    .wait-names {
         min-width: 0;
-        max-width: 100%;
+        font-size: var(--fs-md);
+        overflow-wrap: anywhere;
+    }
+
+    .wait-names.blocked {
+        color: var(--c-red-txt);
     }
 </style>

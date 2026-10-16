@@ -46,6 +46,8 @@ import {
     type KeepRule
 } from '../tree.ts';
 import { focusedPane, restore, settleFocus, splitWith } from '../workbench.ts';
+import type { HubVocabs } from '../../../../data/model/index.ts';
+import { leftOutTabs } from './left-out.ts';
 
 export type Instances = {
     activeInstance: (page?: string) => Instance | null;
@@ -80,23 +82,31 @@ export type Instances = {
 
 /**
  * `keep` is the rule that says what an emptied pane of a page is left as (tree.ts keptPane). It
- * applies to a page's panes only: a float whose last tab goes is removed.
+ * applies to a page's panes only: a float whose last tab goes is removed. `hubs` answers the
+ * collections the hubs of the workspace list, which decide the tabs a pane draws (left-out.ts).
  */
 export function createInstances(
     access: LayoutAccess,
     attention: Attention,
-    keep?: KeepRule
+    keep?: KeepRule,
+    hubs: () => HubVocabs | null = () => null
 ): Instances {
     /** The rule that applies to the panes of a host: a page's, and none for a float's. */
     function keepFor(host: Host): KeepRule | undefined {
         return isPage(host) ? keep : undefined;
     }
 
-    /** The active tab of the pane most recently activated, or of the first pane by default. */
+    /**
+     * The active tab of the pane most recently activated, or of the first pane by default, read as
+     * the pane draws it: a tab left out for a collection no hub lists is not on screen, so the
+     * pane's first drawn tab stands for it, and a pane that draws no tab has none.
+     */
     function activeInstance(page?: string): Instance | null {
         const tree = access.layout(page);
         const pane = paneAt(tree, activePath(tree, attention.active(page)));
-        return pane?.tabs.find((instance) => instance.id === pane.active) ?? null;
+        if (pane === null) return null;
+        const drawn = leftOutTabs(pane.tabs, hubs()).drawn;
+        return drawn.find((instance) => instance.id === pane.active) ?? drawn.at(0) ?? null;
     }
 
     /**

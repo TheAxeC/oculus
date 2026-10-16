@@ -6,7 +6,6 @@
 // instead of the bridge to the last published payload, so only the synthetic hub and state folder
 // are read.
 
-import { homedir } from 'node:os';
 import { describe, expect } from 'vitest';
 import { it, test } from '../../fixtures/scratch.ts';
 import { handleTerminal, handleTerminalList } from '../../../src/lib/server/machine/pty/routes.ts';
@@ -138,9 +137,15 @@ describe('POST /api/terminal, the recover action', () => {
             {
                 ...worldOf(task.chatHub),
                 engine: task.engine,
-                configFor: configOf(task.engine),
+                configFor: () => ({
+                    ...configOf(task.engine)(),
+                    recover_command: 'python3 tools/data/redownload.py {key}'
+                }),
                 run: driver.run,
-                datasetIdsFor: () => ['mimic-iv']
+                datasetFor: (id) =>
+                    id === 'mimic-iv'
+                        ? { id, name: 'MIMIC-IV', themes: [], projectIds: [], recover: true }
+                        : null
             }
         );
         expect(response.status).toBe(200);
@@ -152,23 +157,5 @@ describe('POST /api/terminal, the recover action', () => {
         expect(started[started.indexOf('-x') + 1]).toBe('96');
         expect(started[started.indexOf('-y') + 1]).toBe('28');
         expect(lineOf(started)).toEqual(["python3 tools/data/redownload.py 'mimic-iv'"]);
-    });
-
-    it('starts the named shell in the home folder while the workspace has no primary hub', async () => {
-        const driver = tmux();
-        const response = await handleTerminal(
-            request({ action: 'recover', key: 'mimic-iv', cols: 96, rows: 28 }),
-            TOKEN,
-            {
-                ...worldOf(),
-                engine: task.engine,
-                configFor: configOf(task.engine),
-                run: driver.run,
-                datasetIdsFor: () => ['mimic-iv']
-            }
-        );
-        expect(response.status).toBe(200);
-        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
-        expect(started[started.indexOf('-c') + 1]).toBe(homedir());
     });
 });

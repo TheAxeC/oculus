@@ -6,7 +6,7 @@
 # go is a reader's call, so the exit status is 0 whether or not knip found any (knip itself exits 1
 # for findings), and 2, with the message of the shell or of knip, when knip did not run: no
 # node_modules, no knip in it, or a configuration knip refuses. Run from anywhere; it works in
-# tools/oculus.
+# oculus's folder.
 
 cd "$(dirname "$0")/.." || exit 2
 

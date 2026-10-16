@@ -52,6 +52,19 @@ test.afterAll(() => {
 });
 
 describe('POST /api/terminal, the task action', () => {
+    /** The four task files of the task hub, which a task's session is asked to follow. */
+    test.beforeAll(() => {
+        mkdirSync(join(task.taskHub, '.oculus', 'tasks'), { recursive: true });
+        for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
+            writeFileSync(join(task.taskHub, '.oculus', 'tasks', `${kind}.md`), `# ${kind}\n`);
+        }
+    });
+
+    /** The sentence a task's session starts with, read through the catalog rather than typed. */
+    function taskSentence(kind: string): string {
+        return CHAT_CATALOG['server.task.update_task'].replace('{0}', `.oculus/tasks/${kind}.md`);
+    }
+
     /** The command the task action built, from the tmux session it was asked to create. */
     async function taskArgv(
         kind: string,
@@ -66,7 +79,7 @@ describe('POST /api/terminal, the task action', () => {
                       ...worldOf(task.taskHub),
                       engine: task.taskEngine,
                       run: driver.run,
-                      configFor: configOf(task.taskEngine)
+                      configFor: () => CHAT_CONFIG
                   }
                 : {
                       ...worldOf(task.taskHub),
@@ -88,9 +101,7 @@ describe('POST /api/terminal, the task action', () => {
             expect(started[started.indexOf('-c') + 1]).toBe(task.taskHub);
             expect(started[started.indexOf('-x') + 1]).toBe('92');
             expect(started[started.indexOf('-y') + 1]).toBe('27');
-            expect(lineOf(started)).toEqual([
-                `'/opt/Claude CLI/claude' '/research-cockpit ${kind}'`
-            ]);
+            expect(lineOf(started)).toEqual([`'/opt/Claude CLI/claude' '${taskSentence(kind)}'`]);
         }
     });
 

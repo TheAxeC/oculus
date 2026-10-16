@@ -42,6 +42,7 @@ text:
         open_venue: Open this venue as its own tab
         range_from: '{0} from'
         range_to: '{0} to'
+        filter_picked: '{0}, {1} picked'
     views:
         applications: Applications
         applications_glyph: inbox

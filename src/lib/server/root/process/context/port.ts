@@ -8,9 +8,6 @@ import type { LocalConfig } from '../../../../data/sources/config.ts';
 import type { PortMove } from '../../mover.ts';
 import { reasonOf } from './rebuild.ts';
 
-/** The port the cockpit holds, which the server is never moved to. */
-const COCKPIT_PORT = 8787;
-
 /** The highest port number. */
 const LAST_PORT = 65535;
 
@@ -38,7 +35,6 @@ export function createPortMover(deps: PortDeps): PortMover {
 
     /** The reason the server cannot be moved to `port`, or null after it was moved. */
     async function moveTo(port: number): Promise<string | null> {
-        if (port === COCKPIT_PORT) return 'it belongs to the cockpit';
         if (!Number.isInteger(port) || port < 1 || port > LAST_PORT) {
             return `a port is a whole number from 1 to ${LAST_PORT}`;
         }

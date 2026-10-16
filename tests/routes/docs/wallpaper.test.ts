@@ -105,7 +105,8 @@ describe('a wallpaper_dir that leaves its hub', () => {
                 scan: 'sources.yml',
                 newProjectDir: 'sources.yml',
                 wallpaperDir: 'sources.yml',
-                memoriesDir: 'sources.yml'
+                memoriesDir: 'sources.yml',
+                recoverCommand: 'sources.yml'
             },
             hub
         );

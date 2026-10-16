@@ -4,9 +4,10 @@
 # unsanitised, a path reaching a shell), each named by an entry of agents/guarded.md. The list is
 # kept short so the quick list holds 30 s; every other test runs in npm run test:landing.
 #
-# One path per line, relative to tools/oculus, with a note after the # on what it holds. Each path
-# must exist and must not be tagged slow: test:quick reports a path that names no file as a failed
-# command. tests/checks is left to npm run test:checks, and the slow files to npm run test:slow.
+# One path per line, relative to oculus's folder, with a note after the # on what it holds. Each
+# path must exist and must not be tagged slow: test:quick reports a path that names no file as a
+# failed command. tests/checks is left to npm run test:checks, and the slow files to npm run
+# test:slow.
 
 tests/routes/edit/write.test.ts            # write route: token, unreadable record file
 tests/server/files/ops.test.ts             # file operations: token, paths outside the roots, trash

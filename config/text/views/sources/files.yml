@@ -84,6 +84,14 @@ text:
         key_up: Up
         listing_failed: '{0} could not be read: {1}'
         loading: Reading...
+        make_hub_button: Make
+        make_hub_collections: The collections the hub keeps
+        make_hub_detail: 'Oculus writes .oculus/config.yml in {0}, listing the ticked collections, and for each of them its data file under .oculus/data/, from the templates of its docs/templates.md. A collection left unticked has no view until a hub lists it.'
+        make_hub_title: Make {0} a Hub
+        make_refused_exists: '{0} is there already, so nothing was written.'
+        make_refused_failed: 'The files could not all be written. Written: {0}.'
+        make_refused_offer: This folder is in a hub or already a project, so it cannot be made one.
+        make_refused_template: Oculus's docs/templates.md holds no template for it, so nothing was written.
         memory: Memory Usage
         memory_close: Close
         memory_close_title: Close the memory usage
@@ -104,6 +112,8 @@ text:
         menu_delete: Delete
         menu_download: Download...
         menu_find: Find in Folder...
+        menu_make_hub: Make Folder a Hub...
+        menu_make_project: Make Folder a Project
         menu_nesting: File Nesting
         menu_new_file: New File...
         menu_new_folder: New Folder...
@@ -123,6 +133,7 @@ text:
         menu_remove_root: Remove Folder from Workspace
         menu_rename: Rename...
         menu_reveal: Reveal in Finder
+        menu_reveal_linux: Open Containing Folder
         menu_save_workspace: Save Workspace As...
         menu_select_compare: Select for Compare
         menu_show_hidden: Show Hidden Files
@@ -165,9 +176,10 @@ text:
         permanent_question: Failed to delete using the Trash. Do you want to permanently delete instead?
         picker_busy: The folder panel is already open.
         picker_failed: The folder panel could not be opened.
+        picker_missing: No folder panel is installed on this machine; install zenity to choose a folder.
         picker_network: The server could not be reached.
         picker_token: The write token was refused; reload the page.
-        picker_unsupported: The folder panel is available on macOS only.
+        picker_unsupported: The folder panel is available on macOS and Linux only.
         preview_tab: 'Preview {0}'
         problem_join: ', '
         problems_many: 9+
@@ -222,6 +234,7 @@ text:
         replace_detail_upload: 'This action is irreversible!'
         replace_question: "A file or folder with the name '{0}' already exists in the destination folder. Do you want to replace it?"
         reveal_failed: 'Finder could not show it: {0}'
+        reveal_failed_linux: 'The file manager could not open its folder: {0}'
         reveal_missing: '{0} is not there; {1}, the nearest folder on its way, is selected.'
         reveal_no_root: '{0} cannot be shown: this workspace has no root {1}.'
         reveal_no_roots: '{0} cannot be shown: the file browser could not read its roots ({1}).'

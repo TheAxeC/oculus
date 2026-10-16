@@ -1,11 +1,13 @@
 # Oculus text owned by the data view.
 text:
     data:
-        empty: No datasets yet - add some to registries/data.yml.
+        empty: No datasets yet; add some to the hub's data file.
         fetch: Fetch
         filters: Dataset filters
         hpc: HPC
-        intro: '{0} datasets ({1}). Provenance + recovery recipe per set; edit <code>registries/data.yml</code>, recover a set with its Recover control (<code>python3 tools/data/redownload.py</code> in a terminal here).'
+        intro: "{0} datasets ({1}). Provenance + recovery recipe per set, from the data file of the <code>data</code> entry of the hub's <code>collections:</code>."
+        intro_no_recover: No hub of the workspace sets <code>recover_command</code> in its <code>.oculus/config.yml</code>, so no set has a Recover control.
+        intro_recover: Recover a set with its Recover control, which runs its hub's <code>recover_command</code> in a terminal in that hub.
         modality_facet: Modality
         recover: Recover
         recover_failed: 'Recovery did not start: {0}'

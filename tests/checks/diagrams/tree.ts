@@ -14,7 +14,7 @@ import { vi } from 'vitest';
 import { BOUNDARIES, ORDERING, OUT } from '../../../utils/diagrams/diagrams.mjs';
 import { scratchDir } from '../../fixtures/scratch.ts';
 
-/** The engine directory, tools/oculus. */
+/** The engine directory, oculus's own folder. */
 export const ENGINE = resolve(fileURLToPath(import.meta.url), '..', '..', '..', '..');
 
 /** A copy of what the generator reads (src, the boundary test, the order, the diagrams). */

@@ -8,7 +8,7 @@
 // `test.afterAll` are done, red ones included. A file that makes scratch directories takes its
 // `it`, `test` and those hooks from here rather than from vitest, and registers nothing itself. It
 // makes none while it loads, since a run that skips every case of a file never sets its fixture
-// up. A script run outside vitest registers sweepScratch with its own runner.
+// up.
 //
 // The path is checked to be inside the system temporary directory before the directory is made,
 // which is what keeps a case that joins a path onto it from writing into the checkout or the hub,
@@ -75,8 +75,8 @@ export function plantFile(root: string, rel: string, body: string | Buffer): str
     return full;
 }
 
-/** Remove every directory made so far. A file whose own hooks need it may call it early. */
-export function sweepScratch(): void {
+/** Remove every directory made so far. */
+function sweepScratch(): void {
     for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
 }
 

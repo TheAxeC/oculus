@@ -40,8 +40,8 @@ describe('inlineMarkdown', () => {
 describe('a paper saved to Literature', () => {
     it('keeps the words of an abstract that held markup, and its card line holds no element of it', () => {
         const hub = scratchDir('oculus-literature-dom-');
-        const file = join(hub, 'registries', 'literature.yml');
-        mkdirSync(join(hub, 'registries'), { recursive: true });
+        const file = join(hub, '.oculus', 'data', 'literature.yml');
+        mkdirSync(join(hub, '.oculus', 'data'), { recursive: true });
         writeFileSync(
             file,
             'schema:\n  - { field: key, type: text }\n  - { field: title, type: text }\n  - { field: abstract, type: textarea }\nentries: []\n'

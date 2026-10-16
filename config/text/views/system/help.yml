@@ -1,4 +1,4 @@
-# Oculus text owned by the help view: the tool's own manual, tools/oculus/HELP.md.
+# Oculus text owned by the help view: the tool's own manual, the HELP.md of oculus's folder.
 text:
     help:
         failed: 'The manual could not be read: {0}'

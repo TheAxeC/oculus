@@ -26,7 +26,13 @@ import {
     type TickerItem,
     type TickerTarget
 } from './board/ticker-lines.ts';
-import { entryDate, manifestsBehind, type ManifestBehind } from './focus-lanes.ts';
+import {
+    entryDate,
+    manifestsBehind,
+    unplacedRow,
+    type ManifestBehind,
+    type Unplaced
+} from './focus-lanes.ts';
 import {
     deadlineMet,
     entriesOf,
@@ -36,6 +42,7 @@ import {
     snoozed,
     statusFlag,
     terminal,
+    unplaced,
     venueLabel,
     type Tally
 } from './focus.ts';
@@ -90,6 +97,8 @@ export type Ticker = {
     venueLoad: Tally[];
     snoozed: TickerItem[];
     behind: ManifestBehind | null;
+    /** The active projects of the Projects or Personal board that name no lane. */
+    unplaced: Unplaced | null;
 };
 
 /** An ISO date a `YYYY-MM-DD` string holds, and the empty string for anything else. */
@@ -399,7 +408,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         tasks: [...openNotes, ...subtasks.filter((one) => one.days === null), ...openEntries],
         venueLoad: venueLoad(boardProjects, snapshot.entities.venues, warn),
         snoozed: asleep,
-        behind: manifestsBehind(boardProjects, config)
+        behind: manifestsBehind(boardProjects, config),
+        unplaced: unplacedRow(unplaced(projects))
     };
 }
 
@@ -534,11 +544,14 @@ export type CommandGroups = Record<
     readonly unknown[]
 >;
 
-/** Whether the command center has a row, or the line naming the projects behind, to show. */
+/**
+ * Whether the command center has a row to show, the lines naming the projects behind their docs
+ * and the projects on no lane included.
+ */
 export function hasCommandRows(
     groups: CommandGroups,
-    week: Pick<Ticker, 'behind'> | null
+    week: Pick<Ticker, 'behind' | 'unplaced'> | null
 ): boolean {
     const rows = Object.values(groups).reduce((sum, rows) => sum + rows.length, 0);
-    return rows + (week?.behind === null || week?.behind === undefined ? 0 : 1) > 0;
+    return rows > 0 || (week?.behind ?? null) !== null || (week?.unplaced ?? null) !== null;
 }

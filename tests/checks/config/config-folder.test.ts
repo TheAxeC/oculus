@@ -33,7 +33,7 @@ import {
 // Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerAll, registerCollections } from '../../../src/routes/views.ts';
 import { createClientState, type ClientState } from '../../fixtures/client.ts';
-import { realHub } from '../../fixtures/hubs/real-hub.ts';
+import { DEMO_HUB, hubOf, realHub, realHubName, skipLine } from '../../fixtures/hubs/real-hub.ts';
 import { treeFiles } from '../walk.ts';
 
 let client: ClientState;
@@ -144,7 +144,6 @@ describe("oculus's own config directory", () => {
             'editor',
             'latex',
             'writes',
-            'notify',
             'notes',
             'changes',
             'files',
@@ -191,6 +190,7 @@ describe("oculus's own config directory", () => {
             'portfolio_deck',
             'memories_dir',
             'wallpaper_dir',
+            'recover_command',
             'repository_scan_depth',
             'languages'
         ],
@@ -537,42 +537,56 @@ describe("oculus's own config directory", () => {
         expect(invalid.map((view) => view.id)).toEqual([]);
     });
 
-    // The cases over the real hub read the config with the hub's own settings file,
-    // `<hub>/.oculus/config.yml`, over the engine's. They are skipped where the hub's data is not
-    // on the machine.
-    const HUB = realHub();
+    // The document entries are read with a hub's own settings file, `<hub>/.oculus/config.yml`,
+    // over the engine's: the demo hub's always, and the real hub's when OCULUS_TEST_HUB names one
+    // (tests/fixtures/hubs/real-hub.ts), the cases over it failing when the variable names no hub.
+    const REAL = realHub();
+    if (!REAL.asked) console.warn(skipLine('config-folder'));
 
-    it.skipIf(!HUB.present)(
-        'names a group of its own and a path under the hub for every document',
+    /** The checks of the document entries of a hub's merged config. */
+    function checkDocs(hub: string): void {
+        const { config } = loadConfig(engineDir(), { hub });
+        const groups = Object.keys(config.nav_groups as Record<string, unknown>);
+        const docs = config.docs as { label: string; path: string; group: string }[];
+        expect(docs.length).toBeGreaterThan(0);
+        for (const entry of docs) {
+            expect(groups).toContain(entry.group);
+            expect(entry.path.startsWith('/')).toBe(false);
+            expect(entry.path.includes('..')).toBe(false);
+            expect(entry.path.endsWith('.md')).toBe(true);
+            expect(entry.label.length).toBeGreaterThan(0);
+        }
+    }
+
+    it('names a group of its own and a path under the hub for every document of the demo hub', () => {
+        checkDocs(DEMO_HUB);
+    });
+
+    it.skipIf(!REAL.asked)(
+        realHubName(
+            'names a group of its own and a path under the hub for every document of the real hub',
+            REAL
+        ),
         () => {
-            const { config } = loadConfig(engineDir(), { hub: HUB.hub });
-            const groups = Object.keys(config.nav_groups as Record<string, unknown>);
-            const docs = config.docs as { label: string; path: string; group: string }[];
-            for (const entry of docs) {
-                expect(groups).toContain(entry.group);
-                expect(entry.path.startsWith('/')).toBe(false);
-                expect(entry.path.includes('..')).toBe(false);
-                expect(entry.path.endsWith('.md')).toBe(true);
-                expect(entry.label.length).toBeGreaterThan(0);
-            }
+            checkDocs(hubOf(REAL));
         }
     );
 
     // Every YAML file of the folder is matched to a schema generated from the catalogs, and the
     // files oculus ships pass it, both under a workspace folder that is oculus's config folder and
-    // under one that is the hub holding it as tools/oculus/config. Skipped where the hub's data is
-    // not on the machine, since the schemas list the registries' keys.
-    it.skipIf(!HUB.present)('passes every config file through the schema it is matched to', () => {
-        const { config } = loadConfig(engineDir(), { hub: HUB.hub });
+    // under one that is oculus's own repository holding it as config/. The schemas list the
+    // registries' keys, so the portfolio is the demo hub's.
+    it('passes every config file through the schema it is matched to', () => {
+        const { config } = loadConfig(engineDir(), { hub: DEMO_HUB });
         const portfolio = portfolioConfigFrom(config);
         const checker = createChecker();
         const dir = join(engineDir(), 'config');
         const held = [
             { root: 'config', path: '' },
-            { root: 'hub', path: 'tools/oculus/config' }
+            { root: 'oculus', path: 'config' }
         ];
         const { schemas } = buildPortfolioWithSchemas(
-            HUB.hub,
+            DEMO_HUB,
             portfolio,
             1,
             [],
@@ -584,8 +598,8 @@ describe("oculus's own config directory", () => {
         const problems: string[] = [];
         for (const rel of tracked(dir)) {
             const engine = schemaFor(schemas, 'config', rel);
-            const hub = schemaFor(schemas, 'hub', `tools/oculus/config/${rel}`);
-            if (engine === undefined || engine !== hub) {
+            const repository = schemaFor(schemas, 'oculus', `config/${rel}`);
+            if (engine === undefined || engine !== repository) {
                 unmatched.push(rel);
                 continue;
             }

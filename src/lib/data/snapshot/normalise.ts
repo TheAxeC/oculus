@@ -44,6 +44,7 @@ import type {
     Resource,
     SchemaField,
     Snapshot,
+    HubVocabs,
     Venue
 } from '../model/index.ts';
 import { domainColorOf, entryIdOf, entryTitleOf } from '../model/index.ts';
@@ -83,6 +84,26 @@ export function isFeedCollection(key: string): key is (typeof FEED_COLLECTION_KE
 export function collectionKeys(config: Record<string, unknown>): string[] {
     const keys: string[] = [];
     for (const key of readOr(collectionKeysShape, config.collections, [])) {
+        if (REGISTRY_KEYS.includes(key) || isFeedCollection(key)) continue;
+        if (!keys.includes(key)) keys.push(key);
+    }
+    return keys;
+}
+
+/**
+ * The collection keys the page registers a view for: the keys a hub of the workspace lists
+ * (`HubVocab.collections`), in the merged config's order (`collectionKeys`) and then each hub's,
+ * the registry and feed keys left out as there. A collection only a hub other than the primary
+ * lists has its view, and a collection of the engine's list that no hub lists has none, so the
+ * catalogue and the palette offer no view whose tab its pane would leave out.
+ */
+export function workspaceCollectionKeys(
+    config: Record<string, unknown>,
+    hubs: HubVocabs | null
+): string[] {
+    const listed = Object.values(hubs?.lists ?? {}).flatMap((vocab) => vocab.collections);
+    const keys = collectionKeys(config).filter((key) => listed.includes(key));
+    for (const key of listed) {
         if (REGISTRY_KEYS.includes(key) || isFeedCollection(key)) continue;
         if (!keys.includes(key)) keys.push(key);
     }

@@ -274,6 +274,8 @@ text:
             lit_label: Lit Watch
             lit_note: new-paper radar (web | minutes)
             next: 'Next: {0} ({1})'
+            no_files: 'The primary hub holds no task file, so no update task is offered; a task is the file .oculus/tasks/<task>.md of the hub, for litwatch, scout, inbox or linkedin, and the Templates tab of the Help page has a template of each.'
+            no_primary: The open workspace has no primary hub, so no update task is offered.
             no_schedule: No schedule
             schedule: Schedule...
             scout_label: Scout

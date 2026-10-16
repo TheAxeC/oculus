@@ -12,7 +12,7 @@ text:
         add: + add lead
         add_tip: add a position lead
         declined: declined {0}
-        empty: No live leads - run `/research-cockpit scout`.
+        empty: No live leads; run Scout from the Update tray.
         exp_note: '| {0} expired (hidden)'
         expired: expired
         expired_sec: Expired / actioned ({0}) - hidden

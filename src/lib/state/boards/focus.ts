@@ -53,7 +53,7 @@ export type Priority = {
 export type Tally = { id?: string; label: string; count: number };
 
 /**
- * The awaiting-a-response strip: who you chase, what you wait on, and how much is simply blocked.
+ * The awaiting-a-response box: who you chase, what you wait on, and how much is simply blocked.
  */
 export type Waiting = {
     people: Tally[];
@@ -238,7 +238,7 @@ export function unplaced(projects: Project[]): Project[] {
     );
 }
 
-/** A tally sorted the way the strip reads it: the biggest first, then alphabetically. */
+/** A tally sorted the way the awaiting box reads it: the biggest first, then alphabetically. */
 function tallies(counts: Record<string, number>): Tally[] {
     return Object.entries(counts)
         .map(([label, count]) => ({ label, count }))
@@ -253,7 +253,7 @@ export function venueLabel(venue: Venue | undefined): string {
 }
 
 /**
- * The awaiting-a-response strip. Every tally follows `focus:` alone: only a project laneItems draws
+ * The awaiting-a-response box. Every tally follows `focus:` alone: only a project laneItems draws
  * on a lane is counted, so a project with no `focus:` or in `holding` is in none. For each, the
  * people named in `waiting-on:` first, then the venue holding it when it is `submitted`. The
  * blocked tally counts the projects on a lane that carry the chip, whatever else the project is
@@ -349,19 +349,6 @@ export function lanesIn(board: Lane[], cluster: string): Lane[] {
 /** Every project of the portfolio, in the order the snapshot holds them; none before it arrives. */
 export function portfolioProjects(snapshot: Snapshot | null): Project[] {
     return Object.values(snapshot?.entities.projects ?? {});
-}
-
-/** How many things the awaiting strip waits on: people, venues, blocked cards and the rest. */
-export function waitingTotal(strip: Waiting | null): number {
-    if (strip === null) return 0;
-    return (
-        strip.people.length +
-        strip.venues.length +
-        strip.blocked +
-        strip.grants.length +
-        strip.applications.length +
-        strip.hosts.length
-    );
 }
 
 /** The two sections of the Focus board that fold, by the key their closed state is kept under. */

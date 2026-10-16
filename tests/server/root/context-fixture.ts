@@ -16,7 +16,7 @@ import { HeldEslints } from '../../../src/lib/server/machine/runs/lint/eslint.ts
 import { HeldComments } from '../../../src/lib/server/machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../../../src/lib/server/machine/runs/lint/runs.ts';
 import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
-import { HookStore, sessionRecord } from '../../../src/lib/server/sessions/stores/hooks.ts';
+import { HookStore } from '../../../src/lib/server/sessions/stores/hooks.ts';
 import { ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import { pickerState } from '../../../src/lib/server/files/fs/picker.ts';
 import { submitState } from '../../../src/lib/server/machine/hpc/submit.ts';
@@ -79,8 +79,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         store: new HookStore(),
         hub,
         limiter: new RateLimiter(),
-        logged: new Set<string>(),
-        recordFor: (session: string) => sessionRecord(hub, session)
+        logged: new Set<string>()
     };
     const engine = overrides.engine ?? '/fixture/engine';
     const lintRuns = new LintRuns();

@@ -48,7 +48,7 @@ function fixture(entries = 'entries: []\n'): {
 } {
     base ??= portfolioConfigFrom(loadConfig(engineDir()).config);
     const hub = scratchDir('oculus-literature-');
-    const file = join(hub, 'registries', 'literature.yml');
+    const file = join(hub, '.oculus', 'data', 'literature.yml');
     expect(resolve(file).startsWith(resolve(hub) + sep)).toBe(true);
     mkdirSync(join(file, '..'), { recursive: true });
     writeFileSync(file, HEAD + entries);

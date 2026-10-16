@@ -142,17 +142,17 @@
 
     /*
      * A push may name a different set of collections, so the registry follows the pushed config:
-     * the effect reads the configuration's generation and the config the push carries, and
-     * registers the collection views the push names, which drops the views of the keys it no
-     * longer names. The first frame is the untracked call above; this runs after it, and returns
+     * the effect reads the configuration's generation and the config and hubs the push carries,
+     * and registers the collection views they name, which drops the views of the keys they no
+     * longer name. The first frame is the untracked call above; this runs after it, and returns
      * until the first push has landed.
      */
     $effect(() => {
         configGeneration();
-        const pushed = config()?.config;
+        const pushed = config();
         // A push whose `collections:` is missing or malformed names no keys, and registering none
         // would close every collection tab on every page; the registry follows a real list only.
-        const keys = pushedCollections(pushed);
+        const keys = pushedCollections(pushed?.config, pushed?.hubs ?? null);
         if (keys !== null) untrack(() => registerCollections(client.registry, keys));
     });
 

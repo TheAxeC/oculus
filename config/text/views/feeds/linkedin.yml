@@ -20,7 +20,7 @@ text:
         no_folder: The LinkedIn folder {0} is not in the hub.
         no_ideas: No ideas yet.
         no_posts: No posts yet.
-        nudge: 'Run <code>/research-cockpit linkedin</code> to draft one - a ready idea:'
+        nudge: 'Run LinkedIn from the Update tray to draft one; a ready idea:'
         ontrack: last post {0}d ago - on track
         overdue: '{0} days since last post (target: every {1}d)'
         postdue: Post-due.

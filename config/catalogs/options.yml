@@ -407,25 +407,6 @@ options:
             min: 1
             max: 500
             whole: true
-        notify.enabled:
-            heading: sessions
-            section: Notifications
-            help: Whether a hook event of a Claude session pushes a macOS notification.
-            default: true
-            control: toggle
-        notify.events:
-            heading: sessions
-            section: Notifications
-            help: The hook events that push a notification. A name is the notification type of a Notification event, or stop for a Stop event. An entry that is not text is dropped.
-            default: [permission_prompt, idle_prompt, stop]
-            control: multi
-            options: [permission_prompt, idle_prompt, stop]
-        notify.quiet_seconds:
-            heading: sessions
-            section: Notifications
-            help: Seconds during which a session's repeat of a notification is suppressed after one was pushed.
-            default: 3
-            control: number
         editor.paint_limit_kb:
             heading: editor
             section: Source editor
@@ -738,48 +719,14 @@ options:
         lint.writing_skip:
             heading: editor
             section: Linting
-            help: The globs of the files the writing rules leave alone, matched against the path from the file's root (a glob without a slash also matches a file name). A skipped file has no marks and no linter item. A file named glyphs.yml is skipped whatever this holds.
-            default:
-                [
-                    '.agents/**',
-                    '.claude/**',
-                    '**/vendor/**',
-                    '**/third_party/**',
-                    '**/bttrlib/**',
-                    '**/notes/thesis/**',
-                    '**/manuscript/**/*.tex',
-                    '**/manuscript/**/*.bib',
-                    '**/*_AUTO.md',
-                    '**/STATUS.md',
-                    feeds/literature-radar.yml,
-                    feeds/position-leads.yml,
-                    tools/oculus/.scratch/migration/plan.md,
-                    tools/oculus/.scratch/migration/agents/guarded.md
-                ]
+            help: The globs of the files the writing rules leave alone, matched against the path from the file's root (a glob without a slash also matches a file name). A skipped file has no marks and no linter item. A file named glyphs.yml is skipped whatever this holds. This is a setting of the hub, kept in its .oculus/config.yml.
+            default: []
             control: list
         lint.writing_glyphs:
             heading: editor
             section: Linting
-            help: The globs of the files that draw arrows as icons. The writing rules mark every banned character in them but arrows.
-            default:
-                [
-                    tools/cockpit/data/**,
-                    tools/cockpit/dummy/data/**,
-                    tools/cockpit/templates/**,
-                    tools/cockpit/assets/**,
-                    tools/cockpit/README.md,
-                    tools/cockpit/DESIGN.md,
-                    tools/cockpit/ARCHITECTURE.md,
-                    tools/cockpit/CLAUDE.md,
-                    tools/present/assets/**,
-                    registries/*.yml,
-                    funding/funding.yml,
-                    network/*.yml,
-                    applications/applications.yml,
-                    education/education.yml,
-                    tasks/tasks.yml,
-                    '**/project.yml'
-                ]
+            help: The globs of the files that draw arrows as icons. The writing rules mark every banned character in them but arrows. This is a setting of the hub, kept in its .oculus/config.yml.
+            default: []
             control: list
         writes.timeout_seconds:
             heading: editor
@@ -877,7 +824,7 @@ options:
         open.program_ext:
             heading: editor
             section: Opening in programs
-            help: The extensions a file may carry to be handed to a program on this machine, each with the bundle id of the one application it opens in. A file of any other extension, and a listed file with an execute bit or marked as a Finder alias, is refused, and a folder is shown in Finder rather than opened. Read again at every request.
+            help: The extensions a file may carry to be handed to a program on this machine, each with the bundle id of the one application it opens in on macOS; on Linux the desktop's own program for the type opens it and the bundle id is not used. A file of any other extension, and a listed file with an execute bit, marked as a Finder alias on macOS or ending .desktop on Linux, is refused, and a folder is shown in Finder on macOS and opened in the file manager on Linux. Read again at every request.
             fields:
                 key:
                     help: an extension with its dot, compared in lower case
@@ -1352,6 +1299,13 @@ options:
             default: .oculus/wallpaper
             control: folder
             allow_missing: true
+        recover_command:
+            heading: sources
+            section: Registry and feed files
+            help: The command the Data view's Recover control runs for one dataset, in a terminal in the dataset's own hub folder, with {key} replaced by the dataset's key as one shell word. Empty gives no Recover control, and a command without {key} is a finding and gives none either. This is a setting of the hub, kept in its .oculus/config.yml.
+            default: ''
+            control: text
+            empty: true
         repository_scan_depth:
             heading: sources
             section: Folders
@@ -1405,7 +1359,7 @@ options:
             help: The Claude account that the suggested commit message runs under, the label of a claude row of accounts in any hub's file, compared once reduced to lowercase letters, digits and dashes. Empty or without it the run takes the default folder, ~/.claude. A label that is not a Claude row's is a finding and the default folder is used. It is read from the primary hub's file only. A change is read again at once.
         open_bin:
             section: Programs
-            help: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to macOS's /usr/bin/open. A change is read again at once.
+            help: The program that an https address is handed to, such as a provider's consent page, an event or a thread at its provider. Without it the address goes to the platform's opener, which is /usr/bin/open on macOS, xdg-open on Linux and wslview under WSL2. A change is read again at once.
         rite_dap_bin:
             section: Programs
             help: The rite debug adapter that the Debug view starts, rite_dap of a cathedra build, an absolute path, a path under ~/ or a name resolved on PATH. Without it the name is rite_dap. A change is read again at once.

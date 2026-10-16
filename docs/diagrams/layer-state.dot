@@ -43,9 +43,9 @@ digraph layer_state {
         "folder state/life to layer data" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/sessions to folder state/shared" [label="27", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/sessions to folder state/sources" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/sessions to layer data" [label="47", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/sessions to layer data" [label="46", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/system to folder state/shared" [label="47", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder state/system to folder state/sources" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder state/system to folder state/sources" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/system to layer data" [label="99", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/forms" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder state/boards to folder state/shared" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

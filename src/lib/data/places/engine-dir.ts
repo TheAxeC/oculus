@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 /**
  * Walk up from a starting file until a directory holds both package.json and config/.
- * In development that lands on tools/oculus from src/lib/data/places; in the adapter-node
+ * In development that lands on oculus's folder from src/lib/data/places; in the adapter-node
  * build it lands on the same directory from build/server/chunks or build-app/server/chunks.
  */
 export function engineDir(from: string = fileURLToPath(import.meta.url)): string {

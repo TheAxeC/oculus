@@ -1,10 +1,11 @@
 // Layer 3, shell. The right-click menu of one tab, VS Code's tab context menu in its groups and
 // words, less what oculus has no part for (Share): the closes, the two copies of a file's path,
-// Reveal in Finder, Show in Files and Open Timeline, the bookmark, Open in Browser and program
-// items, the two compare items, Keep Open and Pin or Unpin, the splits, and in the desktop app Move
-// into New Window and Copy into New Window. A PDF tab also offers Open in New Tab, and Open in New
-// Window where the app's Move into New Window is not offered. Apart from the component so the
-// items, the tabs each close closes and the path copies can be read without a DOM.
+// Reveal in Finder (Open Containing Folder on Linux and WSL2), Show in Files and Open Timeline, the
+// bookmark, Open in Browser and program items, the two compare items, Keep Open and Pin or Unpin,
+// the splits, and in the desktop app Move into New Window and Copy into New Window. A PDF tab also
+// offers Open in New Tab, and Open in New Window where the app's Move into New Window is not
+// offered. Apart from the component so the items, the tabs each close closes and the path copies
+// can be read without a DOM.
 //
 // Every close goes through `askAndClose`, so a tab holding unsaved text is asked about, and a
 // pinned tab is closed by Close alone.
@@ -91,13 +92,14 @@ function tabEdge(id: string): Edge | null {
 }
 
 /**
- * The menu of one tab, in VS Code's groups: the closes; the path copies; Reveal in Finder, Show in
- * Files and Open Timeline, which shows the file's history in the Files view; the bookmark, Open in
- * New Tab and Open in New Window (a PDF), Open in Browser and Open in Program items; the compare
- * items; Keep Open and Pin or Unpin; the splits; in the desktop app, Move into New Window and, off
- * a Terminal tab or the tab of a unique view, Copy into New Window. The file groups are offered
- * for a tab showing a file only. Close Others needs a second tab and Close to the Right a tab to
- * the right; Keep Open is drawn on every tab and enabled on a preview.
+ * The menu of one tab, in VS Code's groups: the closes; the path copies; Reveal in Finder (Open
+ * Containing Folder off macOS), Show in Files and Open Timeline, which shows the file's history in
+ * the Files view; the bookmark, Open in New Tab and Open in New Window (a PDF), Open in Browser and
+ * Open in Program items; the compare items; Keep Open and Pin or Unpin; the splits; in the desktop
+ * app, Move into New Window and, off a Terminal tab or the tab of a unique view, Copy into New
+ * Window. The file groups are offered for a tab showing a file only. Close Others needs a second
+ * tab and Close to the Right a tab to the right; Keep Open is drawn on every tab and enabled on a
+ * preview.
  */
 export function tabMenu(facts: TabFacts, t: Words): MenuItem[] {
     const item = (id: string, label: string, disabled = false): MenuItem =>

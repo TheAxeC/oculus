@@ -137,6 +137,11 @@ export class PdfViewer {
     found = $state<Found>({ current: 0, total: 0, state: 'idle' });
     /** Moves each time the reader asks for the search (Cmd+F in the viewer). */
     asked = $state(0);
+    /**
+     * Whether PDF.js has laid out the pages of the file shown and the place kept for it is put
+     * back, so a page asked now is not undone by that layout.
+     */
+    laidOut = $state(false);
     /** Whether a link left a place that `back` returns to. */
     canBack = $state(false);
 
@@ -530,6 +535,7 @@ export class PdfViewer {
             this.#doc = doc;
             this.#restore = keep;
             this.#applied = false;
+            this.laidOut = false;
             this.#away = null;
             this.pages = doc.numPages;
             this.#viewer.setDocument(doc);
@@ -567,6 +573,7 @@ export class PdfViewer {
         const doc = this.#doc;
         this.#doc = null;
         this.#applied = false;
+        this.laidOut = false;
         this.#away = null;
         this.pages = 0;
         this.#side.setDocument(null);
@@ -620,6 +627,7 @@ export class PdfViewer {
         this.page = viewer.currentPageNumber;
         this.#side.current(this.page);
         this.#applied = true;
+        this.laidOut = true;
         void this.#settle();
     }
 

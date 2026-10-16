@@ -101,14 +101,18 @@ export function attention(
  * exactly what the nudge is for.
  *
  * The inbox nudge is about the triage notes rather than a feed file: the plate itself is read live,
- * and what ages is the classification the triage skill writes, whose own run date the `inbox`
+ * and what ages is the classification the inbox update task writes, whose own run date the `inbox`
  * channel carries and the caller passes.
+ *
+ * A line names the update task that refreshes its feed, so a feed whose task is not in `offered`
+ * (the tasks the primary hub holds a file for) gets no line: there is no task to run.
  */
 export function refresh(
     snapshot: Snapshot,
     config: Record<string, unknown>,
     now: number,
-    notesRun: string | null
+    notesRun: string | null,
+    offered: readonly string[]
 ): RefreshItem[] {
     const out: RefreshItem[] = [];
     const feeds = snapshot.entities.feeds;
@@ -126,5 +130,5 @@ export function refresh(
         const days = daysSince(feeds.scout.lastRun, now);
         if (days !== null && days >= staleAfter(config, 'scout')) out.push({ feed: 'scout', days });
     }
-    return out;
+    return out.filter((one) => offered.includes(one.feed));
 }

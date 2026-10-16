@@ -65,6 +65,8 @@ export function terminalSentence(word: TerminalRefusal, names: readonly string[]
             return catalogText('sessions.refused_task_too_long');
         case 'task-needs-agent':
             return catalogText('sessions.refused_task_needs_agent');
+        case 'task-file-missing':
+            return catalogText('sessions.refused_task_file_missing', first);
         case 'needs-confirm':
             return catalogText('sessions.refused_needs_confirm', first);
         case 'approvals-unwritable':

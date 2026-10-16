@@ -219,8 +219,9 @@ export const HUB_FILE = `${ROOT_FOLDER}/config.yml`;
  * (named relative to config/), which is the group the Settings view draws it in. Each key is a
  * dotted path into the hub file; a value the file holds at one of these paths replaces the engine's
  * value whole, and a key outside the list is a finding and is not applied. They are the keys that
- * describe this hub rather than the engine: its folders and the files of its records, the cluster
- * its jobs run on, and the values its apps' settings hold. Its domains and theme words are its own
+ * describe this hub rather than the engine: its folders and the files of its records, the command
+ * that recovers its datasets, the cluster its jobs run on, the files its writing rules skip or let
+ * draw arrows, and the values its apps' settings hold. Its domains and theme words are its own
  * registry files'.
  */
 const HUB_LIST: readonly { key: string; file: string }[] = [
@@ -233,11 +234,17 @@ const HUB_LIST: readonly { key: string; file: string }[] = [
     { key: 'career_file', file: 'sources.yml' },
     { key: 'memories_dir', file: 'sources.yml' },
     { key: 'wallpaper_dir', file: 'sources.yml' },
+    { key: 'recover_command', file: 'sources.yml' },
     { key: 'wallpaper.image', file: 'appearance.yml' },
     { key: 'docs', file: 'layout.yml' },
     { key: 'slurm.resource', file: 'behavior.yml' },
+    { key: 'lint.writing_skip', file: 'behavior.yml' },
+    { key: 'lint.writing_glyphs', file: 'behavior.yml' },
     { key: 'app_settings', file: 'behavior.yml' }
 ];
+
+/** The placeholder of `recover_command` that the dataset's key, as one shell word, replaces. */
+export const RECOVER_KEY = '{key}';
 
 /** Every dotted key the hub list names, in the list's order. */
 export function hubKeys(): string[] {

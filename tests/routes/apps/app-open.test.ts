@@ -53,6 +53,8 @@ function world(over: { closedPaths?: () => readonly string[] | null } = {}) {
                     'a/.git/config': 'c',
                     'data.bin': '\u0000\u0001\u0002binary',
                     'letter.docx': 'PK\u0003\u0004',
+                    'paper.pdf': '%PDF-1.4',
+                    'A.PDF': '%PDF-1.4',
                     'tools/oculus/config/local.yml': 'secret: yes',
                     '.oculus/apps/todo/app.yml': TODO,
                     '.oculus/apps/todo/index.html': PAGE
@@ -73,9 +75,16 @@ function world(over: { closedPaths?: () => readonly string[] | null } = {}) {
     return { setup, reads };
 }
 
-/** The answer of the route for an app, a root and a path. */
-async function answer(app: string, root: string, path: string, context = world()): Promise<string> {
+/** The answer of the route for an app, a root and a path, at a page when one is given. */
+async function answer(
+    app: string,
+    root: string,
+    path: string,
+    context = world(),
+    page?: string
+): Promise<string> {
     const query = new URLSearchParams({ app, root, path });
+    if (page !== undefined) query.set('page', page);
     const response = handleOpenGet(
         new Request(`http://localhost:8787/api/app-open?${query.toString()}`),
         context.setup.options
@@ -148,8 +157,27 @@ const FILES: [string, string, string, string, string][] = [
     ['a root that is not shown, for a root app', 'app:hub/todo', 'nonesuch', 'x', 'closed']
 ];
 
+/** A row that asks the route about a file of the hub at a page, written as the query holds it. */
+const paged = ([label, path, page, result]: [string, string, string, string]): Row => [
+    `${label}, answered ${result}`,
+    () => answer('app:notes', 'hub', path, world(), page),
+    result
+];
+
+const PAGES: [string, string, string, string][] = [
+    ['a PDF at page 3', 'paper.pdf', '3', 'ok'],
+    ['a PDF at page 0', 'paper.pdf', '0', 'closed'],
+    ['a PDF at page 2.5', 'paper.pdf', '2.5', 'closed'],
+    ['a PDF at page -1', 'paper.pdf', '-1', 'closed'],
+    ['a PDF at a page that is no number', 'paper.pdf', 'three', 'closed'],
+    ['a Markdown file at a page', 'README.md', '2', 'closed'],
+    ['A.PDF at page 2', 'A.PDF', '2', 'ok']
+];
+
 const ROWS: Row[] = [
     ...FILES.map(ask),
+    ...PAGES.map(paged),
+    status('a page given twice', '?app=app%3Anotes&root=hub&path=paper.pdf&page=2&page=3', 400),
     [
         'a path in the config folder, closed with no stat, real path or read of it',
         async () => {

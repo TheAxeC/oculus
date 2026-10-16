@@ -215,20 +215,27 @@ export function handleStoreGet(request: Request, options: AppsRouteOptions): Res
     return json({ version: store.version, value: store.value }, { headers: NO_STORE });
 }
 
-/** GET /api/app-open?app=&root=&path=: whether the app may have the file opened. */
+/**
+ * GET /api/app-open?app=&root=&path=[&page=]: whether the app may have the file opened, at the
+ * page when one is given. A page is a whole number from 1 written in digits; any other text reads
+ * as no number, which the check closes.
+ */
 export function handleOpenGet(request: Request, options: AppsRouteOptions): Response {
     const url = new URL(request.url);
     const view = once(url, 'app');
     const root = once(url, 'root');
     const path = once(url, 'path');
-    if (view === null || root === null || path === null) {
-        return refuse('app, root and path must each be given once', 400);
+    const pages = url.searchParams.getAll('page');
+    if (view === null || root === null || path === null || pages.length > 1) {
+        return refuse('app, root and path must each be given once, and page at most once', 400);
     }
     const app = appById(options.apps.held(), view);
     if (app === undefined) return refuse('missing', 404);
     if (app.row.disabled) return json({ result: 'closed' }, { headers: NO_STORE });
+    const text = pages.at(0);
+    const page = text === undefined ? undefined : /^[1-9]\d*$/.test(text) ? Number(text) : text;
     const result = checkOpen(
-        { app, root, path },
+        { app, root, path, page },
         {
             roots: options.roots(),
             configDir: options.configDir,

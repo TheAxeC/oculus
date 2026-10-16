@@ -6,8 +6,8 @@
 // for (`open.program_ext`) handed to that application through the open endpoint, a picture, a PDF
 // or an HTML page opened in a browser tab of its own (a PDF also in a tab of the page and in a
 // window of its own), a file, folder or root bookmarked or its bookmark taken out as the row's star
-// does, a file or folder revealed in Finder through the open endpoint, a folder or root opened as
-// the workbench of that folder (Open in New Files), a shell started in the folder
+// does, a file or folder revealed in the file manager through the open endpoint, a folder or root
+// opened as the workbench of that folder (Open in New Files), a shell started in the folder
 // (state/shared/stores/shell.ts, `openShell`), the file's bytes saved from api/file as the file
 // view's link saves them, the Search view opened on the folder, the view's add-root form, and its
 // removal behind its question. Fix All Writing Problems in Folder... is picked in
@@ -87,6 +87,8 @@ export const ROW_REMOVE_ROOT = 'remove-root';
 export const ROW_PREVIEW = 'preview';
 export const ROW_DECK = 'present';
 const ROW_ADD_APP = 'add-app';
+export const ROW_MAKE_HUB = 'make-hub';
+export const ROW_MAKE_PROJECT = 'make-project';
 
 /** The file a folder holds to be a deck, and the name that file is shown under. */
 const DECK_FILE = 'present.yml';
@@ -153,6 +155,12 @@ export type RowMenuFacts = {
     commands?: readonly ProjectCommand[];
     /** Whether `lint.writing` is on, which Fix All Writing Problems in Folder needs. */
     writing?: boolean;
+    /**
+     * Whether the folder or root offers Make Folder a Hub... and Make Folder a Project, as the
+     * server answered when the menu opened (control/making.svelte.ts); neither while unread.
+     */
+    makeHub?: boolean;
+    makeProject?: boolean;
 };
 
 /**
@@ -218,8 +226,8 @@ export function menuHints(keymap: readonly FilesChord[], words: KeyWords): Recor
  * The facts of one row of the tree, with the root keys a removal refuses, the selection the menu
  * acts on (the row alone when it is not given), the hints of the items and the entries the fs store
  * holds or the menu read, which say whether a folder holds a `present.yml`, the applications
- * `open.program_ext` names by extension, which say whether a file opens in one, and whether the
- * row is bookmarked.
+ * `open.program_ext` names by extension, which say whether a file opens in one, whether the row
+ * is bookmarked, and what the folder offers of the hub and project controls once that is read.
  */
 export function rowFacts(
     row: TreeRow,
@@ -235,7 +243,8 @@ export function rowFacts(
     bookmarked = false,
     writing = false,
     workbench = false,
-    editors = false
+    editors = false,
+    made: { hub: boolean; project: boolean } | null = null
 ): RowMenuFacts {
     const kind = row.depth === 0 ? 'root' : row.kind;
     const removable = kind === 'root' && !fixed.includes(row.root);
@@ -278,7 +287,9 @@ export function rowFacts(
         hints,
         commands,
         writing,
-        workbench: kind !== 'file' && row.up !== true && workbench
+        workbench: kind !== 'file' && row.up !== true && workbench,
+        makeHub: kind !== 'file' && row.up !== true && made?.hub === true,
+        makeProject: kind !== 'file' && row.up !== true && made?.project === true
     };
 }
 
@@ -292,10 +303,12 @@ export function rowFacts(
  * or root whose listing holds one: the listing the fs store holds, else the one the menu read when
  * it opened (picks.svelte.ts); New Presentation... is in that group on a folder or root whose
  * listing holds none, and New Presentation from Outline on a Markdown file. Add as App is in the
- * group after the presentation items on a folder or root whose listing holds an `app.yml`. A
- * folder: New File... and New Folder..., Reveal in Finder, Open in New Files (the workbench of the
- * folder, on a folder or root of a served root) and its shell, Find in Folder... with Fix All
- * Writing Problems in Folder... (a folder Fix All of the writing rules, disabled while
+ * group after the presentation items on a folder or root whose listing holds an `app.yml`, and
+ * Make Folder a Hub... and Make Folder a Project in the group after it, each on a folder or root
+ * that offers it. A folder: New File... and New Folder..., Reveal in Finder, Open in New Files
+ * (the workbench of the folder, on a folder or root of a served root) and its shell, Find in
+ * Folder... with Fix All Writing Problems in Folder... (a folder Fix All of the writing rules,
+ * disabled while
  * `lint.writing` is off), Cut, Copy and Paste, Upload..., the two copies, Add Bookmark or Remove
  * Bookmark, then Rename... and Delete. A folder or root that is a repository with project commands
  * also offers Run Command, a submenu of them. A root: those of a folder without Cut, Copy,
@@ -328,6 +341,12 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         ...(facts.markdown ? [item(ROW_DECK_OUTLINE, t('files.menu_present_outline'))] : [])
     ];
     const appItems = facts.app === true ? [item(ROW_ADD_APP, t('files.menu_add_app'))] : [];
+    const making = [
+        ...(facts.makeHub === true ? [item(ROW_MAKE_HUB, t('files.menu_make_hub'))] : []),
+        ...(facts.makeProject === true
+            ? [item(ROW_MAKE_PROJECT, t('files.menu_make_project'))]
+            : [])
+    ];
     const bookmark =
         facts.bookmarked === null || facts.bookmarked === undefined
             ? []
@@ -412,6 +431,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
             place,
             decks,
             appItems,
+            making,
             find,
             run,
             [...cutCopy, paste],
@@ -426,6 +446,7 @@ export function rowMenu(facts: RowMenuFacts, t: Words): MenuItem[] {
         place,
         decks,
         appItems,
+        making,
         find,
         run,
         [paste],
@@ -551,8 +572,9 @@ function openPdf(deps: RowStores, row: TreeRow): string {
 /** What a pick from a row's menu does, over the calls handed in. */
 export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: string) => void {
     /**
-     * A file or folder by its root and path, shown in Finder with the item selected, and a root's
-     * own line by its folder, since the open endpoint takes no empty path under a root.
+     * A file or folder by its root and path, shown in the file manager (on macOS with the item
+     * selected), and a root's own line by its folder, since the open endpoint takes no empty path
+     * under a root.
      */
     async function reveal(row: TreeRow, absolute: string): Promise<void> {
         const answer =

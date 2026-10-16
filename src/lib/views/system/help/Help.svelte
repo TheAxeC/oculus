@@ -14,7 +14,7 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Oculus's own manual: tools/oculus/HELP.md, drawn as prose.
+    // Layer 3, view. Oculus's own manual: the HELP.md of its folder, drawn as prose.
     //
     // The manual is a file beside DESIGN.md rather than text in the catalog, because it is pages of
     // prose about the whole tool and a catalog is words a surface draws. It is read through

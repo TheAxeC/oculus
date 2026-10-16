@@ -64,6 +64,7 @@ text:
         refused_nul_value: The value of {0} holds a NUL character, which no environment variable can carry.
         refused_task_changed: The task changed since it was shown; the composer shows its text now.
         refused_task_needs_agent: A task starts Claude or Codex, so nothing was started.
+        refused_task_file_missing: The primary hub holds no {0}, so the update task has nothing to follow and nothing was started.
         refused_task_too_long: The task's text, with the words added to it, is longer than a prompt may be, so nothing was started.
         refused_task_unknown: That task is no longer in the hub, so nothing was started.
         refused_still_running: The line is still running. Restart it to run it again.

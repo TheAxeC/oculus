@@ -2,6 +2,8 @@
 schema:
   - { field: key,    type: text, required: true }
   - { field: name,   type: text, required: true }
+  - { field: modality, type: text }
+  - { field: used_by, type: tags }
   - { field: access, type: select, options: [open, registration, credentialed, private] }
   - { field: themes, type: tags, options: [{ key: graphs, label: "Graphs" }, { key: timeseries, label: "Time series" }] }
 datasets:

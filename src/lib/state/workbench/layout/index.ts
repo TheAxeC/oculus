@@ -115,6 +115,7 @@ export { createAttention } from './open/attention.ts';
 export type { Attention, Beside, Touched } from './open/attention.ts';
 export { createInstances } from './tabs/instances.ts';
 export type { Instances } from './tabs/instances.ts';
+export { carriedIndex, leftOutTabs } from './tabs/left-out.ts';
 export { createOpening } from './open/opening.ts';
 export type { OpenOptions, Opening } from './open/opening.ts';
 export { createShowDeck, createShowInFiles, createShowPlaced } from './open/show.ts';

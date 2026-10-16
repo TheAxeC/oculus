@@ -50,9 +50,9 @@
     // files are text rather than state and are read when a pane or a section asks for them.
     //
     // A repository row's right-click menu starts a shell in the repository through the store, as a
-    // worktree's terminal control does, reveals its folder in Finder through the open endpoint, and
-    // closes it or every other one. A reveal Finder refused is said on one line over the list until
-    // the next one.
+    // worktree's terminal control does, reveals its folder in Finder, or in the file manager off
+    // macOS, through the open endpoint, and closes it or every other one. A reveal the platform's
+    // program refused is said on one line over the list until the next one.
     //
     // A tab a workbench limited to a folder lists the repositories inside the folder and the one
     // that holds it, so a project folder of the hub lists the hub's repository, with the line "In

@@ -1,6 +1,6 @@
-// Layer 2, client state. Collection cards and the manifest-lag attention line for Focus. All values
-// are derived from the supplied snapshot and config; the view resolves configured colours through
-// toneOf.
+// Layer 2, client state. Collection cards and the two attention rows of projects for Focus: the
+// manifests behind their docs and the active projects on no lane. All values are derived from the
+// supplied snapshot and config; the view resolves configured colours through toneOf.
 
 import { z } from 'zod';
 import type { Entry, Id, Project, Snapshot } from '../../data/model/index.ts';
@@ -13,6 +13,10 @@ import {
     rowsShape,
     wordShape
 } from '../../data/shapes/shapes.ts';
+import { labelOf } from './focus.ts';
+
+/** How many project links an attention row of projects draws before its "(+N more)". */
+const ROW_LINKS = 4;
 
 /**
  * The manifest-lag attention line, with the four project links it draws and the remainder count.
@@ -23,7 +27,33 @@ export type ManifestBehind = {
     more: number;
 };
 
-/** One card of the band under the lanes. */
+/**
+ * The attention row of the active projects no lane shows, with the four project links it draws and
+ * the remainder count, the shape of the manifest-lag line.
+ */
+export type Unplaced = {
+    count: number;
+    projects: { id: Id; label: string }[];
+    more: number;
+};
+
+/**
+ * The attention row of the projects `unplaced` of state/boards/focus.ts gives, in title order, or
+ * null when there are none.
+ */
+export function unplacedRow(missing: Project[]): Unplaced | null {
+    if (missing.length === 0) return null;
+    const sorted = [...missing].sort((a, b) => a.title.localeCompare(b.title));
+    return {
+        count: sorted.length,
+        projects: sorted
+            .slice(0, ROW_LINKS)
+            .map((project) => ({ id: project.id, label: labelOf(project) })),
+        more: Math.max(0, sorted.length - ROW_LINKS)
+    };
+}
+
+/** One card of the band above the lanes. */
 export type BandItem = {
     id: string;
     title: string;
@@ -70,13 +100,12 @@ export function manifestsBehind(
     if (stale.length === 0) return null;
     return {
         count: stale.length,
-        projects: stale.slice(0, 4).map((project) => ({
+        projects: stale.slice(0, ROW_LINKS).map((project) => ({
             id: project.id,
-            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
-            label: project.short || project.title,
+            label: labelOf(project),
             days: project.staleDays ?? 0
         })),
-        more: Math.max(0, stale.length - 4)
+        more: Math.max(0, stale.length - ROW_LINKS)
     };
 }
 
@@ -124,7 +153,7 @@ function bandItem(entry: Entry, key: string): BandItem {
 }
 
 /**
- * The band under the lanes: the durable work that is not a project. Grants stack by the stage their
+ * The band above the lanes: the durable work that is not a project. Grants stack by the stage their
  * status names, positions are the applications still out for an answer, and teaching is what the
  * education file marks as running this academic year.
  */

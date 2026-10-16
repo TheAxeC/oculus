@@ -12,6 +12,7 @@
 // without waiting for the next debounced rescan. Nothing here runs a rescan or touches a file.
 
 import type {
+    Dataset,
     HookEvent,
     Project,
     SessionRecord,
@@ -23,18 +24,12 @@ import { isMap } from '../../../data/helpers/guards.ts';
 /** How long a hook keeps showing on its session before it is treated as if it never arrived. */
 export const HOOK_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
-/** Keyed `${session}:${kind ?? event}`, the quiet-window dedup key for one notification's push. */
-function pushKey(event: HookEvent): string {
-    return `${event.session}:${event.kind ?? event.event}`;
-}
-
 /**
  * The latest hook per session, with a 24 hour expiry. ServerContext owns the process's one store
  * and passes it to both the route and the watcher.
  */
 export class HookStore {
     #events = new Map<string, HookEvent>();
-    #lastPush = new Map<string, number>();
 
     /** Record an event as the session's latest, replacing whatever it had. */
     record(event: HookEvent): void {
@@ -47,19 +42,6 @@ export class HookStore {
         if (event === undefined) return null;
         if (now - Date.parse(event.at) > HOOK_EXPIRY_MS) return null;
         return event;
-    }
-
-    /**
-     * Whether this event is due a push: the first of its kind for the session, or the first since
-     * the quiet window closed. Recording it here is what makes the next call inside the window say
-     * no, so a caller asks once per event and acts on the answer rather than checking twice.
-     */
-    duePush(event: HookEvent, now: number, quietSeconds: number): boolean {
-        const key = pushKey(event);
-        const last = this.#lastPush.get(key);
-        if (last !== undefined && now - last < quietSeconds * 1000) return false;
-        this.#lastPush.set(key, now);
-        return true;
     }
 
     /** Every session id with a live (unexpired) event, for a caller that wants to sweep. */
@@ -115,7 +97,10 @@ function patchRecord<T extends SessionRecord>(record: T, event: HookEvent): T {
     return { ...record, hook: event };
 }
 
-/** The record of one session in the last published payload, for the notification's subtitle. */
+/**
+ * The record of one session in the last published payload, for a route that acts on the session
+ * (a resume, a transcript read).
+ */
 export function sessionRecord(hub: HubLike, session: string): SessionRecord | null {
     const message = hub.latest('sessions');
     if (message === undefined) return null;
@@ -207,11 +192,14 @@ export function projects(hub: HubLike): Project[] {
 }
 
 /**
- * Dataset keys in the last portfolio payload, for recovery requests to address by snapshot only.
+ * A dataset of the last portfolio payload by its id, or null, for recovery requests to address by
+ * snapshot only.
  */
-export function datasetIds(hub: HubLike): string[] {
+export function dataset(hub: HubLike, id: string): Dataset | null {
     const datasets = entityMap(hub, 'datasets');
-    return datasets === null ? [] : Object.keys(datasets);
+    const found = datasets === null || !Object.hasOwn(datasets, id) ? undefined : datasets[id];
+    // The payload is the server's own snapshot, so what sits under a dataset id is a dataset.
+    return isMap(found) ? (found as Dataset) : null;
 }
 
 /**

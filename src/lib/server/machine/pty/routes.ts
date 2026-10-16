@@ -21,13 +21,14 @@
 // catalog holds for the word (state/shared/answers/terminal-words.ts).
 
 import { json } from '@sveltejs/kit';
-import { homedir } from 'node:os';
 import { z } from 'zod';
 import { isUpdateTask } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, textCatalog } from '../../../data/sources/config.ts';
-import { repositoryRoots } from '../../files/roots.ts';
+import { allHubs, repositoryRoots } from '../../files/roots.ts';
+import { RECOVER_KEY } from '../../../data/helpers/hub-names.ts';
+import { fallbackShell } from '../../../data/places/platform.ts';
 import { approveLatexStep, startLatex } from './latex/latex.ts';
 import type { RcHomes } from './latex/approval.ts';
 import { streamAction, streamBusy } from '../apps/tools/run/stream-actions.ts';
@@ -80,7 +81,12 @@ import { shellWord } from './shell-word.ts';
 import { startUpdateTask } from '../runs/schedules/task.ts';
 import { run } from './tmux.ts';
 import type { Turns } from './latex/turns.ts';
-import type { SessionRecord, TerminalKind, TerminalResume } from '../../../data/model/index.ts';
+import type {
+    Dataset,
+    SessionRecord,
+    TerminalKind,
+    TerminalResume
+} from '../../../data/model/index.ts';
 import { taskRefOf } from '../../../data/shapes/shapes.ts';
 
 /** The name of a start request: text, and anything else starts the terminal with no name. */
@@ -105,8 +111,8 @@ export type TerminalOptions = StartOptions &
          * Defaulted Tests and the route pass the source they own.
          */
         recordFor?: (id: string) => SessionRecord | null;
-        /** Dataset keys in the server's latest portfolio payload. */
-        datasetIdsFor?: () => string[];
+        /** A dataset of the server's latest portfolio payload by its id, or null. */
+        datasetFor?: (id: string) => Dataset | null;
         /** Whether a program is found, as a build looks up each program of its recipe. */
         programFound?: (program: string) => boolean;
         /** Re-read the terminal manager after a write. */
@@ -168,7 +174,7 @@ export async function handleTerminalList(
         if (typeof ids === 'string') {
             return json({ error: ids }, { status: 400, headers: NO_STORE });
         }
-        const shell = options.shell ?? process.env.SHELL ?? '/bin/zsh';
+        const shell = options.shell ?? fallbackShell();
         const streams = options.streams;
         const held = ids.filter((id) => streams?.has(id) === true);
         const asked = await busyTerminals(
@@ -345,31 +351,41 @@ function approveSeedTask(message: Record<string, unknown>, options: TerminalOpti
     return json({ ok: true }, { headers: NO_STORE });
 }
 
-/** Start the registry's recovery script for one dataset the current snapshot holds. */
+/**
+ * Run the `recover_command` of a dataset's own hub for one dataset the current snapshot holds and
+ * marks `recover`, in that hub's folder, with `{key}` replaced by the dataset's key in its hub as
+ * one shell word.
+ */
 async function recoverDataset(
     key: unknown,
     cols: unknown,
     rows: unknown,
     options: TerminalOptions
 ): Promise<Response> {
-    // A key that starts with a dash would read as a flag of the recovery script (its --all fetches
+    // A key that starts with a dash would read as a flag of a recovery script (a --all would fetch
     // every dataset), so it is refused before the snapshot is consulted; the snapshot decides the
     // rest.
     if (typeof key !== 'string' || key === '' || key.startsWith('-')) {
         return refusal('bad-terminal');
     }
-    const known = options.datasetIdsFor?.() ?? [];
-    if (!known.includes(key)) return refusal('bad-terminal');
-    const cwd = options.openFor().primaryDir ?? homedir();
+    const dataset = options.datasetFor?.(key) ?? null;
+    if (dataset?.recover !== true) return refusal('bad-terminal');
+    const open = options.openFor();
+    const name = dataset.root ?? open.primary;
+    const hub = allHubs(options.engine, options.configFor(), open).find((one) => one.key === name);
+    const template = hub?.config.recoverCommand ?? null;
+    if (hub === undefined || template === null) return refusal('bad-terminal');
+    const own = dataset.root === undefined ? key : key.slice(dataset.root.length + 1);
+    if (own === '' || own.startsWith('-')) return refusal('bad-terminal');
     const terminal = await startTerminal(
         {
             kind: 'shell',
-            cwd,
+            cwd: hub.hub,
             cols,
             rows,
             name: `recover ${key}`
         },
-        { ...options, command: `python3 tools/data/redownload.py ${shellWord(key)}` }
+        { ...options, command: template.replaceAll(RECOVER_KEY, shellWord(own)) }
     );
     options.refresh?.();
     return json({ ok: true, terminal }, { headers: NO_STORE });
@@ -390,7 +406,8 @@ async function startTask(
         ...options,
         hub,
         claudeBin: local.claudeBin,
-        size: { cols, rows }
+        size: { cols, rows },
+        text: textCatalog(options.configFor())
     });
     if ('refused' in started) return refusal(started.refused, started.names);
     options.refresh?.();

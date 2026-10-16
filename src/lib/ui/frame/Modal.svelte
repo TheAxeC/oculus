@@ -153,10 +153,14 @@
         display: none;
     }
 
+    /* The ground inherits the page's font in a rule of its own, since its level class (`dialog`,
+       `tray`) is a word a style a browser extension injects may also select, and such a style would
+       otherwise set the font of every modal box. */
     .ground {
         position: fixed;
         inset: 0;
         z-index: 60;
+        font-family: inherit;
         display: flex;
         align-items: center;
         justify-content: center;

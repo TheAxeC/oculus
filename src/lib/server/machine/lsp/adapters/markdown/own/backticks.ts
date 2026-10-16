@@ -1,7 +1,7 @@
 // Layer 2, server. The backticked paths of a Markdown text: a span between single backticks that
-// names a file or folder of the hub, as `tools/cockpit/src/cockpit/schema.py:61` does. The hub's
-// documents name files this way far more often than they link them, so the Markdown entry reads
-// them like links: a path that is not there is a warning, and a press with Cmd on one opens it.
+// names a file or folder of the hub, as `scripts/redownload.py:61` does. The hub's documents
+// name files this way far more often than they link them, so the Markdown entry reads them like
+// links: a path that is not there is a warning, and a press with Cmd on one opens it.
 //
 // A span is counted when it sits outside fenced code blocks, is a single-backtick span, holds no
 // whitespace and at least one `/`, no `://` and none of `* { } < > $ ~ |`; its path is its text up

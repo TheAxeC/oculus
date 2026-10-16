@@ -69,16 +69,26 @@ function installed(
     };
 }
 
+/** The programs the second part looks for on every platform, and on Linux. */
+const PROGRAMS = ['git', 'tmux', 'perl', 'claude'];
+const LINUX_PROGRAMS = ['zenity', 'xdg-open', 'wslview'];
+
+/** A scratch folder `bin` under `root` holding a runnable file for each program named. */
+function binOf(root: string, programs: string[]): string {
+    for (const program of programs) {
+        chmodSync(plantFile(root, `bin/${program}`, '#!/bin/sh\n'), 0o755);
+    }
+    return join(root, 'bin');
+}
+
 /**
  * The second part over a scratch state folder holding `state` as its `workspace.json` (none when
- * null), with the four programs on a PATH of their own so only the workspace could be a lack.
+ * null), with the programs on a PATH of their own so only the workspace could be a lack.
  */
 async function startLacks(root: string, state: string | null) {
     const stateFolder = join(root, 'state');
     if (state !== null) plantFile(stateFolder, 'workspace.json', state);
-    for (const program of ['git', 'tmux', 'perl', 'claude']) {
-        chmodSync(plantFile(root, `bin/${program}`, '#!/bin/sh\n'), 0o755);
-    }
+    binOf(root, [...PROGRAMS, ...LINUX_PROGRAMS]);
     const env = { PATH: join(root, 'bin') };
     const lacks = machineLacks(await machineFacts(8811, env, stateFolder), t);
     return { lacks, mentions: [] };
@@ -195,5 +205,34 @@ describe('the first-run check refuses a start for a required lack', () => {
         expect(lacks.every((lack) => lack.required)).toBe(true);
         const said = lacks.map((lack) => lack.sentence).join('\n');
         for (const mention of mentions) expect(said).toContain(mention);
+    });
+});
+
+describe('the first-run check names the folder panel and the opener a Linux machine lacks', () => {
+    /** The second part for a platform, over a PATH holding the programs named and no other. */
+    function lacksOn(platform: NodeJS.Platform, programs: string[], opener?: string) {
+        const env = { PATH: binOf(plantScratch(PREFIX, {}), programs) };
+        const facts = { claudeBin: 'claude', platform, env, ...(opener ? { opener } : {}) };
+        return machineLacks(facts, t);
+    }
+
+    it('names zenity and xdg-utils as optional lacks on Linux, and neither on macOS', () => {
+        const linux = lacksOn('linux', PROGRAMS, 'xdg-open');
+        expect(linux.map((lack) => [lack.kind, lack.required])).toEqual([
+            ['zenity', false],
+            ['opener', false]
+        ]);
+        const said = linux.map((lack) => lack.sentence).join('\n');
+        expect(said).toContain('Install zenity');
+        expect(said).toContain('Install xdg-utils');
+        expect(lacksOn('darwin', PROGRAMS)).toEqual([]);
+    });
+
+    it('names wslview of wslu under WSL2, and no lack once the programs are there', () => {
+        const wsl = lacksOn('linux', [...PROGRAMS, 'zenity'], 'wslview');
+        expect(wsl.map((lack) => lack.kind)).toEqual(['opener']);
+        expect(wsl[0].sentence).toContain('wslview was not found');
+        expect(wsl[0].sentence).toContain('Install wslu');
+        expect(lacksOn('linux', [...PROGRAMS, ...LINUX_PROGRAMS], 'xdg-open')).toEqual([]);
     });
 });

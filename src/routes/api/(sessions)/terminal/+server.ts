@@ -4,7 +4,7 @@
 
 import { defaultApprovalsPath } from '$lib/server/machine/approvals/approvals';
 import { handleTerminal, handleTerminalList } from '$lib/server/machine/pty/routes';
-import { datasetIds, ownerName, project, sessionRecord } from '$lib/server/sessions/stores/hooks';
+import { dataset, ownerName, project, sessionRecord } from '$lib/server/sessions/stores/hooks';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ request, locals }) =>
@@ -15,7 +15,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
     return handleTerminal(request, server.token, {
         engine: server.engine,
         recordFor: (id) => sessionRecord(server.hub, id),
-        datasetIdsFor: () => datasetIds(server.hub),
+        datasetFor: (id) => dataset(server.hub, id),
         openFor: () => server.workspace.open(),
         projectFor: (id) => project(server.hub, id),
         ownerFor: () => ownerName(server.hub),

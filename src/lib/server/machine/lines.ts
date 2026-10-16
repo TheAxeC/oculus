@@ -4,25 +4,30 @@
 //
 // The files are what git tracks in the engine folder (server/core/git/files.ts, trackedFiles), less
 // the plan's ledger under `.scratch/`, the diagrams `npm run diagrams` writes under
-// `docs/diagrams/` and the lock file, since none of them is code anyone writes by hand. cloc is a
-// Perl program from the `cloc` package, run as a separate process with list arguments and a timeout
-// and never imported: it reads the paths one per line from its standard input and answers one JSON
-// object keyed by path. It runs asynchronously, so the server keeps answering while it counts, and
-// with `--skip-uniqueness`, since two tracked files with the same bytes are two files of the tree
-// and cloc would otherwise count one of them. What stays here is what cloc does not know: the file
-// list, the folder a file is counted under, the TODO rule and the sums.
+// `docs/diagrams/` and the lock file, since none of them is code anyone writes by hand. A folder
+// that lies in no repository, as a release app's folder does, has its shipped entries walked
+// instead (data/places/shipped.ts), with the same three left out and no `node_modules` folder
+// entered; in a repository a git that fails is said as such.
+// cloc is a Perl program from the `cloc` package, run as a separate process with list arguments
+// and a timeout and never imported: it reads the paths one per line from its standard input and
+// answers one JSON object keyed by path. It runs asynchronously, so the server keeps answering
+// while it counts, and with `--skip-uniqueness`, since two tracked files with the same bytes are
+// two files of the tree and cloc would otherwise count one of them. What stays here is what cloc
+// does not know: the file list, the folder a file is counted under, the TODO rule and the sums.
 //
 // Nothing is held between requests: no cache and no timer. Each GET counts afresh and the page
 // store holds the answer for the page's life, so a Count again is always a new count.
 
 import { spawn } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { lstat, readdir, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { json } from '@sveltejs/kit';
 import { z } from 'zod';
 import { isMap } from '../../data/helpers/guards.ts';
 import type { FolderLines, LanguageLines, LineCount, LineTally } from '../../data/model/index.ts';
+import { SHIPPED_SOURCES } from '../../data/places/shipped.ts';
 import { trackedFiles } from '../core/git/files.ts';
 
 /** The folder name of the files no folder holds. */
@@ -241,10 +246,66 @@ function folders(byFolder: Map<string, Map<string, LineTally>>): FolderLines[] {
     return rows.sort((a, b) => (a.folder < b.folder ? -1 : a.folder > b.folder ? 1 : 0));
 }
 
+/** The folder a walk of the shipped entries never enters: the installed packages. */
+const PACKAGES = 'node_modules';
+
+/** The regular files under a folder of the engine, as paths from the engine; links are skipped. */
+async function filesUnder(engine: string, folder: string, into: string[]): Promise<void> {
+    const entries = await readdir(join(engine, folder), { withFileTypes: true });
+    for (const entry of entries) {
+        const path = `${folder}/${entry.name}`;
+        if (entry.isDirectory() && entry.name !== PACKAGES) await filesUnder(engine, path, into);
+        else if (entry.isFile()) into.push(path);
+    }
+}
+
 /**
- * Count oculus's own lines in the engine folder. Never throws: a git that cannot list the folder,
- * a cloc that fails, an answer that is not cloc's and a file that cannot be read for its TODOs
- * each answer one sentence naming what failed.
+ * The files of the engine's shipped entries (data/places/shipped.ts), as paths from the engine in
+ * path order, for a folder git gives no list of. An entry the folder does not hold is passed over,
+ * and a link is never followed.
+ */
+async function shippedFiles(engine: string): Promise<string[]> {
+    const paths: string[] = [];
+    for (const entry of SHIPPED_SOURCES) {
+        let info;
+        try {
+            info = await lstat(join(engine, entry));
+        } catch {
+            continue;
+        }
+        if (info.isDirectory()) await filesUnder(engine, entry, paths);
+        else if (info.isFile()) paths.push(entry);
+    }
+    return paths.sort();
+}
+
+/**
+ * Whether the engine folder lies in a repository: it, or a folder above it, holds a `.git`, as a
+ * checkout does and a release app's folder does not.
+ */
+function inRepository(engine: string): boolean {
+    for (let dir = engine; ; dir = dirname(dir)) {
+        if (existsSync(join(dir, '.git'))) return true;
+        if (dirname(dir) === dir) return false;
+    }
+}
+
+/**
+ * The files the count reads: what git tracks in the engine folder when it lies in a repository,
+ * so a git that fails there is said as such, and the shipped entries walked when it lies in none,
+ * as a release app's folder does.
+ */
+async function countedFrom(engine: string, text: Record<string, string>): Promise<string[]> {
+    if (!inRepository(engine)) return shippedFiles(engine);
+    const tracked = await trackedFiles(engine, text);
+    if (!tracked.ok) throw new Error(`git could not list the tracked files: ${tracked.error}`);
+    return tracked.value;
+}
+
+/**
+ * Count oculus's own lines in the engine folder. Never throws: a folder whose files cannot be
+ * listed, a cloc that fails, an answer that is not cloc's and a file that cannot be read for its
+ * TODOs each answer one sentence naming what failed.
  */
 export async function countLines(
     engine: string,
@@ -252,11 +313,15 @@ export async function countLines(
     options: LinesOptions = {}
 ): Promise<LinesAnswer> {
     try {
-        const tracked = await trackedFiles(engine, text);
-        if (!tracked.ok)
-            return { error: `git could not list the tracked files: ${tracked.error}.` };
+        let listed: string[];
+        try {
+            listed = await countedFrom(engine, text);
+        } catch (error) {
+            const reason = error instanceof Error ? error.message.split('\n')[0] : String(error);
+            return { error: `The files to count could not be listed: ${reason}.` };
+        }
         // cloc reads one path per line, so a path holding a line break cannot be handed to it.
-        const paths = tracked.value.filter((path) => counted(path) && !path.includes('\n'));
+        const paths = listed.filter((path) => counted(path) && !path.includes('\n'));
         const script = options.cloc ?? installedCloc();
         if (script === null) return { error: 'cloc is not installed; run npm install.' };
         if (closed(options.signal)) return { error: 'The request was closed.' };

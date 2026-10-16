@@ -4,7 +4,9 @@
     // drawn and the rest hidden (panes/TabView.svelte). It reaches a view only through the
     // registry, so no module in the shell names a view, and a saved arrangement naming a view this
     // release does not have still renders: the tab says so and the body is empty, which is the rule
-    // state/workbench/layout/ states for a ViewId the registry does not hold.
+    // state/workbench/layout/ states for a ViewId the registry does not hold. A tab of a collection
+    // no hub lists is left out of the strip and the body (state/workbench/layout/tabs/left-out.ts),
+    // and a pane left with no tab names the missing key in its line.
     //
     // The body under the strip is panes/PaneBody.svelte: the views of the tabs the pane has shown,
     // the pointer's report of where a drop would land, the layer that takes a double click's second
@@ -51,6 +53,7 @@
         foldable,
         openLabels,
         isFloatItem,
+        isPaneDrop,
         isPaneItem,
         paneMenu,
         stripMenu,
@@ -61,8 +64,7 @@
     import { useFileProblems } from './strip/file-problems';
     import { stripTab } from './strip/strip-tab';
     import { createTabMenu } from './strip/tab-menu-state.svelte';
-    import { crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
-    import { symbolsAround } from '$lib/state/system/machine/lsp/symbols';
+    import { caretSymbols, crumbPicked, tabCrumbs, type Crumb } from './strip/tab-crumbs';
     import { provideTabActions } from '$lib/ui/tabs/tab-actions.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import CloseQuestion from '$lib/ui/controls/CloseQuestion.svelte';
@@ -74,6 +76,8 @@
     import PaneStrip from './strip/PaneStrip.svelte';
     import { editorActions, showTabs } from '$lib/state/shared/words/appearance';
     import {
+        carriedIndex,
+        leftOutTabs,
         newTextFileOpener,
         panes,
         setLocked,
@@ -123,7 +127,7 @@
         documents,
         editorStatus,
         registry: { viewFor },
-        selectors: { docPlaceFor },
+        selectors: { docPlaceFor, hubVocabs },
         terminals: { newTerminalIn, tabMark },
         ui: { unsaved, setPaneStrip }
     } = client;
@@ -152,8 +156,13 @@
 
     let { node, page = currentPage().id, path = [], onpalette = () => undefined }: Props = $props();
 
-    const instances = $derived<Instance[]>(node.kind === 'pane' ? node.tabs : []);
-    const active = $derived(node.kind === 'pane' ? node.active : '');
+    /** The pane's tabs, the ones drawn and the collections' left out (tabs/left-out.ts). */
+    const split = $derived(leftOutTabs(node.kind === 'pane' ? node.tabs : [], hubVocabs()));
+    const instances = $derived<Instance[]>(split.drawn);
+    const chosen = $derived(node.kind === 'pane' ? node.active : '');
+    const active = $derived(
+        instances.some((one) => one.id === chosen) ? chosen : (instances.at(0)?.id ?? '')
+    );
     const shown = $derived(instances.find((instance) => instance.id === active));
     const maximised = $derived(focused(page) !== null);
     /** The float this pane is, when its page is the id of one: a float's pane has its own menus. */
@@ -214,11 +223,12 @@
     );
 
     /**
-     * The mark, when the drag is over this pane's strip: back in the indices the tabs are drawn in.
+     * The mark, when the drag is over this pane's strip (pane-view.ts `isPaneDrop`): back in the
+     * indices the tabs are drawn in.
      */
     const dropIndex = $derived(
-        held !== null && held.drop?.kind === 'strip' && here(held.drop)
-            ? markAt(held.drop.index, own)
+        held?.drop?.kind === 'strip' && isPaneDrop(held.drop, page, path, currentPage().id)
+            ? markAt(carriedIndex(split, held.drop.index, own, false), own)
             : null
     );
 
@@ -318,35 +328,21 @@
         askAndClose
     });
 
-    /** The symbols of the active tab's file that hold its caret, outermost first. */
-    const around = $derived.by(() => {
+    /**
+     * The breadcrumb of the active tab's path, then the symbols of its file that hold its caret,
+     * empty for a tab naming no file.
+     */
+    const crumbs = $derived.by(() => {
         if (shown === undefined) return [];
-        const tree = documents.symbolsOf(shown.id);
-        const caret = editorStatus.statusOf(shown.id)?.caret ?? null;
-        if (tree === null || typeof tree === 'string' || caret === null) return [];
-        return symbolsAround(tree, caret.line, caret.column);
-    });
-
-    /** The breadcrumb of the active tab's path, empty for a tab naming no file. */
-    const crumbs = $derived(
-        shown === undefined
-            ? []
-            : tabCrumbs(
-                  shown,
-                  roots.map((one) => one.key),
-                  around,
-                  docPlaceFor(shown)
-              )
-    );
-
-    /** Whether a drop is this pane's: the same page, and the same path inside that page's tree. */
-    function here(drop: { path: number[]; page?: string }): boolean {
-        if ((drop.page ?? currentPage().id) !== page) return false;
-        return (
-            drop.path.length === path.length &&
-            drop.path.every((step, index) => step === path[index])
+        const symbols = documents.symbolsOf(shown.id);
+        const around = caretSymbols(symbols, editorStatus.statusOf(shown.id)?.caret);
+        return tabCrumbs(
+            shown,
+            roots.map((one) => one.key),
+            around,
+            docPlaceFor(shown)
         );
-    }
+    });
 
     function press(id: string, point: { x: number; y: number }): void {
         const tab = tabs.find((one) => one.id === id);
@@ -366,7 +362,8 @@
             hover(null);
             return;
         }
-        hover({ kind: 'strip', path, index: withoutOwn(index, own), page });
+        const at = carriedIndex(split, withoutOwn(index, own), own, true);
+        hover({ kind: 'strip', path, index: at, page });
     }
 
     function pick(id: string): void {
@@ -464,6 +461,7 @@
     {/if}
     <PaneBody
         {instances}
+        left={split.left}
         {active}
         {page}
         {path}

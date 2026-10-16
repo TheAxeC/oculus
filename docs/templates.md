@@ -1,6 +1,6 @@
 # Templates
 
-Every YAML file oculus reads, as a file you can copy. Copy a block into the file named above it, then uncomment the keys you want to set. A commented key shows its default; leaving it commented keeps that default.
+Every YAML file oculus reads, and the Markdown file of each update task, as a file you can copy. Copy a block into the file named above it, then uncomment the keys you want to set. A commented key shows its default; leaving it commented keeps that default.
 
 ## Contents
 
@@ -17,6 +17,7 @@ Every YAML file oculus reads, as a file you can copy. Copy a block into the file
 | `bookmarks.yml` | `<hub>/.oculus/bookmarks.yml` | the Files view's star, or you |
 | `workspaces/<name>.yml` | `<hub>/.oculus/workspaces/` | Save Workspace As, or you |
 | `schedules.yml` | `<hub>/.oculus/schedules.yml` | the update tray, or you |
+| `tasks/<task>.md` | `<hub>/.oculus/tasks/` | you |
 | `project.yml` | `<project>/project.yml` or `<repository>/.oculus/project.yml` | you |
 | `settings.yml` | `<repository>/.oculus/settings.yml` | you |
 | `commands.yml` | `<repository>/.oculus/commands.yml` | you |
@@ -60,25 +61,26 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # people, organisations and resources are the registries, leads and radar the Position Leads and
 # Lit Watch feeds, and every other key is a card list. The domains registry holds each domain's
 # colour and label and which domains expect a dataset; the venues and data registries hold their
-# theme words as the options of their `themes` field.
+# theme words as the options of their `themes` field. A key the list leaves out has no view, and
+# Make Folder a Hub writes the ticked keys with these paths.
 # collections:
-#   - { key: data,           file: "registries/data.yml" }
-#   - { key: venues,         file: "registries/venues.yml" }
-#   - { key: pillars,        file: "registries/pillars.yml" }
-#   - { key: domains,        file: "registries/domains.yml" }
-#   - { key: statements,     file: "registries/boilerplate.yml" }
-#   - { key: people,         file: "registries/people.yml" }
-#   - { key: organisations,  file: "registries/organisations.yml" }
-#   - { key: resources,      file: "registries/resources.yml" }
-#   - { key: funding,        file: "funding/funding.yml" }
-#   - { key: events,         file: "network/events.yml" }
-#   - { key: education,      file: "education/education.yml" }
-#   - { key: applications,   file: "applications/applications.yml" }
-#   - { key: joint-work,     file: "network/joint-work.yml" }
-#   - { key: tasks,          file: "tasks/tasks.yml" }
-#   - { key: literature,     file: "registries/literature.yml" }
-#   - { key: leads,          file: "feeds/position-leads.yml" }
-#   - { key: radar,          file: "feeds/literature-radar.yml" }
+#   - { key: data,           file: ".oculus/data/data.yml" }
+#   - { key: venues,         file: ".oculus/data/venues.yml" }
+#   - { key: pillars,        file: ".oculus/data/pillars.yml" }
+#   - { key: domains,        file: ".oculus/data/domains.yml" }
+#   - { key: statements,     file: ".oculus/data/statements.yml" }
+#   - { key: people,         file: ".oculus/data/people.yml" }
+#   - { key: organisations,  file: ".oculus/data/organisations.yml" }
+#   - { key: resources,      file: ".oculus/data/resources.yml" }
+#   - { key: funding,        file: ".oculus/data/funding.yml" }
+#   - { key: events,         file: ".oculus/data/events.yml" }
+#   - { key: education,      file: ".oculus/data/education.yml" }
+#   - { key: applications,   file: ".oculus/data/applications.yml" }
+#   - { key: joint-work,     file: ".oculus/data/joint-work.yml" }
+#   - { key: tasks,          file: ".oculus/data/tasks.yml" }
+#   - { key: literature,     file: ".oculus/data/literature.yml" }
+#   - { key: leads,          file: ".oculus/data/leads.yml" }
+#   - { key: radar,          file: ".oculus/data/radar.yml" }
 
 # A website's publication list, compared with the manifests by the Audit view. None by default.
 # publications_file: path/to/publications.yml
@@ -102,12 +104,25 @@ The hub's own settings. A key set here replaces oculus's value for this hub. Any
 # The hub's own documents, each a tab of the page its group names.
 # docs: []
 #   example:
-#   - { label: "Data map", path: docs/DATA-MAP.md, group: help }
+#   - { label: "Lab handbook", path: docs/handbook.md, group: help }
+
+# The command the Data view's Recover control runs for one dataset, in a terminal in the hub's
+# folder. `{key}` is replaced by the dataset's key as one shell word. Empty gives no Recover control.
+# recover_command: ""
+#   example: python3 scripts/redownload.py {key}
 
 # The cluster Live HPC polls: the key of a `kind: cluster` entry of the resources registry.
 # Empty is no cluster.
 # slurm:
 #   resource: ""
+
+# The writing rules: the globs of the files they leave alone, and of the files that draw arrows
+# as icons, matched against the path from the file's root. Both empty by default.
+# lint:
+#   writing_skip: []
+#   writing_glyphs: []
+#   example:
+#   writing_skip: ['**/vendor/**', '**/manuscript/**/*.tex']
 
 # The values of the settings apps declare, by the setting's whole key. The Settings view writes it.
 # app_settings: {}
@@ -127,6 +142,8 @@ This machine's own values. Keep the file out of git. Oculus reads the keys from 
 # The programs oculus starts.
 # claude_bin: claude
 # commit_message_account: work
+# The program an https address is handed to: /usr/bin/open on macOS, xdg-open on Linux, wslview
+# under WSL2.
 # open_bin: /usr/bin/open
 # rite_dap_bin: rite_dap
 
@@ -218,6 +235,152 @@ A list of schedules. Each runs one thing: an update task, a saved command, or a 
 # - name: Morning summary
 #   runs: { prompt: "Summarise yesterday's commits.", folder: ~/research/my-hub }
 #   when: "0 8 * * 1-5"
+```
+
+## Update tasks
+
+An update task is a Markdown file of the hub, `.oculus/tasks/<task>.md`, for `litwatch`, `scout`, `inbox` and `linkedin`. The Update tray and a schedule start a Claude Code session in the hub's folder and ask it to follow the file step by step, so the file is the whole instruction for one run. The tray offers only the tasks whose file the hub holds. Each template has the same sections: what the task does, the steps, the guardrails and the finish line. Replace every `<...>` with your own words; the rest can stay as it is.
+
+### .oculus/tasks/litwatch.md
+
+Lit Watch adds new papers to the radar file, which the Lit Watch view draws.
+
+```markdown
+# Lit Watch: the literature radar
+
+This file is the whole instruction for one run of the Lit Watch update task. The radar is the file the `radar` key of `.oculus/config.yml` names (`.oculus/data/radar.yml` by default); oculus's Lit Watch view draws it.
+
+## What it does
+
+- Defensive: for each project in <the project folders to watch, for example projects/active/*>, find new papers and put each in one bucket: `preemption` (it could take the project's novelty claim), `cite_baseline` or `adjacent`.
+- Ideas: for each motif below, find papers that could start a new idea, in the bucket `idea`, each with its `motif` and its `maps_to` (a project id, or `new-idea-candidate`).
+
+## Motifs
+
+1. <a method or topic to watch>
+2. <another>
+
+## Steps
+
+1. Read the radar file: collect every `url` already there and `meta.last_run`.
+2. List the projects to watch, and the motifs above.
+3. For each project and each motif, search for papers since `meta.last_run` (on the first run, <the years to cover>). For a project, read its `project.yml` and `README.md` first to find its claim and its search terms. One subagent per project or motif may search in parallel.
+4. Drop every hit whose `url` is already in the file. Add the new ones under `entries:` with `found:` set to today, in the fields of the file's `schema:`, and set `meta.last_run` to today. Keep every earlier entry as it is.
+
+## Guardrails
+
+- Real papers only, each with a working address. Never make one up.
+- The radar is a watch: it changes no project file and no manuscript.
+- Write every value in plain ASCII.
+- <what the radar file must never be: committed, shared, ...>
+
+## Finish
+
+End with the number of new entries in each bucket and the files changed.
+```
+
+### .oculus/tasks/scout.md
+
+Scout adds open positions to the leads file, which the Position Leads view draws.
+
+```markdown
+# Scout: open positions
+
+This file is the whole instruction for one run of the Scout update task, and it is the search spec: edit it to tune what the scout looks for. The leads are the file the `leads` key of `.oculus/config.yml` names (`.oculus/data/leads.yml` by default); oculus's Position Leads view draws it.
+
+## Profile
+
+<who the positions are for: the field, the degree, the years of experience, the languages>
+
+## What to look for
+
+- Include: <the kinds of position and the topics that are in scope>
+- Exclude: <the kinds of position and the topics that are not>
+- Where: <the countries or cities>
+
+## Fit
+
+- strong: <squarely in profile>
+- moderate: <adjacent>
+- reach: <one point of overlap>
+
+## Sources
+
+- <a job board or a search address>
+- <another>
+
+## Steps
+
+1. Read the leads file and collect every logged `url`, and every title with its institution.
+2. Search the sources above for positions open today or later.
+3. For each position in scope that the file does not hold, rate its fit with a one-line reason.
+4. Add each new position at the top of `entries:`, in the fields of the file's `schema:`, with `status: open`. Keep the `schema:` block as it is.
+5. Add one line at the top of `meta.log` that starts with today's date and holds the word `scout`, then the sources checked and the count of new leads. Oculus reads the scout's last run from the newest such line, so a run that finds nothing still writes its line.
+
+## Guardrails
+
+- Only real positions that are open today, each with its address. Never make one up.
+- Change only the leads file, and never a lead whose `status` is no longer `open`.
+- Write every value in plain ASCII.
+
+## Finish
+
+End with the new leads (title, institution, deadline, fit) and the `meta.log` line written.
+```
+
+### .oculus/tasks/inbox.md
+
+Inbox writes a note for each thread on your plate into the triage file, which the Inbox view draws.
+
+```markdown
+# Inbox: email triage
+
+This file is the whole instruction for one run of the Inbox update task. It needs a mail connector of the Claude session (<the connector's name>); without it, say so and stop. The notes go to `<mail_dir>/triage.json`, where `mail_dir` is the key of `.oculus/local.yml` (`~/.oculus/mail` by default). Oculus reads the mailboxes itself; this task writes only what each thread wants.
+
+## Steps
+
+1. Collect the threads on the plate: <the searches that find them, for example the unread threads in the inbox>. If none is found, write an empty set of notes and stop.
+2. Read each thread and give it a `kind`: `reply` (it waits for an answer, and the note holds a draft), `action` (it asks for something to be done, which `what` states) or `info`.
+3. Read `triage.json` when it exists, keep every note of a thread not read this run, and write the file as `{ "run": "<today>", "notes": { "<account key>-<thread id>": { "kind": "reply", "what": "...", "draft": "...", "written": "<ISO 8601 time>" } } }`. The account key is the `<provider>-<label>` of the mailbox's `mail:` row of `local.yml`.
+
+## Guardrails
+
+- Never send a message and never make a draft in the mailbox; a draft lives in the note only.
+- Never set `triaged`: the Inbox view sets it.
+- An empty plate gives an empty set of notes; never pick other mail to fill it.
+- <the language and the tone of a draft>
+
+## Finish
+
+End with the number of threads on the plate and the count of each `kind` written.
+```
+
+### .oculus/tasks/linkedin.md
+
+LinkedIn says whether a post is due and drafts one into the posts folder, which the LinkedIn view draws.
+
+```markdown
+# LinkedIn: post nudge and draft
+
+This file is the whole instruction for one run of the LinkedIn update task. The posts are the folder `linkedin_dir` of `.oculus/config.yml` names: `NN-<slug>.md` is a post made, with `title`, `date`, `category` and `publish` in its front matter, and `xx-<slug>.md` an idea. This task drafts; it never posts.
+
+## Steps
+
+1. Count the days since the `date:` of the newest posted file, against `linkedin_cadence_days` (30 by default), and say whether a post is due.
+2. Pick a topic: the most timely `xx-` idea, or a real milestone of a project (read its `project.yml` and `README.md`).
+3. Draft the post in <the voice and the length to write in>, and show it for review.
+4. On request, save the draft as `xx-<slug>.md` with `publish: False`.
+5. When the post is made, rename the file to the next `NN-<slug>.md` and set `date:` to the day it was posted and `publish: True`.
+
+## Guardrails
+
+- Never post: there is no LinkedIn connector.
+- Claim only what is true; the folder may be public.
+- <what a post must never hold>
+
+## Finish
+
+End with the days since the last post against the target, and the path of any file written or renamed.
 ```
 
 ## project.yml
@@ -421,7 +584,7 @@ A schema line takes these keys:
   # records only: fields (the inner schema), open (more keys allowed), map (a map, not a list)
 ```
 
-### registries/venues.yml
+### .oculus/data/venues.yml
 
 ```yaml
 title: Venues
@@ -469,7 +632,7 @@ entries:
 #    email: editor@example.org
 ```
 
-### registries/data.yml
+### .oculus/data/data.yml
 
 The datasets are listed under `datasets:`, not `entries:`.
 
@@ -507,7 +670,7 @@ datasets:
 #      notes: ""
 ```
 
-### registries/pillars.yml
+### .oculus/data/pillars.yml
 
 ```yaml
 title: Pillars
@@ -529,7 +692,7 @@ entries:
 #    blurb: ""
 ```
 
-### registries/domains.yml
+### .oculus/data/domains.yml
 
 ```yaml
 title: Domains
@@ -547,7 +710,7 @@ entries:
 #    expects_datasets: true       # the Audit reports an active project with no dataset
 ```
 
-### registries/people.yml
+### .oculus/data/people.yml
 
 Exactly one entry carries `self: true`: you.
 
@@ -575,7 +738,7 @@ entries:
 #    self: true                   # on your own entry only
 ```
 
-### registries/organisations.yml
+### .oculus/data/organisations.yml
 
 ```yaml
 title: Organisations
@@ -593,7 +756,7 @@ entries:
 #    links: []
 ```
 
-### registries/resources.yml
+### .oculus/data/resources.yml
 
 ```yaml
 title: Resources
@@ -613,7 +776,7 @@ entries:
 #    links: []
 ```
 
-### registries/boilerplate.yml
+### .oculus/data/statements.yml
 
 ```yaml
 title: Statements
@@ -633,7 +796,7 @@ entries:
 #    statement: ""                # the verbatim text
 ```
 
-### funding/funding.yml
+### .oculus/data/funding.yml
 
 ```yaml
 title: Funding
@@ -671,7 +834,7 @@ entries:
 #    followup: ""
 ```
 
-### network/events.yml
+### .oculus/data/events.yml
 
 ```yaml
 title: Talks & Events
@@ -706,7 +869,7 @@ entries:
 #    followup: ""
 ```
 
-### network/joint-work.yml
+### .oculus/data/joint-work.yml
 
 ```yaml
 title: Joint work
@@ -732,7 +895,7 @@ entries:
 #    followup: ""
 ```
 
-### education/education.yml
+### .oculus/data/education.yml
 
 ```yaml
 title: Education & Service
@@ -764,7 +927,7 @@ entries:
 #    followup: ""
 ```
 
-### applications/applications.yml
+### .oculus/data/applications.yml
 
 ```yaml
 title: Applications
@@ -799,7 +962,7 @@ entries:
 #    followup: ""
 ```
 
-### tasks/tasks.yml
+### .oculus/data/tasks.yml
 
 ```yaml
 title: Tasks
@@ -823,7 +986,7 @@ entries:
 #    followup: ""
 ```
 
-### registries/literature.yml
+### .oculus/data/literature.yml
 
 The papers kept for reading and citing. Save to Literature on a card of the Literature search or Lit Watch writes an entry, and so does Add on the Literature view, which takes a DOI, an arXiv or PubMed id, or an address. Oculus makes the key, the citation key: the first author's surname, the year and the first word of the title.
 
@@ -860,7 +1023,7 @@ entries:
 #    note: ""
 ```
 
-### feeds/position-leads.yml
+### .oculus/data/leads.yml
 
 Written by the scout. `meta.log` holds one dated line per pass.
 
@@ -891,7 +1054,7 @@ entries:
 #    url: https://example.org/job
 ```
 
-### feeds/literature-radar.yml
+### .oculus/data/radar.yml
 
 Written by the literature scout. `meta.last_run` is the day of its last pass.
 

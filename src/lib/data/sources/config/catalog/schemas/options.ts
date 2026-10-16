@@ -1,4 +1,4 @@
-// Layer 1, data. The JSON Schema of one config file of oculus (`tools/oculus/config/*.yml`), made
+// Layer 1, data. The JSON Schema of one config file of oculus (its `config/*.yml`), made
 // from its section of the options catalog: each entry's control says what its key may hold, the
 // entry's `help` is the key's description, and a family describes the records of a list or the
 // values of a map once.

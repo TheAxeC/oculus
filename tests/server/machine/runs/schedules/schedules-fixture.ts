@@ -51,7 +51,10 @@ export function routeOptions(w: World, schedules: SchedulesWatcher): SchedulesRo
     };
 }
 
-/** A scratch folder with its repository, its saved command and no schedules file. */
+/**
+ * A scratch folder with its repository, its saved command, a hub holding the Lit Watch task file
+ * and no schedules file.
+ */
 export function world(): World {
     const dir = scratchDir('oculus-schedules-');
     const repo = plantRepo();
@@ -65,7 +68,8 @@ export function world(): World {
         JSON.stringify({ [repo]: [{ name: 'sync', run: 'echo synced' }] })
     );
     const hub = join(dir, 'hub');
-    mkdirSync(hub);
+    mkdirSync(join(hub, '.oculus', 'tasks'), { recursive: true });
+    writeFileSync(join(hub, '.oculus', 'tasks', 'litwatch.md'), '# Lit Watch\n');
     return { files, repo, hub };
 }
 
@@ -120,6 +124,7 @@ export function watcherOver(
                 run: driver.run,
                 hub: w.hub,
                 claudeBin: CLAUDE,
+                text: TEXT,
                 rootsFor,
                 commands: w.files.commands,
                 approvalsFor: () => join(w.files.commands, '..', 'approvals.json')

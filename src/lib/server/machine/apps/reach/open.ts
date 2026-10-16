@@ -1,6 +1,7 @@
 // Layer 2, server. Whether an app may have a file of a root opened in oculus: the checks of
-// `open({ file: { root, path } })` that need the disk, in the order DESIGN.md's "Opening things in
-// oculus" gives, answered as `ok`, `closed` or `missing`.
+// `open({ file: { root, path, page } })` that need the disk, in the order DESIGN.md's "Opening
+// things in oculus" gives, answered as `ok`, `closed` or `missing`, after the rule of the page
+// (`openPage`), which the page ran already and which needs no disk.
 //
 // The order is what keeps the answer for a hidden path from depending on the disk or on which roots
 // are shown: the segment rule and `closed_paths` on the path as given (the page ran them already,
@@ -14,7 +15,11 @@
 
 import { readlinkSync, statSync } from 'node:fs';
 import { isAbsolute, basename, dirname, join, relative, resolve, sep } from 'node:path';
-import { inClosedPaths, pathSegmentsOpen } from '../../../../data/helpers/files/apps/apps.ts';
+import {
+    inClosedPaths,
+    openPage,
+    pathSegmentsOpen
+} from '../../../../data/helpers/files/apps/apps.ts';
 import { below, realPath } from '../../../core/paths.ts';
 import type { Root } from '../../../files/files.ts';
 import type { HeldApp } from '../read/held.ts';
@@ -166,11 +171,15 @@ export function locate(
     return { answer: 'ok', real };
 }
 
-/** Answer whether the app may have this file of this root opened. */
+/**
+ * Answer whether the app may have this file of this root opened, at `page` when one is asked: a
+ * page is first held to `openPage`'s rule, which reads no disk.
+ */
 export function checkOpen(
-    ask: { app: HeldApp; root: string; path: string },
+    ask: { app: HeldApp; root: string; path: string; page?: unknown },
     context: OpenContext
 ): OpenAnswer {
+    if (openPage(ask.path, ask.page) === 'closed') return 'closed';
     const found = locate(ask, context);
     if (found.answer !== 'ok') return found.answer;
     return context.fs.isFile(found.real) ? 'ok' : 'missing';

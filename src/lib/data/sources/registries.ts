@@ -20,16 +20,19 @@ import type {
 /** The eight hub-relative paths, one per registry; declared with the other types in data/model/. */
 export type { RegistryFiles } from '../model/index.ts';
 
-/** The paths on the hub today, which the config falls back to for a key it does not hold. */
+/**
+ * Oculus's default path of each registry, `.oculus/data/<key>.yml` by the key of its entry in
+ * `collections:`, which the config falls back to for a key it does not hold.
+ */
 export const REGISTRY_FILES: RegistryFiles = {
-    venues: 'registries/venues.yml',
-    datasets: 'registries/data.yml',
-    pillars: 'registries/pillars.yml',
-    domains: 'registries/domains.yml',
-    funding: 'funding/funding.yml',
-    people: 'registries/people.yml',
-    organisations: 'registries/organisations.yml',
-    resources: 'registries/resources.yml'
+    venues: '.oculus/data/venues.yml',
+    datasets: '.oculus/data/data.yml',
+    pillars: '.oculus/data/pillars.yml',
+    domains: '.oculus/data/domains.yml',
+    funding: '.oculus/data/funding.yml',
+    people: '.oculus/data/people.yml',
+    organisations: '.oculus/data/organisations.yml',
+    resources: '.oculus/data/resources.yml'
 };
 
 const NAMES: RegistryName[] = [

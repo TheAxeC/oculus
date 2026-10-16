@@ -485,6 +485,20 @@ export type FieldFilter =
     | { field: string; label: string; kind: 'chips'; chips: FilterChip[] }
     | { field: string; label: string; kind: 'range'; least: number; most: number };
 
+/** The most values a chip filter draws as chips; one with more draws as a list to search. */
+export const FILTER_CHIPS_MOST = 12;
+
+/**
+ * The picks of a chip filter after its list control answered `next`: each value whose press
+ * changed, which the view presses or releases one at a time.
+ */
+export function changedPicks(held: readonly string[], next: readonly string[]): string[] {
+    return [
+        ...held.filter((value) => !next.includes(value)),
+        ...next.filter((value) => !held.includes(value))
+    ];
+}
+
 /**
  * The filters of a collection view, one per field marked `filter: true` in the schema of any of its
  * files, in the order the files name them, over every entry the view holds. A select or tags field

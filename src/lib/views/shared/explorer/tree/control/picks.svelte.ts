@@ -1,7 +1,7 @@
 // Layer 3, view partial of tree/Tree.svelte. What a pick on a row runs: the right-click menu of a
 // row (menu/row-menu.ts), the file operations the menu and the keys start (menu/row-ops.ts), the
 // name being typed (menu/row-ops.ts's rowNaming) and the drops (menu/row-drop.ts), all over the
-// explorer store.
+// explorer store, and the hub and project controls (making.svelte.ts).
 //
 // The entries apps add to `explorer/context` end the menu of a row, run with the row's root and
 // path.
@@ -30,6 +30,8 @@ import type { MenuItem } from '$lib/ui/menu/menu-items';
 import { targetOf } from '../drag';
 import { rowDropper } from '../menu/row-drop';
 import {
+    ROW_MAKE_HUB,
+    ROW_MAKE_PROJECT,
     ROW_WRITING_FIX,
     rootNameIn,
     rowFacts,
@@ -41,6 +43,7 @@ import { holdsContents, rowNaming, rowOpsPicker, type NamingHooks } from '../men
 import { landingRefusal } from '$lib/state/sources/explorer/notes/note-tree';
 import type { Asking } from './asking.svelte';
 import { createFixing } from './fixing.svelte';
+import { createMaking, type MakeOffer } from './making.svelte';
 import type { ViewAccess } from './view-access';
 
 /** What the ids of the choices apps add to the menu start with. */
@@ -107,6 +110,11 @@ export function createPicks(deps: PicksDeps) {
     const stores = rowStores(client);
 
     const fixing = createFixing(client);
+
+    const making = createMaking(client, say);
+
+    /** What the folder the open menu was opened on offers, once the server answered. */
+    let offered: MakeOffer | null = null;
 
     /**
      * One act that makes a deck, then the deck shown in a Present tab named as the folder is: the
@@ -208,6 +216,9 @@ export function createPicks(deps: PicksDeps) {
             return;
         }
         if (pick === ROW_WRITING_FIX) void fixing.start(row, rootNameIn(deps.rows(), row.root));
+        const label = row.path === '' ? rootNameIn(deps.rows(), row.root) : nameOf(row.path);
+        if (pick === ROW_MAKE_HUB && offered !== null) making.startHub(row, label, offered);
+        if (pick === ROW_MAKE_PROJECT) void making.project(row);
         menuPicked(row, pick);
         opsPicked(row, pick);
     }
@@ -221,10 +232,13 @@ export function createPicks(deps: PicksDeps) {
      * The menu of a row: a right-click on a row outside the selection selects it first. A row that
      * is a repository has its list of commands read when its menu opens, not before, and a folder
      * or root whose listing is not held has its listing read then too, which says whether Open
-     * Presentation or New Presentation is offered. The menu is returned at once, as reactive items
-     * that the Run Command submenu and the presentation items join when their answers arrive,
-     * whichever lands first, so a folder nobody opens a menu on is never asked for. A read that
-     * fails leaves the menu as it was.
+     * Presentation or New Presentation is offered, and a folder or root alone in the selection has
+     * what it offers of Make Folder a Hub... and Make Folder a Project read then
+     * (making.svelte.ts). The menu is returned at once, as reactive items that the Run Command
+     * submenu, the presentation items and the make items join when their answers arrive, whichever
+     * lands
+     * first, so a folder nobody opens a menu on is never asked for. A read that fails leaves the
+     * menu as it was.
      */
     function menuOf(row: TreeRow, event: MouseEvent) {
         const here = targetOf(row, event);
@@ -235,6 +249,7 @@ export function createPicks(deps: PicksDeps) {
         const shown = shownOf(view.now());
         let commandsRead: readonly ProjectCommand[] = [];
         let listingRead: FsEntry[] | null = null;
+        offered = null;
         const apps = client.appShell.choices(
             'explorer/context',
             {
@@ -268,7 +283,8 @@ export function createPicks(deps: PicksDeps) {
                     deps.isMarked(here),
                     writingFixOffered(client.selectors.configMap()),
                     client.folders.served(here.root),
-                    client.appShell.editorsOf(here.root, here.path).length > 0
+                    client.appShell.editorsOf(here.root, here.path).length > 0,
+                    offered
                 ),
                 t
             ),
@@ -281,6 +297,13 @@ export function createPicks(deps: PicksDeps) {
         if (repo !== null) {
             void client.commands.load(repo).then((answer) => {
                 commandsRead = answer.commands;
+                rebuild();
+            });
+        }
+        if (here.kind !== 'file' && here.up !== true && group.length === 1) {
+            void making.offer(here.root, here.path).then((answer) => {
+                if (target !== here || answer === null) return;
+                offered = answer;
                 rebuild();
             });
         }
@@ -302,6 +325,7 @@ export function createPicks(deps: PicksDeps) {
         naming,
         dropper,
         fixing,
+        making,
         run,
         pickTarget,
         menuOf

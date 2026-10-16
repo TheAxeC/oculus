@@ -11,6 +11,7 @@ import { portfolioConfigFrom } from '../../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { PortfolioConfig } from '../../../src/lib/data/model/index.ts';
 import { scratchDir } from '../../fixtures/scratch.ts';
+import { withHubCollections } from '../../fixtures/hubs/collections.ts';
 import { PERSONAL_ROOT, PERSONAL_SCAN, plantPersonal } from '../../routes/edit/write-fixture.ts';
 import type { PlantedPersonal } from '../../routes/edit/write-fixture.ts';
 
@@ -34,7 +35,7 @@ export const MANIFEST = [
  * hub's `new_project_dir` for the tiers `projects` and `personal`.
  */
 export function configFor(): PortfolioConfig {
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(withHubCollections(loadConfig(engineDir()).config));
     return {
         ...real,
         scan: [

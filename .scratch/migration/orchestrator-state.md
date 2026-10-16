@@ -26,17 +26,10 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:      # steps in flight, up to six (Z632)
 - step: O33
-  executor: agent   # phase A only (ruling O33 builder); phases B and C, the looks and the landing are the orchestrator's
-  worker: claude:opus
-  session_id: a20f2cebacd022c8d (claude-opus-5-5)   # launched with the prompt of agents/briefs/O33-launch.md word for word
-  report: agents/reviews/O33-report.md
-  builder_usage: "151,315 tokens, 1713 tool uses, 232.4 min"
-  reviewer_report: "agents/reviews/O33-refuter.md (a1b12a5347e0657cb, claude-opus-5-5, 286,616 tokens, 168 tool uses, 29.8 min)"
-  worktree: .agents/worktrees/O33
-  base: b80e3a9cd   # the preparation commit; base copy .agents/worktrees/O33-base with unused-exports.txt
-  round: 1   # sent 2026-10-16, agents/briefs/O33-round1.md; snapshot .agents/worktrees/O33-round-1
-  landing: not-started
-  brief_check: "agents/reviews/O33-brief-check.md (adcbfd466be0be62e, claude-opus-5-5, 249,112 tokens, 79 tool uses, 11.8 min)"
+  executor: inline   # phases B and C, the orchestrator's (brief, "Where you work, and the base"); phase A built by a20f2cebacd022c8d and landed (plan.md, O33 booking of 2026-10-16)
+  session_id: inline
+  report: agents/reviews/O33-landing.md
+  landing: phase B   # waits on open item 118, Axel's yes path by path; then phase C
 ```
 
 ## The standing demands (from Axel, in force)
@@ -167,6 +160,7 @@ Lifted 2026-09-30 by Axel's go: the loop runs unattended through the night with 
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is folded into an existing step in `plan.md` (Z468), never booked as a step of its own.
 
+- 118 (2026-10-16, O33 phase B): the paths phase B deletes or edits, each on Axel's yes (Step 0, open item 109): (1) delete `.agents/skills/research-cockpit/` (3 files), `.agents/skills/remove-unicode/SKILL.md`, `.agents/skills/project-new/SKILL.md` and the six links `.claude/skills/{research-cockpit,remove-unicode,project-new}` and `.codex/skills/{research-cockpit,remove-unicode,project-new}`; (2) edit `.agents/skills/project-cleanup/SKILL.md` lines 18, 102, 255, 263 and 277 to the hub's own text; (3) delete `tools/cockpit/` (189 tracked files) and drop `tools/cockpit` from `.agents/plan.yaml:12` `worktree_paths`; the three untracked files there (`AUDIT_AUTO.md`, `cockpit.html`, `cockpit.local.yml`, not read, since the last may hold a secret) go with the folder only on their own yes; (4) delete `selection_text` from `tools/present/deck_config.py`, whose only callers are in `tools/cockpit/`; (5) write README.md's sentence naming the last commit that holds the cockpit with its real id. Recommendation: yes to all; the lazy option is keeping them, which leaves three skills pointing at a cockpit that is gone. In full in `agents/reviews/O33-landing.md`.
 
 ## Booked, no ruling needed (what a review, a look or the closure audit found; each is a step in plan.md and is worked in queue order)
 
@@ -281,6 +275,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
+- 2026-10-16 (O33 phase A landed). O33's phase A landed on main (booking in plan.md under O33, `agents/reviews/O33-landing.md`) after one repair round and the review over it; the review's nine findings closed at landing, four defects of the look fixed at landing (the Awaiting box's repeated names, the window title on a left-out collection tab, modals in the page font, a PDF opened at a page), one red line fixed (a comment's width), self-rules Z927 to Z929; `npm run test:landing` passed in the gate and main's staged tree equals the gate's. The worktree, its snapshot, its base copy and its branches removed. Open items: 118 (phase B's paths). In flight (1 of 6): O33 (phase B, waiting on 118). Next: phase B on Axel's yes, then phase C.
 - 2026-10-15 (Q72 landed). Q72, the architecture re-read with its four carried fixes, landed on main (booking in plan.md under Q72, `agents/reviews/Q72-landing.md`) after one repair round and the review over it: the re-read finds no major architectural problem in any layer, good enough to maintain and to open-source; the channel and write drawings hold no two arrows along each other (G25's row); the diff pane draws git's hunks, the character changes found in a worker of their own; the eight form fields read one stylesheet; the three negative checks wait on a signal. Five findings of the review over round 1 fixed at landing (a superseded worker answer no longer draws over the newer, a throwing worker start falls back to Monaco's diff, three head comments); G33's Test line names the new row (Z901). `npm run test:landing` passed in the gate (557.2 s); the look on 8796 saw the diff pane, the drawings and the fields in dark, light and nord. Open items: 116. In flight (0 of 6): none. Next: O33, built inline by the orchestrator; its deletions of research-cockpit, remove-unicode and project-new and the repointing of `.agents/skills/project-cleanup/SKILL.md:18` are listed path by path for Axel's yes first.
 - 2026-10-15 (Q72 round 1 sent). Q72's builder reported all five parts (`agents/reviews/Q72-report.md`, usage in `builder_usage`); the reviewer a036aa66bc03d3ab8 on claude-opus-5-5 wrote `agents/reviews/Q72-refuter.md`: every item holds, cases 8, 21, 22 and 23 wait on the look; findings: the character changes of git's blocks computed on the page's thread (a 5000-line block 167 s), the providers' map never shrinking, a stale comment in the G25 describe, the builder's unapproved scripts (open item 116). Round 1 (`agents/briefs/Q72-round1.md`, three items) sent to the builder af9a2233fb1dc8792; snapshot `.agents/worktrees/Q72-round-1`. Open items: 116. In flight (1 of 6): Q72 (round 1). Next: the review over the round, /land Q72 (looks: diff pane, drawings, fields), then O33.
 - 2026-10-15 (the Pillars page back, inline). Axel: "I think I want the pillars rail back" (open item 115): the Pillars page restored with Pillars, Domains and Map (l1 to l3), Registries ends at Resources (r1 to r6); the foot keeps Workbenches and Update. `npm run diagrams && npm run test:landing` in the gate: every command passed; a look on 8796 saw both pages and l1, l3, r1, r2. Open items: none. In flight (0 of 6): none. Next: on Axel's word, /spec Q72, then O33.

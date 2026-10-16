@@ -6,7 +6,7 @@ text:
         dismiss: dismiss
         dismiss_tip: dismiss from the radar
         dismissed_sec: Dismissed
-        empty: No radar items yet - run /research-cockpit litwatch.
+        empty: No radar items yet; run Lit Watch from the Update tray.
         feed_error: 'Could not read {0}: {1}'
         filters: Radar filters
         idea: idea
@@ -16,14 +16,14 @@ text:
         intro_cross: plus cross-pollination
         intro_lead: <b>New-paper radar</b> across active &amp; manuscript projects
         intro_preempt: pre-emption
-        intro_refresh: refresh with <code>/research-cockpit litwatch</code>.
+        intro_refresh: refresh by running Lit Watch from the Update tray.
         intro_sparks: <b>idea sparks</b> tied to the ideas folder.
         intro_sweep: last sweep <b>{0}</b>
         intro_tracked: '{0} tracked'
         new: NEW
         new_idea_candidate: new idea candidate
         no_date: '-'
-        no_file: No radar file yet - run <code>/research-cockpit litwatch</code> to populate <code>{0}</code>.
+        no_file: No radar file yet; run Lit Watch from the Update tray to populate <code>{0}</code>.
         paper: paper
         restore: restore
         restore_tip: restore to the radar

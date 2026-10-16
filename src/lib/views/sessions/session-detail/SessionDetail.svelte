@@ -179,10 +179,17 @@
 </Pane>
 
 <style>
+    /* The view's words are the size of a sidebar's, `--fs-sm`, its boxes to type in among them;
+       a section's own sizes (a label, a heading) stand as each section sets them. */
     .session {
         display: flex;
         flex-direction: column;
         min-width: 0;
+        font-size: var(--fs-sm);
+    }
+
+    .session :global(.oculus-field) {
+        font-size: var(--fs-sm);
     }
 
     /* The terminal shape: one face for the whole view, so the columns of every section line up. */

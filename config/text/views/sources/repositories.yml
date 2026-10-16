@@ -301,12 +301,14 @@ text:
         menu_open_changes: Open Changes
         menu_reveal: Reveal in Explorer View
         menu_reveal_finder: Reveal in Finder
+        menu_reveal_linux: Open Containing Folder
         menu_stage: Stage Changes
         menu_start_claude: Start Claude Here
         menu_start_codex: Start Codex Here
         menu_terminal: Open in Integrated Terminal
         menu_unstage: Unstage Changes
         reveal_failed: 'Finder could not show it: {0}'
+        reveal_failed_linux: 'The file manager could not open its folder: {0}'
         reveal_unserved: No served folder holds {0}, so the Files view cannot show it.
     views:
         repositories: Repositories

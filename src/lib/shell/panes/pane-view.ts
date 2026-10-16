@@ -1,7 +1,8 @@
 // Layer 3, shell. The pane menu's page items, apart from the component so the numbering they draw,
 // the pages they offer and the two choices they are gathered under can be read by a test; and the
 // right-click menu of a pane's strip and of an empty pane's body, VS Code's editor group menu, with
-// what each of its picks runs.
+// what each of its picks runs; and the path and tab helpers a pane reads (`isPaneDrop`,
+// `shownTabPath`, `openLabels`).
 
 import { grouped, type MenuItem as Item } from '$lib/ui/menu/menu-items';
 import type { EditorActions, TabBar } from '$lib/state/shared/words/appearance';
@@ -506,6 +507,20 @@ export function shownTabPath(
     const file = fileOfTab(tab, place);
     const root = roots.find((one) => one.key === file?.root);
     return file === null || root === undefined ? null : shownPath(root.dir, file.path, home);
+}
+
+/** Where a drop lands: a pane's path in a page's tree, the page on screen when it names none. */
+type DropPlace = { path: number[]; page?: string };
+
+/** Whether a drop is the pane's at `path` on `page`, `current` being the page on screen. */
+export function isPaneDrop(
+    drop: DropPlace,
+    page: string,
+    path: number[],
+    current: string
+): boolean {
+    if ((drop.page ?? current) !== page) return false;
+    return drop.path.length === path.length && drop.path.every((step, at) => step === path[at]);
 }
 
 /** The labels of the tabs open on every page, which an untitled text file is named past. */

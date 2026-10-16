@@ -211,7 +211,8 @@ export function createClientState(
                 search.forgetSearch(id);
             }
         },
-        desktop === undefined ? undefined : { turn: desktop.bridge.saveLayout }
+        desktop === undefined ? undefined : { turn: desktop.bridge.saveLayout },
+        () => entities.config()?.hubs ?? null
     );
     const drag = createDrag(layout, desktop);
     const openTabs = () => layout.hosts().flatMap((host) => tabsOf(host.workbench.root));

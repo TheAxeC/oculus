@@ -170,6 +170,7 @@ arrangements:
         - { view: help, pinned: true }
         - { view: doc, state: { id: engine:docs/apps.md, path: docs/apps.md, engine: true, label: "Apps guide" }, pinned: true }
         - { view: doc, state: { id: engine:docs/templates.md, path: docs/templates.md, engine: true, label: "Templates" }, pinned: true }
+        - { view: doc, state: { id: engine:docs/data-map.md, path: docs/data-map.md, engine: true, label: "Data map" }, pinned: true }
         - { view: doc, state: { id: engine:docs/palette.md, path: docs/palette.md, engine: true, label: "Palette" }, pinned: true }
   views:
     root:

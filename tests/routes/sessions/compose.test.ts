@@ -228,7 +228,7 @@ describe('POST /api/terminal, a start with a task', () => {
     /** The tasks file with one entry whose note is `note`. */
     function plant(note: string): void {
         writeFileSync(
-            join(hub, 'tasks', 'tasks.yml'),
+            join(hub, '.oculus', 'data', 'tasks.yml'),
             `title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: Submission\n    status: todo\n    note: "${note}"\n`
         );
     }
@@ -249,7 +249,7 @@ describe('POST /api/terminal, a start with a task', () => {
 
     test.beforeAll(() => {
         hub = scratchDir('oculus-task-hub-');
-        mkdirSync(join(hub, 'tasks'), { recursive: true });
+        mkdirSync(join(hub, '.oculus', 'data'), { recursive: true });
     });
 
     test.beforeEach(() => {

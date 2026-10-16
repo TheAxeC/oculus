@@ -1,29 +1,15 @@
 <script module lang="ts">
-    // Layer 3, view registration. The generic collection component owns each configured
-    // collection's place in the catalogue, which is the rail page it sits on: the Academic Life
-    // page's six, the Literature page's Literature after the Literature search and Lit Watch, and
-    // the Registries page's for Statements, People, Organisations, Resources and a collection
-    // sources.yml adds that no placement names.
+    // Layer 3, view registration. The generic collection component registers each configured
+    // collection at its place in the catalogue, which is the rail page it sits on
+    // (state/workbench/layout/tabs/left-out.ts `COLLECTION_PLACES`), and a collection sources.yml
+    // or a hub adds that no placement names in the Registries group after them.
     import type { ViewRegistration } from '$lib/state/workbench/navigation/registry';
-
-    const placements: Record<string, { group: string; order: number }> = {
-        funding: { group: 'academic', order: 0 },
-        events: { group: 'academic', order: 1 },
-        education: { group: 'academic', order: 2 },
-        applications: { group: 'academic', order: 3 },
-        'joint-work': { group: 'academic', order: 4 },
-        tasks: { group: 'academic', order: 5 },
-        literature: { group: 'literature', order: 2 },
-        statements: { group: 'registries', order: 3 },
-        people: { group: 'registries', order: 4 },
-        organisations: { group: 'registries', order: 5 },
-        resources: { group: 'registries', order: 6 }
-    };
+    import { COLLECTION_PLACES } from '$lib/state/workbench/layout/tabs/left-out';
 
     export const registration = (keys: string[]): ViewRegistration[] =>
         keys.map((id, index) => {
             const applications = id === 'applications';
-            const place = placements[id] ?? { group: 'registries', order: 100 + index };
+            const place = COLLECTION_PLACES[id] ?? { group: 'registries', order: 100 + index };
             return {
                 id,
                 label: `views.${id}`,

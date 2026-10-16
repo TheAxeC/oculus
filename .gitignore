@@ -3,3 +3,9 @@ node_modules
 build/
 .svelte-kit-app/
 build-app/
+release/
+.DS_Store
+*.log
+.env*
+coverage/
+.vite/

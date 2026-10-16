@@ -1,5 +1,4 @@
-/* The themes. Fourteen blocks are ported from the cockpit's assets/css/08-themes.css and
-   01-base.css with their token values unchanged. The VS Code themes are not here: they are
+/* The themes. Fourteen blocks are written by hand here. The VS Code themes are not here: they are
    generated into vscode.css by utils/migrations/convert-vscode-themes.ts from the theme files of
    the installed VS Code. A theme is a block of token overrides, so no component knows a theme
    exists. A dark theme's block also sets `color-scheme: dark`, so the page's native controls and

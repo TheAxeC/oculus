@@ -434,7 +434,10 @@ A record of a hub other than the primary carries `root` (the hub's name) and has
 | `{ view: '<id>' }` | a catalogue view | `closed` for a view opened only for something, `missing` for an unknown id |
 | `{ project: '<id>' }` | the project's tab | `missing` |
 | `{ file: { root, path } }` | the file, as Files opens it | `closed`, `missing`, `failed:0` |
+| `{ file: { root, path, page } }` | a PDF at that page, in a new tab or the tab already showing it | `closed` for a `page` that is no whole number from 1 or a path not ending `.pdf`; `missing`, `failed:0` |
 | `{ url: '<address>' }` | the address in a new browser tab, after you confirm | `closed` for a non-http address; `declined` on Cancel |
+
+`page` counts from 1, in the desktop app and in a browser alike. The extension is compared without case, so `.PDF` takes a page too, and a page past the end opens at the last page. A string such as `'3'` is refused.
 
 A link that leaves the app goes through `open({ url })`.
 

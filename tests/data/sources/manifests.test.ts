@@ -26,10 +26,10 @@ import { plantHub, workspaceWith, type FolderSpec } from '../../fixtures/hubs/wo
 
 const MERGED = loadConfig(engineDir()).config;
 
-/** The hub every row is read over: two registries and three projects. */
+/** The hub every row is read over: two registries at oculus's own paths, and three projects. */
 const HUB_FILES: Record<string, string> = {
-    'registries/venues.yml': 'entries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
-    'registries/people.yml': 'entries:\n  - { key: rivera, name: Ana Rivera }\n',
+    '.oculus/data/venues.yml': 'entries:\n  - { id: jmlr, name: Journal of Machine Learning }\n',
+    '.oculus/data/people.yml': 'entries:\n  - { key: rivera, name: Ana Rivera }\n',
     'projects/ideas/tensor-spark/project.yml': 'title: Tensor spark\ntier: projects\ntype: idea\n',
     'projects/ideas/beta/project.yml': 'title: Beta\ntier: projects\ntype: idea\n',
     'projects/active/loewner/project.yml': 'title: Loewner layers\ntier: projects\ntype: active\n'

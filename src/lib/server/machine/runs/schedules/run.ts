@@ -28,6 +28,8 @@ export type RunEntryOptions = StartOptions & {
     hub: string | null;
     /** The `claude` program, as `claude_bin` of the machine's configuration names it. */
     claudeBin: string;
+    /** The text catalog, which holds the sentence an update task starts with. */
+    text: Record<string, string>;
     /** The directories the file browser serves, read at the call. */
     rootsFor: () => string[];
     /** The saved commands file. */
@@ -47,7 +49,7 @@ export async function runEntry(
     size: { cols: number; rows: number },
     options: RunEntryOptions
 ): Promise<RunAnswer> {
-    const { hub, claudeBin, rootsFor, commands, approvalsFor, ...tmux } = options;
+    const { hub, claudeBin, text, rootsFor, commands, approvalsFor, ...tmux } = options;
     const runs = entry.runs;
     try {
         if ('task' in runs) {
@@ -55,6 +57,7 @@ export async function runEntry(
                 ...tmux,
                 hub,
                 claudeBin,
+                text,
                 size
             });
         }

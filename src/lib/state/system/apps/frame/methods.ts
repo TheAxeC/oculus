@@ -21,6 +21,7 @@ import {
     appAddress,
     inClosedPaths,
     inFilesEntry,
+    openPage,
     pathSegmentsOpen
 } from '../../../../data/helpers/files/apps/apps.ts';
 import { createLimiter } from '../../../../data/helpers/run/limiter.ts';
@@ -94,9 +95,10 @@ export type MethodsContext = {
     openView: (view: string) => void;
     hasProject: (key: string) => boolean;
     openProject: (key: string) => void;
-    /** The server's answer for a file target, or null when the request got none. */
-    check: (root: string, path: string) => Promise<OpenResult | null>;
-    openFile: (root: string, path: string) => void;
+    /** The server's answer for a file target, at a page of a PDF, or null when it got none. */
+    check: (root: string, path: string, page: number | null) => Promise<OpenResult | null>;
+    /** Open a file as Files opens it; a PDF goes to `page` when one is given. */
+    openFile: (root: string, path: string, page: number | null) => void;
     /** Run a command of the app's root, in a terminal the reader sees. */
     runCommand: (name: string) => Promise<CommandOutcome>;
     /** One call of the app's secrets, or null when the request got no answer. */
@@ -403,18 +405,21 @@ export function createMethods(context: MethodsContext): Methods {
             const root = member(file, 'root');
             const path = member(file, 'path');
             if (typeof file !== 'object' || file === null || Array.isArray(file)) return closed();
-            if (Object.keys(file).length !== 2 || !isText(root) || !isText(path)) return closed();
+            const keys = Object.keys(file).filter((key) => key !== 'page');
+            if (keys.length !== 2 || !isText(root) || !isText(path)) return closed();
+            const page = openPage(path, member(file, 'page'));
+            if (page === 'closed') return closed();
             const folders = settings().closedPaths.folders;
             if (folders === null) return closed();
             if (!pathSegmentsOpen(path) || inClosedPaths(path, folders)) return closed();
             if (row.root !== '' && root !== row.root) return closed();
             if (!context.shown(root)) return refuse(REFUSED.missing);
-            const result = await context.check(root, path);
+            const result = await context.check(root, path, page);
             if (!context.alive()) return never();
             if (result === null) return refuse(failedWith(0));
             if (result === 'closed') return closed();
             if (result === 'missing') return refuse(REFUSED.missing);
-            context.openFile(root, path);
+            context.openFile(root, path, page);
             return undefined;
         },
 

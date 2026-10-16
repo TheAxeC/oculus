@@ -79,7 +79,13 @@ const processesShape = unchangedAs<Payloads['processes']>(
 );
 
 const scheduleShape = unchangedAs<Payloads['schedule']>(
-    z.object({ schedules: listShape, commands: listShape, folders: listShape, unread: listShape })
+    z.object({
+        schedules: listShape,
+        commands: listShape,
+        folders: listShape,
+        tasks: listShape.nullable(),
+        unread: listShape
+    })
 );
 
 const calendarShape = unchangedAs<Payloads['calendar']>(

@@ -61,6 +61,7 @@ text:
             files_ph: filter files in this project ...
             files_title: Files
             folder_failed: 'The folder could not be shown in Finder: {0}'
+            folder_failed_linux: 'The file manager could not open the folder: {0}'
             funding_glyph: funding
             hpc_glyph: hpc
             ideas: Ideas / avenues
@@ -108,6 +109,7 @@ text:
             doc_human_tip: human-only - no agent edits this
             folder: Folder
             folder_tip: show the project folder in Finder
+            folder_tip_linux: open the project folder in the file manager
             full: Full
             open_workbench: Open Workbench
             open_workbench_tip: open a workbench for the project folder

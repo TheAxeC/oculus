@@ -222,9 +222,11 @@ export function createFlows(deps: FlowsDeps): FlowsStore {
                 const line =
                     picked.error === 'unsupported'
                         ? t('apps.add_unsupported')
-                        : picked.error === 'busy'
-                          ? t('apps.add_panel_busy')
-                          : t('apps.add_panel_failed');
+                        : picked.error === 'no-picker'
+                          ? t('files.picker_missing')
+                          : picked.error === 'busy'
+                            ? t('apps.add_panel_busy')
+                            : t('apps.add_panel_failed');
                 notices.post(line, { tone: 'error' });
                 return;
             }

@@ -2,8 +2,8 @@
     // Layer 3, shell. The body of one pane: the view of every tab the pane has shown, the active
     // one drawn and the rest hidden (panes/TabView.svelte), the pointer's report of where a drop
     // would land while a drag is in progress, the layer that keeps a preview tab on the second
-    // press of a double click, and, for a pane holding no tab, the line saying that opened files
-    // appear there.
+    // press of a double click, and, for a pane drawing no tab, the line saying that opened files
+    // appear there, or which collections no hub lists when the pane left their tabs out.
     //
     // A tab's view is mounted the first time the tab is shown and stays mounted until the tab
     // closes or leaves the pane, so switching back to it neither builds the view again nor fetches
@@ -68,6 +68,8 @@
     type Props = {
         /** The pane's tabs, in the order the strip draws them. */
         instances: Instance[];
+        /** The collection keys of the tabs the pane leaves out, since no hub lists them. */
+        left?: string[];
         /** The id of the tab the pane shows. */
         active: string;
         /** The page whose tree holds the pane. */
@@ -82,14 +84,16 @@
         onpick: (id: string) => void;
     };
 
-    let { instances, active, page, path, keeps, items, onpick }: Props = $props();
+    let { instances, left = [], active, page, path, keeps, items, onpick }: Props = $props();
 
     /**
-     * The line an empty pane says: terminals for a pane kept for them, files and documents else.
+     * The line an empty pane says: the collection keys it left out when it left some out, else
+     * terminals for a pane kept for them, files and documents else.
      */
-    const emptyWords = $derived(
-        keeps === 'terminals' ? t('ui.pane_empty_terminals') : t('ui.pane_empty')
-    );
+    const emptyWords = $derived.by(() => {
+        if (left.length > 0) return t('ui.pane_unlisted', left.join(', '));
+        return keeps === 'terminals' ? t('ui.pane_empty_terminals') : t('ui.pane_empty');
+    });
 
     let body: HTMLDivElement | undefined = $state();
     let layer: HTMLDivElement | undefined = $state();

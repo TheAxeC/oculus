@@ -22,6 +22,7 @@ import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import { z } from 'zod';
 import { SCROLLBACK_LINES, STEER_CONTROL, STEER_MAX } from '../../../data/model/index.ts';
+import { fallbackShell } from '../../../data/places/platform.ts';
 import type {
     Terminal,
     TerminalJob,
@@ -291,12 +292,14 @@ export function kindOf(id: string, command: string): TerminalKind {
     return 'shell';
 }
 
-/** What a kind runs: the two agents by name, and the user's own shell for a plain terminal. */
+/**
+ * What a kind runs: the two agents by name, and the user's own shell for a plain terminal, the
+ * platform's when `SHELL` names none.
+ */
 export function commandFor(kind: TerminalKind): string {
     if (kind === 'claude') return 'claude';
     if (kind === 'codex') return 'codex';
-    const shell = process.env.SHELL;
-    return shell === undefined || shell === '' ? '/bin/zsh' : shell;
+    return fallbackShell();
 }
 
 /**

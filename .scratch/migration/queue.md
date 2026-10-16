@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O33 (oculus in its own repository, the cockpit retired and Linux): phase A built (parts 1 to 15, part 15 the Focus page: projects with no focus in Needs attention, the Awaiting box in rows, Deadlines & dates across both columns, Situation in rows, the career banner at the top and the band above the lanes) and reviewed; its one repair round is with the builder (task-file templates, tests of the make route and the PDF page, the cockpit lines left in hub files, the figures); then the landing; the deletions and the new repository wait for Axel's yes and his push.
+- O33 (oculus in its own repository, the cockpit retired and Linux): phase A landed 2026-10-16 (parts 1 to 15 with the Focus page, the review's findings and four look defects fixed at landing); phase B, the cockpit and three skills removed, waits on Axel's yes path by path (open item 118); then phase C, the new repository, the Lima run, Axel's push and the draft Release.
 
 Queued, in order (0 steps): none.
 

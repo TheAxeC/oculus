@@ -37,6 +37,7 @@ import {
     type NameRefusal
 } from '../../../src/lib/data/prose/markdown/note-names.ts';
 import { symbolKindName } from '../../../src/lib/data/prose/symbol-kinds.ts';
+import { platformText } from '../../../src/lib/data/places/platform.ts';
 import { registerAll, registerApps, registerCollections } from '../../../src/routes/views.ts';
 import { fixtureApp } from '../../fixtures/entities-fixture.ts';
 import { recordedKinds } from '../../fixtures/kinds.ts';
@@ -384,6 +385,20 @@ const COMPUTED_PREFIXES = [
         file: 'lib/shell/keys/rows/SymbolRows.svelte',
         start: 't(`app.palette.symbol_',
         keys: () => SYMBOL_KIND_WORDS().map((name) => `app.palette.symbol_${name}`)
+    },
+    {
+        // The words of the reveal off macOS are read by the key that names Finder's words, in the
+        // text the server sends a page from a machine that is no Mac.
+        file: 'lib/data/places/platform.ts',
+        start: 'text[other]',
+        keys: () => {
+            // Each key worded by its own name: the words platformText puts in place off macOS
+            // are the names of the keys it reads.
+            const named = Object.fromEntries(Object.keys(catalog).map((key) => [key, key]));
+            return Object.entries(platformText(named, 'linux')).flatMap(([key, words]) =>
+                key === words ? [] : [words]
+            );
+        }
     }
 ] as const;
 

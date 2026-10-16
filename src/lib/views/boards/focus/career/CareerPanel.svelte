@@ -1,7 +1,9 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/focus/Focus.svelte. The career panel at the foot of the
-    // board: the situation, the next milestone, the order of work, the host pipeline with its
-    // status buttons (CareerHosts.svelte), the criteria, the eligibility rules and what was
+    // Layer 3, view partial of views/boards/focus/Focus.svelte. The career banner at the top of the
+    // board. Folded, it is one line drawn like the command center's heading: the career file's
+    // title, its next milestone and how many hosts are in flight. Unfolded, it is the whole panel:
+    // the situation, one fact a row, the next milestone, the order of work, the host pipeline with
+    // its status buttons (CareerHosts.svelte), the criteria, the eligibility rules and what was
     // dropped.
     //
     // Its Edit control opens the editor of the career file's sections, built from the file's own
@@ -10,11 +12,11 @@
     // while edits are unsaved, and closing it over them asks first. The file has no Add and no
     // Delete: it is one file, not a list of entries.
     //
-    // Collapsed by default, so the lanes stay the top of the board. It draws nothing when the hub
-    // holds no career file, which is the ordinary case for a hub that keeps no career plan.
+    // Folded by default, so the banner takes one line above the command center. It draws nothing
+    // when the hub holds no career file, which is the ordinary case for a hub that keeps no career
+    // plan, and the board then starts at the command center.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
-    import Empty from '$lib/ui/frame/Empty.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
@@ -73,13 +75,24 @@
         editing = false;
     }
 
-    /** The one line of the collapsed summary: the title, how many are in flight, the milestone. */
+    /** Whether the banner is unfolded; it starts folded. */
+    let unfolded = $state(false);
+
+    /**
+     * The one line of the folded banner: the title, the next milestone and how many hosts are in
+     * flight, each part left out when the file gives it nothing.
+     */
     const summary = $derived.by(() => {
         if (career === null) return '';
         const flight = inFlight(career.hosts);
         const milestone = summaryOf(career);
-        const count = flight > 0 ? t('focus.in_flight', flight) : '';
-        return `${career.title}${count}${milestone === '' ? '' : ` | ${milestone}`}`;
+        return [
+            career.title,
+            milestone === '' ? '' : t('focus.career_next', milestone),
+            flight > 0 ? t('focus.in_flight', flight) : ''
+        ]
+            .filter((part) => part !== '')
+            .join(' | ');
     });
 </script>
 
@@ -88,8 +101,14 @@
 {/snippet}
 
 {#if career !== null}
-    <details class="career">
-        <summary><Glyph name={t('focus.wait_glyph')} />{summary}</summary>
+    <details class="career" bind:open={unfolded}>
+        <summary>
+            <Glyph
+                name={unfolded ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
+            />
+            <Glyph name={t('focus.career_glyph')} />
+            <b>{summary}</b>
+        </summary>
         <div class="body">
             {#if page !== null}
                 <ToolButton
@@ -108,7 +127,8 @@
                     {@render section(t('focus.career_situation'))}
                     <div class="facts">
                         {#each career.situation as fact (fact.label)}
-                            <span class="fact"><b>{fact.label}</b>{fact.value}</span>
+                            <b>{fact.label}</b>
+                            <span>{fact.value}</span>
                         {/each}
                     </div>
                 {/if}
@@ -216,8 +236,6 @@
             {/if}
         </div>
     </details>
-{:else}
-    <Empty message={t('focus.career_empty')} />
 {/if}
 
 {#if discarding}
@@ -242,19 +260,24 @@
         backdrop-filter: blur(var(--wall-blur));
     }
 
+    /* The folded banner is one line in the type of the command center's heading; a line longer
+       than the pane is cut with an ellipsis, and the unfolded panel shows all of it. */
     .career > summary {
         display: flex;
         align-items: center;
         gap: 6px;
         padding: 4px 8px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
         background: var(--chip);
         cursor: pointer;
-        overflow-wrap: anywhere;
+    }
+
+    .career > summary > b {
+        min-width: 0;
+        overflow: hidden;
+        font-weight: 600;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 
     /* Inside the panel, which is already translucent: these rows keep their rules and paint
@@ -290,31 +313,31 @@
         overflow-wrap: anywhere;
     }
 
-    .facts,
     .chips {
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
     }
 
-    .fact {
-        padding: 2px 8px;
-        border: 1px solid var(--line);
-        border-radius: var(--input-radius);
-        background: var(--chip);
-        font-size: var(--fs-md);
+    /* One fact a row: the labels in a column as wide as the widest of them, since a grid column is
+       one width for every row, and each value wrapping in its own column. */
+    .facts {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        align-items: baseline;
+        gap: 2px 12px;
     }
 
-    :global(body.wall) .fact {
-        background: transparent;
-    }
-
-    .fact b {
-        margin-right: 5px;
+    .facts b {
         font-size: var(--fs-xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
+    }
+
+    .facts span {
+        font-size: var(--fs-md);
+        overflow-wrap: anywhere;
     }
 
     .milestone,

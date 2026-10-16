@@ -89,7 +89,7 @@ export function timedFetcher(fetcher: Fetcher, ms: number = READ_TIMEOUT_MS): Fe
 /**
  * How an `https` address reaches the operating system, for the calendar's and the mail's consent
  * and event links. It is injectable so route tests open nothing. It is declared here, with the
- * connect flow that opens a consent page, and server/files/open.ts's macOpenAddress satisfies it.
+ * connect flow that opens a consent page, and server/files/open.ts's addressOpener satisfies it.
  */
 export type Opener = (target: string) => Promise<void> | void;
 

@@ -460,6 +460,11 @@ export type Dataset = Rooted & {
      */
     retrieval?: Record<string, unknown>;
     hpcPath?: string;
+    /**
+     * True when its own hub's `recover_command` gives it a Recover control; absent when that hub
+     * sets none.
+     */
+    recover?: true;
     /** The dataset registry's own theme words (`ecg`, `single-cell`), which are not domain keys. */
     themes: string[];
     /**

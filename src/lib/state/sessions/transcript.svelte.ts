@@ -16,11 +16,14 @@
 // A subagent's own transcript is held the same way, under its session and the agent's id in the
 // session's record (`agent`, empty for the session's own transcript), and asked for with that
 // `agent` beside the session's id. Its file grows while the parent's lastActivity stands still, so
-// the view hands follow() a mark that moves at each sessions message while the agent runs.
+// while the agent runs its tab's mark is the session's record itself, which the sessions channel
+// hands anew with each message and which every tab of the session reads as the same object
+// (followMark). A mark is compared by identity, so it moves once per message, whatever the number
+// of tabs and of runs of the effect that hands it.
 
 import { z } from 'zod';
 import { byKey } from '../../data/helpers/guards.ts';
-import type { Turn } from '../../data/model/index.ts';
+import type { SessionAgent, Turn } from '../../data/model/index.ts';
 import {
     anyNumberShape,
     filledTextShape,
@@ -90,7 +93,7 @@ const NO_BODY = { turns: [], offset: undefined, results: {} };
  */
 export type TranscriptsStore = {
     turnsFor: (id: string, agent?: string) => TurnsState;
-    follow: (id: string, lastActivity: string | null, agent?: string) => void;
+    follow: (id: string, mark: unknown, agent?: string) => void;
     showing: (id: string, agent?: string) => () => void;
     forget: (id: string, agent?: string) => void;
     hold: (id: string, turns: Turn[], offset?: number) => void;
@@ -102,6 +105,40 @@ const agentPinShape = z.object({ agent: filledTextShape });
 /** The agent a Transcript instance shows, from its saved state: empty for the session's own. */
 export function pinnedAgent(state: unknown): string {
     return readAs(agentPinShape, state)?.agent ?? '';
+}
+
+/** What a tab's mark is read from: the session's record as one sessions message hands it. */
+type FollowRecord = {
+    lastActivity: string | null;
+    agents: readonly Pick<SessionAgent, 'id' | 'status' | 'ended'>[];
+};
+
+/**
+ * The mark a Transcript tab hands follow() for one sessions message: the record's lastActivity for
+ * the session's own transcript; for a subagent, the record object itself while the agent runs,
+ * since its file grows while the session's stamp stands still, and the end it reports once it
+ * ended. Every value is one of the message, so the same message gives the same mark in every tab
+ * and on every run of the effect.
+ */
+function followMark(record: FollowRecord | null | undefined, agent: string): unknown {
+    if (agent === '') return record?.lastActivity ?? null;
+    const row = record?.agents.find((one) => one.id === agent);
+    return row?.status === 'running' ? record : `ended ${row?.ended ?? ''}`;
+}
+
+/** What one tab follows: its session's id, its agent or the empty text, and its session record. */
+type FollowTarget = { id: string; agent: string; record: FollowRecord | null | undefined };
+
+/**
+ * The effect a Transcript tab follows its file with, registered in the calling component: it reads
+ * the record, so it runs again at each sessions message, and hands follow() the tab's mark.
+ */
+export function followTab(follow: TranscriptsStore['follow'], target: () => FollowTarget): void {
+    $effect(() => {
+        const { id, agent, record } = target();
+        if (id === '') return;
+        follow(id, followMark(record, agent), agent);
+    });
 }
 
 /** The query key of one transcript: the session's, or one of its agents'. */
@@ -162,8 +199,8 @@ async function tail(id: string, agent: string, held: TurnsState | undefined): Pr
 }
 
 export function createTranscripts(queries: Queries): TranscriptsStore {
-    /** The lastActivity each session was last asked at. */
-    const marks: Record<string, string | undefined> = {};
+    /** The mark each transcript was last asked at. */
+    const marks: Record<string, unknown> = {};
 
     /**
      * The turns of one session. The first call for a session asks the server for the whole file;
@@ -183,16 +220,17 @@ export function createTranscripts(queries: Queries): TranscriptsStore {
 
     /**
      * Read what has been appended since the last read, when the record says there is something.
-     * Called from the view's effect with the record's lastActivity: the first call for a session
-     * only notes the stamp, since the read turnsFor() scheduled already carries everything written
-     * up to it. A stamp that moves while a request is out asks again when it lands. A hidden tab
-     * only marks the turns, and asks once when it is shown.
+     * Called from a tab's effect (followTab) with a mark of the sessions message, compared by
+     * identity: the first call for a transcript only notes the mark, since the read turnsFor()
+     * scheduled already carries everything written up to it. A mark that moves while a request is
+     * out asks again when it lands. A hidden tab only marks the turns, and asks once when it is
+     * shown.
      */
-    function follow(id: string, lastActivity: string | null, agent = ''): void {
+    function follow(id: string, given: unknown, agent = ''): void {
         if (id === '') return;
         const slot = slotOf(id, agent);
         const key = keyOf(id, agent);
-        const mark = lastActivity ?? '';
+        const mark = given ?? '';
         const first = marks[slot] === undefined;
         if (marks[slot] === mark) return;
         marks[slot] = mark;

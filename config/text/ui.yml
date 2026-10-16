@@ -46,6 +46,7 @@ text:
         pane_close_confirm: Close this pane and the {0} tabs in it?
         pane_empty: Files and documents you open on this page appear here.
         pane_empty_terminals: Terminals you start from this pane's menu appear here.
+        pane_unlisted: 'No hub of this workspace lists {0} under collections: in its .oculus/config.yml.'
         pane_expand: Expand pane
         pane_expand_glyph: expand
         pane_fold: Fold pane

@@ -6,7 +6,8 @@ text:
         awaiting_response: Awaiting a response
         cards_group: Funding | positions | teaching
         career_caveat: Caveat
-        career_empty: No career file on this hub.
+        career_glyph: focus
+        career_next: 'Next: {0}'
         career_rules: Rules
         career_score_tip: '{0}: {1}'
         career_shots: Shots left
@@ -61,15 +62,18 @@ text:
             overdue_generic: '{0} {1}d ago'
             position_deadline: position deadline in {0}d
             refresh_glyph: refresh_live
-            refresh_inbox_plain: 'Inbox: triaged {0}d ago | run /research-cockpit inbox'
-            refresh_litwatch_plain: 'Lit Watch: {0} | run /research-cockpit litwatch'
-            refresh_scout_plain: 'Position scout: ran {0}d ago | run /research-cockpit scout'
+            refresh_inbox_plain: 'Inbox: triaged {0}d ago | run Inbox from the Update tray'
+            refresh_litwatch_plain: 'Lit Watch: {0} | run Lit Watch from the Update tray'
+            refresh_scout_plain: 'Position scout: ran {0}d ago | run Scout from the Update tray'
             scout_glyph: scout
             since_linkedin: since your last LinkedIn post
             snoozed: Snoozed ({0})
             snoozed_glyph: snooze
             submission_deadline: submission deadline in {0}d
             this_month: this month
+            unplaced_glyph: compass
+            unplaced_many: active projects not on the board (set <code>focus:</code>)
+            unplaced_one: active project not on the board (set <code>focus:</code>)
             venue_count: '{0} x{1}'
             venue_load_tail: (>={0} in flight; consider spreading)
             word_application: application
@@ -87,16 +91,13 @@ text:
         funding_glyph: coin
         funding_lane: Funding
         funding_sub: grant applications
-        hint_count: '{0} active'
-        hint_link: open the first one
-        hint_tail: not on the board (set their <code>focus:</code>)
         host: 'host: {0}'
         host_pipeline: Host pipeline
         idea_backlog: 'idea backlog: drag onto a lane to start, or drop here to park'
         ideas: Ideas
         ideas_glyph: idea
         in_days: in {0}d
-        in_flight: '- {0} in flight'
+        in_flight: '{0} in flight'
         jobs_glyph: scout
         jobs_lane: Job applications
         jobs_sub: positions awaiting outcome
@@ -125,7 +126,7 @@ text:
         venue_unset: (venue unset)
         wait_apps: Applications
         wait_blocked: Blocked
-        wait_glyph: focus
+        wait_count: '{0} ({1})'
         wait_grants: Grants
         wait_hosts: Host outreach
         wait_people: Waiting on

@@ -5,10 +5,11 @@ import type { Component } from 'svelte';
 import { z } from 'zod';
 import { appActive, appViewId } from '$lib/data/helpers/files/apps/apps';
 import { EDITOR_VIEW, PANEL_VIEW, contributedViewId } from '$lib/data/helpers/files/apps/views';
-import type { AppRow } from '$lib/data/model';
-import { collectionKeys } from '$lib/data/snapshot/normalise';
+import type { AppRow, HubVocabs } from '$lib/data/model';
+import { workspaceCollectionKeys } from '$lib/data/snapshot/normalise';
 import { itemsShape, readAs } from '$lib/data/shapes/shapes';
 import { viewOffers, type ViewOffer } from '$lib/state/system/apps/shell/contributions';
+import { isPlacedCollection } from '$lib/state/workbench/layout/tabs/left-out';
 import type {
     RegistryStore,
     ViewProps,
@@ -52,18 +53,22 @@ export function registerAll(registry: RegistryStore): void {
 }
 
 /**
- * The collection keys a pushed configuration names: those `collectionKeys` reads from its
- * `collections` list, none for an empty list, and null when the configuration holds no list there.
+ * The collection keys a pushed configuration names with the hubs it was pushed with: those
+ * `workspaceCollectionKeys` reads from its `collections` list and the hubs' lists, none for an
+ * empty list and no hub listing one, and null when the configuration holds no list there.
  */
-export function pushedCollections(pushed: unknown): string[] | null {
+export function pushedCollections(pushed: unknown, hubs: HubVocabs | null): string[] | null {
     const held = readAs(pushedShape, pushed);
-    return held === null ? null : collectionKeys(held);
+    return held === null ? null : workspaceCollectionKeys(held, hubs);
 }
 
 /**
  * Register the generic Collection view once per configured collection key, and drop the views of
  * every key the list no longer holds, so a collection taken out of config/sources.yml leaves the
- * rail and the palette with the keys that took it out rather than at the next reload.
+ * rail and the palette with the keys that took it out rather than at the next reload. The tabs of
+ * a key oculus's pages place stay in their panes, which leave them out while no hub lists the key
+ * and draw them again when one does (state/workbench/layout/tabs/left-out.ts); the tabs of any
+ * other key close with its view.
  *
  * A key that is the id of a view a module registers as its own is left out, so a `collections:`
  * entry named `debug` or `files` never replaces a built-in view.
@@ -88,8 +93,9 @@ export function registerCollections(registry: RegistryStore, keys: string[]): vo
         const wanted = definitions(module.registration, free);
         const ids = new Set(wanted.map((registration) => registration.id));
         for (const registration of registry.views()) {
-            if (registration.component !== module.default) continue;
-            if (!ids.has(registration.id)) registry.unregisterView(registration.id);
+            if (registration.component !== module.default || ids.has(registration.id)) continue;
+            if (isPlacedCollection(registration.id)) registry.dropView(registration.id);
+            else registry.unregisterView(registration.id);
         }
         registry.registerComponent(module.default, wanted);
     }

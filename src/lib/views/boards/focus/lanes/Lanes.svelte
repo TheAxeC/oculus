@@ -15,7 +15,6 @@
     import LaneCard from './LaneCard.svelte';
     import LaneHead from './LaneHead.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
-    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { DEADLINE_SOON, daysUntil } from '$lib/state/boards/board';
     import {
         backlog,
@@ -30,7 +29,6 @@
         nextPriority,
         portfolioProjects,
         priorities,
-        unplaced,
         type Id,
         type Lane,
         type Project,
@@ -62,7 +60,6 @@
     const board = $derived(lanes(config));
     const items = $derived(laneItems(projects, board));
     const ideas = $derived(backlog(projects, board));
-    const missing = $derived(unplaced(projects));
     const levels = $derived(priorities(config));
 
     /** The lane a card is being dragged over, so it can light up; null while nothing is dragged. */
@@ -261,21 +258,6 @@
     </div>
 </details>
 
-{#if missing.length > 0}
-    <p class="hint">
-        <span class="hint-link">
-            <ToolButton
-                plain
-                label={t('focus.hint_count', missing.length)}
-                title={t('focus.hint_link')}
-                onclick={() => onproject(missing[0].id)}
-            />
-        </span>
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-        {@html t('focus.hint_tail')}
-    </p>
-{/if}
-
 <style>
     summary {
         display: flex;
@@ -287,24 +269,6 @@
         letter-spacing: 0.05em;
         color: var(--accent-txt, var(--accent));
         cursor: pointer;
-    }
-
-    .hint {
-        margin: 6px 0 0;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    /* The count that opens the first unplaced project is a link: the accent colour, an underline
-       under the pointer and with the focus. */
-    .hint-link {
-        font-weight: 600;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .hint-link:hover,
-    .hint-link:focus-within {
-        text-decoration: underline;
     }
 
     /* The lanes fill the pane's width in as many columns as it holds, and one column in a pane

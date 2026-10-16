@@ -39,7 +39,7 @@
 // Every command is an argument array: a root's path is one argument whatever characters it
 // holds, and nothing is passed through a shell.
 
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { refusesFile, serverFacts, type LspServerId } from '../../../data/prose/lsp-servers.ts';
@@ -187,6 +187,16 @@ function factsOf(id: LspServerId): Pick<ServerEntry, 'id' | 'languages' | 'progr
 }
 
 /**
+ * Oculus's own `node_modules` by its real path when it is there: node's permission model checks a
+ * read against the real path, so a linked folder is named by where it leads, script and flag alike.
+ * A missing folder is kept as given, so its packages read as not installed.
+ */
+function ownModules(options: ServersOptions): string {
+    const modules = join(options.oculus, 'node_modules');
+    return existsSync(modules) ? realpathSync(modules) : modules;
+}
+
+/**
  * The launch of a package that runs under oculus's own node, or null when it is not installed.
  * `flags` are node's own, placed before the script.
  */
@@ -198,7 +208,7 @@ function packaged(
     flags: string[] = []
 ): Launch | null {
     const exists = options.exists ?? existsSync;
-    const script = join(options.oculus, 'node_modules', ...entry);
+    const script = join(ownModules(options), ...entry);
     return exists(script)
         ? {
               command: options.node,
@@ -441,7 +451,7 @@ function yaml(options: ServersOptions): ServerEntry {
                 'yaml',
                 ['yaml-language-server', 'bin', 'yaml-language-server'],
                 setup,
-                ['--permission', `--allow-fs-read=${join(options.oculus, 'node_modules')}`]
+                ['--permission', `--allow-fs-read=${ownModules(options)}`]
             ),
         initializationOptions: () => ({}),
         // Its `initialized` handler throws without this, which skips pulling its settings.
@@ -554,7 +564,7 @@ function markdown(options: ServersOptions): ServerEntry {
                 'markdown',
                 ['vscode-markdown-languageserver', 'dist', 'node', 'workerMain.js'],
                 setup,
-                ['--permission', `--allow-fs-read=${join(options.oculus, 'node_modules')}`]
+                ['--permission', `--allow-fs-read=${ownModules(options)}`]
             ),
         initializationOptions: () => ({ markdownFileExtensions: extensions() }),
         configuration: () => null,

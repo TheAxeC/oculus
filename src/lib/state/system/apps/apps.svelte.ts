@@ -26,7 +26,8 @@
 import { untrack } from 'svelte';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 import { appAddress, appViewId, inAppsFolder } from '../../../data/helpers/files/apps/apps.ts';
-import { APP_HEADER, appHeaderValue } from '../../../data/helpers/files/apps/apps.ts';
+import { APP_HEADER, appHeaderValue, openQuery } from '../../../data/helpers/files/apps/apps.ts';
+import { withAskedPage } from '../../sources/explorer/pdf-place.ts';
 import { oculusCommandKind } from '../../../data/helpers/files/apps/commands.ts';
 import { PANEL_VIEW } from '../../../data/helpers/files/apps/views.ts';
 import { fields } from '../../../data/helpers/guards.ts';
@@ -517,10 +518,9 @@ export function createApps(deps: AppsDeps): AppsStore {
         }, 0);
     }
 
-    async function checkOpen(id: string, root: string, path: string): Promise<OpenResult | null> {
-        const query = new URLSearchParams({ app: id, root, path });
+    async function checkOpen(query: string): Promise<OpenResult | null> {
         try {
-            const response = await get(`/api/app-open?${query.toString()}`);
+            const response = await get(`/api/app-open?${query}`);
             if (!response.ok) return null;
             const body = (await response.json()) as { result?: unknown };
             const result = body.result;
@@ -630,10 +630,12 @@ export function createApps(deps: AppsDeps): AppsStore {
                 if (project === null) return;
                 deps.layout.openView('project', { id: key, label: project.title });
             },
-            check: (root, path) => checkOpen(options.id, root, path),
-            openFile: (root, path) => {
+            check: (root, path, page) => checkOpen(openQuery(options.id, root, path, page)),
+            openFile: (root, path, page) => {
                 const tab = options.tabFor(root, path);
-                deps.layout.openView(tab.view, tab.state);
+                const id = deps.layout.openView(tab.view, tab.state);
+                if (page === null || tab.view !== 'file') return;
+                deps.ui.setInstanceState(id, withAskedPage(deps.ui.instanceState(id), page));
             },
             runCommand: (name) => deps.commands.run(row()?.root ?? '', name),
             secrets: (action, key, value) =>

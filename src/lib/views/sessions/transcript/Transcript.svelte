@@ -41,7 +41,7 @@
     import { sanitise } from '$lib/ui/html';
     import { clock } from '$lib/state/shared/words/format';
     import { t } from '$lib/state/shared/words/text';
-    import { pinnedAgent, type Turn } from '$lib/state/sessions/transcript.svelte';
+    import { followTab, pinnedAgent, type Turn } from '$lib/state/sessions/transcript.svelte';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
 
@@ -81,24 +81,9 @@
     /** Pixels from the foot that still count as reading the newest turn. */
     const SLACK = 40;
 
-    /** How many sessions messages this tab has seen while its subagent runs. */
-    let beat = 0;
-
-    // The record is read here, so this re-runs at each sessions message. A session's tab asks for
-    // the tail when its lastActivity moves. A subagent's file grows while that stamp stands still,
-    // so an agent's tab hands a mark that moves at each message while the agent runs and once more
-    // when it ends.
-    $effect(() => {
-        const id = sessionId;
-        if (id === '') return;
-        if (agent === '') {
-            follow(id, record?.lastActivity ?? null);
-            return;
-        }
-        const row = record?.agents.find((one) => one.id === agent);
-        const mark = row?.status === 'running' ? `running ${beat++}` : `ended ${row?.ended ?? ''}`;
-        follow(id, mark, agent);
-    });
+    // The record is read by this effect, so it re-runs at each sessions message and hands follow()
+    // the tab's mark of that message (state/sessions/transcript.svelte.ts, followTab).
+    followTab(follow, () => ({ id: sessionId, agent, record }));
 
     // The store keeps a transcript's turns while an instance is showing it and drops them when the
     // last one stops; the effect's cleanup is that release, so a change of session or a teardown
@@ -251,9 +236,11 @@
         overflow: auto;
     }
 
+    /* A turn's words are the size of a sidebar's, `--fs-sm`, and a heading of an answer one step
+       above, `--fs-md`. */
     .turn {
         min-width: 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     /* The head of a turn is one line of the tree's row height. */
@@ -307,14 +294,14 @@
 
     .cut {
         margin: 2px 0 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
     /* The document block of a rendered answer, as the project view draws a README. */
     .doc {
         margin-top: 2px;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         color: var(--ink-txt, var(--ink));
         overflow-wrap: anywhere;
     }

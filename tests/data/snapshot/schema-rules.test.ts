@@ -13,8 +13,9 @@ import { buildPortfolioWithSchemas, portfolioConfigFrom } from '../../../src/lib
 import { findingText } from '../../../src/lib/data/helpers/finding-text.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../src/lib/data/sources/config.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
+import { withHubCollections } from '../../fixtures/hubs/collections.ts';
 
-const LOADED = loadConfig(engineDir()).config;
+const LOADED = withHubCollections(loadConfig(engineDir()).config);
 const CATALOG = textCatalog(LOADED);
 const CONFIG = portfolioConfigFrom(LOADED);
 

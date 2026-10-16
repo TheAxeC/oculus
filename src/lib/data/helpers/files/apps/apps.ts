@@ -8,8 +8,9 @@
 // the `x-oculus-app` header; the channels an app may read and the ones closed to every app or to a
 // root app; the write kinds an app may ask for, the ones it may not, and the ones that ask the
 // reader first; the two rules a file path is judged by, the segment rule and the `closed_paths`
-// match; the root a `files` entry names; the rule of a secret's key and value; and whether an app
-// acts at all (`appActive`), which every contribution of an app is judged by.
+// match; the page an `open` of a PDF may ask for; the root a `files` entry names; the rule of a
+// secret's key and value; and whether an app acts at all (`appActive`), which every contribution
+// of an app is judged by.
 
 import { joinPath, pathUnder } from '../paths.ts';
 
@@ -189,6 +190,24 @@ export const CONFIRMED_WRITES: readonly string[] = [
 export function writeAccess(kind: string): 'open' | 'closed' | 'unknown' {
     if (OPEN_WRITES.some((one) => one === kind)) return 'open';
     return CLOSED_WRITES.some((one) => one === kind) ? 'closed' : 'unknown';
+}
+
+/**
+ * The page `open({ file: { root, path, page } })` asks a PDF to open at: null with no `page`, the
+ * page for a whole number from 1 when the path ends `.pdf` in any case, and `closed` for any other
+ * `page`, a string among them.
+ */
+export function openPage(path: string, page: unknown): number | null | 'closed' {
+    if (page === undefined) return null;
+    if (!path.toLowerCase().endsWith('.pdf')) return 'closed';
+    return typeof page === 'number' && Number.isSafeInteger(page) && page >= 1 ? page : 'closed';
+}
+
+/** The query of the server's open check (`/api/app-open`), with the page when one is asked. */
+export function openQuery(app: string, root: string, path: string, page: number | null): string {
+    const query = new URLSearchParams({ app, root, path });
+    if (page !== null) query.set('page', String(page));
+    return query.toString();
 }
 
 /**

@@ -1,7 +1,8 @@
 <script lang="ts">
-    // Layer 3, shell. The window: the title bar strip across its top (titlebar/TitleBar.svelte),
-    // the rail, the one tree the page on screen is (panes/leaf/PageArea.svelte), and the status bar
-    // along the foot under both. It reads the arrangement from the store and every change goes back
+    // Layer 3, shell. The window: in the desktop app the title bar strip across its top
+    // (titlebar/TitleBar.svelte), which a page in a browser does not draw, the rail, the one tree
+    // the page on screen is (panes/leaf/PageArea.svelte), and the status bar along the foot under
+    // both. It reads the arrangement from the store and every change goes back
     // through the store, so the whole of what is on screen is the saved workbench and a reload puts
     // it back as it was. Several of the status bar's items read stores the shell may not, so the
     // page hands in their words, and the git writes two of them ask for, and the shell draws the
@@ -164,7 +165,9 @@
     }: Props = $props();
 
     const walk = provideWalk(() => history);
-    provideStripActions();
+    /** Whether the window draws the title bar strip: the app's windows do, a browser does not. */
+    const stripped = client.desktop !== undefined;
+    if (stripped) provideStripActions();
 
     /** The float this page draws alone in a popped-out window of the app, or null. */
     const floatId = client.float;
@@ -357,13 +360,15 @@
         <Bell drawn={false} />
     {/if}
 {:else}
-    <div class="workbench">
+    <div class="workbench" class:stripless={!stripped}>
         {#if wall}
             <!-- Behind everything the workbench draws, and behind nothing else: a fixed layer at a
              negative depth paints over the page's own background and under every panel. -->
             <div class="wallpaper" style={image}></div>
         {/if}
-        <TitleBar onpalette={openPalette} />
+        {#if stripped}
+            <TitleBar onpalette={openPalette} />
+        {/if}
         <div class="body" style={bodyTracks(shownFloats())}>
             <ActivityRail {pages} {editRail} onupdate={openUpdate} />
             <div class="column">
@@ -406,6 +411,11 @@
         width: 100%;
         height: 100vh;
         overflow: hidden;
+    }
+
+    /* A page in a browser draws no strip, so a free float may reach the window's top. */
+    .workbench.stripless {
+        --titlebar-height: 0px;
     }
 
     /* The rail, the left dock, the area, the right dock across, and the area over the bottom dock

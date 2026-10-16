@@ -72,11 +72,39 @@
         )
     );
 
+    /**
+     * Whether the Needs attention group shows: it has an attention line, the row of manifests
+     * behind their docs or the row of active projects on no lane.
+     */
+    const needsAttention = $derived(
+        attentionRows.length > 0 ||
+            (week?.behind ?? null) !== null ||
+            (week?.unplaced ?? null) !== null
+    );
+
     /** The singular or plural manifest noun for the behind-project line. */
     function manifestWord(count: number): string {
         return count === 1 ? t('focus.command.manifest') : t('focus.command.manifests');
     }
 </script>
+
+{#snippet links(projects: { id: string; label: string; days?: number }[], more: number)}
+    {#each projects as project (project.id)}
+        <span class="link">
+            <ToolButton
+                plain
+                label={project.label}
+                title={project.days === undefined
+                    ? undefined
+                    : t('project.card.stale_behind', project.days)}
+                onclick={() => onproject(project.id)}
+            />
+        </span>
+    {/each}
+    {#if more > 0}
+        <span>{t('focus.command.more', more)}</span>
+    {/if}
+{/snippet}
 
 {#snippet marked(text: string)}
     <RootChip record={{ root: text }} />
@@ -137,7 +165,7 @@
                 t('focus.command.grp_overdue_glyph'),
                 view.overdue
             )}
-            {#if attentionRows.length > 0 || week?.behind}
+            {#if needsAttention}
                 <div class="grp">
                     <p class="lbl">
                         <Glyph name={t('focus.command.grp_attention_glyph')} />{t(
@@ -153,42 +181,55 @@
                             <b>{week.behind.count} {manifestWord(week.behind.count)}</b><span
                                 >{t('focus.command.behind_refresh')}</span
                             >
-                            {#each week.behind.projects as project (project.id)}
-                                <span class="link">
-                                    <ToolButton
-                                        plain
-                                        label={project.label}
-                                        title={t('project.card.stale_behind', project.days)}
-                                        onclick={() => onproject(project.id)}
-                                    />
-                                </span>
-                            {/each}
-                            {#if week.behind.more > 0}
-                                <span>{t('focus.command.more', week.behind.more)}</span>
-                            {/if}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render links(week.behind.projects, week.behind.more)}
+                        </div>
+                    {/if}
+                    {#if week?.unplaced}
+                        <div class="behind">
+                            <Glyph name={t('focus.command.unplaced_glyph')} />
+                            <b>{week.unplaced.count}</b>
+                            <span>
+                                {#if week.unplaced.count === 1}
+                                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
+                                    {@html t('focus.command.unplaced_one')}
+                                {:else}
+                                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
+                                    {@html t('focus.command.unplaced_many')}
+                                {/if}
+                            </span>
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render links(week.unplaced.projects, week.unplaced.more)}
                         </div>
                     {/if}
                 </div>
             {/if}
             {#if view.categories.length > 0}
-                <div class="grp">
-                    <p class="lbl">
-                        <Glyph name={t('focus.command.grp_deadlines_glyph')} />{t(
-                            'focus.command.grp_deadlines_label'
-                        )}
-                    </p>
-                    {#each view.categories as one (one.category)}
-                        <p class="sub">
-                            {categoryLabel(one.category)}
-                        </p>
-                        <Ticker
-                            rows={one.rows}
-                            {onpick}
-                            {onaction}
-                            reveal
-                            kept={view.kept}
-                            {marked}
-                        />
+                <!-- The group may run on into the second column, a category at a time: each
+                     category is one block that does not break, and the group's heading is inside
+                     the first, so it never stands alone at a column's foot. -->
+                <div class="grp split">
+                    {#each view.categories as one, at (one.category)}
+                        <div class="category">
+                            {#if at === 0}
+                                <p class="lbl">
+                                    <Glyph name={t('focus.command.grp_deadlines_glyph')} />{t(
+                                        'focus.command.grp_deadlines_label'
+                                    )}
+                                </p>
+                            {/if}
+                            <p class="sub">
+                                {categoryLabel(one.category)}
+                            </p>
+                            <Ticker
+                                rows={one.rows}
+                                {onpick}
+                                {onaction}
+                                reveal
+                                kept={view.kept}
+                                {marked}
+                            />
+                        </div>
                     {/each}
                 </div>
             {/if}
@@ -271,6 +312,12 @@
     }
     .grp {
         margin-top: 4px;
+        break-inside: avoid;
+    }
+    .grp.split {
+        break-inside: auto;
+    }
+    .category {
         break-inside: avoid;
     }
     .lbl {

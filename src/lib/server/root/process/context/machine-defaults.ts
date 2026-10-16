@@ -13,7 +13,7 @@ import { defaultApprovalsPath } from '../../../machine/approvals/approvals.ts';
 import { defaultLspPath } from '../../../machine/lsp/choices.ts';
 import { defaultRecordPath } from '../../../machine/runs/schedules/record.ts';
 import { defaultHistoryDir } from '../../../files/fs/history.ts';
-import { OPEN } from '../../../files/open.ts';
+import { openProgram } from '../../../../data/places/platform.ts';
 import { PER_OCULUS_NAMES } from '../../../files/workspace/paths.ts';
 import { defaultOverridesPath } from '../../../sessions/overrides.ts';
 import { defaultCachePath } from '../../../sessions/stores/transcripts.ts';
@@ -55,7 +55,7 @@ export function machineDefaults(text: Record<string, string>): Record<string, st
         schedule_record: defaultRecordPath(),
         claude_bin: defaults.claudeBin,
         commit_message_account: '',
-        open_bin: OPEN,
+        open_bin: openProgram() ?? words(text, 'server.machine_default.no_opener'),
         rite_dap_bin: defaults.riteDapBin,
         accounts: defaults.accounts.map((one) => one.dir).join(', '),
         calendars: noAccounts,

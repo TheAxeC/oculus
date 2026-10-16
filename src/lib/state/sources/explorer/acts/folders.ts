@@ -12,7 +12,7 @@ import type { FsRoot } from '../view/place.ts';
 import { rootHolding } from '../view/tab-roots.ts';
 
 /** The words the route refuses with. */
-export type PickRefusal = 'unsupported' | 'busy' | 'failed' | 'token' | 'network';
+export type PickRefusal = 'unsupported' | 'no-picker' | 'busy' | 'failed' | 'token' | 'network';
 
 /**
  * What the panel came to: the folders chosen (none when it was cancelled), or why it did not open.
@@ -20,7 +20,9 @@ export type PickRefusal = 'unsupported' | 'busy' | 'failed' | 'token' | 'network
 export type Picked = { ok: true; paths: string[] } | { ok: false; error: PickRefusal };
 
 const pickedShape = z.object({ ok: z.literal(true), paths: z.array(z.string()) });
-const refusedShape = z.object({ error: z.enum(['unsupported', 'busy', 'failed', 'token']) });
+const refusedShape = z.object({
+    error: z.enum(['unsupported', 'no-picker', 'busy', 'failed', 'token'])
+});
 
 /**
  * The answer of the panel's route as a verdict. A request that never reached the server is
@@ -82,6 +84,7 @@ export type WorkbenchFolder = { folder: { root: string; path: string } | null; l
 /** The sentence for a panel that did not open, by the word the route refused with. */
 export function pickerLine(error: PickRefusal): string {
     if (error === 'unsupported') return t('files.picker_unsupported');
+    if (error === 'no-picker') return t('files.picker_missing');
     if (error === 'busy') return t('files.picker_busy');
     if (error === 'token') return t('files.picker_token');
     if (error === 'network') return t('files.picker_network');

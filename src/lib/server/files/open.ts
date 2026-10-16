@@ -1,26 +1,33 @@
 // Layer 2, server. The authenticated open action for a file or a folder, and the two ways oculus
-// hands anything to macOS `open`.
+// hands anything to the operating system's opener: macOS `open`, `xdg-open` on Linux, and
+// `wslview` on Linux under WSL2, where `/proc/version` names Microsoft's kernel.
 //
 // A requested path is resolved inside one of the roots the file browser serves, with realpath on
 // both ends, before the operating system sees it. The boundary is the roots: a dotfile or a file
 // under a build folder, which the tree leaves out of its listing, is resolved like any other path
 // under a root.
 //
-// A folder is never opened: it is revealed, `open -R`, which has Finder select it in its parent's
-// window and launches nothing, so an application or installer bundle is shown rather than run. A
-// symlink named like a file that points at a folder is revealed as that folder.
+// A folder is never opened as a program: on macOS it is revealed, `open -R`, which has Finder
+// select it in its parent's window and launches nothing, so an application or installer bundle is
+// shown rather than run; on Linux the folder itself is opened in the file manager. A symlink named
+// like a file that points at a folder is handled as that folder.
 //
-// A file or a folder asked for with `reveal: true` is revealed the same way, whatever the file is
-// and has: Finder only selects it, so no application is named and nothing runs.
+// A file or a folder asked for with `reveal: true` is revealed, whatever the file is and has: on
+// macOS Finder only selects it, and on Linux the folder holding it is opened, so no application is
+// named and nothing runs.
 //
-// A file is opened by the one application `open.program_ext` of config/behavior.yml names for its
-// extension, `open -b <bundle id>`, so neither a per-file Open With choice nor the machine's
-// default for the type decides the program. The extension of the name asked for and of the real
-// name must both have an entry, and the real one's names the application. A listed file is still
-// refused when its mode carries an execute bit, when its first bytes are a Finder bookmark (`book`,
-// four bytes, `mark`), or when its `com.apple.FinderInfo` attribute marks it as an alias, since
-// `open` follows an alias to wherever it points. The map is read at every request, so an edit to it
-// applies at once.
+// The platform and its opener program are read from data/places/platform.ts.
+//
+// A file is opened only when its extension has an entry in `open.program_ext` of
+// config/behavior.yml. On macOS the entry's application opens it, `open -b <bundle id>`, so neither
+// a per-file Open With choice nor the machine's default for the type decides the program; on Linux
+// the entry's bundle id is not used and the desktop's own program for the type opens it. The
+// extension of the name asked for and of the real name must both have an entry, and on macOS the
+// real one's names the application. A listed file is still refused when its mode carries an
+// execute bit; on macOS also when its first bytes are a Finder bookmark (`book`, four bytes,
+// `mark`) or its `com.apple.FinderInfo` attribute marks it as an alias, since `open` follows an
+// alias to wherever it points, and on Linux when its name ends `.desktop`, a launcher the desktop
+// would run. The map is read at every request, so an edit to it applies at once.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
 
@@ -29,8 +36,9 @@ import { z } from 'zod';
 import { isMap, scalar } from '../../data/helpers/guards.ts';
 import { execFile } from 'node:child_process';
 import { closeSync, openSync, readSync, realpathSync, statSync } from 'node:fs';
-import { basename, isAbsolute, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, resolve } from 'node:path';
 import { programFor, type ProgramApps } from '../../data/helpers/files/opens-in-program.ts';
+import { openPlatform, openProgram, type OpenPlatform } from '../../data/places/platform.ts';
 import { hasForm } from '../../data/sources/config/catalog/value-rule.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { resolveRootPath, type Root } from './files.ts';
@@ -44,9 +52,9 @@ export type { Opener };
 
 /**
  * What the open endpoint hands to the operating system: a file and its application, a folder to
- * reveal, or any file or folder to select in Finder without opening it (`reveal`).
+ * reveal, or any file or folder to reveal without opening it (`reveal`).
  */
-export type OpenTarget =
+type OpenTarget =
     | { kind: 'file'; path: string; app: string }
     | { kind: 'folder'; path: string }
     | { kind: 'reveal'; path: string };
@@ -64,9 +72,11 @@ export type PathOpener = (target: OpenTarget) => Promise<void> | void;
  */
 export type FinderInfoReader = (path: string) => Promise<Buffer | null>;
 
-/** The system binaries this module runs, by absolute path so no PATH entry stands in for them. */
-export const OPEN = '/usr/bin/open';
+/** The extended-attribute reader of macOS, by its absolute path. */
 const XATTR = '/usr/bin/xattr';
+
+/** The ending of a desktop launcher, which a Linux desktop runs rather than opens. */
+const LAUNCHER = '.desktop';
 
 /** The sentence every refusal of a path outside the roots carries. */
 const OUTSIDE = 'the path is outside the folders of the workspace';
@@ -79,6 +89,9 @@ const RUNS = 'the file would run rather than open';
 
 /** The sentence a refusal of a root key no root carries. */
 const NO_ROOT = 'the root names no served root';
+
+/** The sentence a refusal on a platform with no opener carries. */
+const NO_OPENER = 'this platform has no program that opens files';
 
 /** How many bytes of a file are read to tell a Finder bookmark, whose header fits in them. */
 const BOOKMARK_HEAD = 16;
@@ -102,12 +115,33 @@ function fileOrFolder(real: string): boolean {
     }
 }
 
-/** Run one system binary with an argument list and no shell, answering its standard output. */
-function run(binary: string, args: string[]): Promise<string> {
+/** node's execFile as this module calls it, so a test can stand in for the program. */
+export type ExecFile = (
+    binary: string,
+    args: string[],
+    done: (error: (Error & { code?: unknown }) | null, stdout: string, stderr: string) => void
+) => void;
+
+/** The real execFile, with the outputs read as text. */
+const execText: ExecFile = (binary, args, done) => {
+    execFile(binary, args, { encoding: 'utf8' }, (error, stdout, stderr) =>
+        done(error, stdout, stderr)
+    );
+};
+
+/**
+ * Run one program with an argument list and no shell, answering its standard output. A program
+ * that is not installed is refused by its name.
+ */
+function run(binary: string, args: string[], exec: ExecFile = execText): Promise<string> {
     return new Promise((resolveRun, reject) => {
-        execFile(binary, args, (error, stdout, stderr) => {
+        exec(binary, args, (error, stdout, stderr) => {
             if (error === null) {
                 resolveRun(stdout);
+                return;
+            }
+            if (error.code === 'ENOENT') {
+                reject(new Error(`the program ${binary} is not installed on this machine`));
                 return;
             }
             const reason = stderr.trim() === '' ? scalar(error.message, 'failed') : stderr.trim();
@@ -167,30 +201,42 @@ async function aliasFlagged(real: string, reader: FinderInfoReader): Promise<boo
     return info.length > FINDER_FLAGS_BYTE && (info[FINDER_FLAGS_BYTE] & ALIAS_FLAG) !== 0;
 }
 
-/** Whether a regular file may be handed to an application at all, whatever its name says. */
-async function safeFile(real: string, reader: FinderInfoReader): Promise<boolean> {
+/**
+ * Whether a regular file may be handed to an application at all, whatever its name says: no
+ * execute bit, and on macOS no bookmark head and no alias flag, on Linux no launcher ending. The
+ * Finder checks are macOS's and are not run elsewhere.
+ */
+async function safeFile(
+    real: string,
+    reader: FinderInfoReader,
+    platform: OpenPlatform
+): Promise<boolean> {
     const stat = statSync(real);
     if (!stat.isFile() || (stat.mode & 0o111) !== 0) return false;
+    if (platform !== 'darwin') return !real.toLowerCase().endsWith(LAUNCHER);
     if (hasBookmarkHead(real)) return false;
     return !(await aliasFlagged(real, reader));
 }
 
 /**
- * What `open` may be handed for a real path, or null. `asked` is the path as the request named it:
- * a file's asked name and real name must both have an application in the map, and the real name's
- * is the one used. A folder is always revealed. Anything that cannot be read is refused.
+ * What the opener may be handed for a real path, or null. `asked` is the path as the request
+ * named it: a file's asked name and real name must both have an entry in the map, the asked name
+ * not a launcher either, and the real name's application is the one macOS uses. A folder is always
+ * revealed. Anything that cannot be read is refused.
  */
 async function openTarget(
     real: string,
     asked: string,
     apps: ProgramApps,
-    reader: FinderInfoReader
+    reader: FinderInfoReader,
+    platform: OpenPlatform
 ): Promise<OpenTarget | null> {
     try {
         if (statSync(real).isDirectory()) return { kind: 'folder', path: real };
         const app = programFor(basename(real), apps);
         if (app === null || programFor(basename(asked), apps) === null) return null;
-        return (await safeFile(real, reader)) ? { kind: 'file', path: real, app } : null;
+        if (platform !== 'darwin' && asked.toLowerCase().endsWith(LAUNCHER)) return null;
+        return (await safeFile(real, reader, platform)) ? { kind: 'file', path: real, app } : null;
     } catch {
         return null;
     }
@@ -222,15 +268,16 @@ function allowed(path: string, roots: Root[], primary: string | null): string | 
 }
 
 /**
- * What macOpenPath will hand to the operating system, which is its own rule and not its caller's:
- * an absolute path that is already its own real path, a folder that is one, or a regular file with
- * no execute bit, no bookmark head and no alias flag, given with an application named by a bundle
- * id, or a file or folder to reveal, which Finder only selects. The endpoint's `openTarget` is the
- * narrowing and this is the floor under it.
+ * What the opener will hand to the operating system, which is its own rule and not its caller's:
+ * an absolute path that is already its own real path, a folder that is one, a file or folder to
+ * reveal, or a regular file that safeFile takes for the platform, given on macOS with an
+ * application named by a bundle id. The endpoint's `openTarget` is the narrowing and this is the
+ * floor under it.
  */
 export async function openable(
     target: OpenTarget,
-    reader: FinderInfoReader = readFinderInfo
+    reader: FinderInfoReader = readFinderInfo,
+    platform: OpenPlatform = 'darwin'
 ): Promise<boolean> {
     const path = target.path;
     if (!isAbsolute(path) || path.startsWith('-')) return false;
@@ -238,33 +285,50 @@ export async function openable(
         if (realpathSync(path) !== path) return false;
         if (target.kind === 'folder') return statSync(path).isDirectory();
         if (target.kind === 'reveal') return fileOrFolder(path);
-        return hasForm('bundle_id', target.app) && (await safeFile(path, reader));
+        if (platform === 'darwin' && !hasForm('bundle_id', target.app)) return false;
+        return await safeFile(path, reader, platform);
     } catch {
         return false;
     }
 }
 
 /**
- * The arguments `open` is run with: `-b <bundle id> <path>` for a file, `-R <path>` for a folder or
- * a reveal. `open`'s manual documents no `--` separator, so none is passed; the path is an absolute
- * real path, which starts with `/` and so is never read as an option.
+ * The command line the opener runs for a target, the program first. On macOS `-b <bundle id>
+ * <path>` for a file and `-R <path>` for a folder or a reveal; `open`'s manual documents no `--`
+ * separator, so none is passed. On Linux the path of a file or a folder, and the holding folder of
+ * a reveal. The path is an absolute real path, which starts with `/` and so is never read as an
+ * option.
  */
-export function openArgs(target: OpenTarget): string[] {
-    return target.kind === 'file' ? ['-b', target.app, target.path] : ['-R', target.path];
+export function openArgs(target: OpenTarget, platform: OpenPlatform = 'darwin'): string[] {
+    const program = openProgram(platform) ?? '';
+    if (platform === 'darwin') {
+        return target.kind === 'file'
+            ? [program, '-b', target.app, target.path]
+            : [program, '-R', target.path];
+    }
+    return [program, target.kind === 'reveal' ? dirname(target.path) : target.path];
 }
 
 /**
- * Hand one file to its application or reveal one folder, refusing what `openable` does not take.
+ * The path opener of a platform: hand one file to its program or reveal one folder, refusing what
+ * `openable` does not take, and refusing everything on a platform with no opener.
  */
-export async function macOpenPath(target: OpenTarget): Promise<void> {
-    if (!(await openable(target))) throw new Error('open refused');
-    await run(OPEN, openArgs(target));
+export function pathOpener(
+    platform: OpenPlatform | null = openPlatform(),
+    exec: ExecFile = execText
+): PathOpener {
+    return async (target: OpenTarget): Promise<void> => {
+        if (platform === null) throw new Error(NO_OPENER);
+        if (!(await openable(target, readFinderInfo, platform))) throw new Error('open refused');
+        const [program, ...args] = openArgs(target, platform);
+        await run(program, args, exec);
+    };
 }
 
 /**
- * What macOpenAddress will hand to the operating system: an `https` address and nothing else, so a
- * relative path, a `file:` or `javascript:` address and an argument `open` would read as an option
- * of its own all fall outside it.
+ * What an address opener will hand to the operating system: an `https` address and nothing else,
+ * so a relative path, a `file:` or `javascript:` address and an argument the program would read as
+ * an option of its own all fall outside it.
  */
 export function openableAddress(target: string): boolean {
     if (target.startsWith('-') || target === '') return false;
@@ -277,33 +341,33 @@ export function openableAddress(target: string): boolean {
 
 /**
  * An opener that hands one `https` address to a program as its one argument, refusing anything
- * else unopened. The program is macOS's `open` unless the machine's own file names another in
- * `open_bin`, which is how a served test run is given one that records the address instead.
+ * else unopened. The program is the platform's opener unless the machine's own file names another
+ * in `open_bin`, which is how a served test run is given one that records the address instead; a
+ * platform with no opener and no `open_bin` refuses every address.
  */
-export function addressOpener(program: string): Opener {
+export function addressOpener(program: string | null, exec: ExecFile = execText): Opener {
     return async (target: string): Promise<void> => {
+        if (program === null) throw new Error(NO_OPENER);
         if (!openableAddress(target)) throw new Error('open refused');
-        await run(program, [target]);
+        await run(program, [target], exec);
     };
 }
 
-/** Hand one `https` address to macOS, refusing anything else unopened. */
-export const macOpenAddress: Opener = addressOpener(OPEN);
-
-/** The real path a body names that `open` may be given, or the refusal to answer with. */
+/** The real path a body names that the opener may be given, or the refusal to answer with. */
 async function target(
     body: Record<string, unknown>,
     path: string,
     roots: Root[],
     apps: ProgramApps,
     reader: FinderInfoReader,
-    primary: string | null
+    primary: string | null,
+    platform: OpenPlatform
 ): Promise<OpenTarget | Response> {
     const real = resolved(body, path, roots, primary);
     if (real instanceof Response) return real;
-    // Finder only selects what it reveals, so no program is asked for and no file is run.
+    // A reveal only shows where the path is, so no program is asked for and no file is run.
     if (body.reveal === true) return { kind: 'reveal', path: real };
-    return (await openTarget(real, path, apps, reader)) ?? refuse(403, 'path', RUNS);
+    return (await openTarget(real, path, apps, reader, platform)) ?? refuse(403, 'path', RUNS);
 }
 
 /**
@@ -341,7 +405,8 @@ const openBodyShape = z.looseObject({ path: z.string().refine((path) => path.tri
 /**
  * Refuse an untrusted path, or hand its canonical file or folder to the opener. `appsFor` reads
  * `open.program_ext` of the configuration as it is now, once per request; a map that cannot be read
- * answers 500 naming the key.
+ * answers 500 naming the key. `platform` decides which files a request may name, as `openable`
+ * does; with none, every request that reaches the opener is refused by it.
  */
 export async function handleOpen(
     request: Request,
@@ -349,9 +414,10 @@ export async function handleOpen(
     text: () => Record<string, string>,
     roots: Root[],
     appsFor: () => ProgramApps,
-    opener: PathOpener = macOpenPath,
+    opener: PathOpener = pathOpener(),
     reader: FinderInfoReader = readFinderInfo,
-    primary: string | null = null
+    primary: string | null = null,
+    platform: OpenPlatform | null = openPlatform()
 ): Promise<Response> {
     const read = await tokenedBody(request, token, { text });
     if (read instanceof Response) return read;
@@ -369,7 +435,7 @@ export async function handleOpen(
             { status: 500 }
         );
     }
-    const found = await target(body, body.path, roots, apps, reader, primary);
+    const found = await target(body, body.path, roots, apps, reader, primary, platform ?? 'darwin');
     if (found instanceof Response) return found;
     try {
         await opener(found);

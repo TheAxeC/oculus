@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, view partial of views/boards/focus/Focus.svelte. The band under the lanes: the
+    // Layer 3, view partial of views/boards/focus/Focus.svelte. The band above the lanes: the
     // durable work that is not a project. Three columns, the grants stacked by the stage their
     // status names, the job applications still out for an answer, and this year's teaching.
     //

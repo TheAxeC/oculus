@@ -36,9 +36,9 @@ stale_lag_days: 1
 
 # The Focus refresh strip prompts for live feeds older than these numbers of days. A feed not listed here is never prompted for.
 refresh_stale_days:
-  litwatch: 14  # /research-cockpit litwatch (meta.last_run in literature-radar.yml)
-  inbox: 2  # /research-cockpit inbox (the triage notes under `mail_dir`)
-  scout: 7  # /research-cockpit scout (newest meta.log date in position-leads.yml)
+  litwatch: 14  # the Lit Watch update task (meta.last_run in literature-radar.yml)
+  inbox: 2  # the Inbox update task (the triage notes under `mail_dir`)
+  scout: 7  # the Scout update task (newest meta.log date in position-leads.yml)
 
 
 # Look-ahead windows for each deadline class on the Focus strip.
@@ -94,14 +94,6 @@ calendar:
 mail:
   poll_min: 10
   per_signal: 25
-
-
-# === Hook push notifications ================================================
-# Hook event names that trigger macOS notifications and their per-session repeat interval.
-notify:
-  enabled: true
-  events: [permission_prompt, idle_prompt, stop]
-  quiet_seconds: 3
 
 
 # === The source editor ======================================================
@@ -179,8 +171,8 @@ latex:
 # The linters oculus runs on a source tab's file when it is saved and when a tab of a file with no unsaved text opens: ChkTeX for .tex and .latex files, Ruff for .py and .pyi, ESLint for TypeScript, JavaScript and Svelte files under an eslint.config.* file, ShellCheck for .sh, .bash and .slurm, and the writing rules of the hub for Markdown and YAML files and for the comments of code files. The writing rules run no program: they mark each character the hub bans (em and en dashes, curly quotes, the ellipsis, arrows, the non-breaking space) and each Markdown paragraph broken across lines. Their findings are marks in the editor and rows of the Problems view. Each switch is true or false.
 # chktex_path, ruff_path and shellcheck_path name the program: an absolute path or one that starts with ~; empty finds it on the PATH oculus was started with. A named path that cannot be used is reported as not found, and the PATH is not tried in its place. ESLint is the one the repository holds, and only after its eslint.config.* files are approved in the palette (:eslint-config).
 # chktex_args are the arguments ChkTeX runs with, LaTeX Workshop's by default; oculus adds the output format, -I0 and a .chktexrc found beside the file or in the root.
-# writing_skip lists the globs of the files the writing rules leave alone, matched against the path from the file's root: skills machinery, vendored and third-party trees, received text, generated files and the plan ledger's two files. A file named glyphs.yml is skipped whatever the list holds.
-# writing_glyphs lists the globs of the files that draw arrows as icons, where the writing rules mark every banned character but arrows.
+# writing_skip lists the globs of the files the writing rules leave alone, matched against the path from the file's root, such as vendored trees, received text and generated files. A file named glyphs.yml is skipped whatever the list holds. Empty here: the files are a hub's own, so a hub sets the list in its .oculus/config.yml.
+# writing_glyphs lists the globs of the files that draw arrows as icons, where the writing rules mark every banned character but arrows. Empty here, and set by a hub like writing_skip.
 lint:
   chktex: true
   ruff: true
@@ -191,38 +183,8 @@ lint:
   ruff_path: ''
   shellcheck_path: ''
   chktex_args: [-wall, -n22, -n30, -e16, -q]
-  writing_skip:
-    - '.agents/**'
-    - '.claude/**'
-    - '**/vendor/**'
-    - '**/third_party/**'
-    - '**/bttrlib/**'
-    - '**/notes/thesis/**'
-    - '**/manuscript/**/*.tex'
-    - '**/manuscript/**/*.bib'
-    - '**/*_AUTO.md'
-    - '**/STATUS.md'
-    - 'feeds/literature-radar.yml'
-    - 'feeds/position-leads.yml'
-    - 'tools/oculus/.scratch/migration/plan.md'
-    - 'tools/oculus/.scratch/migration/agents/guarded.md'
-  writing_glyphs:
-    - 'tools/cockpit/data/**'
-    - 'tools/cockpit/dummy/data/**'
-    - 'tools/cockpit/templates/**'
-    - 'tools/cockpit/assets/**'
-    - 'tools/cockpit/README.md'
-    - 'tools/cockpit/DESIGN.md'
-    - 'tools/cockpit/ARCHITECTURE.md'
-    - 'tools/cockpit/CLAUDE.md'
-    - 'tools/present/assets/**'
-    - 'registries/*.yml'
-    - 'funding/funding.yml'
-    - 'network/*.yml'
-    - 'applications/applications.yml'
-    - 'education/education.yml'
-    - 'tasks/tasks.yml'
-    - '**/project.yml'
+  writing_skip: []
+  writing_glyphs: []
 
 
 # === Writes =================================================================
@@ -272,7 +234,7 @@ literature:
   cache_min: 30
 
 # === Open in its program ====================================================
-# Each extension a file may carry to be handed to a program on this machine, with the bundle id of the one application it opens in. A file of any other extension, and a listed file with an execute bit or marked as a Finder alias, is refused; a folder is shown in Finder rather than opened. Read again at every request.
+# Each extension a file may carry to be handed to a program on this machine, with the bundle id of the one application it opens in on macOS; on Linux the desktop's own program for the type opens it and the bundle id is not used. A file of any other extension, and a listed file with an execute bit, marked as a Finder alias on macOS or ending .desktop on Linux, is refused; a folder is shown in Finder on macOS and opened in the file manager on Linux. Read again at every request.
 open:
   program_ext:
     ".docx": com.microsoft.Word

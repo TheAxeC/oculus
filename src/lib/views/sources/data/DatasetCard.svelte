@@ -87,6 +87,9 @@
                 deleting = true;
             }
         );
+        // The Recover control runs the `recover_command` of the dataset's own hub, so a dataset
+        // whose hub sets none has no such control.
+        if (dataset.recover !== true) return record;
         return record.concat({
             id: 'recover',
             label: t('data.recover'),

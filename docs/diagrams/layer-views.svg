@@ -127,7 +127,7 @@
 <g id="node19" class="node">
 <title>folder views/boards to layer state</title>
 <polygon fill="none" stroke="none" points="182.88,-1496.88 165.12,-1496.88 165.12,-1484.4 182.88,-1484.4 182.88,-1496.88"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="174" y="-1488.24" font-family="Helvetica,Arial,sans-serif" font-size="8.00">105</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="174" y="-1488.24" font-family="Helvetica,Arial,sans-serif" font-size="8.00">107</text>
 </g>
 <!-- folder views/boards&#45;&gt;folder views/boards to layer state -->
 <g id="edge26" class="edge">
@@ -138,7 +138,7 @@
 <g id="node20" class="node">
 <title>folder views/boards to layer ui</title>
 <polygon fill="none" stroke="none" points="198.88,-1439.28 185.12,-1439.28 185.12,-1426.8 198.88,-1426.8 198.88,-1439.28"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="192" y="-1430.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">88</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="192" y="-1430.64" font-family="Helvetica,Arial,sans-serif" font-size="8.00">85</text>
 </g>
 <!-- folder views/boards&#45;&gt;folder views/boards to layer ui -->
 <g id="edge28" class="edge">
@@ -444,7 +444,7 @@
 <g id="node44" class="node">
 <title>folder views/shared to layer state</title>
 <polygon fill="none" stroke="none" points="112.88,-86.08 95.12,-86.08 95.12,-73.6 112.88,-73.6 112.88,-86.08"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="104" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">312</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="104" y="-77.44" font-family="Helvetica,Arial,sans-serif" font-size="8.00">315</text>
 </g>
 <!-- folder views/shared&#45;&gt;folder views/shared to layer state -->
 <g id="edge76" class="edge">
@@ -455,7 +455,7 @@
 <g id="node45" class="node">
 <title>folder views/shared to layer ui</title>
 <polygon fill="none" stroke="none" points="136.88,-28.48 119.12,-28.48 119.12,-16 136.88,-16 136.88,-28.48"/>
-<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="128" y="-19.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">166</text>
+<text fill="currentColor" xml:space="preserve" text-anchor="middle" x="128" y="-19.84" font-family="Helvetica,Arial,sans-serif" font-size="8.00">169</text>
 </g>
 <!-- folder views/shared&#45;&gt;folder views/shared to layer ui -->
 <g id="edge78" class="edge">

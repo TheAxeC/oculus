@@ -1,4 +1,10 @@
-import { collectionKeys, glyphCatalog, textCatalog, vocabCatalog } from '$lib/data/sources/config';
+import {
+    glyphCatalog,
+    textCatalog,
+    vocabCatalog,
+    workspaceCollectionKeys
+} from '$lib/data/sources/config';
+import { platformText } from '$lib/data/places/platform';
 import { payloadOf } from '$lib/server/machine/apps/read/held';
 import { configSeed } from '$lib/server/root/config-seed';
 import type { PageServerLoad } from './$types';
@@ -36,7 +42,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = ({ locals }) => {
     const read = locals.config();
     const { config } = read;
-    const text = textCatalog(config);
+    const text = platformText(textCatalog(config));
     const icons = locals.server.icons.set;
     const hubs = locals.server.configCache.vocab();
     return {
@@ -45,7 +51,7 @@ export const load: PageServerLoad = ({ locals }) => {
         icons,
         vocab: vocabCatalog(config),
         hubs,
-        collections: collectionKeys(config),
+        collections: workspaceCollectionKeys(config, hubs),
         seed: configSeed(locals.server.hub, read, {
             hubs,
             text,

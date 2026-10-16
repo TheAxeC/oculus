@@ -30,7 +30,8 @@
     // reads, dragging.svelte.ts the drags and drops (the files and folders moved, and the movable
     // roots reordered, which Alt+Up and Alt+Down do through keyed.ts as well), asking.svelte.ts the
     // questions and the file dialog they wait on, fixing.svelte.ts the folder Fix All of the
-    // writing rules that ../WritingFixDialog.svelte draws, view-access.ts the tab's state. A row on
+    // writing rules that ../WritingFixDialog.svelte draws, making.svelte.ts the hub and project
+    // controls whose dialog MakeHubDialog.svelte draws, view-access.ts the tab's state. A row on
     // the clipboard as Cut is drawn faded, and a row marked `editing` by treeRows() is drawn as an
     // input (tree/NameInput.svelte) in place of its name.
     //
@@ -56,6 +57,7 @@
     import NameInput from './NameInput.svelte';
     import Questions from '../Questions.svelte';
     import WritingFixDialog from '../WritingFixDialog.svelte';
+    import MakeHubDialog from './MakeHubDialog.svelte';
     import { menuHints } from './menu/row-menu';
     import type { NamingHooks } from './menu/row-ops';
     import { createAsking } from './control/asking.svelte';
@@ -228,6 +230,7 @@
     });
     const naming = picks.naming;
     const fix = $derived(picks.fixing.view());
+    const make = $derived(picks.making.view());
 
     const keyRows = $derived.by(() => {
         const keyed = treeKeyRows(rows, filtering);
@@ -310,6 +313,15 @@
         ontick={picks.fixing.tick}
         onconfirm={() => void picks.fixing.confirm()}
         oncancel={picks.fixing.cancel}
+    />
+{/if}
+
+{#if make !== null}
+    <MakeHubDialog
+        view={make}
+        ontick={picks.making.tick}
+        onconfirm={() => void picks.making.confirm()}
+        oncancel={picks.making.cancel}
     />
 {/if}
 

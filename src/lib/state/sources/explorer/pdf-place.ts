@@ -7,6 +7,9 @@
 // id equals, holds the last places of the last 50 files read, newest first, so a tab opened for a
 // file starts where the file was last read.
 //
+// The tab's record also holds, under `asked_page`, a page an app's `open` asked the PDF to go to,
+// until the file view turns to it.
+//
 // Both records come out of `localStorage`, so every read here checks its value: a place that is
 // not an object or holds a number that is no number reads as null, a zoom or a mode that is not
 // one of the viewer's reads as the viewer's default, and a bad entry of the list is dropped.
@@ -128,4 +131,24 @@ export function withTabPlace(
     place: PdfPlace
 ): Record<string, unknown> {
     return { ...record, pdf: place };
+}
+
+/** The key of a tab's ui record that holds a page asked of its PDF and not yet turned to. */
+const ASKED = 'asked_page';
+
+/** The page asked of a tab's PDF, from its ui record read as a map, or null. */
+export function readAskedPage(record: Readonly<Record<string, unknown>>): number | null {
+    const page = record[ASKED];
+    return typeof page === 'number' && Number.isSafeInteger(page) && page >= 1 ? page : null;
+}
+
+/**
+ * A tab's ui record, held as anything, with a page asked of its PDF set, or with null taken out:
+ * an app's `open` asks it, and the file view turns to it once and takes it out.
+ */
+export function withAskedPage(held: unknown, page: number | null): Record<string, unknown> {
+    const record: Record<string, unknown> =
+        typeof held === 'object' && held !== null && !Array.isArray(held) ? { ...held } : {};
+    const { [ASKED]: _asked, ...rest } = record;
+    return page === null ? rest : { ...rest, [ASKED]: page };
 }

@@ -8,17 +8,20 @@
 // runs. The first part (`installLacks`) is asked before any package is loaded: the Node version and
 // the installed packages. Its sentences are literals here, since the text catalog is read through
 // the `yaml` package and cannot be read while the packages may be missing. For the same reason this
-// file imports `node:` modules, server/core/program.ts and data/places/engine-dir.ts only (and the
+// file imports `node:` modules, server/core/program.ts, data/places/engine-dir.ts and
+// data/places/platform.ts only (and the
 // type of the catalog's reader, which is erased); the config reader is loaded with `import()` after
 // the first part passes. The second part (`machineLacks`) is asked after the packages load, with
 // the catalog's sentences: the programs oculus runs by name.
 //
 // A lack is required (the Node version, the packages: oculus cannot run without it) or optional
-// (git, tmux, perl and the Claude CLI: oculus runs and the parts that need the program do not
-// work). The packages are compared with `package-lock.json` through the hidden lockfile npm writes
-// at `npm ci` and `npm install` (`node_modules/.package-lock.json`): every entry of the lockfile
-// other than the root and those marked optional must be there at the same version. Another package
-// manager writes no hidden lockfile and so reads as not installed, with `npm ci` as the fix.
+// (git, tmux, perl and the Claude CLI, and on Linux the folder panel `zenity` and the opener,
+// `xdg-open` of xdg-utils or `wslview` of wslu under WSL2: oculus runs and the parts that need the
+// program do not work). The packages are compared with `package-lock.json` through the hidden
+// lockfile npm writes at `npm ci` and `npm install` (`node_modules/.package-lock.json`): every
+// entry of the lockfile other than the root and those marked optional must be there at the same
+// version. Another package manager writes no hidden lockfile and so reads as not installed, with
+// `npm ci` as the fix.
 
 import { spawnSync } from 'node:child_process';
 import { readFileSync, realpathSync } from 'node:fs';
@@ -26,6 +29,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { programPath } from '../../../core/program.ts';
 import { engineDir } from '../../../../data/places/engine-dir.ts';
+import { openProgram } from '../../../../data/places/platform.ts';
 import type { Words } from '../words.ts';
 
 /**
@@ -41,9 +45,15 @@ const NODE_NEXT_MAJOR = 26;
 /** The git the Command Line Tools stub installs on every Mac, which runs only with the tools. */
 const GIT_STUB = '/usr/bin/git';
 
+/** The package of a Linux distribution that holds each opener program. */
+const OPENER_PACKAGES: Record<string, string> = { 'xdg-open': 'xdg-utils', wslview: 'wslu' };
+
 export type Lack = {
-    /** What is missing: `node`, `packages`, or the program's name for the four programs. */
-    kind: 'node' | 'packages' | 'git' | 'tmux' | 'perl' | 'claude';
+    /**
+     * What is missing: `node`, `packages`, the program's name for the four programs and `zenity`,
+     * or `opener` for the program that opens files and addresses.
+     */
+    kind: 'node' | 'packages' | 'git' | 'tmux' | 'perl' | 'claude' | 'zenity' | 'opener';
     /** Whether oculus cannot run without it. */
     required: boolean;
     /** What is missing, what of oculus needs it and its fix, in one text. */
@@ -63,6 +73,8 @@ type MachineFacts = {
     env: NodeJS.ProcessEnv;
     /** How `xcode-select -p` is run on macOS. */
     run?: Run;
+    /** The program that opens files and addresses on Linux, `xdg-open` or under WSL2 `wslview`. */
+    opener?: string;
 };
 
 /** One entry of a lockfile's `packages` map, of which only these two keys are read. */
@@ -131,10 +143,39 @@ const runProgram: Run = (command, args) =>
     spawnSync(command, args, { stdio: 'ignore' }).status ?? 1;
 
 /**
- * The second part: the four programs. A workspace with no folder, or with no hub among them, is no
- * lack. A program is looked up with `programPath` in the environment given, which is the one the
- * server runs with, so a packaged app is asked in its login shell's environment. On macOS a git
- * found at the stub's path counts only when `xcode-select -p` succeeds.
+ * The two programs a Linux desktop may lack that macOS always has: the folder panel and the opener.
+ */
+function linuxLacks(facts: MachineFacts, t: Words): Lack[] {
+    const lacks: Lack[] = [];
+    if (programPath('zenity', facts.env) === null) {
+        const sentence = t(
+            'server.start.lack_program',
+            'zenity',
+            t('server.start.needs_zenity'),
+            t('server.start.fix_install', 'zenity')
+        );
+        lacks.push({ kind: 'zenity', required: false, sentence });
+    }
+    const opener = facts.opener ?? 'xdg-open';
+    if (programPath(opener, facts.env) === null) {
+        const fix = t('server.start.fix_install', OPENER_PACKAGES[opener] ?? opener);
+        const sentence = t(
+            'server.start.lack_program',
+            opener,
+            t('server.start.needs_opener'),
+            fix
+        );
+        lacks.push({ kind: 'opener', required: false, sentence });
+    }
+    return lacks;
+}
+
+/**
+ * The second part: the four programs, and on Linux the folder panel and the opener. A workspace
+ * with no folder, or with no hub among them, is no lack. A program is looked up with `programPath`
+ * in the environment given, which is the one the server runs with, so a packaged app is asked in
+ * its login shell's environment. On macOS a git found at the stub's path counts only when
+ * `xcode-select -p` succeeds.
  */
 export function machineLacks(facts: MachineFacts, t: Words): Lack[] {
     const { claudeBin, platform, env } = facts;
@@ -175,7 +216,7 @@ export function machineLacks(facts: MachineFacts, t: Words): Lack[] {
         );
         lacks.push({ kind: 'claude', required: false, sentence });
     }
-    return lacks;
+    return platform === 'linux' ? [...lacks, ...linuxLacks(facts, t)] : lacks;
 }
 
 /**
@@ -193,7 +234,8 @@ export async function machineFacts(
     const { defaultStateFolder } = await import('../../../files/workspace/state.ts');
     const open = openWorkspace(stateFolder ?? defaultStateFolder());
     const { claudeBin } = readMachineWithDefault(defaultPort)(open.hubs, open.primary).config;
-    return { claudeBin, platform: process.platform, env };
+    const opener = openProgram();
+    return { claudeBin, platform: process.platform, env, ...(opener === null ? {} : { opener }) };
 }
 
 /** Hand every lack to `write` as a line, and answer whether one of them is required. */

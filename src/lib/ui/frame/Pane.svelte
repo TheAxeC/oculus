@@ -7,9 +7,9 @@
     // The header is VS Code's pane header: 22 px, one line, the title cut with an
     // ellipsis, and the actions in 20 px boxes that are always drawn. A view whose title is its
     // file's path, which the pane's breadcrumb draws, asks for `titled: false` and has no title row
-    // at all, or only its actions. It holds icon actions only,
-    // in a Toolbar that asks for `overflow`; a search box, a select, a segment, a toggle, a chip
-    // and a text button go in the bar, which wraps and does not scroll with the body.
+    // at all, or only its actions. It holds icon actions only, in a Toolbar that asks for
+    // `overflow`; a search box, a select, a segment, a toggle, a chip and a text button go in the
+    // bar, which wraps, does not scroll with the body and scrolls on its own past half the box.
 
     import type { Snippet } from 'svelte';
 
@@ -134,13 +134,18 @@
     }
 
     /* The strip for the view's controls: 6px above and below, VS Code's view bar padding, wrapping.
-       It draws nothing when the view's snippet draws nothing. */
+       It draws nothing when the view's snippet draws nothing. It takes at most half the box and
+       scrolls past that, so a bar of many filters never leaves the body too little room to scroll
+       to its last entry. */
     .viewbar {
         display: flex;
         flex: 0 0 auto;
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
+        max-height: 50%;
+        overflow-y: auto;
+        box-sizing: border-box;
         padding: 6px 12px;
         border-bottom: 1px solid var(--line);
     }

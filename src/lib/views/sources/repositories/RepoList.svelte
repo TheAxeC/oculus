@@ -21,10 +21,10 @@
     // their hover words, so a reader sees why a root has nothing to show before choosing it.
     //
     // A row opens a right-click menu (menus/repo-menu.ts) of a shell in the repository and Reveal
-    // in Finder (for a folder that is there), then Close Repository and, while more than one is
-    // listed, Close Other Repositories. The view answers them: a closed repository leaves this list
-    // for the tab and comes back through Reopen Closed Repositories. A readable row draws the same
-    // items under its `...` control.
+    // in Finder, Open Containing Folder off macOS (for a folder that is there), then Close
+    // Repository and, while more than one is listed, Close Other Repositories. The view answers
+    // them: a closed repository leaves this list for the tab and comes back through Reopen Closed
+    // Repositories. A readable row draws the same items under its `...` control.
     //
     // The source controls of the apps' hosts follow the repositories, one row each
     // (apps/AppSourceItem.svelte); pressing one shows it in place of a repository.
@@ -70,7 +70,7 @@
         ask: (message: string, detail: string, act: () => void) => void;
         /** A shell started in a repository's folder. */
         onterminal: (root: string) => void;
-        /** A repository's folder revealed in Finder. */
+        /** A repository's folder revealed in Finder, or in the file manager off macOS. */
         onreveal: (root: string) => void;
         /** A repository closed in this tab. */
         onclose: (root: string) => void;

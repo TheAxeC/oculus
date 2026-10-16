@@ -1,10 +1,10 @@
 // Layer 3, view partial. The right-click menus of a repository row and of a worktree row of the
 // Repositories view, as VS Code's Source Control builds them: a shell in the folder, Reveal in
-// Finder, Close Repository and Close Other Repositories for a repository; a shell, Claude and Codex
-// started there, Open Worktree, Open Worktree in New Window and Delete Worktree for a worktree.
-// Each pick runs what the view already has: the Source Control store's shell, the open endpoint's
-// reveal, the repositories the view draws, the workspace's add-root write, and the removal of a
-// worktree behind its question.
+// Finder (Open Containing Folder off macOS), Close Repository and Close Other Repositories for a
+// repository; a shell, Claude and Codex started there, Open Worktree, Open Worktree in New Window
+// and Delete Worktree for a worktree. Each pick runs what the view already has: the Source Control
+// store's shell, the open endpoint's reveal, the repositories the view draws, the workspace's
+// add-root write, and the removal of a worktree behind its question.
 //
 // A repository whose folder is gone offers no shell and no reveal, since they need the folder, but
 // it can still be closed. Close Other Repositories is offered only while more than one repository

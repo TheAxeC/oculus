@@ -3,16 +3,17 @@
     // framing changes independently of its documents, links, sessions and expanded details.
     //
     // The card's controls are views/shared/card/CardActions.svelte, shown under the pointer and
-    // kept on one line; the project's folder is offered three times among them, shown in Finder
-    // through the host, selected in the Files view of this page, and opened as a workbench (a page
-    // that belongs to the folder, with the project view in its documents pane). A project whose
-    // folder is a repository also has its project commands, drawn below the chips by the commands
-    // bar the Repositories view uses (views/shared/sessions/CommandBar.svelte): five buttons, an
-    // overflow menu for the rest, the control that adds a command and the mark of a file that was
-    // not read. The card's ELI5 is views/shared/card/Clamp.svelte wherever the caller keeps an open
-    // state for it; its subtasks block is drawn only for a project that has subtasks, adding the
-    // first being one of the controls. The card is a positioned box whose content may reach past
-    // its edge, so the More menu of its controls is not cut off at the foot of a short card.
+    // kept on one line; the project's folder is offered three times among them, shown in the file
+    // manager through the host, selected in the Files view of this page, and opened as a workbench
+    // (a page that belongs to the folder, with the project view in its documents pane). A project
+    // whose folder is a repository also has its project commands, drawn below the chips by the
+    // commands bar the Repositories view uses (views/shared/sessions/CommandBar.svelte): five
+    // buttons, an overflow menu for the rest, the control that adds a command and the mark of a
+    // file that was not read. The card's ELI5 is views/shared/card/Clamp.svelte wherever the caller
+    // keeps an open state for it; its subtasks block is drawn only for a project that has subtasks,
+    // adding the first being one of the controls. The card is a positioned box whose content may
+    // reach past its edge, so the More menu of its controls is not cut off at the foot of a short
+    // card.
     //
     // Every project is drawn by this card, whatever its tier: its `links:` are listed under the
     // next action, and its folder is the one `placeOf` names, a repository's own Files root for a

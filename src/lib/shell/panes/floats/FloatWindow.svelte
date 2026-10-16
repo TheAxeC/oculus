@@ -6,9 +6,10 @@
     // in its middle and no dock toggles, and its Back and Forward walk the history of this window
     // alone. The float is a PaneView of its one pane with the float's id as its page, as FloatLayer
     // draws it, so the tab strip, the menus, the keyboard and the drops reach it as they reach any
-    // pane. The float's window is closed when the float stops being one placed in a window: it was
-    // returned to a page, docked, freed or closed elsewhere. In the app the host closes it; a
-    // browser tab opened for the float closes itself.
+    // pane. A browser tab opened for the float draws no strip, as no page in a browser does, and
+    // its float fills the tab. The float's window is closed when the float stops being one placed
+    // in a window: it was returned to a page, docked, freed or closed elsewhere. In the app the
+    // host closes it; a browser tab opened for the float closes itself.
 
     import { useState } from '$lib/state/client/use';
     import TitleBar from '$lib/shell/titlebar/TitleBar.svelte';
@@ -48,7 +49,9 @@
 
 {#if float !== undefined}
     <div class="window" data-float-window={id}>
-        <TitleBar {title} {onpalette} />
+        {#if client.desktop !== undefined}
+            <TitleBar {title} {onpalette} />
+        {/if}
         <div class="fill">
             <PaneView node={float.pane} path={[]} page={float.id} {onpalette} />
         </div>

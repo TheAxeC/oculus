@@ -25,6 +25,11 @@ collections:
   - { key: radar,          file: "feeds/literature-radar.yml" }
 
 
+# The hub's documents, each a tab of the page its group names.
+docs:
+  - { label: "About the demo hub", path: README.md, group: help }
+
+
 # `resource` is the key of a cluster entry of registries/resources.yml, whose `host` is the ssh alias the poller uses.
 slurm:
   resource: utwente

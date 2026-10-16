@@ -1,6 +1,6 @@
 # Oculus
 
-Oculus shows the research hub's YAML and Markdown files as boards, lists and documents, in a browser tab or in its own app. It writes only where a control says so: back into the file a value came from, and files and folders you make from the Files view. `README.md` says how to run and check it; the [Apps guide](docs/apps.md) says how to build an app; the [templates](docs/templates.md) give every YAML file oculus reads.
+Oculus shows the research hub's YAML and Markdown files as boards, lists and documents, in a browser tab or in its own app. It writes only where a control says so: back into the file a value came from, and files and folders you make from the Files view. `README.md` says how to run and check it; the [Apps guide](docs/apps.md) says how to build an app; the [templates](docs/templates.md) give every YAML file oculus reads and the file of each update task.
 
 ## Contents
 
@@ -10,21 +10,30 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 
 ## The window
 
-- Oculus runs in a browser tab, or in its own app (`oculus.app`, or Electron from the checkout).
+- Oculus runs in a browser tab, or in its own app (`oculus.app`, the Linux folder of a release, or Electron from the checkout).
 - The app starts the server and stops it when it quits; tmux terminals keep running. Started again, it opens its windows where they were.
 - When the server ends on its own, a dialog says why and offers Restart. Open windows keep their pages, unsaved text and terminals, and reconnect.
 - The app adds: windows that remember their place, floats that become windows, a native folder panel, a find bar, spelling suggestions, and the keys marked "in the app" under [The keys](#the-keys).
 - In the app a link to another site opens in the default browser, and the presenter screen opens the audience window on another display when there is one.
 
+### On Linux and WSL2
+
+- Oculus runs on Linux, and on Windows through WSL2, in a browser tab or as the app: `npm run app` from the checkout, or the Linux archive of a release, unpacked, started by its `oculus` program.
+- The folder panel of Add Folder to Workspace and Open Folder is `zenity`. Without it the panel says that no folder panel is installed; the rest of oculus works.
+- Open in Program, Open Folder and a link to another site go through `xdg-open`, and under WSL2 through `wslview`, so the program the desktop names for the file opens it. Reveal in Finder is Open Containing Folder there, as in VS Code, and opens the folder that holds the file. A `.desktop` file and a file with its execute bit set are refused, since opening one runs it.
+- At start a missing `zenity` or opener is named, with the package that holds it (`zenity`, `xdg-utils`, `wslu`), in the terminal or in the app's start sheet; oculus starts all the same.
+- A plain terminal runs the shell `SHELL` names, else `/bin/bash`.
+- An app's secrets live in the keyring, which on Linux is the desktop's Secret Service. A machine with none says that the keyring is not available and stores nothing.
+
 ### The title bar
 
-- A strip runs across the top of the window, in the app and in a browser. Left: Go Back and Go Forward. Middle: the Command Center, the open workspace's name (with its hub's name in front when the two differ); a press opens the palette, as Cmd+K does. Right: the three dock toggles.
+- A strip runs across the top of the window in the app. A page in a browser draws none: there Go Back, Go Forward, the dock toggles and the palette are reached through their keys and the palette, and every pane keeps its own Split Right and `...`. Left: Go Back and Go Forward. Middle: the Command Center, the open workspace's name (with its hub's name in front when the two differ); a press opens the palette, as Cmd+K does. Right: the three dock toggles.
 - The Command Center is the strip's button that opens the palette. The Focus board's "Command center" is a different thing: the board's panel of what wants attention.
 - Go Back and Go Forward walk the tabs you made active, on any page, pane or float, and in a source tab the places you jumped to (Go to Definition, a search result, a problem) and caret moves of more than 10 lines. Back or Forward to a closed tab opens it again in the page, pane or float it was closed from, at its place among the tabs there, while that page and pane are still there; otherwise it opens in the pane you are in on the page on screen. A step whose file is gone is skipped. Each window keeps its own last fifty steps until it reloads, and a button is disabled at either end. The keys are under [The keys](#the-keys); the palette has `:go-back` and `:go-forward`.
 - Toggle Left Dock, Toggle Bottom Dock and Toggle Right Dock hide or show the float docked at that edge. A toggle is drawn pressed while its float shows and disabled when no float is docked there. Docking a float at a hidden edge, by drag or from a menu, or opening a view in its float, shows the edge again. Which edges are hidden is saved with the layout. The palette has `:toggle-left-dock`, `:toggle-bottom-dock` and `:toggle-right-dock`.
-- With `show_tabs: none` and `editor_actions: strip` in `appearance.yml`, the active pane's Split Right and `...` stand in the strip, before the toggles, and no pane draws them in its own head; the strip's right-click menu names that place Title Bar. With a tab bar drawn they stay in the pane's tab bar.
+- With `show_tabs: none` and `editor_actions: strip` in `appearance.yml`, the active pane's Split Right and `...` stand in the strip, before the toggles, and no pane draws them in its own head; the strip's right-click menu names that place Title Bar. With a tab bar drawn they stay in the pane's tab bar, and in a browser, which has no strip, each pane draws them in a title row of its own.
 - In the app the window has no title bar of the system's: the strip moves the window, the window buttons sit at its left on macOS and over its right end elsewhere, where they take the strip's colours of the theme on screen (no room is kept for them in full screen, where macOS hides them), and a double press on its empty part does what macOS's "Double-click a window's title bar to" setting says: zoom, minimise or nothing. The find bar opens under the strip.
-- A float's window has the same strip, with the name of the float's tab in the middle and no toggles; its Back and Forward walk that window's own steps.
+- A float's window in the app has the same strip, with the name of the float's tab in the middle and no toggles; its Back and Forward walk that window's own steps. A browser tab opened for a float draws no strip.
 
 ### The rail
 
@@ -79,7 +88,8 @@ Oculus shows the research hub's YAML and Markdown files as boards, lists and doc
 
 ### The update tray and schedules
 
-- Update, at the foot of the rail, opens the tray: the schedules of `.oculus/schedules.yml` and the update tasks (Lit Watch, Scout, LinkedIn, Inbox). A task runs the `/research-cockpit` skill as a Claude session in a terminal. Chat starts a Claude session over the portfolio.
+- Update, at the foot of the rail, opens the tray: the schedules of `.oculus/schedules.yml` and the update tasks (Lit Watch, Scout, LinkedIn, Inbox). A task is a file of the primary hub, `.oculus/tasks/litwatch.md`, `scout.md`, `linkedin.md` or `inbox.md`, and runs as a Claude session in a terminal that is asked to follow that file step by step. The tray offers only the tasks whose file the hub holds, and says so in one line when it holds none; [templates](docs/templates.md) has a template of each file. Chat starts a Claude session over the portfolio.
+- A schedule or a request that names a task whose file the primary hub lacks is refused and starts nothing, and the Focus board's refresh lines name only the tasks that have a file.
 - A schedule runs a task, a saved command or a prompt on a cron pattern, in local time. The dialog shows the next three runs before it saves.
 - An entry is `name`, `runs` (`{ task: litwatch }`, `{ command: build, folder: ... }` or `{ prompt: "...", folder: ... }`), `when`, and optional `paused` and `unattended`. Without `when` it runs only from Run now. The template is in [templates](docs/templates.md).
 - You may edit the file by hand; the dialog, Pause and Resume change only their own keys and keep your comments.
@@ -210,7 +220,7 @@ Off macOS, Cmd is Ctrl.
 | `present` | Present | A deck, with overview, full screen, presenter screen and PDF export. |
 | `radar` | Lit Watch | The literature radar. |
 | `literature-search` | Literature search | One query to OpenAlex, Semantic Scholar, Crossref, PubMed, Europe PMC and arXiv, and Web of Science and Scopus with keys. |
-| `literature` | Literature | The papers kept, from `registries/literature.yml`. |
+| `literature` | Literature | The papers kept, from the file of the `literature` collection. |
 | `leads` | Position Leads | Position leads. |
 | `inbox` | Inbox | Your mailboxes, with each thread's wish and a drafted answer. |
 | `linkedin` | LinkedIn | Posts and post ideas. |
@@ -253,11 +263,12 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 
 ### Notes on single views
 
-- **Focus.** A project sits on the lane its `focus:` names. The ideas backlog holds `holding` projects and ideas on no lane. Deadlines, due follow-ups and open subtasks are lines of the ticker; a dated deadline stays while it lies inside `deadline_horizon_days` and until the project has a chip marked `deadline_met` (`submitted`). A task line has an `agent` button that opens the composer with the task. The career panel's Edit opens an editor over the career file.
+- **Focus.** One page, top to bottom: the career banner, the command center, the tasks, the quick add, the Awaiting box, the Funding | positions | teaching band, the lanes and the ideas. A project sits on the lane its `focus:` names. The ideas backlog holds `holding` projects and ideas on no lane. An active project of the Projects or Personal board with no `focus:` is named in the command center's Needs attention group, with a link that opens it. Deadlines, due follow-ups and open subtasks are lines of the ticker; a dated deadline stays while it lies inside `deadline_horizon_days` and until the project has a chip marked `deadline_met` (`submitted`). A task line has an `agent` button that opens the composer with the task. The Awaiting box has one row per kind that has something (Waiting on, Under review, Applications, Grants, Host outreach, Blocked), and a name waited on more than once carries its count, as in "BSPC (2)". The career banner is folded to one line, the career file's title, its next milestone and the hosts in flight; unfolded, it shows the whole career panel, whose Edit opens an editor over the career file. A hub with no career file has no banner.
 - **Projects.** `+ new idea` asks for an id, title, short handle, domain, description and folder (from `new_project_dir`, inside a `scan:` folder), and writes `<folder>/<id>/project.yml` with a README. An opened card's file box lists the files of the extensions in `file_index.ext`.
 - **Personal and Software.** A personal or software project has the same card as any project. A repository is a project once it is a folder of the workspace holding `.oculus/project.yml`. When the manifest's `repository.url` is not cloned anywhere, the card offers Clone.
 - **Deposit.** Every project has one. It keeps a mirror clone under `~/.oculus/deposits`, synced from the project's `code/`, with sync, commit, push, snapshot, branches, Fetch, and the diffs against `origin/main`.
 - **Map.** Press a node to fix it, drag to move it; re-tune lays the map out again.
+- **Data.** A dataset has a Recover control when its hub's `.oculus/config.yml` sets `recover_command`, a command holding `{key}`: Recover runs it in a terminal in that hub's folder, with `{key}` replaced by the dataset's key as one shell word. With no hub setting it, no dataset has the control and the intro says so; a command without `{key}` is a finding and gives no control.
 - **Present.** A deck is a folder with a `present.yml` and Markdown slides (several per file, split by `---`). The deck menu opens the portfolio deck (`portfolio_deck`), a project's `present/` deck, or one opened from Files. Right-click a slide to edit, add, duplicate or delete it; History undoes each. A dropped image is copied into the deck. Export to PDF writes `<name>.pdf` in the deck's folder (in the app; the print dialog in a browser). Notes come from the slide's `notes:` key.
 - **Literature search.** Sends the query only to the sources that are on. Results with one DOI, PubMed id or arXiv id merge. Copy BibTeX writes no file. Add to Lit Watch and Save to Literature are the writes.
 - **Literature.** The papers kept, one entry each, keyed by citation key: the first author's surname, the year and the first word of the title (`faes2024blockterm`), with `b`, `c` and on added when the key is taken. Save to Literature on a Literature search card and on a Lit Watch card writes the paper to the primary hub's Literature file (else the first hub's) and is undoable in History; a card whose paper is there reads In Literature. A paper with the DOI of one already kept, or with the title of one when either has no DOI, is refused. Add asks for one value: a DOI or its doi.org address, an arXiv id or address, or a PubMed id or address is looked up through the sources the search asks and saved, and any other address is saved as it is with a key made from its last path word. When every source fails nothing is saved and Add names them; an empty answer asks for the new entry's key, as Add does on every collection. A venue that names an entry of the venues registry opens it. Copy BibTeX on an entry, and in the toolbar for the entries shown, fetches each entry's BibTeX by DOI or makes it from the fields, under the entry's own key, and says how many were copied and which were not.
@@ -353,7 +364,7 @@ Views opened for one thing, and not in the catalogue: `project`, `person`, `entr
 
 - ChkTeX (`.tex`), Ruff (`.py`), ESLint (TypeScript, JavaScript, Svelte) and ShellCheck (`.sh`, `.bash`, `.slurm`) run on the saved file, never while typing. `lint.chktex`, `lint.ruff`, `lint.eslint`, `lint.shellcheck` and `lint.writing` switch them.
 - The `lint.*_path` keys set where a program is. ESLint is the repository's own and runs only after you approve its configuration in `:eslint-config`.
-- The writing rules warn on Markdown, YAML and comments: `em-dash`, `en-dash`, `curly-quote`, `ellipsis`, `arrow`, `nbsp`, `wrapped-paragraph`. `lint.writing_skip` lists globs to skip. Fix All Writing Problems in Folder fixes many files at once, as one History record.
+- The writing rules warn on Markdown, YAML and comments: `em-dash`, `en-dash`, `curly-quote`, `ellipsis`, `arrow`, `nbsp`, `wrapped-paragraph`. `lint.writing_skip` lists globs to skip and `lint.writing_glyphs` globs of files where arrows are allowed; both are settings of the hub, empty until its `.oculus/config.yml` sets them. Fix All Writing Problems in Folder fixes many files at once, as one History record.
 - A finding with a fix offers it in Quick Fix (Cmd+.), with Show documentation and a comment that silences it.
 - The status bar shows `not found`, `failed`, `timed out` or `not approved` for a linter that did not run.
 
@@ -462,14 +473,19 @@ configurations:
 - A domain's card colour (`color`, `#rrggbb`) and label (`title`), and whether its active projects must list a dataset (`expects_datasets`), are fields of its entry in the domains registry. The theme words of venues and datasets are the options of the `themes` field of the venues and data registries, each a word or `{ key, label }`.
 - A hub's `.oculus/local.yml` is this machine's: the port, `hpc_host`, the programs, the agent accounts, the calendar and mail accounts, the Literature keys, and where oculus keeps its files. Every key has a default. It stays out of git, and only the primary hub's file is read (the account rows are joined over every hub). The keys are in its template.
 - `commit_message_account` in `local.yml` names the Claude account the suggested commit message runs under: the label of a `claude` row of `accounts:` in any hub's file. Empty or absent, it runs on `~/.claude`; a label no Claude row holds is a finding and `~/.claude` is used. The run saves no session, so it is never listed in Sessions.
-- The rest of `.oculus/` (bookmarks, workspaces, schedules, notes, apps, pictures) is listed in the hub's Data map, `docs/DATA-MAP.md`.
+- The rest of `.oculus/` (bookmarks, workspaces, schedules, update tasks, data files, notes, apps, pictures) is listed in the Data map ([data map](docs/data-map.md)).
 - `~/.oculus/` is oculus's own state: the open workspace, the change log, the local history, approvals, the language servers' folder, app stores, provider credentials. It is not for editing.
 - The change log (`changes.jsonl`) records every write oculus makes; History undoes one. A file saved from a source tab, a note included, is not in it (its copy is in the local history). `changes.keep` sets how many are kept.
-- The hub's data files, their keys and the views that show them are in the hub's Data map, `docs/DATA-MAP.md`, on the Help page.
+- A hub's data files, their keys and the views that show them are in the Data map ([data map](docs/data-map.md)), a tab of the Help page. A collection's default file is `.oculus/data/<key>.yml`.
+- A collection no hub of the workspace lists under `collections:` has no view: its tab is left out of its page, and a pane left with no tab names the missing key. The tab comes back when a hub lists the key.
+- A hub's settings that name no `collections:` list take oculus's list, and the hub lists the collections whose file it holds at their default path.
 
 ### Hubs and projects
 
 - A folder of the workspace with `.oculus/config.yml` is a hub. Every hub is read and merged into one portfolio. A record of another hub than the primary has the id `<hub>:<id>` and a hub chip.
+- Make Folder a Hub..., in the Files view's menu of a folder, opens a dialog with a box per collection of the templates, all ticked. Make writes the folder's `.oculus/config.yml`, whose `collections:` names the ticked keys at `.oculus/data/<key>.yml`, and each ticked collection's data file from its template. It writes over no file: when one of them is there, it says which and writes nothing. It is offered on a folder that is no hub, lies in no hub and is no project (it holds no `project.yml` and no `.oculus/project.yml`).
+- Make Folder a Project writes the folder's `.oculus/project.yml` from its template. It is offered on a folder that is no hub and no project.
+- Neither is offered on the home folder, whose `.oculus` folder is oculus's own. History undoes a make, as it does New File, by moving what the make wrote to the Trash.
 - A change goes to its own hub's file. A new record goes to the file of the hub that lists its collection, and Add asks which one when more than one hub does.
 - A project is a folder holding `project.yml` or `.oculus/project.yml`, found by a `scan:` folder or as a folder of the workspace. Its id is the folder's name. Its `tier` and `type` set its board and stage.
 - A project's `repository:` block (`url`, `visibility`, `description`, `homepage`, `topics`, `date`) says where its code lives. It counts as cloned wherever a repository of the workspace has that `url` as `origin`.
@@ -482,4 +498,4 @@ configurations:
 - `calendars` and `mail` in `local.yml` list your accounts (`provider`: `google`, `microsoft`, or `ics` for a calendar link). Add account and Remove in the views write them.
 - The first account of a provider opens Account setup, which saves your app's client to `~/.oculus/connect/`. Tokens and calendar links live in files with mode 0600 and are never shown or logged.
 - `mail.poll_min`, `calendar.poll_min`, `calendar.days_back` and `calendar.days_ahead` in `behavior.yml` set the polling.
-- An Inbox thread is on your plate when it is unread in the inbox, labelled `todo`, or a single unlabelled message. The notes per thread are in `<mail_dir>/triage.json`, written by the card and by `/research-cockpit inbox`.
+- An Inbox thread is on your plate when it is unread in the inbox, labelled `todo`, or a single unlabelled message. The notes per thread are in `<mail_dir>/triage.json`, written by the card and by the Inbox update task.

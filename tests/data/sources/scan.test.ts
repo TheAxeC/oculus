@@ -104,7 +104,13 @@ describe('a wrong scan or new_project_dir value', () => {
         };
         const found = sourcesFindings(
             merged,
-            { scan: SOURCES, newProjectDir: SOURCES, memoriesDir: SOURCES, wallpaperDir: SOURCES },
+            {
+                scan: SOURCES,
+                newProjectDir: SOURCES,
+                memoriesDir: SOURCES,
+                wallpaperDir: SOURCES,
+                recoverCommand: SOURCES
+            },
             hub
         );
         const read = readManifests(hub, portfolioConfigFrom(merged).scan, CATALOG);

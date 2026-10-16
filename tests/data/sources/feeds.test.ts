@@ -40,9 +40,9 @@ function readHub(files: Record<string, string>): ReturnType<typeof readFeeds> {
 
 const LEADS = `meta:
   log:
-    - "2026-09-02 (local /research-cockpit scout): an older pass"
-    - "2026-09-09 (local /research-cockpit scout): the newest pass"
-    - "2026-09-10 (local /research-cockpit litwatch): a different task, not a run of this feed"
+    - "2026-09-02 scout (the Scout update task): an older pass"
+    - "2026-09-09 scout (the Scout update task): the newest pass"
+    - "2026-09-10 litwatch (the Lit Watch update task): a different task, not a run of this feed"
 entries:
   - { title: "Postdoc AI", deadline: "20-09-2026 (2026-09-20)", status: open, fit: strong }
   - { title: "Closed one", deadline: "2026-09-30", status: applied }

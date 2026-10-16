@@ -1,11 +1,12 @@
 // Layer 4, server test. POST /api/folders/pick with a runner standing in for the folder panel
 // (server/files/fs/picker.ts): a missing token, the end of a panel when its connection or its
-// server closes, the answer of a cancel and of any other failure, and the desktop app's sheet,
-// which the state's `ask` stands in for. No test opens a panel: the runner and the `ask` are
-// always the test's own, and each wait is on a turn of the event loop.
+// server closes, the answer of a cancel and of any other failure, the desktop app's sheet, which
+// the state's `ask` stands in for, and the panel program of Linux and of a platform with none. No
+// test opens a panel: the runner and the `ask` are always the test's own, and each wait is on a
+// turn of the event loop.
 
 import { EventEmitter } from 'node:events';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
 import { TOKEN_HEADER } from '../../../src/lib/server/core/auth.ts';
 import {
@@ -60,7 +61,7 @@ const printing =
  */
 function waiting() {
     const panel = { started: false, ended: false };
-    const runner: PickRunner = (_script, signal) =>
+    const runner: PickRunner = (_argv, signal) =>
         new Promise((resolve) => {
             const kill = (): void => {
                 panel.ended = true;
@@ -136,8 +137,8 @@ describe('the folder panel route', () => {
 
     it('opens the panel at the folder asked for, for one folder when one is asked for', async () => {
         const scripts: string[] = [];
-        const runner: PickRunner = (script) => {
-            scripts.push(script);
+        const runner: PickRunner = (argv) => {
+            scripts.push(argv[argv.length - 1]);
             return Promise.resolve({ code: 0, out: '/chosen\n', err: '' });
         };
         const answer = await pick(runner, { body: { start: tmpdir(), single: true } });
@@ -201,5 +202,53 @@ describe('the folder panel route', () => {
         sheets[0](['/old']);
         sheets[1](['/new']);
         expect(await again).toMatchObject({ status: 200, body: { ok: true, paths: ['/new'] } });
+    });
+});
+
+describe('the folder panel on Linux', () => {
+    it('runs zenity for folders at the folder asked for, several unless one is asked for, and answers the chosen folders', async () => {
+        const runs: (readonly string[])[] = [];
+        const runner: PickRunner = (argv) => {
+            runs.push(argv);
+            return Promise.resolve({ code: 0, out: '/home/a/one\n/home/a/two\n', err: '' });
+        };
+        const several = await pick(runner, { platform: 'linux', body: { start: tmpdir() } });
+        const one = await pick(runner, { platform: 'linux', body: { single: true } });
+        expect(several).toMatchObject({
+            status: 200,
+            body: { ok: true, paths: ['/home/a/one', '/home/a/two'] }
+        });
+        expect(one).toMatchObject({ status: 200, body: { ok: true } });
+        expect(runs[0]).toEqual([
+            'zenity',
+            '--file-selection',
+            '--directory',
+            `--filename=${tmpdir()}/`,
+            '--multiple',
+            '--separator=\n'
+        ]);
+        expect(runs[1]).toEqual([
+            'zenity',
+            '--file-selection',
+            '--directory',
+            `--filename=${homedir()}/`
+        ]);
+    });
+
+    it('answers that no folder panel is installed when zenity is missing', async () => {
+        const missing: PickRunner = () =>
+            Promise.resolve({ code: 1, out: '', err: '', missing: true });
+        const answer = await pick(missing, { platform: 'linux' });
+        expect(answer).toMatchObject({ status: 400, body: { error: 'no-picker' } });
+    });
+
+    it('answers a panel the reader cancelled, which zenity reports as exit 1 with nothing printed, as no folders', async () => {
+        const answer = await pick(printing('', 1), { platform: 'linux' });
+        expect(answer).toMatchObject({ status: 200, body: { ok: true, paths: [] } });
+    });
+
+    it('answers unsupported on a platform with no panel program and no parent to ask', async () => {
+        const answer = await pick(printing('/a\n'), { platform: 'win32' });
+        expect(answer).toMatchObject({ status: 400, body: { error: 'unsupported' } });
     });
 });

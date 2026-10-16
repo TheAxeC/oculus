@@ -35,35 +35,35 @@ const ROWS = [
     {
         row: 'a hub link that climbs out of the hub opens nothing',
         doc: hubDoc('tools/oculus'),
-        from: 'docs/DATA-MAP.md',
+        from: 'docs/AGENT-APPROACH.md',
         href: '../../x.md',
         opens: null
     },
     {
         row: 'a hub link that climbs out of the hub opens nothing with the engine outside it',
         doc: hubDoc(''),
-        from: 'docs/DATA-MAP.md',
+        from: 'docs/AGENT-APPROACH.md',
         href: '../../x.md',
         opens: null
     },
     {
         row: 'a hub link to another hub document opens it',
         doc: hubDoc('tools/oculus'),
-        from: 'docs/DATA-MAP.md',
+        from: 'docs/AGENT-APPROACH.md',
         href: 'RESEARCH-APPROACH.md',
         opens: { kind: 'hub', path: 'docs/RESEARCH-APPROACH.md', hub: 'hub' }
     },
     {
         row: 'a hub link to the manual opens the Help view',
         doc: hubDoc('tools/oculus'),
-        from: 'docs/DATA-MAP.md',
+        from: 'docs/AGENT-APPROACH.md',
         href: '../tools/oculus/HELP.md',
         opens: { kind: 'help' }
     },
     {
         row: 'a hub link into the engine folder opens the engine document',
         doc: hubDoc('tools/oculus'),
-        from: 'docs/DATA-MAP.md',
+        from: 'docs/AGENT-APPROACH.md',
         href: '../tools/oculus/docs/apps.md',
         opens: { kind: 'engine', path: 'docs/apps.md' }
     },
@@ -91,7 +91,7 @@ const ROWS = [
     {
         row: 'a link between documents of a second hub opens a document of that hub',
         doc: hubDoc('', 'lab'),
-        from: 'docs/DATA-MAP.md',
+        from: 'docs/AGENT-APPROACH.md',
         href: 'RESEARCH-APPROACH.md',
         opens: { kind: 'hub', path: 'docs/RESEARCH-APPROACH.md', hub: 'lab' }
     },

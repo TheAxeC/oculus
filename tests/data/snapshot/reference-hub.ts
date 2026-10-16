@@ -15,6 +15,7 @@ import {
 } from '../../../src/lib/data/snapshot/references/lookup.ts';
 import type { FileScan, ReferenceIndex } from '../../../src/lib/data/snapshot/references/model.ts';
 import { plantScratch } from '../../fixtures/scratch.ts';
+import { withHubCollections } from '../../fixtures/hubs/collections.ts';
 import { join } from 'node:path';
 
 /**
@@ -26,7 +27,7 @@ const CONFIG_FOLDER = 'engine';
 /** Where the config folder lies inside the hub when oculus's folder is inside the hub folder. */
 const CONFIG_IN_HUB = 'tools/oculus/config';
 
-const LOADED = loadConfig(engineDir()).config;
+const LOADED = withHubCollections(loadConfig(engineDir()).config);
 export const CONFIG = portfolioConfigFrom(LOADED);
 
 /** The files of the planted hub, by their path under the hub root. */

@@ -3,7 +3,6 @@ text:
     notify:
         idle_chip: idle
         permission_chip: waiting on you
-        stop: Session finished
     server:
         app_setting:
             enum: 'This setting takes one of: {0}'
@@ -439,6 +438,7 @@ text:
             hpc_host: the host of the cluster that slurm.resource of behavior.yml names
             no_accounts: no accounts
             no_key: none
+            no_opener: none on this platform
         manifest_write:
             group: 'the field is a group; set its children, or clear it whole'
             id_read_only: 'the id is the name of the folder, or for a repository the name of its workspace folder; rename that to change it'
@@ -484,8 +484,10 @@ text:
             listening: 'oculus on http://{0}:{1} over the workspace {2}'
             needs_claude: the chat terminals, the worktree agents, the usage refresh, the update tasks, the prompts of schedules and the suggested commit messages
             needs_git: Source Control and History
+            needs_opener: opening a file in its program, showing a folder and opening a link
             needs_perl: the line counts of the Status view
             needs_tmux: the terminals and their sessions
+            needs_zenity: the folder panel of Add Folder to Workspace and Open Folder
             port_in_use: 'oculus: port {0} is in use'
             workspace_unsaved: an unsaved workspace
         task:
@@ -496,6 +498,7 @@ text:
             seed_part_of: 'Part of: {0}'
             seed_subtasks: 'Open subtasks: {0}'
             seed_title: 'Task: {0}'
+            update_task: Do the update task described in {0}, following it step by step.
         workspace:
             no_hub: The workspace lists no hub, so there is no .oculus folder to write in; add a folder that holds .oculus/config.yml first
             no_hub_named: The workspace has no hub named {0}

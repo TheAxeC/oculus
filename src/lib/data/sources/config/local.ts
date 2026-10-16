@@ -104,7 +104,8 @@ export type LocalConfig = {
     /**
      * The program an `https` address is handed to, `open_bin` in the file: a provider's consent
      * page, an event or a thread at its provider. Absent unless the machine sets it, and the server
-     * then hands the address to macOS's /usr/bin/open.
+     * then hands the address to the platform's opener: /usr/bin/open on macOS, xdg-open on Linux,
+     * wslview under WSL2.
      */
     openBin?: string;
     /**
@@ -141,7 +142,7 @@ export type LocalConfig = {
     literature?: LiteratureKeys;
 };
 
-/** The default development port; the reserved port 8787 is never used. */
+/** The default development port. */
 export const DEFAULT_PORT = 8790;
 
 /** The name of the machine-local file inside a hub's `.oculus/` folder. */
