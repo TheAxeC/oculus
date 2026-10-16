@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O37 (the fixes and owed looks of O33's phase A): report received, its diff being read, the review after.
+- O37 (the fixes and owed looks of O33's phase A): reviewed; repair round 1 sent (the review's 14 findings, two of the orchestrator's, 91 look defects, open item 123's digest); the review over the round and the landing after.
 
 Queued, in order (2 steps):
 - O38 (the cockpit retired and the hub's tools cleaned): once O37 has landed; each deletion on Axel's yes, path by path.

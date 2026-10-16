@@ -1,0 +1,149 @@
+# O37, repair round 1
+
+The refuter's report is `agents/reviews/O37-refuter.md`. Each finding below carries its ruling. Work in `.agents/worktrees/O37` only, under the brief `agents/briefs/O37.md` and `agents/spec.md`; no git command that changes state (reading with `git status`, `git diff` and `git show` is fine; a file is moved with `mv`). No diagnosis runs, by you or anyone (O37 Step 0). A shortcut is a finding: a narrower reading of an item, a check loosened, a test fitted to the code, or work inside an item called outside it. Every item below is done in this round; there is no second round. An item you find cannot be done as ruled is handed back in the report with the run that shows it, never left out silently.
+
+This round's copy of `agents/reviews/owed-looks.md` is in your worktree's ledger at that path; the look items below cite its lines.
+
+## The refuter's findings
+
+R1. Spec 1, the types lock taken over from a live writer. `src/lib/server/core/json.ts:273` takes a lock over by its age alone, and `vite.config.ts:86` gives the types lock a 60 s age while a writer may hold it for up to `READERS_WAIT_MS` (15 min) waiting for readers. Ruling: the types lock is taken over only when the process that holds it has ended (`leftByEnded`), never by age while that process runs; a starter waits for a live holder as long as the holder may hold it (the wait longer than `READERS_WAIT_MS` and a write), printing once whom it waits for. Every other caller of `takeLock` keeps the rule it has now unless it holds its lock as long; read each caller and say which.
+R2. Spec 2, two starters taking over one left lock. `json.ts:273-281` unlinks whatever file is at the path after it judged it stale, so the second of two starters can delete the lock the first has just made. Ruling: the takeover replaces only the file it judged stale (read the holder it names, then replace it atomically, for example by `rename` of a fresh file made with `wx` over the path after reading the path again and finding the same holder, or by `link`), so of two starters exactly one holds the lock, in `takeLock` for every caller. A test starts two takeovers of a lock left by an ended process and asserts one holds it and the other waits; its first run on the unchanged code is quoted.
+R3. Spec 3 with Standards 1, the fold cache keyed by a hand-raised constant. This is open item 123, ruled (b) by Axel (plan.md:2126). `CACHE_VERSION` (`server/sessions/cache.ts:31`) is replaced by a digest of the reader's source files computed at build time in `vite.config.ts`: the files whose code folds a transcript into a record (`fold.ts`, `turns.ts`, `transcripts.ts`, `cache.ts` and every module they import under `server/sessions/`), hashed in a fixed order, the hash given to the server as a build-time constant (`define`), so a cache written by another reader is folded again with no hand-raised number. The test of `tests/server/sessions/transcripts.test.ts` ("serves a record from the cache its reader wrote, and folds it again for another reader") uses the digest in place of `CACHE_VERSION`. The comment at the digest says what it hashes and why, no history. DESIGN.md:754, which names `CACHE_VERSION` as 7, says what the cache is keyed by now.
+R4. Spec 4, `npm run test:quick` over its 45 s (item 24). The run over this step's change took 72.1 s on your machine and 120.8 s on the reviewer's. Ruling: read where the run spends its time (each command's time and vitest's per-file times, which the run prints or `--reporter=verbose` gives), make fast every file whose time is waiting rather than checking (a sleep, a timeout waited out, a lock retry, a build repeated per case), and quote one run at the end within 45 s on a machine with no other suite running. If, with every such wait removed, the run over this step's whole change is still over 45 s, hand that back with the per-file times; it is not moved under "What in the brief was wrong".
+R5. Spec 5, the slow tags removed with the time unchanged. `tests/routes/edit/config-key.test.ts:7` and both `config-value` files lost their `@module-tag slow` while each case still takes 526 to 1631 ms. Ruling: read what a case spends its time on and make it fast where it is waste, with the times before and after quoted; a file whose cases stay over the tier's per-case bound keeps its slow tag, with its comment saying what the time is.
+R6. Proof 1, runs nobody can repeat. The report's evidence for items 5, 6, 12, 17, 18 and 20 cites `notes/c5.js`, `notes/place-time.js`, `notes/c18.js`, the c17 runs, the createSaves and the placeNames runs, whose text is nowhere. Ruling: no script file is written for this step; each such run is redone as a `node -e` quoted whole in the report with its output, or as the test the brief's case names, so the reviewer can rerun it. Item 17's runs are redone after R1 and R2.
+R7. Proof 2, the failed comment-width run. `agents/reviews/O37-report.md` item 24 quotes a run of `tests/checks/source/comment-width.test.ts` that shows "1 failed" with its message not captured. Run the file again; when it fails, quote the failing message and fix what it names; when it passes, quote the pass and say the earlier failure's message was not kept.
+R8. Proof 3, the report's first line. The first line states what is not done, if anything is after this round, before any result; "Everything in the brief is done." is written only if it is true.
+R9. Standards 2, `registries/venues.yml:10-13`: the new `intro:` stands between the schema's head comment and `schema:`. Put `intro:` above that comment, so the comment heads the schema again.
+R10. Behaviour 1, the palette-level overlays dim nothing (`src/lib/ui/frame/Modal.svelte:194`). VS Code's quick input draws no scrim, so the change stays; the report gives its before and after (the palette, QuickPick, the glyph picker, CloneAsk and AppQuickBox covered the page at 0.72 before, and dim nothing now).
+R11. Behaviour 2 with the orchestrator's finding on watch mode, a vitest that blocks every sync. `vite.config.ts` `readTypes` marks a vitest server a reader of `.svelte-kit/types` until its process exits, and `lockToWrite` has `svelte-kit sync` and `vite build` wait up to `READERS_WAIT_MS` (15 min) for every reader and then throw. A vitest in its default watch mode (`npx vitest`) never exits, so `npm run check`, `npm run build` and `npm run test:quick` started beside it wait 15 min and fail. Ruling: a vitest run in watch mode marks itself a reader only while a test run is in progress (the mark taken at a run's start and dropped at its end, through Vitest's reporter or watcher hooks), so a writer waits for the run in progress and never for an idle watcher; `vitest run` keeps its mark to its exit as now. The head comment of `vite.config.ts` and `syncTypesOnce`'s comment state it. The report gives the before and after of item 17 for a person running `npm run check`, `npm run build` and `npx vitest` side by side.
+R12. Behaviour 3, a resize from a socket not attached (`src/lib/server/machine/pty/channel.ts:589-591`). A resize from a socket not attached to the terminal is kept as that socket's size for its next attach and applied when it attaches, never run on the terminal before then, and the socket does not hold the terminal; a socket that leaves before attaching sizes nothing. The test "a page that resizes before it attaches" still passes, and a test of a resize from a socket that never attaches asserts no `resize-window`.
+R13. Behaviour 4, the graphs no longer laid out anew (`Map.svelte`, `NotesGraph.svelte`, the `{#key}` removed). The behaviour stays; the report gives the before and after for both views (a new note placed beside its links, the picture for a seed now depending on the pane's size), and DESIGN.md:666 says it for both.
+R14. Behaviour 5, an open conflict no longer marked (`MergeSide.svelte`, `.bar.open` and its `body.wall` rule removed). Put back a mark that tells an open conflict's lens line from a settled one at a glance under every theme, wallpaper themes included, in the conflict colour (`--c-scm-conflict`), as VS Code's merge editor marks an unhandled conflict, without bringing back the overlap of defect 3.
+
+## The orchestrator's findings
+
+O1. Headless sessions told apart by their entrypoint (Behaviour). `server/sessions/fold.ts` `saidByHuman` and `server/sessions/stores/turns.ts` `claudeRecord` take every user record with no origin, not meta and with string content as a human prompt, in interactive transcripts too. Over the 40 newest transcripts of `~/.claude/projects/-Users-axelfaes-workspace-research-hub` that is 456 records, 406 of them compaction summaries (`isCompactSummary: true`) and the rest `<command-name>`, `<local-command-stdout>`, `<bash-input>` and `<bash-stdout>` records, all with `entrypoint: "cli"`; the same transcripts hold 2173 records with a human origin. Ruling: a record with no origin is a prompt only in a headless transcript, told by its `entrypoint` value `sdk-cli`, the value `claude -p` writes (of the 189 transcripts under `~/.claude/projects/*/` on this machine, 136 carry `cli` on every user record and 53 carry `sdk-cli`, counted by a python read of each file's first 400 lines), and a record with `isCompactSummary: true` is never a prompt. The tests of `tests/server/sessions/transcripts.test.ts` give the headless record its entrypoint, and a case holds an interactive transcript with a compaction summary and a `<command-name>` record, neither of them a prompt or a title.
+O2. The claim about browser tabs (Standards). `state/workbench/layout/saved/storage.ts`'s head comment says browser tabs "run one at a time, so nothing comes between the read and the write". Chrome can run two tabs of one origin in separate processes, and `localStorage` reaches the other process later, so the sentence is not true as written. Write what the code relies on and what holds when it does not: the test "a browser tab whose arrangement another tab has moved on from" (`tests/state/workbench/layout/saved/layout-workspaces.test.ts`) covers the in-order case; say what a write made between another tab's read and write does (which tab's change is kept), and make the code keep both where it can, by reading the saved arrangement again at the write.
+
+## The look defects
+
+Each item names the defect as `agents/reviews/owed-looks.md` records it (the line given is that file's line in this round's copy); read the record whole before you change anything. No diagnosis runs for any of them (O37 Step 0, no diagnosis): where the record says the cause is not known, you read the code the item names, find what produces the symptom and end it there, and your report names the operation that went wrong with its file and line. An item that the step's diff already ends is answered in the report with the file and line that end it and the run or test that shows it; it is not left as "already done" without that evidence.
+
+### The ground of every confirm, and the confirms' words
+
+L1. The commit Confirm's ground is opaque white (owed-looks.md:26), the same defect as Q89-look-2 (:499) and the ground noted at D33-look-2 (:268). Defect 13 is this; `src/lib/server/root/styles/pdf-styles.ts` now scopes pdf.js's sheet to `.oc-pdf`. Answer it with the evidence: under vitest and under `vite build`, the sheet's `.dialog` rule no longer matches `ui/frame/Modal.svelte`'s `.ground.dialog` (a test that reads the transformed sheet is not that evidence; the computed style of a Modal ground after the PDF viewer's module has loaded is).
+L2. The confirm buttons in lower case: D33-look-2 (:268), D68-look-1 (:403), D-look-2 (:318), and `files.yml:23` `cancel: cancel`, `:230` `remove_root: remove`. Every confirm of the catalogue reads "Cancel" and a capitalised action; grep `config/text` for every key a `Confirm` or `Modal` uses as a button and make each one so.
+L3. D47-look-2 (:358): "clear the title" beside "Title". Capitalise it as the other controls.
+L4. D71-look-1 (:443): the Deposit view's buttons (adopt, plan, fetch, create, suggest, commit, push, snapshot, `config/text/views/boards/deposit.yml:4,9,19,33,45,48,57,61`) in title case, as the rest of the workbench names its buttons.
+L5. D67-look-3 (:426): the star's `aria-label` "bookmark" reads "Add Bookmark" or "Remove Bookmark" by its state, the words of the row menu.
+
+### Plural nouns after one, and sentences
+
+L6. D37-look-1 (:288): `search.yml:95` `count_replacing` gets the singular forms for one hit and one file, as `merge_left_one` does (`repositories.yml:148`); grep `config/text` for every other count key drawn with a number that can be 1 and has no `_one` form, and give each one.
+L7. D-look-3 (:336): "1 live sessions" (`config/text/statusbar.yml:86-87`), the same rule.
+L8. D73-look-3 (:452): `config/text/server.yml:435,515`: each refusal a sentence, capital first and full stop last.
+L9. D73-look-1 (:450): `config/text/views/feeds/radar.yml:26` holds `<code>{0}</code>` drawn as text by `Empty` (`views/feeds/radar/Radar.svelte:113`): the path is drawn as code by the means the catalogue already uses for code in a sentence (the backtick form that `inlineMarkdown` draws), with no markup in the catalogue.
+L10. S5-look-4 (:553): "Skipped in look-repo : python.word_wrap": no space before the colon.
+L11. D43-look-2 (:332): a Rerun whose root left says which folder is no longer served and that adding it back to the workspace lets the build run again; the bare "It is not inside a served root." is not shown for it.
+L12. Q89-look-3 (:502): a terminal oculus knows no folder for is not offered Split; when a Split is refused, the sentence says the terminal has no folder oculus can split in.
+L13. Q89-look-4 (:503): the row's tooltip leaves out a field with no value ("Folder:" and "Command: cd" for that terminal).
+L14. D71-look-4 (:446): a commit refused for no git identity tells the reader to set `user.name` and `user.email` (the sentence from the catalogue, git's own text not shown as the reason).
+L15. D18-look-1 (:272): the Processes failure line gives what `ps` printed on stderr: `ps.ts` reads stderr as well and `ReadFailure` carries it, and the line shows it after the status.
+L16. D71-look-3 (:445): "Against origin/main: 1 ahead, 1 behind  1 ahead of its upstream": when the upstream is the branch compared against, the count is said once.
+
+### Focus and keyboard
+
+L17. D44-look-1 (:370): after Submit Job's confirm closes (Cancel, Escape or a refusal) the keyboard is back on Submit Job. The control is disabled while the plan is asked (`BarActions.svelte:137` `disabled={submitting}`), so `Modal.svelte`'s give-back lands on a disabled control and falls to the body; make the give-back reach the control once it is enabled again, or keep the control focusable while it waits (`aria-disabled`), whichever `Modal.svelte`'s other callers need too.
+L18. D52-look-1 (:388): `src/lib/ui/controls/segment/Segment.svelte` becomes one Tab stop with the arrow keys moving the choice and the focus, as a `radiogroup` does (roving tabindex), for every Segment of the tree.
+L19. D47-look-1 (:357): the Session view's Changes section is one Tab stop with the arrows inside, as the Files view's sections are: the rows a tree with a roving focus, Down and Up moving between rows, the row's buttons reached as the Files view reaches them.
+L20. Q88b-look-4 (:493): Find in Folder... puts the focus in the Search view's box.
+L21. Q88b-look-5 (:494): Cmd-click and Shift-click on Files rows build a multi-selection, and Shift+Up and Shift+Down extend it, as VS Code's explorer does; the menu then offers Compare Selected for two selected files, and its result opens.
+L22. S5-look-2 (:551): Add in a list family focuses the new item's box.
+L23. Q96-look-1 (:510): a closed FieldSelect or GlyphSelect trigger takes no key pressed with Cmd, Ctrl or Alt as type-ahead: the component stops the key before bits-ui's handler (`node_modules/bits-ui/dist/bits/select/select.svelte.js:661-664` passes `e.key` on without the modifiers), so Cmd+S, Cmd+C, Cmd+A and Cmd+Shift+P reach the workbench and the pick does not change.
+L24. Q96-look-2 (:511): Cmd+S on the Settings tab while it shows the unsaved dot saves it, as the rail list's Save does (`shell/keys/workbench-keys.svelte.ts:263-266`).
+L25. D62-look-1 (:419): keys typed straight after Cmd+Shift+P with the focus inside an app frame go to the palette's input: the palette takes the focus from the frame before it draws, so no key reaches the frame.
+L26. E4-look-1 (:463): a press in the Document frame straight after a press in the probe frame makes Document the active tab.
+
+### Panes, tabs and layout
+
+L27. L4-1 (:76): Float and Return to Page keep a terminal at the line the reader scrolled to (X3c item 20's kept viewport acts).
+L28. L4-2 (:77): a shell's Terminal tab reads the process tmux reports ("zsh"), `terminalTabTitle` (`state/sessions/terminal/terminal-lists.ts:73-84`) used by `views/sessions/terminal/Terminal.svelte:215-222`.
+L29. :78: Return to Page puts a floated pane back in the place it came from (HELP.md:57).
+L30. :79: closing a tab with its close control keeps its pane the page's active pane and focuses the tab it activates.
+L31. :80: after the text size changes, each tab strip scrolls its shown tab into view.
+L32. :81: the diff editor in a pane of about 140 px draws its text: below a width it drops to the inline layout with the number columns and the overview ruler narrowed or hidden, as VS Code's diff editor does under `diffEditor.useInlineViewWhenSpaceIsLimited`.
+L33. :82: Quick Open's folder column (`shell/keys/PaletteRow.svelte`) shrinks and cuts with an ellipsis; the list never scrolls sideways.
+L34. A1 narrow row (:55): in the Session view's Changed and Touched lists the file name keeps its room, cut with an ellipsis, at every width; the row's actions take no width while hidden (`views/shared/changes/ChangeGroups.svelte:296-350`), and "also open" and the counts give way before the name does.
+L35. R18-look-2 (:527): Open Preview to the Side opens the preview in a group beside the source's pane, never in the source's own pane (`openBeside`, `state/workbench/layout/open/opening.ts:170-180`).
+L36. D53-look-1 (:396): the System rail button and `: tab settings` show the System page once it was left, the palette closes after it, and the stored `current` in `oculus.layout.v1` names the page drawn, after Reset all pages too.
+L37. D56-look-1 (:402): the Files tab of a workbench page whose root left says which root is gone and that adding it back shows it, never "No folders yet" while the workspace serves folders.
+L38. D15-look-1 and D15-look-2 (:249, :250): Maximise pane and Restore panes keep the PDF's page and its fitted zoom: the page shown before stays shown, and the fitted zoom fits the new pane width each time.
+L39. S3c-look-1 (:408): after a reveal in the System page, the table of contents scrolls its current row into view.
+L40. D-look-4 (:363): `: tab <id>` with an id no view has keeps the palette open and says no view has that id (`shell/keys/rows/CommandRows.svelte:133`).
+
+### Drawing
+
+L41. O33-look-1, O33-look-2, O33-look-3 (:469-471): brief O33.md Part 13's sizes: the Session view's headings one step above `--fs-sm`, its file rows and their folder parts at the size Part 13 names (set in `session-detail/ChangesTouched.svelte` and `ChangesRepository.svelte`, not inherited), and the Transcript composer's box and its line at the size Part 13 gives them.
+L42. Q72-look-1 (:481): every field control is one height: the native select (`ui/forms/choice/Select.svelte`) and DateInput take `field.css`'s height as the text box, the MultiSelect filter and the FieldSelect trigger do.
+L43. Q72-look-2 (:482): the FieldSelect trigger draws the same open mark as the native select under every theme (a glyph from `glyphs.yml`, the one the native select is given too, or the native select drawn with that glyph), so two dropdowns of a row carry one mark.
+L44. Q88b-look-2 (:491): `ui/tree/TreeItem.svelte:439-445`: the comment moved out of the selector list, so the selected row's twisty keeps its width and the colour rule of `.item.selected .twisty` and `.mark` applies.
+L45. U1-look-1 (:531): the band card's icon and title have the gap of every other icon and label (`views/boards/focus/Band.svelte:86`, `ui/controls/ToolButton.svelte:319-321`).
+L46. U1-look-2 (:532), D55-look-1 (:415): a card of a second hub carries the hub chip in the Focus lanes and the band cards, as the Command center draws it.
+L47. Q72-look-3 (:483): the Projects board's Filter menu lists one row per value, the counts summed over the hubs, or one group per hub with the hub's name; take the one the Command center's filters use.
+L48. D67-look-1 (:424): the starred root's star is drawn in the theme's accent in every theme (never `rgb(0, 0, 0)` on a dark row).
+L49. D51-look-1 (:381): under the two high-contrast themes the diff outlines inserted and removed text with VS Code's colours for them (`diffEditor.insertedTextBorder` and `diffEditor.removedTextBorder`, hcDark `#33ff2eff` and `#FF008F`, hcLight `#374E06` and `#AD0707`), set in `src/lib/ui/controls/editor/kit/theme/colours.ts:254-255` by theme, transparent for the other themes.
+L50. D69-look-1 (:434): the merge editor's action buttons hold their words: none runs under the next button at any width (defect 3's code lens links).
+L51. Q35-look-1 (:541): a link on a slide is drawn in the theme's link colour.
+L52. Q98-look-1 (:519): under a wallpaper theme a code chip is told from the words around it (a background or an outline from the theme's tokens), in the Audit view and the Settings descriptions alike.
+L53. Q30-look-1 (:515): the Findings rows name the file relative to its hub's folder, cut with an ellipsis, never broken inside a word (`views/system/findings/Findings.svelte:83-89`).
+L54. S5-look-5 (:554): a tri-state box in the `editor.languages` cards draws no words beside it that repeat the field name, and the card fits its pane.
+L55. Q89-look-1 (:498): an armed Kill says so in words on the row (the catalogue's "Press again to kill this terminal" or its like), not only by a darker icon.
+L56. X3f-look-1 (:557): the empty line after the file's last newline draws no blame cell and no committed lines' rule (`Gutter.svelte:147-148`).
+L57. D14-7-look-1 (:254): the picture hover is kept inside the editor: its box as wide as the picture it holds, within the editor's width, and placed above the line when there is no room below, as Monaco's hovers are.
+L58. D23c-look-2 (:264): F8 to a problem puts its line clear of the sticky scroll lines.
+L59. D46-look-2 (:350): the command mode opened from a source tab draws no go-to-line hint.
+
+### Behaviour
+
+L60. D39-look-1 and D52-look-2 (:298, :389): the History view draws a record of every kind the change log is written with: `history.yml` gets `kind_schedules`, `kind_commands` and `kind_lsp`, and `recordedKinds` (`tests/fixtures/kinds.ts:25`) collects the kind of every `logChanges` caller, so the key check fails for a kind with no key. A kind with no key draws its raw kind, never a throw.
+L61. D39-look-2 (:299): `shell/panes/TabView.svelte`'s `svelte:boundary` (now at :54) draws a failed state in the pane (the view's name and that it failed, with the error's message), and never leaves the previous tab's body drawn under the new tab.
+L62. D11 (:46): Add Configuration refreshes the Debug view, so its second press is not offered and the configuration picker and Open launch.yml show at once.
+L63. D22-look-1 (:280): a venue card whose `link` is a hub folder draws Show in Files only, no "site" link.
+L64. D33-look-1 and D41-look-3 (:267, :313): after Remove Folder from Workspace no tab draws "The file was deleted on disk" for a file that is on disk; the tree drops the root and the tabs show the unserved note in the same update.
+L65. D33-look-3 (:269): a root written back into the workspace file by hand can be opened as soon as Files shows it; the served roots the file reader checks follow the same read as the tree.
+L66. D41-look-1 (:311): Apply of a link preview drawn in another pane writes the edits into the tab (or to disk when no tab holds the file), at once; Revert File afterwards shows the disk's text. Cause not known: read the Apply path from the preview to the tab's model.
+L67. D41-look-2 (:312): link edits for a tab with unsaved text are computed over the tab's text, never over the disk's (the ranges matched the disk text); no Apply writes damaged text into a tab.
+L68. D41-look-4, D41-look-5, D41-look-6 (:314-316): an unserved tab's bar offers no Save (`BarActions.svelte`, `agents/briefs/D41.md:149`); Cmd+S on it draws the note once; once its root is served again the note goes.
+L69. D41-look-7 (:317): a move in the Files view shows in the Files tree and the link preview at once; cause not known: read the path from the move's write to the tree's refresh and the preview's answer.
+L70. D43-look-1 (:331): with `latex.unimath_symbols: true`, `\alph` offers `\alpha` (case 24).
+L71. D43-look-3 (:333): no console throw when a root leaves (D43 case 1): the language features stop asking for a document that is closed; and the three throws seen while served (`translateBackRange` "reading 'start'", `toLspInlayHintLabel` "reading 'map'", the "Uncaught (in promise)" from `showWhile`) end at their operations. Causes not known: read the code those stacks name.
+L72. D43-look-4 (:334): the clean of an Rnw main whose `.tex` was never made runs nothing and ends clean.
+L73. D43-look-5 (:335): a failed weave build draws a page notice as a failed `.tex` build does.
+L74. D-log-1 (:273): `views/sources/source/Source.svelte:217` no longer assigns a stale value (`assignment_value_stale`).
+L75. D37-look-2 (:289): a command terminal shows only what the command printed: the chain's marker line (`chainLine`, `server/machine/runs/commands/chain.ts:37`) is read by the page without being drawn, and tmux's "Pane is dead" line is not drawn.
+L76. D46-look-1 (:349): the palette's rows draw within the 50 ms bound from the keydown in the file mode, the first key included; cause not known: read the matcher and the rows' draw, and the report gives the times measured after the change the way the record measured them.
+L77. D65-look-1 (:414): the Status chips picker offers every chip of the status legend, the personal chips among them, or says which chips it leaves out and why.
+L78. D70-look-1 (:439): a language server edit refused for a read-only file shows `lsp_edit_readonly` (`source.yml:152`) to the reader under the editor that asked.
+L79. D71-look-2 (:444): after a commit the Deposit plan is asked again, so Changed lists what is still changed.
+L80. D73-look-2 (:451): after a save the card reads In Literature, after a reload too, on a hub whose Literature file is at oculus's own path and on one that names it.
+L81. Q88b-look-1 (:490): New File... opens the new file in the editor.
+L82. Q88b-look-3 (:492): Paste into a closed folder opens it and selects the pasted item.
+L83. Q91-look-1 and Q91-look-2 (:536, :537): the read-only follow-up fields show each note with its own date; the sentence sends the reader to the place where both notes can be edited: the project's manifest, opened at its `follow_up` key by a link in the sentence, since the Focus board offers only Done for a due note and never shows one not yet due.
+L84. Q123-look-1 (:477): after a reload a pane shows its prompt once. Cause not verified: read the capture at attach (`pty/capture.ts` `paneScreen`, `channel.ts`'s first screen) against zsh's repaint on the resize.
+L85. R18-look-1 (:526): the Markdown preview resolves an image's relative `src` against the file's folder, so DESIGN.md's nine diagrams draw.
+L86. S4-look-1 (:545): the family editor's Save says "Saved." and an empty family draws a line saying it holds no entry.
+L87. S5-look-1 (:550): a held number out of range draws the range words beside the red box.
+L88. S5-look-3 (:552): the page's checks of rows 14 and 15 run: `formMessage` (`state/system/config/editors/fields.ts:344-352`) is reached from the list and card editors (`views/system/workbench/editors/Editor.svelte:55-58`), so `settings_not_program` and `settings_not_extension` show and Save waits.
+L89. PR3-look-1 (:563): a draft redraw of a slide shows within the case's 250 ms: the `POST /api/deck` answer, 2130 ms where the GET answers in under 240 ms. Cause not known: read the POST's server path.
+L90. D11, seen once (:47): a pause reveals the execution line in the editor, whatever line the caret was on before.
+L91. The schedules watcher with a long tmux folder (:49): when tmux lists no terminal the tray says the schedules cannot run and why.
+
+
+## Verify before you report
+
+Run the scoped tests while working. After the last change, run the brief's "Verify before you report" list once, through the filter the rules file names, and the tree checks `npx vitest run tests/checks/source/comment-width.test.ts tests/checks/tree/duplication.test.ts tests/checks/source/history.test.ts`; a failed command is rerun alone, then the full list once more. The report states the number of full-list runs and quotes the outputs.
+
+## The report
+
+Append to `agents/reviews/O37-report.md` (your worktree copy) a section "Repair round 1": for each item above, in its number, what changed (file and line), the run or test that shows it, and for a user-visible change its before and after. For each look item, the look: the view, the state to put it in, what should be seen. No narration of wrong turns.
