@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O37 (the fixes and owed looks of O33's phase A): brief checked, worktree being made.
+- O37 (the fixes and owed looks of O33's phase A): building.
 
 Queued, in order (2 steps):
 - O38 (the cockpit retired and the hub's tools cleaned): once O37 has landed; each deletion on Axel's yes, path by path.
