@@ -8,6 +8,16 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
+- D68, Add Folder to Workspace: the add itself, the panel pressed (Accessibility for Visual Studio Code granted 2026-10-16); its panel opening behind the windows is L95 of O37's round 1.
+- D71, the question after a clone with its Save, Don't Save and name box, the folder panel pressed.
+- Q88b Upload...: the file dialog pressed.
+- O30, the desktop app: the floating window, find in the page, the application menu, the spelling menu, window state, and the folder sheet, by real keys and presses in a scratch app.
+- O30b, the "not built" dialog (case 15), in a scratch app started from a checkout without `build-app/`.
+- S5 row 19: `port: x` in the machine config while the built server runs (the scratch app's server).
+- D69, the rest: the linter item at its cap in a window under about 508 px, and a hover in the diff and peek editors by the real pointer.
+- PR1: Present's real full-screen states, in the scratch app.
+- PR3 case 25: Export to PDF, the print dialog read and cancelled.
+- PR4, the desktop and full-screen parts (cases 16 to 18), in the scratch app.
 - D52, the rest: an undo from History on an entry page, taken once D52-look-2 is fixed (History cannot draw on the scratch hub until then).
 - D72 item 11: the History row saying what an undo did, taken once D52-look-2 is fixed (History cannot draw on the scratch hub until then, and an undo is a write, so it is not taken on TEST).
 - S5 row 11: the undo from History of a Settings write and of a write that mended `slurm.days: x`, taken once D52-look-2 is fixed (History cannot draw on the scratch hub until then).
@@ -582,17 +592,4 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
 
 ## Blocked, for Axel
 
-- D68, Add Folder to Workspace through the menus: it opens the macOS folder panel (`pick()`, `state/sources/explorer/ops.svelte.ts:716`), which a look here never opens.
-- D64, the stop dialog's background: the dialog opens only from a Stop press (Processes' Stop or the Debug view's Stop), and the looks never press Stop.
-- D71, the question after a clone with its Save, Don't Save and name box: both clones ask for the folder with the macOS folder panel (`PICK_PATH` `/api/folders/pick`, `state/sources/clone/clone.svelte.ts:27`), which a look here never opens.
-- D74, Cmd+W on a pinned tab and Cmd+Shift+T: in a browser tab both keys belong to the browser (Cmd+W closes the browser tab), so they reach oculus only in the desktop app, whose window a look here cannot drive (the looks drive Chrome only).
-- O30, the desktop app: the floating window, find in the page, the application menu, the spelling menu, the folder picker and the dialogs are all of the desktop app's own window and the macOS panels, which a look here cannot drive.
-- O30b, the "not built" dialog (case 15): a native dialog of the desktop app at its start (`desktop.dialog.not_built`), which a look here cannot drive.
-- Q88b Upload...: the item opens the browser's native file dialog (`ui/forms/file/FileChooser.svelte:26`, `field?.click()`), a macOS panel this session never presses.
-- S5 row 19: `local.yml` `port: x` while the server runs: it needs a write to `local.yml`, which no look may open or write, and a wrong port moves the server onto 8790, Axel's own server's port.
-- S5 row 6, the press: Open in its application on a `.pdf` with `open.program_ext` holding a bad member, which starts an application on the Mac.
-- D69, the rest, both parts need Axel's window and pointer. The linter item at its cap: on the scratch oculus a `.sh` file draws the most a file gets, "ShellCheck" and "Writing rules" in one item 203 px wide (97 and 106 px) under a cap of `--status-item-max: 40vw` (`shell/status/StatusBar.svelte:334`), 604.8 px in a 1512 px window; the cap is reached only in a window under about 508 px, and the browser window here did not change size when asked (`innerWidth` stayed 1512). A hover in the diff and peek editors: a peek of `greetLook` in `riterepo/src/use.ts` opened (Alt+F12), but neither the pointer moved over the name in it nor a command shows a hover: Cmd+K is oculus's search, so VS Code's Show Hover chord (Cmd+K Cmd+I) opens the search, and the command palette lists no hover command.
-- PR1: Present's real full-screen states; full screen takes over Axel's monitor, so it is his to see.
-- PR3 case 25: Export to PDF in a browser tab opens the browser's print dialog, a native dialog that is never opened here.
-- PR4, the desktop and full-screen parts: the desktop audience window and its display (case 16), the bridge refused in it (case 17), Close Window, and the audience window's Full Screen control and F (case 18), which need the desktop app and a real full screen.
-- Narrow panes, Live HPC's Refresh in its live state: it needs the cluster reachable over the UT network or EduVPN, which is off here.
+None: the permission that blocked them (Accessibility for Visual Studio Code) was granted on 2026-10-16, and every look that was here is under "To take" or "Taken".
