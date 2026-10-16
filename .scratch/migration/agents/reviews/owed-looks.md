@@ -6,21 +6,95 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 ## To take
 
-- Q81: a dialog over the update tray taking the first Escape. Taken by Axel 2026-10-13 on his own page (the `tasks.skip_permissions` Confirm is gone with that retired setting; the schedule dialog checked in its place): Update opens the tray, Schedule... opens the schedule dialog over it, the first Escape closes the dialog and leaves the tray open, the second closes the tray and gives the focus back to Update. Passed.
+Every look below is owed from a landed step and taken at O37's landing, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
+
+- Narrow panes (state file's Booked section, for U2's audit and X3c): the source tab's buttons at 140 px (now in the breadcrumb bar), Live HPC's Refresh cut, the diff bar wrapping, a tab's close control out of reach, a shell in a narrow column redrawn at another width after a reload.
+- X3c's look list (`agents/briefs/X3c.md:207`), the fixes never seen in the app: R18-look-1 (a long palette row), U3-look-1 (tabs at 150%), A1-look-1 (the status bar on a diff tab), Q88c-15 (Editor Actions Position, and Hidden leaving a float's More button), Q88c-16 (New Text File), Q88c-17 and Q81-look-4 (the tab activated after a close).
+- X3c's look list, continued: L4-1 (a floated terminal's scroll), L4-2 (a Terminal tab's title), M3-4 (a preview table in a narrow pane), Q81-look-1 to Q81-look-3 and Q88-look-3 (a dialog's focus and its drawing over a float).
+- Q99-look-3: the Sessions view's New button opening nothing (held out of D20 as Z515 (2), never probed).
+- Q88-look-1, its second half: a right-click on a branch pill while a git write is in flight (held out of D20 as Z515 (3)).
+- The terminal's wheel scroll speed, with a real trackpad and a mouse.
+- D25-owed-4a: Revert Block cut at about 300 px, which D42 claims fixed; D42's look covered only the Timeline.
+- Q88c: Unstage and Commit carried out, on a scratch repository (plan.md:392).
+- D11: debug cases 1, 2, 36, 44, 51, 58 to 62, 79, 82, 84, 85, 90 and 97, and the round's colours.
+- A3: a listed schedule row, its runs, a held row and the refusal sentences.
+- A1: Send pressed, in a scratch session only, never in a real one.
+- D15: Open in New Window and Copy into New Window in the desktop app, a document tab under Maximise, two browser tabs of oculus on one arrangement.
+- D14 defect 7: the fixed picture hover (`latex-widget.ts:192-200`).
+- D23b: the Svelte server's approval, and a rename carried out with its approval.
+- D23c: an Outline press on a LaTeX section, and F8 into another file.
+- D33 case 8: a removed root's command and LaTeX rows leaving Problems.
+- D18: the Processes failure line when `ps` cannot be read.
+- D22: Show in Files on the collection cards, the venue cards and a person's folder.
+- D36: Run Again on a tab of an unserved root.
+- D37: the terminal bar's resize refusal (case 18), and a preview asked from a float (case 32).
+- D38: Web of Science and Scopus hits drawn (only the no-key state was seen).
+- D39: the Refactor Preview's Apply, its History record and Undo; References rows and Peek for hub keys.
+- D41: cases 6, 17, 21 and 29, the page side of Behaviour 1, and case 33 in the dark theme.
+- D43, LaTeX through texlab: Go to Definition from \ref, \cite completion and hover, \includegraphics completion with its preview, unimath, the weave approval, Restart, and `latex-unmarked`.
+- D44: the Submit Job confirms for btfno and ward, and a refusal's alert tone.
+- D45: a LaTeX build, a clean, SyncTeX both ways, and the status item during a build.
+- D46: Cmd+Shift+P, F1 inside the editor, and the rows' draw time against the 50 ms bound.
+- D47: case 5 (the drag and Alt+Up), case 6 (the Discard and branch questions), case 16 (a 200 px pane) and case 17 (the keyboard).
+- D49: the rewritten Data map tab drawn on a real hub.
+- D51: a diff under a VS Code theme, and the themes Red, Dark High Contrast, Light High Contrast and Dark+ (`config/appearance.yml:21,26,29,30`).
+- D52: the person page's Folder block, the Documents switch between files, and an undo from History on an entry page.
+- D53: Copy into New Window, Reset, Reset all pages, and a drop from the catalogue.
+- D55: case 19d, a `lab:` tab after its root is removed.
+- D56: a workbench root that leaves the workspace, and the Code theme menu's 19 themes.
+- D57: the drag of case 5.
+- D59: the rice red command's two states (an open CAREER.yml, and the Nudge approval panel), and a repository personal project's page.
+- D62: calls from the page into a frame (onTheme, onChannel, onStore, onHost), and the dark theme.
+- D63: the status item's dimmed strength through the button primitive's `inert` flag.
+- D64: the stop dialog's background.
+- D65: the Focus lanes with a personal project, the boards in the dark theme, and the Edit Manifest form under the one schema.
+- D66: the Usage live-session rows, and the dark theme.
+- D67: the root-bookmark star, its row and menus in the dark theme.
+- D68: Save Workspace As, and Add and Remove Folder through the menus.
+- D69: the diff, merge and peek editors' widgets, a wheel scroll of a diff list, a high-contrast theme, and the linter item at its cap.
+- D70: the `lsp_edit_readonly` notice.
+- D71: the question after a clone, and a deposit mirror with an origin (Fetch, ahead and behind).
+- D72 item 11: the History row saying what an undo did.
+- D73: Save to Literature from a Lit Watch card and from a Literature card.
+- D74: Cmd+W on a pinned tab, and Cmd+Shift+T.
+- D76: pasting a picture into a note, and Present on a slide with a handler or a script.
+- E4: the wallpaper over an app frame, a penpal message from the Document frame and from a second tab, P2 (the Confirm detail's scrollWidth) and P3 (a press from one frame into another).
+- M6: LinkedIn Add opening the idea with the caret on its body line.
+- O30, the desktop app: the floating window, find in the page, the application menu, the spelling menu, the folder picker and the dialogs.
+- O30b: the "not built" dialog (case 15).
+- O33 phase A: the Sessions view's text size, opened from the palette (the look never pressed the Sessions rail).
+- PR1: Present's real full-screen states.
+- PR3: the Export to PDF print dialog (case 25), and case 16's live redraw timed end to end.
+- PR4: the audience popup, the desktop audience window, Close Window, real full screen (cases 16 to 18) and the light theme (case 19).
+- Q107: the Terminal list's right-click menu on its empty area.
+- Q123: attaching to a pane on its alternate screen (a 403 refused it on TEST; a scratch oculus takes it).
+- Q72: DateInput, the MultiSelect filter and the FieldSelect trigger with `field.css`.
+- Q79a: a save and an add from the page.
+- Q88b: New File and New Folder carried out, Rename, Paste, Upload, Trash, Reveal in Finder, Find in Folder, and the result of Compare Selected, on a scratch folder.
+- Q89: Delete and Backspace on a row, a held key, Shift+Enter, the arrows, the focus handed to the grid, the paste question, a file drop and a drag.
+- Q96: an icon pick that changes a rail row, on a scratch oculus whose `rail:` a look may write.
+- Q30: the Findings sentences for a broken reference, an unknown status and a schema error.
+- R18: the Help diagrams under the light theme, seen as a picture.
+- S3c: the wide table of contents (700 px and up), the reveal from the rail's Settings, and a row's hover under a wallpaper theme.
+- S4 and D25: the emptied-family save (every `read_limits` entry removed, then Save).
+- S5: look-table rows 5, 6, 7, 10, 11, 14, 15, 17, 19 (`port: x`) and 21.
+- X3e: the E80 "unreadable" state in between, and case 121's timings under load.
+- X3f case 7: the index tab's staged-line blame colours, read on the gutter.
+- Q35: the Present `#` link jump in a scaled frame, on a scratch hub whose `PRESENT.md` holds a fragment link (no test holds it).
+- Q91: the follow-up editor with several notes, on a scratch hub whose manifest lists two or more notes.
+- Q98: the Audit view's code drawing, on a scratch hub with a finding that holds a backticked word.
+- U1: the Teaching column's icon, on a scratch hub with an active teaching entry.
+- Q89: a terminal split outside every place, on a scratch oculus.
+- Q86b: a press on a mover while the last drag still settles.
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
-- Q35's Present `#` link jump in a scaled frame: no `PRESENT.md` on the hub holds a fragment link (`git grep -n "](#" -- 'projects/**/PRESENT.md'` prints nothing), and a slide with one needs a project written under a scan tier and placed in `present.yml`'s deck order, a write a look may not leave. No test holds it; the scale division is read in `views/shared/prose/jump.ts` (head comment and body).
-
-- Q91: the follow-up editor with several notes; no manifest holds a list of two or more notes.
-- Q98: the Audit view's code drawing; no live finding holds a backticked word.
-- U1: the Teaching column's icon; the hub has no active teaching entry.
-- Q89: a terminal split outside every place; no terminal on this machine starts outside the composer's places.
-- Q86b: a press on a mover while the last drag still settles; the browser tool's next action comes after the settle.
-- Q67: a live Connect against a real provider; no client half exists on this machine.
 - Q97: the one-pane System arrangement. It no longer exists: S4 (1184e5f38) replaced the `info` page with the `views` page, three panes (`config/layout.yml:98-110`), and the rail's System button now opens it. That page is seen only by a rail press or a reset of Axel's System page, which a look on TEST never does; `tests/data/sources/config/rail.test.ts` holds that every rail page names an arrangement.
 
 ## Taken
+
+- Q67, a live Connect against a real provider: taken by Axel 2026-10-16 ("I've done this, and it works correctly").
+- Q81: a dialog over the update tray taking the first Escape. Taken by Axel 2026-10-13 on his own page (the `tasks.skip_permissions` Confirm is gone with that retired setting; the schedule dialog checked in its place): Update opens the tray, Schedule... opens the schedule dialog over it, the first Escape closes the dialog and leaves the tray open, the second closes the tray and gives the focus back to Update. Passed.
 
 - D77, the window buttons off macOS taking the strip's colours: taken by Axel 2026-10-15 ("I did the look myself, looks good").
 - D77, taken 2026-10-15 on a scratch oculus on 8796 over the gate at 317acc041 (main's head), with a scratch home holding four Claude transcripts with background agents and two scratch hubs; the Sessions view opened from the palette, never from the rail; no agent started.

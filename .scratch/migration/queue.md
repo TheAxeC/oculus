@@ -1,9 +1,14 @@
 In flight (1 of 6 slots in use):
-- O33 (oculus in its own repository, the cockpit retired and Linux): phase A landed 2026-10-16 (parts 1 to 15 with the Focus page, the review's findings and four look defects fixed at landing); phase B, the cockpit and three skills removed, waits on Axel's yes path by path (open item 118); then phase C, the new repository, the Lima run, Axel's push and the draft Release.
+- O37 (the fixes and owed looks of O33's phase A): brief checked, worktree being made.
 
-Queued, in order (0 steps): none.
+Queued, in order (2 steps):
+- O38 (the cockpit retired and the hub's tools cleaned): once O37 has landed; each deletion on Axel's yes, path by path.
+- O39 (oculus in its own repository): once O38 has landed.
+
+Owed looks (agents/reviews/owed-looks.md): 78, taken at O37's landing.
 
 Landed, newest first:
+- O33 (phase A: oculus ready for its own repository, parts 1 to 15 with the Focus page), 2026-10-16, bda7b0346.
 - Q72 (the architecture re-read: no major problem, good enough to maintain and to open-source; the channel and write drawings with no two arrows along each other; the diff pane on git's hunks; one stylesheet for the form fields; three negative checks on a signal), 2026-10-15, 69252f5d9.
 - The Pillars page back on the rail (open item 115), 2026-10-15, inline on main.
 - The rail inline (open item 114: the foot's Search and Bookmarks removed, the Pillars page merged into Registries), 2026-10-15, inline on main.
