@@ -9,8 +9,7 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
 - Narrow panes, the part left: Live HPC's Refresh in a narrow pane, which shows only when a cluster is configured, so it is taken on TEST.
-- D51: a diff under a VS Code theme, and the themes Red, Dark High Contrast, Light High Contrast and Dark+ (`config/appearance.yml:21,26,29,30`).
-- D52: the person page's Folder block, the Documents switch between files, and an undo from History on an entry page.
+- D52, the rest: an undo from History on an entry page, taken once D52-look-2 is fixed (History cannot draw on the scratch hub until then).
 - D53: Copy into New Window, Reset, Reset all pages, and a drop from the catalogue.
 - D55: case 19d, a `lab:` tab after its root is removed.
 - D56: a workbench root that leaves the workspace, and the Code theme menu's 19 themes.
@@ -414,13 +413,28 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
   - Refusal, passed: a `.slurm` in the btfno folder outside `code/` on the scratch hub (made for the look and removed after it) gave "This job script is not inside the code folder of its project." under the editor in red (rgb(204, 32, 32)), in an element with role alert; no confirm opened.
   - Defect, booked for O37's repair round:
   - D44-look-1: after a press of Submit Job the keyboard is on the page body, not on Submit Job: after Cancel on the btfno confirm, after Escape on the ward confirm, and after the refusal (a page script reading `document.activeElement`: BODY each time). The control is drawn disabled while the plan is asked (`disabled={submitting}`, `src/lib/views/sources/source/actions/BarActions.svelte:137`), and `Modal.svelte` gives the keyboard back to the control that held it when the confirm was drawn. Goes into O37's repair round with this symptom and no diagnosis runs (O37 Step 0).
-  - Not taken: opening the confirm from the keyboard (Submit Job focused, Enter); the session's permission check refused that press. The two mouse presses above cover the confirms and the refusal.
+  - Opening the confirm from the keyboard (Submit Job focused, Enter), passed: taken by Axel, who reported it works; the session's permission check refused that press for the session.
+
+- D15 (the desktop part), D38 and the terminal's wheel speed, 2026-10-16, taken by Axel, who reported each works:
+  - D15: Open in New Window and Copy into New Window in the desktop app.
+  - D38: the Web of Science and Scopus hits drawn by the Lit Watch search, with his API keys set.
+  - The terminal's wheel speed with a real trackpad and a real mouse, against VS Code's integrated terminal on the same output.
+
+- D51, 2026-10-16, the scratch oculus on 8796, a scratch HOME: the side-by-side diff of `a.rite` in the scratch riterepo (two added lines and one changed line, made for the look and put back after it), picked from the Settings view's Theme menu and seen zoomed.
+  - Passed: the Theme menu lists the 34 themes of `config/appearance.yml` in order (a page script over its menu items) and scrolls to the last; under vscode red, vscode dark high contrast, vscode light high contrast and vscode dark+ the removed line, the added lines, the changed words, the hunk head with Stage Block and Revert Block, the hidden-lines rows and the overview ruler each draw in the theme's colours, the code coloured by the theme's rules, all readable. The other four themes D51 named (Red, Dark High Contrast, Light High Contrast, Dark+) were seen on a Python file at D52's landing.
+  - Defect, booked for O37's repair round:
+  - D51-look-1: under vscode dark high contrast and vscode light high contrast the diff draws no outline around inserted and removed text. VS Code registers `diffEditor.insertedTextBorder` and `diffEditor.removedTextBorder` for its high-contrast themes (hcDark `#33ff2eff` and `#FF008F`, hcLight `#374E06` and `#AD0707` in the installed VS Code's `workbench.desktop.main.js`), and `src/lib/ui/controls/editor/kit/theme/colours.ts:254-255` sets both to `--line 00` (transparent) for every theme. Goes into O37's repair round with this symptom and no diagnosis runs (O37 Step 0).
+
+- D52, 2026-10-16: the person page's Folder block and the Documents switch on TEST (8790, the real hub, read only), the undo from History on the scratch oculus (8796).
+  - Folder block, passed: Dongho's person page (opened from the palette's people entry) draws "Supervision folder (education/student-supervision/dongho-2024)" with Show in Files and Open Workbench beside it, the heading and both controls on one middle (320 px each, a page script), and the folder's six PDFs as links; the heading's style (11 px, 700) is the page's other block headings'. On the scratch hub, whose copy of the folder is empty, the block says "The folder holds no files."
+  - Documents switch, passed for the mouse: on the FWO Senior Postdoctoral Fellowship 2026 entry page the Documents group lists ASSESSMENT.md, naesens-concept-note.md, QUESTIONS-FOR-NAESENS.md and RESEARCHQUESTIONS.md; a press on the second draws its text in place of the first.
+  - Undo from History on an entry page: not taken, held by D52-look-2. The status of the scratch FWO entry was set to planned (the page said "saved status") and back to in-prep; History never drew its rows.
+  - Defects, booked for O37's repair round:
+  - D52-look-1: the Documents switch does not follow the keyboard: each of its four buttons is its own Tab stop (tabIndex 0 on all four) and Right on the checked one leaves the choice and the focus where they were (a page script reading `aria-checked` and `document.activeElement` after the key). It is `src/lib/ui/controls/segment/Segment.svelte`, a `radiogroup` of ToolButtons with no arrow handling, so every Segment of the tree behaves the same.
+  - D52-look-2: the History view stays at "Reading the change log..." when the change log holds a write of the schedules file: the console throws "text key not in the text catalog (config/text/): history.kind_schedules" from `kindOf` (`src/lib/views/system/history/History.svelte:121`). The change log is also written with the kinds `lsp` (`src/lib/server/machine/lsp/choices.ts:45`) and `commands` (`src/lib/server/machine/runs/commands/routes.ts:46`), and `config/text/views/system/history.yml` has no `kind_schedules`, `kind_lsp` or `kind_commands`. Goes into O37's repair round with this symptom and no diagnosis runs (O37 Step 0); the undo look is taken after it.
 
 ## Blocked, for Axel
 
-Looks that need the desktop app's windows or a physical device, which nothing here can drive: the session has no screen control of the Electron app and no trackpad or mouse of its own.
+None: Axel took the last three (under "Taken").
 
-- D15, the desktop part: Open in New Window and Copy into New Window in the desktop app (Copy into New Window is not in the browser's tab menu).
-- D38: Web of Science and Scopus hits drawn. They need Axel's API keys, which the session does not read or enter; with the keys set, the Lit Watch search draws the two lists.
-- The terminal's wheel speed with a real trackpad and a real mouse, against VS Code's integrated terminal on the same output; the synthetic measurement is under "Taken".
 

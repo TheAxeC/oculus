@@ -34,6 +34,7 @@ dispatch:      # steps in flight, up to six (Z632)
   session_id: a85b6f3127062ae40 (claude-opus-5-5)
   launched: 2026-10-16
   report: agents/reviews/O37-report.md
+  builder_usage: 358242 tokens, 1139 tool uses, 201.5 min
   round: 0
   landing: not-started
 ```
