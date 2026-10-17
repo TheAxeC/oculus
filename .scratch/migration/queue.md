@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O40 (O37's open look defects): brief checked, builder starting.
+- O40 (O37's open look defects): building.
 
 Queued, in order (2 steps):
 - O38 (cockpit retired, hub tools cleaned): once O40 has landed.

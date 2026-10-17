@@ -26,8 +26,16 @@ workers_at_once: 6           # Axel, 2026-10-06 (Z632): six. Before: five (Z472,
 ```yaml
 dispatch:      # steps in flight, up to six (Z632)
 - step: O40
+  base: 06aaa0da4
+  worktree: .agents/worktrees/migration-O40
+  executor: agent
+  worker: claude:opus (ordo-high)
+  session_id: a9544cabcb0062b1d
+  launched: 2026-10-17
+  report: tools/oculus/.scratch/migration/agents/reviews/O40-report.md
+  round: 0
   brief_check: agents/reviews/O40-brief-check.md (a720dd5aa206b347e, claude-opus-5-5, 238,481 tokens, 81 tool uses, 12.3 min)
-  landing: preparing
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
@@ -276,7 +284,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - A landing's check run (the gate) starts only while no builder or reviewer of another step is running tests: `ps -Ao command | grep -E 'vitest|svelte-check'` shows no process of another worktree. Otherwise the landing waits for that run to end (Axel, 2026-10-13, after D71's landing met timeouts under the load of D64's builder).
 
 ## Current position (rewrite at every package)
-- 2026-10-17 (O40 prepared). Axel ruled open items 130 and 131: the six diagnosis agents were stopped, and diagnosis is banned for everyone, standing. O40's brief (`agents/briefs/O40.md`) covers all 45 open rows of `agents/reviews/O37-defects.md`, 43 built and rows 24 and 83 needing no change; its brief check a720dd5aa206b347e (claude-opus-5-5) found 30-odd points, each closed in the brief (`agents/reviews/O40-brief-check.md`, Closed); Z932 taken. Defects: 85, 42 done, 43 open, all in O40. Next: the builder, then /refute and /land with the looks (rows of the report's look lines, D68's browser panel after row 69, row 85 with the real pointer). Then O38, then O39.
+- 2026-10-17 (O40 prepared). Axel ruled open items 130 and 131: the six diagnosis agents were stopped, and diagnosis is banned for everyone, standing. O40's brief (`agents/briefs/O40.md`) covers all 45 open rows of `agents/reviews/O37-defects.md`, 43 built and rows 24 and 83 needing no change; its brief check a720dd5aa206b347e (claude-opus-5-5) reported findings under eight headings, each closed in the brief (`agents/reviews/O40-brief-check.md`, Closed); Z932 taken. Defects: 85, 42 done, 43 open, all in O40. Builder a9544cabcb0062b1d launched on base 06aaa0da4 in `.agents/worktrees/migration-O40`. Next: its report, then /refute and /land with the looks (rows of the report's look lines, D68's browser panel after row 69, row 85 with the real pointer). Then O38, then O39.
 - 2026-10-17 (O30 case 27 taken). On Axel's greenlight (ruling 128 (b)) the session took O30 case 27 with the real pointer on its scratch app on 8796: a tab dragged onto the desktop opened a new window, and a tab dragged into a popped-out window moved into its pane; a drag that starts on a window that is not the active one does nothing, booked for O40 as row 85 of `agents/reviews/O37-defects.md` (85 defects, 40 done, 45 open for O40). Next: O40, prepared and started on Axel's go, then O38, then O39.
 - 2026-10-17 (O37 landed). O37 landed on main (booking in plan.md under O37, `agents/reviews/O37-landing.md`) after one repair round and the review over it: the review's findings closed at landing, 40 of the 84 look defects done and 44 open for O40 (`agents/reviews/O37-defects.md`), the owed looks taken but O30 case 27 (open item 128, ruled (b): it waits on Axel's greenlight) and D68's browser panel (O40), red lines in six test files, four tree checks and the format check fixed, Z930 taken; `npm run test:landing` passed in the gate and main's staged oculus tree equals the gate's. Open items: 128. In flight (0 of 6): none. Next: O38's /spec, each deletion on Axel's yes path by path; O40 on Axel's go.
 - 2026-10-16 (O37 round 1 sent). O37's builder a85b6f3127062ae40 reported (`agents/reviews/O37-report.md`, usage in `builder_usage`); the reviewer ad8a7f0497e2ae8be on claude-opus-5-5 wrote `agents/reviews/O37-refuter.md`: items 17, 24 and 32 violated (the types lock taken over by age from a live writer and by two starters at once, `test:quick` over 45 s with slow tags removed, the cache still keyed by `CACHE_VERSION`), the builder's probe runs not repeatable, five behaviour changes unstated. Round 1 (`agents/briefs/O37-round1.md`: 14 refuter items, 2 of the orchestrator's, 91 look defects from `owed-looks.md`, open item 123's digest) sent to the builder; snapshot `.agents/worktrees/O37-round-1` with `files.txt`. Open items: none. In flight (1 of 6): O37 (round 1). Next: X3e case 121 under the builder's load, the review over the round, /land O37, then O38 on Axel's yes.
