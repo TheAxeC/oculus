@@ -1,5 +1,6 @@
-In flight (1 of 6 slots in use):
+In flight (2 of 6 slots in use):
 - O40 (O37's open look defects): building.
+- O41 (motion, the rail's summed number, the clone finding): brief checked, builder launch next.
 
 Queued, in order (2 steps):
 - O38 (cockpit retired, hub tools cleaned): once O40 has landed.

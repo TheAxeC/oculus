@@ -4,6 +4,8 @@ Read `orchestrator-state.md` first. This file holds what was raised and closed, 
 
 ## Closed items (the log of what was raised and how it ended, newest first)
 
+- Open item 131 (2026-10-17): diagnosis banned, standing, for the orchestrator and every agent, never suggested; O40 runs with every open row in its brief. Axel's word.
+- Open item 132 (2026-10-17): Axel's three asks (motion for actions, the rail's summed number, the clone finding over worktrees) discussed and ruled: booked as O41, run beside O40.
 - Open item 130 (2026-10-17): O40's six diagnosis agents, about 85 minutes in with no record returned. Axel ruled (b): they are stopped and the orchestrator reads each row's cause from the code; their apps, tmux servers, worktrees and copies are removed.
 - Open item 129 (2026-10-17): O40 row 83, a popped-out window's close button pressed by Accessibility closed the Live HPC window. Axel ruled (a): the session presses a popped-out window's close button once with the real pointer in a scratch app with that app in front; row 83 is fixed in O40 if the wrong window closes, and needs no change if the right one does.
 - Open item 128 (2026-10-17): O30 case 27, the tab drag between two windows of the desktop app. Axel ruled (b): the session moves the pointer for one drag on a scratch app with that app in front, and only once Axel gives the greenlight ("(b) and once I give the greenlight").

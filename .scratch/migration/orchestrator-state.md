@@ -36,6 +36,9 @@ dispatch:      # steps in flight, up to six (Z632)
   round: 0
   brief_check: agents/reviews/O40-brief-check.md (a720dd5aa206b347e, claude-opus-5-5, 238,481 tokens, 81 tool uses, 12.3 min)
   landing: not-started
+- step: O41
+  brief_check: "running: a5ee76e018077f142"
+  landing: preparing
 ```
 
 ## The standing demands (from Axel, in force)
