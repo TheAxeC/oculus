@@ -1,5 +1,5 @@
 In flight (1 of 6 slots in use):
-- O40 (O37's open look defects): reviewed (`agents/reviews/O40-refuter.md`); repair round 1 next, with rulings 133 to 135 (a) and the review's findings; the review over the round and the landing after.
+- O40 (O37's open look defects): repair round 1 sent (`agents/briefs/O40-round1.md`: rulings 133 to 135 (a) and the review's ten findings); the review over the round and the landing after.
 
 Queued, in order (2 steps):
 - O38 (cockpit retired, hub tools cleaned): once O40 has landed.
@@ -8,7 +8,7 @@ Queued, in order (2 steps):
 Owed looks: 1, D68's folder panel from a browser tab, in O40.
 
 Landed, newest first:
-- O41 (motion, the rail's summed number, the clone finding), 2026-10-18, the landing commit after 6e13eafc6.
+- O41 (motion, the rail's summed number, the clone finding), 2026-10-18, 590a795a3.
 - O37 (O33 phase A fixes and owed looks), 2026-10-17, 93633a2b4.
 - O33 (phase A, oculus ready for its own repository), 2026-10-16, bda7b0346.
 - Q72 (the architecture re-read), 2026-10-15, 69252f5d9.
