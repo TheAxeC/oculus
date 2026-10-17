@@ -1,19 +1,21 @@
-In flight (1 of 6 slots in use):
-- O37 (the fixes and owed looks of O33's phase A): reviewed; repair round 1 sent (the review's 14 findings, two of the orchestrator's, 91 look defects, open item 123's digest); the review over the round and the landing after.
+In flight (0 of 6 slots in use):
+- none.
 
-Queued, in order (2 steps):
-- O38 (the cockpit retired and the hub's tools cleaned): once O37 has landed; each deletion on Axel's yes, path by path.
+Queued, in order (3 steps):
+- O40 (O37's open look defects): waits on Axel's go.
+- O38 (cockpit retired, hub tools cleaned): after O40.
 - O39 (oculus in its own repository): once O38 has landed.
 
-Owed looks (agents/reviews/owed-looks.md): taken while O37 is built and reviewed; 13 left to take (10 with native windows, now takeable with Accessibility for Visual Studio Code, and 3 that wait for D52-look-2's fix), none blocked; the defects found booked for O37's repair round (L94 to L98 added from the looks of 2026-10-16 evening).
+Owed looks: 1, D68's folder panel from a browser tab, in O40.
 
 Landed, newest first:
-- O33 (phase A: oculus ready for its own repository, parts 1 to 15 with the Focus page), 2026-10-16, bda7b0346.
-- Q72 (the architecture re-read: no major problem, good enough to maintain and to open-source; the channel and write drawings with no two arrows along each other; the diff pane on git's hunks; one stylesheet for the form fields; three negative checks on a signal), 2026-10-15, 69252f5d9.
+- O37 (O33 phase A fixes and owed looks), 2026-10-17, 93633a2b4.
+- O33 (phase A, oculus ready for its own repository), 2026-10-16, bda7b0346.
+- Q72 (the architecture re-read), 2026-10-15, 69252f5d9.
 - The Pillars page back on the rail (open item 115), 2026-10-15, inline on main.
-- The rail inline (open item 114: the foot's Search and Bookmarks removed, the Pillars page merged into Registries), 2026-10-15, inline on main.
-- D77 (the Sessions view and the title bar, the rail pages, the Repositories change groups and the graph), 2026-10-15, 9e250b73d.
-- D73 (the Literature view, hidden and ignored files shown, the domain, theme and feed settings in their files, Copy on code blocks and the Help tabs), 2026-10-14, 8af4c1dae.
+- The rail inline (open item 114), 2026-10-15, inline on main.
+- D77 (Sessions view and title bar), 2026-10-15, 9e250b73d.
+- D73 (the Literature view), 2026-10-14, 8af4c1dae.
 - D76 (notes like Obsidian), 2026-10-14, 8e41021f3.
 - D74 (the shell and source-control fixes), 2026-10-13, f92a0abe6.
 - D72 (collection entries as records of their own), 2026-10-13, f3c588783.
