@@ -17,6 +17,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 - A risk you name is a task you own: fix it, or say plainly and prominently that it is unfixed. Pick a check by asking whether it would fail if the risk were real.
 - No silent design decisions: a user-visible shape (a config key, a key in a saved record under `~/.oculus`, a wire format or route parameter, a vocabulary or attribute value, a keybinding, a z-order, a destructive action without confirmation, a departure from a ruling) the brief does not name is reported as a decision the orchestrator may reverse, not baked in quietly. Internal, reversible details are chosen freely and listed.
 - Verify before asserting: read the source, cite `file:line`; never repeat another agent's summary as a fact.
+- Diagnosis is banned: never run `/diagnose`, never start a diagnosis agent, and never ask for, offer or suggest one in a report or a message. A cause is found by reading the code and by runs of your own.
 - Prose: plain, ASCII, no em dashes, no quips, no 'not X but Y' construction (state the thing directly); name the actual function, file and line.
 - The cockpit is a cautionary reference, never a justification; every oculus choice is justified from `DESIGN.md`.
 

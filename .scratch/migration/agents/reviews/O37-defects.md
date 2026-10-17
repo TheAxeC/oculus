@@ -50,7 +50,7 @@ Status: fixed (at landing in the gate, with the check named) | open.
 14. a/i43-1: an open merge tab keeps "1 conflict left" after a second conflict is written behind it.
 15. a/i43-1: the commit box keeps "Merge branch 'side'" while .git/MERGE_MSG names side2.
 21. f/i43-12: while the settings are held, Cmd+S in the editor sends no save.
-24. c/i43-34: a folder whose listing is not held sends its listing read at the right-press.
+24. c/i43-34: a folder whose listing is not held sends its listing read at the right-press. No change needed: the read decides whether the menu offers Open Presentation or New Presentation (`src/lib/views/shared/explorer/tree/control/picks.svelte.ts:238-247`).
 26. a/i43-23: the merge Result editor draws no tint on an open conflict.
 27. e/L22: Cmd+A then typing does not replace the Settings search text.
 30. b/line702: a new project with links is placed on the rim, 142 to 188 units from its links.
@@ -89,10 +89,10 @@ Status: fixed (at landing in the gate, with the check named) | open.
 80. d/owed-D72-11: the delete's own History row and the add's undo row carry the same words, "entry removed".
 81. o/O30 case 41 and the O30 looks: the close question over unsaved text puts the keyboard on Confirm (`Confirm.svelte:60`), so Enter loses the text, and it offers no Save; VS Code's question focuses Save and offers Save, Don't Save and Cancel.
 82. the O30 looks: the editor's status items (language, linter, caret) go when a view tab of another group (Files, Repositories) becomes active, since the status bar follows `activeInstance()`; VS Code keeps them while the side bar has the focus.
-83. the O30 looks: two Accessibility presses on a popped-out window's close button closed the Live HPC window, not the one pressed, while File > Close Window closed the right one; whether the app or the Accessibility press is at fault is not known, and a pointer press on the close button settles it.
+83. the O30 looks: two Accessibility presses on a popped-out window's close button closed the Live HPC window, not the one pressed, while File > Close Window closed the right one; whether the app or the Accessibility press is at fault is not known, and a pointer press on the close button settles it. No change needed: one pointer press on the close button of the popped-out `t2.txt` window, the app in front, closed that window alone, and its tabs `use.ts` and `t2.txt` came back to the main window (CDP tab list); the Accessibility press is at fault.
 84. the O30 looks: the app requests `/node_modules/monaco-editor/esm/vs/editor/editor.worker.js` three times (404) while the real worker loads from `/_app/immutable/workers/`; what requests the first path is not known.
 85. O30 case 27: a tab drag that starts on a window of the desktop app that is not the active one does nothing; the press only activates that window, the page receives no `pointerdown` (recorded on the page), and the tab stays; the same drag from the active window works. `src/desktop/windows/` sets no `acceptFirstMouse`, so Electron's default on macOS applies.
 
 ## Count
 
-85 defects: 40 done in the gate (39 fixed, row 56 needing no change), 45 open for O40.
+85 defects: 42 done (39 fixed in the gate; rows 24, 56 and 83 needing no change), 43 open for O40.

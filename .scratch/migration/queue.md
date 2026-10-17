@@ -1,9 +1,8 @@
-In flight (0 of 6 slots in use):
-- none.
+In flight (1 of 6 slots in use):
+- O40 (O37's open look defects): brief checked, builder starting.
 
-Queued, in order (3 steps):
-- O40 (O37's open look defects): waits on Axel's go.
-- O38 (cockpit retired, hub tools cleaned): after O40.
+Queued, in order (2 steps):
+- O38 (cockpit retired, hub tools cleaned): once O40 has landed.
 - O39 (oculus in its own repository): once O38 has landed.
 
 Owed looks: 1, D68's folder panel from a browser tab, in O40.

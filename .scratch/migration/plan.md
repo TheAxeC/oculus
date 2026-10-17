@@ -2137,6 +2137,11 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item 127 (2026-10-17): the look defects O37's landing does not fix go into one new step, O40, not into O37 again; O40 waits for Axel's go before it starts (the user).
 - O37's looks (2026-10-17): taken by six look agents (general-purpose, Opus 5.5) on their own scratch copies and desktop apps, the orchestrator reading every record and screenshot, and some looks the orchestrator's own (the user). [P2129]
 - Open item 128 (2026-10-17): (b), O30 case 27 is taken by the session moving the pointer for one drag on a scratch app with that app in front, only after Axel's greenlight (the user).
+- Open item 129 (2026-10-17): (a), O40 row 83 is settled by one real pointer press on a popped-out window's close button in a scratch app with that app in front (the user).
+- Open item 130 (2026-10-17): (b), O40's six diagnosis agents are stopped and the orchestrator finds each open row's cause by reading the code itself; no diagnosis runs for O40, no `/diagnose` and no diagnosis agent: where a row needs a run, the orchestrator runs it itself on a scratch copy (the user).
+- Open item 131 (2026-10-17): diagnosis is banned, standing: no `/diagnose` and no diagnosis agent for the orchestrator, any builder, any reviewer or any other agent, and no one asks for or suggests it; O40 runs now with every open row in its brief, a row whose cause the orchestrator's read does not settle given with its symptom, what the read found and the behaviour that must hold, for the builder to fix (the user).
+- Z932 (2026-10-17, O40's /spec, the orchestrator, automode): the close question over unsaved text reads "Do you want to save the changes to this tab before it closes?" with Don't Save, Cancel and Save, the keyboard on Save; the add's undo row reads "add undone"; the Refactor Preview after a drag is held to 1 s (self-rule).
+- Z931 (2026-10-17, O40's /spec, the orchestrator, automode): row 24 of `agents/reviews/O37-defects.md` needs no change; the read at a folder's right-press decides Open or New Presentation (`picks.svelte.ts:238-247`) (self-rule).
 - Z930 (2026-10-17, O37's landing, the orchestrator, automode): `npm run test:quick` holds 45 s over a change of a builder's size (20.8 s); over a whole step's change it selects nearly the whole unit suite (92.9 s), which the landing list runs; making that fit is not O37's part; calling the whole-step run green was the lazy option, not taken (self-rule).
 
 ## Agents
@@ -2250,6 +2255,12 @@ Agents in no role the cost script prices:
 19. a5e4e011ba391dc69: diagnosis of step D74, claude-opus-5-5
 20. aa071f530aa99f740: diagnosis of step D77, claude-opus-5-5
 21. af9bf8786db8217ac: diagnosis of step O33, claude-opus-5-5
+22. afcde32342183629f: diagnosis of step O40, claude-opus-5-5, stopped before its record (open item 130 (b))
+23. a25c310b4975d315b: diagnosis of step O40, claude-opus-5-5, stopped before its record (open item 130 (b))
+24. a47e21da890bfb61f: diagnosis of step O40, claude-opus-5-5, stopped before its record (open item 130 (b))
+25. aa66356a681657070: diagnosis of step O40, claude-opus-5-5, stopped before its record (open item 130 (b))
+26. a075972fce90e8742: diagnosis of step O40, claude-opus-5-5, stopped before its record (open item 130 (b))
+27. ac757d2dea85c1ee0: diagnosis of step O40, claude-opus-5-5, stopped before its record (open item 130 (b))
 - a0af7bce29bac6fa9: builder of step E4g, claude-sonnet-5-5
 - a0be667a081a9ab33: brief check of step E4g, claude-opus-5-5
 - a1387d637f72b6115: reviewer of step E4g, claude-opus-5-5

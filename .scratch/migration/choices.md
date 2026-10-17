@@ -4,6 +4,20 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z932 (2026-10-17, O40's /spec, the orchestrator, automode): the words and bounds O40's brief sets
+
+- Chosen: the close question over unsaved text reads "Do you want to save the changes to this tab before it closes?" (for several tabs, "to <n> tabs before they close?") with Don't Save, Cancel and Save in that order and the keyboard on Save, as VS Code's question on macOS; the add's undo row in History reads "add undone"; the Refactor Preview after a drag is held to 1 s. Row 81 names VS Code's question as the standard, and row 80 needs words that differ from the delete's "entry removed".
+- Not chosen: keeping "Close this tab and lose its unsaved changes?" with Save added as a third button, which leaves the question naming only the loss; no bound for the preview, the lazy option, which lets row 73 pass at any time.
+
+Where it applies: O40's brief, decisions 1, 2 and 4. Booked in `plan.md` Rulings.
+
+## Z931 (2026-10-17, O40's /spec, the orchestrator, automode): row 24, a folder's listing read at its right-press
+
+- Chosen: row 24 of `agents/reviews/O37-defects.md` needs no change. The read at the press is the documented one that decides whether the menu offers Open Presentation or New Presentation for a folder whose listing the page does not hold (`src/lib/views/shared/explorer/tree/control/picks.svelte.ts:238-247`); the Make Folder a Hub and Make Folder a Project items, which the look was about, are in the menu as it opens with no request, as the look record c/i43-34 shows.
+- Not chosen: deciding the presentation item without the listing (offer both, or decide at the click), which changes what the menu shows for no reader's gain. The lazy option would be the same "no change" taken without reading why the read is there; it was read.
+
+Where it applies: O40's brief, row 24. Booked in `plan.md` Rulings.
+
 ## Z930 (2026-10-17, O37's landing, the orchestrator, automode): `npm run test:quick` over a whole step's change
 
 - Chosen: item 24 of O37's brief is held met by the quick list over a change of a builder's size, which stays inside its 45 s (two changed files, 9 test files: 20.8 s), with no test of the unit suite waiting where it could check (the review over round 1's grep over every test file). A run over this step's whole change (534 changed files, 230 test files, nearly the whole unit suite) takes 92.9 s; running every test is the landing list's job, and it ran them all.
