@@ -91,7 +91,8 @@ Status: fixed (at landing in the gate, with the check named) | open.
 82. the O30 looks: the editor's status items (language, linter, caret) go when a view tab of another group (Files, Repositories) becomes active, since the status bar follows `activeInstance()`; VS Code keeps them while the side bar has the focus.
 83. the O30 looks: two Accessibility presses on a popped-out window's close button closed the Live HPC window, not the one pressed, while File > Close Window closed the right one; whether the app or the Accessibility press is at fault is not known, and a pointer press on the close button settles it.
 84. the O30 looks: the app requests `/node_modules/monaco-editor/esm/vs/editor/editor.worker.js` three times (404) while the real worker loads from `/_app/immutable/workers/`; what requests the first path is not known.
+85. O30 case 27: a tab drag that starts on a window of the desktop app that is not the active one does nothing; the press only activates that window, the page receives no `pointerdown` (recorded on the page), and the tab stays; the same drag from the active window works. `src/desktop/windows/` sets no `acceptFirstMouse`, so Electron's default on macOS applies.
 
 ## Count
 
-84 defects: 40 done in the gate (39 fixed, row 56 needing no change), 44 open for O40.
+85 defects: 40 done in the gate (39 fixed, row 56 needing no change), 45 open for O40.
