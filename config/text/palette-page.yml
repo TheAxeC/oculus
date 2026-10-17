@@ -12,7 +12,7 @@ text:
         col_type: Type
         col_view: View
         commands: Colon commands
-        commands_intro: A colon starts a command. The commands that list choices type their name and a space when chosen, and a command marked unavailable in the list is drawn and does not run.
+        commands_intro: A colon starts a command. The commands that list choices type their name and a space when chosen, and a command marked unavailable in the list is drawn and does not run. A command whose argument is empty or names no view, project, theme or file icon theme says so in the palette, which stays open.
         contents: Contents
         editor: Editor commands
         editor_intro: While a source tab is on screen the palette also lists the editor's own Cmd-K commands, each under the editor's own label with its chord beside it. The table names each by the editor's action id.

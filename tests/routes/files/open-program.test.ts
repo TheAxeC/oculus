@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { openPlatform } from '../../../src/lib/data/places/platform.ts';
 import {
-    addressOpener,
+    machineOpener,
     openable,
     openArgs,
     pathOpener,
@@ -108,11 +108,10 @@ describe('what the opener of Linux and of WSL2 is run with', () => {
 
     it('hands an https address to xdg-open and to wslview as one argument, and nothing else', async () => {
         const ran = recording();
-        await addressOpener('xdg-open', ran.exec)('https://example.org/a b');
-        await addressOpener('wslview', ran.exec)('https://example.org/c');
-        await expect(addressOpener('xdg-open', ran.exec)('file:///etc/passwd')).rejects.toThrow(
-            'open refused'
-        );
+        await machineOpener({ openBin: 'xdg-open' }, ran.exec)('https://example.org/a b');
+        await machineOpener({ openBin: 'wslview' }, ran.exec)('https://example.org/c');
+        const xdg = machineOpener({ openBin: 'xdg-open' }, ran.exec);
+        await expect(xdg('file:///etc/passwd')).rejects.toThrow('open refused');
         expect(ran.calls).toEqual([
             ['xdg-open', 'https://example.org/a b'],
             ['wslview', 'https://example.org/c']

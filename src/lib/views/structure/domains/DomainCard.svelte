@@ -4,6 +4,7 @@
 
     import RegistryCard from '$lib/views/shared/forms/registry/RegistryCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import type { Entry, IdentityFault, SchemaField } from '$lib/state/boards/collection';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import { isDormant, type Domain, type Project } from '$lib/state/boards/structure/lines';
@@ -20,6 +21,9 @@
         onsaid: (said: string) => void;
     };
     let { domain, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
 </script>
 
 <div class:dormant={isDormant(projects)} data-domain={domain.id}>
@@ -39,7 +43,7 @@
     >
         {#if domain.blurb}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p>{@html inlineMarkdown(domain.blurb)}</p>
+            <p>{@html inlineMarkdown(domain.blurb, cardMath(domain.blurb))}</p>
         {/if}
     </RegistryCard>
 </div>

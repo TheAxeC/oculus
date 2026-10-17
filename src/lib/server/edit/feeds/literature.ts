@@ -23,7 +23,6 @@ import {
     samePaper,
     wholeNumber
 } from '../../../data/prose/literature.ts';
-import { loadConfig } from '../../../data/sources/config.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { inside } from '../../core/paths.ts';
 import { words } from '../../core/words.ts';
@@ -49,9 +48,12 @@ type LiteratureSource = LiteratureSaveWrite['source'];
 /** The `collections:` entries of a configuration, each a key and a file. */
 const listedShape = z.array(z.looseObject({ key: z.string(), file: z.string() })).catch([]);
 
-/** The path the engine's own `collections:` list gives the Literature file, if it names one. */
-export function engineLiteraturePath(engine: string): string | undefined {
-    const listed = listedShape.parse(loadConfig(engine).config.collections);
+/**
+ * The path the engine's own `collections:` list, in its configuration `engineConfig`, gives the
+ * Literature file, if it names one.
+ */
+export function engineLiteraturePath(engineConfig: Record<string, unknown>): string | undefined {
+    const listed = listedShape.parse(engineConfig.collections);
     return listed.find((one) => one.key === LITERATURE)?.file;
 }
 

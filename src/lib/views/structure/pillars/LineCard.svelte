@@ -6,6 +6,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import RegistryCard from '$lib/views/shared/forms/registry/RegistryCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import type { Entry, IdentityFault, SchemaField } from '$lib/state/boards/collection';
     import type { ViewSource } from '$lib/state/sessions/view-source';
     import {
@@ -48,6 +49,9 @@
         fault,
         onsaid
     }: Props = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
     const flight = $derived(inFlight(projects));
     const strip = $derived(tierStrip(projects, venues, tiers));
     const funding = $derived(optionalText(entry?.fields.funding));
@@ -83,18 +87,18 @@
         {/if}
         {#if line.goal}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="goal">{@html inlineMarkdown(line.goal)}</p>
+            <p class="goal">{@html inlineMarkdown(line.goal, cardMath(line.goal))}</p>
         {/if}
         {#if funding}
             <p class="funding">
                 <Glyph name="funding" />
                 <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                {@html inlineMarkdown(funding)}
+                {@html inlineMarkdown(funding, cardMath(funding))}
             </p>
         {/if}
         {#if line.blurb}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="blurb">{@html inlineMarkdown(line.blurb)}</p>
+            <p class="blurb">{@html inlineMarkdown(line.blurb, cardMath(line.blurb))}</p>
         {/if}
     </RegistryCard>
 </div>

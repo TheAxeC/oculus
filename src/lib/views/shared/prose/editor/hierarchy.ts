@@ -1,5 +1,5 @@
-// Layer 3, view partial of Source.svelte. What a language server answers for Show Call Hierarchy
-// and Show Type Hierarchy, in the two steps the protocol has: the items at the caret
+// Layer 3, shared view partial of lsp.ts beside it. What a language server answers for Show Call
+// Hierarchy and Show Type Hierarchy, in the two steps the protocol has: the items at the caret
 // (`textDocument/prepareCallHierarchy`, `prepareTypeHierarchy`), then the items one level from an
 // item in a direction (`callHierarchy/incomingCalls` and `outgoingCalls`,
 // `typeHierarchy/supertypes` and `subtypes`). The References view draws them as a tree

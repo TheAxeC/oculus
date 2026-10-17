@@ -14,9 +14,18 @@
 // is left out. A request whose page closed answers nothing. A root whose server ended or did not
 // answer within 30 s, the wait for it to read the files changed on disk included, is named in the
 // answer beside the edits of the others, and a request no root's server answered is an error.
+//
+// The request carries the text of each tab of the page with unsaved text in the root. A Markdown
+// file among them that the server holds no document of is lent to it as an open document with that
+// text for the request, so its edits are computed over the tab's text and not the disk's: a moved
+// tab is closed under its old address and opened under its new one by the page a moment after the
+// move, and a request that lands between the two would otherwise be answered over the disk. A lent
+// document the page opens meanwhile becomes the page's (relay/relay-route.ts, openOn); the others
+// are closed once the server answered. The texts the answer names are those the server held when
+// it was asked.
 
 import { readFileSync, statSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { extname, join, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { LinksFailure, LspRpc, LspToServer } from '../../../../../data/model/index.ts';
 import { TEXT_LIMIT } from '../../../../../data/file-ops.ts';
@@ -44,6 +53,9 @@ export type LinksContext = OculusContext & {
 };
 
 type Links = Extract<LspToServer, { oculus: 'links' }>;
+
+/** A text of a tab of the page lent to a server, as the document it is opened as. */
+type Lent = Doc;
 
 /** What the request comes to: the edit and the texts it is of, or why there is none. */
 type Answer =
@@ -136,6 +148,56 @@ function followDocuments(page: Page, held: Held, moves: readonly Moved[]): void 
     }
 }
 
+/**
+ * Lend the server each Markdown text of a tab of the page that lies in its root and that it holds
+ * no document of, open under the page's address of the file, so the edit is computed over it.
+ */
+function lend(
+    context: LinksContext,
+    page: Page,
+    held: Held,
+    entry: ServerEntry,
+    texts: { real: string; key: string; root: string; text: string }[]
+): Lent[] {
+    const lent: Lent[] = [];
+    const markdown = context.extensions().map((one) => one.toLowerCase());
+    for (const one of texts) {
+        const fileUri = pathToFileURL(one.real).href;
+        if (!inside(one.real, held.root.real) || held.docs.has(docKey(fileUri))) continue;
+        if (!markdown.includes(extname(one.real).slice(1).toLowerCase())) continue;
+        if (page.opened.has(normal(one.real))) continue;
+        if (entry.refuses?.(one.real, context.roots()) === true) continue;
+        const doc: Doc = {
+            real: one.real,
+            fileUri,
+            pageUri: one.key,
+            pageRoot: one.root,
+            channel: 'lsp:markdown',
+            languageId: 'markdown',
+            version: 1,
+            shift: 0,
+            text: one.text
+        };
+        held.open(doc);
+        lent.push(doc);
+    }
+    return lent;
+}
+
+/** Close each lent document the page did not open meanwhile; one it opened is the page's now. */
+function giveBack(page: Page, held: Held, lent: readonly Lent[]): void {
+    for (const doc of lent) {
+        if (page.opened.has(normal(doc.real))) continue;
+        held.docs.delete(docKey(doc.fileUri));
+        held.dropped(doc);
+        held.notify({
+            jsonrpc: '2.0',
+            method: 'textDocument/didClose',
+            params: { textDocument: { uri: doc.fileUri } }
+        });
+    }
+}
+
 /** The page's address of a moved document: its old root key and the path under the root. */
 function pageKeyOf(oldName: string, root: ServedRoot, real: string): string {
     const rooted = /^oculus-file:\/\/\/([^/]*)/.exec(oldName)?.[1];
@@ -163,12 +225,17 @@ function goneFiles(held: Held, files: readonly string[], moves: readonly Moved[]
     held.notify({ jsonrpc: '2.0', method: 'workspace/didChangeWatchedFiles', params: { changes } });
 }
 
-/** The edit of the changes of one root: the server's entries and the backticked ones. */
+/**
+ * The edit of the changes of one root: the server's entries and the backticked ones. The text of
+ * each document the server holds when it is asked goes into `texts`, which the page checks its tabs
+ * against.
+ */
 async function editOf(
     context: LinksContext,
     held: Held,
     root: ServedRoot,
-    moves: Moved[]
+    moves: Moved[],
+    texts: Map<string, string>
 ): Promise<{ entries: unknown[] } | null> {
     const reach = { root, roots: context.roots() };
     const files = await markdownFiles(reach, context.extensions());
@@ -181,6 +248,7 @@ async function editOf(
             held.touched(move.to, 'create');
         }
         goneFiles(held, files, moves);
+        for (const doc of held.docs.values()) texts.set(doc.pageUri, doc.text);
         return held.call(
             'markdown/getEditForFileRenames',
             [
@@ -264,6 +332,13 @@ async function collect(
     const merged = new MergedEdits();
     const used: Held[] = [];
     const unanswered: string[] = [];
+    const texts = new Map<string, string>();
+    const tabs = message.texts.flatMap((one) => {
+        const parts = one.path.split('/');
+        if (base === undefined || parts.some((part) => ['', '.', '..'].includes(part))) return [];
+        const real = join(base.real, one.path);
+        return [{ real, key: pageUri(message.root, one.path), root: message.root, text: one.text }];
+    });
     try {
         for (const root of holders) {
             const key = heldKey(entry, root);
@@ -278,7 +353,9 @@ async function collect(
                 (move) => inside(move.from, root.real) && inside(move.to, root.real)
             );
             followDocuments(page, held, mine);
-            const found = await editOf(context, held, root, mine);
+            const lent = lend(context, page, held, entry, tabs);
+            const found = await editOf(context, held, root, mine, texts);
+            giveBack(page, held, lent);
             if (found === null) {
                 unanswered.push(root.key);
                 continue;
@@ -301,12 +378,9 @@ async function collect(
     if (unanswered.length > 0 && unanswered.length === holders.length) {
         return { error: 'no_answer' };
     }
-    const texts = used.flatMap((held) =>
-        [...held.docs.values()].map((doc) => ({ uri: doc.pageUri, text: doc.text }))
-    );
     return {
         edit: changes.length === 0 ? null : { documentChanges: changes },
-        held: texts,
+        held: [...texts].map(([uri, text]) => ({ uri, text })),
         overlaps,
         unanswered
     };

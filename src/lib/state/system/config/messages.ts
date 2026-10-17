@@ -25,6 +25,9 @@ export const SETTINGS_MESSAGES = {
     range: 'workbench.settings_range',
     rangeMin: 'workbench.settings_range_min',
     rangeMax: 'workbench.settings_range_max',
+    rangeWhole: 'workbench.settings_range_whole',
+    rangeWholeMin: 'workbench.settings_range_whole_min',
+    rangeWholeMax: 'workbench.settings_range_whole_max',
     notHubPath: 'workbench.settings_not_hub_path',
     noFolder: 'workbench.settings_no_folder',
     noFile: 'workbench.settings_no_file',
@@ -44,7 +47,8 @@ export const SETTINGS_MESSAGES = {
     changedSince: 'workbench.settings_changed_since',
     draftDropped: 'workbench.settings_draft_dropped',
     listLoading: 'workbench.settings_list_loading',
-    listFailed: 'workbench.settings_list_failed'
+    listFailed: 'workbench.settings_list_failed',
+    portRefused: 'workbench.settings_machine_port_refused'
 } as const;
 
 /** The name a message is answered under. */

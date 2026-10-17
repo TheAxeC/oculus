@@ -5,7 +5,7 @@
 // hub's settings file would, rather than relying on the engine's default.
 
 /** One entry per key, the file a planted hub keeps it in. */
-export const HUB_COLLECTIONS: readonly { key: string; file: string }[] = [
+const HUB_COLLECTIONS: readonly { key: string; file: string }[] = [
     { key: 'data', file: 'registries/data.yml' },
     { key: 'venues', file: 'registries/venues.yml' },
     { key: 'pillars', file: 'registries/pillars.yml' },

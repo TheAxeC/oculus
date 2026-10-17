@@ -52,6 +52,8 @@ text:
         stat_blocked: '{0} blocked'
         stat_dated: '{0} dated'
         stat_projects: '{0} projects'
+        stat_projects_one: 1 project
+        stat_projects_shown: '{0} of {1} projects shown'
         stat_submit_ready: '{0} submit-ready'
         stat_venue_count: x{0}
         stat_venue_tip: '{0}: {1}'

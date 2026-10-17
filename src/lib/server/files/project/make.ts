@@ -3,17 +3,17 @@
 //
 // The folder is a root's key and a path under it, resolved by real path inside its root, so no
 // name walks out of the workspace. `offer` answers which of the two controls the folder offers,
-// with the collections a new hub may keep. A folder that holds `.oculus/project.yml` or
-// `project.yml` is a project and offers neither control. Any other folder offers Make Folder a
-// Hub when neither it nor a folder above it, up to the home folder and not including it, holds a
-// `.oculus/config.yml`, so a folder inside a hub is never made a hub of its own; it offers Make
-// Folder a Project when it holds no `.oculus/config.yml`, since a hub is never a project
-// (data/sources/manifests.ts, `projectFileIn`). The home folder's `.oculus` is oculus's own state
-// folder and never a hub, so the walk up stops below it, and the home folder itself offers
-// neither control. `hub` writes
-// `.oculus/config.yml` with the chosen collections and each chosen collection's data file at its
-// default path, `project` writes `.oculus/project.yml`, both from the templates of oculus's
-// docs/templates.md (data/sources/documents/templates.ts), and only on that press.
+// with the collections a new hub may keep, by the rule of data/helpers/hub-names.ts's `makeOffer`
+// over what the folder holds (`folderMarks`) and whether a folder above it is a hub (`hubAbove`):
+// a project offers neither control, a folder inside a hub offers no hub, a hub is never a project,
+// and the home folder, whose `.oculus` is oculus's own state folder and never a hub, offers
+// neither and stops the walk up. The Files view's listings carry the same marks of each folder
+// (fs.ts, `listShown`, and `workspacesAnswer` for the folders of the workspace), so its menu
+// draws the two items as it opens; `markedBy` names the folder whose marks a written path may
+// change, which the git watcher lists again (watch/git.ts). `hub` writes `.oculus/config.yml`
+// with the chosen collections and each chosen collection's data file at its default path,
+// `project` writes `.oculus/project.yml`, both from the templates of oculus's docs/templates.md
+// (data/sources/documents/templates.ts), and only on that press.
 //
 // A make runs in the write chain of the Files view's operations (fs/ops.ts), asks the offer again
 // there before it writes, refuses when any file it would write is there already, and writes each
@@ -31,7 +31,13 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
 import { FILES_KIND, type FileStamp } from '../../../data/file-ops.ts';
-import { HUB_FILE, MANIFEST, ROOT_FOLDER } from '../../../data/helpers/hub-names.ts';
+import {
+    HUB_FILE,
+    MANIFEST,
+    ROOT_FOLDER,
+    makeOffer,
+    type FolderMarks
+} from '../../../data/helpers/hub-names.ts';
 import {
     TEMPLATES_PAGE,
     collectionTemplates,
@@ -96,6 +102,37 @@ function inHub(folder: string, home: string): boolean {
     return false;
 }
 
+/** What the folder at a real path holds that the two controls are offered by; `home` is real. */
+export function folderMarks(folder: string, home: string): FolderMarks {
+    const project = existsSync(join(folder, OWN_MANIFEST)) || existsSync(join(folder, MANIFEST));
+    return {
+        ...(existsSync(join(folder, HUB_FILE)) ? { hub: true as const } : {}),
+        ...(project ? { project: true as const } : {}),
+        ...(folder === home ? { home: true as const } : {})
+    };
+}
+
+/**
+ * Whether a folder above the one at a real path, up to the home folder and not including it,
+ * holds a hub settings file; `home` is the home folder's real path.
+ */
+export function hubAbove(folder: string, home: string): boolean {
+    return folder !== home && dirname(folder) !== folder && inHub(dirname(folder), home);
+}
+
+/**
+ * The folder whose marks an event at a path under a root may change, or null for none: the folder
+ * holding a `project.yml` or a `.oculus` folder named by the path, or the folder whose
+ * `.oculus` holds the `config.yml` or `project.yml` named; `''` is the root itself.
+ */
+export function markedBy(path: string): string | null {
+    const parts = path.split(/[\\/]/);
+    const inner = parts.slice(-2).join('/');
+    if (inner === HUB_FILE || inner === OWN_MANIFEST) return parts.slice(0, -2).join('/');
+    const last = parts[parts.length - 1];
+    return last === MANIFEST || last === ROOT_FOLDER ? parts.slice(0, -1).join('/') : null;
+}
+
 /** The templates page of oculus's folder, or null when it cannot be read. */
 function readPage(engine: string): string | null {
     try {
@@ -107,11 +144,8 @@ function readPage(engine: string): string | null {
 
 /** Which controls the folder at a real path offers; `home` is the home folder's real path. */
 function offerOf(folder: string, page: string | null, home: string): MakeOffer {
-    const project = existsSync(join(folder, OWN_MANIFEST)) || existsSync(join(folder, MANIFEST));
-    const closed = folder === home || project;
     return {
-        hub: !closed && !inHub(folder, home),
-        project: !closed && !existsSync(join(folder, HUB_FILE)),
+        ...makeOffer(folderMarks(folder, home), hubAbove(folder, home)),
         collections: collectionTemplates(page ?? '').map(({ key, file }) => ({ key, file }))
     };
 }

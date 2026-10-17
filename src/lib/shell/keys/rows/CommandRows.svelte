@@ -1,15 +1,20 @@
 <script lang="ts">
-    // Layer 3, partial of shell/keys/Palette.svelte. The rows of the colon commands: each with its
-    // argument hint after its name and what it does at the end of the row, an unavailable one drawn
-    // and not run. Above them, a bare colon says which line the caret of the source tab on screen
-    // is on and how many the file has. A press runs the command: the commands that list choices
-    // type their name and a space, which opens their list; the others change the theme, the file
-    // icon theme, the CRT overlay, the tabs or the folder shown, reopen the tabs closed last, walk
-    // the navigation history back or forward (shell/titlebar/history-walk.ts), or hide or show the
-    // floats docked at an edge, and close the palette. A tab a command showed takes the keyboard on
-    // its head once the page has drawn it, since the tab chosen is where the reader went. A refusal
-    // of Open Folder, of Close Workspace or of Add Task is said in the palette, which stays open.
-    // Add Task writes the task and posts a notice with an Open action; Shift+Enter, or a press with
+    // Layer 3, partial of shell/keys/Palette.svelte. The rows of the colon commands, as
+    // shell/keys/palette-modes.ts `commandRows` matches them: each with its argument hint after its
+    // name and what it does at the end of the row, the letters the typed words matched marked, an
+    // unavailable one drawn and not run; and the views, by their label, a press opening the view in
+    // a tab. Above them, a bare colon opened as Go to Line (the status bar's caret item) says which
+    // line the caret of the source tab on screen is on and how many the file has. A press runs the
+    // command: the commands that list choices type their name and a space, which opens their list,
+    // as does a command that takes an argument when the row was matched rather than typed by its
+    // name; the others change the theme, the file icon theme, the CRT overlay, the tabs or the
+    // folder shown, add folders to the workspace, reopen the tabs closed last, walk the navigation
+    // history back or forward (shell/titlebar/history-walk.ts), or hide or show the floats docked
+    // at an edge, and close the palette. A tab a command showed takes the keyboard on its head once
+    // the page has drawn it, since the tab chosen is where the reader went. A refusal of Open
+    // Folder, of Close Workspace or of Add Task is said in the palette, which stays open, as is an
+    // argument of `:tab`, `:goto`, `:theme` or `:file-icons` that is empty or names nothing. Add
+    // Task writes the task and posts a notice with an Open action; Shift+Enter, or a press with
     // Shift held, opens the task's page as well.
 
     import { opensTaskPage } from '$lib/data/helpers/keys/oculus/palette-table';
@@ -18,10 +23,13 @@
     import { addTask } from '$lib/state/forms/new-entry';
     import { pageView } from '$lib/state/forms/page-entry';
     import { fileIconThemeNamed, themeNamed } from '$lib/state/shared/words/appearance';
-    import { opensAsMode } from '$lib/shell/keys/palette-modes';
+    import { commandRowValue, opensAsMode, type CommandRow } from '$lib/shell/keys/palette-modes';
     import {
+        addFolderCommand,
+        argumentRefusal,
         folderCommand,
         workspaceCommand,
+        type CommandOutcome,
         type PaletteCommand,
         type ParsedCommand
     } from '$lib/state/workbench/palette';
@@ -46,7 +54,7 @@
 
     type Props = {
         parsed: ParsedCommand;
-        list: PaletteCommand[];
+        list: CommandRow[];
         /** The caret of the source tab on screen and the lines of its file, or null with none. */
         caret: { line: number; column: number; lines: number } | null;
         onclose: () => void;
@@ -66,16 +74,9 @@
         views().map((view) => ({ id: view.id, label: registrationLabel(view) }))
     );
 
-    /** Open Folder: the folder panel, then the folder shown; a panel that did not open is said. */
-    async function openFolder(): Promise<void> {
-        const result = await folderCommand(explorer.openFolder);
-        if (result.closed) onclose();
-        else onsaid(result.said);
-    }
-
-    /** Close Workspace: the open workspace file is left; a refusal is said in the palette. */
-    async function closeWork(): Promise<void> {
-        const result = await workspaceCommand(() => closeWorkspace(), '');
+    /** Close the palette when a command went through; otherwise keep it open saying why. */
+    async function settled(outcome: Promise<CommandOutcome>): Promise<void> {
+        const result = await outcome;
         if (result.closed) onclose();
         else onsaid(result.said);
     }
@@ -100,12 +101,23 @@
         onclose();
     }
 
-    function run(command: PaletteCommand): void {
+    /** Open a view in a tab, which takes the keyboard on its head once drawn. */
+    function openTab(id: string): void {
+        const shown = openView(id);
+        onclose();
+        if (shown !== '') void landOn(shown);
+    }
+
+    /**
+     * Run a command. `named` says the reader typed its whole name, whose words after it are its
+     * argument; a command matched by its words is run with none.
+     */
+    function run(command: PaletteCommand, named: boolean): void {
         if (!command.available) return;
-        const argument = parsed.argument;
+        const argument = named ? parsed.argument : '';
         // The instance a command showed, when it showed a tab.
         let shown = '';
-        if (opensAsMode(command.name)) {
+        if (opensAsMode(command.name) || (!named && command.hint !== '')) {
             ontype(`:${command.name} `);
             return;
         }
@@ -114,32 +126,39 @@
             return;
         }
         if (command.name === 'folder') {
-            void openFolder();
+            void settled(folderCommand(explorer.openFolder));
+            return;
+        }
+        if (command.name === 'folder-add') {
+            void settled(addFolderCommand(explorer.addFolders));
             return;
         }
         if (command.name === 'workspace-close') {
-            void closeWork();
+            void settled(workspaceCommand(() => closeWorkspace({ said: true }), ''));
+            return;
+        }
+        const project = current.snapshot?.entities.projects[argument];
+        const refused = argumentRefusal(command, argument, {
+            view: (id) => knownViews.some((view) => view.id === id),
+            project: () => project !== undefined,
+            theme: (name) => themeNamed(name, offers()) !== null,
+            fileIcons: (name) => fileIconThemeNamed(name, offers()) !== null
+        });
+        if (refused !== '') {
+            onsaid(refused);
             return;
         }
         if (command.name === 'theme') {
-            const name = themeNamed(argument, offers());
-            if (name !== null) setTheme(name);
+            setTheme(themeNamed(argument, offers()) ?? argument);
         } else if (command.name === 'crt') {
             setCrt(!crt());
         } else if (command.name === 'file-icons') {
-            const name = fileIconThemeNamed(argument, offers());
-            if (name !== null) void setFileIcons(name);
+            void setFileIcons(fileIconThemeNamed(argument, offers()) ?? argument);
         } else if (command.name === 'tab') {
-            if (knownViews.some((view) => view.id === argument)) shown = openView(argument);
-        } else if (command.name === 'goto') {
-            const held = current.snapshot?.entities;
-            const project = held?.projects[argument];
-            if (project !== undefined) {
-                shown = openView('project', {
-                    id: project.id,
-                    label: project.short ?? project.title
-                });
-            }
+            openTab(argument);
+            return;
+        } else if (command.name === 'goto' && project !== undefined) {
+            shown = openView('project', { id: project.id, label: project.short ?? project.title });
         } else if (command.name === 'update') {
             onupdate();
         } else if (command.name === 'reopen-closed-tab') {
@@ -170,18 +189,39 @@
         {t('statusbar.palette_line_hint', caret.line, caret.column, caret.lines)}
     </p>
 {/if}
-{#each list as command (command.name)}
+{#snippet commandRow(row: CommandRow & { kind: 'command' })}
+    {@const command = row.command}
+    {@const hint = command.hint === '' ? '' : ` ${command.hint}`}
     <PaletteRow
         row={{
-            value: `command:${command.name}`,
+            value: commandRowValue(row),
             kind: ':',
-            label: `${command.name}${command.hint === '' ? '' : ` ${command.hint}`}`,
-            hint: command.description,
+            label: `${command.name}${hint}`,
+            parts: [...row.name, ...(hint === '' ? [] : [{ text: hint, hit: false }])],
+            hintParts: row.words,
             disabled: !command.available,
-            note: command.available ? undefined : t('app.palette_unavailable'),
-            pick: () => run(command)
+            note: command.available ? undefined : (command.why ?? t('app.palette_unavailable')),
+            pick: () => run(command, row.named)
         }}
     />
+{/snippet}
+
+{#each list as row (commandRowValue(row))}
+    {#if row.kind === 'view'}
+        <PaletteRow
+            row={{
+                value: commandRowValue(row),
+                kind: ':',
+                label: row.view.label,
+                parts: row.label,
+                hint: t('app.palette.kind_view'),
+                pick: () => openTab(row.view.id)
+            }}
+        />
+    {:else}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+        {@render commandRow(row)}
+    {/if}
 {/each}
 
 <style>

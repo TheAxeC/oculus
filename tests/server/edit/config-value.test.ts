@@ -6,9 +6,10 @@
 // and the other files from the copy and writes the copy. What this does NOT cover: the route that
 // carries the writer, History and Undo (tests/routes/edit/config-value.test.ts) and the editors
 // that send the write.
-//
-// A case that merges the whole config folder takes 100 ms or more in a run of its own and is
-// tagged slow; the refusal of the machine's own file reads no file and is not.
+// @module-tag slow: every case takes 250 ms or more in a run of its own. The time is the writer's
+// own reading: every write, a refusal included, first reads the whole configuration of the scratch
+// engine (`loadConfig`, about 220 ms a read) for the catalog and the words of its answer, and a
+// write reads it again after, to check it; no case waits.
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, vi } from 'vitest';
@@ -63,33 +64,29 @@ function write(engine: string, file: string, key: string, value: unknown) {
 const WAITING = 'behavior.yml:waiting_status';
 
 describe('a list written in place', () => {
-    it(
-        'adds one item, removes one and swaps two, and keeps every other line',
-        { tags: ['slow'] },
-        () => {
-            const engine = scratchEngine();
-            const before = held(engine, 'behavior.yml');
-            const next = ['pending', 'submitted', 'under-review', 'queued'];
-            const outcome = write(engine, 'behavior.yml', 'waiting_status', next);
-            expect(outcome.refused).toEqual([]);
-            expect(outcome.changed).toEqual([WAITING]);
-            expect(held(engine, 'behavior.yml')).toBe(
-                before.replace(
-                    '[submitted, pending, under review, under-review]',
-                    '[pending, submitted, under-review, queued]'
-                )
-            );
-            expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(next);
-            expect(outcome.records).toHaveLength(1);
-            expect(outcome.records?.[0]).toMatchObject({
-                key: 'behavior.yml',
-                field: 'waiting_status',
-                before: ['submitted', 'pending', 'under review', 'under-review'],
-                after: next,
-                undo: 'field'
-            });
-        }
-    );
+    it('adds one item, removes one and swaps two, and keeps every other line', () => {
+        const engine = scratchEngine();
+        const before = held(engine, 'behavior.yml');
+        const next = ['pending', 'submitted', 'under-review', 'queued'];
+        const outcome = write(engine, 'behavior.yml', 'waiting_status', next);
+        expect(outcome.refused).toEqual([]);
+        expect(outcome.changed).toEqual([WAITING]);
+        expect(held(engine, 'behavior.yml')).toBe(
+            before.replace(
+                '[submitted, pending, under review, under-review]',
+                '[pending, submitted, under-review, queued]'
+            )
+        );
+        expect(valueOf(engine, 'behavior.yml', 'waiting_status')).toEqual(next);
+        expect(outcome.records).toHaveLength(1);
+        expect(outcome.records?.[0]).toMatchObject({
+            key: 'behavior.yml',
+            field: 'waiting_status',
+            before: ['submitted', 'pending', 'under review', 'under-review'],
+            after: next,
+            undo: 'field'
+        });
+    });
 });
 
 describe("the machine's own file", () => {
@@ -136,7 +133,7 @@ describe("the machine's own file", () => {
     });
 });
 
-describe('a write refused with nothing written', { tags: ['slow'] }, () => {
+describe('a write refused with nothing written', () => {
     it('refuses a base the file no longer holds, with the sentence that it changed since it was read', () => {
         const engine = scratchEngine();
         const before = held(engine, 'behavior.yml');

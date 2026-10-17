@@ -1,8 +1,9 @@
 // Layer 4, test helper. The smallest document Svelte's client runtime and @tanstack/virtual-core
-// need to mount ui/tree/list/VirtualRows.svelte in the client project, which has no DOM: nodes, a
-// parser for the template markup the Svelte compiler emits, and a fixed layout in which an element
-// marked `data-scroll` (the scroll box) is BOX px high and every other element ROW px high, all at
-// the top of the page. A case hands `documentGlobals()` to `vi.stubGlobal` and unstubs them after.
+// need to mount ui/tree/list/VirtualRows.svelte, and the components a client test mounts beside it
+// (a tooltip among them), in the client project, which has no DOM: nodes, a parser for the template
+// markup the Svelte compiler emits, and a fixed layout in which an element marked `data-scroll`
+// (the scroll box) is BOX px high and every other element ROW px high, all at the top of the page.
+// A case hands `documentGlobals()` to `vi.stubGlobal` and unstubs them after.
 
 export const ROW = 20;
 export const BOX = 100;
@@ -255,6 +256,28 @@ class MiniElement extends MiniNode {
         const matches =
             attribute === undefined ? this.localName === selector : this.hasAttribute(attribute);
         return matches ? this : (this.parentElement?.closest(selector) ?? null);
+    }
+    /**
+     * The first element under this one in document order that matches a part of a selector list,
+     * each part a tag name or `[name]`, as `closest` reads them; a part of another form matches
+     * nothing. A tooltip asks it for the control it describes.
+     */
+    querySelector(selector: string): MiniElement | null {
+        const parts = selector.split(',').map((part) => part.trim());
+        const matches = (element: MiniElement): boolean =>
+            parts.some((part) => {
+                const attribute = /^\[([\w-]+)\]$/.exec(part)?.at(1);
+                return attribute === undefined
+                    ? element.localName === part
+                    : element.hasAttribute(attribute);
+            });
+        for (const child of this.childNodes) {
+            if (!(child instanceof MiniElement)) continue;
+            if (matches(child)) return child;
+            const found = child.querySelector(selector);
+            if (found !== null) return found;
+        }
+        return null;
     }
     get offsetHeight(): number {
         return this.hasAttribute('data-scroll') ? BOX : ROW;

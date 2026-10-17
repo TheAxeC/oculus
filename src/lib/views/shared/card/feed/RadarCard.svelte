@@ -18,6 +18,7 @@
     import { pageFault, pageFile } from '$lib/views/shared/forms/entry/edit/page-file';
     import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         crossLinksOf,
         ideaSeed,
@@ -66,6 +67,9 @@
         page: onPage = false,
         onsaid
     }: Props = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
     let spinning = $state(false);
 
     /** True while the question before a delete is open. */
@@ -115,7 +119,7 @@
     {id}
     {cursor}
     {title}
-    titleHtml={inlineMarkdown(title)}
+    titleHtml={inlineMarkdown(title, cardMath(title))}
     ontitle={identity === '' || onPage
         ? undefined
         : () => openView('entry', entryPageState('radar', id, title))}
@@ -185,13 +189,13 @@
     {/if}
     {#if note !== ''}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="note">{@html inlineMarkdown(note)}</p>
+        <p class="note">{@html inlineMarkdown(note, cardMath(note))}</p>
     {/if}
     {#if threat !== ''}
         <p class="threat">
             <Glyph name="warn" />
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-            <span>{@html t('radar.threatens', inlineMarkdown(threat))}</span>
+            <span>{@html t('radar.threatens', inlineMarkdown(threat, cardMath(threat)))}</span>
         </p>
     {/if}
     {#if links.length > 0 || text('maps_to') === 'new-idea-candidate'}
@@ -269,15 +273,17 @@
         white-space: normal;
     }
 
-    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at
-       rest, so the card keeps its size and Tab still reaches every control, and drawn while the
-       pointer is over the card or the keyboard is inside it. */
+    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-at-rest`: not drawn and
+       taking no room at rest, and drawn while the pointer is over the card or the keyboard is
+       inside it. */
     .controls {
-        display: inline-flex;
+        display: var(--card-at-rest, inline-flex);
+        /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
+           words beside them, so a line they share stays as tall as it was at rest; on a line of
+           their own they reach no further than the gap between the lines. */
+        margin-block: min(0px, calc((1lh - 22px) / 2));
         align-items: center;
         gap: 6px;
-        opacity: var(--card-reveal);
-        transition: opacity 120ms ease-out;
     }
 
     .date {

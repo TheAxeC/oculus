@@ -9,6 +9,7 @@ import { basename, join } from 'node:path';
 import { describe, expect } from 'vitest';
 import {
     buildPortfolioWithSchemas,
+    hubVocabOf,
     joinHubs,
     portfolioConfigFrom,
     readOtherHub
@@ -554,7 +555,7 @@ function read(row: Row): Read {
         'hub'
     );
     if (lab === null) return { snapshot: base.snapshot, at };
-    const others = [readOtherHub(engineDir(), { key: 'lab', dir: lab })];
+    const others = [readOtherHub({ key: 'lab', dir: lab }, loadConfig(engineDir(), { hub: lab }))];
     const built = joinHubs(base, { hub: at.hub, name: 'hub', config }, others, 0, createChecker());
     return { snapshot: built.snapshot, at };
 }
@@ -593,7 +594,7 @@ function joinedWith(
         null,
         'hub'
     );
-    const others = [readOtherHub(engineDir(), { key: 'lab', dir: lab })];
+    const others = [readOtherHub({ key: 'lab', dir: lab }, loadConfig(engineDir(), { hub: lab }))];
     const built = joinHubs(base, { hub, name: 'hub', config }, others, 0, createChecker());
     return { snapshot: built.snapshot, lab };
 }
@@ -662,6 +663,45 @@ describe('a hub reports only the files its own configuration names', () => {
             findingText(textCatalog(config), 'findings.registries.file_missing')
         ]);
     });
+
+    it.each([
+        ['holds the file there', true],
+        ['holds none', false]
+    ])(
+        "reads Literature from the engine's path when its list names none and it %s",
+        (_name, held) => {
+            const hub = plantScratch('oculus-collections-literature-', {
+                '.oculus/config.yml':
+                    'collections:\n  - { key: venues, file: registries/venues.yml }\n',
+                'registries/venues.yml': 'entries: []\n',
+                ...(held
+                    ? { '.oculus/data/literature.yml': 'entries:\n  - { key: a24, title: A }\n' }
+                    : {})
+            });
+            const { config, from } = loadConfig(engineDir(), { hub });
+            const portfolio = portfolioConfigFrom(config, from);
+            const built = buildPortfolioWithSchemas(hub, portfolio);
+            const literature = built.snapshot.entities.collections.literature as
+                { file: string; entries: { fields: Record<string, unknown> }[] } | undefined;
+            expect({
+                file: literature?.file,
+                titles: literature?.entries.map((one) => one.fields.title),
+                listed: hubVocabOf(hub, portfolio).collections.includes('literature'),
+                findings: built.snapshot.findings.filter((one) =>
+                    one.file.endsWith('literature.yml')
+                )
+            }).toEqual(
+                held
+                    ? {
+                          file: join(hub, '.oculus/data/literature.yml'),
+                          titles: ['A'],
+                          listed: true,
+                          findings: []
+                      }
+                    : { file: undefined, titles: undefined, listed: false, findings: [] }
+            );
+        }
+    );
 
     it('reads the first of two collections entries for one key and names the key in a finding', () => {
         const hub = plantScratch('oculus-collections-twice-', {

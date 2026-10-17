@@ -17,13 +17,24 @@
 // the arrangement of the workspace it has open was saved elsewhere and reads it (layout/saved/
 // load.ts, `takeSaved`).
 //
-// In the desktop app the windows of one server share one page storage and also share a turn: a save
-// is first put to the host together with the key, the envelope to write and the envelope the page
-// last read or wrote under that key, and the host admits it only when that is the envelope it
-// admitted last for the key, otherwise it answers with the one it holds. A refused save writes
-// nothing and leaves that envelope to be taken (`refusal`), after which the operation that asked is
-// run again on it. A save the host did not answer is refused with no envelope: it writes nothing
-// and is not run again.
+// A save is made from the envelope this page last read or wrote under its key, and is refused when
+// another page has written the key since, so a page that has not yet taken another page's save
+// never writes over it and drops the tabs that save holds. A refused save writes nothing and leaves
+// the envelope that stands to be taken (`refusal`), after which the operation that asked is run
+// again on it. In a browser the page checks this itself, reading the key again just before it
+// writes (`ownTurn`). That read sees every save made in the same process, but two tabs of one
+// origin can run in separate processes, and a save made in the other process reaches this one's
+// storage later: two tabs that read the same envelope can then both write a save made from it, and
+// the save the browser applies last is the one kept, without the other's change. So every save
+// carries a stamp of its own and the stamp of the envelope it was made from, and a tab that hears
+// another tab's save made from the envelope its own last save was made from knows the two crossed;
+// of the two, the tab whose stamp is lower takes the other's save and runs its last operation again
+// on it (`follow`), so both changes are kept whichever save the browser applied last. In the
+// desktop app the windows of one server share one page storage and a turn: a save is first put to
+// the host together with the key, the envelope to write and the envelope it was made from, and the
+// host admits it only when that is the envelope it admitted last for the key, otherwise it answers
+// with the one it holds. A save the host did not answer is refused with no envelope: it writes
+// nothing and is not run again.
 
 import type { SaveAnswer } from '../../../shared/stores/desktop.ts';
 import { tabsOf } from '../instance.ts';
@@ -170,6 +181,28 @@ function sourceOf(entry: LayoutWrite): string {
     return `${entry.tab}|${entry.call}`;
 }
 
+/**
+ * The marks a save adds to its envelope: its own stamp, and the stamp of the envelope it was made
+ * from (null for a save made where the key held none, or held one with no stamp).
+ */
+type SaveMarks = { stamp: string; from: string | null };
+
+/** The marks of a saved envelope, or null for one that carries none or is no JSON. */
+function marksOf(raw: string | null): SaveMarks | null {
+    try {
+        const held = JSON.parse(raw ?? '') as { stamp?: unknown; from?: unknown };
+        if (typeof held.stamp !== 'string') return null;
+        return { stamp: held.stamp, from: typeof held.from === 'string' ? held.from : null };
+    } catch {
+        return null;
+    }
+}
+
+/** An envelope's text with the marks of the save that writes it added. */
+function marked(text: string, marks: SaveMarks): string {
+    return JSON.stringify({ ...(JSON.parse(text) as object), ...marks });
+}
+
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 export type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 
@@ -212,11 +245,12 @@ export type LayoutStorage = {
      * Call `changed` whenever another browser tab saved the arrangement of the selected workspace,
      * as `source` (the window) reports it; answers how to stop. The browser fires the event in
      * every tab but the writer's, so a save made here never calls it, and a write to any other key,
-     * the arrangement of another workspace among them, is not heard. The same source is also heard
-     * for the record of layout writes, which an entry of this tab is put back in when another tab's
-     * write left it out.
+     * the arrangement of another workspace among them, is not heard. `changed` is told `again`
+     * when the save heard crossed this tab's last save and this tab is the one to run its last
+     * operation again on it (`crossed`). The same source is also heard for the record of layout
+     * writes, which an entry of this tab is put back in when another tab's write left it out.
      */
-    follow: (source: EventTarget, changed: () => void) => () => void;
+    follow: (source: EventTarget, changed: (again: boolean) => void) => () => void;
 };
 
 export function createStorage(turn?: SaveTurn): LayoutStorage {
@@ -234,6 +268,9 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
 
     /** The entries this tab added to the records, the newest `WRITES_KEPT` of them. */
     const own: { key: string; entry: LayoutWrite }[] = [];
+
+    /** The marks of this tab's last save under each key. */
+    const saved = new Map<string, SaveMarks>();
 
     function attach(storage: Storable): void {
         backing = storage;
@@ -284,25 +321,39 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
         if (backing === null) return;
         const key = layoutKey(identity);
         try {
-            const text = serialiseLayout(next);
-            if (turn !== undefined) {
-                const answer = turn(key, text, knownFor(key));
-                if (!answer.admitted) {
-                    // A save the host did not answer writes nothing and has no envelope to take.
-                    if (answer.held !== null) {
-                        if (identity === selected) refused = answer.held;
-                        known.set(key, answer.held);
-                    }
-                    return;
+            const marks = {
+                stamp: `${String(Date.now())}-${Math.random().toString(36).slice(2, 8)}`,
+                from: marksOf(knownFor(key))?.stamp ?? null
+            };
+            const text = marked(serialiseLayout(next), marks);
+            const answer =
+                turn === undefined ? ownTurn(key, knownFor(key)) : turn(key, text, knownFor(key));
+            if (!answer.admitted) {
+                // A save the host did not answer writes nothing and has no envelope to take.
+                if (answer.held !== null) {
+                    if (identity === selected) refused = answer.held;
+                    known.set(key, answer.held);
                 }
+                return;
             }
             known.set(key, text);
             backing.setItem(key, text);
+            saved.set(key, marks);
         } catch {
             // A full or refused storage loses the arrangement at the next load and nothing else:
             // the arrangement in memory is what the shell renders and it is already current.
         }
         record(identity, next, call);
+    }
+
+    /**
+     * The browser's own turn for a save under `key` made from the envelope `from`: admitted when
+     * the key still holds that envelope, else refused with the envelope it holds. A key that holds
+     * none, or a storage that cannot be read, refuses nothing.
+     */
+    function ownTurn(key: string, from: string | null): SaveAnswer {
+        const held = get(key);
+        return held === null || held === from ? { admitted: true } : { admitted: false, held };
     }
 
     function write(next: Pages, call = ''): void {
@@ -392,17 +443,30 @@ export function createStorage(turn?: SaveTurn): LayoutStorage {
         }
     }
 
+    /**
+     * Whether the save `heard` under `key` crossed this tab's last save there: both were made from
+     * one envelope, so the browser keeps only one of them. Of the two tabs, the one whose stamp is
+     * lower answers true and runs its operation again on the other's save; the other takes the save
+     * it hears and is given the merged one when it comes.
+     */
+    function crossed(key: string, heard: string | null): boolean {
+        const mine = saved.get(key);
+        const other = marksOf(heard);
+        if (mine === undefined || other === null || other.stamp === mine.stamp) return false;
+        return other.from === mine.from && mine.stamp < other.stamp;
+    }
+
     function refusal(): string | null {
         const held = refused;
         refused = null;
         return held;
     }
 
-    function follow(source: EventTarget, changed: () => void): () => void {
+    function follow(source: EventTarget, changed: (again: boolean) => void): () => void {
         const heard = (event: Event): void => {
-            const key = (event as StorageEvent).key;
+            const { key, newValue } = event as StorageEvent;
             if (selected === null || key === null) return;
-            if (key === layoutKey(selected)) changed();
+            if (key === layoutKey(selected)) changed(crossed(key, newValue));
             else if (key === writesKey(selected)) putBack(key);
         };
         source.addEventListener('storage', heard);

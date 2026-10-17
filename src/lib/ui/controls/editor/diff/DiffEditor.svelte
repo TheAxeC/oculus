@@ -10,12 +10,12 @@
     // (`changes`), which the page's diff provider gives Monaco while the models hold those texts
     // (diff/git-provider.ts), else Monaco's own. The two sides are side by side or one inline, as
     // the parent's layout says, and inline whenever the editor is narrower than `NARROW` pixels, as
-    // VS Code's is. The
-    // layout drawn is read off the diff editor, since the comment sides and the sizing follow it.
-    // It shows the line numbers of both, the changed words of a changed line, whitespace changes,
-    // and the unchanged runs hidden with `context` lines kept each side, which Monaco reveals on a
-    // press, unless the parent asks for every line. The `options` (options.ts, with no minimap)
-    // are put on both sides when it is made and again whenever they change.
+    // VS Code's is; in a narrower box still the gutters narrow, so the text keeps most of it
+    // (diff/narrow.ts). The layout drawn is read off the diff editor, since the comment sides and
+    // the sizing follow it. It shows the line numbers of both, the changed words of a changed line,
+    // whitespace changes, and the unchanged runs hidden with `context` lines kept each side, which
+    // Monaco reveals on a press, unless the parent asks for every line. The `options` (options.ts,
+    // with no minimap) are put on both sides when it is made and again whenever they change.
     //
     // Monaco's own hunk menu and revert arrows are off, since the parent's bars (bars/zones.ts,
     // after lines of either side) carry the actions, and the diff always runs to its end, so a bar
@@ -43,12 +43,16 @@
     // and the parameter hints and places what stays open against the text again. The quick input
     // stays in the box, as Monaco scopes it.
     //
+    // The parent's `extension` is added to the modified side's editor and model as the text editor
+    // adds one (types.ts), and taken away with the editor or when another is given: a diff over the
+    // working tree registers that model with the language server of its file through it.
+    //
     // Until Monaco has loaded the modified text is a plain block, which the unit suite's server
     // render draws too.
 
     import { onDestroy, untrack, type Snippet } from 'svelte';
     import type * as Monaco from 'monaco-editor';
-    import { modelUri, type EditorKit } from '../kit/load';
+    import type { EditorKit } from '../kit/load';
     import { buildWhenHosted } from '../kit/built.svelte';
     import { shikiId } from '../kit/languages/grammars';
     import { font, paintCode, repaint } from '../kit/look';
@@ -69,8 +73,10 @@
         DiffSelections,
         DiffSide,
         EditorAction,
-        EditorBar
+        EditorBar,
+        EditorExtension
     } from '../types';
+    import { holdChanges, sideModel } from './models';
     import {
         bothSelections,
         contentHeight,
@@ -78,6 +84,7 @@
         lineChangesOf,
         type DiffLayout
     } from './read';
+    import { NARROW, narrowWatch } from './narrow';
     import './comment-add.css';
     import '../kit/theme/wall.css';
 
@@ -108,7 +115,7 @@
         editable?: boolean;
         /** The modified side's text each time the reader changes it. */
         oninput?: (text: string) => void;
-        /** A value that changes whenever the tokens or the text size do. */
+        /** A value that changes with the tokens, the text size and every pick of a code theme. */
         look?: string;
         /** The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme. */
         codeTheme?: string;
@@ -128,6 +135,10 @@
         onselect?: (selections: DiffSelections) => void;
         onview?: (view: object) => void;
         onactions?: (actions: EditorAction[]) => void;
+        /**
+         * What the modified side's editor and model are given beyond the diff, as a text editor's.
+         */
+        extension?: EditorExtension;
     };
 
     let {
@@ -155,14 +166,12 @@
         onchanges,
         onselect,
         onview,
-        onactions
+        onactions,
+        extension
     }: Props = $props();
 
     /** A hidden run is at least one line: Monaco hides any run the kept lines leave. */
     const SHORTEST_HIDDEN = 1;
-
-    /** The width in pixels at and under which Monaco draws a side by side diff inline. */
-    const NARROW = 900;
 
     let host: HTMLDivElement | undefined = $state();
     let kit: EditorKit | null = $state.raw(null);
@@ -230,10 +239,10 @@
         });
         widgets.tie([made.getOriginalEditor(), made.getModifiedEditor()]);
         const pair = {
-            original: fresh(loaded, originalPath ?? path, 'original', original),
-            modified: fresh(loaded, path, 'modified', modified)
+            original: sideModel(loaded, name, language, originalPath ?? path, 'original', original),
+            modified: sideModel(loaded, name, language, path, 'modified', modified)
         };
-        hold(loaded, pair.modified, { original, modified, changes });
+        holdChanges(loaded, pair.modified, { original, modified, changes });
         made.setModel(pair);
         const sides = [made.getOriginalEditor(), made.getModifiedEditor()];
         restore = view;
@@ -255,7 +264,10 @@
         ] as const) {
             side.mount(on, on.getOption(monaco.editor.EditorOption.lineHeight));
         }
-        listeners.push(layoutWatch(box, (layout) => (drawn = layout)));
+        listeners.push(
+            layoutWatch(box, (layout) => (drawn = layout)),
+            narrowWatch(box, made)
+        );
         diff = made;
         models = pair;
         kit = loaded;
@@ -263,31 +275,6 @@
         painted = painting;
         void paintCode(loaded, codeTheme, () => (painted = null));
         grown(made);
-    }
-
-    /** One side's model, on its own URI under the instance's name, holding its text. */
-    function fresh(
-        loaded: EditorKit,
-        file: string,
-        side: 'original' | 'modified',
-        text: string
-    ): Monaco.editor.ITextModel {
-        const uri = modelUri(loaded.monaco, `${name}:${side}`, file);
-        loaded.monaco.editor.getModel(uri)?.dispose();
-        return loaded.monaco.editor.createModel(text, shikiId(language), uri);
-    }
-
-    /** Hand the page's diff provider git's changes of the two texts, or drop them for none. */
-    function hold(
-        loaded: EditorKit,
-        on: Monaco.editor.ITextModel,
-        held: { original: string; modified: string; changes?: DiffLineChange[] }
-    ): void {
-        const given =
-            held.changes === undefined
-                ? null
-                : { ...held, changes: held.changes.map((change) => ({ ...change })) };
-        loaded.gitDiffs.hold(on.uri.toString(), given);
     }
 
     /** A diff drawn: its line changes said, and a view state waiting put back. */
@@ -328,7 +315,7 @@
         const given = changes;
         if (held === null || made === null || loaded === null) return;
         untrack(() => {
-            hold(loaded, held.modified, { ...texts, changes: given });
+            holdChanges(loaded, held.modified, { ...texts, changes: given });
             if (
                 held.original.getValue() === texts.original &&
                 held.modified.getValue() === texts.modified
@@ -415,6 +402,13 @@
         const chords = chordActions(made.getModifiedEditor(), loaded.mac);
         untrack(() => onactions?.(listedWithComment(chords, offering, commentLabel)));
         return () => added?.dispose();
+    });
+
+    $effect(() => {
+        const [add, loaded, made, held] = [extension, kit, diff, models];
+        if (add === undefined || loaded === null || made === null || held === null) return;
+        const side = made.getModifiedEditor();
+        return untrack(() => add(loaded, side, held.modified));
     });
 
     $effect(() => {

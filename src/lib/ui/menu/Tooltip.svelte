@@ -240,6 +240,8 @@
         {@render children()}
     </span>
 {:else}
+    <!-- The trigger and the portal touch: a space between them is a text node drawn after the
+         control, which in a line of words is a space before the word that follows it. -->
     <Tooltip.Root bind:open>
         <Tooltip.Trigger
             onpointerenter={dragging}
@@ -263,8 +265,7 @@
                     <span {id} class="words" hidden>{text}</span>
                 </span>
             {/snippet}
-        </Tooltip.Trigger>
-        <Tooltip.Portal>
+        </Tooltip.Trigger><Tooltip.Portal>
             <Tooltip.Content
                 {side}
                 align={placement === 'beside' ? 'center' : 'start'}

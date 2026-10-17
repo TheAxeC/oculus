@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial. The inline field a Rename opens on a terminal's row, or on the bar's
-    // title while no list is drawn: a text box holding the current title. Enter saves it (an empty
-    // value clears the title), Escape or focus leaving the box cancels. It keeps its own draft and
-    // hands the saved value out; what the value means is the terminals store's `renameTerminal`.
+    // title while no list, or a narrow one, is drawn: a text box holding the current title. Enter
+    // saves it (an empty value clears the title), Escape or focus leaving the box cancels. It keeps
+    // its own draft and hands the saved value out; what the value means is the terminals store's
+    // `renameTerminal`.
 
     import { untrack } from 'svelte';
     import TextInput from '$lib/ui/forms/TextInput.svelte';

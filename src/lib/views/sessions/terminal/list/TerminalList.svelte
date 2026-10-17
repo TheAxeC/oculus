@@ -13,11 +13,19 @@
     // the stop carries tabindex 0 and everything else in the list -1, Split and Kill included. The
     // arrow keys move the stop, Enter shows the row, Shift+Enter splits it, and Delete or Backspace
     // kills it as Kill does, the first press arming and the second killing; the two controls are
-    // the pointer's way to the same two actions, shown on hover. An armed Kill is disarmed when the
-    // stop moves or focus leaves the list, and a held key arms nothing (terminal-list.ts, `rowKey`
-    // and `armKept`). The arm is held by the tab (Terminal.svelte), since the grid's menu arms and
-    // kills through the same `pressKill`. A pointer press on a row shows it and hands the keyboard
-    // to its grid, so the list holds focus only for a reader who came to it by the keyboard.
+    // the pointer's way to the same two actions, shown on hover. An armed row (RowFace.svelte) says
+    // in words, in place of its description, that a second press kills the terminal (the bar says
+    // it while the list is narrow). An armed Kill is disarmed when the stop moves off its row, and
+    // a held key arms nothing (terminal-list.ts, `rowKey`, and kill-arm.svelte.ts, `armKept`). The
+    // arm is held by the tab (Terminal.svelte), since the grid's menu arms and kills through the
+    // same `pressKill`, and the tab also takes it off at a press elsewhere, at Escape and after its
+    // timeout (kill-arm.svelte.ts). A pointer press on a row shows it and hands the keyboard to its
+    // grid, so the list holds focus only for a reader who came to it by the keyboard.
+    //
+    // The tab hands the list its width (list-width.svelte.ts). A narrow list draws each row as its
+    // mark alone, with the bell while it rings, and no Split or Kill control; the row's name is its
+    // accessible name and its tooltip, its menu and keys are the same, and Rename opens the field
+    // on the bar and a refused kill is said there, since the list has no room for either.
     //
     // Split starts a terminal of the row's own kind in the row's own folder at once and puts it
     // right of that terminal in the tab's row, which holds any number of terminals (the terminals
@@ -47,23 +55,22 @@
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
-    import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { reordered, showingRow } from '$lib/state/sessions/terminal/terminal-tabs';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { nextStop } from '$lib/ui/tree/roving';
-    import RenameField from './RenameField.svelte';
-    import { terminalAppMenus } from './app-menus';
+    import RenameField from '../RenameField.svelte';
+    import { terminalAppMenus } from '../app-menus';
+    import { armKept } from './kill-arm.svelte';
+    import RowFace from './RowFace.svelte';
     import {
         MENU_NEW,
         ROW_DRAG,
-        armKept,
         attachedOf,
         emptyListMenu,
         taskStateOf,
-        tokenStyle,
         movedOrder,
         profileOf,
         routePick,
@@ -71,8 +78,7 @@
         terminalRowMenu,
         terminalTip,
         type TerminalListProps
-    } from './terminal-list';
-    import { markOf } from '$lib/state/sessions/terminal/terminal-marks';
+    } from '../terminal-list';
     import { useState } from '$lib/state/client/use';
 
     let {
@@ -91,7 +97,9 @@
         onrenamecancel,
         arming,
         failure,
-        ondisarm
+        ondisarm,
+        width,
+        narrow
     }: TerminalListProps = $props();
 
     const client = useState();
@@ -165,18 +173,6 @@
         show(row);
     }
 
-    /**
-     * Focus leaving the list disarms Kill, so a later Delete or Backspace arms it again. A row's
-     * menu takes the focus into its own content, outside the list, as it opens; that keeps the
-     * arm, so Kill Terminal picked from it a second time kills.
-     */
-    function left(event: FocusEvent): void {
-        const to = event.relatedTarget;
-        if (to instanceof Node && list?.contains(to) === true) return;
-        if (to instanceof Element && to.closest('[role="menu"]') !== null) return;
-        if (arming !== '') ondisarm();
-    }
-
     /** The first press arms Kill and the second stops the terminal, as the Sessions list's does. */
     function kill(row: TerminalChoice): void {
         handlers.kill(row.terminal);
@@ -244,8 +240,8 @@
     }
 </script>
 
-<!-- The drag handlers report where a dragged row would land and take the drop, and focus leaving
-     the list disarms Kill; the rows' own controls carry the keyboard. -->
+<!-- The drag handlers report where a dragged row would land and take the drop; the rows' own
+     controls carry the keyboard. -->
 <ContextMenu
     label={t('sessions.terminal_list')}
     items={emptyListMenu(t, attachables)}
@@ -254,11 +250,12 @@
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         class="list"
+        class:narrow
+        style={`width: ${width}px`}
         data-terminal-list
         role="group"
         aria-label={t('sessions.terminal_list')}
         bind:this={list}
-        onfocusout={left}
         ondragover={listOver}
         ondrop={dropped}
         ondragleave={(event: DragEvent) => {
@@ -278,7 +275,8 @@
                         others,
                         arming === row.terminal,
                         t,
-                        taskStateOf(row)
+                        taskStateOf(row),
+                        row.splittable
                     ),
                     ...appMenus.items('terminal/title/context', row.terminal)
                 ]}
@@ -296,20 +294,23 @@
                     ondragover={(event: DragEvent) => dragOver(event, index)}
                 >
                     <span class="pick">
-                        {#if renaming === row.terminal}
+                        {#if renaming === row.terminal && !narrow}
                             <!-- The field is not inside the row's button: a text box cannot be
                                  typed into within one. -->
-                            <span class="face">
-                                <span class="markglyph" style={tokenStyle(markOf(row).token)}>
-                                    <Glyph name={markOf(row).glyph} />
-                                </span>
+                            <RowFace
+                                {row}
+                                armed={false}
+                                ringing={false}
+                                narrow={false}
+                                onrename={() => undefined}
+                            >
                                 <RenameField
                                     value={row.title}
                                     label={t('sessions.terminal_rename_field')}
                                     onsave={(value: string) => onrenamed(row.terminal, value)}
                                     oncancel={onrenamecancel}
                                 />
-                            </span>
+                            </RowFace>
                         {:else}
                             <ToolButton
                                 cell
@@ -320,43 +321,28 @@
                                 onclick={(event: MouseEvent) => pressed(event, row)}
                                 onkeydown={(event: KeyboardEvent) => keys(event, index)}
                             >
-                                <span class="face">
-                                    <span class="markglyph" style={tokenStyle(markOf(row).token)}>
-                                        <Glyph name={markOf(row).glyph} />
-                                    </span>
-                                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                                    <span
-                                        class="title"
-                                        data-row-title
-                                        ondblclick={() => handlers.rename(row.terminal)}
-                                        >{row.title}</span
-                                    >
-                                    <span class="description" data-row-description
-                                        >{row.description}</span
-                                    >
-                                    {#if ringing === row.terminal}
-                                        <span
-                                            class="bell"
-                                            data-bell
-                                            title={t('sessions.terminal_bell')}
-                                        >
-                                            <Glyph name="bell" />
-                                        </span>
-                                    {/if}
-                                </span>
+                                <RowFace
+                                    {row}
+                                    armed={arming === row.terminal}
+                                    ringing={ringing === row.terminal}
+                                    {narrow}
+                                    onrename={() => handlers.rename(row.terminal)}
+                                />
                             </ToolButton>
                         {/if}
                     </span>
                     <span class="actions">
-                        <ToolButton
-                            compact
-                            bare
-                            label={t('sessions.terminal_split')}
-                            title={t('sessions.terminal_split_tip')}
-                            glyph="split_right"
-                            tabindex={-1}
-                            onclick={() => split(row)}
-                        />
+                        {#if row.splittable}
+                            <ToolButton
+                                compact
+                                bare
+                                label={t('sessions.terminal_split')}
+                                title={t('sessions.terminal_split_tip')}
+                                glyph="split_right"
+                                tabindex={-1}
+                                onclick={() => split(row)}
+                            />
+                        {/if}
                         <ToolButton
                             compact
                             bare
@@ -369,6 +355,7 @@
                             glyph="trash"
                             pressed={arming === row.terminal}
                             tabindex={-1}
+                            data={{ kill: row.terminal }}
                             onclick={() => kill(row)}
                         />
                     </span>
@@ -378,7 +365,7 @@
         {#if dropIndex !== null && dropIndex >= rows.length}
             <span class="mark" aria-hidden="true"></span>
         {/if}
-        {#if failure !== ''}
+        {#if failure !== '' && !narrow}
             <div class="failure">
                 <Empty error message={failure} />
             </div>
@@ -391,15 +378,27 @@
         display: flex;
         flex-direction: column;
         flex: 0 0 auto;
-        width: 180px;
         min-height: 0;
         overflow-y: auto;
         border-left: 1px solid var(--line);
     }
 
+    /* A narrow list draws a row's mark alone, centred, and the bell while it rings. */
+    .narrow .row {
+        justify-content: center;
+        padding: 0;
+    }
+
+    .list.narrow .row .actions {
+        display: none;
+    }
+
+    .narrow .pick {
+        flex: 0 1 auto;
+    }
+
     /* One row of VS Code's tabs list, 22 pixels. */
     .row {
-        --row-reveal: 0;
         display: flex;
         align-items: center;
         gap: 2px;
@@ -407,19 +406,6 @@
         min-width: 0;
         padding: 0 2px 0 6px;
         border-left: 2px solid transparent;
-    }
-
-    .row:hover,
-    .row:focus-within,
-    .row.current,
-    .row.armed {
-        --row-reveal: 1;
-    }
-
-    @media (hover: none) {
-        .row {
-            --row-reveal: 1;
-        }
     }
 
     .row:hover {
@@ -439,53 +425,52 @@
         height: 100%;
     }
 
-    .face {
-        display: flex;
-        align-items: center;
-        gap: 4px;
+    /* The row's controls are drawn, and take room, only while the pointer or the keyboard's stop
+       is on the row, while it is a terminal the tab shows, or while its Kill is armed, so the armed
+       Kill shows while a Delete, a Backspace or a menu's Kill Terminal waits for its second press;
+       they are always drawn on a screen that does not hover. They give up their room before the
+       name gives up any of its own: a row too narrow for both drops controls, from the left, and
+       the name keeps its width. A control is drawn whole or not at all: the controls are laid out
+       from the right, Kill first, each at its own width, and one with no room left on the row's
+       line wraps to a second line that the box, one line tall, does not draw. A line's first item
+       never wraps, so an empty item of no width starts the line and Kill can wrap as well. */
+    .actions {
+        display: none;
+        flex: 0 10000 auto;
+        flex-direction: row-reverse;
+        flex-wrap: wrap;
+        align-content: flex-start;
         height: 100%;
         min-width: 0;
-        cursor: pointer;
-    }
-
-    .title,
-    .description {
         overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
-    .title {
-        flex: 0 1 auto;
-        font-size: var(--fs-md);
+    .actions::before {
+        content: '';
+        flex: none;
+        width: 0;
+        height: 100%;
     }
 
-    .description {
-        flex: 1 1 0;
-        min-width: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+    .actions > :global(*) {
+        flex: none;
     }
 
-    .markglyph {
-        display: inline-flex;
-        flex: 0 0 auto;
+    .actions > :global(:not(:last-child)) {
+        order: 1;
     }
 
-    .bell {
-        flex: 0 0 auto;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    /* The row's controls are drawn clear, and drawn while the pointer or the keyboard's stop is on
-       the row, while it is a terminal the tab shows, or while its Kill is armed, so the armed Kill
-       shows while a Delete, a Backspace or a menu's Kill Terminal waits for its second press. They
-       are always drawn on a screen that does not hover, and keep the focus while clear. */
-    .actions {
+    .row:hover .actions,
+    .row:focus-within .actions,
+    .row.current .actions,
+    .row.armed .actions {
         display: flex;
-        flex: 0 0 auto;
-        opacity: var(--row-reveal);
-        transition: opacity 120ms ease-out;
+    }
+
+    @media (hover: none) {
+        .actions {
+            display: flex;
+        }
     }
 
     .mark {

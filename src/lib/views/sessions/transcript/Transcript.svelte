@@ -214,7 +214,7 @@
             {/if}
         </div>
         {#if record !== null && agent === ''}
-            <SteerBox terminal={terminalOfSession(record)} />
+            <SteerBox terminal={terminalOfSession(record)} small />
         {/if}
     </div>
 </Pane>

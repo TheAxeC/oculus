@@ -49,7 +49,7 @@ function target(): FsTarget & { hub: string } {
         hub,
         engine: folder(),
         workspace: workspaceWith([{ name: 'hub', dir: hub }]),
-        machine: { set: [], defaults: {}, values: {}, hubs: {} },
+        machine: { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null },
         bookmarks: join(store, 'bookmarks.yml'),
         writes: fsWrites(),
         ignored: ignoredCache()

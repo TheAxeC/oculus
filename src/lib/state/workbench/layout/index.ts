@@ -129,7 +129,6 @@ export {
     documentState,
     editorTab,
     findInstance,
-    findView,
     instanceFlag,
     instanceLabel,
     instanceMap,

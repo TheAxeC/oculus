@@ -62,6 +62,15 @@ export function floatStyle(place: DrawnPlace): string {
     ].join('; ');
 }
 
+/**
+ * The least width of a left or right dock in pixels, VS Code's side bar and auxiliary bar minimum
+ * (`minimumWidth=170` of those parts), so a dock in a narrow window still holds words whole.
+ */
+const DOCK_MIN_WIDTH_PX = 170;
+
+/** The least height of a bottom dock in pixels, VS Code's panel minimum (`minimumHeight=77`). */
+const DOCK_MIN_HEIGHT_PX = 77;
+
 /** The size a docked float holds along an edge, or nothing for an edge no float is docked on. */
 function dockSize(floats: Float[], edge: DockEdge): number {
     for (const float of floats) {
@@ -73,7 +82,8 @@ function dockSize(floats: Float[], edge: DockEdge): number {
 /**
  * The grid the body lays the rail, the docks and the area out in: the rail, the left dock, the
  * area and the right dock across, and the area over the bottom dock down. An edge with no float is
- * a track of no size.
+ * a track of no size; a dock's track is its fraction of the window and never less than the dock
+ * minimum, the area taking what is left.
  */
 export function bodyTracks(floats: Float[]): string {
     const left = dockSize(floats, 'left');
@@ -81,11 +91,14 @@ export function bodyTracks(floats: Float[]): string {
     const bottom = dockSize(floats, 'bottom');
     const across = [
         'auto',
-        left === 0 ? '0' : viewport(left, 'vw'),
+        left === 0 ? '0' : `max(${DOCK_MIN_WIDTH_PX}px, ${viewport(left, 'vw')})`,
         'minmax(0, 1fr)',
-        right === 0 ? '0' : viewport(right, 'vw')
+        right === 0 ? '0' : `max(${DOCK_MIN_WIDTH_PX}px, ${viewport(right, 'vw')})`
     ];
-    const down = ['minmax(0, 1fr)', bottom === 0 ? '0' : viewport(bottom, 'vh')];
+    const down = [
+        'minmax(0, 1fr)',
+        bottom === 0 ? '0' : `max(${DOCK_MIN_HEIGHT_PX}px, ${viewport(bottom, 'vh')})`
+    ];
     return `grid-template-columns: ${across.join(' ')}; grid-template-rows: ${down.join(' ')}`;
 }
 
@@ -130,12 +143,14 @@ export function resizePlace(place: FreePlace, edges: Edges, dx: number, dy: numb
  * The size a docked float takes when its sash is dragged `delta` pixels along the window's
  * `extent` (its width for the left and right docks, its height for the bottom one). The sash of a
  * dock on the right or the bottom grows it by moving back toward the origin, so those two take the
- * movement the other way round.
+ * movement the other way round. The drag starts from the size the dock is drawn at, which the
+ * dock minimum may hold above `size`, so the sash moves with the pointer from its first pixel.
  */
 export function dockedSize(edge: DockEdge, size: number, delta: number, extent: number): number {
     if (extent <= 0) return size;
+    const floor = (edge === 'bottom' ? DOCK_MIN_HEIGHT_PX : DOCK_MIN_WIDTH_PX) / extent;
     const grown = edge === 'left' ? delta : -delta;
-    return Math.min(Math.max(size + grown / extent, FLOAT_MIN), DOCK_MAX);
+    return Math.min(Math.max(Math.max(size, floor) + grown / extent, FLOAT_MIN), DOCK_MAX);
 }
 
 /**

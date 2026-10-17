@@ -24,6 +24,7 @@
         title,
         checked,
         disabled = false,
+        waiting = false,
         inert = false,
         compact = false,
         small = false,
@@ -83,6 +84,7 @@
         class:joined
         class:cut
         class:inert
+        class:waiting
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
         aria-expanded={expanded}
@@ -95,7 +97,10 @@
         data-stop={stop}
         {tabindex}
         disabled={disabled || inert}
-        {onclick}
+        aria-disabled={waiting ? 'true' : undefined}
+        onclick={(event: MouseEvent) => {
+            if (!waiting) onclick(event);
+        }}
         {ondblclick}
         {onkeydown}
         {...attributes}
@@ -200,6 +205,13 @@
     .tool:disabled {
         opacity: 0.5;
         cursor: default;
+    }
+
+    /* A waiting button looks disabled and takes no pointer, so no fill comes under the pointer;
+       the wrapper around it still opens the tooltip. */
+    .tool.waiting {
+        opacity: 0.5;
+        pointer-events: none;
     }
 
     /* A strip's own button: the glyph in a box of the strip's action size, or of the box a pane
@@ -315,10 +327,12 @@
     }
 
     /* The words or marks alone, inline: the box around the button holds its look, so the button
-       takes that box's font, colour, case and decoration and draws nothing of its own. */
+       takes that box's font, colour, case and decoration and draws nothing of its own. Its glyph
+       stands 4px from its words, as every button's does; the button's box is the tooltip's span,
+       which has no gap of its own to give. */
     .tool.plain,
     :global(body.rice) .tool.plain {
-        gap: inherit;
+        gap: 4px;
         min-width: 0;
         padding: 0;
         border: 0;

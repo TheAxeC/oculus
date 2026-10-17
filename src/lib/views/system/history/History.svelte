@@ -51,7 +51,7 @@
     import Toolbar from '$lib/ui/frame/toolbar/Toolbar.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { stamp } from '$lib/state/shared/words/format';
-    import { t } from '$lib/state/shared/words/text';
+    import { hasText, t } from '$lib/state/shared/words/text';
     import { instanceText } from '$lib/state/workbench/layout';
     import {
         FILE_RECORD,
@@ -111,15 +111,29 @@
     }
 
     /**
-     * The word a kind of write is called, which is a catalog word and never the wire's own. The
-     * records of a deck's `order:` are told from those of a group's list by their field.
+     * The catalog word of a kind of write, never the wire's own. A kind the catalog has no word
+     * for, such as one a newer server writes, is drawn as the log names it, so one record never
+     * stops the view from drawing.
+     */
+    function kindWord(kind: string): string {
+        const word = kind.replaceAll('-', '_');
+        if (!hasText(`history.kind_${word}`)) return kind;
+        return t(`history.kind_${word}`);
+    }
+
+    /**
+     * The word a row's kind of write is called. The records of a deck's `order:` are told from
+     * those of a group's list by their field.
      */
     function kindOf(row: Change): string {
         if (row.undoes !== undefined) return undidOf(row);
         if (row.kind === 'deck-slides' && row.field === 'order')
             return t('history.kind_deck_order');
-        return t(`history.kind_${row.kind.replaceAll('-', '_')}`);
+        return kindWord(row.kind);
     }
+
+    /** The kinds of write that add a value, whose undo takes it out again. */
+    const ADDS = new Set(['new-entry', 'lead-add', 'radar-add', 'literature-save', 'subtask-add']);
 
     /**
      * What an undo did, which its record names by the kind of the write it took back: an entry or
@@ -145,7 +159,7 @@
             case 'reorder':
                 return t('history.undid_reorder');
             default:
-                return t('history.undid_field', t(`history.kind_${row.kind.replaceAll('-', '_')}`));
+                return t('history.undid_field', kindWord(row.kind));
         }
     }
 
@@ -212,7 +226,7 @@
             row.kind === FILE_RECORD
                 ? await explorer.undoFile(row, workspaces().folders)
                 : await undoWrite(row.at);
-        const outcome = undoSaid(answer, named(row));
+        const outcome = undoSaid(answer, named(row), ADDS.has(row.kind));
         said = outcome.said;
         if (!outcome.undone) {
             refused.add(row.at);
@@ -242,13 +256,15 @@
                 {#each list as row (row.at)}
                     <li data-change={row.at}>
                         <div class="head">
-                            <span class="when">{stamp(row.at)}</span>
-                            <span class="kind" data-kind={row.kind}>{kindOf(row)}</span>
-                            <span class="file">{fileShown(row.file, roots(), primary())}</span>
-                            <span class="what">{whatOf(row)}</span>
-                            {#if row.app !== undefined}
-                                <span class="app">{t('history.by_app', row.app)}</span>
-                            {/if}
+                            <span class="words">
+                                <span class="when">{stamp(row.at)}</span>
+                                <span class="kind" data-kind={row.kind}>{kindOf(row)}</span>
+                                <span class="file">{fileShown(row.file, roots(), primary())}</span>
+                                <span class="what">{whatOf(row)}</span>
+                                {#if row.app !== undefined}
+                                    <span class="app">{t('history.by_app', row.app)}</span>
+                                {/if}
+                            </span>
                             {#if row.undo !== 'none'}
                                 <span class="reveal">
                                     <ToolButton
@@ -275,7 +291,9 @@
                                         <span class="reveal" class:open={opened.has(key)}>
                                             <Disclosure
                                                 count={pair.held.size}
-                                                label={t('history.items')}
+                                                label={pair.held.size === 1
+                                                    ? t('history.items_one')
+                                                    : t('history.items')}
                                                 expanded={opened.has(key)}
                                                 onclick={() => toggle(key)}
                                             />
@@ -343,14 +361,36 @@
     }
 
     /* Each line of a row is one line of the tree's row height, and a line that wraps grows by
-       whole lines. */
+       whole lines. The row's words wrap in their own column and the Undo stands in a column of
+       its own at the first line's end, so a clear Undo never takes a line of its own. */
     .head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: 0 6px;
+        min-width: 0;
+    }
+
+    .words {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 0 6px;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         min-width: 0;
+    }
+
+    .words > * {
+        display: inline-flex;
+        align-items: center;
+        min-height: calc(var(--tree-row) * var(--text-scale, 1));
+    }
+
+    /* The Undo column is one line tall, so the button, taller than a line, stands centred on the
+       first line and never makes the row taller than its words. */
+    .head > .reveal {
+        align-items: center;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
     }
 
     .sides {

@@ -56,9 +56,9 @@ export function tabActions(deps: TabActionsDeps) {
      * switched away from by the time it lands. A tab closed meanwhile has no record left, and is
      * not given one back for a line nobody will see.
      */
-    function answerAt(owner: string, part: Pick<Partial<FilesView>, 'note'>): void {
+    function answerAt(owner: string, part: { note: string; told?: boolean }): void {
         if (owner !== deps.id() && instanceState(owner) === undefined) return;
-        patchAt(owner, part);
+        patchAt(owner, { note: part.note, told: part.told === true });
     }
 
     /**

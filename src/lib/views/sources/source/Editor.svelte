@@ -13,9 +13,10 @@
     // The actions the tab owns (Alt+Z's toggle of word wrap among them) are handed to the editor,
     // which binds their keys and lists them to the palette.
     //
-    // The editor holds the theme and the font as values, so it is handed the theme and the text
-    // size in force, and builds its look again whenever either changes. It is also handed the code
-    // theme, whose syntax colours the editor paints its text with.
+    // The editor holds the theme and the font as values, so it is handed a look that changes with
+    // the theme, the text size and every pick of a code theme (the ui store's editorLook()), and
+    // builds its look again whenever it changes. It is also handed the code theme, whose syntax
+    // colours the editor paints its text with.
     //
     // A Markdown file opens as the editor alone. With the rendered half turned on, the row splits
     // into the editor and the rendered half, with the handle between them: the rendered half takes
@@ -67,7 +68,7 @@
     const {
         fs: { notes },
         selectors: { editorOptions, languages, paintLimit },
-        ui: { codeTheme, theme, textScale }
+        ui: { codeTheme, editorLook }
     } = client;
 
     type Props = {
@@ -188,8 +189,8 @@
     /** Whether this file has a rendered half at all, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');
     const split = $derived(markdown && rendered);
-    /** The theme and the text size in force, which the editor's look is built from. */
-    const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
+    /** The theme, the text size and the code theme picks, which the editor's look is built from. */
+    const look = $derived(editorLook());
 
     /** The editor's command for a place: its range, the word at its column, or its line. */
     function goingTo(at: OpenedAt): EditorCommand {

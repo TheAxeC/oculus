@@ -34,8 +34,8 @@ export function font(host: HTMLElement | undefined): Monaco.editor.IEditorOption
  * Paint the page's theme under the code theme `code` and the body's class string. A paint that
  * fails (a code theme whose file did not load) leaves the theme before it in force and is not an
  * error of the editor: `failed` is told, so the editor forgets what it painted and the next change
- * of the look or of the code theme paints again (a second pick of the same theme changes neither),
- * and the answer always resolves.
+ * of the look or of the code theme paints again, a second pick of the same theme included, since
+ * every pick changes the look the editor is handed, and the answer always resolves.
  */
 export async function paintCode(kit: EditorKit, code: string, failed: () => void): Promise<void> {
     try {

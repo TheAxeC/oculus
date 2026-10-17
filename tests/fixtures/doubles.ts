@@ -1,20 +1,18 @@
-// Layer 4, test helper. The inert callbacks a case hands to a component, a fixture or a double when
+// Layer 4, test helper. The inert callback a case hands to a component, a fixture or a double when
 // it asserts nothing about the call, the stand-in for the words function, the write request a page
-// sends, the entries of a hand-built folder listing, and the child process a case drives in place
-// of `ps`. They exist once here so a case says "nothing happens on this callback" in one word
-// rather than writing an empty function at every prop, every route test posts the same page
-// request, every listing is built from the same two entries, and every test of the process table
-// drives the same child.
+// sends, the entries of a hand-built folder listing, a clock the case moves by hand, a terminal
+// driver that runs no tmux, and a language server channel that is open and takes what is sent. They
+// exist once here so a case says "nothing happens on this callback" in one word rather than writing
+// an empty function at every prop, every route test posts the same page request, and every listing
+// is built from the same two entries.
 
-import { EventEmitter } from 'node:events';
 import type { Clock } from '../../src/lib/server/core/file-poll.ts';
 import type { FsEntry } from '../../src/lib/state/sources/fs.ts';
+import type { TerminalDriver } from '../../src/lib/server/machine/pty/channel.ts';
+import type { LspPort } from '../../src/lib/ui/controls/editor/kit/lsp/services.ts';
 
 /** A callback whose call the case does not read. */
 export const noop = (): void => undefined;
-
-/** The same where the caller awaits what the callback returns. */
-export const noopAsync = (): Promise<void> => Promise.resolve();
 
 /**
  * A stand-in for the words function: a key answers `@key`, with its arguments after it in
@@ -46,33 +44,6 @@ export function dir(name: string): FsEntry {
     return { name, kind: 'dir', size: 0, mtime: 1 };
 }
 
-/**
- * A child process the case drives: it writes to its standard output, ends with a status or a
- * signal, and records the signal it was killed with.
- */
-export class ChildDouble extends EventEmitter {
-    readonly stdout = new EventEmitter() as EventEmitter & { setEncoding: (value: 'utf8') => void };
-    readonly kills: string[] = [];
-
-    constructor() {
-        super();
-        this.stdout.setEncoding = () => undefined;
-    }
-
-    kill(signal: 'SIGKILL'): boolean {
-        this.kills.push(signal);
-        return true;
-    }
-
-    write(text: string): void {
-        this.stdout.emit('data', text);
-    }
-
-    end(code: number | null, signal: string | null = null): void {
-        this.emit('close', code, signal);
-    }
-}
-
 /** A clock that runs a scheduled call only when the test says so. */
 export function manualClock(): Clock & { due: () => number; tick: () => void } {
     const scheduled = new Map<number, () => void>();
@@ -93,4 +64,37 @@ export function manualClock(): Clock & { due: () => number; tick: () => void } {
             for (const run of running) run();
         }
     };
+}
+
+/**
+ * A terminal driver that runs no tmux: every command and read answers nothing, and no server runs.
+ */
+export function idleDriver(): TerminalDriver {
+    return {
+        run: () => Promise.resolve(''),
+        read: () => Promise.resolve(''),
+        onOutput: noop,
+        onChange: noop,
+        attached: noop,
+        live: () => false,
+        serverRuns: () => Promise.resolve(false),
+        close: noop
+    };
+}
+
+/**
+ * A language server channel for an editor's transport: open, taking every message sent, and handing
+ * the transport each payload the case gives `answer` as the server's message.
+ */
+export function openPort(): { port: LspPort; answer: (payload: Record<string, unknown>) => void } {
+    let hear: (payload: Record<string, unknown>) => void = () => undefined;
+    const port: LspPort = {
+        state: { value: 'open', onChange: () => () => undefined },
+        send: () => true,
+        listen: (fn) => {
+            hear = fn;
+            return () => undefined;
+        }
+    };
+    return { port, answer: (payload) => hear(payload) };
 }

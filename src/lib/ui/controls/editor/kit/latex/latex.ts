@@ -1,10 +1,21 @@
 // Layer 3, primitive, pure. What the editor reads of a LaTeX text to preview it: the math span
-// under a position, the picture a position names, and the file that picture is. The page reads
-// nothing else here; the widget that draws the preview is kit/latex/latex-widget.ts's.
+// under a position, the picture a position names, the file that picture is, and the room the
+// preview has beside the line. The page reads nothing else here; the widget that draws the preview
+// is kit/latex/latex-widget.ts's.
 //
 // A span is found by a scan from the start of the text, so a `%` comment and an escaped character
 // (`\$`, `\%`) never open or close one. A single `$` span does not cross a blank line, which is
 // where a lone dollar sign in running text ends.
+
+/**
+ * The height a preview may take beside a line, in pixels: the larger of the room above the line
+ * and the room below it within the editor's visible height, so the preview fits on one side of
+ * the line and Monaco places it there, as its own hovers are placed. `top` and `height` are the
+ * line's, from the top of the editor's visible part.
+ */
+export function previewRoom(top: number, height: number, viewport: number): number {
+    return Math.max(0, top, viewport - top - height);
+}
 
 /** A math span: its offsets in the text (the end is past the closing delimiter), the source KaTeX
  * is given and whether it is set as a display formula. */

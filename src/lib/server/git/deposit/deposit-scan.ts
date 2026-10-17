@@ -4,14 +4,12 @@
 
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
+import type { DepositFinding as Finding } from '../../../data/model/index.ts';
 
 /** Names and suffixes that look like a credential, and the size above which a file is flagged. */
 const SECRET_HINTS = ['.secrets', '.env', '.netrc', 'id_rsa', 'credentials'];
 const SECRET_SUFFIXES = ['.pem', '.key'];
 const BIG_FILE_MB = 25;
-
-/** One thing the scan found. The words are the view's; this says what and where. */
-export type Finding = { kind: 'secret' | 'large' | 'readme'; path: string; mb: number };
 
 /** Anything that looks like a credential or is too big to belong in a public repository. */
 export function scan(mirror: string, files: string[]): Finding[] {

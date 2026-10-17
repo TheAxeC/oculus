@@ -3,8 +3,8 @@
 // export only HTTP verbs. The roots are the workspace's folders and nothing else, so a folder the
 // reader added in the file browser is a root a deck can be opened from. The projects are the ones
 // this request's server last published, and the configuration is the one read `locals.config()`
-// keeps for the request, taken from the ServerContext's cache of the parse. The POST reads the same
-// deck over the drafts of the body.
+// keeps for the request, taken from the ServerContext's cache of the parse, as each other hub's
+// settings are. The POST reads the same deck over the drafts of the body.
 
 import { portfolioConfigFrom } from '$lib/data/index';
 import { handleDeck, handleDeckDrafts } from '$lib/server/content/deck/endpoint';
@@ -25,7 +25,7 @@ function sourceOf(locals: App.Locals): DeckSource {
                 : { key: open.primary, dir: open.primaryDir },
         config: portfolioConfigFrom(config, from),
         projects: projects(locals.server.hub),
-        hubs: hubTargets(locals.server.engine, open)
+        hubs: hubTargets(open, locals.server.configCache.hub)
     };
 }
 

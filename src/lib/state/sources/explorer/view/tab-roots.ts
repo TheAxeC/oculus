@@ -127,27 +127,30 @@ export function followRevealed(held: unknown, found: { root: FsRoot; path: strin
  * What a Files tab draws when it is rooted at a folder: the one root holding the folder, the
  * folder as the head of the tree, and the folder the row above the head moves to (none at the
  * root's own top). A tab not rooted draws the workspace's roots as they are. A rooted tab whose
- * root the workspace no longer has draws nothing.
+ * root the workspace no longer has draws no tree and names that root (`gone`), so the tab says
+ * which root went and that adding it back shows it.
  */
 export type RootedView = {
     rooted: boolean;
     roots: FsRoot[];
     top: TreeTop | null;
     up: RowRef | null;
+    gone: string | null;
 };
 
 /** The rooted view of one tab, from the folder its instance state names and the roots in force. */
 export function rootedView(top: RowRef | null, roots: FsRoot[]): RootedView {
-    if (top === null) return { rooted: false, roots, top: null, up: null };
+    if (top === null) return { rooted: false, roots, top: null, up: null, gone: null };
     const root = roots.find((one) => one.key === top.root);
-    if (root === undefined) return { rooted: true, roots: [], top: null, up: null };
+    if (root === undefined) return { rooted: true, roots: [], top: null, up: null, gone: top.root };
     const at = top.path.lastIndexOf('/');
     const name = top.path === '' ? root.key : top.path.slice(at + 1);
     return {
         rooted: true,
         roots: [root],
         top: { path: top.path, name },
-        up: parentOf(top)
+        up: parentOf(top),
+        gone: null
     };
 }
 

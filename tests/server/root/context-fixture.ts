@@ -15,7 +15,7 @@ import { createRelay } from '../../../src/lib/server/machine/lsp/relay/relay.ts'
 import { HeldEslints } from '../../../src/lib/server/machine/runs/lint/eslint.ts';
 import { HeldComments } from '../../../src/lib/server/machine/runs/lint/writing/comments.ts';
 import { LintRuns } from '../../../src/lib/server/machine/runs/lint/runs.ts';
-import { Terminals, type TerminalDriver } from '../../../src/lib/server/machine/pty/channel.ts';
+import { Terminals } from '../../../src/lib/server/machine/pty/channel.ts';
 import { HookStore } from '../../../src/lib/server/sessions/stores/hooks.ts';
 import { ignoredCache } from '../../../src/lib/server/files/fs.ts';
 import { pickerState } from '../../../src/lib/server/files/fs/picker.ts';
@@ -24,24 +24,12 @@ import { createRunningGit } from '../../../src/lib/server/core/git/running.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { LiteratureDesk } from '../../../src/lib/server/content/literature/desk.ts';
 import { wallpaperMemory } from '../../../src/lib/server/content/wallpaper.ts';
-import { noop } from '../../fixtures/doubles.ts';
+import { idleDriver, noop } from '../../fixtures/doubles.ts';
 import { hubOption } from '../../../src/lib/server/files/workspace/paths.ts';
 import { workspaceWith } from '../../fixtures/hubs/workspace.ts';
 import { hostsFixture } from '../machine/apps/world/hosts-fixture.ts';
 
 const ROUTE_TOKEN = 'the-write-token-of-this-context';
-
-function terminalDriver(): TerminalDriver {
-    return {
-        run: () => Promise.resolve(''),
-        onOutput: noop,
-        onChange: noop,
-        attached: noop,
-        live: () => false,
-        serverRuns: () => Promise.resolve(false),
-        close: noop
-    };
-}
 
 export function contextFixture(overrides: Partial<ServerContext> = {}): ServerContext {
     const hub = overrides.hub ?? new Hub();
@@ -53,8 +41,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         calendars: [],
         mail: []
     };
-    const terminals =
-        overrides.terminals ?? new Terminals(hub, { driver: terminalDriver(), poll: 0 });
+    const terminals = overrides.terminals ?? new Terminals(hub, { driver: idleDriver(), poll: 0 });
     const relay =
         overrides.relay ??
         createRelay({
@@ -157,7 +144,9 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         local,
         machine: () => local,
         machineSet: () => [],
+        portRefused: () => null,
         machineLists: () => ({}),
+        repositories: () => [],
         engine,
         configCache:
             overrides.configCache ??
@@ -165,15 +154,20 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
                 engine,
                 hub: () => workspace.open().primaryDir,
                 load: () => loadConfig(engine, hubOption(workspace.open().primaryDir)),
+                loadHub: (dir) => loadConfig(engine, dir === null ? {} : { hub: dir }),
                 report: () => undefined,
                 primary: () => workspace.open().primary,
-                others: () => [],
-                vocabs: (read) =>
+                others: () =>
+                    workspace
+                        .open()
+                        .hubs.filter((one) => one.name !== workspace.open().primary)
+                        .map((one) => ({ key: one.name, dir: one.dir })),
+                vocabs: (read, others, settings) =>
                     workspaceVocabs(
-                        engine,
                         { name: workspace.open().primary, dir: workspace.open().primaryDir },
                         read,
-                        []
+                        others,
+                        settings
                     )
             }),
         fsWrites: overrides.fsWrites ?? fsWrites(),

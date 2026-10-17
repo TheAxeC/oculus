@@ -24,6 +24,7 @@ import { join, relative, sep } from 'node:path';
 import { splitHubId } from '../../../data/helpers/hub-names.ts';
 import { manifestDir } from '../../../data/sources/manifests.ts';
 import type { PortfolioConfig } from '../../../data/model/index.ts';
+import type { HubSettings } from '../../../data/index.ts';
 import { inside } from '../../core/paths.ts';
 import type { OpenWorkspace } from '../workspace/open.ts';
 import { primaryConfig, hubManifests, hubTargets, type HubTarget } from '../roots.ts';
@@ -233,12 +234,13 @@ export function listFiles(into: FilesTarget, id: string): Response {
 /**
  * What the route reads: the primary hub every write lands in, the other hubs of the open workspace,
  * and the request's merged config beside them. The hubs and the scan rules come from the same
- * readers target() in lib/server/edit/writes.ts takes them from, primaryConfig and hubTargets.
+ * readers target() in lib/server/edit/writes.ts takes them from, primaryConfig and hubTargets, and
+ * each other hub's settings from `hubSettings`, the server's kept parse of them.
  */
 export function filesTarget(
-    engine: string,
     settings: Record<string, unknown>,
-    open: OpenWorkspace
+    open: OpenWorkspace,
+    hubSettings: HubSettings
 ): FilesTarget {
     return {
         primary:
@@ -246,7 +248,7 @@ export function filesTarget(
                 ? null
                 : { key: open.primary, dir: open.primaryDir },
         config: primaryConfig(settings, open),
-        hubs: hubTargets(engine, open),
+        hubs: hubTargets(open, hubSettings),
         settings
     };
 }

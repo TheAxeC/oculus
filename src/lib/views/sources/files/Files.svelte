@@ -53,13 +53,17 @@
     // panel (POST /api/folders/pick) and adds what it returns; the workspace menu items (Close
     // Workspace apart, which the view runs and says its refusal in the message line) and Open
     // Folder open the palette with their command typed, where state/workbench/palette.ts runs them.
+    // A workspace with no folder keeps its header and draws Add Folder to Workspace... as a button
+    // under the words that say it holds none, disabled while the folder panel is open.
     //
     // A tab rooted at a folder (its `top`) or following a session draws the folder as the head of
     // its tree, with a `..` row above a rooted one, and no workspace header. A folder outside every
     // root that Open Folder found is said above the tree with the control that adds it. A tab with
     // `follow: true` in its layout state is rooted at a session's workspace: the tree is that
     // folder as its own head, read through the root that holds it (tree/Follow.svelte). The session
-    // is the one the tab pins in its layout state, and the selection when it pins none.
+    // is the one the tab pins in its layout state, else the selection, else the one the tab showed
+    // last, which it keeps in its layout state so a reload shows it again
+    // (state/workbench/selection.svelte.ts, `keepShown`).
     //
     // A file opens in the view that can show it, which shared/explorer/opening.ts decides from the
     // file's own first bytes. One click opens the pane's preview tab and a double click opens a tab
@@ -71,6 +75,7 @@
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
     import Controls from './header/Controls.svelte';
     import Filters from './header/Filters.svelte';
@@ -100,7 +105,7 @@
         type RowRef
     } from '$lib/state/sources/fs';
     import { rootKeysOf } from '$lib/state/sources/fs-transport';
-    import { pinnedSession } from '$lib/state/workbench/selection.svelte';
+    import { followedSession, keepShown } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -109,7 +114,7 @@
     const {
         explorer: { panelOpen },
         fs: { addRoot, closeWorkspace, invalidate, orderRoots },
-        layout: { activeInstance, currentPage, instanceLayoutState, layout },
+        layout: { activeInstance, currentPage, instanceLayoutState, layout, restateInstance },
         clangd,
         selection: { selected },
         selectors: { docPlaceFor, sessionById },
@@ -160,8 +165,15 @@
         step: (direction: 'up' | 'down') => sectionDrag.step(id, direction)
     });
 
-    /** The session or terminal the tab follows: the one it pins, else the selection. */
-    const followed = $derived(pinnedSession(instanceLayoutState(instance.id)) ?? selected());
+    /**
+     * The session or terminal the tab follows: its pin, else the selection, else the one it showed
+     * last.
+     */
+    const followed = $derived(followedSession(instanceLayoutState(instance.id), selected()));
+    /** The session or terminal followed while the payload holds it, else null. */
+    const held = $derived(
+        sessionById(followed) !== null || terminalById(followed) !== null ? followed : null
+    );
     const follow = $derived(
         followView(
             instanceLayoutState(instance.id),
@@ -169,6 +181,13 @@
             followedDirOf(sessionById(followed), terminalById(followed))
         )
     );
+    // While the tab follows the selection, the session it shows is kept in its layout state.
+    keepShown({
+        state: () => instanceLayoutState(instance.id),
+        selected,
+        shown: () => (follow.following ? held : null),
+        write: (state) => restateInstance(instance.id, state)
+    });
     /** The folder a rooted tab is drawn from, and the roots and the `..` row that goes with it. */
     const rooted = $derived(rootedView(follow.following ? null : view.top, current.roots));
     const shownRoots = $derived(
@@ -191,11 +210,12 @@
 
     /**
      * The one line the view says, laid over its foot: that the folder panel is open while it is,
-     * else the refusal, else the outcome of an ask to show a path, with what clears it.
+     * else the last answer (a refusal as an error, a result that went through whole as
+     * information), else the outcome of an ask to show a path, with what clears it.
      */
     const message = $derived.by(() => {
         if (panelOpen()) return { text: t('files.picker_busy'), error: false, clear: {} };
-        if (view.note !== '') return { text: view.note, error: true, clear: { note: '' } };
+        if (view.note !== '') return { text: view.note, error: !view.told, clear: { note: '' } };
         const shown = revealLine(view.revealed);
         return shown === '' ? null : { text: shown, error: false, clear: { revealed: null } };
     });
@@ -209,21 +229,21 @@
     /** Write the new order of the movable roots, and say a refusal in the message line. */
     async function reorderRoots(keys: string[]): Promise<void> {
         const owner = instance.id;
-        const answer = await orderRoots(keys);
+        const answer = await orderRoots(keys, { said: true });
         answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
     }
 
     /** Leave the open workspace file, and say a refusal in the message line. */
     async function closeWork(): Promise<void> {
         const owner = instance.id;
-        const answer = await closeWorkspace();
+        const answer = await closeWorkspace({ said: true });
         answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '', answer.reason) });
     }
 
     /** Add the folder Open Folder found outside every root, and drop the line that offered it. */
     async function addOutside(dir: string): Promise<void> {
         const owner = instance.id;
-        const answer = await addRoot(dir);
+        const answer = await addRoot(dir, { said: true });
         answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
         if (answer.ok) patchAt(owner, { outside: '' });
     }
@@ -247,12 +267,7 @@
 </script>
 
 {#snippet tools()}
-    <Controls
-        owner={instance.id}
-        followed={sessionById(followed) !== null || terminalById(followed) !== null
-            ? followed
-            : null}
-    />
+    <Controls owner={instance.id} followed={held} />
 {/snippet}
 
 {#snippet bar()}
@@ -290,6 +305,15 @@
     />
 {/snippet}
 
+{#snippet addFolder()}
+    <ToolButton
+        primary
+        label={t('files.menu_add_root')}
+        disabled={panelOpen()}
+        onclick={() => void tree.addFolders()}
+    />
+{/snippet}
+
 {#snippet editorsSection()}
     <OpenEditors
         open={sectionOpen(view, 'editors')}
@@ -319,9 +343,25 @@
         <Empty error message={t('files.read_failed', saved.error)} />
     {:else if saved.loading}
         <Empty message={t('files.loading')} glyph={t('files.none_glyph')} />
+    {:else if tree.rows.length === 0 && headed && rooted.gone === null}
+        <!-- A workspace with no folder keeps its header, with its menu, and the button under the
+             words, as VS Code's empty Explorer does, so the sentence's request can be met here. -->
+        <RootedTree
+            {tree}
+            {workspace}
+            owner={instance.id}
+            {header}
+            {headerOpen}
+            onmoveheader={(direction: 'up' | 'down') => sectionDrag.step('files', direction)}
+        />
+        {#if headerOpen}
+            <Empty message={t('files.none')} glyph={t('files.none_glyph')} action={addFolder} />
+        {/if}
     {:else if tree.rows.length === 0}
         <!-- A tab following nothing, or a folder no root serves, has its own line above. -->
-        {#if !follow.following || follow.found !== null}
+        {#if !follow.following && rooted.gone !== null}
+            <Empty message={t('files.root_gone', rooted.gone)} glyph={t('files.none_glyph')} />
+        {:else if !follow.following || follow.found !== null}
             <Empty message={t('files.none')} glyph={t('files.none_glyph')} />
         {/if}
     {:else}
@@ -355,7 +395,8 @@
             onopenmark={(entry: Entry) => openBookmark(tree.opener, entry)}
             onrenamemark={(id: string, label: string) => void marking.rename(id, label)}
             onremovemark={(id: string) => void marking.remove(id)}
-            onnote={(owner: string, note: string) => answerAt(owner, { note })}
+            onnote={(owner: string, note: string, told?: boolean) =>
+                answerAt(owner, { note, told })}
         />
         <MessageLine
             message={message?.text ?? ''}

@@ -136,7 +136,9 @@
             <span class="note">{t('latex.no_errors')}</span>
         {/if}
         {#if row.words !== null}
-            <span class="note">{t('latex.words', row.words)}</span>
+            <span class="note"
+                >{row.words === 1 ? t('latex.words_one') : t('latex.words', row.words)}</span
+            >
         {/if}
     </div>
 </div>

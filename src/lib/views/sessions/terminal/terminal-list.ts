@@ -1,11 +1,12 @@
 // Layer 3, view helper. The rules the Terminal view's list and grid go by: whether the list is
-// drawn, the rows of one tab in the tab's order, the key a row answers, how long an armed Kill
-// stays armed, a dragged row's new place, the drag a row carries, the grid's font size, the line
-// count a paste is asked about and the listener that holds such a paste, the file drag the grid
-// takes, a dropped path quoted for the shell, a terminal's tooltip, the items of the view's
-// right-click menus, the find bar's count, options and keys, and the handler a link in the grid
-// opens by. The pure ones are here rather than in the components so each is asserted
-// without a DOM, which the grid's paste, drop and drag need to happen at all.
+// drawn, the rows of one tab in the tab's order, the key a row answers, a dragged row's new place,
+// the drag a row carries, the grid's font size, the line count a paste is asked about and the
+// listener that holds such a paste, the file drag the grid takes, a dropped path quoted for the
+// shell, a terminal's tooltip, the items of the view's right-click menus, the find bar's count,
+// options and keys, and the handler a link in the grid opens by. The pure ones are here rather than
+// in the components so each is asserted without a DOM, which the grid's paste, drop and drag need
+// to happen at all. How long an armed Kill stays armed, and what else ends it, is
+// list/kill-arm.svelte.ts's; the list's width is list/list-width.svelte.ts's.
 //
 // The right-click menus are VS Code's terminal menus, with the items oculus runs: the grid's (Copy
 // and Copy as HTML while it holds a selection, Paste, Select All, Clear, then Split Terminal,
@@ -15,12 +16,12 @@
 // own) and the list's empty area's (New Terminal, and New Terminal With Profile over the kinds,
 // each starting that kind at once, and Attach to Session over the running terminals no Terminal tab
 // owns). The bar's kinds dropdown lists the same kinds, With a Prompt, which shows the composer,
-// and the same Attach to Session. Kill Terminal goes through the row's Kill (`pressKill`): the
-// first pick arms the terminal and the item then reads as the armed control does, and a second pick
-// or press kills it. The context menu key and Shift+F10 open the grid's menu, which xterm would
-// otherwise send to the shell (`holdMenuKeys`). Every label is `t(...)` of a catalog key, except a
-// terminal's own name in Join Terminals and Attach to Session, which is passed through as the list
-// hands it.
+// and the same Attach to Session. Kill Terminal goes through the row's Kill (`pressKill` of
+// list/kill-arm.svelte.ts): the first pick arms the terminal and the item then reads as the armed
+// control does, and a second pick or press kills it. The context menu key and Shift+F10 open the
+// grid's menu, which xterm would otherwise send to the shell (`holdMenuKeys`). Every label is
+// `t(...)` of a catalog key, except a terminal's own name in Join Terminals and Attach to Session,
+// which is passed through as the list hands it.
 
 import type { ISearchOptions } from '@xterm/addon-search';
 import { FILE_DRAG } from '$lib/state/sources/fs';
@@ -59,11 +60,11 @@ export type TerminalListProps = {
     /** Called with a row's terminal when a pointer press shows it, before it is shown. */
     onshown: (terminal: string) => void;
     /**
-     * What a pick of a row's menu does, and what the row's own controls call: Split, Kill (a
-     * press of the row's Kill, a Delete or Backspace on it, or Kill Terminal from its menu, which
-     * is the tab's `pressKill`: it arms the terminal first and kills it on the second), and the
-     * double click that opens Rename. The bar's menu of a sole terminal is routed through the same
-     * object.
+     * What a pick of a row's menu does, and what the row's own controls call: Split, Kill (a press
+     * of the row's Kill, a Delete or Backspace on it, or Kill Terminal from its menu, which is the
+     * tab's `pressKill` of list/kill-arm.svelte.ts: it arms the terminal first and kills it on the
+     * second), and the double click that opens Rename. The bar's menu of a sole terminal is routed
+     * through the same object.
      */
     handlers: PickHandlers;
     /** The terminal whose title is being edited on its row, or ''. */
@@ -76,8 +77,12 @@ export type TerminalListProps = {
     arming: string;
     /** A kill the server refused, said below the rows until the next one. */
     failure: string;
-    /** Take the arm off, when the stop moves off the armed row or focus leaves the list. */
+    /** Take the arm off, when the stop moves off the armed row. */
     ondisarm: () => void;
+    /** The list's width in pixels (list/list-width.svelte.ts, `listFit`). */
+    width: number;
+    /** Whether the list is narrow: each row drawn as its mark alone. */
+    narrow: boolean;
 };
 
 /** The width the composer keeps at the right of a row that is being composed into, in rem. */
@@ -185,15 +190,6 @@ export function rowKey(key: string, shift: boolean, repeat: boolean): RowAction 
 }
 
 /**
- * Whether an armed Kill stays armed when the keyboard's stop moves: only while its row is still
- * the stop, so a second Delete or Backspace kills the row the first one armed and no other. Focus
- * leaving the list disarms it as well, which the list does on its focusout.
- */
-export function armKept(armed: string, stop: string): boolean {
-    return armed !== '' && armed === stop;
-}
-
-/**
  * The number of lines a paste holds when it holds a line break, which is the paste the grid asks
  * about before sending since a line break runs what comes before it, or null for a paste with no
  * line break, which goes through. A line break that ends the text closes its last line rather than
@@ -269,9 +265,22 @@ export function shellQuote(path: string): string {
     return `'${path.replaceAll("'", "'\\''")}'`;
 }
 
-/** A terminal's tooltip on its row and on the bar: its name, command, folder and start time. */
-export function terminalTip(held: Pick<Terminal, 'name' | 'command' | 'cwd' | 'created'>): string {
-    return t('sessions.terminal_row_tip', held.name, held.command, held.cwd, stamp(held.created));
+/**
+ * A terminal's tooltip on its row and on the bar: its name, command, folder and start time, and for
+ * a kept terminal whose line ended the status it ended with, as VS Code's terminal tab says it. A
+ * field tmux reported no value for is left out rather than drawn with nothing after its name.
+ */
+export function terminalTip(
+    held: Pick<Terminal, 'name' | 'command' | 'cwd' | 'created' | 'exit'>
+): string {
+    const lines = [
+        held.name,
+        held.command === '' ? '' : t('sessions.terminal_tip_command', held.command),
+        held.cwd === '' ? '' : t('sessions.terminal_tip_folder', held.cwd),
+        held.created === '' ? '' : t('sessions.terminal_tip_started', stamp(held.created)),
+        held.exit === null ? '' : t('sessions.terminal_row_ended', held.exit)
+    ];
+    return lines.filter((line) => line !== '').join('\n');
 }
 
 type Words = (key: string, ...args: (string | number)[]) => string;
@@ -301,30 +310,6 @@ const PROFILE = 'profile:';
 
 /** The kinds New Terminal With Profile offers, in the order its submenu lists them. */
 const PROFILES: readonly ComposerAgent[] = ['shell', 'claude', 'codex'];
-
-/**
- * What a press of a row's Kill, a Delete or Backspace on the row, or a pick of Kill Terminal from
- * the grid's or the row's menu does: a terminal not armed is armed, and the armed one is stopped,
- * the arm taken off first. A refusal of the stop is handed to `fail`.
- */
-export async function pressKill(
-    armed: string,
-    terminal: string,
-    deps: {
-        arm: (terminal: string) => void;
-        stop: (terminal: string) => Promise<{ ok: boolean; error: string }>;
-        fail: (error: string) => void;
-    }
-): Promise<void> {
-    if (armed !== terminal) {
-        deps.arm(terminal);
-        return;
-    }
-    deps.arm('');
-    deps.fail('');
-    const answer = await deps.stop(terminal);
-    if (!answer.ok) deps.fail(answer.error);
-}
 
 /**
  * The Kill Terminal item: while the terminal is armed it carries the armed control's label, so the
@@ -358,9 +343,17 @@ function taskItems(task: TaskState, t: Words): MenuItem[] {
     ];
 }
 
-/** The two items the grid and a row both have: the row's own Split and Kill. */
-function rowActions(armed: boolean, t: Words): MenuItem[] {
-    return [{ id: MENU_SPLIT, label: t('sessions.menu_split') }, killItem(armed, t)];
+/**
+ * Split Terminal, for a terminal whose folder oculus knows only, since a split starts the new
+ * terminal in that folder.
+ */
+function splitItems(t: Words, splittable: boolean): MenuItem[] {
+    return splittable ? [{ id: MENU_SPLIT, label: t('sessions.menu_split') }] : [];
+}
+
+/** The items the grid and a row both have: the row's own Split and Kill. */
+function rowActions(armed: boolean, t: Words, splittable: boolean): MenuItem[] {
+    return [...splitItems(t, splittable), killItem(armed, t)];
 }
 
 /** The words of each colour name, held to the colour list by its type. */
@@ -400,16 +393,16 @@ function styleItems(t: Words): MenuItem[] {
 
 /**
  * The grid's items: Copy and Copy as HTML while it holds a selection, Paste, Select All, Clear,
- * then Split, Rename, Change Icon, Change Color and Kill, Kill with its armed label while the
- * grid's terminal is armed.
+ * then Split (for a terminal whose folder oculus knows), Rename, Change Icon, Change Color and
+ * Kill, Kill with its armed label while the grid's terminal is armed.
  */
 export function gridMenu(
     selected: boolean,
     armed: boolean,
     t: Words,
-    task: TaskState = null
+    task: TaskState = null,
+    splittable = true
 ): MenuItem[] {
-    const [split, kill] = rowActions(armed, t);
     return grouped([
         [
             ...(selected
@@ -423,7 +416,7 @@ export function gridMenu(
         ],
         [{ id: MENU_CLEAR, label: t('sessions.menu_clear') }],
         taskItems(task, t),
-        [split, ...styleItems(t), kill]
+        [...splitItems(t, splittable), ...styleItems(t), killItem(armed, t)]
     ]);
 }
 
@@ -443,10 +436,10 @@ function inShownRow(tab: TerminalTabState, terminal: string): boolean {
 
 /**
  * A row's items: Rerun (once a task terminal's line ended) and Restart for a task terminal, Split
- * Terminal and Kill Terminal, Kill with its armed label while the row's terminal is armed; Rename,
- * Change Icon, Change Color and Clear; then Unsplit Terminal on a terminal of the row the tab
- * shows, and Join Terminals, a submenu of the terminals other Terminal tabs own, each by the name
- * it is handed.
+ * Terminal (for a terminal whose folder oculus knows) and Kill Terminal, Kill with its armed label
+ * while the row's terminal is armed; Rename, Change Icon, Change Color and Clear; then Unsplit
+ * Terminal on a terminal of the row the tab shows, and Join Terminals, a submenu of the terminals
+ * other Terminal tabs own, each by the name it is handed.
  */
 export function terminalRowMenu(
     tab: TerminalTabState,
@@ -454,11 +447,12 @@ export function terminalRowMenu(
     others: readonly { terminal: string; title: string }[],
     armed: boolean,
     t: Words,
-    task: TaskState = null
+    task: TaskState = null,
+    splittable = true
 ): MenuItem[] {
     const joins = others.map((one) => ({ id: `${JOIN}${one.terminal}`, label: one.title }));
     return grouped([
-        [...taskItems(task, t), ...rowActions(armed, t)],
+        [...taskItems(task, t), ...rowActions(armed, t, splittable)],
         [...styleItems(t), { id: MENU_CLEAR, label: t('sessions.menu_clear') }],
         [
             ...(inShownRow(tab, terminal)
@@ -519,8 +513,8 @@ export function kindsMenu(t: Words, attachable: readonly Attachable[]): MenuItem
     ]);
 }
 
-/** The words of one kind. */
-function kindLabel(kind: ComposerAgent, t: Words): string {
+/** The words of one kind of terminal. */
+export function kindLabel(kind: ComposerAgent, t: Words): string {
     if (kind === 'claude') return t('sessions.kind_claude');
     if (kind === 'codex') return t('sessions.kind_codex');
     return t('sessions.kind_shell');

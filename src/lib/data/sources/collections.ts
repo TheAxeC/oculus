@@ -13,10 +13,39 @@ import { byKey } from '../helpers/guards.ts';
 import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { itemsShape, mapShape, readAs } from '../shapes/shapes.ts';
 import { isAbsent, readYamlMap } from './yaml-file.ts';
-import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model/index.ts';
+import type {
+    CollectionFile,
+    Finding,
+    PortfolioConfig,
+    RawCollection,
+    RawEntry
+} from '../model/index.ts';
 
 /** A key and a hub-relative path from the `collections:` list; declared with the other types. */
 export type { CollectionFile } from '../model/index.ts';
+
+/**
+ * The engine's Literature collection, read from a hub whose own list names no Literature file when
+ * the hub holds the file, since Save to Literature writes there then
+ * (server/edit/feeds/literature.ts), so the collection the cards read is the file the save wrote.
+ */
+export const LITERATURE_FILE: CollectionFile = {
+    key: 'literature',
+    file: '.oculus/data/literature.yml'
+};
+
+/**
+ * Whether the collection `key` of a hub is one its own settings do not name (`unnamed` of
+ * PortfolioConfig): every collection of a hub that names no list, and the engine's Literature of a
+ * hub whose list names none. A file of it that is absent is no finding, and the hub lists it only
+ * when it holds the file.
+ */
+export function unnamedCollection(unnamed: PortfolioConfig['unnamed'], key: string): boolean {
+    return (
+        unnamed?.collections === true ||
+        (unnamed?.literature === true && key === LITERATURE_FILE.key)
+    );
+}
 
 /** The record-list key, including the dataset registry's established exception. */
 function listKey(key: string): string {
@@ -87,14 +116,15 @@ function readCollection(
  * whether a record is known by its `key` or its `title`. A file that is missing, does not parse, is
  * not a map, or has no entry list gives an empty collection and one finding; an entry that is not a
  * map is one finding and no record. Two entries for the same key is a finding on the second and the
- * first file is the one read, so the returned map has one collection per key. With `unnamed` set,
- * the hub's own config does not name the list, so a file of it that is absent raises no finding.
+ * first file is the one read, so the returned map has one collection per key. A key `unnamed`
+ * answers true for is one the hub's own config does not name, so its file being absent raises no
+ * finding.
  */
 export function readCollections(
     hub: string,
     files: CollectionFile[],
     catalog: TextCatalog,
-    unnamed = false
+    unnamed: (key: string) => boolean = () => false
 ): { collections: Record<string, RawCollection>; findings: Finding[] } {
     const findings: Finding[] = [];
     const collections: Record<string, RawCollection> = {};
@@ -112,7 +142,13 @@ export function readCollections(
                 )
             });
         } else {
-            collections[asked.key] = readCollection(hub, asked, catalog, findings, unnamed);
+            collections[asked.key] = readCollection(
+                hub,
+                asked,
+                catalog,
+                findings,
+                unnamed(asked.key)
+            );
         }
     }
     return { collections, findings };

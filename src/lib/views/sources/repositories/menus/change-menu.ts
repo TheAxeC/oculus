@@ -147,7 +147,9 @@ export function askDiscardFolder(
 ): void {
     const { root, folder, paths } = target;
     deps.ask(
-        t('repositories.folder_discard_confirm', paths.length, folder),
+        paths.length === 1
+            ? t('repositories.folder_discard_confirm_one', folder)
+            : t('repositories.folder_discard_confirm', paths.length, folder),
         t('git.discard_all_detail'),
         () => {
             deps.discardPaths(root, paths);
@@ -258,7 +260,11 @@ export function askDiscardPaths(
         );
         return;
     }
-    deps.ask(t('git.discard_all_confirm', paths.length), t('git.discard_detail'), () => {
+    const question =
+        paths.length === 1
+            ? t('git.discard_all_confirm_one')
+            : t('git.discard_all_confirm', paths.length);
+    deps.ask(question, t('git.discard_detail'), () => {
         deps.discardPaths(root, paths);
     });
 }

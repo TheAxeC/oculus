@@ -91,6 +91,9 @@ export const ADDRESSES: readonly string[] = ['uri', 'targetUri', 'file'];
  */
 export const OWN = 'own:';
 
+/** The client's cancel of a request it sent, which names the request by its id. */
+export const CANCEL = '$/cancelRequest';
+
 /**
  * The requests whose parameters are the document's identifier itself, `{ uri }`, as clangd's
  * `textDocument/switchSourceHeader` reads them; every other request names it as `textDocument`.
@@ -140,6 +143,18 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Whether a code action is one whose edit the transport keeps, by its command. */
+export function keptAction(action: unknown): boolean {
+    const command = isRecord(action) ? action.command : null;
+    return isRecord(command) && command.command === APPLY_COMMAND;
+}
+
+/** The client's address of the document a request is made for, or null for none. */
+export function askingOf(params: unknown): string | null {
+    const document = isRecord(params) ? params.textDocument : null;
+    return isRecord(document) && typeof document.uri === 'string' ? document.uri : null;
+}
+
 /** The key a model is known by in the client's address. */
 export function keyOf(model: LspModel): string {
     return model.uri.toString(true);
@@ -172,4 +187,41 @@ export function registrationsOf(params: unknown): { id: string; method: string }
             ? [{ id: one.id, method: one.method }]
             : []
     );
+}
+
+/**
+ * Monaco asks the completion providers of a model in groups of equal score and stops at the first
+ * group that answers: a provider registered for the language scores 10, and one registered with no
+ * selector, as Monaco's client registers a server's completion whose declaration names none, scores
+ * 5, so the server's completion would be asked only when none of the page's own providers of the
+ * language (the LaTeX symbols and environments, the apps' snippets) answers. It is given the
+ * client's language as its selector, so it is asked beside them and their items are listed
+ * together.
+ */
+function scopedCompletion(options: unknown, language: string): unknown {
+    if (options === undefined || options === null || options === false) return options;
+    const given = isRecord(options) ? options : {};
+    const selector = given.documentSelector;
+    if (Array.isArray(selector) && selector.length > 0) return options;
+    return { ...given, documentSelector: [{ language }] };
+}
+
+/** An `initialize` answer with the server's completion scoped to the client's language. */
+export function scopedInitialize(result: unknown, language: string): unknown {
+    if (!isRecord(result) || !isRecord(result.capabilities)) return result;
+    const capabilities = result.capabilities;
+    if (capabilities.completionProvider === undefined) return result;
+    const completionProvider = scopedCompletion(capabilities.completionProvider, language);
+    return { ...result, capabilities: { ...capabilities, completionProvider } };
+}
+
+/** A `client/registerCapability` request with a completion registration scoped to the language. */
+export function scopedRegistrations(params: unknown, language: string): unknown {
+    if (!isRecord(params) || !Array.isArray(params.registrations)) return params;
+    const registrations = (params.registrations as unknown[]).map((one) =>
+        isRecord(one) && one.method === 'textDocument/completion'
+            ? { ...one, registerOptions: scopedCompletion(one.registerOptions, language) }
+            : one
+    );
+    return { ...params, registrations };
 }

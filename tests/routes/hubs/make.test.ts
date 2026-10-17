@@ -6,6 +6,11 @@
 // so the walk up for a hub above a folder never reaches the machine's home folder. The templates
 // are oculus's own docs/templates.md, read and never written. A make that is refused is checked
 // to have written nothing by listing the planted folder before and after it.
+//
+// What the Files view holds of a folder before its menu opens is read through the server's own
+// answers: the listing of each folder above it (fs.ts, `listShown`) and the workspaces answer
+// (`workspacesAnswer`), read as the page reads them, and the offer the page builds from them
+// (data/helpers/hub-names.ts, `offerAlong`) is the route's offer of the same folder.
 
 import {
     lstatSync,
@@ -21,7 +26,15 @@ import { describe, expect } from 'vitest';
 import { readChanges, type ChangeLog } from '../../../src/lib/server/core/changes.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
 import { engineDir } from '../../../src/lib/data/sources/config.ts';
-import { handleMake, type MakeTarget } from '../../../src/lib/server/files/project/make.ts';
+import {
+    handleMake,
+    markedBy,
+    type MakeTarget
+} from '../../../src/lib/server/files/project/make.ts';
+import { listShown, workspacesAnswer } from '../../../src/lib/server/files/fs.ts';
+import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
+import { offerAlong, type FolderMarks } from '../../../src/lib/data/helpers/hub-names.ts';
+import { pageWorkspaces, plantState } from '../../fixtures/hubs/workspace.ts';
 import { it, plantScratch, scratchDir } from '../../fixtures/scratch.ts';
 
 const TOKEN = 'a-make-token';
@@ -328,4 +341,95 @@ describe('a make', () => {
         expect(tree(w.ws)).toEqual(before);
         expect(readChanges(w.log)).toEqual([]);
     });
+});
+
+describe('what the Files view holds of a folder before its menu opens', () => {
+    it('carries the marks of each folder in its listing and of each folder of the workspace in the workspaces answer, and the offer they give each folder is the route offer (G32)', async () => {
+        const free = planted(
+            {
+                'p/project.yml': 'tier: projects\n',
+                'q/.oculus/project.yml': 'tier: projects\n',
+                'h/.oculus/config.yml': ''
+            },
+            ['a/b', 'h/in']
+        );
+        const top = planted({ '.oculus/config.yml': '' }, ['inside/x']);
+        const open = openWorkspace(
+            plantState([
+                { name: 'free', dir: free },
+                { name: 'inside', dir: join(top, 'inside') }
+            ])
+        );
+        const answer = workspacesAnswer(open, engineDir(), {
+            set: [],
+            defaults: {},
+            values: {},
+            hubs: {},
+            portRefused: null
+        });
+        const roots = (await pageWorkspaces(answer)).folders;
+        expect(roots.map((one) => [one.key, one.marks, one.above])).toEqual([
+            ['free', undefined, undefined],
+            ['inside', undefined, true]
+        ]);
+        const listed = await listShown(open.roots, 'free', '');
+        expect(
+            'entries' in listed ? listed.entries.map((one) => [one.name, one.marks]) : listed
+        ).toEqual([
+            ['a', undefined],
+            ['h', { hub: true }],
+            ['p', { project: true }],
+            ['q', { project: true }]
+        ]);
+        const target: MakeTarget = { roots: open.roots, engine: engineDir(), writes: fsWrites() };
+        const rows: [string, string, { hub: boolean; project: boolean }][] = [
+            ['free', '', { hub: true, project: true }],
+            ['free', 'a', { hub: true, project: true }],
+            ['free', 'a/b', { hub: true, project: true }],
+            ['free', 'p', { hub: false, project: false }],
+            ['free', 'q', { hub: false, project: false }],
+            ['free', 'h', { hub: false, project: false }],
+            ['free', 'h/in', { hub: false, project: true }],
+            ['inside', '', { hub: false, project: true }],
+            ['inside', 'x', { hub: false, project: true }]
+        ];
+        for (const [key, path, offer] of rows) {
+            const root = roots.find((one) => one.key === key);
+            const names = path === '' ? [] : path.split('/');
+            const below: FolderMarks[] = [];
+            for (let at = 0; at < names.length; at += 1) {
+                const found = await listShown(open.roots, key, names.slice(0, at).join('/'));
+                const entries = JSON.parse(
+                    JSON.stringify('entries' in found ? found.entries : [])
+                ) as { name: string; marks?: FolderMarks }[];
+                below.push(entries.find((one) => one.name === names[at])?.marks ?? {});
+            }
+            const page = offerAlong(root?.marks ?? {}, root?.above === true, below);
+            const route = await post(target, { action: 'offer', root: key, path });
+            expect({
+                key,
+                path,
+                page,
+                route: { hub: route.body.hub, project: route.body.project }
+            }).toEqual({ key, path, page: offer, route: offer });
+        }
+    });
+
+    it.each<[string, string | null]>([
+        ['a/project.yml', 'a'],
+        ['a/.oculus', 'a'],
+        ['a/.oculus/config.yml', 'a'],
+        ['a/.oculus/project.yml', 'a'],
+        ['a\\b\\.oculus\\config.yml', 'a/b'],
+        ['project.yml', ''],
+        ['.oculus/config.yml', ''],
+        ['a/notes.md', null],
+        ['a/.oculus/notes/one.md', null],
+        ['a/.oculus/project.yml.tmp', null]
+    ])(
+        'names, for a write at %s, the folder whose marks it may change: %s (G32)',
+        (path, owner) => {
+            expect(markedBy(path)).toBe(owner);
+        }
+    );
 });

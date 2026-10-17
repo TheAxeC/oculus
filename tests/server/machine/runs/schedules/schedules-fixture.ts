@@ -107,12 +107,16 @@ export function plantRecord(
     );
 }
 
-/** A watcher over the world's files and the real start, with the recording tmux handed in. */
+/**
+ * A watcher over the world's files and the real start, with the recording tmux handed in. The
+ * terminal list reads unless the case hands in a listing of its own.
+ */
 export function watcherOver(
     w: World,
     hub: Hub,
     driver: ReturnType<typeof tmux>,
-    table: SchedulesOptions['table'] = () => Promise.resolve([])
+    table: SchedulesOptions['table'] = () => Promise.resolve([]),
+    listing: SchedulesOptions['listing'] = { unreadable: () => null, onChange: () => noop }
 ): SchedulesWatcher {
     const rootsFor = (): string[] => [w.repo];
     return watchSchedules(hub, {
@@ -131,6 +135,7 @@ export function watcherOver(
             }),
         stop: (terminal) => stopTerminal(terminal, { run: driver.run }),
         table,
-        refresh: noop
+        refresh: noop,
+        listing
     });
 }

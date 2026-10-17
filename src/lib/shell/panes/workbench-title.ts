@@ -1,5 +1,7 @@
 // Layer 3, shell. The document title: the words on the active main tab and the count of sessions
-// waiting in front of them. Apart from the component so the DOM-free string contract is testable.
+// waiting in front of them; a popped-out window's page names the active tab of its own float, the
+// words its title bar strip draws. Apart from the component so the DOM-free string contract is
+// testable.
 // It sits in shell/panes beside the folded pane that draws it, below Workbench.svelte, which reads
 // it too, so the shell's folders import downward only.
 
@@ -7,7 +9,7 @@ import { t as catalogText } from '$lib/state/shared/words/text';
 import { engineDocName } from '$lib/state/workbench/navigation/pages';
 import { registrationLabel } from '$lib/state/workbench/navigation/registry';
 import type { RegistryStore } from '$lib/state/workbench/navigation/registry';
-import { instanceLabel, type Instance } from '$lib/state/workbench/layout';
+import { instanceLabel, type Float, type Instance } from '$lib/state/workbench/layout';
 
 /** The words on the active main tab, including the per-instance label when it has one. */
 export function activeLabel(registry: RegistryStore, instance: Instance | null): string {
@@ -24,4 +26,19 @@ export function activeLabel(registry: RegistryStore, instance: Instance | null):
 export function windowTitle(waiting: number, label: string): string {
     const active = catalogText('app.nav.title_fmt', catalogText('app.nav.host'), label);
     return waiting > 0 ? catalogText('app.title_waiting', waiting, active) : active;
+}
+
+/**
+ * The active tab of the area a page draws: of the float a popped-out window's page draws, or with
+ * no such float the main area's. The page's title names it, and a key with no pane in focus
+ * addresses the pane that holds it.
+ */
+export function pageActiveTab(
+    float: string | null,
+    floats: readonly Float[],
+    main: Instance | null
+): Instance | null {
+    if (float === null) return main;
+    const held = floats.find((one) => one.id === float);
+    return held?.pane.tabs.find((one) => one.id === held.pane.active) ?? null;
 }

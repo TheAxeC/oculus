@@ -21,7 +21,12 @@ import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import { z } from 'zod';
-import { SCROLLBACK_LINES, STEER_CONTROL, STEER_MAX } from '../../../data/model/index.ts';
+import {
+    isTerminalId,
+    SCROLLBACK_LINES,
+    STEER_CONTROL,
+    STEER_MAX
+} from '../../../data/model/index.ts';
 import { fallbackShell } from '../../../data/places/platform.ts';
 import type {
     Terminal,
@@ -94,14 +99,15 @@ export function isSessionId(id: unknown): id is string {
 }
 
 /**
- * The fields a terminal is read from. The first six are the session and its active pane; the
- * seventh is the label the starter gave, the eighth the session it resumes, and the ninth to the
- * eleventh the title, icon and colour the reader gave, each kept as a tmux user option so tmux
- * stays the only store. The twelfth is the task mark, the thirteenth whether the pane's process
- * has ended (`remain-on-exit` keeps a task's pane) and the fourteenth the status it ended with.
- * The fifteenth is the view id of the app whose host made the terminal. The sixteenth and last is
- * the pid of the tmux server that answered, the same on every row, which names that server to
- * whoever cannot reach it by its socket later (see serverPid).
+ * The fields a terminal is read from. The first six are the session and its active pane, the sixth
+ * the pane's folder, or the folder the session started in once the pane's process ended and tmux
+ * names no folder for it; the seventh is the label the starter gave, the eighth the session it
+ * resumes, and the ninth to the eleventh the title, icon and colour the reader gave, each kept as a
+ * tmux user option so tmux stays the only store. The twelfth is the task mark, the thirteenth
+ * whether the pane's process has ended (`remain-on-exit` keeps a task's pane) and the fourteenth
+ * the status it ended with. The fifteenth is the view id of the app whose host made the terminal.
+ * The sixteenth and last is the pid of the tmux server that answered, the same on every row, which
+ * names that server to whoever cannot reach it by its socket later (see serverPid).
  */
 export const LIST_FORMAT = [
     '#{session_name}',
@@ -109,7 +115,7 @@ export const LIST_FORMAT = [
     '#{session_attached}',
     '#{pane_current_command}',
     '#{pane_pid}',
-    '#{pane_current_path}',
+    '#{?pane_current_path,#{pane_current_path},#{session_path}}',
     `#{${NAME_OPTION}}`,
     `#{${RESUMES_OPTION}}`,
     `#{${TITLE_OPTION}}`,
@@ -279,10 +285,11 @@ export function terminalId(session: string): string | null {
     return session.startsWith(PREFIX) ? session.slice(PREFIX.length) : null;
 }
 
-/** Whether a string is an id start() could have produced. Everything else is refused unread. */
-export function isTerminalId(id: unknown): id is string {
-    return typeof id === 'string' && /^[0-9a-f]{6}-(claude|codex|shell|app)$/.test(id);
-}
+/**
+ * Whether a string is an id start() could have produced (data/model `isTerminalId`). Everything
+ * else is refused unread.
+ */
+export { isTerminalId };
 
 /** The kind an id ends in, or the kind a pane's command names when the suffix says nothing. */
 export function kindOf(id: string, command: string): TerminalKind {
@@ -394,7 +401,10 @@ export function parseTerminal(line: string): Terminal | null {
     const id = terminalId(fields[0]);
     if (id === null || id === '') return null;
     const created = Number(fields[1]);
-    const command = fields[3] ?? '';
+    // A pane whose process ended runs nothing: tmux then names the first word of the line the
+    // pane was started with (`cd` for a line that begins in a folder), so no command is listed.
+    const started = fields[3] ?? '';
+    const command = fields[12] === '1' ? '' : started;
     const named = fields[6] ?? '';
     const mark = fields[11] ?? '';
     return {
@@ -410,7 +420,7 @@ export function parseTerminal(line: string): Terminal | null {
         title: fields[8] ?? '',
         icon: fields[9] ?? '',
         color: fields[10] ?? '',
-        kind: kindOf(id, command),
+        kind: kindOf(id, started),
         app: fields[14] ?? '',
         cwd: fields[5] ?? '',
         command,
@@ -599,7 +609,8 @@ export function startArgs(
             session,
             option,
             tmuxValue(value)
-        ])
+        ]),
+        ...(task === undefined ? [] : quietEndArgs(session))
     ];
 }
 
@@ -624,6 +635,16 @@ function taskArgs(session: string, task: TerminalJob): string[] {
         TASK_OPTION,
         jobOption(task)
     ];
+}
+
+/**
+ * The command that keeps tmux from drawing its "Pane is dead" line under what a task's line
+ * printed, an empty `remain-on-exit-format`: the terminal shows only the line's own output, and the
+ * list reads the status from the pane. It is the last command of the invocation, since a tmux older
+ * than 3.3 refuses the option and runs none of the commands after it.
+ */
+function quietEndArgs(session: string): string[] {
+    return [';', 'set-option', '-t', session, 'remain-on-exit-format', ''];
 }
 
 /**

@@ -186,7 +186,9 @@
                                 current={root === shown}
                                 count={count > 0 ? count : undefined}
                                 badge
-                                countTitle={t('repositories.list_changes', count)}
+                                countTitle={count === 1
+                                    ? t('repositories.list_changes_one')
+                                    : t('repositories.list_changes', count)}
                                 nameStyle="font-weight: 400"
                                 showActions={readable}
                                 yielding={readable}

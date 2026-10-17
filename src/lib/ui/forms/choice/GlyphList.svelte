@@ -5,8 +5,9 @@
     // `list` and puts on the box it paints, so a test can hold it open inside a Select of its own.
     //
     // The keys are bits-ui's: the arrows, Home and End, Enter to pick, and type-ahead, which reads
-    // each item's text. So each item holds its name first and draws its icon before it by the flex
-    // order, and the text of an item begins with its name. Where the list is placed is bits-ui's.
+    // each item's text. So each item holds its words first and draws its icon before them by the
+    // flex order, and the text of an item begins with its words; the glyph's name, which is what a
+    // manifest holds, is drawn dimmed after the words. Where the list is placed is bits-ui's.
     // The box is ui/frame/FloatingList.svelte, the menus' own, and the items sit in bits-ui's
     // viewport inside it, which scrolls and which bits-ui scrolls to keep the keys' item in view.
 
@@ -37,6 +38,7 @@
                             <div {...entry} class="item">
                                 <span class="name">{item.label}</span>
                                 {#if item.icon}
+                                    <span class="key">{item.value}</span>
                                     <span class="lead">
                                         <Glyph name={item.value} />
                                     </span>
@@ -76,6 +78,12 @@
 
     :global(body.rice) .item .name:only-child {
         padding-left: calc(3ch + 6px);
+    }
+
+    /* The glyph's name after its words, dimmed as VS Code dims a quick pick row's description. */
+    .key {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
     }
 
     .item[data-highlighted] {

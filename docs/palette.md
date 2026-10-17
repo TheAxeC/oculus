@@ -93,7 +93,7 @@ Every registered view is listed by its words.
 
 ## Colon commands
 
-A colon starts a command. The commands that list choices type their name and a space when chosen, and a command marked unavailable in the list is drawn and does not run.
+A colon starts a command. The commands that list choices type their name and a space when chosen, and a command marked unavailable in the list is drawn and does not run. A command whose argument is empty or names no view, project, theme or file icon theme says so in the palette, which stays open.
 
 | Command | Argument | What it does |
 | --- | --- | --- |
@@ -123,6 +123,8 @@ A colon starts a command. The commands that list choices type their name and a s
 | `:workspace-new` | `<name>` | New Workspace |
 | `:workspace-close` | - | Close Workspace |
 | `:folder` | - | Open a folder in the Files view |
+| `:folder-add` | - | Add Folder to Workspace |
+| `:folder-remove` | `<folder>` | Remove Folder from Workspace |
 
 ## Prefixes
 

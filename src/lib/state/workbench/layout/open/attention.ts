@@ -1,7 +1,8 @@
 // Layer 2, client state. What the reader last acted in, which is what an operation naming no page
-// and no pane means: the instance each page was left on, the page of the pane last pressed, the
-// pane the last openBeside made, and the tabs of views opened for something each page received,
-// whose pane the next such view lands in (layout/open/landing.ts).
+// and no pane means: the instance each page was left on and the order its tabs were used in (the
+// tab a session pressed on a card opens in, views/shared/card/card.ts), the page of the pane last
+// pressed, the pane the last openBeside made, and the tabs of views opened for something each page
+// received, whose pane the next such view lands in (layout/open/landing.ts).
 //
 // None of it is saved. A reload opens a view in the first pane, which is where an arrangement with
 // one pane puts it anyway, and nothing about the arrangement itself is lost; keeping it out of the
@@ -32,6 +33,8 @@ export type Attention = {
     active: (page?: string) => string | null;
     /** Remember which instance a page was last left on. */
     remembered: (id: string | null, page?: string) => void;
+    /** The tabs of a page that were activated and are still on it, the one activated last first. */
+    used: (page?: string) => string[];
     /**
      * The page the reader is in, which is what a view opened by anything naming no page lands in.
      */
@@ -68,6 +71,9 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
      */
     const lastActive: Record<string, string | null> = {};
 
+    /** The tabs activated on each page, the one activated last first, keyed by page id. */
+    const lastUsed = new Map<string, string[]>();
+
     /** The pane the last openBeside made on each page, keyed by page id. */
     const lastBeside = new Map<string, Beside>();
 
@@ -79,9 +85,27 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
         return held === null ? null : (lastActive[held.id] ?? null);
     }
 
+    /**
+     * Remember the instance a page was left on, and put it first among the tabs the page used; a
+     * tab no longer on the page is let go at the same time.
+     */
     function remembered(id: string | null, page?: string): void {
         const held = access.at(page);
-        if (held !== null) lastActive[held.id] = id;
+        if (held === null) return;
+        lastActive[held.id] = id;
+        if (id === null) return;
+        const tree = held.workbench.root;
+        const kept = (lastUsed.get(held.id) ?? []).filter(
+            (one) => one !== id && findInstance(tree, one) !== null
+        );
+        lastUsed.set(held.id, [id, ...kept]);
+    }
+
+    function used(page?: string): string[] {
+        const held = access.at(page);
+        if (held === null) return [];
+        const tree = held.workbench.root;
+        return (lastUsed.get(held.id) ?? []).filter((one) => findInstance(tree, one) !== null);
     }
 
     /**
@@ -123,6 +147,7 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
     function forgetPage(id: string): void {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete lastActive[id];
+        lastUsed.delete(id);
         lastBeside.delete(id);
         lastReceived.delete(id);
     }
@@ -130,6 +155,7 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
     function clear(): void {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         for (const id of Object.keys(lastActive)) delete lastActive[id];
+        lastUsed.clear();
         lastBeside.clear();
         lastReceived.clear();
     }
@@ -171,6 +197,7 @@ export function createAttention(access: LayoutAccess, where: Touched = { page: n
     return {
         active,
         remembered,
+        used,
         touched,
         touchPane,
         forgetTouched,

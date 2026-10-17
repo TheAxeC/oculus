@@ -23,14 +23,9 @@
 // onUnwritten; the store that sent it says its failure in its own view.
 
 import { tick } from 'svelte';
-import { z } from 'zod';
 import { fields } from '../../data/helpers/guards.ts';
-import {
-    optionalTextShape,
-    readJson,
-    survivorsShape,
-    unchanged
-} from '../../data/shapes/shapes.ts';
+import { readJson } from '../../data/shapes/shapes.ts';
+import { answerShape, refusalsShape, writeTimeout } from './shapes/write-answer.ts';
 import { APP_HEADER, KIND_HEADER, appHeaderValue } from '../../data/helpers/files/apps/apps.ts';
 import { failedAnswer, unreadableAnswer } from '../shared/answers/answers.ts';
 import { t } from '../shared/words/text.ts';
@@ -66,64 +61,11 @@ export const DEPOSIT_PATH = '/api/deposit';
 /** The endpoint of the Memories wall: one picture added to the folder, behind the same token. */
 export const MEMORIES_PATH = '/api/memories';
 
-/** One write's answer, and whether the server gave it or the write got none. */
-type Exchange = { answer: WriteAnswer; answered: boolean };
-
-/** One refusal the endpoint names, answered as the endpoint sent it. */
-const refusalShape = unchanged(z.object({ field: z.string(), reason: z.string() }));
-
-/** One branch row of a deposit `branches` answer, as the endpoint sent it. */
-const branchShape = unchanged(
-    z.object({ name: z.string(), upstream: z.string(), current: z.boolean() })
-);
-
 /**
- * The parts of a write's answer the page reads, each with the value it takes when the answer has
- * none: a list that is no list is empty (`branches` absent), a text that is no text is absent, and
- * an item a list should hold and does not is left out of it.
+ * One write's answer, whether the server gave it or the write got none, and whether its `error` is
+ * the one the server's answer named (`coded`), which a caller's `words` say as a sentence.
  */
-const answerShape = z.object({
-    error: optionalTextShape,
-    code: optionalTextShape,
-    reason: optionalTextShape,
-    changed: survivorsShape(z.string()).catch([]),
-    refused: survivorsShape(refusalShape).catch([]),
-    output: optionalTextShape,
-    branches: survivorsShape(branchShape).optional().catch(undefined),
-    id: optionalTextShape,
-    hash: optionalTextShape,
-    file: optionalTextShape
-}) satisfies z.ZodType<
-    Pick<
-        WriteAnswer,
-        | 'error'
-        | 'code'
-        | 'reason'
-        | 'changed'
-        | 'refused'
-        | 'output'
-        | 'branches'
-        | 'id'
-        | 'hash'
-        | 'file'
-    >
->;
-
-/** The refusals an answer lists, however many of them are well formed. */
-const refusalsShape = z.object({ refused: z.array(z.unknown()).catch([]) });
-
-/** The configured wait: `writes.timeout_seconds`, a positive number. */
-const timeoutShape = z.object({ writes: z.object({ timeout_seconds: z.number().positive() }) });
-
-/**
- * How long a write waits for its answer before it is given up, in milliseconds, from
- * `writes.timeout_seconds` of config/behavior.yml; null when the configuration names no positive
- * number, and then a write waits as long as the request does.
- */
-export function writeTimeout(config: Record<string, unknown> | null): number | null {
-    const parsed = timeoutShape.safeParse(config);
-    return parsed.success ? parsed.data.writes.timeout_seconds * 1000 : null;
-}
+type Exchange = { answer: WriteAnswer; answered: boolean; coded?: boolean };
 
 /** The sink that holds nothing, for a store built with none. Frozen, since such stores share it. */
 const NO_SETTLE: Readonly<Settle> = Object.freeze({
@@ -173,8 +115,9 @@ export function createWrites(
 
     /**
      * Say a write that did not land to every listener: one the server refused, in whole or a field
-     * of it, or one that got no answer. A listener that fails leaves the caller the answer it
-     * already has, which is what the caller acts on.
+     * of it, or one that got no answer, a refusal the server named by a code in the caller's
+     * `words` for it. A listener that fails leaves the caller the answer it already has, which is
+     * what the caller acts on.
      */
     function tell(sent: Exchange, options: SendOptions): WriteAnswer {
         const { answer, answered } = sent;
@@ -183,7 +126,10 @@ export function createWrites(
             return answer;
         }
         const fields = answer.refused.map((one) => one.reason).filter((one) => one !== '');
-        const reason = fields.length > 0 ? fields.join('; ') : (answer.error ?? '');
+        const { words } = options;
+        const named = sent.coded === true && words !== undefined && answer.error !== undefined;
+        const error = named ? words(answer.error ?? '', answer.reason) : (answer.error ?? '');
+        const reason = fields.length > 0 ? fields.join('; ') : error;
         for (const listener of unwrittenListeners) {
             try {
                 listener(reason, answered);
@@ -800,6 +746,7 @@ export function createWrites(
                 state.error = error;
                 return {
                     answered: true,
+                    coded: held.error !== undefined,
                     answer: {
                         ok: false,
                         changed: [],

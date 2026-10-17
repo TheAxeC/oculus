@@ -37,7 +37,7 @@ async function answered(primary: boolean) {
     const target: FsTarget = {
         engine: engineDir(),
         workspace,
-        machine: { set: read.set, defaults, values: {}, hubs: {} },
+        machine: { set: read.set, defaults, values: {}, hubs: {}, portRefused: null },
         bookmarks: null,
         writes: fsWrites(),
         ignored: ignoredCache()

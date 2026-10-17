@@ -84,7 +84,7 @@
 
     .head:hover {
         --row-bg: var(--chip);
-        --actions-opacity: 1;
+        --actions-display: flex;
         background: var(--row-bg);
     }
 

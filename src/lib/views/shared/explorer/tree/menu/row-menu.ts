@@ -495,6 +495,8 @@ export type RowStores = {
     startTerminal: ClientState['terminals']['startTerminal'];
     showTerminal: ClientState['terminals']['showTerminal'];
     setSearchState: ClientState['search']['setSearchState'];
+    /** Ask a Search tab to put the cursor in its query box once the box is drawn. */
+    wantSearchFocus: ClientState['search']['wantFocus'];
     /** Write to the clipboard; rejects when the page's clipboard refuses the write. */
     copy: (text: string) => Promise<void>;
     download: (url: string, name: string) => void;
@@ -520,6 +522,7 @@ export function rowStores(client: ClientState): RowStores {
         startTerminal: client.terminals.startTerminal,
         showTerminal: client.terminals.showTerminal,
         setSearchState: client.search.setSearchState,
+        wantSearchFocus: client.search.wantFocus,
         copy: (text) => navigator.clipboard.writeText(text),
         download: (url, name) => {
             const link = document.createElement('a');
@@ -626,6 +629,14 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         deps.showDeck({ root: row.root, path: own }, label);
     }
 
+    /** Open Search scoped to the row's folder with the cursor in its query box, as VS Code does. */
+    function findIn(row: TreeRow): void {
+        const id = deps.openView('search');
+        if (id === '') return;
+        deps.setSearchState(id, { root: row.root, under: row.path });
+        deps.wantSearchFocus(id, 'query');
+    }
+
     return (row, pick) => {
         const dir = deps.dirOf(row.root);
         const paths = rowPaths(dir, row.path);
@@ -638,8 +649,7 @@ export function rowPicker(deps: RowPickDeps, t: Words): (row: TreeRow, pick: str
         else if (pick === ROW_REVEAL) void reveal(row, paths.absolute);
         else if (pick === ROW_WORKBENCH) deps.openWorkbench({ root: row.root, path: row.path });
         else if (pick === ROW_TERMINAL) void shell(row, dir);
-        else if (pick === ROW_FIND)
-            deps.setSearchState(deps.openView('search'), { root: row.root, under: row.path });
+        else if (pick === ROW_FIND) findIn(row);
         else if (pick === ROW_DOWNLOAD) deps.download(fileBytesUrl(row.root, row.path), row.name);
         else if (pick === ROW_COPY_PATH) void copy(copied(row, 'absolute'));
         else if (pick === ROW_COPY_RELATIVE) void copy(copied(row, 'relative'));

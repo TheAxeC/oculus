@@ -319,7 +319,9 @@
                     ? t('sessions.cache_ttl_none')
                     : t('sessions.cache_ttl', record.cache.ttl),
                 t('sessions.cache_share', cacheShare(record)),
-                t('sessions.cache_busts', record.cache.busts)
+                record.cache.busts === 1
+                    ? t('sessions.cache_busts_one')
+                    : t('sessions.cache_busts', record.cache.busts)
             ].join(` ${t('sessions.meta_sep')} `)
         )}
     </div>

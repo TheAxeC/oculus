@@ -7,6 +7,7 @@
 // machine's values as it holds them and reads no disk. The workspace's poll runs on a clock the
 // case ticks itself, every watcher that the case does not look at is inert, and every folder is a
 // scratch folder under the system temporary directory.
+// @module-tag slow: every case builds a whole server context.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

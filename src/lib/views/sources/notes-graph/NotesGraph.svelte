@@ -24,7 +24,9 @@
     // from a seed the node set gives, settled by the same forces, dragged, panned and zoomed the
     // same way. It is read from the notes as the page holds them (fs.svelte.ts's `notes`), so a
     // note made, saved, renamed, moved or removed, by the page or by another program, redraws it
-    // as the notes are read again; a new node set is laid out again.
+    // as the notes are read again: a new note is placed beside the notes it links to and every
+    // other note keeps its place, and another hub's notes, which share no note with those drawn,
+    // are laid out anew.
 
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Empty from '$lib/ui/frame/Empty.svelte';
@@ -32,7 +34,7 @@
     import Select from '$lib/ui/forms/choice/Select.svelte';
     import Graph from '$lib/views/shared/graph/Graph.svelte';
     import { openSourceFile } from '$lib/views/shared/links/source-file';
-    import { layoutKey, layoutSeed, type PointNode } from '$lib/state/boards/structure/graph';
+    import { layoutSeed, type PointNode } from '$lib/state/boards/structure/graph';
     import { graphHubs, nodePlace, noteGraph } from '$lib/state/boards/structure/note-graph';
     import { notePath } from '$lib/state/sources/explorer/notes/note-tree';
     import { instanceText } from '$lib/state/workbench/layout/instance';
@@ -88,16 +90,14 @@
         {#if graph.nodes.length === 0}
             <Empty message={t('notes.graph_empty')} glyph={t('notes.graph_glyph')} />
         {:else}
-            {#key `${layoutKey(graph.nodes)}-${seed}`}
-                <Graph
-                    {graph}
-                    instanceId={instance.id}
-                    {seed}
-                    label={t('views.notes_graph')}
-                    onopen={open}
-                    failed={(reason: string) => t('notes.graph_failed', reason)}
-                />
-            {/key}
+            <Graph
+                {graph}
+                instanceId={instance.id}
+                {seed}
+                label={t('views.notes_graph')}
+                onopen={open}
+                failed={(reason: string) => t('notes.graph_failed', reason)}
+            />
         {/if}
     </div>
 </Pane>

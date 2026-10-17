@@ -17,10 +17,8 @@ import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { hubDirs } from '../../../src/lib/data/helpers/files/private-folders.ts';
 import { configDir, engineDir } from '../../../src/lib/data/sources/config.ts';
-import { readAs } from '../../../src/lib/data/shapes/shapes.ts';
 import { workspacesAnswer } from '../../../src/lib/server/files/fs.ts';
 import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
-import { workspacesShape } from '../../../src/lib/state/sources/fs-transport.ts';
 import { mintToken } from '../../../src/lib/server/core/auth.ts';
 import { foldsCase, under } from '../../../src/lib/server/core/paths.ts';
 import type { Root } from '../../../src/lib/server/files/workspace/folders.ts';
@@ -29,7 +27,7 @@ import { withheldFolders } from '../../../src/lib/server/machine/lsp/library/rul
 import { isPrivateFile as isPrivateForServer } from '../../../src/lib/server/machine/lsp/adapters/yaml/private-file.ts';
 import { isPrivateFile as isPrivateForPage } from '../../../src/lib/state/system/config/config-files.ts';
 import { it, plantScratch } from '../../fixtures/scratch.ts';
-import { plantHub, plantState } from '../../fixtures/hubs/workspace.ts';
+import { pageWorkspaces, plantHub, plantState } from '../../fixtures/hubs/workspace.ts';
 import {
     replaceWorld,
     lspEdit,
@@ -40,7 +38,7 @@ import {
 import { plant, route, settingsOf } from '../../server/machine/runs/lint/lint-fixture.ts';
 
 const TOKEN = mintToken();
-const NO_MACHINE = { set: [], defaults: {}, values: {}, hubs: {} };
+const NO_MACHINE = { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null };
 const HOST = '127.0.0.1:8791';
 const TEXT = 'foo\n';
 
@@ -100,11 +98,10 @@ describe('the secrets folder of a hub', () => {
         );
     });
 
-    it('is learned by the page from the workspaces answer, which marks the hubs', () => {
+    it('is learned by the page from the workspaces answer, which marks the hubs', async () => {
         const { state } = hubs();
         const answer = workspacesAnswer(openWorkspace(state), engineDir(), NO_MACHINE);
-        const read = readAs(workspacesShape, JSON.parse(JSON.stringify(answer)));
-        const held = read?.folders ?? [];
+        const held = (await pageWorkspaces(answer)).folders;
         expect(held.map((one) => [one.key, one.hub])).toEqual([
             ['hub', true],
             ['lab', true]
@@ -226,24 +223,20 @@ describe('the secrets folder of a hub', () => {
             expect(await listed('hub')).toEqual(['.oculus/config.yml', 'open.yml']);
 
             const answer = workspacesAnswer(openWorkspace(state), engineDir(), NO_MACHINE);
-            const held = readAs(workspacesShape, JSON.parse(JSON.stringify(answer)))?.folders;
-            expect(held?.map((one) => one.folds)).toEqual([true, true]);
+            const held = (await pageWorkspaces(answer)).folders;
+            expect(held.map((one) => one.folds)).toEqual([true, true]);
+            expect(isPrivateForPage({ root: 'lab', path: 'Secrets/x.yml' }, held, '/home/me')).toBe(
+                true
+            );
             expect(
-                isPrivateForPage({ root: 'lab', path: 'Secrets/x.yml' }, held ?? [], '/home/me')
+                isPrivateForPage({ root: 'lab', path: 'secrets/deep/d.yml' }, held, '/home/me')
             ).toBe(true);
-            expect(
-                isPrivateForPage(
-                    { root: 'lab', path: 'secrets/deep/d.yml' },
-                    held ?? [],
-                    '/home/me'
-                )
-            ).toBe(true);
-            expect(
-                isPrivateForPage({ root: 'hub', path: 'secrets/h.yml' }, held ?? [], '/home/me')
-            ).toBe(true);
-            expect(
-                isPrivateForPage({ root: 'lab', path: 'open.yml' }, held ?? [], '/home/me')
-            ).toBe(false);
+            expect(isPrivateForPage({ root: 'hub', path: 'secrets/h.yml' }, held, '/home/me')).toBe(
+                true
+            );
+            expect(isPrivateForPage({ root: 'lab', path: 'open.yml' }, held, '/home/me')).toBe(
+                false
+            );
         }
     );
 

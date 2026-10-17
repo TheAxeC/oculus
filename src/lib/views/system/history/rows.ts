@@ -21,7 +21,8 @@ export type Shown = {
     /** How many things a list or a map holds; zero for a scalar and for an empty value. */
     size: number;
     /**
-     * True when there was no value at all: a field that was not set, an entry that was not there.
+     * True when there was no value at all: a field that was not set, an entry that was not there,
+     * or a list or a map that holds nothing.
      */
     empty: boolean;
 };
@@ -32,14 +33,13 @@ export function shown(value: unknown): Shown {
         return { text: '', size: 0, empty: true };
     }
     if (Array.isArray(value)) {
+        if (value.length === 0) return { text: '', size: 0, empty: true };
         return { text: JSON.stringify(value, null, 2), size: value.length, empty: false };
     }
     if (typeof value === 'object') {
-        return {
-            text: JSON.stringify(value, null, 2),
-            size: Object.keys(value).length,
-            empty: false
-        };
+        const size = Object.keys(value).length;
+        if (size === 0) return { text: '', size: 0, empty: true };
+        return { text: JSON.stringify(value, null, 2), size, empty: false };
     }
     if (typeof value === 'string') return { text: value, size: 0, empty: false };
     if (typeof value === 'number' || typeof value === 'boolean') {
@@ -59,7 +59,8 @@ export const STORE_RECORD = 'app-store';
 /** The size of a store a store record names, as the number of bytes. */
 export function shownBytes(size: unknown): Shown {
     if (typeof size !== 'number') return { text: '', size: 0, empty: true };
-    return { text: t('history.bytes', String(size)), size: 0, empty: false };
+    const text = size === 1 ? t('history.bytes_one') : t('history.bytes', String(size));
+    return { text, size: 0, empty: false };
 }
 
 /**

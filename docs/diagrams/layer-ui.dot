@@ -1,7 +1,7 @@
 digraph layer_ui {
-    graph [bgcolor="transparent", rankdir=TB, newrank=true, mclimit=4, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
-    node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
-    edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
+    graph [bgcolor="transparent", rankdir=TB, newrank=true, mclimit=4, fontname="Helvetica", fontsize=12, nodesep=0.2, ranksep=0.5];
+    node [shape=box, color="black", fontcolor="black", fontname="Helvetica", fontsize=10, height=0.3, margin="0.12,0.04"];
+    edge [color="black", fontcolor="black", fontname="Helvetica", fontsize=8, arrowsize=0.6];
     subgraph "cluster_ui" {
         label="ui"; style=solid;
         "folder ui/tabs" [label="ui/tabs"];
@@ -23,8 +23,8 @@ digraph layer_ui {
         "folder ui/tree to folder ui/display" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/tree to folder ui/menu" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/forms to folder ui/controls" [label="12", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder ui/forms to folder ui/display" [label="4", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder ui/forms to folder ui/frame" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder ui/forms to folder ui/display" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder ui/forms to folder ui/frame" [label="5", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/forms to folder ui/theme" [label="7", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/controls to folder ui/display" [label="3", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder ui/controls to folder ui/frame" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

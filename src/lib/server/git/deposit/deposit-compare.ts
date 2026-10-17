@@ -14,6 +14,7 @@
 
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import type { MainComparison } from '../../../data/model/index.ts';
 import { words } from '../../core/words.ts';
 import {
     MAX_OUTPUT,
@@ -28,16 +29,6 @@ import {
 
 /** The remote branch the mirror is compared with. */
 const REMOTE_MAIN = 'origin/main';
-
-/** The mirror's branch against `origin/main`. */
-export type MainComparison = {
-    /** Whether `origin/main` and a commit of the mirror both exist to compare. */
-    known: boolean;
-    ahead: number;
-    behind: number;
-    /** The paths the mirror's commits and `origin/main` differ in, sorted. */
-    differ: string[];
-};
 
 /** What a mirror with nothing to compare reads as. */
 export const UNCOMPARED: MainComparison = { known: false, ahead: 0, behind: 0, differ: [] };
@@ -82,12 +73,16 @@ export async function compareWithMain(at: Where): Promise<MainComparison> {
     };
 }
 
-/** How many commits the current branch is ahead of its upstream. No upstream is nothing to send. */
-export async function aheadOfUpstream(at: Where): Promise<number> {
+/**
+ * The current branch's upstream as git names it (`origin/main`) and how many commits the branch is
+ * ahead of it. No upstream is the empty name and nothing to send.
+ */
+export async function upstreamOf(at: Where): Promise<{ name: string; ahead: number }> {
     const up = await revParse(at, ['--abbrev-ref', '@{upstream}']);
-    if (!up.ok) return 0;
-    const counted = await logCmd(at, ['--format=%H', `${up.output.trim()}..HEAD`]);
-    return counted.ok ? lines(counted.output).length : 0;
+    if (!up.ok) return { name: '', ahead: 0 };
+    const name = up.output.trim();
+    const counted = await logCmd(at, ['--format=%H', `${name}..HEAD`]);
+    return { name, ahead: counted.ok ? lines(counted.output).length : 0 };
 }
 
 /** The text of a path in a commit, empty when the commit holds no such path. */

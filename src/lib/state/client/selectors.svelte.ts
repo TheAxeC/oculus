@@ -51,7 +51,7 @@ import type { LayoutStore } from '../workbench/layout.svelte.ts';
 import { movable } from '../boards/focus.ts';
 import { choicesFor, formFields, formSections } from '../forms/schema.ts';
 import { newProjectFolder as folderOfNewProjects } from '../boards/board/new-project.ts';
-import { pinnedSession } from '../workbench/selection.svelte.ts';
+import { followedSession } from '../workbench/selection.svelte.ts';
 import { waitsOnReader } from '../workbench/navigation/notice-sources.ts';
 import { isEngineDoc, type DocPlace } from '../workbench/navigation/pages.ts';
 import type { EnginePlace } from '../system/docs.svelte.ts';
@@ -89,6 +89,32 @@ export type {
  * project is grouped under, empty for a known area of the session's workspace.
  */
 type PinChoice = { key: string; label: string; group: string };
+
+/**
+ * The choices with every label two of them share followed by what tells them apart, as VS Code
+ * names two items of one name by their paths: the folder `folders` gives each choice, with the
+ * hub it is grouped under before it where projects of two hubs share the folder's name too.
+ */
+function tellNamesakesApart(choices: PinChoice[], folders: Map<string, string>): PinChoice[] {
+    const counted = (labels: string[]): Map<string, number> => {
+        const count = new Map<string, number>();
+        for (const label of labels) count.set(label, (count.get(label) ?? 0) + 1);
+        return count;
+    };
+    const shared = (count: Map<string, number>, label: string): boolean =>
+        (count.get(label) ?? 0) > 1;
+    const titles = counted(choices.map((one) => one.label));
+    const folderOfChoice = (one: PinChoice): string => folders.get(one.key) ?? one.key;
+    const byFolder = choices.map((one) => `${one.label} (${folderOfChoice(one)})`);
+    const folderLabels = counted(byFolder);
+    return choices.map((one, at) => {
+        if (!shared(titles, one.label)) return one;
+        if (!shared(folderLabels, byFolder[at]) || one.group === '') {
+            return { ...one, label: byFolder[at] };
+        }
+        return { ...one, label: `${one.label} (${one.group}/${folderOfChoice(one)})` };
+    });
+}
 
 /**
  * The absolute folder of one project: the manifest's own path, less the file name. The snapshot
@@ -491,13 +517,14 @@ export function createSelectors(
     }
 
     /**
-     * The session a view instance shows: the id its own state pins, and the workbench's selection
-     * when it pins none. A pinned or selected session the payload no longer holds is null, which is
+     * The session a view instance shows: the id its own state pins, the workbench's selection when
+     * it pins none, and the session it showed last while the selection names none, as after a
+     * reload (workbench/selection.svelte.ts). A session the payload does not hold is null, which is
      * the empty state a view draws.
      */
     function sessionFor(instanceId: string): GroupedSession | null {
-        const pinned = pinnedSession(layout.instanceLayoutState(instanceId));
-        return sessionById(pinned ?? selection.selected());
+        const state = layout.instanceLayoutState(instanceId);
+        return sessionById(followedSession(state, selection.selected()));
     }
 
     /**
@@ -546,11 +573,13 @@ export function createSelectors(
         const held = new Set(known.map((area) => area.key));
         const { primary } = workspace();
         const groups = new Map<string, { first: boolean; rows: PinChoice[] }>();
+        const folders = new Map<string, string>();
         for (const project of Object.values(entities.portfolio()?.entities.projects ?? {})) {
             const key = folderOf(project);
             if (key === '' || held.has(key)) continue;
             held.add(key);
             const short = project.workspaceFolder?.root ?? project.folder;
+            folders.set(key, project.folder !== '' ? project.folder : key);
             const label = project.title !== '' ? project.title : short === '' ? key : short;
             const group = project.workspaceFolder?.root ?? rootOf(project, primary);
             const rows = groups.get(group) ?? { first: false, rows: [] };
@@ -566,12 +595,15 @@ export function createSelectors(
             label: area.short === '' ? area.key : area.full,
             group: ''
         }));
-        return [
-            ...areas,
-            ...ordered.flatMap(([, { rows }]) =>
-                rows.sort((one, two) => one.label.localeCompare(two.label))
-            )
-        ];
+        return tellNamesakesApart(
+            [
+                ...areas,
+                ...ordered.flatMap(([, { rows }]) =>
+                    rows.sort((one, two) => one.label.localeCompare(two.label))
+                )
+            ],
+            folders
+        );
     }
 
     /** The git state of one workspace root, or null when the payload carries none for it. */

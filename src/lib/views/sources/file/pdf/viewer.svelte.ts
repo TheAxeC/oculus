@@ -7,30 +7,31 @@
 // the box once (`new PdfViewer`), hands it to the tab frames store, and reads it from there; the
 // viewer holds no view and imports no store, so what it needs of the page comes in as hooks.
 //
-// `open(url, key, saved, own)` loads a document. The key names the file: a call with the key of
-// the file shown reloads it in place and puts the viewer back at the place it was at (the page,
-// the offset in the page, the zoom, the scroll and spread modes and the side panel), which is how
-// a rebuilt PDF is drawn. When `own`, the place the page keeps for this tab, is one the viewer did
+// `open(url, key, saved, own)` loads a document. The key names the file: a call with the key of the
+// file shown reloads it in place and puts the viewer back at the place it was at (the page, the
+// offset in the page, the zoom, the scroll and spread modes and the side panel), which is how a
+// rebuilt PDF is drawn. When `own`, the place the page keeps for this tab, is one the viewer did
 // not send and the box is hidden, another page wrote it (a window the tab was in), and the viewer
-// goes there; a viewer in view keeps its place. A call
-// while no document is held opens at `saved`, the place the page kept for the tab or the file, or
-// at the first page at the zoom the reader chose when it has none. A load that a later call
-// overtook, or that ends after `dispose`, draws nothing. A document that cannot be read leaves the
-// viewer in a state that says why, with the old document still behind it until a new one loads.
+// goes there; a viewer in view keeps its place. A call while no document is held opens at `saved`,
+// the place the page kept for the tab or the file, or at the first page at the zoom the reader
+// chose when it has none. A load that a later call overtook, or that ends after `dispose`, draws
+// nothing. A document that cannot be read leaves the viewer in a state that says why, with the old
+// document still behind it until a new one loads.
 //
-// The viewer reports the place the reader is at through the `placed` hook, so the page can keep
-// it. A change of page that is no scroll (a page entry, Next, a link), of zoom, of a mode or of the
+// The viewer reports the place the reader is at through the `placed` hook, so the page can keep it.
+// A change of page that is no scroll (a page entry, Next, a link), of zoom, of a mode or of the
 // panel is reported on PDF.js's next `updateviewarea`, which carries the new offset; the offset
-// while the reader scrolls, and a page change that comes of the scroll, is reported at most once
-// in 500 ms, the last one always. Nothing is reported before the place a load restores is applied,
+// while the reader scrolls, and a page change that comes of the scroll, is reported at most once in
+// 500 ms, the last one always. Nothing is reported before the place a load restores is applied,
 // while no document is ready, or while the box has no size. A report still waiting is sent by
 // `flush` with the place PDF.js holds, which PDF.js keeps while no page is visible: when the box
-// loses its size, when the viewer is disposed (its box is already detached then), when the
-// window's page is hidden, and when the page is about to put the tab in a window or copy it
-// there, move a float or hand the tab to another window. The viewer takes its place when the box
-// loses its size and scrolls back to it when the box has a size again, since a hidden box loses its
-// scroll offset. A box that changes size goes back to the place last reported, and the scroll a new
-// size forces (a maximised pane in which every page fits) is not reported until the reader moves.
+// loses its size, when the viewer is disposed (its box is already detached then), when the window's
+// page is hidden, and when the page is about to put the tab in a window or copy it there, move a
+// float or hand the tab to another window. The viewer takes its place when the box loses its size
+// and scrolls back to it when the box has a size again, since a hidden box loses its scroll offset.
+// A box that changes size fits a fitted zoom to it again and goes back to the place last reported,
+// and the scroll a new size forces (a maximised pane in which every page fits) is not reported
+// until the reader moves.
 //
 // The libraries load on the first `open`, as a chunk of their own, so a page that never shows a PDF
 // carries none of PDF.js. The worker is built by Vite from a URL import, and the character maps,
@@ -184,7 +185,7 @@ export class PdfViewer {
      * does not replace: the viewer goes back to it at each new size until the reader moves.
      */
     #held: PdfPlace | null = null;
-    /** Whether the viewer is scrolling back to `#held` itself, so a page change is no reader's. */
+    /** Whether the viewer refits its zoom or scrolls back to a place itself: no reader's change. */
     #own = false;
     #disposed = false;
     #pending = false;
@@ -393,8 +394,7 @@ export class PdfViewer {
             if (this.#sendable()) this.#send(this.#away);
             return;
         }
-        // Asked first, so that the view update made by laying the pages out beside the panel
-        // sends it.
+        // Asked first, so the view update made by laying the pages out beside the panel sends it.
         this.#changed(true);
         this.#setSide(next);
         this.#unseen();
@@ -478,16 +478,14 @@ export class PdfViewer {
         eventBus.on(
             'pagechanging',
             (event: { pageNumber: number }) => this.#paged(event.pageNumber),
-            {
-                signal
-            }
+            { signal }
         );
         eventBus.on(
             'scalechanging',
             (event: { scale: number; presetValue?: string }) => {
                 this.scale = event.scale;
                 this.scaleValue = event.presetValue ?? String(event.scale);
-                this.#changed(true);
+                if (!this.#own) this.#changed(true);
             },
             { signal }
         );
@@ -676,11 +674,21 @@ export class PdfViewer {
         return this.#box.clientWidth > 0 && this.#box.clientHeight > 0;
     }
 
-    /** The box lost its size or has one again. */
+    /**
+     * The box lost its size, has one again or has a new one. A new size keeps the place last
+     * reported: a wider box can push the scroll back, as a maximised pane does when every page fits
+     * in it, and the scroll it forces is not reported until the reader moves.
+     */
     #resized(): void {
         const sized = this.#hasSize();
         if (sized && this.#sized) {
-            this.#keepThroughSize();
+            if (!this.#applied) return;
+            if (this.#pending && !this.#awaiting) {
+                if (this.#timer !== null) clearTimeout(this.#timer);
+                this.#timer = null;
+                this.#pending = false;
+            }
+            this.#fitAndGo((this.#held ??= this.#sent));
             return;
         }
         if (sized === this.#sized) return;
@@ -692,27 +700,18 @@ export class PdfViewer {
         }
         const place = this.#away;
         this.#away = null;
-        if (place !== null) this.#scrollTo(place);
+        this.#fitAndGo(place);
     }
 
-    /**
-     * The box has a new size: a wider box can push the scroll back, as a maximised pane does when
-     * every page fits in it, and that is no move of the reader's. The scroll it forces is not
-     * reported, and the viewer goes back to the place last reported.
-     */
-    #keepThroughSize(): void {
-        if (!this.#applied) return;
-        if (this.#pending && !this.#awaiting) {
-            if (this.#timer !== null) clearTimeout(this.#timer);
-            this.#timer = null;
-            this.#pending = false;
-        }
-        this.#held ??= this.#sent;
-        if (this.#held === null) return;
-        // The page change PDF.js announces for this scroll is the viewer's own, no reader's.
+    /** Fit a fitted zoom (no factor) to the box, then go to `place`; neither is a reader's move. */
+    #fitAndGo(place: Position | null): void {
+        const viewer = this.#viewer;
+        if (viewer === null) return;
         this.#own = true;
         try {
-            this.#scrollTo(this.#held);
+            const value = viewer.currentScaleValue;
+            if (Number.isNaN(Number(value))) viewer.currentScaleValue = value;
+            if (place !== null) this.#scrollTo(place);
         } finally {
             this.#own = false;
         }
@@ -751,9 +750,8 @@ export class PdfViewer {
     }
 
     /**
-     * Send a change that no view update followed, which is the case when the pages have no width
-     * left beside the panel: PDF.js then updates nothing, and the place it holds is the one to
-     * keep.
+     * Send a change no view update followed, as when the pages have no width left beside the panel:
+     * PDF.js then updates nothing, and the place it holds is the one to keep.
      */
     #unseen(): void {
         if (this.#awaiting) this.flush();

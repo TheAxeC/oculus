@@ -15,7 +15,6 @@ import { localDate } from '../../../data/helpers/dates.ts';
 import { isMap, scalar, slugOf } from '../../../data/helpers/guards.ts';
 import { addressKey, radarText, sameTitle } from '../../../data/prose/literature.ts';
 import { ideaStub } from '../../../data/prose/linkedin-idea.ts';
-import { loadConfig } from '../../../data/sources/config.ts';
 import { collectionSchema } from '../../../data/snapshot/normalise.ts';
 import { fieldNames } from '../../../data/snapshot/validate.ts';
 import { plain } from '../../core/changes.ts';
@@ -434,11 +433,12 @@ const RADAR_ORDER = [
 /** The relevance words the file holds. */
 const RELEVANCE = ['high', 'med', 'low'];
 
-/** The keys of the radar buckets in the vocabulary the engine's configuration holds. */
+/** The shape of the radar buckets in the vocabulary, each with its key. */
 const bucketKeysShape = z.array(z.looseObject({ key: z.string() })).catch([]);
 
-export function radarBucketKeys(engine: string): string[] {
-    const held = loadConfig(engine).config.radar_buckets;
+/** The keys of the radar buckets the engine's own configuration `engineConfig` holds. */
+export function radarBucketKeys(engineConfig: Record<string, unknown>): string[] {
+    const held = engineConfig.radar_buckets;
     return bucketKeysShape.parse(held).map((one) => one.key);
 }
 

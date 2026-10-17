@@ -20,7 +20,7 @@
     const {
         deposit: { texts },
         selectors: { languages },
-        ui: { codeTheme, textScale, theme }
+        ui: { codeTheme, editorLook }
     } = useState();
 
     type Props = {
@@ -40,7 +40,7 @@
     let open = $state(false);
     /** The texts once asked for, or null until then. */
     let held = $state<FileTexts | null>(null);
-    const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
+    const look = $derived(editorLook());
 
     /** Open or close the diff, asking the route for the texts the first time it opens. */
     async function toggle(): Promise<void> {

@@ -164,6 +164,12 @@ export type UiStore = {
     textScale: () => number | null;
     terminalFont: () => number | null;
     codeTheme: () => string;
+    /**
+     * A value that changes whenever the editors' look does: with the theme, with the text size and
+     * with every pick of a code theme, the theme already chosen included, so a pick after a paint
+     * that failed to load its theme paints again.
+     */
+    editorLook: () => string;
     statusHidden: () => string[];
     statusQuiet: () => boolean;
     /** The repository last chosen in the status bar's repository item, by its root, or null. */
@@ -184,6 +190,14 @@ export type UiStore = {
      * hold unsaved text afterwards, which are the ones the close asks about.
      */
     saveBeforeClose: (ids: string[]) => Promise<string[]>;
+    /**
+     * Register what the save key does on one tab, which the view drawing the tab hands in while it
+     * holds work a save takes (a Settings tab's rail list, an editor draft or a typed field text);
+     * the answer takes it out again.
+     */
+    registerTabSave: (id: string, save: () => void) => () => void;
+    /** Run what the tab's views registered for the save key; false when none registered any. */
+    saveTab: (id: string) => boolean;
     registerTerminalOwner: (owner: TerminalOwner) => void;
     busyTerminals: (instances: readonly OwnedInstance[]) => Promise<BusyTerminal[]>;
     endTerminals: (instances: readonly OwnedInstance[]) => void;
@@ -271,6 +285,8 @@ export function createUi(
 
     /** A transient signal from a view to the shell that owns the Update tray. */
     const updateTray = $state({ requested: 0 });
+    /** How many code theme picks this page has made, which editorLook() reads. */
+    const codePicks = $state({ made: 0 });
     const palette = $state({ seq: 0, text: '' });
 
     const cardMove = $state<{ held: CardMove | null }>({ held: null });
@@ -295,6 +311,9 @@ export function createUi(
 
     /** What saves tabs on a close, registered by the autosave store. */
     const closeSavers: ((ids: string[]) => Promise<void>)[] = [];
+
+    /** What the views of each tab registered for the save key, by the tab's instance id. */
+    const tabSaves = new Map<string, Set<() => void>>();
 
     /** The stores owning terminals that registered, asked by busyTerminals() and endTerminals(). */
     const terminalOwners: TerminalOwner[] = [];
@@ -339,6 +358,10 @@ export function createUi(
     /** The code theme of the editors: the viewer's pick, else the config's `code_theme:`. */
     function codeTheme(): string {
         return store.current.codeTheme ?? codeThemeDefault();
+    }
+
+    function editorLook(): string {
+        return `${theme()} ${String(textScale() ?? 1)} ${String(codePicks.made)}`;
     }
 
     /** The status bar items the reader hid. */
@@ -406,6 +429,22 @@ export function createUi(
     async function saveBeforeClose(ids: string[]): Promise<string[]> {
         for (const save of closeSavers) await save(ids);
         return ids.filter(unsaved);
+    }
+
+    function registerTabSave(id: string, save: () => void): () => void {
+        const saves = tabSaves.get(id) ?? new Set<() => void>();
+        saves.add(save);
+        tabSaves.set(id, saves);
+        return () => {
+            saves.delete(save);
+            if (saves.size === 0 && tabSaves.get(id) === saves) tabSaves.delete(id);
+        };
+    }
+
+    function saveTab(id: string): boolean {
+        const saves = [...(tabSaves.get(id) ?? [])];
+        for (const save of saves) save();
+        return saves.length > 0;
     }
 
     /** Register a store that owns terminals, at the point the client is wired. */
@@ -649,9 +688,12 @@ export function createUi(
     /**
      * Pick the code theme of the editors: `tokens` or the id of a Shiki theme. The only writer of
      * the field, so the value saved is a choice; null, and anything else, the empty string
-     * included, clears the pick and the config's `code_theme:` answers again.
+     * included, clears the pick and the config's `code_theme:` answers again. Every pick moves
+     * editorLook(), so a pick of the theme already chosen still paints it, which loads its file
+     * again after a load that failed.
      */
     function setCodeTheme(id: string | null): void {
+        codePicks.made += 1;
         save({ ...store.current, codeTheme: isCodeTheme(id) ? id : null });
     }
 
@@ -748,6 +790,7 @@ export function createUi(
         textScale,
         terminalFont,
         codeTheme,
+        editorLook,
         statusHidden,
         statusQuiet,
         statusRepository,
@@ -760,6 +803,8 @@ export function createUi(
         fileGone,
         registerSaveBeforeClose,
         saveBeforeClose,
+        registerTabSave,
+        saveTab,
         registerTerminalOwner,
         busyTerminals,
         endTerminals,

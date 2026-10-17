@@ -159,7 +159,7 @@ const ROWS: Row[] = [
         }
     },
     {
-        name: 'gives pyright its script, the YAML server its permission flags and clangd its database folder as single arguments',
+        name: "gives pyright its script, the YAML server its permission flags and clangd its database folder as single arguments, and the two node servers ELECTRON_RUN_AS_NODE beside oculus's environment",
         steps: () => {
             const servers = createServers({
                 oculus: '/oculus dir',
@@ -178,7 +178,8 @@ const ROWS: Row[] = [
                 command: '/a node',
                 args: ['/oculus dir/node_modules/pyright/langserver.index.js', '--stdio'],
                 cwd: AWKWARD,
-                program: 'pyright'
+                program: 'pyright',
+                env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
             });
             expect(servers.forId('yaml').launch(setup)).toEqual({
                 command: '/a node',
@@ -189,7 +190,8 @@ const ROWS: Row[] = [
                     '--stdio'
                 ],
                 cwd: AWKWARD,
-                program: 'yaml-language-server'
+                program: 'yaml-language-server',
+                env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
             });
             expect(servers.forId('clangd').launch(setup)?.args).toEqual([
                 '--header-insertion=never',

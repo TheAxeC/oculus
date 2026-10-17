@@ -1,13 +1,13 @@
 /* Layer 3, stylesheet of the form fields: ui/forms/choice/Select.svelte,
    ui/forms/choice/select/FieldSelect.svelte's trigger, ui/forms/choice/MultiSelect.svelte's filter,
    ui/forms/choice/SuggestInput.svelte, ui/forms/TextInput.svelte, ui/forms/TextArea.svelte,
-   ui/forms/DateInput.svelte and ui/controls/text/Search.svelte. It sits in the lowest folder of
-   ui, so both folders may import it. Each field imports it and puts the class on its field, so
-   every kind of field reads as one kind: the same border, corner, ground, words, line and padding,
-   the same focus outline, a disabled field muted, and the rice theme's terminal shape, a prompt on
-   the panel with a line under it and no box round it. What one kind sets otherwise (its width, a
-   text area's height, the rice line of a text area) is in its own style, whose class selector
-   outranks this one. */
+   ui/forms/DateInput.svelte and ui/controls/text/Search.svelte. It sits in the lowest folder of ui,
+   so both folders may import it. Each field imports it and puts the class on its field, so every
+   kind of field reads as one kind: the same border, corner, ground, words, line and padding, one
+   height for a field of one line, the same focus outline, a disabled field muted, and the rice
+   theme's terminal shape, a prompt on the panel with a line under it and no box round it. What one
+   kind sets otherwise (its width, a text area's height, the rice line of a text area) is in its own
+   style, whose class selector outranks this one. */
 .oculus-field {
     min-width: 0;
     border: 1px solid var(--line);
@@ -18,6 +18,22 @@
     font-size: var(--fs-md);
     line-height: calc(var(--button-line) * var(--text-scale, 1));
     padding: 4px 6px;
+}
+
+/* A field of one line is as tall as its line, its padding and its border, whatever its control:
+   the native select draws its own line height and the date control adds an inner height of its
+   own, and with no height set they stand taller than a text box beside them. A text area's height
+   is its own. */
+.oculus-field:not(textarea) {
+    box-sizing: border-box;
+    height: calc(var(--button-line) * var(--text-scale, 1) + 10px);
+}
+
+/* The date control's inner rows add their own padding to the line; the box's padding is the
+   field's. */
+.oculus-field::-webkit-datetime-edit,
+.oculus-field::-webkit-datetime-edit-fields-wrapper {
+    padding-block: 0;
 }
 
 .oculus-field::placeholder {

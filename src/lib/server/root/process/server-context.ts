@@ -35,6 +35,7 @@ import type { UsageRefreshWatcher } from '../../machine/usage/refresh.ts';
 import type { UsageWatcher } from '../../machine/usage/watch.ts';
 import type { HookTarget } from '../hooks.ts';
 import type { ConfigCache } from './config-cache.ts';
+import type { PortRefusal } from './context/port.ts';
 import type { Workspace } from '../../files/workspace/follow.ts';
 import type { AppHosts } from '../../machine/apps/host/manager.ts';
 import type { AppSecrets } from '../../machine/apps/secrets/secrets.ts';
@@ -61,6 +62,8 @@ export type ServerContext = {
     comments: HeldComments;
     hooks: HookTarget;
     git: GitWatcher;
+    /** The repositories of the workspace as the git watcher last found them, as absolute paths. */
+    repositories: () => readonly string[];
     /** The files open in source tabs, polled for a change on disk behind the `source:` channels. */
     openFiles: OpenFiles;
     hpc: HpcWatcher;
@@ -101,6 +104,10 @@ export type ServerContext = {
     machine: () => LocalConfig;
     /** The names of the keys the primary hub's `local.yml` sets; no value. */
     machineSet: () => readonly string[];
+    /**
+     * The move to the port the primary's `local.yml` names that was refused, and why; else null.
+     */
+    portRefused: () => PortRefusal | null;
     /** The hubs whose `local.yml` sets each joined list (`accounts`, `calendars`, `mail`). */
     machineLists: () => Readonly<Record<string, readonly string[]>>;
     /**
@@ -109,7 +116,9 @@ export type ServerContext = {
     engine: string;
     /**
      * The parse of the config folder, kept between requests while no file of the folder changes;
-     * a request reads it once through `locals.config`.
+     * a request reads it once through `locals.config`, and the server's own readers through
+     * `quiet`. The parse of each other hub's settings is kept beside it (`hub`), and every reader
+     * of another hub's settings is handed that reader.
      */
     configCache: ConfigCache;
     /** The write chain of the workspace file, so two POSTs cannot lose one another's change. */

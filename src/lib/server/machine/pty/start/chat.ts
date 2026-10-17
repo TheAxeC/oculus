@@ -12,7 +12,7 @@ import { writeTextAtomic } from '../../../core/json.ts';
 import { words } from '../../../core/words.ts';
 import { projectDirectory } from '../../../files/files.ts';
 import type { OpenWorkspace } from '../../../files/workspace/open.ts';
-import { primaryConfig, hubTargets } from '../../../files/roots.ts';
+import { primaryConfig } from '../../../files/roots.ts';
 import { TerminalRefused } from '../refusal.ts';
 import { portfolioContext } from './context.ts';
 import { listTerminals, newId, startTerminal, type StartOptions } from '../sessions.ts';
@@ -22,8 +22,6 @@ type ChatProject = Pick<Project, 'title' | 'folder' | 'root' | 'workspaceFolder'
     Partial<Pick<Project, 'tier'>>;
 
 export type ChatOptions = StartOptions & {
-    /** The engine directory the configuration and the machine's own file are read from. */
-    engine: string;
     /** A project in the latest portfolio snapshot. Tests provide the snapshot source they own. */
     projectFor?: (id: string) => ChatProject | null;
     /**
@@ -82,7 +80,6 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     if (id !== null && id !== undefined && typeof id !== 'string') {
         throw new Error('id must be a project id or null');
     }
-    const engine = options.engine;
     const local = options.localFor();
     const open = options.openFor();
     const config = options.configFor();
@@ -96,11 +93,11 @@ export async function startChat(id: unknown, cols: unknown, rows: unknown, optio
     const index = chatIndexPath(local.sessionsOverrides, terminalId);
     const portfolio = project === null;
     // A project of a hub other than the primary lies under its own hub's folder, and a project of a
-    // workspace folder in that folder's own folder.
+    // workspace folder in that folder's own folder. The folder is the workspace's, so no hub's
+    // settings are read for it.
     const home = portfolio
         ? open.primaryDir
-        : (hubTargets(engine, open).find((one) => one.key === project.root)?.hub ??
-          open.primaryDir);
+        : (open.hubs.find((one) => one.name === project.root)?.dir ?? open.primaryDir);
     if (home === null) throw new TerminalRefused('no-primary');
     const cwd = portfolio ? home : projectDirectory(home, project);
 

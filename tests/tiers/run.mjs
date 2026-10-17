@@ -40,11 +40,12 @@ function stop(child) {
 /**
  * Run a command from ROOT and answer, once it has ended, its name, whether it exited 0, the time it
  * took in ms, its output (standard output and standard error together) and whether the time limit
- * stopped it. A limit of 0 is no limit.
+ * stopped it. A limit of 0 is no limit. The variables in `extra` are added to the command's
+ * environment.
  */
-export function runTask(name, command, args, limit = 0) {
+export function runTask(name, command, args, limit = 0, extra = {}) {
     const started = Date.now();
-    const env = { ...process.env, NO_COLOR: '1' };
+    const env = { ...process.env, NO_COLOR: '1', ...extra };
     delete env.FORCE_COLOR;
     return new Promise((done) => {
         let output = '';

@@ -26,6 +26,10 @@
     // of their own: New opens one in the page's documents pane, in the folder, and a picked session
     // opens its Transcript and Timeline there.
     //
+    // A group is named as the workspace picker names its folder (place-names.ts): a hub of the open
+    // workspace by the name the workspace file gives it, any other folder by its last segment, and
+    // two groups that would read the same by the folders above them.
+    //
     // The filter and the search text are kept in the instance's state, so a list comes back as it
     // was left. The marks a row menu sets (pinned to the top, archived, a title) are writes to
     // ~/.oculus/sessions.json and are drawn at once, before the write lands, and put back when it
@@ -59,6 +63,7 @@
     import SessionWorkspace from './SessionWorkspace.svelte';
     import TerminalRows from './TerminalRows.svelte';
     import { filterGroups, sessionsInFolder, terminalsInFolder } from './session-list';
+    import { hubPlaces, placeNames } from '$lib/views/shared/sessions/place-names';
     import { useState } from '$lib/state/client/use';
 
     const {
@@ -104,7 +109,16 @@
             ? sessionsByWorkspace(true)
             : sessionsInFolder(sessionsByWorkspace(true), dir)
     );
-    const groups = $derived(listGroups(tree, filter, archived, top));
+    const listed = $derived(listGroups(tree, filter, archived, top));
+    const names = $derived(
+        placeNames(
+            listed.map((group) => group.key).filter((key) => key !== ''),
+            hubPlaces(workspaces().folders, workspaces().primary)
+        )
+    );
+    const groups = $derived(
+        listed.map((group) => ({ ...group, name: names.get(group.key) ?? group.name }))
+    );
     const panes = $derived(folder === null ? terminals() : terminalsInFolder(terminals(), dir));
     const filtered = $derived(
         filter.states.length > 0 || filter.agents.length > 0 || filter.query.trim() !== ''

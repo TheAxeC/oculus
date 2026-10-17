@@ -9,7 +9,11 @@
 // editor paints, so a text past the paint limit gets none of them; a LaTeX file's build, keys and
 // bar follow its language by name (source/latex/). The extension is a new function whenever the
 // painted language, the root or the path changes, so the editor ends the old one and makes the new
-// one.
+// one. A tab whose root the workspace no longer serves has no registration with a server: the relay
+// holds none of its documents then, so a feature of the editor that asked for it (code actions,
+// links, folding, symbols, inlay hints) would be refused and Monaco would throw the refusal to the
+// console; the editor's requests for a model that is not registered are answered with nothing, and
+// the registration is made again when the root is served again.
 
 import type { ClientState } from '$lib/state/client/context';
 import { markdownOutline } from '$lib/state/sources/explorer/sections/outline';
@@ -20,7 +24,8 @@ import { languageExtension } from './extension';
 import { lintFixes } from './lint-fixes';
 import { problemMarks } from './problem-marks.svelte';
 import { latexEditor } from './latex-editor';
-import { createLspTab, type LspTab } from './lsp';
+import { createLspTab, type LspTab } from '$lib/views/shared/prose/editor/lsp';
+import { servesRoot } from '$lib/state/sources/fs-transport';
 import { symbolsExtension } from './symbols';
 
 /** What the tab says of itself, each as a function. */
@@ -59,6 +64,7 @@ export function createTabLanguage(input: TabLanguageInput): TabLanguage {
     const path = $derived(input.path());
     const library = $derived(input.library());
     const version = $derived(input.version());
+    const served = $derived(servesRoot(input.client.fs.workspaces(), root));
     const extension = $derived(
         languageExtension({
             language: shown,
@@ -86,11 +92,13 @@ export function createTabLanguage(input: TabLanguageInput): TabLanguage {
                     ? undefined
                     : lintFixes(input.client, input.instance(), { root, path }),
             // A tab over a file of a served root has no library address, and its file names none.
-            served: lsp.extension(
-                shown,
-                library === '' ? { root, path } : { root, path, library },
-                version
-            )
+            served: served
+                ? lsp.extension(
+                      shown,
+                      library === '' ? { root, path } : { root, path, library },
+                      version
+                  )
+                : undefined
         })
     );
     return {

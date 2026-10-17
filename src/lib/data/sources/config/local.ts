@@ -240,8 +240,9 @@ export type LocalRead = {
     problems: LocalProblem[];
     unknown: string[];
     /**
-     * The known keys the file carries, whatever their value, so a reader tells a key the file sets
-     * from a default.
+     * The known keys the file carries with a value that reads, so a reader tells a key the file
+     * sets from a default. A key whose value is wrong is left out, as a missing key is, and its
+     * problem is in `problems`: the default in force for it is the one a missing key has.
      */
     set: string[];
     unread: boolean;
@@ -444,8 +445,9 @@ function unreadFile(problem: LocalProblem): LocalRead {
 /**
  * Read one machine-local file's text over the defaults. Every key is read on its own: a scalar
  * whose value is wrong keeps its default (or stays absent where the key is optional), a list that
- * is not a list keeps its default list, and a row of a list that fails is left out while the rows
- * around it are read, so a list whose every row fails is the empty list. A text that does not
+ * is not a list keeps its default list, and either is left out of `set`, as a missing key is; a
+ * row of a list that fails is left out while the rows around it are read, so a list whose every
+ * row fails is the empty list. A text that does not
  * parse, or is not a map, is every default and one problem with the key `''`. The reader and the
  * check the source endpoint makes before it writes that file run this one function, so a body the
  * check accepts is a body the next read takes whole. `base` is the folder of the hub whose file it
@@ -475,7 +477,7 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
     const config = localDefaults();
     const problems: LocalProblem[] = [];
     const unknown = Object.keys(record).filter((key) => !LOCAL_KEYS.includes(key));
-    const set = Object.keys(record).filter((key) => LOCAL_KEYS.includes(key));
+    const carried = Object.keys(record).filter((key) => LOCAL_KEYS.includes(key));
 
     if (record.port !== undefined) {
         const port = readAs(portShape, record.port);
@@ -529,6 +531,8 @@ export function readLocalText(text: string, base: string, hub?: string): LocalRe
         if (value === undefined) problems.push(wrong(key, 'a path'));
         else config[field] = localPath(value, base);
     }
+    const wrongKeys = new Set(problems.filter((one) => one.kind === 'value').map((one) => one.key));
+    const set = carried.filter((key) => !wrongKeys.has(key));
     return { config, problems, unknown, set, unread: false };
 }
 

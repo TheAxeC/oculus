@@ -14,6 +14,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
     const server = locals.server;
     return handleTerminal(request, server.token, {
         engine: server.engine,
+        hubSettings: server.configCache.hub,
         recordFor: (id) => sessionRecord(server.hub, id),
         datasetFor: (id) => dataset(server.hub, id),
         openFor: () => server.workspace.open(),

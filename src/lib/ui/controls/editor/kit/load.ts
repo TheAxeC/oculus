@@ -2,7 +2,7 @@
 // languages, the bridge between them, the workers, and the keys the editor gives up. Each editor on
 // a page awaits the one promise this module holds, so the load runs once per page, the first time
 // an editor mounts. A code theme's file is loaded the first time it is painted, from Shiki's
-// bundled themes, each in a chunk of its own.
+// bundled themes, each a file of its own.
 //
 // Monaco needs a DOM, so it is imported inside the promise, which only an editor's `$effect`
 // starts. The page renders no component on the server (`ssr = false` in src/routes/+layout.ts);
@@ -31,7 +31,10 @@
 // and redraws it where it is in force, and each language's new provider replaces its old one, so a
 // session of theme switches holds one theme and one highlighter. A paint of a code theme awaits its
 // file, so the paints are queued and the last one asked is the one in force; a file that fails to
-// load rejects that paint and leaves the theme before it in force.
+// load rejects that paint and leaves the theme before it in force. A theme's file is imported by
+// its URL (`THEME_FILES`, each file of `@shikijs/themes` emitted as it is, with no import of its
+// own): the page keeps a module whose fetch failed as failed, so a later load of the same theme
+// asks for the URL with a query of its own (`themeLoader`), and the next pick fetches it again.
 //
 // The eighteen first languages load with the first editor. Every language of languages/grammars.ts
 // is registered with Monaco at the start, so a model can be made under any of them, and the others'
@@ -51,9 +54,10 @@
 // the page's node on the document body (options.ts `pageWidgets`), and the one that gives a diff
 // editor git's line changes for a file that carries them (diff/git-provider.ts, whose providers
 // make Monaco's own for every other diff, and which starts the worker
-// diff/inner-changes.worker.ts at the first ask that has git's changes); every call after it finds
-// them in force, the editors take the widgets of their boxes from the kit (`widgets`) and a diff
-// editor holds its file's changes there (`gitDiffs`).
+// diff/inner-changes.worker.ts at the first ask that has git's changes), and the editor progress
+// that never rejects (progress.ts); every call after it finds them in force, the editors take
+// the widgets of their boxes from the kit (`widgets`) and a diff editor holds its file's changes
+// there (`gitDiffs`).
 //
 // Format Document is answered by one provider per language (`createFormatting`), which hands the
 // model it is asked about to the formatter the model's owner gave.
@@ -95,9 +99,41 @@ import { createLspKit, type LspKit } from './lsp/hosts';
 import { Signal } from './lsp/signal';
 import { semanticRules } from './theme/semantic';
 import { codeRules, editorTheme, ownRules } from './theme/theme';
+import { quietProgress } from './progress';
 import type { EditorEnding, EditorKey, KeyPress } from '../types';
-import { bundledThemes, bundledThemesInfo } from 'shiki/themes';
-import type { BundledLanguage, BundledTheme, LanguageRegistration, ThemeRegistration } from 'shiki';
+import { bundledThemesInfo } from 'shiki/themes';
+import type { BundledLanguage, LanguageRegistration, ThemeRegistration } from 'shiki';
+
+/** The URL of each Shiki theme's file, by the file's path. */
+const THEME_FILES: Partial<Record<string, string>> = import.meta.glob(
+    '/node_modules/@shikijs/themes/dist/*.mjs',
+    { query: '?url', import: 'default', eager: true }
+);
+
+/**
+ * The loader of the page's Shiki themes, made once by the editor's load (`start`), which holds how
+ * many loads of each theme have failed: each load imports the theme's registration from its
+ * file's URL, and a load after a failed one asks for the URL with a query of its own, since the
+ * page keeps the failed module.
+ */
+function themeLoader(): (id: string) => Promise<ThemeRegistration> {
+    const failures = new Map<string, number>();
+    return async (id) => {
+        const url = THEME_FILES[`/node_modules/@shikijs/themes/dist/${id}.mjs`];
+        if (url === undefined) throw new Error(`no file for the code theme ${id}`);
+        const failed = failures.get(id) ?? 0;
+        const asked = failed === 0 ? url : `${url}${url.includes('?') ? '&' : '?'}retry=${failed}`;
+        try {
+            const loaded = (await import(/* @vite-ignore */ asked)) as {
+                default: ThemeRegistration;
+            };
+            return loaded.default;
+        } catch (error) {
+            failures.set(id, failed + 1);
+            throw error;
+        }
+    };
+}
 
 /**
  * Paint the page's theme from a reading of the tokens, a code theme (`tokens`, the default, or a
@@ -288,7 +324,11 @@ async function start(): Promise<EditorKit> {
         .create(
             document.createElement('div'),
             { model: null },
-            { ...widgets.services, diffProviderFactoryService: gitDiffs.service }
+            {
+                ...widgets.services,
+                diffProviderFactoryService: gitDiffs.service,
+                editorProgressService: quietProgress
+            }
         )
         .dispose();
     const mac = onMac();
@@ -334,7 +374,7 @@ async function start(): Promise<EditorKit> {
         extras: () => injectionsOf(appKit()),
         revision: appKitVersion,
         codeIds: bundledThemesInfo.map((info) => info.id),
-        loadTheme: async (id) => (await bundledThemes[id as BundledTheme]()).default,
+        loadTheme: themeLoader(),
         semantic: (highlighter) => {
             const resolved = highlighter.getTheme(THEME);
             const rules = semanticRules(

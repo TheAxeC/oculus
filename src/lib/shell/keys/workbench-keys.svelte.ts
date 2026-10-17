@@ -39,7 +39,12 @@ type Options = {
     history: HistoryWalk;
     ui: UiStore;
     navigation: () => RailOrder;
-    activeMain: () => Instance | null;
+    /**
+     * The active tab of the area the page draws: the main area's, or in a popped-out window's page
+     * its float's (shell/panes/workbench-title.ts, `pageActiveTab`), so a key with no pane in focus
+     * addresses the pane the page draws that tab in.
+     */
+    activeTab: () => Instance | null;
     focus: () => Focus | null;
     paletteOpen: () => boolean;
     /** The mode the palette is in while it is open, and null while it is closed. */
@@ -366,7 +371,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         return document.querySelector<HTMLElement>(`[data-widgets-id="${CSS.escape(id)}"]`);
     }
 
-    /** Find the pane keyboard navigation should address from focus, cursor or active main tab. */
+    /** Find the pane keyboard navigation should address from focus, cursor or the page's tab. */
     function focusedPaneElement(): HTMLElement | null {
         const element = document.activeElement;
         if (element instanceof HTMLElement) {
@@ -377,7 +382,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         }
         if (lastFocusedPane?.isConnected) return lastFocusedPane;
         if (options.focus() !== null) return document.querySelector<HTMLElement>('[data-pane]');
-        const active = options.activeMain()?.id;
+        const active = options.activeTab()?.id;
         if (active === undefined) return null;
         return (
             [...document.querySelectorAll<HTMLElement>('[data-pane]')].find(

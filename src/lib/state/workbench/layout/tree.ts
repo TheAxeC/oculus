@@ -424,6 +424,23 @@ export function splitLeaf(
     before = false
 ): Layout {
     if (leafAt(layout, path) === null) return layout;
+    return splitNode(layout, path, dir, fresh, before);
+}
+
+/**
+ * Put `fresh` beside the node at `path`, a leaf or a split, by splitLeaf's arithmetic: a split of
+ * the same direction holding the node gains a sibling, anything else becomes a split of the node
+ * and `fresh`. Return to Page puts a floated pane back beside the node it stood beside, which is a
+ * split when the pane's sibling held several panes.
+ */
+export function splitNode(
+    layout: Layout,
+    path: number[],
+    dir: 'row' | 'col',
+    fresh: Layout,
+    before = false
+): Layout {
+    if (nodeAt(layout, path) === null) return layout;
     const parentPath = path.slice(0, -1);
     const parent = path.length === 0 ? null : nodeAt(layout, parentPath);
     const at = path[path.length - 1];

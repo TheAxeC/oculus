@@ -24,10 +24,12 @@ import {
     Closed,
     ORGANIZE,
     isRecord,
+    keyOf,
     type CompletionHook,
     type TextEdit
 } from './transport/messages';
 import { namedBy } from './transport/edits';
+import { noticeTab } from './transport/host';
 import type { Jump } from './transport/renames';
 import { factsForLanguage, featureOf } from '$lib/data/prose/lsp-servers';
 import { inactiveDecorations, markerOwner, toMarkers } from './markers';
@@ -67,6 +69,12 @@ export type Registration = {
     library?: string;
     /** The editor showing the model. */
     editor: Monaco.editor.IStandaloneCodeEditor;
+    /**
+     * Whether the model shows the file outside a tab of it: the modified side of a diff, or a peek
+     * editor's model. Hover, definitions and diagnostics answer there; no symbols are read for it
+     * and its editor gets no rename preview key, which only a tab's editor has.
+     */
+    shown?: boolean;
 };
 
 /** How a request to format a document ended. */
@@ -122,6 +130,8 @@ export function clientClassOf(
 type Entry = {
     model: Monaco.editor.ITextModel;
     reg: Registration;
+    /** The services of the tab that registered the model, which its notices are told through. */
+    services: LspServices;
     /** The changes' listener and the timer of the symbols' request. */
     watch: { dispose(): void };
     timer: ReturnType<typeof setTimeout> | null;
@@ -212,6 +222,8 @@ export class LanguageHost {
     #entries = new Map<Monaco.editor.ITextModel, Entry>();
     #transport: LspTransport | null = null;
     #client: EndableClient | null = null;
+    /** How many transports this host made: each one's ids begin with its number. */
+    #periods = 0;
     #owned: { dispose(): void }[] = [];
     #stops: (() => void)[] = [];
     #diagnostics = new Map<string, readonly LspDiagnostic[]>();
@@ -281,15 +293,17 @@ export class LanguageHost {
     // ------------------------------------------------------------------ registration
 
     /** Register a model with the file it shows; it is the server's from now on. */
-    register(model: Monaco.editor.ITextModel, reg: Registration): LspHandle {
+    register(model: Monaco.editor.ITextModel, reg: Registration, services: LspServices): LspHandle {
         const first = this.#entries.size === 0;
         const entry: Entry = {
             model,
             reg,
+            services,
             watch: model.onDidChangeContent(() => this.#symbols(entry)),
             timer: null,
             inactive: reg.editor.createDecorationsCollection(),
-            preview: this.#previewKey(reg.editor)
+            preview:
+                reg.shown === true ? { dispose: () => undefined } : this.#previewKey(reg.editor)
         };
         this.#entries.set(model, entry);
         reg.editor.updateOptions({
@@ -382,6 +396,7 @@ export class LanguageHost {
                 );
             }
         }
+        if (entry.reg.shown === true) return;
         this.#parts.services.symbols(entry.reg.instance, 'loading');
         this.#symbols(entry, 0);
     }
@@ -409,7 +424,14 @@ export class LanguageHost {
         if (this.#transport !== null || this.#entries.size === 0) return;
         if (this.#port.state.value !== 'open') return;
         const { monaco, language } = this.#parts;
-        const transport = new LspTransport(this.#port, language, this.#hosting(), this.#parts.now);
+        this.#periods += 1;
+        const transport = new LspTransport(
+            this.#port,
+            language,
+            this.#hosting(),
+            this.#parts.now,
+            `p${String(this.#periods)}:`
+        );
         this.#transport = transport;
         this.#client = new this.#parts.ClientClass(transport as unknown as ClientTransport);
         const facts = factsForLanguage(language);
@@ -607,7 +629,13 @@ export class LanguageHost {
                     else this.#registered.delete(id);
                 }
             },
-            notice: (key, ...words) => services.notice(key, ...words),
+            notice: (asking, key, ...words) => {
+                const tabs = [...this.#entries.values()].map((entry) => ({
+                    key: keyOf(entry.model),
+                    services: entry.services
+                }));
+                noticeTab(tabs, asking, services).notice(key, ...words);
+            },
             completed: async (request, result) => {
                 const document = isRecord(request) ? request.textDocument : null;
                 const at = isRecord(request) ? request.position : null;
@@ -741,6 +769,7 @@ export class LanguageHost {
 
     /** Ask for a tab's symbols once the typing has paused. */
     #symbols(entry: Entry, wait: number = SYMBOLS_QUIET_MS): void {
+        if (entry.reg.shown === true) return;
         if (entry.timer !== null) clearTimeout(entry.timer);
         entry.timer = setTimeout(() => {
             entry.timer = null;

@@ -48,11 +48,10 @@ import {
     type CalendarWatcher
 } from '../accounts/calendar/poll.ts';
 import { watchMail, type MailOptions, type MailWatcher } from '../accounts/mail/poll.ts';
-import { addressOpener, pathOpener, type Opener } from '../files/open.ts';
-import { openProgram } from '../../data/places/platform.ts';
+import { machineOpener, pathOpener } from '../files/open.ts';
 import { LiteratureDesk } from '../content/literature/desk.ts';
 import { Hub } from '../core/channels.ts';
-import { target } from '../edit/writes.ts';
+import { target, type Carried } from '../edit/writes.ts';
 import { hubDirs } from '../../data/helpers/files/private-folders.ts';
 import { registerFilesChannel } from '../files/files-channel.ts';
 import { RateLimiter, type HookTarget } from './hooks.ts';
@@ -205,11 +204,6 @@ const dependencies: ContextDependencies = {
     watchUsage
 };
 
-/** How an `https` address reaches the operating system for these machine values. */
-function openerOf(local: LocalConfig): Opener {
-    return addressOpener(local.openBin ?? openProgram());
-}
-
 /**
  * Build every process-owned server object once. `portMove` is how the process that owns the HTTP
  * server moves it when the primary hub's local.yml names another port (none keeps the port); no app
@@ -276,14 +270,20 @@ export function createServerContext(
         engine,
         hub: () => open().primaryDir,
         load,
+        loadHub: (dir) => make.loadConfig(engine, dir === null ? {} : { hub: dir }),
         report: reportFindings,
         primary: () => open().primary,
         others: () =>
             open()
                 .hubs.filter((one) => one.name !== open().primary)
                 .map((one) => ({ key: one.name, dir: one.dir })),
-        vocabs: (read, others) =>
-            workspaceVocabs(engine, { name: open().primary, dir: open().primaryDir }, read, others)
+        vocabs: (read, others, settings) =>
+            workspaceVocabs(
+                { name: open().primary, dir: open().primaryDir },
+                read,
+                others,
+                settings
+            )
     });
     const { config, from } = configCache.read();
     const slurm = slurmSettings(config);
@@ -300,9 +300,11 @@ export function createServerContext(
     const streamTerminals = new StreamTerminalSet();
     const terminals = make.createTerminals(hub, streamTerminals);
     const schemas = new SchemaFeed();
-    const held = (): { open: ReturnType<typeof open>; local: LocalConfig } => ({
+    const held = (): Carried => ({
         open: open(),
-        local: machine.values()
+        local: machine.values(),
+        settings: configCache.hub,
+        defaults: configCache.defaults
     });
     const appServers = appFeed();
     const relay = make.createRelay({
@@ -313,12 +315,12 @@ export function createServerContext(
         roots: () => open().roots,
         lspFolder: () => expandHome(local.lsp ?? defaultLspPath()),
         approvals: () => local.approvals ?? defaultApprovalsPath(),
-        latex: () => latexBuild(load().config),
-        markdown: () => markdownExtensions(load().config),
-        catalog: () => textCatalog(load().config),
-        changes: () => target(engine, load().config, held(), context).changes,
+        latex: () => latexBuild(configCache.quiet().config),
+        markdown: () => markdownExtensions(configCache.quiet().config),
+        catalog: () => textCatalog(configCache.quiet().config),
+        changes: () => target(engine, configCache.quiet().config, held(), context).changes,
         library: () => ({
-            closed: closedPaths(load().config).folders,
+            closed: closedPaths(configCache.quiet().config).folders,
             withheld: withheldFolders(configDir(engine), hubDirs(open().roots))
         })
     });
@@ -326,7 +328,7 @@ export function createServerContext(
         hub,
         spawn: spawnChild,
         adapter: () => local.riteDapBin,
-        catalog: () => textCatalog(load().config)
+        catalog: () => textCatalog(configCache.quiet().config)
     });
     const lintRuns = new LintRuns();
     const comments = new HeldComments();
@@ -370,10 +372,9 @@ export function createServerContext(
         return built.parts;
     };
     // The workspace is taken from the holder at the call, as the git watcher's roots are, so a
-    // folder added to the open file while the server runs is served when the next rebuild asks. The
-    // repositories of the workspace as the git watcher last listed them, which the portfolio reads
-    // to tell a project's clones, and the write of the exclude blocks in flight, so two writes
-    // never overlap.
+    // folder added to the open file while the server runs is served when the next rebuild asks.
+    // `nested` holds the repositories the git watcher last listed (the portfolio's clones and the
+    // file names' own runs read them) and the exclude write in flight, so two never overlap.
     const nested: { repositories: readonly string[]; write: Promise<void> } = {
         repositories: [],
         write: Promise.resolve()
@@ -386,6 +387,7 @@ export function createServerContext(
                 icons,
                 host,
                 open,
+                settings: configCache.hub,
                 held: heldFindings,
                 problems: () => machine.held().problems,
                 follow: followWorkspace
@@ -394,7 +396,7 @@ export function createServerContext(
                 built: () => {
                     built.live?.hostChanged();
                     relay.settingsChanged();
-                    if (!lintSettings(load().config).on.eslint) eslint.endAll();
+                    if (!lintSettings(configCache.quiet().config).on.eslint) eslint.endAll();
                 },
                 schemas: (set, references) => schemas.publish(set, references),
                 repositories: () => nested.repositories
@@ -424,7 +426,7 @@ export function createServerContext(
         startGit(
             make,
             hub,
-            engine,
+            () => configCache.quiet().config,
             workspace,
             nestedFound(nested, () => owned().portfolio.rescan())
         );
@@ -437,8 +439,7 @@ export function createServerContext(
 
     // The files are read from the keys at the call that builds the watcher, which a change of
     // either key builds again. The hub, the roots and the claude program are read at each call, as
-    // the git watcher's roots are, so a root or a setting changed meanwhile is read at the next
-    // start of a run.
+    // the git watcher's roots are, so a root or setting changed meanwhile is read at the next run.
     const startSchedules = (): SchedulesWatcher => {
         const files = {
             schedules: paths().schedules,
@@ -454,14 +455,15 @@ export function createServerContext(
                 runEntry(entry, size, {
                     hub: open().primaryDir,
                     claudeBin: local.claudeBin,
-                    text: textCatalog(load().config),
+                    text: textCatalog(configCache.quiet().config),
                     rootsFor,
                     commands: files.commands,
                     approvalsFor: () => local.approvals ?? defaultApprovalsPath()
                 }),
             stop: (terminal) => stopTerminal(terminal),
             table: () => readTable(),
-            refresh: () => terminals.refresh()
+            refresh: () => terminals.refresh(),
+            listing: terminals
         });
     };
     // The apps are read from the primary hub's apps folder and the workspace's folders, and the
@@ -471,7 +473,7 @@ export function createServerContext(
         engine,
         secret: appsSecret,
         local: () => local,
-        config: () => load().config,
+        config: () => configCache.quiet().config,
         open,
         follow: (listener) => workspace.subscribe(() => listener())
     });
@@ -494,14 +496,14 @@ export function createServerContext(
         hub,
         apps,
         local: () => local,
-        config: () => load().config,
+        config: () => configCache.quiet().config,
         engine,
         opsWrites,
         terminals,
         streamTerminals,
         open,
         follow: (listener) => workspace.subscribe(() => listener()),
-        target: () => target(engine, load().config, held(), context),
+        target: () => target(engine, configCache.quiet().config, held(), context),
         ready
     });
     appServers.attach(hosts.hosts.tools, schemas);
@@ -510,7 +512,7 @@ export function createServerContext(
         debugControl({
             rootsFor: () => repositoryRoots(open()),
             approvalsFor: () => local.approvals ?? defaultApprovalsPath(),
-            catalog: () => textCatalog(load().config),
+            catalog: () => textCatalog(configCache.quiet().config),
             client: debug,
             port: () => debug.port()
         })
@@ -589,6 +591,7 @@ export function createServerContext(
         get git() {
             return owned().git;
         },
+        repositories: () => nested.repositories,
         hpc: polled.hpc,
         calendar: polled.calendar,
         mail: polled.mail,
@@ -613,6 +616,7 @@ export function createServerContext(
         local,
         machine: machine.values,
         machineSet: () => machine.held().set,
+        portRefused: () => mover.refused(),
         machineLists: () => machine.held().lists,
         engine,
         configCache,
@@ -644,7 +648,7 @@ export function createServerContext(
             writes,
             reload: () => reloadLocal()
         },
-        opener: openerOf(local),
+        opener: machineOpener(local),
         openPath: pathOpener(),
         depositPlans: new Map(),
         rescan: () => owned().portfolio.rescan(),
@@ -729,7 +733,9 @@ export function createServerContext(
         local,
         portMove,
         isClosed: () => closed,
-        listeningOn
+        listeningOn,
+        refusalChanged: () =>
+            hub.publish('files', { root: '', workspaces: true } satisfies FilesPayload)
     });
 
     /** The sentence the last read that failed said, so the same fault is said once. */
@@ -805,7 +811,7 @@ export function createServerContext(
         Object.assign(local, next, { port: kept });
         rebuild(rebuiltBy(changed), previous);
         if (changed.includes('lsp')) relay.reload();
-        if (changed.includes('openBin')) context.opener = openerOf(local);
+        if (changed.includes('openBin')) context.opener = machineOpener(local);
         if (changed.includes('hpcHost')) built.live?.hostChanged();
         if (changed.includes('calendars') || changed.includes('calendarDir')) {
             context.calendarDir = local.calendarDir ?? defaultConnectDir('calendar');

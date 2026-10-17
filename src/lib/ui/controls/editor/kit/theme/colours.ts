@@ -235,6 +235,11 @@ export const COLOURS: Record<string, string> = {
     'editorStickyScroll.shadow': '--line',
     'diffEditor.unchangedRegionShadow': '--line',
 
+    // The outline round inserted and removed text, which VS Code draws in its high contrast themes
+    // alone: the tokens are transparent in every other theme.
+    'diffEditor.insertedTextBorder': '--diff-added-outline',
+    'diffEditor.removedTextBorder': '--diff-deleted-outline',
+
     // A border, an outline or a fill VS Code's own themes leave unset or transparent outside high
     // contrast: transparent here too, so nothing is drawn where VS Code draws nothing.
     contrastBorder: '--line 00',
@@ -251,8 +256,6 @@ export const COLOURS: Record<string, string> = {
     'editor.findMatchHighlightBorder': '--line 00',
     'editor.findRangeHighlightBorder': '--line 00',
     'editor.snippetTabstopHighlightBorder': '--line 00',
-    'diffEditor.insertedTextBorder': '--line 00',
-    'diffEditor.removedTextBorder': '--line 00',
     'diffEditor.border': '--line 00',
     'widget.border': '--line 00',
     'toolbar.hoverOutline': '--line 00',

@@ -10,6 +10,27 @@ import { t } from '../../shared/words/text.ts';
 /** How many occurrences, how many files and the replace text a sentence is about. */
 type ReplaceCount = { hits: number; files: number; text: string };
 
+/**
+ * The count line over a search's results: how many hits in how many files and how long the search
+ * took, as hits that would be replaced while a replace text is typed. Each count is said in its
+ * singular for one, as the replace question is.
+ */
+export function countLine(hits: number, files: number, ms: number, replacing: boolean): string {
+    const said = [String(hits), String(files), String(ms)];
+    const one = hits === 1;
+    const alone = files === 1;
+    if (replacing) {
+        if (one && alone) return t('search.count_replacing_1_1', ...said);
+        if (one) return t('search.count_replacing_1_n', ...said);
+        return alone
+            ? t('search.count_replacing_n_1', ...said)
+            : t('search.count_replacing', ...said);
+    }
+    if (one && alone) return t('search.count_1_1', ...said);
+    if (one) return t('search.count_1_n', ...said);
+    return alone ? t('search.count_n_1', ...said) : t('search.count', ...said);
+}
+
 /** The question asked before Replace All. */
 export function replaceQuestion(count: ReplaceCount, capped: number | null): string {
     const [hits, files] = [String(count.hits), String(count.files)];

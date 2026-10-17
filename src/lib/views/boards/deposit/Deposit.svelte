@@ -409,6 +409,7 @@
                     {id}
                     comparison={now.main}
                     upstream={now.ahead}
+                    upstreamName={now.upstream}
                     {busy}
                     model={instance.id}
                     onfetch={fetchOrigin}

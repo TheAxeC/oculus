@@ -14,13 +14,19 @@
 // one run per due time. A lock older than a minute is taken over with one stderr line, and a
 // younger one is waited on for a short while.
 
-import { closeSync, mkdirSync, openSync, readFileSync, statSync, unlinkSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { z } from 'zod';
 import { isMap } from '../../../../data/helpers/guards.ts';
 import type { ScheduleRun } from '../../../../data/model/index.ts';
-import { readJsonChecked, writeTextAtomic } from '../../../core/json.ts';
+import {
+    dropLock,
+    readJsonChecked,
+    takeLock,
+    writeTextAtomic,
+    type LockWaits
+} from '../../../core/json.ts';
 
 /** The mode of the file: it names the runs of this machine. */
 const FILE_MODE = 0o600;
@@ -28,12 +34,13 @@ const FILE_MODE = 0o600;
 /** How many runs the record keeps for each schedule, the oldest dropped by the next one. */
 const RUNS_KEPT = 20;
 
-/** The age at which a lock file is taken to be left by a process that is gone. */
-const STALE_LOCK_MS = 60_000;
-
-/** The wait between two tries of a lock another process holds, and the longest total wait. */
-const LOCK_RETRY_MS = 50;
-const LOCK_WAIT_MS = 2000;
+/**
+ * The wait between two tries of a lock another process holds, the longest total wait, and the age
+ * at which a lock file is taken to be left by a process that is gone: a change holds the lock for
+ * one read and one write with no wait between them, so a lock a minute old is held by no change. A
+ * save waits two seconds at most, too short to say whom it waits for.
+ */
+const LOCK_WAITS: LockWaits = { retryMs: 50, waitMs: 2000, staleMs: 60_000, tellWait: false };
 
 /** How a run was started. */
 export type RunTrigger = ScheduleRun['trigger'];
@@ -105,55 +112,6 @@ export type Outcome<T> = { ok: true; value: T } | Refused;
 /** What the work of a change answers: its value, and whether the entries are to be written. */
 type Change<T> = { value: T; write: boolean };
 
-function pause(ms: number): Promise<void> {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms).unref();
-    });
-}
-
-/**
- * Take the lock file, waiting for a younger one and taking over one older than STALE_LOCK_MS. A
- * folder the lock cannot be made in is a write that cannot happen, not a lock that is held.
- */
-async function takeLock(lock: string): Promise<{ ok: true } | Refused> {
-    for (let waited = 0; waited <= LOCK_WAIT_MS; waited += LOCK_RETRY_MS) {
-        try {
-            closeSync(openSync(lock, 'wx'));
-            return { ok: true };
-        } catch (error) {
-            if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
-                return { ok: false, why: 'unwritable', reason: String(error) };
-            }
-        }
-        let age: number;
-        try {
-            age = Date.now() - statSync(lock).mtimeMs;
-        } catch {
-            continue;
-        }
-        if (age > STALE_LOCK_MS) {
-            console.error(`schedule record: took over ${lock}, which was ${age} ms old`);
-            try {
-                unlinkSync(lock);
-            } catch {
-                // another process took it over first
-            }
-            continue;
-        }
-        await pause(LOCK_RETRY_MS);
-    }
-    return { ok: false, why: 'locked', reason: `${lock} stays taken` };
-}
-
-/** Remove the lock file this process took. */
-function dropLock(lock: string): void {
-    try {
-        unlinkSync(lock);
-    } catch {
-        // the lock is gone already
-    }
-}
-
 /**
  * The text of the file for these entries. The object is made with no prototype, so a name such as
  * `__proto__` is an own key that JSON.stringify writes like any other.
@@ -180,7 +138,7 @@ async function change<T>(
     } catch (error) {
         return { ok: false, why: 'unwritable', reason: String(error) };
     }
-    const taken = await takeLock(lock);
+    const taken = await takeLock(lock, LOCK_WAITS, 'schedule record');
     if (!taken.ok) return taken;
     try {
         const loaded = loadRecord(file);

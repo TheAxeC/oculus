@@ -4,7 +4,9 @@
 // The engine is a scratch copy of the checkout's config/ folder (write-fixture.ts), and the target
 // names it, so no case here writes the checkout's config or reads the machine's own file. What this
 // does NOT cover: the Settings control that sends the write.
-// @module-tag slow: every case takes 140 ms or more to write a setting through the route.
+// @module-tag slow: every case takes 600 ms or more in a run of its own. The time is the write's
+// own checks: a config-key write and its undo each read the whole configuration of the scratch
+// engine before and after they write (`loadConfig`, about 220 ms a read), and no case waits.
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

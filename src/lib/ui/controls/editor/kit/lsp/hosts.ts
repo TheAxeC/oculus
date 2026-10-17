@@ -7,6 +7,12 @@
 // serves a model and the braces' while it does not. A go to definition into a library file (a
 // resource under the library scheme, uris.ts) opens its tab through the same opener.
 //
+// A peek editor that shows a peek model (a definition peeked into a file no tab holds, of a root or
+// a library file) registers that model with its language's client while it shows it, at the place
+// a tab of the file registers under (`LspServices.peekPlace`), so hover, definitions and
+// diagnostics answer in the peek; the registration ends when the editor shows another model or is
+// disposed. A file the server is not given is not registered.
+//
 // The languages a client is made for are the ones the page hands in (`served`): the entries of
 // data/prose/lsp-servers.ts joined with the languages the registrations of the acting apps' hosts
 // name. A model of any other language registers with no client and is never sent anywhere.
@@ -163,6 +169,36 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
             : { line: named.range.end.line + 1, column: named.range.end.character + 1 };
     }
 
+    /** The registration of the peek model each editor shows, by editor. */
+    const showing = new Map<Monaco.editor.ICodeEditor, LspHandle>();
+
+    /** End an editor's peek registration, and make one for the peek model it shows now. */
+    function shown(editor: Monaco.editor.ICodeEditor): void {
+        showing.get(editor)?.dispose();
+        showing.delete(editor);
+        const model = editor.getModel();
+        const target = model === null ? null : peeks.targetOf(model);
+        if (model === null || target === null || services === null) return;
+        const at = services.peekPlace(target, model.getLanguageId());
+        if (at === null) return;
+        const reg = {
+            instance: '',
+            ...at,
+            editor: editor as Monaco.editor.IStandaloneCodeEditor,
+            shown: true
+        };
+        const handle = kit.register(services, model, reg);
+        if (handle !== null) showing.set(editor, handle);
+    }
+
+    monaco.editor.onDidCreateEditor((editor) => {
+        editor.onDidChangeModel(() => shown(editor));
+        editor.onDidDispose(() => {
+            showing.get(editor)?.dispose();
+            showing.delete(editor);
+        });
+    });
+
     monaco.editor.registerEditorOpener({
         openCodeEditor(source, resource, at) {
             if (services === null) return false;
@@ -202,7 +238,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
         }
     });
 
-    return {
+    const kit: LspKit = {
         register(given, model, reg) {
             const language = model.getLanguageId();
             if (!parts.served().includes(language)) return null;
@@ -227,7 +263,7 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
                 });
                 hosts.set(language, host);
             }
-            return host.register(model, reg);
+            return host.register(model, reg, given);
         },
         served: {
             has: (model) => [...hosts.values()].some((host) => host.serves(model)),
@@ -243,4 +279,5 @@ export function createLspKit(monaco: typeof Monaco, parts: LspKitParts): LspKit 
             };
         }
     };
+    return kit;
 }

@@ -19,7 +19,7 @@ text:
         chktex_fix_42: 'Remove extraneous space'
         chktex_fix_45: 'Use \[ ... \] instead of $$ ... $$'
         chktex_fix_46: 'Use \( ... \) instead of $ ... $'
-        chktex_fix_5: 'Remove extraneous italic correction(s)'
+        chktex_fix_5: 'Remove the repeated italic correction'
         chktex_fix_6: 'Add italic correction (\/)'
         disable_file: 'Disable {0} for the entire file'
         disable_line: 'Disable {0} for this line'

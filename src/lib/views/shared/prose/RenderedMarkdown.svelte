@@ -8,10 +8,12 @@
     // the file as saved. The text is the file's own Markdown, so it goes through the same
     // marked-and-sanitise call every other document of the application is drawn through.
     //
-    // An image address is left as the file wrote it. The text is one file, and the file route is
-    // not asked to resolve a figure beside it. A front matter block at the head of the file is the
-    // manifest of a document and not its prose, so it is left out as the document route leaves it
-    // out.
+    // A relative image source is resolved against the file's own folder and read through the file
+    // route under the file's root (data/helpers/files/address.ts, `figureUrl`), as the document
+    // route resolves a figure, so a diagram beside the file draws; an address the browser resolves
+    // itself, and one that climbs out of the root, are left as the file wrote them. A front matter
+    // block at the head of the file is the manifest of a document and not its prose, so it is
+    // left out as the document route leaves it out.
     //
     // A note of a hub (a file of its `.oculus/notes/`, named by `root` and `path`) is drawn with
     // its links, embeds and tags (state/sources/explorer/notes/note-press.ts's noteDrawing): an
@@ -39,6 +41,7 @@
     import { pressNote } from '$lib/views/shared/explorer/control/note-actions';
     import { MATH_OPTIONS, holdsMath, loadMarkdownMath } from '$lib/views/shared/latex/math';
     import { t } from '$lib/state/shared/words/text';
+    import { figureUrl } from '$lib/state/sources/fs-transport';
 
     type Props = {
         /** The file the text belongs to, which names it for a reader. */
@@ -112,10 +115,13 @@
         );
     });
 
+    /** The address an image source of the file is read at, under the file's root. */
+    const image = $derived(root === '' ? null : (source: string) => figureUrl(root, path, source));
+
     /** The rendered document and its headings, drawn once the text has been read. */
     const drawn = $derived(
         error === '' && !loading
-            ? blockMarkdownParts(text.replace(FRONT_MATTER, ''), { note, math })
+            ? blockMarkdownParts(text.replace(FRONT_MATTER, ''), { note, math, image })
             : { html: '', slots: undefined, headings: [] }
     );
 

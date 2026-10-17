@@ -5,7 +5,9 @@
 // a test drives it over a real server on an ephemeral port while src/server.ts only calls it with
 // the process's own.
 
+import { existsSync } from 'node:fs';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
+import { join, normalize } from 'node:path';
 import { carryingHandler, type ServerContext } from '../context.ts';
 import { serverMover, type MoverOptions, type PortMove } from '../mover.ts';
 import { attachSocket, type Attached } from '../socket.ts';
@@ -64,4 +66,31 @@ export function serveContext(
     const served = wireServer(server, makeContext, attachAtWs, options);
     server.on('request', carryingHandler(handler, served.context));
     return served;
+}
+
+/**
+ * The built handler with a file of the built page that is not on disk answered 404. The adapter's
+ * static server lists the client folder once, at its start, and opens a listed file with no
+ * handler of the open's error, so a file a later build removed ends the whole process; a page
+ * that still names a file of the earlier build asks for exactly such a file. `client` is the
+ * build's client folder, beside its `handler.js`.
+ */
+export function withMissingFiles(client: string, handler: Handler): Handler {
+    return (req, res) => {
+        const path = new URL(req.url ?? '/', 'http://oculus').pathname;
+        if (path.startsWith('/_app/')) {
+            let file: string;
+            try {
+                file = normalize(join(client, decodeURIComponent(path)));
+            } catch {
+                file = '';
+            }
+            if (!file.startsWith(client) || !existsSync(file)) {
+                res.statusCode = 404;
+                res.end();
+                return;
+            }
+        }
+        handler(req, res);
+    };
 }

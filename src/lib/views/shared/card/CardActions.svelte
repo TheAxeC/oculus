@@ -20,11 +20,14 @@
 
 <script lang="ts">
     // Layer 3, shared view. The row of controls a card carries in its meta row: drawn only while
-    // the pointer is over the card or the keyboard is inside it, and kept on one line.
+    // the pointer is over the card, the keyboard is inside it or its menu is open, and kept on one
+    // line.
     //
-    // A control that is not shown is transparent rather than gone, so the card does not change size
-    // under the pointer and Tab still reaches every control. The controls that do not fit go, from
-    // the end, into one More menu at the strip's end, drawn at the other controls' height.
+    // At rest the row is not drawn and takes no room, as the hidden actions of a tree row take
+    // none, so the chips have the card's width (ui/frame/Card.svelte, `--card-at-rest`); Tab
+    // reaches the controls of the card the focus or the keyboard cursor is in. The controls that
+    // do not fit go, from the end, into one More menu at the strip's end, drawn at the other
+    // controls' height.
     //
     // The room is measured in fractional widths. The line is the part of the meta row that can be
     // seen: a pane narrower than its card clips the card, and a control past the pane's edge could
@@ -35,7 +38,9 @@
     // remembered by id, since a control inside the menu has no width on the page.
     //
     // A measurement that lands after the component is gone, or after a newer one began, is dropped
-    // (card-layout.ts's measureGate). A device with no hover draws every control all the time.
+    // (card-layout.ts's measureGate), and a row that is not drawn is not measured: it is measured
+    // when it is drawn, since the line's children are watched for their size. A device with no
+    // hover draws every control all the time.
 
     import { tick } from 'svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -90,6 +95,7 @@
         const node = strip;
         const line = node?.parentElement;
         if (node === undefined || line === null || line === undefined) return;
+        if (getComputedStyle(node).display === 'none') return;
         for (const one of node.querySelectorAll<HTMLElement>('[data-action]')) {
             widths[one.dataset.action ?? ''] = one.getBoundingClientRect().width;
         }
@@ -189,8 +195,14 @@
 </span>
 
 <style>
+    /* Drawn as the card around it says, ui/frame/Card.svelte's `--card-at-rest`, which the nearest
+       card sets, so the controls answer to their own card and not to a card around it. */
     .actions {
-        display: flex;
+        display: var(--card-at-rest, flex);
+        /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
+           words beside them, so a line they share stays as tall as it was at rest; on a line of
+           their own they reach no further than the gap between the lines. */
+        margin-block: min(0px, calc((1lh - 22px) / 2));
         flex: 0 0 auto;
         flex-wrap: nowrap;
         align-items: center;
@@ -202,11 +214,7 @@
         margin-left: 0;
     }
 
-    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`, which the nearest
-       card sets, so the controls answer to their own card and not to a card around it. */
     .act {
         display: flex;
-        opacity: var(--card-reveal);
-        transition: opacity 120ms ease-out;
     }
 </style>

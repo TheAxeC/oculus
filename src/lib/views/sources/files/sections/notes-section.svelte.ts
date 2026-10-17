@@ -122,7 +122,7 @@ export function createNotesSection(client: ClientState, deps: NotesSectionDeps) 
         client,
         id: deps.owner,
         entries: () => fs.bookmarks().entries,
-        tab: { answerAt: (owner, part) => deps.say(owner, part.note ?? '') }
+        tab: { answerAt: (owner, part) => deps.say(owner, part.note) }
     });
 
     /** Start the name of a new note or folder in a folder of a hub's notes. */
@@ -163,7 +163,7 @@ export function createNotesSection(client: ClientState, deps: NotesSectionDeps) 
     async function order(root: string, paths: string[] | null): Promise<void> {
         if (paths === null) return;
         const owner = deps.owner();
-        const answer = await fs.orderNotes(root, paths);
+        const answer = await fs.orderNotes(root, paths, { said: true });
         deps.say(owner, answer.ok ? '' : refusal(answer.error ?? ''));
     }
 

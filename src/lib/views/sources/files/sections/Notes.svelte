@@ -32,7 +32,7 @@
         ontoggle: () => void;
         move: SectionMove;
         /** Say what a press answered on the Files view's line of the instance it was made in. */
-        onnote: (owner: string, note: string) => void;
+        onnote: (owner: string, note: string, told?: boolean) => void;
     };
 
     let { owner, open, ontoggle, move, onnote }: Props = $props();
@@ -134,7 +134,7 @@
         onremove={() => undefined}
         onbookmark={(row: TreeRow) => void section.marking.bookmark(row)}
         onmoveheader={(direction: 'up' | 'down') => move.step(direction)}
-        onrefused={(note: string) => onnote(owner, note)}
+        onrefused={(note: string, told: boolean) => onnote(owner, note, told)}
         rowOrder={section.rowOrder}
         naming={section.naming}
         rowActions={groupActions}

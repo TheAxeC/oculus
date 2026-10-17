@@ -1,11 +1,14 @@
 <script lang="ts">
-    // Layer 3, primitive. VS Code's quick pick, the
-    // box Reopen Closed Repositories and Compare with... ask a choice in: a title, an input that
-    // narrows the rows by the letters typed, and one row per choice, the first one in force. The
-    // arrow keys move the choice in force (and wrap), Enter picks it and Escape, or a press on the
-    // ground beside the box, closes it, on the modal ground ui/frame/Modal.svelte draws at the
-    // palette's level. A row marked `rule` is drawn after a rule, which is how VS Code sets All
-    // Repositories apart from the repositories.
+    // Layer 3, primitive. VS Code's quick pick, the box Reopen Closed Repositories, Compare with...
+    // and Change Icon ask a choice in: a title, an input that narrows the rows by the letters
+    // typed, and one row per choice, the first one in force. The arrow keys move the choice in
+    // force (and wrap), Enter picks it and Escape, or a press on the ground beside the box, closes
+    // it, on the modal ground ui/frame/Modal.svelte draws at the palette's level. A row marked
+    // `rule` is drawn after a rule, which is how VS Code sets All Repositories apart from the
+    // repositories. A row may draw a glyph before its words and a description dimmed after them,
+    // and the typed text is matched against the words and the description; in a list where some
+    // rows draw a glyph, a row without one keeps the glyphs' column, so every row's words start at
+    // one place.
     //
     // The box holds the typed text and the row in force and nothing else: the choices are the
     // caller's, already worded, and a pick is handed out by the id the choice carries.
@@ -30,10 +33,18 @@
     let query = $state('');
     let at = $state(0);
 
-    /** The rows whose words hold what was typed, in the order given. */
-    const shown = $derived(
-        choices.filter((one) => one.label.toLowerCase().includes(query.trim().toLowerCase()))
-    );
+    /** The rows whose words or description hold what was typed, in the order given. */
+    const shown = $derived.by(() => {
+        const typedText = query.trim().toLowerCase();
+        return choices.filter((one) =>
+            [one.label, one.description ?? ''].some((text) =>
+                text.toLowerCase().includes(typedText)
+            )
+        );
+    });
+
+    /** Whether any row draws a glyph, which is when a row without one keeps the glyphs' column. */
+    const glyphed = $derived(choices.some((one) => one.glyph !== undefined));
 
     function typed(next: string): void {
         query = next;
@@ -70,12 +81,23 @@
                         class:rule={choice.rule === true}
                         data-choice={choice.id}
                     >
-                        <div class="row" class:now={index === at} role="presentation">
+                        <div
+                            class="row"
+                            class:now={index === at}
+                            class:unglyphed={glyphed && choice.glyph === undefined}
+                            role="presentation"
+                        >
                             <ToolButton
                                 plain
                                 label={choice.label}
+                                glyph={choice.glyph}
                                 onclick={() => onpick(choice.id)}
-                            />
+                            >
+                                {choice.label}
+                                {#if choice.description !== undefined}
+                                    <span class="description">{choice.description}</span>
+                                {/if}
+                            </ToolButton>
                         </div>
                     </li>
                 {/each}
@@ -151,6 +173,30 @@
         justify-content: flex-start;
         width: 100%;
         text-align: left;
+    }
+
+    /* The row's plain button sets its glyph 6px apart from its words, over the 4px of a plain
+       button, in every theme. */
+    .row :global(.tool.plain),
+    :global(body.rice) .row :global(.tool.plain) {
+        gap: 6px;
+    }
+
+    /* The glyph box is 1.2em wide, and three characters wide under the terminal theme, and the
+       plain button's 6px gap sits between its glyph and its words. */
+    .row.unglyphed :global(.tool) {
+        padding-left: calc(1.2em + 6px);
+    }
+
+    :global(body.rice) .row.unglyphed :global(.tool) {
+        padding-left: calc(3ch + 6px);
+    }
+
+    /* A row's description, dimmed after its words as VS Code draws a quick pick row's. */
+    .description {
+        margin-left: 6px;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
     }
 
     .row.now {

@@ -35,13 +35,19 @@ function wrappable(line: string): boolean {
         .every((word) => marker + word.length <= WIDTH);
 }
 
-/** Every comment line of one file past the width that a wrap could bring inside it. */
+/**
+ * Every comment line of one file past the width that a wrap could bring inside it. The lines past
+ * the width are found first, and the file is parsed only when it has one, to tell which of them are
+ * comment lines.
+ */
 function tooWide(name: string, text: string): number[] {
-    const lines = text.split('\n');
-    return commentLines(name, text).filter((at) => {
-        const line = lines[at - 1];
-        return line.length > WIDTH && !WHOLE.test(line) && wrappable(line);
+    const long = text.split('\n').flatMap((line, index) => {
+        const fault = line.length > WIDTH && !WHOLE.test(line) && wrappable(line);
+        return fault ? [index + 1] : [];
     });
+    if (long.length === 0) return [];
+    const comments = new Set(commentLines(name, text));
+    return long.filter((at) => comments.has(at));
 }
 
 /** Every source file under a folder, as full paths, in name order. */

@@ -24,6 +24,8 @@ export type LoadSetters = {
     clearAttention: () => void;
     /** Note that the saved arrangement was read, or that none could be. */
     setLoaded: () => void;
+    /** Run the last operation of this tab that saved the pages again, on the pages now current. */
+    again: () => void;
 };
 
 /** The load of the saved arrangement and its following. */
@@ -96,8 +98,13 @@ export function createLoad(access: LayoutAccess, storage: LayoutStorage, set: Lo
         });
     }
 
-    function takeSaved(): void {
+    /**
+     * Take the arrangement another tab saved, and run this tab's last saving operation again on it
+     * when that save crossed this tab's own (`follow` of storage.ts), so its change is not lost.
+     */
+    function takeSaved(again: boolean): void {
         adopt(storage.readSaved());
+        if (again) set.again();
     }
 
     function retake(): boolean {

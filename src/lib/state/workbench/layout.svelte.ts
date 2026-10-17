@@ -331,6 +331,13 @@ export function createLayout(
      */
     let writing = '';
 
+    /**
+     * The last operation that saved the pages, to run again on another tab's save that crossed its
+     * save (`again` of the load), and the count of saves, which tells whether an operation saved.
+     */
+    let lastSaving: { name: string; run: () => unknown } | null = null;
+    let saves = 0;
+
     // Everything below stays in the factory, which owns the arrangement as a whole: the page list
     // and what is on screen, the write path every change goes through, and the operations that
     // rearrange a page's panes. The rune is declared here, and these are the readers and writers of
@@ -481,6 +488,15 @@ export function createLayout(
         clearAttention: attention.clear,
         setLoaded: () => {
             loaded = true;
+        },
+        again: () => {
+            if (lastSaving === null || writing !== '') return;
+            writing = lastSaving.name;
+            try {
+                lastSaving.run();
+            } finally {
+                writing = '';
+            }
         }
     });
 
@@ -584,6 +600,7 @@ export function createLayout(
         fresh = false;
         if (next.current !== store.current.current) previous = store.current.current;
         store.current = next;
+        saves += 1;
         storage.write(next, writing);
     }
 
@@ -747,6 +764,7 @@ export function createLayout(
                 (...args: unknown[]): unknown => {
                     if (writing !== '') return run(...args);
                     writing = name;
+                    const before = saves;
                     try {
                         let answer = run(...args);
                         // The app's host refused a save made from an envelope another window had
@@ -755,6 +773,7 @@ export function createLayout(
                         for (let turn = 0; turn < MAX_TURNS && load.retake(); turn++) {
                             answer = run(...args);
                         }
+                        if (saves !== before) lastSaving = { name, run: () => run(...args) };
                         return answer;
                     } finally {
                         writing = '';
@@ -822,6 +841,7 @@ export function createLayout(
             instances.activateInstance(id, page);
             revealed(id);
         },
+        usedInstances: instances.usedInstances,
         closeInstancesOfView: instances.closeInstancesOfView,
         moveInstanceToPage: instances.moveInstanceToPage,
         closeInstance: instances.closeInstance,

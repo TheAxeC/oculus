@@ -55,28 +55,30 @@
 // and a second click on the same row ask the server once.
 
 import { TEXT_SNIFF_READ } from '../../data/helpers/files/text-kind.ts';
-import { readAs } from '../../data/shapes/shapes.ts';
-import type { EntitiesStore, WriteAnswer, WritesStore } from '../shared/stores/shapes.ts';
+import type {
+    EntitiesStore,
+    SendOptions,
+    WriteAnswer,
+    WritesStore
+} from '../shared/stores/shapes.ts';
+import { refusal } from './explorer/acts/refusal.ts';
 import type { Fetcher, Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 import {
     heldListings,
+    listingKeys,
     type HeldListing,
     NO_BOOKMARKS,
     NO_LISTING,
     NO_NOTES,
     NO_TEXT,
-    noMachine,
     noWorkspaces,
     fileBytesUrl,
     FS_PATH,
-    bookmarksShape,
     listingAnswer,
     listingForm,
     listingKey as keyOfListing,
     listingUrl,
-    notesShape,
-    readAnswer,
     readCappedBytes,
     readText,
     type BookmarksState,
@@ -84,7 +86,9 @@ import {
     type Listing,
     type NotesState,
     type WorkspacesState,
-    workspacesShape
+    bookmarksAnswer,
+    notesAnswer,
+    workspacesAnswer
 } from './fs-transport.ts';
 import { NOTES_FOLDER, inNotes } from '../../data/prose/markdown/note-names.ts';
 import { diskPlan } from './explorer/view/disk.ts';
@@ -100,7 +104,6 @@ import {
 import { t } from '../shared/words/text.ts';
 import {
     createFileHistory,
-    reasonOf,
     type CommitPage,
     type FileCommits,
     type FileCopies
@@ -175,6 +178,12 @@ export type FsStore = {
      * every folder held under it too: the folders a file operation changed.
      */
     relistFolder: (root: string, path: string, below?: boolean) => void;
+    /**
+     * Take items a file operation removed out of every listing held of their folder at once, so
+     * the tree drops their rows on the operation's answer and not when the folder's read again
+     * answers; that read, which `relistFolder` asks for, then stands.
+     */
+    dropListed: (root: string, paths: string[]) => void;
     workspaces: () => WorkspacesState;
     /** The workspaces as the server holds them now: read again when they are stale. */
     workspacesNow: () => Promise<WorkspacesState>;
@@ -236,33 +245,37 @@ export type FsStore = {
     bookmarksNow: () => Promise<BookmarksState>;
     /** The notes of every hub, one answer per hub in the workspace's folder order. */
     notes: () => NotesState;
-    /** Add a folder to the open workspace: its file's `folders:` list, or the unsaved state. */
-    addRoot: (dir: string) => Promise<WriteAnswer>;
+    /**
+     * Add a folder to the open workspace: its file's `folders:` list, or the unsaved state. This
+     * write and the workspace writes below take the caller's send options, `said` from a caller
+     * that draws the refusal itself; one told for a caller is told in words, never as its code.
+     */
+    addRoot: (dir: string, options?: SendOptions) => Promise<WriteAnswer>;
     /** Take the folder of that name out of the open workspace. */
-    removeRoot: (key: string) => Promise<WriteAnswer>;
+    removeRoot: (key: string, options?: SendOptions) => Promise<WriteAnswer>;
     /**
      * Put the folders in the order the names give. The workspace is read again after the answer,
      * whatever it was, so a refused order is drawn as the server holds it.
      */
-    orderRoots: (keys: string[]) => Promise<WriteAnswer>;
+    orderRoots: (keys: string[], options?: SendOptions) => Promise<WriteAnswer>;
     /**
      * Put one hub's notes in the order the paths name (each a path inside the notes folder without
      * `.md`), newest first for any a list leaves out.
      */
-    orderNotes: (root: string, paths: string[]) => Promise<WriteAnswer>;
+    orderNotes: (root: string, paths: string[], options?: SendOptions) => Promise<WriteAnswer>;
     /**
      * Save the open workspace as `.oculus/workspaces/<name>.yml` of the primary hub (or the first).
      */
-    saveWorkspace: (name: string) => Promise<WriteAnswer>;
+    saveWorkspace: (name: string, options?: SendOptions) => Promise<WriteAnswer>;
     /**
      * Make `.oculus/workspaces/<name>.yml` with no folder in the primary hub (or the first) and
      * open it.
      */
-    newWorkspace: (name: string) => Promise<WriteAnswer>;
+    newWorkspace: (name: string, options?: SendOptions) => Promise<WriteAnswer>;
     /** Open the workspace file at that path. */
-    selectWorkspace: (path: string) => Promise<WriteAnswer>;
+    selectWorkspace: (path: string, options?: SendOptions) => Promise<WriteAnswer>;
     /** Leave the open workspace file for the unsaved workspace with no folder. */
-    closeWorkspace: () => Promise<WriteAnswer>;
+    closeWorkspace: (options?: SendOptions) => Promise<WriteAnswer>;
     /** Add one bookmark through the collection write path, and ask for them again. */
     addBookmark: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     /** Take one bookmark out, by the label it is found by. */
@@ -435,8 +448,42 @@ export function createFs(
         }
     }
 
+    function dropListed(root: string, paths: string[]): void {
+        for (const path of paths) {
+            const at = path.lastIndexOf('/');
+            const folder = at < 0 ? '' : path.slice(0, at);
+            const name = path.slice(at + 1);
+            for (const key of listingKeys(root, folder)) {
+                const held = queries.peek<Listing>(key).data;
+                if (!held?.entries.some((one) => one.name === name)) continue;
+                queries.hold(key, {
+                    ...held,
+                    entries: held.entries.filter((one) => one.name !== name)
+                });
+            }
+        }
+    }
+
+    /** Whether the workspaces held name a root of that key. */
+    const holdsRoot = (root: string): boolean =>
+        queries.peek<WorkspacesState>(WORKSPACES).data?.folders.some((one) => one.key === root) ===
+        true;
+
+    /**
+     * The fetch of one folder. A refusal of a root as outside every served root that belongs to a
+     * workspace being left, answered while a workspace write is out or for a root the workspaces
+     * held when it was asked and hold no longer, is not kept, so it is never drawn: the folder
+     * keeps what it held, and is read again when a workspace holding the root is opened.
+     */
     function listingFetcher(root: string, path: string, shown: ListingShown): Fetcher<Listing> {
-        return () => listingAnswer(listingUrl(root, path, shown));
+        return async () => {
+            const asked = holdsRoot(root);
+            const answer = await listingAnswer(listingUrl(root, path, shown));
+            if (answer.refused !== 'outside' || (switching === 0 && !asked) || holdsRoot(root)) {
+                return answer;
+            }
+            return queries.peek<Listing>(listingQuery(root, path, shown)).data ?? NO_LISTING;
+        };
     }
 
     /**
@@ -511,26 +558,29 @@ export function createFs(
         return workspaces().primary;
     }
 
-    async function readWorkspaces(): Promise<WorkspacesState> {
-        try {
-            const answer = await readAnswer(await fetch(FS_PATH));
-            if (!answer.ok) return { ...noWorkspaces(), error: answer.error, loading: false };
-            const body = readAs(workspacesShape, answer.body);
-            return {
-                home: body?.home ?? '',
-                open: body?.open ?? null,
-                folders: body?.folders ?? [],
-                primary: body?.primary ?? null,
-                engine: body?.engine ?? null,
-                recent: body?.recent ?? [],
-                available: body?.available ?? [],
-                machine: body?.machine ?? noMachine(),
-                error: '',
-                loading: false
-            };
-        } catch (error) {
-            return { ...noWorkspaces(), error: reasonOf(error), loading: false };
+    /**
+     * Ask again for what is held under each root that joined the workspace or now names another
+     * folder: a listing, a text or a kind held under its key was read while the key served nothing
+     * or another folder, and the tree would draw that answer, such as the refusal of a folder
+     * outside every root, until the page was reloaded.
+     */
+    function markJoined(before: readonly FsRoot[], after: readonly FsRoot[]): void {
+        const was = new Set(before.map((one) => `${one.key}\n${one.dir}`));
+        for (const one of after) {
+            if (was.has(`${one.key}\n${one.dir}`)) continue;
+            for (const kind of ['listing', 'text', 'kind']) {
+                queries.mark(['fs', kind, one.key], 'replace');
+            }
         }
+    }
+
+    /**
+     * The open workspace and its roots; with what was held, the roots that joined are read again.
+     */
+    async function readWorkspaces(held?: WorkspacesState): Promise<WorkspacesState> {
+        const read = await workspacesAnswer();
+        if (held !== undefined) markJoined(held.folders, read.folders);
+        return read;
     }
 
     /** One file's text, read through the file route and stopped at the window's limit. */
@@ -611,7 +661,7 @@ export function createFs(
 
     /** The reader's own bookmarks, asked for once and held until they are marked. */
     function bookmarks(): BookmarksState {
-        const { data } = queries.read(BOOKMARKS, readBookmarks, { enabled: inBrowser() });
+        const { data } = queries.read(BOOKMARKS, bookmarksAnswer, { enabled: inBrowser() });
         return data ?? NO_BOOKMARKS;
     }
 
@@ -619,38 +669,13 @@ export function createFs(
         const found = queries.peek<BookmarksState>(BOOKMARKS);
         if (found.data !== undefined && !found.stale && !found.data.loading) return found.data;
         if (!inBrowser()) return NO_BOOKMARKS;
-        return queries.fetch(BOOKMARKS, readBookmarks);
-    }
-
-    async function readBookmarks(): Promise<BookmarksState> {
-        try {
-            const read = await readAnswer(await fetch(`${FS_PATH}?bookmarks=1`));
-            if (!read.ok) return { ...NO_BOOKMARKS, error: read.error, loading: false };
-            const body = readAs(bookmarksShape, read.body);
-            return { entries: body?.entries ?? [], error: '', loading: false };
-        } catch (error) {
-            return { ...NO_BOOKMARKS, error: reasonOf(error), loading: false };
-        }
+        return queries.fetch(BOOKMARKS, bookmarksAnswer);
     }
 
     /** The notes of every hub, asked for once and held until the notes are marked. */
     function noteList(): NotesState {
-        const { data } = queries.read(NOTES, readNotes, { enabled: inBrowser() });
+        const { data } = queries.read(NOTES, notesAnswer, { enabled: inBrowser() });
         return data ?? NO_NOTES;
-    }
-
-    async function readNotes(): Promise<NotesState> {
-        try {
-            const answer = await readAnswer(await fetch(`${FS_PATH}?notes=1`));
-            if (!answer.ok) return { ...NO_NOTES, error: answer.error, loading: false };
-            return {
-                hubs: readAs(notesShape, answer.body)?.hubs ?? [],
-                error: '',
-                loading: false
-            };
-        } catch (error) {
-            return { ...NO_NOTES, error: reasonOf(error), loading: false };
-        }
     }
 
     /**
@@ -675,40 +700,56 @@ export function createFs(
         for (const kind of ['listing', 'text', 'kind']) queries.mark(['fs', kind, root], 'replace');
     }
 
-    /** One workspace action, behind the same token every other write carries. */
-    async function act(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        const answer = await writes.send(fields, FS_PATH);
-        if (answer.ok) invalidate();
-        return answer;
-    }
+    /**
+     * A caller's options for a write of this endpoint's or of the roots, whose refusals are named
+     * by a code: one told for the caller is told in the words `refusal` has for the code.
+     */
+    const coded = (options: SendOptions): SendOptions => ({ ...options, words: refusal });
+
+    /** How many workspace writes are out, from their send to the hold of the workspaces. */
+    let switching = 0;
 
     /**
-     * Save As. The file it made is handed to `carry` before the workspaces are asked for again, so
-     * the arrangement shown is saved for the file before the workspace answer names it.
+     * Send one write of the workspace or its folders. On its success the workspaces are held as
+     * the server holds them now and everything else held is then marked, so the tree's rows and the
+     * roots their listings are asked under change in one update; `landed` runs first (Save As hands
+     * the file it made to `carry`, so the arrangement shown is saved for the file before the
+     * workspace answer names it). While it is out, a listing refused under a root of the workspace
+     * being left is not kept (`listingFetcher`).
      */
-    async function saveAs(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        const answer = await writes.send(fields, FS_PATH);
-        if (answer.ok) {
-            if (answer.file !== undefined) carry(answer.file);
-            invalidate();
+    async function switched(
+        fields: Record<string, unknown>,
+        path: string | undefined,
+        options: SendOptions,
+        landed: (answer: WriteAnswer) => void = () => undefined
+    ): Promise<WriteAnswer> {
+        switching += 1;
+        try {
+            const answer = await writes.send(fields, path, coded(options));
+            if (!answer.ok) return answer;
+            landed(answer);
+            queries.hold(WORKSPACES, await workspacesAnswer());
+            for (const one of queries.entries(ALL)) {
+                if (one.key[1] !== WORKSPACES[1]) queries.mark(one.key, 'replace');
+            }
+            return answer;
+        } finally {
+            switching -= 1;
         }
-        return answer;
     }
 
     /**
      * Write the order of one hub's notes. The notes are read again whatever the answer, so a
      * refused order is drawn as the server holds it.
      */
-    async function orderNotes(root: string, paths: string[]): Promise<WriteAnswer> {
-        const answer = await writes.send({ action: 'order-notes', root, ids: paths }, FS_PATH);
+    async function orderNotes(
+        root: string,
+        paths: string[],
+        options: SendOptions = {}
+    ): Promise<WriteAnswer> {
+        const fields = { action: 'order-notes', root, ids: paths };
+        const answer = await writes.send(fields, FS_PATH, coded(options));
         queries.mark(NOTES, 'replace');
-        return answer;
-    }
-
-    /** One write on the open workspace's folders, which marks everything held as a save does. */
-    async function rootsWrite(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        const answer = await writes.send({ kind: 'roots', ...fields });
-        if (answer.ok) invalidate();
         return answer;
     }
 
@@ -729,6 +770,7 @@ export function createFs(
         gone,
         relist,
         relistFolder,
+        dropListed,
         workspaces,
         workspacesNow,
         roots,
@@ -748,18 +790,30 @@ export function createFs(
         bookmarks,
         bookmarksNow,
         notes: noteList,
-        addRoot: (dir: string) => rootsWrite({ action: 'add', dir }),
-        removeRoot: (key: string) => rootsWrite({ action: 'remove', key }),
-        orderRoots: async (keys: string[]) => {
-            const answer = await rootsWrite({ action: 'order', keys });
+        addRoot: (dir: string, options: SendOptions = {}) =>
+            switched({ kind: 'roots', action: 'add', dir }, undefined, options),
+        removeRoot: (key: string, options: SendOptions = {}) =>
+            switched({ kind: 'roots', action: 'remove', key }, undefined, options),
+        orderRoots: async (keys: string[], options: SendOptions = {}) => {
+            const answer = await switched(
+                { kind: 'roots', action: 'order', keys },
+                undefined,
+                options
+            );
             queries.mark(WORKSPACES, 'replace');
             return answer;
         },
         orderNotes,
-        saveWorkspace: (name: string) => saveAs({ action: 'save-workspace', name }),
-        newWorkspace: (name: string) => act({ action: 'new-workspace', name }),
-        selectWorkspace: (path: string) => act({ action: 'select-workspace', path }),
-        closeWorkspace: () => act({ action: 'close-workspace' }),
+        saveWorkspace: (name: string, options: SendOptions = {}) =>
+            switched({ action: 'save-workspace', name }, FS_PATH, options, (answer) => {
+                if (answer.file !== undefined) carry(answer.file);
+            }),
+        newWorkspace: (name: string, options: SendOptions = {}) =>
+            switched({ action: 'new-workspace', name }, FS_PATH, options),
+        selectWorkspace: (path: string, options: SendOptions = {}) =>
+            switched({ action: 'select-workspace', path }, FS_PATH, options),
+        closeWorkspace: (options: SendOptions = {}) =>
+            switched({ action: 'close-workspace' }, FS_PATH, options),
         addBookmark: (fields: Record<string, unknown>) =>
             bookmarkWrite({ kind: 'new-entry', collection: BOOKMARK_COLLECTION, fields }),
         removeBookmark: (label: string) =>

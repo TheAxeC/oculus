@@ -18,6 +18,12 @@
     // glyph the vocabulary does not hold (a new row has none yet) draws its icon field with no
     // icon, and the rule's line names what the row lacks.
     //
+    // The save key on the tab (Cmd+S, Ctrl+S off macOS) saves a list that differs from the file's,
+    // as Save does (ui.svelte.ts's registerTabSave).
+    //
+    // Until the configuration is read, the file's list is not known: no row is drawn from it, the
+    // sentence that the rail has no button waits for the read, and Save waits with it.
+    //
     // The partial has no heading: it is drawn inside the `rail` row of the Settings view
     // (settings/Item.svelte), whose title is the heading. The rail's Settings choice opens that row
     // (Settings.svelte).
@@ -45,20 +51,22 @@
     const {
         entities: { config },
         layout: { instanceView },
-        ui: { instanceState, setInstanceState },
+        ui: { instanceState, setInstanceState, registerTabSave },
         writes: { writeRail }
     } = useState();
 
     let { id }: { id: string } = $props();
 
     const merged = $derived(config()?.config);
+    /** Whether the configuration has been read, before which the file's list is not known. */
+    const read = $derived(merged !== undefined);
     const saved = $derived(configRail(merged));
     const draft = $derived(railDraft(instanceState(id)));
     const rows = $derived(draft ?? saved);
     const pages = $derived(arrangementKeys(merged?.arrangements));
     const glyphs = $derived(glyphNames(merged) ?? []);
     const problems = $derived(readRail(rows, pages, glyphs).problems);
-    const dirty = $derived(draft !== null && !sameRail(draft, saved));
+    const dirty = $derived(read && draft !== null && !sameRail(draft, saved));
 
     /** Whether a save is on its way, which is what keeps Save from being pressed twice. */
     let sending = $state(false);
@@ -113,6 +121,12 @@
         outcome = t('workbench.rail_saved');
     }
 
+    $effect(() =>
+        registerTabSave(id, () => {
+            if (dirty) void save();
+        })
+    );
+
     /** Forget the list being typed; the file's list is shown again. */
     function revert(): void {
         outcome = '';
@@ -122,7 +136,7 @@
 
 <div class="rail" data-settings="rail">
     <p class="about">{t('workbench.rail_about')}</p>
-    {#if rows.length === 0}
+    {#if read && rows.length === 0}
         <p class="empty">{t('workbench.rail_empty')}</p>
     {/if}
     <!-- Keyed by position: a row being typed may carry the same page as another until it is

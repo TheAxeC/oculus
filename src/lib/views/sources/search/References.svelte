@@ -32,7 +32,8 @@
     // offers Copy, Copy Path and Dismiss, and a right-click on the count line Copy All. A cleared
     // view says "No results." and, while it has a history, lists the last ten searches of the
     // instance, each as "<title>: <word>", a press running it again. F4 and Shift+F4 walk the
-    // locations of the latest result from the source tab's editor (source/language/lsp.ts).
+    // locations of the latest result from the source tab's editor
+    // (views/shared/prose/editor/lsp.ts).
     //
     // The result and the history are the instance's own state, kept with the layout
     // (state/system/machine/lsp/references.svelte.ts), so a saved page draws the result it had

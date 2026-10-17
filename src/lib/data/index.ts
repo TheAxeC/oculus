@@ -20,7 +20,7 @@ import {
 } from './shapes/shapes.ts';
 import { manifestDir, readHubManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
-import { readCollections } from './sources/collections.ts';
+import { LITERATURE_FILE, readCollections, unnamedCollection } from './sources/collections.ts';
 import { readCareer } from './sources/documents/career.ts';
 import { feedItems, readFeeds } from './sources/documents/feeds.ts';
 import { projectDocs } from './sources/documents/docs.ts';
@@ -37,7 +37,7 @@ import {
 } from './helpers/hub-names.ts';
 import { createReader } from './sources/deck/read.ts';
 import type { DeckProject } from './sources/deck/kinds.ts';
-import { loadConfig, textCatalog } from './sources/config.ts';
+import { textCatalog, type loadConfig } from './sources/config.ts';
 import { readYamlMap } from './sources/yaml-file.ts';
 import { fieldsOf } from './snapshot/schema/field.ts';
 import { mergeHubs, type HubSnapshot } from './snapshot/hubs/merge.ts';
@@ -313,7 +313,11 @@ export function portfolioConfigFrom(
     const path = (key: string, fallback: string): string =>
         readOr(pathShape, merged[key], fallback);
     const listed = collectionFiles(merged.collections);
-    const collections = listed.filter((file) => !isFeedCollection(file.key));
+    const unnamed = from === undefined ? undefined : unnamedBy(from, listed);
+    const collections = [
+        ...listed.filter((file) => !isFeedCollection(file.key)),
+        ...(unnamed?.literature === true ? [LITERATURE_FILE] : [])
+    ];
     const registryFile = (name: RegistryName): string =>
         collections.find((file) => file.key === REGISTRY_KEYS[name])?.file ?? REGISTRY_FILES[name];
     const feedFile = (key: FeedKey): string =>
@@ -344,7 +348,7 @@ export function portfolioConfigFrom(
     return {
         scan,
         repositories: [],
-        ...(from === undefined ? {} : { unnamed: unnamedBy(from, listed) }),
+        ...(unnamed === undefined ? {} : { unnamed }),
         newProjectDir: newProjectDirs(merged.new_project_dir, scan, '', text).dirs,
         registries,
         collections,
@@ -404,7 +408,14 @@ function unnamedBy(
     const feeds = FEED_COLLECTION_KEYS.filter(
         (key) => !listed || !collections.some((file) => file.key === key)
     );
-    return { registries, feeds, collections: !listed, deck: !named(from, 'portfolio_deck') };
+    const literature = listed && !collections.some((file) => file.key === LITERATURE_FILE.key);
+    return {
+        registries,
+        feeds,
+        collections: !listed,
+        literature,
+        deck: !named(from, 'portfolio_deck')
+    };
 }
 
 /**
@@ -519,11 +530,12 @@ export function buildPortfolioWithSchemas(
         config.text,
         config.unnamed?.registries
     );
-    const collections = readCollections(
-        hub,
-        config.collections,
-        config.text,
-        config.unnamed?.collections ?? false
+    // The engine's Literature, which the hub's list does not name, is read once the hub holds it.
+    const read = config.collections.filter(
+        (file) => file !== LITERATURE_FILE || existsSync(join(hub, file.file))
+    );
+    const collections = readCollections(hub, read, config.text, (key) =>
+        unnamedCollection(config.unnamed, key)
     );
     const feeds = readFeeds(hub, config.feeds, config.text, config.unnamed?.feeds);
     const career =
@@ -640,6 +652,14 @@ export function buildFolderProjects(
 export type HubRoot = { key: string; dir: string };
 
 /**
+ * The parse of the engine's config folder under the settings file of the hub at `dir`, as
+ * `loadConfig(engine, { hub: dir })` gives it. The server answers it from the parse it keeps for
+ * that hub (server/root/process/config-cache.ts), so a reader of another hub's settings is handed
+ * this function and never parses the folder itself.
+ */
+export type HubSettings = (dir: string) => ReturnType<typeof loadConfig>;
+
+/**
  * A hub other than the primary, read with its own settings: the engine's defaults under the hub's
  * own `.oculus/config.yml`. Its career and its portfolio deck are the primary hub's alone, so they
  * are not read, and the findings of its settings file ride along for the caller to report.
@@ -650,9 +670,9 @@ export type OtherHub = HubRoot & {
     vocab: HubVocab;
 };
 
-/** The settings of a hub other than the primary. */
-export function readOtherHub(engine: string, root: HubRoot): OtherHub {
-    const { config, findings, from } = loadConfig(engine, { hub: root.dir });
+/** The settings of a hub other than the primary, from the parse `loaded` of its settings. */
+export function readOtherHub(root: HubRoot, loaded: ReturnType<typeof loadConfig>): OtherHub {
+    const { config, findings, from } = loaded;
     const portfolio = { ...portfolioConfigFrom(config, from), career: null, portfolioDeck: null };
     const sources = join(root.dir, HUB_FILE);
     return {
@@ -720,7 +740,7 @@ export function hubDomainsOf(hub: string, config: PortfolioConfig): HubVocab['do
  */
 export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
     const held = config.collections.filter(
-        (file) => config.unnamed?.collections !== true || existsSync(join(hub, file.file))
+        (file) => !unnamedCollection(config.unnamed, file.key) || existsSync(join(hub, file.file))
     );
     return {
         domains: hubDomainsOf(hub, config),
@@ -736,7 +756,7 @@ export function hubVocabOf(hub: string, config: PortfolioConfig): HubVocab {
  */
 function hubVocabFiles(hub: string, config: PortfolioConfig): string[] {
     const { domains, venues, datasets } = config.registries;
-    const looked = config.unnamed?.collections === true ? config.collections : [];
+    const looked = config.collections.filter((file) => unnamedCollection(config.unnamed, file.key));
     return [domains, venues, datasets, ...looked.map((one) => one.file)].map((file) =>
         join(hub, file)
     );
@@ -760,8 +780,8 @@ export function hubVocabs(
 /**
  * The vocabulary of the hub at `root` and the files it was read from, by its own settings.
  */
-function readHubVocab(engine: string, root: HubRoot): { vocab: HubVocab; files: string[] } {
-    const { config, from } = loadConfig(engine, { hub: root.dir });
+function readHubVocab(root: HubRoot, settings: HubSettings): { vocab: HubVocab; files: string[] } {
+    const { config, from } = settings(root.dir);
     const portfolio = portfolioConfigFrom(config, from);
     return { vocab: hubVocabOf(root.dir, portfolio), files: hubVocabFiles(root.dir, portfolio) };
 }
@@ -769,21 +789,21 @@ function readHubVocab(engine: string, root: HubRoot): { vocab: HubVocab; files: 
 /**
  * The vocabulary of a workspace and every file it was read from: the primary hub's, read from its
  * folder `dir` by the settings `read` holds (none when the workspace has no primary folder), and
- * each other hub's, read by its own settings.
+ * each other hub's, read by its own settings as `settings` gives them.
  */
 export function workspaceVocabs(
-    engine: string,
     primary: { name: string | null; dir: string | null },
     read: { config: Record<string, unknown>; from?: ReturnType<typeof loadConfig>['from'] },
-    others: readonly HubRoot[]
+    others: readonly HubRoot[],
+    settings: HubSettings
 ): { vocabs: HubVocabs; files: string[] } {
-    const settings = portfolioConfigFrom(read.config, read.from);
-    const own = primary.dir === null ? null : hubVocabOf(primary.dir, settings);
-    const held = others.map((one) => ({ key: one.key, ...readHubVocab(engine, one) }));
+    const own = portfolioConfigFrom(read.config, read.from);
+    const vocab = primary.dir === null ? null : hubVocabOf(primary.dir, own);
+    const held = others.map((one) => ({ key: one.key, ...readHubVocab(one, settings) }));
     return {
-        vocabs: hubVocabs(primary.name, own, held),
+        vocabs: hubVocabs(primary.name, vocab, held),
         files: [
-            ...(primary.dir === null ? [] : hubVocabFiles(primary.dir, settings)),
+            ...(primary.dir === null ? [] : hubVocabFiles(primary.dir, own)),
             ...held.flatMap((one) => one.files)
         ]
     };

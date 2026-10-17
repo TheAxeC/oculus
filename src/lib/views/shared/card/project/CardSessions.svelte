@@ -5,14 +5,14 @@
     import RowButton from '$lib/ui/controls/RowButton.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import type { BoardItem } from '$lib/state/boards/board';
-    import { sessionViewShown } from '../card';
+    import { sessionTab } from '../card';
     import { folderOf, type GroupedSession } from '$lib/state/client/selectors.svelte';
     import { liveCount } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
     const {
-        layout: { layout, openBeside },
+        layout: { layout, openBeside, activateInstance, usedInstances },
         selection: { select },
         selectors: { sessionsForProject }
     } = useState();
@@ -37,13 +37,15 @@
     }
 
     /**
-     * Select one session and, when the page shows no view that follows the selected session
-     * (card.ts, `sessionViewShown`), open that session's own detail tab beside the board.
+     * Select one session and show it in the tab of the page that follows the selected session and
+     * was used last (card.ts, `sessionTab`), brought forward in its pane; on a page with no such
+     * tab, open that session's own detail tab beside the board.
      */
     function pick(entry: GroupedSession): void {
         select(entry.id);
-        if (!sessionViewShown(layout()))
-            openBeside('session-detail', { session: entry.id, label: entry.title });
+        const tab = sessionTab(layout(), usedInstances());
+        if (tab !== null) activateInstance(tab.id);
+        else openBeside('session-detail', { session: entry.id, label: entry.title });
     }
 </script>
 

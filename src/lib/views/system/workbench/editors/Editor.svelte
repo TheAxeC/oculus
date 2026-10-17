@@ -11,7 +11,11 @@
     // whole value through the editors' write (state/system/config/editors/writer.ts) and waits for
     // the watcher's push of the file to end the draft; while the write is out the draft is shown
     // and Save waits. A draft started over a value the file no longer holds is named and cannot
-    // be saved, only discarded, since a Save would write over the other change.
+    // be saved, only discarded, since a Save would write over the other change. The save key on the
+    // tab (Cmd+S, Ctrl+S off macOS) saves a held draft when Save could be pressed. Once the file
+    // holds what was sent the editor says "Saved." until the next edit, as the rail list's Save
+    // does, and a list or family with no entry says so above its Add, so a saved empty family reads
+    // as one and not as a list that failed to draw.
 
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -36,7 +40,7 @@
     import Rollup from './Rollup.svelte';
 
     const {
-        ui: { instanceState, setInstanceState }
+        ui: { instanceState, setInstanceState, registerTabSave }
     } = useState();
 
     let {
@@ -65,6 +69,12 @@
 
     const sending = $derived(editors.sending(row));
     const refusal = $derived(editors.said(row));
+    const saved = $derived(editors.saved(row));
+
+    /** Whether the draft holds no entry: no key of a roll-up, no card of any other form. */
+    const empty = $derived(
+        draft !== null && (draft.form === 'rollup' ? draft.groups : draft.cards).length === 0
+    );
 
     /** The specs the draft's fields are drawn by, and the one the keys of a roll-up are. */
     const specs = $derived(draft === null ? {} : specsOf(row, draft.form));
@@ -98,10 +108,19 @@
         if (draft === null || stale) return;
         void editors.save(row, draft);
     }
+
+    $effect(() =>
+        registerTabSave(id, () => {
+            if (held !== undefined && !sending && problems.length === 0) save();
+        })
+    );
 </script>
 
 {#if draft !== null}
     <div class="editor" data-editor={draft.form}>
+        {#if empty}
+            <p class="empty" data-editor-empty>{t('settings.editor_empty')}</p>
+        {/if}
         {#if draft.form === 'rollup'}
             <Rollup
                 {draft}
@@ -143,6 +162,8 @@
         {/if}
         {#if refusal !== null}
             <p class="problem" role="status">{said(refusal)}</p>
+        {:else if saved && held === undefined}
+            <p class="done" role="status">{t('settings.editor_saved')}</p>
         {/if}
         {#if held !== undefined}
             <div class="actions">
@@ -182,8 +203,16 @@
         font-size: var(--fs-md);
     }
 
-    .problem {
+    .problem,
+    .empty,
+    .done {
         margin: 0;
+    }
+
+    .empty,
+    .done {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
     }
 
     .actions {

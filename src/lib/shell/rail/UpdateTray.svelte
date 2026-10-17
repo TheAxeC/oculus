@@ -6,10 +6,10 @@
     // schedule store's `offered`), and one line in their place when it holds none or there is no
     // primary: each control starts the server-built Claude command in a terminal, selects it, and
     // shows it in the Terminal tab of the page on screen, or a new one (the terminals store's
-    // `showTerminal`); the snapshot's feed summary supplies the last-run value beside each control,
-    // the inbox triage's comes from the `inbox` channel, whose notes file is what that task writes,
-    // and each row says which schedule runs the task next and opens the schedule dialog for the
-    // task.
+    // `showTerminal`); beside each control, a cell gives the last run with its label (the
+    // snapshot's feed summary supplies it, and the inbox triage's comes from the `inbox` channel,
+    // whose notes file is what that task writes), a separator, a cell saying which schedule runs
+    // the task next, and the control that opens the schedule dialog for the task.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
     // pane and a press starts it straight away. A run that goes unattended is a schedule's Run
@@ -72,6 +72,12 @@
             next: schedule.nextOfTask(kind)
         }))
     );
+
+    /** The row's last-run words: the date with its label, or that the task has not run yet. */
+    function lastLine(kind: UpdateTask, last: string | null | undefined): string {
+        if (last === null || last === undefined || last === '') return t('app.tasks.last_none');
+        return kind === 'linkedin' ? t('app.tasks.last_post', last) : t('app.tasks.last', last);
+    }
 
     async function start(kind: UpdateTask): Promise<void> {
         running = kind;
@@ -153,7 +159,8 @@
                                 disabled={running !== null || chatting}
                                 onclick={() => start(task.kind)}
                             />
-                            <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
+                            <span class="last">{lastLine(task.kind, task.last)}</span>
+                            <span class="sep" aria-hidden="true">{t('sessions.meta_sep')}</span>
                             <span class="next" data-next>{task.next}</span>
                             <ToolButton
                                 label={t('app.tasks.schedule')}
@@ -255,6 +262,7 @@
     }
 
     .last,
+    .sep,
     .next,
     .note,
     .none,

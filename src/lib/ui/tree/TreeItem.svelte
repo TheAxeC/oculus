@@ -9,10 +9,11 @@
     // pointer presses, and the row itself answers a press on the space beyond its parts, so the
     // whole line opens what the name opens; a row given nothing to do is the same line as text. The
     // controls sit beside the line rather than inside it, since a button holds no button, and the
-    // tooltip opens while the pointer is anywhere over the row. They are shown while the pointer is
-    // over the row or the focus is inside it, and are otherwise transparent rather than removed, so
-    // a control is where the reader's pointer will land. A row given `showActions` draws them at
-    // full strength always, for a section head whose one control adds to the section.
+    // tooltip opens while the pointer is anywhere over the row. They are drawn while the pointer is
+    // over the row or the focus is inside it and otherwise take no room, as in VS Code's lists, so
+    // the name of a row in a narrow pane gives way to its controls only while they are drawn
+    // (row/TreeActions.svelte). A row given `showActions` draws them always, for a section head
+    // whose one control adds to the section.
     //
     // A row drawn in a ui/tree/TreeView.svelte is a treeitem, and the treeitem is what takes the
     // keyboard's focus: it spreads what the tree's `nav` hands it from zag's tree-view machine (its
@@ -165,6 +166,7 @@
 
 <div
     class="item"
+    style:--depth={guides.length}
     class:selected
     class:current
     class:heading
@@ -254,19 +256,31 @@
     /* The row's height, one level's indent and the two type sizes are the tokens of
        themes/tokens.css, which an ancestor may set for a tree of its own, each multiplied here by
        the text size. */
+    /* A row never narrows past its guides, its arrow, its icon and the first characters of its
+       name (`--depth` guides, each its indent and gap, and the 4px gaps of the line): in a pane
+       narrower than that it runs past the pane's edge, its tint with it, and the pane scrolls
+       sideways, so the controls a narrow row draws give way (row/TreeActions.svelte) rather than
+       lie over the icon. The name part keeps the same least width, so the controls are what
+       give way. */
     .item {
+        --row-least: calc(
+            var(--depth, 0) *
+                (var(--tree-indent) * var(--text-scale, 1) + var(--tree-guide-gap, 4px) + 4px) + 2 *
+                (var(--icon-box) * var(--text-scale, 1) + 4px) + 4ch + 6px
+        );
         display: flex;
         align-items: center;
         height: calc(var(--tree-row) * var(--text-scale, 1));
-        min-width: 0;
+        min-width: var(--row-least);
         border-radius: var(--radius-sm);
         color: var(--ink-txt, var(--ink));
         font-size: calc(var(--tree-font) * var(--text-scale, 1));
         --row-bg: var(--panel);
     }
 
-    /* A row that only says something (no bookmark yet, nothing changed) has nothing to point at. */
-    .item:not(.muted, .warn, .error):hover {
+    /* A row that only says something (no bookmark yet, nothing changed) has nothing to point at,
+       and a selected row keeps its selection tint under the pointer. */
+    .item:not(.muted, .warn, .error, .selected):hover {
         --row-bg: var(--chip);
         background: var(--chip);
     }
@@ -280,10 +294,12 @@
         box-shadow: inset 0 -2px 0 var(--accent);
     }
 
-    /* The controls are shown while the pointer is over the row or the focus is inside it. */
+    /* The controls are drawn while the pointer is over the row, the focus is inside it or the row
+       is selected, as VS Code's lists draw a row's inline actions. */
     .item:hover,
-    .item:focus-within {
-        --actions-opacity: 1;
+    .item:focus-within,
+    .item.selected {
+        --actions-display: flex;
     }
 
     .item.selected {
@@ -307,7 +323,7 @@
         flex: 1 1 auto;
         align-items: center;
         height: calc(var(--tree-row) * var(--text-scale, 1));
-        min-width: 0;
+        min-width: var(--row-least);
         padding: 0 4px 0 2px;
         border: 0;
         background: none;
@@ -434,16 +450,17 @@
         font-size: var(--fs-sm);
     }
 
+    /* The words after the name take only the room the name leaves: a basis of nothing grown
+       into the free width, so the name is cut only once they have none left, as VS Code's rows
+       keep a file's name and cut its folder. */
+    .detail {
+        flex: 1 1 0;
+    }
+
     /* On the accent tint every part of the row is drawn in the tint's own text colour, which the
        theme derives to read on it, where the muted colour does not. */
     .item.selected .twisty,
     .item.selected .mark,
-    /* The words after the name give up their room first, and the name shrinks only once they
-       are gone, as VS Code's rows keep a file's name and cut its folder. */
-    .detail {
-        flex-shrink: 1000;
-    }
-
     .item.selected .detail,
     .item.selected .count,
     .item.selected .end {

@@ -25,10 +25,11 @@
     // An entry is also opened on the page the catalogue is on. Dragged onto a pane there it opens
     // where it was dropped, through the drag every tab takes, and each entry's right-click menu
     // offers Open on this page and Open beside on this page, which is the keyboard's way to the
-    // same two places. None of them covers the catalogue: a view asked for in its own pane opens in
-    // another pane of the page, or beside the catalogue when its pane is the page's only one. A
-    // unique view another page or a float holds is shown there by the menu, and a drop carries it
-    // to where it is dropped.
+    // same two places. A view the page does not hold yet never covers the catalogue: asked for in
+    // its own pane, it opens in another pane of the page, or beside the catalogue when its pane is
+    // the page's only one. A view the page already holds is shown where it is by the menu, its
+    // place in its strip kept, in the catalogue's own pane too. A unique view another page or a
+    // float holds is shown there by the menu, and a drop carries it to where it is dropped.
     //
     // A view an app contributes is listed under the title of its container, drawn as a subtitle
     // above the run of views that share it.

@@ -39,11 +39,11 @@ import {
     rowPicker,
     rowStores
 } from '../menu/row-menu';
-import { holdsContents, rowNaming, rowOpsPicker, type NamingHooks } from '../menu/row-ops';
+import { holdsContents, rowNaming, rowOpsPicker, shownAt, type NamingHooks } from '../menu/row-ops';
 import { landingRefusal } from '$lib/state/sources/explorer/notes/note-tree';
 import type { Asking } from './asking.svelte';
 import { createFixing } from './fixing.svelte';
-import { createMaking, type MakeOffer } from './making.svelte';
+import { createMaking } from './making.svelte';
 import type { ViewAccess } from './view-access';
 
 /** What the ids of the choices apps add to the menu start with. */
@@ -71,10 +71,15 @@ export type PicksDeps = {
     isSelected: (row: TreeRow) => boolean;
     /** A plain press moved the cursor to a row. */
     select: (row: TreeRow) => void;
-    /** Say a refusal, or its end with the empty text, on the caller's own line. */
-    onrefused?: (note: string) => void;
+    /**
+     * Say a refusal, or its end with the empty text, on the caller's own line; `told` is true for
+     * a result that went through whole, which the line draws as information.
+     */
+    onrefused?: (note: string, told: boolean) => void;
     /** What the tree does with a typed name beyond the Files tree's (the Notes section's notes). */
     naming?: NamingHooks;
+    /** Open a file New File... made, as a kept tab in the editor. */
+    opened?: (file: { root: string; path: string }) => void;
 };
 
 export type Picks = ReturnType<typeof createPicks>;
@@ -85,15 +90,18 @@ export function createPicks(deps: PicksDeps) {
 
     /** A pick the server refused, said until the next pick. */
     let refused = $state('');
+    /** Whether `refused` says a result that went through whole rather than a refusal. */
+    let told = $state(false);
 
     /** The row a menu or a key acts on; a segment of a folder chain when one was pressed. */
     let target: TreeRow | null = null;
 
     /** Set the refusal line and hand it to the caller; the end of no line is not handed on. */
-    const say = (note: string): void => {
+    const say = (note: string, whole = false): void => {
         if (note === '' && refused === '') return;
         refused = note;
-        deps.onrefused?.(note);
+        told = whole;
+        deps.onrefused?.(note, whole);
     };
 
     /** The absolute folder of a root or folder row that is a repository, else null. */
@@ -112,9 +120,6 @@ export function createPicks(deps: PicksDeps) {
     const fixing = createFixing(client);
 
     const making = createMaking(client, say);
-
-    /** What the folder the open menu was opened on offers, once the server answered. */
-    let offered: MakeOffer | null = null;
 
     /**
      * One act that makes a deck, then the deck shown in a Present tab named as the folder is: the
@@ -166,6 +171,7 @@ export function createPicks(deps: PicksDeps) {
                     path,
                     t
                 ),
+            open: (file) => deps.opened?.(file),
             get hooks() {
                 return deps.naming;
             }
@@ -192,7 +198,8 @@ export function createPicks(deps: PicksDeps) {
                           .filter((one) => one.kind === 'file')
                           .map((one) => ({ root: one.root, path: one.path })),
             acting: acted,
-            confirmDelete: () => confirmDelete(client.selectors.configMap())
+            confirmDelete: () => confirmDelete(client.selectors.configMap()),
+            reveal: (item) => view.patch(shownAt(view.now().expanded, item))
         },
         t
     );
@@ -217,7 +224,7 @@ export function createPicks(deps: PicksDeps) {
         }
         if (pick === ROW_WRITING_FIX) void fixing.start(row, rootNameIn(deps.rows(), row.root));
         const label = row.path === '' ? rootNameIn(deps.rows(), row.root) : nameOf(row.path);
-        if (pick === ROW_MAKE_HUB && offered !== null) making.startHub(row, label, offered);
+        if (pick === ROW_MAKE_HUB) void making.startHub(row, label);
         if (pick === ROW_MAKE_PROJECT) void making.project(row);
         menuPicked(row, pick);
         opsPicked(row, pick);
@@ -232,13 +239,12 @@ export function createPicks(deps: PicksDeps) {
      * The menu of a row: a right-click on a row outside the selection selects it first. A row that
      * is a repository has its list of commands read when its menu opens, not before, and a folder
      * or root whose listing is not held has its listing read then too, which says whether Open
-     * Presentation or New Presentation is offered, and a folder or root alone in the selection has
-     * what it offers of Make Folder a Hub... and Make Folder a Project read then
-     * (making.svelte.ts). The menu is returned at once, as reactive items that the Run Command
-     * submenu, the presentation items and the make items join when their answers arrive, whichever
-     * lands
-     * first, so a folder nobody opens a menu on is never asked for. A read that fails leaves the
-     * menu as it was.
+     * Presentation or New Presentation is offered. A folder or root alone in the selection offers
+     * Make Folder a Hub... and Make Folder a Project by the marks the page holds of it
+     * (making.svelte.ts), so those two items are in the menu as it opens, with no request. The
+     * menu is returned at once, as reactive items that the Run Command submenu and the
+     * presentation items join when their answers arrive, whichever lands first. A read that fails
+     * leaves the menu as it was.
      */
     function menuOf(row: TreeRow, event: MouseEvent) {
         const here = targetOf(row, event);
@@ -249,7 +255,10 @@ export function createPicks(deps: PicksDeps) {
         const shown = shownOf(view.now());
         let commandsRead: readonly ProjectCommand[] = [];
         let listingRead: FsEntry[] | null = null;
-        offered = null;
+        const offered =
+            here.kind !== 'file' && here.up !== true && group.length === 1
+                ? making.offerAt(here, shown)
+                : null;
         const apps = client.appShell.choices(
             'explorer/context',
             {
@@ -300,13 +309,6 @@ export function createPicks(deps: PicksDeps) {
                 rebuild();
             });
         }
-        if (here.kind !== 'file' && here.up !== true && group.length === 1) {
-            void making.offer(here.root, here.path).then((answer) => {
-                if (target !== here || answer === null) return;
-                offered = answer;
-                rebuild();
-            });
-        }
         if (here.kind !== 'file' && client.fs.heldEntries(here.root, here.path, shown) === null) {
             void client.fs.readListing(here.root, here.path, shown).then((answer) => {
                 if (answer.error !== '') return;
@@ -319,6 +321,7 @@ export function createPicks(deps: PicksDeps) {
 
     return {
         refused: () => refused,
+        told: () => told,
         clear: () => say(''),
         say,
         acted,

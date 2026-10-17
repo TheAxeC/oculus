@@ -32,7 +32,12 @@ import { filledTextShape, readAs, rowsShape } from '../../data/shapes/shapes.ts'
 import { PREFIX_ROWS } from '../../data/helpers/keys/oculus/palette-table.ts';
 import { PAGE_FEEDS, pageView, revealState } from '../forms/page-entry.ts';
 import { feedIdents, feedRoot, nestedStrings } from '../shared/page/idents.ts';
-import { pickerLine, type PickRefusal } from '../sources/explorer/acts/folders.ts';
+import {
+    addedLine,
+    pickerLine,
+    type FoldersAdded,
+    type PickRefusal
+} from '../sources/explorer/acts/folders.ts';
 import { refusal } from '../sources/explorer/acts/refusal.ts';
 import { workspaceMatches, type WorkspaceChoice } from '../sources/explorer/acts/workspaces.ts';
 import type { WorkspacesState } from '../sources/fs-transport.ts';
@@ -42,6 +47,7 @@ import { t } from '../shared/words/text.ts';
 import type { GithubListing, GithubRepo } from '../../data/model/index.ts';
 import type { SourceOnScreen } from './navigation/editor-status.svelte.ts';
 import { instanceText, pageLeaves, panes, type Host, type Layout } from './layout/index.ts';
+import type { DockEdge } from './layout/model.ts';
 import { MARKDOWN_PREVIEW_VIEW } from '../sources/explorer/file-type.ts';
 import {
     byScore,
@@ -125,12 +131,16 @@ export type PaletteCommand = {
         | 'workspace-close'
         | 'workspace-save'
         | 'task-add'
-        | 'folder';
+        | 'folder'
+        | 'folder-add'
+        | 'folder-remove';
     /** What the command does, drawn beside it in the list. */
     description: string;
     /** What follows the name when the command takes an argument; empty when it takes none. */
     hint: string;
     available: boolean;
+    /** Why an unavailable command cannot run, drawn at its row's end in place of the plain word. */
+    why?: string;
 };
 
 export type ParsedCommand = { name: string; argument: string };
@@ -346,7 +356,8 @@ export function pinItems(
     ];
 }
 
-export type { TextPart };
+/** The palette's fuzzy matcher, which the shell's own row lists (the command mode's) match by. */
+export { byScore, fuzzyMatches, textParts, type TextPart };
 
 /** One result the palette draws: the item, and its title in matched and unmatched runs. */
 export type PaletteMatch = { item: PaletteItem; title: TextPart[] };
@@ -407,6 +418,36 @@ export function parseCommand(query: string): ParsedCommand | null {
     };
 }
 
+/** Whether an argument names a thing of each kind a colon command opens or switches to. */
+export type ArgumentNames = {
+    view: (id: string) => boolean;
+    project: (id: string) => boolean;
+    theme: (name: string) => boolean;
+    fileIcons: (name: string) => boolean;
+};
+
+/**
+ * What the palette says, staying open, when the argument of `:tab`, `:goto`, `:theme` or
+ * `:file-icons` names no view, project, theme or file icon theme, or is empty; empty when the
+ * argument names one, or for a command that takes no such argument.
+ */
+export function argumentRefusal(
+    command: Pick<PaletteCommand, 'name' | 'hint'>,
+    argument: string,
+    names: ArgumentNames
+): string {
+    const kinds: Partial<Record<string, [(text: string) => boolean, (text: string) => string]>> = {
+        tab: [names.view, (text) => t('app.palette.tab_unknown', text)],
+        goto: [names.project, (text) => t('app.palette.goto_unknown', text)],
+        theme: [names.theme, (text) => t('app.palette.theme_unknown', text)],
+        'file-icons': [names.fileIcons, (text) => t('app.palette.file_icons_unknown', text)]
+    };
+    const kind = kinds[command.name];
+    if (kind === undefined) return '';
+    if (argument === '') return t('app.palette.argument_missing', command.hint);
+    return kind[0](argument) ? '' : kind[1](argument);
+}
+
 /**
  * The line a go-to-line query names: the line row's prefix and a whole number, as VS Code's quick
  * input reads one, or null for any other query.
@@ -449,8 +490,9 @@ function choiceCommands(served: string): PaletteCommand[] {
  * changes, and the language a server serves the tab in (empty for none), which is what
  * `interpreter` and `compile-database` change, whether the folder panel is open, which leaves
  * `folder` unavailable, and whether the list of the tabs closed last holds a tab, without which
- * `reopen-closed-tab` is not listed. The palette's page (docs/palette.md) names no list, so it
- * lists the command.
+ * `reopen-closed-tab` is not listed, and the edges a float is docked at (`docked`), without which
+ * an edge's dock toggle is unavailable and says so, as the title bar's disabled toggle does. The
+ * palette's page (docs/palette.md) names no list, so it lists the command.
  */
 export function commands(
     config: Record<string, unknown>,
@@ -458,7 +500,8 @@ export function commands(
     source = false,
     served = '',
     panelOpen = false,
-    reopenable = true
+    reopenable = true,
+    docked: readonly DockEdge[] = ['left', 'bottom', 'right']
 ): PaletteCommand[] {
     const themes = [...(readAs(themeNamesShape, config.themes) ?? []), ...appThemeLabels(offers)];
     return [
@@ -505,12 +548,22 @@ export function commands(
         ...(
             [
                 ['go-back', t('app.palette.cmd_go_back')],
-                ['go-forward', t('app.palette.cmd_go_forward')],
-                ['toggle-left-dock', t('app.palette.cmd_toggle_left_dock')],
-                ['toggle-bottom-dock', t('app.palette.cmd_toggle_bottom_dock')],
-                ['toggle-right-dock', t('app.palette.cmd_toggle_right_dock')]
+                ['go-forward', t('app.palette.cmd_go_forward')]
             ] as const
         ).map(([name, description]) => ({ name, description, hint: '', available: true })),
+        ...(
+            [
+                ['toggle-left-dock', 'left', t('app.palette.cmd_toggle_left_dock')],
+                ['toggle-bottom-dock', 'bottom', t('app.palette.cmd_toggle_bottom_dock')],
+                ['toggle-right-dock', 'right', t('app.palette.cmd_toggle_right_dock')]
+            ] as const
+        ).map(([name, edge, description]) => ({
+            name,
+            description,
+            hint: '',
+            available: docked.includes(edge),
+            why: docked.includes(edge) ? undefined : t('app.palette_dock_none')
+        })),
         {
             name: 'goto',
             description: t('app.palette.cmd_goto'),
@@ -573,6 +626,18 @@ export function commands(
             description: t('app.palette.cmd_folder'),
             hint: '',
             available: !panelOpen
+        },
+        {
+            name: 'folder-add',
+            description: t('app.palette.cmd_folder_add'),
+            hint: '',
+            available: !panelOpen
+        },
+        {
+            name: 'folder-remove',
+            description: t('app.palette.cmd_folder_remove'),
+            hint: t('app.palette.cmd_folder_remove_hint'),
+            available: true
         }
     ];
 }
@@ -609,6 +674,16 @@ export async function folderCommand(
 ): Promise<CommandOutcome> {
     const answer = await open();
     return answer.ok ? { closed: true } : { closed: false, said: pickerLine(answer.picker) };
+}
+
+/**
+ * `:folder-add`: the panel's folders become roots, as the Files view's Add Folder to Workspace
+ * does. The palette closes unless something is left to say: the panel did not open, a folder was
+ * refused or was a root already.
+ */
+export async function addFolderCommand(add: () => Promise<FoldersAdded>): Promise<CommandOutcome> {
+    const said = addedLine(await add(), refusal);
+    return said === '' ? { closed: true } : { closed: false, said };
 }
 
 /** The sentence for what a workspace write or the folder panel refused with. */

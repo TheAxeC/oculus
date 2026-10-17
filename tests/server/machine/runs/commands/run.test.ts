@@ -120,7 +120,7 @@ describe('the terminal a run starts', () => {
         const start = starts[0];
         const token = tokenOf();
         expect(lineOf(start)).toBe(
-            `cd '${repo}' && printf '%s\\n' '${token} build' && make && cd '${repo}/sub' && printf '%s\\n' '${token} test' && make test`
+            `cd '${repo}' && printf '\\033[8m%s\\033[28m\\n' '${token} build' && make && cd '${repo}/sub' && printf '\\033[8m%s\\033[28m\\n' '${token} test' && make test`
         );
         expect(start[start.indexOf('-c') + 1]).toBe(repo);
     });

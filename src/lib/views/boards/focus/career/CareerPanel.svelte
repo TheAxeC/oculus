@@ -249,14 +249,17 @@
 {/if}
 
 <style>
+    /* Drawn in the command center's box (CommandCenterView.svelte `.week`), with its own edge
+       colour, which no other Focus section takes. */
     .career {
         border: 1px solid var(--line);
+        border-left: 3px solid var(--c-purple);
         border-radius: var(--input-radius);
-        background: var(--panel);
+        background: var(--chip);
     }
 
     :global(body.wall) .career {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        background: var(--chip-on-wall);
         backdrop-filter: blur(var(--wall-blur));
     }
 
@@ -268,7 +271,6 @@
         gap: 6px;
         padding: 4px 8px;
         font-size: var(--fs-md);
-        background: var(--chip);
         cursor: pointer;
     }
 
@@ -278,12 +280,6 @@
         font-weight: 600;
         white-space: nowrap;
         text-overflow: ellipsis;
-    }
-
-    /* Inside the panel, which is already translucent: these rows keep their rules and paint
-       nothing. */
-    :global(body.wall) .career > summary {
-        background: transparent;
     }
 
     .body {

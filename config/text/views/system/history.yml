@@ -14,6 +14,7 @@ text:
         before: Before
         after: After
         items: values
+        items_one: value
         nothing_there: nothing
         older: Load older
         undo: Undo
@@ -21,7 +22,9 @@ text:
         undo_tip: Put back what {0} held before this write
         undoing: 'Putting {0} back...'
         undone: '{0} is back.'
-        undone_partly: '{0} is back, except {1} field(s) the file would not take.'
+        undone_removed: '{0} is taken out again.'
+        undone_partly: '{0} is back, except {1} fields the file would not take.'
+        undone_partly_one: '{0} is back, except one field the file would not take.'
         moved: The file has changed since this write, so it was left alone.
         gone: What this write addressed is no longer in the hub.
         outside: The file this write changed is in no hub now, so it was left alone.
@@ -63,6 +66,9 @@ text:
         kind_files: file operation
         kind_roots: workspace folder
         kind_app_store: app store
+        kind_schedules: schedule
+        kind_commands: command
+        kind_lsp: language server choice
         undid_delete_entry: entry put back
         undid_feed_delete: feed entry put back
         undid_new_entry: entry removed
@@ -74,6 +80,7 @@ text:
         undid_field: '{0} set back'
         by_app: 'by {0}'
         bytes: '{0} bytes'
+        bytes_one: 1 byte
         deck_create: deck made
         deck_delete: slide removed
         deck_duplicate: slide copied

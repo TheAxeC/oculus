@@ -32,7 +32,8 @@ describe('the "This machine" section', () => {
             set: ['port', 'claude_bin'],
             defaults: DEFAULTS,
             values: {},
-            hubs: {}
+            hubs: {},
+            portRefused: null
         });
         expect(byKey('port')).toMatchObject({ setIn: 'lab', fallback: '8790' });
         expect(byKey('claude_bin')).toMatchObject({ setIn: 'lab', fallback: 'claude' });
@@ -46,7 +47,8 @@ describe('the "This machine" section', () => {
             set: [],
             defaults: {},
             values: {},
-            hubs: {}
+            hubs: {},
+            portRefused: null
         });
         expect(rows.map((row) => row.key)).toEqual(Object.keys(shipped['local.yml']));
     });
@@ -57,7 +59,8 @@ describe('the "This machine" section', () => {
             set: ['port'],
             defaults: DEFAULTS,
             values: {},
-            hubs: {}
+            hubs: {},
+            portRefused: null
         });
         expect(rows.every((row) => row.setIn === null)).toBe(true);
         expect(rows.find((row) => row.key === 'port')?.fallback).toBe('8790');
@@ -70,7 +73,8 @@ describe('the "This machine" section', () => {
             set: [],
             defaults: {},
             values: {},
-            hubs: {}
+            hubs: {},
+            portRefused: null
         });
         const [line] = group.lines;
         expect(line.file).toBe('.oculus/local.yml');

@@ -1,10 +1,15 @@
-// What the deposit does to a mirror, and what it refuses to do.
+// What the deposit does to a mirror, and what it refuses to do, and the plan it answers after a
+// commit: made again, so it lists what is still changed.
 //
 // Every repository here is made under the system temporary directory with the real git: a hub, a
 // mirrors folder, and a bare repository standing in for GitHub. `gh` is never run:
 // server/git/deposit/deposit.ts takes it as an option, and the stub below answers the three shapes
 // and does with the bare repository what the real one would do with GitHub. Nothing reaches the
 // hub's own checkout, ~/.oculus, or the network.
+//
+// The machine's and the user's git configuration are replaced by an empty file
+// (`isolateDepositGit`), so no hook, identity or signing key of the machine runs or is read; the
+// committer is the fixture's own.
 // @module-tag slow: its cases run real git against a bare remote, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
@@ -12,12 +17,25 @@ import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { parse } from 'yaml';
-import { adopt, commit, push, sync } from '../../../src/lib/server/git/deposit/deposit.ts';
+import {
+    adopt,
+    commit,
+    push,
+    sync,
+    type Plan
+} from '../../../src/lib/server/git/deposit/deposit.ts';
 import { type GhRun, type Outcome } from '../../../src/lib/server/git/deposit/deposit-git.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
-import { depositTarget, gitIn, writeInside } from '../../fixtures/hubs/deposit-world.ts';
+import {
+    depositTarget,
+    gitIn,
+    isolateDepositGit,
+    writeInside
+} from '../../fixtures/hubs/deposit-world.ts';
 import { TEXT } from '../text.ts';
+
+isolateDepositGit();
 
 /** The repositories the stub knows, by name. A name it does not know does not exist on GitHub. */
 const known = new Map<string, string>();
@@ -131,6 +149,21 @@ describe('the plan', () => {
         expect(written.ok).toBe(false);
         expect(written.error).toContain('The scan found something');
         rmSync(join(codeOf('alpha'), '.env'));
+    });
+
+    it('is made again after a commit, so it lists what is still changed', async () => {
+        const plans = new Map<string, Plan>();
+        const before = await sync('alpha', TEXT, { ...options(), plans });
+        expect(before.plan?.changes.length).toBeGreaterThan(0);
+        const written = await commit('alpha', 'Add the first files', TEXT, {
+            ...options(),
+            plans
+        });
+        expect(written.ok).toBe(true);
+        expect({ answered: written.plan?.changes, kept: plans.get('alpha')?.changes }).toEqual({
+            answered: [],
+            kept: []
+        });
     });
 });
 

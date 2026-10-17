@@ -21,7 +21,7 @@ import { randomBytes } from 'node:crypto';
 import { realpathSync } from 'node:fs';
 import { relative, isAbsolute } from 'node:path';
 import { z } from 'zod';
-import { chainMarker } from '../../../../../data/helpers/run/marker.ts';
+import { MARKER_FORMAT, chainMarker } from '../../../../../data/helpers/run/marker.ts';
 import type {
     AppTaskDescription,
     CommandFinding,
@@ -84,7 +84,7 @@ const preparedShape = z.union([
 const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /** The line that prints the marker the page reads a task's output by, then runs the program. */
-const MARKED = 'printf "%s\\n" "$1"; shift; exec "$@"';
+const MARKED = `printf '${MARKER_FORMAT}' "$1"; shift; exec "$@"`;
 
 /** The refusal of a run, and the names its sentence is about. */
 export type TaskRefusal = { refused: TerminalRefusal; names: string[] };

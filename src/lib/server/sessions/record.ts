@@ -3,7 +3,8 @@
 // A session is one pass over a line-delimited file, so nothing is held but a running total: what
 // was said, which tools ran, which files were touched, which subagents were dispatched and what
 // the turn cost. The accumulator is JSON-safe on purpose, because the transcript cache stores it
-// and resumes the next pass from it (cache.ts), and any change to its shape bumps CACHE_VERSION.
+// and resumes the next pass from it (cache.ts), which folds again whatever was cached by another
+// version of this code, since its digest is the cache's version.
 //
 // The caps below are what stops a long session growing without bound: they are applied when the
 // accumulator is pruned, so the cache entry stays small, and again when the record is finished.

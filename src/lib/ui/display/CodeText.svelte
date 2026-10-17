@@ -36,8 +36,12 @@
         padding: 0 3px;
     }
 
-    /* Over a wallpaper a code piece paints nothing under it, as the manual's inline code does. */
+    /* Over a wallpaper a code piece paints nothing under it, as the manual's inline code does,
+       and is outlined in the line colour instead, so it is told from the words beside it, a rice
+       theme's mono words among them. */
     :global(body.wall) code {
         background: transparent;
+        outline: 1px solid var(--line);
+        outline-offset: -1px;
     }
 </style>

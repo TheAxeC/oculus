@@ -838,6 +838,7 @@ export type CommandDiagnostic = {
 /**
  * What a `source:<root>/<path>` channel carries: the SHA-256 of the file's bytes as lower-case hex,
  * `stat:` and the SHA-256 of its stat signature for a file over the read limit, or null when
- * nothing readable is there (deleted, a folder, outside every root).
+ * nothing readable is there (deleted, a folder, outside every root); and whether the name's root
+ * key is among the served roots.
  */
-export type OpenFileMessage = { hash: string | null };
+export type OpenFileMessage = { hash: string | null; served: boolean };

@@ -309,7 +309,7 @@ export function isStray(
 export type Trouble =
     | { is: 'notNumber' }
     | { is: 'notWhole' }
-    | { is: 'range'; min: number | undefined; max: number | undefined }
+    | { is: 'range'; min: number | undefined; max: number | undefined; whole: boolean }
     | { is: 'form'; form: Form }
     | { is: 'hubPath' }
     | { is: 'noFolder'; path: string }
@@ -321,15 +321,15 @@ export type Trouble =
 /**
  * The trouble a problem of the rule is on the page, or null for a problem the page does not refuse
  * on: a word outside a list is marked by `isStray` and answered by the server, and a value of the
- * wrong type cannot come out of the control.
+ * wrong type cannot come out of the control. A range of an entry that takes whole numbers says so.
  */
-function troubleOf(problem: ValueProblem | null): Trouble | null {
+function troubleOf(problem: ValueProblem | null, spec: CatalogEntry): Trouble | null {
     if (problem === null) return null;
     switch (problem.kind) {
         case 'whole':
             return { is: 'notWhole' };
         case 'range':
-            return { is: 'range', min: problem.min, max: problem.max };
+            return { is: 'range', min: problem.min, max: problem.max, whole: spec.whole === true };
         case 'form':
             return { is: 'form', form: problem.form };
         case 'path':
@@ -364,10 +364,17 @@ export function troubleMessage(trouble: Trouble): Message {
             return formMessage(trouble.form);
         case 'range':
             if (trouble.min !== undefined && trouble.max !== undefined) {
-                return message('range', trouble.min, trouble.max);
+                return trouble.whole
+                    ? message('rangeWhole', trouble.min, trouble.max)
+                    : message('range', trouble.min, trouble.max);
             }
-            return trouble.min === undefined
-                ? message('rangeMax', trouble.max ?? 0)
+            if (trouble.min === undefined) {
+                return trouble.whole
+                    ? message('rangeWholeMax', trouble.max ?? 0)
+                    : message('rangeMax', trouble.max ?? 0);
+            }
+            return trouble.whole
+                ? message('rangeWholeMin', trouble.min)
                 : message('rangeMin', trouble.min);
         case 'hubPath':
             return message('notHubPath');
@@ -392,7 +399,7 @@ export function troubleMessage(trouble: Trouble): Message {
 export function numberRefusal(spec: CatalogEntry, text: string): Message | null {
     const number = decimalOf(text);
     if (number === null) return null;
-    const trouble = troubleOf(valueProblem(spec, number));
+    const trouble = troubleOf(valueProblem(spec, number), spec);
     return trouble === null ? null : troubleMessage(trouble);
 }
 
@@ -416,7 +423,7 @@ function pathTrouble(
     lists: Lists
 ): Trouble | null {
     const control = controlOf(spec);
-    const shape = troubleOf(valueProblem(spec, text));
+    const shape = troubleOf(valueProblem(spec, text), spec);
     if (shape !== null || control === 'path' || text === '') return shape;
     const wantsFolder = control === 'folder';
     const missing: Trouble = wantsFolder
@@ -490,7 +497,7 @@ function listValue(spec: CatalogEntry, items: string[], reading: Reading): Writt
     }
     if (heldAlready(spec, made, reading)) return done(made);
     for (const item of made) {
-        const trouble = troubleOf(itemProblem(spec, item));
+        const trouble = troubleOf(itemProblem(spec, item), spec);
         if (trouble !== null) return failed(trouble);
     }
     return done(made);
@@ -517,7 +524,7 @@ export function writtenField(
             if (number === null) return failed({ is: 'notNumber' });
             const trouble = heldAlready(spec, number, reading)
                 ? null
-                : troubleOf(valueProblem(spec, number));
+                : troubleOf(valueProblem(spec, number), spec);
             return trouble === null ? done(number) : failed(trouble);
         }
         case 'multi':
@@ -548,7 +555,7 @@ export function writtenField(
             if (typeof held !== 'string') return failed({ is: 'type' });
             const trouble = heldAlready(spec, held, reading)
                 ? null
-                : troubleOf(valueProblem(spec, held));
+                : troubleOf(valueProblem(spec, held), spec);
             return trouble === null ? done(held) : failed(trouble);
         }
         default:
@@ -579,7 +586,7 @@ export function commitValue(spec: CatalogEntry, input: string | boolean, lists: 
     switch (control) {
         case 'text':
         case 'long': {
-            const trouble = troubleOf(valueProblem(spec, input));
+            const trouble = troubleOf(valueProblem(spec, input), spec);
             return trouble === null
                 ? { write: true, value: input }
                 : { write: false, said: troubleMessage(trouble) };
@@ -594,7 +601,7 @@ export function commitValue(spec: CatalogEntry, input: string | boolean, lists: 
             if (input.trim() === '') return { write: false, said: message('empty') };
             const number = decimalOf(input);
             if (number === null) return { write: false, said: message('notNumber') };
-            const trouble = troubleOf(valueProblem(spec, number));
+            const trouble = troubleOf(valueProblem(spec, number), spec);
             if (trouble !== null) return { write: false, said: troubleMessage(trouble) };
             return { write: true, value: number };
         }

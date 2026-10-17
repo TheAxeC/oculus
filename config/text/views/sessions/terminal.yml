@@ -78,8 +78,15 @@ text:
         terminal_smaller: Smaller terminal text
         terminal_title_shell: shell
         terminal_list: The terminals oculus runs; the arrow keys move between them and Enter shows one here
-        terminal_row_tip: "{0}\nCommand: {1}\nFolder: {2}\nStarted: {3}"
+        terminal_tip_command: 'Command: {0}'
+        terminal_tip_folder: 'Folder: {0}'
+        terminal_tip_started: 'Started: {0}'
+        terminal_row_ended: 'Ended with exit status {0}'
         terminal_split: Split
+        terminal_switch: Show a terminal of this tab
+        terminal_switch_item: '{0}: {1}'
+        terminal_switch_glyph: list
+        terminal_split_no_folder: This terminal has no folder oculus can split in, since tmux reports none for it. Start a new terminal from the kinds menu instead.
         terminal_split_unknown: This terminal is not known to the page yet, so it cannot be split
         terminal_starting: 'Starting {0}...'
         terminal_start_failed: The terminal did not start

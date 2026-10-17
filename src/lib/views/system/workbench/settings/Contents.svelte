@@ -5,11 +5,14 @@
     // stays as it is); a press on a section scrolls to its title; Left and Right close and open a
     // heading. Every heading is open when the view is drawn, since the closed ones are this
     // partial's own state. The heading or section at the top of the list is drawn as the selected
-    // row.
+    // row, and the table scrolls that row into its view each time it changes, as after a reveal
+    // that moved the list far from the row the table showed. The table scrolls in Settings.svelte's
+    // `.contents`, the parent of this partial's box, and nothing else is scrolled.
 
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeView from '$lib/ui/tree/TreeView.svelte';
     import type { TreeNav } from '$lib/ui/tree/tree-keys';
+    import { keepInView } from '$lib/ui/tree/in-view';
     import { t } from '$lib/state/shared/words/text';
     import { pressedGroups, toggledGroups, type TocEntry } from '$lib/state/system/config/groups';
 
@@ -24,6 +27,16 @@
 
     /** The groups the reader closed. */
     let closed: string[] = $state([]);
+
+    let box: HTMLElement | undefined = $state();
+
+    // An effect runs after the rows are drawn, so the row marked selected is the current one.
+    $effect(() => {
+        if (box === undefined || current === '') return;
+        const row = box.querySelector<HTMLElement>('[aria-selected="true"]');
+        const scroller = box.parentElement;
+        if (row !== null && scroller !== null) keepInView(scroller, row);
+    });
 
     const rows = $derived(
         entries.flatMap((entry) => {
@@ -48,41 +61,43 @@
     }
 </script>
 
-<TreeView label={t('workbench.settings_contents')} {rows} ontoggle={toggle}>
-    {#snippet children(nav: TreeNav)}
-        {#each entries as entry (entry.id)}
-            {@const open = !closed.includes(entry.id)}
-            <div class="group">
-                <TreeItem
-                    label={entry.title}
-                    id={entry.id}
-                    {nav}
-                    level={1}
-                    expanded={entry.sections.length > 0 ? open : undefined}
-                    selected={current === entry.id}
-                    onclick={() => pressGroup(entry)}
-                />
-                {#if open && entry.sections.length > 0}
-                    <ul class="sections" role="group" aria-label={entry.title}>
-                        {#each entry.sections as one (one.id)}
-                            <li role="none">
-                                <TreeItem
-                                    label={one.title}
-                                    id={one.id}
-                                    {nav}
-                                    level={2}
-                                    depth={1}
-                                    selected={current === one.id}
-                                    onclick={() => onpick(one.id)}
-                                />
-                            </li>
-                        {/each}
-                    </ul>
-                {/if}
-            </div>
-        {/each}
-    {/snippet}
-</TreeView>
+<div bind:this={box}>
+    <TreeView label={t('workbench.settings_contents')} {rows} ontoggle={toggle}>
+        {#snippet children(nav: TreeNav)}
+            {#each entries as entry (entry.id)}
+                {@const open = !closed.includes(entry.id)}
+                <div class="group">
+                    <TreeItem
+                        label={entry.title}
+                        id={entry.id}
+                        {nav}
+                        level={1}
+                        expanded={entry.sections.length > 0 ? open : undefined}
+                        selected={current === entry.id}
+                        onclick={() => pressGroup(entry)}
+                    />
+                    {#if open && entry.sections.length > 0}
+                        <ul class="sections" role="group" aria-label={entry.title}>
+                            {#each entry.sections as one (one.id)}
+                                <li role="none">
+                                    <TreeItem
+                                        label={one.title}
+                                        id={one.id}
+                                        {nav}
+                                        level={2}
+                                        depth={1}
+                                        selected={current === one.id}
+                                        onclick={() => onpick(one.id)}
+                                    />
+                                </li>
+                            {/each}
+                        </ul>
+                    {/if}
+                </div>
+            {/each}
+        {/snippet}
+    </TreeView>
+</div>
 
 <style>
     .group {

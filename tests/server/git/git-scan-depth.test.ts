@@ -8,8 +8,9 @@
 //
 // The last describe is the block of nested repositories in a hub's exclude file: the watcher's own
 // rebuild hands on the repositories found below the hub, at the first walk and again when one is
-// moved or deleted, and the block is written from that list (server/git/clone/exclude.ts). It runs
-// real git in the hub, so it is tagged slow and npm test leaves it out.
+// moved or deleted, and the block is written from that list (server/git/clone/exclude.ts). It and
+// the describe of each root's top folder run real git, so they are tagged slow and npm test leaves
+// them out.
 
 import { mkdirSync, readFileSync, realpathSync, renameSync, rmSync, symlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -145,7 +146,7 @@ describe('the git watch of a root', () => {
     });
 });
 
-describe('the top folder and the workspace mark of each root', () => {
+describe('the top folder and the workspace mark of each root', { tags: ['slow'] }, () => {
     it('names the top folder of a repository, of a folder inside one and of one found below a root, and marks a root only a session names as outside the workspace', async () => {
         const hub = new Hub();
         const root = scratchDir('oculus-git-top-');

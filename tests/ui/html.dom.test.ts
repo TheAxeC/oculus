@@ -35,6 +35,24 @@ describe('inlineMarkdown', () => {
         expect(field).toContain('<strong>field</strong>');
         expect(field).not.toMatch(/onerror|<script/);
     });
+
+    it("keeps a hub field's formula as KaTeX's markup and drops a handler written beside it", () => {
+        const field = inlineMarkdown(
+            'A line on $\\sqrt{\\Delta t}$ <img src=x onerror="alert(1)">',
+            EXTRAS.math
+        );
+        expect(field).toContain('class="katex"');
+        expect(field).not.toMatch(/onerror|math-slot/);
+    });
+
+    it('keeps two dollar prices as text and an invalid formula as its source', () => {
+        const prices = inlineMarkdown('From $5 to $10 a month', EXTRAS.math);
+        expect([prices.includes('$5 to $10'), prices.includes('katex')]).toEqual([true, false]);
+        const invalid = inlineMarkdown('A formula $\\frac{1}{$ here', EXTRAS.math);
+        expect(invalid).toContain('class="math-error"');
+        expect(invalid).toContain('$\\frac{1}{$');
+        expect(invalid).not.toContain('katex');
+    });
 });
 
 describe('a paper saved to Literature', () => {

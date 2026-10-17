@@ -153,13 +153,12 @@
 {#snippet actions(reach: number)}
     {#if row.up !== true}
         <ToolButton
-            label={t('files.row_bookmark')}
+            label={marked ? t('files.menu_remove_bookmark') : t('files.menu_add_bookmark')}
             title={marked
                 ? t('files.row_unbookmark_title', row.name)
                 : t('files.row_bookmark_title', row.name)}
             glyph={t('files.bookmark_glyph')}
             compact
-            pressed={marked}
             active={marked}
             tabindex={reach}
             onclick={() => onbookmark(row)}

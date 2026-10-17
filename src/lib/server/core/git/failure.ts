@@ -1,9 +1,9 @@
 // Layer 2, server. The sentence of a git or gh command that ended with no reason of git's own:
-// Cancel, the time limit, the output limit, a signal, or an exit status with nothing written (the
-// codes of parse.ts's `classifyFailure`). It is worded from the `server.git` group of the text
-// catalog, so the write routes (server/git/git-routes.ts) and the read path (run.ts's `reasonOf`)
-// say a failure in one set of words. It sits beside run.ts, below every folder that words a git
-// failure.
+// Cancel, the time limit, the output limit, a signal, a commit with no author identity, or an exit
+// status with nothing written (the codes of parse.ts's `classifyFailure`). It is worded from the
+// `server.git` group of the text catalog, so the write routes (server/git/git-routes.ts) and the
+// read path (run.ts's `reasonOf`) say a failure in one set of words. It sits beside run.ts, below
+// every folder that words a git failure.
 
 import { words } from '../words.ts';
 import type { CommandFailure, Unfinished } from './parse.ts';
@@ -23,11 +23,14 @@ function sentenceOf(failure: CommandFailure, catalog: Record<string, string>): s
             : words(catalog, 'server.git.program_git');
     if (failure.code === 'cancelled') return words(catalog, 'server.git.cancelled', program);
     if (failure.code === 'timed-out') {
-        return words(catalog, 'server.git.timed_out', program, failure.detail);
+        return failure.detail === '1'
+            ? words(catalog, 'server.git.timed_out_one', program)
+            : words(catalog, 'server.git.timed_out', program, failure.detail);
     }
     if (failure.code === 'too-much-output') {
         return words(catalog, 'server.git.too_much_output', program, failure.detail);
     }
+    if (failure.code === 'no-identity') return words(catalog, 'server.git.no_identity');
     if (failure.code === 'signal') {
         return words(catalog, 'server.git.signal', program, failure.detail);
     }

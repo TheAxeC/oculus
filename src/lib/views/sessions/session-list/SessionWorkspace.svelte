@@ -168,11 +168,15 @@
                     {/if}
                     <span class="sep">{t('sessions.meta_sep')}</span>
                     <span title={t('sessions.files_tip')}
-                        >{t('sessions.files_n', String(entry.files.length))}</span
+                        >{entry.files.length === 1
+                            ? t('sessions.files_one')
+                            : t('sessions.files_n', String(entry.files.length))}</span
                     >
                     <span class="sep">{t('sessions.meta_sep')}</span>
                     <span title={t('sessions.prompts_tip')}
-                        >{t('sessions.prompts_n', String(entry.prompts))}</span
+                        >{entry.prompts === 1
+                            ? t('sessions.prompts_one')
+                            : t('sessions.prompts_n', String(entry.prompts))}</span
                     >
                 </span>
             </RowButton>

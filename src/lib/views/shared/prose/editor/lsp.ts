@@ -1,9 +1,16 @@
-// Layer 3, view partial of Source.svelte. What a source tab of a language a server serves adds to
-// its editor when the server serves it: the registration of its model with the editor's language
-// server client (ui/controls/editor/kit/lsp/), the services that client is handed (the page's
-// channel, the reads and opens it needs, the stores it reports to, the edits a server asks for),
-// and the actions the tab lists while a server serves it. Which languages a server serves, the
-// words each is named by and the choices it asks for are the entries of data/prose/lsp-servers.ts.
+// Layer 3, shared view partial, read by the source tab (views/sources/source/language/
+// tab-language.svelte.ts) and the diff sections. What a source tab of a language a server serves
+// adds to its editor when the server serves it: the registration of its model with the editor's
+// language server client (ui/controls/editor/kit/lsp/), the services that client is handed (the
+// page's channel, the reads and opens it needs, the stores it reports to, the edits a server asks
+// for), and the actions the tab lists while a server serves it. Which languages a server serves,
+// the words each is named by and the choices it asks for are the entries of
+// data/prose/lsp-servers.ts.
+//
+// The modified side of a diff over a working-tree file registers its model through a wiring of its
+// own (`diffLanguage`), marked as shown outside a tab: hover, definitions and diagnostics answer in
+// the diff, and no symbols, searches or palette symbols are kept for it; its notices are posted on
+// the page. Two models of one file are one document on the server (kit/lsp/transport.ts).
 //
 // A tab over a library file (status/library-tab.svelte.ts) registers its model under the library
 // address, so hover, definitions and diagnostics are answered by the server that named the file.
@@ -47,10 +54,10 @@ import {
     refusesFile,
     type LspServerFacts
 } from '$lib/data/prose/lsp-servers';
-import { hierarchyBelow, hierarchyRoots } from '$lib/views/sources/source/language/hierarchy';
+import { hierarchyBelow, hierarchyRoots } from '$lib/views/shared/prose/editor/hierarchy';
 import type { HierarchyDirection, HierarchyEntry } from '$lib/state/system/machine/lsp/hierarchy';
 import { isLibrary, libraryOf, placeOf, type Target } from '$lib/ui/controls/editor/kit/lsp/uris';
-import { readText } from '$lib/state/sources/fs-transport';
+import { readText, servesRoot } from '$lib/state/sources/fs-transport';
 import { languageOf } from '$lib/state/sources/fs';
 import {
     openLibraryFile,
@@ -92,6 +99,11 @@ export type LspTab = {
      * file's root is the one it was named under and its path the file's name.
      */
     extension: (language: string, file: LspFile, version: boolean) => EditorExtension | undefined;
+    /**
+     * The extension that registers a model showing a file outside a tab of it (a diff's modified
+     * side), or undefined for a language no server serves and a file its server is not given.
+     */
+    shown: (language: string, file: { root: string; path: string }) => EditorExtension | undefined;
     /**
      * The actions that apply now to a tab of this language, in the order the palette lists them.
      */
@@ -218,6 +230,15 @@ export function createLspTab(input: LspTabInput): LspTab {
                 text: read.text,
                 language: languageOf(target.path, client.selectors.languages())
             };
+        },
+        peekPlace: (target, language) => {
+            if (!isLibrary(target)) {
+                const place = { root: target.root, path: target.path };
+                return isRefusedFile(client, language, place) ? null : { place };
+            }
+            const root = lsp.library(target.library)?.root;
+            if (root === undefined) return null;
+            return { place: { root, path: target.name }, library: target.library };
         },
         open: (target, line, column, end) => {
             const place = {
@@ -462,6 +483,19 @@ export function createLspTab(input: LspTabInput): LspTab {
         };
     }
 
+    function shown(
+        language: string,
+        file: { root: string; path: string }
+    ): EditorExtension | undefined {
+        if (!servedLanguage(language) || file.root === '' || file.path === '') return undefined;
+        if (isRefusedFile(input.client, language, file)) return undefined;
+        return (kit, editor, model) => {
+            const reg = { instance: input.instance(), place: file, editor, shown: true };
+            const handle = kit.lsp.register(services, model, reg);
+            return () => handle?.dispose();
+        };
+    }
+
     function served(
         language: string,
         file: { root: string; path: string },
@@ -649,5 +683,22 @@ export function createLspTab(input: LspTabInput): LspTab {
         if (focus) editor.focus();
     }
 
-    return { extension, actions, served, formatForSave, select };
+    return { extension, shown, actions, served, formatForSave, select };
+}
+
+/**
+ * The extension of the modified side of a diff over a working-tree file of a served root: its
+ * model registered with the server of the file's root, its notices posted on the page.
+ */
+export function diffLanguage(
+    client: ClientState,
+    instance: string,
+    language: string,
+    file: { root: string; path: string }
+): EditorExtension | undefined {
+    if (!servesRoot(client.fs.workspaces(), file.root)) return undefined;
+    const say = (words: string): void => {
+        client.notices.post(words);
+    };
+    return createLspTab({ client, instance: () => instance, say }).shown(language, file);
 }

@@ -12,6 +12,8 @@
 // model that is not registered (a diff side, a merge pane, a model of another language) is answered
 // at once with an empty result and never reaches the port. Two models of one file are one document:
 // the server follows the first registered model, and a request from either is sent for the file.
+// A peek model an editor shows may be registered too (the host's peek editors): it is then a
+// document of the server like any other, and its hold on the peek is given back when it goes.
 //
 // The client names a document by its model's `inmemory:` address and the relay by the page's
 // address (uris.ts); the transport turns each into the other, in every field that holds one. A
@@ -24,7 +26,9 @@
 // `inactiveRegions` go to the host, and `workspace/semanticTokens/refresh` is answered and told to
 // the host. A feature the relay registers with the client after `initialize`, or withdraws, is
 // handed to the client, which asks for it from then on, and told to the host
-// (`TransportHost.registered`), which counts it as declared. An edit a server asks for (its
+// (`TransportHost.registered`), which counts it as declared. The server's completion, declared or
+// registered, is given the client's language as its selector (`scopedInitialize`), so Monaco asks
+// it beside the page's own completion providers of the language. An edit a server asks for (its
 // `workspace/applyEdit`, a rename's answer, a code action's edit) is never given to Monaco, whose
 // client applies an edit to the models it can name: the transport hands the whole edit to the host
 // (`TransportHost.applyEdit`), which edits the tabs and writes the other files or refuses the whole
@@ -64,12 +68,14 @@
 // the middle of one answer never lets a later one overtake it. The answer to a completion request
 // is given to the host last (`TransportHost.completed`), which may add to its items, and so is the
 // answer to the resolve of one of them, with the params of the completion request whose answer the
-// client listed when it asked for the resolve.
+// client listed when it asked for the resolve. Every id the transport sends begins with its period,
+// so an answer to a request of a transport that ended is dropped, never given to another request.
 
 import type { LspDiagnostic, LspEditOutcome, LspFrame, LspPort } from './services';
 import {
     APPLY_COMMAND,
     BARE_DOCUMENT,
+    CANCEL,
     Closed,
     DROP,
     NO_DOCUMENT,
@@ -77,12 +83,16 @@ import {
     REQUEST_CANCELLED,
     SPELLINGS,
     SYNC,
+    askingOf,
     changesOf,
     isRecord,
     keyOf,
+    keptAction,
     openMessage,
     registrationsOf,
     saveMessage,
+    scopedInitialize,
+    scopedRegistrations,
     type LspModel,
     type LspRange,
     type ModelChange,
@@ -126,8 +136,14 @@ export class LspTransport {
     /** The same addresses lower-cased, which is how the client looks a model up. */
     #lowered = new Map<string, string>();
     #peeks = new Map<string, Peek>();
+    /** The peek models a registration took over, whose hold is given back when it ends. */
+    #adopted = new Set<LspModel>();
     #gone = new GoneRoots();
     #waiting = new Map<number | string, Waiting>();
+    /** The id each request of the client was sent under, by that id: the client's own id. */
+    #sent = new Map<string, number | string>();
+    /** What every id this transport sends begins with, unique among the transports of the page. */
+    #period: string;
     #tokens: EditTokens;
     #own = new Map<string, Own>();
     #next = 0;
@@ -137,9 +153,16 @@ export class LspTransport {
     #closed = false;
     #stops: (() => void)[] = [];
 
-    constructor(port: LspPort, language: string, host: TransportHost, now: () => number) {
+    constructor(
+        port: LspPort,
+        language: string,
+        host: TransportHost,
+        now: () => number,
+        period: string
+    ) {
         this.#port = port;
         this.#language = language;
+        this.#period = period;
         this.#tokens = new EditTokens(language);
         this.#host = host;
         this.#now = now;
@@ -201,7 +224,7 @@ export class LspTransport {
             model,
             model.onDidChangeContent((event) => this.#changed(model, doc, event.changes))
         );
-        this.#retire(page);
+        this.#retire(page, model);
         if (first) this.#sendOpen(doc);
     }
 
@@ -227,6 +250,7 @@ export class LspTransport {
         this.#watching.get(model)?.dispose();
         this.#watching.delete(model);
         this.#forget(keyOf(model));
+        if (this.#adopted.delete(model)) this.#host.drop(model);
         const wasPrimary = doc.models[0] === model;
         doc.models = doc.models.filter((one) => one !== model);
         if (doc.models.length === 0) {
@@ -277,11 +301,12 @@ export class LspTransport {
         this.#lowered.delete(key.toLowerCase());
     }
 
-    /** A peek model of a file a tab opened is not needed: the tab's model answers. */
-    #retire(page: string): void {
+    /** A peek model of a file a model registered goes, unless it is that model (`shown`). */
+    #retire(page: string, shown: LspModel): void {
         const peek = this.#peeks.get(page);
         if (peek === undefined) return;
         this.#peeks.delete(page);
+        if (peek.model === shown) return void this.#adopted.add(shown);
         this.#forget(keyOf(peek.model));
         this.#host.drop(peek.model);
     }
@@ -307,16 +332,18 @@ export class LspTransport {
             return Promise.resolve();
         }
         if (message.id === undefined || message.id === null) {
-            if (!SYNC.includes(method)) this.#write(message);
+            if (method === CANCEL)
+                this.#write({ ...message, params: this.#cancelled(message.params) });
+            else if (!SYNC.includes(method)) this.#write(message);
             return Promise.resolve();
         }
         const id = message.id;
         if (method === 'initialize') {
             this.#waiting.set(id, { method, params: message.params, asking: null, asked: null });
-            this.#write({ ...message, params: declaringEdits(message.params) });
+            this.#write({ ...message, id: this.#out(id), params: declaringEdits(message.params) });
             return Promise.resolve();
         }
-        if (method === 'codeAction/resolve' && this.#isKept(message.params)) {
+        if (method === 'codeAction/resolve' && keptAction(message.params)) {
             // An action whose edit the transport keeps has nothing for the server to resolve.
             const result = message.params;
             this.#enqueue(() => this.#deliver({ jsonrpc: '2.0', id, result }));
@@ -327,7 +354,7 @@ export class LspTransport {
 
     /** One request of the client sent to the server with its addresses turned. */
     #forward(id: number | string, method: string, given: unknown): Promise<void> {
-        const asking = this.#askingOf(given);
+        const asking = askingOf(given);
         const params = toPage(this.#addresses, given);
         if (params === null || this.#left(asking)) {
             this.#enqueue(() => this.#deliver({ jsonrpc: '2.0', id, result: null }));
@@ -349,8 +376,28 @@ export class LspTransport {
             ...preview,
             settle
         });
-        this.#write({ jsonrpc: '2.0', id, method, params: params.value });
+        this.#write({ jsonrpc: '2.0', id: this.#out(id), method, params: params.value });
         return settle?.promise ?? Promise.resolve();
+    }
+
+    /**
+     * The id a request of the client is sent under: the client's id after this transport's period.
+     * A client made after another one ended counts its ids from the start again, and the relay
+     * answers what the ended one asked after it ended, so an answer is taken only under the id it
+     * was asked by; an answer to the ended client's request would otherwise be given to the new
+     * client's request of the same number, of another method, whose provider throws on its shape.
+     */
+    #out(id: number | string): string {
+        const sent = `${this.#period}${String(id)}`;
+        this.#sent.set(sent, id);
+        return sent;
+    }
+
+    /** A cancel of the client's, naming the id its request was sent under. */
+    #cancelled(params: unknown): unknown {
+        const id: unknown = isRecord(params) ? params.id : undefined;
+        if (typeof id !== 'number' && typeof id !== 'string') return params;
+        return { ...(params as Record<string, unknown>), id: `${this.#period}${String(id)}` };
     }
 
     /**
@@ -368,18 +415,6 @@ export class LspTransport {
     /** The version of every document the server holds. */
     #versions(): Map<string, number> {
         return new Map([...this.#docs].map(([page, doc]) => [page, doc.version]));
-    }
-
-    /** Whether a code action is one whose edit the transport keeps, by its command. */
-    #isKept(action: unknown): boolean {
-        const command = isRecord(action) ? action.command : null;
-        return isRecord(command) && command.command === APPLY_COMMAND;
-    }
-
-    /** The client's address of the document a request is made for, or null for none. */
-    #askingOf(params: unknown): string | null {
-        const document = isRecord(params) ? params.textDocument : null;
-        return isRecord(document) && typeof document.uri === 'string' ? document.uri : null;
     }
 
     /** Write a message to the port; one that cannot be sent is dropped, never queued. */
@@ -419,12 +454,12 @@ export class LspTransport {
     /** Make the edit a code action kept, then run the command the action had after it. */
     async #applyKept(kept: KeptEdit): Promise<unknown> {
         if (kept.asking !== null && !this.#addresses.has(kept.asking)) {
-            this.#host.notice('lsp_edit_gone');
+            this.#host.notice(kept.asking, 'lsp_edit_gone');
             return null;
         }
         const outcome = await this.#commit(kept.edit, kept.asked);
         if (!outcome.applied) {
-            this.#host.notice(outcome.notice, ...outcome.words);
+            this.#host.notice(kept.asking, outcome.notice, ...outcome.words);
             return null;
         }
         if (kept.then === null) return null;
@@ -487,7 +522,7 @@ export class LspTransport {
         method: string,
         root: string | null
     ): Promise<unknown> {
-        const id = `${OWN}${(this.#next += 1)}`;
+        const id = `${OWN}${this.#period}${(this.#next += 1)}`;
         return new Promise<unknown>((resolve, reject) => {
             this.#own.set(id, { resolve, reject, root });
             if (!this.#write({ jsonrpc: '2.0', id, method, params })) {
@@ -541,11 +576,11 @@ export class LspTransport {
     }
 
     async #response(message: Rpc): Promise<void> {
-        const id = message.id;
-        if (id === undefined || id === null) return;
-        if (typeof id === 'string' && id.startsWith(OWN)) {
-            const own = this.#own.get(id);
-            this.#own.delete(id);
+        const sent = message.id;
+        if (sent === undefined || sent === null) return;
+        if (typeof sent === 'string' && sent.startsWith(OWN)) {
+            const own = this.#own.get(sent);
+            this.#own.delete(sent);
             if (own === undefined) return;
             if (message.error !== undefined) own.reject(new Error(message.error.message));
             else {
@@ -554,6 +589,10 @@ export class LspTransport {
             }
             return;
         }
+        // An answer to a request this transport did not send is an ended transport's.
+        const id = this.#sent.get(String(sent));
+        if (id === undefined) return;
+        this.#sent.delete(String(sent));
         const waiting = this.#waiting.get(id);
         if (waiting === undefined) return;
         this.#waiting.delete(id);
@@ -584,7 +623,7 @@ export class LspTransport {
             // The box is closed by now and the caret may have moved, so the refusal is a notice.
             const given = message.error.message;
             const words = given === '' ? this.#host.words('lsp_rename_refused_empty') : given;
-            this.#host.notice('lsp_edit_refused', words);
+            this.#host.notice(waiting.asking, 'lsp_edit_refused', words);
             this.#deliver({ jsonrpc: '2.0', id, result: null });
             return;
         }
@@ -594,13 +633,14 @@ export class LspTransport {
         }
         if (waiting.method === 'initialize') {
             this.#declared(message.result);
-            this.#deliver({ jsonrpc: '2.0', id, result: message.result ?? null });
+            const scoped = scopedInitialize(message.result ?? null, this.#language);
+            this.#deliver({ jsonrpc: '2.0', id, result: scoped });
             return;
         }
         // The model the request was made for went before the answer came: nothing is made for it.
         if (waiting.asking !== null && !this.#addresses.has(waiting.asking)) {
             if (waiting.method === RENAME && message.result != null) {
-                this.#host.notice('lsp_edit_gone');
+                this.#host.notice(waiting.asking, 'lsp_edit_gone');
             }
             this.#deliver({ jsonrpc: '2.0', id, result: null });
             return;
@@ -616,7 +656,8 @@ export class LspTransport {
             // empty edit would be announced as "Made 0 edits in 0 files". Monaco's standalone
             // editor writes its "No result." for that answer to the console only.
             const outcome = await this.#commit(result, waiting.asked, waiting.preview === true);
-            if (!outcome.applied) this.#host.notice(outcome.notice, ...outcome.words);
+            if (!outcome.applied)
+                this.#host.notice(waiting.asking, outcome.notice, ...outcome.words);
             this.#deliver({ jsonrpc: '2.0', id, result: null });
             return;
         }
@@ -676,7 +717,7 @@ export class LspTransport {
                 const outcome = await this.#commit(edit, null);
                 if (outcome.applied) reply({ applied: true });
                 else {
-                    this.#host.notice(outcome.notice, ...outcome.words);
+                    this.#host.notice(null, outcome.notice, ...outcome.words);
                     reply({ applied: false, failureReason: outcome.notice });
                 }
                 return;
@@ -694,7 +735,14 @@ export class LspTransport {
                     message.method === 'client/registerCapability',
                     registrationsOf(message.params)
                 );
-                this.#deliver(message);
+                this.#deliver(
+                    message.method === 'client/registerCapability'
+                        ? {
+                              ...message,
+                              params: scopedRegistrations(message.params, this.#language)
+                          }
+                        : message
+                );
                 return;
             default:
                 void this.#write({
@@ -811,9 +859,12 @@ export class LspTransport {
         this.#own.clear();
         for (const waiting of this.#waiting.values()) waiting.settle?.resolve();
         this.#waiting.clear();
+        this.#sent.clear();
         this.#tokens.clear();
         for (const peek of this.#peeks.values()) this.#host.drop(peek.model);
+        for (const model of this.#adopted) this.#host.drop(model);
         this.#peeks.clear();
+        this.#adopted.clear();
         this.#docs.clear();
         this.#byModel.clear();
         this.#addresses.clear();

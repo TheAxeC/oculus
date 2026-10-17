@@ -1,11 +1,17 @@
 // Layer 4, test helper. One case's own client: every store built fresh, and the context a rendered
 // component reads them from. A case builds one in beforeEach, so no state is carried from the case
-// before it and no case resets anything by hand.
+// before it and no case resets anything by hand. Beside it, the Files view's store over the write
+// store and the file browser a case hands it, with no tab, no instance state and no source tab.
 
 import { render } from 'svelte/server';
-import { vi } from 'vitest';
-import type { Terminal } from '../../src/lib/data/model/index.ts';
 import { createClientState, type ClientState } from '../../src/lib/state/client/context.ts';
+import {
+    createExplorer,
+    type ExplorerStore
+} from '../../src/lib/state/sources/explorer/ops.svelte.ts';
+import type { WritesStore } from '../../src/lib/state/shared/stores/shapes.ts';
+import type { FsStore } from '../../src/lib/state/sources/fs.svelte.ts';
+import type { Move } from '../../src/lib/state/sources/explorer/follow.ts';
 import { STATE_KEY } from '../../src/lib/state/client/use.ts';
 import { t } from '../../src/lib/state/shared/words/text.ts';
 import { TIP_KEY, createTipIds } from '../../src/lib/ui/menu/tip-ids.ts';
@@ -19,15 +25,6 @@ export function emptyClient(): ClientState {
     client.ui.loadUi({ getItem: () => null, setItem: () => undefined });
     client.layout.apply({ root: { kind: 'pane', tabs: [], active: '' } });
     return client;
-}
-
-/** Hands the client a `sessions` payload that holds these terminals and no session records. */
-export function holdTerminals(client: ClientState, terminals: Terminal[]): void {
-    client.entities.receive({
-        channel: 'sessions',
-        version: 1,
-        payload: { records: [], workspaces: [], terminals }
-    });
 }
 
 /** The sentence a refused answer is said in, with the status it came with. */
@@ -80,49 +77,35 @@ export async function settle(): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-/** Replace `fetch` with a stub that records each address in `asked` and answers as `answer`. */
-export function stubFetch(
-    asked: string[],
-    answer: (url: string) => Response | Promise<Response>
-): void {
-    vi.stubGlobal('fetch', (url: string) => {
-        asked.push(url);
-        return Promise.resolve(answer(url));
-    });
-}
-
 /**
- * Replace `fetch` with a stub whose answers wait for the returned release, so a case can act while
- * a request is out. Every request records its address in `asked` and answers `answer` once
- * released.
+ * The Files view's store (state/sources/explorer/ops.svelte.ts) over `writes` and `fs`, in a page
+ * with no tab, no instance state and no source tab, telling `moved` each move it makes.
  */
-export function stubGated(
-    asked: string[],
-    answer: (url: string) => Response
-): { release: () => void } {
-    let release: () => void = () => undefined;
-    const gate = new Promise<void>((resolve) => {
-        release = resolve;
-    });
-    vi.stubGlobal('fetch', async (url: string) => {
-        asked.push(url);
-        await gate;
-        return answer(url);
-    });
-    return { release: () => release() };
-}
-
-/**
- * Replace `fetch` with a stub whose next request stays out until the returned `land` is called with
- * its answer. Every request records its address in `asked`.
- */
-export function stubHeld(asked: string[]): { land: (answer: Response) => void } {
-    let land: (answer: Response) => void = () => undefined;
-    vi.stubGlobal('fetch', (url: string) => {
-        asked.push(url);
-        return new Promise<Response>((done) => {
-            land = done;
-        });
-    });
-    return { land: (answer) => land(answer) };
+export function explorerOver(
+    writes: WritesStore,
+    fs: FsStore,
+    moved: (moves: Move[]) => void = () => undefined
+): ExplorerStore {
+    return createExplorer(
+        writes,
+        fs,
+        {
+            tabs: () => [],
+            restateInstance: () => undefined,
+            openView: () => '',
+            showFolderInFiles: () => ''
+        },
+        {
+            instanceState: () => undefined,
+            setInstanceState: () => undefined,
+            clearInstanceState: () => undefined,
+            instanceKeys: () => []
+        },
+        {
+            sourceDirty: () => false,
+            sourceDraft: () => ({ file: '' }),
+            reloadSource: () => Promise.resolve()
+        },
+        moved
+    );
 }

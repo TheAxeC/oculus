@@ -4,11 +4,24 @@
 // allowed root comes from local.yml inside that directory, so nothing reaches the hub's own
 // checkout.
 //
+// The machine's and the user's git configuration are replaced by an empty file (`isolateGit`),
+// so no hook, identity or signing key of the machine runs or is read.
+//
 // What this does NOT cover: `claude` is never run.
 // @module-tag slow: its cases start real git processes, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    chmodSync,
+    existsSync,
+    lstatSync,
+    mkdirSync,
+    readFileSync,
+    rmSync,
+    symlinkSync,
+    unlinkSync,
+    writeFileSync
+} from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, vi } from 'vitest';
 import {
@@ -34,6 +47,9 @@ import { stash } from '../../../src/lib/server/git/git-refs.ts';
 import { pull } from '../../../src/lib/server/git/git-remote.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { TEXT } from '../text.ts';
+import { isolateGit } from './refs/repo.ts';
+
+isolateGit();
 
 let dir = '';
 let repo = '';
@@ -101,6 +117,35 @@ describe('staging', () => {
         const answer = await discard(repo, ['kept.txt'], TEXT, ROOTS);
         expect(answer.ok).toBe(true);
         expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('one\n');
+    });
+
+    it('stages a path whose type changed and discards it, the whole path each time', async () => {
+        write(repo, 'typed.txt', 'typed\n');
+        git(repo, 'add', 'typed.txt');
+        git(repo, 'commit', '-q', '-m', 'Add typed');
+        unlinkSync(join(repo, 'typed.txt'));
+        symlinkSync('kept.txt', join(repo, 'typed.txt'));
+        const codes = async (): Promise<string[]> => {
+            const found: string[] = [];
+            await statusIn(repo, (record: StatusRecord) => {
+                if (record.path === 'typed.txt') found.push(record.code);
+                return true;
+            });
+            return found;
+        };
+        expect(await codes()).toEqual([' T']);
+
+        expect((await stage(repo, ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
+        expect(await codes()).toEqual(['T ']);
+        expect(git(repo, 'ls-files', '-s', 'typed.txt')).toMatch(/^120000 /);
+
+        expect((await unstage(repo, ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
+        expect(await codes()).toEqual([' T']);
+
+        expect((await discard(repo, ['typed.txt'], TEXT, ROOTS)).ok).toBe(true);
+        expect(await codes()).toEqual([]);
+        expect(lstatSync(join(repo, 'typed.txt')).isSymbolicLink()).toBe(false);
+        expect(readFileSync(join(repo, 'typed.txt'), 'utf8')).toBe('typed\n');
     });
 });
 

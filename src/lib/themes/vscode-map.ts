@@ -14,12 +14,12 @@
 // the shown tab are nudged in lightness by derive.ts's `readable`, as are the foreground of each
 // rule on `--panel` and on the Source Control tints.
 //
-// Besides the chrome, the Source Control, the tab and the code tokens, a block sets the window's
-// title bar strip from VS Code's title bar keys (`--titlebar-bg`, `--titlebar-txt`, whose words
-// are nudged to 4.5:1 on the strip, and `--titlebar-line`, transparent when VS Code draws no
-// border) and the Source Control Graph's name colours from its `scmGraph.*` keys
-// (`--c-graph-ref`, `--c-graph-remote`, `--c-graph-base`), all with VS Code's registered defaults
-// when the theme holds none.
+// Besides the chrome, the Source Control, the diff's text outlines (`--diff-added-outline`,
+// `--diff-deleted-outline`), the tab and the code tokens, a block sets the window's title bar strip
+// from VS Code's title bar keys (`--titlebar-bg`, `--titlebar-txt`, whose words are nudged to 4.5:1
+// on the strip, and `--titlebar-line`, transparent when VS Code draws no border) and the Source
+// Control Graph's name colours from its `scmGraph.*` keys (`--c-graph-ref`, `--c-graph-remote`,
+// `--c-graph-base`), all with VS Code's registered defaults when the theme holds none.
 
 import { ratio, readable } from './derive.ts';
 import { parseBlocks } from './parse.ts';
@@ -156,6 +156,8 @@ const WORKBENCH: Record<string, TypeDefaults> = {
         null,
         null
     ),
+    'diffEditor.insertedTextBorder': table(null, null, '#33ff2eff', '#374E06'),
+    'diffEditor.removedTextBorder': table(null, null, '#FF008F', '#AD0707'),
     'titleBar.activeBackground': table('#3C3C3C', '#DDDDDD', '#000000', '#FFFFFF'),
     'titleBar.activeForeground': table('#CCCCCC', '#333333', '#FFFFFF', '#292929'),
     'titleBar.border': table(null, null, via('contrastBorder'), via('contrastBorder')),
@@ -195,6 +197,15 @@ const GRAPH_KEYS: [string, string[]][] = [
     ['--c-graph-ref', ['scmGraph.historyItemRefColor', 'charts.blue', 'editorInfo.foreground']],
     ['--c-graph-remote', ['scmGraph.historyItemRemoteRefColor', 'charts.purple']],
     ['--c-graph-base', ['scmGraph.historyItemBaseRefColor']]
+];
+
+/**
+ * The outlines the diff draws round inserted and removed text, which VS Code registers for its two
+ * high contrast themes alone; every other theme takes oculus's base, a transparent outline.
+ */
+const OUTLINE_KEYS: [string, string][] = [
+    ['--diff-added-outline', 'diffEditor.insertedTextBorder'],
+    ['--diff-deleted-outline', 'diffEditor.removedTextBorder']
 ];
 
 /**
@@ -449,7 +460,7 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
     pick('--line', highContrast ? ['contrastBorder', ...lineKeys] : lineKeys);
     const accentKeys = ['focusBorder', 'button.background', 'activityBarBadge.background'];
     pick('--accent', highContrast ? ['contrastActiveBorder', ...accentKeys] : accentKeys);
-    for (const [token, key] of SCM_KEYS) pick(token, [key]);
+    for (const [token, key] of [...SCM_KEYS, ...OUTLINE_KEYS]) pick(token, [key]);
     for (const [token, keys] of GRAPH_KEYS) pick(token, keys);
     for (const [token, key] of [STRIP_BG, STRIP_TXT, STRIP_LINE]) pick(token, [key]);
     tokens[STRIP_LINE[0]] ??= 'transparent';
@@ -469,6 +480,7 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
         '--accent',
         '--c-scm-conflict-bg',
         ...SCM_KEYS.map(([token]) => token),
+        ...OUTLINE_KEYS.map(([token]) => token),
         ...CODE_SCOPES.map(([name]) => `--c-code-${name}`)
     ];
     for (const token of complete) {
@@ -519,6 +531,7 @@ export function mapTheme(theme: ResolvedTheme, ui: UiTheme, context: Context): M
         '--accent',
         ...(dark ? DARK_TINTS : []),
         ...SCM_KEYS.map(([token]) => token),
+        ...OUTLINE_KEYS.map(([token]) => token),
         '--c-scm-conflict-bg',
         ...GRAPH_KEYS.map(([token]) => token),
         ...TAB_KEYS.map(([token]) => token),

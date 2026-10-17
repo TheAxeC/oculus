@@ -25,6 +25,7 @@ import {
     plantRoot,
     recordingSink,
     relaysMade,
+    sentOnClock,
     settle,
     states,
     stubSpawn,
@@ -366,13 +367,14 @@ const ROWS: Row[] = [
                     oculus: 'links',
                     id: 5,
                     root: 'repo',
-                    moves: [{ from: 'docs/b.md', to: 'docs/c.md' }]
+                    moves: [{ from: 'docs/b.md', to: 'docs/c.md' }],
+                    texts: []
                 })
             );
             // The ask waits on the root's Markdown files, which are read from the disk: the second
             // child exists when the relay has read them, and has the ask when the relay sent it.
             const second = await spawned.childOf(1);
-            const asked = await second.sentOf('markdown/getEditForFileRenames');
+            const asked = await sentOnClock(second, 'markdown/getEditForFileRenames');
             expect(spawned.children).toHaveLength(2);
             second.say({
                 jsonrpc: '2.0',
@@ -637,11 +639,12 @@ describe('a link rewrite of a move two roots hold', () => {
                 oculus: 'links',
                 id: 9,
                 root: 'inner',
-                moves: [{ from: 'b.md', to: 'c.md' }]
+                moves: [{ from: 'b.md', to: 'c.md' }],
+                texts: []
             })
         );
         const inner = await spawned.childOf(0);
-        const asked = await inner.sentOf('markdown/getEditForFileRenames');
+        const asked = await sentOnClock(inner, 'markdown/getEditForFileRenames');
         inner.say({
             jsonrpc: '2.0',
             id: asked.id,
@@ -668,7 +671,7 @@ describe('a link rewrite of a move two roots hold', () => {
             }
         });
         const outer = await spawned.childOf(1);
-        await outer.sentOf('markdown/getEditForFileRenames');
+        await sentOnClock(outer, 'markdown/getEditForFileRenames');
         await advance(30_000);
         await page.arrival((payload) => payload.oculus === 'links_answer');
         const answer = page.frames.find((one) => one.payload.oculus === 'links_answer');

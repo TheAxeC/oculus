@@ -28,7 +28,7 @@ text:
         confirm_skip_yes: Start
         elsewhere: This session runs in a terminal of its own, so it cannot be typed into from here.
         failed: The session did not start.
-        hub: hub
+        hub_in: '{0} ({1})'
         interrupt: Stop
         interrupt_title: Interrupt the turn with Escape; the session goes on
         outside: '{0} is not inside the workspace the session starts in.'

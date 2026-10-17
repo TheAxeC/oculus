@@ -10,10 +10,15 @@
     // the field's label, held out of sight, and the chosen word after it, as a native select reads
     // its label and its option. What is drawn before the chosen word (`lead`) and the list itself
     // (`list`, handed bits-ui's props for it) are the caller's.
+    //
+    // A key pressed on the closed trigger with Cmd, Ctrl or Alt held is not handed to bits-ui's
+    // type-ahead (select/trigger-keys.ts), so the workbench's keys reach the page and the pick
+    // stays.
 
     import type { Snippet } from 'svelte';
     import { Select } from 'bits-ui';
     import Glyph from '../../../display/Glyph.svelte';
+    import { triggerKeys } from './trigger-keys';
     import '../../../theme/field.css';
 
     type Props = {
@@ -43,15 +48,27 @@
     /** The ids of the trigger's two names: the field's label, then the chosen word. */
     const labelId = `${uid}-label`;
     const nameId = `${uid}-name`;
+
+    /** The chosen entry's words, or the value as it is held when no entry carries it. */
+    const chosen = $derived(
+        value === '' ? (empty ?? '') : (items.find((item) => item.value === value)?.label ?? value)
+    );
 </script>
 
 <Select.Root type="single" {value} {items} onValueChange={onchange}>
     <Select.Trigger>
         {#snippet child({ props })}
-            <button {...props} class="select oculus-field" aria-labelledby="{labelId} {nameId}">
+            <button
+                {...props}
+                class="select oculus-field"
+                aria-labelledby="{labelId} {nameId}"
+                onkeydown={triggerKeys(
+                    (props as { onkeydown?: (event: KeyboardEvent) => void }).onkeydown
+                )}
+            >
                 <span id={labelId} class="unseen">{label}</span>
                 {@render lead?.()}
-                <span id={nameId} class="name">{value === '' ? (empty ?? '') : value}</span>
+                <span id={nameId} class="name">{chosen}</span>
                 <span class="caret">
                     <Glyph name="disclosure" />
                 </span>

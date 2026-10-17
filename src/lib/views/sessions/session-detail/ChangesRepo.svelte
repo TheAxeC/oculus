@@ -110,7 +110,8 @@
 </section>
 
 <style>
-    /* A section heading: the group label in the size of a label, bold and in capitals. */
+    /* A section heading: the group label, bold and in capitals, at the view's heading size, one
+       step above its text. */
     .sec-h {
         display: flex;
         align-items: center;
@@ -118,7 +119,7 @@
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         font-weight: 700;
         border-bottom: 1px solid var(--line);
         padding-bottom: 2px;

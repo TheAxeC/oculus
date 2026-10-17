@@ -11,17 +11,10 @@
 // A Terminal tab is titled by `terminalTabTitle`, which only the tab uses; the Sessions view's rows
 // and the Processes view keep `terminalLabel` (title, else name).
 
-import type { DebugPayload, Terminal } from '../../../data/model/index.ts';
+import { isTerminalId, type DebugPayload, type Terminal } from '../../../data/model/index.ts';
 import type { AppEnding } from '../../system/apps/flows.ts';
 import { t } from '../../shared/words/text.ts';
-import {
-    isTerminalId,
-    ownerOf,
-    readTab,
-    tabTerminals,
-    withTerminal,
-    withoutTerminal
-} from './terminal-tabs.ts';
+import { ownerOf, readTab, tabTerminals, withTerminal, withoutTerminal } from './terminal-tabs.ts';
 import type { TerminalTab, TerminalTabs } from './workbench-shape.ts';
 
 /**

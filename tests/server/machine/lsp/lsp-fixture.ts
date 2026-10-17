@@ -284,7 +284,7 @@ export function makeRelay(options: {
  * writers of vscode-jsonrpc hand each message on through `setImmediate`, which stays real so the
  * streams of the stubs run as they do in the server.
  */
-export function useClock(): void {
+function useClock(): void {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
 }
 
@@ -299,6 +299,26 @@ export async function settle(): Promise<void> {
 export async function advance(ms: number): Promise<void> {
     await vi.advanceTimersByTimeAsync(ms);
     await settle();
+}
+
+/** The step by which `sentOnClock` moves the fake clock. */
+const STEP_MS = 250;
+
+/**
+ * The first message of a method a stub is sent, the fake clock moved on by STEP_MS at a time while
+ * it waits, at most `limitMs`: a relay's bounded waits (a request the stub never answers, a read of
+ * a file the stub never makes, as after a watch event of a planted file) end only as the clock
+ * moves, as they do in real time.
+ */
+export async function sentOnClock(child: Stub, method: string, limitMs = 30_000): Promise<LspRpc> {
+    const pending = child.sentOf(method);
+    const seen = { sent: false };
+    void pending.then(() => {
+        seen.sent = true;
+    });
+    for (let moved = 0; !seen.sent && moved < limitMs; moved += STEP_MS) await advance(STEP_MS);
+    if (!seen.sent) throw new Error(`${method} was not sent within ${String(limitMs)} ms`);
+    return pending;
 }
 
 /**

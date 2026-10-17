@@ -16,7 +16,10 @@
     // come from validate over the hub's YAML, and the config channel's own, which come from reading
     // config/. A finding is reported and never repaired, so this view is where a bad manifest edit
     // shows up within a second of being saved. The list is drawn straight into the pane, so the
-    // pane asks for the tint; a clear list is said with the Empty primitive.
+    // pane asks for the tint; a clear list is said with the Empty primitive. A row names its file
+    // relative to the folder of the root that holds it (its hub's, or a repository's), as VS Code's
+    // Problems view names a file relative to the workspace, on one line cut with an ellipsis at
+    // its end, the whole path in its tooltip; a file no root holds is named by its whole path.
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
@@ -24,15 +27,23 @@
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
+    import { fileUnder } from '$lib/state/shared/page/hubs';
 
     const {
         apps: { findings: appFindings },
-        entities: { config, portfolio }
+        entities: { config, portfolio },
+        fs: { primary, roots }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
     const found = $derived(allFindings(portfolio(), config(), { findings: appFindings() }));
+
+    /** A finding's file under the root that holds it, with its line when it names one. */
+    function named(file: string, line: number | undefined): string {
+        const path = fileUnder(file, roots(), primary())?.path ?? file;
+        return line === undefined ? path : `${path}:${String(line)}`;
+    }
 </script>
 
 <Pane title={t('views.findings')} tinted>
@@ -43,10 +54,8 @@
             <ul>
                 {#each found as finding, index (`${finding.file}:${finding.key}:${index}`)}
                     <li>
-                        <span class="file"
-                            >{finding.line === undefined
-                                ? finding.file
-                                : `${finding.file}:${finding.line}`}</span
+                        <span class="file" title={finding.file}
+                            >{named(finding.file, finding.line)}</span
                         >
                         <span class="key">{finding.key}</span>
                         <span class="message">{finding.message}</span>
@@ -85,6 +94,18 @@
         font-family: var(--font-mono);
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
+    }
+
+    /* The file on one line, cut with an ellipsis where the row is narrower than it. */
+    .file {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .key {
         word-break: break-all;
     }
 
@@ -92,7 +113,10 @@
        tests/checks/look/contrast.test.ts never measured, so the colour rule refuses it. Until
        applyTheme has set the derived tokens the declaration computes to the inherited ink, which is
        what the rest of the view is painted in. */
+    /* A message holding a long path breaks inside it rather than running past a narrow pane. */
     .message {
+        min-width: 0;
         color: var(--c-amber-txt);
+        overflow-wrap: anywhere;
     }
 </style>

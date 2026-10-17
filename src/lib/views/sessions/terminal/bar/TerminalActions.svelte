@@ -4,13 +4,18 @@
     // Claude or Codex the same way, shows the composer (With a Prompt) in the shown terminal's
     // kind (Claude for a terminal of an app), or, under Attach to Session, joins a running terminal
     // no Terminal tab owns to the end of the tab, and Split, which splits the shown terminal. A
-    // task terminal also has Rerun (once its line ended) and Restart. The words of each are its
-    // tooltip and its accessible name. The title, the font buttons and what the tab said are on the
-    // view's bar.
+    // task terminal also has Rerun (once its line ended) and Restart. While the tab has no room for
+    // its list of terminals and owns more than one, a terminals menu lists them all by their place
+    // in the tab and their title, so two terminals of one title are told apart, the shown ones
+    // checked, and a pick shows that terminal, as a press on its row would, as VS Code's terminal
+    // panel offers its terminals in a dropdown while its tabs list is hidden. The words of each are
+    // its tooltip and its accessible name. The title, the font buttons and what the tab said are on
+    // the view's bar.
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { TerminalKind } from '$lib/state/sessions/terminals.svelte';
+    import type { TerminalChoice } from '$lib/state/sessions/folds';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import {
@@ -31,6 +36,8 @@
         kind: TerminalKind | undefined;
         /** The running terminals no Terminal tab owns, offered under Attach to Session. */
         attachables: Attachable[];
+        /** Whether oculus knows the shown terminal's folder, which Split starts the new one in. */
+        splittable: boolean;
         /** Split a terminal of this tab. */
         onsplit: (terminal: string) => void;
         /** Where the shown terminal's line is, or null when it is no task terminal. */
@@ -38,9 +45,28 @@
         /** Rerun and Restart the shown task terminal. */
         onrerun: (terminal: string) => void;
         onrestart: (terminal: string) => void;
+        /** The terminals the menu of terminals lists: all the tab owns, while it draws no list. */
+        switching: TerminalChoice[];
+        /** The terminals the tab shows, checked in that menu. */
+        current: string[];
+        /** Show a terminal picked from that menu. */
+        onshow: (terminal: string) => void;
     };
 
-    let { instance, shown, kind, attachables, onsplit, task, onrerun, onrestart }: Props = $props();
+    let {
+        instance,
+        shown,
+        kind,
+        attachables,
+        splittable,
+        onsplit,
+        task,
+        onrerun,
+        onrestart,
+        switching,
+        current,
+        onshow
+    }: Props = $props();
 
     const {
         terminals: { attachTerminal, composeInTab, startInTab }
@@ -76,7 +102,24 @@
     align="right"
     onpick={kindPicked}
 />
-{#if shown !== null}
+{#if switching.length > 1}
+    <Menu
+        label={t('sessions.terminal_switch')}
+        items={switching.map((row, at) => ({
+            id: row.terminal,
+            label: t('sessions.terminal_switch_item', at + 1, row.title),
+            title: row.description,
+            checked: current.includes(row.terminal)
+        }))}
+        glyph={t('sessions.terminal_switch_glyph')}
+        compact
+        bare
+        placement="down"
+        align="right"
+        onpick={onshow}
+    />
+{/if}
+{#if shown !== null && splittable}
     <ToolButton
         bare
         label={t('sessions.terminal_split')}

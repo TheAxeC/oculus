@@ -4,7 +4,8 @@
 // scan depths it reads with them (the global one and the folders' own), and the re-read the fetch
 // asks of the watcher in force. They are read from the open workspace and the configuration at each
 // call, so a folder added to the workspace, a changed depth and a changed catalog are in force when
-// the move that follows reaches the watcher.
+// the move that follows reaches the watcher. The configuration is the parse the server context's
+// config cache keeps, which is parsed again only when one of its files changed.
 
 import { repositoryScanDepth, textCatalog } from '../../../../data/sources/config.ts';
 import type { Hub } from '../../../core/channels.ts';
@@ -16,9 +17,8 @@ import { syncNested } from '../../../git/clone/exclude.ts';
 import type { GitWatcher, GitWatchOptions } from '../git.ts';
 import type { NestedFound } from './nested.ts';
 
-/** What the git watcher's start reads from the process: the configuration, as it is now. */
+/** What the git watcher's start takes from the process: the watchers it builds. */
 export type GitStart = {
-    loadConfig: (engine: string, opts?: { hub?: string }) => { config: Record<string, unknown> };
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
     watchAutofetch: (hub: Hub, options: AutofetchOptions) => AutofetchWatcher;
 };
@@ -64,12 +64,10 @@ export function nestedFound(hold: NestedHold, rescan: () => void): (found: Neste
 export function startGit(
     make: GitStart,
     hub: Hub,
-    engine: string,
+    config: () => Record<string, unknown>,
     workspace: Pick<Workspace, 'open' | 'subscribe'>,
     found: (found: NestedFound) => void
 ): GitWatcher {
-    const config = (): Record<string, unknown> =>
-        make.loadConfig(engine, { hub: workspace.open().primaryDir ?? undefined }).config;
     return make.watchGit(hub, {
         roots: () => repositoryRoots(workspace.open()),
         text: () => textCatalog(config()),

@@ -28,8 +28,10 @@ text:
         nav:
             host: axel@research
             title_fmt: '{0}: ~/{1}'
+        page_failed: 'This page could not be drawn because of an error: {0}'
         palette:
             approve_ask: Run this Python interpreter for this repository?
+            argument_missing: 'Type {0} after the command.'
             approve_yes: Approve and Select
             choices_loading: Reading the choices of this repository...
             clone_error: 'GitHub repositories could not be listed: {0}'
@@ -45,6 +47,9 @@ text:
             cmd_compile_database_hint: '<name>'
             cmd_crt: Turn the CRT overlay on or off
             cmd_folder: Open a folder in the Files view
+            cmd_folder_add: Add Folder to Workspace
+            cmd_folder_remove: Remove Folder from Workspace
+            cmd_folder_remove_hint: '<folder>'
             cmd_goto: Open a project in a tab
             cmd_goto_hint: '<project id>'
             cmd_file_icons: Switch the file icon theme
@@ -97,6 +102,8 @@ text:
             files_open_none: No file is open in a tab; type part of a file name.
             files_partial: 'The files under {0} are listed in part: the search for them ran out of time or failed.'
             files_placeholder: Search files by name...
+            file_icons_unknown: 'No file icon theme is named {0}.'
+            goto_unknown: 'No project has the id {0}.'
             database_none: This repository has no compile database and no .oculus/cpp.yml.
             interpreter_none: No Python interpreter was found for this repository.
             interpreter_typed: 'Use the interpreter at {0}'
@@ -111,6 +118,7 @@ text:
             kind_feed: Feed
             kind_file: File
             kind_finding: Finding
+            kind_folder: Folder
             kind_interpreter: Interpreter
             kind_project: Project
             kind_task: Task
@@ -147,11 +155,13 @@ text:
             symbols_loading: Asking the language server...
             symbols_none: No symbol of the workspace matches.
             symbols_unavailable: No language server answers for the tab on screen.
+            tab_unknown: 'No view has the id {0}.'
             task_add_collection: The hub has no tasks collection, so no task can be added.
             task_add_key: 'The title gives no key: it needs a letter from A to Z or a digit.'
             task_add_title: Type a title for the task.
             task_added: 'Added the task {0}'
             task_open: Open
+            theme_unknown: 'No theme is named {0}.'
             unpin_editor: Unpin Editor
             workspace_missing: gone
             workspace_new: 'Make the workspace {0} with no folder'
@@ -160,6 +170,7 @@ text:
             workspace_save_name: Type a name for the workspace
         palette_empty: No match
         palette_unavailable: Unavailable
+        palette_dock_none: No float is docked at this edge
         pillars: 'Pillars: {0}'
         projects: 'Projects: {0}'
         schedules:
@@ -186,6 +197,7 @@ text:
             name: Name
             next: 'Next: {0}'
             next_runs: 'Next runs: {0}'
+            no_terminals: 'No schedule runs, because tmux lists no terminal: "{0}". A schedule starts in a terminal and waits until the list reads.'
             none: No schedules yet.
             off: 'Off: it runs only from Run now'
             outcome_failed: 'failed: {0}'
@@ -273,10 +285,13 @@ text:
             linkedin_note: draft a post from _linkedin/
             lit_label: Lit Watch
             lit_note: new-paper radar (web | minutes)
+            last: 'Last run: {0}'
+            last_none: 'Last run: none yet'
+            last_post: 'Last post: {0}'
             next: 'Next: {0} ({1})'
             no_files: 'The primary hub holds no task file, so no update task is offered; a task is the file .oculus/tasks/<task>.md of the hub, for litwatch, scout, inbox or linkedin, and the Templates tab of the Help page has a template of each.'
             no_primary: The open workspace has no primary hub, so no update task is offered.
-            no_schedule: No schedule
+            no_schedule: 'Next: no schedule'
             schedule: Schedule...
             scout_label: Scout
             scout_note: academic openings (web | minutes)
@@ -293,6 +308,8 @@ text:
         update_tip: Open the update tasks
         venues: 'Venues: {0}'
         version: Snapshot version {0}
+        view_failed: 'The {0} view could not be drawn because of an error: {1}'
+        view_retry: Draw again
         waiting: Waiting for the first snapshot
         write_timed_out: no answer came in time, so the write was given up and may not have landed
     views:

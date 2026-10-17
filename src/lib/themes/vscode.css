@@ -2,15 +2,17 @@
    utils/migrations/convert-vscode-themes.ts from the theme files under extensions/ of the
    installed app, which are Microsoft's and MIT licensed with VS Code. Generated: change the
    converter and run it, never this file, with: node utils/migrations/convert-vscode-themes.ts. A
-   block sets the chrome tokens, the Source Control tokens, the Source Control Graph's three name
-   colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme holds, the
-   window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line) and the six code
-   hues; its comment names each token that VS Code's registered default or oculus's base gave. */
+   block sets the chrome tokens, the Source Control tokens, the diff's outlines of inserted and
+   removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three
+   name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme
+   holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line) and the
+   six code hues; its comment names each token that VS Code's registered default or oculus's base
+   gave. */
 
 /* Light 2026: theme-defaults/themes/2026-light.json, uiTheme vs. Registered VS Code defaults:
    --c-scm-added-bg (diffEditor.insertedLineBackground), --c-scm-deleted-bg
    (diffEditor.removedLineBackground), --c-graph-base (scmGraph.historyItemBaseRefColor). oculus
-   base: --c-scm-conflict-bg. */
+   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
 body.vscode-light-2026 {
     --bg: #fafafd;
     --panel: #ffffff;
@@ -27,6 +29,8 @@ body.vscode-light-2026 {
     --c-scm-conflict: #ad0707;
     --c-scm-added-bg: #ebf1dd;
     --c-scm-deleted-bg: #ffcccc;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #e1caea;
     --c-graph-ref: #1a5cff;
     --c-graph-remote: #652d90;
@@ -53,8 +57,8 @@ body.vscode-light-2026 {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor).
-   oculus base: --c-scm-conflict-bg. Nudged to 4.5:1: --tab-inactive-txt from #868686
-   (tab.inactiveForeground). */
+   oculus base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. Nudged to
+   4.5:1: --tab-inactive-txt from #868686 (tab.inactiveForeground). */
 body.vscode-light-modern {
     --bg: #f8f8f8;
     --panel: #ffffff;
@@ -71,6 +75,8 @@ body.vscode-light-modern {
     --c-scm-conflict: #ad0707;
     --c-scm-added-bg: #ebf1dd;
     --c-scm-deleted-bg: #ffcccc;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #e1caea;
     --c-graph-ref: #0063d3;
     --c-graph-remote: #652d90;
@@ -99,7 +105,7 @@ body.vscode-light-modern {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground). oculus
-   base: --c-scm-conflict-bg. */
+   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
 body.vscode-light-plus {
     --bg: #f3f3f3;
     --panel: #ffffff;
@@ -116,6 +122,8 @@ body.vscode-light-plus {
     --c-scm-conflict: #ad0707;
     --c-scm-added-bg: #ebf1dd;
     --c-scm-deleted-bg: #ffcccc;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #e1caea;
     --c-graph-ref: #0063d3;
     --c-graph-remote: #652d90;
@@ -142,7 +150,7 @@ body.vscode-light-plus {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground). oculus
-   base: --c-scm-conflict-bg, --c-code-name. */
+   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline, --c-code-name. */
 body.vscode-light-visual-studio {
     --bg: #f3f3f3;
     --panel: #ffffff;
@@ -159,6 +167,8 @@ body.vscode-light-visual-studio {
     --c-scm-conflict: #ad0707;
     --c-scm-added-bg: #ebf1dd;
     --c-scm-deleted-bg: #ffcccc;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #e1caea;
     --c-graph-ref: #0063d3;
     --c-graph-remote: #652d90;
@@ -182,7 +192,8 @@ body.vscode-light-visual-studio {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg. */
+   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-quiet-light {
     --bg: #f2f2f2;
     --panel: #f5f5f5;
@@ -199,6 +210,8 @@ body.vscode-quiet-light {
     --c-scm-conflict: #ad0707;
     --c-scm-added-bg: #e3e9d5;
     --c-scm-deleted-bg: #f7c4c4;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #e1caea;
     --c-graph-ref: #0063d3;
     --c-graph-remote: #652d90;
@@ -223,8 +236,9 @@ body.vscode-quiet-light {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-txt (titleBar.activeForeground). --muted: --ink at 0.7 over --panel, the rule of VS
-   Code descriptionForeground. oculus base: --c-scm-conflict-bg. Nudged to 4.5:1:
-   --tab-inactive-txt from #586e75 (tab.inactiveForeground). */
+   Code descriptionForeground. oculus base: --c-scm-conflict-bg, --diff-added-outline,
+   --diff-deleted-outline. Nudged to 4.5:1: --tab-inactive-txt from #586e75
+   (tab.inactiveForeground). */
 body.vscode-solarized-light {
     --bg: #eee8d5;
     --panel: #fdf6e3;
@@ -241,6 +255,8 @@ body.vscode-solarized-light {
     --c-scm-conflict: #ad0707;
     --c-scm-added-bg: #e9eac7;
     --c-scm-deleted-bg: #fdc5b6;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #e1caea;
     --c-graph-ref: #0063d3;
     --c-graph-remote: #652d90;
@@ -265,7 +281,8 @@ body.vscode-solarized-light {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg. */
+   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-abyss {
     color-scheme: dark;
     --shadow: none;
@@ -288,6 +305,8 @@ body.vscode-abyss {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #1f2f24;
     --c-scm-deleted-bg: #330a13;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -304,7 +323,8 @@ body.vscode-abyss {
 }
 
 /* Dark 2026: theme-defaults/themes/2026-dark.json, uiTheme vs-dark. Registered VS Code defaults:
-   --c-graph-base (scmGraph.historyItemBaseRefColor). oculus base: --c-scm-conflict-bg. */
+   --c-graph-base (scmGraph.historyItemBaseRefColor). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-dark-2026 {
     color-scheme: dark;
     --shadow: none;
@@ -327,6 +347,8 @@ body.vscode-dark-2026 {
     --c-scm-conflict: #f48771;
     --c-scm-added-bg: #17231a;
     --c-scm-deleted-bg: #2d1919;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #57a3f8;
     --c-graph-remote: #ad80d7;
@@ -353,7 +375,7 @@ body.vscode-dark-2026 {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor).
-   oculus base: --c-scm-conflict-bg. */
+   oculus base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
 body.vscode-dark-modern {
     color-scheme: dark;
     --shadow: none;
@@ -376,6 +398,8 @@ body.vscode-dark-modern {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #383e2a;
     --c-scm-deleted-bg: #4c1919;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -404,7 +428,7 @@ body.vscode-dark-modern {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground). oculus
-   base: --c-scm-conflict-bg. */
+   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline. */
 body.vscode-dark-plus {
     color-scheme: dark;
     --shadow: none;
@@ -427,6 +451,8 @@ body.vscode-dark-plus {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #373d29;
     --c-scm-deleted-bg: #4b1818;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -453,7 +479,7 @@ body.vscode-dark-plus {
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
    --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground). oculus
-   base: --c-scm-conflict-bg, --c-code-name. */
+   base: --c-scm-conflict-bg, --diff-added-outline, --diff-deleted-outline, --c-code-name. */
 body.vscode-dark-visual-studio {
     color-scheme: dark;
     --shadow: none;
@@ -476,6 +502,8 @@ body.vscode-dark-visual-studio {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #373d29;
     --c-scm-deleted-bg: #4b1818;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -500,7 +528,8 @@ body.vscode-dark-visual-studio {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg. */
+   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-kimbie-dark {
     color-scheme: dark;
     --shadow: none;
@@ -523,6 +552,8 @@ body.vscode-kimbie-dark {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #3a3a1d;
     --c-scm-deleted-bg: #4e150c;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -546,7 +577,8 @@ body.vscode-kimbie-dark {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg. */
+   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-monokai {
     color-scheme: dark;
     --shadow: none;
@@ -569,6 +601,8 @@ body.vscode-monokai {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #3e452c;
     --c-scm-deleted-bg: #52201b;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -594,7 +628,8 @@ body.vscode-monokai {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg. */
+   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-monokai-dimmed {
     color-scheme: dark;
     --shadow: none;
@@ -617,6 +652,8 @@ body.vscode-monokai-dimmed {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #373d29;
     --c-scm-deleted-bg: #4b1818;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -641,7 +678,8 @@ body.vscode-monokai-dimmed {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg, --c-code-number. */
+   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline, --c-code-number. */
 body.vscode-red {
     color-scheme: dark;
     --shadow: none;
@@ -664,6 +702,8 @@ body.vscode-red {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #4d2511;
     --c-scm-deleted-bg: #610000;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -688,7 +728,8 @@ body.vscode-red {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg. */
+   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-solarized-dark {
     color-scheme: dark;
     --shadow: none;
@@ -711,6 +752,8 @@ body.vscode-solarized-dark {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #1f473c;
     --c-scm-deleted-bg: #33222b;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -737,7 +780,8 @@ body.vscode-solarized-dark {
    (diffEditor.insertedLineBackground), --c-scm-deleted-bg (diffEditor.removedLineBackground),
    --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
    (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
-   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg. */
+   --titlebar-txt (titleBar.activeForeground). oculus base: --c-scm-conflict-bg,
+   --diff-added-outline, --diff-deleted-outline. */
 body.vscode-tomorrow-night-blue {
     color-scheme: dark;
     --shadow: none;
@@ -760,6 +804,8 @@ body.vscode-tomorrow-night-blue {
     --c-scm-conflict: #e4676b;
     --c-scm-added-bg: #1f4252;
     --c-scm-deleted-bg: #331d41;
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -781,11 +827,13 @@ body.vscode-tomorrow-night-blue {
    --c-scm-added (gitDecoration.addedResourceForeground), --c-scm-modified
    (gitDecoration.modifiedResourceForeground), --c-gutter-modified
    (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
-   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-graph-ref
-   (scmGraph.historyItemRefColor), --c-graph-remote (scmGraph.historyItemRemoteRefColor),
-   --c-graph-base (scmGraph.historyItemBaseRefColor), --titlebar-bg (titleBar.activeBackground),
-   --titlebar-txt (titleBar.activeForeground), --titlebar-line (titleBar.border). oculus base:
-   --c-scm-conflict-bg, --c-scm-added-bg, --c-scm-deleted-bg. */
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --diff-added-outline
+   (diffEditor.insertedTextBorder), --diff-deleted-outline (diffEditor.removedTextBorder),
+   --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
+   (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
+   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground),
+   --titlebar-line (titleBar.border). oculus base: --c-scm-conflict-bg, --c-scm-added-bg,
+   --c-scm-deleted-bg. */
 body.vscode-dark-high-contrast {
     color-scheme: dark;
     --shadow: none;
@@ -808,6 +856,8 @@ body.vscode-dark-high-contrast {
     --c-scm-conflict: #c74e39;
     --c-scm-added-bg: #0d2e28;
     --c-scm-deleted-bg: #351521;
+    --diff-added-outline: #33ff2e;
+    --diff-deleted-outline: #ff008f;
     --c-scm-conflict-bg: #29133d;
     --c-graph-ref: #59a4f9;
     --c-graph-remote: #b180d7;
@@ -830,11 +880,13 @@ body.vscode-dark-high-contrast {
    (gitDecoration.addedResourceForeground), --c-scm-modified
    (gitDecoration.modifiedResourceForeground), --c-gutter-modified
    (editorGutter.modifiedBackground), --c-scm-deleted (gitDecoration.deletedResourceForeground),
-   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --c-graph-ref
-   (scmGraph.historyItemRefColor), --c-graph-remote (scmGraph.historyItemRemoteRefColor),
-   --c-graph-base (scmGraph.historyItemBaseRefColor), --titlebar-bg (titleBar.activeBackground),
-   --titlebar-txt (titleBar.activeForeground), --titlebar-line (titleBar.border). oculus base:
-   --c-scm-conflict-bg, --c-scm-added-bg, --c-scm-deleted-bg. */
+   --c-scm-conflict (gitDecoration.conflictingResourceForeground), --diff-added-outline
+   (diffEditor.insertedTextBorder), --diff-deleted-outline (diffEditor.removedTextBorder),
+   --c-graph-ref (scmGraph.historyItemRefColor), --c-graph-remote
+   (scmGraph.historyItemRemoteRefColor), --c-graph-base (scmGraph.historyItemBaseRefColor),
+   --titlebar-bg (titleBar.activeBackground), --titlebar-txt (titleBar.activeForeground),
+   --titlebar-line (titleBar.border). oculus base: --c-scm-conflict-bg, --c-scm-added-bg,
+   --c-scm-deleted-bg. */
 body.vscode-light-high-contrast {
     --bg: #ffffff;
     --panel: #ffffff;
@@ -851,6 +903,8 @@ body.vscode-light-high-contrast {
     --c-scm-conflict: #ad0707;
     --c-scm-added-bg: #c5e5d6;
     --c-scm-deleted-bg: #edcccf;
+    --diff-added-outline: #374e06;
+    --diff-deleted-outline: #ad0707;
     --c-scm-conflict-bg: #e1caea;
     --c-graph-ref: #0063d3;
     --c-graph-remote: #652d90;

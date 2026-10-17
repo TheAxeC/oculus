@@ -1,14 +1,15 @@
 // Layer 3, shared graph helper. Where a pointer lands in the graph (Graph.svelte), and what it
-// holds there. The SVG draws its box under `preserveAspectRatio="xMidYMid meet"`, so in a pane of
-// another shape the picture is scaled evenly and centred with empty bands on two sides; a pointer
-// is mapped through that letterbox to the box, then through the pane's pan and zoom to the graph.
+// holds there. The SVG's box is the pane's own size as last measured, drawn under
+// `preserveAspectRatio="xMidYMid meet"`, so the box fills the pane; between a resize and its
+// measure the picture is scaled evenly and centred with empty bands on two sides, and a pointer is
+// mapped through that letterbox to the box, then through the pane's pan and zoom to the graph.
 // A dragged node keeps the offset from the pointer it was grabbed at and is placed again only once
 // the pointer has moved a screen pixel, and the link pointer takes the nearest project in reach.
 //
 // Every function here is pure, so the drag, the link pointer, the pan and the wheel zoom share one
 // rule and it is checked without a page.
 
-import { DEFAULT_BOUNDS, type PointNode } from '$lib/state/boards/structure/graph';
+import type { Bounds, PointNode } from '$lib/state/boards/structure/graph';
 
 /** A point, in client pixels, box units or graph units by what it is handed to. */
 export type Point = { x: number; y: number };
@@ -17,15 +18,15 @@ export type Point = { x: number; y: number };
 export type Rect = { left: number; top: number; width: number; height: number };
 
 /**
- * A client point in the graph's box: the picture's scale is the smaller of the two ratios of the
- * pane to the box, and its corner sits half the empty band in from the pane's. A pane of no size (a
- * hidden tab) draws nothing and answers the box's corner.
+ * A client point in the graph's box `box`: the picture's scale is the smaller of the two ratios of
+ * the pane to the box, 1 while the box is the pane's size, and its corner sits half the empty band
+ * in from the pane's. A pane of no size (a hidden tab) draws nothing and answers the box's corner.
  */
-export function toBox(client: Point, rect: Rect): Point {
-    const scale = Math.min(rect.width / DEFAULT_BOUNDS.width, rect.height / DEFAULT_BOUNDS.height);
+export function toBox(client: Point, rect: Rect, box: Bounds): Point {
+    const scale = Math.min(rect.width / box.width, rect.height / box.height);
     if (!(scale > 0)) return { x: 0, y: 0 };
-    const left = rect.left + (rect.width - DEFAULT_BOUNDS.width * scale) / 2;
-    const top = rect.top + (rect.height - DEFAULT_BOUNDS.height * scale) / 2;
+    const left = rect.left + (rect.width - box.width * scale) / 2;
+    const top = rect.top + (rect.height - box.height * scale) / 2;
     return { x: (client.x - left) / scale, y: (client.y - top) / scale };
 }
 

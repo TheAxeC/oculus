@@ -13,10 +13,11 @@
     // index a drop would land at, and `dropIndex` draws the mark at an index the caller chose.
     //
     // Whole tabs at the left edge come from the scroll controls, which jump to the next tab start,
-    // and from a tab becoming the shown one, being pressed, or being crossed or hidden by a change
-    // of width, which brings it in whole. A wheel or trackpad scrolls the strip freely and leaves
-    // it where it stops. The strip's end is the browser's largest offset, so a control press or a
-    // reveal there may rest short of a tab start. How it scrolls is ui/tabs/tab-scroll.svelte.ts.
+    // and from a tab becoming the shown one, being pressed, being crossed or hidden by a change of
+    // width, or, as the shown one, changing width itself (the text size), which brings it in whole.
+    // A wheel or trackpad scrolls the strip freely and leaves it where it stops. The strip's end is
+    // the browser's largest offset, so a control press or a reveal there may rest short of a tab
+    // start. How it scrolls is ui/tabs/tab-scroll.svelte.ts.
     //
     // A surface that blurs what is behind it is the stacking context of everything inside it, so
     // the strip carries a depth of its own wherever it blurs, over the pane body beside it, and a
@@ -118,12 +119,13 @@
     let openerWidth = $state(0);
 
     /**
-     * The tab a Delete asked to close, with the ring it asked from. The caller may put a question
-     * in front of the close, so the keyboard is carried only once the tab has actually gone; until
-     * then it belongs to whatever is asking, and a close the reader refuses leaves the focus where
-     * the question left it.
+     * The tab a Delete or a close control asked to close, with the ring it asked from and whether
+     * the keyboard then goes to the shown tab (a close control) or to the tab that sits where the
+     * closed one sat (Delete). The caller may put a question in front of the close, so the keyboard
+     * is carried only once the tab has actually gone; until then it belongs to whatever is asking,
+     * and a close the reader refuses leaves the focus where the question left it.
      */
-    let asked: { id: string; ring: string[] } | null = null;
+    let asked: { id: string; ring: string[]; shown: boolean } | null = null;
 
     /**
      * The tab the strip's one stop sits on: the tab the arrows last carried the focus to, and the
@@ -181,16 +183,22 @@
         queueMicrotask(() => scrolling.reveal(index));
     });
 
-    // A tab closed by Delete unmounts its button under the keyboard, which would drop the focus to
-    // the document. The tab that now sits where it sat takes the stop and the keyboard, by the one
-    // rule ui/tree/roving.ts states for a ring that has lost a control; a pane whose last tab went
-    // is gone with it, and where the keyboard lands is then the tree's answer.
+    // A tab closed by Delete or its close control unmounts its button under the keyboard, which
+    // would drop the focus to the document. After Delete the tab that now sits where it sat takes
+    // the stop and the keyboard, by the one rule ui/tree/roving.ts states for a ring that has lost
+    // a control; after the close control the tab the pane shows takes them, which is the tab the
+    // close activated when the closed tab was the shown one. A pane whose last tab went is gone
+    // with it, and where the keyboard lands is then the tree's answer.
     $effect(() => {
         const ring = tabs.map((tab) => tab.id);
         const held = asked;
         if (held === null || ring.includes(held.id)) return;
         asked = null;
-        const moved = heldStop(held.ring, ring, held.id);
+        const moved = held.shown
+            ? ring.includes(active)
+                ? active
+                : ''
+            : heldStop(held.ring, ring, held.id);
         if (moved === '') return;
         stopped = moved;
         recoverStop(ring.indexOf(moved));
@@ -249,8 +257,14 @@
             return;
         }
         if (after.kind === 'none') return;
-        asked = { id: tabs[index].id, ring: tabs.map((tab) => tab.id) };
+        asked = { id: tabs[index].id, ring: tabs.map((tab) => tab.id), shown: false };
         onclose(tabs[index].id);
+    }
+
+    /** A press on a tab's close control, after which the keyboard goes to the shown tab. */
+    function closeControl(id: string): void {
+        asked = { id, ring: tabs.map((tab) => tab.id), shown: true };
+        onclose(id);
     }
 
     function over(event: PointerEvent): void {
@@ -331,7 +345,7 @@
                 handle={onpointerdown !== undefined}
                 onselect={() => press(index)}
                 ondblclick={() => ondblclick?.(tab.id)}
-                onclose={() => onclose(tab.id)}
+                onclose={() => closeControl(tab.id)}
                 onunpin={() => onunpin?.(tab.id)}
                 onkeydown={(event: KeyboardEvent) => keys(event, index)}
                 onpointerdown={(event: PointerEvent) => down(tab.id, event)}

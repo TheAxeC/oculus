@@ -5,21 +5,32 @@
     //
     // It counts nothing itself. state/boards/board/'s stats() is the counting, over the board's own
     // projects before any filter, so the strip says what the board is rather than what a search has
-    // left on screen. A venue at or over `venue_conc_warn` is marked: that is the config's own
-    // threshold for too much of one board on one venue.
+    // left on screen; while a filter or a search shows fewer cards than that, the first count says
+    // how many of them are shown (`shown`). A venue at or over `venue_conc_warn` is marked: that is
+    // the config's own threshold for too much of one board on one venue.
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import { t } from '$lib/state/shared/words/text';
     import type { BoardStats } from '$lib/state/boards/board';
 
-    type Props = { stats: BoardStats };
+    type Props = {
+        stats: BoardStats;
+        /** How many cards the board shows after its filters and its search. */
+        shown: number;
+    };
 
-    let { stats }: Props = $props();
+    let { stats, shown }: Props = $props();
 </script>
 
 <div class="stats" aria-label={t('board.stats')}>
-    <span class="st">{t('board.stat_projects', stats.active)}</span>
+    <span class="st"
+        >{shown < stats.active
+            ? t('board.stat_projects_shown', shown, stats.active)
+            : stats.active === 1
+              ? t('board.stat_projects_one')
+              : t('board.stat_projects', stats.active)}</span
+    >
     <span class="st">{t('board.stat_submit_ready', stats.submitReady)}</span>
     <span class="st">{t('board.stat_blocked', stats.blocked)}</span>
     {#if stats.dated > 0}

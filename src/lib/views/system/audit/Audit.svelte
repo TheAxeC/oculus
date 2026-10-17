@@ -303,9 +303,11 @@
         }
     }
 
+    /* A message holding a long path breaks inside it rather than running past a narrow pane. */
     .message {
         min-width: 0;
         color: var(--muted-txt, var(--muted));
+        overflow-wrap: anywhere;
     }
 
     .where {

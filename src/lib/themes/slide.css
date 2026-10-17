@@ -18,6 +18,12 @@
     font-size: var(--slide-fs-body);
 }
 
+/* A link on a slide is drawn in the theme's link colour, the accent's text form, as a link of a
+   Markdown document is (views/shared/prose/Markdown.svelte), never in the browser's own blue. */
+.slide-frame a {
+    color: var(--accent-txt, var(--accent));
+}
+
 /* Under a rice theme the slide sizes are the design sizes times 12/13, rounded to whole pixels (56
    gives 52, 36 gives 33, 28 gives 26, 24 gives 22, 18 gives 17). The rule sits here because the
    sizes are declared on `.slide-frame` itself, where a declaration on `body.rice` does not

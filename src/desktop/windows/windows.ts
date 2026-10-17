@@ -266,12 +266,16 @@ export function createWindows(deps: WindowsDeps): Windows {
 
     /**
      * Keep a main window's state when it moves, resizes, changes state or closes, and when its page
-     * enters or leaves full screen.
+     * enters or leaves full screen. On macOS `resized` comes only for a resize by hand, so
+     * `resize`, sent for a resize by any means (a window manager's through Accessibility), is heard
+     * as well; the store writes the last state its wait leaves, so the stream of `resize` is one
+     * write.
      */
     function keepState(entry: Entry): void {
         for (const event of [
             'moved',
             'resized',
+            'resize',
             'maximize',
             'unmaximize',
             'enter-full-screen',
@@ -287,7 +291,10 @@ export function createWindows(deps: WindowsDeps): Windows {
         });
     }
 
-    /** Tell a popped-out window's page where its window is, once it stops moving. */
+    /**
+     * Tell a popped-out window's page where its window is, once it stops moving or resizing, a
+     * resize by any means included (`resize`, as in `keepState`).
+     */
     function tellBounds(entry: Entry): void {
         let timer: NodeJS.Timeout | undefined;
         // While the page is in full screen the window is the size of the monitor, and those are not
@@ -306,6 +313,7 @@ export function createWindows(deps: WindowsDeps): Windows {
         };
         entry.win.on('moved', tell);
         entry.win.on('resized', tell);
+        entry.win.on('resize', tell);
         entry.win.on('enter-html-full-screen', () => {
             pageFullScreen = true;
             windowWasFull = entry.win.isFullScreen();

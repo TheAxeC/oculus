@@ -118,7 +118,8 @@ export type SocketStore = {
     connect: (names: string[]) => void;
     disconnect: () => void;
     send: (message: unknown) => boolean;
-    subscribe: (names: string[]) => void;
+    /** Add channels; `again` asks the server for listed ones as well, as a load asks for them. */
+    subscribe: (names: string[], again?: boolean) => void;
     unsubscribe: (names: string[]) => void;
     listen: (channel: string, fn: (message: Message) => void) => () => void;
     installConfig: (payload: ConfigPayload | null) => void;
@@ -204,10 +205,16 @@ export type SubtaskTarget = { id: string; collection?: string };
 export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
 
 /**
- * What a caller says about one write it sends: `said` when it words a failure itself, and `asked`
- * the codes of the refusals it answers with a question, which are not told as failures.
+ * What a caller says about one write it sends: `said` when it words a failure itself, `asked` the
+ * codes of the refusals it answers with a question, which are not told as failures, and `words`
+ * the sentence of a refusal for an endpoint whose answer names it by a code (the file browser's),
+ * so a refusal told for the caller is told in words, never as its code.
  */
-export type SendOptions = { said?: boolean; asked?: readonly string[] };
+export type SendOptions = {
+    said?: boolean;
+    asked?: readonly string[];
+    words?: (code: string, reason?: string) => string;
+};
 
 /**
  * What went wrong before the endpoint's answer could be read: no answer came, or the answer was not

@@ -148,6 +148,15 @@ describe('the folder panel route', () => {
         expect(scripts[0]).toContain('allowsMultipleSelection = false');
         expect(scripts[1]).toContain('fileURLWithPath($.NSHomeDirectory())');
         expect(scripts[1]).toContain('allowsMultipleSelection = true');
+        // Drawn above every window and taking the keyboard, before the modal run.
+        for (const script of scripts) {
+            const lines = script.split('\n');
+            const run = lines.findIndex((line) => line.includes('panel.runModal'));
+            const before = lines.slice(0, run);
+            expect(before).toContain('panel.level = 8;');
+            expect(before).toContain('panel.makeKeyAndOrderFront(null);');
+            expect(before).toContain('$.NSApplication.sharedApplication.setActivationPolicy(1);');
+        }
     });
 
     it('hands the desktop sheet the options of the request, and drops a start that is no folder of this machine', async () => {

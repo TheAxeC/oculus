@@ -60,7 +60,8 @@ const oculusShape = z.discriminatedUnion('oculus', [
         oculus: z.literal('links'),
         id: z.number().int(),
         root: rootShape,
-        moves: z.array(z.object({ from: z.string().min(1), to: z.string().min(1) })).min(1)
+        moves: z.array(z.object({ from: z.string().min(1), to: z.string().min(1) })).min(1),
+        texts: z.array(z.object({ path: z.string().min(1), text: z.string() }))
     })
 ]) satisfies z.ZodType<LspToServer>;
 

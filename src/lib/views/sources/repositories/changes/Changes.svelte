@@ -183,7 +183,9 @@
 
     function discardAll(): void {
         const count = git.unstaged.length;
-        ask(t('git.discard_all_confirm', count), t('git.discard_all_detail'), () => {
+        const question =
+            count === 1 ? t('git.discard_all_confirm_one') : t('git.discard_all_confirm', count);
+        ask(question, t('git.discard_all_detail'), () => {
             void repositories.discardAll(root);
         });
     }

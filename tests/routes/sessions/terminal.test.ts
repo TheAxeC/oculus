@@ -158,4 +158,43 @@ describe('POST /api/terminal, the recover action', () => {
         expect(started[started.indexOf('-y') + 1]).toBe('28');
         expect(lineOf(started)).toEqual(["python3 tools/data/redownload.py 'mimic-iv'"]);
     });
+
+    it('keeps the recovery terminal after its command ended, with its exit status, as a task terminal', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'recover', key: 'mimic-iv', cols: 96, rows: 28 }),
+            TOKEN,
+            {
+                ...worldOf(task.chatHub),
+                engine: task.engine,
+                configFor: () => ({
+                    ...configOf(task.engine)(),
+                    recover_command: 'python3 tools/data/redownload.py {key}'
+                }),
+                run: driver.run,
+                datasetFor: (id) =>
+                    id === 'mimic-iv'
+                        ? { id, name: 'MIMIC-IV', themes: [], projectIds: [], recover: true }
+                        : null
+            }
+        );
+        expect(response.status).toBe(200);
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        const joined = joinedCommands(started);
+        expect(joined).toContainEqual(['set-option', '-t', started[3], 'remain-on-exit', 'on']);
+        // The pane draws no "Pane is dead" line under what the line printed; the format is set
+        // last.
+        expect(joined.at(-1)).toEqual([
+            'set-option',
+            '-t',
+            started[3],
+            'remain-on-exit-format',
+            ''
+        ]);
+        const mark = joined.find((one) => one[3] === '@oculus_task');
+        expect(JSON.parse(mark?.[4] ?? 'null')).toEqual({
+            repo: task.chatHub,
+            name: 'recover mimic-iv'
+        });
+    });
 });

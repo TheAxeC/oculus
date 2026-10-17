@@ -1,9 +1,16 @@
 <script lang="ts">
     // Layer 3, partial of ui/tree/TreeItem.svelte. The controls of one row, drawn beside its line
-    // at the right. They are transparent until the row says otherwise: the row sets
-    // `--actions-opacity` to 1 while the pointer is over it or the focus is inside it, `shown`
-    // draws them at full strength always, and a screen with no pointer that hovers shows them all
-    // the time, since a control pressed where nothing is drawn is one nobody can aim at.
+    // at the right. As in VS Code's lists they are not drawn and take no room until the row says
+    // otherwise, so a narrow pane gives a row's whole width to its name: the row sets
+    // `--actions-display` to `flex` while the pointer is over it, the focus is inside it or it is
+    // selected, and the name gives way to them then. `shown` draws them always; a control whose
+    // menu is open keeps them drawn while the pointer and the focus are in the menu, so the menu
+    // stays by its opener; and a screen with no pointer that hovers shows them all the time, since
+    // a control drawn only under a pointer is one nobody can reach there.
+    //
+    // Drawn in a row too narrow for them beside its icon and the first characters of its name (the
+    // least the row's name keeps, ui/tree/TreeItem.svelte), they are cut at the row's edge rather
+    // than drawn over the name.
     //
     // `yielding` makes them the part of the line that shrinks first, cut at the row's edge, so the
     // branch name and the counts of a repository's row give way before the repository's name; each
@@ -24,16 +31,18 @@
 
 <style>
     .actions {
-        display: flex;
-        flex: 0 0 auto;
+        display: var(--actions-display, none);
+        flex: 0 1 auto;
         align-items: center;
+        min-width: 0;
+        overflow: hidden;
         gap: 1px;
         padding-right: 2px;
-        opacity: var(--actions-opacity, 0);
     }
 
-    .actions.shown {
-        opacity: 1;
+    .actions.shown,
+    .actions:has(:global([aria-haspopup][aria-expanded='true'])) {
+        display: flex;
     }
 
     .actions.yielding {
@@ -59,7 +68,7 @@
 
     @media (hover: none) {
         .actions {
-            opacity: 1;
+            display: flex;
         }
     }
 
@@ -69,6 +78,12 @@
         border-color: transparent;
         background: none;
         padding: var(--action-pad, 1px 3px);
+    }
+
+    /* A control that is on (a set bookmark star) has no fill here to carry the text colour drawn
+       on the accent, so its glyph takes the accent itself, in every theme. */
+    .actions :global(.tool.active) {
+        color: var(--accent-txt, var(--accent));
     }
 
     /* A view that draws the icon controls of its rows closer sets `--action-pad`, the padding round

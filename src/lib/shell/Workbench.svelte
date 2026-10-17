@@ -38,7 +38,7 @@
     // It is also where the languages the acting apps add are handed to the editor's kit
     // (window/app-languages.svelte.ts), in the main window and in a popped-out window alike.
 
-    import { activeLabel, windowTitle } from '$lib/shell/panes/workbench-title';
+    import { activeLabel, pageActiveTab, windowTitle } from '$lib/shell/panes/workbench-title';
     import ActivityRail from './rail/ActivityRail.svelte';
     import DropLayer from './panes/DropLayer.svelte';
     import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
@@ -95,7 +95,7 @@
     $effect(() => client.layout.settleBeforeWindow(() => frames.flush()));
 
     const {
-        layout: { activeInstance, currentPage, focused, shownFloats },
+        layout: { activeInstance, currentPage, floats, focused, shownFloats },
         ui: { paletteRequested, updateTrayRequested },
         registry: { views }
     } = client;
@@ -176,7 +176,7 @@
     let area: HTMLElement | undefined = $state();
 
     let paletteOpen = $state(false);
-    let paletteStart = $state<PaletteStart>({ text: '', files: false });
+    let paletteStart = $state<PaletteStart>({ text: '', files: false, line: false });
     let paletteQuery = $state('');
     let updateOpen = $state(false);
     let sheetOpen = $state(false);
@@ -205,7 +205,7 @@
         history: walk,
         ui: client.ui,
         navigation: () => navigation,
-        activeMain: () => activeMain,
+        activeTab: () => pageActiveTab(floatId, floats(), activeMain),
         focus: () => focus,
         paletteOpen: () => paletteOpen,
         paletteMode: () => (paletteOpen ? modeOf(paletteQuery, paletteStart.files) : null),
@@ -282,11 +282,11 @@
         return keyboard.stopCards;
     });
 
-    function openPalette(prefill: string, files = false): void {
+    function openPalette(prefill: string, files = false, line = false): void {
         keyboard.clearCursor();
         sheetOpen = false;
         updateOpen = false;
-        paletteStart = { text: prefill, files };
+        paletteStart = { text: prefill, files, line };
         paletteOpen = true;
     }
 
@@ -339,9 +339,11 @@
     /**
      * A tab in the background still says a session wants Axel: the document title carries the count
      * of sessions with an open permission prompt, so switching tabs is not the only way to notice.
+     * A popped-out window's page names its float's active tab, the words its strip draws.
      */
     $effect(() => {
-        document.title = windowTitle(waiting, activeLabel(client.registry, activeMain));
+        const tab = pageActiveTab(floatId, floats(), activeMain);
+        document.title = windowTitle(waiting, activeLabel(client.registry, tab));
     });
 </script>
 
@@ -376,7 +378,12 @@
             </div>
             <FloatLayer {area} onpalette={openPalette} />
         </div>
-        <StatusBar {status} {git} onpalette={openPalette} />
+        <StatusBar
+            {status}
+            {git}
+            onpalette={openPalette}
+            ongoto={() => openPalette(':', false, true)}
+        />
     </div>
 {/if}
 <FrameLayer {frames} />

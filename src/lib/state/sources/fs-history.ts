@@ -39,11 +39,6 @@ function noCommits(): FileCommits {
     return { commits: [], more: false, failed: false, loading: true };
 }
 
-/** The sentence a read that threw is held with. */
-export function reasonOf(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
-}
-
 /** What every copies key opens with, and the key of one root's copies. */
 const COPIES = ['fs', 'history'];
 

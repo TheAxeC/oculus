@@ -123,6 +123,20 @@ const ROWS: [string, Error, string, string, Classified][] = [
         { reason: 'nothing to commit, working tree clean' }
     ],
     [
+        "git's prompt for a missing author identity is said in the catalog's words",
+        failure({ code: 128 }),
+        '',
+        "Author identity unknown\n\n*** Please tell me who you are.\n\nfatal: unable to auto-detect email address (got 'me@host.(none)')",
+        coded('no-identity', '')
+    ],
+    [
+        'a commit refused under user.useConfigOnly is a missing identity too',
+        failure({ code: 128 }),
+        '',
+        'fatal: no email was given and auto-detection is disabled',
+        coded('no-identity', '')
+    ],
+    [
         'git text comes before an exit status',
         failure({ code: 1 }),
         '',
@@ -148,6 +162,10 @@ const SENTENCES: [CommandFailure, string][] = [
         'Git wrote more than 8 MB of output, so it was stopped'
     ],
     [{ code: 'signal', detail: 'SIGKILL', program: 'git' }, 'Git was ended by the signal SIGKILL'],
+    [
+        { code: 'no-identity', detail: '', program: 'git' },
+        'Git does not know your name and email, so nothing was committed. Set them with git config --global user.name and git config --global user.email, then commit again'
+    ],
     [
         { code: 'exit-status', detail: '1', program: 'git' },
         'Git stopped with exit status 1 and gave no reason'

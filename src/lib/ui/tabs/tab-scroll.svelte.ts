@@ -1,12 +1,13 @@
 // Layer 3, primitive. How an overflowing tab strip scrolls. The scroll controls jump to the next
-// tab start, and a tab is brought in whole when it becomes the shown one, when it is pressed, and
-// when a change of width crosses it or takes it out of sight, resting with a tab start at the left
-// edge where the browser's largest offset allows it. A wheel or trackpad scrolls the strip freely,
-// the vertical wheel turned into horizontal travel, and is not settled anywhere. Every change of
-// size is measured again from the tabs as they are, so the controls and the overflow never outlive
-// a widening. The arithmetic is ui/tabs/tab-strip.ts's; this is the part that reads the elements
-// and writes the offset, apart from ui/tabs/Tabs.svelte so the component stays its markup and its
-// keyboard.
+// tab start, and a tab is brought in whole when it becomes the shown one, when it is pressed, when
+// a change of width crosses it or takes it out of sight, and when the shown tab's own width changes
+// and leaves it not whole, which a change of the text size does to every strip, resting with a tab
+// start at the left edge where the browser's largest offset allows it. A wheel or trackpad scrolls
+// the strip freely, the vertical wheel turned into horizontal travel, and is not settled anywhere.
+// Every change of size is measured again from the tabs as they are, so the controls and the
+// overflow never outlive a widening. The arithmetic is ui/tabs/tab-strip.ts's; this is the part
+// that reads the elements and writes the offset, apart from ui/tabs/Tabs.svelte so the component
+// stays its markup and its keyboard.
 //
 // One of these belongs to one strip. Its state lives in the object it returns, never in the module.
 
@@ -65,12 +66,33 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
     let state = $state<TabScrollState>({ overflowing: false, atStart: true, atEnd: true });
 
     /**
-     * Whether the showing tab was whole at the last measure at the list's width then. A change of
-     * width that leaves it not whole brings it back; a scroll by the reader that takes it away does
-     * not, since the reader asked for that.
+     * Whether the strip keeps the showing tab in view: set when the strip brings it in, and set to
+     * whether it is whole after the reader's wheel or scroll control, so a scroll that takes it
+     * away is kept, since the reader asked for that. A change of size that leaves a kept tab not
+     * whole brings it back, and so does the first measure.
      */
-    let shownWhole = false;
-    let measuredWidth = -1;
+    let kept = false;
+    let measured = false;
+
+    /**
+     * The width of the showing tab at the last measure. A reader's scroll never changes it, so a
+     * change of it (the text size, the tab's own words) brings the tab back whatever the reader
+     * did.
+     */
+    let shownWidth = -1;
+
+    /**
+     * Whether the showing tab was whole at the last measure. A change of size that takes a tab
+     * the reader could see whole out of sight (a zoom or a narrower pane) brings it back, whatever
+     * `kept` says, since no scroll of the reader's took it away.
+     */
+    let wasWhole = false;
+
+    /** The width of the showing tab as it is drawn now, or -1 for none. */
+    function widthOfShown(): number {
+        const face = parts.faces().at(parts.shown());
+        return face === undefined || face === null ? -1 : face.getBoundingClientRect().width;
+    }
 
     /**
      * Whether the scroll controls fit beside the tabs, and the width the two took when last drawn,
@@ -120,23 +142,28 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
             fits,
             parts.wrapped()
         );
+        wasWhole = showingWhole(list);
     }
 
+    /**
+     * A scroll event: the strip's own offset, a clamp of the browser's, or the reader's wheel,
+     * which `wheel` has already weighed. It changes what is kept in view in none of them.
+     */
     function scrolled(): void {
-        const list = parts.list();
-        if (!list) return;
+        if (!parts.list()) return;
         measure();
-        if (list.clientWidth === measuredWidth) shownWhole = showingWhole(list);
     }
 
     function resized(): void {
         const list = parts.list();
         if (!list) return;
-        const was = shownWhole || measuredWidth < 0;
+        const width = widthOfShown();
+        const changed = shownWidth >= 0 && Math.abs(width - shownWidth) > 0.5;
+        const bring = kept || !measured || changed || wasWhole;
         measure();
-        measuredWidth = list.clientWidth;
-        if (was && !showingWhole(list)) reveal(parts.shown());
-        else shownWhole = showingWhole(list);
+        measured = true;
+        shownWidth = width;
+        if (bring && !showingWhole(list)) reveal(parts.shown());
     }
 
     function restAt(left: number): void {
@@ -153,16 +180,14 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
         const target = all.at(index);
         if (target === undefined) return;
         restAt(revealOffset(all, target, list.scrollLeft, list.clientWidth, maxScroll(list)));
-        if (index === parts.shown()) {
-            measuredWidth = list.clientWidth;
-            shownWhole = showingWhole(list);
-        }
+        if (index === parts.shown()) kept = true;
     }
 
     function step(direction: -1 | 1): void {
         const list = parts.list();
         if (!list || parts.wrapped()) return;
         restAt(tabEdgeStep(spans(list), list.scrollLeft, maxScroll(list), direction));
+        kept = showingWhole(list);
     }
 
     function wheel(event: WheelEvent): void {
@@ -173,6 +198,7 @@ export function createTabScroll(parts: TabScrollParts): TabScroll {
         event.preventDefault();
         list.scrollLeft += delta;
         measure();
+        kept = showingWhole(list);
     }
 
     return {

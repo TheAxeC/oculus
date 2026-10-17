@@ -65,8 +65,17 @@ export type Bounds = { width: number; height: number; pad: number };
 /** The length neato lays every edge out at, before its picture is scaled to fit the box. */
 export const LINK_LENGTH = 107;
 
-/** The box the Map draws into, which is the box every layout rule below places nodes in. */
-export const DEFAULT_BOUNDS: Bounds = { width: 1000, height: 680, pad: 48 };
+/** How far inside the edges of the box the Map draws into its nodes are placed and kept. */
+const BOUNDS_PAD = 48;
+
+/**
+ * The box the Map draws into: the pane's own size in CSS pixels, so the graph takes the pane's
+ * shape and one unit of the graph is one pixel at the zoom of 1. Every layout rule places nodes in
+ * it, less its pad.
+ */
+export function paneBounds(width: number, height: number): Bounds {
+    return { width, height, pad: BOUNDS_PAD };
+}
 
 /** The label mode the configuration's `map_label_mode` names, and the empty word for any other. */
 export function labelModeOf(config: Record<string, unknown>): string {

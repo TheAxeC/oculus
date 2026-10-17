@@ -4,7 +4,7 @@
 
 import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/boards/board';
 import type { ClientState } from '$lib/state/client/context';
-import { findView, type Layout } from '$lib/state/workbench/layout';
+import { isInstanceOf, tabsOf, type Instance, type Layout } from '$lib/state/workbench/layout';
 import { placeOf } from '$lib/state/shared/page/hubs';
 import { fileBytesUrl } from '$lib/state/sources/fs-transport';
 import { t } from '$lib/state/shared/words/text';
@@ -18,14 +18,20 @@ export type Translate = (key: string, ...args: (string | number)[]) => string;
  * when the page holds one. A Terminal tab draws only the terminals it owns and follows no
  * selection, so it is not among them.
  */
-export const SESSION_VIEWS = ['session-list', 'session-detail', 'timeline'] as const;
+export const SESSION_VIEWS = ['session-list', 'session-detail', 'transcript', 'timeline'] as const;
 
 /**
- * Whether a tree already shows a view that follows the selected session; when it shows none, a
- * session pressed on a card opens that session's own detail tab.
+ * The tab a session pressed on a card opens in: of the tabs of a tree that follow the selected
+ * session, a view of SESSION_VIEWS that pins no session, the one the page used last (`used`, the
+ * page's tabs, the one activated last first), else the first; null when the tree holds none, and
+ * the press then opens the session's own detail tab.
  */
-export function sessionViewShown(tree: Layout): boolean {
-    return SESSION_VIEWS.some((view) => findView(tree, view, null) !== null);
+export function sessionTab(tree: Layout, used: readonly string[]): Instance | null {
+    const following = tabsOf(tree).filter((tab) =>
+        SESSION_VIEWS.some((view) => isInstanceOf(tab, view, null))
+    );
+    const last = used.find((id) => following.some((tab) => tab.id === id));
+    return following.find((tab) => tab.id === last) ?? following.at(0) ?? null;
 }
 
 /** How many entries of one tag kind a collapsed card draws before the rest need its own control. */

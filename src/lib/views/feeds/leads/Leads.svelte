@@ -38,6 +38,7 @@
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceToolbar from '../../shared/links/SourceToolbar.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         declinedCount,
         leadIdents,
@@ -71,6 +72,9 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
 
     const today = localDate(Date.now());
     const data = $derived(feed('leads'));
@@ -254,7 +258,7 @@
                         <ul class="runlog">
                             {#each shownLog as line, at (`${at}:${line}`)}
                                 <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                                <li>{@html inlineMarkdown(line)}</li>
+                                <li>{@html inlineMarkdown(line, cardMath(line))}</li>
                             {/each}
                         </ul>
                         {#if log.length > LOG_LINES}

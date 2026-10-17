@@ -34,7 +34,7 @@ export function notesFiles(manifest: string = MANIFEST): Record<string, string> 
 }
 
 /** What a case plants: the machine's folder and each root's files. */
-export type Planted = {
+type Planted = {
     machine?: Record<string, string>;
     roots?: Record<string, Record<string, string>>;
     /** The folders closed to every app, given the folder the case is planted in. */

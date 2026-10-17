@@ -5,6 +5,7 @@
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { vi } from 'vitest';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 import { engineDir } from '../../../src/lib/data/places/engine-dir.ts';
 import { fsWrites } from '../../../src/lib/server/core/json.ts';
@@ -12,11 +13,28 @@ import { handleFsWrite, ignoredCache } from '../../../src/lib/server/files/fs.ts
 import { writeState } from '../../../src/lib/server/files/workspace/state.ts';
 import { openWorkspace } from '../../../src/lib/server/files/workspace/open.ts';
 import type { Workspace } from '../../../src/lib/server/files/workspace/follow.ts';
+import {
+    workspacesAnswer as readWorkspaces,
+    type WorkspacesState
+} from '../../../src/lib/state/sources/fs-transport.ts';
 import { scratchDir } from '../scratch.ts';
 import { noop } from '../doubles.ts';
 
 /** A folder of a case's workspace: the name it is served under and where it lies. */
 export type FolderSpec = { name: string; dir: string };
+
+/**
+ * The workspaces answer `body` as the page reads it (state/sources/fs-transport.ts
+ * `workspacesAnswer`), sent through JSON by a fetch that answers it, as the route sends it.
+ */
+export async function pageWorkspaces(body: unknown): Promise<WorkspacesState> {
+    vi.stubGlobal('fetch', () => Promise.resolve(Response.json(body)));
+    try {
+        return await readWorkspaces();
+    } finally {
+        vi.unstubAllGlobals();
+    }
+}
 
 /** The state folder of an unsaved workspace with these folders and this primary. */
 export function plantState(folders: readonly FolderSpec[], primary?: string): string {
@@ -64,7 +82,7 @@ export function workspaceWith(folders: readonly FolderSpec[], primary?: string):
 }
 
 /** The write token the requests of `writeFs` carry. */
-export const FS_TOKEN = 'a-write-token';
+const FS_TOKEN = 'a-write-token';
 
 /** One write of `action` to /api/fs over the workspace of the state folder `state`. */
 export async function writeFs(
@@ -85,7 +103,7 @@ export async function writeFs(
     const response = await handleFsWrite(request, FS_TOKEN, {
         engine: engineDir(),
         workspace: workspaceOf(state),
-        machine: { set: [], defaults: {}, values: {}, hubs: {} },
+        machine: { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null },
         bookmarks: null,
         writes: fsWrites(),
         ignored: ignoredCache()

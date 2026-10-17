@@ -1,9 +1,13 @@
 // Layer 2, client state. Where the Map's nodes go: Graphviz's neato engine, run in the page through
 // @viz-js/viz (Graphviz compiled to WebAssembly), lays a Graph out from a start seed, and the
-// positions it answers are fitted into the Map's box. The same node set and seed give the same
-// picture every time, since neato's random start is seeded by `start` and d3-force's random
-// source starts from one fixed seed in every simulation. mapPlacement() then runs that placement
-// to rest under the Map's forces (forces.ts) before the first draw.
+// positions it answers are fitted into the Map's box, which is the pane's own size. The same node
+// set, edges, seed and box give the same picture every time, since neato's random start is seeded
+// by `start` and d3-force's random source starts from one fixed seed in every simulation.
+// mapPlacement() then runs that placement to rest under the Map's forces (forces.ts) before the
+// first draw. A placement is made again only on a re-tune, a new seed for the same node set, or a
+// node set that shares no node with the one drawn (placementTurn()); an edge written or taken away
+// later, and a node added or taken away, are brought into the simulation the view holds (relink()
+// and renode() of forces.ts) and move no other node.
 //
 // The library is loaded by a dynamic import on the first load of createGraphviz()'s loader, which
 // only the page makes, so the server never loads the WebAssembly. The loader is held by the client
@@ -15,8 +19,8 @@ import type { Viz } from '@viz-js/viz';
 import { z } from 'zod';
 import { readAs, rowsShape } from '../../../data/shapes/shapes.ts';
 import {
-    DEFAULT_BOUNDS,
     LINK_LENGTH,
+    layoutKey,
     type Bounds,
     type Graph,
     type GraphEdge,
@@ -156,15 +160,20 @@ function positions(json: unknown, count: number): { x: number; y: number }[] {
 export type Placed = { nodes: PointNode[] };
 
 /**
- * Lay a graph out with neato from one start seed and fit it into the box: the picture is scaled
- * evenly and centred, Graphviz's upward y turned into the page's downward one.
+ * How much one axis of the picture is scaled to fill the room the box has along it: up to
+ * MAX_SCALE, and nothing for a box with no room past its pad.
  */
-export function placeGraph(
-    viz: Viz,
-    graph: Graph,
-    seed: number,
-    bounds: Bounds = DEFAULT_BOUNDS
-): Placed {
+function axisScale(span: number, room: number): number {
+    return Math.min(MAX_SCALE, span > 0 ? Math.max(0, room) / span : Infinity);
+}
+
+/**
+ * Lay a graph out with neato from one start seed and fit it into the box: each axis of the picture
+ * is scaled to fill the box's room along it, so the picture takes the pane's shape whatever shape
+ * neato gave it, as Graphviz's own `ratio=fill` does, and centred, Graphviz's upward y turned into
+ * the page's downward one.
+ */
+export function placeGraph(viz: Viz, graph: Graph, seed: number, bounds: Bounds): Placed {
     if (graph.nodes.length === 0) return { nodes: [] };
     const json = viz.renderJSON(graphDot(graph, seed), { engine: ENGINE });
     const points = positions(json, graph.nodes.length);
@@ -178,17 +187,14 @@ export function placeGraph(
     ];
     const spanX = maxX - minX;
     const spanY = maxY - minY;
-    const scale = Math.min(
-        MAX_SCALE,
-        spanX > 0 ? (bounds.width - bounds.pad * 2) / spanX : Infinity,
-        spanY > 0 ? (bounds.height - bounds.pad * 2) / spanY : Infinity
-    );
+    const scaleX = axisScale(spanX, bounds.width - bounds.pad * 2);
+    const scaleY = axisScale(spanY, bounds.height - bounds.pad * 2);
     const midX = (minX + maxX) / 2;
     const midY = (minY + maxY) / 2;
     const nodes = graph.nodes.map((node, at) => ({
         ...node,
-        x: bounds.width / 2 + (points[at].x - midX) * scale,
-        y: bounds.height / 2 - (points[at].y - midY) * scale,
+        x: bounds.width / 2 + (points[at].x - midX) * scaleX,
+        y: bounds.height / 2 - (points[at].y - midY) * scaleY,
         vx: 0,
         vy: 0
     }));
@@ -199,46 +205,76 @@ export function placeGraph(
 export type Placement = Placed | { error: string };
 
 /** Place a graph, answering the engine's error as a value so the Map can say it in its place. */
-export function placement(viz: Viz, graph: Graph, seed: number): Placement {
+export function placement(viz: Viz, graph: Graph, seed: number, bounds: Bounds): Placement {
     try {
-        return placeGraph(viz, graph, seed);
+        return placeGraph(viz, graph, seed, bounds);
     } catch (error) {
         return { error: error instanceof Error ? error.message : String(error) };
     }
 }
 
 /**
- * What the Map draws: its nodes, the reason the load or the placement failed, and the simulation
- * the view goes on with, which is null before the load or on a failure.
+ * What the Map draws: its nodes, the reason the load or the placement failed, the simulation the
+ * view goes on with, which is null before the load or on a failure, and the box the nodes were
+ * placed in, null with no simulation.
  */
-export type MapPlacement = Placed & { failure: string | null; forces: MapForces | null };
+export type MapPlacement = Placed & {
+    failure: string | null;
+    forces: MapForces | null;
+    bounds: Bounds | null;
+};
 
 /**
- * What a placement is made from, as one string: the seed, each node's id and drawn size, and each
- * edge's id and ends. A graph built again with the same of these (a new portfolio version, a
- * toggle of the pane's link mode, another label) is placed the same, so the view keeps the
- * simulation it has; the parts are written as JSON, so no two graphs share a key whatever
- * characters their ids hold.
+ * What one pane's placement was last made from: the key of its node set (layoutKey() of graph.ts),
+ * the node ids, the seed, and the count of placements made, which names the placement in force.
  */
-export function placementKey(graph: Graph, seed: number): string {
-    return JSON.stringify([
-        seed,
-        graph.nodes.map((node) => [node.id, node.radius]),
-        graph.edges.map((edge) => [edge.id, edge.source, edge.target])
-    ]);
+export type PlacementTurn = { key: string; ids: ReadonlySet<string>; seed: number; turn: number };
+
+/**
+ * The record for the graph and the seed now, its `turn` one past `held`'s when the pane is to be
+ * placed again: a seed changed under the same node set (the Map's re-tune), or a node set sharing
+ * no node with the one held (another hub's notes). Anything else keeps the turn: a graph built
+ * again from a new portfolio version, a toggle of the link mode, another label, a link written or
+ * taken away, and a node set that changed while keeping some node, whose seed changes with it
+ * (startFor() of graph.ts) and whose new nodes are placed beside the drawn ones (renode() of
+ * forces.ts).
+ */
+export function placementTurn(
+    held: PlacementTurn | null,
+    nodes: GraphNode[],
+    seed: number
+): PlacementTurn {
+    const key = layoutKey(nodes);
+    const ids = new Set(nodes.map((node) => node.id));
+    if (held === null) return { key, ids, seed, turn: 0 };
+    const retuned = key === held.key && seed !== held.seed;
+    const replaced = ![...ids].some((id) => held.ids.has(id));
+    return { key, ids, seed, turn: held.turn + (retuned || replaced ? 1 : 0) };
 }
 
 /**
- * What the Map draws from what it holds of Graphviz: no node and no failure before the load, and
- * once it has loaded, neato's placement run to rest under the Map's forces: the settled
- * simulation, cold, and copies of its nodes. A failed load or placement answers its reason.
+ * What the Map draws from what it holds of Graphviz, in the box `bounds`: no node and no failure
+ * before the load or while the pane has not been measured (`bounds` null), and once both are there,
+ * neato's placement run to rest under the Map's forces: the settled simulation, cold, and copies of
+ * its nodes. A failed load answers its reason whether or not the pane is measured, and a failed
+ * placement answers the engine's.
  */
-export function mapPlacement(answer: GraphvizAnswer, graph: Graph, seed: number): MapPlacement {
-    if (answer === null) return { nodes: [], failure: null, forces: null };
-    const placed = typeof answer === 'string' ? { error: answer } : placement(answer, graph, seed);
-    if ('error' in placed) return { nodes: [], failure: placed.error, forces: null };
-    const forces = createForces(placed.nodes, graph.edges);
-    return { nodes: settleForces(forces), failure: null, forces };
+export function mapPlacement(
+    answer: GraphvizAnswer,
+    graph: Graph,
+    seed: number,
+    bounds: Bounds | null
+): MapPlacement {
+    if (typeof answer === 'string') {
+        return { nodes: [], failure: answer, forces: null, bounds: null };
+    }
+    if (answer === null || bounds === null) {
+        return { nodes: [], failure: null, forces: null, bounds: null };
+    }
+    const placed = placement(answer, graph, seed, bounds);
+    if ('error' in placed) return { nodes: [], failure: placed.error, forces: null, bounds: null };
+    const forces = createForces(placed.nodes, graph.edges, bounds);
+    return { nodes: settleForces(forces, bounds), failure: null, forces, bounds };
 }
 
 /**

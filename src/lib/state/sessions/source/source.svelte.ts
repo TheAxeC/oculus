@@ -680,7 +680,8 @@ export function createSource(
     ): Promise<boolean> {
         const draft = sourceDraft(id);
         if (draft.readonly) return saidOnLine(id, t('source.readonly'));
-        if (draft.disk === 'unserved') return saidOnLine(id, t('source.disk_unserved'));
+        // The disk line under the editor says already that the folder is not served.
+        if (draft.disk === 'unserved') return false;
         if (draft.truncated) return saidOnLine(id, t('source.truncated'));
         if (draft.notText) return saidOnLine(id, t('source.not_text'));
         const base = options.overwrite === true ? '' : draft.base;

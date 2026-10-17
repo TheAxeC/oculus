@@ -1320,7 +1320,7 @@ options:
             section: Server
             control: number
             whole: true
-            help: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it the port is 8790. Only the primary hub's file sets it, and it is read when the server starts, so a restart takes a change.
+            help: The port the oculus server listens on, bound to 127.0.0.1. It must be a whole number. Without it, or with a value that is not one, the port is the server's default, 8790 unless the server was started with another. Only the primary hub's file sets it. The server moves to a port written to the file at once, and stays on the port it listens on when that port cannot be used.
         hpc_host:
             section: HPC host
             help: This machine's ssh alias for the Live HPC view. It takes precedence over the host of the cluster that slurm.resource of behavior.yml names. A change is read again at once.

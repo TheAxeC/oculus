@@ -1,6 +1,13 @@
 // Layer 2, client state. Board facet values, labels, ordering and counts live here because facet
 // vocabulary changes independently of item construction and board state.
+//
+// A value that names a record of a hub (a domain, a pillar, a funding scheme, a dataset, a
+// resource) is that record's id inside its hub, with the merged portfolio's hub prefix off: on a
+// workspace of two hubs one value of both is one row of the filter menu, its count the sum of both
+// hubs' projects, and one filter picks the projects of both. The words are the ones a project
+// card draws for the record, which items.ts gives the id inside the project's own hub.
 
+import { rootOf, splitHubId } from '../../../data/helpers/hub-names.ts';
 import { chipKeys, chipLabel, domainLabel } from '../../shared/words/tones.ts';
 import {
     CODE_VALUES,
@@ -13,24 +20,30 @@ import {
     type Facet
 } from './presets.ts';
 
+/** A record id of the project's hub with the hub's prefix off, as items.ts's `own` reads it. */
+function bare(item: BoardItem, id: string): string {
+    return splitHubId(id, [rootOf(item.project, null)], null).id;
+}
+
 export function facetValues(item: BoardItem, facet: string): string[] {
+    const ids = (tags: { id: string }[]): string[] => tags.map((tag) => bare(item, tag.id));
     switch (facet) {
         case 'category':
             return item.bucket === '' ? [] : [item.bucket];
         case 'year':
             return [item.year === '' ? NONE : item.year];
         case 'domain':
-            return item.domain === null ? [] : [item.domain.id];
+            return item.domain === null ? [] : [bare(item, item.domain.id)];
         case 'pillar':
-            return item.pillars.map((tag) => tag.id);
+            return ids(item.pillars);
         case 'funding':
-            return item.funding.length === 0 ? [NONE] : item.funding.map((tag) => tag.id);
+            return item.funding.length === 0 ? [NONE] : ids(item.funding);
         case 'dataset':
-            return item.datasets.map((tag) => tag.id);
+            return ids(item.datasets);
         case 'status':
             return item.chips;
         case 'compute':
-            return item.compute.length === 0 ? [NONE] : item.compute.map((one) => one.id);
+            return item.compute.length === 0 ? [NONE] : ids(item.compute);
         case 'reproduced':
             return [item.reproduced ? '1' : '0'];
         case 'code':
@@ -49,7 +62,8 @@ function recordResources(items: BoardItem[]): Recorded {
     const recorded: Recorded = new Map();
     for (const item of items) {
         for (const one of item.compute) {
-            if (!recorded.has(one.id)) recorded.set(one.id, { label: one.label, order: one.order });
+            const id = bare(item, one.id);
+            if (!recorded.has(id)) recorded.set(id, { label: one.label, order: one.order });
         }
     }
     return recorded;

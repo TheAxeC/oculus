@@ -16,9 +16,21 @@ export type WorkspaceChoice = {
 };
 
 /**
+ * How well a file matches the typed words, without regard to case: 0 for a name (or a
+ * `<hub>/<name>`) equal to them, 1 for one that starts with them, 2 for any other match.
+ */
+function rankOf(name: string, full: string, typed: string): number {
+    if (typed === '' || name === typed || full === typed) return 0;
+    return name.startsWith(typed) || full.startsWith(typed) ? 1 : 2;
+}
+
+/**
  * The workspace files whose `<hub>/<name>` holds every word of the argument, without regard to
- * case: the recent files first in their order, then the files of the hubs that are not among them.
- * A file's name is listed with its hub when another listed file has the same name.
+ * case, the best match first, as VS Code's quick pick ranks the label that matches best: a name
+ * equal to the typed words, then the names that start with them, then the rest, each group with
+ * the recent files first in their order and then the files of the hubs that are not among them, so
+ * the row the palette selects is the workspace typed. A file's name is listed with its hub when
+ * another listed file has the same name.
  */
 export function workspaceMatches(
     argument: string,
@@ -34,12 +46,17 @@ export function workspaceMatches(
         .map((one) => ({ ...one, missing: false }));
     const all = [...recent, ...rest];
     const shared = (name: string) => all.filter((one) => one.name === name).length > 1;
+    const typed = words.join(' ');
+    const rank = (one: WorkspaceFile): number =>
+        rankOf(one.name.toLowerCase(), `${one.hub}/${one.name}`.toLowerCase(), typed);
     return all
         .filter((one) => {
             const full = `${one.hub}/${one.name}`.toLowerCase();
             return words.every((word) => full.includes(word));
         })
-        .map((one) => ({
+        .map((one, at) => ({ one, at, rank: rank(one) }))
+        .sort((a, b) => a.rank - b.rank || a.at - b.at)
+        .map(({ one }) => ({
             path: one.path,
             label: shared(one.name) ? `${one.hub}/${one.name}` : one.name,
             current: saved.open?.path === one.path,

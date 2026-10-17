@@ -1,12 +1,13 @@
 // Layer 2, client state. The file browser's request addresses, the shapes its answers are held in,
 // the lookups the views make over what those shapes hold (the current workspace, a bookmark, the
-// open folders that failed to list) and bounded response reads, kept apart from the store because
-// they depend only on the wire and the response stream.
+// open folders that failed to list), the reads of the whole-file answers (the workspaces, the
+// bookmarks, the notes) and bounded response reads, kept apart from the store because they depend
+// only on the wire and the response stream.
 
 import { z } from 'zod';
 import type { OpsRefusal } from '../../data/file-ops.ts';
 import type { Entry, HubNotes, NoteEntry } from '../../data/model/index.ts';
-import { OCULUS_CONFIG_ROOT, fileBytesUrl } from '../../data/helpers/files/address.ts';
+import { OCULUS_CONFIG_ROOT, fileBytesUrl, figureUrl } from '../../data/helpers/files/address.ts';
 import type { BookmarkKind } from './explorer/view/bookmark-rows.ts';
 import {
     anyNumberShape,
@@ -52,17 +53,22 @@ type OpenWorkspaceFile = WorkspaceFile & { real: string };
 /** One recent workspace: the file, and whether it is gone from the disk. */
 export type RecentWorkspace = WorkspaceFile & { missing: boolean };
 
-/** What the server sent of the machine's `local.yml` files, for the Settings machine rows. */
-export type WorkspaceMachine = {
+/**
+ * What the server sent of the machine's `local.yml` files, for the Settings machine rows; the
+ * value in force of `port` is the port the server listens on, and `portRefused` the move to the
+ * port the file names that the server could not make, with why.
+ */
+type WorkspaceMachine = {
     set: string[];
     defaults: Record<string, string>;
     values: Record<string, string>;
     hubs: Record<string, string[]>;
+    portRefused: { port: number; reason: string } | null;
 };
 
 /** The machine's files before the server has answered, or when it sent nothing readable. */
-export function noMachine(): WorkspaceMachine {
-    return { set: [], defaults: {}, values: {}, hubs: {} };
+function noMachine(): WorkspaceMachine {
+    return { set: [], defaults: {}, values: {}, hubs: {}, portRefused: null };
 }
 
 /**
@@ -208,7 +214,20 @@ export const NO_BOOKMARKS: BookmarksState = { entries: [], error: '', loading: t
 
 export const NO_NOTES: NotesState = { hubs: [], error: '', loading: true };
 
-export { fileBytesUrl };
+export { fileBytesUrl, figureUrl };
+
+/**
+ * What a folder holds that the make controls are offered by, as the endpoint sent it; a value that
+ * is no such map is read as none.
+ */
+const marksShape = z
+    .object({
+        hub: z.literal(true).optional(),
+        project: z.literal(true).optional(),
+        home: z.literal(true).optional()
+    })
+    .optional()
+    .catch(undefined);
 
 /** One folder of a workspace, answered as the endpoint sent it, and the key it is held under. */
 const folderShape = z
@@ -217,14 +236,18 @@ const folderShape = z
         dir: z.string(),
         real: z.string().optional().catch(undefined),
         hub: z.boolean().catch(false),
-        folds: z.literal(true).optional().catch(undefined)
+        folds: z.literal(true).optional().catch(undefined),
+        marks: marksShape,
+        above: z.literal(true).optional().catch(undefined)
     })
     .transform((one): FsRoot => ({
         key: one.name,
         dir: one.dir,
         ...(one.real === undefined ? {} : { real: one.real }),
         ...(one.hub ? { hub: true as const } : {}),
-        ...(one.folds === undefined ? {} : { folds: true as const })
+        ...(one.folds === undefined ? {} : { folds: true as const }),
+        ...(one.marks === undefined ? {} : { marks: one.marks }),
+        ...(one.above === undefined ? {} : { above: true as const })
     }));
 
 const workspaceFileShape = unchanged(
@@ -238,7 +261,7 @@ const recentShape = unchanged(
 /**
  * The workspaces answer: the open workspace, its folders, its primary and the files to switch to.
  */
-export const workspacesShape = z.object({
+const workspacesShape = z.object({
     home: z.string().catch(''),
     open: unchanged(
         z.object({ path: z.string(), name: z.string(), hub: z.string(), real: z.string() })
@@ -255,7 +278,8 @@ export const workspacesShape = z.object({
             set: z.array(z.string()).catch([]),
             defaults: z.record(z.string(), z.string()).catch({}),
             values: z.record(z.string(), z.string()).catch({}),
-            hubs: z.record(z.string(), z.array(z.string())).catch({})
+            hubs: z.record(z.string(), z.array(z.string())).catch({}),
+            portRefused: z.object({ port: z.number(), reason: z.string() }).nullable().catch(null)
         })
         .catch(() => noMachine())
 });
@@ -273,7 +297,7 @@ const bookmarkShape = unchanged(
 ) satisfies z.ZodType<BookmarkEntry>;
 
 /** The bookmarks answer: the well-formed entries. */
-export const bookmarksShape = z.object({ entries: survivorsShape(bookmarkShape).catch([]) });
+const bookmarksShape = z.object({ entries: survivorsShape(bookmarkShape).catch([]) });
 
 /** One file or folder of a hub's notes folder, answered as the endpoint sent it. */
 const noteEntryShape = unchanged(
@@ -298,7 +322,7 @@ const hubNotesShape = z.object({
 }) satisfies z.ZodType<HubNotes>;
 
 /** The notes answer: the well-formed hubs. */
-export const notesShape = z.object({ hubs: survivorsShape(hubNotesShape).catch([]) });
+const notesShape = z.object({ hubs: survivorsShape(hubNotesShape).catch([]) });
 
 /** The endpoint the tree reads and the workspace actions write. */
 export const FS_PATH = '/api/fs';
@@ -345,9 +369,12 @@ export function heldListings(
     root: string,
     path: string
 ): HeldListing[] {
-    return LISTING_FORMS.map((form) =>
-        peek(['fs', 'listing', root, `${form}${treeKey(root, path)}`])
-    );
+    return listingKeys(root, path).map(peek);
+}
+
+/** The keys a folder's listing is held under, one for each pair of toggles. */
+export function listingKeys(root: string, path: string): string[][] {
+    return LISTING_FORMS.map((form) => ['fs', 'listing', root, `${form}${treeKey(root, path)}`]);
 }
 
 /** What a read of an endpoint came to: the body of a successful answer, or why the read failed. */
@@ -381,7 +408,8 @@ const fsEntryShape = unchanged(
         size: anyNumberShape,
         mtime: anyNumberShape,
         link: z.literal(true).optional().catch(undefined),
-        ignored: z.literal(true).optional().catch(undefined)
+        ignored: z.literal(true).optional().catch(undefined),
+        marks: marksShape
     })
 ) satisfies z.ZodType<FsEntry>;
 
@@ -404,11 +432,58 @@ export async function listingAnswer(url: string): Promise<Listing> {
         const entries = readAs(listingShape, answer.body)?.entries ?? [];
         return { entries, error: '', loading: false };
     } catch (error) {
+        return { entries: [], error: reasonOf(error), loading: false };
+    }
+}
+
+/** The sentence a read that threw is held with. */
+function reasonOf(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
+/** The open workspace, its folders and the workspace files the switcher offers, as answered. */
+export async function workspacesAnswer(): Promise<WorkspacesState> {
+    try {
+        const answer = await readAnswer(await fetch(FS_PATH));
+        if (!answer.ok) return { ...noWorkspaces(), error: answer.error, loading: false };
+        const body = readAs(workspacesShape, answer.body);
         return {
-            entries: [],
-            error: error instanceof Error ? error.message : String(error),
+            home: body?.home ?? '',
+            open: body?.open ?? null,
+            folders: body?.folders ?? [],
+            primary: body?.primary ?? null,
+            engine: body?.engine ?? null,
+            recent: body?.recent ?? [],
+            available: body?.available ?? [],
+            machine: body?.machine ?? noMachine(),
+            error: '',
             loading: false
         };
+    } catch (error) {
+        return { ...noWorkspaces(), error: reasonOf(error), loading: false };
+    }
+}
+
+/** The reader's own bookmarks, as answered. */
+export async function bookmarksAnswer(): Promise<BookmarksState> {
+    try {
+        const read = await readAnswer(await fetch(`${FS_PATH}?bookmarks=1`));
+        if (!read.ok) return { ...NO_BOOKMARKS, error: read.error, loading: false };
+        const body = readAs(bookmarksShape, read.body);
+        return { entries: body?.entries ?? [], error: '', loading: false };
+    } catch (error) {
+        return { ...NO_BOOKMARKS, error: reasonOf(error), loading: false };
+    }
+}
+
+/** The notes of every hub, as answered. */
+export async function notesAnswer(): Promise<NotesState> {
+    try {
+        const answer = await readAnswer(await fetch(`${FS_PATH}?notes=1`));
+        if (!answer.ok) return { ...NO_NOTES, error: answer.error, loading: false };
+        return { hubs: readAs(notesShape, answer.body)?.hubs ?? [], error: '', loading: false };
+    } catch (error) {
+        return { ...NO_NOTES, error: reasonOf(error), loading: false };
     }
 }
 
@@ -491,7 +566,6 @@ export async function readText(root: string, path: string): Promise<FileText> {
         const body = await readCapped(response, TEXT_LIMIT);
         return { ...body, error: '', loading: false };
     } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        return { ...NO_TEXT, error: reason, loading: false };
+        return { ...NO_TEXT, error: reasonOf(error), loading: false };
     }
 }

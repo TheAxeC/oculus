@@ -12,7 +12,9 @@
     // opens with the keyboard on Cancel (`focus`), so a key meant for that app never confirms it.
     // A caller may give a box of its own (`option`, VS Code's "Do not ask me again"), whose state
     // the confirm hands to `onconfirm`, and further buttons (`others`) between Cancel and the
-    // confirm, each handing its place in the list to `onother`.
+    // confirm, each handing its place in the list to `onother`. A confirm that cannot succeed is
+    // drawn disabled (`refused`), with the caller's words for why as the detail, and the keyboard
+    // then starts on Cancel.
     // Drawn in a tab, it stays in that tab, and one left open in a tab the pane hides takes the
     // keyboard again when its tab shows; the keyboard comes back to the control it was raised from
     // when it goes, as the ground says.
@@ -44,6 +46,8 @@
         level?: 'dialog' | 'tray' | 'palette' | 'sheet';
         /** The control that holds the keyboard when the dialog opens; the confirm unless given. */
         focus?: 'confirm' | 'cancel';
+        /** Draw the confirm disabled, for an answer that cannot succeed now. */
+        refused?: boolean;
     };
 
     let {
@@ -57,7 +61,8 @@
         detail = '',
         option = '',
         level = 'dialog',
-        focus = 'confirm'
+        focus = 'confirm',
+        refused = false
     }: Props = $props();
 
     let yes: HTMLButtonElement | undefined = $state();
@@ -65,7 +70,12 @@
     let checked = $state(false);
 </script>
 
-<Modal alert {level} onclose={oncancel} onopen={() => (focus === 'cancel' ? no : yes)?.focus()}>
+<Modal
+    alert
+    {level}
+    onclose={oncancel}
+    onopen={() => (focus === 'cancel' || refused ? no : yes)?.focus()}
+>
     {#snippet children(props)}
         <div {...props} class="box" aria-label={message}>
             <p class="message">{message}</p>
@@ -84,8 +94,12 @@
                         >{other}</button
                     >
                 {/each}
-                <button type="button" class="yes" bind:this={yes} onclick={() => onconfirm(checked)}
-                    >{confirm}</button
+                <button
+                    type="button"
+                    class="yes"
+                    bind:this={yes}
+                    disabled={refused}
+                    onclick={() => onconfirm(checked)}>{confirm}</button
                 >
             </div>
         </div>
@@ -155,6 +169,11 @@
     .row .yes {
         border-color: var(--accent);
         color: var(--accent-txt, var(--accent));
+    }
+
+    .row button:disabled {
+        opacity: 0.5;
+        cursor: default;
     }
 
     .row button:focus-visible {

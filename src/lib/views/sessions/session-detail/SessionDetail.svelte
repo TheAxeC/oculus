@@ -114,6 +114,7 @@
 
 <Pane
     title={t('sessions.detail_title')}
+    large
     toolbar={panePin !== null && record !== null ? tools : undefined}
     {bar}
     tinted
@@ -179,9 +180,12 @@
 </Pane>
 
 <style>
-    /* The view's words are the size of a sidebar's, `--fs-sm`, its boxes to type in among them;
-       a section's own sizes (a label, a heading) stand as each section sets them. */
+    /* The view's words are the size of a sidebar's, `--fs-sm`, its boxes to type in among them,
+       and its headings one step above, `--fs-md`: the pane's title and each section's head, whose
+       tree row reads `--tree-heading-font` and scales it by `--text-scale` itself. A section's
+       own sizes (a label, a sub-heading, a row) stand as each section sets them. */
     .session {
+        --tree-heading-font: calc(var(--fs-md) / var(--text-scale, 1));
         display: flex;
         flex-direction: column;
         min-width: 0;

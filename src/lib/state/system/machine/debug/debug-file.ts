@@ -7,7 +7,10 @@
 // asked of the app's host through the debug route). A provider that fails is said as a notice and
 // its debugger's other configurations are still offered. The server appends the chosen one to the
 // file's `configurations` list, making the file when it is absent; the name is made unique among
-// the entries the file holds, and the file's tab opens at the new entry.
+// the entries the file holds, and the file's tab opens at the new entry. The launch file is read
+// again as soon as the server has written it and its answer is held under the repository's key, so
+// the Debug view draws the new configuration, its picker and Open launch.yml at once, rather than
+// waiting for a reader to ask again after a mark.
 
 import type { DebugConfiguration, DebugLaunches } from '../../../../data/model/index.ts';
 import {
@@ -20,7 +23,7 @@ import {
 } from '../../../../data/helpers/files/apps/tools/debuggers.ts';
 import type { Queries } from '../../../shared/stores/shapes.ts';
 import { t } from '../../../shared/words/text.ts';
-import { postDebug } from './debug-io.ts';
+import { postDebug, readLaunches } from './debug-io.ts';
 import type { DebugDeps } from './debug.svelte.ts';
 
 /** The file the launch configurations are kept in, relative to a repository. */
@@ -104,7 +107,9 @@ export async function addConfiguration(
         deps.notices.post(answer.error, { tone: 'error' });
         return null;
     }
-    queries.mark(['debug', repo], 'replace');
+    const read = await readLaunches(repo);
+    if ('error' in read) queries.mark(['debug', repo], 'replace');
+    else queries.hold(['debug', repo], read);
     deps.openFile(repo, LAUNCH_FILE, answer.kind === 'line' ? answer.line : 1);
     return name;
 }

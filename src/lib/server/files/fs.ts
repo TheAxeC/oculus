@@ -21,7 +21,11 @@
 // The file route still serves what a listing leaves out, since what is served and what is offered
 // are different questions. A symbolic link is resolved and then listed as the kind its target is,
 // under the same rule the file route serves one by: inside the root it is an ordinary entry, and
-// pointing out of the root it is left out.
+// pointing out of the root it is left out. A folder of a listing, and each folder of the
+// workspace, carries what it holds that Make Folder a Hub and Make Folder a Project are offered by
+// (project/make.ts, `folderMarks`), three stats of each folder listed, and a folder of the
+// workspace also whether a folder above it is a hub, so the Files view's menu draws the two items
+// as it opens.
 //
 // The workspace is the open workspace file of server/files/workspace and nothing else: a GET with
 // no root answers it, and the actions on it as a whole are Save Workspace As (`save-workspace`, a
@@ -43,11 +47,13 @@ import { homedir } from 'node:os';
 import { join, relative } from 'node:path';
 import { z } from 'zod';
 import { isMap } from '../../data/helpers/guards.ts';
+import type { FolderMarks } from '../../data/helpers/hub-names.ts';
 import { configDir } from '../../data/sources/config/folder.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { resolveRootPath, type Root } from './files.ts';
 import { readBookmarks } from './fs/bookmarks.ts';
 import { ignoredIn } from '../core/git/files.ts';
+import { folderMarks, hubAbove } from './project/make.ts';
 import { notesFolderOf, notesFolderState, readAllNotes, writeNoteOrder } from './fs/notes.ts';
 import { chained, type FsWrites } from '../core/json.ts';
 import { foldsCase, inside, realPath } from '../core/paths.ts';
@@ -71,6 +77,8 @@ export type Entry = {
     link?: true;
     /** True for an entry git ignores, listed because the request asked for those too. */
     ignored?: true;
+    /** What a folder holds that Make Folder a Hub and Make Folder a Project are offered by. */
+    marks?: FolderMarks;
 };
 
 /**
@@ -87,6 +95,10 @@ type AnsweredFolder = {
     real: string;
     hub: boolean;
     folds?: true;
+    /** What the folder holds that the two make controls are offered by (project/make.ts). */
+    marks?: FolderMarks;
+    /** A folder above it, up to the home folder and not including it, is a hub. */
+    above?: true;
 };
 
 /** What a GET with no root answers: the open workspace and the files the switcher offers. */
@@ -114,14 +126,15 @@ export type WorkspacesAnswer = {
 
 /**
  * The names of the keys the primary's `local.yml` sets, the default text by key, the text of the
- * value in force by key (one line for each row of a joined list), and the hubs whose files set each
- * joined list.
+ * value in force by key (one line for each row of a joined list), the hubs whose files set each
+ * joined list, and the move to the port the file names that the server could not make.
  */
 type MachineAnswer = {
     set: readonly string[];
     defaults: Record<string, string>;
     values: Record<string, string>;
     hubs: Record<string, string[]>;
+    portRefused: { port: number; reason: string } | null;
 };
 
 /**
@@ -273,6 +286,8 @@ export function listDir(
 /**
  * One directory as a listing request asks for it: listDir's entries, without the ones git ignores
  * there unless the request asks for those too, in which case each of them carries `ignored: true`.
+ * A folder carries the marks the Files view's menu offers Make Folder a Hub and Make Folder a
+ * Project by (project/make.ts, `folderMarks`), read through a link as its target's.
  */
 export async function listShown(
     list: Root[],
@@ -283,17 +298,32 @@ export async function listShown(
 ): Promise<{ entries: Entry[] } | { error: 'outside' | 'missing' }> {
     const found = listDir(list, key, path, shown.hidden);
     if ('error' in found) return found;
+    const marked = withMarks(found.at, found.entries);
     const ignored = await cachedIgnored(
         cache,
         found.at,
         found.entries.map((one) => one.name)
     );
-    if (!shown.ignored) return { entries: found.entries.filter((one) => !ignored.has(one.name)) };
+    if (!shown.ignored) return { entries: marked.filter((one) => !ignored.has(one.name)) };
     return {
-        entries: found.entries.map((one) =>
-            ignored.has(one.name) ? { ...one, ignored: true } : one
-        )
+        entries: marked.map((one) => (ignored.has(one.name) ? { ...one, ignored: true } : one))
     };
+}
+
+/** The home folder of the account the server runs as, with every symlink resolved. */
+function realHome(): string {
+    return realPath(homedir()) ?? homedir();
+}
+
+/** The entries of the folder at a real path, each folder with its marks when it has any. */
+function withMarks(at: string, entries: readonly Entry[]): Entry[] {
+    const home = realHome();
+    return entries.map((one) => {
+        if (one.kind !== 'dir') return one;
+        const path = join(at, one.name);
+        const marks = folderMarks(one.link === true ? (realPath(path) ?? path) : path, home);
+        return Object.keys(marks).length === 0 ? one : { ...one, marks };
+    });
 }
 
 /** What a listing request asks to see, from its query: `hidden=1` and `ignored=1`, each alone. */
@@ -333,6 +363,7 @@ export function workspacesAnswer(
     engine: string,
     machine: MachineAnswer
 ): WorkspacesAnswer {
+    const home = realHome();
     return {
         home: homedir(),
         open:
@@ -344,14 +375,20 @@ export function workspacesAnswer(
                       hub: open.hub,
                       real: realPath(open.file) ?? open.file
                   },
-        folders: open.folders.map((one) => ({
-            name: one.name,
-            path: one.path,
-            dir: one.dir,
-            real: realPath(one.dir) ?? '',
-            hub: one.hub,
-            ...(foldsCase(one.dir) ? { folds: true as const } : {})
-        })),
+        folders: open.folders.map((one) => {
+            const real = realPath(one.dir);
+            const marks = real === null ? {} : folderMarks(real, home);
+            return {
+                name: one.name,
+                path: one.path,
+                dir: one.dir,
+                real: real ?? '',
+                hub: one.hub,
+                ...(foldsCase(one.dir) ? { folds: true as const } : {}),
+                ...(Object.keys(marks).length === 0 ? {} : { marks }),
+                ...(real !== null && hubAbove(real, home) ? { above: true as const } : {})
+            };
+        }),
         primary: open.primary,
         engine: configPlace(open, engine),
         recent: open.recent,

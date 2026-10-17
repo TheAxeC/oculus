@@ -21,13 +21,19 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import ActionStrip, { type StripAction } from '$lib/ui/tabs/ActionStrip.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
-    import type { DiffActions } from '$lib/state/sources/repositories/diff/diff-hunks';
+    import {
+        hunkHead,
+        type DiffActions,
+        type Hunk
+    } from '$lib/state/sources/repositories/diff/diff-hunks';
     import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
     import { t } from '$lib/state/shared/words/text';
 
     type Props = {
-        /** The hunk's head text, git's `@@ -a,b +c,d @@`. */
-        head: string;
+        /** The hunk, whose head the bar says as git writes it, `@@ -a,b +c,d @@`. */
+        hunk: Hunk;
+        /** How many lines each side of the file holds, which the head's context stays inside. */
+        sides: { original: number; modified: number };
         /** The hunk's place in the file, which the bar's ids carry. */
         at: number;
         /** The bar's id among the pane's bars: the file's place and the hunk's. */
@@ -51,7 +57,8 @@
     };
 
     let {
-        head,
+        hunk,
+        sides,
         at,
         id,
         actions,
@@ -64,6 +71,18 @@
         offered = [],
         onoffer
     }: Props = $props();
+
+    /** The hunk's head in git's words, its context widened inside each side's lines. */
+    const head = $derived.by(() => {
+        const span = hunkHead(hunk, sides.original, sides.modified);
+        return t(
+            'repositories.hunk_head',
+            span.oldStart,
+            span.oldCount,
+            span.newStart,
+            span.newCount
+        );
+    });
 
     /** The width the bar keeps for the head's first characters, its padding and gaps with them. */
     const ROOM = 96;
@@ -78,9 +97,11 @@
                     {
                         mode: 'unstage',
                         label:
-                            count > 0
-                                ? t('repositories.lines_unstage', count)
-                                : t('repositories.hunk_unstage'),
+                            count === 1
+                                ? t('repositories.lines_unstage_one')
+                                : count > 1
+                                  ? t('repositories.lines_unstage', count)
+                                  : t('repositories.hunk_unstage'),
                         glyph: 'unstage'
                     }
                 ]
@@ -88,17 +109,21 @@
                     {
                         mode: 'stage',
                         label:
-                            count > 0
-                                ? t('repositories.lines_stage', count)
-                                : t('repositories.hunk_stage'),
+                            count === 1
+                                ? t('repositories.lines_stage_one')
+                                : count > 1
+                                  ? t('repositories.lines_stage', count)
+                                  : t('repositories.hunk_stage'),
                         glyph: 'stage'
                     },
                     {
                         mode: 'revert',
                         label:
-                            count > 0
-                                ? t('repositories.lines_revert', count)
-                                : t('repositories.hunk_revert'),
+                            count === 1
+                                ? t('repositories.lines_revert_one')
+                                : count > 1
+                                  ? t('repositories.lines_revert', count)
+                                  : t('repositories.hunk_revert'),
                         glyph: 'note_back'
                     }
                 ]
@@ -107,7 +132,9 @@
         actions === 'none'
             ? conflicted
                 ? t('repositories.diff_conflicted')
-                : t('repositories.diff_whole')
+                : staged
+                  ? t('repositories.diff_whole_staged')
+                  : t('repositories.diff_whole')
             : ''
     );
 

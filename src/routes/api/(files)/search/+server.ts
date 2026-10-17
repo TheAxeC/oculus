@@ -19,6 +19,7 @@ export const GET: RequestHandler = ({ request, locals }) => {
         roots: locals.server.workspace.open().roots,
         cap: settings.maxHits,
         maxNames: settings.maxNames,
+        repositories: locals.server.repositories(),
         timeout: settings.timeoutS * 1000
     });
 };

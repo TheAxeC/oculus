@@ -32,35 +32,42 @@
     // The header holds the icon actions (bar/TerminalActions.svelte): New terminal starts a shell
     // at once in the tab's folder, the kinds dropdown beside it starts Shell, Claude or Codex the
     // same way, shows the composer (With a Prompt) in the shown terminal's kind, or, under Attach
-    // to Session, joins a running terminal no Terminal tab owns to the end of this tab and shows
-    // it alone, and Split splits the shown terminal. The bar under the header holds the shown
-    // terminal's title, the font buttons (TerminalFontTools.svelte) and, at its end, what the tab
-    // says. A start the server refuses, a Split of a terminal the page knows nothing of, and a
-    // failed Copy as HTML are said on the bar and change nothing. From two terminals on, the tab's
-    // list (TerminalList.svelte) is drawn on the right of the body, and with one while the composer
-    // shows; a tab showing its only terminal names it on the bar. A row dragged from another tab's
-    // list onto this tab's body, when this tab draws no list, joins the end of this tab.
+    // to Session, joins a running terminal no Terminal tab owns to the end of this tab and shows it
+    // alone, and Split splits the shown terminal. The bar under the header (bar/TerminalBar.svelte)
+    // holds the title of the terminal the tab names there, the font buttons and, at its end, what
+    // the tab says. A start the server refuses, a Split of a terminal the page knows nothing of,
+    // and a failed Copy as HTML are said on the bar and change nothing. From two terminals on, the
+    // tab's list (list/TerminalList.svelte) is drawn on the right of the body, and with one while
+    // the composer shows. The handle left of it drags its width, and a pane with no room for that
+    // width draws it narrower, narrow (its rows as their marks) or not at all, so the row of
+    // terminals keeps a usable width (list/list-width.svelte.ts). A tab showing its only terminal,
+    // or with no room for its list, names the shown terminal on the bar; with no room for its list,
+    // the header's terminals menu lists every terminal it owns. A row dragged from another
+    // tab's list onto this tab's body, when this tab draws no list, joins the end of this tab.
     //
-    // The tab's label is the shown terminal's title, else its name, kept in its state as a terminal
-    // is renamed while it runs. Rename opens an inline field on the row, or on the bar's title
-    // while no list is drawn; Change Icon opens the glyph list (ui/forms/choice/GlyphDialog.svelte)
-    // and Change Color takes the picked colour; Clear empties the grid and the terminal's history.
+    // The tab's label is what a Terminal tab calls the shown terminal (`terminalTabTitle`: the
+    // title the reader gave it, else the agent's or the task's words, else the process tmux
+    // reports, as "zsh"), kept in its state as a terminal is renamed or runs another process.
+    // Rename opens an inline field on the row, or on the bar's title while no list or a narrow one
+    // is drawn; Change Icon opens the glyph list (ui/forms/choice/GlyphDialog.svelte) and Change
+    // Color takes the picked colour; Clear empties the grid and the terminal's history.
     //
     // The grid's, the list's and the bar's right-click menus act through this tab (a right-click on
     // the bar's name of a sole terminal opens a list row's menu, and `routePick` sends a pick of
     // either to one set of handlers): Split Terminal splits it as a row's Split does, Kill Terminal
-    // arms the terminal and kills it on a second pick or press, as the row's Kill does
-    // (terminal-list.ts, `pressKill`), the arm taken off when a terminal joins or leaves the tab,
-    // and Join Terminals is offered the terminals the other Terminal tabs own, each by its name.
+    // arms the terminal and kills it on a second pick or press, as the row's Kill does, and Join
+    // Terminals is offered the terminals the other Terminal tabs own, each by its name. The arm is
+    // the tab's (list/kill-arm.svelte.ts, which says what takes it off).
 
     import TerminalStart from './start/TerminalStart.svelte';
     import TerminalActions from './bar/TerminalActions.svelte';
+    import TerminalBar from './bar/TerminalBar.svelte';
     import { SvelteMap } from 'svelte/reactivity';
     import GlyphDialog from '$lib/ui/forms/choice/GlyphDialog.svelte';
     import TerminalGrid from './grid/TerminalGrid.svelte';
-    import TerminalList from './TerminalList.svelte';
-    import TerminalFontTools from './TerminalFontTools.svelte';
-    import TerminalTitle from './TerminalTitle.svelte';
+    import TerminalList from './list/TerminalList.svelte';
+    import { createKillArm } from './list/kill-arm.svelte';
+    import { createListWidth } from './list/list-width.svelte';
     import Pane from '$lib/ui/frame/Pane.svelte';
     import Sash from '$lib/ui/frame/Sash.svelte';
     import { SASH_PX } from '$lib/ui/frame/sash-size';
@@ -72,6 +79,7 @@
         resizedShares,
         rowWidths,
         showingOne,
+        showingRow,
         splitDrawn,
         unsplit,
         withLabel,
@@ -88,15 +96,12 @@
         ROW_DRAG,
         listDrawn,
         ownedElsewhere,
-        pressKill,
-        routePick,
         tabRows,
         taskStateOf,
-        terminalRowMenu,
-        terminalTip,
         type PickHandlers
     } from './terminal-list';
     import { terminalLabel } from '$lib/state/sessions/terminals.svelte';
+    import { terminalTabTitle } from '$lib/state/sessions/terminal/terminal-lists';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
     import { useState } from '$lib/state/client/use';
@@ -119,7 +124,8 @@
             stopTerminal,
             terminalById,
             terminals
-        }
+        },
+        ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -174,25 +180,42 @@
 
     /**
      * The terminal whose Kill was pressed or picked once and waits for the second, held here since
-     * the list's Kill and the grid's menu arm and kill the same way; the list takes it off when its
-     * stop moves or focus leaves it (TerminalList.svelte).
+     * the list's Kill and the grid's menu arm and kill the same way, and a kill the server refused,
+     * said below the list's rows while a list that names them is drawn and on the bar otherwise.
      */
-    let arming = $state('');
-    /**
-     * A kill the server refused, said below the list's rows while the list is drawn and on the bar
-     * otherwise, until the next kill.
-     */
-    let failure = $state('');
+    const arm = createKillArm(stopTerminal, () => tab.terminals);
 
     /** The terminal whose bell rang in this tab, while its mark shows. */
     let ringing: string | null = $state(null);
     const bell = bellMark((which) => (ringing = which));
+    /** The terminal whose title is being edited. */
+    let renaming = $state('');
     /** The terminal a pointer press on its row asked for, whose grid takes focus. */
     let focusing: string | null = $state(null);
     /** The body, whose width gives each terminal of the row its width. */
     let bodyWidth = $state(0);
-    /** The terminal whose title is being edited, and the one whose icon is being chosen. */
-    let renaming = $state('');
+    /** The tab's content, the row and the list together, whose width gives the list its room. */
+    let content: DOMRectReadOnly | undefined = $state();
+    const listWidth = createListWidth({
+        record: () => instanceState(instance.id),
+        write: (record) => setInstanceState(instance.id, record),
+        listed: () => listed,
+        body: () => content?.width ?? 0
+    });
+    /** How the list is drawn, or null when it is not. */
+    const fit = $derived(listWidth.fit());
+    /**
+     * The row whose title the bar names: the shown one while no list is drawn, and the one being
+     * renamed while the list is narrow.
+     */
+    const titled = $derived(
+        fit === null
+            ? shownRow
+            : fit.narrow
+              ? (rows.find((row) => row.terminal === renaming) ?? null)
+              : null
+    );
+    /** The terminal whose icon is being chosen. */
     let iconFor = $state('');
     /** The Clear of each mounted grid, by terminal, for a row's menu. */
     const clears = new SvelteMap<string, () => Promise<string>>();
@@ -212,24 +235,13 @@
         restateInstance(instance.id, next);
     }
 
-    // A terminal is renamed while it runs; the tab's label follows the shown terminal's title, else
-    // its name.
+    // A terminal is renamed while it runs, or runs another process; the tab's label follows what a
+    // Terminal tab calls the shown terminal.
     $effect(() => {
         const live = terminal;
-        const named = live === null ? '' : terminalLabel(live);
+        const named = live === null ? '' : terminalTabTitle(live);
         if (live === null || named === '' || tab.label === named) return;
         restate(withLabel(tab, named));
-    });
-
-    // An arm holds only while the tab's terminals stay the same: one joining or leaving takes it
-    // off, so an arm set from the grid of a lone terminal never turns a later Delete on its row
-    // into a kill.
-    let armedAmong = '';
-    $effect(() => {
-        const now = tab.terminals.join(' ');
-        if (now === armedAmong) return;
-        armedAmong = now;
-        arming = '';
     });
 
     // The bell's mark goes with the tab.
@@ -275,15 +287,6 @@
         else clears.set(which, held.clear);
     }
 
-    /** A press of a row's Kill, or Kill Terminal from a menu: the first arms, the second kills. */
-    function kill(terminal: string): void {
-        void pressKill(arming, terminal, {
-            arm: (one) => (arming = one),
-            stop: stopTerminal,
-            fail: (error) => (failure = error)
-        });
-    }
-
     /** Join Terminals: a terminal another tab owns moves in after `terminal`, shown beside it. */
     function joinInto(terminal: string, moving: string): void {
         moveTerminal(moving, instance.id, pageId(), tab.terminals.indexOf(terminal) + 1);
@@ -294,7 +297,7 @@
     /** What a pick of a terminal's menu does, on a list row and on the bar's name alike. */
     const handlers: PickHandlers = {
         split: splitOn,
-        kill,
+        kill: arm.kill,
         unsplit: (which: string) => restate(unsplit(tab, which)),
         rename,
         icon: (which: string) => (iconFor = which),
@@ -342,45 +345,36 @@
             shown={tab.shown}
             kind={terminal?.kind}
             {attachables}
+            splittable={terminal !== null && terminal.cwd !== ''}
             onsplit={splitOn}
             task={taskStateOf(terminal)}
             onrerun={handlers.rerun}
             onrestart={handlers.restart}
+            switching={fit === null ? rows : []}
+            {current}
+            onshow={(one: string) => {
+                focusing = one;
+                restate(showingRow(tab, one));
+            }}
         />
     </Toolbar>
 {/snippet}
 
 {#snippet bar()}
-    <Toolbar label={t('sessions.terminal_bar')}>
-        {#if !listed && shownRow !== null}
-            <TerminalTitle
-                shown={shownRow}
-                tip={terminal === null ? shownRow.title : terminalTip(terminal)}
-                ringing={ringing === shownRow.terminal}
-                renaming={renaming === shownRow.terminal}
-                onrename={() => rename(shownRow.terminal)}
-                menu={() =>
-                    terminalRowMenu(
-                        tab,
-                        shownRow.terminal,
-                        others,
-                        arming === shownRow.terminal,
-                        t,
-                        taskStateOf(shownRow)
-                    )}
-                onpick={(pick: string) => routePick(pick, shownRow.terminal, handlers)}
-                onsave={(value: string) => void renamed(shownRow.terminal, value)}
-                oncancel={() => (renaming = '')}
-            />
-        {/if}
-        <TerminalFontTools />
-        {#if said !== ''}
-            <span class="failure" role="alert">{said}</span>
-        {/if}
-        {#if failure !== '' && !listed}
-            <span class="failure" role="alert">{failure}</span>
-        {/if}
-    </Toolbar>
+    <TerminalBar
+        row={titled}
+        {tab}
+        {others}
+        armed={arm.armed()}
+        {ringing}
+        {renaming}
+        {handlers}
+        {said}
+        failure={fit === null || fit.narrow ? arm.failure() : ''}
+        arming={(fit === null || fit.narrow) && arm.armed() !== ''}
+        onrenamed={(which: string, value: string) => void renamed(which, value)}
+        onrenamecancel={() => (renaming = '')}
+    />
 {/snippet}
 
 {#snippet grid(id: string)}
@@ -390,8 +384,8 @@
         onfocused={() => (focusing = null)}
         onbell={bell.ring}
         onsplit={splitOn}
-        armed={arming === id}
-        onkill={kill}
+        armed={arm.armed() === id}
+        onkill={arm.kill}
         onrerun={handlers.rerun}
         onrestart={handlers.restart}
         onrename={rename}
@@ -408,8 +402,9 @@
     <div
         class="terminal"
         data-instance={instance.id}
-        ondragover={listed ? undefined : rowOver}
-        ondrop={listed ? undefined : rowDropped}
+        bind:contentRect={content}
+        ondragover={fit === null ? rowOver : undefined}
+        ondrop={fit === null ? rowDropped : undefined}
     >
         <div class="main" bind:clientWidth={bodyWidth}>
             {#if tab.row.length === 0}
@@ -442,7 +437,15 @@
                 {/if}
             {/if}
         </div>
-        {#if listed}
+        {#if fit !== null}
+            <Sash
+                dir="row"
+                share={content !== undefined && content.width > 0
+                    ? 1 - fit.width / content.width
+                    : 1}
+                onresize={listWidth.moved}
+                onreset={listWidth.reset}
+            />
             <TerminalList
                 instance={instance.id}
                 page={pageId()}
@@ -457,9 +460,11 @@
                 {renaming}
                 onrenamed={(which: string, value: string) => void renamed(which, value)}
                 onrenamecancel={() => (renaming = '')}
-                {arming}
-                {failure}
-                ondisarm={() => (arming = '')}
+                arming={arm.armed()}
+                failure={arm.failure()}
+                ondisarm={arm.disarm}
+                width={fit.width}
+                narrow={fit.narrow}
             />
         {/if}
     </div>
@@ -482,9 +487,9 @@
 {/if}
 
 <style>
+    /* The handle left of the list is the gap between the row and the list. */
     .terminal {
         display: flex;
-        gap: 6px;
         min-width: 0;
         height: 100%;
         padding: 4px 6px 6px;
@@ -508,16 +513,5 @@
 
     .composer {
         flex: 1 0 20rem;
-    }
-
-    /* What the tab said of a refused action, at the end of the bar. */
-    .failure {
-        margin-left: auto;
-        color: var(--c-red-txt, var(--ink));
-        font-size: var(--fs-xs);
-    }
-
-    .failure ~ .failure {
-        margin-left: 0;
     }
 </style>

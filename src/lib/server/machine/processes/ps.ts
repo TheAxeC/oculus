@@ -23,13 +23,21 @@ const PS_ARGS = ['-axww', '-o', 'pid=,ppid=,user=,pcpu=,rss=,lstart=,command='];
  */
 const MAX_OUTPUT = 32 * 1024 * 1024;
 
+/** How much of the error stream is kept for the failure's sentence, in characters. */
+const MAX_SAID = 2000;
+
+/** One stream of the child, read as text. */
+type PsStream = {
+    setEncoding(encoding: 'utf8'): unknown;
+    on(event: 'data', listener: (chunk: string) => void): unknown;
+    on(event: 'error', listener: () => void): unknown;
+};
+
 /** The child of one run: what the call reads of it and the kill. */
 type PsChild = {
-    stdout: {
-        setEncoding(encoding: 'utf8'): unknown;
-        on(event: 'data', listener: (chunk: string) => void): unknown;
-        on(event: 'error', listener: () => void): unknown;
-    };
+    stdout: PsStream;
+    /** What `ps` says when it fails, which the failure's sentence gives. */
+    stderr: PsStream;
     on(event: 'error', listener: () => void): unknown;
     on(event: 'close', listener: (code: number | null, signal: string | null) => void): unknown;
     kill(signal: 'SIGKILL'): boolean;
@@ -39,7 +47,7 @@ type PsChild = {
 type PsStart = (file: string, args: string[], env: NodeJS.ProcessEnv) => PsChild;
 
 const startChild: PsStart = (file, args, env) =>
-    spawn(file, args, { env, stdio: ['ignore', 'pipe', 'ignore'] });
+    spawn(file, args, { env, stdio: ['ignore', 'pipe', 'pipe'] });
 
 type PsOptions = {
     /** How the child is started; the real `ps` when absent. */
@@ -77,6 +85,7 @@ export function readTable(options: PsOptions = {}): Promise<Entry[]> {
             gone = done;
         });
         const entries: Entry[] = [];
+        let said = '';
         let rest = '';
         let read = 0;
         let settled = false;
@@ -116,6 +125,13 @@ export function readTable(options: PsOptions = {}): Promise<Entry[]> {
             if (read > maxOutput) fail(new ReadFailure('output'));
         });
         child.stdout.on('error', () => fail(new ReadFailure('output')));
+        child.stderr.setEncoding('utf8');
+        child.stderr.on('data', (chunk: string) => {
+            if (said.length < MAX_SAID) said = (said + chunk).slice(0, MAX_SAID);
+        });
+        // A failed error stream leaves the sentence without what ps said; the status still names
+        // it.
+        child.stderr.on('error', () => undefined);
         child.on('error', () => {
             fail(new ReadFailure('start'));
             gone();
@@ -123,8 +139,10 @@ export function readTable(options: PsOptions = {}): Promise<Entry[]> {
         child.on('close', (code, stop) => {
             gone();
             if (rest !== '') fold(rest);
-            if (code !== 0) fail(new ReadFailure('status', code ?? stop ?? 'unknown'));
-            else if (entries.length === 0 && read > 0) fail(new ReadFailure('output'));
+            if (code !== 0) {
+                const first = said.trim().split('\n')[0].trim();
+                fail(new ReadFailure('status', code ?? stop ?? 'unknown', first));
+            } else if (entries.length === 0 && read > 0) fail(new ReadFailure('output'));
             else finish(() => resolve(entries));
         });
     });

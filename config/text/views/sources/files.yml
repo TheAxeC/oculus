@@ -20,7 +20,7 @@ text:
         bookmarks: Bookmarks
         bookmarks_empty: No bookmark yet. The star on a file, a folder or a root adds one.
         bookmarks_failed: 'The bookmarks could not be read: {0}'
-        cancel: cancel
+        cancel: Cancel
         collapse_title: Close {0}
         compare_missing: One of the two files is not there.
         compare_not_a_file: A folder cannot be compared with a file.
@@ -185,7 +185,7 @@ text:
         problems_many: 9+
         problems_one_title: 1 problem in this file
         problems_title: '{0} problems in this file'
-        read_again: read again
+        read_again: Read again
         read_again_bookmarks: Read the bookmarks again
         read_again_notes: Read the notes again
         read_failed: 'The folders could not be read: {0}'
@@ -227,7 +227,7 @@ text:
         refused_trash_failed: The Trash could not take it.
         refused_unreadable: '{0} does not read, so oculus leaves it as it is; the Problems view says why'
         refused_unwritable: The file could not be written.
-        remove_root: remove
+        remove_root: Remove
         remove_root_confirm: Take {0} out of this workspace?
         remove_root_detail: The folder stays on this machine; this workspace stops serving it.
         replace_button: Replace
@@ -240,7 +240,7 @@ text:
         reveal_no_roots: '{0} cannot be shown: the file browser could not read its roots ({1}).'
         reveal_place: '{0}/{1}'
         reveal_unread: '{0} cannot be shown: {1} could not be read ({2}), and is selected.'
-        row_bookmark: bookmark
+        root_gone: '{0} is not a root this workspace serves now. Add it to the workspace again to show it here.'
         row_bookmark_title: Bookmark {0}
         row_open_tab: open in a new tab
         row_open_tab_title: Open {0} in a tab that stays

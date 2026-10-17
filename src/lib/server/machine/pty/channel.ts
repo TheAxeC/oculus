@@ -3,13 +3,13 @@
 // the page beyond a subscription.
 //
 // A page subscribes to `pty:<id>`, gets what the pane already shows as its first message, and then
-// one message per chunk tmux reports for that pane. It sends back `input` and `resize`, and both
-// are accepted only from a socket the socket module found carrying the write token (server/root/
-// socket.ts, which hands `gate` the `canWrite(sink)` that `inbound` asks); a socket without the
-// token reads every channel and writes to none. That is DESIGN.md's "The socket accepts nothing
-// from the page except subscriptions and, from a socket whose subscription carried the write
-// token, terminal input and the frames of an `lsp:<language>` channel", made concrete for the
-// terminals.
+// one message per chunk tmux reports for that pane. It sends back `input` and `resize`, a `resize`
+// also just before it subscribes, and both are accepted only from a socket the socket module found
+// carrying the write token (server/root/socket.ts, which hands `gate` the `canWrite(sink)` that
+// `inbound` asks); a socket without the token reads every channel and writes to none. That is
+// DESIGN.md's "The socket accepts nothing from the page except subscriptions and, from a socket
+// whose subscription carried the write token, terminal input and the frames of an `lsp:<language>`
+// channel", made concrete for the terminals.
 //
 // A control client is opened per attached terminal and closed a minute after nothing is attached to
 // that terminal, so a machine with no terminal open runs no tmux child. While one is open, tmux's
@@ -41,22 +41,7 @@ import type {
 } from '../../../data/model/index.ts';
 import type { Hub, Sink } from '../../core/channels.ts';
 import { anyNumberShape } from '../../../data/shapes/shapes.ts';
-import {
-    alternateAt,
-    alternateOnArgs,
-    alternateScreenArgs,
-    alternateScreenAt,
-    captureArgs,
-    cursorArgs,
-    historyArgs,
-    holdsSavedScreen,
-    inAlternateScreen,
-    modesAt,
-    savedScreenArgs,
-    screenAt,
-    type AlternateCaptures,
-    type AlternateScreen
-} from './capture.ts';
+import { paneScreen } from './capture.ts';
 import {
     isTerminalId,
     listArgs,
@@ -100,9 +85,6 @@ export const IDLE_POLL_MS = 60000;
  */
 export const NO_SERVER_CONFIRMS = 2;
 export const NO_SERVER_CONFIRM_MS = 300;
-
-/** What reading the alternate screen gives when the program left while it was read. */
-const LEFT = 'left';
 
 /** The tmux notifications that mean the terminal list or the pane map moved. */
 const CHANGE_EVENTS = new Set([
@@ -187,6 +169,13 @@ export function terminalMessage(data: string): TerminalInput | TerminalResize | 
 export type TerminalDriver = {
     /** One tmux command, the argument list sessions.ts built. */
     run(args: string[]): Promise<string>;
+    /**
+     * One read of an attached terminal's pane, run by its control client once that client is
+     * attached, so `replied` is called at the reply's place in the terminal's output (tmux.ts,
+     * `command`). The reads of one terminal run in the order they were asked. A terminal with no
+     * attached control client is read by `run`, and `replied` is called as the answer comes.
+     */
+    read(id: string, args: string[], replied: () => void): Promise<string>;
     /** Pane output, already routed to the terminal it belongs to. */
     onOutput(listener: (id: string, bytes: Buffer) => void): void;
     /** Something tmux said that moves the terminal list. */
@@ -261,6 +250,27 @@ export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
         clients.set(id, client);
     };
 
+    /** The last read of each terminal that went to `run`, which the next one waits for. */
+    const reads = new Map<string, Promise<unknown>>();
+
+    const runRead = (id: string, args: string[], replied: () => void): Promise<string> => {
+        const after = (reads.get(id) ?? Promise.resolve()).then(
+            () => run(args, options),
+            () => run(args, options)
+        );
+        const done = after.then((text) => {
+            replied();
+            return text;
+        });
+        reads.set(id, done);
+        void done
+            .finally(() => {
+                if (reads.get(id) === done) reads.delete(id);
+            })
+            .catch(() => undefined);
+        return done;
+    };
+
     const drop = (id: string): void => {
         forget(restarts, id);
         forget(idles, id);
@@ -270,6 +280,19 @@ export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
 
     return {
         run: (args: string[]) => run(args, options),
+        read(id, args, replied): Promise<string> {
+            const client = clients.get(id);
+            if (client === undefined) return runRead(id, args, replied);
+            // Reads asked in one turn are written in that order before any reply is read, so tmux
+            // takes them together.
+            return client
+                .ready()
+                .then((attached) =>
+                    attached && client.live()
+                        ? client.command(args, replied)
+                        : runRead(id, args, replied)
+                );
+        },
         onOutput(listener): void {
             outputs = listener;
         },
@@ -354,12 +377,30 @@ export class Terminals {
     #lines: number;
     #attached = new Map<string, Set<Sink>>();
     #held = new Map<Sink, Set<string>>();
-    /** The tail of each terminal's command chain, so its keystrokes reach tmux in order. */
+    /**
+     * The size a socket asked of each terminal it was not attached to, kept for its attach, which
+     * applies it before the pane is read.
+     */
+    #asked = new Map<Sink, Map<string, { cols: number; rows: number }>>();
+    /**
+     * Per tmux terminal, the sinks whose screen is being read, each with the output that came after
+     * the reply of the last read: the screen holds what came before it.
+     */
+    #opening = new Map<string, Map<Sink, Buffer[]>>();
+    /**
+     * The tail of each terminal's command chain while one runs, so its keystrokes reach tmux in
+     * order and an attach reads the pane after the resizes asked before it.
+     */
     #queue = new Map<string, Promise<void>>();
     /** The last list tmux gave, or null before it has given one. */
     #tmux: Terminal[] | null = null;
     /** The terminals the pages are told of: tmux's and the apps' stream terminals. */
     #terminals: Terminal[] | null = null;
+    /**
+     * Tmux's words for the last read when it failed for a reason other than "no server" (a socket
+     * path too long to reach, a tmux that cannot run), null once a list is taken.
+     */
+    #unreadable: string | null = null;
     #streams: StreamTerminals | undefined;
     #signature = '';
     #listeners = new Set<() => void>();
@@ -435,6 +476,15 @@ export class Terminals {
         return this.#terminals;
     }
 
+    /**
+     * Why the terminal list cannot be read: tmux's words for the newest read when it failed for a
+     * reason other than "no server", null once a list is taken. The listeners are told when it
+     * changes, so the schedules can say why they wait while no list was ever read.
+     */
+    unreadable(): string | null {
+        return this.#unreadable;
+    }
+
     /** Called when the list changed; the sessions watcher republishes its payload on it. */
     onChange(listener: () => void): () => void {
         this.#listeners.add(listener);
@@ -473,7 +523,11 @@ export class Terminals {
             try {
                 text = await this.#driver.run(listArgs());
             } catch (error) {
-                if (!noServer(reason(error))) return;
+                const said = reason(error);
+                if (!noServer(said)) {
+                    this.#failed(turn, said);
+                    return;
+                }
                 if (confirmed >= NO_SERVER_CONFIRMS) {
                     if (!this.#driver.live() && !(await this.#serverKeptRuns()))
                         this.#take(turn, []);
@@ -508,7 +562,20 @@ export class Terminals {
     #take(turn: number, terminals: Terminal[]): void {
         if (this.#stale(turn)) return;
         this.#applied = turn;
-        this.#took(terminals);
+        const cleared = this.#unreadable !== null;
+        this.#unreadable = null;
+        if (!this.#took(terminals) && cleared) this.#tell();
+    }
+
+    /** Keep tmux's words of a failed read that is not stale, and tell the listeners of a change. */
+    #failed(turn: number, said: string): void {
+        if (this.#stale(turn) || this.#unreadable === said) return;
+        this.#unreadable = said;
+        this.#tell();
+    }
+
+    #tell(): void {
+        for (const listener of this.#listeners) listener();
     }
 
     /** Wait, and wake early when the channels close, so a waiting read does not outlive them. */
@@ -542,7 +609,11 @@ export class Terminals {
      * One message from the page that was not a subscription. True when it was a terminal message,
      * which is what tells the socket the message was accounted for. A socket that did not carry
      * the write token can read every channel and write to none, so a page of another origin that
-     * got past the handshake types nothing.
+     * got past the handshake types nothing. A page types only into a terminal it is attached to. A
+     * page resizes a terminal before it attaches, so the screen it is sent is read at its grid's
+     * size: the size a socket asks of a terminal it is not attached to is kept for its attach and
+     * applied there (`#attach`), and never sizes the terminal before then, so a late resize from a
+     * page that has left sizes nothing another page is viewing.
      */
     inbound(sink: Sink, data: string): boolean {
         const message = terminalMessage(data);
@@ -553,21 +624,38 @@ export class Terminals {
             console.error(`pty: input on ${message.channel} from a socket without the write token`);
             return true;
         }
-        if (this.#attached.get(id)?.has(sink) !== true) return true;
-        // One terminal's commands run one after another: each keystroke is its own message and its
-        // own tmux process, and two started at once can finish in either order, which types "ceho"
-        // for "echo".
-        const work =
+        if (this.#attached.get(id)?.has(sink) !== true) {
+            if (message.type === 'input') return true;
+            const asked =
+                this.#asked.get(sink) ?? new Map<string, { cols: number; rows: number }>();
+            asked.set(id, { cols: message.cols, rows: message.rows });
+            this.#asked.set(sink, asked);
+            return true;
+        }
+        this.#chain(id, () =>
             message.type === 'input'
-                ? () => this.#input(id, message.bytes)
-                : () => this.#resize(id, message.cols, message.rows, sink);
+                ? this.#input(id, message.bytes)
+                : this.#resize(id, message.cols, message.rows, sink)
+        );
+        return true;
+    }
+
+    /**
+     * Run one command of a terminal after the ones asked before it. Each keystroke is its own
+     * message and its own tmux process, and two started at once can finish in either order, which
+     * types "ceho" for "echo".
+     */
+    #chain(id: string, work: () => Promise<void>): void {
         const after = (this.#queue.get(id) ?? Promise.resolve()).then(work, work);
         this.#queue.set(id, after);
-        return true;
+        void after.then(() => {
+            if (this.#queue.get(id) === after) this.#queue.delete(id);
+        });
     }
 
     /** The socket closed: nothing is delivered to this sink, and the tmux sessions live on. */
     remove(sink: Sink): void {
+        this.#asked.delete(sink);
         const ids = this.#held.get(sink);
         if (ids === undefined) return;
         this.#held.delete(sink);
@@ -596,11 +684,13 @@ export class Terminals {
         this.#listeners.clear();
         this.#attached.clear();
         this.#held.clear();
+        this.#asked.clear();
         this.#driver.close();
     }
 
-    #took(read: Terminal[] | null): void {
-        if (read === null) return;
+    /** Take a list read from tmux; true when the listeners were told it changed. */
+    #took(read: Terminal[] | null): boolean {
+        if (read === null) return false;
         this.#tmux = read;
         const terminals = [...read, ...(this.#streams?.list() ?? [])];
         // Everything the reader sets on a terminal is in the signature, so a rename or a new icon
@@ -622,69 +712,72 @@ export class Terminals {
         );
         // The first list is taken even when it is empty: it is what turns "not read yet" into a
         // list.
-        if (this.#terminals !== null && signature === this.#signature) return;
+        if (this.#terminals !== null && signature === this.#signature) return false;
         this.#signature = signature;
         this.#terminals = terminals;
         this.#arm();
-        for (const listener of this.#listeners) listener();
+        this.#tell();
+        return true;
     }
 
     /**
-     * Attach one sink to one terminal. The sink is subscribed without the channel's latest message,
-     * since that is the previous chunk and the scrollback below already holds it; the scrollback is
-     * then sent to this sink alone, so a second page attaching does not repaint the first page's.
-     * A pane whose program is in its alternate screen is sent as the shell's text in the grid's
-     * normal buffer and the program's screen in its alternate buffer (alternateScreenAt). Every
-     * other pane is sent as the whole capture; so is a pane whose reads for the alternate screen
-     * failed, and a pane whose program left while they ran is read again and sent as it stands.
+     * Attach one sink to one terminal. A tmux terminal's sink takes the channel's chunks only once
+     * its screen (capture.ts, `paneScreen`) is sent, since the page resets its grid for the screen
+     * and would wipe a chunk sent before it. The pane is read after the resizes asked before the
+     * attach, through the terminal's control client once that is attached, so the screen holds the
+     * output from before the attach, and the output that came after the last read's reply goes out
+     * behind the screen in the same message. A second page attaching is sent its own screen and
+     * does not repaint the first page's. A size the socket asked before it attached is applied
+     * first, so the pane is read at that size.
      */
     async #attach(sink: Sink, id: string): Promise<void> {
+        const channel = ptyChannel(id);
         const sinks = this.#attached.get(id) ?? new Set<Sink>();
         if (!sinks.has(sink)) {
             sinks.add(sink);
             this.#attached.set(id, sinks);
-            this.#hub.merge(ptyChannel(id), mergeChunks);
+            this.#hub.merge(channel, mergeChunks);
             const held = this.#held.get(sink) ?? new Set<string>();
             held.add(id);
             this.#held.set(sink, held);
-            this.#hub.subscribe(sink, [ptyChannel(id)], false);
             this.#driver.attached(this.#tmuxAttached());
             this.#arm();
         }
+        const size = this.#asked.get(sink)?.get(id);
+        if (size !== undefined) {
+            this.#asked.get(sink)?.delete(id);
+            this.#chain(id, () => this.#resize(id, size.cols, size.rows, sink));
+        }
         if (this.#streams?.has(id) === true) {
+            this.#hub.subscribe(sink, [channel], false);
             await this.#sendReplay(sink, id);
             return;
         }
-        let { text, cursor } = await this.#readPane(id);
-        let alternate = alternateAt(cursor);
-        let captured: AlternateCaptures | null = null;
-        if (alternate !== null) {
-            const read = await this.#alternateCaptures(id, alternate);
-            if (read === LEFT) {
-                ({ text, cursor } = await this.#readPane(id));
-                alternate = null;
-            } else captured = read;
+        this.#hub.unsubscribe(sink, [channel]);
+        const after: Buffer[] = [];
+        const opening = this.#opening.get(id) ?? new Map<Sink, Buffer[]>();
+        opening.set(sink, after);
+        this.#opening.set(id, opening);
+        let screen: string;
+        try {
+            await this.#queue.get(id);
+            const read = (args: string[]): Promise<string> =>
+                this.#driver.read(id, args, () => (after.length = 0));
+            screen = await paneScreen(sessionName(id), this.#lines, read);
+        } finally {
+            if (opening.get(sink) === after) opening.delete(sink);
+            if (opening.size === 0 && this.#opening.get(id) === opening) this.#opening.delete(id);
         }
         if (!this.#attached.get(id)?.has(sink)) return;
-        const placed = screenAt(text, cursor);
-        if (placed === text && cursor !== '') {
-            console.error(`pty: the cursor of ${id} did not read, the whole capture is sent`);
-        }
-        // capture-pane writes one line per row with a bare newline between them; a terminal moves
-        // down without returning to the left on a bare newline, so the rows would step across the
-        // grid (seen in Chrome as a staircase). Every line break goes out as CR LF.
-        // The modes the pane's program set go after the screen, since the page resets its grid
-        // before writing it.
-        const screen =
-            alternate !== null && captured !== null
-                ? alternateScreenAt(alternate, captured, cursor)
-                : placed.replace(/\r?\n/g, '\r\n') + modesAt(cursor);
+        this.#hub.subscribe(sink, [channel], false);
         const message = {
-            channel: ptyChannel(id),
+            channel,
             // The scrollback is not a chunk, so it carries no chunk number; the chunks count from
             // 1.
             version: 0,
-            payload: { bytes: Buffer.from(screen, 'utf8').toString('base64') }
+            payload: {
+                bytes: Buffer.concat([Buffer.from(screen, 'utf8'), ...after]).toString('base64')
+            }
         };
         try {
             await sink.send(JSON.stringify(message));
@@ -714,60 +807,9 @@ export class Terminals {
         }
     }
 
-    /**
-     * What the pane shows now and where tmux has its cursor and modes. The cursor is read after the
-     * capture, so output that lands between the two moves the cursor down over rows the capture
-     * already holds rather than past rows it lacks. A read that fails gives an empty text or
-     * cursor, which sends the capture as it is.
-     */
-    async #readPane(id: string): Promise<{ text: string; cursor: string }> {
-        const session = sessionName(id);
-        let text = '';
-        try {
-            text = await this.#driver.run(captureArgs(session, this.#lines));
-        } catch (error) {
-            console.error(`pty: no scrollback for ${id}: ${reason(error)}`);
-        }
-        let cursor = '';
-        try {
-            cursor = await this.#driver.run(cursorArgs(session));
-        } catch (error) {
-            console.error(`pty: no cursor for ${id}, the whole capture is sent: ${reason(error)}`);
-        }
-        return { text, cursor };
-    }
-
-    /**
-     * The history, the saved normal screen and the screen of a pane whose program is in its
-     * alternate screen, read after the `display-message` answer that says the program is in it. The
-     * history is read only when the pane holds some, since with none tmux answers that range with
-     * the screen's top row. `LEFT` when the program left while these were read: the saved normal
-     * screen is then a single blank line (holdsSavedScreen), or `#{alternate_on}` read after the
-     * screen is no longer 1. Null when a read fails.
-     */
-    async #alternateCaptures(
-        id: string,
-        state: AlternateScreen
-    ): Promise<AlternateCaptures | typeof LEFT | null> {
-        const session = sessionName(id);
-        try {
-            const history =
-                state.history > 0 ? await this.#driver.run(historyArgs(session, this.#lines)) : '';
-            const saved = await this.#driver.run(savedScreenArgs(session));
-            if (!holdsSavedScreen(saved, state)) return LEFT;
-            const alternate = await this.#driver.run(alternateScreenArgs(session));
-            if (!inAlternateScreen(await this.#driver.run(alternateOnArgs(session)))) return LEFT;
-            return { history, saved, alternate };
-        } catch (error) {
-            console.error(
-                `pty: no alternate screen for ${id}, the whole capture is sent: ${reason(error)}`
-            );
-            return null;
-        }
-    }
-
     #output(id: string, bytes: Buffer): void {
         if (!this.#attached.has(id)) return;
+        for (const after of this.#opening.get(id)?.values() ?? []) after.push(bytes);
         this.#hub.publish(ptyChannel(id), { bytes: bytes.toString('base64') });
     }
 

@@ -209,6 +209,57 @@ export type CodeAvailability = {
 };
 
 /**
+ * The deposit mirror of a project's `code/` folder as GET and POST /api/deposit answer it, one
+ * declaration for the server that sends it (server/git/deposit/) and the page that reads it
+ * (state/system/deposit.svelte.ts). A finding is what the scan objected to: a credential, a file
+ * too big for a public repository, a missing README.
+ */
+export type DepositFinding = { kind: 'secret' | 'large' | 'readme'; path: string; mb: number };
+
+/** One path `git status --porcelain=v1 -z` reported in the mirror, with git's own two letters. */
+export type DepositChange = { path: string; letters: string };
+
+/** What a `plan` answers: what would ship, what moved, and what the scan objected to. */
+export type DepositPlan = {
+    repo: string;
+    mirror: string;
+    branch: string;
+    /** origin's URL, or the empty string when the mirror has no remote yet. */
+    remote: string;
+    files: string[];
+    changes: DepositChange[];
+    findings: DepositFinding[];
+};
+
+/** The mirror's branch against `origin/main`. */
+export type MainComparison = {
+    /** Whether `origin/main` and a commit of the mirror both exist to compare. */
+    known: boolean;
+    ahead: number;
+    behind: number;
+    /** The paths the mirror's commits and `origin/main` differ in, sorted. */
+    differ: string[];
+};
+
+/** Where the mirror is and what state it is in. */
+export type MirrorState = {
+    id: string;
+    repo: string;
+    mirror: string;
+    exists: boolean;
+    branch: string;
+    remote: string;
+    /** The current branch's upstream as git names it, or the empty name without one. */
+    upstream: string;
+    /** Commits the current branch is ahead of its upstream; 0 without an upstream. */
+    ahead: number;
+    /** The current branch against `origin/main`; nothing known until the mirror has fetched. */
+    main: MainComparison;
+    /** The last plan made for this project in this process, or null when none was. */
+    plan: DepositPlan | null;
+};
+
+/**
  * A project's repository, the `repository:` map of a manifest: where the code lives on the remote
  * and where it is cloned to. `url` is the remote's address. `clones` are the absolute folders of
  * the repositories of the workspace whose `origin` is that address, in the order the repositories

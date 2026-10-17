@@ -116,7 +116,11 @@
             parts.push(t('statusbar.latex_tip_at', stamp(new Date(build.at).toISOString())));
         }
         if (main !== null && main.words !== null) {
-            parts.push(t('statusbar.latex_tip_words', main.words));
+            parts.push(
+                main.words === 1
+                    ? t('statusbar.latex_tip_words_one')
+                    : t('statusbar.latex_tip_words', main.words)
+            );
         }
         return parts.join('. ');
     });

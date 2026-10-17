@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { isMap, text } from '../../../../data/helpers/guards.ts';
-import type { ProcessRow, Terminal } from '../../../../data/model/index.ts';
+import { isTerminalId, type ProcessRow, type Terminal } from '../../../../data/model/index.ts';
 import { readOr } from '../../../../data/shapes/shapes.ts';
 import { t } from '../../../shared/words/text.ts';
 
@@ -50,7 +50,11 @@ export type ProcessGroup = {
     listed: boolean;
     /** The other processes of the terminal, by pid. */
     rows: ProcessRow[];
-    /** Whether the page may end the terminal: the page holds its record and oculus minted it. */
+    /**
+     * Whether the page may end the terminal: oculus minted its id, which the row's own `terminal`
+     * names, and the record, when the page holds one, does not mark it foreign. A page with no
+     * Terminal view open may hold no record, and the terminal is still oculus's.
+     */
     stoppable: boolean;
 };
 
@@ -100,7 +104,7 @@ export function arrange(
             head: found ?? drawnHead(terminal, record),
             listed: found !== undefined,
             rows: others,
-            stoppable: record !== null && record.foreign !== true
+            stoppable: isTerminalId(terminal) && record?.foreign !== true
         });
     }
     return { groups, matched };

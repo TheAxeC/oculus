@@ -8,6 +8,7 @@
 // the set survives a reload and a tab switch, and the rows drawn are computed from it.
 
 import { z } from 'zod';
+import { offerAlong, type FolderMarks } from '../../../../data/helpers/hub-names.ts';
 import { fieldItemsShape, readAs } from '../../../../data/shapes/shapes.ts';
 
 /**
@@ -38,13 +39,17 @@ export type FsEntry = {
     link?: true;
     /** True for an entry git ignores, listed because the ignored toggle asks to see them. */
     ignored?: true;
+    /** What a folder holds that Make Folder a Hub and Make Folder a Project are offered by. */
+    marks?: FolderMarks;
 };
 
 /**
  * One folder of the open workspace as /api/fs answers it, under the name the workspace gives it:
  * `real` is the folder with every symlink resolved, which is how a repository's folder is written;
  * it is empty for a folder that does not exist and absent where an answer carries none. `hub` is
- * true on a folder that holds `.oculus/config.yml`.
+ * true on a folder that holds `.oculus/config.yml`. `marks` are what it holds that the make
+ * controls are offered by, read with the answer, and `above` is true when a folder above it, up to
+ * the home folder and not including it, is a hub.
  */
 export type FsRoot = {
     key: string;
@@ -53,7 +58,32 @@ export type FsRoot = {
     hub?: true;
     /** Its file system reads a path in another letter case as the same path. */
     folds?: true;
+    marks?: FolderMarks;
+    above?: true;
 };
+
+/**
+ * What the folder `path` of the workspace folder `root` offers to make, from the marks the page
+ * holds of it and of each folder above it, by the rule the server offers by (`offerAlong`,
+ * data/helpers/hub-names.ts). `listed` answers the entries of a listing the page holds, null for
+ * one it holds not; the offer is null while a listing on the way to the folder is not held.
+ */
+export function heldOffer(
+    root: FsRoot,
+    path: string,
+    listed: (path: string) => FsEntry[] | null
+): { hub: boolean; project: boolean } | null {
+    const below: FolderMarks[] = [];
+    const names = path === '' ? [] : path.split('/');
+    for (let at = 0; at < names.length; at += 1) {
+        const found = listed(names.slice(0, at).join('/'))?.find(
+            (one) => one.kind === 'dir' && one.name === names[at]
+        );
+        if (found === undefined) return null;
+        below.push(found.marks ?? {});
+    }
+    return offerAlong(root.marks ?? {}, root.above === true, below);
+}
 
 /**
  * What a listing asks to see beside what the tree offers by default: the dotfiles and the build

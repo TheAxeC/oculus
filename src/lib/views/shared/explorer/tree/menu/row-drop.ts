@@ -21,8 +21,8 @@ type Words = (key: string, ...args: (string | number)[]) => string;
 /** What a drop needs: the store's move and upload, the tree's line, and its questions. */
 export type RowDropDeps = {
     explorer: Pick<ExplorerStore, 'drop' | 'upload'>;
-    /** Say a refusal or a result on the tree's line. */
-    say: (note: string) => void;
+    /** Say a refusal or a result on the tree's line, `told` true for a whole upload. */
+    say: (note: string, told?: boolean) => void;
     /** Ask a question and answer whether it was confirmed. */
     confirm: (question: AskedQuestion) => Promise<boolean>;
 };
@@ -86,8 +86,9 @@ export function rowDropper(deps: RowDropDeps, t: Words) {
             verdict.refused.length === 0
                 ? ''
                 : t('files.drop_folder_refused', verdict.refused.join(', '));
-        const sent = files.length === 0 ? '' : await uploading(dropInto(target), files);
-        deps.say([refused, sent].filter((one) => one !== '').join(' '));
+        const sent = files.length === 0 ? null : await uploading(dropInto(target), files);
+        const text = [refused, sent?.text ?? ''].filter((one) => one !== '').join(' ');
+        deps.say(text, refused === '' && sent?.told === true);
     }
 
     return { rows, outside };

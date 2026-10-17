@@ -51,7 +51,7 @@
         {#snippet children(props)}
             <div
                 {...props}
-                class="dialog"
+                class="box"
                 aria-label={draft.was === null
                     ? t('app.schedules.title_add')
                     : t('app.schedules.title_edit')}
@@ -165,15 +165,17 @@
                     <p class="preview" data-preview>{schedule.preview(draft)}</p>
                 {/if}
                 {#if draft.kind !== 'command'}
-                    <Checkbox
-                        checked={draft.unattended}
-                        label={t('app.schedules.unattended')}
-                        unset={draft.unchosen.includes('unattended')
-                            ? t('app.schedules.unattended_unset')
-                            : undefined}
-                        onchange={(unattended: boolean) => schedule.edit({ unattended })}
-                        onunset={() => schedule.edit({ unattended: null })}
-                    />
+                    <div class="inset">
+                        <Checkbox
+                            checked={draft.unattended}
+                            label={t('app.schedules.unattended')}
+                            unset={draft.unchosen.includes('unattended')
+                                ? t('app.schedules.unattended_unset')
+                                : undefined}
+                            onchange={(unattended: boolean) => schedule.edit({ unattended })}
+                            onunset={() => schedule.edit({ unattended: null })}
+                        />
+                    </div>
                     {#if draft.unattended === true}
                         <p class="preview" data-unattended-note>
                             {t('app.schedules.unattended_note')}
@@ -185,12 +187,14 @@
                 {/each}
                 <div class="buttons">
                     <ToolButton label={t('app.schedules.cancel')} onclick={close} />
-                    <ToolButton
-                        label={t('app.schedules.save')}
-                        primary
-                        disabled={saving}
-                        onclick={save}
-                    />
+                    <div class="confirm">
+                        <ToolButton
+                            label={t('app.schedules.save')}
+                            primary
+                            disabled={saving}
+                            onclick={save}
+                        />
+                    </div>
                 </div>
             </div>
         {/snippet}
@@ -198,7 +202,7 @@
 {/if}
 
 <style>
-    .dialog {
+    .box {
         position: relative;
         display: grid;
         gap: 6px;
@@ -213,7 +217,7 @@
         box-shadow: var(--shadow);
     }
 
-    :global(body.wall) .dialog {
+    :global(body.wall) .box {
         background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));
     }
@@ -227,10 +231,26 @@
         font-size: var(--fs-md);
     }
 
+    /* Each checkbox brings the browser's 4px left margin, so the row starts 4px early and the first
+       square lines up with the fields. */
     .days {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        margin-left: -4px;
+    }
+
+    /* What stands between the fields lines up with their controls: a field's control sits behind
+       its 2px edge and 8px of padding (ui/forms/Field.svelte). */
+    .preview,
+    .problem {
+        padding-left: 10px;
+    }
+
+    /* The checkbox brings the browser's 4px left margin, so 6px here lines its square up with the
+       fields. */
+    .inset {
+        padding-left: 6px;
     }
 
     .preview {
@@ -248,5 +268,10 @@
         justify-content: flex-end;
         gap: 8px;
         margin-top: 4px;
+    }
+
+    /* The primary button fills its box, so the box is as wide as its words. */
+    .confirm {
+        flex: none;
     }
 </style>

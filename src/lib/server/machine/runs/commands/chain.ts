@@ -4,7 +4,7 @@
 // token is minted at each start, so a command's own output never prints the marker of the next.
 
 import type { ProjectCommand } from '../../../../data/model/index.ts';
-import { chainMarker } from '../../../../data/helpers/run/marker.ts';
+import { MARKER_FORMAT, chainMarker } from '../../../../data/helpers/run/marker.ts';
 import { shellWord } from '../../pty/shell-word.ts';
 
 /**
@@ -26,7 +26,7 @@ function lineOf(run: string): string {
 }
 
 /**
- * The one line a chain runs: each command as `cd <folder> && printf '%s\n' <marker> && <line>`,
+ * The one line a chain runs: each command as `cd <folder> && printf <format> <marker> && <line>`,
  * joined by `&&` so that a command that fails stops the commands after it. The folder and the
  * marker are each one shell word.
  */
@@ -34,7 +34,7 @@ export function chainLine(chain: ProjectCommand[], token: string): string {
     return chain
         .map(
             (command) =>
-                `cd ${shellWord(command.cwd)} && printf '%s\\n' ${shellWord(chainMarker(token, command.name))} && ${lineOf(command.run)}`
+                `cd ${shellWord(command.cwd)} && printf '${MARKER_FORMAT}' ${shellWord(chainMarker(token, command.name))} && ${lineOf(command.run)}`
         )
         .join(' && ');
 }

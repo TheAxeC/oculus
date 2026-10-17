@@ -92,7 +92,13 @@ text:
         clear_scope: Search the whole root
         clear_scope_title: Search every folder of the root again
         count: '{0} hits in {1} files, {2} ms'
+        count_1_1: '{0} hit in {1} file, {2} ms'
+        count_1_n: '{0} hit in {1} files, {2} ms'
+        count_n_1: '{0} hits in {1} file, {2} ms'
         count_replacing: '{0} hits would be replaced in {1} files, {2} ms'
+        count_replacing_1_1: '{0} hit would be replaced in {1} file, {2} ms'
+        count_replacing_1_n: '{0} hit would be replaced in {1} files, {2} ms'
+        count_replacing_n_1: '{0} hits would be replaced in {1} file, {2} ms'
         dismiss: Dismiss
         dismiss_file_title: Take {0} out of these results without changing it
         dismiss_glyph: dismiss

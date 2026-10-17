@@ -6,7 +6,7 @@
 import { createHash } from 'node:crypto';
 
 /** What a test drives and reads of the sending end. */
-export type CreditSender = {
+type CreditSender = {
     /** Send chunks until the total is sent or the credit is spent. */
     pump: () => void;
     /** Add credit the other end granted; `pump` then sends what it allows. */

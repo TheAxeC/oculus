@@ -196,7 +196,8 @@
                 set: workspaces().machine.set,
                 defaults: workspaces().machine.defaults,
                 values: workspaces().machine.values,
-                hubs: workspaces().machine.hubs
+                hubs: workspaces().machine.hubs,
+                portRefused: workspaces().machine.portRefused
             }
         )
     );

@@ -1,11 +1,12 @@
 // Layer 3, primitive. The models of files no tab holds. A location a server answers in a file no
-// tab has open (a definition in a header, a reference in another module) needs a model for
-// Monaco's peek and references widgets, which read the target's text through a model. The model is
-// read through the services, made under the file's language and the page's address of it, and
-// never sent to a server. A library file is read through the channel and made under the library
-// address, and one the relay refuses to read gets a model with no text, so its location stays and
-// the library tab says why. A file that cannot be read, or is truncated, gets no model, and the
-// location is dropped from the answer.
+// tab has open (a definition in a header, a reference in another module) needs a model for Monaco's
+// peek and references widgets, which read the target's text through a model. The model is read
+// through the services and made under the file's language and the page's address of it; it is sent
+// to a server only while a peek editor shows it (hosts.ts), so hover, definitions and diagnostics
+// answer in the peek as in a tab. A library file is read through the channel and made under the
+// library address, and one the relay refuses to read gets a model with no text, so its location
+// stays and the library tab says why. A file that cannot be read, or is truncated, gets no model,
+// and the location is dropped from the answer.
 //
 // Monaco has no read-only model, so a peek editor that is typed into is put back to the text that
 // was read. A file's model is shared by the clients that ask for it and disposed with the last of
@@ -43,6 +44,8 @@ export type Peeks = {
     release(model: Monaco.editor.ITextModel): void;
     /** Read again the files of the pages' addresses that a peek model shows. */
     refresh(services: LspServices, pages: readonly string[]): Promise<void>;
+    /** The file a peek model shows, or null for a model that is no peek model. */
+    targetOf(model: Monaco.editor.ITextModel): Target | null;
 };
 
 /** The address a peek model has: the page's, with a variant when two addresses differ by case. */
@@ -106,6 +109,7 @@ export function createPeeks(
                 one.setting = false;
             }
         },
+        targetOf: (model) => held.get(model)?.target ?? null,
         release(model) {
             const one = held.get(model);
             if (one === undefined) return;

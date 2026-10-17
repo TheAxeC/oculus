@@ -3,7 +3,8 @@
     // priority flames at its leading edge, its status marks, its name, its deadline, the move menu,
     // and the lines saying what it waits on and what is next. It draws what the lanes hand it and
     // reads no store: the deadline, the waiting line, the flame count and the menu are the lanes'
-    // rules, and every press is handed back.
+    // rules, and every press is handed back. A project of a hub but the primary carries the hub's
+    // chip after its name, as the Command center's rows and the Projects board's cards do.
     //
     // A card is its own markup rather than ui/frame/Card.svelte: it is a drag handle with a
     // click-to-cycle badge at its leading edge, which is a different thing from the card a board of
@@ -14,6 +15,7 @@
 
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu/menu-items';
@@ -102,6 +104,7 @@
         <span class="name">
             <ToolButton plain cut dataCardToggle {label} onclick={onopen} />
         </span>
+        <RootChip record={project} />
         {#if due}
             <span class="due">
                 <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />

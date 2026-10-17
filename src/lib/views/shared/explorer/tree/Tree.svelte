@@ -119,6 +119,8 @@
          * press passes the time it was made at.
          */
         onopen: (row: TreeRow, preview: boolean, pressedAt?: number) => void;
+        /** Open a file New File... made, as a kept tab; a tree given none leaves it unopened. */
+        onmade?: (file: { root: string; path: string }) => void;
         onremove: (key: string) => void;
         onbookmark: (row: TreeRow) => void;
         /** The `..` row of a rooted tab was pressed: show this folder as the top. */
@@ -138,9 +140,9 @@
         onmoveheader?: (direction: 'up' | 'down') => void;
         /**
          * Say a pick's refusal on the caller's own line, the empty text when it ends; a tree given
-         * none says it above its rows.
+         * none says it above its rows. `told` is true for a result that went through whole.
          */
-        onrefused?: (note: string) => void;
+        onrefused?: (note: string, told: boolean) => void;
         /** The order the caller keeps its rows in; none for a tree whose rows the disk orders. */
         rowOrder?: RowOrder;
         /** What a typed name makes beyond what the Files tree makes. */
@@ -166,6 +168,7 @@
         onselect,
         ontoggle,
         onopen,
+        onmade,
         onremove,
         onbookmark,
         onup,
@@ -223,7 +226,8 @@
         hints: menuHints(keymap, keyWords(t, mac)),
         isSelected,
         select: (row: TreeRow) => onselect(row),
-        onrefused: (note: string) => onrefused?.(note),
+        onrefused: (note: string, told: boolean) => onrefused?.(note, told),
+        opened: (file) => onmade?.(file),
         get naming() {
             return namingHooks;
         }
@@ -298,7 +302,7 @@
 </script>
 
 {#if onrefused === undefined && picks.refused() !== ''}
-    <Empty error message={picks.refused()} />
+    <Empty error={!picks.told()} message={picks.refused()} />
 {/if}
 
 <FileChooser bind:this={chooser} accept="" multiple onchoose={asking.chosen} />

@@ -106,7 +106,7 @@
         refactor,
         editorStatus: { asked: askedOf, forget, publish },
         layout: { instanceView },
-        ui: { codeTheme, instanceState, setInstanceState, theme, textScale }
+        ui: { codeTheme, editorLook, instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -175,7 +175,7 @@
     );
     const title = $derived(held.label === '' ? t('views.repositories_diff') : held.label);
     const busy = $derived(repositories.busy(held.root));
-    const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
+    const look = $derived(editorLook());
     /** The repository's state, whose every move is a new read of a diff the pane can act on. */
     const repo = $derived(held.root === '' ? null : gitFor(held.root));
     const several = $derived(files.length > 1);

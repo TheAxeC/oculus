@@ -70,6 +70,8 @@ export type Instances = {
     pinTab: (id: string) => void;
     unpinTab: (id: string) => void;
     activateInstance: (id: string, page?: string) => void;
+    /** The tabs of a page that were activated and are still on it, the one activated last first. */
+    usedInstances: (page?: string) => string[];
     closeInstancesOfView: (view: ViewId) => void;
     moveInstanceToPage: (id: string, page: string) => void;
     closeInstance: (id: string, page?: string) => void;
@@ -231,11 +233,33 @@ export function createInstances(
     /** Close one instance wherever it is: on the current page, on another or in a float. */
     function closeInstanceAnywhere(id: string): void {
         const holder = access.holding(id);
-        if (holder !== null && attention.active(holder.id) === id) {
-            attention.remembered(null, holder.id);
-        }
+        const stays = holder === null ? null : stayingBeside(holder.workbench.root, id);
         access.save(dropInstance(access.held(), id, keep));
+        if (holder !== null) settleAttention(holder.id, id, stays);
         access.ui.clearInstanceState(id);
+    }
+
+    /**
+     * A tab of the pane holding `id` other than `id`, which stays in that pane when `id` closes.
+     */
+    function stayingBeside(tree: Layout, id: string): string | null {
+        const found = findInstance(tree, id);
+        const pane = found === null ? null : paneAt(tree, found.path);
+        return pane?.tabs.find((tab) => tab.id !== id)?.id ?? null;
+    }
+
+    /**
+     * After `id` closed on a host: when it was the tab the host was left on, the tab its pane shows
+     * now takes its place (`stays` finds that pane), so the pane stays the host's active one and
+     * the window title, the status bar and the keyboard follow the tab it shows; a pane the close
+     * emptied leaves the host on no tab.
+     */
+    function settleAttention(host: string, id: string, stays: string | null): void {
+        if (attention.active(host) !== id) return;
+        const tree = access.workbench(host).root;
+        const found = stays === null ? null : findInstance(tree, stays);
+        const shown = found === null ? null : (paneAt(tree, found.path)?.active ?? null);
+        attention.remembered(shown === '' ? null : shown, host);
     }
 
     /**
@@ -282,17 +306,21 @@ export function createInstances(
         );
     }
 
-    /** Close an instance, and forget it if it was its page's active one. */
+    /**
+     * Close an instance. When it was its page's active one, the tab its pane shows now becomes the
+     * active one (`settleAttention`).
+     */
     function closeInstance(id: string, page?: string): void {
         const holder = access.holding(id) ?? access.at(page);
         if (holder === null) return;
-        if (attention.active(holder.id) === id) attention.remembered(null, holder.id);
         const current = access.workbench(holder.id);
         const found = findInstance(current.root, id);
+        const stays = stayingBeside(current.root, id);
         access.apply(
             settleFocus({ ...current, root: removeInstance(current.root, id, keepFor(holder)) }),
             holder.id
         );
+        settleAttention(holder.id, id, stays);
         access.ui.clearInstanceState(id);
         // A closed tab ends the terminals it owns; a tab moved, split or reloaded ends none.
         if (found !== null) access.ui.endTerminals([found.instance]);
@@ -395,6 +423,7 @@ export function createInstances(
         pinTab,
         unpinTab,
         activateInstance,
+        usedInstances: attention.used,
         closeInstancesOfView,
         moveInstanceToPage,
         closeInstance,

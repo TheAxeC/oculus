@@ -62,9 +62,9 @@
     // What the status bar draws for the tab and what the bar and the palette ask of it are
     // status/source-status.svelte.ts and status/ask-perform.ts, joined to the tab by
     // status/tab-asks.svelte.ts; the editor's indentation, word wrap and rulers are
-    // views/shared/prose/source-options.ts. The editor keeps the text in the line ending it was
-    // opened in, so typing into a CRLF file is kept in CRLF. A rewrite of the text is an edit like
-    // typing, handed back as one and unsaved until Save. For a file in a repository the gutter
+    // views/shared/prose/editor/source-options.ts. The editor keeps the text in the line ending it
+    // was opened in, so typing into a CRLF file is kept in CRLF. A rewrite of the text is an edit
+    // like typing, handed back as one and unsaved until Save. For a file in a repository the gutter
     // carries the quick diff marks and each line's blame (source-gutter.svelte.ts).
     //
     // A save made without a press of Save (editor.autosave) is state/sessions/source/
@@ -103,7 +103,7 @@
     import { lintActions } from './language/lint-fixes';
     import { createTabLanguage } from './language/tab-language.svelte';
     import { createSourceGutter } from './source-gutter.svelte';
-    import { createSourceOptions } from '$lib/views/shared/prose/source-options';
+    import { createSourceOptions } from '$lib/views/shared/prose/editor/source-options';
     import { markdownPreviewState, MARKDOWN_PREVIEW_VIEW } from '$lib/state/sources/fs';
     import { blameStatus } from '$lib/state/sources/repositories/file-git';
     import { START, lineEnding, type Caret } from '$lib/state/workbench/navigation/editor-text';
@@ -214,7 +214,9 @@
         library: () => lib.address,
         version: () => head !== undefined,
         say: (words: string) => note.say(words),
-        commands: (found) => (latexTab.commands = found)
+        commands: (found) => {
+            latexTab.commands = found;
+        }
     });
     /** Whether the file has a rendered half, which is what a Markdown file has. */
     const markdown = $derived(language === 'markdown');

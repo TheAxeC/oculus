@@ -95,8 +95,9 @@ export type ConfigRow = RowBase & {
 /**
  * What the Settings view knows of the machine's own files: the name of the primary hub, the names
  * of the keys its `local.yml` sets, the default text of each key that has one, the text of the
- * value in force of each key that has one (a line for each row of a joined list), and the names of
- * the hubs whose files set each joined list.
+ * value in force of each key that has one (a line for each row of a joined list), the names of
+ * the hubs whose files set each joined list, and the move to the port the file names that the
+ * server could not make, with why (the port in force is then the one it stays on).
  */
 export type MachineState = {
     primary: string | null;
@@ -104,14 +105,16 @@ export type MachineState = {
     defaults: Readonly<Record<string, string>>;
     values: Readonly<Record<string, string>>;
     hubs: Readonly<Record<string, readonly string[]>>;
+    portRefused: { port: number; reason: string } | null;
 };
 
 /**
  * One key of the machine's own file, listed from the catalog and what is known of the files:
  * `setIn` is the primary hub whose file sets it, else null, `fallback` is the default in force for
  * a key the file does not set, null when the key has none, `lines` is the value in force, one line
- * for each row of a joined list, none when the key has no value to show, and `hubs` names the hubs
- * whose files set a joined list.
+ * for each row of a joined list, none when the key has no value to show, `hubs` names the hubs
+ * whose files set a joined list, and `refused` is the message saying why the value the file names
+ * is not in force, null when it is.
  */
 export type LocalRow = RowBase & {
     kind: 'local';
@@ -121,6 +124,7 @@ export type LocalRow = RowBase & {
     fallback: string | null;
     lines: string[];
     hubs: string[];
+    refused: Message | null;
 };
 
 /** Why a file draws no rows, or `rows` when it does. */
@@ -383,8 +387,20 @@ export function localRows(
         setIn: machine.primary !== null && machine.set.includes(key) ? machine.primary : null,
         fallback: Object.hasOwn(machine.defaults, key) ? machine.defaults[key] : null,
         lines: Object.hasOwn(machine.values, key) ? machine.values[key].split('\n') : [],
-        hubs: Object.hasOwn(machine.hubs, key) ? [...machine.hubs[key]] : []
+        hubs: Object.hasOwn(machine.hubs, key) ? [...machine.hubs[key]] : [],
+        refused: key === 'port' ? portRefusal(machine) : null
     }));
+}
+
+/**
+ * The message of the sentence the server logs when it cannot move to the port the file names: the
+ * port, why, and the port it stays on, which is the port in force. Null when no move was refused.
+ */
+function portRefusal(machine: MachineState): Message | null {
+    const refused = machine.portRefused;
+    if (refused === null) return null;
+    const stays = Object.hasOwn(machine.values, 'port') ? machine.values.port : '';
+    return message('portRefused', refused.port, refused.reason, stays);
 }
 
 /** A value as the sentence about it shows it. */

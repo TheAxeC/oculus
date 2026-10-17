@@ -21,26 +21,14 @@ import {
     textCatalog
 } from '../../../../../../src/lib/data/sources/config.ts';
 import type { Message } from '../../../../../../src/lib/data/model/index.ts';
-import { noop } from '../../../../../fixtures/doubles.ts';
+import { idleDriver, noop } from '../../../../../fixtures/doubles.ts';
 import { it } from '../../../../../fixtures/scratch.ts';
-import type { TerminalDriver } from '../../../../../../src/lib/server/machine/pty/channel.ts';
 import { creditSender } from '../../world/credit-sender.ts';
 
 /** The window oculus grants the host for the terminal's bytes, and the size of each chunk. */
 const WINDOW = 1024;
 const CHUNK = 128;
 const TOTAL = 100 * 1024;
-
-/** A driver that runs no tmux. */
-const idle: TerminalDriver = {
-    run: () => Promise.resolve(''),
-    onOutput: noop,
-    onChange: noop,
-    attached: noop,
-    live: () => false,
-    serverRuns: () => Promise.resolve(false),
-    close: noop
-};
 
 /** A turn of the event loop, after every promise already queued has run. */
 const turn = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
@@ -63,7 +51,7 @@ function rig(window: number) {
     const set = new StreamTerminalSet();
     const row = set.add({ app: 'app:notes', name: 'Big', cwd: '/', stream, ended: () => '' });
     const pages = new Hub();
-    const terminals = new Terminals(pages, { driver: idle, streams: set, poll: 0 });
+    const terminals = new Terminals(pages, { driver: idleDriver(), streams: set, poll: 0 });
     return { toHost, streams, set, row, terminals, stream };
 }
 

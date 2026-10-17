@@ -4,11 +4,13 @@
     // status names, the job applications still out for an answer, and this year's teaching.
     //
     // Every card opens its collection tab and sets that tab's transient reveal id, so the exact
-    // entry scrolls into view and flashes after the view opens.
+    // entry scrolls into view and flashes after the view opens. A card of an entry of a hub but the
+    // primary carries the hub's chip after its title, as the Command center's rows do.
 
     import LaneHead from './lanes/LaneHead.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import RootChip from '$lib/views/shared/card/RootChip.svelte';
     import { daysUntil, firstSentence } from '$lib/state/boards/board';
     import {
         bandHasCards,
@@ -85,6 +87,7 @@
             <span class="entry-name">
                 <ToolButton plain cut label={item.title} {glyph} onclick={() => reveal(item)} />
             </span>
+            <RootChip record={item} />
             {#if days !== null}
                 <span class="badge">
                     <Tag
@@ -249,10 +252,10 @@
     }
 
     /* The first line of an entry is one row of the tree's height. */
+    /* The name, then the hub's chip beside it, then the deadline at the right end. */
     .entry-h {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 6px;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
     }
@@ -275,6 +278,7 @@
 
     .badge {
         flex: 0 0 auto;
+        margin-left: auto;
     }
 
     .note {

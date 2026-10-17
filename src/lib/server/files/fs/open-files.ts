@@ -20,8 +20,12 @@
 // out of every root or a folder may be gone from the workspace or carry another name; such a name
 // has no path to stat, publishes null at the tick it stops resolving and reads nothing, and is
 // followed again when it resolves. Otherwise the file is read and hashed. A file over the read
-// limit is not read, and its message is `stat:` and the hash of its inode, size, mtime and ctime. A
-// message that repeats the one before it is not published again.
+// limit is not read, and its message is `stat:` and the hash of its inode, size, mtime and ctime.
+// Each message also says whether the name's root key is among the roots, so a tab learns from the
+// null of a removed folder that its folder is no longer served, and not that its file was deleted,
+// before the page has read the workspace again; a name whose root joins or leaves the roots is
+// published when the configuration or the workspace moves, not at the next tick. A message that
+// repeats the one before it is not published again.
 //
 // A poll lives while some socket holds its channel. When the last sink drops a name, by an
 // unsubscribe message or by closing, the poll closes and the hub forgets the channel's message, so
@@ -76,8 +80,8 @@ export type OpenFilesOptions = {
     read?: (path: string) => Buffer;
 };
 
-/** One polled name: its poll, the sinks that hold it and the newest hash it published. */
-type Entry = { poll: FilePoll; sinks: Set<Sink>; last: string | null | undefined };
+/** One polled name: its poll, the sinks that hold it and the newest message it published. */
+type Entry = { poll: FilePoll; sinks: Set<Sink>; last: OpenFileMessage | undefined };
 
 /**
  * Where a name is polled: the path inside its root that the name spells, whether a file is there
@@ -128,26 +132,42 @@ export function createOpenFiles(options: OpenFilesOptions): OpenFiles {
     const roots = (): Root[] => (served ??= options.roots());
     const moved: Sink = {
         send: () => {
-            served = null;
+            rootsMoved();
             return Promise.resolve();
         },
         close: () => undefined
     };
     hub.subscribe(moved, ['config'], false);
-    const unfollow =
-        options.follow?.(() => {
-            served = null;
-        }) ?? null;
+    const unfollow = options.follow?.(rootsMoved) ?? null;
 
     /** Publish what the file says now, unless it is what the channel said last. */
     function tell(channel: string, entry: Entry): void {
         const name = parseSourceChannel(channel);
         entry.poll.reading();
-        const hash = name === null ? null : hashNow(roots(), name, read);
-        if (hash === entry.last) return;
-        entry.last = hash;
-        const message: OpenFileMessage = { hash };
+        const places = roots();
+        const hash = name === null ? null : hashNow(places, name, read);
+        const served = name !== null && places.some((one) => one.key === name.root);
+        if (hash === entry.last?.hash && served === entry.last.served) return;
+        const message: OpenFileMessage = { hash, served };
+        entry.last = message;
         hub.publish(channel, message);
+    }
+
+    /**
+     * Forget the roots read, and publish at once for each name whose root joined or left the
+     * served roots: whether a root is served moves no stat of the file, so the poll would not
+     * publish it, and a tab told only at a later tick would take the removed folder's file for one
+     * deleted on disk.
+     */
+    function rootsMoved(): void {
+        served = null;
+        if (polls.size === 0) return;
+        const keys = new Set(roots().map((one) => one.key));
+        for (const [channel, entry] of polls) {
+            const name = parseSourceChannel(channel);
+            const now = name !== null && keys.has(name.root);
+            if (entry.last !== undefined && entry.last.served !== now) tell(channel, entry);
+        }
     }
 
     function start(channel: string, name: { root: string; path: string }, sink: Sink): void {

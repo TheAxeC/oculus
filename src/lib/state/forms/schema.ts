@@ -303,10 +303,38 @@ function sourceChoices(
         : [];
 }
 
-/** The words of the notes that have some, one after another, and undefined when none has. */
-function noteWords(words: (string | undefined)[]): string | undefined {
-    const held = words.filter((one): one is string => one !== undefined && one !== '');
-    return held.length === 0 ? undefined : held.join('; ');
+/** A text with something in it, and undefined for an absent or empty one. */
+function someText(words: string | undefined): string | undefined {
+    return words === undefined || words === '' ? undefined : words;
+}
+
+/**
+ * The values of the two follow-up fields. One note shows its text and its date. Two or more, which
+ * the fields show read-only, show each note under its number with its own date after it, and the
+ * date field each date under the number of its note, so no date reads as the date of every note.
+ */
+function followupValues(project: Project): Record<string, string | undefined> {
+    const notes = project.followups;
+    if (notes.length <= 1) {
+        return {
+            'followup.do': someText(notes.at(0)?.do),
+            'followup.after': someText(notes.at(0)?.after)
+        };
+    }
+    const dated = notes.map((note, at) => {
+        const date = someText(note.after);
+        return date === undefined
+            ? t('editor.followup_note', at + 1, note.do)
+            : t('editor.followup_note_dated', at + 1, note.do, date);
+    });
+    const dates = notes.flatMap((note, at) => {
+        const date = someText(note.after);
+        return date === undefined ? [] : [t('editor.followup_date', at + 1, date)];
+    });
+    return {
+        'followup.do': dated.join('; '),
+        'followup.after': dates.length === 0 ? undefined : dates.join('; ')
+    };
 }
 
 /** The lines of the checklist still open, as one text; the box that shows it is read-only. */
@@ -342,8 +370,7 @@ export function fieldValues(project: Project): Record<string, unknown> {
         'waiting-on': project.waitingOn,
         snooze: project.snooze,
         subtasks: openSubtasks(project),
-        'followup.do': noteWords(project.followups.map((note) => note.do)),
-        'followup.after': noteWords(project.followups.map((note) => note.after)),
+        ...followupValues(project),
         pin: project.pin === true,
         venue_id: project.venueId,
         year: project.year,

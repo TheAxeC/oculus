@@ -148,6 +148,8 @@ export type PortfolioConfig = {
         registries: RegistryName[];
         feeds: ('leads' | 'radar')[];
         collections: boolean;
+        /** Whether its list names no Literature file, so the engine's path of it is read. */
+        literature: boolean;
         deck: boolean;
     };
     /**
@@ -495,7 +497,12 @@ export type {
     ScanRule,
     Subtask,
     Tier,
-    Venue
+    Venue,
+    DepositChange,
+    DepositFinding,
+    DepositPlan,
+    MainComparison,
+    MirrorState
 } from './model-entities.ts';
 
 export type {
@@ -690,6 +697,7 @@ export {
 export {
     BUILD_OUTCOMES,
     CHKTEX_FIXABLE,
+    isTerminalId,
     LINT_IDS,
     lintersOf,
     SCHEDULE_WORDS,
@@ -697,6 +705,7 @@ export {
     SCROLLBACK_LINES,
     STEER_MAX,
     TERMINAL_COLORS,
+    TERMINAL_ID,
     TERMINAL_REFUSALS,
     UPDATE_TASKS
 } from './machine/model-machine.ts';

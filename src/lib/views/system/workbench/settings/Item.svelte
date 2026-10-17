@@ -108,6 +108,7 @@
         const found: string[] = [];
         if (row.kind !== 'config') {
             return [
+                ...(row.kind === 'local' && row.refused !== null ? [said(row.refused)] : []),
                 ...(browserSaid === null ? [] : [said(browserSaid)]),
                 ...(copyRefused ? [t('workbench.settings_copy_refused')] : [])
             ];
@@ -380,8 +381,12 @@
         padding: 0 3px;
     }
 
+    /* Over a wallpaper a code word paints nothing under it and is outlined in the line colour
+       instead, so it is told from the words beside it. */
     :global(body.wall) code {
         background: transparent;
+        outline: 1px solid var(--line);
+        outline-offset: -1px;
     }
 
     /* The row's hover takes the code chip's own colour, so a code word keeps a chip of its own. */

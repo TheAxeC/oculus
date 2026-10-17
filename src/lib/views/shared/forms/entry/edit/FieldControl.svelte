@@ -143,6 +143,7 @@
         removeGlyph={t('editor.remove_glyph')}
         free={field.type === 'tags'}
         none={t('editor.no_choices')}
+        more={(count: number) => t('editor.more_choices', count)}
     />
 {:else if field.type === 'textarea' || field.type === 'lines'}
     <TextArea

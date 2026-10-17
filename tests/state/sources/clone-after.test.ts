@@ -3,7 +3,9 @@
 // clone the only folder of the unsaved workspace and closes an open workspace file without touching
 // it, an unsaved workspace holding folders asks Save, Don't Save or Cancel first, Save writes the
 // folders as a workspace file under the name given, an unsaved workspace with no folder asks
-// nothing, and Add to Workspace adds the folder as Add Folder to Workspace does.
+// nothing, and Add to Workspace adds the folder as Add Folder to Workspace does. While no folder of
+// the unsaved workspace is a hub the question offers Save as unavailable, since the workspace file
+// has nowhere to be kept, and Save then does nothing.
 //
 // The workspace, the state and the clone are under the system temporary directory, asserted to be
 // inside it before anything is written. The notices the store posts are collected and read.
@@ -74,7 +76,7 @@ function world(setup: (hub: string, notes: string, clone: string) => object) {
             const open = openWorkspace(state);
             return Promise.resolve({
                 open: open.file === null ? null : { path: open.file, name: open.name },
-                folders: open.roots.map((root) => ({ key: root.key, dir: root.dir }))
+                folders: open.roots.map((root) => ({ key: root.key, dir: root.dir, hub: root.hub }))
             } as unknown as WorkspacesState);
         }
     };
@@ -124,7 +126,7 @@ describe('Open after a clone while the unsaved workspace holds folders', () => {
         const w = world((hub, notes) => unsaved(hub, notes));
         w.after.ask(w.clone);
         await w.after.open();
-        expect(w.after.asking()).toEqual({ step: 'leave', dir: w.clone });
+        expect(w.after.asking()).toEqual({ step: 'leave', dir: w.clone, savable: true });
         w.after.cancel();
         expect(w.after.asking()).toBeNull();
         expect(dirs(w.now())).toEqual([w.hub, w.notes]);
@@ -179,6 +181,17 @@ describe('Open after a clone while the unsaved workspace holds folders', () => {
         expect(w.after.asking()).toBeNull();
         expect(dirs(w.now())).toEqual([w.hub, w.notes]);
         expect(readdirSync(join(w.hub, '.oculus'))).toEqual(['config.yml']);
+    });
+});
+
+describe('Open after a clone while no folder of the unsaved workspace is a hub', () => {
+    test('asks with Save unavailable, and Save does nothing', async () => {
+        const w = world((_hub, notes) => unsaved(notes));
+        w.after.ask(w.clone);
+        await w.after.open();
+        expect(w.after.asking()).toEqual({ step: 'leave', dir: w.clone, savable: false });
+        w.after.save();
+        expect(w.after.asking()).toEqual({ step: 'leave', dir: w.clone, savable: false });
     });
 });
 

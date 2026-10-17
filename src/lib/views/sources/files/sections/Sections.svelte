@@ -75,7 +75,7 @@
         onrenamemark: (id: string, label: string) => void;
         onremovemark: (id: string) => void;
         /** Say what a press answered on the refusal line of the instance it was made in. */
-        onnote: (owner: string, note: string) => void;
+        onnote: (owner: string, note: string, told?: boolean) => void;
     };
 
     let {

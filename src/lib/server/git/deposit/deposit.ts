@@ -28,15 +28,18 @@ import {
     cpSync,
     existsSync,
     mkdirSync,
-    mkdtempSync,
     readFileSync,
     readdirSync,
     rmSync,
     writeFileSync
 } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { CODE_FOLDER, manifestDir } from '../../../data/sources/manifests.ts';
+import type {
+    DepositChange as Change,
+    DepositPlan as Plan,
+    MirrorState
+} from '../../../data/model/index.ts';
 import { hubManifests } from '../../files/roots.ts';
 import { z } from 'zod';
 import {
@@ -45,7 +48,7 @@ import {
     branchCmd,
     checkRefFormat,
     cloneInto,
-    commitFile,
+    commitMessage,
     createArgs,
     defaultBranchArgs,
     defaultMirrorsDir,
@@ -73,14 +76,13 @@ import {
     urlOf
 } from './deposit-git.ts';
 import { REFS_FORMAT } from '../../core/git/parse.ts';
-import { scan, type Finding } from './deposit-scan.ts';
+import { scan } from './deposit-scan.ts';
 import {
     UNCOMPARED,
-    aheadOfUpstream,
+    upstreamOf,
     compareWithMain,
     fetchOrigin,
     textsOf,
-    type MainComparison,
     type TextsOutcome
 } from './deposit-compare.ts';
 import { target, writeManifest, type Carried, type WriteTarget } from '../../edit/writes.ts';
@@ -106,36 +108,8 @@ const MAIN = 'main';
 /** The first line of the mirror's generated `.gitignore`. */
 const IGNORE_HEADER = '# Generated, cached, and dead-end files - not part of this deposit.';
 
-/** One path `git status --porcelain=v1 -z` reported, with git's own two letters. */
-export type Change = { path: string; letters: string };
-
-/** What a `plan` answers: what would ship, what moved, and what the scan objected to. */
-export type Plan = {
-    repo: string;
-    mirror: string;
-    branch: string;
-    /** origin's URL, or the empty string when the mirror has no remote yet. */
-    remote: string;
-    files: string[];
-    changes: Change[];
-    findings: Finding[];
-};
-
-/** What a GET answers: where the mirror is and what state it is in. */
-export type MirrorState = {
-    id: string;
-    repo: string;
-    mirror: string;
-    exists: boolean;
-    branch: string;
-    remote: string;
-    /** Commits the current branch is ahead of its upstream; 0 without an upstream. */
-    ahead: number;
-    /** The current branch against `origin/main`; nothing known until the mirror has fetched. */
-    main: MainComparison;
-    /** The last plan made for this project in this process, or null when none was. */
-    plan: Plan | null;
-};
+/** The answers' shapes, declared once for the server and the page (data/model). */
+export type { Change, Plan, MirrorState };
 
 /** An operation's answer, with the plan on the two that make one. */
 export type PlanOutcome = Outcome & { plan: Plan | null };
@@ -424,8 +398,9 @@ export async function commit(
     if (deposit === null) {
         return { ...failed(words(text, 'server.deposit.no_project', id)), plan: null };
     }
-    const written = await withMessageFile(message, (file) => commitFile(deposit.at, file));
-    return { ...written, plan: planned.plan };
+    const written = await commitMessage(deposit.at, message);
+    if (!written.ok) return { ...written, plan: planned.plan };
+    return { ...written, plan: await replanned(id, text, options) };
 }
 
 /**
@@ -518,7 +493,7 @@ export async function snapshot(
     const staged = await restage(deposit);
     if (!staged.ok) return { ...staged, plan: planned.plan };
 
-    const written = await withMessageFile(message, (file) => commitFile(deposit.at, file));
+    const written = await commitMessage(deposit.at, message);
     if (!written.ok) return { ...written, plan: planned.plan };
     const sent = await forcePushSnapshot(deposit.at);
     if (!sent.ok) return { ...sent, plan: planned.plan };
@@ -535,8 +510,22 @@ export async function snapshot(
                 ? words(text, 'server.deposit.one_commit')
                 : words(text, 'server.deposit.one_commit_other_default', MAIN)
         ),
-        plan: planned.plan
+        plan: await replanned(id, text, options)
     };
+}
+
+/**
+ * The plan made again after a commit, so the answer and the plan the GET keeps list what is still
+ * changed rather than what the commit holds; null, with no plan kept, when it cannot be made.
+ */
+async function replanned(
+    id: string,
+    text: Record<string, string>,
+    options: DepositOptions
+): Promise<Plan | null> {
+    const again = await sync(id, text, options);
+    if (!again.ok) options.plans?.delete(id);
+    return again.plan;
 }
 
 /** Every branch of the mirror, with its upstream and which one is checked out. */
@@ -660,11 +649,13 @@ export async function state(id: string, options: DepositOptions = {}): Promise<M
             exists: false,
             branch: '',
             remote: '',
+            upstream: '',
             ahead: 0,
             main: UNCOMPARED,
             plan
         };
     }
+    const upstream = await upstreamOf(deposit.at);
     return {
         id,
         repo: deposit.repo,
@@ -672,7 +663,8 @@ export async function state(id: string, options: DepositOptions = {}): Promise<M
         exists: true,
         branch: await currentBranch(deposit.at),
         remote: await remoteUrl(deposit.at),
-        ahead: await aheadOfUpstream(deposit.at),
+        upstream: upstream.name,
+        ahead: upstream.ahead,
         main: await compareWithMain(deposit.at),
         plan
     };
@@ -855,21 +847,6 @@ async function pointDefaultAtMain(deposit: Deposit, run: GhRun): Promise<boolean
     const url = urlOf(view.output);
     if (url === '') return false;
     return (await run(defaultBranchArgs(slugOf(url), MAIN), NETWORK_TIMEOUT_MS)).ok;
-}
-
-/** A commit message goes through a file rather than an argument, as git-write.ts's commit does. */
-async function withMessageFile(
-    message: string,
-    write: (file: string) => Promise<Outcome>
-): Promise<Outcome> {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-deposit-'));
-    const file = join(dir, 'message.txt');
-    try {
-        writeFileSync(file, message.endsWith('\n') ? message : `${message}\n`, 'utf8');
-        return await write(file);
-    } finally {
-        rmSync(dir, { recursive: true, force: true });
-    }
 }
 
 function today(): string {

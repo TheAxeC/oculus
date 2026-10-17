@@ -25,6 +25,7 @@ import type { Attention } from './attention.ts';
 import {
     floatHost,
     isPage,
+    samePath,
     type Focus,
     type Host,
     type Instance,
@@ -173,7 +174,8 @@ export function createOpening(
      * the next one as a tab while it is still open, so opening the editor from five cards is one
      * pane of five tabs. A view already open is activated where it is, exactly as openView
      * activates it, and a maximised pane takes the view itself, since a new pane beside it would be
-     * one nobody can see.
+     * one nobody can see. The pane being read never takes the view: a view opened for something
+     * lands where landingFor puts a view the tab being read asked for, beside that tab's pane.
      */
     function openBeside(view: ViewId, state?: unknown, page?: string, asker?: string): string {
         return openInto(view, state, true, page, false, asker);
@@ -226,9 +228,12 @@ export function createOpening(
             return activateFloated(floated, state, preview);
         }
         // A float is one pane: a view opened for something lands in it as a tool view does, and a
-        // view asked for beside another is a tab of it, since a float takes no split.
+        // view asked for beside another is a tab of it, since a float takes no split. A view opened
+        // for something and asked for beside the one being read is asked by that one, so it lands
+        // beside its pane and never in it (landingFor's `away`), as Open Preview to the Side does.
         if ((document || opened(view)) && isPage(held)) {
-            return openOpened(view, state, host, preview, asker);
+            const by = asker ?? (beside ? (attention.active(host) ?? undefined) : undefined);
+            return openOpened(view, state, host, preview, by);
         }
         const focus = focusedPane(access.workbench(host));
         const tree = access.layout(host);
@@ -278,7 +283,10 @@ export function createOpening(
         const fresh = newInstance(view, state ?? {});
         const instance = preview ? asPreview(fresh) : fresh;
         const aside = beside && inside === null && isPage(held);
-        const stack = aside ? attention.besidePath(tree, host) : null;
+        // The pane the last open beside made takes the view as a tab, unless it is the pane being
+        // read, which a view asked for beside it never lands in.
+        const last = aside ? attention.besidePath(tree, host) : null;
+        const stack = last !== null && !samePath(last, path) ? last : null;
         if (aside) {
             // The pane split off keeps the tab that was being read as the one it sits beside; a tab
             // stacked into that pane keeps the memory the pane was made with.

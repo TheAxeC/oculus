@@ -1,6 +1,8 @@
 <script lang="ts">
     // Layer 3, primitive. One tick. The label beside it is the control's name and its words, so a
-    // form row that holds one needs nothing else.
+    // form row that holds one needs nothing else. A caller that draws the name itself beside the
+    // box, as a card of fields does in its column of names, makes the box `bare`: the label is then
+    // the box's accessible name and no words of it are drawn.
     //
     // A caller that gives `unset` words gets the three-state box of a field that may be absent:
     // `checked` null draws the native box indeterminate with the unset words after the label, and a
@@ -21,9 +23,21 @@
         onunset?: () => void;
         /** The box cannot be pressed and draws `checked`. */
         disabled?: boolean;
+        /**
+         * The label is the box's accessible name only, for a caller that draws the name beside it.
+         */
+        bare?: boolean;
     };
 
-    let { checked, label, onchange, unset, onunset, disabled = false }: Props = $props();
+    let {
+        checked,
+        label,
+        onchange,
+        unset,
+        onunset,
+        disabled = false,
+        bare = false
+    }: Props = $props();
 
     let box: HTMLInputElement | null = $state(null);
 
@@ -59,8 +73,11 @@
         bind:this={box}
         onchange={pressed}
         {disabled}
+        aria-label={bare ? label : undefined}
     />
-    <span class="words">{label}</span>
+    {#if !bare}
+        <span class="words">{label}</span>
+    {/if}
     {#if three && checked === null}
         <span class="unset">{unset}</span>
     {/if}

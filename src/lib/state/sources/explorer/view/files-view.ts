@@ -88,6 +88,12 @@ export type FilesView = FilesForms & {
      * none.
      */
     note: string;
+    /**
+     * Whether `note` says a result that went through, an upload that landed whole, which the view
+     * draws in the information style; a refusal, or a result with a refusal in it, is drawn as an
+     * error.
+     */
+    told: boolean;
     /** The name being typed for a new file or folder, or a renamed row; null for none. */
     naming: Naming | null;
     /** The folder a rooted tab is drawn from, or null for a tab that draws the workspace. */
@@ -199,6 +205,7 @@ const filesViewShape = z
         revealed: outcomeShape.nullable().catch(null),
         revealing: countShape,
         note: z.string().catch(''),
+        told: z.boolean().catch(false),
         naming: namingShape.nullable().catch(null),
         showHidden: z.boolean().catch(true),
         showIgnored: z.boolean().catch(true),
@@ -240,6 +247,7 @@ function emptyFilesView(): FilesView {
         revealed: null,
         revealing: 0,
         note: '',
+        told: false,
         naming: null,
         showHidden: true,
         showIgnored: true,

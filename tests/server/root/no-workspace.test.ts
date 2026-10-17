@@ -4,6 +4,7 @@
 // the Files view has no folder, and a state file that does not parse is left byte for byte as it
 // was. The state folder is a dependency of the context, a scratch folder here, so the state of the
 // person running the test is never read.
+// @module-tag slow: every case builds a whole server context.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

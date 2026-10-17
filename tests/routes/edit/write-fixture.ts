@@ -138,6 +138,7 @@ export function targetOver(
             newProjectDir: { projects: 'projects/ideas' }
         },
         engine: engineDir(),
+        engineConfig: () => loadConfig(engineDir()).config,
         career: careerRules(merged),
         overrides: files.overrides,
         projects: () => [],
@@ -306,6 +307,7 @@ export function deckTarget(): PrimaryTarget {
         primary: 'hub',
         config: { ...real, portfolioDeck: DECK_FOLDER },
         engine: engineDir(),
+        engineConfig: () => loadConfig(engineDir()).config,
         career: careerRules(loadConfig(engineDir()).config),
         projects: () => projects,
         files: { roots: () => [{ key: 'hub', dir }] },
@@ -381,7 +383,7 @@ function withRoot(base: PrimaryTarget, entry: { key: string; dir: string }): Por
 }
 
 /** What `personalTarget` plants: the target, and the manifest file of each project by its id. */
-export type PersonalTarget = { into: PrimaryTarget; files: PlantedPersonal['files'] };
+type PersonalTarget = { into: PrimaryTarget; files: PlantedPersonal['files'] };
 
 /**
  * The target with the two personal projects of `plantPersonal` planted, its scan naming the hub's
@@ -421,7 +423,7 @@ export function secondHubPersonal(
 export const REPOSITORY_ID = 'gamma';
 
 /** The manifest of the repository `repositoryTarget` plants. */
-export const REPOSITORY_MANIFEST = [
+const REPOSITORY_MANIFEST = [
     'tier: personal',
     'type: active',
     'title: "A repository"',
@@ -435,7 +437,7 @@ export const REPOSITORY_MANIFEST = [
 ].join('\n');
 
 /** What `repositoryTarget` plants: the target, the repository's folder and its manifest file. */
-export type RepositoryTarget = { into: PrimaryTarget; dir: string; file: string };
+type RepositoryTarget = { into: PrimaryTarget; dir: string; file: string };
 
 /**
  * The target with a repository planted as a project: a folder under the system temporary directory

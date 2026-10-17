@@ -7,8 +7,13 @@
     // as setting it. A caller that gives none draws a pick that always holds one of the choices. A
     // disabled pick is drawn so and carries `title`, the words saying why. A choice given a group
     // is drawn under it as an `<optgroup>`, after the choices given none.
+    //
+    // The pick is the browser's own select with its own mark taken off and the `disclosure` glyph
+    // drawn at its right end in its place, the mark select/FieldSelect.svelte's trigger draws, so
+    // two dropdowns side by side carry one mark in every theme, a terminal theme's `v` among them.
 
     import { choiceGroups, isStray, type SelectChoice } from './choices';
+    import Glyph from '../../display/Glyph.svelte';
     import '../../theme/field.css';
 
     type Props = {
@@ -42,27 +47,53 @@
     const drawn = $derived(choiceGroups(choices));
 </script>
 
-<select class="select oculus-field" aria-label={label} {disabled} {title} onchange={picked}>
-    {#if empty !== undefined}
-        <option value="" selected={value === ''}>{empty}</option>
-    {/if}
-    {#if stray}
-        <option {value} selected>{value}</option>
-    {/if}
-    {#each drawn.loose as choice (choice.id)}
-        <option value={choice.id} selected={choice.id === value}>{choice.label}</option>
-    {/each}
-    {#each drawn.groups as group (group.name)}
-        <optgroup label={group.name}>
-            {#each group.choices as choice (choice.id)}
-                <option value={choice.id} selected={choice.id === value}>{choice.label}</option>
-            {/each}
-        </optgroup>
-    {/each}
-</select>
+<span class="pick">
+    <select class="select oculus-field" aria-label={label} {disabled} {title} onchange={picked}>
+        {#if empty !== undefined}
+            <option value="" selected={value === ''}>{empty}</option>
+        {/if}
+        {#if stray}
+            <option {value} selected>{value}</option>
+        {/if}
+        {#each drawn.loose as choice (choice.id)}
+            <option value={choice.id} selected={choice.id === value}>{choice.label}</option>
+        {/each}
+        {#each drawn.groups as group (group.name)}
+            <optgroup label={group.name}>
+                {#each group.choices as choice (choice.id)}
+                    <option value={choice.id} selected={choice.id === value}>{choice.label}</option>
+                {/each}
+            </optgroup>
+        {/each}
+    </select>
+    <span class="caret"><Glyph name="disclosure" /></span>
+</span>
 
 <style>
-    .select {
+    .pick {
+        position: relative;
+        display: inline-flex;
+        min-width: 0;
         max-width: 100%;
+    }
+
+    /* The browser's mark is taken off, and the room it took is the glyph's. */
+    .select {
+        appearance: none;
+        min-width: 0;
+        max-width: 100%;
+        padding-right: calc(12px + var(--icon-box) * var(--text-scale, 1));
+    }
+
+    /* Over the select's right end, where the browser's mark was; a press on it is the select's. */
+    .caret {
+        position: absolute;
+        top: 0;
+        right: 6px;
+        bottom: 0;
+        display: inline-flex;
+        align-items: center;
+        pointer-events: none;
+        color: var(--muted-txt, var(--muted));
     }
 </style>

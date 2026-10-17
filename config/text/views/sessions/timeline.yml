@@ -2,6 +2,7 @@
 text:
     sessions:
         ev_bust: prompt cache rewritten, {0} tokens
+        ev_bust_one: prompt cache rewritten, 1 token
         ev_k_bust: bust
         ev_k_edit: edit
         ev_k_prompt: prompt

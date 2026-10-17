@@ -699,6 +699,15 @@ export function diffHeads(output: string): DiffHead[] {
 }
 
 /**
+ * Whether two files of a diff, one after the other, are one path whose type changed (a file turned
+ * into a symbolic link or a submodule, or back): git writes such a path as its deletion followed by
+ * its creation, each with its own mode.
+ */
+export function typeChanged(deleted: DiffHead, created: DiffHead): boolean {
+    return deleted.deleted && created.created && deleted.oldPath === created.newPath;
+}
+
+/**
  * One side of a submodule's change, as git writes it: `Subproject commit <sha>` and its newline.
  */
 export function submoduleText(head: DiffHead, mark: '-' | '+'): string {
@@ -750,9 +759,19 @@ function gitsReason(stderr: unknown, stdout: unknown, width: number): string {
  * Why a command that failed was not one with a reason of git's own: the run was ended by Cancel
  * (`cancelled`), by its time limit (`timed-out`), for writing more than the output limit
  * (`too-much-output`), by a signal that nothing here sent (`signal`), or it stopped with a status
- * and wrote neither stream (`exit-status`).
+ * and wrote neither stream (`exit-status`). A commit git refused because it knows no name or email
+ * for the author (`no-identity`) is said in the catalog's words, which tell the reader what to set,
+ * since git's own line names only the address it failed to guess.
  */
-type FailureCode = 'cancelled' | 'timed-out' | 'too-much-output' | 'signal' | 'exit-status';
+type FailureCode =
+    'cancelled' | 'timed-out' | 'too-much-output' | 'signal' | 'exit-status' | 'no-identity';
+
+/**
+ * The lines git writes when it has no name or email for a commit: its prompt to configure them,
+ * the guess it could not make, an empty name, and the refusal of a guess under user.useConfigOnly.
+ */
+const NO_IDENTITY =
+    /Please tell me who you are|unable to auto-detect email address|empty ident name|no (?:email|name) was given and auto-detection is disabled/;
 
 /**
  * A failed command that gave no reason of its own: the code, the detail its sentence needs (the
@@ -785,9 +804,9 @@ type ExecFailure = Error & { code?: unknown; killed?: boolean; signal?: unknown 
 /**
  * The reason a failed command gives, read in this order: Cancel (`ABORT_ERR`), the time limit
  * (`killed`, which Node sets only for its own timeout), the output limit
- * (`ERR_CHILD_PROCESS_STDIO_MAXBUFFER`), a signal nothing here sent, then git's own text (see
- * gitsReason), then an exit status with both streams empty. A run ended by a limit carries partial
- * streams, which are never shown as its reason.
+ * (`ERR_CHILD_PROCESS_STDIO_MAXBUFFER`), a signal nothing here sent, git's lines for a missing
+ * identity, then git's own text (see gitsReason), then an exit status with both streams empty. A
+ * run ended by a limit carries partial streams, which are never shown as its reason.
  */
 export function classifyFailure(
     error: unknown,
@@ -812,6 +831,7 @@ export function classifyFailure(
     if (typeof failure.signal === 'string' && failure.signal !== '') {
         return coded('signal', failure.signal);
     }
+    if (NO_IDENTITY.test(scalar(stderr))) return coded('no-identity', '');
     const text = gitsReason(stderr, stdout, width);
     if (text !== '') return { reason: text };
     if (typeof failure.code === 'number') return coded('exit-status', String(failure.code));

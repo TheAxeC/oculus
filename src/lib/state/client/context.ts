@@ -432,6 +432,7 @@ export function createClientState(
     // serve it under, and point the Repositories view at a commit through its remembered state.
     const repositories = createRepositories(writes, terminals, layout, {
         served: servedRoots,
+        asked: source.nextAsked,
         instanceState: ui.instanceState,
         setInstanceState: ui.setInstanceState
     });
@@ -550,6 +551,7 @@ export function createClientState(
     });
     movedItems = createLinkRewrite({
         askLinks: lsp.askLinks,
+        drafts: () => openTabs().map((tab) => source.sourceDraft(tab.id)),
         submit: refactor.submit,
         say: (message) => void notices.post(message, { tone: 'warning' })
     });

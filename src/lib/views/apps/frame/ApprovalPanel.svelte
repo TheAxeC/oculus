@@ -65,7 +65,11 @@
     {/if}
     <p class="meta">{t('apps.name_line', row.name)}</p>
     <p class="meta">{t('apps.folder_line', row.folder)}</p>
-    <p class="meta">{t('apps.size_line', row.files.toString(), size(row.bytes))}</p>
+    <p class="meta">
+        {row.files === 1
+            ? t('apps.size_line_one', size(row.bytes))
+            : t('apps.size_line', row.files.toString(), size(row.bytes))}
+    </p>
     <p class="question">{t('apps.approve_question')}</p>
     <ul>
         {#if row.host !== ''}

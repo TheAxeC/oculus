@@ -18,6 +18,11 @@
         title: string;
         /** Whether the header draws the title; a view that has none still draws its actions. */
         titled?: boolean;
+        /**
+         * Whether the title is drawn at `--fs-md`, a step above the sidebar's `--fs-sm`, for a view
+         * whose text is drawn at `--fs-sm` and whose headings a step above it (the Session view).
+         */
+        large?: boolean;
         /** The icon actions at the right of the header, a Toolbar that asks for `overflow`. */
         toolbar?: Snippet;
         /** The strip under the header for the view's other controls, usually a Toolbar. */
@@ -33,14 +38,22 @@
         children?: Snippet;
     };
 
-    let { title, titled = true, toolbar, bar, tinted = false, children }: Props = $props();
+    let {
+        title,
+        titled = true,
+        large = false,
+        toolbar,
+        bar,
+        tinted = false,
+        children
+    }: Props = $props();
 </script>
 
 <section class="pane" class:tinted>
     {#if titled || toolbar}
         <header>
             {#if titled}
-                <h2 class="title">{title}</h2>
+                <h2 class="title" class:large>{title}</h2>
             {/if}
             {#if toolbar}
                 <div class="tools">{@render toolbar()}</div>
@@ -120,6 +133,10 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .title.large {
+        font-size: var(--fs-md);
     }
 
     /* The actions keep their room up to everything but the title's three characters; the Toolbar

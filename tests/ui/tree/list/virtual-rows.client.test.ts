@@ -6,7 +6,7 @@
 // It does not cover scrolling or measuring, which the look does.
 
 import { flushSync, mount, unmount } from 'svelte';
-import { afterEach, expect, it, onTestFinished, vi } from 'vitest';
+import { expect, it, onTestFinished, vi } from 'vitest';
 import { cell } from '../../frame/rooted.svelte.ts';
 import { documentGlobals } from './mini-dom.ts';
 import ShrinkingRows from './ShrinkingRows.svelte';
@@ -14,19 +14,19 @@ import ShrinkingRows from './ShrinkingRows.svelte';
 const rowsOf = (count: number) =>
     Array.from({ length: count }, (_, at) => ({ id: `r${String(at)}`, name: `row ${String(at)}` }));
 
-afterEach(() => {
-    vi.unstubAllGlobals();
-});
-
 it('asks for no row past the end when a list of 20 shrinks to 3 inside an effect', () => {
     const { globals, body } = documentGlobals();
     for (const [name, value] of Object.entries(globals)) vi.stubGlobal(name, value);
+    // The list is taken down while the document is still there, and the document is taken away
+    // after it, since unmount() lets go of the events the mount listened to on the document.
+    let list: ReturnType<typeof mount> | null = null;
+    onTestFinished(async () => {
+        if (list !== null) await unmount(list);
+        vi.unstubAllGlobals();
+    });
     const rows = cell(rowsOf(20));
     const past = { key: [] as number[], body: [] as number[] };
-    const list = mount(ShrinkingRows, { target: body, props: { rows: () => rows.get(), past } });
-    onTestFinished(() => {
-        void unmount(list);
-    });
+    list = mount(ShrinkingRows, { target: body, props: { rows: () => rows.get(), past } });
     flushSync();
     expect(body.textContent.match(/row \d+/g)).toHaveLength(10);
     let thrown = '';

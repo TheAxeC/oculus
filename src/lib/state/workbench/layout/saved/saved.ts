@@ -7,20 +7,20 @@
 // add up: sizes that sum to one, a minimum size, a folded index inside the children.
 //
 // The envelope is `{ version, pages, current, floats, kept, hidden }`, each float `{ id, pane,
-// place }`; a page may carry `folder` (`{ root, path }`) and `item` (`{ view, state }`), `kept`
-// lists the layouts of the folder pages that were closed (kept.ts reads them), and `hidden` the
-// edges whose docked float the window strip's toggles hide, read with an edge no float docks on and
-// an edge named twice dropped and absent when none is. Only an envelope of LAYOUT_VERSION is read;
-// any other version is not, and the text of one is kept under UNREAD_KEY by the load (load.ts)
-// while the default pages show. A float that does not add up (no tab, a place past the window, an
-// id a page or another float already uses, a tab id held twice, a second float docked on one edge,
-// a window place with a size that is not finite or is under 200) is dropped on reading and the rest
-// kept, and so is a kept layout that does not add up. A pane carries `locked` (a pane without the
-// field reads as unlocked), `added` (a pane without the field reads as one its page's arrangement
-// defined, and a float's pane never carries it), `documents` (a pane without the field reads as not
-// the documents pane of a workbench, and a float's pane never carries it) and `recent`, the ids of
-// the other tabs it showed, and a saved pane whose pinned tabs are not first is put in that order
-// on reading.
+// place, from }`, `from` read as absent when it is missing or does not fit its shape; a page may
+// carry `folder` (`{ root, path }`) and `item` (`{ view, state }`), `kept` lists the layouts of the
+// folder pages that were closed (kept.ts reads them), and `hidden` the edges whose docked float the
+// window strip's toggles hide, read with an edge no float docks on and an edge named twice dropped
+// and absent when none is. Only an envelope of LAYOUT_VERSION is read; any other version is not,
+// and the text of one is kept under UNREAD_KEY by the load (load.ts) while the default pages show.
+// A float that does not add up (no tab, a place past the window, an id a page or another float
+// already uses, a tab id held twice, a second float docked on one edge, a window place with a size
+// that is not finite or is under 200) is dropped on reading and the rest kept, and so is a kept
+// layout that does not add up. A pane carries `locked` (a pane without the field reads as
+// unlocked), `added` (a pane without the field reads as one its page's arrangement defined, and a
+// float's pane never carries it), `documents` (a pane without the field reads as not the documents
+// pane of a workbench, and a float's pane never carries it) and `recent`, the ids of the other tabs
+// it showed, and a saved pane whose pinned tabs are not first is put in that order on reading.
 
 import { z } from 'zod';
 import { tabsOf } from '../instance.ts';
@@ -119,12 +119,32 @@ const pagesEnvelopeShape = z.object({
     hidden: z.unknown().optional()
 });
 
-/** A saved float: its id, with its pane and its place read apart. */
+/** A saved float: its id, with its pane, its place and where its pane stood read apart. */
 const savedFloatShape = z.object({
     id: z.string().min(1),
     pane: z.unknown().optional(),
-    place: z.unknown().optional()
+    place: z.unknown().optional(),
+    from: z.unknown().optional()
 });
+
+/** Where a float's pane stood in its page (model.ts, FloatFrom). */
+const fromShape = z.union([
+    z.object({
+        kind: z.literal('whole'),
+        page: z.string().min(1),
+        added: z.literal(true).optional()
+    }),
+    z.object({
+        kind: z.literal('beside'),
+        page: z.string().min(1),
+        path: pathShape,
+        holds: z.string().min(1).nullable(),
+        dir: dirShape,
+        before: z.boolean(),
+        share: z.number().gt(0).lt(1),
+        added: z.literal(true).optional()
+    })
+]);
 
 /**
  * A saved place: a free rectangle, a dock, or the bounds of a window of the app; whether it fits
@@ -596,7 +616,8 @@ function readFloat(
     // A float is not a page, so its pane is never an added one or a workbench's documents pane.
     delete pane.added;
     delete pane.documents;
-    return { id: held.id, pane, place };
+    const from = readAs(fromShape, held.from);
+    return from === null ? { id: held.id, pane, place } : { id: held.id, pane, place, from };
 }
 
 /** Whether a float is docked on this edge. */

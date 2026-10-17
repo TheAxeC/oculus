@@ -5,10 +5,11 @@
 // Live HPC; a script that never names the cluster's scratch folder gets the warning first and its
 // yes reads "Submit Anyway". A refusal and the outcome are said under the editor, through `said`.
 //
-// One flow runs at a time: the press does nothing while one is planning or running, and the
-// control is drawn disabled meanwhile. The confirm is an Ask drawn by views/shared/writes/
-// AskConfirm.svelte in the tab. The server computes the plan again at the press of the yes and
-// refuses a plan that differs, so the page never decides what runs.
+// One flow runs at a time: the press does nothing while one is planning or running, and the control
+// waits meanwhile (drawn disabled and kept focusable, ToolButton's `waiting`), so the keyboard is
+// on it again when the confirm closes or a refusal is said. The confirm is an Ask drawn by
+// views/shared/writes/AskConfirm.svelte in the tab. The server computes the plan again at the press
+// of the yes and refuses a plan that differs, so the page never decides what runs.
 
 import { humanSize } from '$lib/state/boards/board/stats';
 import { t } from '$lib/state/shared/words/text';
@@ -37,7 +38,7 @@ export type SubmitJobDeps = {
 
 /** The flow of one tab. */
 export type SubmitJob = {
-    /** Whether a press is planning or running, which disables the control. */
+    /** Whether a press is planning or running, while which the control waits. */
     readonly busy: boolean;
     /** The confirm held, or null while none is. */
     readonly asking: Ask | null;

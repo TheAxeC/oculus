@@ -457,10 +457,20 @@ export function sanitiseGraph(svg: string): string {
  * statement are one paragraph and a link or two in the hub's files, so this is the inline renderer:
  * a block renderer would only wrap each of them in a `<p>` the card's own markup already gives
  * them. What the file holds is somebody's text, so the result is sanitised before it is returned,
- * which is what covers every card that draws a value this way.
+ * which is what covers every card that draws a value this way. Its `$...$` formulas are typeset
+ * once `math` is given, as a document's are, and drawn as their source until then.
  */
-export function inlineMarkdown(text: string): string {
-    return sanitise(marked.parseInline(text, { async: false }));
+export function inlineMarkdown(text: string, math: MathDrawing | null = null): string {
+    if (math === null) return sanitise(marked.parseInline(text, { async: false }));
+    const mark = `slot-${crypto.randomUUID()}`;
+    const formulas: string[] = [];
+    const parser = new Marked(
+        mathExtension(math, (html) => {
+            formulas.push(html);
+            return `<span class="${MATH_SLOT}">${mark}-m${formulas.length - 1}</span>`;
+        })
+    );
+    return sanitise(parser.parseInline(text, { async: false }), { mark, formulas });
 }
 
 /**
@@ -489,8 +499,27 @@ export type MathDrawing = {
     refused: string;
 };
 
-/** What a document is drawn with beyond the document rule. */
-export type MarkdownExtras = { note?: NoteDrawing | null; math?: MathDrawing | null };
+/**
+ * What a document is drawn with beyond the document rule: a note's links, embeds and tags, KaTeX,
+ * and `image`, which answers the address an image's source is read at, or null to leave the
+ * source as the document wrote it.
+ */
+export type MarkdownExtras = {
+    note?: NoteDrawing | null;
+    math?: MathDrawing | null;
+    image?: ((source: string) => string | null) | null;
+};
+
+/** The token pass that sets each image's address to what `image` answers for its source. */
+function imageExtension(image: (source: string) => string | null): MarkedExtension {
+    return {
+        walkTokens(token) {
+            if (token.type !== 'image') return;
+            const held = token as Tokens.Image;
+            held.href = image(held.href) ?? held.href;
+        }
+    };
+}
 
 /** The class of a formula's slot, and of a formula KaTeX refused. */
 const MATH_SLOT = 'math-slot';
@@ -566,8 +595,9 @@ function inlineDrawn(text: string, extensions: MarkedExtension[]): string {
 /**
  * A whole Markdown document as `blockMarkdown` renders it, not yet sanitised, with its formulas
  * held apart and the list of its headings: `sanitise(html, slots)` is what is drawn. A note is
- * drawn with its links, embeds and tags (`note`), and formulas are typeset once KaTeX has loaded
- * (`math`); without either the document is the document rule's alone.
+ * drawn with its links, embeds and tags (`note`), formulas are typeset once KaTeX has loaded
+ * (`math`), and images are read at the addresses `image` answers; without them the document is
+ * the document rule's alone.
  */
 export function blockMarkdownParts(
     text: string,
@@ -580,8 +610,10 @@ export function blockMarkdownParts(
         return `<span class="${MATH_SLOT}">${mark}-m${formulas.length - 1}</span>`;
     };
     const maths = extras.math === undefined || extras.math === null ? [] : [extras.math];
+    const images = extras.image === undefined || extras.image === null ? [] : [extras.image];
     const own = (embeds: boolean, slots: EmbedSlot[]): MarkedExtension[] => [
         ...maths.map((one) => mathExtension(one, slot)),
+        ...images.map((one) => imageExtension(one)),
         ...(extras.note === undefined || extras.note === null
             ? []
             : [noteExtension({ ...extras.note, embeds }, slots, `${mark}-e`)])

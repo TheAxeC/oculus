@@ -93,7 +93,7 @@
     let refused = $state('');
 
     async function addOutside(): Promise<void> {
-        const answer = await addRoot(dir);
+        const answer = await addRoot(dir, { said: true });
         refused = answer.ok ? '' : refusal(answer.error ?? '');
     }
 </script>

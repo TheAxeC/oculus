@@ -29,6 +29,7 @@
     import CrossLinks from '$lib/views/shared/links/CrossLinks.svelte';
     import { accessTone, type Dataset } from '$lib/state/sources/registries/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import type { Entry, IdentityFault, Project, SchemaField } from '$lib/state/boards/collection';
     import { pageView } from '$lib/state/forms/page-entry';
     import type { ViewSource } from '$lib/state/sessions/view-source';
@@ -58,6 +59,9 @@
     };
 
     let { dataset, cursor, projects, entry, schema, file, fault, onsaid }: Props = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
     let recovering = $state(false);
 
     /** True while the question before a delete is open. */
@@ -126,7 +130,10 @@
         id={dataset.id}
         {cursor}
         title={dataset.name === '' ? dataset.id : dataset.name}
-        titleHtml={inlineMarkdown(dataset.name === '' ? dataset.id : dataset.name)}
+        titleHtml={inlineMarkdown(
+            dataset.name === '' ? dataset.id : dataset.name,
+            cardMath(dataset.name === '' ? dataset.id : dataset.name)
+        )}
         ontitle={entry === null ? undefined : openPage}
     >
         {#snippet meta()}
@@ -138,8 +145,10 @@
         {/snippet}
 
         {#if dataset.description}
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="description">{@html inlineMarkdown(dataset.description)}</p>
+            <p class="description">
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+                {@html inlineMarkdown(dataset.description, cardMath(dataset.description))}
+            </p>
         {/if}
 
         <!-- eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string must not count as a value here, which ?? would make it -->
@@ -176,7 +185,7 @@
             <div class="note">
                 <Glyph name="note_back" />
                 <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                <span>{@html inlineMarkdown(notes)}</span>
+                <span>{@html inlineMarkdown(notes, cardMath(notes))}</span>
             </div>
         {/if}
 

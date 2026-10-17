@@ -103,12 +103,15 @@
 </article>
 
 <style>
-    /* `--card-reveal` says whether what a card draws only under the pointer or the keyboard is
-       drawn: 0 at rest and 1 while the card is hovered or holds the focus, or always on a screen
-       whose pointer does not hover. Every card sets it, so a card drawn inside another answers for
+    /* `--card-at-rest` says whether what a card draws only under the pointer or the keyboard is
+       drawn: `none` at rest, so its controls are not drawn and take no room, as the hidden actions
+       of a tree row take none, and unset while the card is hovered, holds the focus or the keyboard
+       cursor, or has a menu of its own open, or always on a screen whose pointer does not hover. A
+       control reads it as `display: var(--card-at-rest, <its own display>)`, so unset gives each
+       control its own display back. Every card sets it, so a card drawn inside another answers for
        itself and not for the card around it. */
     .card {
-        --card-reveal: 0;
+        --card-at-rest: none;
         position: relative;
         display: flex;
         background: var(--card);
@@ -118,16 +121,19 @@
         overflow: hidden;
     }
 
-    /* The card holding the keyboard cursor reveals its actions as a hovered card does. */
+    /* The card holding the keyboard cursor reveals its actions as a hovered card does, and a card
+       whose menu is open keeps them while the pointer and the focus are in the menu, so the menu
+       stays by its opener. */
     .card:hover,
     .card:focus-within,
-    .card[data-cursor] {
-        --card-reveal: 1;
+    .card[data-cursor],
+    .card:has(:global([aria-haspopup][aria-expanded='true'])) {
+        --card-at-rest: initial;
     }
 
     @media (hover: none) {
         .card {
-            --card-reveal: 1;
+            --card-at-rest: initial;
         }
     }
 

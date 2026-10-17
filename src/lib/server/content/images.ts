@@ -21,13 +21,18 @@
 //   EXIF block met on the way gives the orientation, its first directory read at the offset the
 //   block names and a damaged block read as none.
 // - A PNG is sized by image-size, and its `eXIf` chunk, which image-size does not read, is walked
-//   here for the orientation as far as the first image data.
+//   here for the orientation through every chunk before the first image data, where the PNG
+//   specification places it and where the browser reads it, however many chunks come first.
 // - A WebP is sized by image-size and never turned, since the browser does not turn a WebP.
 // - Any other format gives no size.
-// Both walks read at their position through the same handle once they pass the head, so a frame or
-// a chunk behind a large colour profile is still reached, and a walk makes at most SEGMENTS reads
-// past the head, so no file is read whole: a JPEG whose frame is further on gives no size, and a
-// PNG whose `eXIf` chunk is further on is sized at its stored shape.
+// Both walks read at their position through the same handle once they pass the head, at least BLOCK
+// bytes a read, so a frame or a chunk behind a large colour profile is reached however many
+// segments or chunks come first, as the browser reaches it, and a run of small ones costs one read
+// a block. A walk steps over what it does not need by its length and stops at the first frame or
+// image data, so it reads no more of a file than what comes before that data and one block of it.
+// The JPEG walk ends at its first frame, the first scan, the end of the file or a marker that is
+// not one; the PNG walk at the first image data, the end of the file or a chunk whose type is not
+// four letters.
 // The type a picture is served as is mime's for its extension.
 //
 // Whether a path lies in a folder is read from server/core/paths.ts (`inside`).
@@ -77,10 +82,10 @@ export const READ_CAP = 512 * 1024;
 type ReadAt = (position: number, length: number) => Uint8Array;
 
 /**
- * The reads a walk makes past the head before it gives up, about one for each JPEG segment or PNG
- * chunk it passes there, so no file is read whole.
+ * The bytes a read past the head takes at least, which serve the reads after it that fall inside
+ * them: a page, so stepping over a run of small chunks reads the file a block at a time.
  */
-export const SEGMENTS = 512;
+const BLOCK = 4096;
 
 /**
  * The bytes of a JPEG EXIF block or a PNG `eXIf` chunk read for its orientation. The tag sits in
@@ -128,7 +133,8 @@ function turned(orientation: number, width: number, height: number): Size | null
 /**
  * The orientation a PNG's `eXIf` chunk names, or 0 when it has none. The chunks after IHDR are
  * walked by their lengths as far as the first image data, where the chunk must already have come,
- * or the end of what `read` gives; a chunk head that is not four letters ends the walk.
+ * or the end of what `read` gives; a chunk head that is not four letters ends the walk. Each step
+ * moves on by at least a chunk head, so the walk ends at the end of the file.
  */
 function pngOrientation(read: ReadAt): number {
     const ihdr = read(8, 4);
@@ -183,7 +189,8 @@ function exifOrientation(body: Uint8Array): number {
  * large EXIF block or colour profile before the frame is stepped over. The first EXIF block met on
  * the way is read as far as its orientation, and a quarter turn swaps the two sides, since the
  * browser draws the picture turned. A scan, the end of what `read` gives or a broken segment before
- * any frame gives no size.
+ * any frame gives no size. Each step moves on by at least a byte, so the walk ends at the end of
+ * the file.
  */
 function jpeg(read: ReadAt): Size | null {
     let at = 2;
@@ -219,10 +226,10 @@ function jpeg(read: ReadAt): Size | null {
 }
 
 /**
- * A picture's size from its head, with `read` for the bytes a walk needs past it: a JPEG walked
- * here and turned by its EXIF orientation, a PNG sized by image-size and turned by its `eXIf`
- * chunk, a WebP sized by image-size as stored. Any other format, and a head image-size cannot read,
- * give null.
+ * A picture's size from its head, with `read` reading the bytes a walk needs, past the head
+ * included: a JPEG walked here and turned by its EXIF orientation, a PNG sized by image-size and
+ * turned by its `eXIf` chunk, a WebP sized by image-size as stored. Any other format, and a head
+ * image-size cannot read, give null.
  */
 function measured(head: Uint8Array, read: ReadAt): Size | null {
     if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return jpeg(read);
@@ -232,9 +239,34 @@ function measured(head: Uint8Array, read: ReadAt): Size | null {
     } catch {
         return null;
     }
-    if (found.type === 'png') return turned(pngOrientation(read), found.width, found.height);
+    if (found.type === 'png') {
+        return turned(pngOrientation(read), found.width, found.height);
+    }
     if (found.type === 'webp') return sized(found.width, found.height);
     return null;
+}
+
+/**
+ * The reader of a file whose head is read: a read inside the head is served from it, and a read
+ * past it reads BLOCK bytes or more at its position through `handle`, which serve the reads after
+ * it that fall inside them. No read goes past the head when the head came back short (`short`),
+ * since the file then ended before the head did.
+ */
+function pastHead(handle: number, head: Uint8Array, short: boolean): ReadAt {
+    let block = new Uint8Array(0);
+    let start = 0;
+    return (position, length) => {
+        if (position + length <= head.byteLength) return head.subarray(position, position + length);
+        const offset = position - start;
+        if (offset >= 0 && offset + length <= block.byteLength) {
+            return block.subarray(offset, offset + length);
+        }
+        if (short) return new Uint8Array(0);
+        const bytes = new Uint8Array(Math.max(length, BLOCK));
+        block = bytes.subarray(0, readSync(handle, bytes, 0, bytes.byteLength, position));
+        start = position;
+        return block.subarray(0, length);
+    };
 }
 
 /**
@@ -264,14 +296,7 @@ export function sizeOf(path: string): Size | null {
             if (read === 0) break;
             got += read;
         }
-        let past = 0;
-        const read: ReadAt = (position, length) => {
-            if (position + length <= got) return head.subarray(position, position + length);
-            if (got < want || past === SEGMENTS) return new Uint8Array(0);
-            past += 1;
-            const bytes = new Uint8Array(length);
-            return bytes.subarray(0, readSync(handle, bytes, 0, length, position));
-        };
+        const read = pastHead(handle, head.subarray(0, got), got < want);
         return measured(head.subarray(0, got), read);
     } catch {
         return null;

@@ -27,7 +27,12 @@ const target = (locals: App.Locals): FsTarget => {
     return {
         engine: server.engine,
         workspace: { open: () => open, stateFolder: open.stateFolder },
-        machine: { set, defaults, ...machineValues(server.machine(), set, defaults, lists) },
+        machine: {
+            set,
+            defaults,
+            ...machineValues(server.machine(), server.local.port, set, defaults, lists),
+            portRefused: server.portRefused()
+        },
         bookmarks: own.bookmarks,
         writes: server.fsWrites,
         ignored: server.ignoredCache

@@ -37,6 +37,7 @@ import {
     type LocalConfig
 } from '../../data/sources/config.ts';
 import { FILES_KIND } from '../../data/file-ops.ts';
+import type { HubSettings } from '../../data/index.ts';
 import { tokenedBody } from '../core/auth.ts';
 import { changeAt, defaultChangesPath, logChanges } from '../core/changes.ts';
 import { undoChange } from './writes/undo.ts';
@@ -114,6 +115,11 @@ export type WriteTarget = {
     config: PortfolioConfig;
     /** The engine directory this write's configuration was read from. */
     engine: string;
+    /**
+     * The engine's own configuration, under no hub's settings, as the server keeps it parsed: the
+     * lists a write reads from the engine alone (the Lit Watch buckets, the Literature path).
+     */
+    engineConfig: () => Record<string, unknown>;
     /** The career file and its host statuses, out of the request's configuration. */
     career: CareerRules;
     overrides?: string;
@@ -260,18 +266,31 @@ const LAYOUT = 'layout.yml';
 
 /**
  * The open workspace and the machine's values a target is made from, both as the server holds
- * them at the call.
+ * them at the call, the reader of the settings of the workspace's other hubs, and the engine's own
+ * configuration, which the server answers from the parses it keeps.
  */
-export type Carried = { open: OpenWorkspace; local: LocalConfig };
+export type Carried = {
+    open: OpenWorkspace;
+    local: LocalConfig;
+    settings: HubSettings;
+    defaults: () => { config: Record<string, unknown> };
+};
 
 /**
- * What a request carries into `target`: the workspace open now and the machine's values read now.
+ * What a request carries into `target`: the workspace open now, the machine's values read now, the
+ * server's kept parse of each other hub's settings and its kept parse of the engine's own folder.
  */
 export function carriedOf(server: {
     workspace: { open(): OpenWorkspace };
     machine: () => LocalConfig;
+    configCache: { hub: HubSettings; defaults: Carried['defaults'] };
 }): Carried {
-    return { open: server.workspace.open(), local: server.machine() };
+    return {
+        open: server.workspace.open(),
+        local: server.machine(),
+        settings: server.configCache.hub,
+        defaults: server.configCache.defaults
+    };
 }
 
 /**
@@ -299,12 +318,13 @@ export function target(
     },
     appData: string = defaultAppData()
 ): WriteTarget {
-    const { open, local } = carried;
+    const { open, local, settings, defaults } = carried;
     return {
         hub: open.primaryDir,
         primary: open.primary,
         config: primaryConfig(merged, open),
         engine,
+        engineConfig: () => defaults().config,
         career: careerRules(merged),
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
@@ -313,7 +333,7 @@ export function target(
         behaviorFile: join(configDir(engine), BEHAVIOR),
         layoutFile: join(configDir(engine), LAYOUT),
         glyphs: glyphNames(merged) ?? [],
-        hubs: hubTargets(engine, open),
+        hubs: hubTargets(open, settings),
         workspace: open,
         files: filesTargetOf(() => open.roots, local.history, server?.opsWrites),
         changes:

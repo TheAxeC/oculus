@@ -103,7 +103,9 @@
             case 'starting':
                 return t('statusbar.ls_tip_starting', name, where);
             case 'indexing':
-                return t('statusbar.ls_tip_indexing', name, where, server.done, server.total);
+                return server.total === 1
+                    ? t('statusbar.ls_tip_indexing_one', name, where, server.done)
+                    : t('statusbar.ls_tip_indexing', name, where, server.done, server.total);
             case 'ready':
                 return t('statusbar.ls_tip_ready', name, where);
             case 'not_found':

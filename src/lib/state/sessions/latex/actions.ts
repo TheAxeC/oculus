@@ -321,7 +321,11 @@ export function createLatexActions(deps: LatexActionDeps): LatexActions {
             say(counted.error, true);
             return;
         }
-        say(t('latex.words_of', found.main, counted.words));
+        say(
+            counted.words === 1
+                ? t('latex.words_of_one', found.main)
+                : t('latex.words_of', found.main, counted.words)
+        );
     }
 
     async function checkcites(root: string, file: string): Promise<void> {

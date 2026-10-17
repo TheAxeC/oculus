@@ -18,20 +18,21 @@
     // ground beside it close it; a result that shows a tab takes the keyboard on that tab's head.
     //
     // It is also the quick input of the source tab on screen, as VS Code's is of the active editor:
-    // a colon and a number goes to that line, a colon alone says which line the caret is on and how
-    // many there are, and `:language` lists every language the highlighter paints, the words after
-    // it narrowing the list, under VS Code's three entries above them (rows/LanguageRows.svelte:
-    // Auto Detect, the file association, the language's settings). Both are asked of the tab
-    // through the editor status store, and with no source tab on screen the palette says there is
-    // none. While a source tab is on screen its editor's actions are listed with the other results:
-    // Go to Next Change and Go to Previous Change with their keys beside them, and Open Change,
-    // while the file has quick diff marks, and the Cmd+K chords the editor gave up so that Cmd+K
-    // opens the palette from inside it, each with its old chord beside it. Choosing one asks the
-    // tab to run it. A diff pane on screen lists its diff editor's actions the same way, and takes
-    // no line or language query. A view that offers commands of its own (the Present view's slide
-    // actions and Export to PDF) has them listed while its tab is on screen, and choosing one runs
-    // it. The tasks that apps offer for the repository holding the file on screen are listed too,
-    // each run as a press of it in the Repositories view runs.
+    // a colon and a number goes to that line, a colon alone opened as Go to Line (the status bar's
+    // caret item) says which line the caret is on and how many there are, and `:language` lists
+    // every language the highlighter paints, the words after it narrowing the list, under VS Code's
+    // three entries above them (rows/LanguageRows.svelte: Auto Detect, the file association, the
+    // language's settings). Both are asked of the tab through the editor status store, and with no
+    // source tab on screen the palette says there is none. While a source tab is on screen its
+    // editor's actions are listed with the other results: Go to Next Change and Go to Previous
+    // Change with their keys beside them, and Open Change, while the file has quick diff marks, and
+    // the Cmd+K chords the editor gave up so that Cmd+K opens the palette from inside it, each with
+    // its old chord beside it. Choosing one asks the tab to run it. A diff pane on screen lists its
+    // diff editor's actions the same way, and takes no line or language query. A view that offers
+    // commands of its own (the Present view's slide actions and Export to PDF) has them listed
+    // while its tab is on screen, and choosing one runs it. The tasks that apps offer for the
+    // repository holding the file on screen are listed too, each run as a press of it in the
+    // Repositories view runs.
     //
     // It is also where the Files view's workspace commands run: `:workspace` lists the default
     // workspace and the saved ones, the one in force marked, and a pick switches in place;
@@ -70,12 +71,14 @@
     import { createCloneList } from '$lib/shell/keys/rows/clone-list.svelte';
     import { createLanguageList } from '$lib/shell/keys/lists/language-list.svelte';
     import { createLintConfigList } from '$lib/shell/keys/lists/lint-config.svelte';
+    import { createWorkspaceList } from '$lib/shell/keys/lists/workspace-list.svelte';
     import SymbolRows from '$lib/shell/keys/rows/SymbolRows.svelte';
     import WorkspaceRows from '$lib/shell/keys/rows/WorkspaceRows.svelte';
     import { createFileNames } from '$lib/shell/keys/lists/file-names.svelte';
     import {
         choiceModeOf,
         choiceRows,
+        commandRows,
         listedRows,
         type PaletteStart
     } from '$lib/shell/keys/palette-modes';
@@ -98,10 +101,8 @@
         taskItems,
         taskRepoOf,
         viewItems,
-        workspaceChoicesOf,
         type PaletteItem
     } from '$lib/state/workbench/palette';
-    import type { LanguageAssociation } from '$lib/state/workbench/navigation/status';
     import {
         editorOnScreen,
         sourceOnScreen
@@ -120,7 +121,7 @@
         appTools,
         commands: projectCommands,
         explorer,
-        fs: { workspaces },
+        fs: { roots, workspaces },
         layout: { activeInstance, closedCount, currentPage, floats, hosts },
         lint,
         lsp,
@@ -148,7 +149,7 @@
         open,
         onclose,
         onupdate,
-        start = { text: '', files: false },
+        start = { text: '', files: false, line: false },
         query = $bindable('')
     }: Props = $props();
     let box: HTMLDivElement | undefined = $state();
@@ -197,6 +198,12 @@
     const parsed = $derived(parseCommand(query));
     /** The source tab's caret, which a go-to-line needs: a tab drawing no editor has none. */
     const caret = $derived(source?.status.caret ?? null);
+    /** The caret and the file's lines a bare colon opened as Go to Line says, else null. */
+    const lineHint = $derived(
+        start.line && caret !== null && source !== null
+            ? { ...caret, lines: source.status.lines }
+            : null
+    );
 
     /** The line a go-to-line query names, or null for another query. */
     const line = $derived(lineQuery(query));
@@ -214,57 +221,57 @@
     const choiceList = $derived(
         choiceMode === null ? [] : choiceRows(choiceMode, choiceView, parsed?.argument ?? '')
     );
-    /** Whether the query is the workspace's symbol list (a `#`), the workspace list or its save. */
+    /** Whether the query is the workspace's symbol list (a `#`). */
     const symbolMode = $derived(mode === 'symbols');
-    const workspaceMode = $derived(parsed !== null && parsed.name === 'workspace');
-    const saveMode = $derived(
-        parsed !== null && (parsed.name === 'workspace-save' || parsed.name === 'workspace-new')
-    );
+    const workspaceList = createWorkspaceList({ parsed: () => parsed, saved: workspaces, roots });
     const lintConfig = createLintConfigList({
         parsed: () => parsed,
         linters: () => source?.status.linters,
         config: lint.config
     });
     const cloneList = createCloneList({ parsed: () => parsed, repos: clone.githubRepos });
-    const saved = $derived(workspaces());
-    const choices = $derived(
-        workspaceMode ? workspaceChoicesOf(parsed?.argument ?? '', saved) : []
-    );
     /** Whether the query is a mode whose rows are drawn by a partial of its own. */
     const listsRows = $derived(
         languageMode ||
-            workspaceMode ||
-            saveMode ||
+            workspaceList.active ||
             choiceMode !== null ||
             lintConfig.active ||
             cloneList.active
     );
+    /** The edges a float is docked at, whose dock toggles can run. */
+    const dockedEdges = $derived(
+        floats().flatMap((one) => (one.place.kind === 'dock' ? [one.place.edge] : []))
+    );
     const commandList = $derived(
         parsed === null || line !== null || listsRows
             ? []
-            : commands(
-                  current.config,
-                  appShell.offers(),
-                  source !== null,
-                  served?.language ?? '',
-                  explorer.panelOpen(),
-                  closedCount() > 0
-              ).filter((command) => command.name.startsWith(parsed.name))
+            : commandRows(
+                  commands(
+                      current.config,
+                      appShell.offers(),
+                      source !== null,
+                      served?.language ?? '',
+                      explorer.panelOpen(),
+                      closedCount() > 0,
+                      dockedEdges
+                  ),
+                  knownViews,
+                  parsed
+              )
     );
     const matches = $derived(
         parsed === null && mode === 'search' ? ranked(index, query).slice(0, 30) : []
     );
+    /** The trees on screen: the page, the pages it shows and its floats, or this window's float. */
+    const shown = $derived({
+        page: currentPage().id,
+        floats: floats().map((one) => one.id),
+        float: client.float
+    });
     /** The files open in tabs of the trees on screen, the active tab of the pane in use first. */
     const openFiles = $derived(
         open && fileMode
-            ? openFileEntries(
-                  shownTrees(hosts(), {
-                      page: currentPage().id,
-                      floats: floats().map((one) => one.id),
-                      float: client.float
-                  }),
-                  tab?.id ?? null
-              ).map(plainFile)
+            ? openFileEntries(shownTrees(hosts(), shown), tab?.id ?? null).map(plainFile)
             : []
     );
     /** The rows of the file mode: the open files with nothing typed, else the matches. */
@@ -283,9 +290,7 @@
             languageMode,
             languageEntries: languageList.entries,
             languages: languageList.languages,
-            workspaceMode,
-            choices,
-            saveMode,
+            workspace: workspaceList,
             choiceMode,
             commandList,
             choiceList,
@@ -398,27 +403,16 @@
                                                         {onclose}
                                                     />
                                                 {:else if languageMode}
-                                                    {#if source === null}
-                                                        <p class="empty">
-                                                            {t('statusbar.palette_language_none')}
-                                                        </p>
-                                                    {:else}
-                                                        <LanguageRows
-                                                            {source}
-                                                            actions={languageList.entries}
-                                                            languages={languageList.languages}
-                                                            associating={languageList.associating}
-                                                            onassociate={(
-                                                                next: LanguageAssociation
-                                                            ) => languageList.associate(next)}
-                                                            {onclose}
-                                                            onsaid={(words: string) =>
-                                                                (said = words)}
-                                                        />
-                                                    {/if}
-                                                {:else if workspaceMode || saveMode}
+                                                    <LanguageRows
+                                                        {source}
+                                                        list={languageList}
+                                                        {onclose}
+                                                        onsaid={(words: string) => (said = words)}
+                                                    />
+                                                {:else if workspaceList.active}
                                                     <WorkspaceRows
-                                                        choices={workspaceMode ? choices : null}
+                                                        choices={workspaceList.choices}
+                                                        folders={workspaceList.folders}
                                                         name={parsed.argument}
                                                         command={parsed.name}
                                                         {onclose}
@@ -445,12 +439,7 @@
                                                     <CommandRows
                                                         {parsed}
                                                         list={commandList}
-                                                        caret={caret !== null && source !== null
-                                                            ? {
-                                                                  ...caret,
-                                                                  lines: source.status.lines
-                                                              }
-                                                            : null}
+                                                        caret={lineHint}
                                                         {onclose}
                                                         {onupdate}
                                                         ontype={typed}

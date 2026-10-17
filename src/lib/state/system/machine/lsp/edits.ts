@@ -39,7 +39,7 @@
 // One edit with a rename of a file never reaches the plan: the rename of a note of a hub's notes
 // folder to a name in the same folder, which the Markdown entry answers a rename on a `[[link]]`
 // with. `noteRenameOf` names it, and the source tab renames the note as the Notes section does
-// (views/sources/source/language/lsp.ts), which rewrites the links that name it; the text edits the
+// (views/shared/prose/editor/lsp.ts), which rewrites the links that name it; the text edits the
 // entry sent for those links are not made a second time.
 //
 // The commit reads the tabs again and refuses when a planned tab was closed, is read-only or no

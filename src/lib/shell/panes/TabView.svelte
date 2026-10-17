@@ -16,11 +16,18 @@
     // A hidden view is `display: none` and out of the accessibility tree, so no control of it takes
     // a press, the focus or a screen reader's attention. The keyboard's pane actions read the view
     // a pane shows through `data-tab-view` and `hidden` (shell/keys/key-dom.ts).
+    //
+    // A view that throws while it is drawn is caught here and its tab says so, with the view's
+    // name, the error and a control that draws it again, as VS Code says an editor could not be
+    // opened; the throw then stops at the tab, so the pane still switches tabs and the other views
+    // go on.
 
+    import Failed from './leaf/Failed.svelte';
     import { provideInstance } from '$lib/state/client/instance-context';
+    import { t } from '$lib/state/shared/words/text';
     import { provideTabState } from '$lib/state/client/use';
     import type { Instance } from '$lib/state/workbench/layout';
-    import type { Registration } from '$lib/state/workbench/navigation/registry';
+    import { registrationLabel, type Registration } from '$lib/state/workbench/navigation/registry';
 
     type Props = {
         instance: Instance;
@@ -39,7 +46,17 @@
 </script>
 
 <div class="tab-view" data-tab-view={instance.id} hidden={!shown}>
-    <View {instance} />
+    <svelte:boundary onerror={(error: unknown) => console.error(error)}>
+        <View {instance} />
+        {#snippet failed(error: unknown, reset: () => void)}
+            <Failed
+                {error}
+                {reset}
+                wording={(words: string) =>
+                    t('app.view_failed', registrationLabel(registration), words)}
+            />
+        {/snippet}
+    </svelte:boundary>
 </div>
 
 <style>

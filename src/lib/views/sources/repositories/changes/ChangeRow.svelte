@@ -167,12 +167,14 @@
         }}
     >
         {#snippet detail()}
-            {#if showFolder && folder !== ''}
-                <span class="folder">{folder}</span>
-            {/if}
-            {#if group !== 'merge'}
-                <span class="detail-counts"><ChangeCounts {entry} /></span>
-            {/if}
+            <span class="fit">
+                {#if showFolder && folder !== ''}
+                    <span class="folder">{folder}</span>
+                {/if}
+                {#if group !== 'merge'}
+                    <span class="detail-counts"><ChangeCounts {entry} /></span>
+                {/if}
+            </span>
         {/snippet}
         {#snippet actions(reach: number)}
             {#if group === 'merge'}
@@ -251,6 +253,37 @@
 {/snippet}
 
 <style>
+    /* The detail's one line: the counts are drawn whole or not at all, since a cut count reads as
+       another number. Counts with no room wrap onto a second line, which the line's height and
+       its clip keep out of sight, and the folder is cut with an ellipsis. */
+    .fit {
+        display: flex;
+        flex-wrap: wrap;
+        align-content: flex-start;
+        align-items: center;
+        min-width: 0;
+        height: calc(var(--tree-row) * var(--text-scale, 1));
+        overflow: hidden;
+    }
+
+    /* A line's first item never wraps, so this empty one opens the first line: the counts of a row
+       with no folder can still wrap away. It is the row's height, so the second line starts below
+       the clip and none of it shows. */
+    .fit::before {
+        content: '';
+        flex: none;
+        width: 0;
+        height: 100%;
+    }
+
+    .fit .folder {
+        flex: 0 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     /* 90% of the row's own size: the detail part is drawn at the small size, so the folder is
        sized from the tree's font token, as the status letter below is. */
     .folder {
@@ -261,6 +294,7 @@
 
     .detail-counts {
         display: inline-flex;
+        flex: none;
         gap: 4px;
         margin-left: 4px;
     }

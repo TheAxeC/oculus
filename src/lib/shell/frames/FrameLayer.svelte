@@ -132,13 +132,22 @@
 
     /**
      * What a view hears of each document its frame loads: the document's own events, handed to the
-     * view's latest handlers.
+     * view's latest handlers. A document the page can reach (a Document tab's) also raises a
+     * `focusin` on its slot when it is pressed or takes the keyboard, so the pane that holds the
+     * slot becomes the active one from the document's own events, whatever frame held the keyboard
+     * before; `followFocus` reads only the page's `activeElement`, which is all a frame the page
+     * cannot reach (an app's) offers.
      */
     function listen(id: string, node: HTMLIFrameElement): () => void {
         const loaded = (): void => {
-            if (untrack(() => frames.specOf(id)?.hear) === undefined) return;
             const held = node.contentDocument;
             if (held === null) return;
+            const entered = (): void => {
+                frames.slotOf(id)?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+            };
+            held.addEventListener('pointerdown', entered, true);
+            held.addEventListener('focusin', entered);
+            if (untrack(() => frames.specOf(id)?.hear) === undefined) return;
             held.addEventListener('contextmenu', (event) =>
                 frames.specOf(id)?.hear?.contextmenu?.(event)
             );

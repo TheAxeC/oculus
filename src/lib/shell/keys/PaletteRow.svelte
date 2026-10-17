@@ -30,9 +30,10 @@
     // matched letters marked. A title longer than the row is cut with an ellipsis at the row's end
     // and its whole words are the row's tooltip, as VS Code's quick pick does. A file row draws the
     // icon of its file name before its label, its folder as the hint with the letters a query
-    // matched marked, and the key of its root after it, which it carries only when more than one
-    // root holds files. The Command reads the row's id and selection from the item, so the row's
-    // own control is pressed through the row and does nothing more.
+    // matched marked, cut with an ellipsis where the row has no room for it, and the key of its
+    // root after it, which it carries only when more than one root holds files. The Command reads
+    // the row's id and selection from the item, so the row's own control is pressed through the row
+    // and does nothing more.
 
     import { Command } from 'bits-ui';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -57,8 +58,9 @@
                     plain
                     cut
                     label={row.label}
-                    title={row.label}
+                    title={row.note ?? row.label}
                     active={row.active}
+                    disabled={row.disabled}
                     onclick={pressed}
                 >
                     {#if row.file !== undefined}
@@ -88,7 +90,7 @@
                     {:else if row.hint !== undefined}
                         <span class="hint">{row.hint}</span>
                     {/if}
-                    {#if row.trail !== undefined}<span class="hint">{row.trail}</span>{/if}
+                    {#if row.trail !== undefined}<span class="hint trail">{row.trail}</span>{/if}
                     {#if row.note !== undefined}<span class="unavailable">{row.note}</span>{/if}
                 </span>
             {/if}
@@ -99,10 +101,12 @@
 <style>
     /* One row of the list is one line of the tree's row height with its words at the main size,
        which the plain button inside it takes; the row in force is ringed by the application's one
-       ring. */
+       ring. The label takes the room its words need first and the hint the rest, at the row's
+       end; a hint longer than that room is cut with an ellipsis and a label longer than the row
+       is cut too, so no row is wider than the list and the list never scrolls sideways. */
     .result {
         display: grid;
-        grid-template-columns: minmax(5rem, auto) minmax(0, 1fr) auto;
+        grid-template-columns: minmax(5rem, auto) minmax(0, max-content) minmax(0, 1fr);
         align-items: center;
         gap: 6px;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
@@ -138,11 +142,31 @@
     }
 
     /* The hint and the unavailable mark share the row's last column, so a row with both stays one
-       line. */
+       line; the hint gives way first, cut with an ellipsis, and the mark keeps its words. */
     .end {
-        display: inline-flex;
+        display: flex;
+        justify-self: end;
         gap: 6px;
+        min-width: 0;
+        max-width: 100%;
         white-space: nowrap;
+    }
+
+    .end .hint {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* The root's key after a file's folder keeps its words while the folder gives way, and is cut
+       only past half the column, so a long folder never leaves the root one letter. */
+    .end .trail {
+        flex: 0 0 auto;
+        max-width: 50%;
+    }
+
+    .end .unavailable {
+        flex: none;
     }
 
     .kind,

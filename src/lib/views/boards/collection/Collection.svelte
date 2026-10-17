@@ -69,6 +69,7 @@
     import Reveal from '../../shared/card/Reveal.svelte';
     import SourceButton from '../../shared/links/SourceButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         FUNDING,
         NO_FUNDING,
@@ -110,6 +111,9 @@
     } = client;
 
     let { instance }: ViewProps = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
 
     /** The collection key, which is the id the view was registered under. */
     const key = $derived(instance.view);
@@ -368,7 +372,7 @@
 <Pane title={title()} toolbar={tools} {bar}>
     <div class="collection" data-instance={instance.id} data-collection={instance.view}>
         {#if collection?.intro}
-            <Intro html={inlineMarkdown(collection.intro)} />
+            <Intro html={inlineMarkdown(collection.intro, cardMath(collection.intro))} />
         {/if}
 
         {#if said !== ''}

@@ -19,6 +19,7 @@ import type { LiveEntry, SessionRecord, SessionTool } from '../../../data/model/
 import {
     MAX_FIRST_READ_BYTES,
     loadCache,
+    readerDigest,
     rehydrate,
     saveCache,
     usable,
@@ -301,7 +302,8 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     const now = options.now ?? Date.now();
     const stamps = options.stamps ?? createStamps();
 
-    const previous = loadCache(cachePath);
+    const version = readerDigest();
+    const previous = loadCache(cachePath, version);
     const probe = options.probe ?? systemProbe;
     const candidates = registryCandidates(options.registries ?? [], probe);
     const starts = probe.starts(candidates.map((entry) => entry.pid));
@@ -360,7 +362,7 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     takeNewest(stores, (store) => claudeTranscripts(store, windowDays, 0), 'claude');
     takeNewest(codexStores, (store) => codexRollouts(store, windowDays, 0), 'codex');
 
-    saveCache(cachePath, previous, fresh);
+    saveCache(cachePath, version, previous, fresh);
     found.sort((a, b) => b.mtimeMs - a.mtimeMs);
     return found.map((item) => item.record);
 }

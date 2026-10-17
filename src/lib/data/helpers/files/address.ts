@@ -38,6 +38,35 @@ export function fileBytesUrl(root: string, path: string, version = 0): string {
     return version > 0 ? `${at}?v=${version}` : at;
 }
 
+/**
+ * A source the browser resolves itself: a scheme, an address of another host, a path, a fragment.
+ */
+const OWN_ADDRESS = /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|#)/i;
+
+/**
+ * The address a relative image source of the document `path` under `root` is read at: the source
+ * resolved against the document's own folder, as the document route resolves a figure. Null for a
+ * source the browser resolves itself and for one that climbs out of the root, which the file route
+ * would not serve; such a source is drawn as the document wrote it.
+ */
+export function figureUrl(root: string, path: string, source: string): string | null {
+    if (OWN_ADDRESS.test(source)) return null;
+    let written = source;
+    try {
+        written = decodeURIComponent(source);
+    } catch {
+        // A source that is not escaped text is read as it is written.
+    }
+    const parts = path.split('/').filter((part) => part !== '');
+    parts.pop();
+    for (const part of written.split('/')) {
+        if (part === '' || part === '.') continue;
+        if (part !== '..') parts.push(part);
+        else if (parts.pop() === undefined) return null;
+    }
+    return parts.length === 0 ? null : fileBytesUrl(root, parts.join('/'));
+}
+
 /** What the name of a channel that follows one open file starts with. */
 export const SOURCE_PREFIX = 'source:';
 

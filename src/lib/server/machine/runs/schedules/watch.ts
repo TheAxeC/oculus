@@ -24,13 +24,15 @@
 // run in the record that has one. It is working while that terminal is listed on the `sessions`
 // channel and, for a task or a prompt, the Claude session in it is not idle (the session is the
 // registry record whose pid is the terminal's pane pid or a process under it), or, for a command,
-// its line has not ended. A working earlier run makes the due time start nothing and be recorded
-// as skipped. An idle or ended one is closed, oculus having started that terminal itself, and the
-// new run starts. A decision waits for the first `sessions` payload that lists terminals, so a
-// terminal that outlived a restart of the server is seen. A due time that arrives while a decision
-// waits is not decided on its own: the newest one replaces the waiting due time, so the payload's
-// arrival starts one run for the latest due time. Only a due time that arrives after the claim is
-// written and while the start is awaited is recorded as skipped.
+// its line has not ended. A working earlier run makes the due time start nothing and be recorded as
+// skipped. An idle or ended one is closed, oculus having started that terminal itself, and the new
+// run starts. A decision waits for the first `sessions` payload that lists terminals, so a terminal
+// that outlived a restart of the server is seen; while tmux cannot be read before then (a socket
+// path too long to reach), the payload carries tmux's words as `waiting`, so the tray says why no
+// schedule runs. A due time that arrives while a decision waits is not decided on its own: the
+// newest one replaces the waiting due time, so the payload's arrival starts one run for the latest
+// due time. Only a due time that arrives after the claim is written and while the start is awaited
+// is recorded as skipped.
 //
 // A Run now follows the same rule, handles no due time, and runs a paused or Off entry.
 
@@ -86,6 +88,12 @@ export type SchedulesOptions = {
     table: () => Promise<Entry[]>;
     /** Re-read the terminal manager after a start or a stop. */
     refresh: () => void;
+    /**
+     * The terminal list: tmux's words when its newest read failed (null while it reads), and the
+     * call that tells of a change. While no list was ever read no due time is decided, and the
+     * payload carries these words so the tray says why.
+     */
+    listing: { unreadable: () => string | null; onChange: (listener: () => void) => () => void };
 };
 
 /** What a Run now answers: the terminal it started, the run it skipped, or why it was refused. */
@@ -282,7 +290,8 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             commands: saved.ok ? saved.commands : [],
             folders: roots.filter((root, at) => roots.indexOf(root) === at),
             tasks: primary === null ? null : tasksWithFile(primary),
-            unread
+            unread,
+            waiting: sessionsNow() === null ? options.listing.unreadable() : null
         };
     };
 
@@ -325,6 +334,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
         hub.subscribe(waiting, ['sessions'], false);
         stopWaiting = () => hub.remove(waiting);
     });
+    const stopListening = options.listing.onChange(() => publish());
 
     /**
      * What the schedule's earlier run is doing now: `gone` when it has no terminal or that terminal
@@ -767,6 +777,7 @@ export function watchSchedules(hub: Hub, options: SchedulesOptions): SchedulesWa
             for (const job of jobs.values()) job.stop();
             jobs.clear();
             stopWaiting();
+            stopListening();
             clearInterval(check);
             for (const handle of folders.values()) handle.close();
             tasksWatch?.close();

@@ -79,8 +79,11 @@ export type RowOpsDeps = {
         | 'compareFile'
         | 'clipboard'
     >;
-    /** Say a refusal or a result on the tree's line. */
-    say: (note: string) => void;
+    /**
+     * Say a refusal or a result on the tree's line, `told` true for a result that went through
+     * whole, which the line draws as information rather than as an error.
+     */
+    say: (note: string, told?: boolean) => void;
     /** Ask a question and answer whether it was confirmed. */
     confirm: (question: AskedQuestion) => Promise<boolean>;
     /** Open the browser's file dialog; the files chosen, and none when it was left. */
@@ -108,6 +111,8 @@ export type RowOpsDeps = {
     acting?: (row: TreeRow) => TreeRow[];
     /** Whether a delete to the Trash asks first (`files.confirm_delete`); omitted, it does. */
     confirmDelete?: () => boolean;
+    /** Show an item a paste placed: the folders above it opened and it selected. */
+    reveal?: (item: Place) => void;
 };
 
 /**
@@ -142,12 +147,13 @@ function placeOf(row: TreeRow): Place {
 /**
  * Upload files into a folder one after another, as the Upload... pick and a drop from Finder do:
  * a file too large or unreadable is refused with its reason and the rest go on. The answer is the
- * sentence for the tree's line, how many landed and then each refusal.
+ * sentence for the tree's line, how many landed and then each refusal, and whether every file
+ * landed.
  */
 export function uploader(
     deps: { explorer: Pick<ExplorerStore, 'upload'>; confirm: RowOpsDeps['confirm'] },
     t: Words
-): (into: Place, files: readonly File[]) => Promise<string> {
+): (into: Place, files: readonly File[]) => Promise<{ text: string; told: boolean }> {
     const replace: Confirm = (question) => deps.confirm({ ...question, upload: true });
     return async (into, files) => {
         let landed = 0;
@@ -168,7 +174,10 @@ export function uploader(
             if (outcome.ok) landed += 1;
             else refused.push(t('files.upload_refused', file.name, refusalLine(outcome, t)));
         }
-        return [t('files.upload_done', landed), ...refused].join(' ');
+        return {
+            text: [t('files.upload_done', landed), ...refused].join(' '),
+            told: refused.length === 0
+        };
     };
 }
 
@@ -222,8 +231,12 @@ export function rowOpsPicker(deps: RowOpsDeps, t: Words): (row: TreeRow, pick: s
         return { root: row.root, path: at < 0 ? '' : row.path.slice(0, at) };
     }
 
+    /** Paste into the row's folder and show the first item placed, as VS Code selects it. */
     async function pasteInto(row: TreeRow): Promise<void> {
-        report(await deps.explorer.paste(pasteTarget(row), asked));
+        const outcome = await deps.explorer.paste(pasteTarget(row), asked);
+        report(outcome);
+        const first = outcome.ok ? outcome.paths.at(0) : undefined;
+        if (first !== undefined) deps.reveal?.({ root: row.root, path: first });
     }
 
     const uploading = uploader(deps, t);
@@ -232,7 +245,8 @@ export function rowOpsPicker(deps: RowOpsDeps, t: Words): (row: TreeRow, pick: s
     async function upload(into: TreeRow): Promise<void> {
         const files = await deps.choose();
         if (files.length === 0) return;
-        deps.say(await uploading(placeOf(into), files));
+        const said = await uploading(placeOf(into), files);
+        deps.say(said.text, said.told);
     }
 
     function compareSelected(): void {
@@ -418,8 +432,19 @@ export type RowNamingDeps = {
      * empty string for one the folders it lands in take.
      */
     refuse?: (root: string, path: string) => string;
+    /** Open a file the name input made as a kept tab, where the hooks do not say what it does. */
+    open?: (file: Place) => void;
     hooks?: NamingHooks;
 };
+
+/** What the Files view remembers once a made or pasted item is shown: folders open, it selected. */
+export function shownAt(expanded: string[], item: Place): Pick<FilesView, 'expanded' | 'selected'> {
+    const opened = ancestorsOf(item).reduce(
+        (kept, one) => setExpanded(kept, treeKey(one.root, one.path), true),
+        expanded
+    );
+    return { expanded: opened, selected: item };
+}
 
 /** The calls of the name input: start one, accept its text, and test a name against its folder. */
 export function rowNaming(deps: RowNamingDeps, t: Words) {
@@ -463,12 +488,8 @@ export function rowNaming(deps: RowNamingDeps, t: Words) {
         const made = outcome.ok && naming.mode !== 'rename' ? outcome.paths[0] : undefined;
         if (made === undefined) return;
         const row = { root: naming.root, path: made };
-        if (naming.mode === 'file') deps.hooks?.made?.(row);
-        const opened = ancestorsOf(row).reduce(
-            (kept, one) => setExpanded(kept, treeKey(one.root, one.path), true),
-            deps.view().expanded
-        );
-        deps.patch({ expanded: opened, selected: row });
+        if (naming.mode === 'file') (deps.hooks?.made ?? deps.open)?.(row);
+        deps.patch(shownAt(deps.view().expanded, row));
     }
 
     /** Whether a folder already holds a name, as the folder compares names (without case). */

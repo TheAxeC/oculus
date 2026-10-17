@@ -74,7 +74,7 @@
     let removing = $state('');
 
     async function remove(key: string): Promise<void> {
-        const answer = await removeRoot(key);
+        const answer = await removeRoot(key, { said: true });
         tree.tab.answerAt(owner, { note: answer.ok ? '' : refusal(answer.error ?? '') });
     }
 </script>
@@ -98,6 +98,8 @@
     ontoggle={tree.tab.toggle}
     onopen={(row: TreeRow, preview: boolean, pressedAt?: number) =>
         void openRow(tree.opener, row, preview, pressedAt)}
+    onmade={(file: { root: string; path: string }) =>
+        void openRow(tree.opener, file, false, performance.now())}
     onremove={(key: string) => (removing = key)}
     onbookmark={(row: TreeRow) => void tree.marking.bookmark(row)}
     onup={onup ?? ((to: RowRef) => tree.tab.patchAt(owner, { top: to }))}
@@ -105,7 +107,7 @@
     order={movable}
     {onreorder}
     {onmoveheader}
-    onrefused={(note: string) => tree.tab.answerAt(owner, { note })}
+    onrefused={(note: string, told: boolean) => tree.tab.answerAt(owner, { note, told })}
 />
 {#if tree.filtering && matchedNothing(tree.shown)}
     <Empty message={t('files.filter_none')} glyph={t('files.none_glyph')} />

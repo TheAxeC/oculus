@@ -67,6 +67,7 @@ function muteTarget(body = BEHAVIOR): WriteTarget {
         primary: 'hub',
         config: portfolioConfigFrom(merged),
         engine: engineDir(),
+        engineConfig: () => loadConfig(engineDir()).config,
         career: careerRules(merged),
         projects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),

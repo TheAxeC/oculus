@@ -81,9 +81,9 @@ async function post(
 ) {
     const driver = tmux();
     const response = await handleTerminal(request({ cols: 80, rows: 24, ...body }), TOKEN, {
+        ...worldOf(),
         engine: ENGINE,
         run: driver.run,
-        openFor: worldOf().openFor,
         localFor: () => LOCAL,
         configFor: () => BASE_CHAT_CONFIG,
         recordFor,

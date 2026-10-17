@@ -68,7 +68,7 @@
     const {
         repositories,
         selectors: { languages },
-        ui: { codeTheme, theme, textScale }
+        ui: { codeTheme, editorLook }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -93,7 +93,7 @@
     const left = $derived(openCount(regions, choices));
     const busy = $derived(repositories.busy(root));
     const language = $derived(languageOf(path, languages()));
-    const look = $derived(`${theme()} ${String(textScale() ?? 1)}`);
+    const look = $derived(editorLook());
 
     $effect(() => {
         const wanted = `${root}\n${path}`;
@@ -180,7 +180,9 @@
 {/snippet}
 
 {#snippet bar()}
-    <span class="left" data-conflicts-left={left}>{t('repositories.merge_left', left)}</span>
+    <span class="left" data-conflicts-left={left}>
+        {left === 1 ? t('repositories.merge_left_one') : t('repositories.merge_left', left)}
+    </span>
 {/snippet}
 
 {#snippet again()}
@@ -254,7 +256,9 @@
 
 {#if asking}
     <Confirm
-        message={t('repositories.merge_complete_confirm', left)}
+        message={left === 1
+            ? t('repositories.merge_complete_confirm_one')
+            : t('repositories.merge_complete_confirm', left)}
         detail={t('repositories.merge_complete_detail')}
         confirm={t('ui.confirm_ok')}
         cancel={t('ui.confirm_cancel')}

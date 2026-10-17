@@ -345,14 +345,16 @@
         font-family: var(--font-num);
     }
 
-    /* The refresh control is drawn as its card says, ui/frame/Card.svelte's `--card-reveal`: under
-       the pointer, with the focus inside the card, or always where nothing hovers. It keeps its
-       place in the layout and in the tab order while clear. */
+    /* The refresh control is drawn as its card says, ui/frame/Card.svelte's `--card-at-rest`:
+       under the pointer, with the focus inside the card, or always where nothing hovers. At rest it
+       is not drawn and takes no room. */
     .act {
-        display: inline-flex;
+        display: var(--card-at-rest, inline-flex);
+        /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
+           words beside them, so a line they share stays as tall as it was at rest; on a line of
+           their own they reach no further than the gap between the lines. */
+        margin-block: min(0px, calc((1lh - 22px) / 2));
         margin-left: auto;
-        opacity: var(--card-reveal);
-        transition: opacity 120ms ease-out;
     }
 
     .history {

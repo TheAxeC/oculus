@@ -251,6 +251,8 @@ export type TerminalChoice = {
     task: boolean;
     /** The exit status of a task terminal whose line ended, else null. */
     exit: number | null;
+    /** Whether oculus knows the terminal's folder, which Split starts the new terminal in. */
+    splittable: boolean;
 };
 
 /** The last segment of a folder, or the folder itself when it has none (the root). */
@@ -301,7 +303,8 @@ export function terminalChoices(
                 icon: one.icon,
                 color: one.color,
                 task: one.task,
-                exit: one.exit
+                exit: one.exit,
+                splittable: one.cwd !== ''
             };
             const title = terminalTabTitle(one);
             if (one.kind === 'shell') return { ...row, title, description: folderName(one.cwd) };

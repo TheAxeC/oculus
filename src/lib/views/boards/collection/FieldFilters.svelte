@@ -60,6 +60,7 @@
                 remove={t('editor.remove')}
                 removeGlyph={t('editor.remove_glyph')}
                 none={t('editor.no_choices')}
+                more={(count: number) => t('editor.more_choices', count)}
             />
         </span>
     {:else if filter.kind === 'chips'}

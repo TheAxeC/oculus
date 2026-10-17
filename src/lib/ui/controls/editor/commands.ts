@@ -4,12 +4,32 @@
 // (and load its grammar when it has not loaded), insert a text or a snippet at the selections,
 // replace the whole text as one edit, or run one of the editor's actions; and the first line the
 // editor shows, which the parent keeps so that a copy of the tab opens at it; and the edits a text
-// the parent handed in was reached by, made in the model as they are.
+// the parent handed in was reached by, made in the model as they are, or the whole text when the
+// model refuses them.
+//
+// A place is revealed by Monaco's own reveal, which keeps it clear of the sticky scroll lines. An
+// ask run before the editor has a height (a tab opened at a problem, its editor made a moment
+// before) is revealed again once it has one: Monaco reveals into a viewport of no height by putting
+// the place's line at the top, under the sticky lines.
 
 import type * as Monaco from 'monaco-editor';
 import { eolOf, type EditorKit } from './kit/load';
 import { shikiId } from './kit/languages/grammars';
-import type { EditorCommand, EditorReach } from './types';
+import type { EditorCommand, EditorEnding, EditorReach } from './types';
+
+/** Reveal a place now and, when the editor has no height yet, again once it has one. */
+function revealLaidOut(
+    made: Pick<Monaco.editor.IStandaloneCodeEditor, 'getLayoutInfo' | 'onDidLayoutChange'>,
+    reveal: () => void
+): void {
+    reveal();
+    if (made.getLayoutInfo().height > 0) return;
+    const laid = made.onDidLayoutChange((info) => {
+        if (info.height <= 0) return;
+        laid.dispose();
+        reveal();
+    });
+}
 
 /** Do one ask of the parent's on a loaded editor and its model. */
 export function runCommand(
@@ -22,7 +42,7 @@ export function runCommand(
         const line = Math.min(Math.max(1, command.line), held.getLineCount());
         const column = Math.min(Math.max(1, command.column ?? 1), held.getLineMaxColumn(line));
         made.setPosition({ lineNumber: line, column });
-        made.revealLineInCenter(line);
+        revealLaidOut(made, () => made.revealLineInCenter(line));
         if (command.focus !== false) made.focus();
     } else if (command.kind === 'range') {
         const clamp = (line: number, column: number): Monaco.IPosition => {
@@ -38,7 +58,9 @@ export function runCommand(
             endLineNumber: end.lineNumber,
             endColumn: end.column
         });
-        made.revealRangeInCenter(made.getSelection() ?? held.getFullModelRange());
+        revealLaidOut(made, () =>
+            made.revealRangeInCenter(made.getSelection() ?? held.getFullModelRange())
+        );
         if (command.focus !== false) made.focus();
     } else if (command.kind === 'word') {
         const line = Math.min(Math.max(1, Math.floor(command.line)), held.getLineCount());
@@ -58,7 +80,7 @@ export function runCommand(
                 endColumn: word.endColumn
             });
         }
-        made.revealLineInCenter(line);
+        revealLaidOut(made, () => made.revealLineInCenter(line));
         if (command.focus !== false) made.focus();
     } else if (command.kind === 'indent') {
         const { tabs, size } = command.indent;
@@ -178,9 +200,11 @@ export function followFirstLine(
 
 /**
  * Make the edits a text was reached by, each at its own range, as one undo stop. False when the
- * model does not hold the text they were made in or does not hold `wanted` after them.
+ * model does not hold the text they were made in, refuses them, or does not hold `wanted` after
+ * them, so the caller replaces the whole text: an edit the model refuses (Monaco throws for ranges
+ * it will not take) must not leave the model on the old text while the tab's draft holds the new.
  */
-export function reachedBy(
+function reachedBy(
     monaco: EditorKit['monaco'],
     held: Monaco.editor.ITextModel,
     reach: EditorReach | null,
@@ -189,18 +213,44 @@ export function reachedBy(
     const LF = monaco.editor.EndOfLinePreference.LF;
     const same = held.getValue(LF) === reach?.from.replace(/\r\n/g, '\n');
     if (reach === null || !same) return false;
-    held.pushEditOperations(
-        [],
-        reach.edits.map(({ range, newText }) => ({
-            range: new monaco.Range(
-                range.start.line + 1,
-                range.start.character + 1,
-                range.end.line + 1,
-                range.end.character + 1
-            ),
-            text: newText
-        })),
-        () => null
-    );
+    try {
+        held.pushEditOperations(
+            [],
+            reach.edits.map(({ range, newText }) => ({
+                range: new monaco.Range(
+                    range.start.line + 1,
+                    range.start.character + 1,
+                    range.end.line + 1,
+                    range.end.character + 1
+                ),
+                text: newText
+            })),
+            () => null
+        );
+    } catch {
+        return false;
+    }
     return held.getValue(LF) === wanted.replace(/\r\n/g, '\n');
+}
+
+/**
+ * Bring a model to a text the parent handed in: by the edits the text was reached by when the
+ * model takes them, else as one replacement of the whole text, and then in the line ending asked
+ * for.
+ */
+export function reachText(
+    monaco: EditorKit['monaco'],
+    held: Monaco.editor.ITextModel,
+    reach: EditorReach | null,
+    wanted: string,
+    ending: EditorEnding
+): void {
+    if (!reachedBy(monaco, held, reach, wanted)) {
+        held.pushEditOperations(
+            [],
+            [{ range: held.getFullModelRange(), text: wanted }],
+            () => null
+        );
+    }
+    held.pushEOL(eolOf(monaco, ending));
 }

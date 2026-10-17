@@ -1,9 +1,9 @@
 // Layer 2, server tests. The open files (server/files/fs/open-files.ts): which `source:` names are
 // polled, what a poll publishes, and when it closes. A name that leaves the roots, names a root
 // nothing serves or has no path is never polled and never published; a name inside a root is
-// polled on a clock the test runs itself, so each case says exactly when a tick comes. The reads of
-// bytes are recorded by the reader the server is given, to show that a name out of the roots is
-// never read.
+// polled on a clock the test runs itself, so each case says exactly when a tick comes. Each message
+// says whether the name's root is served. The reads of bytes are recorded by the reader the server
+// is given, to show that a name out of the roots is never read.
 
 import { createHash } from 'node:crypto';
 import {
@@ -83,7 +83,7 @@ type Step =
     /** The newest message of a channel: its payload and, when given, its version. */
     | {
           latest: string;
-          payload?: { hash: string | null };
+          payload?: { hash: string | null; served: boolean };
           version?: number;
           /** The hash starts with this, as a `stat:` signature does. */
           starts?: string;
@@ -140,21 +140,32 @@ const rows: Row[] = [
             { readSomeOf: 'a.md' },
             { link: true },
             { tick: true },
-            { latest: A, payload: { hash: null } },
+            { latest: A, payload: { hash: null, served: true } },
             { readNothing: true }
         ]
     },
     {
-        title: 'publishes null at the tick its root stops being served, and follows the file when it is served again',
+        title: 'publishes null as soon as its root stops being served, and follows the file when it is served again',
         steps: [
             { subscribe: [A], refused: [] },
             { tick: true },
             { serve: false },
-            { tick: true },
-            { latest: A, payload: { hash: null } },
+            { latest: A, payload: { hash: null, served: false } },
             { serve: true },
             { tick: true },
-            { latest: A, payload: { hash: hashOf('one\n') } }
+            { latest: A, payload: { hash: hashOf('one\n'), served: true } }
+        ]
+    },
+    {
+        title: 'publishes again when the root of a file already gone stops being served',
+        steps: [
+            { subscribe: [A], refused: [] },
+            { tick: true },
+            { remove: true },
+            { tick: true },
+            { latest: A, payload: { hash: null, served: true }, version: 2 },
+            { serve: false },
+            { latest: A, payload: { hash: null, served: false }, version: 3 }
         ]
     },
     {
@@ -196,15 +207,15 @@ const rows: Row[] = [
         steps: [
             { subscribe: [A], refused: [] },
             { tick: true },
-            { latest: A, payload: { hash: hashOf('one\n') }, version: 1 },
+            { latest: A, payload: { hash: hashOf('one\n'), served: true }, version: 1 },
             { tick: true },
             { latest: A, version: 1 },
             { write: 'two\n' },
             { tick: true },
-            { latest: A, payload: { hash: hashOf('two\n') }, version: 2 },
+            { latest: A, payload: { hash: hashOf('two\n'), served: true }, version: 2 },
             { remove: true },
             { tick: true },
-            { latest: A, payload: { hash: null }, version: 3 }
+            { latest: A, payload: { hash: null, served: true }, version: 3 }
         ]
     },
     {
@@ -222,7 +233,7 @@ const rows: Row[] = [
             { write: 'later\n' },
             { subscribe: [A], as: 'next', refused: [] },
             { tick: true },
-            { latest: A, payload: { hash: hashOf('later\n') } }
+            { latest: A, payload: { hash: hashOf('later\n'), served: true } }
         ]
     }
 ];

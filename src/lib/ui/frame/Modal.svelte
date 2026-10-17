@@ -23,11 +23,16 @@
     // opened and focused keeps the keyboard. The first focus of a box that asks nothing and the
     // focus given back are the page's own, so they go through `focusFirstQuietly` and
     // `giveBackQuietly` (ui/frame/quiet-focus.ts) and open no tooltip on the control they land on.
+    //
+    // A frame holding the keyboard when the ground is drawn (an app's page) keeps every key in its
+    // own document whatever the page focuses, so the keys typed straight after a box opens would
+    // go to the frame. The ground takes the keyboard from the frame before the box is drawn
+    // (`takeFromFrame`), and the frame has it back when the box goes.
 
     import { AlertDialog, Dialog } from 'bits-ui';
     import { tick, type Snippet } from 'svelte';
     import { portal, watchShown } from '$lib/ui/shown';
-    import { focusOnOpen, giveBackQuietly } from '$lib/ui/frame/quiet-focus';
+    import { focusOnOpen, giveBackQuietly, takeFromFrame } from '$lib/ui/frame/quiet-focus';
 
     type Props = {
         /** A question that must be answered, drawn as an alert dialog. */
@@ -68,6 +73,8 @@
      * The control that held the keyboard when the ground was drawn, read before the box takes it.
      */
     const came = typeof document === 'undefined' ? null : document.activeElement;
+    // Read only in the page: the server has no document and no frame class.
+    if (came !== null && came instanceof HTMLIFrameElement) takeFromFrame(came);
 
     $effect(() =>
         anchor === undefined ? undefined : watchShown(anchor, (shown) => (open = shown))
@@ -101,7 +108,7 @@
 </script>
 
 {#snippet stand(box: Snippet)}
-    <div class="ground {level}" class:away={!open} bind:this={ground} use:portal>
+    <div class="ground" data-level={level} class:away={!open} bind:this={ground} use:portal>
         <div class="scrim"></div>
         {@render box()}
         {@render over?.()}
@@ -153,9 +160,10 @@
         display: none;
     }
 
-    /* The ground inherits the page's font in a rule of its own, since its level class (`dialog`,
-       `tray`) is a word a style a browser extension injects may also select, and such a style would
-       otherwise set the font of every modal box. */
+    /* The ground names its level in `data-level` and not in a class, since a class word such as
+       `dialog` is selected by stylesheets the page also loads (pdf.js's viewer stylesheet gives
+       every `.dialog` an opaque background) and by styles a browser extension injects; the font is
+       inherited in a rule of its own for the same reason. */
     .ground {
         position: fixed;
         inset: 0;
@@ -167,27 +175,30 @@
         padding: 16px;
     }
 
-    .ground.tray,
-    .ground.palette {
+    .ground[data-level='tray'],
+    .ground[data-level='palette'] {
         align-items: flex-start;
         padding: 10vh 16px 16px;
     }
 
-    .ground.tray {
+    .ground[data-level='tray'] {
         z-index: 65;
     }
 
-    .ground.palette,
-    .ground.sheet {
+    .ground[data-level='palette'],
+    .ground[data-level='sheet'] {
         z-index: 70;
     }
 
-    /* The ground behind the box: the page's own surface, most of the way opaque. A scrim of its own
-       colour keeps the rule that a component paints only with the theme's surfaces. */
+    /* The ground behind the box dims the page and leaves it readable, as VS Code's modal dialog
+       does. The palette's level is VS Code's quick input, which dims nothing. */
     .scrim {
         position: absolute;
         inset: 0;
-        background: var(--bg);
-        opacity: 0.72;
+        background: var(--scrim);
+    }
+
+    .ground[data-level='palette'] > .scrim {
+        background: none;
     }
 </style>

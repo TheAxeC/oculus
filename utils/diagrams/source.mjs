@@ -14,8 +14,16 @@ export const BOUNDARIES = 'tests/checks/tree/boundaries.test.ts';
 /** The file whose `ORDER` lists each layer's folders from the top down, relative to the engine. */
 export const ORDERING = 'tests/checks/imports/order.ts';
 
-/** The font every label is set in; one family keeps the text widths Graphviz measures stable. */
-const FONT = 'Helvetica,Arial,sans-serif';
+/**
+ * The font every label is measured in. Graphviz measures text by one family it knows by name and
+ * takes a list of families for one it does not know, measuring it as Times, whose letters are
+ * narrower than Helvetica's, so text set in Helvetica would run past the box measured for it. The
+ * SVG names the families a reader falls back on (FONTS).
+ */
+const FONT = 'Helvetica';
+
+/** The families the SVG sets every label in, the first the one Graphviz measured. */
+export const FONTS = 'Helvetica,Arial,sans-serif';
 
 /** The dashed group every reader draws what it could not place or follow in, file and line. */
 export const UNPLACED = 'not placed';

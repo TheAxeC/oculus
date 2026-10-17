@@ -30,6 +30,22 @@ import { createServer } from 'vite';
 export const PAGE = 'docs/palette.md';
 
 /**
+ * A plugin that leaves the loading server with no file watcher. Vite merges an inline config over
+ * vite.config.ts and skips a null value, so `server.watch: null` given to createServer never
+ * arrives; the config hook sets it on the merged config. A watcher would invalidate the loaded
+ * modules on any write in the tree during a load, and a module imported after that is evaluated
+ * again: the text module palette.ts imports would then be a second one, with no catalog set.
+ *
+ * @type {import('vite').Plugin}
+ */
+const UNWATCHED = {
+    name: 'palette-page-unwatched',
+    config(config) {
+        config.server = { ...config.server, watch: null };
+    }
+};
+
+/**
  * The page the palette's modules give now, as text. Vite's server is started for the loading and
  * closed again whatever the loading does.
  *
@@ -42,7 +58,8 @@ export async function paletteText(engine) {
         configFile: join(engine, 'vite.config.ts'),
         appType: 'custom',
         logLevel: 'error',
-        server: { middlewareMode: true, hmr: false, watch: null }
+        server: { middlewareMode: true, hmr: false, ws: false },
+        plugins: [UNWATCHED]
     });
     try {
         const load = (/** @type {string} */ path) => server.ssrLoadModule(path);

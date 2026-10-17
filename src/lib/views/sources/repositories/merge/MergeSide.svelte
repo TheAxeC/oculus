@@ -10,11 +10,11 @@
     // Layer 3, partial of views/sources/repositories/merge/Merge.svelte. One input of the three-way
     // merge editor, Incoming or Current: the whole version git holds for that side in a read-only
     // Monaco editor (ui/controls/editor/Editor.svelte), each conflict's lines tinted, and above
-    // each conflict a bar with the choices this side offers for it (this side's lines, both with
-    // this side's first, or neither). A conflict with no lines on this side draws its bar where its
-    // lines would sit and tints none. A conflict already settled says how, so the reader sees which
-    // have been handled.
-
+    // each conflict a code lens line with the choices this side offers for it (this side's lines,
+    // both with this side's first, or neither), drawn as VS Code's merge editor draws them: small
+    // links separated by bars. A conflict with no lines on this side draws its line where its lines
+    // would sit and tints none. A conflict already settled says how, and one still open has its
+    // line marked in the conflict colour, so the reader sees at a glance which are left.
     import Editor from '$lib/ui/controls/editor/Editor.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { t } from '$lib/state/shared/words/text';
@@ -46,6 +46,21 @@
             .map((one) => ({ line: one.span.start + 1, count: one.span.count }))
     );
 
+    /** The choices this side offers for a conflict, in the order VS Code's code lens lists them. */
+    const offered = $derived<{ choice: Choice; label: string; title?: string }[]>([
+        side === 'incoming'
+            ? { choice: 'incoming', label: t('repositories.accept_incoming') }
+            : { choice: 'current', label: t('repositories.accept_current') },
+        side === 'incoming'
+            ? { choice: 'both-incoming', label: t('repositories.accept_both_incoming') }
+            : { choice: 'both-current', label: t('repositories.accept_both_current') },
+        {
+            choice: 'base',
+            label: t('repositories.accept_none'),
+            title: t('repositories.accept_none_title')
+        }
+    ]);
+
     /** The words saying how a conflict is settled, the empty string for one still open. */
     function settledAs(choice: Choice): string {
         if (choice === 'incoming') return t('repositories.merge_took_incoming');
@@ -62,32 +77,26 @@
 {#snippet conflictBar(id: string)}
     {@const conflict = conflicts.find((one) => String(one.region) === id)}
     {#if conflict !== undefined}
-        <div class="bar" data-conflict={conflict.region} class:open={conflict.choice === 'open'}>
-            {#if side === 'incoming'}
-                <ToolButton
-                    label={t('repositories.accept_incoming')}
-                    onclick={() => onchoose(conflict.region, 'incoming')}
-                />
-                <ToolButton
-                    label={t('repositories.accept_both_incoming')}
-                    onclick={() => onchoose(conflict.region, 'both-incoming')}
-                />
-            {:else}
-                <ToolButton
-                    label={t('repositories.accept_current')}
-                    onclick={() => onchoose(conflict.region, 'current')}
-                />
-                <ToolButton
-                    label={t('repositories.accept_both_current')}
-                    onclick={() => onchoose(conflict.region, 'both-current')}
-                />
-            {/if}
-            <ToolButton
-                label={t('repositories.accept_none')}
-                title={t('repositories.accept_none_title')}
-                onclick={() => onchoose(conflict.region, 'base')}
-            />
-            <span class="said">{settledAs(conflict.choice)}</span>
+        {@const said = settledAs(conflict.choice)}
+        <div class="lens" class:open={said === ''} data-conflict={conflict.region}>
+            <div class="choices">
+                {#each offered as one (one.choice)}
+                    <span class="choice">
+                        <span class="sep" aria-hidden="true">{t('sessions.meta_sep')}</span>
+                        <span class="link">
+                            <ToolButton
+                                plain
+                                label={one.label}
+                                title={one.title}
+                                onclick={() => onchoose(conflict.region, one.choice)}
+                            />
+                        </span>
+                    </span>
+                {/each}
+                {#if said !== ''}
+                    <span class="choice said">{said}</span>
+                {/if}
+            </div>
         </div>
     {/if}
 {/snippet}
@@ -136,25 +145,78 @@
         overflow: hidden;
     }
 
-    .bar {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 1px 6px;
-        border-top: 1px solid var(--line);
-        background: var(--chip);
-        white-space: nowrap;
+    /* VS Code's code lens: a line of small muted words above the conflict, each choice a link
+       that takes the link colour and an underline under the pointer, the choices parted by bars.
+       Each choice is one box with the bar before it, as wide as its words, so no box is ever
+       narrower than the words it holds and none is drawn over the next: the line wraps between
+       choices where the column is narrower than it, and a choice wider than the whole column
+       wraps its own words. The row of choices starts one bar's width left of the lens and the
+       lens clips it, so the bar of the choice that starts a line is never drawn, and a bar never
+       stands alone on a line or starts one. The line's room in the editor grows with its lines. The
+       line of a conflict still open carries a bar of the conflict colour at its start, as VS
+       Code's merge editor marks an unhandled conflict; a settled one keeps the bar's room, so the
+       choices of both stand at one place. The bar is a border of the line's own box, so it takes
+       no room from the choices and lies on whatever the editor draws under it, a wallpaper
+       theme's included. */
+    .lens {
+        display: block;
+        padding: 2px 6px 0 4px;
+        border-left: 2px solid transparent;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
+        line-height: 1.4;
+        white-space: normal;
+        overflow: hidden;
     }
 
-    .bar.open {
-        border-top-color: var(--c-scm-conflict);
+    .choices {
+        --sep-room: 13px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        margin-left: calc(-1 * var(--sep-room));
+    }
+
+    .choice {
+        display: inline-flex;
+        align-items: baseline;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .lens.open {
+        border-left-color: var(--c-scm-conflict);
+    }
+
+    .link {
+        display: inline-block;
+        min-width: 0;
+        max-width: 100%;
+        vertical-align: baseline;
+        overflow-wrap: anywhere;
+    }
+
+    /* The choice is a plain button, which takes this box's colour. The button is an atomic
+       inline box, which an underline of this box does not reach, so the button carries it. */
+    .link:hover,
+    .link:has(:global(:focus-visible)) {
+        color: var(--accent-txt, var(--accent));
+    }
+
+    .link:hover :global(button),
+    .link :global(button:focus-visible) {
+        text-decoration: underline;
+    }
+
+    .sep {
+        flex: none;
+        width: var(--sep-room);
+        text-align: center;
+        opacity: 0.7;
     }
 
     .said {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    :global(body.wall) .bar {
-        background: var(--chip-on-wall);
+        padding-left: var(--sep-room);
+        font-style: italic;
     }
 </style>

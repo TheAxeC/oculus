@@ -77,14 +77,21 @@ text:
         diff_inline: Inline View
         diff_open: Open Changes
         diff_refresh: Refresh
+        diff_type_changed: 'Type changed: {0} on the left, {1} on the right.'
+        diff_type_changed_inline: 'Type changed: {0} in the removed lines, {1} in the added lines.'
+        diff_type_file: the file's text
+        diff_type_link: the symbolic link's target
+        diff_type_submodule: the submodule's commit
         diff_unchanged: Collapse Unchanged Regions
         diff_whole: Stage or revert this file from Changes
+        diff_whole_staged: Unstage this file from Staged Changes
         fetch: Fetch
         file_fold: Fold this file
         file_unfold: Unfold this file
         folder_bar: Repositories folder
         folder_gone: '{0} is not a root this workspace serves, so it lists no repository.'
         folder_discard_confirm: Throw away the changes to {0} paths in {1}?
+        folder_discard_confirm_one: Throw away the change to 1 path in {0}?
         folder_discard_title: Throw away every change under this folder
         folder_stage_title: Stage every change under this folder
         folder_unstage_title: Unstage every change under this folder
@@ -104,10 +111,15 @@ text:
         incoming: Incoming Changes
         lines_revert: Revert {0} Selected Lines
         lines_revert_confirm: Revert {0} chosen lines of {1}?
+        lines_revert_confirm_one: Revert 1 chosen line of {0}?
+        lines_revert_one: Revert 1 Selected Line
         lines_stage: Stage {0} Selected Lines
+        lines_stage_one: Stage 1 Selected Line
         lines_unstage: Unstage {0} Selected Lines
+        lines_unstage_one: Unstage 1 Selected Line
         list: Repositories
         list_changes: '{0} changes'
+        list_changes_one: 1 change
         mark_added: Lines added from line {0}. Open the change.
         mark_deleted: Lines deleted before line {0}. Open the change.
         mark_modified: Lines changed from line {0}. Open the change.
@@ -118,6 +130,7 @@ text:
         merge_changes: Merge Changes
         merge_complete: Complete Merge
         merge_complete_confirm: '{0} conflicts are still open. Complete the merge anyway?'
+        merge_complete_confirm_one: 1 conflict is still open. Complete the merge anyway?
         merge_complete_detail: The Result is written over the file and staged, and an open conflict keeps the common ancestor's lines.
         merge_current: Current
         merge_delete: Accept Deletion
@@ -133,6 +146,7 @@ text:
         merge_failed: The three versions of this file could not be read.
         merge_incoming: Incoming
         merge_left: '{0} conflicts left'
+        merge_left_one: 1 conflict left
         merge_mark: Mark Resolved
         merge_mark_title: Take the file as it stands, staged, or its deletion where the worktree no longer holds it, which tells git its conflict is resolved
         merge_open: Open in Merge Editor
@@ -182,6 +196,7 @@ text:
         sync_changes: Sync Changes
         sync_confirm: Sync {0} with {1}?
         sync_detail: git pulls {0} commits and then pushes {1}. Nothing is forced.
+        sync_detail_one: git pulls 1 commit and then pushes {0}. Nothing is forced.
         tag_create: Create Tag
         tag_create_detail: A tag with a message is annotated; without one it is a plain tag. It is made on HEAD.
         tag_delete: Delete Tag
@@ -208,6 +223,7 @@ text:
         status_deleted: deleted
         status_renamed: renamed
         status_copied: copied
+        status_type_changed: type changed
         status_untracked: untracked
         status_changed: changed
         diff: diff

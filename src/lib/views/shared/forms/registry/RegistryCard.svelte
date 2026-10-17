@@ -15,6 +15,7 @@
     import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import { projectCount } from '$lib/views/shared/card/card';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import type { Entry, IdentityFault, SchemaField } from '$lib/state/boards/collection';
     import { pageView } from '$lib/state/forms/page-entry';
     import type { ViewSource } from '$lib/state/sessions/view-source';
@@ -65,6 +66,9 @@
         children
     }: Props = $props();
 
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
+
     /** True while the question before a delete is open. */
     let deleting = $state(false);
 
@@ -93,7 +97,7 @@
     {id}
     {cursor}
     {title}
-    titleHtml={inlineMarkdown(title)}
+    titleHtml={inlineMarkdown(title, cardMath(title))}
     ontitle={entry === null ? undefined : openPage}
     {tone}
 >

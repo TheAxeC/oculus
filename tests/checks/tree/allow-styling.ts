@@ -98,6 +98,6 @@ export const HELD: Styling[] = [
     },
     {
         line: 'views/sources/venues/VenueCard.svelte styles .card of ui/frame/Card.svelte through .slot.concentrated :global(.card)',
-        why: 'the rule at src/lib/views/sources/venues/VenueCard.svelte:189 reaches into the primitive rather than asking it for the difference'
+        why: 'the rule at src/lib/views/sources/venues/VenueCard.svelte:283 reaches into the primitive rather than asking it for the difference'
     }
 ];

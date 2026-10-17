@@ -10,8 +10,8 @@
     //
     // The blame item opens the commit that last changed the caret's line in the Repositories view's
     // graph, which the tab does, since it holds the blame. The caret item and the language item
-    // open the palette, the one quick input oculus has: on a go-to-line query, a colon, and on the
-    // language list. A file a language server serves also draws its three items before the language
+    // open the palette, the one quick input oculus has: as Go to Line, a colon, and on the language
+    // list. A file a language server serves also draws its three items before the language
     // (LanguageItems.svelte). The other three open a list over the item. A tab that may not write
     // its file draws no caret and offers no change of its text: its indentation list offers no
     // conversion, its line endings list holds the one the file has, and each item's tooltip says
@@ -36,7 +36,12 @@
         appTools
     } = useState();
 
-    let { instance, status, shown, onpalette }: ItemsProps = $props();
+    type Props = ItemsProps & {
+        /** Open the palette as Go to Line, which the caret item does. */
+        ongoto: () => void;
+    };
+
+    let { instance, status, shown, onpalette, ongoto }: Props = $props();
 
     const endings: LineEnding[] = ['LF', 'CRLF'];
 
@@ -175,7 +180,7 @@
             glyph="caret"
             title={t('statusbar.caret_tip')}
             status
-            onclick={() => onpalette(':')}
+            onclick={ongoto}
         />
     </span>
 {/if}

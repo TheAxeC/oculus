@@ -16,7 +16,7 @@ import { spawnSync } from 'node:child_process';
 import type { LiveEntry, SessionRecord } from '../../data/model/index.ts';
 import { distinctFolders } from './folders.ts';
 import { z } from 'zod';
-import { readJson } from '../core/json.ts';
+import { processRuns, readJson } from '../core/json.ts';
 import { readAs, wholeShape } from '../../data/shapes/shapes.ts';
 
 /** Seconds of disagreement allowed between the registry's stamp and what `ps` reports. */
@@ -45,15 +45,7 @@ export type Candidate = LiveEntry & { sessionId: string; pid: number; procStart:
 
 export const systemProbe: Probe = {
     running(pid: number): boolean {
-        if (pid <= 0) return false;
-        try {
-            // Signal 0 asks the kernel whether the pid exists without touching the process.
-            process.kill(pid, 0);
-            return true;
-        } catch (error) {
-            // EPERM is a live process owned by another user.
-            return (error as NodeJS.ErrnoException).code === 'EPERM';
-        }
+        return pid > 0 && processRuns(pid);
     },
     starts(pids: number[]): Map<number, number> {
         const wanted = [...new Set(pids.filter((pid) => pid > 0))].sort((a, b) => a - b);

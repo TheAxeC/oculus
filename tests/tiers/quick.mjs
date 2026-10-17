@@ -1,8 +1,10 @@
 // Layer 4, test tool. npm run test:quick: the commands a builder or a reviewer runs after a change,
 // held to 45 s for the whole list.
 //
-// What it runs, all at the same time; only svelte-check waits for `svelte-kit sync`, which makes
-// the generated types it reads:
+// What it runs, all at the same time, except that vitest, eslint and svelte-check start when
+// `svelte-kit sync` has ended: the sync rewrites the generated types under .svelte-kit with
+// truncating writes, and all three read them, so a reader started beside it can find a file empty.
+// The sync runs while the tests are chosen.
 //
 // - vitest over the tests that guard the most (tests/tiers/essential.txt), the tests that name or
 //   import a changed file at most RELATED_DEPTH imports away, and every changed test,
@@ -246,9 +248,6 @@ function track(promise, display = show) {
 }
 
 const pending = [];
-// A checkout with no generated types yet lets vitest's start write them, so vitest then waits for
-// the sync instead of writing them beside it (vite.config.ts, `syncTypesOnce`).
-const noTypesYet = !existsSync(join(ROOT, '.svelte-kit', 'non-ambient.d.ts'));
 const synced = track(runTask('svelte-kit sync', join(BIN, 'svelte-kit'), ['sync']));
 pending.push(synced);
 const formatted = existing.filter((one) => FORMATTED.test(one));
@@ -284,7 +283,7 @@ const flags = [
     'runner',
     '--experimental.fsModuleCache'
 ];
-if (noTypesYet) await synced;
+await synced;
 pending.push(track(runTask('vitest', process.execPath, [VITEST, 'run', ...select, ...flags])));
 const linted = existing.filter((one) => LINTED.test(one));
 if (linted.length > 0) {

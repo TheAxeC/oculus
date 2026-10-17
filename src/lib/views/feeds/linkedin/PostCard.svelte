@@ -103,14 +103,13 @@
         overflow-wrap: anywhere;
     }
 
-    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at
-       rest, so the card keeps its size and Tab still reaches every control. */
+    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-at-rest`: not drawn and
+       taking no room at rest, and drawn while the pointer is over the card or the keyboard is
+       inside it. */
     .actions {
-        display: flex;
+        display: var(--card-at-rest, flex);
         align-items: center;
         flex-wrap: wrap;
         gap: 6px;
-        opacity: var(--card-reveal);
-        transition: opacity 120ms ease-out;
     }
 </style>

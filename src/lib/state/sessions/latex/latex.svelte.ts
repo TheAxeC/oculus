@@ -104,6 +104,7 @@ export type LatexStore = Omit<
     | 'approve'
     | 'building'
     | 'sessionsMoved'
+    | 'settingsMoved'
     | 'filesMoved'
     | 'holdRerun'
     | 'cancel'
@@ -254,6 +255,11 @@ export function createLatex(
     entities.afterReceive((message) => {
         if (message.channel === 'files') {
             filesMoved(message);
+            return;
+        }
+        // A save made before the settings came is built once a configuration brings them.
+        if (message.channel === 'config') {
+            builds.settingsMoved();
             return;
         }
         if (message.channel !== 'sessions' || message.version === heard) return;

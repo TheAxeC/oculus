@@ -4,11 +4,15 @@
     // the view on the session it shows. A view that follows the selection picks by selecting, so
     // the other views that follow it move too; a view pinned to a session is pinned to the one
     // picked instead, and the rest are left where they are.
+    //
+    // A view that follows the selection keeps the session the selection shows it in its own state
+    // (`keepShown`), which it reads while the selection names none, so a reload, which starts with
+    // no selection, shows the view's session again (state/workbench/selection.svelte.ts).
 
     import Menu from '$lib/ui/menu/Menu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import type { MenuGroup } from '$lib/ui/menu/menu-items';
-    import { pinnedSession } from '$lib/state/workbench/selection.svelte';
+    import { keepShown, pinnedSession } from '$lib/state/workbench/selection.svelte';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
 
@@ -20,13 +24,20 @@
     let { instance }: Props = $props();
 
     const {
-        layout: { instanceLayoutState, pinInstance, unpinInstance },
-        selection: { select },
+        layout: { instanceLayoutState, pinInstance, restateInstance, unpinInstance },
+        selection: { select, selected },
         selectors: { sessionFor, sessionsByWorkspace }
     } = useState();
 
     const record = $derived(sessionFor(instance));
     const pinned = $derived(pinnedSession(instanceLayoutState(instance)));
+
+    keepShown({
+        state: () => instanceLayoutState(instance),
+        selected,
+        shown: () => record?.id ?? null,
+        write: (state) => restateInstance(instance, state)
+    });
 
     const groups = $derived(
         sessionsByWorkspace(false).map((workspace): MenuGroup => ({

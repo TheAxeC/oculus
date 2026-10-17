@@ -3,7 +3,7 @@
 // git holds moves, and what the editor does to it: the text typed and the word wrap toggled.
 
 import { untrack } from 'svelte';
-import type { createSourceOptions } from '$lib/views/shared/prose/source-options';
+import type { createSourceOptions } from '$lib/views/shared/prose/editor/source-options';
 import type { HeadStage } from '$lib/state/sessions/source/draft';
 
 /** The word wrap the tab's options say the next toggle sets. */

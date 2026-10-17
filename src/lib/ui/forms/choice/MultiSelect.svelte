@@ -13,6 +13,10 @@
     // keyboard's and a box nobody is typing in has no choice to take with Enter.
     //
     // The filter box carries the text boxes' editing menu (TextBoxMenu.svelte).
+    //
+    // At most LIMIT choices are drawn at once; when more match, a control after them says how many
+    // more there are and draws them all when pressed, so every choice is reachable without typing,
+    // and a filter typed after that starts from LIMIT again.
 
     import Glyph from '../../display/Glyph.svelte';
     import '../../theme/field.css';
@@ -38,6 +42,8 @@
         free?: boolean;
         /** What to say when the filter matches nothing. Already translated. */
         none: string;
+        /** The words of the control that draws the `count` choices past LIMIT. Translated. */
+        more: (count: number) => string;
     };
 
     let {
@@ -49,10 +55,11 @@
         remove,
         removeGlyph,
         free = false,
-        none
+        none,
+        more
     }: Props = $props();
 
-    /** How many choices are offered at once; the filter is how the rest are reached. */
+    /** How many choices are drawn at once until the reader asks for the rest. */
     const LIMIT = 12;
 
     let typed = $state('');
@@ -60,9 +67,13 @@
     /** Whether the filter box has focus. */
     let focused = $state(false);
     let box: HTMLInputElement | null = $state(null);
+    /** Whether the reader asked for every match, until the filter changes. */
+    let whole = $state(false);
 
     const matches = $derived(filtered(typed));
-    const shown = $derived(matches.slice(0, LIMIT));
+    const shown = $derived(whole ? matches : matches.slice(0, LIMIT));
+    /** How many matches are not drawn. */
+    const past = $derived(matches.length - shown.length);
 
     function filtered(term: string): Choice[] {
         const needle = term.trim().toLowerCase();
@@ -79,6 +90,7 @@
         if (id === '' || values.includes(id)) return;
         typed = '';
         at = 0;
+        whole = false;
         onchange([...values, id]);
     }
 
@@ -115,6 +127,7 @@
             event.preventDefault();
             typed = '';
             at = 0;
+            whole = false;
         }
     }
 
@@ -123,6 +136,7 @@
         if (field instanceof HTMLInputElement) {
             typed = field.value;
             at = 0;
+            whole = false;
         }
     }
 </script>
@@ -177,6 +191,9 @@
                 title={choice.id}
             />
         {/each}
+        {#if past > 0}
+            <ToolButton label={more(past)} onclick={() => (whole = true)} />
+        {/if}
         {#if shown.length === 0}
             {#if free && typed.trim() !== ''}
                 <ToolButton

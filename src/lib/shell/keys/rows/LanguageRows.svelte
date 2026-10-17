@@ -5,17 +5,17 @@
     // the language's own settings; each language with its name in brackets, and the one in force
     // marked. Choosing the association turns the list into a second one, titled with the ending,
     // whose pick writes the association to config/sources.yml and closes the palette; a refusal of
-    // the write is said in the palette, which stays open.
+    // the write is said in the palette, which stays open. With no source tab on screen the list
+    // says there is none to set the language of.
 
     import { onDestroy } from 'svelte';
     import PaletteRow from '$lib/shell/keys/PaletteRow.svelte';
+    import type { LanguageList } from '$lib/shell/keys/lists/language-list.svelte';
     import {
         associationOutcome,
         languageHint,
         type LanguageAction,
-        type LanguageAssociation,
-        type LanguageChoice,
-        type LanguageMatch
+        type LanguageChoice
     } from '$lib/state/workbench/navigation/status';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
@@ -23,21 +23,24 @@
     const client = useState();
 
     type Props = {
-        /** The source tab the palette is changing the language of, and the language in force. */
-        source: { instance: string; status: { language: string } };
-        actions: LanguageAction[];
-        languages: LanguageMatch[];
-        associating: LanguageAssociation | null;
-        onassociate: (association: LanguageAssociation) => void;
+        /**
+         * The source tab the palette is changing the language of, and the language in force; null
+         * with no source tab on screen.
+         */
+        source: { instance: string; status: { language: string } } | null;
+        list: LanguageList;
         onclose: () => void;
         onsaid: (words: string) => void;
     };
 
-    let { source, actions, languages, associating, onassociate, onclose, onsaid }: Props = $props();
+    let { source, list, onclose, onsaid }: Props = $props();
+
+    const associating = $derived(list.associating);
 
     /** Paint the source tab in a language, or in the one its name gives with an empty name. */
     function paint(language: string): void {
-        client.editorStatus.ask(source.instance, { kind: 'language', language });
+        if (source !== null)
+            client.editorStatus.ask(source.instance, { kind: 'language', language });
         onclose();
     }
 
@@ -46,7 +49,7 @@
         if (action.kind === 'auto') {
             paint('');
         } else if (action.kind === 'associate') {
-            onassociate({ ending: action.ending, title: action.title });
+            list.associate({ ending: action.ending, title: action.title });
         } else {
             client.paletteSource.openLanguageSettings();
             onclose();
@@ -71,10 +74,12 @@
     }
 </script>
 
-{#if associating !== null}
+{#if source === null}
+    <p class="title">{t('statusbar.palette_language_none')}</p>
+{:else if associating !== null}
     <p class="title" data-association-title>{associating.title}</p>
 {/if}
-{#each associating === null ? actions : [] as action (action.kind)}
+{#each associating === null ? list.entries : [] as action (action.kind)}
     <PaletteRow
         row={{
             value: `language-action:${action.kind}`,
@@ -84,15 +89,15 @@
         }}
     />
 {/each}
-{#each languages as found (found.choice.name)}
+{#each source === null ? [] : list.languages as found (found.choice.name)}
     <PaletteRow
         row={{
             value: `language:${found.choice.name}`,
             kind: t('statusbar.palette_kind_language'),
             label: found.choice.label,
             parts: found.label,
-            hint: languageHint(found.choice.name, source.status.language),
-            active: source.status.language === found.choice.name,
+            hint: languageHint(found.choice.name, source?.status.language ?? ''),
+            active: source?.status.language === found.choice.name,
             language: found.choice.name,
             pick: () =>
                 associating === null ? paint(found.choice.name) : void associate(found.choice)

@@ -12,15 +12,15 @@
 // inside the functions the write route reaches. graphs.mjs reads the imports and the channels,
 // writes.mjs the write chain, drawing/labels.mjs draws an arrow's words and checks where they land,
 // drawing/apart.mjs draws the channel and write diagrams so no two arrows run along each other,
-// parsed.mjs computes each file's imports and its code once per generation for all of them, and
-// source.mjs holds what they share. A module no layer row places is drawn in a dashed group named
-// "not placed"; so is, with its file and line, an import, a publish, a channel read or comparison,
-// a re-export of a whole module, or a call the write reader cannot follow (writes.mjs says which).
-// The write diagram draws only the modules on a path to the disk or to a call it cannot follow.
-// Every count and every call list is a small node of words standing on its arrow
-// (drawing/labels.mjs), which every other arrow is drawn around. A channel or write diagram the
-// rule of drawing/apart.mjs cannot clear is an error naming each pair, so the run writes nothing
-// and exits non-zero.
+// drawing/stack.mjs sets the parts the write diagram is cut into in rows, parsed.mjs computes each
+// file's imports and its code once per generation for all of them, and source.mjs holds what they
+// share. A module no layer row places is drawn in a dashed group named "not placed"; so is, with
+// its file and line, an import, a publish, a channel read or comparison, a re-export of a whole
+// module, or a call the write reader cannot follow (writes.mjs says which). The write diagram draws
+// only the modules on a path to the disk or to a call it cannot follow. Every count and every call
+// list is a small node of words standing on its arrow (drawing/labels.mjs), which every other arrow
+// is drawn around. A channel or write diagram the rule of drawing/apart.mjs cannot clear is an
+// error naming each pair, so the run writes nothing and exits non-zero.
 //
 // The render is @viz-js/viz, Graphviz compiled to WebAssembly, so no system install is needed and
 // one input gives the same bytes on every machine. The drawing has no background and every line
@@ -37,7 +37,7 @@ import { fileURLToPath } from 'node:url';
 import { channelsDot, layerDot, layersDot } from './graphs.mjs';
 import { drawnApart } from './drawing/apart.mjs';
 import { parseReader } from './parsed.mjs';
-import { BOUNDARIES, ORDERING, readLayers, readOrder, readSources } from './source.mjs';
+import { BOUNDARIES, FONTS, ORDERING, readLayers, readOrder, readSources } from './source.mjs';
 import { WRITE_ROUTE, writesDrawn } from './writes.mjs';
 
 export { channelsDot, folderOf, layerDot, layersDot, placeOf } from './graphs.mjs';
@@ -83,6 +83,8 @@ const STANDALONE =
  * there is no colour of its own anywhere and nothing opaque behind it. What Graphviz writes before
  * the `svg` element (the XML declaration, the doctype and a comment carrying its build date) is
  * dropped, so the bytes change only with the drawing and the file is one element a page can hold.
+ * Every text is set in the families of source.mjs's FONTS, where Graphviz writes the one family it
+ * measured the text in.
  *
  * Two things are added for a reader who meets the file outside oculus or points at an edge:
  *
@@ -123,7 +125,8 @@ async function drawer() {
                     `<title>${ends}: ${words.replace(/&#10;/g, ', ')}</title>\n${drawn}`
             )
             .replace(/(stroke|fill)="black"/g, '$1="currentColor"')
-            .replace(/<text /g, '<text fill="currentColor" ');
+            .replace(/<text /g, '<text fill="currentColor" ')
+            .replace(/ font-family="Helvetica[^"]*"/g, ` font-family="${FONTS}"`);
     /** @param {string} dot */
     const layout = (dot) =>
         /** @type {import('./drawing/apart.mjs').Layout} */ (viz.renderJSON(dot));

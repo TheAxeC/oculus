@@ -30,7 +30,8 @@ import {
     hubVocabOf,
     hubVocabs,
     readOtherHub,
-    sourcesFindings
+    sourcesFindings,
+    type HubSettings
 } from '../../../data/index.ts';
 import { mergedFeeds } from '../../../data/snapshot/hubs/feeds.ts';
 import type { HubSnapshot } from '../../../data/snapshot/hubs/merge.ts';
@@ -102,6 +103,12 @@ export type WatchPaths = {
      * read as projects.
      */
     open: () => OpenWorkspace;
+    /**
+     * The settings of a hub of the workspace other than the primary, by its folder: the parse the
+     * server's config cache keeps for that hub, made again when the engine's folder or that hub's
+     * settings file changed.
+     */
+    settings: HubSettings;
     /**
      * The findings the server holds besides those the files raise: a key of the primary's
      * `local.yml` kept at its running value until a restart. Read at every rebuild.
@@ -598,10 +605,13 @@ export function watchPortfolio(
             const { config, findings, from } = loadConfig(paths.engine, hubOption(primaryDir));
             // The hubs other than the primary are read again at every rebuild, each with its own
             // settings, so a folder that left the workspace or lost its config is out of this
-            // build.
+            // build. The settings are the parse the server keeps for each hub, which is made again
+            // when a file it was read from changed.
             const others = workspace.hubs
                 .filter((one) => one.name !== workspace.primary)
-                .map((one) => readOtherHub(paths.engine, { key: one.name, dir: one.dir }));
+                .map((one) =>
+                    readOtherHub({ key: one.name, dir: one.dir }, paths.settings(one.dir))
+                );
             const portfolio = primaryConfig(config, workspace, from);
             // Each hub's domains and theme words are read from its registry files, so a change of
             // one of them republishes the config channel that carries them, as a settings change
@@ -647,7 +657,7 @@ export function watchPortfolio(
                         ...(paths.held?.() ?? []),
                         ...wallpaperFindings(
                             config,
-                            picturesOf(allHubs(paths.engine, config, workspace)),
+                            picturesOf(allHubs(config, workspace, paths.settings)),
                             sourceFile(paths.engine, primaryDir, from, 'wallpaper'),
                             textCatalog(config)
                         ),

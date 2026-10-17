@@ -5,11 +5,15 @@
 // show the terminal left it, would otherwise fill the grid with the blank rows under the cursor and
 // put every line above them out of view.
 //
-// The resizes of one terminal are posted one after another, so a grid mounted while the grid before
-// it still waits on its answer (a remount, two quick moves of a tab) leaves the window at the size
-// of the last one. Input typed while a subscribe waits is held and written right after it, since
-// the server drops what a socket sends before it is attached to the channel. The terminals store
-// (terminals.svelte.ts) hands this module the post of a resize.
+// On a socket that is open and admitted to write, the resize goes out on the socket right ahead of
+// the subscribe, and the server reads the pane after it has run, so a grid is drawn as soon as the
+// socket answers, a reload included, with no request to wait for. On any other socket the resize is
+// posted and the channel is asked for after its answer. The resizes of one terminal go out one
+// after another, so a grid mounted while the grid before it still waits on its answer (a remount,
+// two quick moves of a tab) leaves the window at the size of the last one. Input typed while a
+// subscribe waits is held and written right after it, since the server drops what a socket types
+// before it is attached to the channel. The terminals store (terminals.svelte.ts) hands this module
+// the post of a resize, and the wire (pty-wire.ts) the resize on the socket.
 
 /** The size of a grid in cells. */
 export type PtySize = { cols: number; rows: number };
@@ -32,16 +36,18 @@ type Waiting = {
 /** The order in which grids attach to terminals. */
 export type PtyOrder = {
     /**
-     * Resize the terminal's window to what `size` answers, again for as long as the answer changes
-     * while a resize is out, then call `subscribe` and write the input held meanwhile through
-     * `send`. The call returned takes the listener off: nothing more is posted or subscribed, and
-     * the held input is dropped.
+     * Resize the terminal's window to what `size` answers, then call `subscribe` and write the
+     * input held meanwhile through `send`. `ahead` sends the resize on the socket and answers false
+     * when the socket cannot take it; the resize is then posted, again for as long as the answer
+     * changes while one is out, and `subscribe` waits for its answer. The call returned takes the
+     * listener off: nothing more is posted or subscribed, and the held input is dropped.
      */
     attach: (
         id: string,
         size: () => PtySize,
         subscribe: () => void,
-        send: (message: unknown) => boolean
+        send: (message: unknown) => boolean,
+        ahead: (size: PtySize) => boolean
     ) => () => void;
     /**
      * Take a message for a terminal whose subscribe is waiting. True when it is held, false when
@@ -92,12 +98,13 @@ export function createPtyOrder(
     }
 
     return {
-        attach(id, size, subscribe, send) {
+        attach(id, size, subscribe, send, ahead) {
             const entry: Waiting = { live: true, held: [] };
             waiting.set(id, [...(waiting.get(id) ?? []), entry]);
             const run = async (): Promise<void> => {
                 try {
-                    if (await settle(id, entry, size)) {
+                    if (!entry.live) return;
+                    if (ahead(size()) || (await settle(id, entry, size))) {
                         subscribe();
                         for (const message of entry.held) send(message);
                     }

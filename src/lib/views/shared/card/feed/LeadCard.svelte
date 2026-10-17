@@ -18,6 +18,7 @@
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         APPLIED,
         DECLINED,
@@ -68,6 +69,9 @@
         onpage,
         blocked
     }: Props = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
     let sure = $state(false);
 
     const text = (field: string): string => textOrNumber(entry[field]);
@@ -118,7 +122,7 @@
         id={identity}
         {cursor}
         {title}
-        titleHtml={inlineMarkdown(title)}
+        titleHtml={inlineMarkdown(title, cardMath(title))}
         ontitle={onpage}
         tone={expired ? 'grey' : tone}
     >
@@ -178,7 +182,7 @@
         {/snippet}
 
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p class="sub">{@html inlineMarkdown(sub)}</p>
+        <p class="sub">{@html inlineMarkdown(sub, cardMath(sub))}</p>
         {#if country !== '' || type !== ''}
             <div class="chips">
                 {#if country !== ''}
@@ -191,7 +195,7 @@
         {/if}
         {#if note !== ''}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="note">{@html inlineMarkdown(note)}</p>
+            <p class="note">{@html inlineMarkdown(note, cardMath(note))}</p>
         {/if}
         {#if posting(url) !== undefined}
             <p class="posting">
@@ -207,9 +211,9 @@
 
 {#if sure}
     <Confirm
-        message={t('leads.action.delete_lead_tip')}
+        message={t('leads.action.delete_lead_ask')}
         detail={title}
-        confirm={t('project.action.del')}
+        confirm={t('entry_form.delete')}
         cancel={t('collection.form_cancel')}
         onconfirm={remove}
         oncancel={() => (sure = false)}
@@ -237,11 +241,15 @@
         font-size: var(--fs-sm);
     }
 
-    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at
-       rest, so the card keeps its size and Tab still reaches every control. */
+    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-at-rest`: not drawn and
+       taking no room at rest, and drawn while the pointer is over the card or the keyboard is
+       inside it. */
     .actions {
-        opacity: var(--card-reveal);
-        transition: opacity 120ms ease-out;
+        display: var(--card-at-rest, inline-flex);
+        /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
+           words beside them, so a line they share stays as tall as it was at rest; on a line of
+           their own they reach no further than the gap between the lines. */
+        margin-block: min(0px, calc((1lh - 22px) / 2));
     }
 
     .sub {

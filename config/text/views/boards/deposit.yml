@@ -1,12 +1,12 @@
 # Oculus text owned by the deposit view.
 text:
     deposit:
-        adopt: adopt
+        adopt: Adopt
         adopt_title: Clone the deposit repository, or make an empty mirror on main
         branch: Branch
         branch_new: New branch
         branch_new_confirm: Create {0} in the mirror and check it out?
-        branch_new_create: create
+        branch_new_create: Create
         branch_new_detail: The mirror moves to the new branch. code/ is left as it is.
         branch_new_label: Name for the new branch
         branch_switch_confirm: Check out {0} in the mirror?
@@ -16,21 +16,21 @@ text:
         cancel_title: Stop the git command running for this deposit
         changes: Changed ({0})
         changes_none: Nothing changed since the mirror's last commit.
-        commit: commit
+        commit: Commit
         commit_confirm: Commit {0} changed paths on {1}?
         commit_confirm_one: Commit 1 changed path on {0}?
         commit_detail: The message is committed in the mirror. Nothing is sent to GitHub.
         commit_label: Commit message
         ahead: '{0} ahead of its upstream'
         compared: 'Against origin/main: {0} ahead, {1} behind'
-        compared_unknown: origin/main is not known to the mirror yet; fetch to compare.
+        compared_unknown: origin/main is not known to the mirror yet; press Fetch to compare.
         diff_close: Hide the diff of {0}
         diff_loading: Reading the two texts...
         diff_open: Show the diff of {0}
         differ: 'Different from origin/main ({0})'
         differ_none: No file differs from origin/main.
         done: Done.
-        fetch: fetch
+        fetch: Fetch
         fetch_title: Fetch origin into the mirror; the branch and the files stay as they are
         files: Files ({0})
         finding_large: 'large file ({0} MB): {1}'
@@ -42,31 +42,31 @@ text:
         no_mirror: There is no mirror yet. Adopt clones the GitHub repository when there is one, and makes an empty mirror on main when there is not.
         none: No project chosen. Open the deposit from a project card.
         none_glyph: published
-        plan: plan
-        plan_none: No plan yet. Press plan to see what would ship.
+        plan: Plan
+        plan_none: No plan yet. Press Plan to see what would ship.
         plan_title: Put code/ into the mirror and list what would ship
-        push: push
+        push: Push
         push_confirm: Push {0} to {1}?
-        push_create: create the repository
+        push_create: Create Repository
         push_create_confirm: Create the repository {0} and push the mirror to it?
         push_create_title: Make the GitHub repository and push the mirror to it
         push_detail: The manifest's code_availability gets the status, the URL and today's date.
         push_title: Push the mirror to {0}
         remote_none: no remote yet
-        retry: Try again
-        snapshot: snapshot
+        retry: Try Again
+        snapshot: Snapshot
         snapshot_confirm: Replace the history of {0} with one commit?
         snapshot_detail: The remote keeps one commit and the history it had is gone. There is no undo.
         snapshot_title: Replace the remote with one commit of what would ship
-        suggest: suggest
-        suggest_pending: reading the staged diff
+        suggest: Suggest
+        suggest_pending: Suggesting...
         suggest_title: Write a message from the mirror's staged diff
         title: Deposit
         unknown: The snapshot holds no project with the id {0}.
         why_busy: A request is in flight.
         why_findings: The plan has findings; fix them first.
         why_no_mirror: There is no mirror yet.
-        why_no_plan: Press plan first.
+        why_no_plan: Press Plan first.
     views:
         deposit: Deposit
         deposit_glyph: published

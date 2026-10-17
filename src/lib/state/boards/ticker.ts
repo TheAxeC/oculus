@@ -11,7 +11,7 @@ import {
     type Venue
 } from '../../data/model/index.ts';
 import { z } from 'zod';
-import { text as str } from '../../data/helpers/guards.ts';
+import { byKey, text as str } from '../../data/helpers/guards.ts';
 import { bareId, hubId, rootOf } from '../../data/helpers/hub-names.ts';
 import { listOrOneShape, readAs, rowsShape, wordShape } from '../../data/shapes/shapes.ts';
 import { isLeadClosed } from '../../data/accounts/leads.ts';
@@ -453,16 +453,21 @@ function followupsOf(value: unknown): Followup[] {
     return readAs(followupsShape, readAs(listOrOneShape, value)) ?? [];
 }
 
-/** The venues carrying too many in-flight papers, most-loaded first. */
+/**
+ * The venues carrying too many in-flight papers, most-loaded first. A venue is counted by its
+ * name, so the one journal catalogued in two hubs of the workspace carries the papers of both.
+ */
 export function venueLoad(projects: Project[], venues: Record<Id, Venue>, warn: number): Tally[] {
-    const counts: Record<string, number> = {};
+    const counts = new Map<string, { id: Id; count: number }>();
     for (const project of projects) {
         const id = project.venueId;
         if (id === undefined || id === '') continue;
-        counts[id] = (counts[id] ?? 0) + 1;
+        const name = byKey(venues, id)?.name ?? id;
+        const held = counts.get(name);
+        counts.set(name, { id: held?.id ?? id, count: (held?.count ?? 0) + 1 });
     }
-    return Object.entries(counts)
-        .map(([id, count]) => ({
+    return [...counts.values()]
+        .map(({ id, count }) => ({
             id,
             label: venueLabel(venues[id]) === '' ? id : venueLabel(venues[id]),
             count

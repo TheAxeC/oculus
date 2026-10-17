@@ -57,10 +57,13 @@
 // names, relevant to git or not, to the root's window; the root's throttle timer publishes the
 // window as `{ root, folders }` (or `{ root }` when more than 64 folders came in it) when it fires,
 // and a read of the state is asked for when a relevant event came in the window, or when the root's
-// last read ran out of time. The message is published by the timer and not by the read, so a file
-// listing is never held behind git. It is this watcher's because it already watches every root
-// recursively and already throttles the burst a save makes, so no second watcher and no second
-// throttle are needed.
+// last read ran out of time. An event at a folder's `project.yml` or `.oculus` adds the folder
+// above that folder too, whose listing carries what the folder holds for the make controls
+// (files/project/make.ts, `markedBy`), and for the root's own the timer says the workspaces may
+// have changed, since their answer carries the root's. The message is published by the timer and
+// not by the read, so a file listing is never held behind git. It is this watcher's because it
+// already watches every root recursively and already throttles the burst a save makes, so no second
+// watcher and no second throttle are needed.
 //
 // The reads run git as child processes (server/core/git/run.ts), so the event loop serves requests
 // while they work. Each root has at most one read running and at most one waiting: a read asked for
@@ -96,6 +99,7 @@ import { systemClock, type Clock, type Timer } from '../../core/file-poll.ts';
 import { readState, type StateRead } from '../../core/git/state.ts';
 import { TIMEOUT_MS } from '../../core/git/run.ts';
 import { APP_FOLDERS, PLAIN_FOLDERS } from '../process/build-folders.ts';
+import { markedBy } from '../../files/project/make.ts';
 import type { HubRepositories } from '../../git/clone/exclude.ts';
 import {
     composeFound,
@@ -103,6 +107,7 @@ import {
     nestedRepositories,
     type NestedFound
 } from './repos/nested.ts';
+import { mayChangeRepositories } from './repos/depth.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds one root is re-read at most once in. */
@@ -238,20 +243,6 @@ export function subrepositories(root: string, depth: number): string[] {
     return found.sort();
 }
 
-/**
- * Whether a `rename` event at `path` may have made or removed a repository below a root: a path of
- * at most `depth` segments names a folder the walk lists, and a path ending in `/.git` of at most
- * `depth + 1` segments is the repository mark of a folder the walk lists. A path inside a `.git`
- * folder is no such event: a commit renames files there all the time.
- */
-function mayChangeRepositories(path: string, depth: number, folderOrGone: () => boolean): boolean {
-    const parts = path.split(/[/\\]/).filter((part) => part !== '');
-    if (parts.length === 0 || parts.slice(0, -1).includes('.git')) return false;
-    if (depth === Infinity) return parts[parts.length - 1] === '.git' || folderOrGone();
-    if (parts.length <= depth) return true;
-    return parts[parts.length - 1] === '.git' && parts.length <= depth + 1;
-}
-
 function reason(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
@@ -356,6 +347,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const windows = new Map<string, { folders: Set<string>; whole: boolean }>();
     /** The roots a relevant event came for in the window, which the timer reads. */
     const wants = new Set<string>();
+    /** The roots a write may have changed the make marks of, which the workspaces answer holds. */
+    const marked = new Set<string>();
     /** The roots a failed watch is said of once. */
     const said = new Set<string>();
     const slots = new Map<string, Slot>();
@@ -517,6 +510,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
                     const named = heard.whole || heard.folders.size > MOST_FOLDERS;
                     announceFiles(root, named ? null : [...heard.folders].sort());
                 }
+                if (marked.delete(root)) announceWorkspaces();
                 if (wants.delete(root)) void ask(root, true);
                 if (deepWants.delete(root)) void renewNested();
             }, wait)
@@ -545,7 +539,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
 
     /**
      * One event under a root. The folder that holds the path joins the window whatever the path is,
-     * since a listing of it is stale for an ignored folder as for any other; a path git reports
+     * since a listing of it is stale for an ignored folder as for any other, and so does the folder
+     * whose listing carries the make marks the path may change; a path git reports
      * nothing for asks for no read. An event for a change a read already saw is dropped, which the
      * stat is spared when a window is already open.
      */
@@ -555,6 +550,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         const span = windows.get(root) ?? { folders: new Set<string>(), whole: false };
         windows.set(root, span);
         span.folders.add(parentOf(path));
+        const owner = markedBy(path);
+        if (owner === '') marked.add(root);
+        else if (owner !== null) span.folders.add(parentOf(owner));
         if (span.folders.size > MOST_FOLDERS) span.whole = true;
         if (relevant(path)) {
             wants.add(root);

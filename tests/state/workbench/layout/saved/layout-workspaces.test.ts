@@ -54,8 +54,8 @@ function eventSource() {
             heard.splice(heard.indexOf(listener), 1);
         },
         dispatchEvent: () => true,
-        fire: (key: string) => {
-            for (const listener of [...heard]) listener({ key } as unknown as Event);
+        fire: (key: string, newValue: string | null = null) => {
+            for (const listener of [...heard]) listener({ key, newValue } as unknown as Event);
         }
     };
 }
@@ -209,6 +209,69 @@ describe('the storage event', () => {
     });
 });
 
+describe('a browser tab whose arrangement another tab has moved on from', () => {
+    it('takes the saved arrangement and runs its change on it, so no tab of either is lost', () => {
+        const storage = fakeStorage();
+        const first = createClientState();
+        const second = createClientState();
+        first.layout.loadLayout(storage);
+        second.layout.loadLayout(storage);
+        first.layout.workspaceOpened(A);
+        second.layout.workspaceOpened(A);
+        first.layout.openPage('From the first');
+        second.layout.openPage('From the second');
+        const saved = storage.held[layoutKey(A)];
+        expect(saved).toContain('From the first');
+        expect(saved).toContain('From the second');
+        expect(labels(second)).toEqual(['Page 1', 'From the first', 'From the second']);
+    });
+
+    // Two tabs in separate processes: each writes its own copy of the storage, and the browser
+    // applies the writes one at a time, in the order a row gives for the two that crossed, copying
+    // each into the other tab's storage and firing the event there.
+    it.each([
+        ['the first', [0, 1]],
+        ['the second', [1, 0]]
+    ])('keeps both changes of two saves that crossed, %s applied first', (_, order) => {
+        const central: Record<string, string> = {};
+        const queue: { tab: number; key: string; value: string }[] = [];
+        const tabs = [0, 1].map((tab) => {
+            const held: Record<string, string> = {};
+            const storage = {
+                getItem: (key: string): string | null => held[key] ?? null,
+                setItem: (key: string, value: string): void => {
+                    held[key] = value;
+                    queue.push({ tab, key, value });
+                }
+            };
+            return { held, storage, source: eventSource(), client: createClientState() };
+        });
+        for (const { storage, source, client } of tabs) {
+            client.layout.loadLayout(storage, source);
+            client.layout.workspaceOpened(A);
+        }
+        tabs[0].client.layout.openPage('From the first');
+        tabs[1].client.layout.openPage('From the second');
+        const crossed = queue.filter((write) => write.key === layoutKey(A));
+        queue.splice(0, queue.length, ...order.map((at) => crossed[at]));
+        for (let write = queue.shift(); write !== undefined; write = queue.shift()) {
+            central[write.key] = write.value;
+            for (const [at, other] of tabs.entries()) {
+                if (at === write.tab) continue;
+                other.held[write.key] = write.value;
+                other.source.fire(write.key, write.value);
+            }
+        }
+        const both = ['Page 1', 'From the first', 'From the second'];
+        expect(central[layoutKey(A)]).toContain('From the first');
+        expect(central[layoutKey(A)]).toContain('From the second');
+        expect(tabs.map(({ client }) => [...labels(client)].sort())).toEqual([
+            [...both].sort(),
+            [...both].sort()
+        ]);
+    });
+});
+
 describe('the turn of the desktop host', () => {
     it('is asked for the key of the workspace a save is made under, from the envelope read there', () => {
         const asked: { key: string; from: string | null }[] = [];
@@ -229,7 +292,7 @@ describe('the turn of the desktop host', () => {
         storage.select(A);
         storage.write(pages);
         storage.writeFor(B, pages);
-        const text = serialiseLayout(pages);
+        const text = held[layoutKey(A)];
         expect(asked).toEqual([
             { key: layoutKey(A), from: null },
             { key: layoutKey(B), from: null }

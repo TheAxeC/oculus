@@ -68,7 +68,8 @@ export function waitingLine(
  * are waiting on somebody, how many are dated, and where they are aimed. The counts are over the
  * board's own projects, before any filter, so the strip says what the board is rather than what is
  * on screen. The venues come from the registry rather than from the manifests, so a chip carries
- * the catalogued short name and the full one it stands for.
+ * the catalogued short name and the full one it stands for. A venue is counted by its name, so the
+ * one journal catalogued in two hubs of the workspace is one chip with the papers of both.
  */
 export function stats(
     items: BoardItem[],
@@ -76,7 +77,7 @@ export function stats(
     config: Record<string, unknown> = {}
 ): BoardStats {
     const warnAt = setting(config, 'venue_conc_warn', VENUE_WARN);
-    const counts = new Map<Id, number>();
+    const counts = new Map<string, { id: Id; count: number }>();
     let submitReady = 0;
     let blocked = 0;
     let dated = 0;
@@ -85,11 +86,13 @@ export function stats(
         if (item.project.focus === BLOCKED) blocked += 1;
         if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
         const id = item.venue?.id;
-        if (id !== undefined) counts.set(id, (counts.get(id) ?? 0) + 1);
+        if (id === undefined) continue;
+        const name = byKey(venues, id)?.name ?? id;
+        const held = counts.get(name);
+        counts.set(name, { id: held?.id ?? id, count: (held?.count ?? 0) + 1 });
     }
-    const rows: VenueCount[] = [...counts.entries()].map(([id, count]) => {
+    const rows: VenueCount[] = [...counts.entries()].map(([name, { id, count }]) => {
         const venue = byKey(venues, id);
-        const name = venue?.name ?? id;
         return {
             id,
             short: venue?.short !== undefined && venue.short !== '' ? venue.short : name,

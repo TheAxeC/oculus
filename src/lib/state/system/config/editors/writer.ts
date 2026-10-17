@@ -9,10 +9,11 @@
 // meantime, ends it with the sentence that it did. A push that lands before the answer is the same
 // push. A push that leaves the row in a form the editor does not draw ends the draft the tab holds
 // of it, with the sentence that it was dropped, since a draft with no editor cannot be saved or
-// discarded. A closed sequence sends nothing, says nothing and moves no state. It is a plain
-// closure with no runes; the view hands it a callback that redraws, one that drops a draft, one
-// that says whether the tab holds a draft of a row, and the lists the draft's fields are checked
-// against before it is sent.
+// discarded. A push carrying the value sent marks the row saved, which the editor says until the
+// row is edited or sent again, as the rail list's Save says it. A closed sequence sends nothing,
+// says nothing and moves no state. It is a plain closure with no runes; the view hands it a
+// callback that redraws, one that drops a draft, one that says whether the tab holds a draft of a
+// row, and the lists the draft's fields are checked against before it is sent.
 
 import { sameInOrder } from '../../../../data/helpers/guards.ts';
 import type { WriteAnswer } from '../../../shared/stores/shapes.ts';
@@ -54,7 +55,9 @@ export type EditorWriter = {
     sending: (row: ConfigRow) => boolean;
     /** The sentence under the row, or null. */
     said: (row: ConfigRow) => Message | null;
-    /** Take the sentence of a row away. */
+    /** Whether the file took the row's last write, until the row is edited or sent again. */
+    saved: (row: ConfigRow) => boolean;
+    /** Take the sentence of a row, and its saved mark, away. */
     clear: (row: ConfigRow) => void;
     /** End the sequence: nothing is sent, and nothing on its way changes anything. */
     close: () => void;
@@ -67,6 +70,7 @@ type Out = { sent: unknown; base: unknown; turn: number };
 export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks): EditorWriter {
     const out = new Map<string, Out>();
     const saying = new Map<string, Message>();
+    const taken = new Set<string>();
     let turns = 0;
     let closed = false;
     /** Whether the sequence was closed, read afresh after every wait. */
@@ -78,6 +82,7 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
         const turn = turns;
         out.set(row.id, { sent: value, base: row.value, turn });
         saying.delete(row.id);
+        taken.delete(row.id);
         hooks.changed();
         const answer = await write(row.file, row.key, value, row.value);
         if (stopped() || out.get(row.id)?.turn !== turn) return;
@@ -117,6 +122,7 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
         if (held === undefined) return;
         if (sameInOrder(row.value, held.sent)) {
             out.delete(row.id);
+            taken.add(row.id);
             hooks.ended(row);
         } else if (sameInOrder(row.value, held.base)) {
             return;
@@ -134,8 +140,10 @@ export function createEditorWriter(write: WriteConfigValue, hooks: EditorHooks):
         pushed,
         sending: (row) => out.has(row.id),
         said: (row) => saying.get(row.id) ?? null,
+        saved: (row) => taken.has(row.id),
         clear: (row) => {
-            if (saying.delete(row.id)) hooks.changed();
+            const said = saying.delete(row.id);
+            if (taken.delete(row.id) || said) hooks.changed();
         },
         close: () => {
             closed = true;

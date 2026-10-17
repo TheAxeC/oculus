@@ -5,7 +5,9 @@
 // names it, so no case here writes the checkout's config or reads the machine's own file. What this
 // does NOT cover: the editors that send the write, which are state/system/config/editors's and the
 // look's.
-// @module-tag slow: every case takes 240 ms or more to write a list through the route.
+// @module-tag slow: its case takes about 1.2 s in a run of its own. The time is the write's own
+// checks: the write and its undo each read the whole configuration of the scratch engine before
+// and after they write (`loadConfig`, about 220 ms a read), and the case waits on nothing.
 
 import { readFileSync } from 'node:fs';
 import { describe, expect } from 'vitest';

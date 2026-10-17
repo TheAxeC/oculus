@@ -268,7 +268,11 @@
                 >
                     <h3 class="name">
                         {group.name}
-                        <span class="count">{t('slides.count', String(group.count))}</span>
+                        <span class="count"
+                            >{group.count === 1
+                                ? t('slides.count_one')
+                                : t('slides.count', String(group.count))}</span
+                        >
                     </h3>
                     <div class="rows" role="list" inert={busy}>
                         {#each rows as row (row.name)}

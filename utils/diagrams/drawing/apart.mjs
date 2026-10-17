@@ -51,6 +51,19 @@ import { PORT, TRACK, jogsOf, trackOrder } from './tracks.mjs';
 const PAD = 16;
 
 /**
+ * How far, in points, a group's box may reach past its margin and still be taken as keeping it:
+ * Graphviz writes positions to a hundredth of a point, so a box that keeps its margin can read a
+ * hair past it.
+ */
+const SLACK = 0.5;
+
+/**
+ * The margin, in inches, of a node outlined dashed round its table: one point, the width of the
+ * border a solid table draws, so the two kinds of box hold their words alike.
+ */
+const SEAM = (1 / 72).toFixed(4);
+
+/**
  * How many drawings the rule makes before it gives up: the port order settles within a few, and a
  * drawing takes about a second.
  */
@@ -148,7 +161,8 @@ function portColumn(/** @type {number} */ count, /** @type {string} */ prefix) {
  * The attributes of a node drawn with its ports: a table of its words between a column of the
  * ports its arrows arrive at, down its west side, and a column of the ports its arrows leave by,
  * down its east side. An ellipse becomes a box with round corners, so a channel reads apart from
- * a module, and a cylinder keeps its shape round the table.
+ * a module, a cylinder keeps its shape round the table, and a node styled dashed is outlined
+ * dashed.
  *
  * @param {string} id
  * @param {string} attrs The node's attributes as the diagram wrote them.
@@ -159,7 +173,8 @@ function portedAttrs(id, attrs, sides) {
     const label = /(?:^|, )label=("(?:[^"\\]|\\.)*")/.exec(attrs);
     const words = label === null ? id : unquoted(label[1].slice(1, -1));
     const shape = /(?:^|, )shape=(\w+)/.exec(attrs)?.[1] ?? 'box';
-    const outlined = shape !== 'cylinder';
+    const dashed = /(?:^|, )style=dashed(?:,|$)/.test(attrs);
+    const outlined = shape !== 'cylinder' && !dashed;
     const cells = [
         sides.ins.length > 0 ? portColumn(sides.ins.length, 'i') : '',
         `<TD CELLPADDING="4">${htmlWords(words)}</TD>`,
@@ -170,6 +185,9 @@ function portedAttrs(id, attrs, sides) {
         shape === 'ellipse' ? ' STYLE="rounded"' : '',
         `><TR>${cells}</TR></TABLE>`
     ].join('');
+    // A dashed outline is the node's own, round a table drawn with none: Graphviz's JSON output
+    // writes the style of a table outlined dashed as unreadable text, and the layout reads it.
+    if (dashed) return `shape=box, style=dashed, margin=${SEAM}, label=<${table}>`;
     return `${outlined ? 'shape=plain' : `shape=${shape}, margin=0`}, label=<${table}>`;
 }
 
@@ -520,9 +538,34 @@ function placedDot(chained, arrows, laid, ports, plans) {
                 y1: y + tall
             };
         });
+    // How far each group's box reaches out past the margin of PAD / 2 a box keeps round its
+    // nodes, on the left of its first band and on the right of its last: Graphviz widens a box to
+    // its label, which the bands, made of the nodes alone, do not show.
+    const reaches = laid.objects
+        .filter((one) => one.bb !== undefined && one.nodes !== undefined)
+        .map((group) => {
+            const [x0, , x1] = (group.bb ?? '').split(',').map(Number);
+            const [first, last] = spanOf(group);
+            return {
+                first,
+                last,
+                left: west[first] - PAD / 2 - x0,
+                right: x1 - east[last] - PAD / 2
+            };
+        });
+    /** The most a box reaches out on the left of band `rank`, or on its right. */
+    const beyond = (/** @type {'left' | 'right'} */ side, /** @type {number} */ rank) =>
+        Math.max(
+            0,
+            ...reaches
+                .filter((one) => (side === 'left' ? one.first : one.last) === rank)
+                .map((one) => one[side])
+                .filter((one) => one > SLACK)
+        );
     // Each space as wide as its tracks need, and each rank moved right by what the spaces before
     // it grew. An upright that would cross a group's label at its height takes its track past the
-    // label, and the tracks after it follow.
+    // label, and the tracks after it follow. A space also holds what the boxes on either side of
+    // it reach out, so no group's box or label runs into the band beside it.
     /** @type {Map<string, number>} */
     const tracks = new Map();
     /** @type {Map<number, number>} */
@@ -532,6 +575,7 @@ function placedDot(chained, arrows, laid, ports, plans) {
     shift[0] = before > 0 ? 2 * PAD + (before - 1) * TRACK : 0;
     for (let space = -1; space <= final; space += 1) {
         const edge = space < 0 ? west[0] : east[space] + shift[space];
+        const start = space < 0 ? edge : edge + beyond('right', space);
         const placed = labels
             .filter((label) => label.rank <= space)
             .map((label) => ({
@@ -540,7 +584,7 @@ function placedDot(chained, arrows, laid, ports, plans) {
                 x1: label.x1 + shift[label.rank] + TRACK / 2
             }));
         const order = trackOrder(spaces.get(space) ?? []);
-        let x = edge + PAD;
+        let x = start + PAD;
         for (const run of order) {
             for (;;) {
                 const across = placed.find(
@@ -553,8 +597,9 @@ function placedDot(chained, arrows, laid, ports, plans) {
             tracks.set(`${run.arrow}.${run.part}`, x);
             x += TRACK;
         }
-        const quiet = space < 0 || space === final ? 0 : 2 * PAD;
-        widths.set(space, order.length > 0 ? x - TRACK + PAD - edge : quiet);
+        const quiet = space < 0 || space === final ? 0 : start - edge + 2 * PAD;
+        const after = space >= 0 && space < final ? beyond('left', space + 1) : 0;
+        widths.set(space, (order.length > 0 ? x - TRACK + PAD - edge : quiet) + after);
         if (space >= 0 && space < final) {
             shift[space + 1] = edge + (widths.get(space) ?? 0) - west[space + 1];
         }

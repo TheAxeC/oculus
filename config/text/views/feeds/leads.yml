@@ -7,6 +7,7 @@ text:
             decline: decline
             decline_tip: decline this lead (off the radar, kept in the file)
             delete_lead_tip: delete this lead (removes the entry)
+            delete_lead_ask: Delete this lead? Its entry is removed from the file.
             reopen: reopen
             reopen_tip: reopen (back to the radar)
         add: + add lead

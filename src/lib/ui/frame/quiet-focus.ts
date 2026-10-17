@@ -39,13 +39,36 @@ export function focusIsFree(): boolean {
  * flush with the value from before the change, so a handler run there that writes state writes
  * back what the change replaced. A control that took the focus in that flush, as a view opened by
  * the answer does, keeps it.
+ *
+ * A disabled control takes no focus, and a control that waits for its own question's answer is
+ * disabled while the box is drawn (Submit Job's button while the plan is asked), so the focus
+ * would fall to the page. Such a control is given the focus when it is enabled again, if it is
+ * still on the page and nothing holds the focus by then.
  */
 export function giveBackQuietly(control: Element | null): void {
     queueMicrotask(() => {
-        if (focusIsFree() && control instanceof HTMLElement && control.isConnected) {
+        if (!focusIsFree() || !(control instanceof HTMLElement) || !control.isConnected) return;
+        if (!control.matches(':disabled')) {
             focusQuietly(control);
+            return;
         }
+        const enabled = new MutationObserver(() => {
+            if (control.matches(':disabled')) return;
+            enabled.disconnect();
+            if (focusIsFree() && control.isConnected) focusQuietly(control);
+        });
+        enabled.observe(control, { attributes: true, attributeFilter: ['disabled'] });
     });
+}
+
+/**
+ * Take the keyboard from a frame drawn in the page, as a box does before it draws. While the focus
+ * is inside a frame every key goes to the frame's own document, whatever the page focuses, so the
+ * frame is blurred and the page's window takes the keyboard.
+ */
+export function takeFromFrame(frame: HTMLIFrameElement): void {
+    frame.blur();
+    frame.ownerDocument.defaultView?.focus();
 }
 
 /** Whether Tab reaches the element: in the tab order, enabled, and not hidden or inert. */

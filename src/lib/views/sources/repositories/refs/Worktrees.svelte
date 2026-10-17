@@ -118,7 +118,7 @@
     async function opened(path: string, newWindow: boolean): Promise<void> {
         refused = '';
         const answer = await openWorktree(path, newWindow, {
-            addRoot,
+            addRoot: (dir: string) => addRoot(dir, { said: true }),
             rootOf: async (dir: string) =>
                 (await workspacesNow()).folders.find((folder) => folder.dir === dir)?.key ?? null,
             showInFiles: (path: string, key: string) => showInFiles(path, key),

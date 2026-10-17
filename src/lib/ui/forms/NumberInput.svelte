@@ -7,7 +7,8 @@
     // moments a form writes in, as ui/forms/TextInput.svelte gives them.
     //
     // A caller that knows why the text in the box is refused hands the words as `refused`: the box
-    // then carries `aria-invalid` and the words as its title, and Enter and the loss of focus hand
+    // then carries `aria-invalid` and the words as its title, the words are drawn beside the box,
+    // so a reader who does not hover it sees why it is red, and Enter and the loss of focus hand
     // nothing on until the text is mended. Which texts are refused is the caller's rule, so the box
     // holds no reading of a number of its own; a text with no refusal passes, as it does without
     // the prop.
@@ -45,24 +46,45 @@
     }
 </script>
 
-<span class="number" class:broken>
-    <TextInput
-        {...props}
-        {value}
-        inputmode="decimal"
-        invalid={refused}
-        onenter={enter}
-        onblur={leave}
-    />
+<span class="number">
+    <span class="box" class:broken>
+        <TextInput
+            {...props}
+            {value}
+            inputmode="decimal"
+            invalid={refused}
+            onenter={enter}
+            onblur={leave}
+        />
+    </span>
+    {#if refused !== undefined}
+        <span class="refused" role="status">{refused}</span>
+    {/if}
 </span>
 
 <style>
+    /* The box takes the width it is given; the words wrap under it when the row has no room. */
     .number {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px 6px;
+    }
+
+    .box {
         display: block;
+        flex: 1 1 8em;
+        min-width: 0;
         border-radius: var(--input-radius);
     }
 
-    .number.broken {
+    .box.broken {
         outline: 1px solid var(--c-red-txt);
+    }
+
+    .refused {
+        flex: 0 1 auto;
+        color: var(--c-red-txt);
+        font-size: var(--fs-sm);
     }
 </style>

@@ -56,8 +56,11 @@ export type TransportHost = {
      * by its registration's id and method.
      */
     registered(added: boolean, list: readonly { id: string; method: string }[]): void;
-    /** Shows a notice by its catalog key, with the words it is said with. */
-    notice(key: string, ...words: string[]): void;
+    /**
+     * Shows a notice by its catalog key, with the words it is said with, under the editor of the
+     * model whose request it answers (`asking`, the model's key), or null for one the server made.
+     */
+    notice(asking: string | null, key: string, ...words: string[]): void;
     /**
      * The answer to a completion request, or the one item a resolve answers, in the client's form,
      * for the host to add to; `request` is the client's params of the completion request. It
@@ -65,3 +68,17 @@ export type TransportHost = {
      */
     completed(request: unknown, result: unknown): Promise<unknown>;
 };
+
+/**
+ * Of the registered models' tabs, by each model's key, the one a notice is told through: the tab
+ * whose model asked, so the reader sees it under the editor where the request was made, else the
+ * tab registered last, for a request the server made itself; `first` when none is registered.
+ */
+export function noticeTab<S>(
+    tabs: readonly { key: string; services: S }[],
+    asking: string | null,
+    first: S
+): S {
+    const own = asking === null ? undefined : tabs.find((tab) => tab.key === asking);
+    return (own ?? tabs.at(-1))?.services ?? first;
+}

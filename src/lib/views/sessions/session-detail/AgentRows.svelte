@@ -85,10 +85,20 @@
                   : seconds(agent.started, agent.ended, now);
         if (took !== null) parts.push(span(took));
         if (agent.resultChars > 0) {
-            parts.push(t('sessions.ag_chars', compactCount(agent.resultChars)));
+            parts.push(
+                agent.resultChars === 1
+                    ? t('sessions.ag_chars_one')
+                    : t('sessions.ag_chars', compactCount(agent.resultChars))
+            );
         }
         const spent = agentTokens(agent);
-        if (spent !== null) parts.push(t('sessions.ag_tokens', compactCount(spent)));
+        if (spent !== null) {
+            parts.push(
+                spent === 1
+                    ? t('sessions.ag_tokens_one')
+                    : t('sessions.ag_tokens', compactCount(spent))
+            );
+        }
         return parts.join(` ${t('sessions.meta_sep')} `);
     }
 

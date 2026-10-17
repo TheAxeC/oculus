@@ -20,7 +20,9 @@ text:
         failed_output: the output of ps could not be read
         failed_start: ps could not be started
         failed_status: ps ended with status {0}
+        failed_status_said: 'ps ended with status {0}: {1}'
         failed_timeout: the process table did not answer within {0} seconds
+        failed_timeout_one: the process table did not answer within 1 second
         head: '{0}, {1}'
         hosts_title: App programs
         host_app: '{0}'

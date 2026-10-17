@@ -15,6 +15,7 @@
 // the editor leaves to its own until the configuration arrives.
 
 import { languageOfFile, type LanguageMap } from '$lib/state/sources/fs';
+import type { EditorOptions } from '$lib/ui/controls/editor/options';
 import type { FileText } from '$lib/state/sources/fs-transport';
 import {
     detectIndent,
@@ -67,6 +68,27 @@ export type SourceOptions = {
     /** Whether a save first formats the document with its language server. */
     readonly formatOnSave: boolean;
 };
+
+/**
+ * The options a diff's editor takes: the word wrap and rulers resolved for its file, and the
+ * configured whitespace and sticky scroll, none of them until the configuration has arrived. A
+ * diff draws no minimap, which the editor's options leave out.
+ */
+export function diffOptions(
+    resolved: SourceOptions,
+    configured: EditorOptions | null
+): EditorOptions {
+    return {
+        ...(resolved.wrap === null ? {} : { wordWrap: resolved.wrap }),
+        ...(resolved.rulers === null ? {} : { rulers: resolved.rulers }),
+        ...(configured === null
+            ? {}
+            : {
+                  renderWhitespace: configured.renderWhitespace,
+                  stickyScroll: configured.stickyScroll
+              })
+    };
+}
 
 /** Make the options of one tab over what it is handed. */
 export function createSourceOptions(input: SourceOptionsInput): SourceOptions {

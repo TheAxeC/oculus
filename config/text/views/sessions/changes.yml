@@ -38,6 +38,7 @@ text:
         cut_warning: Too many changes were detected. Only the first 200 changes will be shown below.
         discard_all: Discard All Changes
         discard_all_confirm: Throw away the changes to {0} paths?
+        discard_all_confirm_one: Throw away the change to 1 path?
         discard_all_untracked: Discard All Untracked Changes
         discard_all_detail: Every tracked path goes back to what is staged, or to what is committed when nothing is. Untracked files are kept. There is no undo.
         discard_confirm: Throw away the change to {0}?
@@ -48,6 +49,7 @@ text:
         push: Push
         push_confirm: Push {0} to {1}?
         push_detail: '{0} commits go to the upstream. Nothing is forced.'
+        push_detail_one: 1 commit goes to the upstream. Nothing is forced.
         push_none: This branch has no upstream, so there is nowhere to push it.
         stage: Stage
         stage_all: Stage All Changes
@@ -86,6 +88,7 @@ text:
         ch_times: '{0}x'
         ch_touched: Touched by this session
         ch_touched_empty: No file touched yet.
+        ch_tree: Changes in the repository
         ch_untracked: Untracked
         comment_action: Add Comment on Line
         comment_cancel: Cancel

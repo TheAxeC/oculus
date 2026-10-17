@@ -169,6 +169,11 @@ export type RepositoriesStore = {
      */
     openFile: (root: string, path: string, line?: number) => boolean;
     /**
+     * The served root and path a file is at, `root` read as openFile reads it; null when no served
+     * root holds the file.
+     */
+    placeOf: (root: string, path: string) => TabFile | null;
+    /**
      * Show a file in the Files view, answering whether a served root holds it: `root` is read as
      * openFile reads it.
      */
@@ -190,11 +195,14 @@ export type ViewOpener = {
 };
 
 /**
- * What the store needs to open a file and point a view: the roots the file routes serve, and a
- * view instance's own remembered state. The fs store and the ui store satisfy it.
+ * What the store needs to open a file and point a view: the roots the file routes serve, a view
+ * instance's own remembered state, and the source store's next ask, which marks an open at a line
+ * as asked so the tab goes to the line again when it is already there (a pause on the line the
+ * caret left).
  */
 export type OpenAccess = {
     served: () => ServedRoot[];
+    asked: () => number;
     instanceState: (id: string) => unknown;
     setInstanceState: (id: string, state: unknown) => void;
 };
@@ -339,7 +347,8 @@ export function createRepositories(
             return false;
         }
         const state = { root: tab.root, path: tab.path, label: nameOf(path) };
-        const shown = line === undefined || line <= 0 ? state : { ...state, line };
+        const shown =
+            line === undefined || line <= 0 ? state : { ...state, line, asked: access.asked() };
         if (beside) layout.openBeside('source', shown);
         else layout.openView('source', shown);
         return true;
@@ -543,6 +552,7 @@ export function createRepositories(
             openDiff(subject, t('repositories.workspace_label', nameOf(path)));
         },
         openFile,
+        placeOf: tabOf,
         revealFile,
         openMerge,
         openCommit(root, hash) {

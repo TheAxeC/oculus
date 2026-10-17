@@ -55,7 +55,7 @@ export type ServerScript = {
 };
 
 /** The text of a server program for a script; its first argument is the log file. */
-export function serverProgram(script: ServerScript): string {
+function serverProgram(script: ServerScript): string {
     return `
 const fs = require('node:fs');
 const SCRIPT = ${JSON.stringify(script)};
@@ -313,7 +313,7 @@ export function pageClients(l: LanguageWorld, language: string): { make: () => P
     };
     const host = new Proxy({}, { get: () => () => undefined }) as TransportHost;
     const make = (): PageClient => {
-        const transport = new LspTransport(port, language, host, () => 0);
+        const transport = new LspTransport(port, language, host, () => 0, 'p1:');
         const handed: LspRpc[] = [];
         const written: LspRpc[] = [];
         let waiting: { accepts: (message: LspRpc) => boolean; resolve: () => void }[] = [];

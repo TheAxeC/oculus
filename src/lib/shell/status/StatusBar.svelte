@@ -25,14 +25,14 @@
     // the hidden set is the ui store's, saved with the appearance. The items apps add stand last in
     // the list, each named as `<name> (<app title>)` and kept hidden under `<view id>/<item id>`.
     //
-    // An item is drawn whole or not at all. The bar is one row, and an item that does not fit wraps
-    // to a second row the bar clips: the right group's items leave from its left end first, as VS
-    // Code's do (its markup is written in reverse order for that, and the row reverses it back, so
-    // the Tab key walks the right group from its right end to its left), and once the right group
-    // is as narrow as its widest item the left group's last items leave. An item is at most 40 % of
-    // the window wide, a longer text ends in an ellipsis, and the several buttons of the linter
-    // item share its width, each ending in an ellipsis. An item that has left the row is inert
-    // (wrapped.ts) and is listed in the right-click menu as any other is.
+    // An item is drawn whole or not at all. The bar is one row and never wraps: when the items do
+    // not all fit, the fewest are left out whole in the order status-items.ts states beside the
+    // groups (`DROP_ORDER`, the caret, the language, the problems and the branch last), and an item
+    // left out is not drawn (one-row.ts) and is listed in the right-click menu as any other is. The
+    // right group's markup is written in reverse order and the row reverses it back, so the bell
+    // stands at the window's right edge and the Tab key walks the right group from its right end to
+    // its left. An item is at most 40 % of the window wide, a longer text ends in an ellipsis, and
+    // the several buttons of the linter item share its width, each ending in an ellipsis.
 
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -44,7 +44,7 @@
     import LatexItem from './LatexItem.svelte';
     import RepoItems from './RepoItems.svelte';
     import SourceItems from './SourceItems.svelte';
-    import { inertWhenWrapped } from './wrapped';
+    import { fitOneRow } from './one-row';
     import { toggleView } from '$lib/shell/keys/keys';
     import {
         STATUS_ITEMS,
@@ -79,9 +79,16 @@
         git?: StatusGit;
         /** Open the palette on a query, which the caret and language items do. */
         onpalette?: (prefill: string) => void;
+        /** Open the palette as Go to Line, which the caret item does. */
+        ongoto?: () => void;
     };
 
-    let { status, git = NO_GIT, onpalette = () => undefined }: Props = $props();
+    let {
+        status,
+        git = NO_GIT,
+        onpalette = () => undefined,
+        ongoto = () => undefined
+    }: Props = $props();
 
     const held = $derived(hosts());
     const dirty = $derived(unsavedCount(held, unsaved));
@@ -174,8 +181,9 @@
         class:debugging={debug.active() && debug.status() !== 'starting'}
         aria-label={t('statusbar.label')}
         data-status-bar
+        {@attach fitOneRow}
     >
-        <div class="group" data-status-group="left" {@attach inertWhenWrapped}>
+        <div class="group" data-status-group="left">
             {#if shown('host')}
                 <span data-status="host">
                     <ToolButton
@@ -221,9 +229,13 @@
             {#if shown('findings')}
                 <span data-status="findings">
                     <ToolButton
-                        label={t('statusbar.findings_name', status.findings)}
+                        label={status.findings === 1
+                            ? t('statusbar.findings_name_one')
+                            : t('statusbar.findings_name', status.findings)}
                         glyph="warn"
-                        title={t('statusbar.findings_tip', status.findings)}
+                        title={status.findings === 1
+                            ? t('statusbar.findings_tip_one')
+                            : t('statusbar.findings_tip', status.findings)}
                         status
                         onclick={() => openView('findings')}
                     >
@@ -282,16 +294,20 @@
             {/if}
             <AppItems side="left" {hidden} />
         </div>
-        <div class="group" data-status-group="right" {@attach inertWhenWrapped}>
+        <div class="group" data-status-group="right">
             <Bell drawn={shown('bell')} />
             {#if shown('unsaved')}
                 <span data-status="unsaved">
                     <ToolButton
-                        label={t('statusbar.unsaved_name', dirty)}
+                        label={dirty === 1
+                            ? t('statusbar.unsaved_name_one')
+                            : t('statusbar.unsaved_name', dirty)}
                         glyph="save"
                         title={dirty === 0
                             ? t('statusbar.unsaved_none')
-                            : t('statusbar.unsaved_tip', dirty)}
+                            : dirty === 1
+                              ? t('statusbar.unsaved_tip_one')
+                              : t('statusbar.unsaved_tip', dirty)}
                         status
                         disabled={dirty === 0}
                         onclick={openUnsaved}
@@ -303,9 +319,13 @@
             {#if shown('sessions')}
                 <span data-status="sessions">
                     <ToolButton
-                        label={t('statusbar.sessions_name', status.live)}
+                        label={status.live === 1
+                            ? t('statusbar.sessions_name_one')
+                            : t('statusbar.sessions_name', status.live)}
                         glyph="agents"
-                        title={t('statusbar.sessions_tip', status.live)}
+                        title={status.live === 1
+                            ? t('statusbar.sessions_tip_one')
+                            : t('statusbar.sessions_tip', status.live)}
                         status
                         onclick={() => openView('session-list')}
                     >
@@ -320,6 +340,7 @@
                     status={source.status}
                     {shown}
                     {onpalette}
+                    {ongoto}
                 />
             {/if}
         </div>
@@ -345,19 +366,14 @@
         font-size: var(--status-text);
     }
 
-    /* A group wraps the items it has no room for onto a second row, which it clips, so an item is
-       drawn whole or not at all; the group is as narrow as its widest item. The left group keeps
-       its width until the right group is as narrow as it goes, and wraps its last items after that.
-       The right group takes the rest of the bar and lays its items out from its right end, in
-       reverse order so that the wrap starts at its left end and its markup is written reversed
-       (flex-direction: row-reverse draws the first item at the right). The groups are the offset
-       parent of their items, which wrapped.ts measures. */
+    /* A group lays its items out on one row and never wraps; the items that do not fit are left
+       out whole (one-row.ts). The right group takes the rest of the bar and lays its items out
+       from its right end, its markup written reversed (flex-direction: row-reverse draws the first
+       item at the right). */
     .group {
-        position: relative;
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         align-items: stretch;
-        align-content: flex-start;
         overflow: clip;
     }
 
@@ -370,6 +386,10 @@
         display: flex;
         flex: 0 0 auto;
         max-width: var(--status-item-max);
+    }
+
+    .group > :global([data-left-out]) {
+        display: none;
     }
 
     /* A session runs or is paused: the whole bar takes the orange and the ink derived for it. A

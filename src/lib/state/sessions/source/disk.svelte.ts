@@ -5,12 +5,14 @@
 // A tab that read the file or wrote it holds `base`, the hash of those bytes. A message with that
 // hash moves nothing. A message with another hash reads a tab with no unsaved text again, and marks
 // a tab with unsaved text `changed` with its text kept. A null hash marks every tab over the file
-// `gone`, or `unserved` when the tab's root is not among the page's served roots, since a root that
-// stops being served says nothing of its files. Several tabs over one file share one channel; the
-// channel is subscribed when the first of them has loaded its draft and dropped, with a message to
-// the server, when the last of them closes or is pointed at another file. A tab whose own save is
-// in flight holds the messages it hears until the answer lands and compares the newest with the
-// hash the answer carries, so the tab's own write is never taken for another program's.
+// `gone`, or `unserved` when the message says the tab's root is no longer served, since a root that
+// stops being served says nothing of its files; the message says so itself, as the page's list of
+// served roots can still hold the root a moment after its removal. Several tabs over one file share
+// one channel; the channel is subscribed when the first of them has loaded its draft and dropped,
+// with a message to the server, when the last of them closes or is pointed at another file. A tab
+// whose own save is in flight holds the messages it hears until the answer lands and compares the
+// newest with the hash the answer carries, so the tab's own write is never taken for another
+// program's.
 //
 // A tab whose file is renamed or moved is followed at its new place: the draft names the new
 // file, the old channel is dropped and the new one followed, with the text and the unsaved mark
@@ -42,11 +44,17 @@ export type DiskHost = {
     unserved: (root: string) => boolean;
 };
 
-/** The channel's payload: the hash of the file, or null when nothing readable is there. */
-const payloadShape = z.object({ hash: z.string().nullable() });
+/**
+ * The channel's payload: the hash of the file, or null when nothing readable is there, and whether
+ * the file's root is served.
+ */
+const payloadShape = z.object({ hash: z.string().nullable(), served: z.boolean() });
+
+/** What one message of a channel says. */
+type Heard = z.infer<typeof payloadShape>;
 
 /** One subscribed channel: the tabs that hold its file and the newest message it carried. */
-type Channel = { ids: Set<string>; last: string | null | undefined; stop: () => void };
+type Channel = { ids: Set<string>; last: Heard | undefined; stop: () => void };
 
 export type DiskStore = {
     /**
@@ -80,21 +88,23 @@ export function createDisk(
     /** The channel and file of each tracked tab. */
     const places = new Map<string, { name: string; file: string; root: string }>();
     /** The tabs whose save is out, with the newest message heard meanwhile. */
-    const saving = new Map<string, { held: string | null | undefined }>();
+    const saving = new Map<string, { held: Heard | undefined }>();
     /** The newest message each cut read heard, which a message that differs reads again for. */
     const readFor = new Map<string, string>();
 
     /** What a message for a channel does to one tab. */
-    function hear(id: string, hash: string | null): void {
+    function hear(id: string, heard: Heard): void {
         const held = saving.get(id);
         if (held !== undefined) {
-            held.held = hash;
+            held.held = heard;
             return;
         }
+        const { hash, served } = heard;
         const draft = host.draft(id);
         if (!draft.loaded) return;
         if (hash === null) {
-            const absent = host.unserved(places.get(id)?.root ?? '') ? 'unserved' : 'gone';
+            const absent =
+                !served || host.unserved(places.get(id)?.root ?? '') ? 'unserved' : 'gone';
             if (draft.disk !== absent || draft.conflict)
                 host.update(id, { disk: absent, conflict: false });
             return;
@@ -121,9 +131,9 @@ export function createDisk(
         const channel = channels.get(name);
         const payload = readAs(payloadShape, heard.payload);
         if (channel === undefined || payload === null) return;
-        channel.last = payload.hash;
+        channel.last = payload;
         latest[name] = payload.hash;
-        for (const id of [...channel.ids]) hear(id, payload.hash);
+        for (const id of [...channel.ids]) hear(id, payload);
     }
 
     /** Take a tab off its channel, and drop the channel when no tab holds it. */

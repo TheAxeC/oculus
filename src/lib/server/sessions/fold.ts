@@ -116,15 +116,26 @@ function noContent(): NonNullable<z.output<typeof userContentShape>> {
     return { prompt: '', blocks: [], text: '' };
 }
 
+/**
+ * The fields of a user record that say whether a person wrote it (`saidByHuman`): its origin, the
+ * meta and compaction-summary marks, and the entrypoint of the process that wrote it.
+ */
+export const promptFields = {
+    origin: z.object({ kind: z.string() }).optional().catch(undefined),
+    isMeta: z.boolean().optional().catch(undefined),
+    isCompactSummary: z.boolean().optional().catch(undefined),
+    entrypoint: textShape
+};
+
+/** What `promptFields` read off a user record. */
+type PromptHead = z.output<z.ZodObject<typeof promptFields>>;
+
 /** A record of the `user` kind. */
 const userShape = quickly(
     z.object({
         timestamp: stampShape,
         ...contextShape,
-        origin: z
-            .object({ kind: z.literal('human') })
-            .optional()
-            .catch(undefined),
+        ...promptFields,
         message: z.object({ content: userContentShape }).catch(() => ({ content: undefined })),
         toolUseResult: z.unknown().optional()
     })
@@ -225,12 +236,29 @@ function foldContext(acc: Acc, found: UserRecord | AssistantRecord): void {
     touch(acc, found.timestamp);
 }
 
+/** The entrypoint a headless Claude session (`claude -p`, the SDK) writes on its records. */
+const HEADLESS_ENTRYPOINT = 'sdk-cli';
+
+/**
+ * Whether a user record is a prompt a person wrote. A compaction summary never is. An interactive
+ * session marks a prompt with the origin `human`, and its other user records with an origin of
+ * their own kind (a task notification, a message from another session) or with none (a command
+ * and its output, a shell line); a headless session writes its prompts with no origin at all, so a
+ * record with no origin is a prompt only in a headless transcript, told by its entrypoint, and only
+ * when it is no meta record and holds words.
+ */
+export function saidByHuman(head: PromptHead, words: string): boolean {
+    if (head.isCompactSummary === true) return false;
+    if (head.origin !== undefined) return head.origin.kind === 'human';
+    return head.entrypoint === HEADLESS_ENTRYPOINT && head.isMeta !== true && words !== '';
+}
+
 function foldUser(acc: Acc, record: UserRecord): void {
     const stamp = record.timestamp;
     const { prompt, blocks, text } = record.message.content ?? noContent();
     acc.lastKind = 'user';
     acc.lastToolIds = [];
-    if (record.origin !== undefined) {
+    if (saidByHuman(record, prompt)) {
         acc.prompts += 1;
         if (prompt) {
             acc.firstPrompt ??= prompt;

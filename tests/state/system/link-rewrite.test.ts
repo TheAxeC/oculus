@@ -1,7 +1,8 @@
 // Layer 2, client-state test. The offer to keep the links in Markdown files pointing at moved
 // items (state/system/machine/refactor/link-rewrite.ts): a root whose Markdown server gave no
 // answer is said in a notification, whether no root answered or another root's server answered
-// with edits, and nothing is shown or said for an answer with no edit.
+// with edits, and nothing is shown or said for an answer with no edit. The request carries the text
+// of each tab with unsaved text under the root, which the edits are computed over.
 //
 // What this does NOT cover: the relay's answer itself (tests/server/machine/lsp/lifetime.test.ts
 // reads it for a move two roots hold) and the Refactor Preview the edit is shown in
@@ -63,6 +64,7 @@ describe('the offer to rewrite the links of moved items', () => {
         });
         const offer = createLinkRewrite({
             askLinks: () => Promise.resolve(answers.shift() ?? reply),
+            drafts: () => [],
             submit: (edit) => {
                 submitted.push(edit);
                 shown?.();
@@ -75,5 +77,39 @@ describe('the offer to rewrite the links of moved items', () => {
         await second;
         expect(told).toEqual(said);
         expect(submitted).toEqual([{ documentChanges: [CREATED] }]);
+    });
+});
+
+describe('the request for the edit of a move', () => {
+    it('carries the text of each tab with unsaved text under the root, by its path', async () => {
+        const asked: unknown[] = [];
+        const draft = (file: string, text: string, saved: string) => ({
+            file,
+            text,
+            saved,
+            loaded: true
+        });
+        const offer = createLinkRewrite({
+            askLinks: (root, moves, texts) => {
+                asked.push({ root, moves, texts });
+                return Promise.resolve({ ok: false, error: 'no_answer' });
+            },
+            drafts: () => [
+                draft('inner/sub/README.md', 'Typed.\n', 'Saved.\n'),
+                draft('inner/clean.md', 'Saved.\n', 'Saved.\n'),
+                draft('other/a.md', 'Typed.\n', 'Saved.\n')
+            ],
+            submit: () => Promise.resolve({ applied: true }),
+            say: () => undefined
+        });
+        offer([MOVE]);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(asked).toEqual([
+            {
+                root: 'inner',
+                moves: [{ from: 'b.md', to: 'c.md' }],
+                texts: [{ path: 'sub/README.md', text: 'Typed.\n' }]
+            }
+        ]);
     });
 });

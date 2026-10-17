@@ -9,7 +9,7 @@ text:
     person:
         toolbar: Person controls
         nobody: This tab was opened for nobody. Press a collaborator tag on a project card to open a person.
-        unknown: 'No entry in registries/people.yml carries the key {0}.'
+        unknown: "No entry of the hub's people file carries the key {0}."
         self: this is me
         organisation: Organisation
         organisation_line: '{0} ({1})'

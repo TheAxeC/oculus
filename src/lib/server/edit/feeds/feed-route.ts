@@ -103,7 +103,7 @@ export function feedRoute(
     if (radar !== null) {
         const home = homeOf(into);
         if (home === null) return noHub(into);
-        const buckets = radarBucketKeys(into.engine);
+        const buckets = radarBucketKeys(into.engineConfig());
         const outcome = addRadarEntry(home.hub, home.config, radar.fields, buckets);
         if (!outcome.found) return refused(words(text, 'server.write_route.no_radar_file'), 404);
         return { outcome, kind: 'radar-add' };
@@ -131,7 +131,7 @@ export function feedRoute(
             );
             return refused(error, 404);
         }
-        const path = engineLiteraturePath(into.engine);
+        const path = engineLiteraturePath(into.engineConfig());
         const outcome = saveLiterature(home.hub, home.config, path, paper.source, paper.paper);
         if (!outcome.found) {
             return refused(words(text, 'server.write_route.no_literature_file'), 404);

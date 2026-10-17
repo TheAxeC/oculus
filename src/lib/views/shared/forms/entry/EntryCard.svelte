@@ -54,6 +54,7 @@
     import Subtasks from '../Subtasks.svelte';
     import EntryLink from './EntryLink.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         crossLinks,
         drawnFields,
@@ -142,6 +143,7 @@
         extra = []
     }: Props = $props();
 
+    const cardMath = createCardMath();
     const status = $derived(entryStatus(entry));
     const pinned = $derived(isPinned(entry));
     const groups = $derived(crossLinks(entry, collection, projects, archiveDead()));
@@ -271,16 +273,15 @@
     }
 </script>
 
-<!-- A long body field: cut to its clamp and opened by the control, or whole where the card has no
-     control to open it. -->
+<!-- A long body field: cut to its clamp and opened by the control, or whole on a card without. -->
 {#snippet text(words: string)}
     {#if onmore === undefined}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        {@html inlineMarkdown(words)}
+        {@html inlineMarkdown(words, cardMath(words))}
     {:else}
         <Clamp open={more} ontoggle={onmore}>
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            {@html inlineMarkdown(words)}
+            {@html inlineMarkdown(words, cardMath(words))}
         </Clamp>
     {/if}
 {/snippet}

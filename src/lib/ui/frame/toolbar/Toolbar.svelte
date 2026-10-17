@@ -15,6 +15,10 @@
     // is how many controls the line draws while some are clipped, and null while all fit; the
     // toolbar measures it itself, and a render with no layout is told it.
     //
+    // The popover stays inside the pane the toolbar is in: the pane is its collision boundary, and
+    // its controls wrap onto further lines within the pane's width, so in a pane narrower than the
+    // popover's line it never lies over the activity bar or a neighbouring pane.
+    //
     // The `more` button is the toolbar's own plain button drawn with Glyph, because ui/frame
     // imports nothing above ui/display, and not a ToolButton.
 
@@ -40,10 +44,21 @@
 
     let { label, overflow = false, shown = $bindable(null), children }: Props = $props();
 
-    let root: HTMLElement | undefined = $state();
-    let run: HTMLElement | undefined = $state();
-    let panel: HTMLElement | undefined = $state();
+    // `bind:this` sets an element to null when it goes, so each element is null while it is not
+    // drawn. The popover's box is held by markPanel(), which runs while the box is drawn.
+    let root = $state<HTMLElement | null>(null);
+    let run = $state<HTMLElement | null>(null);
+    let panel: HTMLElement | null = null;
     let open = $state(false);
+    /** The pane the toolbar is in, read when the popover opens, and its width then. */
+    let pane = $state<HTMLElement | null>(null);
+    let paneWidth = $state(0);
+
+    $effect(() => {
+        if (!open || root === null) return;
+        pane = root.closest<HTMLElement>('.pane');
+        paneWidth = pane?.clientWidth ?? 0;
+    });
 
     /** The width of the `more` button, which is the width of a header action. */
     function openerWidth(host: HTMLElement): number {
@@ -58,7 +73,7 @@
 
     /** Which controls the room holds, and the line's controls marked clipped from there on. */
     function measure(): void {
-        if (!overflow || root === undefined || run === undefined) return;
+        if (!overflow || root === null || run === null) return;
         const controls = Array.from(run.children).filter(
             (one): one is HTMLElement => one instanceof HTMLElement
         );
@@ -79,27 +94,30 @@
     }
 
     $effect(() => {
-        if (!overflow || root === undefined || run === undefined) return;
+        if (!overflow || root === null || run === null) return;
         measure();
         return watchToolbar(root, run, measure);
     });
 
-    /** The popover's copy of the controls shows only the ones the line is missing. */
-    function markPanel(): void {
-        if (panel === undefined) return;
-        Array.from(panel.children).forEach((one, at) =>
-            one.toggleAttribute('data-shown', at < (shown ?? 0))
+    /**
+     * The popover's copy of the controls shows only the ones the line is missing. It is the box's
+     * attachment, so it runs once the box is drawn and again when `shown` changes, and ends when
+     * the popover closes and the box goes; the box is held for focusFirst() only while it is drawn.
+     */
+    function markPanel(box: HTMLElement): () => void {
+        panel = box;
+        const count = shown ?? 0;
+        Array.from(box.children).forEach((one, at) =>
+            one.toggleAttribute('data-shown', at < count)
         );
+        return () => {
+            panel = null;
+        };
     }
-
-    $effect(() => {
-        markPanel();
-    });
 
     /** The focus goes to the first control of the popover, which the shown controls are not. */
     function focusFirst(event: Event): void {
         event.preventDefault();
-        markPanel();
         const found = panel?.querySelectorAll<HTMLElement>(
             'button:not([disabled]), a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
         );
@@ -146,6 +164,8 @@
                     side="bottom"
                     align="end"
                     sideOffset={4}
+                    collisionBoundary={pane ?? undefined}
+                    collisionPadding={4}
                     onOpenAutoFocus={focusFirst}
                 >
                     {#snippet child({ wrapperProps, props })}
@@ -158,7 +178,10 @@
                                 role="toolbar"
                                 tabindex="-1"
                                 aria-label={label}
-                                bind:this={panel}
+                                style:max-width={paneWidth > 0
+                                    ? `min(90vw, 320px, ${paneWidth - 8}px)`
+                                    : undefined}
+                                {@attach markPanel}
                                 onclick={pressed}
                             >
                                 {#if children}

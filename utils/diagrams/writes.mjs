@@ -19,6 +19,7 @@
 import { posix } from 'node:path';
 import ts from 'typescript';
 import { drawnApart } from './drawing/apart.mjs';
+import { boxOf, stacked } from './drawing/stack.mjs';
 import { labelledEdge } from './drawing/labels.mjs';
 import { parseReader } from './parsed.mjs';
 import {
@@ -48,6 +49,13 @@ export const WRITE_ROUTE = 'routes/api/write/+server.ts';
 
 /** The node every write that reaches the disk points at. */
 const DISK = 'file on disk';
+
+/**
+ * The points a part of the write diagram may take across before it is cut again, 960 CSS pixels,
+ * so the rows read on a Help page about that wide. A part with no module left to cut it at stays
+ * as wide as it is drawn.
+ */
+const WIDE = 720;
 
 /** The node:fs calls that change a file, which is what makes a module's call a write to disk. */
 const FS_WRITE = /^(?:appendFile|copyFile|mkdir|rename|rm|unlink|writeFile)(?:Sync)?$/;
@@ -237,6 +245,27 @@ const METHOD = /(?<![\w$.])([\w$]+)\.([\w$]+)\s*\(/g;
  * @returns {string}
  */
 export function writesDot(sources, route = WRITE_ROUTE, read = parseReader()) {
+    const chain = writeChain(sources, route, read);
+    return chainDot(chain, chain.drawn);
+}
+
+/**
+ * The write chain the trace of writesDot() finds: every arrow, keyed `from\nto\nkind` with the
+ * names it carries, the ones drawn (both ends on a path to the disk or to a call the trace cannot
+ * follow), and the node line of each call it cannot follow.
+ *
+ * @typedef {{ edges: Map<string, Set<string>>, drawn: string[], lost: string[] }} Chain
+ */
+
+/**
+ * The trace of writesDot(), from the route to the disk.
+ *
+ * @param {Sources} sources
+ * @param {string} route
+ * @param {Reader} read
+ * @returns {Chain}
+ */
+function writeChain(sources, route, read) {
     if (!sources.has(route)) throw new Error(`the write route ${route} is not in the source`);
     /** @type {Map<string, Module>} */
     const modules = new Map();
@@ -473,27 +502,155 @@ export function writesDot(sources, route = WRITE_ROUTE, read = parseReader()) {
         const [from, to, kind] = key.split('\n');
         if (kind === 'refuses' && writing.has(from)) writing.add(to);
     }
+    const drawn = sorted(edges.keys()).filter((key) => {
+        const [from, to] = key.split('\n');
+        return writing.has(from) && writing.has(to);
+    });
+    return { edges, drawn, lost };
+}
+
+/**
+ * One part of a cut write chain: the module it is headed by, its arrows in their order, and the
+ * modules it draws without their arrows, since another part draws those.
+ *
+ * @typedef {{ head: string, keys: string[], leaves: Set<string> }} Part
+ */
+
+/**
+ * The write chain cut into parts, so that each is drawn narrow and stacked() sets them in rows. The
+ * route's own modules (the dispatcher) call the modules that head the parts, one part each; a
+ * module two parts would reach heads a part of its own, the shared modules that no other shared
+ * module reaches first, until no module is reached by two. A part draws its head's arrows and on,
+ * module by module, and a module that heads another part ends there, drawn without its arrows (a
+ * leaf), so every arrow out of a module is drawn in one part. A part headed by a module the
+ * dispatcher calls opens with the route, the dispatcher and the dispatcher's arrows into it; the
+ * route's and the dispatcher's arrows to the disk and to calls the trace cannot follow go in the
+ * first part. The modules of `more` head parts of their own as well, after the ones the dispatcher
+ * calls.
+ *
+ * @param {Chain} chain
+ * @param {string} route
+ * @param {Set<string>} [more] Modules a part is headed by besides those the cut finds.
+ * @returns {Part[]}
+ */
+function chainParts(chain, route, more = new Set()) {
+    /** @type {Map<string, string[]>} */
+    const from = new Map();
+    for (const key of chain.drawn) {
+        const tail = key.split('\n')[0];
+        from.set(tail, [...(from.get(tail) ?? []), key]);
+    }
+    const headOf = (/** @type {string} */ key) => key.split('\n')[1];
+    const module = (/** @type {string} */ id) => id !== DISK && !id.startsWith('? ');
+    const entry = (from.get(route) ?? []).filter((key) => module(headOf(key)));
+    const opening = new Set([route, ...entry.map(headOf)]);
+    const dispatched = [...opening]
+        .filter((one) => one !== route)
+        .flatMap((one) => from.get(one) ?? []);
+    const heads = sorted(dispatched.map(headOf).filter((one) => module(one) && !opening.has(one)));
+    const called = heads.length;
+    heads.push(...sorted([...more].filter((one) => !opening.has(one) && !heads.includes(one))));
+    /** The modules a head's part draws with their arrows: it and those it alone reaches. */
+    const region = (/** @type {string} */ head, /** @type {Set<string>} */ stops) => {
+        const found = [head];
+        for (let at = 0; at < found.length; at += 1) {
+            for (const key of from.get(found[at]) ?? []) {
+                const next = headOf(key);
+                if (module(next) && !stops.has(next) && !found.includes(next)) found.push(next);
+            }
+        }
+        return found;
+    };
+    for (;;) {
+        const stops = new Set([...opening, ...heads]);
+        /** @type {Map<string, number>} */
+        const reached = new Map();
+        for (const head of heads) {
+            for (const one of region(head, stops).slice(1)) {
+                reached.set(one, (reached.get(one) ?? 0) + 1);
+            }
+        }
+        const shared = sorted([...reached].filter(([, count]) => count > 1).map(([one]) => one));
+        if (shared.length === 0) break;
+        const reaches = (/** @type {string} */ a, /** @type {string} */ b) =>
+            region(a, stops).includes(b);
+        const first = shared.filter(
+            (one) =>
+                !shared.some(
+                    (other) => other !== one && reaches(other, one) && !reaches(one, other)
+                )
+        );
+        heads.push(...first);
+    }
+    const stops = new Set([...opening, ...heads]);
+    return heads.map((head, at) => {
+        const keys = at < called ? [...entry] : [];
+        if (at === 0) {
+            keys.push(...(from.get(route) ?? []).filter((key) => !module(headOf(key))));
+            keys.push(...dispatched.filter((key) => !heads.includes(headOf(key))));
+        }
+        keys.push(...dispatched.filter((key) => at < called && headOf(key) === head));
+        for (const one of region(head, stops)) keys.push(...(from.get(one) ?? []));
+        const ends = new Set(keys.flatMap((key) => key.split('\n').slice(0, 2)));
+        const leaves = new Set([...ends].filter((one) => one !== head && heads.includes(one)));
+        return { head, keys: sorted(keys), leaves };
+    });
+}
+
+/**
+ * The modules that head a part of their own when `part` is cut again: those its head calls that
+ * make calls of their own, each a call to a module, to the disk or one the trace cannot follow.
+ *
+ * @param {Part} part
+ * @returns {string[]}
+ */
+function cutAgain(part) {
+    const keys = new Set(part.keys);
+    const callers = new Set([...keys].map((key) => key.split('\n')[0]));
+    return [...keys]
+        .map((key) => key.split('\n'))
+        .filter(([from, to]) => from === part.head && to !== DISK && !to.startsWith('? '))
+        .map(([, to]) => to)
+        .filter((to) => callers.has(to) && !part.leaves.has(to));
+}
+
+/**
+ * The DOT of the arrows `keys` of a write chain and the modules at their ends, grouped by folder,
+ * with the calls the trace cannot follow that they reach in the group of what is not placed and the
+ * disk. An arrow that is a refusal or reaches the disk carries its words on it; every other arrow's
+ * tooltip names the functions it calls.
+ *
+ * @param {Chain} chain
+ * @param {string[]} keys The arrows drawn, in their order.
+ * @param {string} [name] The graph's name.
+ * @param {Set<string>} [leaves] The modules drawn without their arrows, outlined dashed.
+ * @returns {string}
+ */
+function chainDot(chain, keys, name = 'writes', leaves = new Set()) {
+    const ends = new Set(keys.flatMap((key) => key.split('\n').slice(0, 2)));
     /** @type {Map<string, string[]>} */
     const folders = new Map();
-    for (const path of touched) {
-        if (path === DISK || path.startsWith('? ') || !writing.has(path)) continue;
+    for (const path of ends) {
+        if (path === DISK || path.startsWith('? ')) continue;
         const folder = posix.dirname(path);
         folders.set(folder, [...(folders.get(folder) ?? []), path]);
     }
-    const lines = header('writes', 'rankdir=LR');
+    const lines = header(name, 'rankdir=LR');
     for (const folder of sorted(folders.keys())) {
-        const nodes = sorted(folders.get(folder) ?? []).map(
-            (path) => `${quote(path)} [label=${quote(posix.basename(path))}];`
-        );
+        const nodes = sorted(folders.get(folder) ?? []).map((path) => {
+            const dashed = leaves.has(path) ? ', style=dashed' : '';
+            return `${quote(path)} [label=${quote(posix.basename(path))}${dashed}];`;
+        });
         lines.push(...cluster(folder, folder, nodes));
     }
-    const kept = lost.filter((line) => writing.has(/^"((?:[^"\\]|\\.)*)"/.exec(line)?.[1] ?? ''));
+    const kept = chain.lost.filter((line) =>
+        ends.has(/^"((?:[^"\\]|\\.)*)"/.exec(line)?.[1] ?? '')
+    );
     if (kept.length > 0) lines.push(...cluster('lost', UNPLACED, sorted(kept), 'dashed'));
-    lines.push(`    ${quote(DISK)} [shape=cylinder];`);
-    for (const key of sorted(edges.keys())) {
+    if (ends.has(DISK) || keys === chain.drawn) lines.push(`    ${quote(DISK)} [shape=cylinder];`);
+    for (const key of keys) {
         const [from, to, kind] = key.split('\n');
-        if (!writing.has(from) || !writing.has(to)) continue;
-        const names = wrap(sorted(edges.get(key) ?? []));
+        const names = wrap(sorted(chain.edges.get(key) ?? []));
         const shown = kind === 'refuses' || to === DISK;
         const style = { calls: '', refuses: 'style=dashed', refers: 'style=dotted' }[kind] ?? '';
         if (kind === 'lost') {
@@ -510,10 +667,13 @@ export function writesDot(sources, route = WRITE_ROUTE, read = parseReader()) {
 }
 
 /**
- * The write diagram drawn by drawing/apart.mjs's drawnApart(), so no two of its arrows run along
- * each other and no words sit across an arrow. Where its rule cannot clear the drawing,
- * drawnApart() throws an error naming every pair and every label left, and `npm run diagrams`
- * writes nothing and exits with it.
+ * The write diagram, cut into the parts of chainParts(), each drawn by drawing/apart.mjs's
+ * drawnApart() so no two of its arrows run along each other and no words sit across an arrow, and
+ * set in rows as one drawing by drawing/stack.mjs's stacked(). A part drawn wider than WIDE is cut
+ * again (cutAgain()), until every part is within it or has no module left to cut it at; the widest
+ * part sets the width of the rows. Where the rule cannot clear a part, or the parts set together,
+ * the error names every pair and every label left, and `npm run diagrams` writes nothing and exits
+ * with it.
  *
  * @param {Sources} sources
  * @param {import('./drawing/apart.mjs').Renderer} renderer
@@ -522,7 +682,26 @@ export function writesDot(sources, route = WRITE_ROUTE, read = parseReader()) {
  * @returns {{ dot: string, svg: string }}
  */
 export function writesDrawn(sources, renderer, route = WRITE_ROUTE, read = parseReader()) {
-    return drawnApart('writes', writesDot(sources, route, read), renderer);
+    const chain = writeChain(sources, route, read);
+    /** @type {Set<string>} */
+    const more = new Set();
+    for (;;) {
+        const parts = chainParts(chain, route, more);
+        const dots = parts.map(
+            (part, at) =>
+                drawnApart(
+                    `writes, part ${at + 1}`,
+                    chainDot(chain, part.keys, 'writes', part.leaves),
+                    renderer
+                ).dot
+        );
+        const count = more.size;
+        dots.forEach((dot, at) => {
+            const [left, , right] = boxOf(dot);
+            if (right - left > WIDE) for (const one of cutAgain(parts[at])) more.add(one);
+        });
+        if (more.size === count) return stacked('writes', dots, renderer);
+    }
 }
 
 /**

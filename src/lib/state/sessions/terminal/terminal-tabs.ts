@@ -19,6 +19,7 @@
 
 import { z } from 'zod';
 import { anyNumberShape, rowsShape } from '../../../data/shapes/shapes.ts';
+import { isTerminalId, TERMINAL_ID } from '../../../data/model/index.ts';
 
 /** The view a Terminal tab is. */
 export const TERMINAL_VIEW = 'terminal';
@@ -48,17 +49,11 @@ export type TerminalTabState = {
     label: string;
 };
 
-/** The shape of a terminal id, six hex digits and the kind. */
-const terminalIdShape = z.string().regex(/^[0-9a-f]{6}-(claude|codex|shell|app)$/);
+/** The shape of a terminal id (data/model `TERMINAL_ID`), six hex digits and the kind. */
+const terminalIdShape = z.string().regex(TERMINAL_ID);
 
-/**
- * Whether an id names a terminal. It is the same shape the server's `isTerminalId` tests, six hex
- * digits and the kind, and it cannot collide with a Claude session id (a UUID) or a Codex slug (a
- * day path), which is why a terminal selects through the one selection the session views share.
- */
-export function isTerminalId(id: unknown): id is string {
-    return terminalIdShape.safeParse(id).success;
-}
+/** Whether an id names a terminal, the rule the server tests by too (data/model). */
+export { isTerminalId };
 
 /** A tab that owns no terminal and shows the composer. */
 export function emptyTab(id: string): TerminalTabState {

@@ -15,13 +15,13 @@ import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { HUB_FILE } from '../../../src/lib/data/helpers/hub-names.ts';
 
 /** The environment variable that names the real hub. */
-export const TEST_HUB_VARIABLE = 'OCULUS_TEST_HUB';
+const TEST_HUB_VARIABLE = 'OCULUS_TEST_HUB';
 
 /** The demo hub, the synthetic research hub the tests read. */
 export const DEMO_HUB = join(engineDir(), 'tests', 'fixtures', 'hubs', 'demo');
 
 /** The real hub as the environment names it. */
-export type RealHub = {
+type RealHub = {
     /** The hub folder, resolved; empty when the variable is unset. */
     hub: string;
     /** Whether the variable is set, so the cases over a real hub run. */

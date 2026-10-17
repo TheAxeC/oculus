@@ -32,6 +32,7 @@
         type Chosen,
         type ReplaceSettings
     } from '$lib/state/sources/search/hits';
+    import { countLine } from '$lib/state/sources/search/words';
     import { t } from '$lib/state/shared/words/text';
     import type { SearchAnswer, SearchFile, SearchHit } from '$lib/state/sources/search/search';
 
@@ -94,7 +95,7 @@
     const files = $derived(answer?.files ?? []);
     const rows = $derived(resultRows(files));
     // The count the line says is the hits listed, which a dismiss or a replace takes down.
-    const hitCount = $derived(String(files.reduce((sum, file) => sum + file.hits.length, 0)));
+    const hitCount = $derived(files.reduce((sum, file) => sum + file.hits.length, 0));
 
     let host: HTMLElement | undefined = $state();
 
@@ -146,9 +147,7 @@
         </p>
     {:else}
         <p class="count" data-search-count>
-            {replacing
-                ? t('search.count_replacing', hitCount, String(files.length), String(answer.ms))
-                : t('search.count', hitCount, String(files.length), String(answer.ms))}
+            {countLine(hitCount, files.length, answer.ms, replacing)}
             {#if answer.truncated}
                 <span class="capped">{t('search.capped', String(max))}</span>
             {/if}

@@ -66,11 +66,11 @@ export function openPage(
  * (`pressedAt`, in the timeline of `performance.now()`): the preview tab a single press opens then
  * keeps the next press on the tab for as long as a double click's second press can take, and the
  * tab a double click keeps takes the keyboard. A key that opens a kept tab passes no time, and the
- * keyboard stays where it is.
+ * keyboard stays where it is. A file the tree has no row of yet, as one just made, has no size.
  */
 export async function openRow(
     opener: Opener,
-    row: TreeRow,
+    row: Pick<TreeRow, 'root' | 'path'> & { size?: number },
     preview: boolean,
     pressedAt?: number
 ): Promise<void> {

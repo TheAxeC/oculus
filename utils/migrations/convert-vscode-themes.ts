@@ -224,7 +224,7 @@ function blockOf(cls: string, mapped: Mapped, note: string): string {
 
 function headOf(version: string): string {
     return wrapped(
-        `The VS Code themes: one block per colour theme of Visual Studio Code ${version}, written by utils/migrations/convert-vscode-themes.ts from the theme files under extensions/ of the installed app, which are Microsoft's and MIT licensed with VS Code. Generated: change the converter and run it, never this file, with: node utils/migrations/convert-vscode-themes.ts. A block sets the chrome tokens, the Source Control tokens, the Source Control Graph's three name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line) and the six code hues; its comment names each token that VS Code's registered default or oculus's base gave.`
+        `The VS Code themes: one block per colour theme of Visual Studio Code ${version}, written by utils/migrations/convert-vscode-themes.ts from the theme files under extensions/ of the installed app, which are Microsoft's and MIT licensed with VS Code. Generated: change the converter and run it, never this file, with: node utils/migrations/convert-vscode-themes.ts. A block sets the chrome tokens, the Source Control tokens, the diff's outlines of inserted and removed text (--diff-added-outline, --diff-deleted-outline), the Source Control Graph's three name colours (--c-graph-ref, --c-graph-remote, --c-graph-base), the tab tokens the theme holds, the window's title bar strip (--titlebar-bg, --titlebar-txt, --titlebar-line) and the six code hues; its comment names each token that VS Code's registered default or oculus's base gave.`
     );
 }
 

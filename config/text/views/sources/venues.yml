@@ -9,10 +9,10 @@ text:
         contact: contact
         deadline: deadline
         dist: ~{0}mo
-        empty: No venues yet - add some to `registries/venues.yml`.
+        empty: No venues yet; add some to the hub's venues file.
         filters: Venue filters
         held: held
-        intro: Target venues - pick on merit (fit + impact + indexing); the free route is just an attribute (the Dutch read-&-publish deal often waives APC). Conference timing is approximate (give-or-take a month; deadlines shift yearly). Edit <code>registries/venues.yml</code>.
+        intro: "Journals and conferences, from the file the <code>venues</code> entry of the hub's collections list names. A conference's months are approximate, since its call and its dates move from year to year."
         jif: JIF {0}
         journals: Journals
         leg_approx: months are approximate - hover a chip for the range

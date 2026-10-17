@@ -43,10 +43,10 @@
 // is the baseline, a later answer with any file written after the time held builds once, and a
 // build a change asks for starts at most once per `latex.auto_build_interval_ms`. A failed build
 // posts one notice; a build a change on disk started posts it once until a build of that root
-// succeeds.
+// succeeds. What a save asks for, a save made before the page holds its settings included, is
+// saves.ts's.
 
 import { joinPath } from '../../../data/helpers/files/paths.ts';
-import { isLatexFile } from '../../../data/prose/latex.ts';
 import type { LatexApproval } from '../../../data/model/index.ts';
 import type { LatexBuilding } from '../../../data/sources/config/settings.ts';
 import { t } from '../../shared/words/text.ts';
@@ -55,6 +55,7 @@ import { readListed } from '../terminal/pty/pty-io.ts';
 import type { TerminalAnswer } from '../terminal/pty/pty-io.ts';
 import type { LatexBuildAsk, TerminalsStore } from '../terminals.svelte.ts';
 import type { LatexCalls } from './calls.ts';
+import { createSaves } from './saves.ts';
 import {
     IDLE_BUILD,
     placeOf,
@@ -138,6 +139,8 @@ type Run = {
     running: boolean;
     /** True while the server's own list is being read for the terminal. */
     asking: boolean;
+    /** How many pushes asked for the list while it was being read. */
+    missed: number;
     again: boolean;
     retry: boolean;
     reader: boolean;
@@ -235,8 +238,13 @@ export type BuildsStore = {
     follow: (root: string, path: string, main: string) => () => void;
     /** Hear every build that ends; the answer stops listening. */
     onBuilt: (listener: BuiltListener) => () => void;
-    /** Build the root a saved file builds through, when `latex.auto_build` says to. */
+    /**
+     * Build the root a saved file builds through, when `latex.auto_build` says to. A save made
+     * while the page holds no settings is held until `settingsMoved` finds them (saves.ts).
+     */
     onSaved: (root: string, path: string) => Promise<void>;
+    /** A `config` message came: run the saves held while the page held no settings. */
+    settingsMoved: () => void;
     /** The `sessions` list moved: end the runs whose terminals ended. */
     sessionsMoved: () => void;
     /**
@@ -253,13 +261,22 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
     /** What is held of each root, by its place. */
     const entries = new Map<string, Entry>();
 
-    /** The newest save of each file, so an answer to an older one is dropped. */
-    const saves = new Map<string, number>();
-
     const listeners = new Set<BuiltListener>();
 
-    /** The files being saved without a build, by root and path. */
-    const quiet = new Set<string>();
+    /** What a save asks for, and the saves made before the settings arrived (saves.ts). */
+    const saves = createSaves({
+        settings: deps.settings,
+        calls: deps.calls,
+        count: deps.count,
+        build: (target, main) => build(target, main),
+        quieted: (root) => {
+            for (const entry of entries.values()) {
+                if ('root' in entry.target && entry.target.root === root) {
+                    entry.quietUntil = now() + QUIET_MS;
+                }
+            }
+        }
+    });
 
     /** The recipe the last build named, which `latex.recipe_default` `last_used` asks for. */
     let last = '';
@@ -471,6 +488,7 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
             terminal: null,
             running: false,
             asking: false,
+            missed: 0,
             again: owed.again,
             retry: true,
             reader: owed.reader
@@ -523,17 +541,28 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
     /**
      * Ask the server whether a terminal the list has never shown running is running, after a push
      * that shows it ended or lacks it: a list that shows it ended or lacks it ends the run, and a
-     * list that shows it running, or a read that failed, leaves the run for the next push.
+     * list that shows it running, or a read that failed, leaves the run for the next push. A push
+     * that came while the list was read is answered by one more read once that read is done.
      */
     async function confirm(entry: Entry, run: Run): Promise<void> {
-        if (run.asking || run.terminal === null) return;
+        if (run.terminal === null) return;
+        if (run.asking) {
+            run.missed += 1;
+            return;
+        }
         const terminal = run.terminal;
         run.asking = true;
+        const missed = run.missed;
         const listed = await readListed();
         run.asking = false;
         if (entry.run !== run || listed === null || run.running) return;
         const found = listed.find((held) => held.id === terminal);
-        if (found?.exit === null) return;
+        if (found?.exit === null) {
+            // A run that ends while the list is read, as a clean or a weave that fails at once
+            // does, is pushed while the read is out, and no other push comes for it.
+            if (run.missed !== missed) await confirm(entry, run);
+            return;
+        }
         finish(entry, run, found?.exit ?? null);
     }
 
@@ -579,6 +608,7 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
             terminal: null,
             running: false,
             asking: false,
+            missed: 0,
             again: ask.again === true,
             retry: ask.retry === true,
             reader: ask.reader
@@ -713,25 +743,6 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         return answer;
     }
 
-    async function savingQuietly(
-        root: string,
-        path: string,
-        save: () => Promise<void>
-    ): Promise<void> {
-        const key = `${root}\n${path}`;
-        quiet.add(key);
-        try {
-            await save();
-        } finally {
-            quiet.delete(key);
-            for (const entry of entries.values()) {
-                if ('root' in entry.target && entry.target.root === root) {
-                    entry.quietUntil = now() + QUIET_MS;
-                }
-            }
-        }
-    }
-
     function log(target: LatexTarget, main: string): boolean {
         const terminal = buildOf(target, main).terminal;
         if (terminal === '') return false;
@@ -815,23 +826,6 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         return () => listeners.delete(listener);
     }
 
-    async function onSaved(root: string, path: string): Promise<void> {
-        if (!isLatexFile(path)) return;
-        const settings = deps.settings();
-        if (settings === null) return;
-        const key = `${root}\n${path}`;
-        const builds = settings.autoBuild === 'on_save' && !quiet.has(key);
-        const counts = settings.texcountAutorun === 'on_save';
-        if (!builds && !counts) return;
-        const mine = (saves.get(key) ?? 0) + 1;
-        saves.set(key, mine);
-        const found = await deps.calls.rootOf(root, path);
-        if (found === null || saves.get(key) !== mine) return;
-        const target = { root: found.root, path: found.path };
-        if (counts) void deps.count(target, found.main);
-        if (builds) await build(target, found.main);
-    }
-
     return {
         buildOf,
         building,
@@ -844,11 +838,12 @@ export function createBuilds(deps: BuildDeps): BuildsStore {
         holdRerun,
         cancel,
         stop,
-        savingQuietly,
+        savingQuietly: saves.savingQuietly,
         log,
         follow,
         onBuilt,
-        onSaved,
+        onSaved: saves.onSaved,
+        settingsMoved: saves.settingsMoved,
         sessionsMoved,
         filesMoved
     };

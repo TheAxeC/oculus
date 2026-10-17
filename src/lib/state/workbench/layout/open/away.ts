@@ -1,9 +1,10 @@
 // Layer 2, client state. Opening a view on a page without covering one instance of it: the view
 // the Views catalogue opens on its own page lands in a pane other than the catalogue's, so the
 // catalogue is never hidden behind the tab it opened. It is built over openView and the two moves
-// a dragged tab takes, so a view opened here is the same tab it would be anywhere else. A view that
-// was already a tab of the catalogue's pane is activated there by openView before it moves out, and
-// the pane would then show the tab beside it, so the catalogue is made that pane's tab again.
+// a dragged tab takes, so a view opened here is the same tab it would be anywhere else. A view
+// already open on the page is shown where it is, as a press on a catalogue entry shows it, its
+// place in its pane's strip kept: openView activates it, and nothing here moves it, the
+// catalogue's own pane included.
 //
 // A unique view that another page or a float holds is shown where it is held and never moved into
 // the catalogue's page: openView answers its id and nothing here carries it over. A view dropped on
@@ -20,13 +21,14 @@ export type Away = {
     /**
      * Open a view on a page in a pane that does not hold `avoid`: the pane a view lands in when it
      * is another one, else the first other pane in tree order, else a new pane beside the one that
-     * holds it. The returned id names the instance, or is empty for a page there is not.
+     * holds it; a view already open on the page is shown where it is. The returned id names the
+     * instance, or is empty for a page there is not.
      */
     openAway: (view: ViewId, state: unknown, page: string, avoid: string) => string;
     /**
-     * Open a view on a page in a new pane beside the pane holding `beside`; a view already open in
-     * another pane of the page is activated where it is, and a unique view held by another page or
-     * a float is shown there.
+     * Open a view on a page in a new pane beside the pane holding `beside`; a view already open on
+     * the page is activated where it is, and a unique view held by another page or a float is shown
+     * there.
      */
     openNextTo: (view: ViewId, state: unknown, page: string, beside: string) => string;
     /**
@@ -59,12 +61,12 @@ export function createAway(
         );
         const id = openView(view, state, page);
         if (id === '' || own === null) return id;
-        // A view already open in another pane of the page is activated there and stays, as
-        // openAway leaves one; a new one, or one in the pane holding `beside`, moves to a new pane
-        // beside it. A unique view held by another page or a float was shown there and stays.
+        // A view already open on the page is activated where it is and stays, as openAway leaves
+        // one; a new one moves to a new pane beside the pane holding `beside`. A unique view held
+        // by another page or a float was shown there and stays.
         const at = findInstance(access.layout(page), id);
         if (at === null && unique(view)) return id;
-        if (open.has(id) && at !== null && !samePath(at.path, own.path)) return id;
+        if (open.has(id)) return id;
         split(id, own.path, 'right', page);
         uncover(beside, page);
         return id;
@@ -89,10 +91,10 @@ export function createAway(
         if (own === null) return openView(view, state, page);
         const other = otherPane(tree, page, own.path);
         if (other === undefined) return openNextTo(view, state, page, avoid);
+        const open = new Set(panes(tree).flatMap(({ pane }) => pane.tabs.map((tab) => tab.id)));
         const id = openView(view, state, page);
-        if (id === '') return id;
-        // A view already open in a third pane is activated there and stays; one that landed in the
-        // avoided pane, new or already there, moves to the end of the other pane's strip.
+        if (id === '' || open.has(id)) return id;
+        // A new tab that landed in the avoided pane moves to the end of the other pane's strip.
         const now = access.layout(page);
         const at = findInstance(now, id);
         if (at !== null && samePath(at.path, own.path)) {

@@ -5,8 +5,10 @@
     // manifest field, a file) is drawn as code and any markup in it is drawn as characters.
     //
     // An empty state is VS Code's welcome view: centred, the glyph over the words, padded
-    // 0 20px 1em. An error is VS Code's input message box: left aligned, a red border and
-    // tint, 12px words on 17px lines, and the view's retry control after the words as `action`.
+    // 0 20px 1em, the side padding no more than 8% of the width it is given, so a message in a
+    // narrow pane keeps the room to break between words. An error is VS Code's input message box:
+    // left aligned, a red border and tint, 12px words on 17px lines, and the view's retry control
+    // after the words as `action`.
 
     import type { Snippet } from 'svelte';
     import CodeText from '../display/CodeText.svelte';
@@ -45,7 +47,7 @@
         align-items: center;
         gap: 6px;
         margin: 0;
-        padding: 0 20px 1em;
+        padding: 0 min(20px, 8%) 1em;
         text-align: center;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);

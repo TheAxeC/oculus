@@ -4,6 +4,11 @@
 // stored. The server sends the scrollback to the attaching socket alone at version 0 and counts the
 // chunks from 1 (server/machine/pty/channel.ts, `#attach`), so the listener is told which of the
 // two it was handed and a reconnect repaints rather than appending a second copy of the scrollback.
+// Every pane that starts reading asks for the channel on the socket, whether or not the page's
+// subscription holds it already, so a pane that arrives by a move (a tab dropped across windows,
+// a popped-out window closed) while another pane of the page still reads the terminal is sent the
+// screen as a pane of a page load is. The channel leaves the subscription when its last pane stops
+// reading.
 // The terminals store (terminals.svelte.ts) builds one wire over its socket and the order in which
 // grids attach (pty-subscribe.ts).
 
@@ -55,8 +60,9 @@ export function createPtyWire(socket: SocketStore, order: PtyOrder) {
     }
 
     /**
-     * Read one terminal's output in a pane: the window takes `size` first, the channel is asked for
-     * after it, and the call returned stops the reading.
+     * Read one terminal's output in a pane: the window takes `size` first, on this socket when it
+     * is admitted to write, the channel is asked for after it, and the call returned stops the
+     * reading.
      */
     function subscribePty(id: string, size: () => PtySize, onBytes: PtyListener): () => void {
         const channel = ptyChannel(id);
@@ -68,8 +74,9 @@ export function createPtyWire(socket: SocketStore, order: PtyOrder) {
         const leave = order.attach(
             id,
             size,
-            () => socket.subscribe([channel]),
-            (message) => socket.send(message)
+            () => socket.subscribe([channel], true),
+            (message) => socket.send(message),
+            (now) => socket.admitted() && sendResize(id, now.cols, now.rows)
         );
         return () => {
             leave();
@@ -77,23 +84,19 @@ export function createPtyWire(socket: SocketStore, order: PtyOrder) {
             if (released) return;
             released = true;
             const left = (reading.get(id) ?? 1) - 1;
-            if (left > 0) reading.set(id, left);
-            else reading.delete(id);
+            if (left > 0) {
+                reading.set(id, left);
+                return;
+            }
+            reading.delete(id);
+            socket.unsubscribe([channel]);
         };
-    }
-
-    /**
-     * Stop reading one terminal's output, and stop asking for its channel on the next reconnect.
-     */
-    function unsubscribePty(id: string): void {
-        socket.unsubscribe([ptyChannel(id)]);
     }
 
     return {
         sendInput,
         sendResize,
         subscribePty,
-        unsubscribePty,
         subscribed: (id: string): boolean => (reading.get(id) ?? 0) > 0
     };
 }

@@ -37,6 +37,7 @@ text:
         editor_add_group: Add a key
         editor_discard: Discard
         editor_down: 'Move entry {0} down'
+        editor_empty: This setting holds no entry.
         editor_field: 'Entry {0}, {1}'
         editor_group_down: 'Move key {0} down'
         editor_group_key: 'Key {0}'
@@ -49,6 +50,7 @@ text:
         editor_remove: 'Remove entry {0}'
         editor_remove_group: 'Remove key {0}'
         editor_save: Save
+        editor_saved: Saved.
         editor_stuck: 'The control cannot show these values, so they are kept as the file has them:'
         editor_unread: 'These fields hold text that is not valid YAML, so Save will refuse until they are mended:'
         editor_up: 'Move entry {0} up'
@@ -154,6 +156,7 @@ text:
         settings_machine_edit_in: 'Edit {0} of {1}'
         settings_machine_edit_tip: 'Open {0} of {1} in a source tab'
         settings_machine_in_force: 'The value in force:'
+        settings_machine_port_refused: 'local.yml: port {0} cannot be used ({1}); the server stays on {2}.'
         settings_machine_no_primary: This workspace has no primary hub, so no file sets a key that has one value here and each of them shows its default; the lists of accounts, calendars and mail show the rows of every hub's file.
         settings_machine_set: 'Set in {0}.'
         settings_machine_unset: Not set in the primary hub, and the key has no default.
@@ -216,6 +219,9 @@ text:
         settings_range: 'It must be a number from {0} to {1}.'
         settings_range_max: 'It must be a number of at most {0}.'
         settings_range_min: 'It must be a number of at least {0}.'
+        settings_range_whole: 'It must be a whole number from {0} to {1}.'
+        settings_range_whole_max: 'It must be a whole number of at most {0}.'
+        settings_range_whole_min: 'It must be a whole number of at least {0}.'
         settings_reset: Reset Setting
         settings_search: Search settings
         settings_text_size_value: '{0}%'

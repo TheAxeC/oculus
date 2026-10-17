@@ -8,7 +8,7 @@
 // channel, `lsp:<language>`, and one page socket, so a message is a map and never a string.
 
 import type { Diagnostic, DocumentSymbol } from 'vscode-languageserver-protocol';
-import type { Target } from './uris';
+import type { Place, Target } from './uris';
 
 /** The state of the page socket as a port reports it. */
 export type PortState = 'open' | 'connecting' | 'closed';
@@ -63,6 +63,12 @@ export type LspServices = {
      * whose read the relay refuses has an empty text, so the location stays and its tab says why.
      */
     readFile(target: Target): Promise<{ text: string; language: string } | null>;
+    /**
+     * Where a peek model of the target is registered with the server of `language`, as a tab of
+     * the file registers: a file of a root at its own place, a library file under the root it was
+     * named in with its address. Null for a file that server is not given, which stays unsent.
+     */
+    peekPlace(target: Target, language: string): { place: Place; library?: string } | null;
     /**
      * Opens the file in a source tab at the line, the same tab when it is open. A column means the
      * word at it is selected, and an end means the range from the line and column to it is; an open

@@ -14,7 +14,7 @@
     import { useState } from '$lib/state/client/use';
     import TitleBar from '$lib/shell/titlebar/TitleBar.svelte';
     import PaneView from '../PaneView.svelte';
-    import { activeLabel } from '../workbench-title';
+    import { activeLabel, pageActiveTab } from '../workbench-title';
 
     type Props = {
         /** The id of the float this window draws. */
@@ -33,12 +33,7 @@
     const float = $derived(floats().find((one) => one.id === id));
 
     /** The window's title: the words of the float's active tab. */
-    const title = $derived(
-        activeLabel(
-            client.registry,
-            float?.pane.tabs.find((one) => one.id === float.pane.active) ?? null
-        )
-    );
+    const title = $derived(activeLabel(client.registry, pageActiveTab(id, floats(), null)));
 
     $effect(() => {
         if (float?.place.kind === 'window') return;

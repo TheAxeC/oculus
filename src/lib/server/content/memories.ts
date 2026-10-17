@@ -66,7 +66,8 @@ export const BODY_LIMIT_BYTES = Math.ceil((MAX_UPLOAD_BYTES * 4) / 3) + 64 * 102
  * The pictures of every hub's photo wall, hubs in the workspace's order and each hub's pictures in
  * name order, each with the size the head of its file gives. The sizes are read on every listing
  * rather than kept, since a kept size would be stale the moment a picture of the same name replaced
- * it; a listing reads at most READ_CAP bytes of each (images.ts).
+ * it; a listing reads the head of each, READ_CAP bytes, and past it the heads of the segments or
+ * chunks a walk steps over (images.ts).
  */
 export function pictures(hubs: readonly HubPictures[]): Picture[] {
     return hubs.flatMap((one) =>

@@ -156,7 +156,7 @@ const COMPUTED_FINDING_KEYS = [
 function computedFindingKeys(root: string): { file: string; key: string }[] {
     const found: { file: string; key: string }[] = [];
     for (const file of sources(root)) {
-        const source = withoutComments(file, readFileSync(file, 'utf8'));
+        const source = codeOf(file);
         for (const match of source.matchAll(FINDING_CALL)) {
             const key = match[1].trim();
             if (!WHOLE_FINDING_KEY.test(key))
@@ -275,7 +275,7 @@ const COMPUTED_PREFIXES = [
         // kind added to writes/bodies.ts without a word fails here rather than drawing the wire
         // word.
         file: 'lib/views/system/history/History.svelte',
-        start: 't(`history.kind_${row.kind',
+        start: 't(`history.kind_${word}',
         keys: () => recordedKinds().map((kind) => `history.kind_${kind.replaceAll('-', '_')}`)
     },
     {
@@ -291,7 +291,7 @@ const COMPUTED_PREFIXES = [
         file: 'lib/views/sources/repositories/changes/ChangeRow.svelte',
         start: 't(statusWordKey(',
         keys: () =>
-            ['M', 'A', 'D', 'R', 'C', '?', 'U', 'UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD'].map(
+            ['M', 'A', 'D', 'R', 'C', 'T', '?', 'U', 'UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD'].map(
                 (status) => statusWordKey(status)
             )
     },
@@ -311,22 +311,22 @@ const COMPUTED_PREFIXES = [
         keys: () => LSP_SERVER_LIST.flatMap((server) => server.words.install ?? [])
     },
     {
-        file: 'lib/views/sources/source/language/lsp.ts',
+        file: 'lib/views/shared/prose/editor/lsp.ts',
         start: 't(facts.words.name',
         keys: () => LSP_SERVER_LIST.map((server) => server.words.name)
     },
     {
-        file: 'lib/views/sources/source/language/lsp.ts',
+        file: 'lib/views/shared/prose/editor/lsp.ts',
         start: 't(facts.words.restart',
         keys: () => LSP_SERVER_LIST.map((server) => server.words.restart)
     },
     {
-        file: 'lib/views/sources/source/language/lsp.ts',
+        file: 'lib/views/shared/prose/editor/lsp.ts',
         start: 't(facts.words.output',
         keys: () => LSP_SERVER_LIST.map((server) => server.words.output)
     },
     {
-        file: 'lib/views/sources/source/language/lsp.ts',
+        file: 'lib/views/shared/prose/editor/lsp.ts',
         start: 't(facts.words.choice',
         keys: () => LSP_SERVER_LIST.flatMap((server) => Object.values(server.words.choice))
     },
@@ -416,13 +416,26 @@ function sources(dir: string): string[] {
         .map((rel) => join(dir, rel));
 }
 
+/** Each file's text with its comments turned to spaces, by its full path, read and parsed once. */
+const uncommented = new Map<string, string>();
+
+/** A file's text with its comments turned to spaces (code.ts's withoutComments), read once. */
+function codeOf(file: string): string {
+    let source = uncommented.get(file);
+    if (source === undefined) {
+        source = withoutComments(file, readFileSync(file, 'utf8'));
+        uncommented.set(file, source);
+    }
+    return source;
+}
+
 type Call = { file: string; reader: string; key: string | null; text: string };
 
 /** Every catalog read under `root`, with its key when the argument is a literal. */
 function calls(root: string): Call[] {
     const found: Call[] = [];
     for (const file of sources(root)) {
-        const source = withoutComments(file, readFileSync(file, 'utf8'));
+        const source = codeOf(file);
         for (const match of source.matchAll(CALL)) {
             const at = match.index + match[0].length;
             if (/function\s+$/.test(source.slice(0, match.index))) continue;
@@ -463,7 +476,7 @@ function calls(root: string): Call[] {
 function findingLiterals(root: string): { file: string; key: string }[] {
     const found: { file: string; key: string }[] = [];
     for (const file of sources(root)) {
-        const source = withoutComments(file, readFileSync(file, 'utf8'));
+        const source = codeOf(file);
         for (const match of source.matchAll(FINDING_LITERAL)) {
             found.push({ file: file.slice(root.length + 1), key: match[2] });
         }
@@ -519,6 +532,13 @@ describe('text keys', () => {
         const missing = found
             .filter((call) => call.key !== null && !(call.key in catalog))
             .map((call) => `${call.file}: ${call.key}`);
+        expect(missing).toEqual([]);
+    });
+
+    it('has a word for every kind the change log records', () => {
+        const missing = recordedKinds()
+            .map((kind) => `history.kind_${kind.replaceAll('-', '_')}`)
+            .filter((key) => !(key in catalog));
         expect(missing).toEqual([]);
     });
 

@@ -51,7 +51,8 @@
     import SteerBox from '$lib/views/shared/sessions/SteerBox.svelte';
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import { titleStripper } from '$lib/state/sessions/terminals.svelte';
-    import { scrollTarget, viewportOf } from '$lib/state/sessions/terminal/viewport';
+    import { viewportOf } from '$lib/state/sessions/terminal/viewport';
+    import { keptViewport } from './kept-viewport';
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import {
         MENU_CLEAR,
@@ -159,8 +160,7 @@
             sendResize,
             subscribePty,
             takeViewport,
-            terminalById,
-            unsubscribePty
+            terminalById
         },
         ui: { terminalFont, textScale, theme }
     } = useState();
@@ -190,6 +190,10 @@
     const find = new GridFind(() => grid?.focus());
 
     const terminal = $derived(terminalById(id));
+    /**
+     * Whether Split is offered: a terminal oculus knows a folder for, which the split starts in.
+     */
+    const splits = $derived(terminal !== null && terminal.cwd !== '');
     /** Whether an agent runs in the terminal, which is what the steer box is drawn under. */
     const agent = $derived(terminal !== null && terminal.kind !== 'shell');
 
@@ -344,8 +348,9 @@
                 })
             );
             // The viewport the last grid of this terminal kept, scrolled to once the scrollback is
-            // written (a grid drawn again by Float or Return to Page).
-            let kept = takeViewport(wanted);
+            // written and held until the reader moves the grid (a grid drawn again by Float or
+            // Return to Page).
+            const viewport = keptViewport(term, host, () => takeViewport(wanted));
             // The window takes the grid's size before the channel is asked for (`subscribePty`).
             const off = subscribePty(
                 wanted,
@@ -358,13 +363,7 @@
                         decoder = new TextDecoder();
                     }
                     const shown = titles(bytes);
-                    if (scrollback && kept !== undefined) {
-                        const place = kept;
-                        kept = undefined;
-                        term.write(shown, () =>
-                            term.scrollToLine(scrollTarget(place, term.buffer.active.baseY))
-                        );
-                    } else term.write(shown);
+                    term.write(shown, scrollback ? viewport.painted : viewport.settled);
                     note(wanted, decoder.decode(shown, { stream: true }), scrollback);
                 }
             );
@@ -374,6 +373,7 @@
                 settle = setTimeout(() => {
                     settle = null;
                     fit.fit();
+                    viewport.settled();
                     resized(wanted);
                 }, SETTLE);
             });
@@ -382,11 +382,11 @@
                 if (settle !== null) clearTimeout(settle);
                 watcher.disconnect();
                 off();
-                unsubscribePty(wanted);
                 typed.dispose();
                 rang.dispose();
                 linking.dispose();
                 detachFind();
+                viewport.stop();
                 // A terminal that ended keeps nothing.
                 if (terminalById(wanted) !== null) {
                     const { viewportY, baseY } = term.buffer.active;
@@ -456,7 +456,7 @@
     <ContextMenu
         label={t('sessions.view_terminal')}
         read={() => [
-            ...gridMenu(grid?.hasSelection() === true, armed, t, taskStateOf(terminal)),
+            ...gridMenu(grid?.hasSelection() === true, armed, t, taskStateOf(terminal), splits),
             ...appMenus.items('terminal/context', id)
         ]}
         onpick={picked}

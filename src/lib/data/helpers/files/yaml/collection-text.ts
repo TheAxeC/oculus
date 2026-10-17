@@ -452,3 +452,17 @@ export function entryAtIndex(source: string, index: number): TextPlace | EntryRe
     const item = seq.items[index];
     return isYamlMap(item) ? afterFirstKey(source, item) : null;
 }
+
+/**
+ * Where a key of the text's top-level map stands: its line and the column of its first letter,
+ * from 1. Null for a text whose top level holds no such key, and the refusal for one that does not
+ * parse.
+ */
+export function keyPlace(source: string, key: string): TextPlace | EntryRefusal | null {
+    const read = readRoot(source);
+    if ('code' in read) return read;
+    const pair = read.root === null ? undefined : pairOf(read.root, key);
+    const range = pair === undefined ? null : rangeOf(pair.key);
+    if (range === null) return null;
+    return { line: lineAt(source, range[0]) + 1, column: columnOf(source, range[0]) + 1 };
+}

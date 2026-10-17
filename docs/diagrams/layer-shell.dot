@@ -1,7 +1,7 @@
 digraph layer_shell {
-    graph [bgcolor="transparent", rankdir=TB, newrank=true, mclimit=4, fontname="Helvetica,Arial,sans-serif", fontsize=12, nodesep=0.2, ranksep=0.5];
-    node [shape=box, color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=10, height=0.3, margin="0.12,0.04"];
-    edge [color="black", fontcolor="black", fontname="Helvetica,Arial,sans-serif", fontsize=8, arrowsize=0.6];
+    graph [bgcolor="transparent", rankdir=TB, newrank=true, mclimit=4, fontname="Helvetica", fontsize=12, nodesep=0.2, ranksep=0.5];
+    node [shape=box, color="black", fontcolor="black", fontname="Helvetica", fontsize=10, height=0.3, margin="0.12,0.04"];
+    edge [color="black", fontcolor="black", fontname="Helvetica", fontsize=8, arrowsize=0.6];
     subgraph "cluster_shell" {
         label="shell"; style=solid;
         "folder shell" [label="shell"];
@@ -29,14 +29,14 @@ digraph layer_shell {
         "folder shell/status to folder shell/keys" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/status to layer data" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/status to layer state" [label="29", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/status to layer ui" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/status to layer ui" [label="22", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/panes to folder shell/keys" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/panes to folder shell/titlebar" [label="2", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/panes to layer state" [label="49", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/panes to layer ui" [label="21", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/panes to layer state" [label="53", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/panes to layer ui" [label="23", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/keys to folder shell/titlebar" [label="1", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/keys to layer data" [label="8", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
-        "folder shell/keys to layer state" [label="44", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
+        "folder shell/keys to layer state" [label="45", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/keys to layer ui" [label="6", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/commands to layer state" [label="16", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];
         "folder shell/commands to layer ui" [label="24", shape=box, color="transparent", fontsize=8, width=0, height=0, margin="0.04,0.02"];

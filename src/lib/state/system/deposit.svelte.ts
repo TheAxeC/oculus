@@ -2,9 +2,8 @@
 //
 // The mirror lives outside the hub tree, under ~/.oculus/deposits, so nothing about it is in the
 // snapshot: it is fetched from GET /api/deposit the first time a panel asks for a project, and read
-// again after every write the panel makes. The wire shapes below are declared here rather than
-// imported, since the boundary table of DESIGN.md lets `state/` import `data/model` and nothing of
-// `server/`; server/git/deposit/deposit.ts holds the same shapes on its own side.
+// again after every write the panel makes. The answer's shapes are data/model's, the one
+// declaration the server's side (server/git/deposit/deposit.ts) sends by.
 //
 // The answer is held in the client state's query client, and the fetch is scheduled on a microtask
 // by state/client/queries/queries.svelte.ts rather than run inside the call, so reading this from a
@@ -12,47 +11,31 @@
 // server-rendered page holds nothing and asks for nothing.
 
 import { z } from 'zod';
+import type {
+    DepositChange,
+    DepositFinding,
+    DepositPlan,
+    MainComparison,
+    MirrorState
+} from '../../data/model/index.ts';
 import { readJson } from '../../data/shapes/shapes.ts';
 import { failedAnswer } from '../shared/answers/answers.ts';
 import type { Queries } from '../shared/stores/shapes.ts';
 import { inBrowser } from '../shared/stores/in-browser.ts';
 
-/** One thing the deposit's scan found. The words are the panel's; this says what and where. */
-export type Finding = { kind: string; path: string; mb: number };
+/** The answer's shapes (data/model), under the names the deposit panel reads them by. */
+export type Finding = DepositFinding;
+export type Change = DepositChange;
+export type Plan = DepositPlan;
+export type { MainComparison, MirrorState };
 
-/** One path `git status --porcelain=v1 -z` reported, with git's own two letters. */
-export type Change = { path: string; letters: string };
-
-/** What a plan answers: what would ship, what moved, and what the scan objected to. */
-export type Plan = {
-    repo: string;
-    mirror: string;
-    branch: string;
-    remote: string;
-    files: string[];
-    changes: Change[];
-    findings: Finding[];
-};
-
-/** The current branch against `origin/main`, and the files the mirror's commits differ in. */
-export type MainComparison = { known: boolean; ahead: number; behind: number; differ: string[] };
-
-/** The mirror's state, as GET /api/deposit answers it. */
-export type MirrorState = {
-    id: string;
-    repo: string;
-    mirror: string;
-    exists: boolean;
-    branch: string;
-    remote: string;
-    /** Commits the current branch is ahead of its upstream. */
-    ahead: number;
-    main: MainComparison;
-    plan: Plan | null;
-};
+/**
+ * The branch the mirror is compared against, the one server/git/deposit/deposit-compare.ts reads.
+ */
+export const REMOTE_MAIN = 'origin/main';
 
 const findingShape = z.object({
-    kind: z.string(),
+    kind: z.enum(['secret', 'large', 'readme']),
     path: z.string(),
     mb: z.number()
 }) satisfies z.ZodType<Finding>;
@@ -84,6 +67,7 @@ const mirrorStateShape = z.object({
     exists: z.boolean(),
     branch: z.string(),
     remote: z.string(),
+    upstream: z.string(),
     ahead: z.number(),
     main: mainShape,
     plan: planShape.nullable()

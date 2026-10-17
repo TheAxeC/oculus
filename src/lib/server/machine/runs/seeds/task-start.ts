@@ -12,6 +12,7 @@
 // changed seed or a moved folder asks again.
 
 import { resolve } from 'node:path';
+import type { HubSettings } from '../../../../data/index.ts';
 import type { ComposeStart, TaskRef } from '../../../../data/model/index.ts';
 import { PROMPT_MAX } from '../../../../data/helpers/run/schedules.ts';
 import { splitHubId } from '../../../../data/helpers/hub-names.ts';
@@ -25,12 +26,13 @@ import { taskSeed } from './task-seed.ts';
 
 /**
  * What the task steps read of the request's server: the open workspace (its primary hub, and the
- * other hubs whose tasks are named `<hub name>:<id>`), the merged config and the engine.
+ * other hubs whose tasks are named `<hub name>:<id>`), the merged config and the settings of each
+ * other hub as the server keeps them parsed.
  */
 export type SeedSource = {
     open: OpenWorkspace;
     merged: Record<string, unknown>;
-    engine: string;
+    settings: HubSettings;
 };
 
 /** The seed, folder and terminal name of a task, as the page is shown them. */
@@ -38,7 +40,7 @@ export type SeedFacts = { seed: string; cwd: string; name: string };
 
 /** The facts a reference names, or the refusal word thrown as a TerminalRefused. */
 export function seedFacts(ref: TaskRef, source: SeedSource): SeedFacts {
-    const hubs = hubTargets(source.engine, source.open);
+    const hubs = hubTargets(source.open, source.settings);
     const named = splitHubId(
         ref.collection ?? ref.id,
         hubs.map((one) => one.key),

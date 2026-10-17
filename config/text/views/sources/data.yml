@@ -5,7 +5,8 @@ text:
         fetch: Fetch
         filters: Dataset filters
         hpc: HPC
-        intro: "{0} datasets ({1}). Provenance + recovery recipe per set, from the data file of the <code>data</code> entry of the hub's <code>collections:</code>."
+        intro: "{0} datasets ({1}). Provenance + recovery recipe per set, from the file the <code>data</code> entry of the hub's collections list names."
+        intro_one: "1 dataset ({0}). Provenance + recovery recipe per set, from the file the <code>data</code> entry of the hub's collections list names."
         intro_no_recover: No hub of the workspace sets <code>recover_command</code> in its <code>.oculus/config.yml</code>, so no set has a Recover control.
         intro_recover: Recover a set with its Recover control, which runs its hub's <code>recover_command</code> in a terminal in that hub.
         modality_facet: Modality

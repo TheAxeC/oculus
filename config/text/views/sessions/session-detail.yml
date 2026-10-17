@@ -3,11 +3,12 @@ text:
     sessions:
         cache: prompt cache
         cache_busts: '{0} busts'
+        cache_busts_one: 1 bust
         cache_share: '{0}% cached'
         cache_ttl: '{0} ttl'
         cache_ttl_none: no ttl
         clear_glyph: clear
-        clear_title: clear the title
+        clear_title: Clear Title
         context: context
         context_num: '{0} / {1}'
         detail_bar: Session controls

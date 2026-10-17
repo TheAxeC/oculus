@@ -1,12 +1,14 @@
 <script lang="ts">
-    // Layer 3, view partial. The Terminal view's bar names the terminal the tab shows while no list
-    // of terminals is drawn, as VS Code's panel names its one terminal in the view's header: the
-    // title after what runs in it (or the title the reader gave it), the description muted after
-    // it, its mark in the icon and colour it was given, and the bell mark while it rings. A double
-    // click on the title opens the rename field in its place. A right-click on it opens the menu of
-    // a list row on this terminal (`menu`), whose pick the tab routes as it routes a row's
-    // (terminal-list.ts, `routePick`); the menu is its own, so the rename field's text box keeps
-    // the text box menu.
+    // Layer 3, view partial. The name of a terminal on the Terminal view's bar
+    // (bar/TerminalBar.svelte), which names the terminal the tab shows while no list of terminals
+    // is drawn, as VS Code's panel names its one terminal in the view's header, and the one being
+    // renamed while the list is narrow: the title after what runs in it (or the title the reader
+    // gave it), the description muted after it, its mark in the icon and colour it was given, and
+    // the bell mark while it rings. A double click on the title opens the rename field in its
+    // place. A right-click on it opens the menu of a list row on this terminal (`menu`), whose pick
+    // the tab routes as it routes a row's (terminal-list.ts, `routePick`); the menu is its own, so
+    // the rename field's text box keeps the text box menu. The name carries the terminal's id, so a
+    // right press on it keeps that terminal's armed Kill (list/kill-arm.svelte.ts).
 
     import Glyph from '$lib/ui/display/Glyph.svelte';
     import ContextMenu from '$lib/ui/menu/ContextMenu.svelte';
@@ -43,7 +45,7 @@
 </script>
 
 <ContextMenu label={shown.title} read={menu} own {onpick}>
-    <span class="shown" title={tip} data-terminal-shown>
+    <span class="shown" title={tip} data-terminal-shown={shown.terminal}>
         <span class="mark" style={tokenStyle(markOf(shown).token)}>
             <Glyph name={markOf(shown).glyph} />
         </span>
@@ -83,11 +85,17 @@
         text-overflow: ellipsis;
     }
 
+    /* The description gives up its room first, down to nothing, so a narrow bar keeps the title
+       whole as long as it can, and a title cut further keeps its first characters readable. */
     .title {
+        flex: 0 1 auto;
+        min-width: 4ch;
         font-size: var(--fs-md);
     }
 
     .description {
+        flex: 0 1000 auto;
+        min-width: 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }

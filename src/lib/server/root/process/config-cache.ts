@@ -9,19 +9,34 @@
 // the hub is the open workspace's primary at each request; a hub without the file is stamped as
 // absent, so making the file moves the stamp.
 //
+// The settings of every other hub of the workspace (the engine's folder parsed under that hub's
+// own `.oculus/config.yml`) are kept the same way, one parse per hub folder under the stamp of the
+// engine's folder and that hub's settings file. A write target, a file operation, a document, a
+// deck, a terminal action and a rebuild each read the settings of every other hub, and a parse of
+// the whole folder per hub at each of them would hold the event loop as the primary's would, so
+// each of them takes the parse kept here. A parse is kept only for a hub of the workspace open at
+// the call, and every read first drops the parses of the hubs that left the workspace, so a folder
+// outside it is parsed at each read. Its findings are not said here: the rebuild reports them with
+// the build of that hub.
+//
 // The vocabulary of the hubs of the workspace (their domains and theme words, read from each hub's
 // registry files) is kept the same way: its stamp adds the settings file of every other hub and the
 // registry files the last read took the vocabulary from, so a request reads it again only when one
-// of those files or the engine's folder changed.
+// of those files or the engine's folder changed. It reads each other hub's settings through the
+// kept parse of that hub.
 //
 // A stamp that cannot be made (an entry that cannot be read, such as a dangling link) says
 // nothing about whether the folder changed, so a parse made under it is returned and not kept,
-// and the next request parses again. A finding of a parse is said when the parse is made.
+// and the next request parses again. A finding of the primary's parse is said once, by the first
+// request that takes the parse. The server's own readers of the settings (the relay, the debugger,
+// the apps, the schedules, the git watch, the rebuild's hook) take the same kept parse and say no
+// finding, so a parse one of them makes is said by the next request, as when that request had
+// made it.
 
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { HUB_FILE } from '../../../data/helpers/hub-names.ts';
-import type { HubRoot } from '../../../data/index.ts';
+import type { HubRoot, HubSettings } from '../../../data/index.ts';
 import type { Finding, HubVocabs } from '../../../data/model/index.ts';
 import { configDir, type loadConfig } from '../../../data/sources/config.ts';
 
@@ -33,6 +48,24 @@ type LoadedConfig = ReturnType<typeof loadConfig>;
  */
 export type ConfigCache = {
     read: () => LoadedConfig;
+    /**
+     * The same parse for a reader of the server's own (the relay, the debugger, the apps, the
+     * schedules, the git watch, the rebuild's hook), which says no finding: a parse it makes is
+     * kept and its findings are said by the next `read`.
+     */
+    quiet: () => LoadedConfig;
+    /**
+     * The parse of the engine's folder under the settings file of the hub at a folder, a hub of the
+     * workspace other than the primary, made again when a file of the folder or that settings file
+     * changed.
+     */
+    hub: HubSettings;
+    /**
+     * The parse of the engine's folder alone, under no hub's settings, which the writes that read
+     * the engine's own lists (the Lit Watch buckets, the Literature path) take; made again when a
+     * file of the folder changed. Its findings are not said here: the primary's parse says them.
+     */
+    defaults: () => LoadedConfig;
     /** The vocabulary of every hub of the workspace, for the records of that hub alone. */
     vocab: () => HubVocabs;
 };
@@ -91,33 +124,72 @@ export type ConfigCacheDeps = {
     /** The primary hub's folder, read at each request; null while the workspace has no primary. */
     hub: () => string | null;
     load: () => LoadedConfig;
+    /**
+     * Parse the engine's folder under the settings file of the hub at `dir`, or under no hub's
+     * settings for `null`.
+     */
+    loadHub: (dir: string | null) => LoadedConfig;
     report: (findings: Finding[]) => void;
     /** The name of the primary hub, and the hubs of the workspace other than it. */
     primary: () => string | null;
     others: () => HubRoot[];
     /**
-     * The vocabulary of the hubs, read by the primary's config and each other hub's settings from
-     * the hubs' registry files, and the files it was read from.
+     * The vocabulary of the hubs, read by the primary's config and each other hub's settings, as
+     * `settings` gives them, from the hubs' registry files, and the files it was read from.
      */
-    vocabs: (primary: LoadedConfig, others: HubRoot[]) => { vocabs: HubVocabs; files: string[] };
+    vocabs: (
+        primary: LoadedConfig,
+        others: HubRoot[],
+        settings: HubSettings
+    ) => { vocabs: HubVocabs; files: string[] };
 };
 
 /**
  * A cache over one engine's config folder and the hub's settings file, empty until the first read.
  */
 export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
-    let held: { stamp: string; read: LoadedConfig } | undefined;
+    let held: { stamp: string; read: LoadedConfig; said: boolean } | undefined;
     let heldVocab: { stamp: string; files: string[]; read: string; vocab: HubVocabs } | undefined;
-    const read = (): LoadedConfig => {
+    const heldHubs = new Map<string, { stamp: string; read: LoadedConfig }>();
+    let heldDefaults: { stamp: string; read: LoadedConfig } | undefined;
+    const take = (say: boolean): LoadedConfig => {
         const stamp = configStamp(deps.engine, deps.hub());
-        if (stamp !== UNREADABLE && held?.stamp === stamp) return held.read;
+        if (stamp !== UNREADABLE && held?.stamp === stamp) {
+            if (say && !held.said) {
+                deps.report(held.read.findings);
+                held.said = true;
+            }
+            return held.read;
+        }
         const parsed = deps.load();
-        deps.report(parsed.findings);
-        held = stamp === UNREADABLE ? undefined : { stamp, read: parsed };
+        if (say) deps.report(parsed.findings);
+        held = stamp === UNREADABLE ? undefined : { stamp, read: parsed, said: say };
+        return parsed;
+    };
+    const read = (): LoadedConfig => take(true);
+    const hub = (dir: string): LoadedConfig => {
+        const open = new Set(deps.others().map((one) => one.dir));
+        for (const one of heldHubs.keys()) if (!open.has(one)) heldHubs.delete(one);
+        const stamp = configStamp(deps.engine, dir);
+        const kept = heldHubs.get(dir);
+        if (stamp !== UNREADABLE && kept?.stamp === stamp) return kept.read;
+        const parsed = deps.loadHub(dir);
+        if (stamp !== UNREADABLE && open.has(dir)) heldHubs.set(dir, { stamp, read: parsed });
+        else heldHubs.delete(dir);
+        return parsed;
+    };
+    const defaults = (): LoadedConfig => {
+        const stamp = configStamp(deps.engine, null);
+        if (stamp !== UNREADABLE && heldDefaults?.stamp === stamp) return heldDefaults.read;
+        const parsed = deps.loadHub(null);
+        heldDefaults = stamp === UNREADABLE ? undefined : { stamp, read: parsed };
         return parsed;
     };
     return {
         read,
+        quiet: () => take(false),
+        hub,
+        defaults,
         vocab() {
             const others = deps.others();
             const stamps = [
@@ -134,7 +206,7 @@ export function createConfigCache(deps: ConfigCacheDeps): ConfigCache {
             ) {
                 return heldVocab.vocab;
             }
-            const made = deps.vocabs(read(), others);
+            const made = deps.vocabs(read(), others, hub);
             const files = filesStamp(made.files);
             const kept = readable && !files.split('\n').includes(UNREADABLE);
             heldVocab = kept

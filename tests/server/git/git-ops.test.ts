@@ -4,6 +4,9 @@
 // Every repository here is made under the system temporary directory with the real git: a bare
 // repository stands for the remote, and the working repository is a clone of it, so pull, fetch,
 // sync, publish and the tag push cross a real remote without leaving the temporary tree.
+//
+// The machine's and the user's git configuration are replaced by an empty file (`isolateGit`),
+// so no hook, identity or signing key of the machine runs or is read.
 // @module-tag slow: its cases run real git against a bare remote, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
@@ -30,6 +33,7 @@ import { hunkRows, hunksOf } from '../../../src/lib/state/sources/repositories/d
 import { sidesPatch } from '../../../src/lib/state/sources/repositories/diff/diff-patch.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
 import { DELETED, deletionConflicts } from './deletions.ts';
+import { isolateGit } from './refs/repo.ts';
 import { TEXT } from '../text.ts';
 
 let dir = '';
@@ -105,6 +109,8 @@ const CLONES = ['seed', 'repo', 'other'];
 
 /** The remote and its clones, built once; every case starts from a copy of this folder. */
 let template = '';
+
+isolateGit();
 
 test.beforeAll(() => {
     dir = scratchDir('oculus-git-ops-template-');

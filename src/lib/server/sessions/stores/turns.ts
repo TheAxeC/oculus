@@ -23,6 +23,7 @@ import { codeColour } from '../../../data/prose/languages.ts';
 import { mapShape, quickly } from '../../../data/shapes/shapes.ts';
 import { stampShape, textShape } from '../record.ts';
 import { foldFrom } from './transcripts.ts';
+import { promptFields, saidByHuman } from '../fold.ts';
 import type { SessionTool, Turn, TurnTool } from '../../../data/model/index.ts';
 
 /** The longest text one turn carries. A longer one is cut and says so. */
@@ -108,11 +109,14 @@ const contentShape = z
     .optional()
     .catch(noContent);
 
-/** What a Claude record that is a turn is read for: its stamp and the message and origin. */
+/**
+ * What a Claude record that is a turn is read for: its stamp, the message, and whether a person
+ * wrote it.
+ */
 const claudeHeadShape = z.object({
     timestamp: stampShape,
     message: z.unknown().optional(),
-    origin: z.unknown().optional()
+    ...promptFields
 });
 
 /** The `message` of a Claude turn record, read for its content; usage.ts reads its usage. */
@@ -121,12 +125,6 @@ const claudeTurnMessageShape = quickly(
         content: noContent()
     }))
 );
-
-/** A record is a human's when its `origin` names one. */
-const humanShape = z
-    .object({ kind: z.literal('human') })
-    .optional()
-    .catch(undefined);
 
 /**
  * The turns of one transcript from byte `from`, each said turn cut at `cap` characters. An
@@ -169,7 +167,7 @@ function claudeRecord(
     const at = head.timestamp;
     const content = claudeTurnMessageShape.parse(head.message).content ?? noContent();
     if (type === 'user') {
-        if (humanShape.parse(head.origin) !== undefined && content.said !== '') {
+        if (content.said !== '' && saidByHuman(head, content.said)) {
             answer.turns.push(saidTurn(at, 'user', content.said, cap));
         }
         for (const { id, ok } of content.results) {

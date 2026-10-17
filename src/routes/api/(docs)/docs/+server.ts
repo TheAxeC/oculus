@@ -1,8 +1,8 @@
 // The document endpoint. A route module may export only its verbs, so everything it does lives in
 // lib/server/content/docs.ts and this is the one line that joins them. The hubs it reads are the
-// hubs of the open workspace, the primary's settings are the ones every write lands under, and the
-// project it reads comes from the portfolio this request's server holds, so one document costs one
-// file read.
+// hubs of the open workspace with the settings the server keeps parsed for each, the primary's
+// settings are the ones every write lands under, and the project it reads comes from the portfolio
+// this request's server holds, so one document costs one file read.
 
 import { portfolioConfigFrom } from '$lib/data/index';
 import { handleDocs } from '$lib/server/content/docs';
@@ -20,7 +20,7 @@ export const GET: RequestHandler = ({ request, locals }) => {
                 : { key: open.primary, dir: open.primaryDir },
         engine: server.engine,
         config: portfolioConfigFrom(locals.config().config),
-        hubs: hubTargets(server.engine, open),
+        hubs: hubTargets(open, server.configCache.hub),
         project: (id) => project(server.hub, id)
     });
 };

@@ -6,14 +6,12 @@
 
 import type {
     Area,
-    GitPayload,
     GitState,
     GroupedSession,
     SessionsPayload,
     Terminal,
     Workspace
 } from '../../src/lib/data/model/index.ts';
-import type { ClientState } from './client.ts';
 
 /** One session, everything at its quiet default and the case's own fields written over it. */
 export function record(id: string, over: Partial<GroupedSession> = {}): GroupedSession {
@@ -84,21 +82,6 @@ export function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
     };
 }
 
-/** Hand the client a `sessions` payload that holds the terminals named, at the version given. */
-export function receiveTerminals(
-    client: ClientState,
-    version: number,
-    ids: string[],
-    name = 'latex build alpha/main.tex'
-): void {
-    const held: SessionsPayload = {
-        records: [],
-        workspaces: [],
-        terminals: ids.map((id) => terminal(id, { name }))
-    };
-    client.entities.receive({ channel: 'sessions', version, payload: held });
-}
-
 /** One area of a workspace, holding the sessions the grouping filed under it. */
 export function area(key: string, sessions: GroupedSession[], over: Partial<Area> = {}): Area {
     return {
@@ -165,34 +148,5 @@ export function git(over: Partial<GitState> = {}): GitState {
             untracked: state.untracked.length,
             merge: state.conflicted.length
         }
-    };
-}
-
-/**
- * The hub's git state the session view tests read: one staged, two changed, one untracked file.
- * The changed manuscript is the file the fixture's other live session holds open, as git sees it:
- * relative to the workspace root, which is what the "also open" mark has to match across.
- */
-export const HUB_GIT: GitState = git({
-    branch: 'main',
-    ahead: 1,
-    staged: [{ path: 'a/one.ts', status: 'M', added: 4, deleted: 2 }],
-    unstaged: [
-        { path: 'a/two.png', status: 'M', added: null, deleted: null },
-        {
-            path: 'projects/manuscripts/alpha/manuscript/main.tex',
-            status: 'M',
-            added: 1,
-            deleted: 0
-        }
-    ],
-    untracked: [{ path: 'a/three.ts', status: '?', added: 0, deleted: 0 }]
-});
-
-/** The session view tests' git channel: the hub's repository, and `/other`, a folder, no repo. */
-export function sessionsGit(hub: string): GitPayload {
-    return {
-        [hub]: HUB_GIT,
-        '/other': git({ branch: '', repository: false, error: 'not a git repository' })
     };
 }

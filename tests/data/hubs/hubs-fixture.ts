@@ -8,7 +8,7 @@
 
 import { cpSync } from 'node:fs';
 import { join } from 'node:path';
-import { engineDir } from '../../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../../src/lib/data/sources/config.ts';
 import type { AuditPayload, FeedsPayload, Snapshot } from '../../../src/lib/data/model/index.ts';
 import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { watchPortfolio } from '../../../src/lib/server/root/watch/portfolio.ts';
@@ -19,7 +19,7 @@ import { workspaceWith, type FolderSpec } from '../../fixtures/hubs/workspace.ts
 const DEMO = join(engineDir(), 'tests', 'fixtures', 'hubs', 'demo');
 
 /** Two copies of the demo hub, the first hub's and the second's, and the folder holding both. */
-export type Copies = { base: string; hub: string; lab: string };
+type Copies = { base: string; hub: string; lab: string };
 
 export function copies(): Copies {
     const base = scratchDir('oculus-hubs-');
@@ -44,6 +44,7 @@ export function published(folders: readonly FolderSpec[], primary?: string): Pub
             icons: { set: {} },
             host: { name: 'test', address: '127.0.0.1' },
             open: () => workspace.open(),
+            settings: (dir) => loadConfig(engineDir(), { hub: dir }),
             problems: () => []
         },
         { debounce: 20 }

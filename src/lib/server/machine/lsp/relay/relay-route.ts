@@ -582,6 +582,33 @@ export function attachMore(state: RelayState, page: Page, open: Open): void {
 }
 
 /**
+ * A lent document the page opens, made the page's: under the page's address and channel, and with
+ * the text the page opens it with put on its server at a version above the one it was lent at,
+ * from which the page's own versions follow.
+ */
+function takeText(open: Open, opening: Doc): Open {
+    const { held, doc } = open;
+    doc.pageUri = opening.pageUri;
+    doc.pageRoot = opening.pageRoot;
+    doc.channel = opening.channel;
+    doc.shift = Math.max(doc.shift, doc.version + 1 - opening.version);
+    if (doc.text === opening.text) {
+        held.versioned(doc, opening.version);
+        return open;
+    }
+    doc.text = opening.text;
+    held.notify({
+        jsonrpc: '2.0',
+        method: 'textDocument/didChange',
+        params: {
+            textDocument: { uri: doc.fileUri, version: held.versioned(doc, opening.version) },
+            contentChanges: [{ text: opening.text }]
+        }
+    });
+    return open;
+}
+
+/**
  * Put a document on its servers. `existed` is whether a server was there before this document:
  * one that was says where it stands to the channel and root key the document opens on, and one
  * made now announces its state as it starts.
@@ -594,10 +621,21 @@ function openOn(
     const [first] = opens;
     if (first.held.docs.has(docKey(first.doc.fileUri))) {
         // The same file under another root key of an overlapping root: one document on the
-        // server, and this address is another name for it.
-        const known = page.opened.get(normal(first.doc.real));
-        const open = known === undefined ? undefined : page.docs.get(known);
-        if (open !== undefined) page.docs.set(first.doc.pageUri, open);
+        // server, and this address is another name for it. A document a link request lent the
+        // server under this address (held/requests/links.ts) is the page's from now on, at the
+        // text the page opens it with.
+        const real = normal(first.doc.real);
+        const known = page.opened.get(real);
+        const lent = first.held.docs.get(docKey(first.doc.fileUri));
+        const open =
+            known !== undefined
+                ? page.docs.get(known)
+                : lent === undefined
+                  ? undefined
+                  : takeText({ held: first.held, doc: lent, also: [] }, first.doc);
+        if (open === undefined) return;
+        page.docs.set(first.doc.pageUri, open);
+        page.opened.set(real, page.opened.get(real) ?? first.doc.pageUri);
         return;
     }
     const made: Open[] = opens.map(({ held, doc }) => ({ held, doc, also: [] }));

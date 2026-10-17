@@ -1,6 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial under views/shared/. The head a registry-line view draws above its
-    // cards: the view's intro and the line the last write or open said. The control that adds an
+    // cards: the hub's own intro, the view's intro and the line the last write or open said. The
+    // hub's intro is the `intro:` of the view's data file, a hub value, so it is drawn through the
+    // sanitiser, with its `$...$` math drawn as the cards draw theirs. The control that adds an
     // entry is the view's header icon (AddButton.svelte), which opens the Add box this draws.
     //
     // The Pillars, Domains, Data and Venues views draw it the same way, so it lives here once. What
@@ -8,6 +10,9 @@
     // the view also writes.
 
     import type { Snippet } from 'svelte';
+    import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
+    import Intro from '$lib/views/shared/prose/Intro.svelte';
     import AddAsk from '../entry/AddAsk.svelte';
     import type { RegistryFile } from './registry-file.svelte';
 
@@ -24,8 +29,13 @@
     };
 
     let { intro, file, spaced = false }: Props = $props();
+
+    const cardMath = createCardMath();
 </script>
 
+{#if file.collection?.intro}
+    <Intro html={inlineMarkdown(file.collection.intro, cardMath(file.collection.intro))} />
+{/if}
 {@render intro()}
 {#if file.said !== ''}
     <p class="said" class:spaced>{file.said}</p>

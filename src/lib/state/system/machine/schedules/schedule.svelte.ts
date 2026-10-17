@@ -341,13 +341,16 @@ export function createSchedule(
     }
 
     function unread(): string[] {
-        return (entities.schedule()?.unread ?? []).map((one) => {
+        const payload = entities.schedule();
+        const lines = (payload?.unread ?? []).map((one) => {
             if (one.file === 'record') return t('app.schedules.unread_record');
             if (one.file === 'commands') return t('app.schedules.unread_commands');
             return one.line === null
                 ? t('app.schedules.unread_schedules')
                 : t('app.schedules.unread_schedules_at', one.line);
         });
+        const waiting = payload?.waiting ?? null;
+        return waiting === null ? lines : [...lines, t('app.schedules.no_terminals', waiting)];
     }
 
     function offered(): UpdateTask[] {

@@ -38,7 +38,6 @@
         buildGraph,
         filterGraph,
         hasRelationships as relationshipsOf,
-        layoutKey,
         lineFilters as lineChips,
         presentFilter,
         nextStart,
@@ -192,17 +191,15 @@
         {:else if base.nodes.length > 0 && graph.nodes.length === 0}
             <Empty message={t('map.empty_filtered')} glyph={t('map.empty_glyph')} />
         {:else}
-            {#key `${layoutKey(graph.nodes)}-${seed}`}
-                <Graph
-                    {graph}
-                    instanceId={instance.id}
-                    {linkMode}
-                    {seed}
-                    label={t('views.map')}
-                    onopen={open}
-                    onlink={toggleRelated}
-                />
-            {/key}
+            <Graph
+                {graph}
+                instanceId={instance.id}
+                {linkMode}
+                {seed}
+                label={t('views.map')}
+                onopen={open}
+                onlink={toggleRelated}
+            />
         {/if}
     </div>
 </Pane>

@@ -11,7 +11,11 @@ import type { RequestHandler } from './$types';
 
 const hubsOf = (locals: App.Locals) =>
     picturesOf(
-        allHubs(locals.server.engine, locals.config().config, locals.server.workspace.open())
+        allHubs(
+            locals.config().config,
+            locals.server.workspace.open(),
+            locals.server.configCache.hub
+        )
     );
 
 export const GET: RequestHandler = ({ url, locals }) => {

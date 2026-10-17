@@ -1,9 +1,9 @@
 <script lang="ts">
     // Layer 3, view partial. The composer of a new session: one box holding the prompt, with its
     // controls in its foot as VS Code's chat input holds them, the attach control, the pickers
-    // (workspace, agent, account, and the agent's own lists out of config/catalogs/agents.yml)
-    // and Start. The Terminal view draws it alone while a tab shows no terminal, and right of the
-    // row of terminals while the tab is composing (New With a Prompt, or the `n` key).
+    // (workspace, agent, account, and the agent's own lists out of config/catalogs/agents.yml) and
+    // Start. The Terminal view draws it alone while a tab shows no terminal, and right of the row
+    // of terminals while the tab is composing (New With a Prompt, or the `n` key).
     //
     // What each picker last chose is kept in the tab's instance state
     // (state/sessions/terminal/composer/composer.ts), so the tab's next composer opens on the same
@@ -22,7 +22,9 @@
     //
     // New worktree (state/sessions/terminal/composer/worktree.ts) makes a worktree of the folder's
     // repository through the Repositories view's own write and starts there; a write that went
-    // leaves the composer on the new worktree's folder, whether or not the start landed.
+    // leaves the composer on the new worktree's folder, whether or not the start landed. Once a
+    // start lands, the tab no longer offers the folder it was opened in or a worktree it made
+    // (`splitEnded`).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import Menu from '$lib/ui/menu/Menu.svelte';
@@ -34,6 +36,7 @@
     import SeedApproval from './SeedApproval.svelte';
     import TaskBlock from './TaskBlock.svelte';
     import WorkspacePicker from '$lib/views/shared/sessions/WorkspacePicker.svelte';
+    import { hubPlaces } from '$lib/views/shared/sessions/place-names';
     import WorktreeName from './worktree/WorktreeName.svelte';
     import WorktreeToggle from './worktree/WorktreeToggle.svelte';
     import {
@@ -53,6 +56,7 @@
         relativeIn,
         worktreeRoot,
         skipQuestion,
+        splitEnded,
         withComposer,
         type SkipQuestion,
         type ComposerAgent,
@@ -66,6 +70,7 @@
     import { FILE_DRAG } from '$lib/state/sources/fs';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
+    import { kindLabel } from '../terminal-list';
 
     type Props = {
         /** The tab whose instance state keeps the picks. */
@@ -159,12 +164,6 @@
         });
     });
 
-    function agentLabel(one: ComposerAgent): string {
-        if (one === 'claude') return t('sessions.kind_claude');
-        if (one === 'codex') return t('sessions.kind_codex');
-        return t('sessions.kind_shell');
-    }
-
     /** Keep one change of the record in the tab's instance state. */
     function keep(next: Partial<ComposerRecord>): void {
         setInstanceState(owner, withComposer(instanceState(owner), { ...record, ...next }));
@@ -237,7 +236,7 @@
     async function start(confirmed = false): Promise<void> {
         if (starting) return;
         const question =
-            agent === 'shell' ? null : skipQuestion(agent, agentLabel(agent), choices, picks);
+            agent === 'shell' ? null : skipQuestion(agent, kindLabel(agent, t), choices, picks);
         if (question !== null && !confirmed) {
             asking = question;
             return;
@@ -284,7 +283,8 @@
         }
         prompt = '';
         attached = [];
-        onstarted(answer.id, agentLabel(agent));
+        setInstanceState(owner, splitEnded(instanceState(owner)));
+        onstarted(answer.id, kindLabel(agent, t));
     }
 
     /** Approve the seed shown in the approval panel, then make the same start again. */
@@ -317,7 +317,7 @@
             <SeedApproval
                 seed={approving.seed}
                 folder={approving.cwd}
-                agent={agentLabel(agent)}
+                agent={kindLabel(agent, t)}
                 busy={approvingNow}
                 onapprove={() => void approve()}
                 oncancel={() => (approving = null)}
@@ -362,7 +362,7 @@
                 <WorkspacePicker
                     workspace={planned}
                     {places}
-                    {hub}
+                    hubs={hubPlaces(workspaces().folders, workspaces().primary)}
                     placement="down"
                     onpick={(dir: string) => keep({ workspace: dir })}
                 />
@@ -374,12 +374,12 @@
                 />
                 <span class="picker" data-picker="agent">
                     <Menu
-                        label={agentLabel(agent)}
+                        label={kindLabel(agent, t)}
                         glyph={markGlyph(agent, '')}
                         placement="down"
                         items={AGENTS.map((one) => ({
                             id: one,
-                            label: agentLabel(one),
+                            label: kindLabel(one, t),
                             glyph: markGlyph(one, ''),
                             active: one === agent
                         }))}

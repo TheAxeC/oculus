@@ -15,12 +15,12 @@
     // the model's as one edit, which undo takes back. A line ending asked for is set on the model,
     // and the text it gives is handed back as a change, as a conversion of the indentation is.
     //
-    // Theme and font are values Monaco holds, so they are read off the computed tokens of the body
-    // when the editor mounts and again whenever `look` or `codeTheme` changes, one frame later,
-    // after the body has taken the new theme's class; the parent hands in a `look` that changes
-    // with the theme and the text size, as the terminal follows them, and the code theme (`tokens`
-    // or a Shiki theme id) whose syntax colours the theme is painted with. The `options`
-    // (options.ts) are put on the editor when it is made and again whenever they change.
+    // Theme and font are values Monaco holds, read off the computed tokens of the body when the
+    // editor mounts and whenever `look` or `codeTheme` changes, one frame later, once the body has
+    // the new theme's class. The parent hands in a `look` that changes with the theme, the text
+    // size and every pick of a code theme, so a theme whose file failed to load is painted again,
+    // and the code theme (`tokens` or a Shiki theme id) whose syntax colours the theme is painted
+    // with. The `options` (options.ts) are set when the editor is made and on each change.
     //
     // The keyboard reaches the quick diff marks through three editor actions, which the palette
     // lists while the text holds a mark (gutter/gutter.ts `changeActions`): Next, Previous, Open
@@ -68,7 +68,7 @@
         type GutterCollections
     } from './gutter/editor-gutter';
     import { tabOut } from './tab-out';
-    import { followFirstLine, reachedBy, runCommand, type FirstLine } from './commands';
+    import { followFirstLine, reachText, runCommand, type FirstLine } from './commands';
     import { applyIndent, applyOptions, monacoOptions } from './options';
     import type { EditorOptions, Widgets } from './options';
     import { lineBars } from './bars/zones';
@@ -116,7 +116,7 @@
         model: string;
         /** The file's path, which names the model after the instance and labels the editor. */
         path: string;
-        /** A value that changes whenever the tokens or the text size do. */
+        /** A value that changes with the tokens, the text size and every pick of a code theme. */
         look?: string;
         /** The code theme the syntax is coloured with: `tokens`, or the id of a Shiki theme. */
         codeTheme?: string;
@@ -333,13 +333,15 @@
     // or the path changes, and not when the object they came from is replaced.
     const named = $derived(name);
     const filed = $derived(path);
+    /** Counts the models found disposed under the editor, each of which is made again. */
+    let remade = $state(0);
 
     // The instance's model, made on its own URI and set on the editor, and made again when the
     // tab is pointed at another file. The one before it is disposed with it.
     $effect(() => {
         const loaded = kit;
         const made = editor;
-        if (loaded === null || made === null) return;
+        if (loaded === null || made === null || remade < 0) return;
         const uri = modelUri(loaded.monaco, named, filed);
         const created = untrack(() => {
             loaded.monaco.editor.getModel(uri)?.dispose();
@@ -366,27 +368,24 @@
         };
     });
 
-    // A text the parent hands in that the model does not hold already reaches the model as the
-    // edits it was made by when the parent names them, and as one replacement otherwise, in the
-    // line ending asked for; the text the reader typed comes back equal and is left.
+    // A text the parent hands in that the model does not hold already reaches the model
+    // (commands.ts, reachText); the text the reader typed comes back equal and is left. A model
+    // disposed under the editor, which an edit would throw on, is made again from the text.
     $effect(() => {
         const held = model;
         const wanted = text;
         if (held === null || kit === null) return;
+        if (held.isDisposed()) {
+            untrack(() => (remade += 1));
+            return;
+        }
         const LF = kit.monaco.editor.EndOfLinePreference.LF;
         if (held.getValue(LF) === wanted.replace(/\r\n/g, '\n')) return;
         const loaded = kit;
         untrack(() => {
             applying = true;
             try {
-                if (!reachedBy(loaded.monaco, held, reached?.() ?? null, wanted)) {
-                    held.pushEditOperations(
-                        [],
-                        [{ range: held.getFullModelRange(), text: wanted }],
-                        () => null
-                    );
-                }
-                held.pushEOL(eolOf(loaded.monaco, ending));
+                reachText(loaded.monaco, held, reached?.() ?? null, wanted, ending);
             } finally {
                 applying = false;
             }
@@ -431,9 +430,10 @@
         return untrack(() => add(loaded, made, held));
     });
 
+    // The tinted runs, drawn when a model is set (the editor is built with none) and on each one.
     $effect(() => {
         const runs = highlights;
-        if (collections !== null) drawHighlights(collections, runs);
+        if (model !== null && collections !== null) drawHighlights(collections, runs);
     });
 
     // The theme and the font again whenever the look or the code theme changes from the one the

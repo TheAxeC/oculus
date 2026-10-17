@@ -1,8 +1,10 @@
 // Layer 2, server. The value each key of the machine's `local.yml` files has in force, as the text
 // the Settings view shows under the key, built from the values the context holds
 // (`server.machine()` is the joined read of the files with the keys a switch did not apply held at
-// their running value). A path is shown as it resolved and the port as a number. A key with no
-// value in force has no entry, and the view shows its default.
+// their running value). A path is shown as it resolved, and the port as the number of the port the
+// server listens on, which is the port in force whatever the file names, since a move to the port
+// it names can be refused. A key with no value in force has no entry, and the view shows its
+// default.
 //
 // The three lists (`accounts`, `calendars`, `mail`) join the rows of every hub's file, so each
 // shows one line per row in YAML flow form followed by the hub whose file holds it in parentheses,
@@ -29,11 +31,11 @@ function lineOf(row: { hub?: string }): string {
     return hub === undefined ? flow : `${flow} (${hub})`;
 }
 
-/** The keys with one value, each with the text of the value `config` holds for it. */
-function scalarsOf(config: LocalConfig): [string, string | undefined][] {
+/** The keys with one value, each with the text of its value in force; the port is `listening`. */
+function scalarsOf(config: LocalConfig, listening: number): [string, string | undefined][] {
     const literature = config.literature;
     return [
-        ['port', String(config.port)],
+        ['port', String(listening)],
         ...[...PROGRAM_KEYS, ...STATE_PATHS].map(([key, field]): [string, string | undefined] => [
             key,
             config[field]
@@ -46,22 +48,24 @@ function scalarsOf(config: LocalConfig): [string, string | undefined][] {
 }
 
 /**
- * The values of `config` for the Settings answer. `set` names the keys the primary hub's file sets
- * and `defaults` is the default text of each key. A key the file does not set has an entry only
- * when its value differs from the default (a started key held at its running value), a key it sets
- * has one always, and a key it sets whose value does not read has its default as the value in
- * force. A list has lines only when some hub's file holds a row of it. `lists` names the hubs
- * whose file sets each list, as the read of the files knows them.
+ * The values of `config` for the Settings answer, with `listening` the port the server listens on.
+ * `set` names the keys the primary hub's file sets and `defaults` is the default text of each key.
+ * A key the file does not set has an entry only when its value differs from the default (a started
+ * key held at its running value, a port the server could not leave), a key it sets has one always,
+ * and a key it sets whose value does not read has its default as the value in force. A list has
+ * lines only when some hub's file holds a row of it. `lists` names the hubs whose file sets each
+ * list, as the read of the files knows them.
  */
 export function machineValues(
     config: LocalConfig,
+    listening: number,
     set: readonly string[],
     defaults: Readonly<Record<string, string>>,
     lists: Readonly<Record<string, readonly string[]>>
 ): MachineValues {
     const values: Record<string, string> = {};
     const hubs: Record<string, string[]> = {};
-    for (const [key, value] of scalarsOf(config)) {
+    for (const [key, value] of scalarsOf(config, listening)) {
         const isSet = set.includes(key);
         const fallback = Object.hasOwn(defaults, key) ? defaults[key] : undefined;
         if (value === undefined) {

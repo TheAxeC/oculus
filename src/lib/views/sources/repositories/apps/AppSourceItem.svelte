@@ -58,7 +58,9 @@
             {current}
             count={control.count !== null && control.count > 0 ? control.count : undefined}
             badge
-            countTitle={t('repositories.list_changes', control.count ?? 0)}
+            countTitle={control.count === 1
+                ? t('repositories.list_changes_one')
+                : t('repositories.list_changes', control.count ?? 0)}
             nameStyle="font-weight: 400"
             onclick={onpick}
         >

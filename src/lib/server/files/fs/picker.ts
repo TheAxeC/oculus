@@ -70,8 +70,13 @@ function pickOptionsOf(body: unknown): PickOptions {
 }
 
 /**
- * The script the panel runs: folders only, in front, starting at the folder asked for or the home
- * folder, with several folders to choose from unless one is asked for.
+ * The script the panel runs: folders only, starting at the folder asked for or the home folder,
+ * with several folders to choose from unless one is asked for. The panel is drawn above every
+ * window and takes the keyboard: `osascript` is a process with no window of its own, which
+ * activating brings nothing forward for, so the script makes it an accessory app (activation policy
+ * 1, which may own the key window and shows no Dock icon), sets the panel's level to the modal
+ * panel level (8, NSModalPanelWindowLevel, above the windows of every app) and makes it key and
+ * front before it runs.
  */
 export function pickerScript(options: PickOptions = {}): string {
     const start =
@@ -85,7 +90,10 @@ export function pickerScript(options: PickOptions = {}): string {
         `panel.allowsMultipleSelection = ${options.single === true ? 'false' : 'true'};`,
         `panel.prompt = ${options.single === true ? "'Choose'" : "'Add'"};`,
         `panel.directoryURL = $.NSURL.fileURLWithPath(${start});`,
+        '$.NSApplication.sharedApplication.setActivationPolicy(1);',
         '$.NSApplication.sharedApplication.activateIgnoringOtherApps(true);',
+        'panel.level = 8;',
+        'panel.makeKeyAndOrderFront(null);',
         'const chosen = [];',
         'if (panel.runModal === 1) {',
         '    const urls = panel.URLs;',

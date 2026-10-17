@@ -127,7 +127,11 @@ export function createFlows(deps: FlowsDeps): FlowsStore {
         const files =
             seen.secrets === null
                 ? t('apps.remove_secrets_unknown', seen.folder)
-                : t('apps.remove_secrets', seen.folder, seen.secrets.toString());
+                : seen.secrets === 0
+                  ? t('apps.remove_secrets_none', seen.folder)
+                  : seen.secrets === 1
+                    ? t('apps.remove_secrets_one', seen.folder)
+                    : t('apps.remove_secrets', seen.folder, seen.secrets.toString());
         const others =
             seen.dependents.length === 0
                 ? ''

@@ -112,6 +112,8 @@ export function mustBe(
         case 'hub_path':
             return findingText(catalog, 'findings.words.hub_path');
         case 'slots':
-            return findingText(catalog, 'findings.words.slots', problem.slots.length);
+            return problem.slots.length === 1
+                ? findingText(catalog, 'findings.words.slots_one')
+                : findingText(catalog, 'findings.words.slots', problem.slots.length);
     }
 }

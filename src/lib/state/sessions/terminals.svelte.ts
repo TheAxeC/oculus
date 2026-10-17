@@ -1,6 +1,5 @@
 // Layer 2, client state. The page's end of DESIGN.md's "PTY": the terminals the sessions payload
-// carries, the actions of /api/terminal, and the two messages a page writes on a `pty:`
-// channel.
+// carries, the actions of /api/terminal, and the two messages a page writes on a `pty:` channel.
 //
 // The `pty:` channel of a terminal, its two messages and the panes reading its output are
 // state/sessions/terminal/pty/pty-wire.ts's; this store builds one wire over its socket and hands
@@ -15,12 +14,12 @@
 // tab's Attach to Session); `startInTab` starts a terminal of a kind at once in the tab's folder,
 // or in a folder given, and shows it, `newTerminalIn` does the same in a Terminal tab of one pane,
 // and `splitTerminal` starts one of the split terminal's kind and folder right of it in the tab's
-// row; `composeIn` puts the composer of a start with a prompt in the page's Terminal tab, in the
-// tab's folder; `composeAt` does the same for a folder and an agent a worktree names, or for a hub
-// task, whose seed it asks the server for (state/sessions/terminal/composer/opening.svelte.ts holds
-// the three composers and the held seeds); `approveSeed` posts the approval a task's seed asked
-// for, and `startingIn` says that a tab's start is in flight. A start the server refuses is said on
-// the tab (`refusal`) and changes nothing.
+// row, refusing one whose folder tmux did not report; `composeIn` puts the composer of a start with
+// a prompt in the page's Terminal tab, in the tab's folder; `composeAt` does the same for a folder
+// and an agent a worktree names, or for a hub task, whose seed it asks the server for
+// (state/sessions/terminal/composer/opening.svelte.ts holds the three composers and the held
+// seeds); `approveSeed` posts the approval a task's seed asked for, and `startingIn` says that a
+// tab's start is in flight. A refused start is said on the tab (`refusal`) and changes nothing.
 // The store keeps what each start answered until the payload lists it, so a terminal started a
 // moment ago can be split. A terminal that ends leaves the `sessions` payload's list, and the store
 // takes it out of every tab that owned it, closes a tab left owning none, on any page, unless the
@@ -176,13 +175,13 @@ export type TerminalsStore = {
     sendInput: (id: string, text: string) => boolean;
     sendResize: (id: string, cols: number, rows: number) => boolean;
     /**
-     * Read one terminal's output once its window has the size `size()` answers: the scrollback is
-     * captured at the window's size with the cursor placed from the pane's top. The resize is
-     * posted again when `size` changed while it was out, and the channel is asked for after its
-     * answer, or at `RESIZE_WAIT`. The call returned takes the listener off.
+     * Read one terminal's output once its window has the size `size()` answers, the scrollback
+     * captured at that size with the cursor placed from the pane's top. The resize goes ahead of
+     * the channel on a socket that may write; else it is posted (again if `size` changed) and the
+     * channel is asked for after its answer or at `RESIZE_WAIT`. The call returned stops it, and
+     * the last such call of a terminal takes its channel out of the page's subscription.
      */
     subscribePty: (id: string, size: () => PtySize, onBytes: PtyListener) => () => void;
-    unsubscribePty: (id: string) => void;
     /** Whether a call of `subscribePty` for the terminal is still reading its output. */
     subscribed: (id: string) => boolean;
     /**
@@ -747,8 +746,11 @@ export function createTerminals(
         const target = tabById(tab);
         const record = terminalRecord(terminal);
         const owned = target !== null && readTab(target.state).terminals.includes(terminal);
-        if (!owned || record === null) {
-            const words = t('sessions.terminal_split_unknown');
+        const known = owned && record !== null;
+        if (!known || record.cwd === '') {
+            const words = known
+                ? t('sessions.terminal_split_no_folder')
+                : t('sessions.terminal_split_unknown');
             say(tab, words);
             return { ok: false, id: '', error: words };
         }
@@ -820,10 +822,7 @@ export function createTerminals(
         }
     }
 
-    const { sendInput, sendResize, subscribePty, unsubscribePty, subscribed } = createPtyWire(
-        socket,
-        order
-    );
+    const { sendInput, sendResize, subscribePty, subscribed } = createPtyWire(socket, order);
 
     return {
         terminals,
@@ -846,7 +845,6 @@ export function createTerminals(
         sendInput,
         sendResize,
         subscribePty,
-        unsubscribePty,
         subscribed,
         showTerminal,
         focusAsked: () => focus.id,

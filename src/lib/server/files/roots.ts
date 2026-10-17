@@ -6,10 +6,14 @@
 // primary's settings and the settings of every other hub, and the git watch opens each folder. The
 // roots the file route, the listing, the search and the language servers serve are the workspace's
 // folders (`OpenWorkspace.roots`), read from the workspace and never from here.
+//
+// The settings of a hub other than the primary are never parsed here: a caller hands the reader of
+// them (`HubSettings`), which the server answers from the parse its config cache keeps for each hub
+// (server/root/process/config-cache.ts), so a request that lists the hubs parses no config folder
+// while no file of it changed.
 
-import { portfolioConfigFrom } from '../../data/index.ts';
+import { portfolioConfigFrom, type HubSettings } from '../../data/index.ts';
 import type { PortfolioConfig, RawManifest, RepositoryRoot } from '../../data/model/index.ts';
-import { loadConfig } from '../../data/sources/config.ts';
 import { readHubManifests } from '../../data/sources/manifests.ts';
 import type { OpenWorkspace } from './workspace/open.ts';
 import { expandHome } from './workspace/folders.ts';
@@ -45,14 +49,14 @@ export function repositoryDepths(open: OpenWorkspace): Map<string, number> {
 
 /**
  * The hubs of the workspace other than the primary, each with its settings (the engine's defaults
- * under the hub's own `.oculus/config.yml`). A hub's project folders are the primary's alone, so a
- * hub other than the primary reads none.
+ * under the hub's own `.oculus/config.yml`) as `settings` gives them. A hub's project folders are
+ * the primary's alone, so a hub other than the primary reads none.
  */
-export function hubTargets(engine: string, open: OpenWorkspace): HubTarget[] {
+export function hubTargets(open: OpenWorkspace, settings: HubSettings): HubTarget[] {
     return open.hubs
         .filter((one) => one.name !== open.primary)
         .map((one) => {
-            const loaded = loadConfig(engine, { hub: one.dir });
+            const loaded = settings(one.dir);
             return {
                 key: one.name,
                 hub: one.dir,
@@ -63,15 +67,15 @@ export function hubTargets(engine: string, open: OpenWorkspace): HubTarget[] {
 
 /**
  * Every hub of the workspace with its settings, in the folders' order: the primary's from the
- * merged config the request read, every other hub's from its own layer. The readers of a thing each
- * hub keeps (the photo walls, the wallpaper folders) go over this list.
+ * merged config the request read, every other hub's from its own layer as `settings` gives it. The
+ * readers of a thing each hub keeps (the photo walls, the wallpaper folders) go over this list.
  */
 export function allHubs(
-    engine: string,
     merged: Record<string, unknown>,
-    open: OpenWorkspace
+    open: OpenWorkspace,
+    settings: HubSettings
 ): HubTarget[] {
-    const others = hubTargets(engine, open);
+    const others = hubTargets(open, settings);
     return open.hubs.flatMap((one) => {
         if (one.name === open.primary) {
             return [{ key: one.name, hub: one.dir, config: primaryConfig(merged, open) }];

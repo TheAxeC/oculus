@@ -8,14 +8,22 @@
 // configuration files the Svelte server would run, which no press acts on, and one row that
 // approves them or, once approved, takes the approval back. `:eslint-config` lists the same for the
 // ESLint configuration file of the source tab's file, whether or not a server serves it. `:clone`
-// is a list mode too; its rows are state/workbench/palette.ts's `cloneRows`.
+// is a list mode too, its rows state/workbench/palette.ts's `cloneRows`; so is `:folder-remove`,
+// whose rows are the folders of the open workspace, made here (`folderRemovals`). The rows of the
+// command mode itself are here too (`commandRows`): the commands and the views that match what is
+// typed.
 
 import type { LintConfig } from '$lib/state/system/machine/lint/lint-model';
 import {
+    byScore,
+    fuzzyMatches,
+    textParts,
     wordsHold,
     type PaletteCommand,
     type PaletteMatch,
-    type ParsedCommand
+    type PaletteView,
+    type ParsedCommand,
+    type TextPart
 } from '$lib/state/workbench/palette';
 import {
     databaseInForce,
@@ -32,8 +40,12 @@ import {
     type LspChoiceKind
 } from '$lib/data/prose/lsp-servers';
 
-/** What a request to open the palette installs: the text, and whether it is the file mode. */
-export type PaletteStart = { text: string; files: boolean };
+/**
+ * What a request to open the palette installs: the text, whether it is the file mode, and whether
+ * it is Go to Line, which the status bar's caret item opens and whose bare colon says the caret's
+ * line; the command mode, a colon too, says nothing of lines.
+ */
+export type PaletteStart = { text: string; files: boolean; line: boolean };
 
 /** The commands that, chosen, open the list of their own instead of running. */
 const MODE_COMMANDS = [
@@ -43,8 +55,108 @@ const MODE_COMMANDS = [
     'workspace-new',
     'eslint-config',
     'clone',
+    'folder-remove',
     ...Object.values(LSP_CHOICES).map((one) => one.command)
 ];
+
+/**
+ * One row of the command mode: a colon command with its name and its words in matched and unmatched
+ * runs, and whether it was typed by its whole name; or a view, by its label, which the row opens in
+ * a tab.
+ */
+export type CommandRow =
+    | {
+          kind: 'command';
+          command: PaletteCommand;
+          name: TextPart[];
+          words: TextPart[];
+          named: boolean;
+      }
+    | { kind: 'view'; view: PaletteView; label: TextPart[] };
+
+/** A command's row with no letter matched. */
+function plainRow(command: PaletteCommand, named: boolean): CommandRow {
+    return {
+        kind: 'command',
+        command,
+        name: [{ text: command.name, hit: false }],
+        words: [{ text: command.description, hit: false }],
+        named
+    };
+}
+
+/**
+ * The rows of the command mode for what follows the colon, as VS Code's Show All Commands lists
+ * them. A command's whole name followed by a space and words is that command with those words as
+ * its argument, as `:theme dark` and `:tab processes` are. Otherwise the typed words are matched
+ * fuzzily against each command's name and words together and against each view's label and id,
+ * ranked by the match, the matched letters marked; with nothing typed every command is listed,
+ * then every view.
+ */
+export function commandRows(
+    list: PaletteCommand[],
+    views: PaletteView[],
+    parsed: ParsedCommand
+): CommandRow[] {
+    const named = list.find((one) => one.name === parsed.name);
+    if (named !== undefined && parsed.argument !== '') return [plainRow(named, true)];
+    const typed = `${parsed.name} ${parsed.argument}`.trim();
+    if (typed === '') {
+        return [
+            ...list.map((one) => plainRow(one, false)),
+            ...views.map((view) => ({
+                kind: 'view' as const,
+                view,
+                label: [{ text: view.label, hit: false }]
+            }))
+        ];
+    }
+    const rows: ({ command: PaletteCommand } | { view: PaletteView })[] = [
+        ...list.map((command) => ({ command })),
+        ...views.map((view) => ({ view }))
+    ];
+    return fuzzyMatches(typed, rows, [
+        (row) => ('command' in row ? row.command.name : row.view.label),
+        (row) => ('command' in row ? row.command.description : row.view.id)
+    ])
+        .sort(byScore)
+        .map((found): CommandRow => {
+            const [first, second] = found.keys;
+            if ('view' in found.row) {
+                return {
+                    kind: 'view',
+                    view: found.row.view,
+                    label: textParts(first, found.row.view.label)
+                };
+            }
+            const { command } = found.row;
+            return {
+                kind: 'command',
+                command,
+                name: textParts(first, command.name),
+                words: textParts(second, command.description),
+                named: command.name === parsed.name
+            };
+        });
+}
+
+/** The value of a command mode row, which the list selects it by. */
+export function commandRowValue(row: CommandRow): string {
+    return row.kind === 'view' ? `view:${row.view.id}` : `command:${row.command.name}`;
+}
+
+/** One folder `:folder-remove` lists: the root's key, and its folder on the machine. */
+export type FolderRow = { value: string; key: string; dir: string };
+
+/** The folders of the open workspace whose name or folder holds every word typed. */
+export function folderRemovals(
+    argument: string,
+    roots: readonly { key: string; dir: string }[]
+): FolderRow[] {
+    return roots
+        .filter((root) => wordsHold(`${root.key} ${root.dir}`, argument))
+        .map((root) => ({ value: `folder:${root.key}`, key: root.key, dir: root.dir }));
+}
 
 /** Whether choosing a command types its name and a space, which opens its list. */
 export function opensAsMode(name: string): boolean {
@@ -209,12 +321,17 @@ export type ListedFacts = {
     languageMode: boolean;
     languageEntries: { kind: string }[];
     languages: { choice: { name: string } }[];
-    workspaceMode: boolean;
-    choices: { path: string }[];
-    /** Whether the query is a command that makes a workspace under the name typed after it. */
-    saveMode: boolean;
+    /**
+     * The workspace commands' lists: the workspace files, whether the query makes a workspace under
+     * the name typed after it, and the folders of `:folder-remove`.
+     */
+    workspace: {
+        choices: { path: string }[] | null;
+        saving: boolean;
+        folders: { value: string }[] | null;
+    };
     choiceMode: ChoiceMode | null;
-    commandList: PaletteCommand[];
+    commandList: CommandRow[];
     choiceList: { value: string }[];
     /** The rows of `:eslint-config` or `:clone` while the query is that command, else null. */
     modeList: { value: string }[] | null;
@@ -227,7 +344,7 @@ export type ListedFacts = {
  * commands, among which one that is unavailable is drawn and has no value.
  */
 export function listedRows(facts: ListedFacts): { count: number; values: string[] } {
-    const { parsed, line, languageMode, workspaceMode, saveMode, choiceMode } = facts;
+    const { parsed, line, languageMode, workspace, choiceMode } = facts;
     if (facts.files !== null) return { count: facts.files.length, values: facts.files };
     if (parsed === null) {
         const chosen = facts.matches.filter((one) => one.item.disabled !== true);
@@ -244,13 +361,19 @@ export function listedRows(facts: ListedFacts): { count: number; values: string[
             ]
         };
     }
-    if (workspaceMode) {
+    if (workspace.choices !== null) {
         return {
-            count: facts.choices.length,
-            values: facts.choices.map((one) => `workspace:${one.path}`)
+            count: workspace.choices.length,
+            values: workspace.choices.map((one) => `workspace:${one.path}`)
         };
     }
-    if (saveMode) return { count: 1, values: [parsed.name] };
+    if (workspace.saving) return { count: 1, values: [parsed.name] };
+    if (workspace.folders !== null) {
+        return {
+            count: workspace.folders.length,
+            values: workspace.folders.map((row) => row.value)
+        };
+    }
     if (facts.modeList !== null) {
         return { count: facts.modeList.length, values: facts.modeList.map((row) => row.value) };
     }
@@ -260,7 +383,7 @@ export function listedRows(facts: ListedFacts): { count: number; values: string[
     return {
         count: facts.commandList.length,
         values: facts.commandList
-            .filter((command) => command.available)
-            .map((command) => `command:${command.name}`)
+            .filter((row) => row.kind === 'view' || row.command.available)
+            .map(commandRowValue)
     };
 }

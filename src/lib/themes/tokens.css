@@ -76,6 +76,10 @@
     --c-scm-added-bg: #c5e5d6;
     --c-scm-deleted-bg: #edcccf;
     --c-scm-conflict-bg: #e1caea;
+    /* The outline the diff draws round inserted and removed text: none here, VS Code's own colours
+       in its two high contrast themes (vscode.css). Not palette entries, so no `-txt` is minted. */
+    --diff-added-outline: #00000000;
+    --diff-deleted-outline: #00000000;
     /* The Source Control Graph's names in the three colours VS Code draws them in: the reference
        colour (the checked-out branch and every local branch), the remote reference colour (a
        remote branch) and the base reference colour (the upstream's base). These are the light and
@@ -108,6 +112,10 @@
     --map-mutual: #0891b2;
     --c-on: #fff; /* text sitting on a filled status chip */
     --pdf-paper: #fff; /* the sheet a PDF page is drawn on, white in every theme */
+    /* The dim a modal dialog lays over the page behind it: VS Code's dimmed modal block
+       (dialog.css, `.monaco-dialog-modal-block.dimmed`), black at half strength in every theme, so
+       the page stays readable behind the dialog. */
+    --scrim: rgba(0, 0, 0, 0.5);
     /* shape + type */
     --radius: 10px;
     --radius-sm: 6px;

@@ -324,7 +324,7 @@
                 onsaid={(answer: string) => (said = answer)}
             />
         {/if}
-        <Stats stats={strip} />
+        <Stats stats={strip} shown={shown.length} />
         {#if said !== ''}
             <p class="said">{said}</p>
         {/if}

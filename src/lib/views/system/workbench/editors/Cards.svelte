@@ -22,8 +22,13 @@
     // lists to the card's place. The keyboard's cursor names one of them (the instance's card
     // cursor), the card it names draws `data-cursor`, and Enter on it moves the focus to the first
     // control inside the card's field area, marked `data-card-focus`, without changing a value.
+    //
+    // Add puts the focus on the first control of the entry it adds once the entry is drawn, as VS
+    // Code's Add Item opens its box focused, so what is typed next goes into the new entry.
 
+    import { tick } from 'svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import { focusFirstQuietly } from '$lib/ui/frame/quiet-focus';
     import { t } from '$lib/state/shared/words/text';
     import { useState } from '$lib/state/client/use';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
@@ -91,6 +96,28 @@
     /** The card the instance's keyboard cursor is on, null for none. */
     const cursor = $derived(cardCursor(instanceLayoutState(instance)));
 
+    let box: HTMLDivElement | undefined = $state();
+    /** The place of the entry an Add asked for, until its first control has taken the focus. */
+    let added: number | null = $state(null);
+
+    $effect(() => {
+        const at = added;
+        const root = box;
+        if (at === null || root === undefined || cards.length <= at) return;
+        added = null;
+        void tick().then(() => {
+            const all = root.querySelectorAll<HTMLElement>(':scope > .card > [data-card-focus]');
+            const fields = Array.from(all).at(at);
+            if (fields !== undefined) focusFirstQuietly(fields);
+        });
+    });
+
+    /** Add an entry at the end of the list, whose first control then takes the focus. */
+    function add(): void {
+        added = cards.length;
+        onedit(aimed({ do: 'add' }));
+    }
+
     /** The id of the card at a place of this list, unique in the pane. */
     function idOf(at: number): string {
         const steps = [...path, { index: at, field: '' }]
@@ -110,6 +137,10 @@
 
     const inline = $derived(form === 'items' || form === 'pairs');
     const fixed = $derived(slots !== undefined || form === 'multi');
+    /**
+     * Whether a field draws its name before its control: in a card, and in a list of named slots.
+     */
+    const worded = $derived(!inline || slots !== undefined);
     const movable = $derived(!fixed && !removeOnly);
 
     /** The name of a field in a control's label, with the nested list it is in. */
@@ -147,7 +178,7 @@
     }
 </script>
 
-<div class="cards" data-cards={form}>
+<div class="cards" data-cards={form} bind:this={box}>
     {#each cards as card, at (at)}
         <div
             class="card"
@@ -179,13 +210,14 @@
                         <code>{textOf(card.fields[name])}</code>
                     {:else if spec !== undefined}
                         <span class="field">
-                            {#if !inline || slots !== undefined}
+                            {#if worded}
                                 <span class="word" aria-hidden="true">{nameOf(name, at)}</span>
                             {/if}
                             <FieldControl
                                 {spec}
                                 value={card.fields[name]}
                                 label={labelOf(name, at)}
+                                named={worded}
                                 {lists}
                                 record={card.fields}
                                 optional={form !== 'items' && form !== 'multi' && name !== 'key'}
@@ -258,11 +290,7 @@
         </div>
     {/each}
     {#if !fixed && !removeOnly}
-        <ToolButton
-            label={t('settings.editor_add')}
-            glyph="add"
-            onclick={() => onedit(aimed({ do: 'add' }))}
-        />
+        <ToolButton label={t('settings.editor_add')} glyph="add" onclick={add} />
     {/if}
 </div>
 
@@ -280,6 +308,7 @@
         flex-wrap: wrap;
         align-items: flex-start;
         gap: 6px;
+        box-sizing: border-box;
         width: 100%;
         max-width: 720px;
         padding: 6px 0;
@@ -313,8 +342,11 @@
         flex-direction: column;
     }
 
+    /* A name wider than the card's column of names, or a control that does not fit beside it, puts
+       the control under the name, so the row stays inside the card. */
     .field {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 6px;
         flex: 1 1 160px;
@@ -333,7 +365,10 @@
     }
 
     .word {
-        flex: 0 0 72px;
+        flex: 0 1 auto;
+        min-width: 72px;
+        max-width: 100%;
+        overflow-wrap: anywhere;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
     }
@@ -358,8 +393,11 @@
         padding: 0 3px;
     }
 
-    /* Over a wallpaper a code piece paints nothing under it, as the manual's inline code does. */
+    /* Over a wallpaper a code piece paints nothing under it, as the manual's inline code does,
+       and is outlined in the line colour instead, so it is told from the words beside it. */
     :global(body.wall) code {
         background: transparent;
+        outline: 1px solid var(--line);
+        outline-offset: -1px;
     }
 </style>

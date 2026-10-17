@@ -123,7 +123,8 @@ function cardFields(row: ConfigRow, keyed: boolean): string[] {
 export function specsOf(row: ConfigRow, form: Draft['form']): Record<string, FieldSpec> {
     if (form === 'items') {
         const control = row.entry.items === 'number' ? 'number' : 'text';
-        return { item: { help: '', control } };
+        const own = row.entry.form === undefined ? {} : { form: row.entry.form };
+        return { item: { help: '', control, ...own } };
     }
     if (form === 'multi') return { value: { ...row.entry, control: 'multi' } };
     if (form === 'rollup') return withoutKey(row.fields);
@@ -465,6 +466,30 @@ function keysOf(cards: Card[], group: number | undefined, problems: Problem[]): 
     });
 }
 
+/**
+ * The problems of the keys whose text has not the form the key's spec gives (`open.program_ext`'s
+ * extension with its dot), named by the entry and the field as a value's are. An empty key is
+ * keysOf's problem.
+ */
+function keyForms(
+    keys: string[],
+    spec: FieldSpec | undefined,
+    lists: Lists,
+    problems: Problem[],
+    group?: number
+): void {
+    if (spec === undefined) return;
+    keys.forEach((key, index) => {
+        if (key === '') return;
+        const written = writtenField(spec, key, { lists, record: {}, held: [] });
+        if (!written.ok) {
+            problems.push(
+                problemOf({ index, group, label: String(index + 1) }, 'key', written.trouble)
+            );
+        }
+    });
+}
+
 /** The value a draft reads back as, or the problems that stop it. */
 export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
     const problems: Problem[] = [];
@@ -474,6 +499,13 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
     if (draft.form === 'rollup') {
         const seen = new Set<string>();
         const value: Plain = {};
+        const keyed = Object.hasOwn(row.fields, 'key') ? row.fields.key : undefined;
+        keyForms(
+            draft.groups.map((group) => group.key.trim()),
+            keyed,
+            lists,
+            problems
+        );
         draft.groups.forEach((group, at) => {
             const key = group.key.trim();
             if (key === '') {
@@ -504,24 +536,19 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
     if (draft.form === 'items') {
         const numbers = row.entry.items === 'number';
         const items: (string | number)[] = [];
+        // An item is checked as its box is: a number by its range, a text by the list's form.
         draft.cards.forEach((card, index) => {
             const text = wordsOf(card.fields.item)[0] ?? '';
             if (text.trim() === '') {
                 problems.push({ index, said: message('emptyItem', index + 1) });
-            } else if (numbers) {
-                const written = writtenField({ help: '', control: 'number' }, text, {
-                    lists,
-                    record: {},
-                    held: []
-                });
-                if (written.ok) items.push(Number(written.value));
-                else
-                    problems.push(
-                        problemOf({ index, label: String(index + 1) }, 'item', written.trouble)
-                    );
-            } else {
-                items.push(text);
+                return;
             }
+            const written = writtenField(specs.item, text, { lists, record: {}, held: [] });
+            if (!written.ok) {
+                problems.push(
+                    problemOf({ index, label: String(index + 1) }, 'item', written.trouble)
+                );
+            } else items.push(numbers ? Number(written.value) : text);
         });
         return result(items);
     }
@@ -534,6 +561,7 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
     }
     if (draft.form === 'pairs') {
         const keys = keysOf(draft.cards, undefined, problems);
+        keyForms(keys, specs.key, lists, problems);
         const value: Plain = {};
         draft.cards.forEach((card, index) => {
             const spec = specs.value;
@@ -570,6 +598,7 @@ export function draftValue(draft: Draft, row: ConfigRow, lists: Lists): Made {
         return result(list);
     }
     const keys = keysOf(draft.cards, undefined, problems);
+    keyForms(keys, specs.key, lists, problems);
     const listed = withoutKey(specs);
     const value: Plain = {};
     draft.cards.forEach((card, index) => {

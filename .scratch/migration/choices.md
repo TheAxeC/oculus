@@ -4,6 +4,13 @@ Each entry is an open item the orchestrator closed itself with the option it jud
 
 
 
+## Z930 (2026-10-17, O37's landing, the orchestrator, automode): `npm run test:quick` over a whole step's change
+
+- Chosen: item 24 of O37's brief is held met by the quick list over a change of a builder's size, which stays inside its 45 s (two changed files, 9 test files: 20.8 s), with no test of the unit suite waiting where it could check (the review over round 1's grep over every test file). A run over this step's whole change (534 changed files, 230 test files, nearly the whole unit suite) takes 92.9 s; running every test is the landing list's job, and it ran them all.
+- Not chosen: making the quick list fit 45 s over nearly the whole unit suite, a change of the test machinery (`maxWorkers: 4` in `vite.config.ts`, the selection in `tests/tiers/quick.mjs`) outside O37's part, which is a step of its own on Axel's word. The lazy option was calling the whole-step run green; it is reported as over its limit.
+
+Where it applies: O37's landing; `tests/tiers/quick.mjs:40` (`LIMIT_MS`). Booked in `plan.md` Rulings.
+
 ## Z929 (2026-10-16, O33's landing, the orchestrator, automode): the hub's text about where oculus lives
 
 - Chosen: the hub's `CLAUDE.md`, `README.md` and `CONTEXT.md` say oculus is in `tools/oculus/` until it moves to its own repository at `~/workspace/oculus`, which is true until phase C moves it; the final texts wait in `agents/briefs/O33-phase-c-hub-text.patch`, applied at phase C, and README's sentence naming the last commit that holds the cockpit is written at phase B with the real commit id.

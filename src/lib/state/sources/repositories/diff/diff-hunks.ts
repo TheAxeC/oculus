@@ -277,7 +277,8 @@ function converted(attributes: DiffAttributes): boolean {
 /** The actions a file allows: none where the pane cannot build a patch git applies (a side whose
  * bytes are not UTF-8, a carriage return in either text, or git converting the text) and on a path
  * in conflict, whose patch would stage or revert against Current's version while the file stays
- * unmerged; the whole file alone for a new or deleted file, else block and line actions. */
+ * unmerged, and on a path whose type changed, which is a deletion and a creation no one patch of
+ * the pane joins; the whole file alone for a new or deleted file, else block and line actions. */
 export function diffActions(
     sides: DiffSides,
     attributes: DiffAttributes,
@@ -286,8 +287,8 @@ export function diffActions(
     if (conflicted || !sides.encoded) return 'none';
     if (sides.original.includes('\r') || sides.modified.includes('\r')) return 'none';
     if (converted(attributes)) return 'none';
-    const whole = sides.head.some(
-        (line) => line.startsWith('new file mode') || line.startsWith('deleted file mode')
-    );
-    return whole ? 'whole' : 'lines';
+    const created = sides.head.some((line) => line.startsWith('new file mode'));
+    const deleted = sides.head.some((line) => line.startsWith('deleted file mode'));
+    if (created && deleted) return 'none';
+    return created || deleted ? 'whole' : 'lines';
 }

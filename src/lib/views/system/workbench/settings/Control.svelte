@@ -8,9 +8,10 @@
     //
     // A box keeps its unsent text in the tab's instance state under the file and key
     // (state/system/config/typed.ts), writes it on Enter and on leaving the box, and drops it on
-    // Escape. The text is kept while the write is refused, so the reader mends it; a write that is
-    // accepted, or needs none, drops it. A pick or a toggle is written as it is made. While a write
-    // is out the control shows the value sent.
+    // Escape, and the save key on the tab (Cmd+S, Ctrl+S off macOS) writes it too. The text is kept
+    // while the write is refused, so the reader mends it; a write that is accepted, or needs none,
+    // drops it. A pick or a toggle is written as it is made. While a write is out the control shows
+    // the value sent.
 
     import { drawsEditor } from '$lib/state/system/config/editors/slots';
     import {
@@ -31,7 +32,7 @@
     import EditLink from './EditLink.svelte';
 
     const {
-        ui: { instanceState, setInstanceState }
+        ui: { instanceState, setInstanceState, registerTabSave }
     } = useState();
 
     type Props = {
@@ -90,6 +91,12 @@
         settling = null;
         if (writer.said(row) === null) forget();
     }
+
+    $effect(() =>
+        registerTabSave(id, () => {
+            if (typed !== undefined) void settle(typed);
+        })
+    );
 
     function revert(event: KeyboardEvent): void {
         if (event.key !== 'Escape' || typed === undefined) return;

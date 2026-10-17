@@ -123,13 +123,19 @@
         asking = pushes
             ? {
                   message: t('git.push_confirm', repo.branch, upstream),
-                  detail: t('git.push_detail', repo.ahead),
+                  detail:
+                      repo.ahead === 1
+                          ? t('git.push_detail_one')
+                          : t('git.push_detail', repo.ahead),
                   verb: t('git.push'),
                   act: () => void git.push(root)
               }
             : {
                   message: t('repositories.sync_confirm', repo.branch, upstream),
-                  detail: t('repositories.sync_detail', repo.behind, repo.ahead),
+                  detail:
+                      repo.behind === 1
+                          ? t('repositories.sync_detail_one', repo.ahead)
+                          : t('repositories.sync_detail', repo.behind, repo.ahead),
                   verb: t('repositories.sync'),
                   act: () => void git.sync(root)
               };
@@ -189,7 +195,9 @@
         <ToolButton
             label={t('statusbar.sync_name', repo.behind, repo.ahead)}
             title={pushes
-                ? t('statusbar.sync_tip_push', repo.ahead, upstream)
+                ? repo.ahead === 1
+                    ? t('statusbar.sync_tip_push_one', upstream)
+                    : t('statusbar.sync_tip_push', repo.ahead, upstream)
                 : t('statusbar.sync_tip_sync', repo.behind, repo.ahead, upstream)}
             status
             onclick={synced}

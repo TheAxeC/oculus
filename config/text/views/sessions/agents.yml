@@ -2,6 +2,7 @@
 text:
     sessions:
         ag_chars: '{0} chars'
+        ag_chars_one: 1 char
         ag_done: done
         ag_empty: This session dispatched no agents.
         ag_error: error
@@ -11,5 +12,6 @@ text:
         ag_secs: '{0} s'
         ag_stopped: stopped
         ag_tokens: '{0} tokens'
+        ag_tokens_one: 1 token
         ag_type: agent
         section_agents: Agents

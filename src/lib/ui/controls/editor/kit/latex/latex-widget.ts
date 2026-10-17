@@ -3,14 +3,17 @@
 // parent hands in. It is an EditorExtension (types.ts), added to a LaTeX model once Monaco has
 // loaded and taken away with the model; kit/latex/latex.ts finds the spans and the picture files.
 //
-// The preview is a Monaco content widget below the position the pointer rests on, drawn after the
-// pointer has stayed 300 ms on one span. Math is typeset by KaTeX with `trust: false`, so no
-// command can emit a link or HTML, and a formula that does not parse is drawn as its source in the
-// error colour. A picture is drawn through the address the parent gives for the file (the file
-// route), never from the path in the text, and only once the browser has decoded it, so the box is
-// sized around the drawn image; a picture that does not decode gives no preview. A PDF is drawn as
-// its name. The widget is removed when the pointer leaves the span or the editor, when the text
-// changes and when the editor scrolls, and an answer that arrives after that is dropped.
+// The preview is a Monaco content widget below the position the pointer rests on, or above it when
+// there is no room below, drawn after the pointer has stayed 300 ms on one span. It is kept inside
+// the editor: no taller than the larger room beside the line (`previewRoom`), and a picture no
+// wider than the box, which Monaco holds to the editor's width, and no taller than that room. Math
+// is typeset by KaTeX with `trust: false`, so no command can emit a link or HTML, and a formula
+// that does not parse is drawn as its source in the error colour. A picture is drawn through the
+// address the parent gives for the file (the file route), never from the path in the text, and only
+// once the browser has decoded it, so the box is sized around the drawn image; a picture that does
+// not decode gives no preview. A PDF is drawn as its name. The widget is removed when the pointer
+// leaves the span or the editor, when the text changes and when the editor scrolls, and an answer
+// that arrives after that is dropped.
 //
 // A `\ref`-like command's label shows its number and the block of text it sits in (the formula,
 // typeset, when the block is a math environment) with a link that shows the place in the PDF, and a
@@ -19,7 +22,7 @@
 
 import type * as Monaco from 'monaco-editor';
 import { t } from '$lib/state/shared/words/text';
-import { mathSpanAt, pictureAt, pictureFile, type MathSpan } from './latex';
+import { mathSpanAt, pictureAt, pictureFile, previewRoom, type MathSpan } from './latex';
 import { packageAt, refAt } from './references';
 import type { EditorExtension, EditorProblem } from '../../types';
 
@@ -52,11 +55,15 @@ export type LatexEditorDeps = {
 /** What the page knows of a label: the number its build gave it and the block it sits in. */
 type LabelFacts = { number: string; text: string; math: boolean };
 
-/**
- * The widest a picture is drawn: the box's 480 px less its horizontal padding and border. A length
- * rather than a percentage, since the box takes its width from its content.
- */
+/** The widest a picture is drawn: the box's 480 px less its horizontal padding and border. */
 const PICTURE_MAX_WIDTH = 458;
+
+/** The tallest a preview box and a picture in it are drawn, in pixels. */
+const BOX_MAX_HEIGHT = 320;
+const PICTURE_MAX_HEIGHT = 300;
+
+/** The box's vertical padding and border, which a picture's height leaves for them. */
+const BOX_FRAME = 14;
 
 /** KaTeX's bounds on one formula: how far it may stretch (em) and how often macros may expand. */
 const KATEX = { trust: false, strict: 'ignore', maxSize: 50, maxExpand: 1000 } as const;
@@ -87,8 +94,9 @@ function box(): HTMLDivElement {
     const node = document.createElement('div');
     node.className = 'oculus-latex-preview';
     node.style.cssText =
-        'padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);' +
-        'background:var(--panel);color:var(--ink);max-width:480px;max-height:320px;overflow:auto';
+        'box-sizing:border-box;padding:6px 10px;border:1px solid var(--line);' +
+        'border-radius:var(--radius-sm);background:var(--panel);color:var(--ink);' +
+        `max-width:480px;max-height:${BOX_MAX_HEIGHT}px;overflow:auto`;
     return node;
 }
 
@@ -192,7 +200,9 @@ async function previewOf(
         const picture = document.createElement('img');
         picture.src = deps.address(file);
         picture.alt = file;
-        picture.style.cssText = `display:block;max-width:${PICTURE_MAX_WIDTH}px;max-height:300px`;
+        picture.style.cssText =
+            `display:block;max-width:min(100%, ${PICTURE_MAX_WIDTH}px);` +
+            `max-height:${PICTURE_MAX_HEIGHT}px`;
         try {
             await picture.decode();
         } catch {
@@ -231,6 +241,7 @@ function previewing(
         const preview = await previewOf(text, offset, deps).catch(() => null);
         if (preview === null || mine !== turn) return;
         const { node } = preview;
+        fitBeside(node, position);
         held = { start: preview.start, end: preview.end };
         widget = {
             getId: () => 'oculus.latex.preview',
@@ -244,6 +255,17 @@ function previewing(
             })
         };
         editor.addContentWidget(widget);
+    }
+
+    /** Hold the box, and a picture in it, to the larger room beside the line. */
+    function fitBeside(node: HTMLElement, position: Monaco.IPosition): void {
+        const line = editor.getScrolledVisiblePosition(position);
+        if (line === null) return;
+        const room = previewRoom(line.top, line.height, editor.getLayoutInfo().height);
+        node.style.maxHeight = `${String(Math.min(BOX_MAX_HEIGHT, room))}px`;
+        const tallest = Math.max(0, Math.min(PICTURE_MAX_HEIGHT, room - BOX_FRAME));
+        const picture = node.querySelector('img');
+        if (picture !== null) picture.style.maxHeight = `${String(tallest)}px`;
     }
 
     function moved(event: Monaco.editor.IEditorMouseEvent): void {

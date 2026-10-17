@@ -6,8 +6,9 @@
 //   workspace holds folders, the reader is asked first, as VS Code asks when it leaves an untitled
 //   workspace: Save asks for a name and saves the folders as that workspace file as
 //   `:workspace-save` does, then opens the clone; Don't Save opens the clone and drops the folders;
-//   Cancel changes nothing. A name the reader cancels cancels the whole Open. An unsaved workspace
-//   with no folder opens the clone without asking.
+//   Cancel changes nothing. While no folder of the workspace is a hub there is nowhere to keep the
+//   file, so Save is drawn disabled with the sentence that says so. A name the reader cancels
+//   cancels the whole Open. An unsaved workspace with no folder opens the clone without asking.
 // - Add to Workspace: the folder is added as Add Folder to Workspace adds one, by the same write,
 //   so it is one entry of the History and its Undo takes the folder back.
 //
@@ -20,12 +21,18 @@ import { refusal } from '../explorer/acts/refusal.ts';
 import { foldersToAdd } from '../explorer/acts/folders.ts';
 import type { FsStore } from '../fs.svelte.ts';
 
+/** The send options of every write here: the question says each refusal itself. */
+const SAID = { said: true } as const;
+
 /** The question in front of the reader: which step of the answer it is. */
 type CloneAsk =
     /** The folder was cloned: Open or Add to Workspace. */
     | { step: 'after'; dir: string }
-    /** Open would leave an unsaved workspace holding folders: Save, Don't Save or Cancel. */
-    | { step: 'leave'; dir: string }
+    /**
+     * Open would leave an unsaved workspace holding folders: Save, Don't Save or Cancel. Save is
+     * `savable` only while a folder of the workspace is a hub, which keeps the workspace file.
+     */
+    | { step: 'leave'; dir: string; savable: boolean }
     /** Save was chosen: the name of the workspace file, with the refusal of the last one. */
     | { step: 'name'; dir: string; said: string };
 
@@ -63,12 +70,12 @@ export function createCloneAfter(fs: CloneAfterFs, notices: Pick<NoticeSink, 'po
 
     /** Make the folder the only one of the unsaved workspace. */
     async function openAlone(dir: string): Promise<void> {
-        const closed = await fs.closeWorkspace();
+        const closed = await fs.closeWorkspace(SAID);
         if (!closed.ok) {
             said(refusal(closed.error ?? '', closed.reason));
             return;
         }
-        const added = await fs.addRoot(dir);
+        const added = await fs.addRoot(dir, SAID);
         if (!added.ok) said(refusal(added.error ?? '', added.reason));
     }
 
@@ -77,12 +84,13 @@ export function createCloneAfter(fs: CloneAfterFs, notices: Pick<NoticeSink, 'po
         if (held?.step !== 'after') return;
         const now = await fs.workspacesNow();
         if (now.open === null && now.folders.length > 0) {
-            asking = { step: 'leave', dir: held.dir };
+            const savable = now.folders.some((one) => one.hub === true);
+            asking = { step: 'leave', dir: held.dir, savable };
             return;
         }
         asking = null;
         if (now.open === null) {
-            const added = await fs.addRoot(held.dir);
+            const added = await fs.addRoot(held.dir, SAID);
             if (!added.ok) said(refusal(added.error ?? '', added.reason));
             return;
         }
@@ -99,13 +107,13 @@ export function createCloneAfter(fs: CloneAfterFs, notices: Pick<NoticeSink, 'po
             notices.post(t('files.add_skipped', skipped.join(', ')));
             return;
         }
-        const added = await fs.addRoot(held.dir);
+        const added = await fs.addRoot(held.dir, SAID);
         if (!added.ok) said(refusal(added.error ?? '', added.reason));
     }
 
     function save(): void {
         const held = asking;
-        if (held?.step !== 'leave') return;
+        if (held?.step !== 'leave' || !held.savable) return;
         asking = { step: 'name', dir: held.dir, said: '' };
     }
 
@@ -119,7 +127,7 @@ export function createCloneAfter(fs: CloneAfterFs, notices: Pick<NoticeSink, 'po
     async function named(name: string): Promise<void> {
         const held = asking;
         if (held?.step !== 'name') return;
-        const saved = await fs.saveWorkspace(name);
+        const saved = await fs.saveWorkspace(name, SAID);
         if (!saved.ok) {
             asking = { ...held, said: refusal(saved.error ?? '', saved.reason) };
             return;

@@ -54,7 +54,7 @@
             <div class="row" data-gutter-line={line}>
                 {#if blame !== null}
                     {#if held === undefined}
-                        <span class="blame"></span>
+                        <span class="blame none"></span>
                     {:else}
                         {@const words = blameWords(held, now)}
                         <span
@@ -144,7 +144,9 @@
         white-space: nowrap;
     }
 
-    .blame:not(.uncommitted) {
+    /* A committed line's cell draws the rule; a line no blame names (the empty line after the
+       file's last line ending) draws neither the rule nor the hover. */
+    .blame:not(.uncommitted, .none) {
         border-left-color: var(--line);
     }
 
@@ -156,7 +158,7 @@
         font-style: italic;
     }
 
-    .blame:not(.uncommitted):hover {
+    .blame:not(.uncommitted, .none):hover {
         background: var(--accent-bg);
     }
 

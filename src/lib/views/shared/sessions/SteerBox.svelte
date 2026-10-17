@@ -3,7 +3,9 @@
     // the session's terminal and presses Enter, and Stop presses Escape, which interrupts the turn
     // and keeps the session. Ending a session is the terminal's own stop, elsewhere. A session that
     // runs in a terminal oculus did not start cannot be typed into from here, and the box says so
-    // and holds no controls that would pretend otherwise.
+    // and holds no controls that would pretend otherwise. Its text box and that line are at the
+    // body's `--fs-md`, or at `--fs-sm` with `small`, in a view whose text is `--fs-sm` (the
+    // Transcript view).
 
     import Empty from '$lib/ui/frame/Empty.svelte';
     import TextArea from '$lib/ui/forms/TextArea.svelte';
@@ -16,9 +18,11 @@
     type Props = {
         /** The oculus terminal the session runs in, or null for one that runs elsewhere. */
         terminal: Terminal | null;
+        /** Whether the text box and the line under it are at `--fs-sm`. */
+        small?: boolean;
     };
 
-    let { terminal }: Props = $props();
+    let { terminal, small = false }: Props = $props();
 
     const {
         terminals: { interruptTerminal, steerTerminal }
@@ -70,7 +74,7 @@
     }
 </script>
 
-<div class="steer" data-steer>
+<div class="steer" class:small data-steer>
     <div class="box" class:off={!usable}>
         <div class="field">
             <TextArea
@@ -156,6 +160,11 @@
         margin: 4px 0 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
+    }
+
+    .small .elsewhere,
+    .small :global(.oculus-field) {
+        font-size: var(--fs-sm);
     }
 
     /* Over the wallpaper the box sits on the tinted box of the view, which is its surface there. */

@@ -6,16 +6,23 @@
     // twice, and every view rebuilds from the stores. Until the rail's list chose the first page of
     // a browser with no saved layout, the area draws no page, so no view mounts twice.
     //
+    // A page that throws while it is drawn, outside the views its tabs draw (TabView.svelte catches
+    // those), is caught here and the area says so with the error and a control that draws it
+    // again, so the throw stops at the page: the rest of the window, the palette and the rail
+    // among it, goes on, and a switch to another page draws that one.
+    //
     // The area is one stacking context, so a depth a view sets inside it (Monaco's overview ruler
     // and scrollbars) stays below the floats drawn over the page. The workbench takes the area's
     // element, whose edges a float let go beside them docks on.
 
+    import Failed from './Failed.svelte';
     import FoldedPane from './FoldedPane.svelte';
     import PageLeaf from './PageLeaf.svelte';
     import PaneView from '../PaneView.svelte';
     import SplitView from '../SplitView.svelte';
     import { paneAt, resize, type Layout } from '$lib/state/workbench/layout';
     import { useState } from '$lib/state/client/use';
+    import { t } from '$lib/state/shared/words/text';
 
     const client = useState();
     const {
@@ -55,26 +62,31 @@
 
 <div class="area" bind:this={area}>
     {#key page.id}
-        {#if client.layout.startingFresh()}
-            <!-- No page until the rail list chose the first. -->
-        {:else if zoomed !== null && focus !== null}
-            <div class="tree" style="flex: 1 1 0">
-                <PaneView node={zoomed} path={focus.path} page={page.id} {onpalette} />
-            </div>
-        {:else}
-            <div class="tree" style="flex: 1 1 0">
-                <SplitView
-                    layout={layout()}
-                    page={page.id}
-                    pane={paneOf}
-                    fold={foldOf}
-                    leaf={leafOf}
-                    onresize={(path: number[], sizes: number[]) =>
-                        change((tree) => resize(tree, path, sizes))}
-                    onexpand={(path: number[], index: number) => expandChild(path, index)}
-                />
-            </div>
-        {/if}
+        <svelte:boundary onerror={(error: unknown) => console.error(error)}>
+            {#if client.layout.startingFresh()}
+                <!-- No page until the rail list chose the first. -->
+            {:else if zoomed !== null && focus !== null}
+                <div class="tree" style="flex: 1 1 0">
+                    <PaneView node={zoomed} path={focus.path} page={page.id} {onpalette} />
+                </div>
+            {:else}
+                <div class="tree" style="flex: 1 1 0">
+                    <SplitView
+                        layout={layout()}
+                        page={page.id}
+                        pane={paneOf}
+                        fold={foldOf}
+                        leaf={leafOf}
+                        onresize={(path: number[], sizes: number[]) =>
+                            change((tree) => resize(tree, path, sizes))}
+                        onexpand={(path: number[], index: number) => expandChild(path, index)}
+                    />
+                </div>
+            {/if}
+            {#snippet failed(error: unknown, reset: () => void)}
+                <Failed {error} {reset} wording={(words: string) => t('app.page_failed', words)} />
+            {/snippet}
+        </svelte:boundary>
     {/key}
 </div>
 

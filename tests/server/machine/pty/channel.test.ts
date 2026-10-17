@@ -17,7 +17,6 @@ import {
 import { StreamHub } from '../../../../src/lib/server/machine/apps/tools/streams.ts';
 import { StreamTerminalSet } from '../../../../src/lib/server/machine/apps/tools/run/stream-terminals.ts';
 import { engineDir, loadConfig, textCatalog } from '../../../../src/lib/data/sources/config.ts';
-import { cursorArgs } from '../../../../src/lib/server/machine/pty/capture.ts';
 import type { Message } from '../../../../src/lib/data/model/index.ts';
 import { noop } from '../../../fixtures/doubles.ts';
 import { it } from '../../../fixtures/scratch.ts';
@@ -51,12 +50,11 @@ const ONE_ROW = '0 0 1\n';
 const FLAGS_AT_RESET: Record<string, string> = { wrap_flag: '1', cursor_flag: '1' };
 
 /**
- * The answer tmux gives to the format `cursorArgs` asks: each `#{name}` of that format replaced by
- * its value in `values`, else by the reset value of a flag, so the answer fits the format whatever
- * fields it holds.
+ * The answer tmux gives to a `display-message` format: each `#{name}` of it replaced by its value
+ * in `values`, else by the reset value of a flag, so the answer fits the format whatever fields it
+ * holds.
  */
-function answerWith(values: Record<string, string>): string {
-    const format = cursorArgs(SESSION).at(-1) ?? '';
+function answerWith(format: string, values: Record<string, string>): string {
     const known = { ...FLAGS_AT_RESET, ...values };
     return format.replace(/#\{(\w+)\}/g, (_, name: string) => known[name] ?? '0') + '\n';
 }
@@ -65,7 +63,9 @@ function answerWith(values: Record<string, string>): string {
 type Captures = (args: string[]) => string;
 
 /** A driver that answers the reads and records every command. */
-function driver(options: { answer?: string; captures?: Captures; alternateAfter?: string } = {}): {
+function driver(
+    options: { values?: Record<string, string>; captures?: Captures; alternateAfter?: string } = {}
+): {
     driver: TerminalDriver;
     calls: string[][];
     emit(id: string, bytes: Buffer): void;
@@ -75,8 +75,10 @@ function driver(options: { answer?: string; captures?: Captures; alternateAfter?
     let output: (id: string, bytes: Buffer) => void = noop;
     let ids: string[] = [];
     const captures = options.captures ?? (() => SCREEN);
-    // The cursor answer a case gives, or that of the one-row pane of the screen above.
-    const cursor = options.answer ?? ONE_ROW;
+    // The pane a case gives answers the format it is asked; else the one-row pane of the screen
+    // above answers.
+    const cursor = (format: string): string =>
+        options.values === undefined ? ONE_ROW : answerWith(format, options.values);
     const list = LIST;
     const controlled = false;
     return {
@@ -84,6 +86,14 @@ function driver(options: { answer?: string; captures?: Captures; alternateAfter?
         emit: (id, bytes) => output(id, bytes),
         attached: () => ids,
         driver: {
+            // A read of the pane is answered as a tmux process would answer it, and its reply's
+            // place in the output is the moment the answer is given.
+            read(_id: string, args: string[], replied: () => void): Promise<string> {
+                return this.run(args).then((text) => {
+                    replied();
+                    return text;
+                });
+            },
             run(args: string[]): Promise<string> {
                 calls.push(args);
                 if (args[0] === 'capture-pane') return Promise.resolve(captures(args));
@@ -94,7 +104,9 @@ function driver(options: { answer?: string; captures?: Captures; alternateAfter?
                     // The read of `#{alternate_on}` alone is the one made after the alternate
                     // screen.
                     const asked = args.at(-1) === '#{alternate_on}';
-                    return Promise.resolve(asked ? (options.alternateAfter ?? '1\n') : cursor);
+                    return Promise.resolve(
+                        asked ? (options.alternateAfter ?? '1\n') : cursor(args.at(-1) ?? '')
+                    );
                 }
                 return Promise.resolve('');
             },
@@ -202,6 +214,43 @@ describe('what the page may send back', () => {
     });
 });
 
+describe('a page that resizes before it attaches', () => {
+    it('resizes the terminal and reads its pane after the resize', async () => {
+        const { held, hub, driver: record } = terminals();
+        const { port } = await socketOver(held, hub);
+        const client = await pageOn(port, { type: 'subscribe', channels: [], token: TOKEN });
+        await settle();
+        record.calls.length = 0;
+        client.send(JSON.stringify({ type: 'resize', channel: CHANNEL, cols: 120, rows: 40 }));
+        client.send(JSON.stringify({ type: 'subscribe', channels: [CHANNEL], token: TOKEN }));
+        await vi.waitFor(() => expect(record.calls).toHaveLength(3));
+        expect(record.calls.map((args) => args[0])).toEqual([
+            'resize-window',
+            'capture-pane',
+            'display-message'
+        ]);
+    });
+
+    it('sizes nothing when it resizes a terminal and leaves before it attaches', async () => {
+        const { held, hub, driver: record } = terminals();
+        const { port } = await socketOver(held, hub);
+        const client = await pageOn(port, { type: 'subscribe', channels: [], token: TOKEN });
+        await settle();
+        record.calls.length = 0;
+        client.send(JSON.stringify({ type: 'resize', channel: CHANNEL, cols: 120, rows: 40 }));
+        // A socket's messages are taken in order, so once the attach to another terminal reads its
+        // pane, the resize before it has been taken.
+        const other = ptyChannel('d4e5f6-shell');
+        client.send(JSON.stringify({ type: 'subscribe', channels: [other], token: TOKEN }));
+        await vi.waitFor(() =>
+            expect(record.calls.map((args) => args[0])).toContain('capture-pane')
+        );
+        client.close();
+        await settle();
+        expect(record.calls.map((args) => args[0])).not.toContain('resize-window');
+    });
+});
+
 describe('what the page may send to a terminal an app opened as a stream', () => {
     it('refuses input from a socket that carried no token, and sends nothing to the host', async () => {
         const toHost: string[] = [];
@@ -271,7 +320,62 @@ describe('a socket that closed', () => {
     });
 });
 
+describe('the first screen of a page that attaches', () => {
+    it('sends the output written after the pane was read behind the screen, and none before it', async () => {
+        const record = driver();
+        const plain = record.driver.run.bind(record.driver);
+        const LATE = Buffer.from('written after the read');
+        // Read by a tmux process each, the program's output lands after the cursor's answer.
+        record.driver.run = (args: string[]): Promise<string> => {
+            const answer = plain(args);
+            if (args[0] === 'display-message') void answer.then(() => record.emit(ID, LATE));
+            return answer;
+        };
+        // Read through the control client, it lands after the reply, in the same read of tmux.
+        record.driver.read = (_id, args, replied) =>
+            plain(args).then((text) => {
+                replied();
+                if (args[0] === 'display-message') record.emit(ID, LATE);
+                return text;
+            });
+        const { held } = terminals(record);
+        const page = recorder();
+        held.subscribed(page.sink, [CHANNEL]);
+        await vi.waitFor(() => expect(page.messages.some((one) => one.version === 0)).toBe(true));
+        record.emit(ID, Buffer.from('and then'));
+        await settle();
+        const decoded = page.messages.map((one) => [
+            one.version,
+            Buffer.from((one.payload as { bytes: string }).bytes, 'base64').toString('utf8')
+        ]);
+        expect(decoded).toEqual([
+            [0, 'the pane as it stands\u001b[1;1Hwritten after the read'],
+            [expect.any(Number), 'and then']
+        ]);
+    });
+});
+
 describe('the list the pages are told of', () => {
+    it("keeps tmux's words while the list cannot be read, and drops them once it is read", async () => {
+        const record = driver();
+        const tooLong = 'error connecting to /a/long/tmux/folder/default (File name too long)';
+        let fails = true;
+        record.driver.run = (args: string[]): Promise<string> => {
+            if (args[0] !== 'list-sessions') return Promise.resolve('');
+            return fails ? Promise.reject(new Error(tooLong)) : Promise.resolve(LIST);
+        };
+        const { held } = terminals(record);
+        let told = 0;
+        held.onChange(() => (told += 1));
+        held.refresh();
+        await settle();
+        expect([held.unreadable(), held.list(), told]).toEqual([tooLong, null, 1]);
+        fails = false;
+        held.refresh();
+        await settle();
+        expect([held.unreadable(), held.list()?.length, told]).toEqual([null, 1, 2]);
+    });
+
     /** One row of tmux's list for a task terminal whose line ended with status 0. */
     const endedRow = (pid: number): string =>
         [
@@ -353,14 +457,14 @@ describe('a page that attaches', () => {
     ])(
         "gives an attaching page the modes the pane's program set, after the screen: $row",
         async ({ flags, modes }) => {
-            const answer = answerWith({
+            const values = {
                 cursor_x: '0',
                 cursor_y: '0',
                 pane_height: '1',
                 alternate_on: '0',
                 ...flags
-            });
-            expect(await attachedWith(driver({ answer }))).toBe(PLACED + modes);
+            };
+            expect(await attachedWith(driver({ values }))).toBe(PLACED + modes);
         }
     );
 
@@ -455,8 +559,7 @@ describe('a page that attaches', () => {
     ])(
         "gives an attaching page a pane's shell text, then the alternate buffer with the editor's screen: $row",
         async ({ values, captures, alternateAfter, expected }) => {
-            const answer = answerWith(values);
-            expect(await attachedWith(driver({ answer, captures, alternateAfter }))).toBe(expected);
+            expect(await attachedWith(driver({ values, captures, alternateAfter }))).toBe(expected);
         }
     );
 });

@@ -192,9 +192,13 @@ export function configOf(engine: string): () => Record<string, unknown> {
 /**
  * The open workspace and the machine values a request is given: the folder `hub` as the primary hub
  * of a workspace when one is named (it is made a hub) with the values of its `.oculus/local.yml`,
- * else a workspace with no folder and the defaults of local.yml.
+ * else a workspace with no folder and the defaults of local.yml. The settings of another hub are
+ * the shipped engine's under that hub's own file, parsed at each call as the server's cache parses
+ * them on a change.
  */
-export function worldOf(hub?: string): Pick<TerminalOptions, 'openFor' | 'localFor'> {
+export function worldOf(
+    hub?: string
+): Pick<TerminalOptions, 'openFor' | 'localFor' | 'hubSettings'> {
     const workspace = workspaceWith(
         hub === undefined ? [] : [{ name: 'hub', dir: plantHub(hub) }],
         hub === undefined ? undefined : 'hub'
@@ -202,7 +206,8 @@ export function worldOf(hub?: string): Pick<TerminalOptions, 'openFor' | 'localF
     return {
         openFor: () => workspace.open(),
         localFor: () =>
-            hub === undefined ? localDefaults() : loadMachine([{ name: 'hub', dir: hub }], 'hub')
+            hub === undefined ? localDefaults() : loadMachine([{ name: 'hub', dir: hub }], 'hub'),
+        hubSettings: (dir) => loadConfig(engineDir(), { hub: dir })
     };
 }
 

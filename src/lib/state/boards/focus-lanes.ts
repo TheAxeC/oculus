@@ -65,6 +65,8 @@ export type BandItem = {
      * none, which is what the education file writes instead. The view shortens it to a sentence.
      */
     note?: string;
+    /** The workspace folder of the hub the entry is in, for an entry of a hub but the primary. */
+    root?: string;
 };
 
 /** One stage stacked inside the funding column of the band. */
@@ -149,6 +151,7 @@ function bandItem(entry: Entry, key: string): BandItem {
         deadline: entryDeadline(entry)
     };
     if (note !== '') card.note = note;
+    if (entry.root !== undefined) card.root = entry.root;
     return card;
 }
 

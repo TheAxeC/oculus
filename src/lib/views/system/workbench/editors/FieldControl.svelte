@@ -13,6 +13,11 @@
     // pick, a toggle or an item list hands on the field's new value (`onpick`), undefined for a
     // field taken out of its record.
     //
+    // A checkbox draws its label as the words beside it, as a Settings row's help is drawn. A
+    // caller that draws the field's name beside the control itself (`named`), as a card of fields
+    // does in its column of names, has the box draw no words, the label kept as its accessible
+    // name.
+    //
     // A value outside what the control offers is shown and marked: a Tag with the words that it is
     // not in the list beside a single value, and the same words after a multi-pick's chip. While
     // the list the control draws from is still being read the held value is shown as the one item,
@@ -55,6 +60,8 @@
         value: FieldValue | undefined;
         /** The control's accessible name, already translated by the view. */
         label: string;
+        /** The caller draws the field's name beside the control, so a checkbox draws no words. */
+        named?: boolean;
         lists: Lists;
         /** The other fields of the record, which some lists and checks read. */
         record?: Record<string, FieldValue>;
@@ -74,6 +81,7 @@
         spec,
         value,
         label,
+        named = false,
         lists,
         record = {},
         optional = false,
@@ -171,6 +179,7 @@
             <Checkbox
                 checked={toggleOf(value)}
                 {label}
+                bare={named}
                 unset={t('settings.unset')}
                 onchange={(next: boolean) => onpick(next)}
                 onunset={() => onpick(undefined)}
@@ -179,6 +188,7 @@
             <Checkbox
                 checked={toggleOf(value) === true}
                 {label}
+                bare={named}
                 onchange={(next: boolean) => onpick(next)}
             />
         {/if}
@@ -242,6 +252,7 @@
             remove={t('editor.remove')}
             removeGlyph={t('editor.remove_glyph')}
             none={t('editor.no_choices')}
+            more={(count: number) => t('editor.more_choices', count)}
             onchange={(next: string[]) => onpick(fromWords(spec, value, next))}
         />
     {:else if control === 'folder' || control === 'file'}
@@ -324,12 +335,15 @@
 </div>
 
 <style>
+    /* The control is never wider than the row it sits in, so a card's field wraps its control
+       under its name rather than past the card's edge. */
     .control {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
         min-width: 0;
+        max-width: 100%;
     }
 
     .area {

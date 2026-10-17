@@ -176,9 +176,15 @@ export type LspStore = {
     askHeld: (files: LspPlace[]) => Promise<LspPlace[] | null>;
     /**
      * Ask the Markdown servers for the edit that keeps the links to some moved items pointing at
-     * them: the moves are `from` and `to` paths under one served root, made already.
+     * them: the moves are `from` and `to` paths under one served root, made already, and the
+     * texts those of the page's tabs with unsaved text under the root, which the edits are
+     * computed over.
      */
-    askLinks: (root: string, moves: { from: string; to: string }[]) => Promise<LinksReply>;
+    askLinks: (
+        root: string,
+        moves: { from: string; to: string }[],
+        texts: { path: string; text: string }[]
+    ) => Promise<LinksReply>;
     /** End a root's server and start it again on its next request. `server` names an app's. */
     restart: (root: string, language: string, server?: string) => boolean;
     /** Record a library file a server named, under the root and language of the request. */
@@ -399,7 +405,11 @@ export function createLsp(socket: SocketStore): LspStore {
     const linking = new Map<number, (answer: LinksAnswer | LinksFailure) => void>();
     let linkQuestions = 0;
 
-    function askLinks(root: string, moves: { from: string; to: string }[]): Promise<LinksReply> {
+    function askLinks(
+        root: string,
+        moves: { from: string; to: string }[],
+        texts: { path: string; text: string }[]
+    ): Promise<LinksReply> {
         link(LINKS_LANGUAGE);
         linkQuestions += 1;
         const id = linkQuestions;
@@ -422,7 +432,8 @@ export function createLsp(socket: SocketStore): LspStore {
             };
             const later = setTimeout(() => end('no_answer'), LINKS_MS);
             linking.set(id, end);
-            if (!write(LINKS_LANGUAGE, root, { oculus: 'links', id, root, moves })) end('unsent');
+            const asked = { oculus: 'links', id, root, moves, texts } as const;
+            if (!write(LINKS_LANGUAGE, root, asked)) end('unsent');
         });
     }
 

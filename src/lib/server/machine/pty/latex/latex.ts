@@ -17,7 +17,8 @@
 // running is answered as it is, and one that ended is run again there with the command the request
 // builds now, so a build on every save leaves one terminal per main file and step. `stop` sends
 // Ctrl+C to the foreground of the kept build terminal and to no other terminal. A clean is refused
-// while the main's build runs, since both write the same files.
+// while the main's build runs, since both write the same files, and the clean of a literate main
+// whose weave never wrote its `.tex` file runs nothing and starts no terminal.
 //
 // A build whose recipe runs latexmk, and a clean, read the latexmkrc files latexmk would read, and
 // a build whose recipe runs a weave tool runs code of the document; each is approved once and asked
@@ -33,7 +34,7 @@
 
 import { json } from '@sveltejs/kit';
 import { existsSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { basename, dirname, extname, join, relative, sep } from 'node:path';
 import { z } from 'zod';
 import { textCatalog } from '../../../../data/sources/config.ts';
 import { latexBuild } from '../../../../data/sources/config/settings.ts';
@@ -244,6 +245,13 @@ function stepsOf(
     if ('refused' in folders) return refused(folders);
     const stem = stemOf(main);
     if (step === 'clean') {
+        // A literate main is cleaned through the `.tex` file its weave writes beside it. Before a
+        // weave has written one there is nothing of a build to clean, and latexmk would end with
+        // status 11 on a file that is not there, so the clean runs nothing.
+        const woven = join(dirname(path), `${stemOf(basename(path))}.tex`);
+        if (extname(path).toLowerCase() !== '.tex' && !existsSync(woven)) {
+            return { steps: [], recipe: '' };
+        }
         const steps = [cleanStep(path, folders)];
         const lost = missingProgram(steps, found);
         return lost === null ? { steps, recipe: '' } : refused(lost);
@@ -327,9 +335,11 @@ function targetOfRepo(repo: string, options: TerminalOptions): LatexJobTarget | 
  * clean, the same answer the `latex` action gives that step of that main now, so a latexmkrc
  * changed since the approval is asked about again, and a main file that is no longer one is refused
  * as the action refuses it. A task mark that names no folder is read by the served root that holds
- * the terminal's working folder. A LaTeX terminal whose mark names no step and main file, or whose
- * folder no served root holds, is refused (`latex-unmarked`), since what it would run cannot be
- * checked. Null for any other terminal, and for a step that waits on nothing.
+ * the terminal's working folder. A LaTeX terminal whose mark names no step and main file is refused
+ * (`latex-unmarked`), since what it would run cannot be checked; one whose folder no served root
+ * holds now is refused with that folder (`latex-unserved`), the root it named or the working
+ * folder, so the reader learns which folder to add back. Null for any other terminal, and for a
+ * step that waits on nothing.
  */
 export function latexAgain(terminal: Terminal, options: TerminalOptions): Response | null {
     const job = terminal.job;
@@ -338,7 +348,10 @@ export function latexAgain(terminal: Terminal, options: TerminalOptions): Respon
     if (kept === undefined) return refusal('latex-unmarked');
     if (kept.step !== 'build' && kept.step !== 'clean') return null;
     const target = kept.target ?? targetOfRepo(job.repo, options);
-    if (target === null) return refusal('latex-unmarked');
+    if (target === null) return refusal('latex-unserved', [job.repo]);
+    if ('root' in target && !options.openFor().roots.some((one) => one.key === target.root)) {
+        return refusal('latex-unserved', [target.root]);
+    }
     const folder = latexFolder(target, options);
     if (folder instanceof Response) return folder;
     if (!isMainOf(folder.dir, kept.main)) return refusal('not-a-main');
@@ -440,6 +453,8 @@ async function runStep(
     }
     const planned = stepsOf(step, folder, main, options, message);
     if (planned instanceof Response) return planned;
+    // A step with nothing to run starts no terminal and ends at once.
+    if (planned.steps.length === 0) return json({ ok: true, recipe: '' }, { headers: NO_STORE });
     if (step !== 'checkcites') {
         const ask = approvalAsk(step, folder, main, planned, options);
         if (ask !== null) return ask;

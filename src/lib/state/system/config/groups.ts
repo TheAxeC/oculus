@@ -252,7 +252,14 @@ export function settingsGroups(
     folders?: FolderListings,
     hubFile?: HubFile,
     apps: AppSettingRow[] = [],
-    machine: MachineState = { primary: null, set: [], defaults: {}, values: {}, hubs: {} }
+    machine: MachineState = {
+        primary: null,
+        set: [],
+        defaults: {},
+        values: {},
+        hubs: {},
+        portRefused: null
+    }
 ): Group[] {
     const groups: Group[] = [];
     if (browser.length > 0) {

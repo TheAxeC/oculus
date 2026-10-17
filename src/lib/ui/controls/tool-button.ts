@@ -42,6 +42,12 @@ export type ToolButtonProps = {
      */
     disabled?: boolean;
     /**
+     * Not pressable while the action it started is under way, drawn as `disabled` is, but kept
+     * focusable and in the tab order (`aria-disabled`): the keyboard that pressed it stays on it,
+     * and a dialog the action opened gives the keyboard back to it when it closes.
+     */
+    waiting?: boolean;
+    /**
      * Takes no press and says nothing is unavailable: drawn at full strength, with no fill under
      * the pointer, as VS Code draws a status bar item that runs no command.
      */

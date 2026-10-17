@@ -30,7 +30,11 @@
 // path listed under it, the files of a root nested inside it included. The machine's private
 // folders are left out by a glob for each one inside a root, and a root that lies inside one is not
 // listed at all. Each root stops at the cap, with the child ended when a name arrives past it, and
-// the answer is the roots in order cut to the cap in all.
+// the answer is the roots in order cut to the cap in all. A repository inside a root (one of
+// `repositories`, the list the git watcher keeps) is listed by a run of its own in its folder, so
+// its files are listed under its own ignore rules: the root's run leaves the repository out
+// whenever the root's ignore rules name it, as a hub's exclude file names every repository inside
+// the hub, and its files are then answered from the repository's run alone.
 
 import { spawn } from 'node:child_process';
 import { statSync } from 'node:fs';
@@ -492,7 +496,7 @@ export async function runSearch(
     const failed: SearchFailure[] = [];
     let total = 0;
     let truncated = false;
-    const places = namesPlans(roots, options.withheld ?? [], false);
+    const places = namesPlans(roots, options.withheld ?? [], false, []);
     for (const root of rootsOf(query, roots)) {
         if (total >= query.max) {
             // The cap is spent, so the roots behind it are not opened at all.
@@ -538,6 +542,8 @@ export type NamesOptions = {
     max: number;
     /** The folders no name is answered from (`privateFolders`), as absolute paths. */
     withheld: string[];
+    /** The repositories of the workspace as the git watcher last found them, as absolute paths. */
+    repositories?: readonly string[];
 };
 
 /** What a names request answers: the roots' names, or the reason it did not run. */
@@ -554,6 +560,11 @@ type NamesPlan = {
     withheld: string[];
     /** Whether the root is a private folder or lies in one, which lists nothing. */
     private: boolean;
+    /**
+     * The repositories inside this root that no deeper root holds, each listed by its own run: its
+     * folder, its path inside the root, and the private folders inside it as paths inside it.
+     */
+    nested: { dir: string; path: string; withheld: string[] }[];
 };
 
 /** A path inside a root written with `/`, whatever the platform separates with. */
@@ -570,7 +581,12 @@ function slashed(path: string): string {
  * private folder written in another letter case is excluded by the name it has on disk. A root with
  * no directory on this machine is listed as it is and fails there.
  */
-function namesPlans(roots: Root[], withheld: string[], shared: boolean): NamesPlan[] {
+function namesPlans(
+    roots: Root[],
+    withheld: string[],
+    shared: boolean,
+    repositories: readonly string[]
+): NamesPlan[] {
     const dirs = roots.map((root) => {
         const dir = expandHome(root.dir);
         return { key: root.key, dir, real: realPath(dir, true) ?? dir };
@@ -578,19 +594,33 @@ function namesPlans(roots: Root[], withheld: string[], shared: boolean): NamesPl
     const folders = withheld.map(
         (folder) => realPath(expandHome(folder), true) ?? expandHome(folder)
     );
-    return dirs.map((root) => ({
-        key: root.key,
-        dir: root.dir,
-        deeper: shared
+    const repos = repositories.map((dir) => realPath(dir, true) ?? dir);
+    return dirs.map((root) => {
+        const deeper = shared
             ? dirs
                   .filter((other) => other.key !== root.key && below(other.real, root.real))
                   .map((other) => slashed(relative(root.real, other.real)))
-            : [],
-        withheld: folders
-            .filter((folder) => below(folder, root.real))
-            .map((folder) => slashed(relative(root.real, folder))),
-        private: under(root.real, folders)
-    }));
+            : [];
+        const inside = (path: string): string[] =>
+            folders
+                .filter((folder) => below(folder, path))
+                .map((one) => slashed(relative(path, one)));
+        return {
+            key: root.key,
+            dir: root.dir,
+            deeper,
+            withheld: inside(root.real),
+            private: under(root.real, folders),
+            nested: repos
+                .filter((repo) => below(repo, root.real) && !under(repo, folders))
+                .map((repo) => ({
+                    dir: repo,
+                    path: slashed(relative(root.real, repo)),
+                    withheld: inside(repo)
+                }))
+                .filter((repo) => !deeper.some((folder) => atOrBelow(repo.path, folder)))
+        };
+    });
 }
 
 /** Whether a path is the folder or lies below it, both written with `/`. */
@@ -598,22 +628,29 @@ function atOrBelow(path: string, folder: string): boolean {
     return path === folder || path.startsWith(`${folder}/`);
 }
 
+/** What one run of a listing read: the paths, whether the cap cut it, and how it ended. */
+type Listed = { paths: string[]; cut: boolean; outcome: RunOutcome };
+
 /**
- * The names of one root, up to the cap. The child is ended when a name arrives past it, which is
- * how a list cut at the cap knows more names existed.
+ * The names one run lists in `dir`, each written as a path inside the root by `prefix`, up to the
+ * cap. A path `skip` refuses is not listed. The child is ended when a name arrives past the cap,
+ * which is how a list cut at the cap knows more names existed.
  */
-async function listRoot(
-    plan: NamesPlan,
+async function listOne(
+    dir: string,
+    withheld: string[],
+    prefix: string,
+    skip: (path: string) => boolean,
     options: NamesOptions
-): Promise<{ listed: NamesRoot; cut: boolean }> {
+): Promise<Listed> {
     const paths: string[] = [];
     let cut = false;
-    if (plan.private) return { listed: { root: plan.key, paths }, cut };
     const run = options.run ?? runRipgrep;
     const outcome = await within(
-        run(plan.dir, namesArgs(plan.withheld), options.timeout, (line) => {
-            const path = pathIn(line);
-            if (path === '' || plan.deeper.some((folder) => atOrBelow(path, folder))) return true;
+        run(dir, namesArgs(withheld), options.timeout, (line) => {
+            const found = pathIn(line);
+            const path = found === '' || prefix === '' ? found : `${prefix}/${found}`;
+            if (found === '' || skip(path)) return true;
             if (paths.length >= options.max) {
                 cut = true;
                 return false;
@@ -623,10 +660,47 @@ async function listRoot(
         }),
         options.timeout
     );
+    return { paths, cut, outcome };
+}
+
+/**
+ * The names of one root, up to the cap: the root's own run, which leaves out the folders of the
+ * deeper roots and of the repositories inside it, then each repository's run. The runs go at once,
+ * so the root waits at most one timeout, and the names a repository's run lists are not listed
+ * again from the root's.
+ */
+async function listRoot(
+    plan: NamesPlan,
+    options: NamesOptions
+): Promise<{ listed: NamesRoot; cut: boolean }> {
+    if (plan.private) return { listed: { root: plan.key, paths: [] }, cut: false };
+    const held = [...plan.deeper, ...plan.nested.map((repo) => repo.path)];
+    const runs = await Promise.all([
+        listOne(
+            plan.dir,
+            [...plan.withheld, ...plan.nested.map((repo) => repo.path)],
+            '',
+            (path) => held.some((one) => atOrBelow(path, one)),
+            options
+        ),
+        ...plan.nested.map((repo) =>
+            listOne(
+                repo.dir,
+                repo.withheld,
+                repo.path,
+                (path) => plan.deeper.some((one) => atOrBelow(path, one)),
+                options
+            )
+        )
+    ]);
+    const all = runs.flatMap((one) => one.paths);
+    const paths = all.slice(0, options.max);
     const listed: NamesRoot = { root: plan.key, paths };
-    if (outcome.timedOut) listed.error = 'timed_out';
-    else if (!outcome.stopped && outcome.code >= FAILED) listed.error = 'failed';
-    return { listed, cut };
+    if (runs.some((one) => one.outcome.timedOut)) listed.error = 'timed_out';
+    else if (runs.some((one) => !one.outcome.stopped && one.outcome.code >= FAILED)) {
+        listed.error = 'failed';
+    }
+    return { listed, cut: runs.some((one) => one.cut) || all.length > paths.length };
 }
 
 /**
@@ -647,7 +721,8 @@ export async function runNames(
         roots.map((one) => one.key)
     );
     if (refused !== null) return { ok: false, refused };
-    const plans = namesPlans(roots, options.withheld, root === ALL_ROOTS).filter(
+    const shared = root === ALL_ROOTS;
+    const plans = namesPlans(roots, options.withheld, shared, options.repositories ?? []).filter(
         (plan) => root === ALL_ROOTS || plan.key === root
     );
     const listings = await Promise.all(plans.map((plan) => listRoot(plan, options)));

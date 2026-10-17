@@ -39,7 +39,6 @@
         themeLabeller,
         toggledThemes
     } from '$lib/state/shared/words/themes';
-    import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/workbench/layout/instance';
     import { t } from '$lib/state/shared/words/text';
     import type { ViewProps } from '$lib/state/workbench/navigation/registry';
@@ -102,11 +101,12 @@
             {#snippet intro()}
                 <Intro
                     lines={[
-                        t('data.intro', allDatasets.length, accessSummary(allDatasets)),
+                        allDatasets.length === 1
+                            ? t('data.intro_one', accessSummary(allDatasets))
+                            : t('data.intro', allDatasets.length, accessSummary(allDatasets)),
                         allDatasets.some((one) => one.recover === true)
                             ? t('data.intro_recover')
-                            : t('data.intro_no_recover'),
-                        ...(file.collection?.intro ? [inlineMarkdown(file.collection.intro)] : [])
+                            : t('data.intro_no_recover')
                     ]}
                 />
             {/snippet}

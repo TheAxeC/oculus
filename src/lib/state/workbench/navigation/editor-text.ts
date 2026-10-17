@@ -126,9 +126,9 @@ function recordsOf(input: SaveRulesInput, root: string): LanguageRecords | null 
  * They come from the configured options in the order `resolveEditor` states, for the language the
  * editor draws the tab in: the repository's `.oculus/settings.yml` record, then `editor.languages`,
  * then the global key. None is on until the configuration has arrived, since the page holds no
- * default for any of them. The tab's own options (views/shared/prose/source-options.ts) resolve the
- * same values by the same function; this is for the saves that no view makes, such as an automatic
- * save.
+ * default for any of them. The tab's own options (views/shared/prose/editor/source-options.ts)
+ * resolve the same values by the same function; this is for the saves that no view makes, such as
+ * an automatic save.
  */
 export function saveRulesOf(
     input: SaveRulesInput,

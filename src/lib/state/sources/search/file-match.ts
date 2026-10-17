@@ -1,6 +1,8 @@
 // Layer 2, client state. The files of a names answer and the matching of a query against them, for
 // the palette's file mode: a file is a `FileEntry`, the list prepares every entry once, and a query
-// lists at most `FILE_ROWS` of them with the file name outranking the folder.
+// lists at most `FILE_ROWS` of them with the file name outranking the folder. A query that is a
+// file's whole name, or the end of its path from a folder boundary (`site/run.sh`), lists that file
+// ahead of every fuzzy match, as VS Code's Quick Open ranks a whole-name match first.
 //
 // The matching runs in a web worker (file-match.worker.ts), because a hundred thousand names are
 // matched in more than a frame when several words are typed. This module is what that worker and
@@ -75,6 +77,26 @@ function matchesIn(index: FuzzyIndex<FileEntry>, query: string): FileMatch[] {
     });
 }
 
+/**
+ * The entry with the end of its path a query named drawn marked: the whole name, and the end of
+ * the folder the query reached into.
+ */
+function wholeMatch(entry: FileEntry, whole: string): FileMatch {
+    const reach = Math.max(0, whole.length - entry.name.length - 1);
+    const kept = entry.folder.length - reach;
+    const folder: TextPart[] = [
+        { text: entry.folder.slice(0, kept), hit: false },
+        { text: entry.folder.slice(kept), hit: true }
+    ].filter((one) => one.text !== '');
+    return { entry, name: [{ text: entry.name, hit: true }], folder };
+}
+
+/** Whether a lowercased query is the entry's whole name or the end of its path at a folder. */
+function namesWhole(entry: FileEntry, whole: string): boolean {
+    const path = entry.path.toLowerCase();
+    return path === whole || path.endsWith(`/${whole}`);
+}
+
 /** What a names answer holds, which the palette says under its rows. */
 export type FileSummary = {
     /** How many files the answer holds. */
@@ -108,12 +130,30 @@ type FileList = FileSummary & {
  * is the first key and the path the second.
  */
 export function fileList(answer: NamesAnswer): FileList {
-    const index = fuzzyIndex(
-        fileEntriesOf(answer),
-        [(one) => one.name, (one) => one.path],
-        FILE_THRESHOLD
-    );
-    return { ...fileSummary(answer), matches: (query) => matchesIn(index, query) };
+    const entries = fileEntriesOf(answer);
+    const index = fuzzyIndex(entries, [(one) => one.name, (one) => one.path], FILE_THRESHOLD);
+    const byName = new Map<string, FileEntry[]>();
+    for (const entry of entries) {
+        const name = entry.name.toLowerCase();
+        const held = byName.get(name);
+        if (held === undefined) byName.set(name, [entry]);
+        else held.push(entry);
+    }
+    /** The fuzzy matches, with the files the query names whole ahead of them in list order. */
+    function matches(query: string): FileMatch[] {
+        const fuzzy = matchesIn(index, query);
+        const whole = query.trim().toLowerCase();
+        if (whole === '' || /\s/.test(whole)) return fuzzy;
+        const named = byName.get(whole.slice(whole.lastIndexOf('/') + 1)) ?? [];
+        const exact = named.filter((entry) => namesWhole(entry, whole));
+        if (exact.length === 0) return fuzzy;
+        const first = new Set(exact);
+        return [
+            ...exact.map((entry) => wholeMatch(entry, whole)),
+            ...fuzzy.filter((one) => !first.has(one.entry))
+        ].slice(0, FILE_ROWS);
+    }
+    return { ...fileSummary(answer), matches };
 }
 
 /** What the page posts to the worker: the names once, then each query with its number. */

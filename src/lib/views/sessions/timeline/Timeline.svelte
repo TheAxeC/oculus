@@ -99,7 +99,10 @@
             return t('sessions.ev_turn', String(Math.round((Number(held) || 0) / 1000)));
         }
         if (event.kind === 'bust') {
-            return t('sessions.ev_bust', compactCount(Number(held) || 0));
+            const tokens = Number(held) || 0;
+            return tokens === 1
+                ? t('sessions.ev_bust_one')
+                : t('sessions.ev_bust', compactCount(tokens));
         }
         if (event.kind === 'tool' || event.kind === 'edit') return nameOf(held);
         return held;

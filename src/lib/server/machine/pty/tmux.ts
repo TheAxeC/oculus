@@ -5,8 +5,9 @@
 // There is no native pty module here and there will not be one. tmux is the terminal, and its
 // control mode is the bridge: `tmux -C attach-session -t <session>` with piped stdio prints
 // `%begin`/`%end` around each command's reply, `%output %<pane-id> <bytes>` for each chunk a pane
-// wrote, and `%session-changed` and its relatives as the server's state moves. One control client
-// per tmux server sees every session's output, so the server holds one, not one per terminal.
+// wrote, and `%session-changed` and its relatives as the server's state moves. A control client
+// sees the output of the session it is attached to, so the channels hold one per attached terminal
+// (server/machine/pty/channel.ts, `tmuxDriver`).
 //
 // The bytes of `%output` are escaped by tmux: a byte below 0x20 and a backslash become `\ooo` in
 // octal, and every other byte is written through as itself. A UTF-8 sequence therefore arrives as
@@ -244,8 +245,18 @@ export type ControlHandlers = {
 };
 
 export type ControlClient = {
-    /** Send one tmux command and resolve with its reply text, or reject on `%error`. */
-    command(args: string[]): Promise<string>;
+    /**
+     * Send one tmux command and resolve with its reply text, or reject on `%error`. `replied` is
+     * called as the reply is read, at its place among the pane's output: tmux writes a client's
+     * replies in order with the `%output` of its session, so every chunk the command saw came
+     * before the call and every chunk it did not see comes after it.
+     */
+    command(args: string[], replied?: () => void): Promise<string>;
+    /**
+     * True once the client is attached and its session's output streams to it, false when the
+     * attach failed or the child ended first.
+     */
+    ready(): Promise<boolean>;
     /** Whether the child is still running. */
     live(): boolean;
     close(): void;
@@ -253,8 +264,11 @@ export type ControlClient = {
 
 /**
  * A control client attached to one session of the user's own tmux server, which is why a session
- * oculus started is also reachable from any terminal with `tmux attach -t oculus-<id>`. Replies
- * come back in the order the commands went out, so the pending queue is a plain FIFO.
+ * oculus started is also reachable from any terminal with `tmux attach -t oculus-<id>`. tmux writes
+ * the reply block of the attach itself first, before the reply of any command the client sent
+ * (measured on tmux 3.7c, a command written before the attach answered included), and an
+ * `%error` block when the session is not there. Replies come back in the order the commands went
+ * out, so the pending queue is a plain FIFO behind that first block.
  */
 export function control(
     session: string,
@@ -267,14 +281,49 @@ export function control(
         stdio: ['pipe', 'pipe', 'pipe']
     });
     let alive = true;
-    const pending: { resolve(text: string): void; reject(error: Error): void }[] = [];
+    let joined = false;
+    let settle: (attached: boolean) => void = () => {
+        // Replaced by the promise below before the child can answer.
+    };
+    const ready = new Promise<boolean>((resolve) => (settle = resolve));
+    const pending: {
+        resolve(text: string): void;
+        reject(error: Error): void;
+        replied?: () => void;
+    }[] = [];
+
+    /**
+     * The commands asked in this turn, written in one write when it ends: tmux runs the lines of
+     * one write together, with no pane output read between them (measured on tmux 3.7c: two
+     * captures written in one write while the pane printed a counter matched 20 times in 20, two
+     * written in two writes differed in 14 of 20), so the reads of one screen see one moment.
+     */
+    let batch: { line: string; entry: (typeof pending)[number] }[] = [];
+    const flush = (): void => {
+        const sent = batch;
+        batch = [];
+        child.stdin.write(sent.map((one) => one.line).join(''), (error) => {
+            if (error === undefined || error === null) return;
+            for (const { entry } of sent) {
+                const at = pending.indexOf(entry);
+                if (at !== -1) pending.splice(at, 1);
+                entry.reject(error);
+            }
+        });
+    };
 
     const parser = createParser({
         output: handlers.output,
         event: handlers.event,
         reply: (reply) => {
+            if (!joined) {
+                joined = true;
+                settle(!reply.error);
+                return;
+            }
             const waiting = pending.shift();
             if (waiting === undefined) return;
+            waiting.replied?.();
             const text = reply.lines.join('\n');
             if (reply.error) waiting.reject(new Error(text === '' ? 'tmux refused' : text));
             else waiting.resolve(text);
@@ -286,32 +335,32 @@ export function control(
     child.stderr.resume();
     child.on('error', () => {
         alive = false;
+        settle(false);
     });
     child.on('exit', () => {
         alive = false;
+        settle(false);
         while (pending.length > 0) pending.shift()?.reject(new Error('the control client exited'));
         handlers.exit();
     });
 
     return {
-        command(args: string[]): Promise<string> {
+        command(args: string[], replied?: () => void): Promise<string> {
             if (!alive) return Promise.reject(new Error('the control client is not running'));
             return new Promise((resolve, reject) => {
-                const entry = { resolve, reject };
+                const entry = { resolve, reject, replied };
                 pending.push(entry);
-                child.stdin.write(commandLine(args), (error) => {
-                    if (error === undefined || error === null) return;
-                    const at = pending.indexOf(entry);
-                    if (at !== -1) pending.splice(at, 1);
-                    reject(error);
-                });
+                batch.push({ line: commandLine(args), entry });
+                if (batch.length === 1) queueMicrotask(flush);
             });
         },
+        ready: () => ready,
         live(): boolean {
             return alive;
         },
         close(): void {
             alive = false;
+            settle(false);
             child.stdin.end();
             child.kill();
         }

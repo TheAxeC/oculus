@@ -26,6 +26,7 @@ import { isUpdateTask } from '../../../data/helpers/run/tasks.ts';
 import { isMap, scalar } from '../../../data/helpers/guards.ts';
 import { tokenedBody } from '../../core/auth.ts';
 import { glyphCatalog, textCatalog } from '../../../data/sources/config.ts';
+import type { HubSettings } from '../../../data/index.ts';
 import { allHubs, repositoryRoots } from '../../files/roots.ts';
 import { RECOVER_KEY } from '../../../data/helpers/hub-names.ts';
 import { fallbackShell } from '../../../data/places/platform.ts';
@@ -106,6 +107,13 @@ const resumeToolShape = z.literal(RESUME_TOOLS);
 
 export type TerminalOptions = StartOptions &
     ChatOptions & {
+        /** The engine directory the configuration and the agents catalog are read from. */
+        engine: string;
+        /**
+         * The settings of a hub of the workspace other than the primary, by its folder: the
+         * server's kept parse of them, which a recovery and a hub task read.
+         */
+        hubSettings: HubSettings;
         /**
          * The session record a resume is about, from the last published `sessions` payload.
          * Defaulted Tests and the route pass the source they own.
@@ -319,10 +327,11 @@ async function composeSession(
 }
 
 /**
- * What the task steps read: the open workspace, the merged config and the engine of this request.
+ * What the task steps read: the open workspace, the merged config and the settings of the other
+ * hubs of this request.
  */
 function seedSource(options: TerminalOptions): SeedSource {
-    return { open: options.openFor(), merged: options.configFor(), engine: options.engine };
+    return { open: options.openFor(), merged: options.configFor(), settings: options.hubSettings };
 }
 
 /** The task reference of a seed or approve-seed request, or the refusal for a missing one. */
@@ -354,7 +363,8 @@ function approveSeedTask(message: Record<string, unknown>, options: TerminalOpti
 /**
  * Run the `recover_command` of a dataset's own hub for one dataset the current snapshot holds and
  * marks `recover`, in that hub's folder, with `{key}` replaced by the dataset's key in its hub as
- * one shell word.
+ * one shell word. The terminal is a task terminal, so it stays after the command ended, with the
+ * command's output and its exit status, and Rerun runs the command again.
  */
 async function recoverDataset(
     key: unknown,
@@ -372,7 +382,9 @@ async function recoverDataset(
     if (dataset?.recover !== true) return refusal('bad-terminal');
     const open = options.openFor();
     const name = dataset.root ?? open.primary;
-    const hub = allHubs(options.engine, options.configFor(), open).find((one) => one.key === name);
+    const hub = allHubs(options.configFor(), open, options.hubSettings).find(
+        (one) => one.key === name
+    );
     const template = hub?.config.recoverCommand ?? null;
     if (hub === undefined || template === null) return refusal('bad-terminal');
     const own = dataset.root === undefined ? key : key.slice(dataset.root.length + 1);
@@ -385,7 +397,11 @@ async function recoverDataset(
             rows,
             name: `recover ${key}`
         },
-        { ...options, command: template.replaceAll(RECOVER_KEY, shellWord(own)) }
+        {
+            ...options,
+            command: template.replaceAll(RECOVER_KEY, shellWord(own)),
+            task: { repo: hub.hub, name: `recover ${key}` }
+        }
     );
     options.refresh?.();
     return json({ ok: true, terminal }, { headers: NO_STORE });

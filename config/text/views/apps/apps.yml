@@ -18,6 +18,7 @@ text:
         name_line: 'Name: {0}'
         folder_line: 'Folder: {0}'
         size_line: '{0} files, {1}'
+        size_line_one: '1 file, {0}'
         size_kb: '{0} KB'
         size_mb: '{0} MB'
         reads_none: Read nothing from oculus.
@@ -114,6 +115,8 @@ text:
         disable_dependents: 'These enabled apps need {0}: {1}. Disable them too?'
         remove_question: 'Remove {0}?'
         remove_secrets: 'Its folder {0} and its data file move to the Trash, and the {1} secrets it holds are deleted from the keyring.'
+        remove_secrets_none: 'Its folder {0} and its data file move to the Trash. It holds no secrets in the keyring.'
+        remove_secrets_one: 'Its folder {0} and its data file move to the Trash, and the secret it holds is deleted from the keyring.'
         remove_secrets_unknown: 'Its folder {0} and its data file move to the Trash. The secrets it holds could not be counted and will not be deleted.'
         remove_dependents: ' These enabled apps need it and are disabled too: {0}.'
         remove_confirm: Remove

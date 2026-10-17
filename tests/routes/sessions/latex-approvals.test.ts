@@ -610,6 +610,62 @@ describe('POST /api/terminal, the approvals of a latex step', () => {
                 }
                 expect(driver.respawns()).toHaveLength(0);
             }
+        },
+        {
+            title: 'refuses Rerun and Restart of a kept build whose folder no served root holds, naming the folder',
+            run: async (driver) => {
+                const built = (await stepAnswer(driver, 'build')).body.terminal as {
+                    id: string;
+                    name: string;
+                };
+                const session = `oculus-${built.id}`;
+                driver.end(session, 0);
+                const elsewhere = join(task.root, 'left-the-workspace');
+                const mark = (fields: Record<string, unknown>): Promise<string> =>
+                    driver.run([
+                        'set-option',
+                        '-t',
+                        session,
+                        '@oculus_task',
+                        JSON.stringify({ name: built.name, source: 'latex', ...fields })
+                    ]);
+                // A mark that names a root the workspace no longer serves names that root.
+                await mark({
+                    repo: manuscript(),
+                    latex: { step: 'build', main: 'main.tex', target: { root: 'gone', path: '' } }
+                });
+                for (const action of ['rerun', 'restart']) {
+                    const refused = await againOf(driver, built.id, action);
+                    expect(refused.body).toEqual({ error: 'latex-unserved', names: ['gone'] });
+                }
+                // A mark read by its working folder, which no served root holds, names that folder.
+                await mark({ repo: elsewhere, latex: { step: 'build', main: 'main.tex' } });
+                const refused = await againOf(driver, built.id, 'rerun');
+                expect(refused.body).toEqual({ error: 'latex-unserved', names: [elsewhere] });
+                expect(driver.respawns()).toHaveLength(0);
+            }
+        },
+        {
+            title: 'runs nothing for the clean of an Rnw main whose .tex was never woven, and latexmk once it is',
+            run: async (driver) => {
+                const woven = join(manuscript(), 'doc2.tex');
+                const before = await stepAnswer(driver, 'clean', { main: 'doc2.Rnw' });
+                expect({ ...before, starts: driver.starts().length }).toEqual({
+                    status: 200,
+                    body: { ok: true, recipe: '' },
+                    starts: 0
+                });
+                writeFileSync(woven, '\\documentclass{article}\n');
+                try {
+                    const after = await stepAnswer(driver, 'clean', { main: 'doc2.Rnw' });
+                    expect(after.status).toBe(200);
+                    expect(
+                        driver.starts().map((args) => args.join(' ').includes("'latexmk' '-c'"))
+                    ).toEqual([true]);
+                } finally {
+                    rmSync(woven, { force: true });
+                }
+            }
         }
     ];
 

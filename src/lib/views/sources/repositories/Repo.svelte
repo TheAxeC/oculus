@@ -382,22 +382,26 @@
                 {#if busy}
                     <p class="none">{t('git.busy')}</p>
                     {#if !repositories.suggesting(root)}
-                        <ToolButton
-                            small
-                            label={t('git.cancel')}
-                            title={t('git.cancel_title')}
-                            onclick={() => void repositories.cancel(root)}
-                        />
+                        <span class="act">
+                            <ToolButton
+                                small
+                                label={t('git.cancel')}
+                                title={t('git.cancel_title')}
+                                onclick={() => void repositories.cancel(root)}
+                            />
+                        </span>
                     {/if}
                 {:else}
                     <p class="outcome">{outcome}</p>
-                    <ToolButton
-                        label={t('repositories.outcome_close')}
-                        glyph={t('repositories.outcome_close_glyph')}
-                        compact
-                        small
-                        onclick={() => repositories.clearOutcome(root)}
-                    />
+                    <span class="act">
+                        <ToolButton
+                            label={t('repositories.outcome_close')}
+                            glyph={t('repositories.outcome_close_glyph')}
+                            compact
+                            small
+                            onclick={() => repositories.clearOutcome(root)}
+                        />
+                    </span>
                 {/if}
             </div>
         </div>
@@ -490,6 +494,13 @@
         min-width: 0;
         margin: 0;
         font-size: var(--fs-md);
+        overflow-wrap: anywhere;
+    }
+
+    /* The line's button keeps its own width, so in a narrow pane the sentence wraps beside it and
+       the button stays inside the line. */
+    .act {
+        flex: none;
     }
 
     .sequence {

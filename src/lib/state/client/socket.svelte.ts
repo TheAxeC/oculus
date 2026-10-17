@@ -224,12 +224,17 @@ export function createSocket(entities: EntitiesStore, writes: WritesStore): Sock
     /**
      * Add channels to the subscription. The server takes a second subscribe message as more
      * channels on the same sink, and the list is remembered so a reconnect asks for them again.
+     * `again` asks for channels the list already holds as well, in a message of those alone, so
+     * the server answers them as it answers a load: a `pty:` channel with its terminal's screen.
      */
-    function subscribe(names: string[]): void {
+    function subscribe(names: string[], again = false): void {
         const added = names.filter((name) => !channels.includes(name));
-        if (added.length === 0) return;
-        channels = [...channels, ...added];
-        send(subscription());
+        if (added.length > 0) {
+            channels = [...channels, ...added];
+            send(subscription());
+            return;
+        }
+        if (again && names.length > 0) send({ ...subscription(), channels: names });
     }
 
     /**

@@ -355,9 +355,9 @@ export function createExplorer(
     }
 
     /** What the page does for files that were written in place: tabs read again, folders listed. */
-    async function rewritten(places: OpsPlace[]): Promise<void> {
+    function rewritten(places: OpsPlace[]): void {
         reloadClean(places);
-        await landed(
+        landed(
             [],
             places.map((one) => ({ root: one.root, path: parentPath(one.path) })),
             []
@@ -368,7 +368,7 @@ export function createExplorer(
     async function writeInPlace(request: OpsRequest): Promise<Outcome> {
         const outcome = await send(request);
         const names = outcome.ok ? outcome.paths : (outcome.done ?? []);
-        await rewritten(names.flatMap((one) => placeOfName(one) ?? []));
+        rewritten(names.flatMap((one) => placeOfName(one) ?? []));
         return outcome;
     }
 
@@ -453,14 +453,17 @@ export function createExplorer(
         }
     }
 
-    /** What the page does once the server has answered: restate, rewrite and read again. */
-    async function landed(moves: Move[], folders: OpsPlace[], gone: OpsPlace[]): Promise<void> {
-        if (moves.length > 0) {
-            followTabs(moves);
-            await followBookmarks(moves);
-        }
+    /**
+     * What the page does once the server has answered: read the folders again and restate the
+     * tabs at once, and rewrite the bookmarks behind them, since a bookmark is read and written
+     * over the network and the tree and the link offer that follow a move do not wait on it.
+     */
+    function landed(moves: Move[], folders: OpsPlace[], gone: OpsPlace[]): void {
         for (const folder of folders) fs.relistFolder(folder.root, folder.path);
         for (const place of gone) fs.relistFolder(place.root, place.path, true);
+        if (moves.length === 0) return;
+        followTabs(moves);
+        void followBookmarks(moves);
     }
 
     async function create(into: OpsPlace, name: string, folder: boolean): Promise<Outcome> {
@@ -471,7 +474,7 @@ export function createExplorer(
             name,
             folder
         });
-        if (answered(outcome)) await landed([], [into], []);
+        if (answered(outcome)) landed([], [into], []);
         return outcome;
     }
 
@@ -492,7 +495,7 @@ export function createExplorer(
         const renamed = outcome.ok ? outcome.paths.at(0) : undefined;
         const moves: Move[] =
             renamed === undefined ? [] : [{ from: item, to: { root: item.root, path: renamed } }];
-        await landed(moves, [parent], moves.length > 0 ? [item] : []);
+        landed(moves, [parent], moves.length > 0 ? [item] : []);
         await notesLanded(ahead, moves);
         if (moves.length > 0) moved(moves);
         return outcome;
@@ -503,8 +506,9 @@ export function createExplorer(
         const outcome = await send({ op, root, paths });
         if (!answered(outcome)) return outcome;
         const gone = doneOf(outcome, paths).map((path) => ({ root, path }));
+        fs.dropListed(root, doneOf(outcome, paths));
         if (gone.length > 0) notes().removed(gone);
-        await landed(
+        landed(
             [],
             gone.map((one) => ({ root, path: parentPath(one.path) })),
             gone
@@ -593,7 +597,7 @@ export function createExplorer(
             const finishedItems = sent.filter((one) => finished.includes(one.path));
             const gone = mode === 'move' ? finishedItems : [];
             finishedMoves.push(...gone.map((one) => movedTo(one, into)));
-            await landed(
+            landed(
                 gone.map((one) => movedTo(one, into)),
                 [into, ...gone.map((one) => ({ root: one.root, path: parentPath(one.path) }))],
                 gone
@@ -662,7 +666,7 @@ export function createExplorer(
             if (!(await confirm({ kind: 'replace', name }))) return outcome;
             outcome = await send(request(true));
         }
-        if (answered(outcome)) await landed([], [into], []);
+        if (answered(outcome)) landed([], [into], []);
         return outcome;
     }
 
@@ -670,8 +674,8 @@ export function createExplorer(
         const answer = await writes.undoWrite(record.at);
         if (answer.ok && answer.changed.length > 0) {
             answeredCount += 1;
-            await landed(undoneMoves(record, roots), [], []);
-            await rewritten(replacedPlaces(record, roots));
+            landed(undoneMoves(record, roots), [], []);
+            rewritten(replacedPlaces(record, roots));
             fs.invalidate();
         }
         return answer;
@@ -704,7 +708,7 @@ export function createExplorer(
         let added = 0;
         let refused = '';
         for (const dir of dirs) {
-            const answer = await fs.addRoot(dir);
+            const answer = await fs.addRoot(dir, { said: true });
             if (answer.ok) added += 1;
             else if (refused === '') refused = answer.error ?? 'refused';
         }
@@ -712,7 +716,9 @@ export function createExplorer(
     }
 
     async function addFolders(): Promise<FoldersAdded> {
-        if (panel) return { ok: true, added: 0, skipped: [], refused: '' };
+        // A press while the panel is open says so: the panel is drawn above every window, so it is
+        // already in front.
+        if (panel) return { ok: false, picker: 'busy' };
         const picked = await pick();
         if (!picked.ok) return { ok: false, picker: picked.error };
         const { add, skipped } = foldersToAdd(picked.paths, currentRoots());
@@ -721,7 +727,7 @@ export function createExplorer(
     }
 
     async function pickWorkbenchFolder(): Promise<WorkbenchFolder> {
-        if (panel) return { folder: null, line: '' };
+        if (panel) return { folder: null, line: addedLine({ ok: false, picker: 'busy' }, refusal) };
         const picked = await pick();
         if (!picked.ok)
             return { folder: null, line: addedLine({ ok: false, picker: picked.error }, refusal) };
@@ -741,7 +747,7 @@ export function createExplorer(
     }
 
     async function openFolder(): Promise<FolderOpened> {
-        if (panel) return { ok: true, choice: { kind: 'none' } };
+        if (panel) return { ok: false, picker: 'busy' };
         const picked = await pick();
         if (!picked.ok) return { ok: false, picker: picked.error };
         const choice = folderChoice(picked.paths, currentRoots());

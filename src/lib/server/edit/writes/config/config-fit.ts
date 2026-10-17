@@ -121,12 +121,14 @@ function sentenceOf(
         case 'hub_path':
             return words(text, 'server.config_key.not_hub_path');
         case 'slots':
-            return words(
-                text,
-                'server.config_key.wrong_slots',
-                problem.slots.length,
-                problem.slots.join(', ')
-            );
+            return problem.slots.length === 1
+                ? words(text, 'server.config_key.wrong_slots_one', problem.slots.join(', '))
+                : words(
+                      text,
+                      'server.config_key.wrong_slots',
+                      problem.slots.length,
+                      problem.slots.join(', ')
+                  );
     }
 }
 

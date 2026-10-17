@@ -26,6 +26,7 @@
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
     import Tooltip from '$lib/ui/menu/Tooltip.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         archiveConfirm,
         kindOf,
@@ -75,6 +76,9 @@
         onarchive,
         onsaid
     }: Props = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
 
     let asking: 'send' | 'archive' | null = $state(null);
     /**
@@ -217,7 +221,7 @@
         {/if}
         {#if note.what}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="what">{@html inlineMarkdown(note.what)}</p>
+            <p class="what">{@html inlineMarkdown(note.what, cardMath(note.what))}</p>
         {/if}
         {#if thread.snippet !== ''}
             <p class="snippet">{thread.snippet}</p>
@@ -286,15 +290,17 @@
         font-size: var(--fs-sm);
     }
 
-    /* Draw as the card around them says, ui/frame/Card.svelte's `--card-reveal`: transparent at
-       rest, so the card keeps its size and Tab still reaches every control, and drawn while the
-       pointer is over the card or the keyboard is inside it. */
+    /* Drawn as the card around them says, ui/frame/Card.svelte's `--card-at-rest`: not drawn and
+       taking no room at rest, and drawn while the pointer is over the card or the keyboard is
+       inside it. */
     .controls {
-        display: inline-flex;
+        display: var(--card-at-rest, inline-flex);
+        /* Drawn, the 20px controls take 2px less than a line of text, less than the chips and
+           words beside them, so a line they share stays as tall as it was at rest; on a line of
+           their own they reach no further than the gap between the lines. */
+        margin-block: min(0px, calc((1lh - 22px) / 2));
         align-items: center;
         gap: 6px;
-        opacity: var(--card-reveal);
-        transition: opacity 120ms ease-out;
     }
 
     .subject {

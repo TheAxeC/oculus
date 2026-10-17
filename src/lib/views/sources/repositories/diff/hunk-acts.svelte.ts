@@ -54,7 +54,9 @@ export class HunkActs {
             message:
                 count === 0
                     ? t('repositories.hunk_revert_confirm', path)
-                    : t('repositories.lines_revert_confirm', count, path),
+                    : count === 1
+                      ? t('repositories.lines_revert_confirm_one', path)
+                      : t('repositories.lines_revert_confirm', count, path),
             act: () => void this.#apply(index, cut, mode)
         };
     }

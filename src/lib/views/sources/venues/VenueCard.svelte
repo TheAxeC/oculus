@@ -4,11 +4,11 @@
     // The project list is already restricted to real users, and concentration arrives as a flag.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
-    // (state/boards/collection.ts's hubPathsOf): a path opens through api/file under the root of
-    // the hub the venue is of, in a tab of its own, and the card carries the control that selects
-    // it in the Files view under that root; an address opens in a tab of the browser's own. Both
-    // links the card draws, the site and the call, go through `hrefOf`, so neither is left relative
-    // to the page's own address.
+    // (state/boards/collection.ts's hubPathsOf): a path is offered only as the control that selects
+    // it in the Files view under the root of the hub the venue is of, since a folder of the hub is
+    // no site and the file address cannot serve it; an address is the site link, opened in a tab of
+    // the browser's own. Both links the card draws, the site and the call, go through `hrefOf`, so
+    // neither is left relative to the page's own address.
 
     import Card from '$lib/ui/frame/Card.svelte';
     import Tag from '$lib/ui/controls/Tag.svelte';
@@ -22,6 +22,7 @@
     import InPlace from '$lib/views/shared/forms/InPlace.svelte';
     import { blockedBy } from '$lib/views/shared/forms/entry-file';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { createCardMath } from '$lib/views/shared/latex/card-math.svelte';
     import {
         groupProjects,
         hrefOf,
@@ -78,6 +79,9 @@
         fault,
         onsaid
     }: Props = $props();
+
+    /** How this component's Markdown fields draw their formulas, once KaTeX is in. */
+    const cardMath = createCardMath();
 
     /** True while the question before a delete is open. */
     let deleting = $state(false);
@@ -160,11 +164,11 @@
             indexed(venue.scopus, venue.scopusMark, (words) => t('venues.scopus', words)),
             venue.format ? { label: venue.format, bold: true } : null,
             venue.timing ? { label: venue.timing, glyph: 'timing' } : null,
-            venue.link
+            venue.link && linkPath === undefined
                 ? {
                       label: t('venues.site'),
                       glyph: 'launch',
-                      href: hrefOf(linkPath ?? venue.link, rootOf(venue, client.fs.primary())),
+                      href: hrefOf(venue.link, rootOf(venue, client.fs.primary())),
                       external: true
                   }
                 : null,
@@ -188,7 +192,7 @@
         id={venue.id}
         {cursor}
         title={venue.name}
-        titleHtml={inlineMarkdown(venue.name)}
+        titleHtml={inlineMarkdown(venue.name, cardMath(venue.name))}
         ontitle={entry === null ? undefined : openPage}
     >
         {#snippet meta()}
@@ -242,7 +246,7 @@
 
         {#if venue.wants}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="wants">{@html inlineMarkdown(venue.wants)}</p>
+            <p class="wants">{@html inlineMarkdown(venue.wants, cardMath(venue.wants))}</p>
         {/if}
 
         {#if groups.length > 0}

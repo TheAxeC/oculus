@@ -6,7 +6,7 @@ text:
         badge_pending: pending
         badge_running: running
         cancel_confirm: Cancel job {0}? This runs scancel and cannot be undone.
-        cancel_ok: Cancel job
+        cancel_ok: Cancel Job
         capacity_label: '{0} partition capacity'
         capacity_summary: sinfo table ({0} rows)
         capacity_summary_one: sinfo table (1 row)

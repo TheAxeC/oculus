@@ -9,8 +9,11 @@
 // last start used until New sets them back to a new composer's own (`freshComposer`) or a New with
 // a prompt in a tab sets them to the tab's folder and the kind chosen (`splitState`). The folder
 // the composer was opened in and the folder of the last worktree a start with New worktree made are
-// kept apart (`split` and `worktree`), and the picker offers both. A value the catalog does not
-// offer is dropped when it is read, so a pick never reaches a start the server would refuse.
+// kept apart (`split` and `worktree`), and the picker offers both. Both are offered by that
+// composer alone: a start from it that lands takes them off (`splitEnded`), so a later composer of
+// the tab offers a folder only when a New or a start opens it in that folder, or it makes that
+// worktree itself. A value the catalog does not offer is dropped when it is read, so a pick never
+// reaches a start the server would refuse.
 
 import {
     confirmValues,
@@ -46,13 +49,14 @@ export type ComposerRecord = {
     picks: Partial<Record<AgentId, Record<string, string>>>;
     /**
      * The folder a New with a prompt, or a start from a place or a task, opened the composer in,
-     * offered as a place of its own whether or not a place holds it; absent on a composer opened
-     * without one.
+     * offered as a place of its own whether or not a place holds it until a start from that
+     * composer lands; absent on a composer opened without one.
      */
     split?: string;
     /**
      * The folder of the last worktree a start with New worktree made, offered as a place of its
-     * own beside the split whether or not a place holds it; absent until a start makes one.
+     * own beside the split whether or not a place holds it until a start from that composer lands;
+     * absent until a start makes one.
      */
     worktree?: string;
     /**
@@ -143,6 +147,16 @@ export function composerWorkspace(
 ): string {
     if (record.workspace !== '' && offered.includes(record.workspace)) return record.workspace;
     return hub ?? '';
+}
+
+/**
+ * The tab's instance state once a start from its composer landed: the record without the folder
+ * the composer was opened in and the folder of the worktree it made, which a later composer of the
+ * tab does not offer, and with the rest of it, the folder and kind the start used among it.
+ */
+export function splitEnded(state: unknown): Record<string, unknown> {
+    const { split: _split, worktree: _worktree, ...rest } = composerOf(state);
+    return withComposer(state, rest);
 }
 
 /** The tab's instance state with the composer record in place of the one it held. */

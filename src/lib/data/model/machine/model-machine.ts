@@ -206,6 +206,11 @@ export type SchedulePayload = {
     tasks: UpdateTask[] | null;
     /** The files that do not read, with the parser's line when it gave one. */
     unread: { file: 'schedules' | 'record' | 'commands'; line: number | null }[];
+    /**
+     * Tmux's words for why the terminal list cannot be read, while no list was ever read and so no
+     * due time is decided; null otherwise.
+     */
+    waiting: string | null;
 };
 
 // ------------------------------------------------------------------ terminals
@@ -221,6 +226,18 @@ export type TerminalKind = 'claude' | 'codex' | 'shell' | 'app';
 
 /** The kinds a page may ask to start: an `app` terminal is made by an app's host alone. */
 export type StartKind = Exclude<TerminalKind, 'app'>;
+
+/** The shape of a terminal id the server's start makes: six hex digits and the kind. */
+export const TERMINAL_ID = /^[0-9a-f]{6}-(claude|codex|shell|app)$/;
+
+/**
+ * Whether an id names an oculus terminal, by TERMINAL_ID, which the server and the page both test
+ * by. It cannot collide with a Claude session id (a UUID) or a Codex slug (a day path), which is
+ * why a terminal selects through the one selection the session views share.
+ */
+export function isTerminalId(id: unknown): id is string {
+    return typeof id === 'string' && TERMINAL_ID.test(id);
+}
 
 /**
  * Which agent session a terminal continues. A terminal started fresh carries none; one started by
@@ -308,7 +325,8 @@ export const TERMINAL_REFUSALS = [
     'latex-folder',
     'latex-building',
     'latex-idle',
-    'latex-unmarked'
+    'latex-unmarked',
+    'latex-unserved'
 ] as const;
 export type TerminalRefusal = (typeof TERMINAL_REFUSALS)[number];
 
@@ -538,7 +556,14 @@ export type LspToServer =
      * (paths under the root), after they happened, and the question which edits to Markdown files
      * keep their links and backticked paths pointing at the moved items.
      */
-    | { oculus: 'links'; id: number; root: string; moves: { from: string; to: string }[] };
+    | {
+          oculus: 'links';
+          id: number;
+          root: string;
+          moves: { from: string; to: string }[];
+          /** The texts of the page's tabs with unsaved text in the root, by path under it. */
+          texts: { path: string; text: string }[];
+      };
 
 /** The relay's message to a page, besides the JSON-RPC ones. */
 export type LspToPage =

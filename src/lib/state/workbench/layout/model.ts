@@ -162,10 +162,32 @@ export type FloatPlace =
     | { kind: 'window'; x: number; y: number; w: number; h: number };
 
 /**
- * A pane drawn over every page, its tabs open wherever the page on screen is. It is a host of its
- * own, addressed by its id wherever a page id is taken, and it is never a page.
+ * Where a floated pane stood in its page, so Return to Page puts it back there. `whole` is a pane
+ * that was the page's whole tree, which left the page one empty pane. `beside` names the node the
+ * pane stood beside, by its path in the page's tree once the pane had left it and by an instance
+ * that node held (`holds`, null when it held none), the direction of the split they shared, the
+ * side the pane was on (`before`), and the share of that split the pane held. `added` is the mark
+ * the pane carried in the page, which a float's pane does not carry.
  */
-export type Float = { id: string; pane: Pane; place: FloatPlace };
+export type FloatFrom =
+    | { kind: 'whole'; page: string; added?: true }
+    | {
+          kind: 'beside';
+          page: string;
+          path: number[];
+          holds: string | null;
+          dir: 'row' | 'col';
+          before: boolean;
+          share: number;
+          added?: true;
+      };
+
+/**
+ * A pane drawn over every page, its tabs open wherever the page on screen is. It is a host of its
+ * own, addressed by its id wherever a page id is taken, and it is never a page. A float made from
+ * a page's pane carries where that pane stood (`from`); one made from a tab carries none.
+ */
+export type Float = { id: string; pane: Pane; place: FloatPlace; from?: FloatFrom };
 
 /**
  * A closed folder page's layout, held by its folder: the arrangement as it was closed, and the

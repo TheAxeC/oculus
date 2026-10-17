@@ -40,6 +40,8 @@ export type SearchRouteOptions = SearchOptions & {
     cap: number;
     /** How many names one list carries, from config/behavior.yml. */
     maxNames: number;
+    /** The repositories of the workspace, each listed with its own ignore rules. */
+    repositories?: readonly string[];
 };
 
 /** What every answer of this route carries besides its type: nothing of it is cached. */
@@ -67,7 +69,8 @@ export async function handleSearch(
             ...(options.run === undefined ? {} : { run: options.run }),
             timeout: options.timeout,
             max: options.maxNames,
-            withheld: privateFolders(hubDirs(options.roots), homedir())
+            withheld: privateFolders(hubDirs(options.roots), homedir()),
+            repositories: options.repositories ?? []
         });
         if (!listed.ok) {
             return json({ error: listed.refused }, { status: 400, headers: NO_STORE });

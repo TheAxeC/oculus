@@ -77,7 +77,7 @@
                     <ToolButton plain label={column.label} onclick={() => onsort(column.key)} />
                 </th>
             {/each}
-            <th scope="col" aria-label={t('processes.stop')}></th>
+            <th scope="col" class="actions" aria-label={t('processes.stop')}></th>
         </tr>
     </thead>
     {#each arranged.groups as group (group.terminal)}
@@ -184,7 +184,23 @@
         white-space: nowrap;
     }
 
+    /*
+     * Stop stays at the right edge of the pane while the other columns scroll under it, so a
+     * narrow pane still shows it; the cell is painted so the scrolled text does not show through.
+     */
     .actions {
+        position: sticky;
+        right: 0;
         text-align: right;
+        background: var(--panel);
+    }
+
+    thead th.actions {
+        z-index: 2;
+    }
+
+    :global(body.wall) .actions {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
     }
 </style>

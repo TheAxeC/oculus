@@ -37,7 +37,8 @@
 // mirrors folder exactly as `run` does.
 
 import { execFile, spawn } from 'node:child_process';
-import { homedir } from 'node:os';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { z } from 'zod';
 import { endWith } from '../../core/git/running.ts';
@@ -293,11 +294,18 @@ export async function statusIn(at: Where, visit: RecordVisit): Promise<Outcome> 
 }
 
 /**
- * Commit what is staged, the message through a file as git-write.ts's commit does. The mirror's
- * commit hooks run, so it has no time limit.
+ * Commit what is staged with `message`, which goes through a file rather than an argument, as
+ * git-write.ts's commit does. The mirror's commit hooks run, so it has no time limit.
  */
-export function commitFile(at: Where, file: string): Promise<Outcome> {
-    return run(at, ['commit', '-F', file], NO_TIME_LIMIT);
+export async function commitMessage(at: Where, message: string): Promise<Outcome> {
+    const dir = mkdtempSync(join(tmpdir(), 'oculus-deposit-'));
+    const file = join(dir, 'message.txt');
+    try {
+        writeFileSync(file, message.endsWith('\n') ? message : `${message}\n`, 'utf8');
+        return await run(at, ['commit', '-F', file], NO_TIME_LIMIT);
+    } finally {
+        rmSync(dir, { recursive: true, force: true });
+    }
 }
 
 /** The one `remote` call site: reading origin's URL and adding it. */

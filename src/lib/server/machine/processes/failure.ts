@@ -8,20 +8,25 @@ import { words } from '../../core/words.ts';
 /** The causes a read fails for. */
 type FailureReason = 'timeout' | 'start' | 'status' | 'output' | 'empty' | 'cancelled';
 
-/** A failed read, with its cause and the one figure the cause's sentence names, if any. */
+/**
+ * A failed read, with its cause, the one figure the cause's sentence names, if any, and what the
+ * program wrote on its error stream, which a status sentence gives after the status.
+ */
 export class ReadFailure extends Error {
     readonly reason: FailureReason;
     readonly detail: string | number;
+    readonly said: string;
     /**
      * Settles when the child the failed read killed has closed, so the watcher starts no other
      * child before it; a failure with no child settles at once.
      */
     ended: Promise<void> = Promise.resolve();
 
-    constructor(reason: FailureReason, detail: string | number = '') {
+    constructor(reason: FailureReason, detail: string | number = '', said = '') {
         super(`the processes could not be read: ${reason}`);
         this.reason = reason;
         this.detail = detail;
+        this.said = said;
     }
 }
 
@@ -30,11 +35,15 @@ export function failureLine(error: unknown, text: Record<string, string>): strin
     if (!(error instanceof ReadFailure)) return words(text, 'processes.failed_other');
     switch (error.reason) {
         case 'timeout':
-            return words(text, 'processes.failed_timeout', error.detail);
+            return String(error.detail) === '1'
+                ? words(text, 'processes.failed_timeout_one')
+                : words(text, 'processes.failed_timeout', error.detail);
         case 'start':
             return words(text, 'processes.failed_start');
         case 'status':
-            return words(text, 'processes.failed_status', error.detail);
+            return error.said === ''
+                ? words(text, 'processes.failed_status', error.detail)
+                : words(text, 'processes.failed_status_said', error.detail, error.said);
         case 'output':
             return words(text, 'processes.failed_output');
         case 'empty':

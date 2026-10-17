@@ -198,7 +198,9 @@ function ownModules(options: ServersOptions): string {
 
 /**
  * The launch of a package that runs under oculus's own node, or null when it is not installed.
- * `flags` are node's own, placed before the script.
+ * `flags` are node's own, placed before the script. Under the desktop app that node is Electron's
+ * helper, which runs a script as node only with `ELECTRON_RUN_AS_NODE=1`, so the child gets
+ * oculus's own environment with it added; node itself ignores the variable.
  */
 function packaged(
     options: ServersOptions,
@@ -214,7 +216,8 @@ function packaged(
               command: options.node,
               args: [...flags, script, '--stdio'],
               cwd: setup.root,
-              program: serverFacts(id).program
+              program: serverFacts(id).program,
+              env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }
           }
         : null;
 }

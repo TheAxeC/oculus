@@ -215,6 +215,47 @@ export const ROOT_FOLDER = '.oculus';
 export const HUB_FILE = `${ROOT_FOLDER}/config.yml`;
 
 /**
+ * What a folder holds that Make Folder a Hub and Make Folder a Project of the Files view are
+ * offered by: `hub` a `.oculus/config.yml`, `project` a project manifest (`.oculus/project.yml`
+ * or `project.yml`), and `home` that it is the home folder, whose `.oculus` is oculus's own state
+ * folder and never a hub. The file server reads them (server/files/project/make.ts), and the page
+ * holds them in its listings, so a menu knows what a folder offers as it opens.
+ */
+export type FolderMarks = { hub?: true; project?: true; home?: true };
+
+/**
+ * Which of the two controls a folder offers, from its marks and whether a folder above it, up to
+ * the home folder and not including it, holds a `.oculus/config.yml` (`above`): neither on the
+ * home folder or a project; Make Folder a Hub when neither it nor a folder above it is a hub, so
+ * a folder inside a hub is never made a hub of its own; Make Folder a Project when it is no hub,
+ * since a hub is never a project.
+ */
+export function makeOffer(marks: FolderMarks, above: boolean): { hub: boolean; project: boolean } {
+    const closed = marks.home === true || marks.project === true;
+    return { hub: !closed && !above && marks.hub !== true, project: !closed && marks.hub !== true };
+}
+
+/**
+ * What a folder offers, read down a tree: the marks of the folder of the workspace it lies in and
+ * whether a hub is above that folder (`above`), then the marks of each folder on the way down to
+ * it, its own last. A folder has a hub above it when the folder over it is a hub or has one above
+ * it, except below the home folder, where the walk up stops.
+ */
+export function offerAlong(
+    top: FolderMarks,
+    above: boolean,
+    below: readonly FolderMarks[]
+): { hub: boolean; project: boolean } {
+    let marks = top;
+    let over = above;
+    for (const next of below) {
+        over = marks.home !== true && (over || marks.hub === true);
+        marks = next;
+    }
+    return makeOffer(marks, over);
+}
+
+/**
  * The keys the hub's settings file may set, each with the config file of the engine it belongs to
  * (named relative to config/), which is the group the Settings view draws it in. Each key is a
  * dotted path into the hub file; a value the file holds at one of these paths replaces the engine's

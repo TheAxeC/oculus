@@ -1,7 +1,8 @@
 // Layer 4, shell test. The question after a repository was cloned (shell/commands/CloneAsk.svelte),
 // drawn on the server for each step of the clone-after store: the first step offers Open and Add to
 // Workspace and Cancel, with no third answer such as an Open in New Window, the second Save and
-// Don't Save and Cancel, the third the name of the workspace file. It does not cover the look.
+// Don't Save and Cancel, Save drawn disabled under the sentence that says why while no folder is a
+// hub, the third the name of the workspace file. It does not cover the look.
 
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
@@ -13,7 +14,7 @@ import {
 } from '../../../src/lib/data/sources/config.ts';
 import { createCloneAfter } from '../../../src/lib/state/sources/clone/clone-after.svelte.ts';
 import type { WorkspacesState } from '../../../src/lib/state/sources/fs-transport.ts';
-import { setCatalog, setGlyphs } from '../../../src/lib/state/shared/words/text.ts';
+import { setCatalog, setGlyphs, t } from '../../../src/lib/state/shared/words/text.ts';
 import CloneAsk from '../../../src/lib/shell/commands/CloneAsk.svelte';
 import { clientContext, emptyClient } from '../../fixtures/client.ts';
 
@@ -23,17 +24,23 @@ setGlyphs(glyphCatalog(config));
 
 const ANSWER = { ok: true, changed: [], refused: [] };
 
-/** An unsaved workspace holding one folder, which Open has to ask about. */
-const HOLDING = { open: null, folders: [{ name: 'notes', path: '/work/notes' }] };
+/** An unsaved workspace holding one folder, a hub, which Open has to ask about. */
+const HOLDING = { open: null, folders: [{ key: 'notes', dir: '/work/notes', hub: true }] };
+
+/** The same workspace when its folder is no hub, so a workspace file has nowhere to be kept. */
+const NO_HUB = { open: null, folders: [{ key: 'notes', dir: '/work/notes', hub: false }] };
 
 /** The words on the buttons of the question as drawn for a store in this state. */
-async function drawn(steps: (after: ReturnType<typeof createCloneAfter>) => void | Promise<void>) {
+async function drawn(
+    steps: (after: ReturnType<typeof createCloneAfter>) => void | Promise<void>,
+    workspace: object = HOLDING
+) {
     const after = createCloneAfter(
         {
             addRoot: () => Promise.resolve(ANSWER),
             closeWorkspace: () => Promise.resolve(ANSWER),
             saveWorkspace: () => Promise.resolve(ANSWER),
-            workspacesNow: () => Promise.resolve(HOLDING as unknown as WorkspacesState)
+            workspacesNow: () => Promise.resolve(workspace as unknown as WorkspacesState)
         },
         { post: () => 0 }
     );
@@ -70,6 +77,21 @@ describe('the question after a clone', () => {
             await after.open();
         });
         expect([...buttons].sort()).toEqual(['Cancel', "Don't Save", 'Save']);
+    });
+
+    it('draws Save disabled, saying why, when no folder is a hub', async () => {
+        const { html } = await drawn(async (after) => {
+            after.ask('/work/repo');
+            await after.open();
+        }, NO_HUB);
+        expect(html).toMatch(/<button[^>]*class="yes[^"]*"[^>]*disabled/);
+        expect(html).toContain(t('files.refused_no_hub'));
+        const { html: savable } = await drawn(async (after) => {
+            after.ask('/work/repo');
+            await after.open();
+        });
+        expect(savable).not.toMatch(/<button[^>]*class="yes[^"]*"[^>]*disabled/);
+        expect(savable).not.toContain(t('files.refused_no_hub'));
     });
 
     it('asks for the name of the workspace file after Save', async () => {

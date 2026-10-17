@@ -36,8 +36,10 @@
                 <p>{@html drawn(line)}</p>
             {/each}
         {:else if html !== undefined}
+            <!-- The words are one paragraph, so the text and the inline tags in it (a code, a b)
+                 run as one line of text rather than as flex items set apart by the gap. -->
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- drawn() sanitises unless the words were marked trusted, and a trusted site draws a catalog line -->
-            {@html drawn(html)}
+            <p>{@html drawn(html)}</p>
         {:else if children}
             {@render children()}
         {/if}

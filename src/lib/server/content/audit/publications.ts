@@ -273,15 +273,14 @@ export function publications(input: AuditInput, add: (f: Raised) => void): void 
     const shown = untracked.slice(0, 12);
     const more =
         untracked.length > shown.length ? ` (+${untracked.length - shown.length} more)` : '';
+    const listed = `${shown.map((title) => `"${title}"`).join('; ')}${more}`;
     add({
         scope: 'website',
         where: 'publications.yml',
         kind: 'publink',
         file,
-        ...sentence(
-            'audit.msg_site_untracked',
-            untracked.length,
-            `${shown.map((title) => `"${title}"`).join('; ')}${more}`
-        )
+        ...(untracked.length === 1
+            ? sentence('audit.msg_site_untracked_one', untracked.length, listed)
+            : sentence('audit.msg_site_untracked', untracked.length, listed))
     });
 }

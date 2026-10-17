@@ -23,7 +23,7 @@ text:
         new: NEW
         new_idea_candidate: new idea candidate
         no_date: '-'
-        no_file: No radar file yet; run Lit Watch from the Update tray to populate <code>{0}</code>.
+        no_file: No radar file yet; run Lit Watch from the Update tray to populate `{0}`.
         paper: paper
         restore: restore
         restore_tip: restore to the radar

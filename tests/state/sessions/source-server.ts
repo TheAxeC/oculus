@@ -54,14 +54,17 @@ export function server(
         }
     };
 
-    /** Say what the channel of a file carries: a hash, or null for a file that is gone. */
-    function say(key: string, hash: string | null): void {
+    /**
+     * Say what the channel of a file carries: a hash, or null for a file that is gone, and whether
+     * its root is served.
+     */
+    function say(key: string, hash: string | null, served = true): void {
         const version = (versions.get(key) ?? 0) + 1;
         versions.set(key, version);
         listeners.get(`source:${key}`)?.({
             channel: `source:${key}`,
             version,
-            payload: { hash }
+            payload: { hash, served }
         });
     }
 
@@ -179,6 +182,10 @@ export function server(
         /** The channel carries this hash for the file, as for a message the page did not read. */
         said(key: string, hash: string | null): void {
             say(key, hash);
+        },
+        /** The file's folder left the workspace, and the channel says nothing is served there. */
+        unserve(key: string): void {
+            say(key, null, false);
         },
         /** The save route tells the channel of the tab's own write before it answers. */
         tellOwnWrites(): void {

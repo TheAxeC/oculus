@@ -49,7 +49,7 @@
     {#each files as file (file.path)}
         {@const also = shared(file.path)}
         {@const parts = split(file.path)}
-        <li role="none">
+        <li role="none" class="file">
             <TreeItem
                 label={parts.name}
                 name={file.path}
@@ -75,7 +75,8 @@
 {/if}
 
 <style>
-    /* A sub-heading of the section: the group label, in the size of a label, bold, in capitals. */
+    /* A sub-heading of the section: the group label, bold, in capitals, at the view's heading
+       size, one step above its text. */
     .sec-h {
         display: flex;
         align-items: center;
@@ -84,8 +85,13 @@
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         font-weight: 700;
+    }
+    /* A file row at the view's text size, `--fs-sm`, its folder part (the row's detail) too: the
+       row's name reads `--tree-font` and scales it by `--text-scale` itself. */
+    .file {
+        --tree-font: calc(var(--fs-sm) / var(--text-scale, 1));
     }
     .lead {
         margin-right: 6px;

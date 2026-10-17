@@ -9,14 +9,17 @@ import {
     appendFileSync,
     closeSync,
     ftruncateSync,
+    mkdirSync,
     openSync,
+    readFileSync,
     writeFileSync,
     writeSync
 } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect } from 'vitest';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
-import { foldFrom } from '../../../src/lib/server/sessions/stores/transcripts.ts';
+import { foldFrom, scan } from '../../../src/lib/server/sessions/stores/transcripts.ts';
+import { readerDigest } from '../../../src/lib/server/sessions/cache.ts';
 import { readTurns } from '../../../src/lib/server/sessions/stores/turns.ts';
 
 let DIR = '';
@@ -137,5 +140,152 @@ describe('readTurns', () => {
         const second = readTurns(path, 'claude', first.offset);
         expect(second.turns.map((turn) => turn.text)).toEqual(['seven']);
         expect(second.offset).toBe(Buffer.byteLength(WHOLE + line(6, 'seven') + '\n'));
+    });
+});
+
+/** Transcript lines, one record to a line. */
+function lines(records: Record<string, unknown>[]): string {
+    return records.map((record) => JSON.stringify(record)).join('\n') + '\n';
+}
+
+/**
+ * A headless session (`claude -p`), whose records carry the entrypoint `sdk-cli`: its prompt and
+ * its meta record carry no origin.
+ */
+const HEADLESS = lines([
+    {
+        type: 'user',
+        isMeta: true,
+        entrypoint: 'sdk-cli',
+        timestamp: new Date(1760000000000).toISOString(),
+        cwd: '/ws/project',
+        message: {
+            role: 'user',
+            content: '<local-command-caveat>Caveat</local-command-caveat>'
+        }
+    },
+    {
+        type: 'user',
+        entrypoint: 'sdk-cli',
+        timestamp: new Date(1760000001000).toISOString(),
+        cwd: '/ws/project',
+        message: { role: 'user', content: 'Summarise the build log' }
+    },
+    {
+        type: 'assistant',
+        entrypoint: 'sdk-cli',
+        timestamp: new Date(1760000002000).toISOString(),
+        message: { role: 'assistant', content: [{ type: 'text', text: 'The build passed.' }] }
+    }
+]);
+
+/**
+ * An interactive session, whose records carry the entrypoint `cli`: a compaction summary and a
+ * command's record, neither with an origin, before the prompt a person wrote.
+ */
+const INTERACTIVE = lines([
+    {
+        type: 'user',
+        isCompactSummary: true,
+        entrypoint: 'cli',
+        timestamp: new Date(1760000000000).toISOString(),
+        cwd: '/ws/project',
+        message: { role: 'user', content: 'This session is being continued from a summary.' }
+    },
+    {
+        type: 'user',
+        entrypoint: 'cli',
+        timestamp: new Date(1760000001000).toISOString(),
+        cwd: '/ws/project',
+        message: { role: 'user', content: '<command-name>/model</command-name>' }
+    },
+    {
+        type: 'user',
+        origin: { kind: 'human' },
+        entrypoint: 'cli',
+        timestamp: new Date(1760000002000).toISOString(),
+        cwd: '/ws/project',
+        message: { role: 'user', content: 'Rename the helper' }
+    },
+    {
+        type: 'assistant',
+        entrypoint: 'cli',
+        timestamp: new Date(1760000003000).toISOString(),
+        message: { role: 'assistant', content: [{ type: 'text', text: 'Renamed.' }] }
+    }
+]);
+
+/** One scan of a store holding `transcript`, with the cache at `cachePath`. */
+function scanned(store: string, cachePath: string) {
+    return scan({
+        stores: [store],
+        codexStores: [],
+        registries: [],
+        cachePath,
+        overridesPath: join(DIR, 'overrides.json'),
+        probe: { running: () => false, starts: () => new Map() },
+        windowDays: 0
+    });
+}
+
+describe('a headless session', () => {
+    it('is listed with its prompt and the title it opens with, and its prompt is a turn', () => {
+        const store = join(DIR, 'headless-store');
+        const path = join(store, 'project', 'headless.jsonl');
+        mkdirSync(join(store, 'project'), { recursive: true });
+        writeFileSync(path, HEADLESS);
+        const [record] = scanned(store, join(DIR, 'headless-cache.json'));
+        const prompts = record.timeline.filter((one) => one.kind === 'prompt');
+        expect([record.title, record.prompts, prompts.map((one) => one.text)]).toEqual([
+            'Summarise the build log',
+            1,
+            ['Summarise the build log']
+        ]);
+        const turns = readTurns(path, 'claude', 0).turns.map((turn) => turn.text);
+        expect(turns).toEqual(['Summarise the build log', 'The build passed.']);
+    });
+});
+
+describe('an interactive session', () => {
+    it('takes neither a compaction summary nor a command record for a prompt or a title', () => {
+        const store = join(DIR, 'interactive-store');
+        const path = join(store, 'project', 'interactive.jsonl');
+        mkdirSync(join(store, 'project'), { recursive: true });
+        writeFileSync(path, INTERACTIVE);
+        const [record] = scanned(store, join(DIR, 'interactive-cache.json'));
+        const prompts = record.timeline.filter((one) => one.kind === 'prompt');
+        expect([record.title, record.prompts, prompts.map((one) => one.text)]).toEqual([
+            'Rename the helper',
+            1,
+            ['Rename the helper']
+        ]);
+        const turns = readTurns(path, 'claude', 0).turns.map((turn) => turn.text);
+        expect(turns).toEqual(['Rename the helper', 'Renamed.']);
+    });
+});
+
+describe('the sessions cache', () => {
+    it('serves a record from the cache its reader wrote, and folds it again for another reader', () => {
+        const store = join(DIR, 'cached-store');
+        mkdirSync(join(store, 'project'), { recursive: true });
+        writeFileSync(join(store, 'project', 'cached.jsonl'), HEADLESS);
+        const cachePath = join(DIR, 'cached-cache.json');
+        scanned(store, cachePath);
+        // The cache as a reader that read another prompt left it, once under the version this
+        // tree's reader wrote, the digest of its code, and once under another reader's.
+        const held = JSON.parse(readFileSync(cachePath, 'utf8')) as {
+            version: string;
+            entries: Record<string, { acc: Record<string, unknown> }>;
+        };
+        expect(held.version).toBe(readerDigest());
+        for (const entry of Object.values(held.entries)) entry.acc.firstPrompt = 'an older reading';
+        const listed = (version: string): unknown => {
+            writeFileSync(cachePath, JSON.stringify({ ...held, version }));
+            return scanned(store, cachePath)[0].title;
+        };
+        expect([listed(held.version), listed('another reader')]).toEqual([
+            'an older reading',
+            'Summarise the build log'
+        ]);
     });
 });

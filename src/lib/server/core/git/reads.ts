@@ -30,7 +30,9 @@ import {
     parseGraph,
     parseLineMarks,
     parseNameStatus,
-    submoduleText
+    submoduleText,
+    typeChanged,
+    type DiffHead
 } from './parse.ts';
 import { MAX_ENTRIES } from './state.ts';
 import { words } from '../words.ts';
@@ -225,7 +227,10 @@ export async function stashDiff(
  * changes from its hunk heads where they match the two texts read (`gitLineChanges`). A binary
  * file, and the side a file was created or deleted on, is the empty string; a submodule's sides
  * are git's own lines for it, and neither carries changes. `encoded` says whether both sides'
- * bytes were UTF-8 before they were decoded.
+ * bytes were UTF-8 before they were decoded. A path whose type changed, which git writes as its
+ * deletion and then its creation (`typeChanged`), is one file, as VS Code's Source Control shows
+ * it: the old type's side against the new one's, with both head lines, so the modes say which
+ * side is which, and no line changes of git's, since its two hunks are each against nothing.
  */
 export async function sidesOf(
     root: string,
@@ -237,7 +242,27 @@ export async function sidesOf(
 ): Promise<Read<DiffSides[]>> {
     const ms = milliseconds(timeout);
     const files: DiffSides[] = [];
-    for (const file of diffHeads(diffText)) {
+    const heads = diffHeads(diffText);
+    for (let at = 0; at < heads.length; at += 1) {
+        const file = heads[at];
+        const next = heads.at(at + 1);
+        if (next !== undefined && typeChanged(file, next)) {
+            at += 1;
+            const original = await sideOf(root, file, '-', before, text, ms);
+            const modified = await sideOf(root, next, '+', after, text, ms);
+            if (!original.ok) return refused(original.text);
+            if (!modified.ok) return refused(modified.text);
+            files.push({
+                oldPath: file.oldPath,
+                newPath: next.newPath,
+                head: [...file.head, ...next.head],
+                binary: file.binary || next.binary,
+                encoded: original.utf8 && modified.utf8,
+                original: original.text,
+                modified: modified.text
+            });
+            continue;
+        }
         const sides = { oldPath: file.oldPath, newPath: file.newPath, head: file.head };
         if (file.binary || file.submodule) {
             const original = file.binary ? '' : submoduleText(file, '-');
@@ -268,6 +293,24 @@ export async function sidesOf(
 
 /** The side of a file a diff created or deleted it on. */
 const NOTHING: Version = { ok: true, text: '', utf8: true };
+
+/**
+ * One side of one half of a type change, the old side (`-`) of its deletion or the new side (`+`)
+ * of its creation: nothing for a binary file, git's own lines for a submodule, and otherwise the
+ * version read whole where `at` names.
+ */
+async function sideOf(
+    root: string,
+    file: DiffHead,
+    mark: '-' | '+',
+    at: string | null,
+    text: Record<string, string>,
+    timeout: number
+): Promise<Version> {
+    if (file.binary) return NOTHING;
+    if (file.submodule) return { ok: true, text: submoduleText(file, mark), utf8: true };
+    return version(root, at, mark === '-' ? file.oldPath : file.newPath, text, timeout);
+}
 
 /** One version of a file: its text, and whether its bytes were UTF-8 before they were decoded. */
 type Version = { ok: boolean; text: string; utf8: boolean };

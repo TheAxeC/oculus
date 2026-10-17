@@ -98,6 +98,7 @@ text:
             not_words: This option takes a list of words
             not_numbers: This option takes a list of numbers
             wrong_slots: 'This option takes exactly {0} items: {1}'
+            wrong_slots_one: 'This option takes exactly 1 item: {0}'
             parked_added: This list only drops items; an item is added from the Audit view
             number_range: 'This option takes a number from {0} to {1}'
             number_min: 'This option takes a number of at least {0}'
@@ -307,25 +308,25 @@ text:
             tool: '{0}: {1} ({2})'
             user: You
         feeds:
-            bucket_unknown: the bucket is not one of the radar buckets
-            delete_not_allowed: 'the {0} feed does not allow deletion'
+            bucket_unknown: The bucket is not one of the radar buckets.
+            delete_not_allowed: 'The {0} feed does not allow deletion.'
             entries_not_maps: '{0}: every entry must be a map'
-            entry_needs_key: 'an entry needs a {0}'
-            field_not_allowed: 'the {0} feed does not allow that field'
-            file_unread: Lit Watch's file does not read
-            idea_needs_title: a LinkedIn idea needs a title
-            lead_needs_title: a lead needs a title
-            lead_title_taken: a lead with this title is in the file already
-            leads_no_schema: the leads feed has no valid schema
+            entry_needs_key: 'An entry needs a {0}.'
+            field_not_allowed: 'The {0} feed does not allow that field.'
+            file_unread: Lit Watch's file does not read.
+            idea_needs_title: A LinkedIn idea needs a title.
+            lead_needs_title: A lead needs a title.
+            lead_title_taken: A lead with this title is in the file already.
+            leads_no_schema: The leads feed has no valid schema.
             meta_not_a_map: '{0}: meta is not a map'
             not_a_directory: '{0}: expected a directory'
             not_a_map: '{0}: expected a map of keys'
-            paper_in_file: this paper is in Lit Watch already
-            paper_needs_title: a paper needs a title
-            path_outside: 'the {0} feed path is outside the hub'
-            post_exists: the numbered LinkedIn post exists already
-            post_needs_idea: a LinkedIn post must name an xx-*.md idea
-            relevance_unknown: the relevance is high, med or low
+            paper_in_file: This paper is in Lit Watch already.
+            paper_needs_title: A paper needs a title.
+            path_outside: 'The {0} feed path is outside the hub.'
+            post_exists: The numbered LinkedIn post exists already.
+            post_needs_idea: A LinkedIn post must name an xx-*.md idea.
+            relevance_unknown: The relevance is high, med or low.
         fork:
             name: fork of {0}
         git:
@@ -364,6 +365,7 @@ text:
             names_no_commit: The name {0} names no commit
             no_action_named: No git action is named {0}
             no_directory: There is no such directory
+            no_identity: 'Git does not know your name and email, so nothing was committed. Set them with git config --global user.name and git config --global user.email, then commit again'
             no_index_text: The path {0} has no text in the index
             no_merge_to_abort: No merge is in progress here, so there is nothing to abort
             no_message_instruction: The message instruction is missing from the catalog
@@ -423,6 +425,7 @@ text:
             switch_refused: Git refused the switch
             tag_needs_name: A tag needs a name
             timed_out: '{0} did not finish within {1} seconds, so it was stopped'
+            timed_out_one: '{0} did not finish within 1 second, so it was stopped'
             too_much_output: '{0} wrote more than {1} MB of output, so it was stopped'
             trash_failed: The path {0} could not be moved to the Trash
             unknown_directory: That directory is not a workspace oculus knows
@@ -431,9 +434,9 @@ text:
         latex:
             name: latex {0} {1}/{2}
         literature:
-            file_unread: the Literature file does not read
-            paper_in_file: this paper is in Literature already
-            paper_needs_address: a paper needs a title, a DOI or an address
+            file_unread: The Literature file does not read.
+            paper_in_file: This paper is in Literature already.
+            paper_needs_address: A paper needs a title, a DOI or an address.
         machine_default:
             hpc_host: the host of the cluster that slurm.resource of behavior.yml names
             no_accounts: no accounts
@@ -510,12 +513,12 @@ text:
             no_collection_in_hub: 'the hub {0} lists no collection {1}'
             no_entry: 'no entry {0} in {1}'
             no_host: 'no host named {0}'
-            no_idea_file: the LinkedIn idea file is not on this hub
-            no_leads_feed: the leads feed is not on this hub
-            no_literature_file: "Literature has no file on this hub: its collections list names none, and the engine's path for it holds none"
-            no_linkedin_folder: the LinkedIn folder is not on this hub
+            no_idea_file: The LinkedIn idea file is not on this hub.
+            no_leads_feed: The leads feed is not on this hub.
+            no_literature_file: "Literature has no file on this hub: its collections list names none, and the engine's path for it holds none."
+            no_linkedin_folder: The LinkedIn folder is not on this hub.
             no_project: 'no project with the id {0}'
-            no_radar_file: Lit Watch has no file on this hub
+            no_radar_file: Lit Watch has no file on this hub.
             not_a_write: the body is not a write this route knows
             session_unsaved: 'the session write could not be saved: {0}'
             unknown_feed: 'unknown feed {0}'

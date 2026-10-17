@@ -19,6 +19,7 @@ import {
 } from '$lib/state/boards/collection';
 import {
     findEntry,
+    findKey,
     placeEntry,
     type EntryAnswer,
     type EntryAt
@@ -93,6 +94,21 @@ async function editInFile(client: ClientState, file: ViewSource, at: EntryAt): P
     const id = await openedDraft(client, file, (one) => openSourceFile(client, one));
     if (id === '') return '';
     return arrived(client, file, findEntry(client.source, id, at));
+}
+
+/**
+ * Open a YAML file at a key of its top level, the caret before the key. The sentence is the reason
+ * a text that does not parse cannot be placed in, and '' otherwise; a text without the key opens
+ * where the tab was.
+ */
+export async function openAtKey(
+    client: ClientState,
+    file: ViewSource,
+    key: string
+): Promise<string> {
+    const id = await openedDraft(client, file, (one) => openSourceFile(client, one));
+    if (id === '') return '';
+    return arrived(client, file, findKey(client.source, id, key));
 }
 
 /**

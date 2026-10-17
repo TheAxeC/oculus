@@ -124,6 +124,7 @@ text:
         refused_format_none: No LaTeX formatter is chosen. Choose one under latex.formatter in Settings.
         refused_format_timeout: The formatter did not finish in time.
         refused_idle: '{0} has no build running.'
+        refused_unserved: '{0} is no longer a folder of this workspace, so the build was not run again. Add {0} back to the workspace to run it.'
         refused_unmarked: This LaTeX terminal does not record its main file and folder, so what it would run cannot be checked; press Build or Clean of its main file to run it again.
         refused_latex_changed: The files changed since they were listed; they are listed again.
         refused_latexindent_missing: latexindent was not found. It comes with TeX Live and MacTeX, or name it in latex.latexindent_path.
@@ -207,7 +208,9 @@ text:
         warning_one: 1 warning
         warnings_many: '{0} warnings'
         words: '{0} words'
+        words_one: 1 word
         words_of: '{0}: {1} words'
+        words_of_one: '{0}: 1 word'
     views:
         latex: LaTeX
         latex_glyph: journals

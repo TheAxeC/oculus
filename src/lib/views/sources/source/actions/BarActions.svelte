@@ -4,8 +4,8 @@
     // star and Open in Program (shared/links/FileBarActions.svelte), and Open Preview, Open Preview
     // to the Side, Submit Job and Toggle Blame after them. Each is drawn only where it applies:
     //
-    //   Save                       a tab whose text may be written; disabled while nothing is
-    //                              unsaved
+    //   Save                       a tab whose text may be written and whose folder is served;
+    //                              disabled while nothing is unsaved
     //   Revert File                a tab whose text may be written and has unsaved text
     //   Open Preview               a Markdown file shown as source, the file's preview tab in
     //                              this pane
@@ -80,7 +80,7 @@
      * Whether Save has work: unsaved text, or a file deleted on disk to write again. A file whose
      * folder is not served is not written.
      */
-    const savable = $derived(draft.disk !== 'unserved' && (dirty || draft.disk === 'gone'));
+    const savable = $derived(dirty || draft.disk === 'gone');
 
     /** Open Preview to the Side: the preview tab in a new pane to the right, or the open one. */
     function previewSide(): void {
@@ -97,7 +97,7 @@
     {#if latex.applies}
         <LatexButtons tab={latex} />
     {/if}
-    {#if editing}
+    {#if editing && draft.disk !== 'unserved'}
         <ToolButton
             bare
             label={t('source.bar_save')}
@@ -134,7 +134,7 @@
             bare
             label={t('source.submit')}
             glyph="submit_job"
-            disabled={submitting}
+            waiting={submitting}
             onclick={onsubmit}
         />
     {/if}

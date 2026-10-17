@@ -6,7 +6,8 @@
     // carries them. A folded file draws its header alone. The editor hides the unchanged runs, or
     // draws them all, as the pane says. A binary file is a note, and a file whose two texts are
     // equal (a rename or a mode change alone, a new empty file) is git's head lines for it. A file
-    // whose line endings alone changed says so at its head and shows all its lines.
+    // whose line endings alone changed says so at its head and shows all its lines, and a file
+    // whose type changed says which side is which type.
     //
     // In a diff of several files the section's editor is made when the section first comes within
     // one screen of the pane's view, since each is two editors, and until then the section holds
@@ -47,13 +48,16 @@
     import { CommentDraft } from './comment-draft.svelte';
     import FileHeader from './FileHeader.svelte';
     import HunkBar from './HunkBar.svelte';
-    import { createSourceOptions } from '$lib/views/shared/prose/source-options';
+    import {
+        createSourceOptions,
+        diffOptions
+    } from '$lib/views/shared/prose/editor/source-options';
+    import { diffLanguage } from '$lib/views/shared/prose/editor/lsp';
     import {
         CONTEXT,
         chosenRows,
         endingsOnly,
         gitLineCount,
-        hunkHead,
         hunkRows,
         hunksOf,
         revealAsked,
@@ -66,6 +70,7 @@
     import type { PatchMode } from '$lib/state/sources/repositories/diff/diff-patch';
     import {
         fileDeleted,
+        typeChangeWords,
         type DiffMode,
         type DiffSides
     } from '$lib/state/sources/repositories/repositories';
@@ -75,7 +80,6 @@
         commentBars,
         commentTitle
     } from '$lib/state/sources/repositories/review-comment';
-    import type { EditorOptions } from '$lib/ui/controls/editor/options';
     import { languageOfFile } from '$lib/state/sources/fs';
     import { useState } from '$lib/state/client/use';
     import { t } from '$lib/state/shared/words/text';
@@ -184,13 +188,14 @@
     let pending: number | null = null;
     let selections: DiffSelections = $state({ original: [], modified: [] });
 
+    const client = useState();
     const {
         appShell,
         appTools,
         fs: { fileText },
         selectors: { editorOptions, languages, paintLimit, repoSettings, sessionById },
         terminals: { steerTerminal, terminalOfSession }
-    } = useState();
+    } = client;
 
     /** The session record the diff was opened for, while the sessions payload holds it. */
     const record = $derived(sessionById(session));
@@ -236,21 +241,21 @@
         paintLimit,
         fileText
     });
+    const options = $derived(diffOptions(resolved, editorOptions()));
     /**
-     * The options the editor takes: the configured ones, with no minimap in a diff, and none of
-     * them until the configuration has arrived.
+     * The modified side of a diff of the working tree is the file on disk, which the language
+     * server of the served root holding it is given, so hover, definitions and diagnostics answer
+     * in the diff. The diff names the file by its repository's folder; the server names it by the
+     * served root and the path under it, as a source tab of the file does.
      */
-    const configured = $derived(editorOptions());
-    const options = $derived<EditorOptions>({
-        ...(resolved.wrap === null ? {} : { wordWrap: resolved.wrap }),
-        ...(resolved.rulers === null ? {} : { rulers: resolved.rulers }),
-        ...(configured === null
-            ? {}
-            : {
-                  renderWhitespace: configured.renderWhitespace,
-                  stickyScroll: configured.stickyScroll
-              })
-    });
+    const working = $derived(!staged && actions !== 'read' && openable && source === undefined);
+    const language = $derived(languageOfFile(path, file.modified, languages()));
+    const serverFile = $derived(
+        working && !compare && root !== '' ? client.repositories.placeOf(root, path) : null
+    );
+    const extension = $derived(
+        serverFile === null ? undefined : diffLanguage(client, model, language, serverFile)
+    );
     /** Whether the header offers Open File: the file is on disk, which a deleted file is not. */
     const present = $derived(openable && !fileDeleted(file));
     const hunks = $derived(hunksOf(changes));
@@ -260,7 +265,12 @@
             box.at
         )
     );
-    const lines = $derived(Math.max(gitLineCount(file.original), gitLineCount(file.modified)));
+    const sideLines = $derived({
+        original: gitLineCount(file.original),
+        modified: gitLineCount(file.modified)
+    });
+    const lines = $derived(Math.max(sideLines.original, sideLines.modified));
+    const turned = $derived(typeChangeWords(file, mode));
 
     // A section of a long list is made when it first comes within a screen of the view.
     $effect(() => {
@@ -331,17 +341,6 @@
         return { rows, count: added + removed };
     }
 
-    function headOf(hunk: Hunk): string {
-        const head = hunkHead(hunk, gitLineCount(file.original), gitLineCount(file.modified));
-        return t(
-            'repositories.hunk_head',
-            head.oldStart,
-            head.oldCount,
-            head.newStart,
-            head.newCount
-        );
-    }
-
     /** The app source control the diff compares with, while it exists. */
     const control = $derived(
         source === undefined ? undefined : appTools.scm.stateOf(source.app, source.id)
@@ -398,7 +397,8 @@
         {@const hunk = hunks.at(at)}
         {#if hunk !== undefined}
             <HunkBar
-                head={headOf(hunk)}
+                {hunk}
+                sides={sideLines}
                 {at}
                 id={`${index}:${id}`}
                 {actions}
@@ -437,6 +437,9 @@
         />
     {/if}
     {#if !folded}
+        {#if turned !== ''}
+            <p class="note" data-type-change>{turned}</p>
+        {/if}
         {#if endings}
             <p class="note">{t('repositories.diff_eol_only')}</p>
         {/if}
@@ -453,7 +456,7 @@
                     bind:this={editor}
                     original={file.original}
                     modified={file.modified}
-                    language={languageOfFile(path, file.modified, languages())}
+                    {language}
                     {model}
                     {path}
                     originalPath={file.oldPath === '' ? path : file.oldPath}
@@ -476,6 +479,7 @@
                     onselect={(next: DiffSelections) => (selections = next)}
                     {onview}
                     {onactions}
+                    {extension}
                 />
             </div>
         {:else}

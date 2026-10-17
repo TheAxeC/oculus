@@ -20,12 +20,19 @@ export type UndoAnswer = {
  * a value the file will not take, and an undo that normalises back to what is already there writes
  * no byte. Either way the value is not back, so the row never says it is. A write that changed
  * something and still refused a field is back in part, and the sentence says how many fields it
- * left out rather than that the value is back whole.
+ * left out rather than that the value is back whole. The undo of an add (`removed`) takes the
+ * added value out, so its sentence says it is gone rather than back.
  */
-export function undoSaid(answer: UndoAnswer, name: string): { undone: boolean; said: string } {
+export function undoSaid(
+    answer: UndoAnswer,
+    name: string,
+    removed = false
+): { undone: boolean; said: string } {
     if (answer.ok && answer.changed.length > 0) {
+        if (removed) return { undone: true, said: t('history.undone_removed', name) };
         const left = answer.refused?.length ?? 0;
-        if (left > 0) return { undone: true, said: t('history.undone_partly', name, left) };
+        if (left === 1) return { undone: true, said: t('history.undone_partly_one', name) };
+        if (left > 1) return { undone: true, said: t('history.undone_partly', name, left) };
         return { undone: true, said: t('history.undone', name) };
     }
     const word = answer.ok ? 'refused' : (answer.error ?? '');

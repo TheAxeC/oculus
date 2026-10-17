@@ -52,7 +52,7 @@ export const RUNNER = resolve(
     import.meta.dirname,
     '../../../../../src/lib/server/machine/apps/host/runner/host-runner.mjs'
 );
-export const JSONRPC = createRequire(import.meta.url).resolve('vscode-jsonrpc/node');
+const JSONRPC = createRequire(import.meta.url).resolve('vscode-jsonrpc/node');
 
 /** What one app of a world holds: its host file, more manifest keys and more files. */
 export type AppSpec = {
@@ -76,7 +76,7 @@ export type Script = {
 };
 
 /** One host process the manager started. */
-export type Spawned = {
+type Spawned = {
     name: string;
     command: string;
     args: readonly string[];
@@ -97,7 +97,7 @@ export type Spawned = {
 };
 
 /** A clock the test advances by hand. */
-export type ManualClock = Clock & { advance: (ms: number) => void };
+type ManualClock = Clock & { advance: (ms: number) => void };
 
 export function manualClock(): ManualClock {
     let at = 0;

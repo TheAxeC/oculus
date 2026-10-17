@@ -12,7 +12,7 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = ({ url, locals }) => {
     const config = locals.config().config;
     const pictures = picturesOf(
-        allHubs(locals.server.engine, config, locals.server.workspace.open())
+        allHubs(config, locals.server.workspace.open(), locals.server.configCache.hub)
     );
     if (url.searchParams.has('list')) return listing(pictures);
     const image = url.searchParams.get('image');

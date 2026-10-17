@@ -3,6 +3,7 @@ text:
     slides:
         already_in: '{0} is already in {1}'
         count: '{0} slides'
+        count_one: 1 slide
         down: down
         down_tip: move {0} one place later
         drag_glyph: grip

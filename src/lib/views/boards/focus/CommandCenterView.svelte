@@ -102,7 +102,7 @@
         </span>
     {/each}
     {#if more > 0}
-        <span>{t('focus.command.more', more)}</span>
+        <span class="more">{t('focus.command.more', more)}</span>
     {/if}
 {/snippet}
 
@@ -177,18 +177,21 @@
                     {/if}
                     {#if week?.behind}
                         <div class="behind">
-                            <Glyph name={t('board.stale_glyph')} />
-                            <b>{week.behind.count} {manifestWord(week.behind.count)}</b><span
-                                >{t('focus.command.behind_refresh')}</span
+                            <span class="lead"
+                                ><Glyph name={t('board.stale_glyph')} />
+                                <b>{week.behind.count} {manifestWord(week.behind.count)}</b></span
                             >
+                            {t('focus.command.behind_refresh')}
                             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                             {@render links(week.behind.projects, week.behind.more)}
                         </div>
                     {/if}
                     {#if week?.unplaced}
                         <div class="behind">
-                            <Glyph name={t('focus.command.unplaced_glyph')} />
-                            <b>{week.unplaced.count}</b>
+                            <span class="lead"
+                                ><Glyph name={t('focus.command.unplaced_glyph')} />
+                                <b>{week.unplaced.count}</b></span
+                            >
                             <span>
                                 {#if week.unplaced.count === 1}
                                     <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
@@ -339,13 +342,20 @@
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
+    /* A needs-attention line is one sentence that wraps as text: the glyph and the count at its
+       start, kept on one line together, the projects at its end, each piece kept in its place on a
+       narrow pane. */
     .behind {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 5px;
         min-height: calc(var(--tree-row) * var(--text-scale, 1));
         font-size: var(--fs-md);
+        line-height: 1.5;
+    }
+    .lead {
+        white-space: nowrap;
+    }
+    .behind > .link,
+    .behind > .more {
+        margin-left: 5px;
     }
 
     /* A project behind its documents opens from its name, drawn as a link: the accent colour, an

@@ -5,9 +5,10 @@
     // placed are bits-ui's.
     //
     // It follows Select.svelte's rules: the empty choice is always there and first, and a value the
-    // choices lack is still shown, so a manifest is never silently retyped. The trigger is named by
-    // the field's label and the chosen name after it, as a native select reads its label and its
-    // option: "Icon of button 2 sliders".
+    // choices lack is still shown, so a manifest is never silently retyped. Each name is listed in
+    // words with the name itself beside them (glyphItems of ./choices.ts). The trigger is named by
+    // the field's label and the chosen name's words after it, as a native select reads its label
+    // and its option: "Icon of button 2 Sliders".
 
     import Glyph from '../../display/Glyph.svelte';
     import FieldSelect from './select/FieldSelect.svelte';

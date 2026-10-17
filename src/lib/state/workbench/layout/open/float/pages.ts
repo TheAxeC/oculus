@@ -38,6 +38,7 @@ import {
     type KeepRule
 } from '../../tree.ts';
 import { restore, settleFocus } from '../../workbench.ts';
+import { putBack, standing } from './return-place.ts';
 
 /** The smallest width or height of a free float and of a dock, in fractions of the window. */
 export const FLOAT_MIN = 0.1;
@@ -412,8 +413,9 @@ export function dropInstance(held: Pages, id: string, keep?: KeepRule): Pages {
 /**
  * The pane at `path` of a page taken out of its tree and put over every page as a free float, in
  * the middle of the window, or at `place`. A page's only pane is left empty. The float's pane
- * carries no mark of an added pane, since a float is not a page. A float's pane is never floated
- * again, and a page or path naming no pane holding a tab changes nothing.
+ * carries no mark of an added pane, since a float is not a page; the float carries where the pane
+ * stood (`standing`), so Return to Page puts it back there. A float's pane is never floated again,
+ * and a page or path naming no pane holding a tab changes nothing.
  */
 export function floatPane(
     held: Pages,
@@ -427,9 +429,10 @@ export function floatPane(
     if (found?.kind !== 'pane' || found.tabs.length === 0) return held;
     const root = closePane(host.workbench.root, path);
     const pane = repane(found, found.tabs.map(kept), found.active);
-    // A float is not a page, so its pane is not one added to a page; Return to Page adds it again.
+    const from = standing(host.workbench.root, root, page, path, found);
+    // A float is not a page, so its pane is not one added to a page; `from` keeps the mark.
     delete pane.added;
-    const float: Float = { id: crypto.randomUUID(), pane, place };
+    const float: Float = { id: crypto.randomUUID(), pane, place, from };
     return {
         ...held,
         pages: held.pages.map((one) =>
@@ -576,6 +579,12 @@ function shares(root: Layout): { path: number[]; share: number }[] {
     return found;
 }
 
+/** The tree with `pane` added and split off the right of its largest pane, or null for none. */
+function beside(root: Layout, pane: Pane): Layout | null {
+    const target = largestPane(root);
+    return target === null ? null : splitLeaf(root, target, 'row', addedPane(pane), false);
+}
+
 /** The path of the pane holding the largest share of the tree, the first of equals. */
 function largestPane(root: Layout): number[] | null {
     let best: { path: number[]; share: number } | undefined;
@@ -586,17 +595,22 @@ function largestPane(root: Layout): number[] | null {
 }
 
 /**
- * A float's tabs put back into a page as a new added pane split off the right of the page's largest
- * pane, by the share of the page each holds. The float goes, and the page is shown whole.
+ * A float's tabs put back into a page. A float made from a pane of this page goes back where the
+ * pane stood, with the share it held and the mark it carried (return-place.ts); any other float,
+ * or one whose place the page no longer has, becomes a new added pane split off the right of the
+ * page's largest pane, by the share of the page each holds. The float goes, and the page is shown
+ * whole.
  */
 export function returnFloat(held: Pages, id: string, page: string): Pages {
     const float = held.floats.find((one) => one.id === id);
     const host = held.pages.find((one) => one.id === page);
     if (float === undefined || host === undefined) return held;
-    const target = largestPane(host.workbench.root);
-    if (target === null) return held;
     const shown = restore(host.workbench);
-    const root = splitLeaf(shown.root, target, 'row', addedPane(float.pane), false);
+    const from = float.from?.page === page ? float.from : undefined;
+    const back = from?.added === true ? addedPane(float.pane) : float.pane;
+    const placed = from === undefined ? null : putBack(shown.root, from, back);
+    const root = placed ?? beside(shown.root, float.pane);
+    if (root === null) return held;
     return {
         ...held,
         pages: held.pages.map((one) =>

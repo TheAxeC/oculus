@@ -8,11 +8,8 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
-- D68, Add Folder to Workspace from a browser tab: the panel path, taken once L95 is fixed.
-- O30 case 27, a drag of a tab between windows, which needs a real pointer; and case 41's question over unsaved text in a popped-out window, taken once L112 is fixed.
-- D52, the rest: an undo from History on an entry page, taken once D52-look-2 is fixed (History cannot draw on the scratch hub until then).
-- D72 item 11: the History row saying what an undo did, taken once D52-look-2 is fixed (History cannot draw on the scratch hub until then, and an undo is a write, so it is not taken on TEST).
-- S5 row 11: the undo from History of a Settings write and of a write that mended `slurm.days: x`, taken once D52-look-2 is fixed (History cannot draw on the scratch hub until then).
+- D68, Add Folder to Workspace from a browser tab: the panel path, taken in O40 once row 69 of `agents/reviews/O37-defects.md` (one press says "The folder panel is already open.", L95) is fixed.
+- O30 case 27, a drag of a tab between windows: it needs a real pointer drag, so it is under "Blocked, for Axel".
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
@@ -616,7 +613,14 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
   - The close question over unsaved text puts the keyboard on Confirm (`Confirm.svelte:60`, `focus = 'confirm'`), so Enter loses the text, and it offers no Save; VS Code's question focuses Save and offers Save, Don't Save and Cancel.
   - Two Accessibility presses on a popped-out window's close button closed the Live HPC window, not the one pressed; File > Close Window closed the right one. Whether the app or the Accessibility press is at fault is not verified; a pointer press on the close button would settle it.
   - The app's log has three 404s for `/node_modules/monaco-editor/esm/vs/editor/editor.worker.js` while the real worker loads (`/_app/immutable/workers/editor.worker-a97YorOs.js`, 200); what requests the first path is not found.
+- Booked to O40 from the looks above: the four items "Open for Axel from these looks" are rows 81 to 84 of `agents/reviews/O37-defects.md`.
+
+- Looks taken 2026-10-17 during O37's landing, each in a scratch desktop app over the gate tree with its own scratch hub, home and engine, Axel's server and tabs untouched; records in the session's scratchpad (`looks/records/d/owed-D52.md`, `owed-D72-11.md`, `owed-S5-11.md`).
+  - D52, the rest, an undo from History on an entry page (look37d): History drew its rows with schedules, commands and language server records in the change log, so D52-look-2 no longer reproduces. The FWO entry's status set to planned, then Undo on History's row: the file read `status: in-prep` again, the log held the undo with `undoes`, History said "2026-fwo-senior-transplant / status is back." and drew a "set back" row, and the undone row lost its Undo. With the entry page open beside History, its select read in-prep after the undo without a reopen. Passed. Defects: rows 51, 53 and 54 of `O37-defects.md`.
+  - D72 item 11, the History row saying what an undo did (look37d): a field write's undo reads "entry field set back", a delete's undo "entry put back" and an add's undo "entry removed", each with its Before and After. Passed. Defects: rows 57, 58, 59 and 80 of `O37-defects.md`.
+  - S5 row 11, the undo from History of a Settings write and of a write that mended `slurm.days: x` (look37d): the undo of `slurm.poll_min` 20 to 25 left `behavior.yml` byte for byte as before (`cmp`); the mend of `days: x` to 4 took the finding away, and its undo put `days: x` back byte for byte (`cmp`) and the finding "slurm.days must be a number; the default is used" came back. Passed.
+  - O30 case 41, the question over unsaved text in a popped-out window (look37, my app): the float holding `use.ts` with the unsaved line `// unsaved o30` was moved into a new window by its menu's Move into New Window; Cmd+W sent to that window's page as a key event (Chrome was in front, and the app is not brought forward; `src/desktop/windows/menu.ts` puts Cmd+W on no menu item, so it reaches the page) drew "Close this tab and lose its unsaved changes?" with Cancel and Confirm, the focus on Confirm; Escape closed the question and kept the tab with its unsaved line, and `use.ts` on disk does not hold it (`grep -c` 0). Passed. Defect: row 81 of `O37-defects.md`.
 
 ## Blocked, for Axel
 
-None: the permission that blocked them (Accessibility for Visual Studio Code) was granted on 2026-10-16, and every look that was here is under "To take" or "Taken".
+- O30 case 27, a drag of a tab from one window of the desktop app into another: the drag needs the real pointer, which moves Axel's mouse and brings the app to the front, and a key or an Accessibility press cannot start a drag between windows. Taken by Axel, or by the session at a time Axel names for one pointer drag.

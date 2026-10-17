@@ -163,7 +163,9 @@ export function markers(input: AuditInput, add: (f: Raised) => void): void {
                 where: name,
                 kind: 'todo',
                 ...fileIn(input.hub, project, path),
-                ...sentence('audit.msg_markers', count, firstMarker(text))
+                ...(count === 1
+                    ? sentence('audit.msg_markers_one', count, firstMarker(text))
+                    : sentence('audit.msg_markers', count, firstMarker(text)))
             });
         }
     }
@@ -245,7 +247,9 @@ export function gaps(input: AuditInput, add: (f: Raised) => void): void {
                     where: 'project.yml',
                     kind: 'data',
                     ...fileIn(input.hub, project, project.file),
-                    ...sentence('audit.msg_provisional', provisional.length)
+                    ...(provisional.length === 1
+                        ? sentence('audit.msg_provisional_one', provisional.length)
+                        : sentence('audit.msg_provisional', provisional.length))
                 });
             }
             if (project.datasetIds.length > 0 && !hasDataSection(folder)) {
@@ -396,7 +400,9 @@ export function guardrails(input: AuditInput, add: (f: Raised) => void): void {
                     where: 'status.chips',
                     kind: 'manifest',
                     ...fileIn(input.hub, project, project.file),
-                    ...sentence('audit.msg_terminal_live', project.type, printed(live))
+                    ...(live.length === 1
+                        ? sentence('audit.msg_terminal_live_one', project.type, printed(live))
+                        : sentence('audit.msg_terminal_live', project.type, printed(live)))
                 });
             }
         }

@@ -12,7 +12,7 @@
 import { existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { engineDir } from './lib/data/places/engine-dir.ts';
 import { LISTEN_HOST } from './lib/server/root/mover.ts';
@@ -55,7 +55,7 @@ if (reportLacks(installLacks(engineDir(), process.versions.node), writeLack)) pr
 const { BODY_LIMIT_BYTES } = await import('./lib/server/content/memories.ts');
 const { createServerContext } = await import('./lib/server/root/context.ts');
 const { readMachineWithDefault } = await import('./lib/server/root/process/start/port.ts');
-const { serveContext } = await import('./lib/server/root/process/serve.ts');
+const { serveContext, withMissingFiles } = await import('./lib/server/root/process/serve.ts');
 const { wordsOf } = await import('./lib/server/root/process/words.ts');
 
 const t = wordsOf(parsed.engine);
@@ -93,7 +93,10 @@ try {
     console.error(t('server.start.handler_failed', fileURLToPath(handlerUrl), reason));
     process.exit(1);
 }
-const { handler } = loaded;
+const handler = withMissingFiles(
+    join(dirname(fileURLToPath(handlerUrl)), 'client'),
+    loaded.handler
+);
 const server = createServer();
 const { context, socket } = serveContext(server, handler, (portMove) =>
     createServerContext(

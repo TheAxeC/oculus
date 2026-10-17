@@ -14,6 +14,7 @@
     import TreeItem from '$lib/ui/tree/TreeItem.svelte';
     import TreeSection from '$lib/ui/tree/TreeSection.svelte';
     import WorkspacePicker from '$lib/views/shared/sessions/WorkspacePicker.svelte';
+    import { hubPlaces } from '$lib/views/shared/sessions/place-names';
     import {
         accountFor,
         accountsOf,
@@ -156,7 +157,7 @@
             <WorkspacePicker
                 {workspace}
                 {places}
-                {hub}
+                hubs={hubPlaces(workspaces().folders, workspaces().primary)}
                 placement="up"
                 onpick={(dir: string) => keep({ workspace: dir })}
             />

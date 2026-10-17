@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, shell. The question after a repository was cloned. Open and Add to Workspace are the
     // two answers; Open of a workspace holding unsaved folders asks once more, Save, Don't Save or
-    // Cancel, and Save asks for the name of the workspace file. Cancel, Escape and a press on the
-    // ground close the question and change nothing (state/sources/clone/clone-after.svelte.ts).
+    // Cancel, and Save asks for the name of the workspace file; while no folder is a hub, Save is
+    // drawn disabled under the sentence that says why. Cancel, Escape and a press on the ground
+    // close the question and change nothing (state/sources/clone/clone-after.svelte.ts).
 
     import Confirm from '$lib/ui/controls/Confirm.svelte';
     import ToolButton from '$lib/ui/controls/ToolButton.svelte';
@@ -38,6 +39,8 @@
 {:else if held !== null && held.step === 'leave'}
     <Confirm
         message={t('app.clone.leave', baseOf(held.dir))}
+        detail={held.savable ? '' : t('files.refused_no_hub')}
+        refused={!held.savable}
         confirm={t('app.clone.save')}
         others={[t('app.clone.dont_save')]}
         cancel={t('ui.confirm_cancel')}

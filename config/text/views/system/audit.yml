@@ -35,12 +35,14 @@ text:
         open_findings_tip: Open the Findings view, which lists the errors in the files themselves.
         open_place_tip: Open {0}
         findings_note: "A bad id, an unknown chip and every other error in the files themselves are the Findings view's, and are not repeated here."
-        msg_markers: '{0} open marker(s), the first "{1}"'
+        msg_markers: '{0} open markers, the first "{1}"'
+        msg_markers_one: 'one open marker, "{1}"'
         msg_intro_marker: 'intro: "{0}"'
         msg_entry_marker: 'open marker: "{0}"'
         msg_no_venue: published/submitted but no venue_id (no venue renders on the card)
         msg_missing_field: 'missing `{0}`'
-        msg_provisional: '{0} provisional result(s): the numbers are not final'
+        msg_provisional: '{0} provisional results: the numbers are not final'
+        msg_provisional_one: 'one provisional result: the number is not final'
         msg_no_data_section: 'has `datasets` but no Data section (README.md `## Data` or DATA.md)'
         msg_docs_ahead: 'docs changed {0}, {1}d after the manifest; refresh project.yml'
         msg_deposit_before_reproduction: 'deposit dated {0} predates the from-scratch reproduction {1}: the reproduced code may not be what was pushed; re-push code/ and bump `code_availability.date`'
@@ -56,7 +58,8 @@ text:
         msg_code_no_readme: code/ has no README.md (the deposit root)
         msg_type_not_folder: "type {0} is not the folder's {1}"
         msg_no_author_chip: 'archive/coauthor entry has no author-role chip (lead / coauthor)'
-        msg_terminal_live: 'terminal ({0}) but still carries live chip(s) {1}: stale; clear them or re-open the project'
+        msg_terminal_live: 'terminal ({0}) but still carries live chips {1}: stale; clear them or re-open the project'
+        msg_terminal_live_one: 'terminal ({0}) but still carries the live chip {1}: stale; clear it or re-open the project'
         msg_projects_published: 'the Projects board carries `published`: it got accepted; move the folder to archive/published/'
         msg_contradictory_chips: 'contradictory status chips `{0}` + `{1}`'
         msg_missing: missing
@@ -68,4 +71,5 @@ text:
         msg_site_missing: 'public (`{0}`) but no website entry: add it (likely section {1})'
         msg_site_negative: 'hub-private negative result (`{0}`) but appears on the PUBLIC website under {1}: remove it (null/negative results never leave the hub)'
         msg_site_deadend: 'hub marks this `{0}` but it appears on the PUBLIC website under {1}; retype to `published` if it is a real publication, else remove it from the site (or mute if intentional)'
-        msg_site_untracked: '{0} website paper(s) not matched to any hub project, expected for pre-hub work; verify none are stale or duplicated: {1}'
+        msg_site_untracked: '{0} website papers not matched to any hub project, expected for pre-hub work; verify none are stale or duplicated: {1}'
+        msg_site_untracked_one: 'one website paper not matched to any hub project, expected for pre-hub work; verify it is not stale or duplicated: {1}'

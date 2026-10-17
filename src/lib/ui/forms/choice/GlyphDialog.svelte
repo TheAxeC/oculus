@@ -1,20 +1,23 @@
 <script lang="ts">
-    // Layer 3, primitive. The box a glyph is chosen in: the glyph vocabulary as GlyphSelect lists
-    // it, each name beside its icon, with the caller's word for "no glyph" first, on a modal
-    // ground. Choosing a name, that first entry included, hands it out and closes the box; Escape
-    // or a press outside closes it and changes nothing. A stored value the vocabulary no longer
-    // holds is shown as it is, which GlyphSelect does for a value its choices lack. The words are
-    // the caller's.
+    // Layer 3, primitive. The box a glyph is chosen in, VS Code's Change Icon: a quick pick
+    // (QuickPick.svelte) whose rows are the caller's word for "no glyph" first, then the glyph
+    // vocabulary, each name drawn with its icon and in words, the name itself dimmed after them
+    // (glyphItems of ./choices.ts). The text typed narrows the rows by their words and by the name,
+    // so a glyph is found by what it reads as and by the name a manifest holds. Choosing a row, the
+    // first one included, hands its name out and closes the box; Escape or a press outside closes
+    // it and changes nothing. A stored value the vocabulary no longer holds is listed as it is,
+    // after the first row. The words are the caller's.
 
-    import Modal from '$lib/ui/frame/Modal.svelte';
-    import GlyphSelect from './GlyphSelect.svelte';
+    import QuickPick from './QuickPick.svelte';
+    import { glyphItems } from './choices';
+    import type { Choice } from './quick-pick';
 
     type Props = {
         /** The glyph name held now, or the empty string for none. */
         value: string;
         /** The names of the glyph vocabulary. */
         choices: string[];
-        /** The box's title and the select's accessible name, already translated. */
+        /** The box's title and the search field's accessible name, already translated. */
         title: string;
         label: string;
         /** The word for the empty choice, already translated. */
@@ -25,40 +28,15 @@
     };
 
     let { value, choices, title, label, empty, onpick, onclose }: Props = $props();
+
+    /** The rows: each glyph by its words with its icon, and its name as the description. */
+    const rows: Choice[] = $derived(
+        glyphItems(value, empty, choices).map((item) =>
+            item.icon
+                ? { id: item.value, label: item.label, glyph: item.value, description: item.value }
+                : { id: item.value, label: item.label }
+        )
+    );
 </script>
 
-<Modal {onclose}>
-    {#snippet children(props)}
-        <div {...props} class="box" aria-label={title}>
-            <p class="message">{title}</p>
-            <GlyphSelect {value} {label} {empty} {choices} onchange={onpick} />
-        </div>
-    {/snippet}
-</Modal>
-
-<style>
-    .box {
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        min-width: 16rem;
-        padding: 14px 16px;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        background: var(--panel);
-        color: var(--ink-txt, var(--ink));
-        box-shadow: var(--shadow);
-    }
-
-    /* The box floats over the pane, so it keeps more of its colour than the pane does. */
-    :global(body.wall) .box {
-        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
-        backdrop-filter: blur(var(--wall-blur));
-    }
-
-    .message {
-        margin: 0;
-        font-size: var(--fs-md);
-    }
-</style>
+<QuickPick {title} placeholder={label} choices={rows} {onpick} {onclose} />

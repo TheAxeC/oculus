@@ -1,10 +1,10 @@
-// Layer 3, view helper of views/sessions/terminal/TerminalList.svelte and grid/TerminalGrid.svelte.
-// The entries apps contribute to the menus of a terminal: `terminal/title/context` on a row of the
-// Terminal tab's list and `terminal/context` on the grid. The entries are appended to oculus's own
-// items under a rule and run with the terminal as the command's argument, `{ $terminal: id }`,
-// which the app's host turns into its `Terminal` object. The context key `terminalProcessSupported`
-// is true for a terminal oculus holds a process of (a tmux terminal) and false for one an app's
-// host draws itself.
+// Layer 3, view helper of views/sessions/terminal/list/TerminalList.svelte and
+// grid/TerminalGrid.svelte. The entries apps contribute to the menus of a terminal:
+// `terminal/title/context` on a row of the Terminal tab's list and `terminal/context` on the grid.
+// The entries are appended to oculus's own items under a rule and run with the terminal as the
+// command's argument, `{ $terminal: id }`, which the app's host turns into its `Terminal` object.
+// The context key `terminalProcessSupported` is true for a terminal oculus holds a process of (a
+// tmux terminal) and false for one an app's host draws itself.
 
 import type { MenuItem } from '$lib/ui/menu/menu-items';
 import type { ClientState } from '$lib/state/client/shapes/client-state';

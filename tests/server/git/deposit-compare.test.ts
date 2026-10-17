@@ -8,6 +8,10 @@
 // folder, a bare repository standing in for GitHub and a second clone that pushes to it. `gh` is
 // never run; the stub answers `view` with failure so a mirror is made from the manifest's url or
 // empty.
+//
+// The machine's and the user's git configuration are replaced by an empty file
+// (`isolateDepositGit`), so no hook, identity or signing key of the machine runs or is read; the
+// committer is the fixture's own.
 // @module-tag slow: its cases run real git against a bare remote, so npm test leaves it out.
 
 import { execFileSync } from 'node:child_process';
@@ -29,8 +33,15 @@ import type { Plan } from '../../../src/lib/server/git/deposit/deposit.ts';
 import type { GhRun } from '../../../src/lib/server/git/deposit/deposit-git.ts';
 import type { WriteTarget } from '../../../src/lib/server/edit/writes.ts';
 import { it, scratchDir, test } from '../../fixtures/scratch.ts';
-import { depositTarget, gitIn, writeInside } from '../../fixtures/hubs/deposit-world.ts';
+import {
+    depositTarget,
+    gitIn,
+    isolateDepositGit,
+    writeInside
+} from '../../fixtures/hubs/deposit-world.ts';
 import { TEXT } from '../text.ts';
+
+isolateDepositGit();
 
 let dir = '';
 let hub = '';
@@ -172,6 +183,7 @@ describe('the comparison with origin/main', () => {
         const committed = await commit('alpha', 'Change a.py', TEXT, options());
         expect(committed.ok).toBe(true);
         expect((await state('alpha', options()))?.ahead).toBe(1);
+        expect((await state('alpha', options()))?.upstream).toBe('origin/main');
         expect((await state('alpha', options()))?.main).toEqual({
             known: true,
             ahead: 1,
@@ -191,6 +203,7 @@ describe('the comparison with origin/main', () => {
 
     it('says nothing is known for a mirror that has not been made', async () => {
         expect((await state('beta', options()))?.ahead).toBe(0);
+        expect((await state('beta', options()))?.upstream).toBe('');
         expect((await state('beta', options()))?.main).toEqual({
             known: false,
             ahead: 0,

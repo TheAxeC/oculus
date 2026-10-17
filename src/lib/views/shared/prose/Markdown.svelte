@@ -324,9 +324,16 @@
        paints nothing under a code span or block, since a second layer reads as a nearly solid
        one. A code span paints nothing on a box that is not tinted either: a blur behind a span
        that wraps covers the whole box around both of its halves, which blurs the prose between
-       them. */
+       them. A code span is outlined in the line colour instead, so it is told from the prose
+       beside it, a rice theme's mono prose among it; a block's code is the block's own. */
     :global(body.wall) .doc :global(code) {
         background: transparent;
+        outline: 1px solid var(--line);
+        outline-offset: -1px;
+    }
+
+    :global(body.wall) .doc :global(pre code) {
+        outline: none;
     }
 
     :global(body.wall) .doc :global(pre) {
