@@ -44,9 +44,11 @@ dispatch:      # steps in flight, up to six (Z632)
   session_id: a3b197066c39c6c82
   launched: 2026-10-17
   report: tools/oculus/.scratch/migration/agents/reviews/O41-report.md
-  round: 0
+  builder_usage: 113,596 tokens, 281 tool uses, 49.4 min
+  round: 1
   brief_check: agents/reviews/O41-brief-check.md (a5ee76e018077f142, claude-opus-5-5, 254,121 tokens, 97 tool uses, 16.1 min)
-  shared_paths: "with oculus/migration O40: src/lib/views/sources/search/Search.svelte (O41 the markup around the results, O40 the script near line 249), src/lib/views/shared/changes/CommitBox.svelte (O41 lines 90, 198 and 215, O40 lines 72 to 89; line 90 is adjacent to O40's last hunk and is resolved by hand at landing if the cherry-pick marks it), src/lib/views/sources/source/actions/submit-job.svelte.ts (O40 has not changed it), config/text/ui.yml (O41 the keys beside page_badge_tip, O40 the close-question keys), HELP.md and DESIGN.md (different sections); each merge is line by line"
+  reviewer_report: agents/reviews/O41-refuter.md (aaf31f5ef12ea8dc2, claude-opus-5-5, 337,168 tokens, 86 tool uses, 18.4 min)
+  shared_paths: "with oculus/migration O40: src/lib/views/sources/search/Search.svelte (O41 the markup around the results, O40 the script near line 249), src/lib/views/shared/changes/CommitBox.svelte (O41 lines 90, 198 and 215, O40 lines 72 to 89; line 90 is adjacent to O40's last hunk and is resolved by hand at landing if the cherry-pick marks it), src/lib/views/sources/source/actions/submit-job.svelte.ts (O40 has not changed it), config/text/ui.yml (O41 the keys beside page_badge_tip, O40 the close-question keys), HELP.md and DESIGN.md (different sections), src/lib/views/sources/source/Source.svelte (outside O41's write list: O41 line 452, O40 the hunks at lines 117, 180, 222 and 276); each merge is line by line"
   landing: not-started
 ```
 
