@@ -1,14 +1,16 @@
 # O37 landing
 
-Position: oculus migration, step O37 (the fixes and owed looks of O33's phase A), landed; next: O38 (the cockpit retired and the hub's tools cleaned, each deletion on Axel's yes path by path), then O39 (oculus's own repository). O40 (the look defects O37's landing does not fix) is prepared once O37 has landed and starts only on Axel's go (ruling 127).
+Position: oculus migration, step O37 (the fixes and owed looks of O33's phase A), landed; next: O40 (the look defects O37's landing does not fix), prepared now and started only on Axel's go (ruling 127), then O38 (the cockpit retired and the hub's tools cleaned, each deletion on Axel's yes path by path), then O39 (oculus's own repository).
 
 ## Open items
 
-- 128 (2026-10-17, O37's landing). O30 case 27, a drag of a tab from one window of the desktop app into another, is the one owed look not taken: it needs the real pointer, and the session moves no pointer and never brings an app to the front; a key or an Accessibility press cannot start a drag between windows. Options: (a) Axel drags a tab between two windows of a scratch app the session starts and says what he saw; (b) Axel names a time at which the session may move the pointer for one drag on a scratch app, with that app in front; (c) the case stays held by its test only. Recommendation: (b), since the session then records the look with its reads as it records every other look, and Axel spends no time on it; (a) costs Axel the look's minutes and gives no reads. The lazy option is (c), which leaves the look untaken.
+None open. Ruled after the landing commit: 128 (b), the drag taken by the session on Axel's greenlight.
+
+- 128 (2026-10-17, O37's landing, ruled (b)). O30 case 27, a drag of a tab from one window of the desktop app into another, is the one owed look not taken: it needs the real pointer, and the session moves no pointer and never brings an app to the front; a key or an Accessibility press cannot start a drag between windows. Options: (a) Axel drags a tab between two windows of a scratch app the session starts and says what he saw; (b) Axel names a time at which the session may move the pointer for one drag on a scratch app, with that app in front; (c) the case stays held by its test only. Recommendation: (b), since the session then records the look with its reads as it records every other look, and Axel spends no time on it; (a) costs Axel the look's minutes and gives no reads. The lazy option is (c), which leaves the look untaken.
 
 ## Not done
 
-- O30 case 27 is not taken (open item 128).
+- O30 case 27 is not taken: Axel ruled (b), and the session takes it on a scratch app once he gives the greenlight.
 - D68's panel path from a browser tab is not taken: it waits on row 69 of `agents/reviews/O37-defects.md` (one press says "The folder panel is already open."), and O40 takes it once that row is fixed.
 - 44 look defects of `agents/reviews/O37-defects.md` are open, each for O40 (ruling 127).
 - `npm run test:quick` over this step's whole change takes 92.9 s against its 45 s; over a change of a builder's size it takes 20.8 s (Z930, self-rule).
@@ -73,4 +75,4 @@ On my scratch desktop app on port 8796 over the gate's tree, and on the look age
 
 ## Next
 
-O38 is prepared through /spec, each deletion and each skill edit brought to Axel path by path for his yes; O40 waits for Axel's go; open item 128 waits for his ruling.
+O40 is prepared through /spec and its builder starts on Axel's go; O38 follows O40, each deletion and each skill edit brought to Axel path by path for his yes; O30 case 27 is taken on Axel's greenlight (ruling 128 (b)).

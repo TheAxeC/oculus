@@ -9,7 +9,7 @@ Found with `grep -n -i "not seen in the look\|not seen at the look\|not looked a
 Every look below is owed from a landed step and taken while O37 builds, on TEST or on a scratch oculus with a scratch hub, and recorded under "Taken" with what was seen (plan.md, O37, Step 0, the looks). Found by the triage of 2026-10-16 over every landing report, plan.md, the state file and the history, each checked against "Taken".
 
 - D68, Add Folder to Workspace from a browser tab: the panel path, taken in O40 once row 69 of `agents/reviews/O37-defects.md` (one press says "The folder panel is already open.", L95) is fixed.
-- O30 case 27, a drag of a tab between windows: it needs a real pointer drag, so it is under "Blocked, for Axel".
+- O30 case 27, a drag of a tab between windows: taken by the session moving the pointer for one drag on a scratch app with that app in front, once Axel gives the greenlight (ruling 128).
 
 ## Cannot be taken on this hub (each held by its test, named in its landing report)
 
@@ -621,6 +621,6 @@ Every look below is owed from a landed step and taken while O37 builds, on TEST 
   - S5 row 11, the undo from History of a Settings write and of a write that mended `slurm.days: x` (look37d): the undo of `slurm.poll_min` 20 to 25 left `behavior.yml` byte for byte as before (`cmp`); the mend of `days: x` to 4 took the finding away, and its undo put `days: x` back byte for byte (`cmp`) and the finding "slurm.days must be a number; the default is used" came back. Passed.
   - O30 case 41, the question over unsaved text in a popped-out window (look37, my app): the float holding `use.ts` with the unsaved line `// unsaved o30` was moved into a new window by its menu's Move into New Window; Cmd+W sent to that window's page as a key event (Chrome was in front, and the app is not brought forward; `src/desktop/windows/menu.ts` puts Cmd+W on no menu item, so it reaches the page) drew "Close this tab and lose its unsaved changes?" with Cancel and Confirm, the focus on Confirm; Escape closed the question and kept the tab with its unsaved line, and `use.ts` on disk does not hold it (`grep -c` 0). Passed. Defect: row 81 of `O37-defects.md`.
 
-## Blocked, for Axel
+## Waiting on Axel's greenlight (ruling 128)
 
 - O30 case 27, a drag of a tab from one window of the desktop app into another: the drag needs the real pointer, which moves Axel's mouse and brings the app to the front, and a key or an Accessibility press cannot start a drag between windows. Taken by Axel, or by the session at a time Axel names for one pointer drag.

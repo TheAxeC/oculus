@@ -94,4 +94,4 @@ Status: fixed (at landing in the gate, with the check named) | open.
 
 ## Count
 
-84 defects: 40 done in the gate (39 fixed, 56 needing no change), 44 open for O40.
+84 defects: 40 done in the gate (39 fixed, row 56 needing no change), 44 open for O40.

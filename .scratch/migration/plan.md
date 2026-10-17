@@ -2136,6 +2136,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - Open item 126 (2026-10-17): (a), the O33 and D63 package lines stay over the 400-character rule, since their ruling tags alone pass it; the tags stay on the line (the user).
 - Open item 127 (2026-10-17): the look defects O37's landing does not fix go into one new step, O40, not into O37 again; O40 waits for Axel's go before it starts (the user).
 - O37's looks (2026-10-17): taken by six look agents (general-purpose, Opus 5.5) on their own scratch copies and desktop apps, the orchestrator reading every record and screenshot, and some looks the orchestrator's own (the user). [P2129]
+- Open item 128 (2026-10-17): (b), O30 case 27 is taken by the session moving the pointer for one drag on a scratch app with that app in front, only after Axel's greenlight (the user).
 - Z930 (2026-10-17, O37's landing, the orchestrator, automode): `npm run test:quick` holds 45 s over a change of a builder's size (20.8 s); over a whole step's change it selects nearly the whole unit suite (92.9 s), which the landing list runs; making that fit is not O37's part; calling the whole-step run green was the lazy option, not taken (self-rule).
 
 ## Agents
